@@ -31,5 +31,9 @@ export default defineConfig(({ command, mode }) => {
         "fs": "path", // Hack to make polyfill to null
       },
     },
+    // https://github.com/mui/material-ui/issues/32727#issuecomment-1697253782
+    optimizeDeps: {
+      include: ['@mui/material/Tooltip', '@emotion/styled', '@mui/material/Unstable_Grid2'],
+    },
   };
 })
