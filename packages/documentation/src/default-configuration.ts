@@ -424,7 +424,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
     <thead><tr><th>Prefix</th><th>Namespace IRI</th></tr></thead>
     <tbody>
       {{#each usedPrefixes}}
-        <tr><td><code>{{prefix}}</code></td><td><a href={{{iri}}}><code>{{iri}}</code></a></td></tr>
+        <tr><td><code>{{prefix}}</code></td><td><a href="{{{iri}}}"><code>{{iri}}</code></a></td></tr>
       {{/each}}
     </tbody>
   </table>
