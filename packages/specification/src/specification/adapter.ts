@@ -7,7 +7,7 @@ import { DataSpecification as LegacyDataSpecification } from "@dataspecer/core/d
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
 import { PackageModel } from "../model-repository/package-model.ts";
 import { DataSpecification } from "./model.ts";
-import { ModelCompositionConfiguration } from "../model-hierarchy/composition-configuration.ts";
+import { ModelCompositionConfiguration, ModelCompositionConfigurationMerge } from "../model-hierarchy/composition-configuration.ts";
 import { SemanticModelAggregatorBuilder } from "../model-hierarchy/semantic-model-aggregator-builder.ts";
 import { MemoryStoreFromBlob } from "../memory-store.ts";
 import { loadAsStructureModel } from "../model-loader.ts";
@@ -112,13 +112,16 @@ export async function getDataSpecificationWithModels(dataSpecificationIri: strin
     let semanticModel: SemanticModelAggregator;
     let usedSemanticModels: InMemorySemanticModel[] = [];
     let compositionConfiguration = specification.modelCompositionConfiguration as ModelCompositionConfiguration | null;
+    const builder = new SemanticModelAggregatorBuilder(pckg, fetch);
     if (compositionConfiguration) {
-      const builder = new SemanticModelAggregatorBuilder(pckg, fetch);
       semanticModel = await builder.build(compositionConfiguration);
-      usedSemanticModels = builder.getUsedEntityModels();
     } else {
-      throw new Error("No composition configuration found.");
+      semanticModel = await builder.build({
+        modelType: "merge",
+        models: null,
+      } as ModelCompositionConfigurationMerge);
     }
+    usedSemanticModels = builder.getUsedEntityModels();
     if (specification.id === dataSpecificationIri) {
       semanticModelAggregator = semanticModel;
     }

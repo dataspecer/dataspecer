@@ -8,7 +8,7 @@ export type ModelCompositionConfigurationMerge = ModelCompositionConfiguration &
   modelType: "merge";
   models: {
     model: ModelCompositionConfiguration;
-  }[];
+  }[] | null;
 };
 
 export type ModelCompositionConfigurationApplicationProfile = ModelCompositionConfiguration & {

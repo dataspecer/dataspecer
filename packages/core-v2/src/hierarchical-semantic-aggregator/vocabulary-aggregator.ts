@@ -1,9 +1,11 @@
 import { Entity, EntityModel } from "../entity-model/index.ts";
-import { isSemanticModelClass, SemanticModelClass, SemanticModelEntity, SemanticModelRelationship } from "../semantic-model/concepts/index.ts";
+import { isSemanticModelClass, isSemanticModelRelationship, SemanticModelClass, SemanticModelEntity, SemanticModelRelationship } from "../semantic-model/concepts/index.ts";
 import { InMemorySemanticModel } from "../semantic-model/in-memory/index.ts";
 import { ExternalEntityWrapped, LocalEntityWrapped, SemanticModelAggregator } from "./interfaces.ts";
 import { getSearchRelevance } from "./utils/get-search-relevance.ts";
 import { withAbsoluteIri } from "../semantic-model/utils/index.ts";
+import { createDefaultNoProfileAggregator, NoProfileAggregator } from "./utils/no-profile-aggregator.ts";
+import { AggregatedProfiledSemanticModelRelationship } from "../semantic-model/profile/aggregator/aggregator.ts";
 
 const VOCABULARY_AGGREGATOR_TYPE = "vocabulary-aggregator";
 
@@ -20,10 +22,12 @@ export class VocabularyAggregator implements SemanticModelAggregator {
   private readonly subscribers: Set<(updated: Record<string, AggregatedEntityInVocabularyAggregator>, removed: string[]) => void> = new Set();
   thisVocabularyChain: object;
   protected readonly baseIri?: string;
+  private readonly noProfileAggregator: NoProfileAggregator;
 
   constructor(vocabulary: InMemorySemanticModel | EntityModel) {
     this.vocabulary = vocabulary;
     this.baseIri = (vocabulary as Partial<InMemorySemanticModel>).getBaseIri?.();
+    this.noProfileAggregator = createDefaultNoProfileAggregator();
 
     this.thisVocabularyChain = {
       name: this.vocabulary.getAlias() ?? "Vocabulary",
@@ -41,11 +45,18 @@ export class VocabularyAggregator implements SemanticModelAggregator {
   private updateLocalEntities(updated: Record<string, Entity>, removed: string[]) {
     const toUpdate: Record<string, AggregatedEntityInVocabularyAggregator> = {};
     for (const entity of Object.values(updated)) {
-      const rawEntity = withAbsoluteIri(entity as SemanticModelEntity, this.baseIri);
+      let aggregatedEntity = withAbsoluteIri(entity as SemanticModelEntity, this.baseIri);
+      if (isSemanticModelClass(aggregatedEntity)) {
+        aggregatedEntity = this.noProfileAggregator.aggregateSemanticModelClass(aggregatedEntity);
+      } else if (isSemanticModelRelationship(aggregatedEntity)) {
+        // todo fix types
+        aggregatedEntity = this.noProfileAggregator.aggregateSemanticModelRelationship(aggregatedEntity) as AggregatedProfiledSemanticModelRelationship & {iri: string};
+      }
+
       const update = {
         id: entity.id,
         type: VOCABULARY_AGGREGATOR_TYPE,
-        aggregatedEntity: rawEntity,
+        aggregatedEntity: aggregatedEntity,
         vocabularyChain: [this.thisVocabularyChain],
         // rawEntity,
         // sources: [],
