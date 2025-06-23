@@ -87,29 +87,29 @@ export function getSchemaArtifacts(
         artifacts.push(xmlSchema);
     }
 
-    const xsltLifting = new DataSpecificationSchema();
-    xsltLifting.iri = `${psmSchemaIri}#xsltlifting`;
-    xsltLifting.generator = XSLT_LIFTING.Generator;
-    const xsltLiftingFileName = dataSpecificationConfiguration.renameArtifacts?.[xsltLifting.generator] ?? "lifting.xslt";
-    xsltLifting.outputPath = `${basePath}${xsltLiftingFileName}`;
-    xsltLifting.publicUrl = `${baseUrl}/${xsltLiftingFileName}${queryParams}`;
-    xsltLifting.psm = psmSchemaIri;
-    xsltLifting.configuration = configuration;
-    if ((dataSpecificationConfiguration.useGenerators?.["xml"] ?? generatorsEnabledByDefault) !== false) {
-        artifacts.push(xsltLifting);
-    }
+    // const xsltLifting = new DataSpecificationSchema();
+    // xsltLifting.iri = `${psmSchemaIri}#xsltlifting`;
+    // xsltLifting.generator = XSLT_LIFTING.Generator;
+    // const xsltLiftingFileName = dataSpecificationConfiguration.renameArtifacts?.[xsltLifting.generator] ?? "lifting.xslt";
+    // xsltLifting.outputPath = `${basePath}${xsltLiftingFileName}`;
+    // xsltLifting.publicUrl = `${baseUrl}/${xsltLiftingFileName}${queryParams}`;
+    // xsltLifting.psm = psmSchemaIri;
+    // xsltLifting.configuration = configuration;
+    // if ((dataSpecificationConfiguration.useGenerators?.["xml"] ?? generatorsEnabledByDefault) !== false) {
+    //     artifacts.push(xsltLifting);
+    // }
 
-    const xsltLowering = new DataSpecificationSchema();
-    xsltLowering.iri = `${psmSchemaIri}#xsltlowering`;
-    xsltLowering.generator = XSLT_LOWERING.Generator;
-    const xsltLoweringFileName = dataSpecificationConfiguration.renameArtifacts?.[xsltLowering.generator] ?? "lowering.xslt";
-    xsltLowering.outputPath = `${basePath}${xsltLoweringFileName}`;
-    xsltLowering.publicUrl = `${baseUrl}/${xsltLoweringFileName}${queryParams}`;
-    xsltLowering.psm = psmSchemaIri;
-    xsltLowering.configuration = configuration;
-    if ((dataSpecificationConfiguration.useGenerators?.["xml"] ?? generatorsEnabledByDefault) !== false) {
-        artifacts.push(xsltLowering);
-    }
+    // const xsltLowering = new DataSpecificationSchema();
+    // xsltLowering.iri = `${psmSchemaIri}#xsltlowering`;
+    // xsltLowering.generator = XSLT_LOWERING.Generator;
+    // const xsltLoweringFileName = dataSpecificationConfiguration.renameArtifacts?.[xsltLowering.generator] ?? "lowering.xslt";
+    // xsltLowering.outputPath = `${basePath}${xsltLoweringFileName}`;
+    // xsltLowering.publicUrl = `${baseUrl}/${xsltLoweringFileName}${queryParams}`;
+    // xsltLowering.psm = psmSchemaIri;
+    // xsltLowering.configuration = configuration;
+    // if ((dataSpecificationConfiguration.useGenerators?.["xml"] ?? generatorsEnabledByDefault) !== false) {
+    //     artifacts.push(xsltLowering);
+    // }
 
     const csvSchema = new DataSpecificationSchema();
     csvSchema.iri = `${psmSchemaIri}#csvschema`;
