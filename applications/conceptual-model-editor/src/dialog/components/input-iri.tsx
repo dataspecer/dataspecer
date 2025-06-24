@@ -1,3 +1,4 @@
+import {t} from "../../application";
 
 export const InputIri = (props: {
   iriPrefix: string,
@@ -7,6 +8,7 @@ export const InputIri = (props: {
   onChange: (value: string) => void,
   disabled?: boolean,
 }) => {
+  const validation = validateUrl(props.value);
   return (
     <div className={`flex w-full flex-col ${props.disabled ? "opacity-50" : ""}`}>
       {/* Switch. */}
@@ -37,6 +39,18 @@ export const InputIri = (props: {
           className="flex-grow"
         />
       </div>
+      {validation === null ? null :
+        <div>
+          <p className="text-red-500">{validation}</p>
+        </div>
+      }
     </div>
   )
 };
+
+const validateUrl = (value: string) : null | string => {
+  if (value.includes(" ")) {
+    return t("input-iri.validate.space");
+  }
+  return null;
+}

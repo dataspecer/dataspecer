@@ -195,6 +195,13 @@ const dataspecer = prefix(
   },
 );
 
+const inputIri = prefix(
+  "input-iri.", {
+    "validate.space": "Invalid IRI syntax.",
+  },
+);
+console.log("LOC", inputIri);
+
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 export const translations: Record<string, string | Function> = {
   ...dialogAssociation,
@@ -211,6 +218,7 @@ export const translations: Record<string, string | Function> = {
   ...editSemanticModelDialog,
   ...searchExternalSemanticModelDialog,
   ...catalog,
+  ...inputIri,
   //
   "notification.icon-error": "Error icon",
   "notification.icon-success": "Check icon",
