@@ -6,6 +6,7 @@ import { InputText } from "../../components/input-text";
 import { useEditSemanticModelDialogController } from "./edit-semantic-model-dialog-controller";
 import { SelectColor } from "../../components/select-color";
 import { CmeSemanticModelType } from "../../../dataspecer/cme-model";
+import { InputAbsoluteIri } from "../../components/input-iri";
 
 //
 
@@ -27,7 +28,7 @@ export function EditSemanticModelDialog(
           />
         </DialogDetailRow>
         <DialogDetailRow detailKey={t("edit-semantic-model-dialog.base-iri")} className="text-xl" >
-          <InputText
+          <InputAbsoluteIri
             value={state.baseIri}
             onChange={controller.setBaseIri}
             disabled={state.baseIriDisabled}
