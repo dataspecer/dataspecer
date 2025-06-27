@@ -5,7 +5,6 @@ import { semanticModelToLightweightOwl } from "./lightweight-owl/index.ts";
 import { createContext, entityListContainerToConceptualModel } from "@dataspecer/core-v2/semantic-model/data-specification-vocabulary";
 import { createStructureModel, StructureClass, StructureModel, StructureProperty } from "./structure-model/index.ts";
 import { isComplexType, isPrimitiveType } from "@dataspecer/core-v2/semantic-model/datatypes";
-import { createHash } from "crypto";
 
 export interface ShaclForProfilePolicy {
 
@@ -59,8 +58,9 @@ export function createSemicShaclStylePolicy(fileUrl: string): ShaclForProfilePol
     minCount: number | null,
     maxCount: number | null,
   }) => {
+    // This is not a good solution, but should be fine for now.
     const value = JSON.stringify(property);
-    return createHash("sha256").update(value).digest("hex");
+    return computeHash(value);
   };
 
   return {
@@ -70,6 +70,16 @@ export function createSemicShaclStylePolicy(fileUrl: string): ShaclForProfilePol
     shaclPredicateShape: (_profile, type, property) =>
       `${fileUrl}#${applyPrefix(type)}Shape/${hashProperty(property)}`,
   }
+}
+
+const computeHash = (value: string) => {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    const char = value.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return hash.toString(16);
 }
 
 
@@ -157,9 +167,9 @@ export function createShaclForProfile(
   // As the next step we need to deal with specializations.
   // For C dsv:specializes P, we need to run all validations from P on C.
   const parentMap = buildFullParentMap(classMap);
-  const members : ShaclNodeShape[] = [];
+  const members: ShaclNodeShape[] = [];
   for (const [entity, shapes] of shapeMap.entries()) {
-    const parents =  parentMap[entity.iri];
+    const parents = parentMap[entity.iri];
     // Now we need to all properties from each parent to each shape,
     // we do not do this in-place to be order independent.
     for (const shape of shapes) {
@@ -207,7 +217,7 @@ function buildPropertiesShapeTemplates(
         } else {
           // Can be both or neither, it should not happen.
           console.warn("Unexpected type.",
-            {isPrimitive, isComplex, property, range});
+            { isPrimitive, isComplex, property, range });
         }
       }
     }
