@@ -456,6 +456,7 @@ function resolveResolvableProperty(
   // We do not update domain, we keep it original.
   // Update range to types of resolved classes.
   const initialRange = value.range;
+  value.range = Array.from(new Set(value.range));
   value.range = classDependencies
     .filter(item => value.range.includes(item.value.iri))
     .map(item => item.value.types)
