@@ -18,7 +18,7 @@ import { ExportButton } from "../components/management/buttons/export-button";
 import { useQueryParamsContext } from "../context/query-params-context";
 import * as DataSpecificationVocabulary from "@dataspecer/core-v2/semantic-model/data-specification-vocabulary";
 import { isInMemorySemanticModel } from "../utilities/model";
-import { createShaclForProfile, shaclToRdf } from "@dataspecer/shacl-v2";
+import { createShaclForProfile, shaclToRdf, createSemicShaclStylePolicy } from "@dataspecer/shacl-v2";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 
 export const ExportManagement = () => {
@@ -165,11 +165,15 @@ export const ExportManagement = () => {
     const profileModels = [...models.values()];
     const topProfileModel = profileModels[0];
 
+    const iri = isInMemorySemanticModel(topProfileModel) ?
+     topProfileModel.getBaseIri() : topProfileModel.getId();
+
     console.log({ semanticModels, profileModels, topProfileModel });
 
     const shacl = createShaclForProfile(
       semanticModels.map(model => new SemanticModelWrap(model)),
-      profileModels, topProfileModel);
+      profileModels, topProfileModel,
+      createSemicShaclStylePolicy(iri));
 
     shaclToRdf(shacl, {
       prettyPrint: true,

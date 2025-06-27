@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { createDefaultSemanticModelBuilder } from "./semantic-model/semantic-model-builder.ts";
 import { createDefaultProfileModelBuilder } from "./profile-model/profile-model-builder.ts";
-import { createShaclForProfile } from "./shacl.ts";
+import { createSemicShaclStylePolicy, createShaclForProfile } from "./shacl.ts";
 import { shaclToRdf } from "./shacl-to-rdf.ts";
 import { SemanticModel } from "./semantic-model/semantic-model.ts";
 import { createReadOnlyInMemoryEntityModel } from "./entity-model/index.ts";
@@ -70,7 +70,8 @@ describe("createShaclForProfile", () => {
     const shacl = createShaclForProfile(
       [xsd.build(), vocabulary.build()],
       [xsdProfile.build()],
-      profile.build());
+      profile.build(),
+      createSemicShaclStylePolicy("http://example/shacl.ttl"));
 
     //
 
@@ -173,7 +174,9 @@ describe("createShaclForProfile", () => {
       "https://example/",
       createReadOnlyInMemoryEntityModel("example-model", entities));
 
-    const shacl = createShaclForProfile([model], [model], model);
+    const shacl = createShaclForProfile(
+      [model], [model], model,
+      createSemicShaclStylePolicy("http://example/shacl.ttl"));
 
   });
 
