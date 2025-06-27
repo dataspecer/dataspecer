@@ -31,6 +31,7 @@ export interface ShaclForProfilePolicy {
 
 // https://github.com/SEMICeu/DCAT-AP/blob/master/releases/3.0.0/shacl/dcat-ap-SHACL.ttl
 export function createSemicShaclStylePolicy(fileUrl: string): ShaclForProfilePolicy {
+
   const prefixes: Record<string, string> = {
     "http://www.w3.org/ns/dcat#": "dcat:",
     "http://purl.org/dc/terms/": "dcterms:",
@@ -66,9 +67,9 @@ export function createSemicShaclStylePolicy(fileUrl: string): ShaclForProfilePol
   return {
     shaclModelIri: () => fileUrl,
     shaclNodeShape: (_profile, type) =>
-      `${fileUrl}#${applyPrefix(type)}Shape`,
+      `${fileUrl}${applyPrefix(type)}Shape`,
     shaclPredicateShape: (_profile, type, property) =>
-      `${fileUrl}#${applyPrefix(type)}Shape/${hashProperty(property)}`,
+      `${fileUrl}${applyPrefix(type)}Shape/${hashProperty(property)}`,
   }
 }
 

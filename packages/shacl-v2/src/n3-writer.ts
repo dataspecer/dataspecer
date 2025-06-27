@@ -121,7 +121,10 @@ function prettyPrintTurtle(turtle: string): string {
   const linesNext = [];
   for (const line of lines) {
     linesNext.push(line);
-    if (line.startsWith(" ") && line.endsWith(".")) {
+    if (line.startsWith("@prefix")) {
+      continue;
+    }
+    if (line.endsWith(".")) {
       linesNext.push("");
     }
   }
