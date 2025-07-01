@@ -17,6 +17,7 @@
     "@dataspecer/data-specification-vocabulary": "*",
     "@dataspecer/entity-model": "*",
     "@dataspecer/lightweight-owl": "*",
+    "@dataspecer/profile-model": "*",
     "@dataspecer/rdf-adapter": "*",
     "@dataspecer/structure-model": "*"
   },
