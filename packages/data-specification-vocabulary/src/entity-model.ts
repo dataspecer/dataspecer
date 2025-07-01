@@ -1,4 +1,4 @@
-import { Entity } from "../../entity-model/index.ts";
+import { Entity } from "@dataspecer/core-v2/entity-model";
 
 /**
  * A wrapper for list of entities.

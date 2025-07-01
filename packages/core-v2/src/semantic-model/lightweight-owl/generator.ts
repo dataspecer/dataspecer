@@ -17,7 +17,7 @@ import {
     isSemanticModelRelationship,
 } from "../concepts/index.ts";
 import { getDomainAndRange } from "../relationship-utils/utils.ts";
-import { PROF } from "../data-specification-vocabulary/vocabulary.ts";
+import { PROF } from "./vocabulary.ts";
 
 function simpleIdSort(a: SemanticModelEntity, b: SemanticModelEntity) {
     return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;

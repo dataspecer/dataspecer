@@ -23,7 +23,6 @@
     "./semantic-model/simplified": "./lib/semantic-model/simplified/index.js",
     "./semantic-model/lightweight-owl": "./lib/semantic-model/lightweight-owl/index.js",
     "./semantic-model/merge/merger": "./lib/semantic-model/merge/merger/index.js",
-    "./semantic-model/data-specification-vocabulary": "./lib/semantic-model/data-specification-vocabulary/index.js",
     "./semantic-model/datatypes": "./lib/semantic-model/datatypes/index.js",
     "./semantic-model/operations": "./lib/semantic-model/operations/index.js",
     "./semantic-model/in-memory": "./lib/semantic-model/in-memory/index.js",

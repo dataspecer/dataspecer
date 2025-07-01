@@ -1,5 +1,5 @@
 import { SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
-import * as DataSpecificationVocabulary from "@dataspecer/core-v2/semantic-model/data-specification-vocabulary";
+import * as DataSpecificationVocabulary from "@dataspecer/data-specification-vocabulary";
 import { generate } from "@dataspecer/core-v2/semantic-model/lightweight-owl";
 import { GenerateSpecificationContext } from "./specification.ts";
 import { ModelDescription } from "./model.ts";

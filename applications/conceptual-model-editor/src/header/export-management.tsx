@@ -16,7 +16,7 @@ import { useClassesContext } from "../context/classes-context";
 import { entityWithOverriddenIri, getIri, getModelIri } from "../util/iri-utils";
 import { ExportButton } from "../components/management/buttons/export-button";
 import { useQueryParamsContext } from "../context/query-params-context";
-import * as DataSpecificationVocabulary from "@dataspecer/core-v2/semantic-model/data-specification-vocabulary";
+import * as DataSpecificationVocabulary from "@dataspecer/data-specification-vocabulary";
 import { isInMemorySemanticModel } from "../utilities/model";
 import { createShaclForProfile, shaclToRdf, createSemicShaclStylePolicy } from "@dataspecer/shacl-v2";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";

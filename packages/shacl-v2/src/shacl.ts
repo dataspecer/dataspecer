@@ -2,7 +2,7 @@ import { ShaclModel, ShaclNodeKind, ShaclNodeShape, ShaclPropertyShape } from ".
 import { ProfileModel } from "./profile-model/profile-model.ts";
 import { SemanticModel } from "./semantic-model/semantic-model.ts";
 import { semanticModelToLightweightOwl } from "./lightweight-owl/index.ts";
-import { createContext, entityListContainerToConceptualModel } from "@dataspecer/core-v2/semantic-model/data-specification-vocabulary";
+import { createContext, entityListContainerToConceptualModel } from "@dataspecer/data-specification-vocabulary";
 import { createStructureModel, StructureClass, StructureModel, StructureProperty } from "./structure-model/index.ts";
 import { isComplexType, isPrimitiveType } from "@dataspecer/core-v2/semantic-model/datatypes";
 
@@ -30,48 +30,60 @@ export interface ShaclForProfilePolicy {
 }
 
 // https://github.com/SEMICeu/DCAT-AP/blob/master/releases/3.0.0/shacl/dcat-ap-SHACL.ttl
-export function createSemicShaclStylePolicy(fileUrl: string): ShaclForProfilePolicy {
+export function createSemicShaclStylePolicy(baseIri: string): ShaclForProfilePolicy {
+
+  // If there is "#" in the IRI we are in fragment section,
+  // we do not need to encode : , ale we need to.
+  const isFragment = baseIri.includes("#");
 
   const prefixes: Record<string, string> = {
-    "http://www.w3.org/ns/dcat#": "dcat:",
-    "http://purl.org/dc/terms/": "dcterms:",
-    "http://xmlns.com/foaf/0.1/": "foaf:",
-    "http://spdx.org/rdf/terms#": "spdx:",
-    "http://www.w3.org/ns/locn#": "locn:",
-    "http://www.w3.org/2006/time#": "time:",
+    "http://www.w3.org/ns/dcat#": "dcat",
+    "http://purl.org/dc/terms/": "dcterms",
+    "http://xmlns.com/foaf/0.1/": "foaf",
+    "http://spdx.org/rdf/terms#": "spdx",
+    "http://www.w3.org/ns/locn#": "locn",
+    "http://www.w3.org/2006/time#": "time",
     "http://www.w3.org/2004/02/skos/core#": "skos",
-    "http://www.w3.org/ns/prov#": "prov:"
+    "http://www.w3.org/ns/prov#": "prov"
   };
 
   const applyPrefix = (value: string) => {
     for (const [prefix, name] of Object.entries(prefixes)) {
-      if (value.startsWith(prefix)) {
-        return name + encodeURIComponent(value.substring(prefix.length));
+      if (!value.startsWith(prefix)) {
+        continue;
+      }
+      const suffix = encodeURIComponent(value.substring(prefix.length));
+      if (isFragment) {
+        return name + ":" + suffix;
+      } else {
+        // We need to encode ":".
+        return name + "%3A" + suffix;
       }
     }
     return value;
   };
 
-  const hashProperty = (property: {
+  const hashProperty = (profile: string, property: {
     path: string,
     datatype: string | null,
     class: string | null,
-    minCount: number | null,
-    maxCount: number | null,
   }) => {
     // This is not a good solution, but should be fine for now.
-    const value = JSON.stringify(property);
+    const type = property.datatype ?? property.class;
+    const value = `${profile}:${property.path}:${type}`;
     return computeHash(value);
   };
 
   return {
-    shaclModelIri: () => fileUrl,
+    shaclModelIri: () => baseIri,
     shaclNodeShape: (_profile, type) =>
-      `${fileUrl}${applyPrefix(type)}Shape`,
-    shaclPredicateShape: (_profile, type, property) =>
-      `${fileUrl}${applyPrefix(type)}Shape/${hashProperty(property)}`,
+      `${baseIri}${applyPrefix(type)}Shape`,
+    shaclPredicateShape: (profile, type, property) =>
+      `${baseIri}${applyPrefix(type)}Shape/${hashProperty(profile, property)}`,
   }
 }
+
+
 
 const computeHash = (value: string) => {
   let hash = 0;

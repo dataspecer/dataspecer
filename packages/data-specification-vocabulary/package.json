@@ -1,5 +1,5 @@
 {
-  "name": "@dataspecer/shacl-v2",
+  "name": "@dataspecer/data-specification-vocabulary",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@dataspecer/core-v2": "*",
-    "@dataspecer/data-specification-vocabulary": "*",
     "n3": "^1.25.1"
   },
   "devDependencies": {

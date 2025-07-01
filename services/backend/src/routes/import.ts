@@ -6,7 +6,7 @@ import {
   LanguageString,
   SemanticModelEntity,
 } from "@dataspecer/core-v2/semantic-model/concepts";
-import { conceptualModelToEntityListContainer, rdfToConceptualModel } from "@dataspecer/core-v2/semantic-model/data-specification-vocabulary";
+import { conceptualModelToEntityListContainer, rdfToConceptualModel } from "@dataspecer/data-specification-vocabulary";
 import { DataTypeURIs, isDataType } from "@dataspecer/core-v2/semantic-model/datatypes";
 import { createRdfsModel } from "@dataspecer/core-v2/semantic-model/simplified";
 import { isSemanticModelRelationshipUsage } from "@dataspecer/core-v2/semantic-model/usage/concepts";

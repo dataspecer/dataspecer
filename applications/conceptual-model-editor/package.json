@@ -15,6 +15,7 @@
   "devDependencies": {
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "^0.0.0",
+    "@dataspecer/data-specification-vocabulary": "^0.0.0",
     "@dataspecer/layout": "0.0.0",
     "@dataspecer/shacl-v2": "^0.0.0",
     "@eslint/js": "^9.23.0",

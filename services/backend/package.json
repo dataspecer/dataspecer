@@ -14,6 +14,7 @@
     "@dataspecer/backend-utils": "*",
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
+    "@dataspecer/data-specification-vocabulary": "*",
     "@dataspecer/documentation": "*",
     "@dataspecer/genapp": "*",
     "@dataspecer/json": "*",

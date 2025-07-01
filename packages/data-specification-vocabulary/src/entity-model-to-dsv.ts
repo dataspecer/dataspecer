@@ -1,10 +1,10 @@
-import { Entity } from "../../entity-model/index.ts";
+import { Entity } from "@dataspecer/core-v2/entity-model";
 
 import {
   isSemanticModelClass,
   isSemanticModelGeneralization,
   isSemanticModelRelationship,
-} from "../concepts/index.ts";
+} from "@dataspecer/core-v2/semantic-model/concepts";
 
 import {
   EntityListContainer,
@@ -31,9 +31,9 @@ import {
   SemanticModelClassProfile,
   SemanticModelRelationshipEndProfile,
   SemanticModelRelationshipProfile,
-} from "../profile/concepts/index.ts";
+} from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL, SKOS, VANN } from "./vocabulary.ts";
-import { isPrimitiveType } from "../datatypes/index.ts";
+import { isPrimitiveType } from "@dataspecer/core-v2/semantic-model/datatypes";
 
 interface EntityListContainerToConceptualModelContext {
 

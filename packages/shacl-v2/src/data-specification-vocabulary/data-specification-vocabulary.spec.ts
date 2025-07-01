@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { createDefaultSemanticModelBuilder } from "../semantic-model/index.ts";
 import { createDefaultProfileModelBuilder } from "../profile-model/profile-model-builder.ts";
-import { createContext, entityListContainerToConceptualModel, isObjectPropertyProfile, ObjectPropertyProfile } from "@dataspecer/core-v2/semantic-model/data-specification-vocabulary";
+import { createContext, entityListContainerToConceptualModel, isObjectPropertyProfile, ObjectPropertyProfile } from "@dataspecer/data-specification-vocabulary";
 
 describe("entityListContainerToConceptualModel", () => {
 

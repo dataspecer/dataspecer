@@ -1,5 +1,5 @@
-import { SemanticModelClass, SemanticModelRelationship } from "../concepts/index.ts";
-import { SemanticModelClassProfile, SemanticModelRelationshipProfile } from "../profile/concepts/index.ts";
+import { SemanticModelClass, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
+import { SemanticModelClassProfile, SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { ClassRole, DsvModel, PropertyProfile, RequirementLevel } from "./dsv-model.ts";
 import { EntityListContainer } from "./entity-model.ts";
 import {

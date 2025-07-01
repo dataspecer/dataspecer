@@ -1,4 +1,4 @@
-import { Entity } from "../../entity-model/index.ts";
+import { Entity } from "@dataspecer/core-v2/entity-model";
 
 import { EntityListContainer } from "./entity-model.ts";
 
@@ -21,9 +21,9 @@ import {
   SemanticModelClassProfile,
   SemanticModelRelationshipEndProfile,
   SemanticModelRelationshipProfile,
-} from "../profile/concepts/index.ts";
+} from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL, SKOS, VANN } from "./vocabulary.ts";
-import { SEMANTIC_MODEL_GENERALIZATION, SemanticModelGeneralization } from "../concepts/index.ts";
+import { SEMANTIC_MODEL_GENERALIZATION, SemanticModelGeneralization } from "@dataspecer/core-v2/semantic-model/concepts";
 
 interface MandatoryConceptualModelToEntityListContainerContext {
 

@@ -8,7 +8,7 @@ import {
   isObjectPropertyProfile,
   PropertyProfile,
   PropertyValueReuse,
-} from "@dataspecer/core-v2/semantic-model/data-specification-vocabulary";
+} from "@dataspecer/data-specification-vocabulary";
 import {
   OwlClass,
   OwlOntology,

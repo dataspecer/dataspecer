@@ -22,6 +22,7 @@
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
     "@dataspecer/csv": "*",
+    "@dataspecer/data-specification-vocabulary": "*",
     "@dataspecer/documentation": "*",
     "@dataspecer/federated-observable-store": "*",
     "@dataspecer/json": "*",
