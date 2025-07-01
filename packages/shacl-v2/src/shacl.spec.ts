@@ -1,10 +1,10 @@
 import { describe, test, expect } from "vitest";
 import { createDefaultSemanticModelBuilder } from "./semantic-model/semantic-model-builder.ts";
-import { createDefaultProfileModelBuilder } from "./profile-model/profile-model-builder.ts";
+import { createDefaultProfileModelBuilder } from "@dataspecer/profile-model";
 import { createSemicShaclStylePolicy, createShaclForProfile } from "./shacl.ts";
 import { shaclToRdf } from "./shacl-to-rdf.ts";
 import { SemanticModel } from "./semantic-model/semantic-model.ts";
-import { createReadOnlyInMemoryEntityModel } from "./entity-model/index.ts";
+import { createReadOnlyInMemoryEntityModel } from "@dataspecer/entity-model";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { createReadOnlyInMemorySemanticModel } from "./semantic-model/semantic-model-factory.ts";
 

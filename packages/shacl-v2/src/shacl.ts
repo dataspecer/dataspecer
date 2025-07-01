@@ -1,9 +1,9 @@
 import { ShaclModel, ShaclNodeKind, ShaclNodeShape, ShaclPropertyShape } from "./shacl-model/shacl-model.ts";
-import { ProfileModel } from "./profile-model/profile-model.ts";
+import { ProfileModel } from "@dataspecer/profile-model";
 import { SemanticModel } from "./semantic-model/semantic-model.ts";
 import { semanticModelToLightweightOwl } from "@dataspecer/lightweight-owl";
 import { createContext, entityListContainerToConceptualModel } from "@dataspecer/data-specification-vocabulary";
-import { createStructureModel, StructureClass, StructureModel, StructureProperty } from "./structure-model/index.ts";
+import { createStructureModel, StructureClass, StructureModel, StructureProperty } from "@dataspecer/structure-model";
 import { isComplexType, isPrimitiveType } from "@dataspecer/core-v2/semantic-model/datatypes";
 
 export interface ShaclForProfilePolicy {

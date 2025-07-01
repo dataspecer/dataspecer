@@ -1,5 +1,5 @@
 import { Entities } from "@dataspecer/core-v2";
-import { EntityModel, EntityModelChangeListener } from "../entity-model/index.ts";
+import { EntityModel, EntityModelChangeListener } from "@dataspecer/entity-model";
 import { SemanticModel } from "./semantic-model.ts";
 
 class ReadOnlyInMemorySemanticModel implements SemanticModel {

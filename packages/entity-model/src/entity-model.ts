@@ -1,7 +1,7 @@
-import { Entities, Entity } from "@dataspecer/core-v2";
+import { EntityRecord } from "./model/entity.ts";
 
 export type EntityModelChangeListener = (
-  updated: Record<string, Entity>,
+  updated: EntityRecord,
   removed: string[],
 ) => void;
 
@@ -9,8 +9,9 @@ export interface EntityModel {
 
   getId(): string;
 
-  getEntities(): Entities;
+  getEntities(): EntityRecord;
 
   subscribeToChanges(listener: EntityModelChangeListener): () => void;
 
 }
+

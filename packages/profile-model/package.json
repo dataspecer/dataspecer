@@ -1,0 +1,24 @@
+{
+  "name": "@dataspecer/profile-model",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "prebuild": "rimraf lib",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "exports": {
+    ".": "./lib/index.js"
+  },
+  "dependencies": {
+    "@dataspecer/core-v2": "*",
+    "@dataspecer/entity-model": "*"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
+  }
+}

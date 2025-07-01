@@ -1,4 +1,4 @@
-import { Entities, Entity } from "@dataspecer/core-v2";
+import { Entity } from "@dataspecer/core-v2";
 import {
   SEMANTIC_MODEL_CLASS,
   SemanticModelClass,
@@ -8,7 +8,7 @@ import {
   SEMANTIC_MODEL_RELATIONSHIP,
   SemanticModelRelationshipEnd,
 } from "./semantic-model.ts";
-import { createReadOnlyInMemoryEntityModel } from "../entity-model/index.ts";
+import { createReadOnlyInMemoryEntityModel } from "@dataspecer/entity-model";
 import { createReadOnlyInMemorySemanticModel } from "./semantic-model-factory.ts";
 
 type LanguageString = { [language: string]: string };

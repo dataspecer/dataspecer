@@ -360,9 +360,6 @@ function dsvCardinality(value: Cardinality | null): {
   min: number | null;
   max: number | null;
 } {
-  if (value === null) {
-    return { min: null, max: null };
-  }
   switch (value) {
     case Cardinality.ZeroToZero:
       return { min: 0, max: 0 };
@@ -381,6 +378,8 @@ function dsvCardinality(value: Cardinality | null): {
     case Cardinality.ManyToOne:
       return { min: null, max: 1 };
     case Cardinality.ManyToMany:
+      return { min: null, max: null };
+    default:
       return { min: null, max: null };
   }
 }

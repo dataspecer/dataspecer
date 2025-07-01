@@ -1,5 +1,5 @@
-import { Entities, Entity } from "@dataspecer/core-v2";
 import { EntityModel, EntityModelChangeListener } from "./entity-model.ts";
+import { Entity, EntityRecord } from "./model/index.ts";
 
 /**
  * Provide ability to see several models using one interface.
@@ -38,7 +38,7 @@ class DefaultAggregatedEntityModel implements AggregatedEntityModel {
   /**
    * Aggregated entities from all models.
    */
-  readonly entities: Entities = {};
+  readonly entities: EntityRecord = {};
 
   /**
    * For each entity store all models this entity is in.
@@ -62,7 +62,7 @@ class DefaultAggregatedEntityModel implements AggregatedEntityModel {
     return this.identifier;
   }
 
-  getEntities(): Entities {
+  getEntities(): EntityRecord {
     return this.entities;
   }
 
@@ -171,7 +171,6 @@ interface EntityModelContainer {
   readonly unsubscribe: () => void;
 
 }
-
 
 export function createAggregatedEntityModel(
   identifier: string,
