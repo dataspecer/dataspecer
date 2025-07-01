@@ -1,5 +1,5 @@
 import { ShaclModel, ShaclNodeKind, ShaclNodeShape, ShaclPropertyShape } from "./shacl-model/shacl-model.ts";
-import { N3Writer } from "./n3-writer.ts";
+import { createN3RdfBuilder, type N3RdfBuilder, createN3Writer } from "@dataspecer/rdf-adapter";
 import { RDFS, SHACL } from "./vocabulary.ts";
 
 interface ShaclModelToRdfConfiguration {
@@ -27,8 +27,13 @@ export async function shaclToRdf(
   const prefixes = {
     ...effectiveConfiguration.prefixes,
   };
-  const writer = new N3Writer(prefixes);
-  (new ShaclModelWriter(writer, model)).writeShaclModel();
+
+  const builder = createN3RdfBuilder();
+  (new ShaclModelWriter(builder, model)).writeShaclModel();
+
+  const writer = createN3Writer(prefixes);
+  writer.addQuads(builder.asQuads());
+
   return effectiveConfiguration.prettyPrint ?
     writer.asPrettyString() : writer.asString();
 }
@@ -47,19 +52,19 @@ function createDefaultConfiguration(): ShaclModelToRdfConfiguration {
 
 class ShaclModelWriter {
 
-  private writer: N3Writer;
+  private builder: N3RdfBuilder;
 
   private model: ShaclModel;
 
-  constructor(writer: N3Writer, model: ShaclModel) {
-    this.writer = writer;
+  constructor(writer: N3RdfBuilder, model: ShaclModel) {
+    this.builder = writer;
     this.model = model;
   }
 
   writeShaclModel(): void {
     // We first write member predicates and then the rest.
     for (const member of this.model.members) {
-      this.writer.addIri(this.model.iri, RDFS.member, member.iri);
+      this.builder.addIri(this.model.iri, RDFS.member, member.iri);
     }
     for (const member of this.model.members) {
       this.writeNodeShape(member);
@@ -68,13 +73,13 @@ class ShaclModelWriter {
 
   writeNodeShape(shape: ShaclNodeShape): void {
     const iri = shape.iri;
-    this.writer.addType(iri, SHACL.NodeShape);
-    this.writer.addIri(iri, RDFS.seeAlso, shape.seeAlso);
-    this.writer.addLiteral(iri, SHACL.closed, shape.closed);
-    this.writer.addIri(iri, SHACL.targetClass, shape.targetClass);
+    this.builder.addType(iri, SHACL.NodeShape);
+    this.builder.addIri(iri, RDFS.seeAlso, shape.seeAlso);
+    this.builder.addLiteral(iri, SHACL.closed, shape.closed);
+    this.builder.addIri(iri, SHACL.targetClass, shape.targetClass);
     for (const propertyShape of shape.propertyShapes) {
       const propertyIri = this.writePropertyShape(propertyShape);
-      this.writer.addIri(iri, SHACL.property, propertyIri);
+      this.builder.addIri(iri, SHACL.property, propertyIri);
     }
   }
 
@@ -83,36 +88,36 @@ class ShaclModelWriter {
 
     // rdfs:seeAlso // TODO Where to get this?
 
-    this.writer.addLanguageString(iri, SHACL.name, shape.name);
-    this.writer.addLanguageString(iri, SHACL.description, shape.description);
+    this.builder.addLanguageString(iri, SHACL.name, shape.name);
+    this.builder.addLanguageString(iri, SHACL.description, shape.description);
 
     switch (shape.nodeKind) {
       case ShaclNodeKind.BlankNode:
-        this.writer.addIri(iri, SHACL.nodeKind, SHACL.BlankNode);
+        this.builder.addIri(iri, SHACL.nodeKind, SHACL.BlankNode);
         break;
       case ShaclNodeKind.BlankNodeOrIRI:
-        this.writer.addIri(iri, SHACL.nodeKind, SHACL.BlankNodeOrIRI);
+        this.builder.addIri(iri, SHACL.nodeKind, SHACL.BlankNodeOrIRI);
         break;
       case ShaclNodeKind.BlankNodeOrLiteral:
-        this.writer.addIri(iri, SHACL.nodeKind, SHACL.BlankNodeOrLiteral);
+        this.builder.addIri(iri, SHACL.nodeKind, SHACL.BlankNodeOrLiteral);
         break;
       case ShaclNodeKind.IRI:
-        this.writer.addIri(iri, SHACL.nodeKind, SHACL.IRI);
+        this.builder.addIri(iri, SHACL.nodeKind, SHACL.IRI);
         break;
       case ShaclNodeKind.IRIOrLiteral:
-        this.writer.addIri(iri, SHACL.nodeKind, SHACL.IRIOrLiteral);
+        this.builder.addIri(iri, SHACL.nodeKind, SHACL.IRIOrLiteral);
         break;
       case ShaclNodeKind.Literal:
-        this.writer.addIri(iri, SHACL.nodeKind, SHACL.Literal);
+        this.builder.addIri(iri, SHACL.nodeKind, SHACL.Literal);
         break;
       default:
         break;
     }
 
-    this.writer.addIri(iri, SHACL.path, shape.path);
-    this.writer.addLiteral(iri, SHACL.maxCount, shape.maxCount);
-    this.writer.addIri(iri, SHACL.class, shape.class);
-    this.writer.addIri(iri, SHACL.class, shape.datatype);
+    this.builder.addIri(iri, SHACL.path, shape.path);
+    this.builder.addLiteral(iri, SHACL.maxCount, shape.maxCount);
+    this.builder.addIri(iri, SHACL.class, shape.class);
+    this.builder.addIri(iri, SHACL.class, shape.datatype);
     return iri;
   }
 

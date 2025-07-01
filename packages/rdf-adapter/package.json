@@ -1,5 +1,5 @@
 {
-  "name": "@dataspecer/shacl-v2",
+  "name": "@dataspecer/rdf-adapter",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,12 +13,10 @@
     ".": "./lib/index.js"
   },
   "dependencies": {
-    "@dataspecer/core-v2": "*",
-    "@dataspecer/data-specification-vocabulary": "*",
-    "@dataspecer/lightweight-owl": "*",
-    "@dataspecer/rdf-adapter": "*"
+    "n3": "^1.25.1"
   },
   "devDependencies": {
+    "@types/n3": "~1.24.2",
     "rimraf": "^6.0.1",
     "typescript": "^5.8.3",
     "vitest": "^3.1.1"
