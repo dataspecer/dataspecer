@@ -16,7 +16,8 @@
     "@dataspecer/core-v2": "*",
     "@dataspecer/data-specification-vocabulary": "*",
     "@dataspecer/lightweight-owl": "*",
-    "@dataspecer/rdf-adapter": "*"
+    "@dataspecer/rdf-adapter": "*",
+    "@dataspecer/structure-model": "*"
   },
   "devDependencies": {
     "rimraf": "^6.0.1",
