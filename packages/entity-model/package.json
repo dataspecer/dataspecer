@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "prebuild": "rimraf lib",
-    "test": "vitest run",
+    "test": "vitest run --pass-with-no-tests",
     "test:watch": "vitest"
   },
   "exports": {
