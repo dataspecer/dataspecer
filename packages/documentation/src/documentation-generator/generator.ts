@@ -76,6 +76,10 @@ const PREFIX_MAP: Record<string, string> = {
   "http://www.w3.org/ns/dx/prof/": "prof",
   "https://w3id.org/dsv-dap#": "dsv-dap",
   "https://w3id.org/dsv#": "dsv",
+  "http://data.europa.eu/r5r/": "dcatap",
+  "https://mff-uk.github.io/specifications/dcat-ap#": "dcat-ap",
+  "https://mff-uk.github.io/specifications/dcat-dap#": "dcat-dap",
+  "https://ofn.gov.cz/dcat-ap-cz#": "dcat-ap-cz"
 };
 
 export type DocumentationGeneratorInputModel = {
