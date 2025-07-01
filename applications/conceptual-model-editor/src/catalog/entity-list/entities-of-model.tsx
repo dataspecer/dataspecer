@@ -47,19 +47,19 @@ const DEFAULT_MODEL_COLOR = "#000069";
  */
 const getEntitiesByType = (entityType: EntityType, model: EntityModel): EntityTypes[] => {
   switch (entityType) {
-    case EntityType.Class:
-      return Object.values(model.getEntities())
-        .filter(isSemanticModelClass);
-    case EntityType.Relationship:
-      return Object.values(model.getEntities())
-        .filter(isSemanticModelRelationship)
-        .filter((entity) => !isSemanticModelAttribute(entity));
-    case EntityType.Attribute:
-      return Object.values(model.getEntities())
-        .filter(isSemanticModelAttribute);
-    case EntityType.Profile:
-      return Object.values(model.getEntities())
-        .filter(isUsageOrProfile);
+  case EntityType.Class:
+    return Object.values(model.getEntities())
+      .filter(isSemanticModelClass);
+  case EntityType.Relationship:
+    return Object.values(model.getEntities())
+      .filter(isSemanticModelRelationship)
+      .filter((entity) => !isSemanticModelAttribute(entity));
+  case EntityType.Attribute:
+    return Object.values(model.getEntities())
+      .filter(isSemanticModelAttribute);
+  case EntityType.Profile:
+    return Object.values(model.getEntities())
+      .filter(isUsageOrProfile);
   }
 };
 
@@ -318,15 +318,15 @@ function renderAddButton(actions: ActionsContextType, type: EntityType, model: E
 
   const onAdd = () => {
     switch (type) {
-      case EntityType.Class:
-        actions.openCreateClassDialog(model.getId());
-        break;
-      case EntityType.Attribute:
-        actions.openCreateAttributeDialogForModel(model.getId());
-        break;
-      case EntityType.Relationship:
-        actions.openCreateAssociationDialog(model.getId());
-        break;
+    case EntityType.Class:
+      actions.openCreateClassDialog(model.getId());
+      break;
+    case EntityType.Attribute:
+      actions.openCreateAttributeDialogForModel(model.getId());
+      break;
+    case EntityType.Relationship:
+      actions.openCreateAssociationDialog(model.getId());
+      break;
     }
   };
 

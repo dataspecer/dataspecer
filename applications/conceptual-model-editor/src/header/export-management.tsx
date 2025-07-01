@@ -166,7 +166,7 @@ export const ExportManagement = () => {
     const topProfileModel = profileModels[0];
 
     const iri = isInMemorySemanticModel(topProfileModel) ?
-     topProfileModel.getBaseIri() : topProfileModel.getId();
+      topProfileModel.getBaseIri() : topProfileModel.getId();
 
     console.log({ semanticModels, profileModels, topProfileModel });
 

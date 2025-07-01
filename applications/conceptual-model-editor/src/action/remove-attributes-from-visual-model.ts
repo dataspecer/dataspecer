@@ -83,7 +83,7 @@ function addAttributesToRemoveToTheMap(
 function geDomainAndRangeForAttribute(
   classes: ClassesContextType, attributeIdentifier: string,
 ): DomainAndRange<SemanticModelRelationshipEnd> | null {
-  let attribute: SemanticModelRelationship | SemanticModelRelationshipProfile | undefined =
+  const attribute: SemanticModelRelationship | SemanticModelRelationshipProfile | undefined =
       classes.relationships.find(relationship => relationship.id === attributeIdentifier);
   if (attribute === undefined) {
     return null;
