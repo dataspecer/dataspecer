@@ -30,6 +30,7 @@
     "@dataspecer/openapi": "*",
     "@dataspecer/shacl": "*",
     "@dataspecer/shex": "*",
+    "@dataspecer/lightweight-owl": "*",
     "@dataspecer/xml": "*",
     "pako": "^2.1.0"
   },

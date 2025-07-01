@@ -2,8 +2,8 @@ import {
   isSemanticModelClass,
   isSemanticModelGeneralization,
   isSemanticModelRelationship,
-  SemanticModel,
-} from "../semantic-model/index.ts";
+} from "@dataspecer/core-v2/semantic-model/concepts";
+
 import {
   OwlOntology,
   OwlClass,
@@ -21,6 +21,7 @@ import {
 import {
   InMemorySemanticModel,
 } from "@dataspecer/core-v2/semantic-model/in-memory";
+import { Entities, Entity } from "@dataspecer/core-v2";
 
 const OWL_THING = "http://www.w3.org/2002/07/owl#Thing";
 
@@ -31,6 +32,32 @@ interface Context {
   baseIri: string;
 
 }
+
+// REMOVE THIS ONCE IN ANOTHER PACKAGE
+
+type EntityModelChangeListener = (
+  updated: Record<string, Entity>,
+  removed: string[],
+) => void;
+
+interface EntityModel {
+
+  getId(): string;
+
+  getEntities(): Entities;
+
+  subscribeToChanges(listener: EntityModelChangeListener): () => void;
+
+}
+
+interface SemanticModel extends EntityModel {
+
+  getBaseIri(): string;
+
+};
+
+
+//
 
 /**
  * The {@link referenceSemanticModels} should contain all entities referenced

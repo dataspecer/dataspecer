@@ -7,7 +7,7 @@ import { Migrate } from "./migrations/migrate.ts";
 import { LocalStoreModel } from "./models/local-store-model.ts";
 import { ResourceModel } from "./models/resource-model.ts";
 import { getDefaultConfiguration } from "./routes/configuration.ts";
-import { getlightweightFromSimplified as getlightweightOwlFromSimplified } from "./routes/experimental.ts";
+import { getLightweightOwlFromSimplified } from "./routes/experimental.ts";
 import { getSingleFile, getZip } from "./routes/generate.ts";
 import { exportPackageResource, importPackageResource } from "./routes/export-import-raw.ts";
 import { getGenerateApplicationByModelId, getGeneratedApplication } from "./routes/genapp.ts";
@@ -117,7 +117,7 @@ application.put(apiBasename + "/simplified-semantic-model", setSimplifiedSemanti
 
 // Experimental features
 
-application.post(apiBasename + "/experimental/lightweight-owl-from-simplified.ttl", getlightweightOwlFromSimplified);
+application.post(apiBasename + "/experimental/lightweight-owl-from-simplified.ttl", getLightweightOwlFromSimplified);
 
 // Generate artifacts
 

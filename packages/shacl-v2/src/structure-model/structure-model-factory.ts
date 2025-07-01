@@ -13,7 +13,7 @@ import {
   OwlClass,
   OwlOntology,
   OwlProperty,
-} from "../lightweight-owl/index.ts";
+} from "@dataspecer/lightweight-owl";
 import {
   StructureClass,
   StructureModel,

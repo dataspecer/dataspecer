@@ -5,18 +5,16 @@ import {
     SemanticModelEntity,
     SemanticModelGeneralization,
     SemanticModelRelationship,
-} from "../concepts/concepts.ts";
-import * as N3 from "n3";
-import { DataFactory, Quad_Predicate, Quad_Subject } from "n3";
-const namedNode = DataFactory.namedNode;
-const literal = DataFactory.literal;
-import {
     isSemanticModelAttribute,
     isSemanticModelClass,
     isSemanticModelGeneralization,
     isSemanticModelRelationship,
-} from "../concepts/index.ts";
-import { getDomainAndRange } from "../relationship-utils/utils.ts";
+} from "@dataspecer/core-v2/semantic-model/concepts";
+import * as N3 from "n3";
+import { DataFactory, Quad_Predicate, Quad_Subject } from "n3";
+const namedNode = DataFactory.namedNode;
+const literal = DataFactory.literal;
+import { getDomainAndRange } from "@dataspecer/core-v2/semantic-model/relationship-utils";
 import { PROF } from "./vocabulary.ts";
 
 function simpleIdSort(a: SemanticModelEntity, b: SemanticModelEntity) {
@@ -31,7 +29,7 @@ interface Context {
 /**
  * Generates lightweight OWL ontology from the given entities.
  */
-export function generate(entities: SemanticModelEntity[], context: Context): Promise<string> {
+export function generateLightweightOwl (entities: SemanticModelEntity[], context: Context): Promise<string> {
     const generator = new Generator(context);
     return generator.generate(entities);
 }

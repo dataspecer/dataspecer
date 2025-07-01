@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { generate } from "@dataspecer/core-v2/semantic-model/lightweight-owl";
+import { generateLightweightOwl } from "@dataspecer/lightweight-owl";
 import type { SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { BackendPackageService } from "@dataspecer/core-v2/project";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
@@ -93,7 +93,7 @@ export const ExportManagement = () => {
       baseIri: "",
       iri: "",
     };
-    generate(entities, context)
+    generateLightweightOwl(entities, context)
       .then((generatedLightweightOwl) => {
         const date = Date.now();
         download(generatedLightweightOwl, `dscme-lw-ontology-${date}.ttl`, "text/plain");

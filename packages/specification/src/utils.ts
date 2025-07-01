@@ -1,6 +1,6 @@
 import { SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import * as DataSpecificationVocabulary from "@dataspecer/data-specification-vocabulary";
-import { generate } from "@dataspecer/core-v2/semantic-model/lightweight-owl";
+import { generateLightweightOwl as generateLightweightOwlInternal } from "@dataspecer/lightweight-owl";
 import { GenerateSpecificationContext } from "./specification.ts";
 import { ModelDescription } from "./model.ts";
 import { createDefaultConfigurationModelFromJsonObject } from "@dataspecer/core-v2/configuration-model";
@@ -12,7 +12,7 @@ import { BlobModel } from "./model-repository/blob-model.ts";
 
 export async function generateLightweightOwl(entities: Record<string, SemanticModelEntity>, baseIri: string, iri: string): Promise<string> {
   // @ts-ignore
-  return await generate(Object.values(entities), { baseIri, iri });
+  return await generateLightweightOwlInternal(Object.values(entities), { baseIri, iri });
 }
 
 export async function generateDsv(forExportModels: ModelDescription[], forContextModels: ModelDescription[], iri: string): Promise<string> {
