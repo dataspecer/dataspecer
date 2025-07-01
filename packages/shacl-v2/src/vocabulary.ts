@@ -38,6 +38,7 @@ export const SHACL = {
   "nodeKind": IRI(SHACL_PREFIX + "nodeKind"),
   "path": IRI(SHACL_PREFIX + "path"),
   "maxCount": IRI(SHACL_PREFIX + "maxCount"),
+  "minCount": IRI(SHACL_PREFIX + "minCount"),
   "class": IRI(SHACL_PREFIX + "class"),
   "datatype": IRI(SHACL_PREFIX + "datatype"),
   "IRI": IRI(SHACL_PREFIX + "IRI"),
