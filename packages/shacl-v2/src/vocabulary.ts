@@ -47,4 +47,5 @@ export const SHACL = {
   "BlankNodeOrIRI": IRI(SHACL_PREFIX + "BlankNodeOrIRI"),
   "BlankNodeOrLiteral": IRI(SHACL_PREFIX + "BlankNodeOrLiteral"),
   "IRIOrLiteral": IRI(SHACL_PREFIX + "IRIOrLiteral"),
+  "PropertyShape": IRI(SHACL_PREFIX + "PropertyShape"),
 };

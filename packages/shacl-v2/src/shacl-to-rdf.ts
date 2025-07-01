@@ -86,8 +86,7 @@ class ShaclModelWriter {
   writePropertyShape(shape: ShaclPropertyShape): string {
     const iri = shape.iri;
 
-    // rdfs:seeAlso // TODO Where to get this?
-
+    this.builder.addType(iri, SHACL.PropertyShape);
     this.builder.addLanguageString(iri, SHACL.name, shape.name);
     this.builder.addLanguageString(iri, SHACL.description, shape.description);
 
