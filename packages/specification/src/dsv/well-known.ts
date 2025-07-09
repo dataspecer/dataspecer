@@ -6,6 +6,8 @@ export const DSV_KNOWN_FORMATS = {
 
 export const DSV_CONFORMS_TO = {
   svg: "https://www.w3.org/TR/SVG/",
+  jsonSchema: "https://json-schema.org/draft/2020-12/schema",
+  jsonLd: "http://www.w3.org/ns/json-ld",
 };
 
 export const OWL_BASE = "http://www.w3.org/2002/07/owl";
@@ -27,6 +29,7 @@ export const PROF = {
     Guidance: "http://www.w3.org/ns/dx/prof/role/Guidance",
     Specification: "http://www.w3.org/ns/dx/prof/role/Specification",
     Vocabulary: "http://www.w3.org/ns/dx/prof/role/Vocabulary",
+    Schema: "http://www.w3.org/ns/dx/prof/role/schema",
   },
 };
 

@@ -124,8 +124,6 @@ export const getSingleFile = asyncHandler(async (request: express.Request, respo
     path,
   );
 
-  console.log("Requested file contents:", streamDictionary.requestedFileContents);
-
   if (streamDictionary.requestedFileContents === null) {
     response.status(404).send({ error: "File not found." });
     return;

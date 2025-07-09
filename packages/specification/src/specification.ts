@@ -13,6 +13,8 @@ import { DSV, DSV_CONFORMS_TO, DSV_KNOWN_FORMATS, OWL, OWL_BASE, PROF, RDFS_BASE
 import { ModelRepository } from "./model-repository/index.ts";
 import { ModelDescription } from "./model.ts";
 import { generateDsv, generateHtmlDocumentation, generateLightweightOwl } from "./utils.ts";
+import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model/data-specification-artefact";
+import { artefactToDsv } from "./v1/artefact-to-dsv.ts";
 
 const PIM_STORE_WRAPPER = "https://dataspecer.com/core/model-descriptor/pim-store-wrapper";
 const SGOV = "https://dataspecer.com/core/model-descriptor/sgov";
@@ -32,7 +34,7 @@ export interface GenerateSpecificationContext {
 
   v1Context?: any;
   v1Specification?: any;
-  artifacts?: any;
+  artifacts: DataSpecificationArtefact[];
 }
 
 /**
@@ -63,6 +65,8 @@ export interface GenerateSpecificationOptions {
  * @todo The interface of this function is still not final. We need to properly
  * consider how generators should work and how to migrate old generators to the
  * new API.
+ *
+ * @todo Only generates new artifacts
  *
  * ! This function is called from backend and DSE
  *
@@ -276,6 +280,8 @@ export async function generateSpecification(packageId: string, context: Generate
 
   // Array of all models' resource descriptors' has resource
   const allModelsHasResource: object[][] = [];
+  // HasResource for the application profile
+  let APHasResource: object[] | null = null;
   const allModelsDsvEntries: object[] = [];
   // For each model we need to decide whether it is a standalone vocabulary of application profile
   for (const model of models.filter((m) => m.isPrimary)) {
@@ -336,6 +342,7 @@ export async function generateSpecification(packageId: string, context: Generate
 
       const hasResource: object[] = [];
       allModelsHasResource.push(hasResource);
+      APHasResource = hasResource;
 
       // This describes the model as a resource, not the descriptor of the serialization
       const dsvEntry = semanticDataSpecification({
@@ -422,6 +429,16 @@ export async function generateSpecification(packageId: string, context: Generate
   const dsvJsonRoot = { ...htmlDescriptor };
   // @reverse http://www.w3.org/ns/dx/prof/hasResource
   dsvJsonRoot["inSpecificationOf"] = allModelsDsvEntries;
+
+  // Inject other artifacts
+  if (APHasResource) {
+    for (const artifact of context.artifacts) {
+      const descriptor = artefactToDsv(artifact, `/${subdirectory}en/index.html`);
+      if (descriptor) {
+        APHasResource.push(descriptor);
+      }
+    }
+  }
 
   // Generate the DSV serialization in JSON
   const dsv = dsvModelToJsonLdSerialization(dsvJsonRoot);
