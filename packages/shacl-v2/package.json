@@ -19,7 +19,8 @@
     "@dataspecer/lightweight-owl": "*",
     "@dataspecer/profile-model": "*",
     "@dataspecer/rdf-adapter": "*",
-    "@dataspecer/structure-model": "*"
+    "@dataspecer/structure-model": "*",
+    "crypto-js": "^4.2.0"
   },
   "devDependencies": {
     "rimraf": "^6.0.1",
