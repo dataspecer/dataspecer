@@ -1,4 +1,4 @@
-import { EntityModel } from "@dataspecer/entity-model";
+import { Entity } from "@dataspecer/entity-model";
 
 export {
   SEMANTIC_MODEL_CLASS_PROFILE,
@@ -19,4 +19,19 @@ export {
   type SemanticModelGeneralization as SemanticModelGeneralizationProfile,
 } from "@dataspecer/core-v2/semantic-model/concepts"
 
-export type ProfileModel = EntityModel;
+export interface ProfileModel {
+
+  getId(): string;
+
+  /**
+   * @returns null if there is no common base IRI.
+   */
+  getBaseIri(): string | null;
+
+  getEntities(): ProfileEntityRecord;
+
+}
+
+export type ProfileEntity = Entity;
+
+export type ProfileEntityRecord = Record<string, ProfileEntity>;

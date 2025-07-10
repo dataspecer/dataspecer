@@ -1,4 +1,3 @@
-import { Entities, Entity } from "@dataspecer/core-v2";
 import {
   ProfileModel,
   SemanticModelClassProfile,
@@ -8,7 +7,9 @@ import {
   SemanticModelRelationshipEndProfile,
   SEMANTIC_MODEL_RELATIONSHIP_PROFILE,
   SEMANTIC_MODEL_GENERALIZATION_PROFILE,
+  ProfileEntity,
 } from "./profile-model.ts";
+import { createReadOnlyInMemoryProfileModel } from "./in-memory/index.ts";
 
 const OWL_THING = "http://www.w3.org/2002/07/owl#Thing";
 
@@ -47,7 +48,7 @@ export interface ProfileModelBuilder {
     child: Type,
   ): ProfileGeneralizationBuilder;
 
-  build(): ProfileModel;
+  build(identifier: string): ProfileModel;
 
 }
 
@@ -107,7 +108,7 @@ class DefaultProfileModelBuilder implements ProfileModelBuilder {
 
   readonly baseUrl: string;
 
-  readonly entities: Record<string, Entity>;
+  readonly entities: Record<string, ProfileEntity>;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
@@ -134,7 +135,7 @@ class DefaultProfileModelBuilder implements ProfileModelBuilder {
       tags: [],
       ...value,
       // SemanticModelEntity
-      iri: this.baseUrl + (value?.iri ?? `classProfile#${this.counter}`),
+      iri: value?.iri ?? `classProfile#${this.counter}`,
     };
     this.entities[identifier] = entity;
     return new DefaultProfileClassBuilder(entity);
@@ -142,7 +143,7 @@ class DefaultProfileModelBuilder implements ProfileModelBuilder {
 
   nextIdentifier() {
     ++this.counter;
-    return this.baseUrl + "000-" + String(this.counter).padStart(3, "0");
+    return "000-" + String(this.counter).padStart(3, "0");
   }
 
   relationship(
@@ -174,7 +175,7 @@ class DefaultProfileModelBuilder implements ProfileModelBuilder {
         profiling: [],
         tags: [],
       }, {
-        iri: this.baseUrl + (value?.iri ?? `relationship#${this.counter}`),
+        iri: value?.iri ?? `relationship#${this.counter}`,
         cardinality: value?.cardinality ?? null,
         concept: OWL_THING,
         externalDocumentationUrl: null,
@@ -204,14 +205,15 @@ class DefaultProfileModelBuilder implements ProfileModelBuilder {
       child: child.identifier,
       parent: parent.identifier,
       // SemanticModelEntity
-      iri: this.baseUrl + `generalizationProfile#${this.counter}`,
+      iri: `generalizationProfile#${this.counter}`,
     };
     this.entities[identifier] = entity;
     return new DefaultProfileGeneralizationBuilder();
   }
 
-  build(): ProfileModel {
-    return new DefaultProfileModel(this.entities);
+  build(identifier: string): ProfileModel {
+    return createReadOnlyInMemoryProfileModel(
+      identifier, this.baseUrl, this.entities);
   }
 
 }
@@ -355,36 +357,6 @@ class DefaultProfileRelationshipBuilder
   mandatory(): ProfileRelationshipBuilder {
     addToArray(ProfileTags.mandatory, this.rangeEnd.tags);
     return this;
-  }
-
-}
-
-class DefaultProfileModel implements ProfileModel {
-
-  entities: Record<string, Entity>;
-
-  constructor(entities: Record<string, Entity>) {
-    this.entities = entities;
-  }
-
-  getEntities(): Entities {
-    return this.entities;
-  }
-
-  subscribeToChanges(): () => void {
-    throw new Error("Method not implemented.");
-  }
-
-  getId(): string {
-    throw new Error("Method not implemented.");
-  }
-
-  getAlias(): string | null {
-    throw new Error("Method not implemented.");
-  }
-
-  setAlias(alias: string | null): void {
-    throw new Error("Method not implemented.");
   }
 
 }
