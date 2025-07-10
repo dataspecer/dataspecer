@@ -1,5 +1,5 @@
-import { EntityModel } from "./entity-model.ts";
-import { EntityRecord } from "./model/index.ts";
+import { EntityModel } from "../entity-model.ts";
+import { EntityRecord } from "../model/index.ts";
 
 class ReadOnlyInMemoryEntityModel implements EntityModel {
 
@@ -7,7 +7,10 @@ class ReadOnlyInMemoryEntityModel implements EntityModel {
 
   readonly entities: EntityRecord = {};
 
-  constructor(identifier: string, entities: EntityRecord) {
+  constructor(
+    identifier: string,
+    entities: EntityRecord,
+  ) {
     this.identifier = identifier;
     // We create a copy.
     this.entities = { ...entities };
@@ -19,11 +22,6 @@ class ReadOnlyInMemoryEntityModel implements EntityModel {
 
   getEntities(): EntityRecord {
     return this.entities;
-  }
-
-  subscribeToChanges(): () => void {
-    // This is read only model.
-    return () => { };
   }
 
 }

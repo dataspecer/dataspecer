@@ -1,4 +1,8 @@
-import { EntityIdentifier } from "./identifier.ts";
+
+/**
+ * This type should be used whenever we identify an entity.
+ */
+export type EntityIdentifier = string;
 
 /**
  * A JSON serializable object that represents an entity.
