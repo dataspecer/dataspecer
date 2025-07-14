@@ -1,4 +1,4 @@
-import { IRI } from "iri";
+import { createIriResolver } from "@dataspecer/utilities";
 
 import {
   SEMANTIC_MODEL_CLASS,
@@ -211,14 +211,4 @@ export function createDefaultSemanticModelBuilder(configuration: {
     urlResolver,
     (identifier) => configuration.baseIdentifier + identifier,
   );
-}
-
-function createIriResolver(baseUrl: string): Resolver {
-  return (iri: string) => {
-    return isAbsoluteIri(iri) ? iri : baseUrl + iri;
-  };
-}
-
-function isAbsoluteIri(iri: string): boolean {
-  return (new IRI(iri).scheme()?.length ?? 0) > 0;
 }
