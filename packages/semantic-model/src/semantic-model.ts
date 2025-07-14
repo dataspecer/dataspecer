@@ -37,4 +37,4 @@ export interface SemanticModel {
 
 export type SemanticEntity = Entity;
 
-export type SemanticEntityRecord = Record<string, SemanticEntity>;
+export type SemanticEntityRecord = { [identifier: string]: SemanticEntity };
