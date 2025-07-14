@@ -34,4 +34,4 @@ export interface ProfileModel {
 
 export type ProfileEntity = Entity;
 
-export type ProfileEntityRecord = Record<string, ProfileEntity>;
+export type ProfileEntityRecord = { [identifier: string]: ProfileEntity };

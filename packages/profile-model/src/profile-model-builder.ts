@@ -1,31 +1,10 @@
-import {
+import type {
   ProfileModel,
   SemanticModelClassProfile,
   SemanticModelRelationshipProfile,
-  SemanticModelGeneralizationProfile,
-  SEMANTIC_MODEL_CLASS_PROFILE,
-  SemanticModelRelationshipEndProfile,
-  SEMANTIC_MODEL_RELATIONSHIP_PROFILE,
-  SEMANTIC_MODEL_GENERALIZATION_PROFILE,
-  ProfileEntity,
 } from "./profile-model.ts";
-import { createReadOnlyInMemoryProfileModel } from "./in-memory/index.ts";
-
-const OWL_THING = "http://www.w3.org/2002/07/owl#Thing";
 
 type LanguageString = { [language: string]: string };
-
-interface PropertyProfile {
-
-  iri: string;
-
-  name: LanguageString;
-
-  usageNote: LanguageString,
-
-  cardinality: [number, number | null] | null;
-
-}
 
 export interface ProfileModelBuilder {
 
@@ -48,25 +27,31 @@ export interface ProfileModelBuilder {
     child: Type,
   ): ProfileGeneralizationBuilder;
 
-  build(identifier: string): ProfileModel;
+  build(): ProfileModel;
 
 }
 
-interface Identifiable {
+export interface PropertyProfile {
 
-  identifier: string;
+  iri: string;
+
+  name: LanguageString;
+
+  usageNote: LanguageString,
+
+  cardinality: [number, number | null] | null;
 
 }
 
-export interface ProfileClassBuilder extends Identifiable {
+export interface ProfileClassBuilder extends IdentifiableBuilder {
 
-  profile(entity: Identifiable): ProfileClassBuilder;
+  profile(entity: IdentifiableBuilder): ProfileClassBuilder;
 
-  reuseName(entity: Identifiable): ProfileClassBuilder;
+  reuseName(entity: IdentifiableBuilder): ProfileClassBuilder;
 
-  reuseDescription(entity: Identifiable): ProfileClassBuilder;
+  reuseDescription(entity: IdentifiableBuilder): ProfileClassBuilder;
 
-  reuseUsageNote(entity: Identifiable): ProfileClassBuilder;
+  reuseUsageNote(entity: IdentifiableBuilder): ProfileClassBuilder;
 
   optional(): ProfileClassBuilder;
 
@@ -76,15 +61,24 @@ export interface ProfileClassBuilder extends Identifiable {
 
 }
 
-export interface ProfileRelationshipBuilder extends Identifiable {
+export interface IdentifiableBuilder {
 
-  profile(entity: Identifiable): ProfileRelationshipBuilder;
+  /**
+   * Provides ability to identify a builder.
+   */
+  identifier: string;
 
-  reuseName(entity: Identifiable): ProfileRelationshipBuilder;
+}
 
-  reuseDescription(entity: Identifiable): ProfileRelationshipBuilder;
+export interface ProfileRelationshipBuilder extends IdentifiableBuilder {
 
-  reuseUsageNote(entity: Identifiable): ProfileRelationshipBuilder;
+  profile(entity: IdentifiableBuilder): ProfileRelationshipBuilder;
+
+  reuseName(entity: IdentifiableBuilder): ProfileRelationshipBuilder;
+
+  reuseDescription(entity: IdentifiableBuilder): ProfileRelationshipBuilder;
+
+  reuseUsageNote(entity: IdentifiableBuilder): ProfileRelationshipBuilder;
 
   domain(value: ProfileClassBuilder): ProfileRelationshipBuilder;
 
@@ -100,274 +94,4 @@ export interface ProfileRelationshipBuilder extends Identifiable {
 
 export interface ProfileGeneralizationBuilder {
 
-}
-
-class DefaultProfileModelBuilder implements ProfileModelBuilder {
-
-  counter: number = 0;
-
-  readonly baseUrl: string;
-
-  readonly entities: Record<string, ProfileEntity>;
-
-  constructor(baseUrl: string) {
-    this.baseUrl = baseUrl;
-    this.entities = {};
-  }
-
-  class(value?: Partial<SemanticModelClassProfile>): ProfileClassBuilder {
-    const identifier = this.nextIdentifier();
-    const entity: SemanticModelClassProfile = {
-      // Entity
-      id: identifier,
-      type: [SEMANTIC_MODEL_CLASS_PROFILE],
-      // NamedThingProfile
-      name: {},
-      nameFromProfiled: null,
-      description: {},
-      descriptionFromProfiled: null,
-      // Profile
-      profiling: [],
-      usageNote: null,
-      usageNoteFromProfiled: null,
-      externalDocumentationUrl: null,
-      // SemanticModelClassProfile
-      tags: [],
-      ...value,
-      // SemanticModelEntity
-      iri: value?.iri ?? `classProfile#${this.counter}`,
-    };
-    this.entities[identifier] = entity;
-    return new DefaultProfileClassBuilder(entity);
-  }
-
-  nextIdentifier() {
-    ++this.counter;
-    return "000-" + String(this.counter).padStart(3, "0");
-  }
-
-  relationship(
-    value?: Partial<SemanticModelRelationshipProfile>,
-  ): ProfileRelationshipBuilder {
-    throw new Error("Method not implemented.");
-  }
-
-  property(
-    value?: Partial<PropertyProfile>,
-  ): ProfileRelationshipBuilder {
-    const identifier = this.nextIdentifier();
-    const entity: SemanticModelRelationshipProfile = {
-      // Entity
-      id: identifier,
-      type: [SEMANTIC_MODEL_RELATIONSHIP_PROFILE],
-      // SemanticModelRelationshipProfile
-      ends: [{
-        iri: null,
-        cardinality: null,
-        concept: OWL_THING,
-        externalDocumentationUrl: null,
-        name: {},
-        nameFromProfiled: null,
-        description: {},
-        descriptionFromProfiled: null,
-        usageNote: null,
-        usageNoteFromProfiled: null,
-        profiling: [],
-        tags: [],
-      }, {
-        iri: value?.iri ?? `relationship#${this.counter}`,
-        cardinality: value?.cardinality ?? null,
-        concept: OWL_THING,
-        externalDocumentationUrl: null,
-        name: value?.name ?? {},
-        nameFromProfiled: null,
-        description: {},
-        descriptionFromProfiled: null,
-        usageNote: null,
-        usageNoteFromProfiled: null,
-        profiling: [],
-        tags: [],
-      }],
-    };
-    this.entities[identifier] = entity;
-    return new DefaultProfileRelationshipBuilder(entity);
-  }
-
-  generalization<Type extends ProfileClassBuilder | ProfileRelationshipBuilder>(
-    parent: Type, child: Type,
-  ): ProfileGeneralizationBuilder {
-    const identifier = this.nextIdentifier();
-    const entity: SemanticModelGeneralizationProfile = {
-      // Entity
-      id: identifier,
-      type: [SEMANTIC_MODEL_GENERALIZATION_PROFILE],
-      // SemanticModelGeneralizationProfile
-      child: child.identifier,
-      parent: parent.identifier,
-      // SemanticModelEntity
-      iri: `generalizationProfile#${this.counter}`,
-    };
-    this.entities[identifier] = entity;
-    return new DefaultProfileGeneralizationBuilder();
-  }
-
-  build(identifier: string): ProfileModel {
-    return createReadOnlyInMemoryProfileModel(
-      identifier, this.baseUrl, this.entities);
-  }
-
-}
-
-enum ProfileTags {
-  "mandatory" = "https://w3id.org/dsv/requirement-level#mandatory",
-  "optional" = "https://w3id.org/dsv/requirement-level#optional",
-  "recommended" = "https://w3id.org/dsv/requirement-level#recommended",
-}
-
-class DefaultProfileClassBuilder implements ProfileClassBuilder {
-
-  readonly identifier: string;
-
-  readonly entity: SemanticModelClassProfile;
-
-  constructor(entity: SemanticModelClassProfile) {
-    this.identifier = entity.id;
-    this.entity = entity;
-  }
-
-  profile(entity: Identifiable): ProfileClassBuilder {
-    this.updateProfiling(entity.identifier);
-    return this;
-  }
-
-  reuseName(entity: Identifiable): ProfileClassBuilder {
-    this.entity.nameFromProfiled = entity.identifier;
-    this.updateProfiling(entity.identifier);
-    return this;
-  }
-
-  private updateProfiling(identifier: string) {
-    addToArray(identifier, this.entity.profiling);
-  }
-
-  reuseDescription(entity: Identifiable): ProfileClassBuilder {
-    this.entity.descriptionFromProfiled = entity.identifier;
-    this.updateProfiling(entity.identifier);
-    return this;
-  }
-
-  reuseUsageNote(entity: Identifiable): ProfileClassBuilder {
-    this.entity.usageNoteFromProfiled = entity.identifier;
-    this.updateProfiling(entity.identifier);
-    return this;
-  }
-
-  optional(): ProfileClassBuilder {
-    addToArray(ProfileTags.optional, this.entity.tags);
-    return this;
-  }
-
-  recommended(): ProfileClassBuilder {
-    addToArray(ProfileTags.recommended, this.entity.tags);
-    return this;
-  }
-
-  mandatory(): ProfileClassBuilder {
-    addToArray(ProfileTags.mandatory, this.entity.tags);
-    return this;
-  }
-
-}
-
-/**
- * If given value is not in the given array, push it to the end.
- */
-function addToArray<T>(value: T, items: T[]) {
-  if (items.includes(value)) {
-    return;
-  }
-  items.push(value);
-}
-
-class DefaultProfileRelationshipBuilder
-  implements ProfileRelationshipBuilder {
-
-  readonly identifier: string;
-
-  readonly entity: SemanticModelRelationshipProfile;
-
-  readonly domainEnd: SemanticModelRelationshipEndProfile;
-
-  readonly rangeEnd: SemanticModelRelationshipEndProfile;
-
-  constructor(entity: SemanticModelRelationshipProfile) {
-    this.identifier = entity.id;
-    this.entity = entity;
-    this.domainEnd = entity.ends[0];
-    this.rangeEnd = entity.ends[1];
-  }
-
-  profile(entity: Identifiable): ProfileRelationshipBuilder {
-    this.updateProfiling(entity.identifier);
-    return this;
-  }
-
-  reuseName(entity: Identifiable): ProfileRelationshipBuilder {
-    this.rangeEnd.nameFromProfiled = entity.identifier;
-    this.updateProfiling(entity.identifier);
-    return this;
-  }
-
-  private updateProfiling(identifier: string) {
-    addToArray(identifier, this.rangeEnd.profiling);
-  }
-
-  reuseDescription(entity: Identifiable): ProfileRelationshipBuilder {
-    this.rangeEnd.descriptionFromProfiled = entity.identifier;
-    this.updateProfiling(entity.identifier);
-    return this;
-  }
-
-  reuseUsageNote(entity: Identifiable): ProfileRelationshipBuilder {
-    this.rangeEnd.usageNoteFromProfiled = entity.identifier;
-    this.updateProfiling(entity.identifier);
-    return this;
-  }
-
-  domain(value: ProfileClassBuilder): ProfileRelationshipBuilder {
-    this.domainEnd.concept = value.identifier;
-    return this;
-  }
-
-  range(value: ProfileClassBuilder): ProfileRelationshipBuilder {
-    this.rangeEnd.concept = value.identifier;
-    return this;
-  }
-
-  optional(): ProfileRelationshipBuilder {
-    addToArray(ProfileTags.optional, this.rangeEnd.tags);
-    return this;
-  }
-
-  recommended(): ProfileRelationshipBuilder {
-    addToArray(ProfileTags.recommended, this.rangeEnd.tags);
-    return this;
-  }
-
-  mandatory(): ProfileRelationshipBuilder {
-    addToArray(ProfileTags.mandatory, this.rangeEnd.tags);
-    return this;
-  }
-
-}
-
-class DefaultProfileGeneralizationBuilder
-  implements ProfileGeneralizationBuilder {
-
-}
-
-export function createDefaultProfileModelBuilder(
-  baseUrl: string,
-): ProfileModelBuilder {
-  return new DefaultProfileModelBuilder(baseUrl);
 }
