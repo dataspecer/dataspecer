@@ -19,6 +19,33 @@ The main components are:
   The ideas is to have all actions at one place.
   For example, 'show/hide' action can be executed from dialog, toolbar or in reaction to user prompt.
 
+### C4 component diagram
+On very high level the CME component looks like this:
+
+![img_6.png](images/c4-component-diagram-cme.png)
+
+Where the layout is the layout package, so technically it is not part of CME.
+
+### Directory structure
+
+- `action` - The actions that can user do, so basically business logic.
+- `catalog (newly catalog-v2)` - Represents the catalog component in CME. Catalog is the part of page which lists semantic information contained in package. ![img_6.png](images/catalog.png)
+- `components` - Some of the exported React components used on multiple places.
+- `configuration` - Language options and static configuration for diagram, etc.
+- `context` - Model, Class, Layout configuration and query params context.
+- `dataspecer` - Communication with backend containing packages and communication layer for core-v2 models.
+- `diagram` - The diagram component of CME. Should be separated from the rest of CME. So we can swap out the rendering library if necessary.
+  - `diagram-api.tsx` - The API used for communication with the rest of CME.
+  - `diagram-controller.ts` - The controller handling logic for diagram component.
+  - `diagram-hook.ts` - The diagram hook used to provide diagram functionality to rest of CME.
+  - `diagram-model.ts` - The entities used in diagram - Node types and Edge types, etc. in diagram
+  - `diagram.tsx` - The react component, which handles rendering of diagram.
+- `dialog` - Contains all the dialogs available in CME.
+- `features` - Mostly Features from header component, like autosave.
+- `header` - The React components related to header. Header is the top part of page containing save, language, etc.
+
+`visualization.tsx` file - Creates the diagram component and handles callbacks caused by changes to entities in semantic model and changes in entities in visual model and the model itself and propagates them to the diagram component.
+
 ### Directories / Packages
 This section contains comments relevant for developing code in certain packages.
 
