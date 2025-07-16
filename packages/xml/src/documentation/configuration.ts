@@ -153,7 +153,7 @@ export const defaultXmlPartials: Record<string, string> = {
 
 {{#def "xml-non-root-element" "element"}}
 <section id="{{xml-id-anchor .}}">
-  <h4>{{#iflng "cs"}}Element{{lng}}Element{{/iflng}} <code>&lt;{{name.[1]}}&gt;</code></h4>
+  <h4>{{#iflng "cs"}}Element{{lng}}Element{{/iflng}} {{^name.[0]}}{{#path}}{{#if (equals entityType "element")}}<code>&lt;{{name.[1]}}&gt;</code> / {{/if}}{{/path}}{{/name.[0]}}<code>&lt;{{name.[1]}}&gt;</code></h4>
 
   <dl>
     <dt>{{#iflng "cs"}}Význam{{lng}}Meaning{{/iflng}}</dt>
@@ -230,5 +230,6 @@ export const defaultXmlPartials: Record<string, string> = {
   </dl>
 </section>
 {{#linkedChildElements}}{{xml-non-root-element .}}{{/linkedChildElements}}
-{{/rootTypes}}`,
+{{/rootTypes}}
+</section>`,
 };

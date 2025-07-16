@@ -183,6 +183,8 @@ export async function generateDocumentation(
       relationshipProfiles: sortedSemanticModel.filter(entity => isSemanticModelRelationshipProfile(entity)),
     },
 
+    classProfilesByTags: Object.groupBy(sortedSemanticModel.filter(entity => isSemanticModelClassProfile(entity)), entity => (entity as SemanticModelClassProfile)?.tags?.[0] || "default"),
+
     dsv: inputModel.dsv,
 
     // The goal of the given documentation

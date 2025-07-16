@@ -30,42 +30,36 @@ export const defaultConfiguration: DocumentationConfiguration = {
       {{/each}}
     </section>
 
-    {{#if locallyDefinedSemanticEntityByTags.[https://w3id.org/dsv/class-role#main]}}
+    {{#if classProfilesByTags.[https://w3id.org/dsv/class-role#main]}}
       <section>
         <h2>{{#iflng "cs"}}Hlavní profily tříd{{lng}}Main class profiles{{/iflng}}</h2>
 
-        {{#each locallyDefinedSemanticEntityByTags.[https://w3id.org/dsv/class-role#main]}}
-          {{#ifEquals type.[0] "class-profile"}}
-            {{> class-profile}}
-          {{/ifEquals}}
+        {{#each classProfilesByTags.[https://w3id.org/dsv/class-role#main]}}
+          {{> class-profile}}
         {{/each}}
       </section>
     {{/if}}
 
-    {{#if locallyDefinedSemanticEntityByTags.[https://w3id.org/dsv/class-role#supportive]}}
+    {{#if classProfilesByTags.[https://w3id.org/dsv/class-role#supportive]}}
       <section>
         <h2>{{#iflng "cs"}}Podpůrné profily třídy{{lng}}Supportive class profiles{{/iflng}}</h2>
 
-        {{#each locallyDefinedSemanticEntityByTags.[https://w3id.org/dsv/class-role#supportive]}}
-          {{#ifEquals type.[0] "class-profile"}}
-            {{> class-profile}}
-          {{/ifEquals}}
+        {{#each classProfilesByTags.[https://w3id.org/dsv/class-role#supportive]}}
+          {{> class-profile}}
         {{/each}}
       </section>
     {{/if}}
 
-    {{#if (and (non-empty locallyDefinedSemanticEntityByTags.default) (non-empty semanticEntitiesByType.classProfiles))}}
+    {{#if (non-empty classProfilesByTags.default)}}
       <section>
-        {{#if (or locallyDefinedSemanticEntityByTags.[https://w3id.org/dsv/class-role#main] locallyDefinedSemanticEntityByTags.[https://w3id.org/dsv/class-role#supportive])}}
+        {{#if (or classProfilesByTags.[https://w3id.org/dsv/class-role#main] classProfilesByTags.[https://w3id.org/dsv/class-role#supportive])}}
           <h2>{{#iflng "cs"}}Nezařazené profily tříd{{lng}}Other class profiles{{/iflng}}</h2>
         {{else}}
           <h2>{{#iflng "cs"}}Profily tříd{{lng}}Class profiles{{/iflng}}</h2>
         {{/if}}
 
-        {{#each locallyDefinedSemanticEntityByTags.default}}
-          {{#ifEquals type.[0] "class-profile"}}
-            {{> class-profile}}
-          {{/ifEquals}}
+        {{#each classProfilesByTags.default}}
+          {{> class-profile}}
         {{/each}}
       </section>
     {{/if}}
