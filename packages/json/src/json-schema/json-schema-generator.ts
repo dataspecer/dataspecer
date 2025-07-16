@@ -158,22 +158,31 @@ export class JsonSchemaGenerator implements ArtefactGenerator {
         });
       });
 
-      let infoText = "Datová sada je tvořena ";
+      let infoText = {
+        cs: "Datová sada je tvořena ",
+        en: "The data set consists of "
+      };
       switch (configuration.jsonRootCardinality) {
         case "single":
-          infoText += "jediným prvkem odpovídající datové struktuře";
+          infoText.cs += "jediným prvkem odpovídající datové struktuře";
+          infoText.en += "a single item of the data structure";
           break;
         case "array":
-          infoText += "seznamem prvků odpovídajících datové struktuře";
+          infoText.cs += "seznamem prvků odpovídajících datové struktuře";
+          infoText.en += "a list of items of the data structure";
           break;
         case "object-with-array":
-          infoText += "seznamem prvků odpovídajících datové struktuře";
+          infoText.cs += "seznamem prvků odpovídajících datové struktuře";
+          infoText.en += "a list of items of the data structure";
           break;
         default:
           assertFailed("Unknown cardinality.");
       }
 
-      let infoText2 = configuration.jsonRootCardinality === "object-with-array" ? ` Prvky jsou uvedeny v poli \`${configuration.jsonRootCardinalityObjectKey}\`.` : "";
+      let infoText2 = configuration.jsonRootCardinality === "object-with-array" ? {
+        cs: ` Prvky jsou uvedeny v poli \`${configuration.jsonRootCardinalityObjectKey}\`.`,
+        en: ` The items are listed in the array \`${configuration.jsonRootCardinalityObjectKey}\`.`
+      } : {};
 
       return {
         structureModel,
@@ -187,12 +196,12 @@ export class JsonSchemaGenerator implements ArtefactGenerator {
 
           if (this instanceof StructureModelClass) {
               const label = this.humanLabel?.cs ?? this.humanLabel?.en ?? "";
-              return `json-schéma-objekt-${normalizeLabel(label)}`;
+              return `json-object-${normalizeLabel(label)}`;
           } else if (this instanceof StructureModelProperty) {
             const obj = structureModel.getClasses().find(c => c.properties.find(p => p.psmIri === this.psmIri))!;
             const objLabel = obj.humanLabel?.cs ?? obj.humanLabel?.en ?? "";
             //const label = this.humanLabel?.cs ?? this.humanLabel?.en ?? "";
-            return `json-schéma-vlastnost-${normalizeLabel(objLabel)}-${normalizeLabel(this.technicalLabel)}`;
+            return `json-property-${normalizeLabel(objLabel)}-${normalizeLabel(this.technicalLabel)}`;
           }
         },
         /**

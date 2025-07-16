@@ -2,8 +2,8 @@ export const MAIN_JSON_PARTIAL = "json-documentation";
 
 export const defaultJsonPartials: Record<string, string> = {
   [MAIN_JSON_PARTIAL]: `<section>
-<h3>Přehled JSON struktury</h3>
-<p>JSON Schéma zachycující strukturu pro <i>{{#humanLabel}}{{translate}}{{/humanLabel}}</i> je definováno v souboru <a href="{{{artifact.json-schema.relativePath}}}"><code>{{artifact.json-schema.relativePath}}</code></a>. {{{infoText}}} <i>{{#structureModel}}{{#roots}}{{#classes}}{{#humanLabel}}{{translate}}{{/humanLabel}}{{/classes}}{{/roots}}{{/structureModel}}</i>.{{{infoText2}}}</p>
+<h3>{{#iflng "cs"}}Přehled JSON struktury{{lng}}Overview of JSON structure{{/iflng}}</h3>
+<p>{{#iflng "cs"}}JSON Schéma zachycující strukturu pro{{lng}}The JSON Schema capturing the structure for{{/iflng}} <i>{{#humanLabel}}{{translate}}{{/humanLabel}}</i> {{#iflng "cs"}}je definováno v souboru{{lng}}is defined in file{{/iflng}} <a href="{{{artifact.json-schema.relativePath}}}"><code>{{artifact.json-schema.relativePath}}</code></a>. {{{translate infoText}}} <i>{{#structureModel}}{{#roots}}{{#classes}}{{#humanLabel}}{{translate}}{{/humanLabel}}{{/classes}}{{/roots}}{{/structureModel}}</i>.{{{translate infoText2}}}</p>
 
 <ul>
 {{#classes}}{{#inThisSchema}}
@@ -15,10 +15,10 @@ export const defaultJsonPartials: Record<string, string> = {
 {{#properties}}
 <li>
     <code>{{technicalLabel}}</code>:
-    {{#if cardinalityIsRequired}}povinná{{else}}nepovinná{{/if}}
-    ({{cardinalityRange}}) položka typu {{#dataTypes}}
+    {{#if cardinalityIsRequired}}{{#iflng "cs"}}povinná{{lng}}required{{/iflng}}{{else}}{{#iflng "cs"}}nepovinná{{lng}}optional{{/iflng}}{{/if}}
+    ({{cardinalityRange}}) {{#iflng "cs"}}položka typu{{lng}}item of type{{/iflng}} {{#dataTypes}}
       {{#isAssociation}}{{#dataType}}{{#isSimpleClass}}<strong>IRI (<a href="{{#pimClass}}{{href pimIri}}{{/pimClass}}">{{#humanLabel}}{{translate}}{{/humanLabel}}</a>)</strong>{{/isSimpleClass}}{{^isSimpleClass}}<strong><a href="#{{structureModelLinkId}}">{{#humanLabel}}{{translate}}{{/humanLabel}}</a></strong>{{/isSimpleClass}}{{/dataType}}{{/isAssociation}}
-      {{#isAttribute}} {{#dataType}}<a href="{{{.}}}">{{translate (getLabelForDataType .)}}</a>{{#./regex}} dle regulárního výrazu <code>{{{.}}}</code>{{/./regex}}{{/dataType}}{{^dataType}}bez datového typu{{/dataType}}{{/isAttribute}}
+      {{#isAttribute}} {{#dataType}}<a href="{{{.}}}">{{translate (getLabelForDataType .)}}</a>{{#./regex}} {{#iflng "cs"}}dle regulárního výrazu{{lng}}by regular expression{{/iflng}} <code>{{{.}}}</code>{{/./regex}}{{/dataType}}{{^dataType}}{{#iflng "cs"}}bez datového typu{{lng}}without data type{{/iflng}}{{/dataType}}{{/isAttribute}}
     {{/dataTypes}}
 </li>
 {{/properties}}
@@ -29,13 +29,13 @@ export const defaultJsonPartials: Record<string, string> = {
 
 {{#classes}}{{#inThisSchema}}
 <section id="{{structureModelLinkId}}">
-<h3>Objekt <i>{{#humanLabel}}{{translate}}{{/humanLabel}}</i></h3>
+<h3>{{#iflng "cs"}}Objekt{{lng}}Object{{/iflng}} <i>{{#humanLabel}}{{translate}}{{/humanLabel}}</i></h3>
 <dl>
 {{#humanDescription}}{{#translate}}
-<dt>Popis</dt>
+<dt>{{#iflng "cs"}}Popis{{lng}}Description{{/iflng}}</dt>
 <dd>{{translation}}</dd>
 {{/translate}}{{/humanDescription}}
-<dt>Interpretace</dt>
+<dt>{{#iflng "cs"}}Interpretace{{lng}}Interpretation{{/iflng}}</dt>
 {{#pimClass}}
 <dd>
   <a href="{{href pimIri}}">{{#humanLabel}}{{translate}}{{/humanLabel}}</a>
@@ -45,21 +45,21 @@ export const defaultJsonPartials: Record<string, string> = {
 
 {{#properties}}
 <section id="{{structureModelLinkId}}">
-<h5>Vlastnost <code>{{technicalLabel}}</code></h5>
+<h5>{{#iflng "cs"}}Vlastnost{{lng}}Property{{/iflng}} <code>{{technicalLabel}}</code></h5>
 <dl>
-<dt>Klíč</dt>
+<dt>{{#iflng "cs"}}Klíč{{lng}}Key{{/iflng}}</dt>
 <dd>\`{{technicalLabel}}\`</dd>
-<dt>Jméno</dt>
+<dt>{{#iflng "cs"}}Jméno{{lng}}Name{{/iflng}}</dt>
 <dd>{{#humanLabel}}{{translate}}{{/humanLabel}}</dd>
 {{#humanDescription}}{{#translate}}
-<dt>Popis</dt>
+<dt>{{#iflng "cs"}}Popis{{lng}}Description{{/iflng}}</dt>
 <dd>{{translation}}</dd>
 {{/translate}}{{/humanDescription}}
-<dt>Povinnost</dt>
-<dd>{{#if cardinalityIsRequired}}povinné{{else}}nepovinné{{/if}}</dd>
-<dt>Kardinalita</dt>
+<dt>{{#iflng "cs"}}Povinnost{{lng}}Optionality{{/iflng}}</dt>
+<dd>{{#if cardinalityIsRequired}}{{#iflng "cs"}}povinné{{lng}}required{{/iflng}}{{else}}{{#iflng "cs"}}nepovinné{{lng}}optional{{/iflng}}{{/if}}</dd>
+<dt>{{#iflng "cs"}}Kardinalita{{lng}}Cardinality{{/iflng}}</dt>
 <dd>{{cardinalityRange}}</dd>
-<dt>Typ</dt>
+<dt>{{#iflng "cs"}}Typ{{lng}}Type{{/iflng}}</dt>
 {{#dataTypes}}
 
 {{#isAssociation}}
@@ -79,23 +79,23 @@ export const defaultJsonPartials: Record<string, string> = {
 
 {{#isAttribute}}
 <dd>
-{{#dataType}}<a href="{{{.}}}">{{translate (getLabelForDataType .)}}</a>{{/dataType}}{{^dataType}}bez datového typu{{/dataType}}
+{{#dataType}}<a href="{{{.}}}">{{translate (getLabelForDataType .)}}</a>{{/dataType}}{{^dataType}}{{#iflng "cs"}}bez datového typu{{lng}}without data type{{/iflng}}{{/dataType}}
 </dd>
 {{/isAttribute}}
 
 {{/dataTypes}}
 
 {{#dataTypes}}{{#isAttribute}}{{#example}}
-<dt>Příklad</dt>
+<dt>{{#iflng "cs"}}Příklad{{lng}}Example{{/iflng}}</dt>
 <dd><div>{{.}}</div></dd>
 {{/example}}{{/isAttribute}}{{/dataTypes}}
 
 {{#dataTypes}}{{#isAttribute}}{{#./regex}}
-<dt>Regulární výraz</dt>
+<dt>{{#iflng "cs"}}Regulární výraz{{lng}}Regular expression{{/iflng}}</dt>
 <dd><code>{{.}}</code></dd>
 {{/./regex}}{{/isAttribute}}{{/dataTypes}}
 
-<dt>Interpretace</dt>
+<dt>{{#iflng "cs"}}Interpretace{{lng}}Interpretation{{/iflng}}</dt>
 {{#pimAssociation}}
 <dd>
 <a href="{{href pimIri}}">{{#humanLabel}}{{translate}}{{/humanLabel}}</a>
@@ -110,22 +110,22 @@ export const defaultJsonPartials: Record<string, string> = {
 
 {{#classes}}{{#isFromExternalSchema}}
 <section id="{{structureModelLinkId}}">
-<h3>Referencovaný objekt <i>{{#humanLabel}}{{translate}}{{/humanLabel}}</i></h3>
+<h3>{{#iflng "cs"}}Referencovaný objekt{{lng}}Referenced object{{/iflng}} <i>{{#humanLabel}}{{translate}}{{/humanLabel}}</i></h3>
 <dl>
 {{#humanDescription}}{{#translate}}
-<dt>Popis</dt>
+<dt>{{#iflng "cs"}}Popis{{lng}}Description{{/iflng}}</dt>
 <dd>{{translation}}</dd>
 {{/translate}}{{/humanDescription}}
-<dt>Interpretace</dt>
+<dt>{{#iflng "cs"}}Interpretace{{lng}}Interpretation{{/iflng}}</dt>
 {{#pimClass}}
 <dd>
   <a href="{{href pimIri}}">{{#humanLabel}}{{translate}}{{/humanLabel}}</a>
 </dd>
 {{/pimClass}}
 {{#classSpecificationArtifact}}
-<dt>Schéma</dt>
+<dt>{{#iflng "cs"}}Schéma{{lng}}Schema{{/iflng}}</dt>
 <dd>
-  Schéma je definováno v  <a href="{{link}}">{{#semanticModel}}{{#humanLabel}}{{translate}}{{/humanLabel}}{{/semanticModel}}</a>.
+  {{#iflng "cs"}}Schéma je definováno v{{lng}}Schema is defined in{{/iflng}} <a href="{{link}}">{{#semanticModel}}{{#humanLabel}}{{translate}}{{/humanLabel}}{{/semanticModel}}</a>.
 </dd>
 {{/classSpecificationArtifact}}
 </dl>

@@ -95,7 +95,10 @@ export const defaultConfiguration: DocumentationConfiguration = {
 
     {{#structureModels}}
       <section>
-      <h2>Specifikace struktury pro {{translate humanLabel}}</h2>
+      <h2>
+        {{#iflng "cs"}}Specifikace struktury pro{{lng}}Data structure specification for{{/iflng}}
+        {{translate humanLabel}}
+      </h2>
       <p>{{translate humanDescription}}</p>
 
       {{#artifacts}}{{#getDocumentation}}{{> (useTemplate)}}{{/getDocumentation}}{{/artifacts}}
@@ -412,7 +415,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
         </tr>
       {{/if}}
         {{#artifacts}}
-        <tr><td>{{title}}</td><td><a href="{{{relativePath}}}">{{relativePathAsText}}</a></td></tr>
+        <tr><td>{{translate title}}</td><td><a href="{{{relativePath}}}">{{relativePathAsText}}</a></td></tr>
         {{/artifacts}}
     </tbody>
   </table>
