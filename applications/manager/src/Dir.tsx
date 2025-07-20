@@ -28,6 +28,7 @@ import { ReloadImported } from "./dialog/reload-imported";
 import { AddImported } from "./dialog/add-imported";
 import { ReloadPimWrapper } from "./dialog/reload-pim-wrapper";
 import { stopPropagation } from "./utils/events";
+import LoginCard from "./components/login-card";
 
 export function lng(text: LanguageString | undefined): string | undefined {
   return text?.["cs"] ?? text?.["en"];
@@ -275,6 +276,7 @@ function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean
   }
 
   return <div className="mb-12">
+    <LoginCard/>
     <div className="flex flex-row">
       <button onClick={() => setIsOpen(!isOpen)}>
         {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}

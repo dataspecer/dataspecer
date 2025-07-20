@@ -29,6 +29,10 @@ import { getSimplifiedSemanticModel, setSimplifiedSemanticModel } from "./routes
 import { getSystemData } from "./routes/system.ts";
 import { useStaticSpaHandler } from "./static.ts";
 import { migratePR419 } from "./tools/migrate-pr419.ts";
+import { authJSRedirectCallback } from "./routes/auth/auth-redirect-to-frontend-handler.ts";
+import { authHandler } from "./routes/auth/auth-handler.ts";
+import { corsOriginHandler } from "./utils/cors-related.ts";
+import { getBasicUserInfo } from "./authorization/auth-session.ts";
 
 // Create application models
 
@@ -64,10 +68,39 @@ const multerUpload = multer({ storage: multerStorage });
 // Run express
 
 const application = express();
-application.use(cors());
+// If app is served through a proxy, trust the proxy to allow HTTPS protocol to be detected.
+// I am not exactly if or why is this needed, but every example has it including the official one.
+// https://authjs.dev/getting-started/deployment#docker it is mentioned for example here for docker
+application.set('trust proxy', true);
+
+application.use(cors(corsOriginHandler));
+// TODO RadStr: Remove the commented code after commit - just so I have it somewhere
+// application.use(cors({
+//   // origin: (origin, callback) => { callback(null, origin) },   // TODO RadStr: Allow any front-end - this is dangerous, don't do it in actual final version
+//   // origin: "http://localhost:5174",      // TODO RadStr: Hardcoded front-end, but we have to specify the exact front-end, otherwise we can not use cookies
+// }));
+
 application.use(express.json({ limit: configuration.payloadSizeLimit }));
 application.use(express.urlencoded({ extended: false, limit: configuration.payloadSizeLimit }));
 application.use(express.urlencoded({ extended: true, limit: configuration.payloadSizeLimit }));
+
+// API for authorization
+
+// TODO RadStr: Remove this line of code later after commit
+// application.use("/auth/*", ExpressAuth(basicAuthConfig));
+
+application.get(apiBasename + "/auth-handler/personal-callback/*", authJSRedirectCallback);
+
+// We have to handle everything related to authorization under this handler - for some reason handlers for specific subparts (like /auth/callback/*) do not work.
+application.use(apiBasename + "/auth/*", authHandler);
+
+// TODO RadStr: This line of code is not currently needed, it will be once we add Git ... it should be probably like this and not define it for every path
+//                                                                                        Since we will want to have route protection in future
+// application.use(currentSession);
+
+// TODO RadStr: Auth endpoint for frontend
+application.get(apiBasename + "/auth-user-data", getBasicUserInfo);
+
 
 // Api for packages (core-v2)
 
