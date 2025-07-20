@@ -156,24 +156,11 @@ function createAuthConfig(configType: ConfigType | null, callerURL?: string): Ex
         return session;
       },
       async redirect(params) {
-        // TODO RadStr: After commit remove everything not commented
-
-        // // TODO RadStr: Hard-coded, just debug
-        // //              We have to set this, because the /auth/callback/github is used by AuthJS - it calls all the callbacks defined here
-        // //              and after that it calls redirect to this. So the correct usage is to set the callbacks here to store the authentication state.
-        // //              And use it after the redirect through session/database. For example we can store it the res.locals, or stuff like that
-
-        console.info("redirect", { params, callerURL });
-
-        // if (request !== undefined && expressRequest !== null) {
-        //   console.info({request, expressRequest});
-        //   // await getSession(expressRequest, createdAuthConfig);
-        //   const jwtToken = await getToken({ req: request, secret: AUTH_SECRET });
-        //   console.info("jwtToken", jwtToken);
-        //   const callerURLInToken: string | null = (jwtToken as any)?.callerURL ?? null;
-        //   return callerURLInToken ?? callerURL ?? params.baseUrl;
-        // }
-
+        // We have implement redirect, because the /auth/callback/github is used by AuthJS - it calls all the callbacks defined here
+        // and after that it calls this method, which handles final redirect.
+        // So we set the callbacks here to store the authentication state.
+        // After redirect we can use the authorization through session/database.
+        // For example we can store it the res.locals as we do through currentSession
         return params.baseUrl + "/auth-handler/personal-callback/github?callerURL=" + callerURL;
       },
     },

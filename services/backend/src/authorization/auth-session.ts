@@ -2,8 +2,6 @@ import { getSession, Session } from "@auth/express"
 import express, { NextFunction } from "express"
 import { createBasicAuthConfig, ConfigType, createAuthConfigBasedOnAccountScope } from "./auth-config.ts"
 import { asyncHandler } from "../utils/async-handler.ts";
-import { GitCredentials, GitProvider } from "../git-providers.ts";
-
 import { getToken } from "@auth/core/jwt"
 import { AUTH_SECRET } from "../git-never-commit.ts";
 import { convertExpressRequestToNormalRequest } from "../utils/git-utils.ts";
@@ -101,24 +99,25 @@ export const getGitCredentialsFromSession = (response: express.Response, wantedA
   };
 };
 
-/**
- * Calls {@link getGitCredentialsFromSession}, but sets defaults for missing values based on set bot for given {@link gitProvider}
- * @param wantedAccessTokenLevels - If the user has "weak" scope for access token (it does not matches any of the provided ones),
- *  the bot one is returned for the accessToken instead of the session one.
- *  ... TODO RadStr: Just be careful that if we extend ConfigType by new value, we have to extend all the places where we want certain level of accessToken permissions
- *  ................ Can't think of anything though - maybe just provide the string value describing permission (but that does not work for different Git providers)
- */
-export const getGitCredentialsFromSessionWithDefaults = (
-  gitProvider: GitProvider,
-  response: express.Response,
-  wantedAccessTokenLevels: ConfigType[]
-): GitCredentials => {
-  const { committerName, committerEmail, committerAccessToken } = getGitCredentialsFromSession(response, wantedAccessTokenLevels);
-  const botCredentials = gitProvider.getBotCredentials();
+// TODO RadStr: We will use this later with Git, for now commented since we are missing the other methods
+// /**
+//  * Calls {@link getGitCredentialsFromSession}, but sets defaults for missing values based on set bot for given {@link gitProvider}
+//  * @param wantedAccessTokenLevels - If the user has "weak" scope for access token (it does not matches any of the provided ones),
+//  *  the bot one is returned for the accessToken instead of the session one.
+//  *  ... TODO RadStr: Just be careful that if we extend ConfigType by new value, we have to extend all the places where we want certain level of accessToken permissions
+//  *  ................ Can't think of anything though - maybe just provide the string value describing permission (but that does not work for different Git providers)
+//  */
+// export const getGitCredentialsFromSessionWithDefaults = (
+//   gitProvider: GitProvider,
+//   response: express.Response,
+//   wantedAccessTokenLevels: ConfigType[]
+// ): GitCredentials => {
+//   const { committerName, committerEmail, committerAccessToken } = getGitCredentialsFromSession(response, wantedAccessTokenLevels);
+//   const botCredentials = gitProvider.getBotCredentials();
 
-  return {
-    name: committerName ?? botCredentials.name,
-    email: committerEmail ?? botCredentials.email,
-    accessToken: committerAccessToken ?? botCredentials.accessToken,
-  };
-};
+//   return {
+//     name: committerName ?? botCredentials.name,
+//     email: committerEmail ?? botCredentials.email,
+//     accessToken: committerAccessToken ?? botCredentials.accessToken,
+//   };
+// };

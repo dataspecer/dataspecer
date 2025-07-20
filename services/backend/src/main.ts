@@ -32,7 +32,6 @@ import { migratePR419 } from "./tools/migrate-pr419.ts";
 import { authJSRedirectCallback } from "./routes/auth/auth-redirect-to-frontend-handler.ts";
 import { authHandler } from "./routes/auth/auth-handler.ts";
 import { corsOriginHandler } from "./utils/cors-related.ts";
-import { getBasicUserInfo } from "./authorization/auth-session.ts";
 
 // Create application models
 
@@ -84,22 +83,14 @@ application.use(express.json({ limit: configuration.payloadSizeLimit }));
 application.use(express.urlencoded({ extended: false, limit: configuration.payloadSizeLimit }));
 application.use(express.urlencoded({ extended: true, limit: configuration.payloadSizeLimit }));
 
-// API for authorization
-
-// TODO RadStr: Remove this line of code later after commit
-// application.use("/auth/*", ExpressAuth(basicAuthConfig));
+// Api for authorization
 
 application.get(apiBasename + "/auth-handler/personal-callback/*", authJSRedirectCallback);
-
 // We have to handle everything related to authorization under this handler - for some reason handlers for specific subparts (like /auth/callback/*) do not work.
 application.use(apiBasename + "/auth/*", authHandler);
-
 // TODO RadStr: This line of code is not currently needed, it will be once we add Git ... it should be probably like this and not define it for every path
 //                                                                                        Since we will want to have route protection in future
 // application.use(currentSession);
-
-// TODO RadStr: Auth endpoint for frontend
-application.get(apiBasename + "/auth-user-data", getBasicUserInfo);
 
 
 // Api for packages (core-v2)
