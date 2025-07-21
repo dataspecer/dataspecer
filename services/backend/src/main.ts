@@ -16,14 +16,19 @@ import {
   copyRecursively,
   createPackageResource,
   createResource,
+  createResourceHandler,
   deleteBlob,
+  deleteBlobHandler,
   deleteResource,
+  deleteResourceHandler,
   getBlob,
   getPackageResource,
   getResource,
   getRootPackages,
   updateBlob,
+  updateBlobHandler,
   updateResource,
+  updateResourceHandler,
 } from "./routes/resource.ts";
 import { getSimplifiedSemanticModel, setSimplifiedSemanticModel } from "./routes/simplified-semantic-model.ts";
 import { getSystemData } from "./routes/system.ts";
@@ -32,6 +37,12 @@ import { migratePR419 } from "./tools/migrate-pr419.ts";
 import { authJSRedirectCallback } from "./routes/auth/auth-redirect-to-frontend-handler.ts";
 import { authHandler } from "./routes/auth/auth-handler.ts";
 import { corsOriginHandler } from "./utils/cors-related.ts";
+import { currentSession } from "./authorization/auth-session.ts";
+import { tryCommitToGitRepo } from "./routes/git-test.ts";
+import { createRandomWebook, handleWebhook } from "./routes/git-webhook-handler.ts";
+import { createLinkBetweenPackageAndGit, createPackageFromExistingGitRepository, removeGitRepository } from "./routes/create-package-git-link.ts";
+import { commitPackageToGitHandler } from "./routes/commit-package-to-git.ts";
+import { redirectToRemoteGitRepository } from "./routes/redirect-to-remote-git-repository.ts";
 
 // Create application models
 
@@ -97,24 +108,24 @@ application.use(apiBasename + "/auth/*", authHandler);
 
 // Manipulates with resources on metadata level only.
 application.get(apiBasename + "/resources", getResource);
-application.put(apiBasename + "/resources", updateResource);
-application.delete(apiBasename + "/resources", deleteResource);
+application.put(apiBasename + "/resources", updateResourceHandler);
+application.delete(apiBasename + "/resources", deleteResourceHandler);
 // Low level API for creating new resources.
-application.post(apiBasename + "/resources", createResource);
+application.post(apiBasename + "/resources", createResourceHandler);
 
 // Manipulates with raw data (blobs) of the resource, if available.
 // Raw data may not be available at all if the resource is not a file, per se. Then, use other operations to access and manipulate the resource.
 application.get(apiBasename + "/resources/blob", getBlob);
-application.post(apiBasename + "/resources/blob", updateBlob);
-application.put(apiBasename + "/resources/blob", updateBlob);
-application.delete(apiBasename + "/resources/blob", deleteBlob);
+application.post(apiBasename + "/resources/blob", updateBlobHandler);
+application.put(apiBasename + "/resources/blob", updateBlobHandler);
+application.delete(apiBasename + "/resources/blob", deleteBlobHandler);
 
 // Operations on resoruces that are interpreted as packages
 application.get(apiBasename + "/resources/packages", getPackageResource);
 application.get(apiBasename + "/resources/export.zip", exportPackageResource);
 application.post(apiBasename + "/resources/packages", createPackageResource);
-application.patch(apiBasename + "/resources/packages", updateResource); // same
-application.delete(apiBasename + "/resources/packages", deleteResource); // same
+application.patch(apiBasename + "/resources/packages", updateResourceHandler); // same
+application.delete(apiBasename + "/resources/packages", deleteResourceHandler); // same
 // Special operation to list all root packages
 application.get(apiBasename + "/resources/root-resources", getRootPackages); // ---
 
@@ -176,12 +187,34 @@ if (configuration.staticFilesPath) {
   application.get(basename + "**", useStaticSpaHandler(configuration.staticFilesPath + ""));
 }
 
-(async () => {
+// Test GIT ... TODO RadStr: Put everything under /git/...
+
+application.get(apiBasename + "/git", currentSession, tryCommitToGitRepo);
+// TODO RadStr: Once I update the URL don't forget to update the ngrok URL in git providers to the same URL suffix
+application.post(apiBasename + "/webhook-test", currentSession, handleWebhook);
+application.post(apiBasename + "/webhook-test2", currentSession, handleWebhook);
+application.get(apiBasename + "/webhook-test", currentSession, createRandomWebook);
+application.get(apiBasename + "/link-package-to-git", currentSession, createLinkBetweenPackageAndGit);
+application.get(apiBasename + "/commit-package-to-git", currentSession, commitPackageToGitHandler);
+application.get(apiBasename + "/remove-git-repository", currentSession, removeGitRepository);
+application.get(apiBasename + "/create-package-from-existing-git-repository", currentSession, createPackageFromExistingGitRepository);
+application.get(apiBasename + "/test-docker", currentSession, exportPackageResource);
+application.get(apiBasename + "/git/redirect-to-remote-git-repository", currentSession, redirectToRemoteGitRepository);
+
+// TODO RadStr: Have to await, because of the generate-specification
+await (async () => {
   // Run migrations or throw
   await migration.tryUp();
 
+  // TODO RadStr: The endsWith is just current patch - the generate specification script should not probably call main
+  //              - It should start the database and all that, however it should not start the express server
+  //              ... That being said - it needs the initialization in the else branch + in the initialization of the database at the start of main
+  //                  (as seen here https://github.com/RadStr-bot/private-copy-of-dataspecer/commit/8ccb225b248091fc54de7fa4211783bd98e2957f)
+  // TODO RadStr: ... Actually we won't have the 3rd argument once we use the data inside the filesystem of gh action
+
+
   // Command-line arguments
-  if (process.argv.length > 2) {
+  if (process.argv.length > 2 && !process.argv[1]?.endsWith("generate-specification-from-local-storage.js")) {
     // Some command line arguments are present
     if (process.argv[2] === "migrate-pr419") {
       await migratePR419();

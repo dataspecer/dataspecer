@@ -39,6 +39,13 @@ model Resource {
   // This should be part of the model itself, but for now, we will keep it here for simplicity.
   userMetadata String @default("{}")
 
+  // The URL of the linked Git repository
+  // the given URL can either be the main page
+  // (for example https://github.com/mff-uk/dataspecer)
+  // or some of the branches
+  // (for example https://github.com/mff-uk/dataspecer/tree/stable)
+  linkedGitRepositoryURL String @default("{}")
+
   // Technical metadata: creation date.
   createdAt DateTime @default(now())
 

@@ -1,0 +1,805 @@
+# # https://lannonbr.com/blog/2019-12-09-git-commit-in-actions/
+
+# # Based on https://github.com/RadStr/test-repo-for-gh-actions/blob/main/.github/workflows/git-commit-simple.yml
+
+# name: Commit date to different main repo
+# on:
+#   push:
+#     paths-ignore:
+#       - 'time.txt'
+# jobs:
+#   date:
+#     runs-on: ubuntu-latest
+#     steps:
+#       # Checkout the branch
+#       - name: checkout
+#         uses: actions/checkout@v4
+#         with:
+#           persist-credentials: false
+
+#       - name: save current date
+#         run: |
+#           # do some operation that changes a file in the git repo
+#           date > time.txt
+
+#       - name: setup git config
+#         run: |
+#           # setup the username and email. We can use 'GitHub Actions Bot' with no email by default
+#           git config --global user.name "GitHub Actions Bot"
+#           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+#           # ... The person who committed should be the one to generate the commit even though it is done by bot
+#           # Maybe should be github.actor instead for name? but probably not.
+#           git config --global user.name ${{ github.event.head_commit.author.name }}
+#           git config --global user.email ${{ github.event.head_commit.author.email }}
+
+
+#       - name: commit
+#         env:
+#           # Shell does not like GitHub secret variables so we have to define them separately
+#           PAT_TOKEN: ${{ secrets.BOT_PAT_TOKEN }}
+#           GITHUB_REPO_OWNER_AND_NAME: ${{ github.repository }}
+#           BRANCH_NAME: ${{ github.ref_name }}
+#         run: |
+#           # Stage the file, commit and push
+#           git add time.txt
+#           git commit -m "Commit from GitHub action"
+#           # Using the bot's pat token stored either automatically from DS or by user
+#           git remote set-url origin https://${PAT_TOKEN}@github.com/${GITHUB_REPO_OWNER_AND_NAME}-publication-repo.git
+#           # Comment the push, because it is annoying for the testing
+#           git push origin ${BRANCH_NAME}
+
+# # Pushing is based on https://sameeradissanayaka.medium.com/how-to-use-github-actions-to-push-code-commit-to-another-branch-af04d8406f08
+
+
+##########################
+##########################
+##########################
+# .. Working version for commiting to another repo - but with hardcoded path
+
+# # https://lannonbr.com/blog/2019-12-09-git-commit-in-actions/
+
+# # Based on https://github.com/RadStr/test-repo-for-gh-actions/blob/main/.github/workflows/git-commit-simple.yml
+
+# name: Commit date to different main repo
+# env:
+#   GITHUB_REPO_OWNER_AND_NAME: ${{ github.repository }}
+#   PUBLICATION_REPOSITORY: ${{ github.repository }}-publication-repo   # Can't use env variables inside env
+#   DIRECTORY_WITH_GENERATED_CONTENT: generated-content
+
+# on:
+#   push:
+#     paths-ignore:
+#       - '${DIRECTORY_WITH_GENERATED_CONTENT}/**'
+# jobs:
+#   date:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Print Variables
+#         run: |
+#           echo "GITHUB_REPO_OWNER_AND_NAME - $GITHUB_REPO_OWNER_AND_NAME"
+#           echo "PUBLICATION_REPOSITORY - $PUBLICATION_REPOSITORY"
+#           echo "DIRECTORY_WITH_GENERATED_CONTENT - $DIRECTORY_WITH_GENERATED_CONTENT"
+#       # Checkout the branch
+#       - name: Checkout current repo
+#         uses: actions/checkout@v4
+#         with:
+#           persist-credentials: false
+#       # TODO RadStr: Probably remove the URL
+#       # Branch check based on ChatGPT (https://chatgpt.com/share/6858226d-3040-8011-911b-8908b8b63f31)
+#       - name: Get repo name only
+#         run: |
+#           REPO_NAME=$(echo "${GITHUB_REPO_OWNER_AND_NAME}" | cut -d "/" -f2)
+#           REPO_NAME=${REPO_NAME}-publication-repo
+#           echo "REPO_NAME=${REPO_NAME}" >> $GITHUB_ENV   # Put it into envs; also note the -publication-repo suffix
+#           echo "FULL_PATH_TO_DIRECTORY_WITH_GENERATED_CONTENT=${DIRECTORY_WITH_GENERATED_CONTENT}/$REPO_NAME" >> $GITHUB_ENV
+#       - name: Check if branch exists
+#         id: check_branch
+#         run: |
+#           git remote -v
+#           BRANCH_EXISTS=$(git ls-remote --heads https://github.com/${{ github.repository }}-publication-repo main | wc -l)
+#           echo "branch_exists=$BRANCH_EXISTS" >> $GITHUB_OUTPUT
+#       - name: Checkout publication repo if branch does not exist
+#         env:
+#           PAT_TOKEN: ${{ secrets.BOT_PAT_TOKEN }}
+#         if: steps.check_branch.outputs.branch_exists == 0     # If Branch has zero commits - it does not exist
+#         run: |
+#           echo "repo name - $REPO_NAME"
+#           echo "FULL_PATH_TO_DIRECTORY_WITH_GENERATED_CONTENT - $FULL_PATH_TO_DIRECTORY_WITH_GENERATED_CONTENT"
+#           mkdir -p ${FULL_PATH_TO_DIRECTORY_WITH_GENERATED_CONTENT}
+#           cd "${FULL_PATH_TO_DIRECTORY_WITH_GENERATED_CONTENT}"
+#           git init --initial-branch=main
+#           # cd "$DIRECTORY_WITH_GENERATED_CONTENT/RadStr-bot"
+#           # git clone https://github.com/${PUBLICATION_REPOSITORY}.git
+#           git remote -v
+#           git remote add origin https://${PAT_TOKEN}@github.com/${PUBLICATION_REPOSITORY}.git
+#           git remote -v
+#           cd "$GITHUB_WORKSPACE"    # Go back to the root
+#       - name: Checkout publication repo if branch exists
+#         uses: actions/checkout@v4
+#         if: steps.check_branch.outputs.branch_exists > 0    # If Branch has at least one commit - it does exist
+#         with:
+#           persist-credentials: false
+#           path: generated-content/672a338f-5d3a-4a4b-ba67-f827189be8c2-publication-repo   # The path overrides the repo name directory to which it would be normally given
+#           repository: "${{ github.repository }}-publication-repo"   # Unfortunately it seems like it can not interpolate the env variable in this specific case
+
+#       - name: Save current date
+#         env:
+#           BRANCH_NAME: ${{ github.ref_name }}
+#         run: |
+#           pwd
+#           ls
+#           cd "$GITHUB_WORKSPACE"
+#           pwd
+#           ls
+#           echo "generated-content/ - content"
+#           ls ${DIRECTORY_WITH_GENERATED_CONTENT}
+
+
+#           # do some operation that changes a file in the git repo
+#           mkdir -p ${FULL_PATH_TO_DIRECTORY_WITH_GENERATED_CONTENT}
+#           cd ${FULL_PATH_TO_DIRECTORY_WITH_GENERATED_CONTENT}
+#           git switch -c $BRANCH_NAME || git switch $BRANCH_NAME
+#           date > ./time.txt
+
+#       - name: Setup git config
+#         run: |
+#           # setup the username and email. We can use 'GitHub Actions Bot' with no email by default
+#           git config --global user.name "GitHub Actions Bot"
+#           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+#           # ... The person who committed should be the one to generate the commit even though it is done by bot
+#           # Maybe should be github.actor instead for name? but probably not.
+#           git config --global user.name ${{ github.event.head_commit.author.name }}
+#           git config --global user.email ${{ github.event.head_commit.author.email }}
+
+
+#       - name: Commit
+#         env:
+#           BRANCH_NAME: ${{ github.ref_name }}
+#           BRANCH_EXISTS: ${{ steps.check_branch.outputs.branch_exists }}
+#         run: |
+#           # Stage the file, commit and push
+#           pwd
+#           ls
+#           cd ${FULL_PATH_TO_DIRECTORY_WITH_GENERATED_CONTENT}
+#           pwd
+#           ls
+#           git status
+#           echo "before branch"
+#           git branch --show-current
+#           echo "after branch"
+#           if [ "$BRANCH_EXISTS" -gt 0 ]; then
+#             git switch $BRANCH_NAME
+#           fi
+
+#           git branch
+#           git add .
+#           git status
+#           git remote -v
+#           git commit -m "Commit from GitHub action"
+
+#       - name: Set remote if not first commit
+#         if: steps.check_branch.outputs.branch_exists > 0    # If Branch has at least one commit - it does exist
+#         env:
+#           # Shell does not like GitHub secret variables so we have to define them separately
+#           PAT_TOKEN: ${{ secrets.BOT_PAT_TOKEN }}
+#         run: |
+#           pwd
+#           ls
+#           cd ${FULL_PATH_TO_DIRECTORY_WITH_GENERATED_CONTENT}
+#           pwd
+#           ls
+#           # Using the bot's pat token stored either automatically from DS or by user
+#           git remote set-url origin https://${PAT_TOKEN}@github.com/${PUBLICATION_REPOSITORY}.git
+
+#       - name: Push
+#         env:
+#           # Shell does not like GitHub secret variables so we have to define them separately
+#           BRANCH_NAME: ${{ github.ref_name }}
+#         run: |
+#           pwd
+#           ls
+#           cd ${FULL_PATH_TO_DIRECTORY_WITH_GENERATED_CONTENT}
+#           if [ "$COMMIT_COUNT" -gt 10 ]; then
+#             echo "More than 10 commits!"
+#           else
+#             echo "10 or fewer commits."
+#           fi
+#           git switch $BRANCH_NAME
+#           pwd
+#           ls
+#           echo "${BRANCH_NAME}"
+#           git remote -v
+#           git push -u origin ${BRANCH_NAME}
+
+# # Pushing is based on https://sameeradissanayaka.medium.com/how-to-use-github-actions-to-push-code-commit-to-another-branch-af04d8406f08
+
+
+
+
+######################################################################
+######################################################################
+######################################################################
+######################################################################
+# Works - puts it into generated-content directory instead
+
+# # https://lannonbr.com/blog/2019-12-09-git-commit-in-actions/
+
+# # Based on https://github.com/RadStr/test-repo-for-gh-actions/blob/main/.github/workflows/git-commit-simple.yml
+
+# name: Commit date to different main repo
+# env:
+#   GITHUB_REPO_OWNER_AND_NAME: ${{ github.repository }}
+#   PUBLICATION_REPOSITORY: ${{ github.repository }}-publication-repo   # Can't use env variables inside env
+#   DIRECTORY_WITH_GENERATED_CONTENT: generated-content
+
+# on:
+#   push:
+#     paths-ignore:
+#       - '${DIRECTORY_WITH_GENERATED_CONTENT}/**'
+# jobs:
+#   date:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Print Variables
+#         run: |
+#           echo "GITHUB_REPO_OWNER_AND_NAME - $GITHUB_REPO_OWNER_AND_NAME"
+#           echo "PUBLICATION_REPOSITORY - $PUBLICATION_REPOSITORY"
+#           echo "DIRECTORY_WITH_GENERATED_CONTENT - $DIRECTORY_WITH_GENERATED_CONTENT"
+#       # Checkout the branch
+#       - name: Checkout current repo
+#         uses: actions/checkout@v4
+#         with:
+#           persist-credentials: false
+#       - name: Check if branch exists
+#         id: check_branch
+#         run: |
+#           git remote -v
+#           BRANCH_EXISTS=$(git ls-remote --heads https://github.com/${{ github.repository }}-publication-repo main | wc -l)
+#           echo "branch_exists=$BRANCH_EXISTS" >> $GITHUB_OUTPUT
+#       - name: Checkout publication repo if branch does not exist
+#         env:
+#           PAT_TOKEN: ${{ secrets.BOT_PAT_TOKEN }}
+#         if: steps.check_branch.outputs.branch_exists == 0     # If Branch has zero commits - it does not exist
+#         run: |
+#           echo "repo name - $REPO_NAME"
+#           echo "DIRECTORY_WITH_GENERATED_CONTENT - $DIRECTORY_WITH_GENERATED_CONTENT"
+#           mkdir -p ${DIRECTORY_WITH_GENERATED_CONTENT}
+#           cd "${DIRECTORY_WITH_GENERATED_CONTENT}"
+#           git init --initial-branch=main
+#           # cd "$DIRECTORY_WITH_GENERATED_CONTENT/RadStr-bot"
+#           # git clone https://github.com/${PUBLICATION_REPOSITORY}.git
+#           git remote -v
+#           git remote add origin https://${PAT_TOKEN}@github.com/${PUBLICATION_REPOSITORY}.git
+#           git remote -v
+#           cd "$GITHUB_WORKSPACE"    # Go back to the root
+#       - name: Checkout publication repo if branch exists
+#         uses: actions/checkout@v4
+#         if: steps.check_branch.outputs.branch_exists > 0    # If Branch has at least one commit - it does exist
+#         with:
+#           persist-credentials: false
+#           path: generated-content  # The path overrides the repo name directory to which it would be normally given
+#           repository: "${{ github.repository }}-publication-repo"   # Unfortunately it seems like it can not interpolate the env variable in this specific case
+
+#       - name: Save current date
+#         env:
+#           BRANCH_NAME: ${{ github.ref_name }}
+#         run: |
+#           pwd
+#           ls
+#           cd "$GITHUB_WORKSPACE"
+#           pwd
+#           ls
+#           echo "generated-content/ - content"
+#           ls ${DIRECTORY_WITH_GENERATED_CONTENT}
+
+
+#           # do some operation that changes a file in the git repo
+#           mkdir -p ${DIRECTORY_WITH_GENERATED_CONTENT}
+#           cd ${DIRECTORY_WITH_GENERATED_CONTENT}
+#           git switch -c $BRANCH_NAME || git switch $BRANCH_NAME
+#           date > ./time.txt
+
+#       - name: Setup git config
+#         run: |
+#           # setup the username and email. We can use 'GitHub Actions Bot' with no email by default
+#           git config --global user.name "GitHub Actions Bot"
+#           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+#           # ... The person who committed should be the one to generate the commit even though it is done by bot
+#           # Maybe should be github.actor instead for name? but probably not.
+#           git config --global user.name ${{ github.event.head_commit.author.name }}
+#           git config --global user.email ${{ github.event.head_commit.author.email }}
+
+
+#       - name: Commit
+#         env:
+#           BRANCH_NAME: ${{ github.ref_name }}
+#           BRANCH_EXISTS: ${{ steps.check_branch.outputs.branch_exists }}
+#         run: |
+#           # Stage the file, commit and push
+#           pwd
+#           ls
+#           cd ${DIRECTORY_WITH_GENERATED_CONTENT}
+#           pwd
+#           ls
+#           git status
+#           echo "before branch"
+#           git branch --show-current
+#           echo "after branch"
+#           if [ "$BRANCH_EXISTS" -gt 0 ]; then
+#             git switch $BRANCH_NAME
+#           fi
+
+#           git branch
+#           git add .
+#           git status
+#           git remote -v
+#           git commit -m "Commit from GitHub action"
+
+#       - name: Set remote if not first commit
+#         if: steps.check_branch.outputs.branch_exists > 0    # If Branch has at least one commit - it does exist
+#         env:
+#           # Shell does not like GitHub secret variables so we have to define them separately
+#           PAT_TOKEN: ${{ secrets.BOT_PAT_TOKEN }}
+#         run: |
+#           pwd
+#           ls
+#           cd ${DIRECTORY_WITH_GENERATED_CONTENT}
+#           pwd
+#           ls
+#           # Using the bot's pat token stored either automatically from DS or by user
+#           git remote set-url origin https://${PAT_TOKEN}@github.com/${PUBLICATION_REPOSITORY}.git
+
+#       - name: Push
+#         env:
+#           # Shell does not like GitHub secret variables so we have to define them separately
+#           BRANCH_NAME: ${{ github.ref_name }}
+#         run: |
+#           pwd
+#           ls
+#           cd ${DIRECTORY_WITH_GENERATED_CONTENT}
+#           if [ "$COMMIT_COUNT" -gt 10 ]; then
+#             echo "More than 10 commits!"
+#           else
+#             echo "10 or fewer commits."
+#           fi
+#           git switch $BRANCH_NAME
+#           pwd
+#           ls
+#           echo "${BRANCH_NAME}"
+#           git remote -v
+#           git push -u origin ${BRANCH_NAME}
+
+# # Pushing is based on https://sameeradissanayaka.medium.com/how-to-use-github-actions-to-push-code-commit-to-another-branch-af04d8406f08
+
+
+
+######################################################################
+######################################################################
+######################################################################
+######################################################################
+# Last thing we have to solve is to create the branch if it does not exist, otherwise it was already created in the push event, which results
+#  in the branch having different parent (the main). ...
+# We Will put everything into one workflow since if we put the branch action into another workflow file, then we have to use another 3rd party action to download artifacts.
+# .... TODO RadStr:
+
+
+
+# # https://lannonbr.com/blog/2019-12-09-git-commit-in-actions/
+
+# # Based on https://github.com/RadStr/test-repo-for-gh-actions/blob/main/.github/workflows/git-commit-simple.yml
+
+
+# name: Commit date to different main repo
+# env:
+#   GITHUB_REPO_OWNER_AND_NAME: ${{ github.repository }}
+#   PUBLICATION_REPOSITORY: ${{ github.repository }}-publication-repo   # Can't use env variables inside env
+#   DIRECTORY_WITH_GENERATED_CONTENT: generated-content
+
+# on:
+#   push:
+#     paths-ignore:
+#       - '${DIRECTORY_WITH_GENERATED_CONTENT}/**'
+
+# concurrency:
+#   group: ${{ github.ref }}
+#   cancel-in-progress: false
+
+# jobs:
+#   date:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Print Variables
+#         run: |
+#           echo "GITHUB_REPO_OWNER_AND_NAME - $GITHUB_REPO_OWNER_AND_NAME"
+#           echo "PUBLICATION_REPOSITORY - $PUBLICATION_REPOSITORY"
+#           echo "DIRECTORY_WITH_GENERATED_CONTENT - $DIRECTORY_WITH_GENERATED_CONTENT"
+#       # Checkout the branch
+#       - name: Checkout current repo
+#         uses: actions/checkout@v4
+#         with:
+#           persist-credentials: false
+#       - name: Check if branch exists
+#         id: check_branch
+#         run: |
+#           git remote -v
+#           BRANCH_EXISTS=$(git ls-remote --heads https://github.com/${{ github.repository }}-publication-repo main | wc -l)
+#           echo "branch_exists=$BRANCH_EXISTS" >> $GITHUB_OUTPUT
+#       - name: Checkout publication repo if branch does not exist
+#         env:
+#           PAT_TOKEN: ${{ secrets.BOT_PAT_TOKEN }}
+#         if: steps.check_branch.outputs.branch_exists == 0     # If Branch has zero commits - it does not exist
+#         run: |
+#           echo "repo name - $REPO_NAME"
+#           echo "DIRECTORY_WITH_GENERATED_CONTENT - $DIRECTORY_WITH_GENERATED_CONTENT"
+#           mkdir -p ${DIRECTORY_WITH_GENERATED_CONTENT}
+#           cd "${DIRECTORY_WITH_GENERATED_CONTENT}"
+#           git init --initial-branch=main
+#           # cd "$DIRECTORY_WITH_GENERATED_CONTENT/RadStr-bot"
+#           # git clone https://github.com/${PUBLICATION_REPOSITORY}.git
+#           git remote -v
+#           git remote add origin https://${PAT_TOKEN}@github.com/${PUBLICATION_REPOSITORY}.git
+#           git remote -v
+#           cd "$GITHUB_WORKSPACE"    # Go back to the root
+#       - name: Checkout publication repo if branch exists
+#         uses: actions/checkout@v4
+#         if: steps.check_branch.outputs.branch_exists > 0    # If Branch has at least one commit - it does exist
+#         with:
+#           persist-credentials: false
+#           path: generated-content  # The path overrides the repo name directory to which it would be normally given
+#           repository: "${{ github.repository }}-publication-repo"   # Unfortunately it seems like it can not interpolate the env variable in this specific case
+
+#       - name: Save current date
+#         env:
+#           BRANCH_NAME: ${{ github.ref_name }}
+#         run: |
+#           pwd
+#           ls
+#           cd "$GITHUB_WORKSPACE"
+#           pwd
+#           ls
+#           echo "generated-content/ - content"
+#           ls ${DIRECTORY_WITH_GENERATED_CONTENT}
+
+
+#           # do some operation that changes a file in the git repo
+#           mkdir -p ${DIRECTORY_WITH_GENERATED_CONTENT}
+#           cd ${DIRECTORY_WITH_GENERATED_CONTENT}
+#           git switch -c $BRANCH_NAME || git switch $BRANCH_NAME
+#           mkdir -p ./docs-dir
+#           echo "<html>$(date)</html>" > ./docs-dir/index.html
+#           echo -e "# This is README header \nThis is readme content" > ./README.md
+#           echo "<html>Hello this is index page for this repository's GitHub pages</html>" > ./index.html
+
+
+#       - name: Create documentation
+#         env:
+#           BRANCH_NAME: ${{ github.ref_name }}
+#         run: |
+#           pwd
+#           ls
+#           cd "$GITHUB_WORKSPACE"
+#           pwd
+#           ls
+#           echo "generated-content/ - content"
+#           ls ${DIRECTORY_WITH_GENERATED_CONTENT}
+
+
+#           # do some operation that changes a file in the git repo
+#           mkdir -p ${DIRECTORY_WITH_GENERATED_CONTENT}
+#           cd ${DIRECTORY_WITH_GENERATED_CONTENT}
+#           git switch -c $BRANCH_NAME || git switch $BRANCH_NAME
+#           mkdir -p ./docs-dir
+#           echo "<html>$(date)</html>" > ./docs-dir/index.html
+#           echo -e "# This is README header \nThis is readme content" > ./README.md
+#           echo "<html>Hello this is index page for this repository's GitHub pages</html>" > ./index.html
+
+
+#       - name: Setup git config
+#         run: |
+#           # setup the username and email. We can use 'GitHub Actions Bot' with no email by default
+#           git config --global user.name "GitHub Actions Bot"
+#           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+#           # ... The person who committed should be the one to generate the commit even though it is done by bot
+#           # Maybe should be github.actor instead for name? but probably not.
+#           git config --global user.name ${{ github.event.head_commit.author.name }}
+#           git config --global user.email ${{ github.event.head_commit.author.email }}
+
+
+#       - name: Commit
+#         env:
+#           BRANCH_NAME: ${{ github.ref_name }}
+#           BRANCH_EXISTS: ${{ steps.check_branch.outputs.branch_exists }}
+#         run: |
+#           # Stage the file, commit and push
+#           pwd
+#           ls
+#           cd ${DIRECTORY_WITH_GENERATED_CONTENT}
+#           pwd
+#           ls
+#           git status
+#           echo "before branch"
+#           git branch --show-current
+#           echo "after branch"
+#           if [ "$BRANCH_EXISTS" -gt 0 ]; then
+#             git switch $BRANCH_NAME
+#           fi
+
+#           git branch
+#           git add .
+#           git status
+#           git remote -v
+#           git commit -m "Commit from GitHub action"
+
+#       - name: Set remote if not first commit
+#         if: steps.check_branch.outputs.branch_exists > 0    # If Branch has at least one commit - it does exist
+#         env:
+#           # Shell does not like GitHub secret variables so we have to define them separately
+#           PAT_TOKEN: ${{ secrets.BOT_PAT_TOKEN }}
+#         run: |
+#           pwd
+#           ls
+#           cd ${DIRECTORY_WITH_GENERATED_CONTENT}
+#           pwd
+#           ls
+#           # Using the bot's pat token stored either automatically from DS or by user
+#           git remote set-url origin https://${PAT_TOKEN}@github.com/${PUBLICATION_REPOSITORY}.git
+
+#       - name: Push
+#         env:
+#           # Shell does not like GitHub secret variables so we have to define them separately
+#           BRANCH_NAME: ${{ github.ref_name }}
+#         run: |
+#           pwd
+#           ls
+#           cd ${DIRECTORY_WITH_GENERATED_CONTENT}
+#           if [ "$COMMIT_COUNT" -gt 10 ]; then
+#             echo "More than 10 commits!"
+#           else
+#             echo "10 or fewer commits."
+#           fi
+#           git switch $BRANCH_NAME
+#           pwd
+#           ls
+#           echo "${BRANCH_NAME}"
+#           git remote -v
+#           git push -u origin ${BRANCH_NAME}
+
+# # Pushing is based on https://sameeradissanayaka.medium.com/how-to-use-github-actions-to-push-code-commit-to-another-branch-af04d8406f08
+
+
+
+######################################################################
+######################################################################
+######################################################################
+######################################################################
+
+
+
+
+# https://lannonbr.com/blog/2019-12-09-git-commit-in-actions/
+
+# Based on https://github.com/RadStr/test-repo-for-gh-actions/blob/main/.github/workflows/git-commit-simple.yml
+
+
+name: Generate specification and commit it to different main repo
+env:
+  GITHUB_REPO_OWNER_AND_NAME: ${{ github.repository }}
+  PUBLICATION_REPOSITORY: ${{ github.repository }}-publication-repo   # Can't use env variables inside env
+  DIRECTORY_WITH_GENERATED_CONTENT: generated-content
+
+on:
+  push:
+    paths-ignore:
+      - '${DIRECTORY_WITH_GENERATED_CONTENT}/**'
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  date:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true     # TODO RadStr: We can live without this
+      matrix:
+        node-version: [ "22.6" ]
+    steps:
+      - name: Print Variables     # TODO RadStr: DEBUG
+        run: |
+          echo "GITHUB_REPO_OWNER_AND_NAME - $GITHUB_REPO_OWNER_AND_NAME"
+          echo "PUBLICATION_REPOSITORY - $PUBLICATION_REPOSITORY"
+          echo "DIRECTORY_WITH_GENERATED_CONTENT - $DIRECTORY_WITH_GENERATED_CONTENT"
+      # Checkout the branch
+      - name: Checkout current repo
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check if branch exists
+        id: check_branch
+        run: |
+          git remote -v
+          BRANCH_EXISTS=$(git ls-remote --heads https://github.com/${{ github.repository }}-publication-repo main | wc -l)
+          echo "branch_exists=$BRANCH_EXISTS" >> $GITHUB_OUTPUT
+      - name: Checkout publication repo if branch does not exist    # We have to call init first
+        env:
+          PAT_TOKEN: ${{ secrets.BOT_PAT_TOKEN }}
+        if: steps.check_branch.outputs.branch_exists == 0     # If Branch has zero commits - it does not exist
+        run: |
+          echo "repo name - $REPO_NAME"
+          echo "DIRECTORY_WITH_GENERATED_CONTENT - $DIRECTORY_WITH_GENERATED_CONTENT"
+          mkdir -p ${DIRECTORY_WITH_GENERATED_CONTENT}
+          cd "${DIRECTORY_WITH_GENERATED_CONTENT}"
+          git init --initial-branch=main
+          # cd "$DIRECTORY_WITH_GENERATED_CONTENT/RadStr-bot"
+          # git clone https://github.com/${PUBLICATION_REPOSITORY}.git
+          git remote -v
+          git remote add origin https://${PAT_TOKEN}@github.com/${PUBLICATION_REPOSITORY}.git
+          git remote -v
+          cd "$GITHUB_WORKSPACE"    # Go back to the root
+      - name: Checkout publication repo if branch exists
+        uses: actions/checkout@v4
+        if: steps.check_branch.outputs.branch_exists > 0    # If Branch has at least one commit - it does exist
+        with:
+          persist-credentials: false
+          path: generated-content  # The path overrides the repo name directory to which it would be normally given
+          repository: "${{ github.repository }}-publication-repo"   # Unfortunately it seems like it can not interpolate the env variable in this specific case
+
+      - name: Create README and html index file
+        env:
+          BRANCH_NAME: ${{ github.ref_name }}
+        run: |
+          pwd
+          ls
+          cd "$GITHUB_WORKSPACE"
+          pwd
+          ls
+          echo "generated-content/ - content"
+          ls ${DIRECTORY_WITH_GENERATED_CONTENT}
+
+
+          # do some operation that changes a file in the git repo
+          mkdir -p ${DIRECTORY_WITH_GENERATED_CONTENT}
+          cd ${DIRECTORY_WITH_GENERATED_CONTENT}
+          git switch -c $BRANCH_NAME || git switch $BRANCH_NAME
+          mkdir -p ./docs-dir
+          echo "<html>$(date)</html>" > ./docs-dir/index.html       # TODO RadStr: Not needed, this is just from the debug variant
+          echo -e "# This is README header \nThis is readme content" > ./README.md
+          echo "<html>Hello this is index page for this repository's GitHub pages</html>" > ./index.html
+
+      # TODO RadStr: Maybe can organize better into different jobs - so stuff can run in parallel
+      # Build and checkout DS repo
+      - name: Checkout DS repo
+        uses: actions/checkout@v4
+        with:
+          repository: RadStr-bot/private-copy-of-dataspecer
+          path: dataspecer-source-code
+          token: ${{ secrets.BOT_PAT_TOKEN }}   # TODO RadStr: Not needed once we use the public version of repository
+          ref: git-integration-proof-of-concept # TODO RadStr: In future use main branch
+      - name: Set up node
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install packages
+        working-directory: dataspecer-source-code
+        run: npm ci
+      - name: Build     # Takes around 1m40s-1m50s with building /applications. 50s-60s without. ... so TODO RadStr: think how to do it, we can have package.json file sideways and just swap it with it if we want some hacky solution
+        working-directory: dataspecer-source-code
+        run: npm run build
+      - name: Build backend
+        working-directory: dataspecer-source-code/services/backend
+        run: npm run build
+
+
+    # Run DS backend
+    # TODO RadStr: Replace with variables instead of copying the paths
+      - name: Update database
+        working-directory: dataspecer-source-code/services/backend
+        run: npm run update-database
+      - name: Run the backend
+        working-directory: dataspecer-source-code/services/backend
+        run: npm run generate-specification "https://github.com/${{ github.repository }}/archive/${{ github.sha }}.zip"   # TODO RadStr: The .zip argument is no longer needed, we create it from the filesystem
+      - name: Move the generated artifacts to correct directory
+        run: |
+          rm -rf ${DIRECTORY_WITH_GENERATED_CONTENT}/artifacts/*   # We remove the content of the directory and then replace it with the newly generated content
+          mkdir -p ${DIRECTORY_WITH_GENERATED_CONTENT}/artifacts
+
+          ls dataspecer-source-code/services/backend/test-generate-specification
+
+          # Since we don't need to share data between different jobs we can just use the filesystem instead of uploading artifacts using specific GH action
+          mv dataspecer-source-code/services/backend/test-generate-specification/* ${DIRECTORY_WITH_GENERATED_CONTENT}/artifacts
+
+
+
+      - name: Generate documentation (specification)
+        env:
+          BRANCH_NAME: ${{ github.ref_name }}
+        run: |
+          pwd
+          ls
+          cd "$GITHUB_WORKSPACE"
+          pwd
+          ls
+          echo "generated-content/ - content"
+          ls ${DIRECTORY_WITH_GENERATED_CONTENT}
+
+
+          mkdir -p ${DIRECTORY_WITH_GENERATED_CONTENT}
+          cd ${DIRECTORY_WITH_GENERATED_CONTENT}
+          git switch -c $BRANCH_NAME || git switch $BRANCH_NAME
+          mkdir -p ./docs-dir
+          echo "<html>$(date)</html>" > ./docs-dir/index.html         # TODO RadStr: Not needed, this is just from the debug variant
+          echo -e "# This is README header \nThis is readme content" > ./README.md
+          echo "<html>Hello this is index page for this repository's GitHub pages</html>" > ./index.html
+
+
+      - name: Setup git config
+        run: |
+          # setup the username and email. We can use 'GitHub Actions Bot' with no email by default
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          # ... The person who committed should be the one to generate the commit even though it is done by bot
+          # Maybe should be github.actor instead for name? but probably not.
+          git config --global user.name ${{ github.event.head_commit.author.name }}
+          git config --global user.email ${{ github.event.head_commit.author.email }}
+
+
+      - name: Commit
+        env:
+          BRANCH_NAME: ${{ github.ref_name }}
+          BRANCH_EXISTS: ${{ steps.check_branch.outputs.branch_exists }}
+        run: |
+          # Stage the file, commit and push
+          pwd
+          ls
+          cd ${DIRECTORY_WITH_GENERATED_CONTENT}
+          pwd
+          ls
+          git status
+          echo "before branch"
+          git branch --show-current
+          echo "after branch"
+          if [ "$BRANCH_EXISTS" -gt 0 ]; then
+            git switch $BRANCH_NAME
+          fi
+
+          git branch
+          git add .
+          git status
+          git remote -v
+          git commit -m "Commit from GitHub action"
+
+      - name: Set remote if not first commit
+        if: steps.check_branch.outputs.branch_exists > 0    # If Branch has at least one commit - it does exist
+        env:
+          # Shell does not like GitHub secret variables so we have to define them separately
+          PAT_TOKEN: ${{ secrets.BOT_PAT_TOKEN }}
+        run: |
+          pwd
+          ls
+          cd ${DIRECTORY_WITH_GENERATED_CONTENT}
+          pwd
+          ls
+          # Using the bot's pat token stored either automatically from DS or by user
+          git remote set-url origin https://${PAT_TOKEN}@github.com/${PUBLICATION_REPOSITORY}.git
+
+      - name: Push
+        env:
+          # Shell does not like GitHub secret variables so we have to define them separately
+          BRANCH_NAME: ${{ github.ref_name }}
+        run: |
+          pwd
+          ls
+          cd ${DIRECTORY_WITH_GENERATED_CONTENT}
+          if [ "$COMMIT_COUNT" -gt 10 ]; then           # TODO RadStr: This IF is just debug remainder
+            echo "More than 10 commits!"
+          else
+            echo "10 or fewer commits."
+          fi
+          git switch $BRANCH_NAME
+          pwd
+          ls
+          echo "${BRANCH_NAME}"
+          git remote -v
+          git push -u origin ${BRANCH_NAME}
+
+# Pushing is based on https://sameeradissanayaka.medium.com/how-to-use-github-actions-to-push-code-commit-to-another-branch-af04d8406f08

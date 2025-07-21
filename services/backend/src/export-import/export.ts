@@ -4,6 +4,7 @@ import { BaseResource, ResourceModel } from "../models/resource-model.ts";
 import { v4 as uuidv4 } from 'uuid';
 import { currentVersion } from "../tools/migrations/index.ts";
 import configuration from "../configuration.ts";
+import { MetadataCacheType } from "./export-import-data-api.ts";
 
 export class PackageExporter {
   resourceModel: ResourceModel;
@@ -50,7 +51,7 @@ export class PackageExporter {
     }
   }
 
-  private constructMetadataFromResource(resource: BaseResource): object {
+  private constructMetadataFromResource(resource: BaseResource): MetadataCacheType {
     return {
       iri: resource.iri,
       types: resource.types,
@@ -60,7 +61,7 @@ export class PackageExporter {
       _exportVersion: 1,
       _exportedAt: new Date().toISOString(),
       _exportedBy: configuration.host,
-    }
+    };
   }
 
   private async writeBlob(iri: string, blobName: string, data: object) {

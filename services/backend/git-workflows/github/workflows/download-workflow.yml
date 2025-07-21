@@ -1,0 +1,25 @@
+# TODO RadStr: Remove after commit
+#              This one was to test downloading artifacts from different workflows
+
+# name: Deploy
+
+# on:
+#   workflow_run:
+#     workflows: ["Build"]
+#     types:
+#       - completed
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v3
+
+#       - name: Download artifact
+#         uses: dawidd6/action-download-artifact@v3
+#         with:
+#           workflow: build.yml
+#           name: my-artifact
+#           path: ./downloaded
+
+#       - run: cat ./downloaded/hello.txt

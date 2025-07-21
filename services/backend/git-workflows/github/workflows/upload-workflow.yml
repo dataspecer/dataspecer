@@ -1,0 +1,18 @@
+# TODO RadStr: Remove after commit
+#              Just uploading artifacts
+
+# name: Build
+
+# on:
+#   push:
+#     branches: [main]
+
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - run: echo "Hello" > hello.txt
+#       - uses: actions/upload-artifact@v4
+#         with:
+#           name: my-artifact
+#           path: hello.txt

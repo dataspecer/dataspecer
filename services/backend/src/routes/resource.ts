@@ -21,7 +21,7 @@ export const getResource = asyncHandler(async (request: express.Request, respons
     return;
 });
 
-export const createResource = asyncHandler(async (request: express.Request, response: express.Response) => {
+export const createResourceHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
     const querySchema = z.object({
         parentIri: z.string().min(1),
     });
@@ -34,13 +34,25 @@ export const createResource = asyncHandler(async (request: express.Request, resp
     }).strict();
     const body = bodySchema.parse(request.body);
 
-    const iri = body.iri ?? uuidv4();
-
-    await resourceModel.createResource(query.parentIri, iri, body.type, body.userMetadata ?? {});
+    const iri = await createResource(query.parentIri, body.type, body.iri, body.userMetadata);
 
     response.send(await resourceModel.getResource(iri));
     return;
 });
+
+/**
+ * @returns Returns used iri, which is either the given {@link iri} or newly created one if not provided
+ */
+export const createResource = async (parentIri: string, type: string, iri?: string, userMetadata?: Record<string, unknown>): Promise<string> => {
+    iri = iri ?? uuidv4();
+    await resourceModel.createResource(parentIri, iri, type, userMetadata ?? {});
+    if (userMetadata) {
+        await resourceModel.updateResource(iri, userMetadata);
+    }
+
+    return iri;
+};
+
 
 /**
  * Copies the whole package recursively or just the resource.
@@ -63,7 +75,7 @@ export const copyRecursively = asyncHandler(async (request: express.Request, res
     return;
 });
 
-export const updateResource = asyncHandler(async (request: express.Request, response: express.Response) => {
+export const updateResourceHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
     const querySchema = z.object({
         iri: z.string().min(1),
     });
@@ -74,25 +86,34 @@ export const updateResource = asyncHandler(async (request: express.Request, resp
     }).strict();
     const body = bodySchema.parse(request.body);
 
-    if (body.userMetadata) {
-        await resourceModel.updateResource(query.iri, body.userMetadata);
-    }
+    await updateResource(query.iri, body.userMetadata);
 
     response.send(await resourceModel.getResource(query.iri));
     return;
 });
 
-export const deleteResource = asyncHandler(async (request: express.Request, response: express.Response) => {
+
+export const updateResource = async (iri: string, userMetadata: Record<string, unknown> | undefined) => {
+    if (userMetadata) {
+        await resourceModel.updateResource(iri, userMetadata);
+    }
+};
+
+export const deleteResourceHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
     const querySchema = z.object({
         iri: z.string().min(1),
     });
     const query = querySchema.parse(request.query);
 
-    await resourceModel.deleteResource(query.iri);
+    await deleteResource(query.iri);
 
     response.sendStatus(204);
     return;
 });
+
+export const deleteResource = async (iri: string) => {
+    await resourceModel.deleteResource(iri);
+}
 
 
 export const getBlob = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -115,31 +136,39 @@ export const getBlob = asyncHandler(async (request: express.Request, response: e
     return;
 });
 
-export const updateBlob = asyncHandler(async (request: express.Request, response: express.Response) => {
+export const updateBlobHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
     const querySchema = z.object({
         iri: z.string().min(1),
         name: z.string().min(1).default("model"),
     });
     const query = querySchema.parse(request.query);
 
-    const buffer = await (await resourceModel.getOrCreateResourceModelStore(query.iri, query.name)).setJson(request.body);
+    const buffer = await updateBlob(query.iri, query.name, request.body);
 
     response.sendStatus(200);
     return;
 });
 
-export const deleteBlob = asyncHandler(async (request: express.Request, response: express.Response) => {
+export const updateBlob = async (iri: string, name: string, newBlobContent: any) => {
+    await (await resourceModel.getOrCreateResourceModelStore(iri, name)).setJson(newBlobContent);
+};
+
+export const deleteBlobHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
     const querySchema = z.object({
         iri: z.string().min(1),
         name: z.string().min(1).default("model"),
     });
     const query = querySchema.parse(request.query);
 
-    await resourceModel.deleteModelStore(query.iri, query.name);
+    await deleteBlob(query.iri, query.name);
 
     response.sendStatus(204);
     return;
 });
+
+export const deleteBlob = async (iri: string, datastoreType: string) => {
+    await resourceModel.deleteModelStore(iri, datastoreType);
+}
 
 export const getPackageResource = asyncHandler(async (request: express.Request, response: express.Response) => {
     const querySchema = z.object({

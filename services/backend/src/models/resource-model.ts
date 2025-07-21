@@ -36,6 +36,8 @@ export interface BaseResource {
         creationDate?: Date;
     };
 
+    linkedGitRepositoryURL: string;
+
     dataStores: Record<string, string>;
 }
 
@@ -90,6 +92,21 @@ export class ResourceModel {
             where: {iri},
             data: {
                 userMetadata: JSON.stringify(metadata),
+            }
+        });
+        await this.updateModificationTime(iri);
+    }
+
+    /**
+     * Updates user metadata of the resource with given {@link linkedGit}.
+     */
+    async updateResourceGitLink(iri: string, linkedGit: string) {
+        const resource = await this.prismaClient.resource.findFirst({where: {iri}});        // TODO RadStr: Why am I looking for resource
+        await this.prismaClient.resource.update({
+            where: {iri},
+
+            data: {
+                linkedGitRepositoryURL: linkedGit,
             }
         });
         await this.updateModificationTime(iri);
@@ -175,6 +192,7 @@ export class ResourceModel {
                 modificationDate: prismaResource.modifiedAt
             },
             dataStores,
+            linkedGitRepositoryURL: prismaResource.linkedGitRepositoryURL,
         }
     }
 

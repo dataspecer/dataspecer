@@ -68,8 +68,10 @@ RUN bunx prisma migrate deploy --schema dist/schema.prisma
 FROM base AS final
 WORKDIR /usr/src/app
 
+RUN apk update && apk add --no-cache git
+
 # Makes directory accessible for the user
-# Instals prisma for migrations and cleans install cache
+# Installs prisma for migrations and cleans install cache
 RUN chmod a+rwx /usr/src/app && \
   bun install --no-cache prisma && \
   rm -rf ~/.bun ~/.cache

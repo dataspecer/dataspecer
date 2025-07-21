@@ -20,7 +20,10 @@ export const exportPackageResource = asyncHandler(async (request: express.Reques
 
   const query = querySchema.parse(request.query);
 
+  // TODO RadStr: Trying different exporters
   const exporter = new PackageExporter(resourceModel);
+  // const exporter = new PackageExporterNew(resourceModel);
+  // const buffer = await exporter.doExportFromIRI(query.iri);
   const buffer = await exporter.doExport(query.iri);
 
   const resource = await resourceModel.getResource(query.iri);

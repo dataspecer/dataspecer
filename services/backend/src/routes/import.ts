@@ -311,7 +311,7 @@ async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIr
 /**
  * Imports from URL and creates either a package or PIM model.
  */
-async function importFromUrl(parentIri: string, url: string): Promise<[BaseResource | null, SemanticModelEntity[]]> {
+export async function importFromUrl(parentIri: string, url: string): Promise<[BaseResource | null, SemanticModelEntity[]]> {
   url = url.replace(/#.*$/, "");
 
   // const baseIri = url;

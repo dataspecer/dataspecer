@@ -55,7 +55,7 @@ class SingleFileStreamDictionary implements StreamDictionary {
 /**
  * The main method to generate everything for a given package into a stream dictionary.
  */
-async function generateArtifacts(
+export async function generateArtifacts(
   packageIri: string,
   streamDictionary: StreamDictionary,
   queryParams: string = "",
