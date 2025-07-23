@@ -118,7 +118,11 @@ export function structureModelToJsonSchema(
     result.root = object;
   }
 
-  const jsonLd = specification.artefacts.find(a => a.generator === JSON_LD_GENERATOR);
+  const jsonLd = specification.artefacts.find(a =>
+    a.generator === JSON_LD_GENERATOR &&
+    (a as DataSpecificationSchema).psm === (artefact as DataSpecificationSchema).psm
+  );
+  console.log("JSON-LD artefact", jsonLd);
   // We MUST use public URL as it is for data
   const jsonLdLink = jsonLd ? jsonLd?.publicUrl : null; // pathRelative(artefact.publicUrl, jsonLd?.publicUrl)
 
