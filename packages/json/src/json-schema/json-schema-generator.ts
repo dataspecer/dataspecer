@@ -118,7 +118,7 @@ export class JsonSchemaGenerator implements ArtefactGenerator {
         partial: (template: string) => string,
       };
 
-      const {structureModel, jsonSchema, mergedConceptualModel, configuration} = await this.generateToObject(context, artefact, specification, true);
+      const {structureModel, jsonSchema, mergedConceptualModel, configuration} = await this.generateToObject(context, artefact, specification, false);
       const conceptualModelProperties: Record<string, ConceptualModelProperty> = {};
       Object.values(mergedConceptualModel.classes).forEach(cls => {
         cls.properties.forEach(prop => {
