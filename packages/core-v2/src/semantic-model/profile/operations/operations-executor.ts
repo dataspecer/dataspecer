@@ -122,6 +122,9 @@ function executeModifySemanticModelClassProfile(
     };
   };
   const updatedEntity: SemanticModelClassProfile = {
+    // The actual entity can be more specialized than SemanticModelClassProfile
+    ...previous,
+
     id: identifier,
     type: [SEMANTIC_MODEL_CLASS_PROFILE],
     description: entity.description ?? previous.description,
@@ -216,6 +219,9 @@ function executeModifySemanticModelRelationshipProfile(
     }));
 
   const updatedEntity: SemanticModelRelationshipProfile = {
+    // The actual entity can be more specialized than SemanticModelRelationshipProfile
+    ...previous,
+
     id: identifier,
     type: [SEMANTIC_MODEL_RELATIONSHIP_PROFILE],
     ends,
