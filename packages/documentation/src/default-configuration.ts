@@ -220,18 +220,20 @@ export const defaultConfiguration: DocumentationConfiguration = {
       <td>{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}</td>
     </tr>
     {{/translate}}
-    {{#def "profilesClassChain"}}
-      {{#ifEquals ./type.[0] "class"}}{{#iflng "cs"}}třída{{lng}}class{{/iflng}}{{/ifEquals}}
+    {{#def "profilesClassChain" "isGeneralization"}}
+      {{#if isGeneralization}}
+        {{#iflng "cs"}}specializuje{{lng}}specializes{{/iflng}}
+        {{else}}
+        {{#iflng "cs"}}profiluje{{lng}}profiles{{/iflng}}
+      {{/if}}
+      {{#ifEquals ./type.[0] "class"}}{{#iflng "cs"}}třídu{{lng}}class{{/iflng}}{{/ifEquals}}
       {{#ifEquals ./type.[0] "class-profile"}}{{#iflng "cs"}}profil{{lng}}class profile{{/iflng}}{{/ifEquals}}
       {{class}} (<a href="{{{./iri}}}">{{prefixed ./iri}}</a>)
-      {{#if (non-empty ./description)}}
+      {{#if (and (not ./descriptionFromProfiled) (non-empty ./description))}}
         <br />{{#iflng "cs"}}Definice: {{lng}}Definition: {{/iflng}}<i>{{translate ./description}}</i>
       {{/if}}
-      {{#if (non-empty ./usageNote)}}
-        <br />{{#iflng "cs"}}Popis použití v profilu: {{lng}}Usage note: {{/iflng}}<i>{{translate ./usageNote}}</i>
-      {{/if}}
-      {{#if ./aggregationParents}}
-        <ul style="list-style-type: none;">
+      {{#if (or ./aggregationParents (parentClasses ./id))}}
+        <ul style="list-style-type: disclosure-closed;">
           {{#each ./aggregationParents}}
             <li>
               {{#semanticEntity ./id}}
@@ -239,15 +241,22 @@ export const defaultConfiguration: DocumentationConfiguration = {
               {{/semanticEntity}}
             </li>
           {{/each}}
+          {{#each (parentClasses ./id)}}
+            <li>
+              {{#semanticEntity ./id}}
+                {{profilesClassChain true}}
+              {{/semanticEntity}}
+            </li>
+          {{/each}}
         </ul>
       {{/if}}
     {{/def}}
 
-    {{#if aggregationParents}}
+    {{#if (or ./aggregationParents (parentClasses ./id))}}
       <tr>
-        <td>{{#iflng "cs"}}Profiluje{{lng}}Profiles{{/iflng}}</td>
+        <td>{{#iflng "cs"}}Hierarchie{{lng}}Hierarchy{{/iflng}}</td>
         <td>
-          <ul style="list-style-type: none; padding-left: 0; margin: 0;">
+          <ul style="list-style-type: disclosure-closed; padding-left: 0; margin: 0;">
             {{#each aggregationParents}}
               {{#semanticEntity ./id}}
                 <li>
@@ -255,12 +264,17 @@ export const defaultConfiguration: DocumentationConfiguration = {
                 </li>
               {{/semanticEntity}}
             {{/each}}
+            {{#each (parentClasses ./id)}}
+              <li>
+                {{profilesClassChain true}}
+              </li>
+            {{/each}}
           </ul>
         </td>
       </tr>
     {{/if}}
 
-    {{#translate aggregation.usageNote}}
+    {{#translate usageNote}}
     <tr>
       <td>{{#iflng "cs"}}Popis použití v profilu{{lng}}Usage note{{/iflng}}</td>
       <td>{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}</td>
@@ -329,22 +343,31 @@ export const defaultConfiguration: DocumentationConfiguration = {
     </td>
     </tr>
 
-    {{#def "profilesRelationshipChain"}}
+    {{#def "profilesRelationshipChain" "isGeneralization"}}
+      {{#if isGeneralization}}
+        {{#iflng "cs"}}specializuje{{lng}}specializes{{/iflng}}
+        {{else}}
+        {{#iflng "cs"}}profiluje{{lng}}profiles{{/iflng}}
+      {{/if}}
       {{#ifEquals type.[0] "relationship"}}{{#iflng "cs"}}vlastnost{{lng}}property{{/iflng}}{{/ifEquals}}
       {{#ifEquals type.[0] "relationship-profile"}}{{#iflng "cs"}}profil{{lng}}property profile{{/iflng}}{{/ifEquals}}
       {{relation}} (<a href="{{{ends.1.iri}}}">{{prefixed ends.1.iri}}</a>)
-      {{#if (non-empty ./ends.1.description)}}
+      {{#if (and (not ./ends.1.descriptionFromProfiled) (non-empty ./ends.1.description))}}
         <br />{{#iflng "cs"}}Definice: {{lng}}Definition: {{/iflng}}<i>{{translate ./ends.1.description}}</i>
       {{/if}}
-      {{#if (non-empty ./ends.1.usageNote)}}
-        <br />{{#iflng "cs"}}Popis použití v profilu: {{lng}}Usage note: {{/iflng}}<i>{{translate ./ends.1.usageNote}}</i>
-      {{/if}}
-      {{#if ./aggregationParents}}
-        <ul style="list-style-type: none;">
+      {{#if (or ./aggregationParents (parentClasses ./id))}}
+        <ul style="list-style-type: disclosure-closed;">
           {{#each ./aggregationParents}}
             <li>
               {{#semanticEntity ./id}}
                 {{profilesRelationshipChain}}
+              {{/semanticEntity}}
+            </li>
+          {{/each}}
+          {{#each (parentClasses ./id)}}
+            <li>
+              {{#semanticEntity ./id}}
+                {{profilesRelationshipChain true}}
               {{/semanticEntity}}
             </li>
           {{/each}}
@@ -353,17 +376,22 @@ export const defaultConfiguration: DocumentationConfiguration = {
     {{/def}}
 
 
-    {{#if aggregationParents}}
+    {{#if (or ./aggregationParents (parentClasses ./id))}}
       <tr>
-        <td>{{#iflng "cs"}}Profiluje{{lng}}Profiles{{/iflng}}</td>
+        <td>{{#iflng "cs"}}Hierarchie{{lng}}Hierarchy{{/iflng}}</td>
         <td>
-          <ul style="list-style-type: none; padding-left: 0; margin: 0;">
-            {{#each aggregationParents}}
+          <ul style="list-style-type: disclosure-closed; padding-left: 0; margin: 0;">
+            {{#each ./aggregationParents}}
               {{#semanticEntity ./id}}
                 <li>
                   {{profilesRelationshipChain}}
                 </li>
               {{/semanticEntity}}
+            {{/each}}
+            {{#each (parentClasses ./id)}}
+              <li>
+                {{profilesRelationshipChain true}}
+              </li>
             {{/each}}
           </ul>
         </td>
