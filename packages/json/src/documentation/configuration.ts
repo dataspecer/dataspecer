@@ -35,6 +35,10 @@ export const defaultJsonPartials: Record<string, string> = {
 <dt>{{#iflng "cs"}}Popis{{lng}}Description{{/iflng}}</dt>
 <dd>{{translation}}</dd>
 {{/translate}}{{/humanDescription}}
+{{#if ./regex}}
+<dt>{{#iflng "cs"}}Regulární výraz{{lng}}Regular expression{{/iflng}}</dt>
+<dd><code>{{./regex}}</code></dd>
+{{/if}}
 <dt>{{#iflng "cs"}}Interpretace{{lng}}Interpretation{{/iflng}}</dt>
 {{#pimClass}}
 <dd>
@@ -49,12 +53,14 @@ export const defaultJsonPartials: Record<string, string> = {
 <dl>
 <dt>{{#iflng "cs"}}Klíč{{lng}}Key{{/iflng}}</dt>
 <dd>\`{{technicalLabel}}\`</dd>
-<dt>{{#iflng "cs"}}Jméno{{lng}}Name{{/iflng}}</dt>
-<dd>{{#humanLabel}}{{translate}}{{/humanLabel}}</dd>
-{{#humanDescription}}{{#translate}}
-<dt>{{#iflng "cs"}}Popis{{lng}}Description{{/iflng}}</dt>
-<dd>{{translation}}</dd>
-{{/translate}}{{/humanDescription}}
+{{#./humanLabel}}{{#translate}}
+  <dt>{{#iflng "cs"}}Jméno{{lng}}Name{{/iflng}}</dt>
+  <dd>{{translate}}</dd>
+{{/translate}}{{/./humanLabel}}
+{{#./humanDescription}}{{#translate}}
+  <dt>{{#iflng "cs"}}Popis{{lng}}Description{{/iflng}}</dt>
+  <dd>{{translation}}</dd>
+{{/translate}}{{/./humanDescription}}
 <dt>{{#iflng "cs"}}Povinnost{{lng}}Optionality{{/iflng}}</dt>
 <dd>{{#if cardinalityIsRequired}}{{#iflng "cs"}}povinné{{lng}}required{{/iflng}}{{else}}{{#iflng "cs"}}nepovinné{{lng}}optional{{/iflng}}{{/if}}</dd>
 <dt>{{#iflng "cs"}}Kardinalita{{lng}}Cardinality{{/iflng}}</dt>
@@ -67,6 +73,9 @@ export const defaultJsonPartials: Record<string, string> = {
 {{#isSimpleClass}}
 <dd>
   IRI (<a href="{{#pimClass}}{{href pimIri}}{{/pimClass}}">{{#humanLabel}}{{translate}}{{/humanLabel}}</a>)
+  {{#if pimClass.regex}}
+    {{#iflng "cs"}}S regulárním výrazem{{lng}}with regular expression{{/iflng}} <code>{{pimClass.regex}}</code>.
+  {{/if}}
 </dd>
 {{/isSimpleClass}}
 {{^isSimpleClass}}
@@ -83,6 +92,10 @@ export const defaultJsonPartials: Record<string, string> = {
 </dd>
 {{/isAttribute}}
 
+{{#isCustomType}}
+<dd>{{#iflng "cs"}}Viz JSON Schéma.{{lng}}See JSON Schema.{{/iflng}}</dd>
+{{/isCustomType}}
+
 {{/dataTypes}}
 
 {{#dataTypes}}{{#isAttribute}}{{#example}}
@@ -95,8 +108,8 @@ export const defaultJsonPartials: Record<string, string> = {
 <dd><code>{{.}}</code></dd>
 {{/./regex}}{{/isAttribute}}{{/dataTypes}}
 
-<dt>{{#iflng "cs"}}Interpretace{{lng}}Interpretation{{/iflng}}</dt>
 {{#pimAssociation}}
+<dt>{{#iflng "cs"}}Interpretace{{lng}}Interpretation{{/iflng}}</dt>
 <dd>
 <a href="{{href pimIri}}">{{#humanLabel}}{{translate}}{{/humanLabel}}</a>
 </dd>

@@ -44,6 +44,7 @@ export class BaseHandlebarsAdapter implements HandlebarsAdapter {
       result = compiled(data, {partials: compiledTemplates, allowedProtoMethods: {
         isAttribute: true,
         isAssociation: true,
+        isCustomType: true,
       }});
       await Promise.all(this.toAwait);
     } while (this.toAwait.length > 0);

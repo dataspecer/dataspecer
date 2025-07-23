@@ -198,7 +198,7 @@ export class JsonSchemaGenerator implements ArtefactGenerator {
               const label = this.humanLabel?.cs ?? this.humanLabel?.en ?? "";
               return `json-object-${normalizeLabel(label)}`;
           } else if (this instanceof StructureModelProperty) {
-            const obj = structureModel.getClasses().find(c => c.properties.find(p => p.psmIri === this.psmIri))!;
+            const obj = structureModel.getClasses().find(c => c.properties.find(p => p === this))!;
             const objLabel = obj.humanLabel?.cs ?? obj.humanLabel?.en ?? "";
             //const label = this.humanLabel?.cs ?? this.humanLabel?.en ?? "";
             return `json-property-${normalizeLabel(objLabel)}-${normalizeLabel(this.technicalLabel)}`;
