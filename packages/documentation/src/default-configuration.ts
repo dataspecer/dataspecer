@@ -224,8 +224,11 @@ export const defaultConfiguration: DocumentationConfiguration = {
       {{#ifEquals ./type.[0] "class"}}{{#iflng "cs"}}třída{{lng}}class{{/iflng}}{{/ifEquals}}
       {{#ifEquals ./type.[0] "class-profile"}}{{#iflng "cs"}}profil{{lng}}class profile{{/iflng}}{{/ifEquals}}
       {{class}} (<a href="{{{./iri}}}">{{prefixed ./iri}}</a>)
-      {{#if (not ./descriptionFromProfiled)}}
+      {{#if (non-empty ./description)}}
         <br />{{#iflng "cs"}}Definice: {{lng}}Definition: {{/iflng}}<i>{{translate ./description}}</i>
+      {{/if}}
+      {{#if (non-empty ./usageNote)}}
+        <br />{{#iflng "cs"}}Popis použití v profilu: {{lng}}Usage note: {{/iflng}}<i>{{translate ./usageNote}}</i>
       {{/if}}
       {{#if ./aggregationParents}}
         <ul style="list-style-type: none;">
@@ -257,7 +260,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
       </tr>
     {{/if}}
 
-    {{#translate usageNote}}
+    {{#translate aggregation.usageNote}}
     <tr>
       <td>{{#iflng "cs"}}Popis použití v profilu{{lng}}Usage note{{/iflng}}</td>
       <td>{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}</td>
@@ -330,8 +333,11 @@ export const defaultConfiguration: DocumentationConfiguration = {
       {{#ifEquals type.[0] "relationship"}}{{#iflng "cs"}}vlastnost{{lng}}property{{/iflng}}{{/ifEquals}}
       {{#ifEquals type.[0] "relationship-profile"}}{{#iflng "cs"}}profil{{lng}}property profile{{/iflng}}{{/ifEquals}}
       {{relation}} (<a href="{{{ends.1.iri}}}">{{prefixed ends.1.iri}}</a>)
-      {{#if (not ./ends.1.descriptionFromProfiled)}}
+      {{#if (non-empty ./ends.1.description)}}
         <br />{{#iflng "cs"}}Definice: {{lng}}Definition: {{/iflng}}<i>{{translate ./ends.1.description}}</i>
+      {{/if}}
+      {{#if (non-empty ./ends.1.usageNote)}}
+        <br />{{#iflng "cs"}}Popis použití v profilu: {{lng}}Usage note: {{/iflng}}<i>{{translate ./ends.1.usageNote}}</i>
       {{/if}}
       {{#if ./aggregationParents}}
         <ul style="list-style-type: none;">
