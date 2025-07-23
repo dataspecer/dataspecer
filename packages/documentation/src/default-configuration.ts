@@ -5,7 +5,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
     // [DOCUMENTATION_MAIN_TEMPLATE_PARTIAL]
     specification: `{{> definitions}}
 <!DOCTYPE html>
-<html>
+<html {{#iflng "cs"}}lang="cs"{{lng}}lang="en"{{/iflng}}>
   <head>
     {{> html-head}}
   </head>
