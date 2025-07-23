@@ -1,6 +1,6 @@
 import { LocalEntityWrapped } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
 import { ConceptualModel, ConceptualModelProperty } from "@dataspecer/core/conceptual-model";
-import { assertFailed, assertNot, createStringSelector } from "@dataspecer/core/core";
+import { assertFailed, assertNot, createStringSelector, LanguageString } from "@dataspecer/core/core";
 import { pathRelative } from "@dataspecer/core/core/utilities/path-relative";
 import { DataSpecificationConfiguration, DataSpecificationConfigurator, DefaultDataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
 import {
@@ -24,6 +24,21 @@ import { structureModelToJsonSchema } from "./json-schema-model-adapter.ts";
 import { JSON_SCHEMA } from "./json-schema-vocabulary.ts";
 import { writeJsonSchema } from "./json-schema-writer.ts";
 import { shortenByIriPrefixes } from "./propagate-iri-regex.ts";
+
+export function selectLanguage(input: LanguageString, languages: readonly string[]): string | undefined {
+  for (const language of languages) {
+    if (input[language]) {
+      return input[language];
+    }
+  }
+
+  // noinspection LoopStatementThatDoesntLoopJS
+  for (const language in input) {
+    return input[language];
+  }
+
+  return undefined;
+}
 
 export class JsonSchemaGenerator implements ArtefactGenerator {
   identifier(): string {
@@ -194,14 +209,16 @@ export class JsonSchemaGenerator implements ArtefactGenerator {
             return label.replace(/ /g, "-").toLowerCase();
           }
 
+          const structureLabel = normalizeLabel(selectLanguage(structureModel.humanLabel, ["en"])); // This is an identifier that should be independent of the language
+
           if (this instanceof StructureModelClass) {
               const label = this.humanLabel?.cs ?? this.humanLabel?.en ?? "";
-              return `json-object-${normalizeLabel(label)}`;
+              return `json-object--${structureLabel}--${normalizeLabel(label)}`;
           } else if (this instanceof StructureModelProperty) {
             const obj = structureModel.getClasses().find(c => c.properties.find(p => p === this))!;
             const objLabel = obj.humanLabel?.cs ?? obj.humanLabel?.en ?? "";
             //const label = this.humanLabel?.cs ?? this.humanLabel?.en ?? "";
-            return `json-property-${normalizeLabel(objLabel)}-${normalizeLabel(this.technicalLabel)}`;
+            return `json-property--${structureLabel}--${normalizeLabel(objLabel)}-${normalizeLabel(this.technicalLabel)}`;
           }
         },
         /**
