@@ -224,21 +224,28 @@ function getLabelTranslate(
     // No translation.
     return "translate(0px,0px)";
   }
-  let shiftX = "0%";
-  if (point.x < (nodePosition.x)) {
-    // Left
-    shiftX = "-110%"
-  } else if (point.x > (nodePosition.x + width)) {
-    // Right
-    shiftX = "10%";
+  let shiftX = "0";
+  if (point.x <= (nodePosition.x)) {
+    // Labels is to the left from the object.
+    shiftX = "-5ch"
+  } else if (point.x >= (nodePosition.x + width)) {
+    // To the right.
+    shiftX = "1ch";
   }
-  let shiftY = "0%";
-  if (point.y < (nodePosition.y)) {
-    // Top
-    shiftY = "-110%"
-  } else if (point.y > (nodePosition.y + height)) {
-    // Bottom
-    shiftY = "10%";
+  let shiftY = "0";
+  if (point.y <= (nodePosition.y)) {
+    // Above.
+    shiftY = "-2em"
+    if (shiftX === "0") {
+      shiftX = "1ch";
+    }
+  } else if (point.y >= (nodePosition.y + height)) {
+    // Bellow.
+    shiftY = "0";
+    if (shiftX === "0") {
+      shiftX = "1ch";
+    }
   }
+  console.log("getLabelTranslate", {point, node: nodePosition, width, height, shiftX, shiftY});
   return `translate(${shiftX},${shiftY})`;
 }
