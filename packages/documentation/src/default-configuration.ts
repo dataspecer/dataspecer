@@ -5,7 +5,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
     // [DOCUMENTATION_MAIN_TEMPLATE_PARTIAL]
     specification: `{{> definitions}}
 <!DOCTYPE html>
-<html>
+<html {{#iflng "cs"}}lang="cs"{{lng}}lang="en"{{/iflng}}>
   <head>
     {{> html-head}}
   </head>
@@ -30,42 +30,36 @@ export const defaultConfiguration: DocumentationConfiguration = {
       {{/each}}
     </section>
 
-    {{#if locallyDefinedSemanticEntityByTags.[https://w3id.org/dsv/class-role#main]}}
+    {{#if classProfilesByTags.[https://w3id.org/dsv/class-role#main]}}
       <section>
         <h2>{{#iflng "cs"}}Hlavní profily tříd{{lng}}Main class profiles{{/iflng}}</h2>
 
-        {{#each locallyDefinedSemanticEntityByTags.[https://w3id.org/dsv/class-role#main]}}
-          {{#ifEquals type.[0] "class-profile"}}
-            {{> class-profile}}
-          {{/ifEquals}}
+        {{#each classProfilesByTags.[https://w3id.org/dsv/class-role#main]}}
+          {{> class-profile}}
         {{/each}}
       </section>
     {{/if}}
 
-    {{#if locallyDefinedSemanticEntityByTags.[https://w3id.org/dsv/class-role#supportive]}}
+    {{#if classProfilesByTags.[https://w3id.org/dsv/class-role#supportive]}}
       <section>
         <h2>{{#iflng "cs"}}Podpůrné profily třídy{{lng}}Supportive class profiles{{/iflng}}</h2>
 
-        {{#each locallyDefinedSemanticEntityByTags.[https://w3id.org/dsv/class-role#supportive]}}
-          {{#ifEquals type.[0] "class-profile"}}
-            {{> class-profile}}
-          {{/ifEquals}}
+        {{#each classProfilesByTags.[https://w3id.org/dsv/class-role#supportive]}}
+          {{> class-profile}}
         {{/each}}
       </section>
     {{/if}}
 
-    {{#if (and (non-empty locallyDefinedSemanticEntityByTags.default) (non-empty semanticEntitiesByType.classProfiles))}}
+    {{#if (non-empty classProfilesByTags.default)}}
       <section>
-        {{#if (or locallyDefinedSemanticEntityByTags.[https://w3id.org/dsv/class-role#main] locallyDefinedSemanticEntityByTags.[https://w3id.org/dsv/class-role#supportive])}}
+        {{#if (or classProfilesByTags.[https://w3id.org/dsv/class-role#main] classProfilesByTags.[https://w3id.org/dsv/class-role#supportive])}}
           <h2>{{#iflng "cs"}}Nezařazené profily tříd{{lng}}Other class profiles{{/iflng}}</h2>
         {{else}}
           <h2>{{#iflng "cs"}}Profily tříd{{lng}}Class profiles{{/iflng}}</h2>
         {{/if}}
 
-        {{#each locallyDefinedSemanticEntityByTags.default}}
-          {{#ifEquals type.[0] "class-profile"}}
-            {{> class-profile}}
-          {{/ifEquals}}
+        {{#each classProfilesByTags.default}}
+          {{> class-profile}}
         {{/each}}
       </section>
     {{/if}}
@@ -95,7 +89,10 @@ export const defaultConfiguration: DocumentationConfiguration = {
 
     {{#structureModels}}
       <section>
-      <h2>Specifikace struktury pro {{translate humanLabel}}</h2>
+      <h2>
+        {{#iflng "cs"}}Specifikace struktury pro{{lng}}Data structure specification for{{/iflng}}
+        {{translate humanLabel}}
+      </h2>
       <p>{{translate humanDescription}}</p>
 
       {{#artifacts}}{{#getDocumentation}}{{> (useTemplate)}}{{/getDocumentation}}{{/artifacts}}
@@ -223,15 +220,20 @@ export const defaultConfiguration: DocumentationConfiguration = {
       <td>{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}</td>
     </tr>
     {{/translate}}
-    {{#def "profilesClassChain"}}
-      {{#ifEquals ./type.[0] "class"}}{{#iflng "cs"}}třída{{lng}}class{{/iflng}}{{/ifEquals}}
+    {{#def "profilesClassChain" "isGeneralization"}}
+      {{#if isGeneralization}}
+        {{#iflng "cs"}}specializuje{{lng}}specializes{{/iflng}}
+        {{else}}
+        {{#iflng "cs"}}profiluje{{lng}}profiles{{/iflng}}
+      {{/if}}
+      {{#ifEquals ./type.[0] "class"}}{{#iflng "cs"}}třídu{{lng}}class{{/iflng}}{{/ifEquals}}
       {{#ifEquals ./type.[0] "class-profile"}}{{#iflng "cs"}}profil{{lng}}class profile{{/iflng}}{{/ifEquals}}
       {{class}} (<a href="{{{./iri}}}">{{prefixed ./iri}}</a>)
-      {{#if (not ./descriptionFromProfiled)}}
+      {{#if (and (not ./descriptionFromProfiled) (non-empty ./description))}}
         <br />{{#iflng "cs"}}Definice: {{lng}}Definition: {{/iflng}}<i>{{translate ./description}}</i>
       {{/if}}
-      {{#if ./aggregationParents}}
-        <ul style="list-style-type: none;">
+      {{#if (or ./aggregationParents (parentClasses ./id))}}
+        <ul style="list-style-type: disclosure-closed;">
           {{#each ./aggregationParents}}
             <li>
               {{#semanticEntity ./id}}
@@ -239,21 +241,33 @@ export const defaultConfiguration: DocumentationConfiguration = {
               {{/semanticEntity}}
             </li>
           {{/each}}
+          {{#each (parentClasses ./id)}}
+            <li>
+              {{#semanticEntity ./id}}
+                {{profilesClassChain true}}
+              {{/semanticEntity}}
+            </li>
+          {{/each}}
         </ul>
       {{/if}}
     {{/def}}
 
-    {{#if aggregationParents}}
+    {{#if (or ./aggregationParents (parentClasses ./id))}}
       <tr>
-        <td>{{#iflng "cs"}}Profiluje{{lng}}Profiles{{/iflng}}</td>
+        <td>{{#iflng "cs"}}Hierarchie{{lng}}Hierarchy{{/iflng}}</td>
         <td>
-          <ul style="list-style-type: none; padding-left: 0; margin: 0;">
+          <ul style="list-style-type: disclosure-closed; padding-left: 0; margin: 0;">
             {{#each aggregationParents}}
               {{#semanticEntity ./id}}
                 <li>
                   {{profilesClassChain}}
                 </li>
               {{/semanticEntity}}
+            {{/each}}
+            {{#each (parentClasses ./id)}}
+              <li>
+                {{profilesClassChain true}}
+              </li>
             {{/each}}
           </ul>
         </td>
@@ -329,19 +343,31 @@ export const defaultConfiguration: DocumentationConfiguration = {
     </td>
     </tr>
 
-    {{#def "profilesRelationshipChain"}}
+    {{#def "profilesRelationshipChain" "isGeneralization"}}
+      {{#if isGeneralization}}
+        {{#iflng "cs"}}specializuje{{lng}}specializes{{/iflng}}
+        {{else}}
+        {{#iflng "cs"}}profiluje{{lng}}profiles{{/iflng}}
+      {{/if}}
       {{#ifEquals type.[0] "relationship"}}{{#iflng "cs"}}vlastnost{{lng}}property{{/iflng}}{{/ifEquals}}
       {{#ifEquals type.[0] "relationship-profile"}}{{#iflng "cs"}}profil{{lng}}property profile{{/iflng}}{{/ifEquals}}
       {{relation}} (<a href="{{{ends.1.iri}}}">{{prefixed ends.1.iri}}</a>)
-      {{#if (not ./ends.1.descriptionFromProfiled)}}
+      {{#if (and (not ./ends.1.descriptionFromProfiled) (non-empty ./ends.1.description))}}
         <br />{{#iflng "cs"}}Definice: {{lng}}Definition: {{/iflng}}<i>{{translate ./ends.1.description}}</i>
       {{/if}}
-      {{#if ./aggregationParents}}
-        <ul style="list-style-type: none;">
+      {{#if (or ./aggregationParents (parentClasses ./id))}}
+        <ul style="list-style-type: disclosure-closed;">
           {{#each ./aggregationParents}}
             <li>
               {{#semanticEntity ./id}}
                 {{profilesRelationshipChain}}
+              {{/semanticEntity}}
+            </li>
+          {{/each}}
+          {{#each (parentClasses ./id)}}
+            <li>
+              {{#semanticEntity ./id}}
+                {{profilesRelationshipChain true}}
               {{/semanticEntity}}
             </li>
           {{/each}}
@@ -350,17 +376,22 @@ export const defaultConfiguration: DocumentationConfiguration = {
     {{/def}}
 
 
-    {{#if aggregationParents}}
+    {{#if (or ./aggregationParents (parentClasses ./id))}}
       <tr>
-        <td>{{#iflng "cs"}}Profiluje{{lng}}Profiles{{/iflng}}</td>
+        <td>{{#iflng "cs"}}Hierarchie{{lng}}Hierarchy{{/iflng}}</td>
         <td>
-          <ul style="list-style-type: none; padding-left: 0; margin: 0;">
-            {{#each aggregationParents}}
+          <ul style="list-style-type: disclosure-closed; padding-left: 0; margin: 0;">
+            {{#each ./aggregationParents}}
               {{#semanticEntity ./id}}
                 <li>
                   {{profilesRelationshipChain}}
                 </li>
               {{/semanticEntity}}
+            {{/each}}
+            {{#each (parentClasses ./id)}}
+              <li>
+                {{profilesRelationshipChain true}}
+              </li>
             {{/each}}
           </ul>
         </td>
@@ -412,7 +443,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
         </tr>
       {{/if}}
         {{#artifacts}}
-        <tr><td>{{title}}</td><td><a href="{{{relativePath}}}">{{relativePathAsText}}</a></td></tr>
+        <tr><td>{{translate title}}</td><td><a href="{{{relativePath}}}">{{relativePathAsText}}</a></td></tr>
         {{/artifacts}}
     </tbody>
   </table>

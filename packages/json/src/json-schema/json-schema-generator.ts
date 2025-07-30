@@ -1,6 +1,6 @@
 import { LocalEntityWrapped } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
 import { ConceptualModel, ConceptualModelProperty } from "@dataspecer/core/conceptual-model";
-import { assertFailed, assertNot, createStringSelector } from "@dataspecer/core/core";
+import { assertFailed, assertNot, createStringSelector, LanguageString } from "@dataspecer/core/core";
 import { pathRelative } from "@dataspecer/core/core/utilities/path-relative";
 import { DataSpecificationConfiguration, DataSpecificationConfigurator, DefaultDataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
 import {
@@ -24,6 +24,21 @@ import { structureModelToJsonSchema } from "./json-schema-model-adapter.ts";
 import { JSON_SCHEMA } from "./json-schema-vocabulary.ts";
 import { writeJsonSchema } from "./json-schema-writer.ts";
 import { shortenByIriPrefixes } from "./propagate-iri-regex.ts";
+
+export function selectLanguage(input: LanguageString, languages: readonly string[]): string | undefined {
+  for (const language of languages) {
+    if (input[language]) {
+      return input[language];
+    }
+  }
+
+  // noinspection LoopStatementThatDoesntLoopJS
+  for (const language in input) {
+    return input[language];
+  }
+
+  return undefined;
+}
 
 export class JsonSchemaGenerator implements ArtefactGenerator {
   identifier(): string {
@@ -118,7 +133,7 @@ export class JsonSchemaGenerator implements ArtefactGenerator {
         partial: (template: string) => string,
       };
 
-      const {structureModel, jsonSchema, mergedConceptualModel, configuration} = await this.generateToObject(context, artefact, specification, true);
+      const {structureModel, jsonSchema, mergedConceptualModel, configuration} = await this.generateToObject(context, artefact, specification, false);
       const conceptualModelProperties: Record<string, ConceptualModelProperty> = {};
       Object.values(mergedConceptualModel.classes).forEach(cls => {
         cls.properties.forEach(prop => {
@@ -158,22 +173,31 @@ export class JsonSchemaGenerator implements ArtefactGenerator {
         });
       });
 
-      let infoText = "Datová sada je tvořena ";
+      let infoText = {
+        cs: "Datová sada je tvořena ",
+        en: "The data set consists of "
+      };
       switch (configuration.jsonRootCardinality) {
         case "single":
-          infoText += "jediným prvkem odpovídající datové struktuře";
+          infoText.cs += "jediným prvkem odpovídající datové struktuře";
+          infoText.en += "a single item of the data structure";
           break;
         case "array":
-          infoText += "seznamem prvků odpovídajících datové struktuře";
+          infoText.cs += "seznamem prvků odpovídajících datové struktuře";
+          infoText.en += "a list of items of the data structure";
           break;
         case "object-with-array":
-          infoText += "seznamem prvků odpovídajících datové struktuře";
+          infoText.cs += "seznamem prvků odpovídajících datové struktuře";
+          infoText.en += "a list of items of the data structure";
           break;
         default:
           assertFailed("Unknown cardinality.");
       }
 
-      let infoText2 = configuration.jsonRootCardinality === "object-with-array" ? ` Prvky jsou uvedeny v poli \`${configuration.jsonRootCardinalityObjectKey}\`.` : "";
+      let infoText2 = configuration.jsonRootCardinality === "object-with-array" ? {
+        cs: ` Prvky jsou uvedeny v poli \`${configuration.jsonRootCardinalityObjectKey}\`.`,
+        en: ` The items are listed in the array \`${configuration.jsonRootCardinalityObjectKey}\`.`
+      } : {};
 
       return {
         structureModel,
@@ -185,14 +209,16 @@ export class JsonSchemaGenerator implements ArtefactGenerator {
             return label.replace(/ /g, "-").toLowerCase();
           }
 
+          const structureLabel = structureModel.technicalLabel || normalizeLabel(selectLanguage(structureModel.humanLabel, ["en"])); // This is an identifier that should be independent of the language
+
           if (this instanceof StructureModelClass) {
               const label = this.humanLabel?.cs ?? this.humanLabel?.en ?? "";
-              return `json-schéma-objekt-${normalizeLabel(label)}`;
+              return `json-object--${structureLabel}--${normalizeLabel(label)}`;
           } else if (this instanceof StructureModelProperty) {
-            const obj = structureModel.getClasses().find(c => c.properties.find(p => p.psmIri === this.psmIri))!;
+            const obj = structureModel.getClasses().find(c => c.properties.find(p => p === this))!;
             const objLabel = obj.humanLabel?.cs ?? obj.humanLabel?.en ?? "";
             //const label = this.humanLabel?.cs ?? this.humanLabel?.en ?? "";
-            return `json-schéma-vlastnost-${normalizeLabel(objLabel)}-${normalizeLabel(this.technicalLabel)}`;
+            return `json-property--${structureLabel}--${normalizeLabel(objLabel)}-${normalizeLabel(this.technicalLabel)}`;
           }
         },
         /**

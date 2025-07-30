@@ -1,4 +1,4 @@
-FROM oven/bun:1.2.4-alpine AS base
+FROM oven/bun:1.2.19-alpine AS base
 
 # Builds in /usr/src/app and copies to /usr/src/final to avoid copying build dependencies
 FROM base AS builder
@@ -10,7 +10,7 @@ COPY services/ services/
 COPY packages/ packages/
 COPY .npmrc package-lock.json package.json turbo.json ./docker/ws/docker-configure.sh ./docker/ws/docker-copy.sh ./
 
-RUN sed -i "/packageManager/ c \"packageManager\": \"bun@1.2.4\"," package.json
+RUN sed -i "/packageManager/ c \"packageManager\": \"bun@1.2.19\"," package.json
 RUN bun install
 
 ARG GIT_COMMIT

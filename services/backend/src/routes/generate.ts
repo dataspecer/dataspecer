@@ -12,6 +12,17 @@ import { resourceModel } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { BackendModelRepository } from "../utils/model-repository.ts";
 
+// Hotfixes https://github.com/oven-sh/bun/issues/8893
+export function bunHotfixHttpFileName(input: string) {
+  return input.replace(/[\u0080-\u00FF]/g, (ch) => {
+    // Try to decompose accents: e.g. "é" -> "é" -> strip combining marks -> "e"
+    const decomposed = ch.normalize("NFKD").replace(/[\u0300-\u036F]/g, "");
+    if (decomposed && decomposed.charCodeAt(0) < 0x80) return decomposed;
+
+    // Otherwise give up or use unknown
+    return "";
+  });
+}
 
 interface DataSpecifications {
   [key: string]: any;
@@ -89,7 +100,7 @@ export const getZip = asyncHandler(async (request: express.Request, response: ex
 
   // Send zip file
   const filename = getName(resource?.userMetadata?.label, "export") + ".zip";
-  response.type("application/zip").attachment(filename).send(await zip.save());
+  response.type("application/zip").attachment(bunHotfixHttpFileName(filename)).send(await zip.save());
   return;
 });
 

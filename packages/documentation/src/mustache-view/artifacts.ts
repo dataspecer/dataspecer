@@ -101,7 +101,7 @@ export function getArtifactsView(
         ...artifact,
         relativePath: pathRelative(baseUrl, artifact.publicUrl),
         relativePathAsText: pathRelative(baseUrl, artifact.publicUrl) || "#",
-        title: artefactTitle[artifact.generator]?.["cs"] ?? "",
+        title: artefactTitle[artifact.generator] ?? {},
         getArtifact: adapter.async(async () => {
             const stream = new MemoryStreamDictionary();
             const generator = await context.context.createGenerator(artifact.generator);

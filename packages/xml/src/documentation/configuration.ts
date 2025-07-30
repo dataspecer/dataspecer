@@ -3,7 +3,7 @@ export const MAIN_XML_PARTIAL = "xml-documentation";
 export const defaultXmlPartials: Record<string, string> = {
   [MAIN_XML_PARTIAL]: `{{#def "xml-meaning" "annotation"}}
   {{#if (or (get-semantic-class annotation) (non-empty annotation.metaTitle) (non-empty annotation.metaDescription))}}
-    <dt>Význam</dt>
+    <dt>{{#iflng "cs"}}Význam{{lng}}Meaning{{/iflng}}</dt>
     {{#if (or (non-empty annotation.metaTitle) (non-empty annotation.metaDescription))}}
       <dd>
         <a href="{{#get-semantic-class annotation}}{{href pimIri}}{{/get-semantic-class}}">{{translate annotation.metaTitle}}</a>
@@ -16,8 +16,8 @@ export const defaultXmlPartials: Record<string, string> = {
 {{#def "xml-qname" "name"}}{{#if name.[0]}}{{name.[0]}}:{{/if}}{{name.[1]}}{{/def}}
 
 {{#def "xml-content-type" "type"}}
-{{#if (equals type "choice")}} - výběr jednoho elementu z množiny{{/if}}
-{{#if (equals type "sequence")}} - elementy v tomto pořadí{{/if}}
+{{#if (equals type "choice")}} - {{#iflng "cs"}}výběr jednoho elementu z množiny{{lng}}choice of one element from the set{{/iflng}}{{/if}}
+{{#if (equals type "sequence")}} - {{#iflng "cs"}}elementy v tomto pořadí{{lng}}elements in this order{{/iflng}}{{/if}}
 {{/def}}
 
 {{#def "xml-schema-complex-content" "contents"}}
@@ -29,12 +29,12 @@ export const defaultXmlPartials: Record<string, string> = {
         {{/if}}
         {{#item}}
           {{#if (or (equals xsType "sequence") (equals xsType "choice") )}}
-            {{#if (equals xsType "sequence")}}sekvence{{/if}}{{#if (equals xsType "choice")}}výběr jednoho prvku{{/if}} [{{../cardinalityMin}}..{{#if ../cardinalityMax}}{{../cardinalityMax}}{{else}}*{{/if}}]
+            {{#if (equals xsType "sequence")}}{{#iflng "cs"}}sekvence{{lng}}sequence{{/iflng}}{{/if}}{{#if (equals xsType "choice")}}{{#iflng "cs"}}výběr jednoho prvku{{lng}}choice of one item{{/iflng}}{{/if}} [{{../cardinalityMin}}..{{#if ../cardinalityMax}}{{../cardinalityMax}}{{else}}*{{/if}}]
             <ul>
               {{xml-schema-complex-content contents}}
             </ul>
-            {{else}}
-              {{xml-type}} [{{../cardinalityMin}}..{{#if ../cardinalityMax}}{{../cardinalityMax}}{{else}}*{{/if}}]
+          {{else}}
+            {{xml-type}} [{{../cardinalityMin}}..{{#if ../cardinalityMax}}{{../cardinalityMax}}{{else}}*{{/if}}]
           {{/if}}
         {{/item}}
       </li>
@@ -44,7 +44,7 @@ export const defaultXmlPartials: Record<string, string> = {
 
 {{#def "xml-complex-definition" "complexDefinition"}}
   {{#if complexDefinition.contents}}
-    <dt>Obsah {{xml-content-type complexDefinition.xsType}}</dt>
+    <dt>{{#iflng "cs"}}Obsah{{lng}}Content{{/iflng}} {{xml-content-type complexDefinition.xsType}}</dt>
     {{xml-schema-complex-content complexDefinition.contents}}
   {{/if}}
 {{/def}}
@@ -52,25 +52,25 @@ export const defaultXmlPartials: Record<string, string> = {
 {{#def "xml-type"}}
   <div style="margin-left: 40px;">
     {{#if (and (not simpleDefinition) (not complexDefinition))}}
-      <dt>Obsah</dt>
+      <dt>{{#iflng "cs"}}Obsah{{lng}}Content{{/iflng}}</dt>
       <dd>
         {{#if (equals name.[1] "langString")}}
-          Obsahem elementue je <i>Řetězec s označením jazyka</i>.
+          {{#iflng "cs"}}Obsahem elementue je <i>Řetězec s označením jazyka</i>.{{lng}}The content of the element is an <i>language-tagged string</i>.{{/iflng}}
         {{else}}
-          Obsahem elementu je typ <a href="{{xml-href .}}"><code>{{xml-qname name}}</code></a>.
+          {{#iflng "cs"}}Obsahem elementu je typ{{lng}}The content of the element is of type{{/iflng}} <a href="{{xml-href .}}"><code>{{xml-qname name}}</code></a>.
         {{/if}}
       </dd>
     {{/if}}
 
     {{#simpleDefinition}}
-      <dt>Obsah</dt>
+      <dt>{{#iflng "cs"}}Obsah{{lng}}Content{{/iflng}}</dt>
       {{#if (equals xsType "restriction")}}
         <dd>
-        Obsahem elementu je jednoduchý typ <code>{{xml-qname base}}</code> s omezením na hodnoty dané regulárním výrazem <code>{{pattern}}</code>.
+          {{#iflng "cs"}}Obsahem elementu je jednoduchý typ{{lng}}The content of the element is a simple type{{/iflng}} <code>{{xml-qname base}}</code> {{#iflng "cs"}}s omezením na hodnoty dané regulárním výrazem{{lng}}with restriction by the regular expression{{/iflng}} <code>{{pattern}}</code>.
         </dd>
       {{else}}
         <dd>
-          Obsahem elementu je jednoduchý typ <code>{{xml-qname xsType}}</code>.
+          {{#iflng "cs"}}Obsahem elementu je jednoduchý typ{{lng}}The content of the element is a simple type{{/iflng}} <code>{{xml-qname xsType}}</code>.
         </dd>
       {{/if}}
     {{/simpleDefinition}}
@@ -79,7 +79,7 @@ export const defaultXmlPartials: Record<string, string> = {
 
     {{#complexDefinition}}
       {{#if name}}
-        <dt>Název</dt>
+        <dt>{{#iflng "cs"}}Název{{lng}}Name{{/iflng}}</dt>
         <dd>
           <code>{{xml-qname name}}</code>
         </dd>
@@ -91,42 +91,41 @@ export const defaultXmlPartials: Record<string, string> = {
 {{/def}}
 
 <section>
-<h3>Přehled XML struktury</h3>
+<h3>{{#iflng "cs"}}Přehled XML struktury{{lng}}Overview of XML Structure{{/iflng}}</h3>
 <p>
-  Tato sekce popisuje XSD zachycující strukturu pro <i>{{translate structureModel.humanLabel}}</i>, jež je definováno
-  v souboru <a href="{{{structureModel.artifact.xml-schema.relativePath}}}"><code>{{structureModel.artifact.xml-schema.relativePath}}</code></a>.
+  {{#iflng "cs"}}Tato sekce popisuje XSD zachycující strukturu pro{{lng}}This section describes the XSD capturing the structure for{{/iflng}} <i>{{translate structureModel.humanLabel}}</i>, {{#iflng "cs"}}jež je definováno v souboru{{lng}}which is defined in the file{{/iflng}} <a href="{{{structureModel.artifact.xml-schema.relativePath}}}"><code>{{structureModel.artifact.xml-schema.relativePath}}</code></a>.
 </p>
 
 {{#if xmlSchema.targetNamespace}}
   <dl>
-    <dt>Definováno v namespace</dt>
-    <dd><code>{{xmlSchema.targetNamespace}}</code> (preferovaný prefix: <code>{{xmlSchema.targetNamespacePrefix}}</code>)</dd>
+    <dt>{{#iflng "cs"}}Definováno v namespace{{lng}}Defined in namespace{{/iflng}}</dt>
+    <dd><code>{{xmlSchema.targetNamespace}}</code> ({{#iflng "cs"}}preferovaný prefix{{lng}}preferred prefix{{/iflng}}: <code>{{xmlSchema.targetNamespacePrefix}}</code>)</dd>
   </dl>
 {{/if}}
 
 <section>
-<h4>Importy</h4>
+<h4>{{#iflng "cs"}}Importy{{lng}}Imports{{/iflng}}</h4>
 <p>
-  Seznam schémat, jež jsou tímto schématem importovány a použity.
+  {{#iflng "cs"}}Seznam schémat, jež jsou tímto schématem importovány a použity.{{lng}}List of schemas that are imported and used by this schema.{{/iflng}}
 </p>
 {{#if imports}}
   <table class="def">
     <thead>
       <tr>
-        <th>Prefix</th>
-        <th>Namespace</th>
-        <th>Lokace schématu</th>
-        <th>Dokumentace</th>
+        <th>{{#iflng "cs"}}Prefix{{lng}}Prefix{{/iflng}}</th>
+        <th>{{#iflng "cs"}}Namespace{{lng}}Namespace{{/iflng}}</th>
+        <th>{{#iflng "cs"}}Lokace schématu{{lng}}Schema Location{{/iflng}}</th>
+        <th>{{#iflng "cs"}}Dokumentace{{lng}}Documentation{{/iflng}}</th>
       </tr>
     </thead>
     <tbody>
       {{#each imports}}
         <tr>
           {{#if prefix}}
-            <td><code></code>{{prefix}}</code></td>
+            <td><code>{{prefix}}</code></td>
             <td><a href="{{{namespace}}}">{{namespace}}</a></td>
           {{else}}
-            <td colspan="2" style="text-align: center;"><i>Stejný namespace jako hlavní dokument</i></td>
+            <td colspan="2" style="text-align: center;"><i>{{#iflng "cs"}}Stejný namespace jako hlavní dokument{{lng}}Same namespace as the main document{{/iflng}}</i></td>
           {{/if}}
           <td><a href="{{schemaLocation}}">{{schemaLocation}}</a></td>
           <td>{{#documentation}}<a href="{{link}}">{{translate semanticModel.humanLabel}}</a>{{/documentation}}</td>
@@ -135,38 +134,36 @@ export const defaultXmlPartials: Record<string, string> = {
     </tbody>
   </table>
 {{else}}
-<i>Nic není importováno.</i>
+  <i>{{#iflng "cs"}}Nic není importováno.{{lng}}Nothing is imported.{{/iflng}}</i>
 {{/if}}
 </section>
 
 <section>
-  <h4>Kořenové entity XSD schématu</h4>
+  <h4>{{#iflng "cs"}}Kořenové entity XSD schématu{{lng}}Root Entities of the XSD Schema{{/iflng}}</h4>
   <ul>
     {{#xmlSchema.elements}}
-      <li> element <a href="{{xml-href .}}"><code>{{xml-qname name}}</code></a></li>
+      <li>{{#iflng "cs"}}element{{lng}}element{{/iflng}} <a href="{{xml-href .}}"><code>{{xml-qname name}}</code></a></li>
     {{/xmlSchema.elements}}
 
     {{#xmlSchema.types}}
-      <li> {{#if complexDefinition}}komplexní{{/if}}{{#if simpleDefinition}}jednoduchý{{/if}} typ <a href="{{xml-href .}}"><code>{{xml-qname name}}</code></a></li>
+      <li> {{#if complexDefinition}}{{#iflng "cs"}}komplexní{{lng}}complex{{/iflng}}{{/if}}{{#if simpleDefinition}}{{#iflng "cs"}}jednoduchý{{lng}}simple{{/iflng}}{{/if}} {{#iflng "cs"}}typ{{lng}}type{{/iflng}} <a href="{{xml-href .}}"><code>{{xml-qname name}}</code></a></li>
     {{/xmlSchema.types}}
   </ul>
 </section>
 
-
-
 {{#def "xml-non-root-element" "element"}}
 <section id="{{xml-id-anchor .}}">
-  <h4>Element {{^name.[0]}}{{#path}}{{#if (equals entityType "element")}}<code>&lt;{{name.[1]}}&gt;</code> / {{/if}}{{/path}}{{/name.[0]}}<code>&lt;{{name.[1]}}&gt;</code></h4>
+  <h4>{{#iflng "cs"}}Element{{lng}}Element{{/iflng}} {{^name.[0]}}{{#path}}{{#if (equals entityType "element")}}<code>&lt;{{name.[1]}}&gt;</code> / {{/if}}{{/path}}{{/name.[0]}}<code>&lt;{{name.[1]}}&gt;</code></h4>
 
   <dl>
-    <dt>Význam</dt>
+    <dt>{{#iflng "cs"}}Význam{{lng}}Meaning{{/iflng}}</dt>
     <dd>
       {{#each pathFromParentEntity}}
         <i>
-          {{#if (equals type "class")}}odkazující na třídu{{/if}}
-          {{#if (equals type "property")}}{{#if @first}}vlastnost{{else}}mající vlastnost{{/if}}{{/if}}
-          {{#if (equals type "generalization")}}{{#if @first}}z obecnější třídy{{else}}mající obecnější třídu{{/if}}{{/if}}
-          {{#if (equals type "specialization")}}{{#if @first}}z konkrétnější třídy{{else}}mající konkrétnější třídu{{/if}}{{/if}}
+          {{#if (equals type "class")}}{{#iflng "cs"}}odkazující na třídu{{lng}}referring to class{{/iflng}}{{/if}}
+          {{#if (equals type "property")}}{{#if @first}}{{#iflng "cs"}}vlastnost{{lng}}property{{/iflng}}{{else}}{{#iflng "cs"}}mající vlastnost{{lng}}having property{{/iflng}}{{/if}}{{/if}}
+          {{#if (equals type "generalization")}}{{#if @first}}{{#iflng "cs"}}z obecnější třídy{{lng}}from a more general class{{/iflng}}{{else}}{{#iflng "cs"}}mající obecnější třídu{{lng}}having a more general class{{/iflng}}{{/if}}{{/if}}
+          {{#if (equals type "specialization")}}{{#if @first}}{{#iflng "cs"}}z konkrétnější třídy{{lng}}from a more specific class{{/iflng}}{{else}}{{#iflng "cs"}}mající konkrétnější třídu{{lng}}having a more specific class{{/iflng}}{{/if}}{{/if}}
         </i>
 
         {{#with entity}}
@@ -181,23 +178,23 @@ export const defaultXmlPartials: Record<string, string> = {
     </dd>
 
     {{#effectiveCardinalityFromParentContainer}}
-      <dt>Efektivní kardinalita elementu vůči nadřazeném elementu</dt>
+      <dt>{{#iflng "cs"}}Efektivní kardinalita elementu vůči nadřazeném elementu{{lng}}Effective cardinality of the element relative to its parent element{{/iflng}}</dt>
       <dd>{{min}}..{{#if max}}{{max}}{{else}}*{{/if}}</dd>
     {{/effectiveCardinalityFromParentContainer}}
     {{#parentEntityInDocumentation}}
-      <dt>Nadřazený element</dt>
+      <dt>{{#iflng "cs"}}Nadřazený element{{lng}}Parent element{{/iflng}}</dt>
       <dd><a href="{{xml-href .}}"></a></dd>
     {{/parentEntityInDocumentation}}
 
     {{#if type}}{{#with type}}
-      <dt>Typ elementu</dt>
+      <dt>{{#iflng "cs"}}Typ elementu{{lng}}Element type{{/iflng}}</dt>
       {{xml-type}}
     {{/with}}{{else}}
-      <i>Element nemá definovaný typ.</i>
+      <i>{{#iflng "cs"}}Element nemá definovaný typ.{{lng}}The element has no defined type.{{/iflng}}</i>
     {{/if}}
 
     {{#if annotation.structureModelEntity.dataTypes.[0].example}}
-      <dt>Příklady dat</dt>
+      <dt>{{#iflng "cs"}}Příklady dat{{lng}}Data examples{{/iflng}}</dt>
       {{#each annotation.structureModelEntity.dataTypes.[0].example}}
         <dd>{{.}}</dd>
       {{/each}}
@@ -208,15 +205,15 @@ export const defaultXmlPartials: Record<string, string> = {
 
 {{#rootElements}}
 <section id="{{xml-id-anchor .}}">
-  <h4>Kořenový element <code>&lt;{{name.[1]}}&gt;</code></h4>
+  <h4>{{#iflng "cs"}}Kořenový element{{lng}}Root element{{/iflng}} <code>&lt;{{name.[1]}}&gt;</code></h4>
   <dl>
     {{xml-meaning annotation}}
 
     {{#if type}}{{#with type}}
-      <dt>Typ elementu</dt>
+      <dt>{{#iflng "cs"}}Typ elementu{{lng}}Element type{{/iflng}}</dt>
       {{xml-type}}
     {{/with}}{{else}}
-      <dd><i>Element nemá definovaný typ.</i></dd>
+      <dd><i>{{#iflng "cs"}}Element nemá definovaný typ.{{lng}}The element has no defined type.{{/iflng}}</i></dd>
     {{/if}}
   </dl>
 </section>
@@ -225,7 +222,7 @@ export const defaultXmlPartials: Record<string, string> = {
 
 {{#rootTypes}}
 <section id="{{xml-id-anchor .}}">
-  <h4>Kořenový {{#if complexDefinition}}komplexní{{/if}}{{#if simpleDefinition}}jednoduchý{{/if}} typ {{#if name}}<code>{{xml-qname name}}</code>{{else}}bez pojmenování{{/if}}</h4>
+  <h4>{{#iflng "cs"}}Kořenový{{lng}}Root{{/iflng}} {{#if complexDefinition}}{{#iflng "cs"}}komplexní{{lng}}complex{{/iflng}}{{/if}}{{#if simpleDefinition}}{{#iflng "cs"}}jednoduchý{{lng}}simple{{/iflng}}{{/if}} {{#iflng "cs"}}typ{{lng}}type{{/iflng}} {{#if name}}<code>{{xml-qname name}}</code>{{else}}{{#iflng "cs"}}bez pojmenování{{lng}}unnamed{{/iflng}}{{/if}}</h4>
   <dl>
     {{xml-meaning annotation}}
 
@@ -234,6 +231,5 @@ export const defaultXmlPartials: Record<string, string> = {
 </section>
 {{#linkedChildElements}}{{xml-non-root-element .}}{{/linkedChildElements}}
 {{/rootTypes}}
-
 </section>`,
 };

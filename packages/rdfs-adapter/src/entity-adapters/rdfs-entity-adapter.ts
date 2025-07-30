@@ -12,6 +12,12 @@ export function loadRdfsEntityToResource(
     const label = entity.property("http://www.w3.org/2000/01/rdf-schema#label");
     resource.pimHumanLabel = rdfObjectsToLanguageString(label);
 
+    if (Object.keys(resource.pimHumanLabel).length === 0) {
+        // No label, use skos:prefLabel
+        const prefLabel = entity.property(SKOS.prefLabel);
+        resource.pimHumanLabel = rdfObjectsToLanguageString(prefLabel);
+    }
+
     const comment = entity.property("http://www.w3.org/2000/01/rdf-schema#comment");
     resource.pimHumanDescription = rdfObjectsToLanguageString(comment);
 

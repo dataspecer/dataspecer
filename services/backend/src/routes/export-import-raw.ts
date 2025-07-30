@@ -5,6 +5,7 @@ import { resourceModel } from "../main.ts";
 import z from "zod";
 import { PackageImporter } from "../export-import/import.ts";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
+import { bunHotfixHttpFileName } from "./generate.ts";
 
 function getName(name: LanguageString | undefined, defaultName: string) {
   return name?.["cs"] || name?.["en"] || defaultName;
@@ -25,7 +26,7 @@ export const exportPackageResource = asyncHandler(async (request: express.Reques
 
   const resource = await resourceModel.getResource(query.iri);
   const filename = getName(resource?.userMetadata?.label, "package") + "-backup.zip";
-  response.type("application/zip").attachment(filename).send(buffer);
+  response.type("application/zip").attachment(bunHotfixHttpFileName(filename)).send(buffer);
 });
 
 export const importPackageResource = asyncHandler(async (request: express.Request, response: express.Response) => {
