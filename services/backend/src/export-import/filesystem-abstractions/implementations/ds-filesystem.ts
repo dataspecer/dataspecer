@@ -46,12 +46,6 @@ export class DSFilesystem extends FilesystemAbstractionBase {
   // Methods
   /////////////////////////////////////
 
-  async getMetadataObject(treePath: string): Promise<MetadataCacheType> {
-    const metaPrefixName = createMetaPrefixName(treePath, "json");
-    const metaContent = await this.getDatastoreContent(treePath, metaPrefixName.type, true);
-    return metaContent as unknown as MetadataCacheType;
-  }
-
   async getDatastoreContent(treePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any> {
     // TODO RadStr: As said somewhere else ... improve the PrefixName type
     //              ... already improved now fix the code

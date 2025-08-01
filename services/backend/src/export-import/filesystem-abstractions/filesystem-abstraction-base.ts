@@ -1,7 +1,7 @@
 import { GitProvider } from "../../git-providers/git-provider-api.ts";
 import { ComparisonData } from "../../routes/git-webhook-handler.ts";
 import { FilesystemNode, FilesystemMappingType, MetadataCacheType, DirectoryNode, FilesystemNodeLocation, DatastoreInfo } from "../export-import-data-api.ts";
-import { createEmptyFilesystemMapping, createFilesystemMappingRoot, FilesystemAbstraction } from "./filesystem-abstraction.ts";
+import { createEmptyFilesystemMapping, createFilesystemMappingRoot, FilesystemAbstraction, getMetaPrefixType } from "./filesystem-abstraction.ts";
 
 import path from "path";
 
@@ -96,6 +96,11 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
     delete relativeMapping[relativePath];
   }
 
+  async getMetadataObject(treePath: string): Promise<MetadataCacheType> {
+    const metaContent = await this.getDatastoreContent(treePath, getMetaPrefixType(), true);
+    return metaContent as unknown as MetadataCacheType;
+  }
+
   // TODO RadStr: This is no longer the case - iri is not the last part of the path - it is the name after the path
   /**
    * The internal mapping to set the {@link filesystemMapping} recursively with the provided {@link iri} and the {@link path}, where the iri is the last part of the path.
@@ -108,7 +113,6 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
     shouldSetMetadataCache: boolean
   ): Promise<FilesystemMappingType>
 
-  abstract getMetadataObject(treePath: string): Promise<MetadataCacheType>;
   abstract getDatastoreContent(treePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any>;
   abstract shouldIgnoreDirectory(directory: string, gitProvider: GitProvider): boolean;
   abstract shouldIgnoreFile(file: string): boolean;

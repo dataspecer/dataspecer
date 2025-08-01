@@ -216,11 +216,6 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     return filesystemMapping;
   }
 
-  async getMetadataObject(treePath: string): Promise<MetadataCacheType> {
-    const metaContent = await this.getDatastoreContent(treePath, getMetaPrefixType(), true);
-    return metaContent as unknown as MetadataCacheType;
-  }
-
   async getDatastoreContent(treePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any> {
     const node = this.globalFilesystemMapping[treePath];
     if (node === undefined) {
