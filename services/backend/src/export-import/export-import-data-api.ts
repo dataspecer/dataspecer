@@ -6,7 +6,7 @@
  */
 export type DatastoreInfo = {
   /**
-   * Is the full name. But it does not necessary have to be exist in the filesystem. It is the datastoreName.type.format
+   * Is the full name. But it does not necessary have to be exist in the filesystem. It is the name.type.format
    */
   fullName: string;
 
@@ -23,7 +23,7 @@ export type DatastoreInfo = {
   /**
    * Is the name of the datastore. It does not contain the format or the type. It is simply the name.
    */
-  datastoreName: string;
+  name: string;
 
   /**
    * Is the format of the datastore. Can be "json" or "yaml", etc., null if unknown.
@@ -51,7 +51,7 @@ export type MetadataCacheType = {
 type DatastructureToExport = {
   name: string,   // TODO RadStr: The name is the same as the key in the FilesystemMappingType
   metadataCache: MetadataCacheType,
-  datastores: DatastoreInfo[],     // TODO RadStr: Was Record<string, string> ... don't know about this, maybe change
+  datastores: DatastoreInfo[],     // Could be Record<string, string> ... however I am not sure if there can not technically exist two or more datastores of same type (TODO RadStr:)
   parent: DirectoryNode | null,
   fullTreePath: string,   // TODO RadStr: We can get it recursively, if we need to (by visiting parents and concating the names). So we don't have to store it.
   extraData?: object  // TODO RadStr: Maybe use later.

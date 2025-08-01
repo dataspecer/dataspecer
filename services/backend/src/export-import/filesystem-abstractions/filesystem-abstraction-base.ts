@@ -1,4 +1,4 @@
-import { GitProvider } from "../../git-providers.ts";
+import { GitProvider } from "../../git-providers/git-provider-api.ts";
 import { ComparisonData } from "../../routes/git-webhook-handler.ts";
 import { FilesystemNode, FilesystemMappingType, MetadataCacheType, DirectoryNode, FilesystemNodeLocation, DatastoreInfo } from "../export-import-data-api.ts";
 import { createEmptyFilesystemMapping, createFilesystemMappingRoot, FilesystemAbstraction } from "./filesystem-abstraction.ts";
@@ -42,14 +42,12 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
     return this.globalFilesystemMapping;
   }
 
-  // TODO RadStr: fullPath rather than name
-  isDirectory(name: string): boolean {
-    return this.globalFilesystemMapping[name].type === "directory";
+  isDirectory(treePath: string): boolean {
+    return this.globalFilesystemMapping[treePath].type === "directory";
   }
 
-  // TODO RadStr: Again fullPath rather than rootName
-  getDatastoreTypes(rootName: string): DatastoreInfo[] {
-    return this.globalFilesystemMapping[rootName].datastores;
+  getDatastoreTypes(treePath: string): DatastoreInfo[] {
+    return this.globalFilesystemMapping[treePath].datastores;
   }
 
   readDirectory(directory: string): FilesystemNode[] {
@@ -110,8 +108,8 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
     shouldSetMetadataCache: boolean
   ): Promise<FilesystemMappingType>
 
-  abstract getMetadataObject(rootName: string): Promise<MetadataCacheType>;
-  abstract getDatastoreContent(rootName: string, type: string): Promise<string>;
+  abstract getMetadataObject(treePath: string): Promise<MetadataCacheType>;
+  abstract getDatastoreContent(treePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any>;
   abstract shouldIgnoreDirectory(directory: string, gitProvider: GitProvider): boolean;
   abstract shouldIgnoreFile(file: string): boolean;
   abstract createFilesystemMapping(root: FilesystemNodeLocation, shouldSetMetadataCache: boolean): Promise<FilesystemMappingType>;

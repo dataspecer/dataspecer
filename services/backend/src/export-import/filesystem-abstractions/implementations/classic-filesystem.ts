@@ -1,4 +1,4 @@
-import { GitProvider } from "../../../git-providers.ts";
+import { GitProvider } from "../../../git-providers/git-provider-api.ts";
 import { ComparisonData } from "../../../routes/git-webhook-handler.ts";
 import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, MetadataCacheType, DatastoreInfo } from "../../export-import-data-api.ts";
 import { FilesystemAbstractionBase } from "../filesystem-abstraction-base.ts";
@@ -8,6 +8,8 @@ import fs from "fs";
 import * as pathLibrary from "path";
 import { isDatastoreForMetadata } from "../../export-new.ts";
 import { getDatastoreOfGivenType } from "./ds-filesystem.ts";
+import { isArtificialExportDirectory } from "../../export-by-resource-type.ts";
+import { convertDatastoreBasedOnFormat, dsPathJoin } from "../../../utils/git-utils.ts";
 
 
 export class ClassicFilesystem extends FilesystemAbstractionBase {
@@ -42,8 +44,6 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
   /////////////////////////////////////
   // Methods
   /////////////////////////////////////
-
-  // TODO RadStr: Should I name it path or directory??
   protected async createFilesystemMappingRecursive(
     mappedNodeLocation: FilesystemNodeLocation,
     filesystemMapping: FilesystemMappingType,
@@ -51,56 +51,77 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     shouldSetMetadataCache: boolean
   ) {
     const { iri } = mappedNodeLocation;
-    const fullPath = pathLibrary.join(mappedNodeLocation.fullPath, iri);
-    const fullTreePath = pathLibrary.join(mappedNodeLocation.fullTreePath, iri);
+    const fullPath: string = dsPathJoin(mappedNodeLocation.fullPath, iri);
+    let fullTreePath: string;
+    const isArtificialDirectory = isArtificialExportDirectory(iri);
+    if (isArtificialDirectory) {
+      fullTreePath = mappedNodeLocation.fullTreePath;
+    }
+    else {
+      fullTreePath = dsPathJoin(mappedNodeLocation.fullTreePath, iri);
+    }
 
     if (this.shouldIgnoreDirectory(fullTreePath, this.gitProvider)) {      // TODO RadStr: treePath or fullPath? ... I would use treePath
       return {};
     }
-
 
     const _directoryContent = fs.readdirSync(fullPath, { withFileTypes: true });
     const filesInDirectory = _directoryContent.filter(entry => !entry.isDirectory());
     const subDirectories = _directoryContent.filter(entry => entry.isDirectory());
     const directoryContentNames = filesInDirectory.map(content => content.name).filter(name => !this.shouldIgnoreFile(name));
     const { prefixGroupings, invalidNames } = groupByPrefixDSSpecific(fullPath, ...directoryContentNames);
-    filesystemMapping[iri] = {
-      name: iri,
-      type: "directory",
-      metadataCache: {},
-      datastores: [],
-      content: {},
-      parent: parentDirectoryNode,
-      fullTreePath: fullTreePath,
-    };
 
-    const parentDirectoryNodeForRecursion = filesystemMapping[iri] as DirectoryNode;
-    const directoryContentContainer = parentDirectoryNodeForRecursion.content;
 
-    for (const subDirectory of subDirectories) {
-      const newDirectoryLocation: FilesystemNodeLocation = {
-        iri: subDirectory.name,
-        fullPath: fullPath,
+    let parentDirectoryNodeForRecursion: DirectoryNode;
+    let directoryContentContainer: FilesystemMappingType;
+
+    if (!isArtificialDirectory) {
+      const directoryNodeFilesystemLocation: FilesystemNodeLocation = {
+        iri,
+        fullPath,
+        fullTreePath,
+      };
+
+      const directoryNode: DirectoryNode = {
+        name: iri,
+        type: "directory",
+        metadataCache: {},
+        datastores: [],
+        content: {},
+        parent: parentDirectoryNode,
         fullTreePath: fullTreePath,
       };
 
-      await this.createFilesystemMappingRecursive(newDirectoryLocation, directoryContentContainer, parentDirectoryNodeForRecursion, shouldSetMetadataCache);
+      parentDirectoryNodeForRecursion = directoryNode;
+      directoryContentContainer = parentDirectoryNodeForRecursion.content;
+
+      // TODO RadStr: It was not here previously however I think that it should be. Because it is missing in the global mapping otherwise
+      this.setValueInFilesystemMapping(directoryNodeFilesystemLocation, filesystemMapping, directoryNode);
     }
+    else {
+      if (parentDirectoryNode === null) {
+        throw new Error("Expected parent to be directory node, however it is null"); // TODO RadStr: It could be parentDirectoryNode!
+      }
+
+      parentDirectoryNodeForRecursion = parentDirectoryNode;
+      directoryContentContainer = filesystemMapping;
+    }
+
 
     if (invalidNames.length > 0) {
       // TODO RadStr: ... we need to process them anyways, since they might be valid files from git, so the error + TODO node is no longer valid
       for (const invalidName of invalidNames) {
         const newFileSystemNodeLocation: FilesystemNodeLocation = {
           iri: invalidName,
-          fullPath: pathLibrary.join(fullPath, invalidName),
-          fullTreePath: pathLibrary.join(fullTreePath, invalidName),
+          fullPath: dsPathJoin(fullPath, invalidName),
+          fullTreePath: dsPathJoin(fullTreePath, invalidName),
         };
 
         const prefixName: DatastoreInfo = {
           fullName: invalidName,
           afterPrefix: invalidName,
           type: invalidName,
-          datastoreName: invalidName,
+          name: invalidName,
           format: null,
           fullPath: newFileSystemNodeLocation.fullPath
         };
@@ -114,6 +135,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
           parent: parentDirectoryNodeForRecursion,
           fullTreePath: newFileSystemNodeLocation.fullTreePath,
         };
+
         this.setValueInFilesystemMapping(newFileSystemNodeLocation, directoryContentContainer, newSingleNode);
       }
 
@@ -131,63 +153,89 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
       // });
 
       if (prefix === "") {    // Directory data
-        filesystemMapping[iri].datastores = valuesForPrefix;
-        const newFullPath = fullPath + pathLibrary.sep;    // We have to do it explictly, if we use path.join on empty string, it won't do anything with the result.
-        setMetadataCache(filesystemMapping[iri], newFullPath, shouldSetMetadataCache);
+        const relevantDirectoryNode = this.globalFilesystemMapping[fullTreePath];
+        if (relevantDirectoryNode !== undefined) {
+          if (shouldSetMetadataCache && Object.values(relevantDirectoryNode.metadataCache).length === 0) {
+            parentDirectoryNodeForRecursion.datastores = parentDirectoryNodeForRecursion.datastores.concat(valuesForPrefix);
+            const newFullPath = fullPath + "/";    // We have to do it explictly, if we use path.join on empty string, it won't do anything with the result.
+            if (getMetadataDatastoreFile(parentDirectoryNodeForRecursion.datastores) !== undefined) {
+              setMetadataCache(parentDirectoryNodeForRecursion, newFullPath, shouldSetMetadataCache);
+            }
+          }
+          else {
+            throw new Error ("Probably implementation error. Metadata for directory have been already set");
+          }
+        }
+        else {
+          throw new Error ("Probably implementation error. Processing metadata for directory, however we have not yet seen the directory");
+        }
         continue;
       }
 
-      const newNodeLocation: FilesystemNodeLocation = {
+      const newFullPath = dsPathJoin(fullPath, prefix);
+      const newFullTreePath = dsPathJoin(fullTreePath, prefix);
+      const fileNodeLocation: FilesystemNodeLocation = {
         iri: prefix,
-        fullPath: pathLibrary.join(fullPath, prefix),
-        fullTreePath: pathLibrary.join(fullTreePath, prefix),
+        fullPath: newFullPath,
+        fullTreePath: newFullTreePath,
       };
 
-      const fileNode: FilesystemNode = {
-        name: prefix,
-        type: "file",
-        metadataCache: {},
-        datastores: valuesForPrefix,
-        parent: parentDirectoryNodeForRecursion,
-        fullTreePath: newNodeLocation.fullTreePath,
-      };
+      let fileNode: FilesystemNode | undefined = this.globalFilesystemMapping[newFullTreePath];
+      if (fileNode === undefined) {
+        fileNode = {
+          name: prefix,
+          type: "file",
+          metadataCache: {},
+          datastores: valuesForPrefix,
+          parent: parentDirectoryNodeForRecursion,
+          fullTreePath: fileNodeLocation.fullTreePath,
+        };
+        this.setValueInFilesystemMapping(fileNodeLocation, directoryContentContainer, fileNode);
+      }
+      else {
+        // TODO RadStr: There should be no duplicate - however I don't think that there is a need for check
+        fileNode.datastores = fileNode.datastores.concat(valuesForPrefix);
+      }
 
-      setMetadataCache(fileNode, newNodeLocation.fullPath, shouldSetMetadataCache);
-      this.setValueInFilesystemMapping(newNodeLocation, directoryContentContainer, fileNode);
+      if (getMetadataDatastoreFile(fileNode.datastores) !== undefined) {
+        setMetadataCache(fileNode, fileNodeLocation.fullPath, shouldSetMetadataCache);
+      }
     }
 
-    // for (const subDirectory of subDirectories) {
-    //   const newDirectoryLocation: FilesystemNodeLocation = {
-    //     iri: subDirectory.name,
-    //     fullPath: fullPath,
-    //     fullTreePath: fullTreePath,
-    //   };
 
-    //   await this.createFilesystemMappingRecursive(newDirectoryLocation, directoryContentContainer, parentDirectoryNodeForRecursion, shouldSetMetadataCache);
-    // }
+    for (const subDirectory of subDirectories) {
+      const newDirectoryLocation: FilesystemNodeLocation = {
+        iri: subDirectory.name,
+        fullPath: fullPath,
+        fullTreePath: fullTreePath,
+      };
+
+      await this.createFilesystemMappingRecursive(newDirectoryLocation, directoryContentContainer, parentDirectoryNodeForRecursion, shouldSetMetadataCache);
+    }
 
     return filesystemMapping;
   }
 
-  async getMetadataObject(rootName: string): Promise<MetadataCacheType> {
-    const metaContent = await this.getDatastoreContent(rootName, getMetaPrefixType());
-    return JSON.parse(metaContent);
+  async getMetadataObject(treePath: string): Promise<MetadataCacheType> {
+    const metaContent = await this.getDatastoreContent(treePath, getMetaPrefixType(), true);
+    return metaContent as unknown as MetadataCacheType;
   }
-  async getDatastoreContent(rootName: string, type: string): Promise<string> {
-    const node = this.globalFilesystemMapping[rootName];
+
+  async getDatastoreContent(treePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any> {
+    const node = this.globalFilesystemMapping[treePath];
     if (node === undefined) {
-      throw new Error(`Given datastore in ${rootName} of type ${type} is not present in abstracted filesystem.`);    // TODO RadStr: Better error handling
+      throw new Error(`Given datastore in ${treePath} of type ${type} is not present in abstracted filesystem.`);    // TODO RadStr: Better error handling
     }
     const datastore = getDatastoreOfGivenType(node, type);
 
     if (datastore === undefined) {
-      throw new Error(`Given datastore in ${rootName} of type ${type} is not present in abstracted filesystem.`);    // TODO RadStr: Better error handling
+      throw new Error(`Given datastore in ${treePath} of type ${type} is not present in abstracted filesystem.`);    // TODO RadStr: Better error handling
     }
 
-    const pathToDatastore = rootName + datastore.afterPrefix;     // TODO RadStr: Just store the path inside the datastore, I think that it will be better
+    const pathToDatastore = datastore.fullPath;
 
     const content = fs.readFileSync(pathToDatastore, "utf-8");
-    return content;
+    return convertDatastoreBasedOnFormat(content, datastore.format, shouldConvertToDatastoreFormat);
   }
 
   shouldIgnoreDirectory(directory: string, gitProvider: GitProvider): boolean {
@@ -208,14 +256,13 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     throw new Error("Method not implemented.");
   }
   async changeDatastore(otherFilesystem: FilesystemAbstraction, changed: ComparisonData, shouldUpdateMetadataCache: boolean): Promise<boolean> {
-    const newContent = await otherFilesystem.getDatastoreContent(changed.newVersion!.name, changed.affectedDataStore.type);
+    const newContent = await otherFilesystem.getDatastoreContent(changed.newVersion!.name, changed.affectedDataStore.type, false);
     return this.updateDatastore(changed.oldVersion!, changed.affectedDataStore.type, newContent);
   }
   async removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<boolean> {
     const relevantDatastore = getDatastoreOfGivenType(filesystemNode, datastoreType)!;
     // TODO RadStr: ... Looking at it, I think that this method can be implemented only once in base case, if we use the instance methods for removal of datastores/resources
-                                                // TODO RadStr: Use the fullPath that is what it is for here
-    fs.rmSync(relevantDatastore.fullName);      // TODO RadStr: Here should be probably the identifier or something
+    fs.rmSync(relevantDatastore.fullPath);
     removeDatastoreFromNode(filesystemNode, datastoreType);
 
     if (shouldRemoveFileWhenNoDatastores) {
@@ -234,8 +281,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
   }
   async updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, content: string): Promise<boolean> {
     const relevantDatastore = getDatastoreOfGivenType(filesystemNode, datastoreType)!;
-    const pathToDatastore = filesystemNode.fullTreePath + relevantDatastore.afterPrefix;     // TODO RadStr: Just store the path inside the datastore, I think that it will be better
-    fs.writeFileSync(pathToDatastore, content);
+    fs.writeFileSync(relevantDatastore.fullPath, content);
     return true;          // TODO RadStr: Again returning true only
   }
   async createDatastore(otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean> {
@@ -267,6 +313,10 @@ function constructMetadataCache(metadataFilePath: string, oldCache?: object) {
   };
 }
 
+
+/**
+ * @deprecated Probably once again deprecated - use the filesystem instead
+ */
 function readMetadataFile(metadataFilePath: string) {
   const metadata = JSON.parse(fs.readFileSync(metadataFilePath, "utf-8"));
   return metadata;
@@ -387,9 +437,9 @@ function groupByPrefix(pathToDirectory: string, prefixSeparator: string, postfix
         fullName: name,
         afterPrefix: `${prefixSeparator}${type}${prefixSeparator}${format}`,
         type,
-        datastoreName: basename,
+        name: basename,
         format,
-        fullPath: pathLibrary.join(pathToDirectory, name),
+        fullPath: dsPathJoin(pathToDirectory, name),
       };
       prefixGroupings[basename].push(prefixName);
     });

@@ -1,6 +1,6 @@
 // TODO RadStr: Think of better names and the name of the property and of type should be aligned
 
-import { GitProvider } from "../../git-providers.ts";
+import { GitProvider } from "../../git-providers/git-provider-api.ts";
 import { ComparisonData } from "../../routes/git-webhook-handler.ts";
 import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, MetadataCacheType, DatastoreInfo } from "../export-import-data-api.ts";
 import { ClassicFilesystem } from "./implementations/classic-filesystem.ts";
@@ -54,33 +54,36 @@ export interface FilesystemAbstraction {
    */
   convertFilesystemAbstractionObjectNamesToIris(filesystemAbstractionObject: FilesystemMappingType): FilesystemMappingType;
 
+  // TODO RadStr: still not sure if I should use treePath or fullPath from the DatastoreInfo
   /**
    * TODO RadStr: I am not sure what is the input for this even - maybe it even isn't part of interface, since this maybe won't be FS speicfic
    *              ... yeah it probably should be here, I have the names inside the data structure but here I want to get the data from filesystem based on the paths stored in the DataStructure
-   * TODO RadStr: Not sure about using the "rootName" ... maybe use resourceName instead? or something nad the same for others
+   * TODO RadStr: Not sure about using the "treePath" ... maybe use resourceName instead? or something nad the same for others
    * TODO RadStr: Not sure abotu the returned type.
    * @deprecated Probably deprecated, because we will use {@link getDatastoreContent} instead. or we can just call the getDatastore here instead and be done with it.
-   * @param rootName is the path the resource. However the name contains the basis in case of filesystem (it does not contain the .meta suffix). In case of DS filesystem it is the IRI of resource.
-   * @returns The metadata for given {@link rootName}
+   * @param treePath is the path the resource. However the name contains the basis in case of filesystem (it does not contain the .meta suffix). In case of DS filesystem it is the IRI of resource.
+   * @returns The metadata for given {@link treePath}
    */
-  getMetadataObject(rootName: string): Promise<MetadataCacheType>;
+  getMetadataObject(treePath: string): Promise<MetadataCacheType>;
 
   /**
    *
-   * @param rootName is path to the directory in which we can find the {@link file}. In case of filesystem it is actual path, in case of DS FileSystem it is the resource IRI.
+   * @param treePath is path to the directory in which we can find the {@link file}. In case of filesystem it is actual path, in case of DS FileSystem it is the resource IRI.
    *  It is the full path to the file, but without the possible suffix (for example .model.json if we are on filesystem)
    * @param type is the type of the datastore to get
-   * @returns Returns the content of datastore (file) as string. In case of filesystem it is actual file. In case of DS filesystem too, but we call it datastore.
+   * @returns Returns the content of datastore (file) as string if {@link shouldConvertToDatastoreFormat} is false,
+   *  otherwise it tries to return object (for example if the datastore has .json or .yaml extension).
+   *  In case of filesystem it is actual file. In case of DS filesystem too, but we call it datastore.
    */
-  getDatastoreContent(rootName: string, type: string): Promise<string>;
+  getDatastoreContent(treePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any>;
 
   /**
    * TODO RadStr: Similar TODOs as in {@link getMetadataObject}
    * TODO RadStr: Return the content or the names? Probably content - I have the names isnide the object ... so yeah it probably should be inisde this IFace
-   * @param rootName is the path the resource. However the name contains the basis in case of filesystem (it does not contain the .meta suffix). In case of DS filesystem it is the IRI of resource.
-   * @returns The datastores for given {@link rootName}. To get the actual content of the datastores use the {@link getDatastoreContent}.
+   * @param treePath is the path the resource. However the name contains the basis in case of filesystem (it does not contain the .meta suffix). In case of DS filesystem it is the IRI of resource.
+   * @returns The datastores for given {@link treePath}. To get the actual content of the datastores use the {@link getDatastoreContent}.
    */
-  getDatastoreTypes(rootName: string): DatastoreInfo[];
+  getDatastoreTypes(treePath: string): DatastoreInfo[];
 
   /**
    * @param directory is the name of the directory
@@ -243,7 +246,7 @@ export function createMetaPrefixName(basename: string, format: string): Datastor
     fullName: `${basename}${afterPrefix}`,
     afterPrefix,
     type: getMetaPrefixType(),
-    datastoreName: basename,
+    name: basename,
     format,
     fullPath: basename,     // TODO RadStr: ??? For DS filesystem ok, for classic fileystem not
   };

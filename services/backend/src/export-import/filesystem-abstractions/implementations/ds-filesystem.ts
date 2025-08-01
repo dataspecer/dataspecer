@@ -10,7 +10,8 @@ import { isDatastoreForMetadata } from "../../export-new.ts";
 import { resourceModel } from "../../../main.ts";
 import { deleteBlob, deleteResource, updateBlob } from "../../../routes/resource.ts";
 import { FilesystemAbstractionBase } from "../filesystem-abstraction-base.ts";
-import { GitProvider } from "../../../git-providers.ts";
+import { GitProvider } from "../../../git-providers/git-provider-api.ts";
+import { convertDatastoreBasedOnFormat } from "../../../utils/git-utils.ts";
 
 
 
@@ -45,30 +46,33 @@ export class DSFilesystem extends FilesystemAbstractionBase {
   // Methods
   /////////////////////////////////////
 
-  async getMetadataObject(rootName: string): Promise<MetadataCacheType> {
-    const metaPrefixName = createMetaPrefixName(rootName, "json");
-    return JSON.parse(await this.getDatastoreContent(rootName, metaPrefixName.type));
+  async getMetadataObject(treePath: string): Promise<MetadataCacheType> {
+    const metaPrefixName = createMetaPrefixName(treePath, "json");
+    const metaContent = await this.getDatastoreContent(treePath, metaPrefixName.type, true);
+    return metaContent as unknown as MetadataCacheType;
   }
 
-  async getDatastoreContent(rootName: string, type: string): Promise<string> {
+  async getDatastoreContent(treePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any> {
     // TODO RadStr: As said somewhere else ... improve the PrefixName type
     //              ... already improved now fix the code
-    const relevantDatastore = getDatastoreOfGivenType(this.globalFilesystemMapping[rootName], type);
+    const relevantDatastore = getDatastoreOfGivenType(this.globalFilesystemMapping[treePath], type);
     if (relevantDatastore === undefined) {
       throw new Error(`Datastore with given type (${type}), does not exist`);     // TODO RadStr: Better error handling
     }
+    const datastoreFormat = relevantDatastore.format;
     if (isDatastoreForMetadata(type)) {
-      const resource = (await this.resourceModel.getResource(rootName));
+      const resource = (await this.resourceModel.getResource(relevantDatastore.fullPath));
       if (resource === null) {
         throw new Error("The resource is not present in database, therefore we can not extract the metadata file");
       }
 
       const metadata = this.constructMetadataFromResource(resource);
-      return JSON.stringify(metadata);
+      const metadataAsString: string = JSON.stringify(metadata);
+      return convertDatastoreBasedOnFormat(metadataAsString, datastoreFormat, shouldConvertToDatastoreFormat);
     }
     else {
-      const data = await this.resourceModel.storeModel.getModelStore(relevantDatastore.fullName.substring(0, relevantDatastore.fullName.indexOf("."))).getJson();
-      return data;
+      const data = await this.resourceModel.storeModel.getModelStore(relevantDatastore.fullPath).getString();
+      return convertDatastoreBasedOnFormat(data, datastoreFormat, shouldConvertToDatastoreFormat);
     }
   }
 
@@ -189,7 +193,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
         fullName: `${storeId}${afterPrefix}`,
         afterPrefix, // TODO RadStr: .json ... well probably not? or yes?
         type: blobName,
-        datastoreName: storeId,
+        name: storeId,
         format,
         fullPath: storeId,
       }
@@ -224,7 +228,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
       throw new Error(`Datastore with given type (${changed.affectedDataStore.type}), does not exist`);     // TODO RadStr: Better error handling
     }
 
-    const newContent = await otherFilesystem.getDatastoreContent(changed.newVersion!.fullTreePath, changed.affectedDataStore.type);
+    const newContent = await otherFilesystem.getDatastoreContent(changed.newVersion!.fullTreePath, changed.affectedDataStore.type, false);
     await this.updateDatastore(changed.oldVersion!, changed.affectedDataStore.type, newContent);
 
     return true;      // TODO RadStr: ... Always returns true
