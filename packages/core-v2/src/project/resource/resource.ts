@@ -26,6 +26,8 @@ export interface BaseResource {
         modificationDate?: Date;
         creationDate?: Date;
     };
+
+    linkedGitRepositoryURL: string;
 }
 
 export interface Package extends BaseResource {

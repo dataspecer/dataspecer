@@ -75,6 +75,7 @@ async function serializePackageModel(packageModel: PackageModel): Promise<Packag
     types: packageModel.types,
     userMetadata: packageModel.getUserMetadata() || {},
     metadata: null as any,
+    linkedGitRepositoryURL: "",      // TODO RadStr: I don't know about this, probably should be specified
 
     subResources
   }
