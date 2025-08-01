@@ -14,9 +14,9 @@ export const authJSRedirectCallback = asyncHandler(async (request: express.Reque
   });
   const query = querySchema.parse(request.query);
 
-  // If we didn't come from classic flow (there is no callerURL or it was invalid), we just redirect to default
   if (isFrontendAllowedForAuthentication(query.callerURL)) {
     return response.redirect(query.callerURL);
   }
+  // If we didn't come from classic flow (there is no callerURL or it was invalid), we just redirect to default
   return response.redirect("http://localhost:5175");    // TODO RadStr: Instead of localhost:5175 use the provided (when starting up the server) allowed frontends
 });

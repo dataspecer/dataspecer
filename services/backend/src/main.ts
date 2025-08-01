@@ -40,9 +40,10 @@ import { corsOriginHandler } from "./utils/cors-related.ts";
 import { currentSession } from "./authorization/auth-session.ts";
 import { tryCommitToGitRepo } from "./routes/git-test.ts";
 import { createRandomWebook, handleWebhook } from "./routes/git-webhook-handler.ts";
-import { createLinkBetweenPackageAndGit, createPackageFromExistingGitRepository, removeGitRepository } from "./routes/create-package-git-link.ts";
+import { createLinkBetweenPackageAndGit, createPackageFromExistingGitRepository } from "./routes/create-package-git-link.ts";
 import { commitPackageToGitHandler } from "./routes/commit-package-to-git.ts";
 import { redirectToRemoteGitRepository } from "./routes/redirect-to-remote-git-repository.ts";
+import { removeGitRepository } from "./routes/remove-git-repository.ts";
 
 // Create application models
 

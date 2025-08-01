@@ -3,6 +3,10 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import { resourceModel } from "../main.ts";
 import express from "express";
 
+
+/**
+ * @deprecated It works, however we have the git url available in frontend, therefore this is extra redirect, which we don't need
+ */
 export const redirectToRemoteGitRepository = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
     iri: z.string().min(1),
