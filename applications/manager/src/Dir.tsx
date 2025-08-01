@@ -105,6 +105,12 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
           <span className="truncate">
             {resource.iri}
           </span>
+          <div className="truncate px-8">
+            { /* TODO RadStr: Make it span or not? */ }
+            { /* TODO RadStr: Use some invalid characters as a default - but maybe {} are invalid URLs */ }
+            { /* TODO RadStr: Don't forget to set to {} or other default after removing the link, right now I use "", probably should always use "" */}
+            { (resource.linkedGitRepositoryURL === "{}" || resource.linkedGitRepositoryURL === "") ? null : <a href={resource.linkedGitRepositoryURL} className="text-green-400" >GIT</a> }
+          </div>
         </div>
       </div>
 
