@@ -102,7 +102,7 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
           <span className="truncate w-[6cm]">
             {getValidTime(resource.metadata?.modificationDate) && t("changed", {val: new Date(resource.metadata?.modificationDate!)})}
           </span>
-          <span className="truncate">
+          <span className="truncate max-w-[12cm]">
             {resource.iri}
           </span>
           <div className="truncate px-8">
@@ -216,10 +216,10 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/git/redirect-to-remote-git-repository?iri=" + encodeURIComponent(iri)}><FolderDown className="mr-2 h-4 w-4" />Visit the remote repository</a></DropdownMenuItem>}
-          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal)}><Pencil className="mr-2 h-4 w-4" />Git branch visualization</DropdownMenuItem>}
+          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, [resource])}><Pencil className="mr-2 h-4 w-4" />Git branch visualization</DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={async () => linkToGitRepoOnClickHandler(openModal, iri)}><Pencil className="mr-2 h-4 w-4" />Link to GitHub REPO </DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={async () => commitToDigDialogOnClickHandler(openModal, iri)}><FolderDown className="mr-2 h-4 w-4" />Commit </DropdownMenuItem>}
-          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/remove-git-repository?iri=" + encodeURIComponent(iri)}><FolderDown className="mr-2 h-4 w-4" />REMOVE GITHUB REPO</a></DropdownMenuItem>}
+          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/git/remove-git-repository?iri=" + encodeURIComponent(iri)}><FolderDown className="mr-2 h-4 w-4" />REMOVE GITHUB REPO</a></DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/experimental/output.zip?iri=" + encodeURIComponent(iri)}><FolderDown className="mr-2 h-4 w-4" /> {t("export-zip")}</a></DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a target="_blank" href={import.meta.env.VITE_BACKEND + `/preview/${i18n.language}/index.html?iri=` + encodeURIComponent(iri)}><FileText className="mr-2 h-4 w-4" /> {t("show-documentation")} ({i18n.language})</a></DropdownMenuItem>}
           {i18n.language !== "en" && resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a target="_blank" href={import.meta.env.VITE_BACKEND + `/preview/en/index.html?iri=` + encodeURIComponent(iri)}><FileText className="mr-2 h-4 w-4" /> {t("show-documentation")} (en)</a></DropdownMenuItem>}

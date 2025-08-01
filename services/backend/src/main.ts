@@ -44,6 +44,7 @@ import { createLinkBetweenPackageAndGit, createPackageFromExistingGitRepository 
 import { commitPackageToGitHandler } from "./routes/commit-package-to-git.ts";
 import { redirectToRemoteGitRepository } from "./routes/redirect-to-remote-git-repository.ts";
 import { removeGitRepository } from "./routes/remove-git-repository.ts";
+import { fetchGitCommitHistory } from "./routes/fetch-git-commit-history.ts";
 
 // Create application models
 
@@ -188,19 +189,19 @@ if (configuration.staticFilesPath) {
   application.get(basename + "**", useStaticSpaHandler(configuration.staticFilesPath + ""));
 }
 
-// Test GIT ... TODO RadStr: Put everything under /git/...
-
-application.get(apiBasename + "/git", currentSession, tryCommitToGitRepo);
+// Test GIT
+application.get(apiBasename + "/git/deprecated-test", currentSession, tryCommitToGitRepo);
 // TODO RadStr: Once I update the URL don't forget to update the ngrok URL in git providers to the same URL suffix
-application.post(apiBasename + "/webhook-test", currentSession, handleWebhook);
-application.post(apiBasename + "/webhook-test2", currentSession, handleWebhook);
-application.get(apiBasename + "/webhook-test", currentSession, createRandomWebook);
-application.get(apiBasename + "/link-package-to-git", currentSession, createLinkBetweenPackageAndGit);
-application.get(apiBasename + "/commit-package-to-git", currentSession, commitPackageToGitHandler);
-application.get(apiBasename + "/remove-git-repository", currentSession, removeGitRepository);
-application.get(apiBasename + "/create-package-from-existing-git-repository", currentSession, createPackageFromExistingGitRepository);
-application.get(apiBasename + "/test-docker", currentSession, exportPackageResource);
+application.post(apiBasename + "/git/webhook-test", currentSession, handleWebhook);
+application.post(apiBasename + "/git/webhook-test2", currentSession, handleWebhook);
+application.get(apiBasename + "/git/webhook-test", currentSession, createRandomWebook);
+application.get(apiBasename + "/git/link-package-to-git", currentSession, createLinkBetweenPackageAndGit);
+application.get(apiBasename + "/git/commit-package-to-git", currentSession, commitPackageToGitHandler);
+application.get(apiBasename + "/git/remove-git-repository", currentSession, removeGitRepository);
+application.get(apiBasename + "/git/create-package-from-existing-git-repository", currentSession, createPackageFromExistingGitRepository);
+application.get(apiBasename + "/git/test-docker", currentSession, exportPackageResource);
 application.get(apiBasename + "/git/redirect-to-remote-git-repository", currentSession, redirectToRemoteGitRepository);
+application.get(apiBasename + "/git/fetch-git-commit-history", currentSession, fetchGitCommitHistory);
 
 // TODO RadStr: Have to await, because of the generate-specification
 await (async () => {
@@ -242,3 +243,8 @@ await (async () => {
     });
   }
 })();
+
+
+
+// TODO RadStr: Just test - can safely remove
+// await testMappingMethod();

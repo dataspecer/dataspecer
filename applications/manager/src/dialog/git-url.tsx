@@ -142,7 +142,7 @@ export const LinkToGitRepoDialog = (props: {iri: string}) => {
     onClick={async () => {
       const result = await openModal(GitDialog, {input: iri, type: "create-new-repository-and-commit"});
       if (result) {
-        const url = import.meta.env.VITE_BACKEND + "/link-package-to-git?iri=" + encodeURIComponent(iri) +
+        const url = import.meta.env.VITE_BACKEND + "/git/link-package-to-git?iri=" + encodeURIComponent(iri) +
                                                   "&givenRepositoryName=" + encodeURIComponent(result.inputByUser) +
                                                   "&givenUserName=" + encodeURIComponent(result.user ?? "") +
                                                   "&gitProviderURL=" + encodeURIComponent(result.gitProvider ?? "") +
@@ -158,7 +158,7 @@ export const LinkToGitRepoDialog = (props: {iri: string}) => {
 export const linkToGitRepoOnClickHandler = async (openModal: OpenBetterModal, iri: string) => {
   const result = await openModal(GitDialog, {input: iri, type: "create-new-repository-and-commit"});
   if (result) {
-    const url = import.meta.env.VITE_BACKEND + "/link-package-to-git?iri=" + encodeURIComponent(iri) +
+    const url = import.meta.env.VITE_BACKEND + "/git/link-package-to-git?iri=" + encodeURIComponent(iri) +
                                               "&givenRepositoryName=" + encodeURIComponent(result.inputByUser) +
                                               "&givenUserName=" + encodeURIComponent(result.user ?? "") +
                                               "&gitProviderURL=" + encodeURIComponent(result.gitProvider ?? "") +
@@ -195,7 +195,7 @@ export const CommitToGitDialog = (props: {iri: string}) => {
     onClick={async () => {
       const result = await openModal(GitDialog, {input: iri, type: "commit"});
       if (result) {
-        const url = import.meta.env.VITE_BACKEND + "/commit-package-to-git?iri=" + encodeURIComponent(iri) +
+        const url = import.meta.env.VITE_BACKEND + "/git/commit-package-to-git?iri=" + encodeURIComponent(iri) +
                                                   "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "");
         fetch(url);
       }
@@ -207,7 +207,7 @@ export const CommitToGitDialog = (props: {iri: string}) => {
 export const commitToDigDialogOnClickHandler = async (openModal: OpenBetterModal, iri: string) => {
   const result = await openModal(GitDialog, {input: iri, type: "commit"});
   if (result) {
-    const url = import.meta.env.VITE_BACKEND + "/commit-package-to-git?iri=" + encodeURIComponent(iri) +
+    const url = import.meta.env.VITE_BACKEND + "/git/commit-package-to-git?iri=" + encodeURIComponent(iri) +
                                               "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "");
 
     fetch(
