@@ -1,5 +1,4 @@
 import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
-import { ZipStreamDictionary } from "../generate/zip-stream-dictionary.ts";
 import { BaseResource, ResourceModel } from "../models/resource-model.ts";
 import { currentVersion } from "../tools/migrations/index.ts";
 import configuration from "../configuration.ts";
@@ -11,6 +10,7 @@ import fs from "fs";
 import { GitHubProvider } from "../git-providers/git-provider-instances/github.ts";
 import { stringifyDatastoreBasedOnFormat } from "../utils/git-utils.ts";
 import { AllowedExportResults, AvailableExports, ExportActionForFilesystem, ExportActionForZip, ExportActions } from "./export-actions.ts";
+import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
 
 
 // TODO RadStr: Put this method into some separate file

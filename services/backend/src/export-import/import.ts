@@ -2,6 +2,7 @@ import JSZip from "jszip";
 import { ResourceModel } from "../models/resource-model.ts";
 import { isArtificialExportDirectory } from "./export-by-resource-type.ts";
 
+
 const FILE_EXTENSION_REGEX = /^\.([-0-9a-zA-Z]+)\.json$/;
 const RESOURCE_IN_PACKAGE_REGEX = /^([-0-9a-zA-Z]+)\.meta\.json$/;
 const PACKAGES_IN_PACKAGE_REGEX = /^([-0-9a-zA-Z]+\/)\.meta\.json/;

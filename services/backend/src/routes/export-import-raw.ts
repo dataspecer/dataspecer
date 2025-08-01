@@ -1,12 +1,10 @@
 import express from "express";
 import { asyncHandler } from "../utils/async-handler.ts";
-import { PackageExporter } from "../export-import/export.ts";
 import { resourceModel } from "../main.ts";
 import z from "zod";
 import { PackageImporter } from "../export-import/import.ts";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
-import { PackageExporter } from "../export-import/export.ts";
 import { AvailableFilesystems } from "../export-import/filesystem-abstractions/filesystem-abstraction.ts";
 import { AvailableExports } from "../export-import/export-actions.ts";
 

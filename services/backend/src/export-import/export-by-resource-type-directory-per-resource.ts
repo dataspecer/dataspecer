@@ -1,5 +1,4 @@
 import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
-import { ZipStreamDictionary } from "../generate/zip-stream-dictionary.ts";
 import { BaseResource, ResourceModel } from "../models/resource-model.ts";
 import { v4 as uuidv4 } from 'uuid';
 import { currentVersion } from "../tools/migrations/index.ts";
@@ -9,6 +8,7 @@ import { createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaPr
 
 import path from "path";
 import { ResourceTypes, resourceTypetoTypeDirectoryMapping } from "./export-by-resource-type.ts";
+import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
 
 
 // TODO RadStr: Put this method into some separate file
