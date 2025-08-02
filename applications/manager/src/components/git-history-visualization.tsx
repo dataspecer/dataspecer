@@ -54,19 +54,38 @@ export const  GitHistoryVisualization = ({ isOpen, resolve }: BetterModalProps<n
                 },
               });
 
-              const develop = master.branch("develop");
-              develop.commit("Add TypeScript");
+              const branches: {develops: any[], aFeatures: any[]} = { develops: [], aFeatures: [] };
+              for(let i = 0; i < 3; i++) {
+                const develop = master.branch(`develop${i}`);
+                develop.commit("Add TypeScript");
 
-              const aFeature = develop.branch("a-feature");
-              aFeature
-                .commit("Make it work")
-                .commit("Make it right")
-                .commit("Make it fast");
+                const aFeature = develop.branch(`a-feature${i}`);
+                aFeature
+                  .commit("Make it work")
+                  .commit("Make it right")
+                  .commit("Make it fast");
 
-              develop.merge(aFeature);
-              develop.commit("Prepare v1");
+                develop.merge(aFeature);
+                develop.commit("Prepare v1");
 
-              master.merge(develop).tag("v1.0.0");
+
+                master.merge(develop).tag(`v${i}.0.0`);
+                master.commit("Commit to not create new branch from merge commit");
+
+                branches.develops.push(develop);
+                branches.aFeatures.push(aFeature);
+
+                // develop.delete();
+                // aFeature.delete();
+              }
+
+              // The placement of delete does not matter, however for some reason it connects the unrelated lines and shows everything in one line - so the delete is useless
+              for (const bd of branches.develops) {
+                bd.delete();
+              }
+              for (const ba of branches.aFeatures) {
+                ba.delete();
+              }
             }}
           </Gitgraph>
         </ModalBody>
