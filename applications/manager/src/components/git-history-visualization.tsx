@@ -245,8 +245,46 @@ const createGitGraph = (withoutAuthor: any, fetchedGitBranches: GitHistory) => {
           const mergesToRender: Record<string, {from: BranchHistory, to: BranchHistory}> = {};    // The merge commit hash to the branches which are part of the merge
           const commitsPinnedToBranch: Record<string, string> = {};    // The commit hash mapped to the branch it has to be on
           const branchesOrderedByDate: string[] = [fetchedGitBranches.defaultBranch];
+          const processedBranches: Record<string, true> = { [fetchedGitBranches.defaultBranch]: true };
           for (const commit of commitsFromOldestToNewest) {
             const parents = commit.parents.split(" ");
+
+            const branchesOnWhichCommitExists = commitToBranchesMap[commit.hash];
+            for (const branch of branchesOnWhichCommitExists) {
+              if (!processedBranches[branch]) {
+                processedBranches[branch] = true;
+                branchesOrderedByDate.push(branch);
+              }
+            }
+            // TODO RadStr: Remove
+            // if (parents.length === 1) {
+            //   const branchesOnWhichCommitExists = commitToBranchesMap[commit.hash];
+            //   let notYetVisitedBranch: string | null = null;
+            //   let commitExistsOnAlreadyVisitedBranch: boolean = false;  // It exists on branch, which we already visited in one of previous commits
+            //   for (const branch of branchesOnWhichCommitExists) {
+            //     if (processedBranches[branch]) {
+            //       commitExistsOnAlreadyVisitedBranch = true;
+            //       break;
+            //     }
+            //     else {
+            //       if (notYetVisitedBranch === null) {
+            //         notYetVisitedBranch = branch;
+            //       }
+            //     }
+            //   }
+            //   if (commitExistsOnAlreadyVisitedBranch) {
+            //     continue;
+            //   }
+
+            //   if (notYetVisitedBranch === null) {
+            //     throw new Error("Commit does not exist on any branch");
+            //   }
+
+            //   processedBranches[notYetVisitedBranch] = true;
+            //   branchesOrderedByDate.push(notYetVisitedBranch)
+            //   continue;
+            // }
+
             if (parents.length === 2) {
               _mergeCommits[commit.hash] = commit;
               uniqueMergeCommits[commit.hash] = commit;
@@ -254,68 +292,54 @@ const createGitGraph = (withoutAuthor: any, fetchedGitBranches: GitHistory) => {
               // We could also take the commit message and if it has the expected format then use it.
               // However I noticed that for example the pull request on github does not create sufficient message - it only gives out the source of the merge but not the target
 
-              let from: BranchHistory;
-              let to: BranchHistory | undefined;
+              let fromCommit: string;
+              let toCommit: string;
+              let from: BranchHistory | undefined = undefined;
+              let to: BranchHistory | undefined = undefined;
               // So go through all branches and look for the one which has it last
-              const leftParentCandidates = commitToBranchesMap[parents[0]];
-              const rightParentCandidates = commitToBranchesMap[parents[1]];
-              const fromBranchParentCandidates = leftParentCandidates.length === 2 ? leftParentCandidates : rightParentCandidates;
-              const fromParentCommit = leftParentCandidates.length === 2 ? parents[0] : parents[1];
-              const toParentCommit = leftParentCandidates.length === 2 ? parents[1] : parents[0];
 
-              const fromParentCandidateBranch1 = fetchedGitBranches.branches.find(fetchedBranch => fetchedBranch.name === fromBranchParentCandidates[0]);
-              const fromParentCandidateBranch2 = fetchedGitBranches.branches.find(fetchedBranch => fetchedBranch.name === fromBranchParentCandidates[1]);
-              if (fromParentCandidateBranch1?.commits.at(-1)?.hash === fromParentCommit) {
-                from = fromParentCandidateBranch1;
-                to = fromParentCandidateBranch2;
+              for (const parent of parents) {
+                const branchesForParent = commitToBranchesMap[parent];
+                for (const branchForParent of branchesForParent) {
+                   const branchHistory = fetchedGitBranches.branches.find(fetchedBranch => fetchedBranch.name === branchForParent);
+                   if (branchHistory?.commits.at(-1)?.hash === parent) {
+                    from = branchHistory;
+                    fromCommit = parent;
+                    toCommit = parent === parents[0] ? parents[1] : parents[0];
+                  }
+                }
               }
-              else if (fromParentCandidateBranch2?.commits.at(-1)?.hash === fromParentCommit) {
-                from = fromParentCandidateBranch2;
-                to = fromParentCandidateBranch1;
+              const sharedBranches: string[] = [];
+              for (const branch of commitToBranchesMap[parents[0]]) {
+                if(branch === from?.name) {
+                  continue;
+                }
+                if (commitToBranchesMap[parents[1]].includes(branch)) {
+                  sharedBranches.push(branch);
+                }
+              }
+
+              if (sharedBranches.length === 1) {
+                to = fetchedGitBranches.branches.find(b => b.name === sharedBranches[0]);
               }
               else {
-                // Not a single parent is a last commit on any of the existing branches
-                console.info("Not a single parent is a last commit on any of the existing branches");    // TODO RadStr: Debug print
+                // TODO RadStr: "findLast", that is Try newest instead
+                // const branchName = branchesOrderedByDate.findLast(branchOrderedByDate => sharedBranches.includes(branchOrderedByDate));
+                const branchName = branchesOrderedByDate.find(branchOrderedByDate => sharedBranches.includes(branchOrderedByDate));
+                to = fetchedGitBranches.branches.find(b => b.name === branchName);
+              }
+
+              if (from === undefined || to === undefined) {
+                console.info("'From' or 'to' for merge commit are not present, but it is probably not a error");
                 continue;
               }
 
-              if (to === undefined) {
-                throw new Error(" The second merge parent is not present on any branch for some reason");
-              }
               mergesToRender[commit.hash] = {
                 from,
                 to,
               };
-              commitsPinnedToBranch[fromParentCommit] = from.name;
-              commitsPinnedToBranch[toParentCommit] = to.name;
-
-              // for (const parent of parents) {
-              //   const mergeBranchCandidates = commitToBranchesMap[parent];
-              //   // Technically we could probably get around having > 2, but for simplicity and sanity sake do it like this (possible TODO RadStr:)
-              //   if (mergeBranchCandidates.length !== 2) {
-              //     console.info(`Debug print - skipping merge parent (${parent}) for: ${commit.hash}`)
-              //     continue;
-              //   }
-              //   for (const fromParentCandidate of fromBranchParentCandidates) {
-
-              //     const oneParent = fromParentCandidate.
-
-              //     if (mergeBranchCandidate === branch.name) {
-              //       continue;
-              //     }
-              //     from = ;
-
-              //     const mergeBranch = fetchedGitBranches.branches.find(fetchedBranch => fetchedBranch.name === branch.name);
-              //     if (parent === mergeBranch?.commits.at(-1)?.hash) {
-              //       mergesToRender[commit.hash] = {
-              //         from: mergeBranch,
-              //         to: branch,
-              //       };
-              //       break;
-              //     }
-              //   }
-              // }
-
+              commitsPinnedToBranch[fromCommit!] = from.name;
+              commitsPinnedToBranch[toCommit!] = to.name;
 
               const lastFromBranchCommit = from.commits.at(-1);
               const lastFromBranchCommitIndex = commitsFromOldestToNewest.findIndex(c => c.hash === lastFromBranchCommit?.hash);
@@ -359,27 +383,39 @@ const createGitGraph = (withoutAuthor: any, fetchedGitBranches: GitHistory) => {
           // TODO RadStr: Old variable - remove
           // const processedCommits: Record<string, string> = {};    // Maps the Commit hash to the branch name.
 
-
-
           let parentCommit: Commit | null = null;
           for (const commit of commitsFromOldestToNewest) {
             if (mergesToRender[commit.hash] !== undefined) {
-              const gitGraphBranchToMergeInto = gitGraphBranches[mergesToRender[commit.hash].to.name];
-              gitGraphBranchToMergeInto.merge({
-                branch: mergesToRender[commit.hash].from.name,
-                commitOptions: {
-                  author: `${commit.authorName} <${commit.authorEmail}>`,
-                  subject: commit.commitMessage,
-                  hash: commit.hash,
-                  onClick: (gitGraphCommit) => {                        // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-dot-click
-                    alert(`You clicked the dot for: ${gitGraphCommit.subject}`);
+              const mergeFrom = mergesToRender[commit.hash].from;
+              if (gitGraphBranches[mergeFrom.name] !== undefined) {    // If the from branch is rendered, otherwise just draw it like normal commit ... there was some ambiguity when it comes to the branch merge targets
+                // if (gitGraphBranches[mergesToRender[commit.hash].to.name] === undefined) {
+                //   branchesOrderedByDate.push(mergesToRender[commit.hash].to.name);
+                //   gitGraphBranches[mergesToRender[commit.hash].to.name] = gitgraph.branch(
+                //     {
+                //       name: mergesToRender[commit.hash].to.name,
+                //       from: parentCommit?.hash      // If there is no parentCommit then the hash is undefined.
+                //       // from: previousBranch === "" ? undefined : previousBranch
+                //     }
+                //   );
+                // }
+
+                const gitGraphBranchToMergeInto = gitGraphBranches[mergesToRender[commit.hash].to.name];
+                gitGraphBranchToMergeInto.merge({
+                  branch: mergeFrom.name,
+                  commitOptions: {
+                    author: `${commit.authorName} <${commit.authorEmail}>`,
+                    subject: commit.commitMessage,
+                    hash: commit.hash,
+                    onClick: (gitGraphCommit) => {                        // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-dot-click
+                      alert(`You clicked the dot for: ${gitGraphCommit.subject}`);
+                    },
+                    onMessageClick: (gitGraphCommit) => {                 // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-message-click
+                      alert(`You clicked the commit text for: ${gitGraphCommit.subject}`);
+                    },
                   },
-                  onMessageClick: (gitGraphCommit) => {                 // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-message-click
-                    alert(`You clicked the commit text for: ${gitGraphCommit.subject}`);
-                  },
-                },
-              });
-              continue;
+                });
+                continue;
+              }
             }
 
             let branchToCommitOn: string;
@@ -390,8 +426,11 @@ const createGitGraph = (withoutAuthor: any, fetchedGitBranches: GitHistory) => {
             }
             else {
               const branchesOnWhichCommitExists = commitToBranchesMap[commit.hash];
-              const oldestBranch = branchesOrderedByDate.find(branchOrderedByDate => branchesOnWhichCommitExists.includes(branchOrderedByDate));
+              // const newestBranch = branchesOrderedByDate.findLast(branchOrderedByDate => branchesOnWhichCommitExists.includes(branchOrderedByDate));
+              // branchToCommitOn = newestBranch ?? branchesOnWhichCommitExists[0];
 
+              // TODO RadStr: ... Trying the newest instead of oldest ... change comment of algorithm based on that
+              const oldestBranch = branchesOrderedByDate.find(branchOrderedByDate => branchesOnWhichCommitExists.includes(branchOrderedByDate));
               branchToCommitOn = oldestBranch ?? branchesOnWhichCommitExists[0];
             }
 
@@ -423,244 +462,6 @@ const createGitGraph = (withoutAuthor: any, fetchedGitBranches: GitHistory) => {
 
             parentCommit = commit;
           }
-
-
-
-          // TODO RadStr: Old variant
-
-          // const currentBranchProcessingState: Record<string, number> = {};  // Maps the branches to their last processed commit
-          // for (const branch of fetchedGitBranches.branches) {
-          //   currentBranchProcessingState[branch.name] = 0;
-          // }
-
-          // const mainBranch = fetchedGitBranches.branches.find(branch => branch.name === fetchedGitBranches.defaultBranch);
-          // if (mainBranch === undefined) {
-          //   console.error("Main branch for some reason does not exist");
-          //   return;
-          // }
-
-
-          // const gitMaingraphBranch = gitgraph.branch(
-          //   {
-          //     name: mainBranch.name,
-          //     // from: previousBranch === "" ? undefined : previousBranch
-          //   }
-          // );
-
-          // gitGraphBranches[mainBranch.name] = gitMaingraphBranch;
-          // let previousCommit: Commit | null = null;
-
-
-          // const mainCommits = mainBranch?.commits ?? [];
-          // for (const commit of mainCommits) {
-          //   const mergeCommit = mergesToRender[commit.hash];
-          //   if (mergeCommit !== undefined) {
-
-          //     if (mergeCommit.to.name === mainBranch.name) {
-          //       const otherParentBranch = mergeCommit.from;
-          //       if (currentBranchProcessingState[otherParentBranch.name] >= otherParentBranch.commits.length) {
-          //         // The commit already exists we can create merge commit
-          //       }
-          //       else {
-          //         // The parent commit does not already exists ... We have to put it in first
-          //         break;
-          //       }
-          //     }
-          //   }
-          //   const commitParents = commit.parents.split(" ");
-          //   if (commitParents.length === 2) {
-          //     // if (processedCommits[commitParents[0]] !== undefined && processedCommits[commitParents[1]] !== undefined) {
-          //       const parentOnOtherBranch = previousCommit?.hash === commitParents[0] ? commitParents[1] : commitParents[0];
-          //       console.info("EXISTS", processedCommits[commitParents[0]], processedCommits[commitParents[1]]);
-          //       console.info("MERGE COMMIT", commit, previousCommit, commitParents[0], commitParents[1], parentOnOtherBranch);
-          //       console.info("MERGE COMMIT BRANCHES", processedCommits[commitParents[0]], processedCommits[commitParents[1]]);
-          //       gitMaingraphBranch.merge({
-          //         branch: processedCommits[parentOnOtherBranch],
-          //         commitOptions: {
-          //           author: `${commit.authorName} <${commit.authorEmail}>`,
-          //           subject: commit.commitMessage,
-          //           hash: commit.hash,
-          //           onClick: (gitGraphCommit) => {                        // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-dot-click
-          //             alert(`You clicked the dot for: ${gitGraphCommit.subject}`);
-          //           },
-          //           onMessageClick: (gitGraphCommit) => {                 // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-message-click
-          //             alert(`You clicked the commit text for: ${gitGraphCommit.subject}`);
-          //           },
-          //         },
-          //       });
-          //     // }
-          //     // else {
-          //     //   // One of the parents does not yet exist in the gitGraph
-          //     // }
-          //   }
-          //   else {
-          //   // If > 2 then undefined behavior ... Nobody uses octopus merge anyways
-          //     console.info("commit", commit);
-          //     gitMaingraphBranch.commit({
-          //       author: `${commit.authorName} <${commit.authorEmail}>`,
-          //       subject: commit.commitMessage,
-          //       hash: commit.hash,
-          //       onClick: (gitGraphCommit) => {                        // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-dot-click
-          //         alert(`You clicked the dot for: ${gitGraphCommit.subject}`);
-          //       },
-          //       onMessageClick: (gitGraphCommit) => {                 // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-message-click
-          //         alert(`You clicked the commit text for: ${gitGraphCommit.subject}`);
-          //       },
-          //     });
-          //   }
-
-          //   processedCommits[commit.hash] = gitMaingraphBranch.name;
-          //   currentBranchProcessingState[mainBranch.name]++;
-          //   previousCommit = commit;
-
-          //   // previousBranch = "Hash-Branch 0-3-1";
-          //   // previousBranch = branch.name;
-          // }
-
-
-
-          // const nonMainBranches = fetchedGitBranches.branches.filter(branch => branch.name !== fetchedGitBranches.defaultBranch);
-          // for (const branch of nonMainBranches) {
-          //   let parentCommit: Commit | null = null;
-          //   let gitGraphBranch = null;
-
-          //   for (const commit of branch.commits) {
-          //     currentBranchProcessingState[branch.name]++;
-          //     if (processedCommits[commit.hash] !== undefined) {
-          //       parentCommit = commit;
-          //       continue;
-          //     }
-
-
-          //     if (gitGraphBranch === null) {      // The first commit on branch, which was not anywhere else yet
-          //       gitGraphBranch = gitgraph.branch(
-          //         {
-          //           name: branch.name,
-          //           from: parentCommit?.hash      // If there is no parentCommit then the hash is undefined.
-          //           // from: previousBranch === "" ? undefined : previousBranch
-          //         }
-          //       );
-
-          //       gitGraphBranches[branch.name] = gitGraphBranch;
-          //     }
-
-          //     const commitParents = commit.parents.split(" ");
-          //     if (commitParents.length === 2) {
-          //       console.info("MERGE COMMIT", commit);
-          //       console.info("MERGE COMMIT BRANCHES", processedCommits[commitParents[0]], processedCommits[commitParents[1]]);
-          //       // if (processedCommits[commitParents[0]] !== undefined && processedCommits[commitParents[1]] !== undefined) {
-          //         const parentOnOtherBranch = previousCommit?.hash === commitParents[0] ? commitParents[1] : commitParents[0];
-          //         gitGraphBranch.merge({
-          //           branch: processedCommits[parentOnOtherBranch],
-          //           commitOptions: {
-          //             author: `${commit.authorName} <${commit.authorEmail}>`,
-          //             subject: commit.commitMessage,
-          //             hash: commit.hash,
-          //             onClick: (gitGraphCommit) => {                        // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-dot-click
-          //               alert(`You clicked the dot for: ${gitGraphCommit.subject}`);
-          //             },
-          //             onMessageClick: (gitGraphCommit) => {                 // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-message-click
-          //               alert(`You clicked the commit text for: ${gitGraphCommit.subject}`);
-          //             },
-          //           },
-          //         });
-          //       // }
-          //       // else {
-          //       //   // One of the parents does not yet exist in the gitGraph
-          //       // }
-          //     }
-          //     else {
-          //       // Duplicate code with the commit, however the library does not provide the type Commit, so putting it inside method is slightly contra-productive
-          //       // TODO RadStr: But maybe we can put the insides of the onClick and onMessageClick outside if we use only subset of the gitgraph commit object
-          //       console.info("commit", commit);
-          //       gitGraphBranch.commit({
-          //         author: `${commit.authorName} <${commit.authorEmail}>`,
-          //         subject: commit.commitMessage,
-          //         hash: commit.hash,
-          //         onClick: (gitGraphCommit) => {                        // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-dot-click
-          //           alert(`You clicked the dot for: ${gitGraphCommit.subject}`);
-          //         },
-          //         onMessageClick: (gitGraphCommit) => {                 // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-message-click
-          //           alert(`You clicked the commit text for: ${gitGraphCommit.subject}`);
-          //         },
-          //       });
-
-          //       // previousBranch = "Hash-Branch 0-3-1";
-          //       // previousBranch = branch.name;
-          //     }
-          //     processedCommits[commit.hash] = gitGraphBranch.name;
-          //   }
-          // }
-
-          // while (true) {
-          //   const branchToProcess = findBranchToPutIntoGitGraph(currentBranchProcessingState, fetchedGitBranches.branches);
-          //   if (branchToProcess === null) {
-          //     return;
-          //   }
-
-          //   const gitGraphBranch = gitGraphBranches[branchToProcess.name];
-          //   if (gitGraphBranch === undefined) {
-          //     throw new Error("Expected the git branch to already have initial commit inside git graph - either incorrect git data, or programmer error");     // TODO RadStr: Better error handling - maybe just console.error
-
-          //   }
-
-          //   for (let commitIndex = currentBranchProcessingState[branchToProcess.name]; commitIndex < branchToProcess.commits.length; commitIndex++, currentBranchProcessingState[mainBranch.name]++) {
-          //     const commit = branchToProcess.commits[commitIndex];
-          //     if (processedCommits[commit.hash] !== undefined) {
-          //       continue;
-          //     }
-
-          //     const commitParents = commit.parents.split(" ");
-          //     if (commitParents.length === 2) {
-          //       console.info("MERGE COMMIT", commit);
-          //       console.info("MERGE COMMIT BRANCHES", processedCommits[commitParents[0]], processedCommits[commitParents[1]]);
-          //       // if (processedCommits[commitParents[0]] !== undefined && processedCommits[commitParents[1]] !== undefined) {
-          //         const parentOnOtherBranch = branchToProcess.commits[commitIndex - 1]?.hash === commitParents[0] ? commitParents[1] : commitParents[0];
-          //         gitGraphBranch.merge({
-          //           branch: processedCommits[parentOnOtherBranch],
-          //           commitOptions: {
-          //             author: `${commit.authorName} <${commit.authorEmail}>`,
-          //             subject: commit.commitMessage,
-          //             hash: commit.hash,
-          //             onClick: (gitGraphCommit) => {                        // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-dot-click
-          //               alert(`You clicked the dot for: ${gitGraphCommit.subject}`);
-          //             },
-          //             onMessageClick: (gitGraphCommit) => {                 // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-message-click
-          //               alert(`You clicked the commit text for: ${gitGraphCommit.subject}`);
-          //             },
-          //           },
-          //         });
-          //       // }
-          //       // else {
-          //       //   // One of the parents does not yet exist in the gitGraph
-          //       // }
-          //     }
-          //     else {
-          //       // Duplicate code with the commit, however the library does not provide the type Commit, so putting it inside method is slightly contra-productive
-          //       // Actually it does provide the the types, but in different package
-          //       // TODO RadStr: But maybe we can put the insides of the onClick and onMessageClick outside if we use only subset of the gitgraph commit object
-          //       console.info("commit", commit);
-          //       gitGraphBranch.commit({
-          //         author: `${commit.authorName} <${commit.authorEmail}>`,
-          //         subject: commit.commitMessage,
-          //         hash: commit.hash,
-          //         onClick: (gitGraphCommit) => {                        // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-dot-click
-          //           alert(`You clicked the dot for: ${gitGraphCommit.subject}`);
-          //         },
-          //         onMessageClick: (gitGraphCommit) => {                 // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-message-click
-          //           alert(`You clicked the commit text for: ${gitGraphCommit.subject}`);
-          //         },
-          //       });
-
-          //       // previousBranch = "Hash-Branch 0-3-1";
-          //       // previousBranch = branch.name;
-          //     }
-          //     processedCommits[commit.hash] = gitGraphBranch.name;
-          //   }
-          // }
-
-          // console.info("processedCommits", Object.keys(processedCommits).length);
-          // return;
         }
       }}
     </Gitgraph>

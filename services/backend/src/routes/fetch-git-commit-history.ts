@@ -50,11 +50,11 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
         return;
     }
 
-    const gitURL = resource.linkedGitRepositoryURL;
+    // const gitURL = resource.linkedGitRepositoryURL;
     // Test URLs
     // const gitURL = "https://github.com/octocat/hello-world";
     // const gitURL = "https://github.com/nodejs/node-addon-examples";
-    // const gitURL = "https://github.com/RadStr-bot/example-merge-repo";
+    const gitURL = "https://github.com/RadStr-bot/example-merge-repo";
 
     // TODO RadStr: Just debug name
     const directoryName = `./TODO_RADSTR_DEBUG_DIRECTORY_NAME/${query.iri}/${uuidv4()}`;        // Without the id, we will run into errors and race conditions
