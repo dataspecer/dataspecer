@@ -1,4 +1,3 @@
-
 // TODO RadStr: Taken from https://github.com/nicoespeon/gitgraph.js/tree/master/packages/gitgraph-react
 
 // Use this as a reference https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-5-templates--without-commit-author
@@ -208,8 +207,7 @@ export const GitHistoryVisualization = ({ isOpen, resolve, branches }: GitHistor
 
 const createGitGraph = (withoutAuthor: any, fetchedGitBranches: GitHistory) => {
   // We don't even need the unique commits, only thing we could do with it is sort the branches by it, so the more active are on the left closer to the main
-  const { commitToBranchesMap, hashToCommitMap } = mapCommitsToBranches(fetchedGitBranches);
-  const { uniqueCommits } = getUniqueCommits(commitToBranchesMap, hashToCommitMap);
+  const { commitToBranchesMap } = mapCommitsToBranches(fetchedGitBranches);
   const commitsFromOldestToNewest = getAllCommitsSortedByDate(fetchedGitBranches);
 
   for (const branch of fetchedGitBranches.branches) {
@@ -251,99 +249,95 @@ const createGitGraph = (withoutAuthor: any, fetchedGitBranches: GitHistory) => {
             const parents = commit.parents.split(" ");
             if (parents.length === 2) {
               _mergeCommits[commit.hash] = commit;
-              if (uniqueCommits[commit.hash] !== undefined) {
-                uniqueMergeCommits[commit.hash] = commit;
-                // Now find the parent, which is the last commit on some branch
-                // We could also take the commit message and if it has the expected format then use it.
-                // However I noticed that for example the pull request on github does not create sufficient message - it only gives out the source of the merge but not the target
+              uniqueMergeCommits[commit.hash] = commit;
+              // Now find the parent, which is the last commit on some branch
+              // We could also take the commit message and if it has the expected format then use it.
+              // However I noticed that for example the pull request on github does not create sufficient message - it only gives out the source of the merge but not the target
 
-                let from: BranchHistory;
-                let to: BranchHistory | undefined;
-                // So go through all branches and look for the one which has it last
-                const leftParentCandidates = commitToBranchesMap[parents[0]];
-                const rightParentCandidates = commitToBranchesMap[parents[1]];
-                const fromBranchParentCandidates = leftParentCandidates.length === 2 ? leftParentCandidates : rightParentCandidates;
-                const fromParentCommit = leftParentCandidates.length === 2 ? parents[0] : parents[1];
-                const toParentCommit = leftParentCandidates.length === 2 ? parents[1] : parents[0];
+              let from: BranchHistory;
+              let to: BranchHistory | undefined;
+              // So go through all branches and look for the one which has it last
+              const leftParentCandidates = commitToBranchesMap[parents[0]];
+              const rightParentCandidates = commitToBranchesMap[parents[1]];
+              const fromBranchParentCandidates = leftParentCandidates.length === 2 ? leftParentCandidates : rightParentCandidates;
+              const fromParentCommit = leftParentCandidates.length === 2 ? parents[0] : parents[1];
+              const toParentCommit = leftParentCandidates.length === 2 ? parents[1] : parents[0];
 
-                const fromParentCandidateBranch1 = fetchedGitBranches.branches.find(fetchedBranch => fetchedBranch.name === fromBranchParentCandidates[0]);
-                const fromParentCandidateBranch2 = fetchedGitBranches.branches.find(fetchedBranch => fetchedBranch.name === fromBranchParentCandidates[1]);
-                if (fromParentCandidateBranch1?.commits.at(-1)?.hash === fromParentCommit) {
-                  from = fromParentCandidateBranch1;
-                  to = fromParentCandidateBranch2;
-                }
-                else if (fromParentCandidateBranch2?.commits.at(-1)?.hash === fromParentCommit) {
-                  from = fromParentCandidateBranch2;
-                  to = fromParentCandidateBranch1;
-                }
-                else {
-                  // Not a single parent is a last commit on any of the existing branches
-                  console.info("Not a single parent is a last commit on any of the existing branches");    // TODO RadStr: Debug print
-                  continue;
-                }
+              const fromParentCandidateBranch1 = fetchedGitBranches.branches.find(fetchedBranch => fetchedBranch.name === fromBranchParentCandidates[0]);
+              const fromParentCandidateBranch2 = fetchedGitBranches.branches.find(fetchedBranch => fetchedBranch.name === fromBranchParentCandidates[1]);
+              if (fromParentCandidateBranch1?.commits.at(-1)?.hash === fromParentCommit) {
+                from = fromParentCandidateBranch1;
+                to = fromParentCandidateBranch2;
+              }
+              else if (fromParentCandidateBranch2?.commits.at(-1)?.hash === fromParentCommit) {
+                from = fromParentCandidateBranch2;
+                to = fromParentCandidateBranch1;
+              }
+              else {
+                // Not a single parent is a last commit on any of the existing branches
+                console.info("Not a single parent is a last commit on any of the existing branches");    // TODO RadStr: Debug print
+                continue;
+              }
 
-                if (to === undefined) {
-                  throw new Error(" The second merge parent is not present on any branch for some reason");
-                }
-                mergesToRender[commit.hash] = {
-                  from,
-                  to,
-                };
-                commitsPinnedToBranch[fromParentCommit] = from.name;
-                commitsPinnedToBranch[toParentCommit] = to.name;
+              if (to === undefined) {
+                throw new Error(" The second merge parent is not present on any branch for some reason");
+              }
+              mergesToRender[commit.hash] = {
+                from,
+                to,
+              };
+              commitsPinnedToBranch[fromParentCommit] = from.name;
+              commitsPinnedToBranch[toParentCommit] = to.name;
 
-                // for (const parent of parents) {
-                //   const mergeBranchCandidates = commitToBranchesMap[parent];
-                //   // Technically we could probably get around having > 2, but for simplicity and sanity sake do it like this (possible TODO RadStr:)
-                //   if (mergeBranchCandidates.length !== 2) {
-                //     console.info(`Debug print - skipping merge parent (${parent}) for: ${commit.hash}`)
-                //     continue;
-                //   }
-                //   for (const fromParentCandidate of fromBranchParentCandidates) {
+              // for (const parent of parents) {
+              //   const mergeBranchCandidates = commitToBranchesMap[parent];
+              //   // Technically we could probably get around having > 2, but for simplicity and sanity sake do it like this (possible TODO RadStr:)
+              //   if (mergeBranchCandidates.length !== 2) {
+              //     console.info(`Debug print - skipping merge parent (${parent}) for: ${commit.hash}`)
+              //     continue;
+              //   }
+              //   for (const fromParentCandidate of fromBranchParentCandidates) {
 
-                //     const oneParent = fromParentCandidate.
+              //     const oneParent = fromParentCandidate.
 
-                //     if (mergeBranchCandidate === branch.name) {
-                //       continue;
-                //     }
-                //     from = ;
+              //     if (mergeBranchCandidate === branch.name) {
+              //       continue;
+              //     }
+              //     from = ;
 
-                //     const mergeBranch = fetchedGitBranches.branches.find(fetchedBranch => fetchedBranch.name === branch.name);
-                //     if (parent === mergeBranch?.commits.at(-1)?.hash) {
-                //       mergesToRender[commit.hash] = {
-                //         from: mergeBranch,
-                //         to: branch,
-                //       };
-                //       break;
-                //     }
-                //   }
-                // }
+              //     const mergeBranch = fetchedGitBranches.branches.find(fetchedBranch => fetchedBranch.name === branch.name);
+              //     if (parent === mergeBranch?.commits.at(-1)?.hash) {
+              //       mergesToRender[commit.hash] = {
+              //         from: mergeBranch,
+              //         to: branch,
+              //       };
+              //       break;
+              //     }
+              //   }
+              // }
 
 
-                const lastFromBranchCommit = from.commits.at(-1);
-                const lastFromBranchCommitIndex = commitsFromOldestToNewest.findIndex(c => c.hash === lastFromBranchCommit?.hash);
-                for (let i = lastFromBranchCommitIndex - 1; i >= 0; i--) {
-                  const commonCommit = commitsFromOldestToNewest[i];
-                  commitsPinnedToBranch[commonCommit.hash] = from.name;
-
-                  const branchesForCommit = commitToBranchesMap[commonCommit.hash];
-                  let isInFromBranch = false;
-                  let isInToBranch = false;
-                  for (const branchForCommit of branchesForCommit) {
-                    if (branchForCommit === to.name) {
-                      isInToBranch = true;
-                    }
-                    else if (branchForCommit === from.name) {
-                      isInFromBranch = true;
-                    }
+              const lastFromBranchCommit = from.commits.at(-1);
+              const lastFromBranchCommitIndex = commitsFromOldestToNewest.findIndex(c => c.hash === lastFromBranchCommit?.hash);
+              for (let i = lastFromBranchCommitIndex - 1; i >= 0; i--) {
+                const commonCommit = commitsFromOldestToNewest[i];
+                const branchesForCommit = commitToBranchesMap[commonCommit.hash];
+                let isInFromBranch = false;
+                let isInToBranch = false;
+                for (const branchForCommit of branchesForCommit) {
+                  if (branchForCommit === to.name) {
+                    isInToBranch = true;
                   }
-
-                  if (isInFromBranch && isInToBranch) {
-                    // Common commit
-                    break;
+                  else if (branchForCommit === from.name) {
+                    isInFromBranch = true;
                   }
-
                 }
+
+                if (isInFromBranch && isInToBranch) {
+                  // Common commit
+                  break;
+                }
+                commitsPinnedToBranch[commonCommit.hash] = from.name;
               }
             }
           }
