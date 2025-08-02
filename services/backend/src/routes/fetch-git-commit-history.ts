@@ -50,11 +50,11 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
         return;
     }
 
-    // const gitURL = resource.linkedGitRepositoryURL;
+    const gitURL = resource.linkedGitRepositoryURL;
     // Test URLs
     // const gitURL = "https://github.com/octocat/hello-world";
     // const gitURL = "https://github.com/nodejs/node-addon-examples";
-    const gitURL = "https://github.com/RadStr-bot/example-merge-repo";
+    // const gitURL = "https://github.com/RadStr-bot/example-merge-repo";
 
     // TODO RadStr: Just debug name
     const directoryName = `./TODO_RADSTR_DEBUG_DIRECTORY_NAME/${query.iri}/${uuidv4()}`;        // Without the id, we will run into errors and race conditions
@@ -175,17 +175,17 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
         // };
 
         console.info("Branches:", await git.branch());
-        response.json(gitHistory);
+        // response.json(gitHistory);
 
-        // // https://github.com/fabien0102/git2json#readme
-        // // TODO RadStr: Actually we don't need the git2json library, we already have the code, we just need to put the log data to different format then we do - we can even do that on front-end.
-        // const path = [directoryName];
-        // const git2jsonRun = await git2json.run({ path });
-        // console.log(git2jsonRun);
-        // response.json(git2jsonRun);
-        // // git2json
-        // //     .run({ paths })
-        // //     .then((myGitLogJSON: any) => {console.log(myGitLogJSON); response.json(myGitLogJSON); });
+        // https://github.com/fabien0102/git2json#readme
+        // TODO RadStr: Actually we don't need the git2json library, we already have the code, we just need to put the log data to different format then we do - we can even do that on front-end.
+        const path = [directoryName];
+        const git2jsonRun = await git2json.run({ path });
+        console.log(git2jsonRun);
+        response.json(git2jsonRun);
+        // git2json
+        //     .run({ paths })
+        //     .then((myGitLogJSON: any) => {console.log(myGitLogJSON); response.json(myGitLogJSON); });
     }
     catch(err) {
         console.info("ERROR IN GIT LOG", err);
