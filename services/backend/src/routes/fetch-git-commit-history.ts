@@ -175,17 +175,17 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
         // };
 
         console.info("Branches:", await git.branch());
-        // response.json(gitHistory);
+        response.json(gitHistory);
 
-        // https://github.com/fabien0102/git2json#readme
-        // TODO RadStr: Actually we don't need the git2json library, we already have the code, we just need to put the log data to different format then we do - we can even do that on front-end.
-        const path = [directoryName];
-        const git2jsonRun = await git2json.run({ path });
-        console.log(git2jsonRun);
-        response.json(git2jsonRun);
-        // git2json
-        //     .run({ paths })
-        //     .then((myGitLogJSON: any) => {console.log(myGitLogJSON); response.json(myGitLogJSON); });
+        // // https://github.com/fabien0102/git2json#readme
+        // // TODO RadStr: Actually we don't need the git2json library, we already have the code, we just need to put the log data to different format then we do - we can even do that on front-end.
+        // const path = [directoryName];
+        // const git2jsonRun = await git2json.run({ path });
+        // console.log(git2jsonRun);
+        // response.json(git2jsonRun);
+        // // git2json
+        // //     .run({ paths })
+        // //     .then((myGitLogJSON: any) => {console.log(myGitLogJSON); response.json(myGitLogJSON); });
     }
     catch(err) {
         console.info("ERROR IN GIT LOG", err);
