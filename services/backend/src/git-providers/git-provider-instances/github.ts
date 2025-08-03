@@ -2,12 +2,17 @@ import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
 
 import { GIT_RAD_STR_BOT_EMAIL, GIT_RAD_STR_BOT_USERNAME, GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN } from "../../git-never-commit.ts";
+import { GITHUB_USER_AGENT } from "../../utils/git-utils.ts";
 
 import fs from "fs";
 
 // Using this one since I could not make the ones for nodeJS (one is not using ES modules and the other one seems to be too old and correctly support types)
 import sodium from "libsodium-wrappers-sumo";
 import { GitProvider, GitProviderEnum, gitProviderDomains, WebhookRequestDataProviderIndependent, GitCredentials, createLinksForFiles } from "../git-provider-api.ts";
+
+// Note:
+// Even though the request usually work without, the docs demand to specify User-Agent in headers for REST API requests
+// https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api?apiVersion=2022-11-28#user-agent
 
 export class GitHubProvider implements GitProvider {
   ////////////////////////////
@@ -73,7 +78,8 @@ export class GitHubProvider implements GitProvider {
         "Content-Type": "application/vnd.github+json",
         "Authorization": `Bearer ${authToken}`,
         "X-GitHub-Api-Version": "2022-11-28",
-        "Accept": "application/vnd.github+json"
+        "Accept": "application/vnd.github+json",
+        "User-Agent": GITHUB_USER_AGENT,
       },
     });
 
@@ -106,7 +112,8 @@ export class GitHubProvider implements GitProvider {
       headers: {
         "Content-Type": "application/vnd.github+json",
         "Authorization": `Bearer ${authToken}`,
-        "X-GitHub-Api-Version": "2022-11-28"
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": GITHUB_USER_AGENT,
       },
       body: JSON.stringify(webhookPayload),
     });
@@ -141,7 +148,8 @@ export class GitHubProvider implements GitProvider {
         "Content-Type": "application/vnd.github+json",
         "Authorization": `Bearer ${authToken}`,
         "X-GitHub-Api-Version": "2022-11-28",
-        "Accept": "application/vnd.github+json"
+        "Accept": "application/vnd.github+json",
+        "User-Agent": GITHUB_USER_AGENT,
       },
       body: JSON.stringify(payload),
     });
@@ -179,7 +187,8 @@ export class GitHubProvider implements GitProvider {
         "Content-Type": "application/vnd.github+json",
         "Authorization": `Bearer ${accessToken}`,
         "X-GitHub-Api-Version": "2022-11-28",
-        "Accept": "application/vnd.github+json"
+        "Accept": "application/vnd.github+json",
+        "User-Agent": GITHUB_USER_AGENT,
       },
       body: JSON.stringify(payload),
     });
@@ -204,7 +213,8 @@ export class GitHubProvider implements GitProvider {
       headers: {
         "Authorization": `Bearer ${botAccessToken}`,
         "X-GitHub-Api-Version": "2022-11-28",
-        "Accept": "application/vnd.github+json"
+        "Accept": "application/vnd.github+json",
+        "User-Agent": GITHUB_USER_AGENT,
       },
     });
 
@@ -220,7 +230,8 @@ export class GitHubProvider implements GitProvider {
       headers: {
         "Authorization": `Bearer ${accessToken}`,
         "X-GitHub-Api-Version": "2022-11-28",
-        "Accept": "application/vnd.github+json"
+        "Accept": "application/vnd.github+json",
+        "User-Agent": GITHUB_USER_AGENT,
       },
     });
 
@@ -274,7 +285,8 @@ export class GitHubProvider implements GitProvider {
         "Content-Type": "application/vnd.github+json",
         "Authorization": `Bearer ${accessToken}`,
         "X-GitHub-Api-Version": "2022-11-28",
-        "Accept": "application/vnd.github+json"
+        "Accept": "application/vnd.github+json",
+        "User-Agent": GITHUB_USER_AGENT,
       },
       body: JSON.stringify(payload),
     });
@@ -327,7 +339,8 @@ export class GitHubProvider implements GitProvider {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${accessToken}`,
         "X-GitHub-Api-Version": "2022-11-28",
-        "Accept": "application/vnd.github+json"
+        "Accept": "application/vnd.github+json",
+        "User-Agent": GITHUB_USER_AGENT,
       },
       body: JSON.stringify(payload),
     });
@@ -338,7 +351,8 @@ export class GitHubProvider implements GitProvider {
     //   headers: {
     //     "Authorization": `Bearer ${accessToken}`,
     //     "X-GitHub-Api-Version": "2022-11-28",
-    //     "Accept": "application/vnd.github+json"
+    //     "Accept": "application/vnd.github+json",
+    //     "User-Agent": GITHUB_USER_AGENT,
     //   },
     // });
 

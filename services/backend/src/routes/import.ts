@@ -29,6 +29,7 @@ import { pipeline } from "stream/promises";
 import { ReadableStream } from "stream/web";
 import { buffer } from "stream/consumers";
 import { extractPartOfRepositoryURL } from "../utils/git-utils.ts";
+import { GITHUB_USER_AGENT } from "../utils/git-utils.ts";
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
   const result: LanguageString = {};
@@ -482,9 +483,7 @@ async function getBranchFromRepositoryURL(repoURL: string): Promise<string> {
     const response = await httpFetch(restEndPointForRepo, {
       method: "GET",
       headers: {
-        // Even though the request usually work without, the docs demand to specify User-Agent
-        // https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api?apiVersion=2022-11-28#user-agent
-        "User-Agent": "Dataspecer-test",      // TODO RadStr: Change to Dataspecer after debugging stage
+        "User-Agent": GITHUB_USER_AGENT,
       },
     });
 
