@@ -68,6 +68,8 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
 
   commitPackageToGitUsingAuthSession(query.iri, fullLinkedGitRepositoryURL, repositoryUserName, repoName, commitMessage, response);
   resourceModel.updateResourceGitLink(query.iri, fullLinkedGitRepositoryURL);
+
+  response.sendStatus(200);
 });
 
 

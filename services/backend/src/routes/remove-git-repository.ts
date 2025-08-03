@@ -58,4 +58,6 @@ export const removeGitRepository = asyncHandler(async (request: express.Request,
   console.info("Git link before removal:", (await resourceModel.getResource(query.iri))?.linkedGitRepositoryURL);
   await resourceModel.updateResourceGitLink(query.iri, "{}");
   console.info("Git link after removal:", (await resourceModel.getResource(query.iri))?.linkedGitRepositoryURL);
+
+  response.sendStatus(200);
 });
