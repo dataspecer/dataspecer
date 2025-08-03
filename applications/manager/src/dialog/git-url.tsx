@@ -7,6 +7,7 @@ import { Dispatch, SetStateAction, useLayoutEffect, useMemo, useState } from "re
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
 import { Pencil } from "lucide-react";
 import { convertToValidRepositoryName } from "@/utils/utilities";
+import { requestLoadPackage } from "@/package";
 
 // TODO RadStr: Maybe use enum instead of TS string enum
 /**
@@ -170,7 +171,7 @@ export const linkToGitRepoOnClickHandler = async (openModal: OpenBetterModal, ir
     //                                           "&gitProviderURL=" + encodeURIComponent(result.gitProvider ?? "") +
     //                                           "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "");
 
-    fetch(
+    await fetch(
       url,
       {
         credentials: "include",         // TODO RadStr: Important, without this we don't send the authorization cookies.
@@ -179,6 +180,9 @@ export const linkToGitRepoOnClickHandler = async (openModal: OpenBetterModal, ir
     // TODO RadStr: Debug
     // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token) - this one is almost surely fine, but just in case
     // console.log("fetch RESPONSE", await response);
+
+
+    requestLoadPackage(iri, true);
   }
 }
 
