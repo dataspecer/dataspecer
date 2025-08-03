@@ -16,7 +16,7 @@ import configuration from "../configuration.ts";
 import fs from "fs";
 import { getRepoURLWithAuthorization, getRepoURLWithAuthorizationUsingDebugPatToken, GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN} from "../git-never-commit.ts";
 import { simpleGit, SimpleGit } from "simple-git";
-import { extractPartOfRepositoryURL } from "../git-providers/git-provider-instances/gitlab.ts";
+import { extractPartOfRepositoryURL } from "../utils/git-utils.ts";
 import { GitCredentials, GitProvider, GitProviderFactory } from "../git-providers/git-provider-api.ts";
 
 import YAML from "yaml";

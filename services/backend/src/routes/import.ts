@@ -28,6 +28,7 @@ import { Readable } from "stream";
 import { pipeline } from "stream/promises";
 import { ReadableStream } from "stream/web";
 import { buffer } from "stream/consumers";
+import { extractPartOfRepositoryURL } from "../utils/git-utils.ts";
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
   const result: LanguageString = {};
@@ -393,7 +394,7 @@ export const importResource = asyncHandler(async (request: express.Request, resp
  *  this URL is transformed to the URL which downloads zip - for example https://github.com/RadStr-bot/4f21bf6d-2116-4ab3-b387-1f8074f7f412/archive/refs/heads/main.zip
  */
 export async function importFromGitUrl(gitURL: string) {
-  const gitZipDownloadURL = convertGitURLToDownloadZipURL(gitURL);
+  const gitZipDownloadURL = await convertRepoURLToDownloadZipURL(gitURL);
 
   console.info("gitDownloadURL", gitURL);
 
@@ -407,7 +408,7 @@ export async function importFromGitUrl(gitURL: string) {
     throw new Error(`Failed to fetch ${gitZipDownloadURL}`);
   }
 
-  // TODO RadStr: Remove - the old variant where we first put the file into filesystem and then load the zip file
+  // TODO RadStr: Remove the commented lines here - this is the old variant where we first put the file into filesystem and then load the zip file
   //// It is tmp-dir since it is not part of the generated directory, therefore it won't be pushed to the publication repo, because we won't "mv" it
   // const zipFromGitDownloadPathInFS = "tmp-dir";     // TODO RadStr: Ideally this should be in some file or something or have templates for gh actions. Because now I have to put the filepath on 2 places
   // if(!fs.existsSync(zipFromGitDownloadPathInFS)) {
@@ -455,7 +456,43 @@ export const importPackageFromGit = asyncHandler(async (request: express.Request
   return;
 });
 
-function convertGitURLToDownloadZipURL(url: string): string {
-  const zipDownloadURL = url + "/archive/refs/heads/main.zip";
-  return zipDownloadURL;
+async function convertRepoURLToDownloadZipURL(repoURL: string): Promise<string> {
+  const repo = extractPartOfRepositoryURL(repoURL, "repository-name");
+  const owner = extractPartOfRepositoryURL(repoURL, "user-name");     // TODO RadStr: Rename user to owner everywhere
+  const branch = await getBranchFromRepositoryURL(repoURL);
+
+  // TODO RadStr: Hard-coded GitHub.com
+  const zipURL = `https://github.com/${owner}/${repo}/archive/refs/heads/${branch}.zip`;
+  return zipURL;
+}
+
+
+/**
+ * @returns Returns the name of branch hidden inside {@link repoURL}  and if the branch is not specified it returns the name of the default one
+ *  (which can be found by querying the REST endpoint for the repository, at least in github case)
+ */
+async function getBranchFromRepositoryURL(repoURL: string): Promise<string> {
+  const branch =  extractPartOfRepositoryURL(repoURL, "branch");
+
+  if (branch === null) {
+    const repo = extractPartOfRepositoryURL(repoURL, "repository-name");
+    const owner = extractPartOfRepositoryURL(repoURL, "user-name");     // TODO RadStr: Rename user to owner everywhere
+    const restEndPointForRepo = `https://api.github.com/repos/${owner}/${repo}`;
+
+    const response = await httpFetch(restEndPointForRepo, {
+      method: "GET",
+      headers: {
+        // Even though the request usually work without, the docs demand to specify User-Agent
+        // https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api?apiVersion=2022-11-28#user-agent
+        "User-Agent": "Dataspecer-test",      // TODO RadStr: Change to Dataspecer after debugging stage
+      },
+    });
+
+    const responseAsJSON = (await response.json()) as any;
+    const defaultBranch = responseAsJSON.default_branch;
+
+    return defaultBranch;
+  }
+
+  return branch;
 }

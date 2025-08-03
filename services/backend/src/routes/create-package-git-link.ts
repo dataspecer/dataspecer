@@ -3,7 +3,7 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { resourceModel } from "../main.ts";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { extractPartOfRepositoryURL } from "../git-providers/git-provider-instances/gitlab.ts";
+import { extractPartOfRepositoryURL } from "../utils/git-utils.ts";
 import { createGitRepositoryURL, GitProviderFactory, WEBHOOK_HANDLER_URL } from "../git-providers/git-provider-api.ts";
 import { commitPackageToGitUsingAuthSession } from "./commit-package-to-git.ts";
 import { transformCommitMessageIfEmpty } from "../utils/git-utils.ts";

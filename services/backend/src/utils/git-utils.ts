@@ -88,3 +88,48 @@ export function stringifyDatastoreBasedOnFormat(datastoreContent: any, format: s
 
   return datastoreContent;
 }
+// TODO: Maybe put into different utils file
+/**
+ * @param repositoryURL is the URL of the repository
+ * @returns The part of given URL. Where the given URL can either be the main page
+ *  (for example https://github.com/mff-uk/dataspecer) or some of the branches (for example https://github.com/mff-uk/dataspecer/tree/stable).
+ *  Should also work for gitlab or any other git providers following similar URL structure.
+ *  In the example mff-uk is "user-name" and dataspecer is "repository-name".
+ *  For "branch" returns null, if it not explicitly provided in the {@link repositoryURL}.
+ */
+export function extractPartOfRepositoryURL(repositoryURL: string, part: "url-domain" | "repository-name" | "user-name" | "branch"): string | null {
+  try {
+    const parsedUrl = new URL(repositoryURL);
+
+    if (part === "url-domain") {
+      return parsedUrl.host;
+    }
+
+    // TODO: Not checking if the repository URL is correct
+    const pathParts = parsedUrl.pathname.split("/").filter(part => part.length > 0);
+
+    if (pathParts.length < 2) {
+      return null;
+    }
+
+    // Where pathParts = ["mff-uk", "dataspecer", "tree", "stable"] for the above example
+    if (part === "repository-name") {
+      return pathParts[1];
+    }
+    else if (part === "user-name") {
+      return pathParts[0];
+    }
+    else if (part === "branch") {
+      // TODO RadStr: In this case it is provider specific
+      if (pathParts.length < 4 || pathParts.at(-2) !== "tree") {
+        return null;
+      }
+
+      return pathParts.at(-1)!;
+    }
+
+    return null;
+  } catch (error) {
+    return null;
+  }
+}

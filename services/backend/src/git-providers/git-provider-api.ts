@@ -1,6 +1,7 @@
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
 import express from "express";
-import { GitLabProvider, extractPartOfRepositoryURL } from "./git-provider-instances/gitlab.ts";
+import { GitLabProvider } from "./git-provider-instances/gitlab.ts";
+import { extractPartOfRepositoryURL } from "../utils/git-utils.ts";
 import { GitHubProvider } from "./git-provider-instances/github.ts";
 
 import fs from "fs";
