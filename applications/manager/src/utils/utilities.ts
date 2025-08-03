@@ -1,3 +1,5 @@
+import { requestLoadPackage } from "@/package";
+
 // TODO RadStr: Maybe move into package?
 export function convertToValidRepositoryName(repoName: string): string {
   // Based on ChatGPT
@@ -12,4 +14,20 @@ export enum ConfigType {
   LoginInfo,
   FullPublicRepoControl,
   DeleteRepoControl,      // TODO RadStr: This is just for debugging, normal user won't use this ever (he could, but I would not trust 3rd party software with removal access).
+}
+
+/**
+ * TODO RadStr: Maybe not utility function, but can't think of better place now
+ */
+export async function removeGitLinkFromPackage(iri: string) {
+  const removeFetchURL = import.meta.env.VITE_BACKEND + "/git/remove-git-repository?iri=" + encodeURIComponent(iri);
+  await fetch(
+    removeFetchURL,
+    {
+      credentials: "include",         // TODO RadStr: Important, without this we don't send the authorization cookies.
+      method: "GET",
+    }
+  );
+
+  requestLoadPackage(iri, true);
 }
