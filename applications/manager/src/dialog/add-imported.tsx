@@ -15,35 +15,63 @@ export interface AddImportedProps {
   id: string;
 }
 
+enum URLImportType {
+  ClassicUrl,
+  Git,
+};
+
 export const AddImported = ({ id, isOpen, resolve }: AddImportedProps & BetterModalProps<boolean>) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
-  const formSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setLoading(true);
+  const getURLsToImport: (event: React.FormEvent, relevantFormKey: string) => string[] = (event: React.FormEvent, relevantFormKey: string) => {
+    const urls = (event.target as any)[relevantFormKey].value
+      .split("\n")
+      .map((url: string) => url.trim())
+      .filter((url: string) => url.length > 0);
 
+    if (urls.length === 0) {
+      setLoading(false);
+      return [];
+    }
+
+    return urls;
+  }
+
+  const importURLs = async (event: React.FormEvent, relevantFormKey: string, importType: URLImportType) => {
     try {
-      const urls = (event.target as any)["url"].value
-        .split("\n")
-        .map((url: string) => url.trim())
-        .filter((url: string) => url.length > 0);
+      event.preventDefault();
+      event.stopPropagation();
+      setLoading(true);
 
+      const urls = getURLsToImport(event, relevantFormKey);
       if (urls.length === 0) {
-        setLoading(false);
         return;
       }
 
       // Import
-
       const importResults = [];
       for (const url of urls) {
-        importResults.push(
-          await fetch(import.meta.env.VITE_BACKEND + "/resources/import?parentIri=" + encodeURIComponent(id) + "&url=" + encodeURIComponent(url), {
-            method: "POST",
-          })
-        );
+        switch(importType) {
+          case URLImportType.ClassicUrl:
+            importResults.push(
+              await fetch(import.meta.env.VITE_BACKEND + "/resources/import?parentIri=" + encodeURIComponent(id) + "&url=" + encodeURIComponent(url), {
+                method: "POST",
+              })
+            );
+            break;
+          case URLImportType.Git:
+            importResults.push(
+              await fetch(import.meta.env.VITE_BACKEND + "/resources/importFromGit?parentIri=" + encodeURIComponent(id) + "&gitURL=" + encodeURIComponent(url), {
+                method: "POST",
+              })
+            );
+            break;
+          default:
+            console.error("Forgot to add new type of import, programmer error");
+            setLoading(false);
+            return;
+        }
       }
 
       await requestLoadPackage(id, true);
@@ -59,6 +87,10 @@ export const AddImported = ({ id, isOpen, resolve }: AddImportedProps & BetterMo
       console.error(error);
       setLoading(false);
     }
+  }
+
+  const urlsSubmit = async (event: React.FormEvent) => {
+    await importURLs(event, "url", URLImportType.ClassicUrl);
   };
 
   const fileSubmit = async (file: File) => {
@@ -83,6 +115,10 @@ export const AddImported = ({ id, isOpen, resolve }: AddImportedProps & BetterMo
     setLoading(false);
   };
 
+  const gitLinksSubmit = async (event: React.FormEvent) => {
+    await importURLs(event, "git-url", URLImportType.Git);
+  };
+
   return (
     <Modal open={isOpen} onClose={() => (loading ? null : resolve(false))}>
       <ModalContent>
@@ -91,18 +127,34 @@ export const AddImported = ({ id, isOpen, resolve }: AddImportedProps & BetterMo
         </ModalHeader>
         <ModalBody className="mt-auto flex flex-col gap-2 p-4">
           <Tabs defaultValue="account">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="URL">URL</TabsTrigger>
+              <TabsTrigger value="git-URL">Git URL</TabsTrigger>
               <TabsTrigger value="file">File</TabsTrigger>
             </TabsList>
             <TabsContent value="URL">
-              <form className="grid gap-4 mt-4" onSubmit={formSubmit}>
+              <form className="grid gap-4 mt-4" onSubmit={urlsSubmit}>
                 <div className="grid gap-2">
                   <Label htmlFor="url">
                     {t("form.url.name")}
                     <span className="text-red-500">*</span>
                   </Label>
                   <Textarea id="url" placeholder={t("form.url.instruction")} required />
+                </div>
+
+                <LoadingButton type="submit" loading={loading}>
+                  {t("add-imported.import")}
+                </LoadingButton>
+              </form>
+            </TabsContent>
+            <TabsContent value="git-URL">
+              <form className="grid gap-4 mt-4" onSubmit={gitLinksSubmit}>
+                <div className="grid gap-2">
+                  <Label htmlFor="git-url">
+                    {t("form.git-url.name")}
+                    <span className="text-red-500">*</span>
+                  </Label>
+                  <Textarea id="git-url" placeholder={t("form.git-url.instruction")} required />
                 </div>
 
                 <LoadingButton type="submit" loading={loading}>

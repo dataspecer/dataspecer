@@ -22,6 +22,12 @@ import z from "zod";
 import { resourceModel } from "../main.ts";
 import { BaseResource } from "../models/resource-model.ts";
 import { asyncHandler } from "./../utils/async-handler.ts";
+import fs from "fs";
+import { PackageImporter } from "../export-import/import.ts";
+import { Readable } from "stream";
+import { pipeline } from "stream/promises";
+import { ReadableStream } from "stream/web";
+import { buffer } from "stream/consumers";
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
   const result: LanguageString = {};
@@ -379,3 +385,77 @@ export const importResource = asyncHandler(async (request: express.Request, resp
   response.send(result);
   return;
 });
+
+
+/**
+ * Generates specification from git URL passed in as argument from command line
+ * @param gitURL is the URL of git repository (method also supports non-main branch URLs),
+ *  this URL is transformed to the URL which downloads zip - for example https://github.com/RadStr-bot/4f21bf6d-2116-4ab3-b387-1f8074f7f412/archive/refs/heads/main.zip
+ */
+export async function importFromGitUrl(gitURL: string) {
+  const gitZipDownloadURL = convertGitURLToDownloadZipURL(gitURL);
+
+  console.info("gitDownloadURL", gitURL);
+
+  // https://stackoverflow.com/questions/11944932/how-to-download-a-file-with-node-js-without-using-third-party-libraries
+  // and https://medium.com/deno-the-complete-reference/download-file-with-fetch-in-node-js-57dd370c973a
+  // TODO RadStr: Using fetch instead of internal httpFetch, since that one does not support zip files
+  const downloadZipResponse = await fetch(gitZipDownloadURL, {
+    method: "GET",
+  });
+  if (!downloadZipResponse.ok || downloadZipResponse.body === null) {
+    throw new Error(`Failed to fetch ${gitZipDownloadURL}`);
+  }
+
+  // TODO RadStr: Remove - the old variant where we first put the file into filesystem and then load the zip file
+  //// It is tmp-dir since it is not part of the generated directory, therefore it won't be pushed to the publication repo, because we won't "mv" it
+  // const zipFromGitDownloadPathInFS = "tmp-dir";     // TODO RadStr: Ideally this should be in some file or something or have templates for gh actions. Because now I have to put the filepath on 2 places
+  // if(!fs.existsSync(zipFromGitDownloadPathInFS)) {
+  //   fs.mkdirSync(zipFromGitDownloadPathInFS, { recursive: true });
+  // }
+  // // Also when we use .toPipe(downloadZipFile), it does not return any promise to await for, so we have to use pipeline or listen to events on downloadZipFile
+  // const downloadZipPath = `${zipFromGitDownloadPathInFS}/temporary-zip-file.zip`;
+  // const donwloadZipFile = fs.createWriteStream(downloadZipPath);
+  // const zipPipeline = await pipeline(Readable.fromWeb(downloadZipResponse.body as ReadableStream<any>), donwloadZipFile);
+  // const zipBuffer = fs.readFileSync(downloadZipPath);
+
+
+  // TODO RadStr: Dont really understand why do I have to recast to <any> if I have clearly more specific type
+  const webReadableStream = Readable.fromWeb(downloadZipResponse.body as ReadableStream<any>);
+  // Create buffer from them stream, no need to touch filesystem.
+  const zipBuffer: Buffer = await buffer(webReadableStream);
+
+
+  const importer = new PackageImporter(resourceModel);
+  const imported = await importer.doImport(zipBuffer);
+
+  if (imported.length > 0) {
+    resourceModel.updateResourceGitLink(imported[0], gitURL);
+  }
+
+  return imported;
+}
+
+/**
+ * Import: Import Git endpoint is a wizard that allows you to import specific package from a remote git repository.
+ */
+export const importPackageFromGit = asyncHandler(async (request: express.Request, response: express.Response) => {
+  const querySchema = z.object({
+    // Parent package IRI
+    parentIri: z.string().min(1),
+    // Url from which to import the resource
+    gitURL: z.string().url(),
+  });
+
+  const query = querySchema.parse(request.query);
+
+  const [result] = await importFromGitUrl(query.gitURL);
+
+  response.send(result);
+  return;
+});
+
+function convertGitURLToDownloadZipURL(url: string): string {
+  const zipDownloadURL = url + "/archive/refs/heads/main.zip";
+  return zipDownloadURL;
+}

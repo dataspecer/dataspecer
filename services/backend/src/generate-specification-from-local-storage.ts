@@ -603,6 +603,7 @@ import { ReadableStream } from "stream/web";
 import { PackageImporter } from "./export-import/import.ts";
 import { generateArtifacts } from "./routes/generate.ts";
 import { ZipStreamDictionary } from "./utils/zip-stream-dictionary.ts";
+import { importFromGitUrl } from "./routes/import.ts";
 
 
 /**
@@ -724,48 +725,9 @@ async function generateSpecificationFromGitURL() {
   console.info("process.argv", process.argv);
   // Example of download URL - https://github.com/RadStr-bot/4f21bf6d-2116-4ab3-b387-1f8074f7f412/archive/refs/heads/main.zip (or commit SHA instead of refs/heads/main)
   const gitZipDownloadURL = process.argv[2];
-  const imported = await importRepositoryFromGit(gitZipDownloadURL);
+  const imported = await importFromGitUrl(gitZipDownloadURL);
   await generateArtifactsFromImported(imported);
   process.exit(0);
-}
-
-/**
- *
- * @param gitZipDownloadURL is the URL of git provider, which returns the zip on access - for example https://github.com/RadStr-bot/4f21bf6d-2116-4ab3-b387-1f8074f7f412/archive/refs/heads/main.zip
- * @returns the importedIRI strings, the first one is the top level one. If the import was sucessful otherwise the length will be 0.
- */
-async function importRepositoryFromGit(gitZipDownloadURL: string) {
-  console.info("gitDownloadURL", gitZipDownloadURL);
-  // It is tmp-dir since it is not part of the generated directory, therefore it won't be pushed to the publication repo, because we won't "mv" it
-  const zipFromGitDownloadPathInFS = "tmp-dir";     // TODO RadStr: Ideally this should be in some file or something or have templates for gh actions. Because now I have to put the filepath on 2 places
-  if(!fs.existsSync(zipFromGitDownloadPathInFS)) {
-    fs.mkdirSync(zipFromGitDownloadPathInFS, { recursive: true });
-  }
-
-  // https://stackoverflow.com/questions/11944932/how-to-download-a-file-with-node-js-without-using-third-party-libraries
-  // and https://medium.com/deno-the-complete-reference/download-file-with-fetch-in-node-js-57dd370c973a
-  const downloadZipPath = `${zipFromGitDownloadPathInFS}/temporary-zip-file.zip`;
-  const donwloadZipFile = fs.createWriteStream(downloadZipPath);
-  // TODO RadStr: Using fetch instead of internal httpFetch, since that one does not support zip files
-  const downloadZipResponse = await fetch(gitZipDownloadURL, {
-    method: "GET",
-  });
-  if (!downloadZipResponse.ok || downloadZipResponse.body === null) {
-    throw new Error(`Failed to fetch ${gitZipDownloadURL}`);
-  }
-
-  // TODO RadStr: Dont really understand why do I have to recast to <any> if I have clearly more specific type
-  // Also when we use .toPipe(downloadZipFile), it does not return any promise to await for, so we have to use pipeline or listen to events on downloadZipFile
-  const zipPipeline = await pipeline(Readable.fromWeb(downloadZipResponse.body as ReadableStream<any>), donwloadZipFile);
-
-
-  const zipBuffer = fs.readFileSync(downloadZipPath);
-  const importer = new PackageImporter(resourceModel);
-  const imported = await importer.doImport(zipBuffer);
-
-  console.log("zipPipeline", zipPipeline);
-
-  return imported;
 }
 
 

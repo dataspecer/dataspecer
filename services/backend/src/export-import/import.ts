@@ -107,9 +107,26 @@ export class PackageImporter {
 
     const files = Object.keys(this.zip.files);
 
-    const rootPackagesMeta = files.filter((file) => file.endsWith("/.meta.json") && file.split("/").length === 2); // It is a directory with one level
+    let maxDepth = -1;
+    files.forEach(file => {
+      const depth = file.split("/").length;
+      if (depth > maxDepth) {
+        maxDepth = depth;
+      }
+    });
+
+    let rootPackagesMeta: string[] = [];
+    for (let rootDirectoryDepth = 2; rootDirectoryDepth <= maxDepth; rootDirectoryDepth++) {
+      rootPackagesMeta = files.filter((file) => file.endsWith("/.meta.json") && file.split("/").length === rootDirectoryDepth); // It is a directory with one level
+      if (rootPackagesMeta.length > 0) {
+        break;
+      }
+    }
     console.info("rootPackagesMeta", rootPackagesMeta);		// TODO RadStr: Debug print
-    const rootPackagesIds = rootPackagesMeta.map((file) => file.split("/")[0]);
+    const rootPackagesIds = rootPackagesMeta.map((file) => {
+      const splitBetweenIdAndType = file.lastIndexOf("/");
+      return file.substring(0, splitBetweenIdAndType);
+    });
 
     const rootMetaFile = await this.zip.file(rootPackagesMeta[0])!.async("text");
     const rootMetaAsJSON = JSON.parse(rootMetaFile);
