@@ -182,10 +182,17 @@ const createGitGraph = (withoutAuthor: any, importedGitGraph: any) => {
   return <div>
     <Gitgraph options={{template: withoutAuthor}}>
       {(gitgraph) => {
-
         // TODO RadStr: Not ideal, but it shows, that creating the branch history as it should be is highly non-trivial issue
         //              Also we should add the onClick properties to the objects stored in the "importedGitGraph".
         // TODO RadStr: Maybe try to fix my solution in future - it is better by focusing on the main and old/new branches, but it does not work correctly unfortunately
+        for (const commit of Object.values(importedGitGraph) as any) {
+          commit.onClick = (gitGraphCommit: any) => {                        // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-dot-click
+            alert(`You clicked the dot for: ${gitGraphCommit.subject}`);
+          };
+          commit.onMessageClick = (gitGraphCommit: any) => {                 // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-message-click
+            alert(`You clicked the commit text for: ${gitGraphCommit.subject}`);
+          };
+        }
         gitgraph.import(importedGitGraph);
       }}
     </Gitgraph>
