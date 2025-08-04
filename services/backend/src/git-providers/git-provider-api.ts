@@ -270,6 +270,38 @@ export interface GitProvider {
    * @returns True if the given {@link fullpath} is path to directory containing the git provider specific files (like workflow files). False otherwise.
    */
   isGitProviderDirectory(fullPath: string): boolean;
+
+  /**
+   * @returns For given {@link repositoryURL} returns the default branch.
+   *  Either the branch is present in side the {@link repositoryURL}, if not it is queried through REST API request.
+   */
+  getDefaultBranch(repositoryURL: string): Promise<string>;
+
+  /**
+   * Note that this method has default implementation in {@link GitProviderBase}.
+   * @returns Returns the name of branch hidden inside {@link repoURL}  and if the branch is not specified it returns the name of the default one
+   *  (which can be found by querying the REST endpoint for the repository, at least in github case).
+   *
+   */
+  getBranchFromRepositoryURL(repoURL: string): Promise<string>;
+
+  /**
+   * Note that this method has default implementation in {@link GitProviderBase}.
+   * @param repositoryURL is the URL of the repository
+   * @returns The part of given URL. Where the given URL can either be the main page
+   *  (for example https://github.com/mff-uk/dataspecer) or some of the branches (for example https://github.com/mff-uk/dataspecer/tree/stable).
+   *  Should also work for gitlab or any other git providers following similar URL structure.
+   *  In the example mff-uk is "user-name" and dataspecer is "repository-name".
+   *  For "branch" returns null, if it not explicitly provided in the {@link repositoryURL}.
+   */
+  extractPartOfRepositoryURL(repositoryURL: string, part: "url-domain" | "repository-name" | "user-name" | "branch"): string | null;
+
+  /**
+   * Converts given {@link repositoryURL} to zip download link. Note that this method is implemented in {@link GitProviderBase}.
+   * @param repositoryURL is the link to the repository. The method supports branch specific links.
+   * @returns The link to download repostitory as a zip.
+   */
+  convertRepoURLToDownloadZipURL(repositoryURL: string): Promise<string>;
 }
 
 

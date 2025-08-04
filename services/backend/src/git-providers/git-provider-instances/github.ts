@@ -8,13 +8,14 @@ import fs from "fs";
 
 // Using this one since I could not make the ones for nodeJS (one is not using ES modules and the other one seems to be too old and correctly support types)
 import sodium from "libsodium-wrappers-sumo";
-import { GitProvider, GitProviderEnum, gitProviderDomains, WebhookRequestDataProviderIndependent, GitCredentials, createLinksForFiles } from "../git-provider-api.ts";
+import { GitProviderEnum, gitProviderDomains, WebhookRequestDataProviderIndependent, GitCredentials, createLinksForFiles } from "../git-provider-api.ts";
+import { GitProviderBase } from "../git-provider-base.ts";
 
 // Note:
 // Even though the request usually work without, the docs demand to specify User-Agent in headers for REST API requests
 // https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api?apiVersion=2022-11-28#user-agent
 
-export class GitHubProvider implements GitProvider {
+export class GitHubProvider extends GitProviderBase {
   ////////////////////////////
   // Fields
   ////////////////////////////
@@ -361,5 +362,37 @@ export class GitHubProvider implements GitProvider {
     // console.info("enableGitHubPages fetchResponse:", await fetchResponse);
 
     return fetchResponse;
+  }
+
+
+  async getDefaultBranch(repositoryURL: string): Promise<string> {
+    const repo = this.extractPartOfRepositoryURL(repositoryURL, "repository-name");
+    const owner = this.extractPartOfRepositoryURL(repositoryURL, "user-name");     // TODO RadStr: Rename user to owner everywhere
+    const restEndPointForRepo = `https://api.github.com/repos/${owner}/${repo}`;
+
+    const response = await httpFetch(restEndPointForRepo, {
+      method: "GET",
+      headers: {
+        "User-Agent": GITHUB_USER_AGENT,
+      },
+    });
+
+    const responseAsJSON = (await response.json()) as any;
+    const defaultBranch = responseAsJSON.default_branch;
+
+    return defaultBranch;
+  }
+
+  extractBranchFromRepositoryURLSplit(repositoryURLSplit: string[]): string | null {
+    if (repositoryURLSplit.length < 4 || repositoryURLSplit.at(-2) !== "tree") {
+      return null;
+    }
+
+    return repositoryURLSplit.at(-1)!;
+  }
+
+  protected getZipDownloadLink(owner: string, repo: string, branch: string): string {
+    const zipURL = `https://github.com/${owner}/${repo}/archive/refs/heads/${branch}.zip`;
+    return zipURL;
   }
 }

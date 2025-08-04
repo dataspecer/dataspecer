@@ -1,10 +1,11 @@
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import fs from "fs";
-import { GitProvider, gitProviderDomains, GitProviderEnum, WebhookRequestDataProviderIndependent, GitCredentials } from "../git-provider-api.ts";
+import { gitProviderDomains, GitProviderEnum, WebhookRequestDataProviderIndependent, GitCredentials } from "../git-provider-api.ts";
+import { GitProviderBase } from "../git-provider-base.ts";
 
 
-export class GitLabProvider implements GitProvider {
+export class GitLabProvider extends GitProviderBase {
   ////////////////////////////
   // Fields
   ////////////////////////////
@@ -14,6 +15,7 @@ export class GitLabProvider implements GitProvider {
   // Constructor
   ////////////////////////////
   constructor(domainURL?: string) {
+    super();
     this.domainURL = domainURL ?? gitProviderDomains[this.getGitProviderEnumValue()];
   }
 
@@ -150,6 +152,22 @@ export class GitLabProvider implements GitProvider {
   }
 
   isGitProviderDirectory(fullPath: string): boolean {
+    throw new Error("Method not implemented.");
+  }
+
+  getDefaultBranch(repositoryURL: string): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+
+  extractBranchFromRepositoryURLSplit(repositoryURLSplit: string[]): string | null {
+    if (repositoryURLSplit.length < 4 || repositoryURLSplit.at(-2) !== "tree") {
+      return null;
+    }
+
+    return repositoryURLSplit.at(-1)!;
+  }
+
+  protected getZipDownloadLink(owner: string, repo: string, branch: string): string {
     throw new Error("Method not implemented.");
   }
 }

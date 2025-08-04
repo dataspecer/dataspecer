@@ -30,6 +30,7 @@ import { ReadableStream } from "stream/web";
 import { buffer } from "stream/consumers";
 import { extractPartOfRepositoryURL } from "../utils/git-utils.ts";
 import { GITHUB_USER_AGENT } from "../utils/git-utils.ts";
+import { GitProvider, GitProviderFactory } from "../git-providers/git-provider-api.ts";
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
   const result: LanguageString = {};
@@ -391,13 +392,14 @@ export const importResource = asyncHandler(async (request: express.Request, resp
 
 /**
  * Generates specification from git URL passed in as argument from command line
- * @param gitURL is the URL of git repository (method also supports non-main branch URLs),
+ * @param repositoryURL is the URL of git repository (method also supports non-main branch URLs),
  *  this URL is transformed to the URL which downloads zip - for example https://github.com/RadStr-bot/4f21bf6d-2116-4ab3-b387-1f8074f7f412/archive/refs/heads/main.zip
  */
-export async function importFromGitUrl(gitURL: string) {
-  const gitZipDownloadURL = await convertRepoURLToDownloadZipURL(gitURL);
+export async function importFromGitUrl(repositoryURL: string) {
+  const gitProvider: GitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(repositoryURL);
+  const gitZipDownloadURL = await gitProvider.convertRepoURLToDownloadZipURL(repositoryURL);
 
-  console.info("gitDownloadURL", gitURL);
+  console.info("gitDownloadURL", repositoryURL);
 
   // https://stackoverflow.com/questions/11944932/how-to-download-a-file-with-node-js-without-using-third-party-libraries
   // and https://medium.com/deno-the-complete-reference/download-file-with-fetch-in-node-js-57dd370c973a
@@ -432,7 +434,7 @@ export async function importFromGitUrl(gitURL: string) {
   const imported = await importer.doImport(zipBuffer);
 
   if (imported.length > 0) {
-    resourceModel.updateResourceGitLink(imported[0], gitURL);
+    resourceModel.updateResourceGitLink(imported[0], repositoryURL);
   }
 
   return imported;
@@ -456,42 +458,3 @@ export const importPackageFromGit = asyncHandler(async (request: express.Request
   response.send(result);
   return;
 });
-
-async function convertRepoURLToDownloadZipURL(repoURL: string): Promise<string> {
-  const repo = extractPartOfRepositoryURL(repoURL, "repository-name");
-  const owner = extractPartOfRepositoryURL(repoURL, "user-name");     // TODO RadStr: Rename user to owner everywhere
-  const branch = await getBranchFromRepositoryURL(repoURL);
-
-  // TODO RadStr: Hard-coded GitHub.com
-  const zipURL = `https://github.com/${owner}/${repo}/archive/refs/heads/${branch}.zip`;
-  return zipURL;
-}
-
-
-/**
- * @returns Returns the name of branch hidden inside {@link repoURL}  and if the branch is not specified it returns the name of the default one
- *  (which can be found by querying the REST endpoint for the repository, at least in github case)
- */
-async function getBranchFromRepositoryURL(repoURL: string): Promise<string> {
-  const branch =  extractPartOfRepositoryURL(repoURL, "branch");
-
-  if (branch === null) {
-    const repo = extractPartOfRepositoryURL(repoURL, "repository-name");
-    const owner = extractPartOfRepositoryURL(repoURL, "user-name");     // TODO RadStr: Rename user to owner everywhere
-    const restEndPointForRepo = `https://api.github.com/repos/${owner}/${repo}`;
-
-    const response = await httpFetch(restEndPointForRepo, {
-      method: "GET",
-      headers: {
-        "User-Agent": GITHUB_USER_AGENT,
-      },
-    });
-
-    const responseAsJSON = (await response.json()) as any;
-    const defaultBranch = responseAsJSON.default_branch;
-
-    return defaultBranch;
-  }
-
-  return branch;
-}
