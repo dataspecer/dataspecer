@@ -50,11 +50,11 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
         return;
     }
 
-    const gitURL = resource.linkedGitRepositoryURL;
+    // const gitURL = resource.linkedGitRepositoryURL;
     // Test URLs
     // const gitURL = "https://github.com/octocat/hello-world";
     // const gitURL = "https://github.com/nodejs/node-addon-examples";
-    // const gitURL = "https://github.com/RadStr-bot/example-merge-repo";
+    const gitURL = "https://github.com/RadStr-bot/example-merge-repo";
 
     // TODO RadStr: Just debug name
     const directoryName = `./TODO_RADSTR_DEBUG_DIRECTORY_NAME/${query.iri}/${uuidv4()}`;        // Without the id, we will run into errors and race conditions
@@ -106,7 +106,16 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
             commitMessage: "%s",
             authorName: "%an",
             authorEmail: "%ae",
-            date: "%ai"
+            date: "%ai",
+
+            refs: "%d",
+            // author: {                        // Does not work
+            //     name: "%an",
+            //     email: "%ae",
+            //     timestamp: "%at",
+            // },
+            authorTimestamp: "%at",
+            subject: "%s",
         };
         let firstCommit: any | null = null;
 
@@ -174,15 +183,63 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
         //     }]
         // };
 
-        console.info("Branches:", await git.branch());
-        // response.json(gitHistory);
+
+        const logGraph = await git.raw(['log', '--graph', '--oneline', '--all']);
+        console.info("logGraph", logGraph);
+
+        // console.info("Branches:", await git.branch());
+        // // response.json(gitHistory);
 
         // https://github.com/fabien0102/git2json#readme
         // TODO RadStr: Actually we don't need the git2json library, we already have the code, we just need to put the log data to different format then we do - we can even do that on front-end.
         const path = [directoryName];
         const git2jsonRun = await git2json.run({ path });
         console.log(git2jsonRun);
-        response.json(git2jsonRun);
+
+        const mapBranchToHeadCommitRaw = await git.raw([
+            "for-each-ref",
+            "--format=%(refname:short) %(objectname)",
+            "refs/remotes/"
+        ]);
+        const mapBranchToHeadCommitAsArray: string[] = mapBranchToHeadCommitRaw.split("\n");
+        const mapBranchToHeadCommit: Record<string, string> = {};
+        mapBranchToHeadCommitAsArray.forEach(keyAndvalue => {
+            const [branch, commitHash] = keyAndvalue.split(" ");
+            mapBranchToHeadCommit[branch] = commitHash;
+        });
+
+
+        // const jsonResponse = {
+        //     git2json: git2jsonRun,
+        //     logGraph,
+        // };
+
+        // TODO RadStr: Debug
+        const customLogResult = await git.log({
+            format: logFormat,
+        });
+        const convertedCustomLogResult = customLogResult.all.map(logResult => {
+            return {
+                author: {
+                    name: logResult.authorName,
+                    email: logResult.authorEmail,
+                    timestamp: logResult.authorTimestamp,
+                },
+                refs: convertRefsToGit2JsonFormat(logResult.refs),
+                parents: convertParentsToGit2JsonFormat(logResult.parents),
+                date: logResult.date,
+                hash: logResult.hash,
+                subject: logResult.commitMessage,
+            };
+        });
+
+        console.info(customLogResult);
+        const jsonResponse = {
+            git2json: convertedCustomLogResult,
+            logGraph,
+        };
+
+        response.json(jsonResponse);
         // git2json
         //     .run({ paths })
         //     .then((myGitLogJSON: any) => {console.log(myGitLogJSON); response.json(myGitLogJSON); });
@@ -240,4 +297,23 @@ function createTestCommits(branchName: string, commitCount: number): Commit[] {
     }
 
     return commits;
+}
+
+
+/**
+ * Taken from https://github.com/fabien0102/git2json/blob/e067166d2468018b6f3982a8fb44a2e54110ce02/src/parsers.js#L15C3-L19C20
+ */
+function convertRefsToGit2JsonFormat(refs: string) {
+    return refs.replace(/[\(\)]/g, '')
+        .replace('->', ',')
+        .split(', ')
+        .map(a => a.trim())
+        .filter(a => a);
+}
+
+/**
+ * Taken from https://github.com/fabien0102/git2json/blob/e067166d2468018b6f3982a8fb44a2e54110ce02/src/parsers.js#L10C3-L10C44
+ */
+function convertParentsToGit2JsonFormat(parents: string) {
+    return parents.split(' ').filter(b => b);
 }

@@ -137,7 +137,7 @@ export const GitHistoryVisualization = ({ isOpen, resolve, branches }: GitHistor
           .then((data) => {
             console.info("git data", data);   // TODO RadStr: Debug
 
-            const gitGraphElement = createGitGraph(withoutAuthor, data);
+            const gitGraphElement = createGitGraph(withoutAuthor, data.git2json);
             setGitGraphElement(gitGraphElement);
           })
           .catch((error) => {
