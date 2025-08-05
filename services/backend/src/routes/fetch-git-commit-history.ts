@@ -10,17 +10,29 @@ import { v4 as uuidv4 } from "uuid";
 import git2json from "@fabien0102/git2json";
 
 
-// TODO RadStr: Put these types into shared package between frontend and backend
+type FetchedGitData = {
+  commits: Commit[],
+  logGraph: string,
+}
+
 type Commit = {
-  authorName: string;
-  authorEmail: string;
-  commitMessage: string;
-  hash: string;
-  date: string;
-  /**
-   * The commit parents are separated by " "
-   */
-  parents: string;
+    hash: string,
+    authorName: string,
+    authorEmail: string,
+    commitMessage: string,
+    date: string,
+    parents: string,
+
+//   author: {
+//     name: string,
+//     email: string,
+//     timestamp: string,
+//   };
+//   subject: string;      // Commit message ... TODO RadStr: I don't like this naming ... just use commitMessage
+//   hash: string;         // Commit hash
+//   date: string;         // Author date of commit in iso8601
+//   parents: string[];
+//   refs: string[];       // The refs which points to this commit (HEADs of branches, i.e. the last commit on branch)
 }
 
 type BranchHistory = {
@@ -183,8 +195,8 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
         //     }]
         // };
 
-
-        const logGraph = await git.raw(['log', '--graph', '--oneline', '--all']);
+	// TODO RadStr: Use abbreviated hashes instead?
+        const logGraph = await git.raw(["log", "--graph", "--oneline", "--all", "--format=%H"]);
         console.info("logGraph", logGraph);
 
         // console.info("Branches:", await git.branch());
@@ -300,6 +312,7 @@ function createTestCommits(branchName: string, commitCount: number): Commit[] {
 }
 
 
+TODO RadStr: Move these two on client
 /**
  * Taken from https://github.com/fabien0102/git2json/blob/e067166d2468018b6f3982a8fb44a2e54110ce02/src/parsers.js#L15C3-L19C20
  */

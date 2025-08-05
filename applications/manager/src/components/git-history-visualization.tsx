@@ -10,16 +10,22 @@ import { useLayoutEffect, useState } from "react";
 import { Package } from "@dataspecer/core-v2/project";
 
 // TODO RadStr: Put these types into shared package between frontend and backend
+type FetchedGitData = {
+  commits: Commit[],
+  logGraph: string,
+}
+
 type Commit = {
-  authorName: string;
-  authorEmail: string;
-  commitMessage: string;
-  hash: string;
-  date: string;
-  /**
-   * The commit parents are separated by " "
-   */
-  parents: string;
+  author: {
+    name: string,
+    email: string,
+    timestamp: string,
+  };
+  subject: string;      // Commit message
+  hash: string;         // Commit hash
+  date: string;         // Author date of commit in iso8601
+  parents: string[];
+  refs: string[];       // The refs which points to this commit (HEADs of branches, i.e. the last commit on branch)
 }
 
 type BranchHistory = {
@@ -239,4 +245,37 @@ function findBranchToPutIntoGitGraph(currentBranchProcessingState: Record<string
 export const gitHistoryVisualizationOnClickHandler = async (openModal: OpenBetterModal, branches: Package[]) => {
   // TODO RadStr: These are DS branches - note that those are different from the git branches
   await openModal(GitHistoryVisualization, { branches });
+}
+
+
+/**
+ * @returns The mapping of branch to the last commit on the branch
+ */
+function getRefs(commits: Commit[]): Record<string, string> {
+  const refsMapping: Record<string, string> = {};
+
+  for (const commit of commits) {
+    commit.refs.forEach(ref => {
+      refsMapping[commit.hash] = ref;
+    });
+  }
+
+  return refsMapping;
+}
+
+type CommitToBranchInternalMapping = {
+  commitToIndentationMap: Record<string, string>;
+  branchToIndentationMap: Record<string, string>;
+};
+
+function getIndentationsFromLogGraph(logGraph: string, refs: Record<string, string>): CommitToBranchInternalMapping {
+  const logGraphSplitIntoLines = logGraph.split("\n");
+  for (const line of logGraphSplitIntoLines) {
+    const commitMarkerPosition = line.indexOf("*");
+    if( commitMarkerPosition === undefined) {
+      continue;
+    }
+
+
+  }
 }
