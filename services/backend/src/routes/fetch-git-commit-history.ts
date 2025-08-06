@@ -7,37 +7,26 @@ import { simpleGit } from "simple-git";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 
-import git2json from "@fabien0102/git2json";
-
 
 type FetchedGitData = {
-  commits: Commit[],
+  commits: RawCommit[],
   logGraph: string,
 }
 
-type Commit = {
+type RawCommit = {
     hash: string,
     authorName: string,
     authorEmail: string,
+    authorTimestamp: string,
     commitMessage: string,
     date: string,
     parents: string,
-
-//   author: {
-//     name: string,
-//     email: string,
-//     timestamp: string,
-//   };
-//   subject: string;      // Commit message ... TODO RadStr: I don't like this naming ... just use commitMessage
-//   hash: string;         // Commit hash
-//   date: string;         // Author date of commit in iso8601
-//   parents: string[];
-//   refs: string[];       // The refs which points to this commit (HEADs of branches, i.e. the last commit on branch)
+    refs: string,
 }
 
 type BranchHistory = {
   name: string;
-  commits: Commit[];
+  commits: RawCommit[];
 }
 
 type GitHistory = {
@@ -168,9 +157,11 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
                     hash: commit.hash,
                     authorName: commit.authorName,
                     authorEmail: commit.authorEmail,
+                    authorTimestamp: commit.authorTimestamp,
                     commitMessage: commit.commitMessage,
                     date: commit.date,
                     parents: commit.parents,
+                    refs: commit.refs,
                 }
             });
 
@@ -195,18 +186,12 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
         //     }]
         // };
 
-	// TODO RadStr: Use abbreviated hashes instead?
+    // TODO RadStr: Use abbreviated hashes instead?
         const logGraph = await git.raw(["log", "--graph", "--oneline", "--all", "--format=%H"]);
         console.info("logGraph", logGraph);
 
         // console.info("Branches:", await git.branch());
         // // response.json(gitHistory);
-
-        // https://github.com/fabien0102/git2json#readme
-        // TODO RadStr: Actually we don't need the git2json library, we already have the code, we just need to put the log data to different format then we do - we can even do that on front-end.
-        const path = [directoryName];
-        const git2jsonRun = await git2json.run({ path });
-        console.log(git2jsonRun);
 
         const mapBranchToHeadCommitRaw = await git.raw([
             "for-each-ref",
@@ -230,24 +215,10 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
         const customLogResult = await git.log({
             format: logFormat,
         });
-        const convertedCustomLogResult = customLogResult.all.map(logResult => {
-            return {
-                author: {
-                    name: logResult.authorName,
-                    email: logResult.authorEmail,
-                    timestamp: logResult.authorTimestamp,
-                },
-                refs: convertRefsToGit2JsonFormat(logResult.refs),
-                parents: convertParentsToGit2JsonFormat(logResult.parents),
-                date: logResult.date,
-                hash: logResult.hash,
-                subject: logResult.commitMessage,
-            };
-        });
 
         console.info(customLogResult);
         const jsonResponse = {
-            git2json: convertedCustomLogResult,
+            rawCommits: customLogResult.all,
             logGraph,
         };
 
@@ -295,8 +266,8 @@ function createTestGitHistory(commitCounts: number[]): GitHistory {
 }
 
 
-function createTestCommits(branchName: string, commitCount: number): Commit[] {
-    const commits: Commit[] = [];
+function createTestCommits(branchName: string, commitCount: number): RawCommit[] {
+    const commits: RawCommit[] = [];
     for (let i = 0; i < commitCount; i++) {
         commits.push({
             authorName: `Author-${branchName}-${i}`,
@@ -304,29 +275,11 @@ function createTestCommits(branchName: string, commitCount: number): Commit[] {
             commitMessage: `Commit Message-${branchName}-${i}`,
             hash: `Hash-${branchName}-${i}`,
             date: i.toString(),
-            parents: `Hash-${branchName}-${i-1}`
+            authorTimestamp: i.toString(),
+            parents: `Hash-${branchName}-${i-1}`,
+            refs: "",
         });
     }
 
     return commits;
-}
-
-
-TODO RadStr: Move these two on client
-/**
- * Taken from https://github.com/fabien0102/git2json/blob/e067166d2468018b6f3982a8fb44a2e54110ce02/src/parsers.js#L15C3-L19C20
- */
-function convertRefsToGit2JsonFormat(refs: string) {
-    return refs.replace(/[\(\)]/g, '')
-        .replace('->', ',')
-        .split(', ')
-        .map(a => a.trim())
-        .filter(a => a);
-}
-
-/**
- * Taken from https://github.com/fabien0102/git2json/blob/e067166d2468018b6f3982a8fb44a2e54110ce02/src/parsers.js#L10C3-L10C44
- */
-function convertParentsToGit2JsonFormat(parents: string) {
-    return parents.split(' ').filter(b => b);
 }

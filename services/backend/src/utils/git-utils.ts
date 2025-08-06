@@ -103,7 +103,7 @@ export function stringifyDatastoreBasedOnFormat(datastoreContent: any, format: s
  *  In the example mff-uk is "user-name" and dataspecer is "repository-name".
  *  For "branch" returns null, if it not explicitly provided in the {@link repositoryURL}.
  */
-export function extractPartOfRepositoryURL(repositoryURL: string, part: "url-domain" | "repository-name" | "user-name" | "branch"): string | null {
+export function extractPartOfRepositoryURL(repositoryURL: string, part: "url-domain" | "repository-name" | "user-name"): string | null {
   try {
     const parsedUrl = new URL(repositoryURL);
 
