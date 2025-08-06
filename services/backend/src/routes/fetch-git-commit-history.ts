@@ -51,11 +51,11 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
         return;
     }
 
-    // const gitURL = resource.linkedGitRepositoryURL;
+    const gitURL = resource.linkedGitRepositoryURL;
     // Test URLs
     // const gitURL = "https://github.com/octocat/hello-world";
     // const gitURL = "https://github.com/nodejs/node-addon-examples";
-    const gitURL = "https://github.com/RadStr-bot/example-merge-repo";
+    // const gitURL = "https://github.com/RadStr-bot/example-merge-repo";
 
     // TODO RadStr: Just debug name
     const directoryName = `./TODO_RADSTR_DEBUG_DIRECTORY_NAME/${query.iri}/${uuidv4()}`;        // Without the id, we will run into errors and race conditions
@@ -186,7 +186,12 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
         //     }]
         // };
 
-    // TODO RadStr: Use abbreviated hashes instead?
+        // TODO RadStr: Remove the explicit log branch stuff before this - I am not using it
+        const customLogResult = await git.log({
+            format: logFormat,
+        });
+
+        // TODO RadStr: Use abbreviated hashes instead?
         const logGraph = await git.raw(["log", "--graph", "--oneline", "--all", "--format=%H"]);
         console.info("logGraph", logGraph);
 
@@ -210,11 +215,6 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
         //     git2json: git2jsonRun,
         //     logGraph,
         // };
-
-        // TODO RadStr: Debug
-        const customLogResult = await git.log({
-            format: logFormat,
-        });
 
         console.info(customLogResult);
         const jsonResponse = {
