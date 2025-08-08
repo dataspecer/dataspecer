@@ -1,3 +1,4 @@
+import { RequirementLevel } from "@dataspecer/data-specification-vocabulary";
 
 type IRI = string;
 
@@ -18,11 +19,15 @@ interface StructureTerm {
    */
   iri: IRI;
 
-  name: LanguageString | null;
+  name: LanguageString;
 
   nameSource: IRI | null;
 
-  usageNote: LanguageString | null;
+  description: LanguageString;
+
+  descriptionSource: IRI | null;
+
+  usageNote: LanguageString;
 
   usageNoteSource: IRI | null;
 
@@ -35,7 +40,7 @@ export interface StructureClass extends StructureTerm {
   /**
    * RDF types for given class.
    */
-  types: IRI[];
+  rdfTypes: IRI[];
 
   properties: StructureProperty[];
 
@@ -63,7 +68,7 @@ export interface StructureProperty extends StructureTerm {
   /**
    * RDF predicates for representation of the property relation.
    */
-  predicates: IRI[];
+  rdfPredicates: IRI[];
 
   /**
    * Range value must be of all given types.
@@ -77,5 +82,7 @@ export interface StructureProperty extends StructureTerm {
     max: number | null;
 
   };
+
+  requirementLevel: RequirementLevel;
 
 }

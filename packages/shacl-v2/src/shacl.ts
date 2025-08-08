@@ -1,10 +1,27 @@
-import { ShaclModel, ShaclNodeKind, ShaclNodeShape, ShaclPropertyShape } from "./shacl-model/shacl-model.ts";
 import { ProfileModel } from "@dataspecer/profile-model";
-import { SemanticModel } from "./semantic-model/semantic-model.ts";
-import { semanticModelToLightweightOwl } from "@dataspecer/lightweight-owl";
-import { createContext, entityListContainerToConceptualModel } from "@dataspecer/data-specification-vocabulary";
-import { createStructureModel, StructureClass, StructureModel, StructureProperty } from "@dataspecer/structure-model";
-import { isComplexType, isPrimitiveType } from "@dataspecer/core-v2/semantic-model/datatypes";
+import { SemanticModel } from "@dataspecer/semantic-model";
+import {
+  semanticModelToLightweightOwl,
+} from "@dataspecer/lightweight-owl";
+import {
+  createDataSpecificationVocabulary,
+} from "@dataspecer/data-specification-vocabulary";
+import {
+  isComplexType,
+  isPrimitiveType,
+} from "@dataspecer/core-v2/semantic-model/datatypes";
+
+import {
+  createStructureModelForProfile,
+  StructureClass,
+  StructureProperty,
+} from "./structure-model/index.ts";
+import {
+  ShaclModel,
+  ShaclNodeKind,
+  ShaclNodeShape,
+  ShaclPropertyShape,
+} from "./shacl-model.ts";
 
 export interface ShaclForProfilePolicy {
 
@@ -83,8 +100,6 @@ export function createSemicShaclStylePolicy(baseIri: string): ShaclForProfilePol
   }
 }
 
-
-
 const computeHash = (value: string) => {
   let hash = 0;
   for (let i = 0; i < value.length; i++) {
@@ -94,7 +109,6 @@ const computeHash = (value: string) => {
   }
   return hash.toString(16);
 }
-
 
 /**
  * {@link topProfileModel} must be part of {@link profileModels}.
@@ -110,51 +124,16 @@ export function createShaclForProfile(
   const owl = semanticModelToLightweightOwl(
     [], semanticModels, { baseIri: "", idDefinedBy: "" });
 
-  // Prepare Data Specification Vocabulary (DSW).
+  // Prepare Data Specification Vocabulary (DSV).
   // We need a DSV for each model, as we need to be able to see
   // the full hierarchy.
 
-  const semanticList = semanticModels.map(model => ({
-    baseIri: (model as any).getBaseIri === undefined ? "" : (model as any).getBaseIri(),
-    entities: Object.values(model.getEntities()),
-  }));
+  const dsv = createDataSpecificationVocabulary({
+    semantics: semanticModels,
+    profiles: profileModels,
+  }, [topProfileModel], { iri: "http://example.com/" });
 
-  const profileList = profileModels.map(model => ({
-    baseIri: (model as any).getBaseIri === undefined ? "" : (model as any).getBaseIri(),
-    entities: Object.values(model.getEntities()),
-  }));
-
-  const context = createContext([
-    ...semanticList,
-    ...profileList,
-  ]);
-
-  const dsv = profileList.map(
-    item => entityListContainerToConceptualModel("", item, context));
-
-  const topDsv = entityListContainerToConceptualModel("", {
-    baseIri: (topProfileModel as any).getBaseIri === undefined ? "" : (topProfileModel as any).getBaseIri(),
-    entities: Object.values(topProfileModel.getEntities()),
-  }, context);
-
-  // Prepare structure model.
-  const inclusionFilter = topDsv.profiles.map(item => item.iri);
-
-  const structure = createStructureModel(
-    owl,
-    { iri: "", profiles: dsv.map(item => item.profiles).flat() },
-    identifier => inclusionFilter.includes(identifier));
-
-  // structure.classes.forEach(item => {
-  //   console.log({
-  //     iri: item.iri,
-  //     properties: item.properties.map(item => ({
-  //       iri: item.iri,
-  //     }))
-  //   })
-  // });
-
-
+  const structure = createStructureModelForProfile(owl, dsv)
   const classMap: Record<string, StructureClass> = {};
   structure.classes.forEach(item => classMap[item.iri] = item);
 
@@ -169,13 +148,11 @@ export function createShaclForProfile(
       classMap, entity.properties);
 
     // We need shape for every type.
-    const shapes = entity.types.map(type => buildShaclNodeShape(
+    const shapes = entity.rdfTypes.map(type => buildShaclNodeShape(
       entity, type, propertyShapesTemplates, policy));
 
     shapeMap.set(entity, shapes);
   }
-
-  // console.log(JSON.stringify(result.members, null, 2));
 
   // As the next step we need to deal with specializations.
   // For C dsv:specializes P, we need to run all validations from P on C.
@@ -217,7 +194,7 @@ function buildPropertiesShapeTemplates(
   const result: ShaclPropertyShapeTemplate[] = [];
   for (const property of properties) {
     // Each property can be expressed using multiple predicates.
-    for (const predicate of property.predicates) {
+    for (const predicate of property.rdfPredicates) {
       for (const range of property.range) {
         const isComplex = isComplexType(range);
         const isPrimitive = isPrimitiveType(range);
@@ -265,7 +242,7 @@ function buildPropertyShapeForTemplateComplexType(
   const result: ShaclPropertyShapeTemplate[] = [];
   // We may not have the information about the class, only the type
   // but that is fine.
-  const types = classMap[range]?.types ?? [range];
+  const types = classMap[range]?.rdfTypes ?? [range];
   for (const type of types) {
     result.push({
       seeAlso: property.iri,
@@ -308,7 +285,9 @@ function buildShaclNodeShape(
   }
 }
 
-function buildFullParentMap(classMap: Record<string, StructureClass>): Record<string, string[]> {
+function buildFullParentMap(
+  classMap: Record<string, StructureClass>,
+): Record<string, string[]> {
   const result: Record<string, string[]> = {};
   for (const item of Object.values(classMap)) {
     const visited = new Set<string>();
@@ -326,4 +305,25 @@ function buildFullParentMap(classMap: Record<string, StructureClass>): Record<st
     result[item.iri] = [...visited];
   }
   return result;
+}
+
+type LanguageString = { [language: string]: string };
+
+/**
+ * Perform in-place modification of the model updating strings
+ * using given filter.
+ */
+export function filterLanguageStringLiterals(
+  model: ShaclModel,
+  filter: (value: LanguageString) => LanguageString | null,
+): void {
+  const filterWrap = (value: LanguageString | null) => value === null
+    ? null : filter(value);
+
+  model.members.forEach(member => {
+    member.propertyShapes.forEach(property => {
+      property.name = filterWrap(property.name);
+      property.description = filterWrap(property.description);
+    });
+  });
 }

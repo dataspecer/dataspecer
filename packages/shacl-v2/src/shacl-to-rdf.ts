@@ -1,5 +1,15 @@
-import { ShaclModel, ShaclNodeKind, ShaclNodeShape, ShaclPropertyShape } from "./shacl-model/shacl-model.ts";
-import { createN3RdfBuilder, type N3RdfBuilder, createN3Writer } from "@dataspecer/rdf-adapter";
+import {
+  createN3RdfBuilder,
+  type N3RdfBuilder,
+  createN3Writer,
+} from "@dataspecer/rdf-adapter";
+
+import {
+  ShaclModel,
+  ShaclNodeKind,
+  ShaclNodeShape,
+  ShaclPropertyShape,
+} from "./shacl-model.ts"
 import { RDFS, SHACL } from "./vocabulary.ts";
 
 interface ShaclModelToRdfConfiguration {
