@@ -34,6 +34,11 @@ class DefaultSemanticModelBuilder implements SemanticModelBuilder {
 
   readonly urlResolver: Resolver;
 
+  /**
+   * Unlike {@link urlResolver} this one always produce absolute URL.
+   */
+  readonly absoluteUrlResolver: Resolver;
+
   readonly identifierResolver: Resolver;
 
   readonly entities: Record<string, SemanticEntity>;
@@ -47,6 +52,7 @@ class DefaultSemanticModelBuilder implements SemanticModelBuilder {
     this.identifier = identifier;
     this.baseUrl = baseUrl;
     this.urlResolver = urlResolver;
+    this.absoluteUrlResolver = createIriResolver(baseUrl);
     this.identifierResolver = identifierResolver
     this.entities = {};
   }
@@ -139,6 +145,10 @@ class DefaultSemanticClassBuilder implements SemanticClassBuilder {
     this.model = model;
     this.identifier = entity.id;
     this.entity = entity;
+  }
+
+  absoluteIri(): string {
+    return this.model.absoluteUrlResolver(this.entity.iri ?? this.identifier);
   }
 
   property(value: {

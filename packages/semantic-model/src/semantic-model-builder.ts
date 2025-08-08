@@ -35,6 +35,11 @@ export interface SemanticModelBuilder {
 export interface SemanticClassBuilder extends IdentifiableBuilder {
 
   /**
+   * @returns Full IRI of this class.
+   */
+  absoluteIri(): string;
+
+  /**
    * Create a relation with this class as the domain.
    */
   property(value: {
