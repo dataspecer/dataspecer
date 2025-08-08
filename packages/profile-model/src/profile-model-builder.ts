@@ -17,7 +17,7 @@ export interface ProfileModelBuilder {
   ): ProfileRelationshipBuilder;
 
   property(
-    value?: Partial<PropertyProfile>,
+    value?: Partial<PropertyProfile & { id: string }>,
   ): ProfileRelationshipBuilder;
 
   generalization<
@@ -82,7 +82,10 @@ export interface ProfileRelationshipBuilder extends IdentifiableBuilder {
 
   domain(value: ProfileClassBuilder): ProfileRelationshipBuilder;
 
-  range(value: ProfileClassBuilder): ProfileRelationshipBuilder;
+  /**
+   * @param value Use IRI for primitive types.
+   */
+  range(value: ProfileClassBuilder | string): ProfileRelationshipBuilder;
 
   optional(): ProfileClassBuilder;
 

@@ -31,7 +31,7 @@ class DefaultProfileModelBuilder implements ProfileModelBuilder {
 
   readonly identifier: string;
 
-  readonly baseUrl: string;
+  readonly baseUrl: string | null;
 
   readonly urlResolver: Resolver;
 
@@ -41,7 +41,7 @@ class DefaultProfileModelBuilder implements ProfileModelBuilder {
 
   constructor(
     identifier: string,
-    baseUrl: string,
+    baseUrl: string | null,
     urlResolver: Resolver,
     identifierResolver: Resolver,
   ) {
@@ -72,7 +72,7 @@ class DefaultProfileModelBuilder implements ProfileModelBuilder {
       tags: [],
       ...value,
       // SemanticModelEntity
-      iri:  this.urlResolver(value?.iri ?? `classProfile#${this.counter}`),
+      iri: this.urlResolver(value?.iri ?? `classProfile#${this.counter}`),
     };
     this.entities[identifier] = entity;
     return new DefaultProfileClassBuilder(entity);
@@ -90,9 +90,9 @@ class DefaultProfileModelBuilder implements ProfileModelBuilder {
   }
 
   property(
-    value?: Partial<PropertyProfile>,
+    value?: Partial<PropertyProfile & { id: string }>,
   ): ProfileRelationshipBuilder {
-    const identifier = this.nextIdentifier();
+    const identifier = value?.id ?? this.nextIdentifier();
     const entity: SemanticModelRelationshipProfile = {
       // Entity
       id: identifier,
@@ -103,9 +103,9 @@ class DefaultProfileModelBuilder implements ProfileModelBuilder {
         cardinality: null,
         concept: OWL_THING,
         externalDocumentationUrl: null,
-        name: {},
+        name: null,
         nameFromProfiled: null,
-        description: {},
+        description: null,
         descriptionFromProfiled: null,
         usageNote: null,
         usageNoteFromProfiled: null,
@@ -116,11 +116,11 @@ class DefaultProfileModelBuilder implements ProfileModelBuilder {
         cardinality: value?.cardinality ?? null,
         concept: OWL_THING,
         externalDocumentationUrl: null,
-        name: value?.name ?? {},
+        name: value?.name ?? null,
         nameFromProfiled: null,
-        description: {},
+        description: null,
         descriptionFromProfiled: null,
-        usageNote: null,
+        usageNote: value?.usageNote ?? null,
         usageNoteFromProfiled: null,
         profiling: [],
         tags: [],
@@ -142,7 +142,7 @@ class DefaultProfileModelBuilder implements ProfileModelBuilder {
       child: child.identifier,
       parent: parent.identifier,
       // SemanticModelEntity
-      iri:  this.urlResolver(`generalizationProfile#${this.counter}`),
+      iri: this.urlResolver(`generalizationProfile#${this.counter}`),
     };
     this.entities[identifier] = entity;
     return new DefaultProfileGeneralizationBuilder();
@@ -276,8 +276,12 @@ class DefaultProfileRelationshipBuilder
     return this;
   }
 
-  range(value: ProfileClassBuilder): ProfileRelationshipBuilder {
-    this.rangeEnd.concept = value.identifier;
+  range(value: ProfileClassBuilder | string): ProfileRelationshipBuilder {
+    if (typeof value === "string") {
+      this.rangeEnd.concept = value;
+    } else {
+      this.rangeEnd.concept = value.identifier;
+    }
     return this;
   }
 
@@ -305,17 +309,18 @@ class DefaultProfileGeneralizationBuilder
 
 export function createDefaultProfileModelBuilder(configuration: {
   baseIdentifier: string,
-  baseUrl: string,
+  baseUrl: string | null,
   /**
    * When true the relative URL of entities are resolved.
    */
   resolveUrl?: boolean,
 }): ProfileModelBuilder {
-  const urlResolver: Resolver = configuration.resolveUrl === true ?
-    createIriResolver(configuration.baseUrl) : iri => iri;
+  const urlResolver: Resolver =
+    configuration.resolveUrl === true && configuration.baseUrl !== null
+      ? createIriResolver(configuration.baseUrl)
+      : iri => iri;
   return new DefaultProfileModelBuilder(
     configuration.baseIdentifier, configuration.baseUrl,
-    urlResolver,
-    (identifier) => configuration.baseIdentifier + identifier,
+    urlResolver, (identifier) => configuration.baseIdentifier + identifier,
   );
 }

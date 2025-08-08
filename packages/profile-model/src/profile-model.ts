@@ -1,4 +1,15 @@
+import {
+  SemanticModelGeneralization,
+} from "@dataspecer/core-v2/semantic-model/concepts";
+import {
+  isSemanticModelClassProfile,
+  isSemanticModelRelationshipProfile,
+  SemanticModelClassProfile,
+  SemanticModelRelationshipEndProfile,
+  SemanticModelRelationshipProfile,
+} from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { Entity } from "@dataspecer/entity-model";
+import { isSemanticModelGeneralizationProfile } from "./index.ts";
 
 export {
   SEMANTIC_MODEL_CLASS_PROFILE,
@@ -35,3 +46,17 @@ export interface ProfileModel {
 export type ProfileEntity = Entity;
 
 export type ProfileEntityRecord = { [identifier: string]: ProfileEntity };
+
+export type ClassProfile = SemanticModelClassProfile;
+
+export const isClassProfile = isSemanticModelClassProfile;
+
+export type RelationshipProfile = SemanticModelRelationshipProfile;
+
+export const isRelationshipProfile = isSemanticModelRelationshipProfile;
+
+export type RelationshipEndProfile = SemanticModelRelationshipEndProfile;
+
+export type GeneralizationProfile = SemanticModelGeneralization;
+
+export const isGeneralizationProfile = isSemanticModelGeneralizationProfile;
