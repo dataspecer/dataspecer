@@ -1,10 +1,12 @@
+import { test, expect } from "vitest";
+
 import { SemanticModelClassProfile, SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { Cardinality, DsvModel, DatatypePropertyProfile, ObjectPropertyProfile, RequirementLevel, ClassRole } from "./dsv-model.ts";
+import { Cardinality, ApplicationProfile, DatatypePropertyProfile, ObjectPropertyProfile, RequirementLevel, ClassRole, ClassProfile } from "./dsv-model.ts";
 import { conceptualModelToEntityListContainer } from "./dsv-to-entity-model.ts";
-import { conceptualModelToRdf } from "./dsv-to-rdf.ts";
+import { dsvToRdf } from "./dsv-to-rdf.ts";
 import { EntityListContainer } from "./entity-model.ts";
 import { createContext, entityListContainerToDsvModel } from "./entity-model-to-dsv.ts";
-import { rdfToConceptualModel } from "./rdf-to-dsv.ts";
+import { rdfToDsv } from "./rdf-to-dsv.ts";
 import { DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL } from "./vocabulary.ts";
 
 test("End to end test I.", async () => {
@@ -201,56 +203,16 @@ test("End to end test I.", async () => {
   const dsvModel = entityListContainerToDsvModel(
     "http://dcat/model/", container, context);
 
-  const expectedConceptualModel: DsvModel = {
+  const expectedConceptualModel: ApplicationProfile = {
     "iri": "http://dcat/model/",
-    "profiles": [{
+    "externalDocumentationUrl": null,
+    "classProfiles": [{
       "iri": "http://dcat/model/sweetState1",
       "prefLabel": {},
       "definition": {},
       "usageNote": {},
       "profileOfIri": [],
-      "$type": ["class-profile"],
-      "properties": [{
-        "iri": "http://dcat/model/SweetState.drabMoment",
-        "cardinality": Cardinality.ZeroToMany,
-        "prefLabel": {},
-        "definition": {},
-        "usageNote": {},
-        "profileOfIri": [],
-        "profiledPropertyIri": ["http://dcat/model/drabMoment"],
-        "reusesPropertyValue": [{
-          "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#prefLabel",
-          "propertyReusedFromResourceIri": "http://dcat/model/drabMoment"
-        }, {
-          "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#definition",
-          "propertyReusedFromResourceIri": "http://dcat/model/drabMoment"
-        }],
-        "$type": ["object-property-profile"],
-        "rangeClassIri": ["http://dcat/model/flatBack1"],
-        "specializationOfIri": [],
-        "externalDocumentationUrl": "external-doc-4",
-        "requirementLevel": RequirementLevel.recommended,
-      } as ObjectPropertyProfile, {
-        "iri": "http://dcat/model/SweetState.tightArtChanges",
-        "cardinality": Cardinality.ZeroToMany,
-        "prefLabel": {},
-        "definition": {},
-        "usageNote": {},
-        "profileOfIri": [],
-        "profiledPropertyIri": ["http://dcat/model/tightArt"],
-        "reusesPropertyValue": [{
-          "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#prefLabel",
-          "propertyReusedFromResourceIri": "http://dcat/model/tightArt"
-        }, {
-          "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#definition",
-          "propertyReusedFromResourceIri": "http://dcat/model/tightArt"
-        }],
-        "$type": ["datatype-property-profile"],
-        "rangeDataTypeIri": ["http://www.w3.org/2000/01/rdf-schema#Literal"],
-        "specializationOfIri": [],
-        "externalDocumentationUrl": "external-doc-4",
-        "requirementLevel": RequirementLevel.recommended,
-      } as DatatypePropertyProfile],
+      "type": ["class-profile"],
       "reusesPropertyValue": [{
         "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#prefLabel",
         "propertyReusedFromResourceIri": "http://localhost/sweetState"
@@ -268,21 +230,64 @@ test("End to end test I.", async () => {
       "definition": { "en": "Changed in profile" },
       "usageNote": { "en": "usage note" },
       "profileOfIri": [],
-      "$type": ["class-profile"],
-      "properties": [],
+      "type": ["class-profile"],
       "reusesPropertyValue": [],
       "profiledClassIri": ["http://dcat/model/flatBack"],
       "specializationOfIri": [],
       "externalDocumentationUrl": "external-doc-2",
       "classRole": ClassRole.supportive,
     }],
+    "datatypePropertyProfiles": [{
+      "iri": "http://dcat/model/SweetState.tightArtChanges",
+      "cardinality": Cardinality.ZeroToMany,
+      "prefLabel": {},
+      "definition": {},
+      "usageNote": {},
+      "profileOfIri": [],
+      "profiledPropertyIri": ["http://dcat/model/tightArt"],
+      "reusesPropertyValue": [{
+        "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#prefLabel",
+        "propertyReusedFromResourceIri": "http://dcat/model/tightArt"
+      }, {
+        "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#definition",
+        "propertyReusedFromResourceIri": "http://dcat/model/tightArt"
+      }],
+      "type": ["datatype-property-profile"],
+      "rangeDataTypeIri": ["http://www.w3.org/2000/01/rdf-schema#Literal"],
+      "specializationOfIri": [],
+      "externalDocumentationUrl": "external-doc-4",
+      "requirementLevel": RequirementLevel.recommended,
+      "domainIri": "http://dcat/model/sweetState1",
+    }],
+    "objectPropertyProfiles": [{
+      "iri": "http://dcat/model/SweetState.drabMoment",
+      "cardinality": Cardinality.ZeroToMany,
+      "prefLabel": {},
+      "definition": {},
+      "usageNote": {},
+      "profileOfIri": [],
+      "profiledPropertyIri": ["http://dcat/model/drabMoment"],
+      "reusesPropertyValue": [{
+        "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#prefLabel",
+        "propertyReusedFromResourceIri": "http://dcat/model/drabMoment"
+      }, {
+        "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#definition",
+        "propertyReusedFromResourceIri": "http://dcat/model/drabMoment"
+      }],
+      "type": ["object-property-profile"],
+      "rangeClassIri": ["http://dcat/model/flatBack1"],
+      "specializationOfIri": [],
+      "externalDocumentationUrl": "external-doc-4",
+      "requirementLevel": RequirementLevel.recommended,
+      "domainIri": "http://dcat/model/sweetState1",
+    }],
   };
 
   expect(dsvModel).toStrictEqual(expectedConceptualModel);
 
   // We go to RDF and back.
-  const actualRdf = await conceptualModelToRdf(dsvModel, {});
-  const parsedConceptualModel = (await rdfToConceptualModel(actualRdf))[0]!;
+  const actualRdf = await dsvToRdf(dsvModel, {});
+  const parsedConceptualModel = (await rdfToDsv(actualRdf))[0]!;
   expect(parsedConceptualModel).toStrictEqual(dsvModel);
 
   const iriToIdentifier: Record<string, string> = {
@@ -324,36 +329,18 @@ test("End to end test I.", async () => {
       "externalDocumentationUrl": "external-doc-1",
       "tags": [],
     }, {
-      "ends": [{
-        "name": {},
-        "nameFromProfiled": null,
-        "description": {},
-        "descriptionFromProfiled": null,
-        "iri": null,
-        // DSV does not support cardinality for domain.
-        "cardinality": null, // [0, null],
-        "usageNote": {},
-        "usageNoteFromProfiled": null,
-        "profiling": [],
-        "concept": "hwey2q71bvjm7d1jrlq",
-        "externalDocumentationUrl": null,
-        "tags": [],
-      }, {
-        "name": {},
-        "nameFromProfiled": "u42wg5rcg2im7d1j3hm",
-        "description": {},
-        "descriptionFromProfiled": "u42wg5rcg2im7d1j3hm",
-        "iri": "SweetState.drabMoment",
-        "cardinality": [0, null],
-        "usageNote": {},
-        "usageNoteFromProfiled": null,
-        "profiling": ["u42wg5rcg2im7d1j3hm"],
-        "concept": "94kn5yss8dm7d1jv9z",
-        "externalDocumentationUrl": "external-doc-4",
-        "tags": [DSV_MANDATORY_LEVEL.recommended],
-      }],
-      "id": "fk532ihkfa5m7d1k90e",
-      "type": ["relationship-profile"]
+      "id": "94kn5yss8dm7d1jv9z",
+      "type": ["class-profile"],
+      "description": { "en": "Changed in profile" },
+      "descriptionFromProfiled": null,
+      "name": { "en": "Flat Back Changed in Profile" },
+      "nameFromProfiled": null,
+      "iri": "flatBack1",
+      "usageNote": { "en": "usage note" },
+      "usageNoteFromProfiled": null,
+      "profiling": ["lqo2gocgg4sm7d1ivqx"],
+      "externalDocumentationUrl": "external-doc-2",
+      "tags": [DSV_CLASS_ROLE.supportive],
     }, {
       "ends": [{
         "name": {},
@@ -386,19 +373,37 @@ test("End to end test I.", async () => {
       "id": "kss58ru9dom7d1omi4",
       "type": ["relationship-profile"]
     } as SemanticModelRelationshipProfile, {
-      "id": "94kn5yss8dm7d1jv9z",
-      "type": ["class-profile"],
-      "description": { "en": "Changed in profile" },
-      "descriptionFromProfiled": null,
-      "name": { "en": "Flat Back Changed in Profile" },
-      "nameFromProfiled": null,
-      "iri": "flatBack1",
-      "usageNote": { "en": "usage note" },
-      "usageNoteFromProfiled": null,
-      "profiling": ["lqo2gocgg4sm7d1ivqx"],
-      "externalDocumentationUrl": "external-doc-2",
-      "tags": [DSV_CLASS_ROLE.supportive],
-    }],
+      "ends": [{
+        "name": {},
+        "nameFromProfiled": null,
+        "description": {},
+        "descriptionFromProfiled": null,
+        "iri": null,
+        // DSV does not support cardinality for domain.
+        "cardinality": null, // [0, null],
+        "usageNote": {},
+        "usageNoteFromProfiled": null,
+        "profiling": [],
+        "concept": "hwey2q71bvjm7d1jrlq",
+        "externalDocumentationUrl": null,
+        "tags": [],
+      }, {
+        "name": {},
+        "nameFromProfiled": "u42wg5rcg2im7d1j3hm",
+        "description": {},
+        "descriptionFromProfiled": "u42wg5rcg2im7d1j3hm",
+        "iri": "SweetState.drabMoment",
+        "cardinality": [0, null],
+        "usageNote": {},
+        "usageNoteFromProfiled": null,
+        "profiling": ["u42wg5rcg2im7d1j3hm"],
+        "concept": "94kn5yss8dm7d1jv9z",
+        "externalDocumentationUrl": "external-doc-4",
+        "tags": [DSV_MANDATORY_LEVEL.recommended],
+      }],
+      "id": "fk532ihkfa5m7d1k90e",
+      "type": ["relationship-profile"]
+    } as SemanticModelRelationshipProfile],
   } as EntityListContainer;
 
   expect(parsedContainer).toStrictEqual(expectedContainer);
@@ -545,7 +550,7 @@ test("Issue #1005", async () => {
     "http://dcat/model/", container, context);
 
   // We go to RDF and back.
-  const actualRdf = await conceptualModelToRdf(dsvModel, {});
+  const actualRdf = await dsvToRdf(dsvModel, {});
 
   const expectedRdf = `@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
@@ -584,27 +589,27 @@ test("Issue #1005", async () => {
     a dsv:ClassProfile;
     dsv:class :bulkyForce.
 
-<http://dcat/model/BulkyForce.juicyWork> dsv:domain :bulkyForceProfile;
-    dct:isPartOf <http://dcat/model/>;
+<http://dcat/model/BulkyForce.juicyWork> dct:isPartOf <http://dcat/model/>;
     a dsv:TermProfile;
     skos:prefLabel "Juicy Work"@en;
     dsv:property :juicyWork;
+    dsv:domain :bulkyForceProfile;
     a dsv:ObjectPropertyProfile;
     dsv:objectPropertyRange :juicyBusinessProfile.
 
-<http://dcat/model/JuicyBusiness.juicyWorkSpecial> dsv:domain :bulkyForceProfile;
-    dct:isPartOf <http://dcat/model/>;
+<http://dcat/model/JuicyBusiness.juicyWorkSpecial> dct:isPartOf <http://dcat/model/>;
     a dsv:TermProfile;
     skos:prefLabel "Juicy Work"@en;
     dsv:specializes <http://dcat/model/BulkyForce.juicyWork>;
     dsv:property :juicyWork;
+    dsv:domain :bulkyForceProfile;
     a dsv:ObjectPropertyProfile;
     dsv:objectPropertyRange :juicyBusinessProfile.
 `;
 
   expect(actualRdf).toStrictEqual(expectedRdf);
 
-  const parsedConceptualModel = (await rdfToConceptualModel(actualRdf))[0]!;
+  const parsedConceptualModel = (await rdfToDsv(actualRdf))[0]!;
 
   const iriToIdentifier: Record<string, string> = {
     "http://dcat/model/bulkyForce": "jv7zjcl0xnfm8lqej9v",

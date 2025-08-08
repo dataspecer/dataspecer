@@ -6,9 +6,10 @@ import { Entity } from "@dataspecer/core-v2/entity-model";
 export interface EntityListContainer {
 
   /**
-   * Base IRI for all relative IRIs in {@link entities}.
+   * Base IRI for all relative IRIs in {@link entities}
+   * or null if there is no common baseIRI available.
    */
-  baseIri: string;
+  baseIri: string | null;
 
   /**
    * List of all entities.

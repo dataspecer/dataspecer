@@ -1,8 +1,8 @@
-import * as N3 from "n3";
+import N3 from "n3";
 
 import {
   LanguageString,
-  DsvModel,
+  ApplicationProfile,
   ClassProfile,
   ClassProfileType,
   PropertyProfile,
@@ -11,7 +11,7 @@ import {
   DatatypePropertyProfile,
   DatatypePropertyProfileType,
   Cardinality,
-  Profile,
+  TermProfile,
   ClassRole,
   RequirementLevel,
 } from "./dsv-model.ts";
@@ -20,18 +20,18 @@ import {
   stringN3ToRdf,
 } from "./n3-reader.ts";
 
-import { RDF, DSV, SKOS, VANN, DCT, DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL } from "./vocabulary.ts";
+import {
+  RDF, DSV, SKOS, VANN, DCT, DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL,
+} from "./vocabulary.ts";
 
-export async function rdfToConceptualModel(
+export async function rdfToDsv(
   rdfAsString: string,
-): Promise<DsvModel[]> {
-  const context = new RdfLoaderContext();
+): Promise<ApplicationProfile[]> {
   const quads = await stringN3ToRdf(rdfAsString);
-  context.loadQuads(quads);
-  const conceptualModels = (new ConceptualModelReader(context)).load();
-  const classProfiles = (new ClassProfilesReader(context, conceptualModels)).load();
-  (new PropertyProfilesReader(context, classProfiles)).loadPropertyProfiles();
-  return Object.values(conceptualModels);
+  const context = new RdfLoaderContext(quads);
+  //
+  const loader = new ProfileLoader(context);
+  return loader.loadApplicationProfiles();
 }
 
 /**
@@ -42,17 +42,17 @@ export async function rdfToConceptualModel(
  */
 class RdfLoaderContext {
 
-  quadsBySubject: Map<string, N3.Quad[]> = new Map();
+  readonly quadsBySubject: Map<string, N3.Quad[]> = new Map();
 
-  conceptualModels: N3.Quad_Subject[] = [];
+  readonly conceptualModels: N3.Quad_Subject[] = [];
 
-  classProfiles: N3.Quad_Subject[] = [];
+  readonly classProfiles: N3.Quad_Subject[] = [];
 
-  objectPropertyProfiles: N3.Quad_Subject[] = [];
+  readonly objectPropertyProfiles: N3.Quad_Subject[] = [];
 
-  datatypePropertyProfiles: N3.Quad_Subject[] = [];
+  readonly datatypePropertyProfiles: N3.Quad_Subject[] = [];
 
-  loadQuads(quads: N3.Quad[]): void {
+  constructor(quads: N3.Quad[]) {
     for (const quad of quads) {
       this.addToQuadsBySubject(quad);
       if (RDF.type.equals(quad.predicate)) {
@@ -84,103 +84,6 @@ class RdfLoaderContext {
     }
   }
 
-}
-
-type ConceptualModelMap = { [iri: string]: DsvModel };
-
-class ConceptualModelReader {
-
-  private context: RdfLoaderContext;
-
-  constructor(context: RdfLoaderContext) {
-    this.context = context;
-  }
-
-  load(): ConceptualModelMap {
-    const conceptualModelMap: ConceptualModelMap = {};
-    this.context.conceptualModels.forEach(subject => {
-      conceptualModelMap[subject.value] = {
-        iri: subject.value,
-        profiles: [],
-      };
-    });
-    return conceptualModelMap;
-  }
-
-}
-
-type ClassProfileMap = { [iri: string]: ClassProfile };
-
-class ClassProfilesReader {
-
-  private context: RdfLoaderContext;
-
-  private conceptualModelMap: ConceptualModelMap;
-
-  constructor(context: RdfLoaderContext, conceptualModelMap: ConceptualModelMap) {
-    this.context = context;
-    this.conceptualModelMap = conceptualModelMap;
-  }
-
-  load(): ClassProfileMap {
-    const result: ClassProfileMap = {};
-    this.context.classProfiles.map(subject => this.loadClass(subject))
-      .forEach(classProfile => result[classProfile.iri] = classProfile);
-    return result;
-  }
-
-  private loadClass(subject: N3.Quad_Subject): ClassProfile {
-    const reader = new RdfPropertyReader(this.context, subject);
-    const classProfile: ClassProfile = {
-      // Profile
-      iri: subject.value,
-      prefLabel: reader.languageString(SKOS.prefLabel),
-      definition: reader.languageString(SKOS.definition),
-      usageNote: reader.languageString(SKOS.scopeNote)
-        ?? reader.languageString(VANN.usageNote),
-      profileOfIri: reader.iris(DSV.profileOf),
-      reusesPropertyValue: [],
-      specializationOfIri: reader.iris(DSV.specializationOf),
-      externalDocumentationUrl: reader.iri(DSV.externalDocumentation),
-      // ClassProfile
-      $type: [ClassProfileType],
-      profiledClassIri: reader.iris(DSV.class),
-      properties: [],
-      classRole: iriToClassRole(reader.iri(DSV.classRole)),
-    };
-    // Load inherited values.
-    for (const node of reader.irisAsSubjects(DSV.reusesPropertyValue)) {
-      loadReusesPropertyValue(this.context, node, classProfile);
-    }
-    // Load and add to the model.
-    const modelIri = reader.iri(DCT.isPartOf);
-    if (modelIri === null) {
-      console.error(`Missing dct:isPartOf for '${subject.value}'.`);
-    } else {
-      const conceptualModel = this.conceptualModelMap[modelIri];
-      if (conceptualModel === undefined) {
-        console.error(`Missing ConceptualModel for '${subject.value}'.`);
-      } else {
-        conceptualModel.profiles.push(classProfile);
-      }
-    }
-    return classProfile;
-  }
-
-}
-
-function iriToClassRole(iri: string | null): ClassRole {
-  if (iri === null) {
-    return ClassRole.undefined;
-  }
-  switch (iri) {
-    case DSV_CLASS_ROLE.main:
-      return ClassRole.main;
-    case DSV_CLASS_ROLE.supportive:
-      return ClassRole.supportive;
-    default:
-      return ClassRole.undefined;
-  }
 }
 
 /**
@@ -245,10 +148,173 @@ class RdfPropertyReader {
 
 }
 
+class ProfileLoader {
+
+  private context: RdfLoaderContext;
+
+  /**
+   * Temporary object to store mapping to ApplicationProfile when
+   * loading TermProfiles.
+   */
+  private profileByIri : Record<string, ApplicationProfile> = {};
+
+  constructor(context: RdfLoaderContext) {
+    this.context = context;
+  }
+
+  loadApplicationProfiles(): ApplicationProfile[] {
+    const result: ApplicationProfile[] = [];
+
+    this.context.conceptualModels
+      .map(subject => this.loadApplicationProfile(subject))
+      .forEach(item => {
+        result.push(item);
+        this.profileByIri[item.iri] = item;
+      })
+
+    // Load profiles.
+    this.context.classProfiles
+      .forEach(subject => this.loadClassProfile(subject));
+    this.context.objectPropertyProfiles
+      .forEach(subject => this.loadObjectPropertyProfile(subject))
+    this.context.datatypePropertyProfiles
+      .forEach(subject => this.loadDatatypePropertyProfile(subject))
+
+    this.profileByIri = {};
+    return result;
+  }
+
+  private loadApplicationProfile(subject: N3.Quad_Subject): ApplicationProfile {
+    const reader = new RdfPropertyReader(this.context, subject);
+    return {
+      iri: subject.value,
+      externalDocumentationUrl: reader.iri(DSV.externalDocumentation),
+      // We load profiles later as ownership is defined in the ProfileTerm.
+      classProfiles: [],
+      objectPropertyProfiles: [],
+      datatypePropertyProfiles: [],
+    };
+  }
+
+  private loadClassProfile(subject: N3.Quad_Subject): void {
+    const reader = new RdfPropertyReader(this.context, subject);
+    const profile: ClassProfile = {
+      ...this.loadTermProfile(subject, reader),
+      // ClassProfile
+      type: [ClassProfileType],
+      profiledClassIri: reader.iris(DSV.class),
+      classRole: iriToClassRole(reader.iri(DSV.classRole)),
+    };
+    this.addToApplicationProfile(reader, item => item.classProfiles, profile);
+  }
+
+  private loadTermProfile(
+    subject: N3.Quad_Subject, reader: RdfPropertyReader,
+  ) : TermProfile{
+    const profile: TermProfile = {
+      type: [],
+      iri: subject.value,
+      prefLabel: reader.languageString(SKOS.prefLabel),
+      definition: reader.languageString(SKOS.definition),
+      usageNote: reader.languageString(SKOS.scopeNote)
+        ?? reader.languageString(VANN.usageNote),
+      profileOfIri: reader.iris(DSV.profileOf),
+      reusesPropertyValue: [],
+      specializationOfIri: reader.iris(DSV.specializationOf),
+      externalDocumentationUrl: reader.iri(DSV.externalDocumentation),
+    }
+    // Load inherited values.
+    for (const node of reader.irisAsSubjects(DSV.reusesPropertyValue)) {
+      loadReusesPropertyValue(this.context, node, profile);
+    }
+    return profile;
+  }
+
+  private addToApplicationProfile<Type extends TermProfile>(
+    reader: RdfPropertyReader,
+    selector: (profile: ApplicationProfile) => Type[],
+    profile: Type,
+  ): void {
+    const ownerIri = reader.iri(DCT.isPartOf);
+    if (ownerIri === null) {
+      console.error(`Missing dct:isPartOf for '${profile.iri}'.`);
+    } else {
+      const owner = this.profileByIri[ownerIri];
+      if (owner === undefined) {
+        console.error(`Missing ApplicationProfile for '${profile.iri}'.`);
+      } else {
+        selector(owner).push(profile);
+      }
+    }
+  }
+
+  private loadObjectPropertyProfile(subject: N3.Quad_Subject): void {
+    const reader = new RdfPropertyReader(this.context, subject);
+    const domain = reader.iri(DSV.domain);
+    if (domain === null) {
+      return;
+    }
+    const profile: ObjectPropertyProfile = {
+      ...this.loadPropertyProfile(subject, reader, domain),
+      // ObjectPropertyProfile
+      type: [ObjectPropertyProfileType],
+      rangeClassIri: reader.iris(DSV.objectPropertyRange),
+    };
+    this.addToApplicationProfile(
+      reader, item => item.objectPropertyProfiles, profile);
+  }
+
+  private loadPropertyProfile(
+    subject: N3.Quad_Subject, reader: RdfPropertyReader,
+    domain: string,
+  ): PropertyProfile {
+    const profile: PropertyProfile = {
+      ...this.loadTermProfile(subject, reader),
+      // PropertyProfile
+      cardinality: loadCardinality(reader),
+      domainIri: domain,
+      profiledPropertyIri: reader.iris(DSV.property),
+      requirementLevel: iriToRequirementLevel(reader.iri(DSV.requirementLevel)),
+    };
+    return profile;
+  }
+
+  private loadDatatypePropertyProfile(subject: N3.Quad_Subject): void {
+    const reader = new RdfPropertyReader(this.context, subject);
+    const domain = reader.iri(DSV.domain);
+    if (domain === null) {
+      return;
+    }
+    const profile: DatatypePropertyProfile = {
+      ...this.loadPropertyProfile(subject, reader, domain),
+      // ObjectPropertyProfile
+      type: [DatatypePropertyProfileType],
+      rangeDataTypeIri: reader.iris(DSV.datatypePropertyRange),
+    };
+    this.addToApplicationProfile(
+      reader, item => item.datatypePropertyProfiles, profile);
+  }
+
+}
+
+function iriToClassRole(iri: string | null): ClassRole {
+  if (iri === null) {
+    return ClassRole.undefined;
+  }
+  switch (iri) {
+    case DSV_CLASS_ROLE.main:
+      return ClassRole.main;
+    case DSV_CLASS_ROLE.supportive:
+      return ClassRole.supportive;
+    default:
+      return ClassRole.undefined;
+  }
+}
+
 function loadReusesPropertyValue(
   context: RdfLoaderContext,
   subject: N3.Quad_Subject,
-  profile: Profile,
+  profile: TermProfile,
 ) {
   const reader = new RdfPropertyReader(context, subject);
   let reusedProperty = reader.iri(DSV.reusedProperty);
@@ -271,119 +337,31 @@ function loadReusesPropertyValue(
 }
 
 /**
- * Load properties into given classes.
+ * @returns First valid cardinality.
  */
-class PropertyProfilesReader {
-
-  private context: RdfLoaderContext;
-
-  private classProfileMap: ClassProfileMap;
-
-  constructor(context: RdfLoaderContext, classProfileMap: ClassProfileMap) {
-    this.context = context;
-    this.classProfileMap = classProfileMap;
-  }
-
-  loadPropertyProfiles(): void {
-    this.context.objectPropertyProfiles
-      .forEach(subject => this.loadObjectPropertyProfile(subject))
-    this.context.datatypePropertyProfiles
-      .forEach(subject => this.loadDatatypePropertyProfile(subject))
-  }
-
-  private loadObjectPropertyProfile(subject: N3.Quad_Subject): void {
-    const reader = new RdfPropertyReader(this.context, subject);
-    const propertyProfile: ObjectPropertyProfile = {
-      ...this.loadPropertyProfile(subject, reader),
-      // ObjectPropertyProfile
-      $type: [ObjectPropertyProfileType],
-      rangeClassIri: reader.iris(DSV.objectPropertyRange),
-    };
-    this.addToClass(reader, propertyProfile);
-  }
-
-  private loadPropertyProfile(
-    subject: N3.Quad_Subject, reader: RdfPropertyReader,
-  ): PropertyProfile {
-    const propertyProfile: PropertyProfile = {
-      // Profile
-      iri: subject.value,
-      prefLabel: reader.languageString(SKOS.prefLabel),
-      definition: reader.languageString(SKOS.definition),
-      usageNote: reader.languageString(SKOS.scopeNote)
-        ?? reader.languageString(VANN.usageNote),
-      profileOfIri: reader.iris(DSV.profileOf),
-      reusesPropertyValue: [],
-      specializationOfIri: reader.iris(DSV.specializationOf),
-      externalDocumentationUrl: reader.iri(DSV.externalDocumentation),
-      // PropertyProfile
-      cardinality: this.loadCardinality(reader),
-      profiledPropertyIri: reader.iris(DSV.property),
-      requirementLevel: iriToRequirementLevel(reader.iri(DSV.requirementLevel)),
-    };
-    // Load inherited values.
-    for (const node of reader.irisAsSubjects(DSV.reusesPropertyValue)) {
-      loadReusesPropertyValue(this.context, node, propertyProfile);
+function loadCardinality(reader: RdfPropertyReader): Cardinality | null {
+  for (const { object } of reader.quads(DSV.cardinality)) {
+    if (DSV.ManyToMany.equals(object)) {
+      return Cardinality.ManyToMany;
+    } else if (DSV.ManyToOne.equals(object)) {
+      return Cardinality.ManyToOne;
+    } else if (DSV.ManyToZero.equals(object)) {
+      return Cardinality.ManyToZero;
+    } else if (DSV.OneToManyV1.equals(object) || DSV.OneToMany.equals(object)) {
+      return Cardinality.OneToMany;
+    } else if (DSV.OneToOneV1.equals(object) || DSV.OneToOne.equals(object)) {
+      return Cardinality.OneToOne;
+    } else if (DSV.OneToZero.equals(object)) {
+      return Cardinality.OneToZero;
+    } else if (DSV.ZeroToManyV1.equals(object) || DSV.ZeroToMany.equals(object)) {
+      return Cardinality.ZeroToMany;
+    } else if (DSV.ZeroToOneV1.equals(object) || DSV.ZeroToOne.equals(object)) {
+      return Cardinality.ZeroToOne;
+    } else if (DSV.ZeroToZero.equals(object)) {
+      return Cardinality.ZeroToZero;
     }
-    return propertyProfile;
   }
-
-  /**
-   * Return first valid cardinality.
-   */
-  private loadCardinality(reader: RdfPropertyReader): Cardinality | null {
-    for (const { object } of reader.quads(DSV.cardinality)) {
-      if (DSV.ManyToMany.equals(object)) {
-        return Cardinality.ManyToMany;
-      } else if (DSV.ManyToOne.equals(object)) {
-        return Cardinality.ManyToOne;
-      } else if (DSV.ManyToZero.equals(object)) {
-        return Cardinality.ManyToZero;
-      } else if (DSV.OneToManyV1.equals(object) || DSV.OneToMany.equals(object)) {
-        return Cardinality.OneToMany;
-      } else if (DSV.OneToOneV1.equals(object) || DSV.OneToOne.equals(object)) {
-        return Cardinality.OneToOne;
-      } else if (DSV.OneToZero.equals(object)) {
-        return Cardinality.OneToZero;
-      } else if (DSV.ZeroToManyV1.equals(object) || DSV.ZeroToMany.equals(object)) {
-        return Cardinality.ZeroToMany;
-      } else if (DSV.ZeroToOneV1.equals(object) || DSV.ZeroToOne.equals(object)) {
-        return Cardinality.ZeroToOne;
-      } else if (DSV.ZeroToZero.equals(object)) {
-        return Cardinality.ZeroToZero;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Add profile to given class based on the dsv:domain.
-   */
-  private addToClass(reader: RdfPropertyReader, profile: PropertyProfile) {
-    const domainIri = reader.iri(DSV.domain);
-    if (domainIri === null) {
-      console.error(`Missing dsv:domain for '${profile.iri}'`);
-      return;
-    }
-    const domain = this.classProfileMap[domainIri];
-    if (domain === undefined) {
-      console.error(`Missing domain for '${profile.iri}'`);
-      return;
-    }
-    domain.properties.push(profile);
-  }
-
-  private loadDatatypePropertyProfile(subject: N3.Quad_Subject): void {
-    const reader = new RdfPropertyReader(this.context, subject);
-    const propertyProfile: DatatypePropertyProfile = {
-      ...this.loadPropertyProfile(subject, reader),
-      // ObjectPropertyProfile
-      $type: [DatatypePropertyProfileType],
-      rangeDataTypeIri: reader.iris(DSV.datatypePropertyRange),
-    };
-    this.addToClass(reader, propertyProfile);
-  }
-
+  return null;
 }
 
 function iriToRequirementLevel(iri: string | null): RequirementLevel {

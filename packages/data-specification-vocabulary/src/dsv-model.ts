@@ -1,22 +1,38 @@
-//
-// In this file we use @lc- annotations. The idea
-// is to be able to collect the information automatically
-// and hopefully, one day, be able to integrate it with the specification.
-//
-
-import { DSV_CLASS_ROLE, SKOS } from "./vocabulary.ts";
+import { SKOS } from "./vocabulary.ts";
 
 export type LanguageString = { [language: string]: string };
 
-export interface DsvModel {
+interface Resource {
 
   /**
-   * Absolute IRI for the model.
+   * @lc-property dsv:externalDocumentation
    */
+  externalDocumentationUrl: string | null;
+
+}
+
+/**
+ * @lc-resource dsv:ApplicationProfile
+ */
+export interface ApplicationProfile extends Resource {
+
   iri: string;
 
-  // @lc-identifier dcterms:isPartOf
-  profiles: ClassProfile[];
+  /**
+   * @lc-property dcterms:isPartOf
+   */
+  classProfiles: ClassProfile[];
+
+  /**
+   * @lc-property dcterms:isPartOf
+   */
+  datatypePropertyProfiles: DatatypePropertyProfile[];
+
+  /**
+   * @lc-property dcterms:isPartOf
+   */
+  objectPropertyProfiles: ObjectPropertyProfile[];
+
 }
 
 export enum Cardinality {
@@ -35,36 +51,44 @@ export enum Cardinality {
  * Instead of LanguageString | null we use only LanguageString.
  * We can not distinguish between null and {} in RDF anyway.
  * So we just pick the empty object as default.
+ *
+ * @lc-resource dsv:TermProfile
  */
-// @lc-identifier dsv:Profile
-export interface Profile {
+export interface TermProfile extends Resource {
 
-  /**
-   * Absolute IRI.
-   */
+  type: string[];
+
   iri: string;
 
-  // @lc-identifier skos:prefLabel
+  /**
+   * @lc-property skos:prefLabel
+   */
   prefLabel: LanguageString;
 
-  // @lc-identifier skos:definition
+  /**
+   * @lc-property skos:definition
+   */
   definition: LanguageString;
 
-  // @lc-identifier skos:scopeNote
+  /**
+   * @lc-property skos:scopeNote
+   */
   usageNote: LanguageString;
 
-  // @lc-identifier dsv:profileOf
-  // @lc-type Profile
+  /**
+   * @lc-property dsv:profileOf
+   */
   profileOfIri: string[];
 
-  // @lc-identifier dsv:reusesPropertyValue
-  // @lc-type PropertyValueReuse
+  /**
+   * @lc-property dsv:reusesPropertyValue
+   */
   reusesPropertyValue: PropertyValueReuse[];
 
-  // @lc-identifier dsv:specializes
+  /**
+   * @lc-property dsv:specializes
+   */
   specializationOfIri: string[];
-
-  externalDocumentationUrl: string | null;
 
 }
 
@@ -74,19 +98,27 @@ export const DSV_REUSE_DESCRIPTION = SKOS.definition.id;
 
 export const DSV_REUSE_USAGE_NOTE = SKOS.scopeNote.id;
 
-// @lc-identifier dsv:PropertyValueReuse
+/**
+ * @lc-resource dsv:PropertyValueReuse
+ */
 export interface PropertyValueReuse {
 
-  // dsv:reusedProperty
+  /**
+   * @lc-property dsv:reusedProperty
+   */
   reusedPropertyIri: string;
 
-  // dsv:reusedFromResource
+  /**
+   * @lc-property dsv:reusedFromResource
+   */
   propertyReusedFromResourceIri: string;
 
 }
 
-// @lc-identifier dsv:InvalidProfile
-export interface InvalidProfile extends Profile {
+/**
+ * @lc-resource dsv:InvalidTermProfile
+ */
+export interface InvalidTermProfile extends TermProfile {
 
 }
 
@@ -96,26 +128,29 @@ export enum ClassRole {
   supportive,
 }
 
-// @lc-identifier dsv:ClassProfile
-export interface ClassProfile extends Profile {
-  $type: [typeof ClassProfileType];
+/**
+ * @lc-resource dsv:ClassProfile
+ */
+export interface ClassProfile extends TermProfile {
 
-  // @lc-identifier dsv:class
-  // @lc-type ConceptualClass
+  type: [typeof ClassProfileType];
+
+  /**
+   * @lc-property dsv:class
+   */
   profiledClassIri: string[];
 
-  // @lc-identifier dsv:domain
-  properties: PropertyProfile[];
-
-  // @lc-identifier dsv:classRole
+  /**
+   * @lc-property dsv:classRole
+   */
   classRole: ClassRole;
 
 }
 
 export const ClassProfileType = "class-profile";
 
-export function isClassProfile(profile:Profile) : profile is ClassProfile {
-  return ((profile as any).$type ?? []).includes(ClassProfileType);
+export function isClassProfile(profile: TermProfile): profile is ClassProfile {
+  return profile.type.includes(ClassProfileType);
 }
 
 export enum RequirementLevel {
@@ -125,52 +160,78 @@ export enum RequirementLevel {
   recommended,
 }
 
-// @lc-identifier dsv:PropertyProfile
-export interface PropertyProfile extends Profile {
+/**
+ * @lc-resource dsv:PropertyProfile
+ */
+export interface PropertyProfile extends TermProfile {
 
-  // @ls-identifier dsv:cardinality
+  /**
+   * @lc-property dsv:cardinality
+   */
   cardinality: Cardinality | null;
 
-  // @lc-identifier dsv:property
-  // @lc-type ConceptualProperty
+  /**
+   * @lc-property dsv:domain
+   */
+  domainIri: string;
+
+  /**
+   * @lc-property dsv:property
+   */
   profiledPropertyIri: string[];
 
-  // @lc-identifier dsv:requirementLevel
+  /**
+   * @lc-property dsv:requirementLevel
+   */
   requirementLevel: RequirementLevel;
 
 }
 
-// @lc-identifier dsv:ObjectPropertyProfile
-export interface ObjectPropertyProfile extends PropertyProfile {
-  $type: [typeof ObjectPropertyProfileType];
+export function isPropertyProfile(
+  profile: TermProfile,
+): profile is PropertyProfile {
+  return profile.type.includes(ObjectPropertyProfileType)
+    || profile.type.includes(DatatypePropertyProfileType);
+}
 
-  // @lc-identifier dsv:objectPropertyRange
-  // @lc-type ClassProfile | ConceptualClass
-  // https://github.com/mff-uk/data-specification-vocabulary/issues/3
+/**
+ * @lc-resource dsv:ObjectPropertyProfile
+ */
+export interface ObjectPropertyProfile extends PropertyProfile {
+  type: [typeof ObjectPropertyProfileType];
+
+  /**
+   * {@link https://github.com/mff-uk/data-specification-vocabulary/issues/3}
+   *
+   * @lc-property dsv:range
+   */
   rangeClassIri: string[];
 }
 
 export const ObjectPropertyProfileType = "object-property-profile";
 
 export function isObjectPropertyProfile(
-  profile:Profile,
-) : profile is ObjectPropertyProfile {
-  return ((profile as any).$type ?? []).includes(ObjectPropertyProfileType);
+  profile: TermProfile,
+): profile is ObjectPropertyProfile {
+  return ((profile as any).type ?? []).includes(ObjectPropertyProfileType);
 }
 
-// @lc-identifier dsv:DatatypePropertyProfile
+/**
+ * @lc-resource dsv:DatatypePropertyProfile
+ */
 export interface DatatypePropertyProfile extends PropertyProfile {
-  $type: [typeof DatatypePropertyProfileType];
+  type: [typeof DatatypePropertyProfileType];
 
-  // @lc-identifier dsv:datatypePropertyRange
-  // @lc-type ConceptualDatatype
+  /**
+   * @lc-property dsv:datatype
+   */
   rangeDataTypeIri: string[];
 }
 
 export const DatatypePropertyProfileType = "datatype-property-profile";
 
 export function isDatatypePropertyProfile(
-  profile:Profile,
-) : profile is DatatypePropertyProfile {
-  return ((profile as any).$type ?? []).includes(DatatypePropertyProfileType);
+  profile: TermProfile,
+): profile is DatatypePropertyProfile {
+  return ((profile as any).type ?? []).includes(DatatypePropertyProfileType);
 }
