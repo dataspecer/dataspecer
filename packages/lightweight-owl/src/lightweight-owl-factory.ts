@@ -3,14 +3,6 @@ import {
   isSemanticModelGeneralization,
   isSemanticModelRelationship,
 } from "@dataspecer/core-v2/semantic-model/concepts";
-
-import {
-  OwlOntology,
-  OwlClass,
-  OwlProperty,
-  IRI,
-  OwlPropertyType,
-} from "./lightweight-owl-model.ts";
 import {
   getDomainAndRange,
 } from "@dataspecer/core-v2/semantic-model/relationship-utils";
@@ -21,7 +13,16 @@ import {
 import {
   InMemorySemanticModel,
 } from "@dataspecer/core-v2/semantic-model/in-memory";
-import { Entities, Entity } from "@dataspecer/core-v2";
+import { Entities } from "@dataspecer/core-v2";
+
+import {
+  OwlOntology,
+  OwlClass,
+  OwlProperty,
+  IRI as TypeIRI,
+  OwlPropertyType,
+} from "./lightweight-owl-model.ts";
+import { isAbsoluteIri } from "@dataspecer/utilities";
 
 const OWL_THING = "http://www.w3.org/2002/07/owl#Thing";
 
@@ -33,31 +34,13 @@ interface Context {
 
 }
 
-// REMOVE THIS ONCE IN ANOTHER PACKAGE
+interface SemanticModel {
 
-type EntityModelChangeListener = (
-  updated: Record<string, Entity>,
-  removed: string[],
-) => void;
-
-interface EntityModel {
-
-  getId(): string;
+  getBaseIri(): string | null;
 
   getEntities(): Entities;
 
-  subscribeToChanges(listener: EntityModelChangeListener): () => void;
-
-}
-
-interface SemanticModel extends EntityModel {
-
-  getBaseIri(): string;
-
 };
-
-
-//
 
 /**
  * The {@link referenceSemanticModels} should contain all entities referenced
@@ -140,7 +123,7 @@ function loadOwlClassesInto(
       continue;
     }
     const newClass: OwlClass = {
-      iri: baseIri + (entity.iri ?? entity.id),
+      iri: createIri(baseIri, entity.iri, entity.id),
       name: entity.name,
       description: entity.description,
       subClassOf: [],
@@ -149,6 +132,18 @@ function loadOwlClassesInto(
     classes.push(newClass);
     classMapId[entity.id] = newClass;
   }
+}
+
+function createIri(
+  baseIri: string, iri: string | null | undefined, id: string,
+): string {
+  if (iri === null || iri === undefined) {
+    return baseIri + id;
+  }
+  if (isAbsoluteIri(iri)) {
+    return iri;
+  }
+  return baseIri + iri;
 }
 
 function prepareOwlProperties(
@@ -180,7 +175,6 @@ function prepareOwlProperties(
   return { properties, propertyMapId };
 }
 
-
 function loadOwlPropertiesInto(
   semanticModel: SemanticModel,
   idDefinedBy: string,
@@ -208,7 +202,7 @@ function loadOwlPropertiesInto(
     const ends = getDomainAndRange(entity);
     const domainEnd = ends?.domain;
     const rangeEnd = ends?.range;
-    const iri = baseIri + (rangeEnd?.iri ?? entity.iri ?? entity.id);
+    const iri = createIri(baseIri, rangeEnd?.iri, entity.id);
     const range = resolveIri(rangeEnd?.concept);
     const newProperty: OwlProperty = {
       iri,
@@ -225,7 +219,7 @@ function loadOwlPropertiesInto(
   }
 }
 
-function determineType(range: IRI): OwlPropertyType | null {
+function determineType(range: TypeIRI): OwlPropertyType | null {
   const isPrimitive = isPrimitiveType(range);
   const isComplex = isComplexType(range);
   if (isPrimitive && !isComplex) {
