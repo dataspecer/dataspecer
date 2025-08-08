@@ -172,13 +172,14 @@ export const ExportManagement = () => {
 
     const shacl = createShaclForProfile(
       semanticModels.map(model => new SemanticModelWrap(model)),
-      profileModels, topProfileModel,
+      profileModels.map(model => new SemanticModelWrap(model)),
+      new SemanticModelWrap(topProfileModel),
       createSemicShaclStylePolicy(iri));
 
     shaclToRdf(shacl, {
       prettyPrint: true,
     }).then(shaclAsRdf => {
-      console.log(shaclAsRdf);
+      console.log("SHACL export:", shaclAsRdf);
       const date = Date.now();
       download(shaclAsRdf, `shacl-profile-${date}.ttl`, "text/plain");
     });

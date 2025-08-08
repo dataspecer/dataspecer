@@ -3,7 +3,7 @@ import { BackendPackageService } from "@dataspecer/core-v2/project";
 import { VisualModel } from "@dataspecer/core-v2/visual-model";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 
-// We keep one instance-wide copy of backend.
+// We keep one instance-wide copy of backend service.
 const BACKEND_URL = import.meta.env.VITE_PUBLIC_APP_BACKEND!;
 const dataspecer = new BackendPackageService(BACKEND_URL, httpFetch)
 
