@@ -30,7 +30,7 @@ print_banner() {
 
   DATE_FORMATED=""
   if [ -n "$DATE" ]; then
-    DATE_FORMATED=$(date -d "$DATE" +"%Y-%m-%d")
+    DATE_FORMATED=$(echo "$DATE" | cut -c1-10)
   fi
 
   INFO=""
