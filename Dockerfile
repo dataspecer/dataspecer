@@ -68,6 +68,16 @@ RUN bunx prisma migrate deploy --schema dist/schema.prisma
 FROM base AS final
 WORKDIR /usr/src/app
 
+# Redeclare build args and expose them as runtime env so entrypoint can print metadata (prefixed to avoid collisions)
+ARG GIT_COMMIT
+ARG GIT_REF
+ARG GIT_COMMIT_DATE
+ARG GIT_COMMIT_NUMBER
+ENV DATASPECER_GIT_COMMIT=${GIT_COMMIT} \
+  DATASPECER_GIT_REF=${GIT_REF} \
+  DATASPECER_GIT_COMMIT_DATE=${GIT_COMMIT_DATE} \
+  DATASPECER_GIT_COMMIT_NUMBER=${GIT_COMMIT_NUMBER}
+
 # Makes directory accessible for the user
 # Instals prisma for migrations and cleans install cache
 RUN chmod a+rwx /usr/src/app && \
