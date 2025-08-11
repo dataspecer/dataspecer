@@ -139,7 +139,7 @@ application.post(apiBasename + "/repository/copy-recursively", copyRecursively);
 
 application.post(apiBasename + "/resources/import", importResource);
 application.post(apiBasename + "/resources/import-zip", multerUpload.single("file"), importPackageResource);
-application.post(apiBasename + "/resources/importFromGit", importPackageFromGit);
+application.post(apiBasename + "/resources/import-from-git", importPackageFromGit);
 
 // Interactive import of packages
 //application.post(apiBasename + '/import', importPackages);

@@ -725,7 +725,7 @@ async function generateSpecificationFromGitURL() {
   console.info("process.argv", process.argv);
   // Example of download URL - https://github.com/RadStr-bot/4f21bf6d-2116-4ab3-b387-1f8074f7f412/archive/refs/heads/main.zip (or commit SHA instead of refs/heads/main)
   const gitZipDownloadURL = process.argv[2];
-  const imported = await importFromGitUrl(gitZipDownloadURL);
+  const imported = await importFromGitUrl(gitZipDownloadURL, "branch");
   await generateArtifactsFromImported(imported);
   process.exit(0);
 }

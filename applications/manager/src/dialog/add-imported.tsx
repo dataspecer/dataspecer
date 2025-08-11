@@ -62,7 +62,7 @@ export const AddImported = ({ id, isOpen, resolve }: AddImportedProps & BetterMo
             break;
           case URLImportType.Git:
             importResults.push(
-              await fetch(import.meta.env.VITE_BACKEND + "/resources/importFromGit?parentIri=" + encodeURIComponent(id) + "&gitURL=" + encodeURIComponent(url), {
+              await fetch(import.meta.env.VITE_BACKEND + "/resources/import-from-git?parentIri=" + encodeURIComponent(id) + "&gitURL=" + encodeURIComponent(url), {
                 method: "POST",
               })
             );

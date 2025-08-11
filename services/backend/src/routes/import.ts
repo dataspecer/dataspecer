@@ -30,7 +30,7 @@ import { ReadableStream } from "stream/web";
 import { buffer } from "stream/consumers";
 import { extractPartOfRepositoryURL } from "../utils/git-utils.ts";
 import { GITHUB_USER_AGENT } from "../utils/git-utils.ts";
-import { GitProvider, GitProviderFactory } from "../git-providers/git-provider-api.ts";
+import { CommitReferenceType, getDefaultCommitReferenceType, GitProvider, GitProviderFactory, isCommitReferenceType } from "../git-providers/git-provider-api.ts";
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
   const result: LanguageString = {};
@@ -395,9 +395,9 @@ export const importResource = asyncHandler(async (request: express.Request, resp
  * @param repositoryURL is the URL of git repository (method also supports non-main branch URLs),
  *  this URL is transformed to the URL which downloads zip - for example https://github.com/RadStr-bot/4f21bf6d-2116-4ab3-b387-1f8074f7f412/archive/refs/heads/main.zip
  */
-export async function importFromGitUrl(repositoryURL: string) {
+export async function importFromGitUrl(repositoryURL: string, commitType: CommitReferenceType) {
   const gitProvider: GitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(repositoryURL);
-  const gitZipDownloadURL = await gitProvider.convertRepoURLToDownloadZipURL(repositoryURL);
+  const gitZipDownloadURL = await gitProvider.convertRepoURLToDownloadZipURL(repositoryURL, commitType);
 
   console.info("gitDownloadURL", repositoryURL);
 
@@ -431,7 +431,10 @@ export async function importFromGitUrl(repositoryURL: string) {
 
 
   const importer = new PackageImporter(resourceModel);
-  const imported = await importer.doImport(zipBuffer);
+
+  const commitName = gitProvider.extractPartOfRepositoryURL(repositoryURL, commitType);
+  const rootIriSuffix = commitName === null ? "" : `-${commitName}`;
+  const imported = await importer.doImport(zipBuffer, rootIriSuffix);
 
   if (imported.length > 0) {
     resourceModel.updateResourceGitLink(imported[0], repositoryURL);
@@ -449,11 +452,23 @@ export const importPackageFromGit = asyncHandler(async (request: express.Request
     parentIri: z.string().min(1),
     // Url from which to import the resource
     gitURL: z.string().url(),
+    // Is either of CommitReferenceType or not provided
+    commitType: z.string().min(0).optional(),
   });
+
+
 
   const query = querySchema.parse(request.query);
 
-  const [result] = await importFromGitUrl(query.gitURL);
+  let commitType: CommitReferenceType;
+  if (query.commitType === undefined) {
+    commitType = getDefaultCommitReferenceType();
+  }
+  else {
+    commitType = isCommitReferenceType(query.commitType) ? query.commitType : getDefaultCommitReferenceType();
+  }
+
+  const [result] = await importFromGitUrl(query.gitURL, commitType);
 
   response.send(result);
   return;

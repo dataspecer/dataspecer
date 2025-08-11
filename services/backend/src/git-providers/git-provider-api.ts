@@ -39,6 +39,27 @@ export type WebhookRequestDataProviderIndependent = {
   iri: string;
 };
 
+export type CommitReferenceType = "commit" | "branch" | "tag";
+
+export type RepositoryURLParts = CommitReferenceType | ("url-domain" | "repository-name" | "user-name");
+
+export function isCommitReferenceType(value: string): value is CommitReferenceType {
+  return value === "commit" || value === "branch" || value === "tag";
+}
+
+/**
+ * Some git providers might change the URL based on the type of commit. For example Github - however Github also allows
+ *  one uniform type of download url and it treats it like commit. Therefore If the {@link commitType} is not provided it will default to "commit".
+ */
+export function getDefaultCommitReferenceType(): CommitReferenceType {
+  return "commit";
+}
+
+export type ExtractedCommitNameFromRepositoryURL = {
+  commitName: string,
+  fallbackToDefaultBranch: boolean,
+};
+
 export abstract class GitProviderFactory {
   static createGitProviderFromWebhookRequest(request: express.Request): WebhookRequestProviderSpecificData {
     // TODO RadStr: Debug print
@@ -279,11 +300,10 @@ export interface GitProvider {
 
   /**
    * Note that this method has default implementation in {@link GitProviderBase}.
-   * @returns Returns the name of branch hidden inside {@link repoURL}  and if the branch is not specified it returns the name of the default one
-   *  (which can be found by querying the REST endpoint for the repository, at least in github case).
-   *
+   * @returns Returns the name of the commit hidden inside {@link repoURL} and if the commit is not specified it returns the name of the default branch
+   *  (which can be found by querying the REST endpoint for the repository, at least in github case). and the {@link fallbackToDefaultBranch} is set to true in such case.
    */
-  getBranchFromRepositoryURL(repoURL: string): Promise<string>;
+  getCommitNameFromRepositoryURL(repoURL: string, commitType: CommitReferenceType): Promise<ExtractedCommitNameFromRepositoryURL>;
 
   /**
    * Note that this method has default implementation in {@link GitProviderBase}.
@@ -294,14 +314,16 @@ export interface GitProvider {
    *  In the example mff-uk is "user-name" and dataspecer is "repository-name".
    *  For "branch" returns null, if it not explicitly provided in the {@link repositoryURL}.
    */
-  extractPartOfRepositoryURL(repositoryURL: string, part: "url-domain" | "repository-name" | "user-name" | "branch"): string | null;
+  extractPartOfRepositoryURL(repositoryURL: string, part: RepositoryURLParts): string | null;
 
   /**
    * Converts given {@link repositoryURL} to zip download link. Note that this method is implemented in {@link GitProviderBase}.
-   * @param repositoryURL is the link to the repository. The method supports branch specific links.
+   * @param repositoryURL is the link to the repository. The method supports commit specific links. That is the {@link commitType} links.
+   *  Note that if you don't know you should use the {@link getDefaultCommitReferenceType}. Then it treats it as link to commit.
+   *  If the commit hash is not inside the link, it defaults into main branch.
    * @returns The link to download repostitory as a zip.
    */
-  convertRepoURLToDownloadZipURL(repositoryURL: string): Promise<string>;
+  convertRepoURLToDownloadZipURL(repositoryURL: string, commitType: CommitReferenceType): Promise<string>;
 }
 
 

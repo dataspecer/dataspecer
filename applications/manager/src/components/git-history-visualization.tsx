@@ -2,12 +2,13 @@
 
 // Use this as a reference https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-5-templates--without-commit-author
 
-import { BetterModalProps, OpenBetterModal } from "@/lib/better-modal";
+import { BetterModalProps, OpenBetterModal, useBetterModal } from "@/lib/better-modal";
 import { Gitgraph, templateExtend, TemplateName } from "@gitgraph/react";
 import { Modal, ModalBody, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "./modal";
 import { Button } from "./ui/button";
 import { useLayoutEffect, useState } from "react";
 import { Package } from "@dataspecer/core-v2/project";
+import { CommitActionsDialog } from "@/dialog/git-commit-actions-dialog";
 
 // TODO RadStr: Put these types into shared package between frontend and backend
 type FetchedGitData = {
@@ -53,7 +54,7 @@ type GitHistory = {
 }
 
 type GitHistoryVisualizationProps = {
-  branches: Package[],
+  examinedPackage: Package,
 } & BetterModalProps<null>;
 
 
@@ -125,22 +126,21 @@ function getUniqueCommits(commitToBranchesMap: Record<string, string[]>, hashToC
 }
 
 
-export const GitHistoryVisualization = ({ isOpen, resolve, branches }: GitHistoryVisualizationProps) => {
+export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage }: GitHistoryVisualizationProps) => {
   // TODO RadStr: Should be JSX.element not ANY
   // TODO RadStr: For some reason I have to put the gitgraph component into component stored in variable,
   // if I put it inside the JSX tree in this component, it does not update on react change
 
-  const [gitGraphElement, setGitGraphElement] = useState<any | null>(null)
+  const [gitGraphElement, setGitGraphElement] = useState<any | null>(null);
+  const openModal = useBetterModal();
 
   useLayoutEffect(() => {
       if (isOpen) {
-        window.requestAnimationFrame(() => document.getElementById("repository-url-dialog-div")?.focus());
-
         console.info("useLayoutEffect for git-history-vis");
 
         // TODO RadStr: Here we load the history for the relevant branches given in properties
         // TODO RadStr: Once again we already have the git link, we don't need to send the package iri, we can send the git url instead
-        const urlQuery = `?iri=${branches[0].iri}`
+        const urlQuery = `?iri=${examinedPackage.iri}`
         // Theoretically we can just fetch it directly from GitHub (or other provider) without calling the DS server, BUT:
         // Somebody has to implement it. We have to implement it for each provider.
         // GitHub has REST API request limits, so if we ask the server a bit too much, we have to call the DS backend anyways.
@@ -156,11 +156,11 @@ export const GitHistoryVisualization = ({ isOpen, resolve, branches }: GitHistor
 
             const convertedCommits = convertFetchedCommitsFormat(data.rawCommits);
 
-            const gitGraphElement = createGitGraph(withoutAuthor, convertedCommits);
+            const gitGraphElement = createGitGraph(openModal, examinedPackage, withoutAuthor, convertedCommits);
             setGitGraphElement(gitGraphElement);
           })
           .catch((error) => {
-            console.error(`Error when fetching git history for ${branches[0].iri}. The error: ${error}`);
+            console.error(`Error when fetching git history for ${examinedPackage.iri}. The error: ${error}`);
           });
       }
     }, []);
@@ -197,8 +197,7 @@ export const GitHistoryVisualization = ({ isOpen, resolve, branches }: GitHistor
 }
 
 
-const createGitGraph = (withoutAuthor: any, commits: Commit[]) => {
-
+const createGitGraph = (openModal: OpenBetterModal, examinedPackage: Package, withoutAuthor: any, commits: Commit[]) => {
   return <div>
     <Gitgraph options={{template: withoutAuthor}}>
       {(gitgraph) => {
@@ -225,10 +224,10 @@ const createGitGraph = (withoutAuthor: any, commits: Commit[]) => {
           }
           isFirst = false;
           commit.onClick = (gitGraphCommit: any) => {                        // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-dot-click
-            alert(`You clicked the dot for: ${gitGraphCommit.subject}`);
+            openModal(CommitActionsDialog, { examinedPackage, commitHash: gitGraphCommit.hash });
           };
           commit.onMessageClick = (gitGraphCommit: any) => {                 // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-message-click
-            alert(`You clicked the commit text for: ${gitGraphCommit.subject}`);
+            openModal(CommitActionsDialog, { examinedPackage, commitHash: gitGraphCommit.hash });
           };
         }
         gitgraph.import(commits);
@@ -256,9 +255,9 @@ function findBranchToPutIntoGitGraph(currentBranchProcessingState: Record<string
 }
 
 
-export const gitHistoryVisualizationOnClickHandler = async (openModal: OpenBetterModal, branches: Package[]) => {
+export const gitHistoryVisualizationOnClickHandler = async (openModal: OpenBetterModal, examinedPackage: Package) => {
   // TODO RadStr: These are DS branches - note that those are different from the git branches
-  await openModal(GitHistoryVisualization, { branches });
+  await openModal(GitHistoryVisualization, { examinedPackage });
 }
 
 function convertFetchedCommitsFormat(rawCommits: RawCommit[]) {

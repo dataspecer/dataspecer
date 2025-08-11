@@ -1,7 +1,6 @@
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
-import fs from "fs";
-import { gitProviderDomains, GitProviderEnum, WebhookRequestDataProviderIndependent, GitCredentials } from "../git-provider-api.ts";
+import { gitProviderDomains, GitProviderEnum, WebhookRequestDataProviderIndependent, GitCredentials, CommitReferenceType } from "../git-provider-api.ts";
 import { GitProviderBase } from "../git-provider-base.ts";
 
 
@@ -159,7 +158,7 @@ export class GitLabProvider extends GitProviderBase {
     throw new Error("Method not implemented.");
   }
 
-  extractBranchFromRepositoryURLSplit(repositoryURLSplit: string[]): string | null {
+  extractCommitNameFromRepositoryURLSplit(repositoryURLSplit: string[], commitType: CommitReferenceType): string | null {
     if (repositoryURLSplit.length < 4 || repositoryURLSplit.at(-2) !== "tree") {
       return null;
     }
@@ -167,7 +166,7 @@ export class GitLabProvider extends GitProviderBase {
     return repositoryURLSplit.at(-1)!;
   }
 
-  protected getZipDownloadLink(owner: string, repo: string, branch: string): string {
+  protected getZipDownloadLink(owner: string, repo: string, commitName: string, commitType: CommitReferenceType): string {
     throw new Error("Method not implemented.");
   }
 }

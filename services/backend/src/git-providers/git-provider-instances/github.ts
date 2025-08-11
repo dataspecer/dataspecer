@@ -8,7 +8,7 @@ import fs from "fs";
 
 // Using this one since I could not make the ones for nodeJS (one is not using ES modules and the other one seems to be too old and correctly support types)
 import sodium from "libsodium-wrappers-sumo";
-import { GitProviderEnum, gitProviderDomains, WebhookRequestDataProviderIndependent, GitCredentials, createLinksForFiles } from "../git-provider-api.ts";
+import { GitProviderEnum, gitProviderDomains, WebhookRequestDataProviderIndependent, GitCredentials, createLinksForFiles, CommitReferenceType } from "../git-provider-api.ts";
 import { GitProviderBase } from "../git-provider-base.ts";
 
 // Note:
@@ -383,7 +383,7 @@ export class GitHubProvider extends GitProviderBase {
     return defaultBranch;
   }
 
-  extractBranchFromRepositoryURLSplit(repositoryURLSplit: string[]): string | null {
+  extractCommitNameFromRepositoryURLSplit(repositoryURLSplit: string[], _commitType: CommitReferenceType): string | null {
     if (repositoryURLSplit.length < 4 || repositoryURLSplit.at(-2) !== "tree") {
       return null;
     }
@@ -391,8 +391,23 @@ export class GitHubProvider extends GitProviderBase {
     return repositoryURLSplit.at(-1)!;
   }
 
-  protected getZipDownloadLink(owner: string, repo: string, branch: string): string {
-    const zipURL = `https://github.com/${owner}/${repo}/archive/refs/heads/${branch}.zip`;
+
+  protected getZipDownloadLink(owner: string, repo: string, commitName: string, commitType: CommitReferenceType): string {
+    let urlPartBasedOnCommitType: string;
+    switch (commitType) {
+      case "commit":
+        urlPartBasedOnCommitType = "";
+        break;
+      case "branch":
+        urlPartBasedOnCommitType = "refs/heads/";
+        break;
+      case "tag":
+        urlPartBasedOnCommitType = "tags/";
+        break;
+      default:
+        throw new Error(`Invalid commit type: ${commitType}. Probably programmer error`);
+    }
+    const zipURL = `https://github.com/${owner}/${repo}/archive/${urlPartBasedOnCommitType}${commitName}.zip`;
     return zipURL;
   }
 }

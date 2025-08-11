@@ -18,6 +18,7 @@ export class PackageImporter {
   private rootToWrite = "http://dataspecer.com/packages/local-root";
   private inputPathsToCanonicalMapping!: Record<string, string>;    // TODO RadStr: Hack with ! - Also I am not sure what should be instance methods and what not when it comes to creation of the mapping
   private canonicalPathsToInputMapping!: Record<string, string>;    // TODO RadStr: Hack with ! - Also I am not sure what should be instance methods and what not when it comes to creation of the mapping
+  private resourcesIriSuffix: string = "";
 
   constructor(resourceModel: ResourceModel) {
     this.resourceModel = resourceModel;
@@ -101,7 +102,8 @@ export class PackageImporter {
     }
   }
 
-  async doImport(buffer: Buffer): Promise<string[]> {
+  async doImport(buffer: Buffer, resourcesIriSuffix?: string): Promise<string[]> {
+    this.resourcesIriSuffix = resourcesIriSuffix ?? "";
     this.zip = new JSZip();
     await this.zip.loadAsync(buffer);
 
@@ -150,7 +152,6 @@ export class PackageImporter {
     return createdPackages;
   }
 
-
   async importPackage(canonicalDirPath: string, parentPackageIri: string): Promise<string> {
     const metaFileName = canonicalDirPath + ".meta.json";
     const metaFileNameOnInput = this.canonicalPathsToInputMapping[metaFileName]
@@ -158,9 +159,9 @@ export class PackageImporter {
     const metaFile = await this.zip.file(metaFileNameOnInput)!.async("text");
     const meta = JSON.parse(metaFile);
 
-    await this.resourceModel.createPackage(parentPackageIri, meta.iri, meta.userMetadata);
-    await this.setBlobsForResource(canonicalDirPath, meta.iri);
-    const thisPackageIri = meta.iri;
+    const thisPackageIri = meta.iri + this.resourcesIriSuffix;
+    await this.resourceModel.createPackage(parentPackageIri, thisPackageIri, meta.userMetadata);
+    await this.setBlobsForResource(canonicalDirPath, thisPackageIri);
 
     for (const file of Object.keys(this.zip.files)) {
       const fileCanonicalPath = this.inputPathsToCanonicalMapping[file];
@@ -193,8 +194,9 @@ export class PackageImporter {
     const metaFile = await this.zip.file(metaFileNameOnInput)!.async("text");
     const meta = JSON.parse(metaFile);
 
-    await this.resourceModel.createResource(parentPackageIri, meta.iri, meta.types[0], meta.userMetadata);
-    await this.setBlobsForResource(canonicalDirPath, meta.iri);
+    const thisResourceIri = meta.iri + this.resourcesIriSuffix;
+    await this.resourceModel.createResource(parentPackageIri, thisResourceIri, meta.types[0], meta.userMetadata);
+    await this.setBlobsForResource(canonicalDirPath, thisResourceIri);
   }
 
   /**
