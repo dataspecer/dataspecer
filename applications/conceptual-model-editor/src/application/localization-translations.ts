@@ -201,7 +201,6 @@ const inputIri = prefix(
     "validate.space": "Invalid IRI syntax.",
   },
 );
-console.log("LOC", inputIri);
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 export const translations: Record<string, string | Function> = {
