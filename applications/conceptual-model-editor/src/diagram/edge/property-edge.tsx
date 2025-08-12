@@ -136,9 +136,10 @@ function prepareEdgeLabel(
     }[] | undefined
   },
 ) {
-  return selectArchetype(options, data.type)
-    + selectEntityLabel(options, data)
-    + selectProfileLabel(options, data.profileOf ?? []);
+  const archetype = selectArchetype(options, data.type);
+  const entity = selectEntityLabel(options, data);
+  const profiles = selectProfileLabel(options, data.profileOf ?? [], entity);
+  return archetype + entity + profiles;
 }
 
 function selectArchetype(options: DiagramOptions, type: EdgeType) {
@@ -181,6 +182,7 @@ function selectProfileLabel(
     label: string;
     iri: string | null;
   }[],
+  entityLabel: string | null,
 ) {
   let labels: (string | null)[] = [];
   switch (options.profileOfVisual) {
@@ -193,10 +195,16 @@ function selectProfileLabel(
   case ProfileOfVisual.None:
     return;
   }
-  if (labels.length === 0) {
+  const filteredLabels = labels.filter(item => item !== null);
+  if (filteredLabels.length === 0) {
     return "";
   }
-  return "\n(" + labels.filter(item => item !== null).join(", ") + ")";
+  // Here we check for a special case when only one profile name is given,
+  // and the name is the same as the one for the entity.
+  if (filteredLabels.length === 1 && filteredLabels[0] === entityLabel) {
+    return "";
+  }
+  return "\n(" + filteredLabels.join(", ") + ")";
 }
 
 function prepareColor(data: ApiEdge) {
