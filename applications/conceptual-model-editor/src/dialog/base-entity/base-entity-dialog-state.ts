@@ -11,7 +11,7 @@ import { isSemanticModelGeneralization } from "@dataspecer/core-v2/semantic-mode
 import { CmeReference, CmeSpecialization, NewCmeSpecialization } from "../../dataspecer/cme-model/model";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { EntityModel } from "@dataspecer/core-v2";
-import { isInMemorySemanticModel } from "../../utilities/model";
+import { isInMemorySemanticModel } from "../../dataspecer/semantic-model";
 
 const LOG = createLogger(import.meta.url);
 

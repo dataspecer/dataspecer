@@ -69,7 +69,7 @@ import { CmeRelationshipProfileMandatoryLevel } from "./dataspecer/cme-model";
 import { asMandatoryLevel, selectDomainAndRange } from "./dataspecer/cme-model/adapter/adapter-utilities";
 
 import "./visualization.css";
-import { isInMemorySemanticModel } from "./utilities/model";
+import { isInMemorySemanticModel } from "./dataspecer/semantic-model";
 import { validateVisualModel } from "./visualization-validation";
 
 const LOG = createLogger(import.meta.url);

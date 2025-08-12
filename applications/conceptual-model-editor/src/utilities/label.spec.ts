@@ -2,8 +2,8 @@ import { describe, expect, test } from "vitest";
 
 import { Entities, EntityModel } from "@dataspecer/core-v2";
 
-import { createGetModelLabel, sanitizeDuplicitiesInRepresentativeLabels } from "./label";
 import { CmeSemanticModel, CmeSemanticModelType } from "../dataspecer/cme-model";
+import { createGetModelLabel, sanitizeDuplicitiesInRepresentativeLabels } from "./label";
 
 class EntityModelMock implements EntityModel {
 

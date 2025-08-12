@@ -95,7 +95,7 @@ import { openEditNodeAttributesDialogAction } from "./open-edit-node-attributes-
 import { openEditAttributeDialogAction } from "./open-edit-attribute-dialog";
 import { openEditAttributeProfileDialogAction } from "./open-edit-attribute-profile-dialog";
 import { findSourceModelOfEntity } from "../service/model-service";
-import { isInMemorySemanticModel } from "../utilities/model";
+import { isInMemorySemanticModel } from "../dataspecer/semantic-model";
 import { isSemanticModelAttribute, isSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import { isSemanticModelAttributeProfile } from "../dataspecer/semantic-model";
 import { createCmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";

@@ -12,7 +12,7 @@ import { Options } from "../configuration/options";
 import { ClassesContextType, UseClassesContextType } from "../context/classes-context";
 import { findSourceModelOfEntity } from "../service/model-service";
 import { VisualModel } from "@dataspecer/core-v2/visual-model";
-import { isInMemorySemanticModel } from "../utilities/model";
+import { isInMemorySemanticModel } from "../dataspecer/semantic-model";
 import { openEditAssociationDialogAction } from "./open-edit-association-dialog";
 import { openEditAssociationProfileDialogAction } from "./open-edit-association-profile-dialog";
 import { openEditAttributeDialogAction } from "./open-edit-attribute-dialog";

@@ -1,3 +1,4 @@
+import { isInMemorySemanticModel } from "../dataspecer/semantic-model";
 import { EntityModel } from "@dataspecer/core-v2";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 
@@ -11,8 +12,4 @@ export function firstInMemorySemanticModel(models: Map<string, EntityModel>): In
     }
   }
   return null;
-}
-
-export function isInMemorySemanticModel(model: EntityModel): model is InMemorySemanticModel {
-  return model instanceof InMemorySemanticModel;
 }
