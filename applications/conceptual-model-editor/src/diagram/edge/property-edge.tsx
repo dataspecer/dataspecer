@@ -246,6 +246,5 @@ function getLabelTranslate(
       shiftX = "1ch";
     }
   }
-  console.log("getLabelTranslate", {point, node: nodePosition, width, height, shiftX, shiftY});
   return `translate(${shiftX},${shiftY})`;
 }
