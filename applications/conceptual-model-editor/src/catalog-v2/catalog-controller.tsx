@@ -209,8 +209,11 @@ function clickHandled(
     }
     return;
     // CLASS PROFILE
-  case Actions.ACTION_CLASS_EXPAND:
-    //                                                                      TODO
+  case Actions.ACTION_CLASS_ADD_SURROUNDINGS:
+    actions.addSemanticClassSurroundings(model, identifier);
+    return;
+  case Actions.ACTION_CLASS_RELEASE_SURROUNDINGS:
+    actions.releaseSemanticClassSurroundings(model, identifier);
     return;
   case Actions.ACTION_CLASS_PROFILE_DELETE:
     actions.deleteFromSemanticModels([{ identifier, sourceModel: model }]);

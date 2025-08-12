@@ -112,13 +112,22 @@ export function ClassToolbar(
       data-visible={node.visualEntities.length > 0 ? 1 : 0}
       data-path={node.path.join(",")}
     >
-      {canBeExpanded ?
+      {canBeExpanded ? (
         <Button
-          action={Actions.ACTION_CLASS_EXPAND}
-          title="catalog.class.expand"
+          action={Actions.ACTION_CLASS_ADD_SURROUNDINGS}
+          title="catalog.class.add-surroundings"
         >
-          ❌ Expand
-        </Button> : null}
+          ➕
+        </Button>
+      ) : null}
+      {canBeExpanded ? (
+        <Button
+          action={Actions.ACTION_CLASS_RELEASE_SURROUNDINGS}
+          title="catalog.class.release-surroundings"
+        >
+          ❌
+        </Button>
+      ) : null}
       {visible ?
         <Button
           action={Actions.ACTION_CLASS_FOCUS}

@@ -33,8 +33,11 @@ export const ACTION_SEMANTIC_MODEL_EXPAND =
 
 // Class
 
-export const ACTION_CLASS_EXPAND =
-  "class-expand";
+export const ACTION_CLASS_ADD_SURROUNDINGS =
+  "class-add-surroundings";
+
+export const ACTION_CLASS_RELEASE_SURROUNDINGS =
+  "class-release-surroundings";
 
 export const ACTION_CLASS_FOCUS =
   "class-focus";
