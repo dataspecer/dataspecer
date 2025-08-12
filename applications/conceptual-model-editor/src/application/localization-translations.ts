@@ -125,7 +125,7 @@ const editSemanticModelDialog = prefix(
     "color": "Color",
     "ok": "✅ Save changes",
     "cancel": "❌ Cancel",
-    "external-model-message": "You are allowed to only change a color for an external model."
+    "external-model-message": "This model is external. As a result you can only change the model's color."
   },
 );
 
