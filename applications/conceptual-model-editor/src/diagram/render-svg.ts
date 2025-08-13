@@ -95,6 +95,13 @@ function cloneNode<Type extends Element>(context: Context, source: Type): Type {
       if (child instanceof HTMLElement) {
         const className = child.className;
         if (className.includes("react-flow__handle")) {
+          // Ignore handles to connect edges.
+          continue;
+        }
+      } else if (child instanceof SVGElement) {
+        const className = (child.className as any).baseVal;
+        if (className.includes("react-flow__edge-interaction")) {
+          // Ignore copy of the path for interaction.
           continue;
         }
       }
@@ -287,14 +294,13 @@ function updateProfileEdge(source: SVGElement, target: SVGElement) {
 
 function updateMarker(source: SVGElement, target: SVGElement) {
   applyComputedStyles(source, target, SVG_STYLE_WHITE_LIST);
-  if (source.tagName.toLowerCase() === "defs") {
-    const color = `light-dark(${lightForegroundColor}, ${darkForegroundColor})`;
-    target.style.fill = color;
-    target.style.stroke = color;
-  } else {
-    // We remove fill and store to inherit them from a parent.
-    target.style.fill = "";
-    target.style.stroke = "";
+  // Replace default color (black) for polyline with light-dark alternative.
+  if (source.tagName.toLowerCase() === "polyline") {
+    if (target.style.fill === "rgb(0, 0, 0)") {
+      const color = `light-dark(${lightForegroundColor}, ${darkForegroundColor})`;
+      target.style.fill = color;
+      target.style.stroke = color;
+    }
   }
 }
 
@@ -372,7 +378,7 @@ function updateEdgeLabelRenderer({ style }: HTMLElement) {
 function updateEdgeLabelStyle({ style }: HTMLElement) {
   // Color is inherited from parent.
   style.color = "";
-  style.backgroundColor = "";
+  style.backgroundColor = `light-dark(${lightBackgroundColor},${darkBackgroundColor})`;
 }
 
 /**
