@@ -80,6 +80,7 @@ export const PropertyEdge = (props: EdgeProps<Edge<ApiEdge>>) => {
         {props.data === undefined || props.data.cardinalitySource === null ? null : (
           <div style={{
             position: "absolute",
+            backgroundColor: "#F0FDFA",
             transform: `${sourceShift} translate(${sourceWaypoint.x}px,${sourceWaypoint.y}px)`
           }}
           >
@@ -89,13 +90,13 @@ export const PropertyEdge = (props: EdgeProps<Edge<ApiEdge>>) => {
         {props.selected || props.label === null ? null : (
           <div
             style={{
-              textAlign: "center",
               position: "absolute",
+              backgroundColor: "#F0FDFA",
               transform: `translate(-50%, -50%) translate(${labelPosition.x}px,${labelPosition.y}px)`,
+              textAlign: "center",
               // We need this to make the content click-able.
               pointerEvents: "all",
               color: "black",
-              backgroundColor: "#F0FDFA",
               // Line break from text, we can split into multiple component and center.
               whiteSpace: "pre-line",
               // Round the edges.
@@ -110,6 +111,7 @@ export const PropertyEdge = (props: EdgeProps<Edge<ApiEdge>>) => {
         {props.data === undefined || props.data.cardinalityTarget === null ? null : (
           <div style={{
             position: "absolute",
+            backgroundColor: "#F0FDFA",
             transform: `${targetShift} translate(${targetWaypoint.x}px,${targetWaypoint.y}px)`
           }}
           >
