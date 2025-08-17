@@ -10,7 +10,7 @@ import { packageService } from "@/package";
 import * as monaco from 'monaco-editor';
 import { DiffTreeVisualization } from "@/components/directory-diff";
 import { createRoot } from "react-dom/client";
-import { RotateCw } from "lucide-react";
+import { Loader, RotateCw } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabsContent } from "@radix-ui/react-tabs";
 import SvgVisualDiff from "@/components/images-conflict-resolver";
@@ -270,7 +270,8 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
       <Modal open={isOpen} onOpenChange={(value: boolean) => value ? null : closeWithSuccess()}>
         <ModalContent className="max-w-none h-[100%]">
             <ModalBody className="grow flex overflow-hidden">
-            <ResizablePanelGroup direction="horizontal" className="overflow-hidden">
+            {/* The pr-2 is there so the cross at the top right corner is seen */}
+            <ResizablePanelGroup direction="horizontal" className="overflow-hidden pr-2">
               <ResizablePanel defaultSize={20} className="flex flex-col pr-16 pl-1 my-6">
                 <ModalHeader className="mb-4">
                       <TabsList className="grid w-full grid-cols-2">
@@ -301,8 +302,10 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
               </ResizablePanel>
               {/* The minus "ml" shenanigans in classNames are because of some weird spaces caused by overflow-y-auto in the diff editor */}
               <ResizableHandle className="-ml-16" withHandle autoFocus={false} />
-              <ResizablePanel className="overflow-hidden flex flex-col pt-1">
-                { isLoadingTextData && <div className="flex-1 h-screen bg-white z-10">...Loading</div> }
+              <ResizablePanel className="overflow-hidden flex flex-col pt-1 h-screen bg-white z-10">
+                { isLoadingTextData && Object.keys(cacheForOriginalTextContent).length !== 0 &&     // The check for non-empty objects is there se we don't show loading on initial load
+                  <Loader className="mr-2 h-4 w-4 animate-spin" />
+                }
                 { !isLoadingTextData &&
                    <div className="flex flex-col flex-1 h-screen">
                     <TabsContent value="image-compare">
@@ -327,12 +330,3 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
     </Tabs>
   );
 }
-
-
-
-
-
-
-
-
-

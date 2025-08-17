@@ -4,6 +4,7 @@
 import { DataResourceNameInfo, ChangeActiveModelMethod } from "@/dialog/diff-editor-dialog";
 import { packageService } from "@/package";
 import _ from "lodash";
+import { Loader } from "lucide-react";
 import React, { SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import { NodeApi, NodeRendererProps, Tree, TreeApi, } from "react-arborist";
 
@@ -859,7 +860,7 @@ export const DiffTreeVisualization = (props: {
 
 function renderTreeWithLoading(isLoadingTreeStructure: boolean, treeComponent: React.ReactElement) {
   return isLoadingTreeStructure ?
-    <div>...Loading</div> :
+    <Loader className="mr-2 h-4 w-4 animate-spin" /> :
     <div>
       {treeComponent}
     </div>
