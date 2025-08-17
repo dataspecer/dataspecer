@@ -38,6 +38,7 @@ export class LocalStoreModel {
             try {
                 await rm(path, {force: true});
             } catch (e) {
+                // EMPTY
             }
         }
     }
@@ -65,6 +66,7 @@ export class LocalStoreModel {
             try {
                 return await readFile(path);
             } catch (e) {
+                // EMPTY
             }
         }
         return null;
@@ -76,6 +78,7 @@ export class LocalStoreModel {
             try {
                 return await writeFile(path, payload);
             } catch (e) {
+                // EMPTY
             }
         }
     }

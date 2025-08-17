@@ -9,7 +9,7 @@ import { createResource, updateBlob, updateResource } from "./resource.ts";
 import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, DatastoreInfo } from "../export-import/export-import-data-api.ts";
 import { AvailableFilesystems, createFilesystemMappingRoot, FilesystemAbstraction, FilesystemFactory } from "../export-import/filesystem-abstractions/filesystem-abstraction.ts";
 import { isDatastoreForMetadata } from "../export-import/export-new.ts";
-import { getDatastoreOfGivenType } from "../export-import/filesystem-abstractions/implementations/ds-filesystem.ts";
+import { getDatastoreInfoOfGivenDatastoreType } from "../export-import/filesystem-abstractions/implementations/ds-filesystem.ts";
 import _ from "lodash";
 import { dsPathJoin } from "../utils/git-utils.ts";
 import { GitHubProvider } from "../git-providers/git-provider-instances/github.ts";
@@ -447,8 +447,7 @@ async function compareFiletreesInternal(
     }
 
     for (const datastore1 of nodeValue.datastores) {
-
-      const node2Datastore = node2Value === undefined ? undefined : getDatastoreOfGivenType(node2Value, datastore1.type);
+      const node2Datastore = node2Value === undefined ? undefined : getDatastoreInfoOfGivenDatastoreType(node2Value, datastore1.type);
       if (node2Datastore !== undefined) {
         if (nodeValue.type === "directory") {
           await compareFiletreesInternal(filesystem1, nodeName, nodeValue, filesystem2, nodeName, node2Value as DirectoryNode, result);
@@ -473,13 +472,13 @@ async function compareFiletreesInternal(
         };
         result.removed.push(removed);
       }
-
     }
+    // TODO RadStr: Have to also go the way around like in the DiffTree, that is find the datastores2 not present in datastore1
   }
 
   for (const [entryName, entryValue] of Object.entries(directory2.content)) {
     for (const datastore of entryValue.datastores) {
-      if (getDatastoreOfGivenType(directory1.content[entryName], datastore.type) === undefined) {
+      if (getDatastoreInfoOfGivenDatastoreType(directory1.content[entryName], datastore.type) === undefined) {
         const created: ComparisonData = {
           oldVersion: null,
           newVersion: entryValue,

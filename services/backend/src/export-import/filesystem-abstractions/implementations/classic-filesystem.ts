@@ -7,7 +7,7 @@ import { FilesystemAbstraction, FileSystemAbstractionFactoryMethod, getMetaPrefi
 import fs from "fs";
 import * as pathLibrary from "path";
 import { isDatastoreForMetadata } from "../../export-new.ts";
-import { getDatastoreOfGivenType } from "./ds-filesystem.ts";
+import { getDatastoreInfoOfGivenDatastoreType } from "./ds-filesystem.ts";
 import { isArtificialExportDirectory } from "../../export-by-resource-type.ts";
 import { convertDatastoreBasedOnFormat, dsPathJoin } from "../../../utils/git-utils.ts";
 
@@ -221,7 +221,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     if (node === undefined) {
       throw new Error(`Given datastore in ${treePath} of type ${type} is not present in abstracted filesystem.`);    // TODO RadStr: Better error handling
     }
-    const datastore = getDatastoreOfGivenType(node, type);
+    const datastore = getDatastoreInfoOfGivenDatastoreType(node, type);
 
     if (datastore === undefined) {
       throw new Error(`Given datastore in ${treePath} of type ${type} is not present in abstracted filesystem.`);    // TODO RadStr: Better error handling
@@ -255,7 +255,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     return this.updateDatastore(changed.oldVersion!, changed.affectedDataStore.type, newContent);
   }
   async removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<boolean> {
-    const relevantDatastore = getDatastoreOfGivenType(filesystemNode, datastoreType)!;
+    const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType)!;
     // TODO RadStr: ... Looking at it, I think that this method can be implemented only once in base case, if we use the instance methods for removal of datastores/resources
     fs.rmSync(relevantDatastore.fullPath);
     removeDatastoreFromNode(filesystemNode, datastoreType);
@@ -275,7 +275,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     return true;          // TODO RadStr: Again returning true only
   }
   async updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, content: string): Promise<boolean> {
-    const relevantDatastore = getDatastoreOfGivenType(filesystemNode, datastoreType)!;
+    const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType)!;
     fs.writeFileSync(relevantDatastore.fullPath, content);
     return true;          // TODO RadStr: Again returning true only
   }

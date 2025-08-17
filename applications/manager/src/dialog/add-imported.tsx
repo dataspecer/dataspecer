@@ -126,7 +126,7 @@ export const AddImported = ({ id, isOpen, resolve }: AddImportedProps & BetterMo
           <ModalTitle>{t("add-imported.title")}</ModalTitle>
         </ModalHeader>
         <ModalBody className="mt-auto flex flex-col gap-2 p-4">
-          <Tabs defaultValue="account">
+          <Tabs defaultValue="account">       { /* TODO RadStr: Note for issue ... I think that here should not be "account" but "URL" or whatever is the default */ }
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="URL">URL</TabsTrigger>
               <TabsTrigger value="git-URL">Git URL</TabsTrigger>
