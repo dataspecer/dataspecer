@@ -45,6 +45,8 @@ import { commitPackageToGitHandler } from "./routes/commit-package-to-git.ts";
 import { redirectToRemoteGitRepository } from "./routes/redirect-to-remote-git-repository.ts";
 import { removeGitRepository } from "./routes/remove-git-repository.ts";
 import { fetchGitCommitHistory } from "./routes/fetch-git-commit-history.ts";
+import { getDataspecerTree } from "./routes/get-dataspecer-tree.ts";
+import { getDatastoreContentDirectly } from "./routes/datastore-actions.ts";
 
 // Create application models
 
@@ -189,6 +191,10 @@ if (configuration.staticFilesPath) {
 
   application.get(basename + "**", useStaticSpaHandler(configuration.staticFilesPath + ""));
 }
+
+// Fetch package tree data
+application.get(apiBasename + "/dataspecer-package-tree", getDataspecerTree);
+application.get(apiBasename + "/get-datastore-content", getDatastoreContentDirectly);
 
 // Test GIT
 application.get(apiBasename + "/git/deprecated-test", currentSession, tryCommitToGitRepo);
