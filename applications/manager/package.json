@@ -47,7 +47,8 @@
     "vaul": "^0.9.0",
 
     "@gitgraph/react": "1.6.0",
-    "@gitgraph/core": "1.5.0"
+    "@gitgraph/core": "1.5.0",
+    "react-arborist": "3.4.3"
   },
   "devDependencies": {
     "@types/node": "^20.11.16",
