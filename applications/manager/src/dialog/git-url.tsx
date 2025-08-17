@@ -1,13 +1,12 @@
 import { Modal, ModalBody, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { BetterModalProps, OpenBetterModal, useBetterModal } from "@/lib/better-modal";
-import { Label } from "@/components/ui/label"
-import { Dispatch, SetStateAction, useLayoutEffect, useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
 import { Pencil } from "lucide-react";
 import { convertToValidRepositoryName } from "@/utils/utilities";
 import { requestLoadPackage } from "@/package";
+import { createIdentifierForHTMLElement, InputComponent } from "@/components/simple-input-component";
 
 // TODO RadStr: Maybe use enum instead of TS string enum
 /**
@@ -23,6 +22,8 @@ type GitURLDialogProps = {
   gitProvider?: string,
   commitMessage?: string,
 } | null>;
+
+const gitDialogInputIdPrefix = "git-dialog-prefix";
 
 /**
  * This dialog represents the dialog used for manipulation of git.
@@ -42,9 +43,12 @@ export const GitDialog = ({ input: defaultInput, isOpen, resolve, type }: GitURL
   const [gitProvider, setGitProvider] = useState<string>("https://github.com/");
   const [commitMessage, setCommitMessage] = useState<string>("");
 
+  let suffixNumber = 0;
+
   useLayoutEffect(() => {
     if (isOpen) {
-      window.requestAnimationFrame(() => document.getElementById("repository-url-dialog-div")?.focus());
+      const idToFocus = createIdentifierForHTMLElement(gitDialogInputIdPrefix, suffixNumber, "input");
+      window.requestAnimationFrame(() => document.getElementById(idToFocus)?.focus());
     }
   }, []);
 
@@ -71,17 +75,17 @@ export const GitDialog = ({ input: defaultInput, isOpen, resolve, type }: GitURL
   switch(type) {
     case "create-new-repository-and-commit":
       modalBody = <div>
-        <InputComponent label="Git user (or org) name under which should be the repository created. If empty - auth user name is used, if not logged in or user did not provide rights to create repo, bot name is used" setInput={setUser} input={user} />
-        <InputComponent label="The commit message for git" setInput={setCommitMessage} input={commitMessage} />
-        <InputComponent label="Git remote repository name" setInput={setInputByUser} input={inputByUser} />
-        <InputComponent label="Git provider URL (Should contain the schema and end with / - for example https://github.com/)" setInput={setGitProvider} input={gitProvider} />
+        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git user (or org) name under which should be the repository created. If empty - auth user name is used, if not logged in or user did not provide rights to create repo, bot name is used" setInput={setUser} input={user} />
+        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="The commit message for git" setInput={setCommitMessage} input={commitMessage} />
+        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git remote repository name" setInput={setInputByUser} input={inputByUser} />
+        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git provider URL (Should contain the schema and end with / - for example https://github.com/)" setInput={setGitProvider} input={gitProvider} />
       </div>;
       break;
     case "commit":
-      modalBody = <InputComponent label="The commit message for git" setInput={setCommitMessage} input={commitMessage} />;
+      modalBody = <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="The commit message for git" setInput={setCommitMessage} input={commitMessage} />;
       break;
     case "link-to-existing-repository":
-      modalBody = <InputComponent label="Git remote repository URL" setInput={setInputByUser} input={inputByUser} />;
+      modalBody = <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git remote repository URL" setInput={setInputByUser} input={inputByUser} />;
       break;
     default:
       modalBody = <div/>;
@@ -108,27 +112,6 @@ export const GitDialog = ({ input: defaultInput, isOpen, resolve, type }: GitURL
     </Modal>
   );
 }
-
-type InputComponentProps = {
-  setInput: Dispatch<SetStateAction<string>>
-  input?: string,
-  label?: string,
-};
-
-const InputComponent = ({ input, label, setInput }: InputComponentProps) => {
-  return <div className="grid gap-4">
-    <div key="repository-url-dialog-div">
-      <Label htmlFor="repository-url-dialog-div" className="flex grow-3 items-baseline gap-2 mb-2">
-        <div>
-          {label}
-        </div>
-        <div className="grow"></div>
-      </Label>
-      <Input id="repository-url-dialog-div" value={input} className="grow" onChange={target => setInput(target.target.value)} />
-    </div>
-    <button type="submit" className="hidden" />
-  </div>;
-};
 
 
 /**
