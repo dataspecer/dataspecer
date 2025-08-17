@@ -32,6 +32,7 @@ import { commitToDigDialogOnClickHandler, linkToGitRepoOnClickHandler } from "./
 import LoginCard from "./components/login-card";
 import { gitHistoryVisualizationOnClickHandler } from "./components/git-history-visualization";
 import { removeGitLinkFromPackage } from "./utils/utilities";
+import { TextDiffEditorDialog } from "./dialog/diff-editor-dialog";
 import { MergeActorsType, useMergeActors } from "./hooks/use-merge";
 
 export function lng(text: LanguageString | undefined): string | undefined {
@@ -219,6 +220,7 @@ const Row = ({ iri, setProjectFilter, mergeActors, parentIri }: { iri: string, s
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
+          {<DropdownMenuItem onClick={() => openModal(TextDiffEditorDialog, {initialOriginalResourceNameInfo: {resourceIri: iri, modelName: ""}, initialModifiedResourceIri: {resourceIri: iri, modelName: ""}})}>Text diff editor</DropdownMenuItem>}
           {(resource.types.includes(LOCAL_PACKAGE) && mergeActors.mergeFrom !== null && mergeActors.mergeFrom !== iri) &&  <DropdownMenuItem onClick={() => mergeActors.setMergeTo(iri)}>MergeTo</DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => setProjectFilter(iri)}>Filter projects</DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => mergeActors.setMergeFrom(iri)}>Set merge from</DropdownMenuItem>}
