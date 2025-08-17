@@ -15,23 +15,23 @@ export const MonacoDiffEditor: FC<{
 
 
   return <div className="flex flex-col grow overflow-hidden">
-      <DiffEditor
-          {...props}
-          onMount={editor => {
-            props.refs.current = {editor};
-          }}
-          theme={resolvedTheme === "dark" ? "dataspecer-dark" : "vs"}
-          language={props.language}
-          original={props.originalContent}
-          modified={props.modifiedContent}
-          beforeMount={handleEditorWillMount}
+    <DiffEditor
+      {...props}
+      onMount={editor => {
+        props.refs.current = {editor};
+      }}
+      theme={resolvedTheme === "dark" ? "dataspecer-dark" : "vs"}
+      language={props.language}
+      original={props.originalContent}
+      modified={props.modifiedContent}
+      beforeMount={handleEditorWillMount}
 
-          options={{
-            glyphMargin: true,       // TODO RadStr: Have to enable if we want to show something next the line numbers ... however that was just for testing of possibilities
-            minimap: {
-              enabled: false
-            },
-          }}
-      />
+      options={{
+        glyphMargin: true,       // TODO RadStr: Have to enable if we want to show something next the line numbers ... however that was just for testing of possibilities
+        minimap: {
+          enabled: false
+        },
+      }}
+    />
   </div>;
 }
