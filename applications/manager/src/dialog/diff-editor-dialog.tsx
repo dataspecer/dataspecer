@@ -1,7 +1,6 @@
 import { Modal, ModalBody, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@/components/modal";
 import { BetterModalProps } from "@/lib/better-modal";
 import { useEffect, useRef, useState } from "react";
-import { MonacoDiffEditor } from "@/components/monaco-diff-editor";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -15,6 +14,7 @@ import { RotateCw } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabsContent } from "@radix-ui/react-tabs";
 import SvgVisualDiff from "@/components/images-conflict-resolver";
+import { MonacoDiffEditor } from "@/components/monaco-diff-editor";
 
 
 export type ChangeActiveModelMethod = (
@@ -95,7 +95,7 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
       // TODO RadStr: Fetch the data here
       setOriginalResourceNameInfo(initialOriginalResourceNameInfo);
       setModifiedResourceNameInfo(initialModifiedResourceIri);
-      changeActiveModel(initialOriginalResourceNameInfo, initialModifiedResourceIri, false);     // TODO RadStr: Should I even call it here ... probably just set the loading of text to true until user clicks something in tree
+      setIsLoadingTextData(true);
       setIsLoadingTreeStructure(false);
     })();
   }, []);
@@ -302,6 +302,7 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
               {/* The minus "ml" shenanigans in classNames are because of some weird spaces caused by overflow-y-auto in the diff editor */}
               <ResizableHandle className="-ml-16" withHandle autoFocus={false} />
               <ResizablePanel className="overflow-hidden flex flex-col pt-1">
+                { isLoadingTextData && <div className="flex-1 h-screen bg-white z-10">...Loading</div> }
                 { !isLoadingTextData &&
                    <div className="flex flex-col flex-1 h-screen">
                     <TabsContent value="image-compare">
@@ -312,8 +313,8 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
                     </TabsContent>
                     <TabsContent value="text-compare">
                       <RotateCw className="flex ml-1 h-4 w-4" onClick={() => reloadModelsDataFromBackend()} />
-                        {/* The h-screen is needed otherwise the monaco editor is not shown at all */}
-                        {/* Also small note - there is loading effect when first starting up the editor, it is not any custom made functionality */}
+                      {/* The h-screen is needed otherwise the monaco editor is not shown at all */}
+                      {/* Also small note - there is loading effect when first starting up the editor, it is not any custom made functionality */}
                       <MonacoDiffEditor className="flex-1 -ml-16 h-screen" refs={monacoEditor} originalContent={activeOriginalContent} modifiedContent={activeModifiedContent} language="text" />
                     </TabsContent>
                   </div>
