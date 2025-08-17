@@ -32,6 +32,7 @@ import { commitToDigDialogOnClickHandler, linkToGitRepoOnClickHandler } from "./
 import LoginCard from "./components/login-card";
 import { gitHistoryVisualizationOnClickHandler } from "./components/git-history-visualization";
 import { removeGitLinkFromPackage } from "./utils/utilities";
+import { MergeActorsType, useMergeActors } from "./hooks/use-merge";
 
 export function lng(text: LanguageString | undefined): string | undefined {
   return text?.["cs"] ?? text?.["en"];
@@ -64,7 +65,7 @@ const useSortIris = (iris: string[]) => {
   }, [iris, resources, selectedOption]);
 };
 
-const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
+const Row = ({ iri, setProjectFilter, mergeActors, parentIri }: { iri: string, setProjectFilter: (value: string | null) => void, mergeActors: MergeActorsType, parentIri?: string }) => {
   const resources = useContext(ResourcesContext);
   const resource = resources[iri]!;
   const {t, i18n} = useTranslation();
@@ -84,8 +85,10 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
 
   return <li className="first:border-y last:border-none border-b">
     <div className="flex items-center space-x-4 hover:bg-accent">
-       {resource.types.includes(LOCAL_PACKAGE) ? <div className="flex"><button onClick={stopPropagation(() => isOpen ? setIsOpen(false) : open())}>
-        {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+      {mergeActors.mergeFrom === iri ? "Merging from" : null}
+      {mergeActors.mergeTo === iri ? "Merging to" : null}
+      {resource.types.includes(LOCAL_PACKAGE) ? <div className="flex"><button onClick={stopPropagation(() => isOpen ? setIsOpen(false) : open())}>
+      {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
       </button><Folder className="text-gray-400 ml-1" /></div> : <div><ModelIcon type={resource.types} /></div>}
 
       <div className="grow min-w-0">
@@ -216,6 +219,9 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
+          {(resource.types.includes(LOCAL_PACKAGE) && mergeActors.mergeFrom !== null && mergeActors.mergeFrom !== iri) &&  <DropdownMenuItem onClick={() => mergeActors.setMergeTo(iri)}>MergeTo</DropdownMenuItem>}
+          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => setProjectFilter(iri)}>Filter projects</DropdownMenuItem>}
+          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => mergeActors.setMergeFrom(iri)}>Set merge from</DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/git/redirect-to-remote-git-repository?iri=" + encodeURIComponent(iri)}><FolderDown className="mr-2 h-4 w-4" />Visit the remote repository</a></DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource)}><FolderDown className="mr-2 h-4 w-4" />Git branch visualization</DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={async () => linkToGitRepoOnClickHandler(openModal, iri)}><Pencil className="mr-2 h-4 w-4" />Link to GitHub REPO </DropdownMenuItem>}
@@ -244,7 +250,7 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
       </DropdownMenu>
     </div>
     {subResources.length > 0 && isOpen && <ul className="pl-8">
-      {subResources.map(iri => <Row iri={iri} key={iri} parentIri={resource.iri} />)}
+      {subResources.map(iri => <Row iri={iri} key={iri} parentIri={resource.iri} setProjectFilter={setProjectFilter} mergeActors={mergeActors} />)}
     </ul>}
     <ResourceDetail isOpen={detailModalToggle.isOpen} close={detailModalToggle.close} iri={iri} />
   </li>
@@ -268,6 +274,9 @@ function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean
 
   // Whether the package is open or not
   const [isOpen, setIsOpen] = useState<boolean>(defaultToggle ?? true);
+
+  const [projectFilter, setProjectFilter] = useState<string | null>(null);
+  const mergeActors = useMergeActors();
 
   useEffect(() => {
     requestLoadPackage(iri);
@@ -297,6 +306,17 @@ function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean
       </button>
       <h2 className="font-heading ml-3 scroll-m-20 pb-2 text-2xl font-semibold tracking-tight first:mt-0 grow"><Translate text={pckg.userMetadata?.label} /></h2>
       <Button variant="ghost" size="sm" className="shrink=0 ml-4"
+        onClick={() => {
+          mergeActors.setMergeTo(null);
+          mergeActors.setMergeFrom(null);
+        }}>
+          Reset chosen merge actors
+      </Button>
+      <Button variant="ghost" size="sm" className="shrink=0 ml-4"
+        onClick={() => setProjectFilter(null)}>
+          Remove filter
+      </Button>
+      <Button variant="ghost" size="sm" className="shrink=0 ml-4"
         onClick={() => openModal(AddImported, {id: iri})}>
         <Import className="mr-2 h-4 w-4" /> {t("import")}
       </Button>
@@ -315,7 +335,12 @@ function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean
     </div>
     {isOpen &&
       <ul>
-        {subResources.map(iri => <Row iri={iri} parentIri={pckg.iri} key={iri} />)}
+        {subResources.map(iri => {
+          if (projectFilter !== null && iri !== projectFilter) {
+            return null;
+          }
+          return <Row iri={iri} parentIri={pckg.iri} key={iri} setProjectFilter={setProjectFilter} mergeActors={mergeActors} />;
+        })}
       </ul>
     }
   </div>;
