@@ -256,8 +256,9 @@ async function commitGivenFilesToGit(
   // console.info("Commit status after: ", await git.status());
   const committerNameToUse = committerName;
   const committerEmailToUse = committerEmail;
-  git.addConfig("user.name", committerNameToUse);
-  git.addConfig("user.email", committerEmailToUse);
+  await git.addConfig("user.name", committerNameToUse);
+  await git.addConfig("user.email", committerEmailToUse);
+
   await git.commit(commitMessage);
 }
 
