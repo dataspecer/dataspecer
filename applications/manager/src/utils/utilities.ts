@@ -1,4 +1,4 @@
-import { requestLoadPackage } from "@/package";
+import { modifyPackageRepresentsBranchHead, requestLoadPackage } from "@/package";
 
 // TODO RadStr: Maybe move into package?
 export function convertToValidRepositoryName(repoName: string): string {
@@ -30,4 +30,10 @@ export async function removeGitLinkFromPackage(iri: string) {
   );
 
   requestLoadPackage(iri, true);
+}
+
+// TODO RadStr: Maybe once again put elsewhere, since it is not really a utility function
+export async function switchRepresentsBranchHead(iri: string, isCurrentlyRepresentingBranchHead: boolean) {
+  await modifyPackageRepresentsBranchHead(iri, !isCurrentlyRepresentingBranchHead);
+  await requestLoadPackage(iri, true);
 }

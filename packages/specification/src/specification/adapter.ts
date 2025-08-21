@@ -75,7 +75,12 @@ async function serializePackageModel(packageModel: PackageModel): Promise<Packag
     types: packageModel.types,
     userMetadata: packageModel.getUserMetadata() || {},
     metadata: null as any,
-    linkedGitRepositoryURL: "",      // TODO RadStr: I don't know about this, probably should be specified
+    linkedGitRepositoryURL: "",       // TODO RadStr: I don't know about this, probably should be specified
+    projectIri: "",                   // TODO RadStr: I don't know about this, probably should be specified
+    branch: "",                       // TODO RadStr: I don't know about this, probably should be specified
+    representsBranchHead: true,       // TODO RadStr: I don't know about this, probably should be specified
+    lastCommitHash: "",               // TODO RadStr: I don't know about this, probably should be specified
+
 
     subResources
   }

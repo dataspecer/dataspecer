@@ -1,7 +1,6 @@
-import { BackendPackageService } from "@dataspecer/core-v2/project";
+import { BackendPackageService, Package } from "@dataspecer/core-v2/project";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { createContext, useRef, useState } from "react";
-import { Package } from "../../../packages/core-v2/lib/project/resource/resource";
 import { StructureEditorBackendService } from "@dataspecer/backend-utils/connectors/specification";
 import { LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { createModelInstructions } from "./known-models";
@@ -48,6 +47,24 @@ export async function requestLoadPackage(iri: string, forceUpdate = false) {
     copiedResourcesMemory[iri] = pckg;
     setResourcesReact(copiedResourcesMemory);
     resourcesMemory.current = copiedResourcesMemory;
+}
+
+export async function modifyPackageRepresentsBranchHead(iri: string, representsBranchHead: boolean) {
+    const pckg = await packageService.updatePackageRepresentsBranchHead(iri, {representsBranchHead});
+    const copiedResourcesMemory = {...resourcesMemory.current};
+    if (copiedResourcesMemory[iri]) {
+        copiedResourcesMemory[iri] = { ...copiedResourcesMemory[iri], representsBranchHead: pckg.representsBranchHead };
+    }
+    setResourcesReact(copiedResourcesMemory);
+}
+
+export async function modifyPackageProjectData(iri: string, projectIri: string, branch: string) {
+    const pckg = await packageService.updatePackageProjectIriAndBranch(iri, { projectIri, branch });
+    const copiedResourcesMemory = {...resourcesMemory.current};
+    if (copiedResourcesMemory[iri]) {
+        copiedResourcesMemory[iri] = { ...copiedResourcesMemory[iri], branch: pckg.branch, projectIri: pckg.projectIri };
+    }
+    setResourcesReact(copiedResourcesMemory);
 }
 
 export async function modifyUserMetadata(iri: string, metadata: {label?: LanguageString, description?: LanguageString}) {

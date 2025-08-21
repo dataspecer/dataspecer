@@ -106,6 +106,7 @@ export const AddImported = ({ id, isOpen, resolve }: AddImportedProps & BetterMo
 
     if (result.ok) {
       toast.success(t("add-imported.success"));
+      // TODO RadStr: Well not really on me, but I would put the rootURL into some variable.
       requestLoadPackage("http://dataspecer.com/packages/local-root", true);
       resolve(true);
     } else {

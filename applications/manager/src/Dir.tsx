@@ -31,9 +31,11 @@ import { stopPropagation } from "./utils/events";
 import { commitToDigDialogOnClickHandler, linkToGitRepoOnClickHandler } from "./dialog/git-url";
 import LoginCard from "./components/login-card";
 import { gitHistoryVisualizationOnClickHandler } from "./components/git-history-visualization";
-import { removeGitLinkFromPackage } from "./utils/utilities";
+import { removeGitLinkFromPackage, switchRepresentsBranchHead } from "./utils/utilities";
 import { TextDiffEditorDialog } from "./dialog/diff-editor-dialog";
 import { MergeActorsType, useMergeActors } from "./hooks/use-merge";
+import { setProjectIriAndBranchDialog } from "./dialog/set-projectIRI-and-branch";
+import { CreateNewBranchDialog } from "./dialog/create-new-branch";
 
 export function lng(text: LanguageString | undefined): string | undefined {
   return text?.["cs"] ?? text?.["en"];
@@ -66,9 +68,14 @@ const useSortIris = (iris: string[]) => {
   }, [iris, resources, selectedOption]);
 };
 
-const Row = ({ iri, setProjectFilter, mergeActors, parentIri }: { iri: string, setProjectFilter: (value: string | null) => void, mergeActors: MergeActorsType, parentIri?: string }) => {
+const Row = ({ iri, projectFilter, setProjectFilter, mergeActors, parentIri }: { iri: string, projectFilter: string | null, setProjectFilter: (value: string | null) => void, mergeActors: MergeActorsType, parentIri?: string }) => {
   const resources = useContext(ResourcesContext);
   const resource = resources[iri]!;
+
+  if (projectFilter !== null && resource.projectIri !== projectFilter) {
+    return null;
+  }
+
   const {t, i18n} = useTranslation();
 
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -107,8 +114,17 @@ const Row = ({ iri, setProjectFilter, mergeActors, parentIri }: { iri: string, s
           <span className="truncate w-[6cm]">
             {getValidTime(resource.metadata?.modificationDate) && t("changed", {val: new Date(resource.metadata?.modificationDate!)})}
           </span>
-          <span className="truncate max-w-[12cm]">
+          <span className="truncate max-w-[8cm]">
             {resource.iri}
+          </span>
+          <span className="truncate px-2 max-w-[4cm]">
+            {resource.projectIri}
+          </span>
+          <span className="truncate px-2 max-w-[4cm]">
+            {resource.branch}
+          </span>
+          <span className="truncate px-2 max-w-[4cm]">
+            {resource.representsBranchHead ? "is Branch" : "is Tag"}
           </span>
           <div className="truncate px-8">
             { /* TODO RadStr: Make it span or not? */ }
@@ -220,14 +236,17 @@ const Row = ({ iri, setProjectFilter, mergeActors, parentIri }: { iri: string, s
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          {<DropdownMenuItem onClick={() => openModal(TextDiffEditorDialog, {initialOriginalResourceNameInfo: {resourceIri: iri, modelName: ""}, initialModifiedResourceIri: {resourceIri: iri, modelName: ""}})}>Text diff editor</DropdownMenuItem>}
-          {(resource.types.includes(LOCAL_PACKAGE) && mergeActors.mergeFrom !== null && mergeActors.mergeFrom !== iri) &&  <DropdownMenuItem onClick={() => mergeActors.setMergeTo(iri)}>MergeTo</DropdownMenuItem>}
-          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => setProjectFilter(iri)}>Filter projects</DropdownMenuItem>}
+          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(CreateNewBranchDialog, { sourcePackage: resource })}>Create branch</DropdownMenuItem>}
+          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => switchRepresentsBranchHead(iri, resource.representsBranchHead)}>Convert to {resource.representsBranchHead ? "tag" : "branch"}</DropdownMenuItem>}
+          {resource.types.includes(LOCAL_PACKAGE) && mergeActors.mergeFrom !== null && mergeActors.mergeTo !== null && <DropdownMenuItem onClick={() => openModal(TextDiffEditorDialog, {initialOriginalResourceNameInfo: {resourceIri: mergeActors.mergeFrom!, modelName: ""}, initialModifiedResourceIri: {resourceIri: mergeActors.mergeTo!, modelName: ""}})}>Text diff editor</DropdownMenuItem>}
+          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => setProjectFilter(resource.projectIri)}>Filter projects</DropdownMenuItem>}
+          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(setProjectIriAndBranchDialog, { examinedPackage: resource })}>Set project branch and/or projectIri</DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => mergeActors.setMergeFrom(iri)}>Set merge from</DropdownMenuItem>}
+          {(resource.types.includes(LOCAL_PACKAGE) && mergeActors.mergeFrom !== null && mergeActors.mergeFrom !== iri) && <DropdownMenuItem onClick={() => mergeActors.setMergeTo(iri)}>MergeTo</DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/git/redirect-to-remote-git-repository?iri=" + encodeURIComponent(iri)}><FolderDown className="mr-2 h-4 w-4" />Visit the remote repository</a></DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource)}><FolderDown className="mr-2 h-4 w-4" />Git branch visualization</DropdownMenuItem>}
-          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={async () => linkToGitRepoOnClickHandler(openModal, iri)}><Pencil className="mr-2 h-4 w-4" />Link to GitHub REPO </DropdownMenuItem>}
-          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={async () => commitToDigDialogOnClickHandler(openModal, iri)}><Pencil className="mr-2 h-4 w-4" />Commit </DropdownMenuItem>}
+          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={async () => linkToGitRepoOnClickHandler(openModal, iri, resource)}><Pencil className="mr-2 h-4 w-4" />Link to GitHub REPO </DropdownMenuItem>}
+          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={async () => commitToDigDialogOnClickHandler(openModal, iri, resource)}><Pencil className="mr-2 h-4 w-4" />Commit </DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={async () => removeGitLinkFromPackage(iri)}><Pencil className="mr-2 h-4 w-4" />REMOVE GITHUB REPO</DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/experimental/output.zip?iri=" + encodeURIComponent(iri)}><FolderDown className="mr-2 h-4 w-4" /> {t("export-zip")}</a></DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a target="_blank" href={import.meta.env.VITE_BACKEND + `/preview/${i18n.language}/index.html?iri=` + encodeURIComponent(iri)}><FileText className="mr-2 h-4 w-4" /> {t("show-documentation")} ({i18n.language})</a></DropdownMenuItem>}
@@ -252,7 +271,7 @@ const Row = ({ iri, setProjectFilter, mergeActors, parentIri }: { iri: string, s
       </DropdownMenu>
     </div>
     {subResources.length > 0 && isOpen && <ul className="pl-8">
-      {subResources.map(iri => <Row iri={iri} key={iri} parentIri={resource.iri} setProjectFilter={setProjectFilter} mergeActors={mergeActors} />)}
+      {subResources.map(iri => <Row iri={iri} key={iri} parentIri={resource.iri} projectFilter={projectFilter} setProjectFilter={setProjectFilter} mergeActors={mergeActors} />)}
     </ul>}
     <ResourceDetail isOpen={detailModalToggle.isOpen} close={detailModalToggle.close} iri={iri} />
   </li>
@@ -338,10 +357,7 @@ function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean
     {isOpen &&
       <ul>
         {subResources.map(iri => {
-          if (projectFilter !== null && iri !== projectFilter) {
-            return null;
-          }
-          return <Row iri={iri} parentIri={pckg.iri} key={iri} setProjectFilter={setProjectFilter} mergeActors={mergeActors} />;
+          return <Row iri={iri} parentIri={pckg.iri} key={iri} projectFilter={projectFilter} setProjectFilter={setProjectFilter} mergeActors={mergeActors} />;
         })}
       </ul>
     }
