@@ -25,7 +25,6 @@ import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-
 import { ConfigType } from "../authorization/auth-config.ts";
 import { createReadmeFile } from "../git-readme/readme-generator.ts";
 import { ReadmeTemplateData } from "../git-readme/readme-template.ts";
-import JSZip from "jszip";
 import { AvailableFilesystems } from "../export-import/filesystem-abstractions/filesystem-abstraction.ts";
 import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
 import { AvailableExports } from "../export-import/export-actions.ts";
@@ -49,7 +48,7 @@ function getName(name: LanguageString | undefined, defaultName: string) {
 export const commitPackageToGitHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
     iri: z.string().min(1),
-    commitMessage: z.string()
+    commitMessage: z.string(),
   });
 
   const query = querySchema.parse(request.query);
@@ -79,7 +78,8 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
     return;
   }
 
-  commitPackageToGitUsingAuthSession(iri, gitLink, userName, repoName, commitMessage, response);
+  const branch = resource.branch === "main." ? null : resource.branch;
+  commitPackageToGitUsingAuthSession(iri, gitLink, branch, resource.lastCommitHash, userName, repoName, commitMessage, response);
 });
 
 
@@ -90,6 +90,8 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
 export const commitPackageToGitUsingAuthSession = async (
   iri: string,
   remoteRepositoryURL: string,
+  branch: string | null,
+  lastCommitHash: string,
   givenRepositoryUserName: string,
   givenRepositoryName: string,
   commitMessage: string | null,
@@ -100,7 +102,7 @@ export const commitPackageToGitUsingAuthSession = async (
   gitProvider ??= GitProviderFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL);
 
   const committer = getGitCredentialsFromSessionWithDefaults(gitProvider, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
-  commitPackageToGit(iri, remoteRepositoryURL, givenRepositoryUserName, givenRepositoryName, committer, commitMessage, gitProvider);
+  commitPackageToGit(iri, remoteRepositoryURL, branch, lastCommitHash, givenRepositoryUserName, givenRepositoryName, committer, commitMessage, gitProvider);
 }
 
 
@@ -112,6 +114,8 @@ export const commitPackageToGitUsingAuthSession = async (
 export const commitPackageToGit = async (
   iri: string,
   remoteRepositoryURL: string,
+  branch: string | null,
+  lastCommitHash: string,
   givenRepositoryUserName: string,
   givenRepositoryName: string,
   committer: GitCredentials,
@@ -140,19 +144,43 @@ export const commitPackageToGit = async (
 
   const git = simpleGit(gitInitialDirectory);
   try {
-    await git.clone(repoURLWithAuthorization, ".");
-    console.info("Cloned repo");
-  }
-  catch (cloneError) {
-    // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
-    // console.info("Catched clone error: ", cloneError);
-    await git.init();
-    try {
-      await git.pull(repoURLWithAuthorization);
+    const options = [
+      "--single-branch",
+      "--depth", "1",
+    ];
+    if (branch !== null) {
+      // Note that this also moves to the branch after clone
+      options.push("--branch", branch);
     }
-    catch (pullError) {
-      // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
-      // console.info("Catched pull error: ", pullError);
+    const cloneResult = await git.clone(repoURLWithAuthorization, ".", options);
+    console.info("Cloned repo", cloneResult);
+  }
+  catch (cloneError: any) {
+    const hasSetLastCommit: boolean = lastCommitHash !== "";
+
+    try {
+      // It is possible that the branch is newly created inside DS.
+      // TODO: There can probably be some optimization to not clone whole repository but only up to the last commit.
+      // It is newly possible (since Git 2.49 from March 2025) to easily fetch specific commit using git options
+      // https://stackoverflow.com/questions/31278902/how-to-shallow-clone-a-specific-commit-with-depth-1
+      if (hasSetLastCommit) {
+        const options = [
+          "--depth", "1",
+          "--revision", lastCommitHash,
+        ];
+        await git.clone(repoURLWithAuthorization, ".", options);
+      }
+      else {
+        // Just try to get whole history and hopefully it will work.
+        await git.clone(repoURLWithAuthorization, ".");
+      }
+      if (branch !== null) {
+        await git.checkoutLocalBranch(branch);
+      }
+    }
+    catch(cloneError2: any)  {
+      console.error("Can not clone repository before commiting from DS", cloneError, cloneError2);
+      throw cloneError2;    // Just rethrow the error
     }
   }
 
@@ -161,7 +189,7 @@ export const commitPackageToGit = async (
 
   const readmeData: ReadmeTemplateData = {
     dataspecerUrl: "http://localhost:5174",
-    publicationRepositoryUrl: `https://${gitProvider.getDomainURL()}/${givenRepositoryUserName}/${givenRepositoryName}-publication-repo`,  // TODO RadStr: Have to fix once we will use better mechanism to name the publication repos
+    publicationRepositoryUrl: `${gitProvider.getDomainURL(true)}/${givenRepositoryUserName}/${givenRepositoryName}-publication-repo`,  // TODO RadStr: Have to fix once we will use better mechanism to name the publication repos
   };
   createReadmeFile(gitInitialDirectory, readmeData);      // TODO RadStr: Again - should be done only in the initial commit
 
@@ -240,6 +268,7 @@ export const gitWorktreeExample = async (
 
 /**
  * Performs the git add and git commit with given {@link commitMessage}
+ * Expects the {@link git} to be on correct branch.
  * @param files - Items can be both files and directories
  */
 async function commitGivenFilesToGit(
@@ -259,6 +288,7 @@ async function commitGivenFilesToGit(
   await git.addConfig("user.name", committerNameToUse);
   await git.addConfig("user.email", committerEmailToUse);
 
+  // We should already be on the correct branch
   await git.commit(commitMessage);
 }
 

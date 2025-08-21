@@ -5,7 +5,7 @@ import { GIT_RAD_STR_BOT_USERNAME, GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN } f
 import fs from "fs";
 import { simpleGit } from "simple-git";
 import path from "path";
-import { createResource, updateBlob, updateResource } from "./resource.ts";
+import { createResource, updateBlob, updateResourceMetadata } from "./resource.ts";
 import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, DatastoreInfo } from "../export-import/export-import-data-api.ts";
 import { AvailableFilesystems, createFilesystemMappingRoot, FilesystemAbstraction, FilesystemFactory } from "../export-import/filesystem-abstractions/filesystem-abstraction.ts";
 import { isDatastoreForMetadata } from "../export-import/export-new.ts";
@@ -22,23 +22,21 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
   response.type("text/plain");
 
   const { gitProvider, webhookPayload } = GitProviderFactory.createGitProviderFromWebhookRequest(request);
-  const dataForWebhookProcessing = gitProvider.extractDataForWebhookProcessing(webhookPayload);
+  const dataForWebhookProcessing = await gitProvider.extractDataForWebhookProcessing(webhookPayload);
   if (dataForWebhookProcessing === null) {
-    // TODO RadStr: Better error handling
-    console.error("Could not extract data from the request. Stopping webhook handler.");
     return;
   }
-  const { commits, cloneURL, iri } = dataForWebhookProcessing;
+  const { commits, cloneURL, iri, branch } = dataForWebhookProcessing;
 
   console.info("dataForWebhookProcessing", dataForWebhookProcessing)
 
-  const directoryWithContent = "./test-git-directory-webhooks";
+  const directoryWithContent = `./test-git-directory-webhooks/${branch}`;
   const gitInitialDirectory = `${directoryWithContent}/${iri}`;
   if(!fs.existsSync(directoryWithContent)) {
-    fs.mkdirSync(directoryWithContent);
+    fs.mkdirSync(directoryWithContent, { recursive: true });
   }
   if(!fs.existsSync(gitInitialDirectory)) {
-    fs.mkdirSync(gitInitialDirectory);
+    fs.mkdirSync(gitInitialDirectory, { recursive: true });
   }
 
 
@@ -46,7 +44,12 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
   try {
     // TODO: Compare SHAs (and maybe behave differently based on number of commits)
     console.info("Before cloning repo");
-    await git.clone(cloneURL, ".", [ "--depth", commits.length.toString() ]);
+    // TODO RadStr: The options are similiar to the commit package to git, except that here is just variable depth, otherwise it is the same ... If I have time I can rewrite that.
+    await git.clone(cloneURL, ".", [
+      "--depth", commits.length.toString(),
+      "--branch", branch,
+      "--single-branch",
+     ]);
     console.info("After cloning repo");
     // await saveChangesInDirectoryToBackendFinalVersion(gitInitialDirectory, iri, gitProvider, true);    // TODO RadStr: Not sure about setting the metadata cache (+ we need it always in the call, so the true should be actaully set inside the called method, and the argument should not be here at all)
     await saveChangesInDirectoryToBackendFinalVersion(directoryWithContent, iri, gitProvider, true);    // TODO RadStr: Not sure about setting the metadata cache (+ we need it always in the call, so the true should be actaully set inside the called method, and the argument should not be here at all)
@@ -563,7 +566,7 @@ async function handleResourceUpdateFinalVersion(fullPathToDirectory: string, dat
     if (isDatastoreForMetadata(datastore.type)) {
       // TODO: Just for now - I don't know about used encodings, etc. - but this is just detail
       const metaFileContent = JSON.parse(fs.readFileSync(fullPathToDatastore, "utf-8"));
-      await updateResource(datastoreIdentifier, metaFileContent!.userMetadata);
+      await updateResourceMetadata(datastoreIdentifier, metaFileContent!.userMetadata);
       continue;
     }
     else {
@@ -890,7 +893,7 @@ async function updateResourceFullyOldVersion(metaFile: fs.Dirent | undefined, mo
 
   // TODO: Can it actually take null/undefined in parameter or not? ... that is use ! or not
   // TODO: + The defaults should be better
-  await updateResource(metaFileContent!.iri, metaFileContent!.userMetadata);
+  await updateResourceMetadata(metaFileContent!.iri, metaFileContent!.userMetadata);
   const packageModelFileContent = modelFile === undefined ? null : JSON.parse(fs.readFileSync(modelFullPath, "utf-8"));
   // TODO: Better name, not "model"
   await updateBlob(metaFileContent!.iri, "model", packageModelFileContent);
@@ -913,7 +916,7 @@ async function updateResourceFully(fullPathToDirectory: string, datastoreIdentif
     if (isDatastoreForMetadata(datastore.type)) {
       // TODO: Just for now - I don't know about used encodings, etc. - but this is just detail
       const metaFileContent = JSON.parse(fs.readFileSync(fullPathToDatastore, "utf-8"));
-      await updateResource(datastoreIdentifier, metaFileContent!.userMetadata);
+      await updateResourceMetadata(datastoreIdentifier, metaFileContent!.userMetadata);
       continue;
     }
     else {

@@ -4,7 +4,7 @@ import express from "express";
 import { resourceModel } from "../main.ts";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { extractPartOfRepositoryURL } from "../utils/git-utils.ts";
-import { createGitRepositoryURL, GitProviderFactory, WEBHOOK_HANDLER_URL } from "../git-providers/git-provider-api.ts";
+import { GitProviderFactory, WEBHOOK_HANDLER_URL } from "../git-providers/git-provider-api.ts";
 import { commitPackageToGitUsingAuthSession } from "./commit-package-to-git.ts";
 import { transformCommitMessageIfEmpty } from "../utils/git-utils.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-session.ts";
@@ -45,12 +45,11 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
   const repoName = query.givenRepositoryName;
 
 
-  console.info("TODO RadStr: STARTING");
-  const fullLinkedGitRepositoryURL = createGitRepositoryURL(query.gitProviderURL, repositoryUserName, repoName);
-  console.info("gitProvider", gitProvider, fullLinkedGitRepositoryURL);
+  const fullLinkedGitRepositoryURL = gitProvider.createGitRepositoryURL(repositoryUserName, repoName);
+  console.info("TODO RadStr: Debug gitProvider", { gitProvider, fullLinkedGitRepositoryURL });
 
   const isUserRepo = repositoryUserName === sessionUserName;
-  const createRemoteRepositoryResult = await gitProvider.createRemoteRepository(accessToken, repositoryUserName, repoName, isUserRepo);
+  const { defaultBranch } = await gitProvider.createRemoteRepository(accessToken, repositoryUserName, repoName, isUserRepo);
   // TODO RadStr: Debug print ... for some reason there is max 10 repositories limit on school gitlab (idk if it is for creations a day or something)
   // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
   // console.info({createRemoteRepositoryResult});
@@ -59,14 +58,16 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
 
   // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
   // console.info({createPublicationRepositoryResult});
-  const setRepositorySecretResult = gitProvider.setRepositorySecret(repositoryUserName, repoName, accessToken, "BOT_PAT_TOKEN", gitProvider.getBotCredentials().accessToken);
+  const setRepositorySecretResult = await gitProvider.setRepositorySecret(repositoryUserName, repoName, accessToken, "BOT_PAT_TOKEN", gitProvider.getBotCredentials().accessToken);
 
   // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
   // console.info({setRepositorySecretResult});
 
   await gitProvider.createWebhook(accessToken, repositoryUserName, repoName, WEBHOOK_HANDLER_URL, ["push"]);
 
-  commitPackageToGitUsingAuthSession(query.iri, fullLinkedGitRepositoryURL, repositoryUserName, repoName, commitMessage, response);
+  await resourceModel.updateResourceProjectIriAndBranch(query.iri, undefined, defaultBranch ?? undefined);
+
+  commitPackageToGitUsingAuthSession(query.iri, fullLinkedGitRepositoryURL, defaultBranch, "", repositoryUserName, repoName, commitMessage, response);
   resourceModel.updateResourceGitLink(query.iri, fullLinkedGitRepositoryURL);
 
   response.sendStatus(200);
@@ -80,6 +81,7 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
 /**
  * Creates new Dataspecer package, which is linked to already existing Git repository.
  *  Which technically means that new webhook is added to the repository
+ * @deprecated Maybe deprecated? I don't call the endpoint from frontend
  */
 export const createPackageFromExistingGitRepository = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
@@ -92,8 +94,10 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
 
   const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
   const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(query.gitRepositoryURL);
-  const repoName = extractPartOfRepositoryURL(query.gitRepositoryURL, "repository-name");
-  const repositoryUserName = extractPartOfRepositoryURL(query.gitRepositoryURL, "user-name");
+  const repoName = gitProvider.extractPartOfRepositoryURL(query.gitRepositoryURL, "repository-name");
+  const repositoryUserName = gitProvider.extractPartOfRepositoryURL(query.gitRepositoryURL, "user-name");
+  const branchName = gitProvider.extractPartOfRepositoryURL(query.gitRepositoryURL, "branch");
+
   if (repoName === null) {
     // TODO RadStr: Better error handling
     console.error("Repository name could not be extracted from the repository URL");
@@ -108,7 +112,8 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
   const { accessToken } = getGitCredentialsFromSessionWithDefaults(gitProvider, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
   await gitProvider.createWebhook(accessToken, repositoryUserName, repoName, WEBHOOK_HANDLER_URL, ["push"]);
 
-  commitPackageToGitUsingAuthSession(query.iri, query.gitRepositoryURL, repositoryUserName, repoName, commitMessage, response);
+  // TODO RadStr: Not sure about the "" if I decide to use it, but I can not use anything else
+  commitPackageToGitUsingAuthSession(query.iri, query.gitRepositoryURL, branchName, "", repositoryUserName, repoName, commitMessage, response);
 });
 
 export async function getRepositoryNameFromDatabase(linkedPackageIri: string): Promise<string | null> {
