@@ -9,7 +9,6 @@ import { useOnKeyDown } from "@/hooks/use-on-key-down";
 import { packageService } from "@/package";
 import * as monaco from 'monaco-editor';
 import { DiffTreeVisualization } from "@/components/directory-diff";
-import { createRoot } from "react-dom/client";
 import { Loader, RotateCw } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabsContent } from "@radix-ui/react-tabs";
@@ -74,8 +73,6 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
 
   const activeOriginalContent = cacheForOriginalTextContent[originalDataResourceNameInfo.resourceIri]?.[originalDataResourceNameInfo.modelName] ?? "";
   const activeModifiedContent = cacheForModifiedTextContent[modifiedDataResourceNameInfo.resourceIri]?.[modifiedDataResourceNameInfo.modelName] ?? "";
-
-  console.info("!!!", {activeOriginalContent, originalDataResourceNameInfo, activeModifiedContent, modifiedDataResourceNameInfo});
 
   useOnBeforeUnload(true);
   useOnKeyDown(e => {
@@ -163,107 +160,109 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
   };
 
   const save = async () => {
-    const modifiedEditor = monacoEditor.current?.editor.getModifiedEditor();
     const editedNewVersion = JSON.parse(monacoEditor.current?.editor.getModifiedEditor().getValue() ?? "{}");
     await packageService.setResourceJsonData(modifiedDataResourceNameInfo.resourceIri, editedNewVersion, modifiedDataResourceNameInfo.modelName);
     await reloadModelsDataFromBackend();
 
 
-    // Remove all listeners first
-    // modifiedEditor?.dispose();
+    // // Remove all listeners first
+    // const modifiedEditor = monacoEditor.current?.editor.getModifiedEditor();
+    // // modifiedEditor?.dispose();
 
-    // Define overlay widget
-    // const overlayWidget: monaco.editor.IOverlayWidget = {
-    //   getId: () => "myOverlayWidget", // unique id
+    // // Define overlay widget
+    // // const overlayWidget: monaco.editor.IOverlayWidget = {
+    // //   getId: () => "myOverlayWidget", // unique id
+    // //   getDomNode: () => {
+    // //     const domNode = document.createElement("div");
+    // //     domNode.style.background = "rgba(0,0,0,0.6)";
+    // //     domNode.style.color = "white";
+    // //     domNode.style.padding = "4px 8px";
+    // //     domNode.style.borderRadius = "4px";
+    // //     domNode.textContent = "Click Me";
+    // //     domNode.style.cursor = "pointer";
+    // //     domNode.onclick = () => alert("Overlay widget clicked!");
+    // //     return domNode;
+    // //   },
+    // //   getPosition: () => {
+    // //     return {
+    // //       preference: monaco.editor.OverlayWidgetPositionPreference.BOTTOM_RIGHT_CORNER,
+    // //     };
+    // //   },
+    // // };
+
+    // // Define a glyph margin widget
+    // const myGlyphWidget: monaco.editor.IGlyphMarginWidget = {
+    //   getId: () => "uniqueGlyphWidget",
     //   getDomNode: () => {
-    //     const domNode = document.createElement("div");
-    //     domNode.style.background = "rgba(0,0,0,0.6)";
-    //     domNode.style.color = "white";
-    //     domNode.style.padding = "4px 8px";
-    //     domNode.style.borderRadius = "4px";
-    //     domNode.textContent = "Click Me";
-    //     domNode.style.cursor = "pointer";
-    //     domNode.onclick = () => alert("Overlay widget clicked!");
-    //     return domNode;
+    //     const el = document.createElement("div");
+    //     el.textContent = "⭐"; // could be icon, button, etc.
+    //     el.style.cursor = "pointer";
+    //     el.onclick = () => alert("Glyph clicked!");
+    //     return el;
     //   },
-    //   getPosition: () => {
-    //     return {
-    //       preference: monaco.editor.OverlayWidgetPositionPreference.BOTTOM_RIGHT_CORNER,
-    //     };
-    //   },
+    //   getPosition: () => ({
+    //     lane: monaco.editor.GlyphMarginLane.Left, // or Right, depending on config
+    //     range: new monaco.Range(3, 1, 3, 1),    // targeting line 3
+    //     zIndex: 1,
+    //   }),
     // };
 
-    // Define a glyph margin widget
-    const myGlyphWidget: monaco.editor.IGlyphMarginWidget = {
-      getId: () => "uniqueGlyphWidget",
-      getDomNode: () => {
-        const el = document.createElement("div");
-        el.textContent = "⭐"; // could be icon, button, etc.
-        el.style.cursor = "pointer";
-        el.onclick = () => alert("Glyph clicked!");
-        return el;
-      },
-      getPosition: () => ({
-        lane: monaco.editor.GlyphMarginLane.Left, // or Right, depending on config
-        range: new monaco.Range(3, 1, 3, 1),    // targeting line 3
-        zIndex: 1,
-      }),
-    };
+    // // Add the widget
+    // modifiedEditor?.addGlyphMarginWidget(myGlyphWidget);
 
-    // Add the widget
-    modifiedEditor?.addGlyphMarginWidget(myGlyphWidget);
+    // // If needed, re-layout after style or layout changes
+    // modifiedEditor?.layoutGlyphMarginWidget(myGlyphWidget);
 
-    // If needed, re-layout after style or layout changes
-    modifiedEditor?.layoutGlyphMarginWidget(myGlyphWidget);
+    // // Create the glyph margin widget
+    // const reactGlyphWidget: monaco.editor.IGlyphMarginWidget = {
+    //   getId: () => "reactGlyphWidget",
+    //   getDomNode: () => {
+    //     const container = document.createElement("div");
 
-    // Create the glyph margin widget
-    const reactGlyphWidget: monaco.editor.IGlyphMarginWidget = {
-      getId: () => "reactGlyphWidget",
-      getDomNode: () => {
-        const container = document.createElement("div");
+    //     // Render React component into the DOM node
+    //     const root = createRoot(container);
+    //     root.render(
+    //       <div>
+    //         <button className="focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800" onClick={() => alert("Glyph clicked1!")} />
+    //         <button className="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900" onClick={() => alert("Glyph clicked2!")} />
+    //       </div>
+    //     );
 
-        // Render React component into the DOM node
-        const root = createRoot(container);
-        root.render(
-          <div>
-            <button className="focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800" onClick={() => alert("Glyph clicked1!")} />
-            <button className="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900" onClick={() => alert("Glyph clicked2!")} />
-          </div>
-        );
+    //     return container;
+    //   },
+    //   getPosition: () => ({
+    //     lane: monaco.editor.GlyphMarginLane.Left,
+    //     range: new monaco.Range(2, 1, 2, 1), // line 2
+    //     zIndex: 10,
+    //   }),
+    // };
 
-        return container;
-      },
-      getPosition: () => ({
-        lane: monaco.editor.GlyphMarginLane.Left,
-        range: new monaco.Range(2, 1, 2, 1), // line 2
-        zIndex: 10,
-      }),
-    };
+    // // Add the react widget
+    // modifiedEditor?.addGlyphMarginWidget(reactGlyphWidget);
 
-    // Add the react widget
-    modifiedEditor?.addGlyphMarginWidget(reactGlyphWidget);
-
-    // Add the overlay
-    // modifiedEditor?.addOverlayWidget(overlayWidget);
+    // // Add the overlay
+    // // modifiedEditor?.addOverlayWidget(overlayWidget);
   };
 
 
   // TODO RadStr: ... Don't load unless it contains svg in name
-  let originalSvg: string;
-  try {
-    originalSvg = JSON.parse(activeOriginalContent)?.svg ?? "";
-  }
-  catch(e) {
-    originalSvg = "";
-  }
+  // let originalSvg: string;
+  // try {
+  //   originalSvg = JSON.parse(activeOriginalContent)?.svg ?? "";
+  // }
+  // catch(e) {
+  //   originalSvg = "";
+  // }
 
-  let modifiedSvg: string;
-  try {
-    modifiedSvg = JSON.parse(activeModifiedContent)?.svg ?? "";
-  }
-  catch(e) {
-    modifiedSvg = "";
-  }
+  // let modifiedSvg: string;
+  // try {
+  //   modifiedSvg = JSON.parse(activeModifiedContent)?.svg ?? "";
+  // }
+  // catch(e) {
+  //   modifiedSvg = "";
+  // }
+  const originalSvg: string = "";
+  const modifiedSvg: string = "";
 
   return (
     <Tabs defaultValue="text-compare">
