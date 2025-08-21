@@ -14,7 +14,7 @@ export type GitCredentials = {
 };
 // TODO RadStr: Always keep the webhook-test (respectively the part of url after /)
 
-export const WEBHOOK_HANDLER_URL = "https://40a28f4bf886.ngrok-free.app/git/webhook-test";
+export const WEBHOOK_HANDLER_URL = "https://cf133943d91c.ngrok-free.app/git/webhook-test";
 
 export enum GitProviderEnum {
   GitHub,

@@ -42,6 +42,7 @@ export interface BaseResource {
     branch: string;
     representsBranchHead: boolean;
     lastCommitHash: string;
+    isSynchronizedWithRemote: boolean;
 
     dataStores: Record<string, string>;
 }
@@ -185,6 +186,17 @@ export class ResourceModel {
         await this.updateModificationTime(iri);
     }
 
+    async updateIsSynchronizedWithRemote(iri: string, isSynchronizedWithRemote: boolean) {
+        const resource = await this.prismaClient.resource.findFirst({where: {iri}});        // TODO RadStr: Why am I looking for resource
+        await this.prismaClient.resource.update({
+            where: {iri},
+            data: {
+                isSynchronizedWithRemote: isSynchronizedWithRemote
+            }
+        });
+        await this.updateModificationTime(iri);
+    }
+
     /**
      * Deletes the resource and if the resource is a package, all sub-resources.
      */
@@ -269,7 +281,8 @@ export class ResourceModel {
             projectIri: prismaResource.projectIri,
             branch: prismaResource.branch,
             representsBranchHead: prismaResource.representsBranchHead,
-            lastCommitHash: prismaResource.lastCommitHash
+            lastCommitHash: prismaResource.lastCommitHash,
+            isSynchronizedWithRemote: prismaResource.isSynchronizedWithRemote,
         }
     }
 

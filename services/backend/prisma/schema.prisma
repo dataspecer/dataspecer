@@ -59,6 +59,7 @@ model Resource {
   representsBranchHead Boolean @default(true)
   // Is the full hash of the last git commit on this package.
   lastCommitHash String @default("")
+  isSynchronizedWithRemote Boolean @default(true)
 
   // Technical metadata: creation date.
   createdAt DateTime @default(now())

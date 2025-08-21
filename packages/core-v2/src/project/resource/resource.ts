@@ -32,6 +32,7 @@ export interface BaseResource {
     representsBranchHead: boolean;
     branch: string;
     lastCommitHash: string;
+    isSynchronizedWithRemote: boolean;
 }
 
 export interface Package extends BaseResource {

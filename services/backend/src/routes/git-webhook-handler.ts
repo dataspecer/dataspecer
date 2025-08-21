@@ -13,6 +13,7 @@ import { getDatastoreInfoOfGivenDatastoreType } from "../export-import/filesyste
 import _ from "lodash";
 import { dsPathJoin } from "../utils/git-utils.ts";
 import { GitHubProvider } from "../git-providers/git-provider-instances/github.ts";
+import { resourceModel } from "../main.ts";
 
 
 export const handleWebhook = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -250,6 +251,8 @@ async function saveChangesInDirectoryToBackendFinalVersion(directory: string, ir
   console.info({comparisonResult, root1: gitFilesystem.getRoot(), root2: gitFilesystem.getRoot()});
 
   await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(rootDirectoryName, rootDirectory, directory, gitProvider);      // TODO RadStr: Maybe await is unnecessary
+  // TODO RadStr: [WIP] Connect it to the conflict database entry
+  resourceModel.updateIsSynchronizedWithRemote(iri, false);
 
 
   // const rootLocation: FilesystemNodeLocation = {
