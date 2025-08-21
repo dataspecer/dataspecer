@@ -44,7 +44,21 @@ model Resource {
   // (for example https://github.com/mff-uk/dataspecer)
   // or some of the branches
   // (for example https://github.com/mff-uk/dataspecer/tree/stable)
+  // Should not end with "/"
   linkedGitRepositoryURL String @default("{}")
+
+  // Note that it ends with ".". This is not oversight, "main." is invalid branch name
+  // (the git branches can not end with "." (See https://stackoverflow.com/questions/3651860/which-characters-are-illegal-within-a-branch-name))
+  // If the branch is set to "main." we consider it as the default branch.
+  branch String @default("main.")
+
+  // Is iri of the "git" project this package is part of.
+  projectIri String @default("")
+  // True if this package represents head of branch. That is, it should move with commits to this branch.
+  // Otherwise it should not react to the webhooks from git, neither allow to commit from it to git.
+  representsBranchHead Boolean @default(true)
+  // Is the full hash of the last git commit on this package.
+  lastCommitHash String @default("")
 
   // Technical metadata: creation date.
   createdAt DateTime @default(now())
