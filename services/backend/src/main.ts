@@ -15,20 +15,17 @@ import { importPackageFromGit, importResource } from "./routes/import.ts";
 import {
   copyRecursively,
   createPackageResource,
-  createResource,
   createResourceHandler,
-  deleteBlob,
   deleteBlobHandler,
-  deleteResource,
   deleteResourceHandler,
   getBlob,
   getPackageResource,
   getResource,
   getRootPackages,
-  updateBlob,
   updateBlobHandler,
-  updateResource,
-  updateResourceHandler,
+  updateRepresentsBranchHeadOnResourceHandler,
+  updateResourceMetadataHandler,
+  updateResourceProjectIriAndBranchHandler,
 } from "./routes/resource.ts";
 import { getSimplifiedSemanticModel, setSimplifiedSemanticModel } from "./routes/simplified-semantic-model.ts";
 import { getSystemData } from "./routes/system.ts";
@@ -112,7 +109,7 @@ application.use(apiBasename + "/auth/*", authHandler);
 
 // Manipulates with resources on metadata level only.
 application.get(apiBasename + "/resources", getResource);
-application.put(apiBasename + "/resources", updateResourceHandler);
+application.put(apiBasename + "/resources", updateResourceMetadataHandler);
 application.delete(apiBasename + "/resources", deleteResourceHandler);
 // Low level API for creating new resources.
 application.post(apiBasename + "/resources", createResourceHandler);
@@ -128,8 +125,12 @@ application.delete(apiBasename + "/resources/blob", deleteBlobHandler);
 application.get(apiBasename + "/resources/packages", getPackageResource);
 application.get(apiBasename + "/resources/export.zip", exportPackageResource);
 application.post(apiBasename + "/resources/packages", createPackageResource);
-application.patch(apiBasename + "/resources/packages", updateResourceHandler); // same
+application.patch(apiBasename + "/resources/packages", updateResourceMetadataHandler); // same
 application.delete(apiBasename + "/resources/packages", deleteResourceHandler); // same
+
+application.patch(apiBasename + "/resources/packages/update-project-iri-and-branch", updateResourceProjectIriAndBranchHandler);     // TODO RadStr: Testing manual udpate of projectIri and branch
+application.patch(apiBasename + "/resources/packages/update-represents-branch-head", updateRepresentsBranchHeadOnResourceHandler);     // TODO RadStr: Testing manual udpate of projectIri and branch
+
 // Special operation to list all root packages
 application.get(apiBasename + "/resources/root-resources", getRootPackages); // ---
 
@@ -205,7 +206,7 @@ application.get(apiBasename + "/git/webhook-test", currentSession, createRandomW
 application.get(apiBasename + "/git/link-package-to-git", currentSession, createLinkBetweenPackageAndGit);
 application.get(apiBasename + "/git/commit-package-to-git", currentSession, commitPackageToGitHandler);
 application.get(apiBasename + "/git/remove-git-repository", currentSession, removeGitRepository);
-application.get(apiBasename + "/git/create-package-from-existing-git-repository", currentSession, createPackageFromExistingGitRepository);
+application.get(apiBasename + "/git/create-package-from-existing-git-repository", currentSession, createPackageFromExistingGitRepository);    // TODO RadStr: Not called for naywhere
 application.get(apiBasename + "/git/test-docker", currentSession, exportPackageResource);
 application.get(apiBasename + "/git/redirect-to-remote-git-repository", currentSession, redirectToRemoteGitRepository);
 application.get(apiBasename + "/git/fetch-git-commit-history", currentSession, fetchGitCommitHistory);

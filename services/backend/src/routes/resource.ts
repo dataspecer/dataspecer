@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { z } from "zod";
 import { v4 as uuidv4 } from 'uuid';
+import { CommitReferenceType } from "../git-providers/git-provider-api.ts";
 
 export const getResource = asyncHandler(async (request: express.Request, response: express.Response) => {
     const querySchema = z.object({
@@ -47,7 +48,7 @@ export const createResource = async (parentIri: string, type: string, iri?: stri
     iri = iri ?? uuidv4();
     await resourceModel.createResource(parentIri, iri, type, userMetadata ?? {});
     if (userMetadata) {
-        await resourceModel.updateResource(iri, userMetadata);
+        await resourceModel.updateResourceMetadata(iri, userMetadata);
     }
 
     return iri;
@@ -79,7 +80,7 @@ export const copyRecursively = asyncHandler(async (request: express.Request, res
     return;
 });
 
-export const updateResourceHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
+export const updateResourceMetadataHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
     const querySchema = z.object({
         iri: z.string().min(1),
     });
@@ -87,19 +88,57 @@ export const updateResourceHandler = asyncHandler(async (request: express.Reques
 
     const bodySchema = z.object({
         userMetadata: z.optional(z.record(z.unknown())),
+
     }).strict();
     const body = bodySchema.parse(request.body);
 
-    await updateResource(query.iri, body.userMetadata);
+    await updateResourceMetadata(query.iri, body.userMetadata);
+
+    response.send(await resourceModel.getResource(query.iri));
+    return;
+});
+
+export const updateResourceProjectIriAndBranchHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
+    const querySchema = z.object({
+        iri: z.string().min(1),
+    });
+    const query = querySchema.parse(request.query);
+
+    const bodySchema = z.object({
+        projectIri: z.string().optional(),
+        branch: z.string().optional(),
+    }).strict();
+    const body = bodySchema.parse(request.body);
+
+    await resourceModel.updateResourceProjectIriAndBranch(query.iri, body.projectIri, body.branch);
+
+    response.send(await resourceModel.getResource(query.iri));
+    return;
+});
+
+export const updateRepresentsBranchHeadOnResourceHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
+    const querySchema = z.object({
+        iri: z.string().min(1),
+    });
+    const query = querySchema.parse(request.query);
+
+    const bodySchema = z.object({
+        representsBranchHead: z.boolean(),
+    }).strict();
+    const body = bodySchema.parse(request.body);
+
+    // TODO RadStr: Maybe also differ between commit/tag? but I think that it is unnecessary. jsut have branch and tag (commit ... but i tihnk that tag is better)
+    const commitReferenceType: CommitReferenceType = body.representsBranchHead ? "branch" : "tag";
+    await resourceModel.updateRepresentsBranchHead(query.iri, commitReferenceType);
 
     response.send(await resourceModel.getResource(query.iri));
     return;
 });
 
 
-export const updateResource = async (iri: string, userMetadata: Record<string, unknown> | undefined) => {
+export const updateResourceMetadata = async (iri: string, userMetadata: Record<string, unknown> | undefined) => {
     if (userMetadata) {
-        await resourceModel.updateResource(iri, userMetadata);
+        await resourceModel.updateResourceMetadata(iri, userMetadata);
     }
 };
 

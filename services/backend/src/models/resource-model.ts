@@ -6,6 +6,7 @@ import { storeModel } from './../main.ts';
 import { LocalStoreModel, ModelStore } from "./local-store-model.ts";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { CoreResource } from "@dataspecer/core/core/core-resource";
+import { CommitReferenceType } from "../git-providers/git-provider-api.ts";
 
 /**
  * Base information every resource has or should have.
@@ -37,6 +38,10 @@ export interface BaseResource {
     };
 
     linkedGitRepositoryURL: string;
+    projectIri: string;
+    branch: string;
+    representsBranchHead: boolean;
+    lastCommitHash: string;
 
     dataStores: Record<string, string>;
 }
@@ -75,13 +80,50 @@ export class ResourceModel {
         if (prismaResource === null) {
             return null;
         }
+
+        return await this.prismaResourceToResource(prismaResource);
+    }
+
+    /**
+     * @returns Returns resources with the given {@link projectIri}.
+     */
+    async getProjectResources(projectIri: string): Promise<BaseResource[]> {
+        const prismaResources = await this.prismaClient.resource.findMany({where: { projectIri: projectIri }});
+        const result = prismaResources.map(prismaResource => this.prismaResourceToResource(prismaResource));
+        return await Promise.all(result);
+    }
+
+    /**
+     * @returns The first resource, which is linked to given {@link gitRepositoryUrl}.
+     */
+    async getResourceForGitUrl(gitRepositoryUrl: string): Promise<BaseResource | null> {
+        const prismaResource = await this.prismaClient.resource.findFirst({where: { linkedGitRepositoryURL: gitRepositoryUrl }});
+        if (prismaResource === null) {
+            return null;
+        }
+
+        return await this.prismaResourceToResource(prismaResource);
+    }
+
+    /**
+     * @returns The first resource, which is linked to given {@link gitRepositoryUrl} and has the given {@link branch}.
+     */
+    async getResourceForGitUrlAndBranch(gitRepositoryUrl: string, branch: string): Promise<BaseResource | null> {
+        const prismaResource = await this.prismaClient.resource.findFirst({where: {
+            linkedGitRepositoryURL: gitRepositoryUrl,
+            branch: branch,
+         }});
+        if (prismaResource === null) {
+            return null;
+        }
+
         return await this.prismaResourceToResource(prismaResource);
     }
 
     /**
      * Updates user metadata of the resource.
      */
-    async updateResource(iri: string, userMetadata: {}) {
+    async updateResourceMetadata(iri: string, userMetadata: {}) {
         const resource = await this.prismaClient.resource.findFirst({where: {iri}});
         let metadata = resource?.userMetadata ? JSON.parse(resource?.userMetadata!) as object : {};
         metadata = {
@@ -101,12 +143,43 @@ export class ResourceModel {
      * Updates user metadata of the resource with given {@link linkedGit}.
      */
     async updateResourceGitLink(iri: string, linkedGit: string) {
+        if (linkedGit.endsWith("/")) {
+            linkedGit = linkedGit.substring(0, linkedGit.length - 1);
+        }
+
         const resource = await this.prismaClient.resource.findFirst({where: {iri}});        // TODO RadStr: Why am I looking for resource
         await this.prismaClient.resource.update({
             where: {iri},
 
             data: {
                 linkedGitRepositoryURL: linkedGit,
+            }
+        });
+        await this.updateModificationTime(iri);
+    }
+
+    /**
+     * Updates {@link projectIri} and {@link branch} if given for resource idnetified by {@link iri}.
+     */
+    async updateResourceProjectIriAndBranch(iri: string, projectIri?: string, branch?: string) {
+        const resource = await this.prismaClient.resource.findFirst({where: {iri}});        // TODO RadStr: Why am I looking for resource
+        await this.prismaClient.resource.update({
+            where: {iri},
+            data: {
+                // undefined values won't update the resource, the previous value will be kept.
+                branch,
+                projectIri
+            }
+        });
+        await this.updateModificationTime(iri);
+    }
+
+    async updateRepresentsBranchHead(iri: string, commitReferenceType: CommitReferenceType) {
+        const resource = await this.prismaClient.resource.findFirst({where: {iri}});        // TODO RadStr: Why am I looking for resource
+        await this.prismaClient.resource.update({
+            where: {iri},
+            data: {
+                representsBranchHead: commitReferenceType === "branch",
             }
         });
         await this.updateModificationTime(iri);
@@ -193,6 +266,10 @@ export class ResourceModel {
             },
             dataStores,
             linkedGitRepositoryURL: prismaResource.linkedGitRepositoryURL,
+            projectIri: prismaResource.projectIri,
+            branch: prismaResource.branch,
+            representsBranchHead: prismaResource.representsBranchHead,
+            lastCommitHash: prismaResource.lastCommitHash
         }
     }
 
@@ -301,7 +378,7 @@ export class ResourceModel {
                 iri: iri,
                 parentResourceId: parentResourceId,
                 representationType: type,
-                userMetadata: JSON.stringify(userMetadata)
+                userMetadata: JSON.stringify(userMetadata),
             }
         });
 
