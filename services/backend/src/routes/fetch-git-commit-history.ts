@@ -189,11 +189,13 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
         // TODO RadStr: Remove the explicit log branch stuff before this - I am not using it
         const customLogResult = await git.log({
             format: logFormat,
+            "--all": null,
         });
 
         // TODO RadStr: Use abbreviated hashes instead?
         const logGraph = await git.raw(["log", "--graph", "--oneline", "--all", "--format=%H"]);
         console.info("logGraph", logGraph);
+        console.info("customLogResult", customLogResult);
 
         // console.info("Branches:", await git.branch());
         // // response.json(gitHistory);
