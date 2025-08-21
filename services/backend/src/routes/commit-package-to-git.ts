@@ -160,7 +160,6 @@ export const commitPackageToGit = async (
 
     try {
       // It is possible that the branch is newly created inside DS.
-      // TODO: There can probably be some optimization to not clone whole repository but only up to the last commit.
       // It is newly possible (since Git 2.49 from March 2025) to easily fetch specific commit using git options
       // https://stackoverflow.com/questions/31278902/how-to-shallow-clone-a-specific-commit-with-depth-1
       if (hasSetLastCommit) {
