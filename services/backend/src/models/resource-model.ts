@@ -221,6 +221,7 @@ export class ResourceModel {
 
     /**
      * Copies package or resource by IRI to another package identified by parentIri.
+     * @returns The iri of new root
      */
     async copyRecursively(iri: string, parentIri: string, userMetadata: {}) {
         const prismaParentResource = await this.prismaClient.resource.findFirst({where: {iri: parentIri}});
@@ -259,9 +260,18 @@ export class ResourceModel {
         }
 
         // Copy the root
-        await copyResource(iri, parentIri, uuidv4());
+        const newRootIri = uuidv4();
+        await copyResource(iri, parentIri, newRootIri);
+
+        const sourcePrismaResource = await this.prismaClient.resource.findFirst({where: { iri }});
+        const sourceGitLink = sourcePrismaResource?.linkedGitRepositoryURL;
+        if (sourceGitLink !== undefined) {
+            await this.updateResourceGitLink(newRootIri, sourceGitLink);
+        }
 
         await this.updateModificationTimeById(prismaParentResource.id);
+
+        return newRootIri;
     }
 
     /**

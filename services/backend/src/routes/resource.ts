@@ -69,9 +69,13 @@ export const copyRecursively = asyncHandler(async (request: express.Request, res
     }).strict();
     const body = bodySchema.parse(request.body);
 
-    await resourceModel.copyRecursively(query.iri, query.parentIri, body.userMetadata ?? {});
+    const newRootIri = await resourceModel.copyRecursively(query.iri, query.parentIri, body.userMetadata ?? {});
+    const responseData = {
+        newRootIri,
+        parentResource: await resourceModel.getResource(query.parentIri),
+    };
 
-    response.send(await resourceModel.getResource(query.parentIri));
+    response.send(responseData);
     return;
 });
 
