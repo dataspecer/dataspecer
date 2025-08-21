@@ -184,21 +184,21 @@ async function compareFiletreesInternal(
   filesystem1: FilesystemAbstraction,
   // @ts-ignore TODO RadStr: For now ts ignore
   directory1Name: string,
-  directory1: DirectoryNode,
+  directory1: DirectoryNode | undefined,
   globalFilesystemMapping1: Record<string, FilesystemNode>,
   filesystem2: FilesystemAbstraction,
   // @ts-ignore TODO RadStr: For now ts ignore
   treeRoot2Name: string,
-  directory2: DirectoryNode,
+  directory2: DirectoryNode | undefined,
   globalFilesystemMapping2: Record<string, FilesystemNode>,
   result: DiffTree,
 ): Promise<number> {
   let resultSize: number = 0;
 
-  for (const [nodeName, nodeValue] of Object.entries(directory1.content)) {
+  for (const [nodeName, nodeValue] of Object.entries(directory1?.content ?? {})) {
     resultSize++;
 
-    const node2Value = directory2.content[nodeName];
+    const node2Value = directory2?.content[nodeName];
     if (node2Value !== undefined && nodeValue.type !== node2Value.type) { // They are not of same type and both exists
       console.error("Tree comparison error - Compared entries have the same name however they are of different type. One is file, while the other is directory");
       throw new Error("Tree comparison error - Compared entries have the same name however they are of different type. One is file, while the other is directory");
@@ -216,7 +216,7 @@ async function compareFiletreesInternal(
     // Recursively process "subdirectories"
     if (nodeValue.type === "directory") {
       const subtreeSize = await compareFiletreesInternal(filesystem1, nodeName, nodeValue, globalFilesystemMapping1,
-                                                          filesystem2, nodeName, node2Value as DirectoryNode, globalFilesystemMapping2,
+                                                          filesystem2, nodeName, node2Value as (DirectoryNode | undefined), globalFilesystemMapping2,
                                                           currentlyProcessedDiffFilesystemNode.childrenDiffTree);
       resultSize += subtreeSize;
     }
@@ -232,7 +232,7 @@ async function compareFiletreesInternal(
         if (await areDatastoresDifferent(filesystem1, nodeValue, filesystem2, node2Value as FileNode, datastore1)) {
           const changed: DatastoreComparison = {
             oldVersion: nodeValue,
-            newVersion: node2Value,
+            newVersion: node2Value ?? null,
             affectedDataStore: datastore1,
             datastoreComparisonResult: "modified",
           };
@@ -241,7 +241,7 @@ async function compareFiletreesInternal(
         else {
           const same: DatastoreComparison = {
             oldVersion: nodeValue,
-            newVersion: node2Value,
+            newVersion: node2Value ?? null,
             affectedDataStore: datastore1,
             datastoreComparisonResult: "same",
           };
@@ -264,7 +264,7 @@ async function compareFiletreesInternal(
       if (!processedDatastoresInSecondTree.has(datastore2)) {
         const created: DatastoreComparison = {
           oldVersion: null,
-          newVersion: node2Value,
+          newVersion: node2Value!,
           affectedDataStore: datastore2,
           datastoreComparisonResult: "created-in-new"
         };
@@ -275,8 +275,8 @@ async function compareFiletreesInternal(
   }
 
   // Find the filesystem nodes which are present only in the 2nd tree
-  for (const [entryName, entryValue] of Object.entries(directory2.content)) {
-    if (result[entryName] !== undefined) {
+  for (const [nodeName, nodeValue] of Object.entries(directory2?.content ?? {})) {
+    if (result[nodeName] !== undefined) {
       continue;
     }
 
@@ -285,22 +285,28 @@ async function compareFiletreesInternal(
     const currentlyProcessedDiffFilesystemNode: ResourceComparison = {
       childrenDiffTree: {},
       datastoreComparisons: [],
-      resource: entryValue,
+      resource: nodeValue,
       resourceComparisonResult,
     };
-    result[entryName] = currentlyProcessedDiffFilesystemNode;
+    result[nodeName] = currentlyProcessedDiffFilesystemNode;
 
-    for (const datastore of entryValue.datastores) {
-      if (getDatastoreInfoOfGivenDatastoreType(directory1.content[entryName], datastore.type) === undefined) {
-        const created: DatastoreComparison = {
-          datastoreComparisonResult: "created-in-new",
-          oldVersion: null,
-          newVersion: entryValue,
-          affectedDataStore: datastore,
-        }
-        currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(created);
-        resultSize++;
-      }
+    if (nodeValue.type === "directory") {
+      const subtreeSize = await compareFiletreesInternal(filesystem1, nodeName, undefined, globalFilesystemMapping1,
+                                                          filesystem2, nodeName, nodeValue, globalFilesystemMapping2,
+                                                          currentlyProcessedDiffFilesystemNode.childrenDiffTree);
+      resultSize += subtreeSize;
+    }
+
+    for (const datastore of nodeValue.datastores) {
+      // The datastore is not present, since the parent filesystem node does not exist, then it means that all of the datastores are not present neither
+      const created: DatastoreComparison = {
+        datastoreComparisonResult: "created-in-new",
+        oldVersion: null,
+        newVersion: nodeValue,
+        affectedDataStore: datastore,
+      };
+      currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(created);
+      resultSize++;
     }
   }
 
@@ -366,6 +372,8 @@ type RenderNode = {
   datastores: RenderNode[];
   originalDataResourceNameInfo: DataResourceNameInfo,
   modifiedDataResourceNameInfo: DataResourceNameInfo,
+  reactElementToRender?: React.ReactNode,
+  isReactElementToRenderRenderedAsSelected?: boolean,
   // fullPathInOldTree: string | null,      // TODO RadStr: I will maybe go back to the oldPaths - the idea is that path to any resource (and model) can behave like a identifier (in local filesystem it is actual path, in DS it is the iri of the resource)
   // fullPathInNewTree: string | null,
 };
@@ -427,10 +435,28 @@ function createDatastoresRenderRepresentations(datastoreComparisons: DatastoreCo
         throw new Error("Programmer or data error");
       }
     }
+    let oldIri: string | null;
+    let newIri: string | null;
+    if (datastoreComparison.oldVersion === null) {
+      oldIri = null;
+    }
+    else {
+      // TODO RadStr: because of the metadataCache ... this is why I want to use the paths instead.
+      if(datastoreComparison.oldVersion?.metadataCache.iri === undefined) {
+        throw new Error(`One of datastore source resource has not defined iri in cache for old resource: ${datastoreComparison.oldVersion}`);
+      }
 
-    // TODO RadStr: because of the metadataCache ... this is why I want to use the paths instead.
-    if(datastoreComparison.oldVersion?.metadataCache.iri === undefined || datastoreComparison.newVersion?.metadataCache.iri === undefined) {
-      throw new Error(`One of datastore source resource hsa not defined iri in cache, OLD: ${datastoreComparison.oldVersion}, NEW: ${datastoreComparison.newVersion}`);
+      oldIri = datastoreComparison.oldVersion?.metadataCache.iri;
+    }
+    if (datastoreComparison.newVersion === null) {
+      newIri = null;
+    }
+    else {
+      if(datastoreComparison.newVersion?.metadataCache.iri === undefined) {
+        throw new Error(`One of datastore source resource has not defined iri in cache for new resource: ${datastoreComparison.newVersion}`);
+      }
+
+      newIri = datastoreComparison.newVersion?.metadataCache.iri;
     }
 
     const datastoreRenderNode: RenderNode = {
@@ -440,8 +466,8 @@ function createDatastoresRenderRepresentations(datastoreComparisons: DatastoreCo
       status,
       datastores: [],
       // TODO RadStr: ... Accessing the iri in cache, this is why I want to use the paths instead
-      originalDataResourceNameInfo: { resourceIri: datastoreComparison.oldVersion?.metadataCache.iri, modelName: datastoreComparison.affectedDataStore.type },
-      modifiedDataResourceNameInfo: { resourceIri: datastoreComparison.newVersion?.metadataCache.iri, modelName: datastoreComparison.affectedDataStore.type },
+      originalDataResourceNameInfo: { resourceIri: oldIri ?? "", modelName: datastoreComparison.affectedDataStore.type },
+      modifiedDataResourceNameInfo: { resourceIri: newIri ?? "", modelName: datastoreComparison.affectedDataStore.type },
     };
     datastoresRenderRepresentations.push(datastoreRenderNode);
   }
@@ -480,7 +506,7 @@ function createTreeRepresentationForRendering(diffTree: DiffTree, treeToExtract:
           status = "removed";
         }
         else {
-          throw new Error(`Either invalid data or programmer error, unknown diff type: ${node.resourceComparisonResult}`)
+          throw new Error(`Either invalid data or programmer error, unknown diff type: ${node.resourceComparisonResult}`);
         }
       }
     }
@@ -502,7 +528,6 @@ function createTreeRepresentationForRendering(diffTree: DiffTree, treeToExtract:
     };
     renderTree.push(renderNode);
   }
-
   return renderTree;
 }
 
@@ -542,9 +567,7 @@ function StyledNode({
     throw new Error(`Programmer error, using unknown data source type: ${node.data.dataSourceType}`);
   }
 
-  console.info("isFocused and 3 isSelected:", node.isFocused, node.isSelectedStart, node.isSelected, node.isSelectedEnd);
-
-  return (
+  const styledNode = (
     <div
       style={{
         ...style,
@@ -596,6 +619,11 @@ function StyledNode({
       <span className={textClassName}>{node.data.name}</span>
     </div>
   );
+
+  // TODO RadStr: Remove this react element optimization
+  node.data.reactElementToRender = styledNode;
+  node.data.isReactElementToRenderRenderedAsSelected = node.isSelected;
+  return styledNode;
 }
 
 
@@ -655,6 +683,13 @@ class FilesystemAbstractionMockupImplmentation implements FilesystemAbstraction 
 const getOtherTreeType = (tree: TreeType) => tree === "old" ? "new" : "old";
 
 const createStyledNode = (props: NodeRendererProps<RenderNode>, changeActiveModelData: ChangeActiveModelMethod) => {
+  // TODO RadStr: Don't do this can possibly introduce problems and actually does not improve performance - just remove
+  // const nodeData = props.node.data;
+  // if (useCachedStyledNode && props.node.data.reactElementToRender !== undefined && (nodeData.isReactElementToRenderRenderedAsSelected === props.node.isSelected)) {
+  //   const cachedReactElementToRender = nodeData.reactElementToRender;
+  //   return cachedReactElementToRender;
+  // }
+
   const extendedProps: NodeRendererProps<RenderNodeWithAdditionalMethods> = props as any;
   extendedProps.node.data.changeActiveModel = changeActiveModelData;
   return <StyledNode {...extendedProps} />;
@@ -663,6 +698,12 @@ const createStyledNode = (props: NodeRendererProps<RenderNode>, changeActiveMode
 const treeRowHeight = 30;
 
 // TODO RadStr: Probably put into separate file from the diff tree creation
+/**
+ * Handles the rendering and actions of the diff tree. That is 2 trees. On left there is the "original" version, on right the "modified".
+ * Unfortunately I think that the performance is not the best. And it is related to number of nodes. For small number of nodes the
+ *  animation of showing that node is selected is almost instant, however the performance gets gradually worse until like I would say 30 nodes (probably when nodes fill whole screen).
+ *  After that the performance does not seem to get worse. This means that it is probably related to the library rather than bad programming.
+ */
 export const DiffTreeVisualization = (props: {
   originalDataResourceNameInfo: DataResourceNameInfo,
   modifiedDataResourceNameInfo: DataResourceNameInfo,
@@ -843,11 +884,11 @@ export const DiffTreeVisualization = (props: {
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
             <Tree children={(props) => createStyledNode(props, changeActiveModel)}
-                    ref={newTreeRef} data={newRenderTree} width={"100%"}
-                    onSelect={(nodes) => onNodesSelect(nodes, "new")}
-                    onFocus={(node) => onNodeFocus(node, "new")}
-                    onToggle={(id: string) => onNodeToggle(id, "new")}
-                    rowHeight={treeRowHeight} height={treeRowHeight*treeRowHeightMultiplier} openByDefault>
+                  ref={newTreeRef} data={newRenderTree} width={"100%"}
+                  onSelect={(nodes) => onNodesSelect(nodes, "new")}
+                  onFocus={(node) => onNodeFocus(node, "new")}
+                  onToggle={(id: string) => onNodeToggle(id, "new")}
+                  rowHeight={treeRowHeight} height={treeRowHeight*treeRowHeightMultiplier} openByDefault>
               {/* TODO RadStr: Remove the StyledNode from here ... it is the same as putting it in children prop */}
               {/* {StyledNode} */}
             </Tree>)
