@@ -434,10 +434,24 @@ export async function importFromGitUrl(repositoryURL: string, commitType: Commit
 
   const commitName = gitProvider.extractPartOfRepositoryURL(repositoryURL, commitType);
   const rootIriSuffix = commitName === null ? "" : `-${commitName}`;
+
   const imported = await importer.doImport(zipBuffer, rootIriSuffix);
 
   if (imported.length > 0) {
-    resourceModel.updateResourceGitLink(imported[0], repositoryURL);
+    const defaultRepositoryUrl = gitProvider.extractDefaultRepositoryUrl(repositoryURL);
+    console.info("defaultRepositoryUrl", defaultRepositoryUrl);
+    const anotherPackageWithSameGitLink = await resourceModel.getResourceForGitUrl(defaultRepositoryUrl);   // Has to be called before we set the git link for the imported package
+    resourceModel.updateResourceGitLink(imported[0], defaultRepositoryUrl);
+    let branch: string;
+    if (commitType === "branch") {
+      branch = gitProvider.extractPartOfRepositoryURL(repositoryURL, "branch") ?? "unknown";
+    }
+    else {
+      branch = gitProvider.extractPartOfRepositoryURL(repositoryURL, "commit") ?? "unknown";
+    }
+    // TODO RadStr: I already check on client if the branch does not exist, but maybe I should also here?
+    resourceModel.updateResourceProjectIriAndBranch(imported[0], anotherPackageWithSameGitLink?.projectIri ?? uuidv4(), branch);
+    resourceModel.updateRepresentsBranchHead(imported[0], commitType);
   }
 
   return imported;
