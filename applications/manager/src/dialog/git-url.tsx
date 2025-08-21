@@ -7,6 +7,7 @@ import { Pencil } from "lucide-react";
 import { convertToValidRepositoryName } from "@/utils/utilities";
 import { requestLoadPackage } from "@/package";
 import { createIdentifierForHTMLElement, InputComponent } from "@/components/simple-input-component";
+import { Package } from "@dataspecer/core-v2/project";
 
 // TODO RadStr: Maybe use enum instead of TS string enum
 /**
@@ -14,6 +15,7 @@ import { createIdentifierForHTMLElement, InputComponent } from "@/components/sim
  *         when type === "link-to-existing-repository", then it is the URL of the repository (the branch URL)
  */
 type GitURLDialogProps = {
+  inputPackage: Package,
   input?: string,
   type?: "create-new-repository-and-commit" | "commit" | "link-to-existing-repository"
 } & BetterModalProps<{
@@ -33,7 +35,7 @@ const gitDialogInputIdPrefix = "git-dialog-prefix";
  *
  * The type of shown dialog depends on the "type" property.
  */
-export const GitDialog = ({ input: defaultInput, isOpen, resolve, type }: GitURLDialogProps) => {
+export const GitDialog = ({ input: defaultInput, inputPackage, isOpen, resolve, type }: GitURLDialogProps) => {
   type = type ?? "create-new-repository-and-commit";
 
   // TODO RadStr: Not sure about the defaults
@@ -58,12 +60,28 @@ export const GitDialog = ({ input: defaultInput, isOpen, resolve, type }: GitURL
     resolve({ inputByUser: resultingInputByUser, user, gitProvider, commitMessage });
   }
 
+  const shouldDisableConfirm = useMemo(() => {
+    switch(type) {
+      case "create-new-repository-and-commit":
+        return false;
+      case "commit":
+        return !inputPackage.representsBranchHead;
+      case "link-to-existing-repository":
+        return false;
+      default:
+        return true;
+    };
+  }, [type]);
+
   const modalDescription = useMemo(() => {
     switch(type) {
       case "create-new-repository-and-commit":
         return "insert name of Git remote repository, which will be created and the current package will be linked to it";
       case "commit":
-        return "insert the commit message for git";
+        if (!inputPackage.representsBranchHead) {
+          return "You can not commit into package, which represents tag. Turn it into branch first.";
+        }
+        return "Insert the commit message for git";
       case "link-to-existing-repository":
         return "insert URL of Git remote repository, which already exists and from which you want to create new Dataspecer package";
       default:
@@ -82,7 +100,7 @@ export const GitDialog = ({ input: defaultInput, isOpen, resolve, type }: GitURL
       </div>;
       break;
     case "commit":
-      modalBody = <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="The commit message for git" setInput={setCommitMessage} input={commitMessage} />;
+      modalBody = <InputComponent disabled={shouldDisableConfirm} idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="The commit message for git" setInput={setCommitMessage} input={commitMessage} />;
       break;
     case "link-to-existing-repository":
       modalBody = <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git remote repository URL" setInput={setInputByUser} input={inputByUser} />;
@@ -106,7 +124,7 @@ export const GitDialog = ({ input: defaultInput, isOpen, resolve, type }: GitURL
         </ModalBody>
         <ModalFooter className="flex flex-row">
           <Button variant="outline" onClick={() => resolve(null)}>Cancel</Button>
-          <Button type="submit" onClick={closeWithSuccess}>Confirm</Button>
+          <Button type="submit" onClick={closeWithSuccess} disabled={shouldDisableConfirm}>Confirm</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
@@ -118,13 +136,14 @@ export const GitDialog = ({ input: defaultInput, isOpen, resolve, type }: GitURL
  * @deprecated {@link DropdownMenuItem} hsa to be used in the tree, when it is part of another component, it is rendered incorrectly.
  *  So we use {@link linkToGitRepoOnClickHandler} instead.
  */
-export const LinkToGitRepoDialog = (props: {iri: string}) => {
+export const LinkToGitRepoDialog = (props: { iri: string, inputPackage: Package }) => {
   const openModal = useBetterModal();
   const iri = props.iri;
+  const inputPackage = props.inputPackage;
 
   return <DropdownMenuItem
     onClick={async () => {
-      const result = await openModal(GitDialog, {input: iri, type: "create-new-repository-and-commit"});
+      const result = await openModal(GitDialog, {input: iri, inputPackage, type: "create-new-repository-and-commit"});
       if (result) {
         const url = import.meta.env.VITE_BACKEND + "/git/link-package-to-git?iri=" + encodeURIComponent(iri) +
                                                   "&givenRepositoryName=" + encodeURIComponent(result.inputByUser) +
@@ -139,8 +158,8 @@ export const LinkToGitRepoDialog = (props: {iri: string}) => {
 }
 
 // TODO RadStr: Maybe put on some better place?
-export const linkToGitRepoOnClickHandler = async (openModal: OpenBetterModal, iri: string) => {
-  const result = await openModal(GitDialog, {input: iri, type: "create-new-repository-and-commit"});
+export const linkToGitRepoOnClickHandler = async (openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
+  const result = await openModal(GitDialog, {input: iri, inputPackage, type: "create-new-repository-and-commit"});
   if (result) {
     const url = import.meta.env.VITE_BACKEND + "/git/link-package-to-git?iri=" + encodeURIComponent(iri) +
                                               "&givenRepositoryName=" + encodeURIComponent(result.inputByUser) +
@@ -174,13 +193,14 @@ export const linkToGitRepoOnClickHandler = async (openModal: OpenBetterModal, ir
  * @deprecated {@link DropdownMenuItem} hsa to be used in the tree, when it is part of another component, it is rendered incorrectly.
  *  So we use {@link commitToDigDialogOnClickHandler} instead
  */
-export const CommitToGitDialog = (props: {iri: string}) => {
+export const CommitToGitDialog = (props: { iri: string, inputPackage: Package }) => {
   const openModal = useBetterModal();
   const iri = props.iri;
+  const inputPackage = props.inputPackage;
 
   return <DropdownMenuItem
     onClick={async () => {
-      const result = await openModal(GitDialog, {input: iri, type: "commit"});
+      const result = await openModal(GitDialog, {input: iri, inputPackage, type: "commit"});
       if (result) {
         const url = import.meta.env.VITE_BACKEND + "/git/commit-package-to-git?iri=" + encodeURIComponent(iri) +
                                                   "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "");
@@ -191,8 +211,8 @@ export const CommitToGitDialog = (props: {iri: string}) => {
 }
 
 // TODO RadStr: Maybe put on some better place?
-export const commitToDigDialogOnClickHandler = async (openModal: OpenBetterModal, iri: string) => {
-  const result = await openModal(GitDialog, {input: iri, type: "commit"});
+export const commitToDigDialogOnClickHandler = async (openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
+  const result = await openModal(GitDialog, {input: iri, inputPackage, type: "commit"});
   if (result) {
     const url = import.meta.env.VITE_BACKEND + "/git/commit-package-to-git?iri=" + encodeURIComponent(iri) +
                                               "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "");
