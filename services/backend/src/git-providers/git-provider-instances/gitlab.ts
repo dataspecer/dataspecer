@@ -1,6 +1,6 @@
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
-import { gitProviderDomains, GitProviderEnum, WebhookRequestDataProviderIndependent, GitCredentials, CommitReferenceType } from "../git-provider-api.ts";
+import { gitProviderDomains, GitProviderEnum, WebhookRequestDataProviderIndependent, GitCredentials, CommitReferenceType, createRemoteRepositoryReturnType } from "../git-provider-api.ts";
 import { GitProviderBase } from "../git-provider-base.ts";
 
 
@@ -25,15 +25,16 @@ export class GitLabProvider extends GitProviderBase {
     return GitProviderEnum.GitLab;
   }
 
-  getDomainURL(): string {
-    return this.domainURL;
+  getDomainURL(shouldPrefixWithHttps: boolean): string {
+    const prefix = shouldPrefixWithHttps ? "https://" : "";
+    return prefix + this.domainURL;
   }
 
   setDomainURL(newDomainURL: string): void {
     this.domainURL = newDomainURL;
   }
 
-  extractDataForWebhookProcessing(webhookPayload: any): WebhookRequestDataProviderIndependent | null {
+  async extractDataForWebhookProcessing(webhookPayload: any): Promise<WebhookRequestDataProviderIndependent | null> {
     const repoName = webhookPayload.repository.name;
     // TODO: In future I will find it through the URL inside the prisma database instead
     const iri = String(repoName).split("-").at(-1);
@@ -44,13 +45,16 @@ export class GitLabProvider extends GitProviderBase {
 
     const cloneURL = webhookPayload.repository.git_http_url;
     const commits = webhookPayload.commits;
-
-    return {
-      cloneURL,
-      commits,
-      repoName,
-      iri,
-    };
+    throw new Error("While all the code here is correct, it is missing how to get branch from the webhookPayload. " +
+      "You can take inspiration in the GitHub implementation, it might be the same. " +
+      "However you have to examine the webhook payload from GitLab yourself to confirm that.");
+    // return {
+    //   cloneURL,
+    //   commits,
+    //   repoName,
+    //   iri,
+    //   branch,
+    // };
   }
 
   async removeRemoteRepository(authToken: string, repositoryUserName: string, repoName: string): Promise<FetchResponse> {
@@ -94,7 +98,7 @@ export class GitLabProvider extends GitProviderBase {
 
     return fetchResponse;
   }
-  async createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean): Promise<FetchResponse> {
+  async createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean): Promise<createRemoteRepositoryReturnType> {
     // https://docs.gitlab.com/api/projects/#create-a-project
     // Example curl request:
     // curl --request POST --header "PRIVATE-TOKEN: <your-token>" \
@@ -110,7 +114,7 @@ export class GitLabProvider extends GitProviderBase {
       "initialize_with_readme": "true",
     };
 
-    const fetchResponse = httpFetch(`https://${this.domainURL}/api/v4/projects/`, {
+    const fetchResponse = await httpFetch(`https://${this.domainURL}/api/v4/projects/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -119,7 +123,16 @@ export class GitLabProvider extends GitProviderBase {
       body: JSON.stringify(payload),
     });
 
-    return fetchResponse;
+    if (fetchResponse.status < 200 || fetchResponse.status >= 300) {
+      throw new Error(`Error when creating new remote GitLab repository: ${fetchResponse.status} ${fetchResponse}`);
+    }
+
+    const responseAsJSON = (await fetchResponse.json()) as any;
+    const defaultBranch: string | null = responseAsJSON?.default_branch ?? null;
+    return {
+      response: fetchResponse,
+      defaultBranch,
+    };
   }
 
   getBotCredentials(): GitCredentials {
@@ -167,6 +180,17 @@ export class GitLabProvider extends GitProviderBase {
   }
 
   protected getZipDownloadLink(owner: string, repo: string, commitName: string, commitType: CommitReferenceType): string {
+    throw new Error("Method not implemented.");
+  }
+
+  createGitRepositoryURL(userName: string, repoName: string, branch?: string): string {
+    // Well GitLab seems to be slightly different than GitHub. It has /-/ between the repoName and tree,
+    // BUT it seems to work without it, so maybe the same implementation for gitlab can be used.
+    throw new Error("Method not implemented.");
+  }
+
+  extractDefaultRepositoryUrl(repositoryUrl: string): string {
+    // Once again it is possible that it has the same implementation as GitHub.
     throw new Error("Method not implemented.");
   }
 }

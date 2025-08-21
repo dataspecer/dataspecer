@@ -1,12 +1,12 @@
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
-import { CommitReferenceType, ExtractedCommitNameFromRepositoryURL, GitCredentials, GitProvider, GitProviderEnum, RepositoryURLParts, WebhookRequestDataProviderIndependent } from "./git-provider-api.ts";
+import { CommitReferenceType, createRemoteRepositoryReturnType, ExtractedCommitNameFromRepositoryURL, GitCredentials, GitProvider, GitProviderEnum, RepositoryURLParts, WebhookRequestDataProviderIndependent } from "./git-provider-api.ts";
 
 export abstract class GitProviderBase implements GitProvider {
   abstract getGitProviderEnumValue(): GitProviderEnum;
-  abstract getDomainURL(): string;
+  abstract getDomainURL(shouldPrefixWithHttps: boolean): string;
   abstract setDomainURL(newDomainURL: string): void;
-  abstract extractDataForWebhookProcessing(webhookPayload: any): WebhookRequestDataProviderIndependent | null;
-  abstract createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean): Promise<FetchResponse>;
+  abstract extractDataForWebhookProcessing(webhookPayload: any): Promise<WebhookRequestDataProviderIndependent | null>;
+  abstract createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean): Promise<createRemoteRepositoryReturnType>;
   abstract removeRemoteRepository(authToken: string, repositoryUserName: string, repoName: string): Promise<FetchResponse>;
   abstract createWebhook(authToken: string, repositoryOwner: string, repositoryName: string, webhookHandlerURL: string, webhookEvents: string[]): Promise<FetchResponse>;
   abstract getBotCredentials(): GitCredentials;
@@ -16,6 +16,8 @@ export abstract class GitProviderBase implements GitProvider {
   abstract copyWorkflowFiles(targetPackageIRI: string): void;
   abstract isGitProviderDirectory(fullPath: string): boolean;
   abstract getDefaultBranch(repositoryURL: string): Promise<string>;
+  abstract createGitRepositoryURL(userName: string, repoName: string, branch?: string): string;
+  abstract extractDefaultRepositoryUrl(repositoryUrl: string): string;
 
   /**
    * @param repositoryURLSplit is the repository URL split by "/", this is internal method used inside {@link extractPartOfRepositoryURL}.

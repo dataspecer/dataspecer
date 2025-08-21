@@ -8,8 +8,9 @@ import fs from "fs";
 
 // Using this one since I could not make the ones for nodeJS (one is not using ES modules and the other one seems to be too old and correctly support types)
 import sodium from "libsodium-wrappers-sumo";
-import { GitProviderEnum, gitProviderDomains, WebhookRequestDataProviderIndependent, GitCredentials, createLinksForFiles, CommitReferenceType } from "../git-provider-api.ts";
+import { GitProviderEnum, gitProviderDomains, WebhookRequestDataProviderIndependent, GitCredentials, createLinksForFiles, CommitReferenceType, createRemoteRepositoryReturnType } from "../git-provider-api.ts";
 import { GitProviderBase } from "../git-provider-base.ts";
+import { resourceModel } from "../../main.ts";
 
 // Note:
 // Even though the request usually work without, the docs demand to specify User-Agent in headers for REST API requests
@@ -32,30 +33,36 @@ export class GitHubProvider extends GitProviderBase {
     return GitProviderEnum.GitHub;
   }
 
-  getDomainURL(): string {
-    return gitProviderDomains[this.getGitProviderEnumValue()];
+  getDomainURL(shouldPrefixWithHttps: boolean): string {
+    const prefix = shouldPrefixWithHttps ? "https://" : "";
+    return prefix + gitProviderDomains[this.getGitProviderEnumValue()];
   }
 
   setDomainURL(newDomainURL: string): void {
     // EMPTY - GitHub has only one domain
   }
 
-  extractDataForWebhookProcessing(webhookPayload: any): WebhookRequestDataProviderIndependent | null {
+  async extractDataForWebhookProcessing(webhookPayload: any): Promise<WebhookRequestDataProviderIndependent | null> {
+    // https://docs.github.com/en/webhooks/webhook-events-and-payloads#push
+
     // TODO RadStr: Taking more data since I might use some of them in future
 
     // TODO: Currently without branches
     const beforeCommit = webhookPayload.before;
     const afterCommit = webhookPayload.after;
-    const gitRefHead = webhookPayload.ref;
+    const refPrefix = "refs/heads/";
+    const branch = webhookPayload.ref.substring(refPrefix.length);
     const repoName = webhookPayload.repository.name;
-    // TODO: In future I will find it through the URL inside the prisma database instead
-    const iri = String(repoName);
+    const repoURL = webhookPayload.repository.html_url;
+    const resourceToUpdateInWebhook = await resourceModel.getResourceForGitUrlAndBranch(repoURL, branch);
+
+    const iri = resourceToUpdateInWebhook?.iri;
     if (iri === undefined) {
-      console.error("For some reason the webhook can't look up iri of package");
+      // This means that new branch was added to git, but the branch does not have equivalent in the DS
+      // TODO RadStr: We could create new package automatically, but I am not sure if we want that
       return null;
     }
 
-    const repoURL = webhookPayload.repository.html_url;
     const gitURL = webhookPayload.repository.git_url;
     const cloneURL = webhookPayload.repository.clone_url;
     const commits = webhookPayload.commits;
@@ -68,6 +75,7 @@ export class GitHubProvider extends GitProviderBase {
       commits,
       repoName,
       iri,
+      branch,
     };
   }
 
@@ -122,7 +130,7 @@ export class GitHubProvider extends GitProviderBase {
     return fetchResponse;
   }
 
-  async createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean): Promise<FetchResponse> {
+  async createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean): Promise<createRemoteRepositoryReturnType> {
     // https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#create-an-organization-repository - org repo
     // vs
     // https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#create-a-repository-for-the-authenticated-user - user repo
@@ -143,7 +151,7 @@ export class GitHubProvider extends GitProviderBase {
 
     const restEndpoint = isUserRepo ? "https://api.github.com/user/repos" : `https://api.github.com/orgs/${repositoryUserName}/repos`;
 
-    const fetchResponse = httpFetch(restEndpoint, {
+    const fetchResponse = await httpFetch(restEndpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/vnd.github+json",
@@ -155,7 +163,16 @@ export class GitHubProvider extends GitProviderBase {
       body: JSON.stringify(payload),
     });
 
-    return fetchResponse;
+    if (fetchResponse.status < 200 || fetchResponse.status >= 300) {
+      throw new Error(`Error when creating new remote GitHub repository: ${fetchResponse.status} ${fetchResponse}`);
+    }
+
+    const responseAsJSON = (await fetchResponse.json()) as any;
+    const defaultBranch: string | null = responseAsJSON?.default_branch ?? null;
+    return {
+      response: fetchResponse,
+      defaultBranch,
+    };
   }
 
   getBotCredentials(): GitCredentials {
@@ -197,7 +214,7 @@ export class GitHubProvider extends GitProviderBase {
     // TODO RadStr: Already doing this somewhere else + maybe there is mechanism how are these things solved in Dataspecer
     const addingCollaboratorFetchResponseAwaited = await addingCollaboratorFetchResponse;
     if (addingCollaboratorFetchResponseAwaited.status < 200 || addingCollaboratorFetchResponseAwaited.status > 299) {
-      console.error("Could not add bot as a collaborator");
+      console.error("Could not add bot as a collaborator", addingCollaboratorFetchResponseAwaited);
       return addingCollaboratorFetchResponse;
     }
 
@@ -409,5 +426,28 @@ export class GitHubProvider extends GitProviderBase {
     }
     const zipURL = `https://github.com/${owner}/${repo}/archive/${urlPartBasedOnCommitType}${commitName}.zip`;
     return zipURL;
+  }
+
+  createGitRepositoryURL(userName: string, repoName: string, branch?: string): string {
+    const branchSuffix = branch === undefined ? "" : `/tree/${branch}`;
+    const url = `${this.getDomainURL(true)}/${userName}/${repoName}${branchSuffix}`;
+    return url;
+  }
+
+  extractDefaultRepositoryUrl(repositoryUrl: string): string {
+    const domain = this.extractPartOfRepositoryURL(repositoryUrl, "url-domain");
+    const owner = this.extractPartOfRepositoryURL(repositoryUrl, "user-name");
+    const repositoryName = this.extractPartOfRepositoryURL(repositoryUrl, "repository-name");
+    if (domain === null) {
+      throw new Error("Invalid domain in" + repositoryUrl);
+    }
+    else if (owner === null) {
+      throw new Error("Invalid owner in" + repositoryUrl);
+    }
+    else if (repositoryName === null) {
+      throw new Error("Invalid repositoryName in" + repositoryUrl);
+    }
+
+    return "https://" + domain + "/" + owner + "/" + repositoryName;
   }
 }

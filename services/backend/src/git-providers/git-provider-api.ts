@@ -14,7 +14,7 @@ export type GitCredentials = {
 };
 // TODO RadStr: Always keep the webhook-test (respectively the part of url after /)
 
-export const WEBHOOK_HANDLER_URL = "https://bfba65ef0993.ngrok-free.app/git/webhook-test";
+export const WEBHOOK_HANDLER_URL = "https://40a28f4bf886.ngrok-free.app/git/webhook-test";
 
 export enum GitProviderEnum {
   GitHub,
@@ -37,6 +37,7 @@ export type WebhookRequestDataProviderIndependent = {
   commits: object[];
   repoName: string;
   iri: string;
+  branch: string;
 };
 
 export type CommitReferenceType = "commit" | "branch" | "tag";
@@ -59,6 +60,11 @@ export type ExtractedCommitNameFromRepositoryURL = {
   commitName: string,
   fallbackToDefaultBranch: boolean,
 };
+
+export type createRemoteRepositoryReturnType = {
+  defaultBranch: string | null,
+  response: FetchResponse
+}
 
 export abstract class GitProviderFactory {
   static createGitProviderFromWebhookRequest(request: express.Request): WebhookRequestProviderSpecificData {
@@ -136,19 +142,7 @@ export const createGitRepositoryURLForKnownProviders = (gitProvider: GitProvider
   const url = `https://${baseURL}/${userName}/${repoName}${branchSuffix}`;
   return url;
 };
-/**
- * @param gitProviderURL the URL of git provider, shoul end with /, for example "https://gitlab.com/" or "https://github.com/"
- * @returns The URL, which looks like {@link gitProviderURL}/{@link userName}/{@link repoName}/tree/{@link branch}.
- *  Where the last part tree/... is only when branch is defined, otherwise it is not in result (which means we are returning main branch).
- */
 
-export const createGitRepositoryURL = (gitProviderURL: string, userName: string, repoName: string, branch?: string): string => {
-  // TODO RadStr: Well gitlab once again has it different it has /-/ between the repoName and tree,
-  //              BUT it seems to work without it, so maybe it is not needed
-  const branchSuffix = branch === undefined ? "" : `/tree/${branch}`;
-  const url = `${gitProviderURL}${userName}/${repoName}${branchSuffix}`;
-  return url;
-};
 /**
  *
  * @param repositoryURL It is enough the for the repositoryURL to contain just the hostname part.
@@ -187,9 +181,9 @@ export interface GitProvider {
 
   /**
    * Returns the domain URL for this instance. For example for github is is "github.com". But for GitLab we can have different domains:
-   *  "gitlab.com" or "gitlab.mff.cuni.cz"
+   *  "gitlab.com" or "gitlab.mff.cuni.cz". If {@link shouldPrefixWithHttps} is set to true, the domain will start with https://, otherwise not
    */
-  getDomainURL(): string;
+  getDomainURL(shouldPrefixWithHttps: boolean): string;
 
   /**
    * Sets the new domain URL for this instance. For example GitHub does nothing on this call. But for GitLab we can have different domains:
@@ -206,8 +200,9 @@ export interface GitProvider {
    * We have to separate it, because unfortunately each provider has slightly different format of the payload.
    * So we just pick the data we need and return them.
    * @param request is the original data from request as it came in webhook converted to JSON.
+   * @returns Returns null if new branch was added to git, but the branch does not have equivalent in the DS.
    */
-  extractDataForWebhookProcessing(webhookPayload: any): WebhookRequestDataProviderIndependent | null;
+  extractDataForWebhookProcessing(webhookPayload: any): Promise<WebhookRequestDataProviderIndependent | null>;
 
   // TODO RadStr: Maybe everywhere use repository instead of repositoryUserName
   /**
@@ -216,7 +211,7 @@ export interface GitProvider {
    * @param isUserRepo if true then we create repository under user of name {@link repositoryUserName},
    *  if false then we are creating repository under organization of name {@link repositoryUserName}.
    */
-  createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean): Promise<FetchResponse>;
+  createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean): Promise<createRemoteRepositoryReturnType>;
 
   /**
    * Removes remote git repository with following URL .../{@link repositoryUserName}/{@link repoName}.
@@ -324,6 +319,17 @@ export interface GitProvider {
    * @returns The link to download repostitory as a zip.
    */
   convertRepoURLToDownloadZipURL(repositoryURL: string, commitType: CommitReferenceType): Promise<string>;
+
+  /**
+   * @returns The URL, which looks like {@link gitProviderURL}/{@link userName}/{@link repoName}/tree/{@link branch} for github, for other provides it might look different.
+   *  Where the last part tree/... is only when branch is defined, otherwise it is not in result (which means we are returning main branch).
+   */
+  createGitRepositoryURL(userName: string, repoName: string, branch?: string): string;
+
+  /**
+   * @returns Converts the {@link repositoryUrl}, which may possible point to commit or branch to the url, which is the homepage of the repository. For example https://github.com/dataspecer/dataspecer
+   */
+  extractDefaultRepositoryUrl(repositoryUrl: string): string;
 }
 
 
