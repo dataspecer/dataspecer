@@ -206,6 +206,8 @@ const createGitGraph = (openModal: OpenBetterModal, examinedPackage: Package, wi
         // TODO RadStr: Maybe try to fix my solution in future - it is better by focusing on the main and old/new branches, but it does not work correctly unfortunately
         let isFirst = true; // TODO RadStr: Debug variable
         for (const commit of Object.values(commits) as any) {
+          // TODO RadStr: remove this - just put from backend only the stuff that is needed instead of deleting
+
           // delete commit["refs"];
           // delete commit["hash"];
           delete commit["hashAbbrev"];
@@ -224,16 +226,33 @@ const createGitGraph = (openModal: OpenBetterModal, examinedPackage: Package, wi
           }
           isFirst = false;
           commit.onClick = (gitGraphCommit: any) => {                        // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-dot-click
-            openModal(CommitActionsDialog, { examinedPackage, commitHash: gitGraphCommit.hash });
+            commitOnClickHandler(openModal, examinedPackage, gitGraphCommit);
           };
           commit.onMessageClick = (gitGraphCommit: any) => {                 // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-message-click
-            openModal(CommitActionsDialog, { examinedPackage, commitHash: gitGraphCommit.hash });
+            commitOnClickHandler(openModal, examinedPackage, gitGraphCommit);
           };
         }
         gitgraph.import(commits);
       }}
     </Gitgraph>
   </div>;
+}
+
+
+const commitOnClickHandler = (openModal: OpenBetterModal, examinedPackage: Package, gitGraphCommit: any) => {
+  console.info({gitGraphCommit});
+  let renderBranchName: string | null;
+  if (gitGraphCommit.branches[0] === "") {
+    renderBranchName = null;
+  }
+  else {
+    renderBranchName = gitGraphCommit.branches[0];
+    const originPrefix = "origin/";
+    if(renderBranchName?.startsWith(originPrefix)) {
+      renderBranchName = renderBranchName.substring(originPrefix.length);
+    }
+  }
+  openModal(CommitActionsDialog, { examinedPackage, branch: renderBranchName, commitHash: gitGraphCommit.hash });
 }
 
 
