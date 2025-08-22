@@ -58,7 +58,14 @@ model Resource {
   // Otherwise it should not react to the webhooks from git, neither allow to commit from it to git.
   representsBranchHead Boolean @default(true)
   // Is the full hash of the last git commit on this package.
+  // Note that this value is one commit ahead, when it comes commiting to git.
+  // That is if we commit (or import package from git), it is pointing to the last commit on the relevant branch,
+  // however if you also exported this value to the git, it would contain the parent commit hash, that is next-to-last commit.
+  // It does not matter, since we don't commit the hash into Git (at least not yet), but it should be noted anyways.
+  // Also note that if decided to export the hash, it has to work this way. It is simply not possible to compute commit hash
+  // and then store it here and then commit, since the change of this value would change the computed commit hash.
   lastCommitHash String @default("")
+  // If false then there exists commit in remote git repo, which failed to be pushed to DS through webhook, because of conflicts.
   isSynchronizedWithRemote Boolean @default(true)
 
   // Technical metadata: creation date.
