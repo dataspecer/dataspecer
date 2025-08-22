@@ -141,6 +141,24 @@ export class ResourceModel {
     }
 
     /**
+     * Updates the last commit hash of package
+     */
+    async updateLastCommitHash(iri: string, lastCommitHash: string) {
+        if (!(lastCommitHash.length === 40 || lastCommitHash.length === 0)) {
+            throw new Error("Updating lastCommitHash to invalid hash, is not of length 40 or 0");        // TODO RadStr: maybe better error handling
+        }
+
+        const resource = await this.prismaClient.resource.findFirst({where: {iri}});        // TODO RadStr: Why am I looking for resource
+        await this.prismaClient.resource.update({
+            where: {iri},
+            data: {
+                lastCommitHash: lastCommitHash,
+            }
+        });
+        await this.updateModificationTime(iri);
+    }
+
+    /**
      * Updates user metadata of the resource with given {@link linkedGit}.
      */
     async updateResourceGitLink(iri: string, linkedGit: string) {
@@ -358,6 +376,7 @@ export class ResourceModel {
         if (sourceGitLink !== undefined) {
             await this.updateResourceGitLink(newRootIri, sourceGitLink);
         }
+        await this.updateLastCommitHash(newRootIri, sourcePrismaResource?.lastCommitHash ?? "");
 
         await this.updateModificationTimeById(prismaParentResource.id);
 
