@@ -194,8 +194,9 @@ export const commitPackageToGit = async (
 
   gitProvider.copyWorkflowFiles(iri);
 
-  await commitGivenFilesToGit(git, ["."], commitMessage, committer.name, committer.email);
+  const commitResult = await commitGivenFilesToGit(git, ["."], commitMessage, committer.name, committer.email);
   await git.push(repoURLWithAuthorization);
+  await resourceModel.updateLastCommitHash(iri, commitResult.commit);
 
   // It is important to not only remove the actual files, but also the .git directory,
   // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
@@ -288,7 +289,7 @@ async function commitGivenFilesToGit(
   await git.addConfig("user.email", committerEmailToUse);
 
   // We should already be on the correct branch
-  await git.commit(commitMessage);
+  return await git.commit(commitMessage);
 }
 
 
