@@ -126,6 +126,9 @@ const Row = ({ iri, projectFilter, setProjectFilter, mergeActors, parentIri }: {
           <span className="truncate px-2 max-w-[4cm]">
             {resource.representsBranchHead ? "is Branch" : "is Tag"}
           </span>
+          <span className="truncate px-1 max-w-[2cm]">
+            {resource.lastCommitHash.substring(0, 6)}
+          </span>
           <div className="truncate px-8">
             { /* TODO RadStr: Make it span or not? */ }
             { /* TODO RadStr: Use some invalid characters as a default - but maybe {} are invalid URLs */ }
