@@ -178,7 +178,7 @@ export class ResourceModel {
     }
 
     /**
-     * Updates {@link projectIri} and {@link branch} if given for resource idnetified by {@link iri}.
+     * Updates {@link projectIri} and {@link branch} if given for resource identified by {@link iri}. If not given the previous value is kept.
      */
     async updateResourceProjectIriAndBranch(iri: string, projectIri?: string, branch?: string) {
         const resource = await this.prismaClient.resource.findFirst({where: {iri}});        // TODO RadStr: Why am I looking for resource

@@ -1,5 +1,8 @@
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
-import { CommitReferenceType, createRemoteRepositoryReturnType, ExtractedCommitNameFromRepositoryURL, GitCredentials, GitProvider, GitProviderEnum, RepositoryURLParts, WebhookRequestDataProviderIndependent } from "./git-provider-api.ts";
+import { CommitReferenceType, ConvertRepoURLToDownloadZipURLReturnType, createRemoteRepositoryReturnType, ExtractedCommitReferenceValueFromRepositoryURL, GitCredentials, GitProvider, GitProviderEnum, RepositoryURLParts, WebhookRequestDataProviderIndependent } from "./git-provider-api.ts";
+import { simpleGit } from "simple-git";
+import { v4 as uuidv4 } from "uuid";
+import fs from "fs";
 
 export abstract class GitProviderBase implements GitProvider {
   abstract getGitProviderEnumValue(): GitProviderEnum;
@@ -15,28 +18,92 @@ export abstract class GitProviderBase implements GitProvider {
   abstract createPublicationRepository(repoName: string, isUserRepo: boolean, repositoryUserName?: string, accessToken?: string): Promise<FetchResponse>;
   abstract copyWorkflowFiles(targetPackageIRI: string): void;
   abstract isGitProviderDirectory(fullPath: string): boolean;
-  abstract getDefaultBranch(repositoryURL: string): Promise<string>;
+  abstract getDefaultBranch(repositoryURL: string): Promise<string | null>;
   abstract createGitRepositoryURL(userName: string, repoName: string, branch?: string): string;
   abstract extractDefaultRepositoryUrl(repositoryUrl: string): string;
+
+  async getLastCommitHash(userName: string, repoName: string, commitReference?: string, isCommit?: boolean): Promise<string> {
+    if (isCommit === true) {
+      if (commitReference === undefined) {
+        // TODO RadStr: Maybe better error handling
+        throw new Error(`When trying to get last commit for userName: ${userName} and repoName: ${repoName}. It was supposed to be commit, however the value of commmit was not given`);
+      }
+      return commitReference;
+    }
+
+    const options = [
+      "--depth", "1",
+    ];
+    if (commitReference !== undefined) {
+      options.push("--revision", commitReference);
+    }
+
+    const uuids = [
+      uuidv4(),
+      uuidv4(),
+    ];
+    const uuidPath = uuids.join("");
+    const gitTmpDirectory = `./tmp/${uuidPath}`
+    try {
+      fs.mkdirSync(gitTmpDirectory, { recursive: true });
+      const git = simpleGit(gitTmpDirectory);
+
+      // TODO: Note that this not work for non-public repositories
+      // Not providing in the branch, we just want the base url with userName and repoName
+      const repositoryUrl = this.createGitRepositoryURL(userName, repoName);
+      await git.clone(repositoryUrl, ".", options);
+      const gitLog = await git.log({ n: 1 });
+      const hash = gitLog.latest?.hash;
+
+      if (hash === undefined) {
+        throw new Error(`Could not get the last commit from given userName: ${userName}, repoName: ${repoName}, branch: ${commitReference}`);        // TODO RadStr: Maybe better error handling
+      }
+      return hash;
+    }
+    catch(error) {
+      throw error;    // Just rethrow it.
+    }
+    finally {
+      fs.rmSync(gitTmpDirectory, { recursive: true, force: true });
+    }
+  }
+
+  async getLastCommitHashFromUrl(repositoryUrl: string, commitReferenceType: CommitReferenceType | null, commitReferenceValue: string | null): Promise<string> {
+    commitReferenceType ??= "branch";
+
+    const userName = this.extractPartOfRepositoryURL(repositoryUrl, "user-name");
+    const repoName = this.extractPartOfRepositoryURL(repositoryUrl, "repository-name");
+    if (userName === null) {
+      throw new Error(`Could not extract userName from given ${repositoryUrl}`);
+    }
+    else if (repoName === null) {
+      throw new Error(`Could not extract repoName from given ${repositoryUrl}`);
+    }
+    if (commitReferenceValue === null) {
+      commitReferenceValue = (await this.getCommitReferenceValue(repositoryUrl, commitReferenceType)).commitReferenceValue;
+    }
+
+    return this.getLastCommitHash(userName, repoName, commitReferenceValue ?? undefined, commitReferenceType === "commit");
+  }
 
   /**
    * @param repositoryURLSplit is the repository URL split by "/", this is internal method used inside {@link extractPartOfRepositoryURL}.
    * Extracts the commit name from the {@link repositoryURLSplit}. Or null if not present (then it should be treated as default branch).
    * The return name depends on the {@link part}, it is either commit hash or name of branch/tag
    */
-  protected abstract extractCommitNameFromRepositoryURLSplit(repositoryURLSplit: string[], commitType: CommitReferenceType): string | null;
+  protected abstract extractCommitReferenceValueFromRepositoryURLSplit(repositoryURLSplit: string[], commitReferenceType: CommitReferenceType): string | null;
 
-  async getCommitNameFromRepositoryURL(repositoryURL: string, commitType: CommitReferenceType): Promise<ExtractedCommitNameFromRepositoryURL> {
-    const commitName = this.extractPartOfRepositoryURL(repositoryURL, commitType);
+  async getCommitReferenceValue(repositoryURL: string, commitReferenceType: CommitReferenceType): Promise<ExtractedCommitReferenceValueFromRepositoryURL> {
+    const commitReferenceValue = this.extractPartOfRepositoryURL(repositoryURL, commitReferenceType);
 
-    if (commitName === null) {
+    if (commitReferenceValue === null) {
       return {
-        commitName: await this.getDefaultBranch(repositoryURL),
+        commitReferenceValue: await this.getDefaultBranch(repositoryURL),
         fallbackToDefaultBranch: true
       };
     }
 
-    return { commitName, fallbackToDefaultBranch: false };
+    return { commitReferenceValue, fallbackToDefaultBranch: false };
   }
 
   extractPartOfRepositoryURL(repositoryURL: string, part: RepositoryURLParts): string | null {
@@ -62,7 +129,7 @@ export abstract class GitProviderBase implements GitProvider {
         return pathParts[0];
       }
       else if (part === "branch" || part === "tag" || part === "commit") {
-        return this.extractCommitNameFromRepositoryURLSplit(pathParts, part);
+        return this.extractCommitReferenceValueFromRepositoryURLSplit(pathParts, part);
       }
 
       return null;
@@ -72,10 +139,10 @@ export abstract class GitProviderBase implements GitProvider {
     }
   }
 
-  async convertRepoURLToDownloadZipURL(repositoryURL: string, commitType: CommitReferenceType): Promise<string> {
+  async convertRepoURLToDownloadZipURL(repositoryURL: string, commitReferenceType: CommitReferenceType): Promise<ConvertRepoURLToDownloadZipURLReturnType> {
     const repo = this.extractPartOfRepositoryURL(repositoryURL, "repository-name");
     const owner = this.extractPartOfRepositoryURL(repositoryURL, "user-name");     // TODO RadStr: Rename user to owner everywhere
-    const commitNameInfo = await this.getCommitNameFromRepositoryURL(repositoryURL, commitType);
+    const commitReferenceValueInfo = await this.getCommitReferenceValue(repositoryURL, commitReferenceType);
 
     if (owner === null) {
       throw new Error(`Could not extract the owner (${owner}) from ${repositoryURL}`);
@@ -85,15 +152,22 @@ export abstract class GitProviderBase implements GitProvider {
       throw new Error(`Could not extract the repository (${repo}) from ${repositoryURL}`);
     }
 
-    const commitTypeBasedOnURL = commitNameInfo.fallbackToDefaultBranch ? "branch" : commitType;
-    const zipURL = this.getZipDownloadLink(owner!, repo!, commitNameInfo.commitName, commitTypeBasedOnURL);
-    return zipURL;
+    if (commitReferenceValueInfo.commitReferenceValue === null) {
+      throw new Error(`Could not extract the commit reference value needed to get zip url. The given repository url looked like this: ${repositoryURL}`);
+    }
+
+    const commitReferenceTypeWithFallback = commitReferenceValueInfo.fallbackToDefaultBranch ? "branch" : commitReferenceType;
+    const zipURL = this.getZipDownloadLink(owner, repo, commitReferenceValueInfo.commitReferenceValue, commitReferenceTypeWithFallback);
+    return {
+      zipURL,
+      commitReferenceValueInfo,
+    };
   }
 
   /**
-   * @param commitType Some git providers might change the URL based on the type of commit. For example Github - however Github also allows
+   * @param commitReferenceType Some git providers might change the URL based on the type of commit. For example Github - however Github also allows
    *  one uniform type of download url and it treats it like commit.
    * @returns The zip link from given arguments to download repository.
    */
-  protected abstract getZipDownloadLink(owner: string, repo: string, commitName: string, commitType: CommitReferenceType): string;
+  protected abstract getZipDownloadLink(owner: string, repo: string, commitName: string, commitReferenceType: CommitReferenceType): string;
 }

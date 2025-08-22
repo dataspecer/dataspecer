@@ -167,11 +167,11 @@ export class GitLabProvider extends GitProviderBase {
     throw new Error("Method not implemented.");
   }
 
-  getDefaultBranch(repositoryURL: string): Promise<string> {
+  getDefaultBranch(repositoryURL: string): Promise<string | null> {
     throw new Error("Method not implemented.");
   }
 
-  extractCommitNameFromRepositoryURLSplit(repositoryURLSplit: string[], commitType: CommitReferenceType): string | null {
+  extractCommitReferenceValueFromRepositoryURLSplit(repositoryURLSplit: string[], commitReferenceType: CommitReferenceType): string | null {
     if (repositoryURLSplit.length < 4 || repositoryURLSplit.at(-2) !== "tree") {
       return null;
     }
@@ -179,7 +179,7 @@ export class GitLabProvider extends GitProviderBase {
     return repositoryURLSplit.at(-1)!;
   }
 
-  protected getZipDownloadLink(owner: string, repo: string, commitName: string, commitType: CommitReferenceType): string {
+  protected getZipDownloadLink(owner: string, repo: string, commitName: string, commitReferenceType: CommitReferenceType): string {
     throw new Error("Method not implemented.");
   }
 

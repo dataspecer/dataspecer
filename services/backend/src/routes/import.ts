@@ -28,9 +28,7 @@ import { Readable } from "stream";
 import { pipeline } from "stream/promises";
 import { ReadableStream } from "stream/web";
 import { buffer } from "stream/consumers";
-import { extractPartOfRepositoryURL } from "../utils/git-utils.ts";
-import { GITHUB_USER_AGENT } from "../utils/git-utils.ts";
-import { CommitReferenceType, getDefaultCommitReferenceType, GitProvider, GitProviderFactory, isCommitReferenceType } from "../git-providers/git-provider-api.ts";
+import { CommitReferenceType, getDefaultCommitReferenceTypeForZipDownload, GitProvider, GitProviderFactory, isCommitReferenceType } from "../git-providers/git-provider-api.ts";
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
   const result: LanguageString = {};
@@ -394,21 +392,28 @@ export const importResource = asyncHandler(async (request: express.Request, resp
  * Generates specification from git URL passed in as argument from command line
  * @param repositoryURL is the URL of git repository (method also supports non-main branch URLs),
  *  this URL is transformed to the URL which downloads zip - for example https://github.com/RadStr-bot/4f21bf6d-2116-4ab3-b387-1f8074f7f412/archive/refs/heads/main.zip
+ * @param commitReferenceType if not provided it just fallbacks to defaults
  */
-export async function importFromGitUrl(repositoryURL: string, commitType: CommitReferenceType) {
+export async function importFromGitUrl(repositoryURL: string, commitReferenceType?: CommitReferenceType) {
   const gitProvider: GitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(repositoryURL);
-  const gitZipDownloadURL = await gitProvider.convertRepoURLToDownloadZipURL(repositoryURL, commitType);
+  // TODO RadStr: If there will be some issues with the defaults when importing from git, then
+  // TODO RadStr: we can clone the repository and do some git actions to find out what type of reference it is
+  const commitReferenceTypeForZip = commitReferenceType === undefined ? getDefaultCommitReferenceTypeForZipDownload() : commitReferenceType;
+  const gitZipDownloadURLData = await gitProvider.convertRepoURLToDownloadZipURL(repositoryURL, commitReferenceTypeForZip);
+  if (gitZipDownloadURLData.commitReferenceValueInfo.fallbackToDefaultBranch) {
+    commitReferenceType = "branch";
+  }
 
   console.info("gitDownloadURL", repositoryURL);
 
   // https://stackoverflow.com/questions/11944932/how-to-download-a-file-with-node-js-without-using-third-party-libraries
   // and https://medium.com/deno-the-complete-reference/download-file-with-fetch-in-node-js-57dd370c973a
   // TODO RadStr: Using fetch instead of internal httpFetch, since that one does not support zip files
-  const downloadZipResponse = await fetch(gitZipDownloadURL, {
+  const downloadZipResponse = await fetch(gitZipDownloadURLData.zipURL, {
     method: "GET",
   });
   if (!downloadZipResponse.ok || downloadZipResponse.body === null) {
-    throw new Error(`Failed to fetch ${gitZipDownloadURL}`);
+    throw new Error(`Failed to fetch ${gitZipDownloadURLData}`);
   }
 
   // TODO RadStr: Remove the commented lines here - this is the old variant where we first put the file into filesystem and then load the zip file
@@ -432,8 +437,8 @@ export async function importFromGitUrl(repositoryURL: string, commitType: Commit
 
   const importer = new PackageImporter(resourceModel);
 
-  const commitName = gitProvider.extractPartOfRepositoryURL(repositoryURL, commitType);
-  const rootIriSuffix = commitName === null ? "" : `-${commitName}`;
+  const commitReferenceValue =  gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue;
+  const rootIriSuffix = commitReferenceValue === null ? "" : `-${commitReferenceValue}`;
 
   const imported = await importer.doImport(zipBuffer, rootIriSuffix);
 
@@ -442,16 +447,17 @@ export async function importFromGitUrl(repositoryURL: string, commitType: Commit
     console.info("defaultRepositoryUrl", defaultRepositoryUrl);
     const anotherPackageWithSameGitLink = await resourceModel.getResourceForGitUrl(defaultRepositoryUrl);   // Has to be called before we set the git link for the imported package
     resourceModel.updateResourceGitLink(imported[0], defaultRepositoryUrl);
-    let branch: string;
-    if (commitType === "branch") {
-      branch = gitProvider.extractPartOfRepositoryURL(repositoryURL, "branch") ?? "unknown";
-    }
-    else {
-      branch = gitProvider.extractPartOfRepositoryURL(repositoryURL, "commit") ?? "unknown";
-    }
-    // TODO RadStr: I already check on client if the branch does not exist, but maybe I should also here?
-    resourceModel.updateResourceProjectIriAndBranch(imported[0], anotherPackageWithSameGitLink?.projectIri ?? uuidv4(), branch);
-    resourceModel.updateRepresentsBranchHead(imported[0], commitType);
+    // If commitReferenceType still not set, just use null, the method will use its default
+    const lastCommitHash = await gitProvider.getLastCommitHashFromUrl(defaultRepositoryUrl, commitReferenceType ?? null, gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue);
+    resourceModel.updateLastCommitHash(imported[0], lastCommitHash);
+
+    // TODO RadStr: I already check on client if the branch already does not exist, but maybe I should also here?
+    resourceModel.updateResourceProjectIriAndBranch(
+      imported[0],
+      anotherPackageWithSameGitLink?.projectIri ?? uuidv4(),
+      gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue ?? undefined);
+    // If still undefined just assume that it is reference to commit, so if it is not user have to explictly switch it to branch
+    resourceModel.updateRepresentsBranchHead(imported[0], commitReferenceType ?? "commit");
   }
 
   return imported;
@@ -467,22 +473,19 @@ export const importPackageFromGit = asyncHandler(async (request: express.Request
     // Url from which to import the resource
     gitURL: z.string().url(),
     // Is either of CommitReferenceType or not provided
-    commitType: z.string().min(0).optional(),
+    commitReferenceType: z.string().min(0).optional(),
   });
-
-
 
   const query = querySchema.parse(request.query);
 
-  let commitType: CommitReferenceType;
-  if (query.commitType === undefined) {
-    commitType = getDefaultCommitReferenceType();
-  }
-  else {
-    commitType = isCommitReferenceType(query.commitType) ? query.commitType : getDefaultCommitReferenceType();
+  const commitReferenceType = query.commitReferenceType;
+
+  if (commitReferenceType !== undefined && !isCommitReferenceType(commitReferenceType)) {
+    response.status(404).json(`Invalid commitReferenctType: ${commitReferenceType}`);
+    return;
   }
 
-  const [result] = await importFromGitUrl(query.gitURL, commitType);
+  const [result] = await importFromGitUrl(query.gitURL, commitReferenceType);
 
   response.send(result);
   return;

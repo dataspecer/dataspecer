@@ -6,6 +6,10 @@ import { GitHubProvider } from "./git-provider-instances/github.ts";
 
 import fs from "fs";
 
+export type ConvertRepoURLToDownloadZipURLReturnType = {
+  zipURL: string,
+  commitReferenceValueInfo: ExtractedCommitReferenceValueFromRepositoryURL,
+};
 
 export type GitCredentials = {
   name: string;
@@ -49,15 +53,15 @@ export function isCommitReferenceType(value: string): value is CommitReferenceTy
 }
 
 /**
- * Some git providers might change the URL based on the type of commit. For example Github - however Github also allows
- *  one uniform type of download url and it treats it like commit. Therefore If the {@link commitType} is not provided it will default to "commit".
+ * Some git providers might change the URL for the zip download based on the type of reference. For example Github - however Github also allows
+ *  one uniform type of download url and it treats it like commit. Therefore If the {@link commitReferenceType} is not provided it will default to "commit".
  */
-export function getDefaultCommitReferenceType(): CommitReferenceType {
+export function getDefaultCommitReferenceTypeForZipDownload(): CommitReferenceType {
   return "commit";
 }
 
-export type ExtractedCommitNameFromRepositoryURL = {
-  commitName: string,
+export type ExtractedCommitReferenceValueFromRepositoryURL = {
+  commitReferenceValue: string | null,
   fallbackToDefaultBranch: boolean,
 };
 
@@ -288,17 +292,20 @@ export interface GitProvider {
   isGitProviderDirectory(fullPath: string): boolean;
 
   /**
+   * Implementation note: Note that this method can be implemented using url transformation + git clone. This is good to know if we ran into REST API requests limits.
    * @returns For given {@link repositoryURL} returns the default branch.
    *  Either the branch is present in side the {@link repositoryURL}, if not it is queried through REST API request.
    */
-  getDefaultBranch(repositoryURL: string): Promise<string>;
+  getDefaultBranch(repositoryURL: string): Promise<string | null>;
 
   /**
    * Note that this method has default implementation in {@link GitProviderBase}.
-   * @returns Returns the name of the commit hidden inside {@link repoURL} and if the commit is not specified it returns the name of the default branch
-   *  (which can be found by querying the REST endpoint for the repository, at least in github case). and the {@link fallbackToDefaultBranch} is set to true in such case.
+   * @returns Returns the value of the commit reference hidden inside {@link repoURL} (for commits it is the hash, for branches branch name)
+   *  and if the reference value is not specified it returns the name of the default branch
+   *  (which can be found by querying the REST endpoint for the repository,
+   *    at least in github case or by cloning the repository and checking on which branch we end up). and the {@link fallbackToDefaultBranch} is set to true in such case.
    */
-  getCommitNameFromRepositoryURL(repoURL: string, commitType: CommitReferenceType): Promise<ExtractedCommitNameFromRepositoryURL>;
+  getCommitReferenceValue(repoURL: string, commitReferenceType: CommitReferenceType): Promise<ExtractedCommitReferenceValueFromRepositoryURL>;
 
   /**
    * Note that this method has default implementation in {@link GitProviderBase}.
@@ -313,12 +320,12 @@ export interface GitProvider {
 
   /**
    * Converts given {@link repositoryURL} to zip download link. Note that this method is implemented in {@link GitProviderBase}.
-   * @param repositoryURL is the link to the repository. The method supports commit specific links. That is the {@link commitType} links.
-   *  Note that if you don't know you should use the {@link getDefaultCommitReferenceType}. Then it treats it as link to commit.
+   * @param repositoryURL is the link to the repository. The method supports commit specific links. That is the {@link commitReferenceType} links.
+   *  Note that if you don't know you should use the {@link getDefaultCommitReferenceTypeForZipDownload}. Then it treats it as link to commit.
    *  If the commit hash is not inside the link, it defaults into main branch.
    * @returns The link to download repostitory as a zip.
    */
-  convertRepoURLToDownloadZipURL(repositoryURL: string, commitType: CommitReferenceType): Promise<string>;
+  convertRepoURLToDownloadZipURL(repositoryURL: string, commitReferenceType: CommitReferenceType): Promise<ConvertRepoURLToDownloadZipURLReturnType>;
 
   /**
    * @returns The URL, which looks like {@link gitProviderURL}/{@link userName}/{@link repoName}/tree/{@link branch} for github, for other provides it might look different.
@@ -330,6 +337,23 @@ export interface GitProvider {
    * @returns Converts the {@link repositoryUrl}, which may possible point to commit or branch to the url, which is the homepage of the repository. For example https://github.com/dataspecer/dataspecer
    */
   extractDefaultRepositoryUrl(repositoryUrl: string): string;
+
+  /**
+   * @param commitReference note that is not necessary branch, it can be also commit or tag.
+   * @returns Returns the last commit hash in repository with the following url gitProviderURL/{@link userName}/{@link repoName}.
+   *  If {@link commitReference} is provided then the last commit hash on that branch (or commit/tag ref) is returned, otherwise the last commit hash on default branch is returned.
+   *  If issue occurred, then null is returned.
+   *  If the {@link isCommit} is true, then it just tries to take the value from {@link commitReference}. This is just optimization so we don't clone when not necessary.
+   */
+  getLastCommitHash(userName: string, repoName: string, commitReference?: string, isCommit?: boolean): Promise<string | null>;
+
+  /**
+   * Same as {@link getLastCommitHash}, but gets url instead of explicit parts.
+   * The url can be the commit specific, if it is the branch/commit will be extracted from it and correct last commit will be used.
+   * @param commitReferenceType If null then it defaults to branch.
+   * @param commitReferenceValue if not provided then it is extracted from the {@link repositoryUrl}.
+   */
+  getLastCommitHashFromUrl(repositoryUrl: string, commitReferenceType: CommitReferenceType | null, commitReferenceValue: string | null): Promise<string>;
 }
 
 

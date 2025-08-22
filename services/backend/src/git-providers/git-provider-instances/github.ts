@@ -382,7 +382,7 @@ export class GitHubProvider extends GitProviderBase {
   }
 
 
-  async getDefaultBranch(repositoryURL: string): Promise<string> {
+  async getDefaultBranch(repositoryURL: string): Promise<string | null> {
     const repo = this.extractPartOfRepositoryURL(repositoryURL, "repository-name");
     const owner = this.extractPartOfRepositoryURL(repositoryURL, "user-name");     // TODO RadStr: Rename user to owner everywhere
     const restEndPointForRepo = `https://api.github.com/repos/${owner}/${repo}`;
@@ -395,12 +395,12 @@ export class GitHubProvider extends GitProviderBase {
     });
 
     const responseAsJSON = (await response.json()) as any;
-    const defaultBranch = responseAsJSON.default_branch;
+    const defaultBranch = responseAsJSON?.default_branch ?? null;
 
     return defaultBranch;
   }
 
-  extractCommitNameFromRepositoryURLSplit(repositoryURLSplit: string[], _commitType: CommitReferenceType): string | null {
+  extractCommitReferenceValueFromRepositoryURLSplit(repositoryURLSplit: string[], _commitReferenceType: CommitReferenceType): string | null {
     if (repositoryURLSplit.length < 4 || repositoryURLSplit.at(-2) !== "tree") {
       return null;
     }
@@ -409,22 +409,22 @@ export class GitHubProvider extends GitProviderBase {
   }
 
 
-  protected getZipDownloadLink(owner: string, repo: string, commitName: string, commitType: CommitReferenceType): string {
-    let urlPartBasedOnCommitType: string;
-    switch (commitType) {
+  protected getZipDownloadLink(owner: string, repo: string, commitName: string, commitReferenceType: CommitReferenceType): string {
+    let urlPartBasedOnCommitReferenceType: string;
+    switch (commitReferenceType) {
       case "commit":
-        urlPartBasedOnCommitType = "";
+        urlPartBasedOnCommitReferenceType = "";
         break;
       case "branch":
-        urlPartBasedOnCommitType = "refs/heads/";
+        urlPartBasedOnCommitReferenceType = "refs/heads/";
         break;
       case "tag":
-        urlPartBasedOnCommitType = "tags/";
+        urlPartBasedOnCommitReferenceType = "tags/";
         break;
       default:
-        throw new Error(`Invalid commit type: ${commitType}. Probably programmer error`);
+        throw new Error(`Invalid commit type: ${commitReferenceType}. Probably programmer error`);
     }
-    const zipURL = `https://github.com/${owner}/${repo}/archive/${urlPartBasedOnCommitType}${commitName}.zip`;
+    const zipURL = `https://github.com/${owner}/${repo}/archive/${urlPartBasedOnCommitReferenceType}${commitName}.zip`;
     return zipURL;
   }
 

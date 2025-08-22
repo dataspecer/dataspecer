@@ -47,7 +47,7 @@ export const CommitActionsDialog = ({ examinedPackage, branch, commitHash, isOpe
     await fetch(import.meta.env.VITE_BACKEND +
       "/resources/import-from-git?parentIri=" + encodeURIComponent(rootURL) +
       "&gitURL=" + encodeURIComponent(gitURL) +
-      `&commitType=${importType}`, {
+      `&commitReferenceType=${importType}`, {
       method: "POST",
     });
     requestLoadPackage(rootURL, true);
