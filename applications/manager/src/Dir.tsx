@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, Copy, EllipsisVertical, FileText, Folder, FolderDown, Import, Menu, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, Sparkles, Trash2, WandSparkles } from "lucide-react";
+import { ArrowLeft, ArrowLeftRight, ArrowRight, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, Copy, EllipsisVertical, Eye, FileText, Filter, FilterX, Folder, FolderDown, GitBranchPlus, GitCommit, GitGraph, GitMerge, GitPullRequestIcon, Import, Menu, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, Sparkles, Trash2, WandSparkles } from "lucide-react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getValidTime } from "./components/time";
@@ -244,18 +244,21 @@ const Row = ({ iri, projectFilter, setProjectFilter, mergeActors, parentIri }: {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(CreateNewBranchDialog, { sourcePackage: resource })}>Create branch</DropdownMenuItem>}
-            {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => switchRepresentsBranchHead(iri, resource.representsBranchHead)}>Convert to {resource.representsBranchHead ? "tag" : "branch"}</DropdownMenuItem>}
-            {resource.types.includes(LOCAL_PACKAGE) && mergeActors.mergeFrom !== null && mergeActors.mergeTo !== null && <DropdownMenuItem onClick={() => openModal(TextDiffEditorDialog, {initialOriginalResourceNameInfo: {resourceIri: mergeActors.mergeFrom!, modelName: ""}, initialModifiedResourceIri: {resourceIri: mergeActors.mergeTo!, modelName: ""}})}>Text diff editor</DropdownMenuItem>}
-            {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => setProjectFilter(resource.projectIri)}>Filter projects</DropdownMenuItem>}
-            {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(setProjectIriAndBranchDialog, { examinedPackage: resource })}>Set project branch and/or projectIri</DropdownMenuItem>}
-            {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => mergeActors.setMergeFrom(iri)}>Set merge from</DropdownMenuItem>}
-            {(resource.types.includes(LOCAL_PACKAGE) && mergeActors.mergeFrom !== null && mergeActors.mergeFrom !== iri) && <DropdownMenuItem onClick={() => mergeActors.setMergeTo(iri)}>MergeTo</DropdownMenuItem>}
-            {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/git/redirect-to-remote-git-repository?iri=" + encodeURIComponent(iri)}><FolderDown className="mr-2 h-4 w-4" />Visit the remote repository</a></DropdownMenuItem>}
-            {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource)}><FolderDown className="mr-2 h-4 w-4" />Git branch visualization</DropdownMenuItem>}
-            {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={async () => linkToGitRepoOnClickHandler(openModal, iri, resource)}><Pencil className="mr-2 h-4 w-4" />Link to GitHub REPO </DropdownMenuItem>}
-            {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={async () => commitToDigDialogOnClickHandler(openModal, iri, resource)}><Pencil className="mr-2 h-4 w-4" />Commit </DropdownMenuItem>}
-            {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={async () => removeGitLinkFromPackage(iri)}><Pencil className="mr-2 h-4 w-4" />REMOVE GITHUB REPO</DropdownMenuItem>}
+            {<DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/git/redirect-to-remote-git-repository?iri=" + encodeURIComponent(iri)}><Eye className="mr-2 h-4 w-4" />Visit the remote repository</a></DropdownMenuItem>}
+            {<DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource)}><GitGraph className="mr-2 h-4 w-4" />Git branch visualization</DropdownMenuItem>}
+            <hr className="border-gray-300" />
+            {<DropdownMenuItem onClick={async () => linkToGitRepoOnClickHandler(openModal, iri, resource)}><GitPullRequestIcon className="mr-2 h-4 w-4" />Link to GitHub repository </DropdownMenuItem>}
+            {<DropdownMenuItem onClick={async () => commitToDigDialogOnClickHandler(openModal, iri, resource)}><GitCommit className="mr-2 h-4 w-4" />Commit </DropdownMenuItem>}
+            {<DropdownMenuItem onClick={() => openModal(CreateNewBranchDialog, { sourcePackage: resource })}><GitBranchPlus className="mr-2 h-4 w-4" />Create branch</DropdownMenuItem>}
+            <hr className="border-gray-300" />
+            {<DropdownMenuItem onClick={() => openModal(setProjectIriAndBranchDialog, { examinedPackage: resource })}><Pencil className="mr-2 h-4 w-4" />Set project branch and/or project IRI</DropdownMenuItem>}
+            {<DropdownMenuItem onClick={() => switchRepresentsBranchHead(iri, resource.representsBranchHead)}><ArrowLeftRight className="mr-2 h-4 w-4" /> Convert to {resource.representsBranchHead ? "tag" : "branch"}</DropdownMenuItem>}
+            <hr className="border-gray-300" />
+            {<DropdownMenuItem onClick={() => setProjectFilter(resource.projectIri)}><Filter className="mr-2 h-4 w-4" />Filter projects</DropdownMenuItem>}
+            {mergeActors.mergeFrom !== null && mergeActors.mergeTo !== null && <DropdownMenuItem onClick={() => openModal(TextDiffEditorDialog, {initialOriginalResourceNameInfo: {resourceIri: mergeActors.mergeFrom!, modelName: ""}, initialModifiedResourceIri: {resourceIri: mergeActors.mergeTo!, modelName: ""}})}><GitMerge className="mr-2 h-4 w-4" />Text diff editor</DropdownMenuItem>}
+            {mergeActors.mergeFrom !== null && mergeActors.mergeFrom !== iri && <DropdownMenuItem onClick={() => mergeActors.setMergeTo(iri)}><ArrowRight className="mr-2 h-4 w-4"/>Merge to</DropdownMenuItem>}
+            {<DropdownMenuItem onClick={() => mergeActors.setMergeFrom(iri)}><ArrowLeft className="mr-2 h-4 w-4"/>Merge from</DropdownMenuItem>}
+            {<DropdownMenuItem className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={async () => removeGitLinkFromPackage(iri)}><Trash2 className="mr-2 h-4 w-4" />Remove Github Repo</DropdownMenuItem>}
           </DropdownMenuContent>
         </DropdownMenu> :
         null
@@ -355,6 +358,7 @@ function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean
       </Button>
       <Button variant="ghost" size="sm" className="shrink=0 ml-4"
         onClick={() => setProjectFilter(null)}>
+          <FilterX className="mr-2 h-4 w-4" />
           Remove filter
       </Button>
       <Button variant="ghost" size="sm" className="shrink=0 ml-4"
