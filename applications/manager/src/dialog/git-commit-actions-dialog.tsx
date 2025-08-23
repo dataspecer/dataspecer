@@ -58,7 +58,7 @@ export const CommitActionsDialog = ({ examinedPackage, branch, commitHash, isOpe
 
   return (
     <Modal open={isOpen} onClose={() => resolve(null)}>
-      <ModalContent>
+      <ModalContent className="min-w-[650px]">
         <ModalHeader>
           <ModalTitle>Perform action on git commit</ModalTitle>
           {isPerformingAction && <Loader className="mr-2 h-4 w-4 animate-spin" /> }
