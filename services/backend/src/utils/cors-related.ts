@@ -9,7 +9,6 @@ import psl from "psl";
 function getRegisteredDomain(urlString: string): string | null {
   try {
     const url = new URL(urlString);
-    console.info({url});
     if (url.hostname === "localhost") {
       return url.hostname;      // TODO RadStr: Allow any port, if we wanted to allow only the exact port, we would return hostname.
     }
