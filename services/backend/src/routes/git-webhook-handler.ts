@@ -14,13 +14,14 @@ import _ from "lodash";
 import { dsPathJoin } from "../utils/git-utils.ts";
 import { GitHubProvider } from "../git-providers/git-provider-instances/github.ts";
 import { resourceModel } from "../main.ts";
+import { updateDSRepositoryByPullingGit } from "./pull-remote-repository.ts";
 
 
 export const handleWebhook = asyncHandler(async (request: express.Request, response: express.Response) => {
   // console.info("Requested URL: ", request.originalUrl);
   // console.info("Webhook - Body: ", request.body);
   // console.info("Webhook - Body payload: ", request.body.payload);
-  response.type("text/plain");
+  response.type("text/plain");      // TODO RadStr: Not sure if there is any good reason why was I doing this.
 
   const { gitProvider, webhookPayload } = GitProviderFactory.createGitProviderFromWebhookRequest(request);
   const dataForWebhookProcessing = await gitProvider.extractDataForWebhookProcessing(webhookPayload);
@@ -29,45 +30,10 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
   }
   const { commits, cloneURL, iri, branch } = dataForWebhookProcessing;
 
-  console.info("dataForWebhookProcessing", dataForWebhookProcessing)
+  console.info("dataForWebhookProcessing", dataForWebhookProcessing);
 
-  const directoryWithContent = `./test-git-directory-webhooks/${branch}`;
-  const gitInitialDirectory = `${directoryWithContent}/${iri}`;
-  if(!fs.existsSync(directoryWithContent)) {
-    fs.mkdirSync(directoryWithContent, { recursive: true });
-  }
-  if(!fs.existsSync(gitInitialDirectory)) {
-    fs.mkdirSync(gitInitialDirectory, { recursive: true });
-  }
-
-
-  const git = simpleGit(gitInitialDirectory);
-  try {
-    // TODO: Compare SHAs (and maybe behave differently based on number of commits)
-    console.info("Before cloning repo");
-    // TODO RadStr: The options are similiar to the commit package to git, except that here is just variable depth, otherwise it is the same ... If I have time I can rewrite that.
-    await git.clone(cloneURL, ".", [
-      "--depth", commits.length.toString(),
-      "--branch", branch,
-      "--single-branch",
-     ]);
-    console.info("After cloning repo");
-    // await saveChangesInDirectoryToBackendFinalVersion(gitInitialDirectory, iri, gitProvider, true);    // TODO RadStr: Not sure about setting the metadata cache (+ we need it always in the call, so the true should be actaully set inside the called method, and the argument should not be here at all)
-    await saveChangesInDirectoryToBackendFinalVersion(directoryWithContent, iri, gitProvider, true);    // TODO RadStr: Not sure about setting the metadata cache (+ we need it always in the call, so the true should be actaully set inside the called method, and the argument should not be here at all)
-    console.info("Saved repo");
-  }
-  catch (cloneError) {
-    // TODO RadStr: We also end up here when repo is created, since creating branch triggers push webhook
-    console.info("Catched clone error: ", { cloneError, cloneURL, iri, commits});
-    return;
-  }
-  finally {
-    // TODO: Not sure about doing this in finally
-    // It is important to not only remove the actual files, but also the .git directory,
-    // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
-    fs.rmSync(gitInitialDirectory, { recursive: true, force: true });
-  }
-
+  const isCloneSuccess = await updateDSRepositoryByPullingGit(iri, gitProvider, branch, cloneURL, "directory-for-webhooks", commits.length);
+  // Actually we don't need to answer based on response, since this comes from git provider, only think we might need is to notify users that there was update
   return;
 });
 
@@ -213,7 +179,7 @@ async function saveChangesInDirectoryToBackend(directory: string, gitProvider: G
  *   c) Either only .meta or .model - skip it. We could try to somehow solve it, but we would probably end up in invalid state by some sequence of actions, so it is better to just skip it.
  * TODO RadStr: This should however account for collisions
  */
-async function saveChangesInDirectoryToBackendFinalVersion(directory: string, iri: string, gitProvider: GitProvider, shouldSetMetadataCache: boolean) {
+export async function saveChangesInDirectoryToBackendFinalVersion(directory: string, iri: string, gitProvider: GitProvider, shouldSetMetadataCache: boolean) {
   const rootLocation: FilesystemNodeLocation = {
     iri: iri,
     fullPath: directory,

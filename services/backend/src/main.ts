@@ -44,6 +44,8 @@ import { removeGitRepository } from "./routes/remove-git-repository.ts";
 import { fetchGitCommitHistory } from "./routes/fetch-git-commit-history.ts";
 import { getDataspecerTree } from "./routes/get-dataspecer-tree.ts";
 import { getDatastoreContentDirectly } from "./routes/datastore-actions.ts";
+import { pullRemoteRepository } from "./routes/pull-remote-repository.ts";
+import { linkToExistingGitRepository } from "./routes/link-to-existing-remote-git-repo.ts";
 
 // Create application models
 
@@ -210,6 +212,8 @@ application.get(apiBasename + "/git/create-package-from-existing-git-repository"
 application.get(apiBasename + "/git/test-docker", currentSession, exportPackageResource);
 application.get(apiBasename + "/git/redirect-to-remote-git-repository", currentSession, redirectToRemoteGitRepository);
 application.get(apiBasename + "/git/fetch-git-commit-history", currentSession, fetchGitCommitHistory);
+application.get(apiBasename + "/git/pull", currentSession, pullRemoteRepository);
+application.get(apiBasename + "/git/link-to-existing-git-repository", currentSession, linkToExistingGitRepository);
 
 // TODO RadStr: Have to await, because of the generate-specification
 await (async () => {

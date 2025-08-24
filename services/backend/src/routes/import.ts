@@ -22,13 +22,12 @@ import z from "zod";
 import { resourceModel } from "../main.ts";
 import { BaseResource } from "../models/resource-model.ts";
 import { asyncHandler } from "./../utils/async-handler.ts";
-import fs from "fs";
 import { PackageImporter } from "../export-import/import.ts";
 import { Readable } from "stream";
-import { pipeline } from "stream/promises";
 import { ReadableStream } from "stream/web";
 import { buffer } from "stream/consumers";
 import { CommitReferenceType, getDefaultCommitReferenceTypeForZipDownload, GitProvider, GitProviderFactory, isCommitReferenceType } from "../git-providers/git-provider-api.ts";
+import { updateGitRelatedDataForPackage } from "./link-to-existing-remote-git-repo.ts";
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
   const result: LanguageString = {};
@@ -403,6 +402,7 @@ export async function importFromGitUrl(repositoryURL: string, commitReferenceTyp
   if (gitZipDownloadURLData.commitReferenceValueInfo.fallbackToDefaultBranch) {
     commitReferenceType = "branch";
   }
+  // Just a note that commitReferenceType still might be undefiend here
 
   console.info("gitDownloadURL", repositoryURL);
 
@@ -443,21 +443,7 @@ export async function importFromGitUrl(repositoryURL: string, commitReferenceTyp
   const imported = await importer.doImport(zipBuffer, rootIriSuffix);
 
   if (imported.length > 0) {
-    const defaultRepositoryUrl = gitProvider.extractDefaultRepositoryUrl(repositoryURL);
-    console.info("defaultRepositoryUrl", defaultRepositoryUrl);
-    const anotherPackageWithSameGitLink = await resourceModel.getResourceForGitUrl(defaultRepositoryUrl);   // Has to be called before we set the git link for the imported package
-    resourceModel.updateResourceGitLink(imported[0], defaultRepositoryUrl);
-    // If commitReferenceType still not set, just use null, the method will use its default
-    const lastCommitHash = await gitProvider.getLastCommitHashFromUrl(defaultRepositoryUrl, commitReferenceType ?? null, gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue);
-    resourceModel.updateLastCommitHash(imported[0], lastCommitHash);
-
-    // TODO RadStr: I already check on client if the branch already does not exist, but maybe I should also here?
-    resourceModel.updateResourceProjectIriAndBranch(
-      imported[0],
-      anotherPackageWithSameGitLink?.projectIri ?? uuidv4(),
-      gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue ?? undefined);
-    // If still undefined just assume that it is reference to commit, so if it is not user have to explictly switch it to branch
-    resourceModel.updateRepresentsBranchHead(imported[0], commitReferenceType ?? "commit");
+    await updateGitRelatedDataForPackage(imported[0], gitProvider, repositoryURL, gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue, commitReferenceType);
   }
 
   return imported;

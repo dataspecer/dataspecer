@@ -96,9 +96,21 @@ export class ResourceModel {
 
     /**
      * @returns The first resource, which is linked to given {@link gitRepositoryUrl}.
+     *  If {@link forbiddenIri} is provided, then the returned resource can not have the same iri as {@link forbiddenIri}.
      */
-    async getResourceForGitUrl(gitRepositoryUrl: string): Promise<BaseResource | null> {
-        const prismaResource = await this.prismaClient.resource.findFirst({where: { linkedGitRepositoryURL: gitRepositoryUrl }});
+    async getResourceForGitUrl(gitRepositoryUrl: string, forbiddenIri?: string): Promise<BaseResource | null> {
+        let prismaResource;
+        if (forbiddenIri === undefined) {
+            prismaResource = await this.prismaClient.resource.findFirst({where: { linkedGitRepositoryURL: gitRepositoryUrl }});
+        }
+        else {
+            prismaResource = await this.prismaClient.resource.findFirst({where: {
+                linkedGitRepositoryURL: gitRepositoryUrl,
+                NOT: {
+                    iri: forbiddenIri
+                }
+            }});
+        }
         if (prismaResource === null) {
             return null;
         }

@@ -8,6 +8,7 @@ import { convertToValidRepositoryName } from "@/utils/utilities";
 import { requestLoadPackage } from "@/package";
 import { createIdentifierForHTMLElement, InputComponent } from "@/components/simple-input-component";
 import { Package } from "@dataspecer/core-v2/project";
+import { toast } from "sonner";
 
 // TODO RadStr: Maybe use enum instead of TS string enum
 /**
@@ -129,7 +130,7 @@ export const GitDialog = ({ input: defaultInput, inputPackage, isOpen, resolve, 
       </ModalContent>
     </Modal>
   );
-}
+};
 
 
 /**
@@ -155,7 +156,7 @@ export const LinkToGitRepoDialog = (props: { iri: string, inputPackage: Package 
       }
       }}><Pencil className="mr-2 h-4 w-4" /> Link to GitHub REPO
   </DropdownMenuItem>
-}
+};
 
 // TODO RadStr: Maybe put on some better place?
 export const linkToGitRepoOnClickHandler = async (openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
@@ -186,7 +187,7 @@ export const linkToGitRepoOnClickHandler = async (openModal: OpenBetterModal, ir
 
     requestLoadPackage(iri, true);
   }
-}
+};
 
 
 /**
@@ -208,7 +209,7 @@ export const CommitToGitDialog = (props: { iri: string, inputPackage: Package })
       }
       }}><Pencil className="mr-2 h-4 w-4" /> Commit
   </DropdownMenuItem>;
-}
+};
 
 // TODO RadStr: Maybe put on some better place?
 export const commitToDigDialogOnClickHandler = async (openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
@@ -224,4 +225,32 @@ export const commitToDigDialogOnClickHandler = async (openModal: OpenBetterModal
         method: "GET",
       });
   }
-}
+};
+
+
+// TODO RadStr: Maybe put on some better place?
+export const linkToExistingGitRepositoryHandler = async (openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
+  const result = await openModal(GitDialog, {input: iri, inputPackage, type: "link-to-existing-repository"});
+  if (result) {
+    const url = import.meta.env.VITE_BACKEND + "/git/link-to-existing-git-repository?iri=" + encodeURIComponent(iri) +
+                                              "&repositoryURL=" + encodeURIComponent(result.inputByUser);
+
+    const response = await fetch(
+      url,
+      {
+        credentials: "include",         // TODO RadStr: Important, without this we don't send the authorization cookies, however in this case we might not need it
+        method: "GET",
+      });
+
+    if (response.ok) {
+      // TODO: Localization
+      toast.success("Sucessfully updated link to remote git repository");
+    }
+    else {
+      // TODO: Localization
+      toast.error("Failed updating link to remote git repository");
+    }
+    requestLoadPackage(iri, true);
+
+  }
+};
