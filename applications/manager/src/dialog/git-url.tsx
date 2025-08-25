@@ -84,7 +84,7 @@ export const GitDialog = ({ input: defaultInput, inputPackage, isOpen, resolve, 
         }
         return "Insert the commit message for git";
       case "link-to-existing-repository":
-        return "insert URL of Git remote repository, which already exists and from which you want to create new Dataspecer package";
+        return "Insert URL of Git remote repository, which already exists and from which you want to create new Dataspecer package. Note that you can put in url pointing to commit/branch/tag.";
       default:
         return "[Programmer oversight - We forgot to extend modal description memo for git dialog]"
     }

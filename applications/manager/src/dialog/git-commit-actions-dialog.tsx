@@ -10,9 +10,11 @@ type CommitActionsDialogProps = {
   examinedPackage: Package,
   commitHash: string,
   branch: string | null,
+  branchAlreadyExistsInDS: boolean,
+  commitAlreadyExistsInDS: boolean,
 } & BetterModalProps<null>;
 
-export const CommitActionsDialog = ({ examinedPackage, branch, commitHash, isOpen, resolve }: CommitActionsDialogProps) => {
+export const CommitActionsDialog = ({ examinedPackage, branch, commitHash, branchAlreadyExistsInDS, commitAlreadyExistsInDS, isOpen, resolve }: CommitActionsDialogProps) => {
   const [isPerformingAction, setIsPerformingAction] = useState<boolean>(false);
 
   const handleRedirect = () => {
@@ -67,11 +69,22 @@ export const CommitActionsDialog = ({ examinedPackage, branch, commitHash, isOpe
             <br/>
             <br/>
             {`You can choose to import the package into DS or visit the corresponding remote git url.`}
+            <br/>
+            <br/>
+            {branchAlreadyExistsInDS ?
+              <div>
+                Note that branch already exists inside DS, so we can not create new one. If you want one you have to first create new branch with new name
+                <br/>
+                <br/>
+              </div> :
+              null
+            }
+            {commitAlreadyExistsInDS ? "Note that commit already exists inside DS, however you can still import the commit." : null}
           </ModalDescription>
         </ModalHeader>
         <ModalFooter>
           <Button variant="outline" onClick={handleImportGitCommitToDS} disabled={isPerformingAction}>Import static commit to DS</Button>
-          {branch !== null && <Button variant="outline" onClick={handleImportGitBranchToDS} disabled={isPerformingAction}>Import branch ({branch}) to DS</Button>}
+          {branch !== null && !branchAlreadyExistsInDS && <Button variant="outline" onClick={handleImportGitBranchToDS} disabled={isPerformingAction}>Import branch ({branch}) to DS</Button>}
           <Button variant="outline" onClick={handleRedirect} disabled={isPerformingAction}>Redirect to commit</Button>
         </ModalFooter>
       </ModalContent>
