@@ -9,6 +9,7 @@ import { Button } from "./ui/button";
 import { useLayoutEffect, useState } from "react";
 import { Package } from "@dataspecer/core-v2/project";
 import { CommitActionsDialog } from "@/dialog/git-commit-actions-dialog";
+import { Loader } from "lucide-react";
 
 // TODO RadStr: Put these types into shared package between frontend and backend
 type FetchedGitData = {
@@ -132,11 +133,13 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage }: Gi
   // if I put it inside the JSX tree in this component, it does not update on react change
 
   const [gitGraphElement, setGitGraphElement] = useState<any | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const openModal = useBetterModal();
 
   useLayoutEffect(() => {
       if (isOpen) {
         console.info("useLayoutEffect for git-history-vis");
+        setIsLoading(true);
 
         // TODO RadStr: Here we load the history for the relevant branches given in properties
         // TODO RadStr: Once again we already have the git link, we don't need to send the package iri, we can send the git url instead
@@ -158,8 +161,11 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage }: Gi
 
             const gitGraphElement = createGitGraph(openModal, examinedPackage, withoutAuthor, convertedCommits);
             setGitGraphElement(gitGraphElement);
+            setIsLoading(false);
           })
           .catch((error) => {
+            setIsLoading(false);
+            alert("Fetch error, check console for more info");
             console.error(`Error when fetching git history for ${examinedPackage.iri}. The error: ${error}`);
           });
       }
@@ -185,7 +191,10 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage }: Gi
           </ModalDescription>
         </ModalHeader>
         <ModalBody className="overflow-y-auto max-h-[60vh]">    {/* TODO RadStr: Needed for the scrolling, the padding (p) so there isn't any part missing */}
-          {gitGraphElement}
+          {isLoading ?
+            <Loader className="mr-2 h-4 w-4 animate-spin" /> :
+            gitGraphElement
+            }
         </ModalBody>
         <ModalFooter className="flex flex-row">
           <Button variant="outline" onClick={() => resolve(null)}>Cancel</Button>
