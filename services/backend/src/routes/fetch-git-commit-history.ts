@@ -7,23 +7,10 @@ import { simpleGit } from "simple-git";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 
-
-// TODO RadStr: Put these types into shared package between frontend and backend
-type DSPackageInProjectVisualizationData = {
-    iri: string;
-    lastCommitHash: string;
-    representsBranch: boolean;
-    branch: string;
-}
-
 // TODO RadStr: On client the rawCommits don't have to be readonly here yes
 type FetchedGitData = {
     rawCommits: readonly RawCommit[],
     logGraph: string,
-    // TODO RadStr: ... Allow only one branch? I mean to me it makes sense, why would you want to have the same branch multiple times in DS, just create new one going from the head, if you want it
-    dsPackagesInProjectForBranches: Record<string, DSPackageInProjectVisualizationData>,          // Maps the branch name to the package in the project
-    dsPackagesInProjectForNonBranches: Record<string, DSPackageInProjectVisualizationData[]>,     // Maps the last commit hash to all ds packages, which are non-branches and have that last commit hash
-    dsPackagesInProjectForAll: Record<string, DSPackageInProjectVisualizationData[]>,             // Maps the last commit hash to all ds packages, which have that last commit hash
 }
 
 type RawCommit = {
@@ -54,47 +41,16 @@ type GitHistory = {
 export const fetchGitCommitHistory = asyncHandler(async (request: express.Request, response: express.Response) => {
     const querySchema = z.object({
         iri: z.string().min(1),
-        projectIri: z.string().min(1),
         historyDepth: z.number().optional()
     });
 
 
     const query = querySchema.parse(request.query);
-    const resources = await resourceModel.getProjectResources(query.projectIri);
-    const resource = resources.find(resource => resource.iri === query.iri);
-    if (!resource) {
+    const resource = await resourceModel.getPackage(query.iri);
+    if (resource === null) {
         response.status(404).send({ error: "Package does not exist." });
         return;
     }
-
-    // Create all the ds package for the current project, so we can visualize them on the client compared to the git ones
-    const dsPackagesInProjectForBranches: Record<string, DSPackageInProjectVisualizationData> = {};
-    const dsPackagesInProjectForNonBranches: Record<string, DSPackageInProjectVisualizationData[]> = {};
-    const dsPackagesInProjectForAll: Record<string, DSPackageInProjectVisualizationData[]> = {};
-    resources.forEach(resourceInPackage => {
-        const dsPackageInProject: DSPackageInProjectVisualizationData = {
-            iri: resourceInPackage.iri,
-            lastCommitHash: resourceInPackage.lastCommitHash,
-            representsBranch: resourceInPackage.representsBranchHead,
-            branch: resourceInPackage.branch,
-        };
-
-        const typeSpecificKey = dsPackageInProject.representsBranch ? dsPackageInProject.branch : dsPackageInProject.lastCommitHash;
-        if (dsPackageInProject.representsBranch) {
-            dsPackagesInProjectForBranches[typeSpecificKey] = dsPackageInProject;
-        }
-        else {
-            if (dsPackagesInProjectForNonBranches[typeSpecificKey] === undefined) {
-                dsPackagesInProjectForNonBranches[typeSpecificKey] = [];
-            }
-            dsPackagesInProjectForNonBranches[typeSpecificKey].push(dsPackageInProject);
-        }
-
-        if (dsPackagesInProjectForAll[dsPackageInProject.lastCommitHash] === undefined) {
-            dsPackagesInProjectForAll[dsPackageInProject.lastCommitHash] = [];
-        }
-        dsPackagesInProjectForAll[dsPackageInProject.lastCommitHash].push(dsPackageInProject);
-    });
 
     const gitURL = resource.linkedGitRepositoryURL;
     // Test URLs
@@ -267,9 +223,6 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
         const jsonResponse: FetchedGitData = {
             rawCommits: customLogResult.all,
             logGraph,
-            dsPackagesInProjectForBranches,
-            dsPackagesInProjectForNonBranches,
-            dsPackagesInProjectForAll
         };
 
         response.json(jsonResponse);

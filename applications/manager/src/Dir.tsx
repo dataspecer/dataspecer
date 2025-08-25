@@ -246,7 +246,7 @@ const Row = ({ iri, projectFilter, setProjectFilter, mergeActors, parentIri }: {
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             {<DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/git/redirect-to-remote-git-repository?iri=" + encodeURIComponent(iri)}><Eye className="mr-2 h-4 w-4" />Visit the remote repository</a></DropdownMenuItem>}
-            {<DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource)}><GitGraph className="mr-2 h-4 w-4" />Git branch visualization</DropdownMenuItem>}
+            {<DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git branch visualization</DropdownMenuItem>}
             <hr className="border-gray-300" />
             {<DropdownMenuItem onClick={async () => linkToGitRepoOnClickHandler(openModal, iri, resource)}><GitPullRequestIcon className="mr-2 h-4 w-4" />Create remote repository </DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => linkToExistingGitRepositoryHandler(openModal, iri, resource)}><Link className="mr-2 h-4 w-4" />Link to remote repository </DropdownMenuItem>}

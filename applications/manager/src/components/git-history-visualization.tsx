@@ -7,10 +7,11 @@ import { Gitgraph, templateExtend, TemplateName } from "@gitgraph/react";
 import { Modal, ModalBody, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "./modal";
 import { Button } from "./ui/button";
 import { useLayoutEffect, useState } from "react";
-import { Package } from "@dataspecer/core-v2/project";
+import { BaseResource, Package } from "@dataspecer/core-v2/project";
 import { CommitActionsDialog } from "@/dialog/git-commit-actions-dialog";
 import { Loader } from "lucide-react";
 import { Template } from "@gitgraph/core/lib/template";
+import { ResourceWithIris } from "@/package";
 
 // TODO RadStr: Put these types into shared package between frontend and backend
 type DSPackageInProjectVisualizationData = {
@@ -23,10 +24,6 @@ type DSPackageInProjectVisualizationData = {
 type FetchedGitData = {
   rawCommits: RawCommit[],      // TODO RadStr: Note that on server here needs to be readonly
   logGraph: string,             // TODO RadStr: Remove then if I won't use it
-  // TODO RadStr: ... Allow only one branch? I mean to me it makes sense, why would you want to have the same branch multiple times in DS, just create new one going from the head, if you want it
-  dsPackagesInProjectForBranches: Record<string, DSPackageInProjectVisualizationData>,          // Maps the branch name to the package in the project
-  dsPackagesInProjectForNonBranches: Record<string, DSPackageInProjectVisualizationData[]>,     // Maps the last commit hash to all ds packages, which are non-branches and have that last commit hash
-  dsPackagesInProjectForAll: Record<string, DSPackageInProjectVisualizationData[]>,             // Maps the last commit hash to all ds packages, which have that last commit hash
 }
 
 type RawCommit = {
@@ -68,6 +65,7 @@ type GitHistory = {
 
 type GitHistoryVisualizationProps = {
   examinedPackage: Package,
+  allResources: Record<string, ResourceWithIris>
 } & BetterModalProps<null>;
 
 
@@ -139,7 +137,48 @@ function getUniqueCommits(commitToBranchesMap: Record<string, string[]>, hashToC
 }
 
 
-export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage }: GitHistoryVisualizationProps) => {
+function createGitToPackagesForProjectMapping(rootPackages: BaseResource[] | undefined) {
+  // Create all the ds package for the current project, so we can visualize them on the client compared to the git ones
+  // TODO RadStr: ... Allow only one branch? I mean to me it makes sense, why would you want to have the same branch multiple times in DS, just create new one going from the head, if you want it
+  const dsPackagesInProjectForBranches: Record<string, DSPackageInProjectVisualizationData> = {};          // Maps the branch name to the package in the project
+  const dsPackagesInProjectForNonBranches: Record<string, DSPackageInProjectVisualizationData[]> = {};     // Maps the last commit hash to all ds packages, which are non-branches and have that last commit hash
+  const dsPackagesInProjectForAll: Record<string, DSPackageInProjectVisualizationData[]> = {};             // Maps the last commit hash to all ds packages, which have that last commit hash
+
+
+  rootPackages?.forEach(resourceInPackage => {
+      const dsPackageInProject: DSPackageInProjectVisualizationData = {
+          iri: resourceInPackage.iri,
+          lastCommitHash: resourceInPackage.lastCommitHash,
+          representsBranch: resourceInPackage.representsBranchHead,
+          branch: resourceInPackage.branch,
+      };
+
+      const typeSpecificKey = dsPackageInProject.representsBranch ? dsPackageInProject.branch : dsPackageInProject.lastCommitHash;
+      if (dsPackageInProject.representsBranch) {
+          dsPackagesInProjectForBranches[typeSpecificKey] = dsPackageInProject;
+      }
+      else {
+          if (dsPackagesInProjectForNonBranches[typeSpecificKey] === undefined) {
+              dsPackagesInProjectForNonBranches[typeSpecificKey] = [];
+          }
+          dsPackagesInProjectForNonBranches[typeSpecificKey].push(dsPackageInProject);
+      }
+
+      if (dsPackagesInProjectForAll[dsPackageInProject.lastCommitHash] === undefined) {
+          dsPackagesInProjectForAll[dsPackageInProject.lastCommitHash] = [];
+      }
+      dsPackagesInProjectForAll[dsPackageInProject.lastCommitHash].push(dsPackageInProject);
+  });
+
+  return {
+    dsPackagesInProjectForBranches,
+    dsPackagesInProjectForNonBranches,
+    dsPackagesInProjectForAll,
+  };
+}
+
+
+export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allResources }: GitHistoryVisualizationProps) => {
   // TODO RadStr: Should be JSX.element not ANY
   // TODO RadStr: For some reason I have to put the gitgraph component into component stored in variable,
   // if I put it inside the JSX tree in this component, it does not update on react change
@@ -155,7 +194,7 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage }: Gi
 
         // TODO RadStr: Here we load the history for the relevant branches given in properties
         // TODO RadStr: Once again we already have the git link, we don't need to send the package iri, we can send the git url instead
-        const urlQuery = `?iri=${examinedPackage.iri}&projectIri=${examinedPackage.projectIri}`;
+        const urlQuery = `?iri=${examinedPackage.iri}`;
         // Theoretically we can just fetch it directly from GitHub (or other provider) without calling the DS server, BUT:
         // Somebody has to implement it. We have to implement it for each provider.
         // GitHub has REST API request limits, so if we ask the server a bit too much, we have to call the DS backend anyways.
@@ -183,9 +222,15 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage }: Gi
               },
             });
 
+            const root = allResources["http://dataspecer.com/packages/local-root"];
+            const rootPackages = root.subResourcesIri
+              .map(rootPackage => allResources[rootPackage])
+              ?.filter(rootPackage => rootPackage !== undefined && rootPackage.projectIri === examinedPackage.projectIri);
+            const { dsPackagesInProjectForAll, dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches } = createGitToPackagesForProjectMapping(rootPackages);
+
             const gitGraphElement = createGitGraph(
               openModal, examinedPackage, gitGraphTemplate, convertedCommits,
-              data.dsPackagesInProjectForBranches, data.dsPackagesInProjectForNonBranches, data.dsPackagesInProjectForAll);
+              dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches, dsPackagesInProjectForAll);
             setGitGraphElement(gitGraphElement);
             setIsLoading(false);
           })
@@ -365,9 +410,9 @@ function findBranchToPutIntoGitGraph(currentBranchProcessingState: Record<string
 }
 
 
-export const gitHistoryVisualizationOnClickHandler = async (openModal: OpenBetterModal, examinedPackage: Package) => {
+export const gitHistoryVisualizationOnClickHandler = async (openModal: OpenBetterModal, examinedPackage: Package, allResources: Record<string, ResourceWithIris>) => {
   // TODO RadStr: These are DS branches - note that those are different from the git branches
-  await openModal(GitHistoryVisualization, { examinedPackage });
+  await openModal(GitHistoryVisualization, { examinedPackage, allResources });
 }
 
 function convertFetchedCommitsFormat(rawCommits: RawCommit[]) {

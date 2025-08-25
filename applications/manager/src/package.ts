@@ -7,7 +7,7 @@ import { createModelInstructions } from "./known-models";
 
 const backendUrl = import.meta.env.VITE_BACKEND;
 
-type ResourceWithIris = Package & { subResourcesIri: string[] };
+export type ResourceWithIris = Package & { subResourcesIri: string[] };
 
 export const ResourcesContext = createContext<Record<string, ResourceWithIris>>({});
 
