@@ -28,6 +28,7 @@ import { ReadmeTemplateData } from "../git-readme/readme-template.ts";
 import { AvailableFilesystems } from "../export-import/filesystem-abstractions/filesystem-abstraction.ts";
 import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
 import { AvailableExports } from "../export-import/export-actions.ts";
+import { createSimpleGit } from "../utils/simple-git-utils.ts";
 
 
 
@@ -126,23 +127,14 @@ export const commitPackageToGit = async (
     commitMessage = createUniqueCommitMessage();
   }
 
-  const directoryWithContent = "./test-git-directory2";
-  const gitInitialDirectory = `${directoryWithContent}/${iri}`;
-  if(!fs.existsSync(directoryWithContent)) {
-    fs.mkdirSync(directoryWithContent);
-  }
-  if(!fs.existsSync(gitInitialDirectory)) {
-    fs.mkdirSync(gitInitialDirectory);
-  }
-
   // TODO RadStr: ... If we fail, then we should try to commit using bot credentials + We should also report the issue
   const repoURLWithAuthorization = getRepoURLWithAuthorization(remoteRepositoryURL, committer.name, givenRepositoryUserName, givenRepositoryName, committer.accessToken);
   // TODO RadStr: Remove the following line - just the old debug variant
   // const repoURLWithAuthorization = getRepoURLWithAuthorizationUsingDebugPatToken(remoteRepositoryURL, givenRepositoryName);
 
   // Up until here same as exportPackageResource except for own implementation of PackageExporter, now just commit and push
+  const { git, gitInitialDirectory, gitInitialDirectoryParent } = createSimpleGit(iri, "commit-package-to-git-dir");
 
-  const git = simpleGit(gitInitialDirectory);
   try {
     const options = [
       "--single-branch",
@@ -184,7 +176,7 @@ export const commitPackageToGit = async (
   }
 
   const exporter = new PackageExporterByResourceType();
-  await exporter.doExportFromIRI(iri, "", directoryWithContent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem);
+  await exporter.doExportFromIRI(iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem);
 
   const readmeData: ReadmeTemplateData = {
     dataspecerUrl: "http://localhost:5174",

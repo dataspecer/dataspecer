@@ -6,6 +6,7 @@ import { simpleGit } from "simple-git";
 import { GitProvider, GitProviderFactory } from "../git-providers/git-provider-api.ts";
 import { saveChangesInDirectoryToBackendFinalVersion } from "./git-webhook-handler.ts";
 import { resourceModel } from "../main.ts";
+import { createSimpleGit } from "../utils/simple-git-utils.ts";
 
 
 
@@ -47,17 +48,7 @@ export const updateDSRepositoryByPullingGit = async (
   cloneDirectoryNamePrefix: string,
   depth?: number
 ): Promise<boolean> => {
-  const directoryWithContent = `./${cloneDirectoryNamePrefix}/${branch}`;
-  const gitInitialDirectory = `${directoryWithContent}/${iri}`;
-  if(!fs.existsSync(directoryWithContent)) {
-    fs.mkdirSync(directoryWithContent, { recursive: true });
-  }
-  if(!fs.existsSync(gitInitialDirectory)) {
-    fs.mkdirSync(gitInitialDirectory, { recursive: true });
-  }
-
-
-  const git = simpleGit(gitInitialDirectory);
+  const { git, gitInitialDirectory, gitInitialDirectoryParent } = createSimpleGit(iri, branch, cloneDirectoryNamePrefix);
   try {
     // TODO: Compare SHAs (and maybe behave differently based on number of commits)
     console.info("Before cloning repo");
@@ -71,7 +62,7 @@ export const updateDSRepositoryByPullingGit = async (
     await git.clone(cloneURL, ".", cloneOptions);
     console.info("After cloning repo");
     // await saveChangesInDirectoryToBackendFinalVersion(gitInitialDirectory, iri, gitProvider, true);    // TODO RadStr: Not sure about setting the metadata cache (+ we need it always in the call, so the true should be actaully set inside the called method, and the argument should not be here at all)
-    await saveChangesInDirectoryToBackendFinalVersion(directoryWithContent, iri, gitProvider, true);    // TODO RadStr: Not sure about setting the metadata cache (+ we need it always in the call, so the true should be actaully set inside the called method, and the argument should not be here at all)
+    await saveChangesInDirectoryToBackendFinalVersion(gitInitialDirectoryParent, iri, gitProvider, true);    // TODO RadStr: Not sure about setting the metadata cache (+ we need it always in the call, so the true should be actaully set inside the called method, and the argument should not be here at all)
     console.info("Saved repo");
   }
   catch (cloneError) {

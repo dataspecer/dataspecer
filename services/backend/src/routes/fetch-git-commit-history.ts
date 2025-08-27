@@ -6,6 +6,7 @@ import { simpleGit } from "simple-git";
 
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
+import { gitCloneOnlyCommits } from "../utils/simple-git-utils.ts";
 
 // TODO RadStr: On client the rawCommits don't have to be readonly here yes
 type FetchedGitData = {
@@ -64,28 +65,7 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
     fs.mkdirSync(directoryName, { recursive: true });
     const git = simpleGit(directoryName);
 
-    try {
-        // TODO: Compare SHAs (and maybe behave differently based on number of commits)
-        console.info("Before cloning repo");
-        // https://github.blog/open-source/git/get-up-to-speed-with-partial-clone-and-shallow-clone/ - The second one from quick summary - Treeless clone
-        const gitCloneOptions = [ "--filter=tree:0" ];
-        if (query.historyDepth !== undefined) {
-            gitCloneOptions.push("--depth", query.historyDepth.toString());
-        }
-        await git.clone(gitURL, `.`, gitCloneOptions);
-    }
-    catch(err) {
-        console.info("Error on clone", err);
-        try {
-            await git.init();
-            await git.pull(gitURL);       // If it fails here, it failed completely
-        }
-        catch(err2) {
-            console.info("I am removing directory", err2);
-            fs.rmSync(directoryName, { recursive: true, force: true });
-            throw err2;
-        }
-    }
+    await gitCloneOnlyCommits(git, directoryName, gitURL, false, undefined, query.historyDepth);
 
     try {
         console.info("After cloning");
@@ -94,12 +74,12 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
 
         const defaultbranchGit = await git.branch(["-vv"]);
         const defaultBranchLabel = defaultbranchGit.branches[defaultbranchGit.current].label;
-        const defaultBranch = defaultBranchLabel.substring(1, defaultBranchLabel.indexOf("]"));     // Inside the [] there is tracked branch - that is the remote to use
-        console.info({defaultBranchLabel, defaultBranch});
+        const defaultBranchName = defaultBranchLabel.substring(1, defaultBranchLabel.indexOf("]"));     // Inside the [] there is tracked branch - that is the remote to use
+        console.info({defaultBranchLabel, defaultBranch: defaultBranchName});
 
         const gitHistory: GitHistory = {
             branches: [],
-            defaultBranch,
+            defaultBranch: defaultBranchName,
         };
 
         const logFormat = {
