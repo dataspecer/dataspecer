@@ -28,7 +28,7 @@ import { ReadmeTemplateData } from "../git-readme/readme-template.ts";
 import { AvailableFilesystems } from "../export-import/filesystem-abstractions/filesystem-abstraction.ts";
 import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
 import { AvailableExports } from "../export-import/export-actions.ts";
-import { createSimpleGit } from "../utils/simple-git-utils.ts";
+import { createSimpleGit, gitCloneBasic } from "../utils/simple-git-utils.ts";
 
 
 
@@ -136,16 +136,7 @@ export const commitPackageToGit = async (
   const { git, gitInitialDirectory, gitInitialDirectoryParent } = createSimpleGit(iri, "commit-package-to-git-dir");
 
   try {
-    const options = [
-      "--single-branch",
-      "--depth", "1",
-    ];
-    if (branch !== null) {
-      // Note that this also moves to the branch after clone
-      options.push("--branch", branch);
-    }
-    const cloneResult = await git.clone(repoURLWithAuthorization, ".", options);
-    console.info("Cloned repo", cloneResult);
+    await gitCloneBasic(git, gitInitialDirectory, repoURLWithAuthorization, true, false, branch ?? undefined, 1);
   }
   catch (cloneError: any) {
     const hasSetLastCommit: boolean = lastCommitHash !== "";

@@ -6,7 +6,7 @@ import { simpleGit } from "simple-git";
 
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
-import { gitCloneOnlyCommits } from "../utils/simple-git-utils.ts";
+import { createSimpleGit, gitCloneBasic } from "../utils/simple-git-utils.ts";
 
 // TODO RadStr: On client the rawCommits don't have to be readonly here yes
 type FetchedGitData = {
@@ -59,15 +59,10 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
     // const gitURL = "https://github.com/nodejs/node-addon-examples";
     // const gitURL = "https://github.com/RadStr-bot/example-merge-repo";
 
-    // TODO RadStr: Just debug name
-    const directoryName = `./TODO_RADSTR_DEBUG_DIRECTORY_NAME/${query.iri}/${uuidv4()}`;        // Without the id, we will run into errors and race conditions
-                                                                                                // TODO RadStr: This is/will be issue on more places
-    fs.mkdirSync(directoryName, { recursive: true });
-    const git = simpleGit(directoryName);
-
-    await gitCloneOnlyCommits(git, directoryName, gitURL, false, undefined, query.historyDepth);
+    const { git, gitInitialDirectory } = createSimpleGit(query.iri, "fetch-git-commit-history");
 
     try {
+        await gitCloneBasic(git, gitInitialDirectory, gitURL, false, true, undefined, query.historyDepth);
         console.info("After cloning");
         // const log = await git.log();
         // console.info("log", {log});
@@ -211,11 +206,11 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
         //     .then((myGitLogJSON: any) => {console.log(myGitLogJSON); response.json(myGitLogJSON); });
     }
     catch(err) {
-        console.info("ERROR IN GIT LOG", err);
+        console.info("Error either in git log or git clone", err);
         throw new Error("Error while trying to fetch git history: " + err);
     }
     finally {
-        fs.rmSync(directoryName, { recursive: true, force: true });
+        fs.rmSync(gitInitialDirectory, { recursive: true, force: true });
     }
 });
 

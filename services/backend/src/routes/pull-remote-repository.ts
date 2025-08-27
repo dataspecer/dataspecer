@@ -6,7 +6,7 @@ import { simpleGit } from "simple-git";
 import { GitProvider, GitProviderFactory } from "../git-providers/git-provider-api.ts";
 import { saveChangesInDirectoryToBackendFinalVersion } from "./git-webhook-handler.ts";
 import { resourceModel } from "../main.ts";
-import { createSimpleGit } from "../utils/simple-git-utils.ts";
+import { createSimpleGit, gitCloneBasic } from "../utils/simple-git-utils.ts";
 
 
 
@@ -48,34 +48,20 @@ export const updateDSRepositoryByPullingGit = async (
   cloneDirectoryNamePrefix: string,
   depth?: number
 ): Promise<boolean> => {
-  const { git, gitInitialDirectory, gitInitialDirectoryParent } = createSimpleGit(iri, branch, cloneDirectoryNamePrefix);
+  const { git, gitInitialDirectory, gitInitialDirectoryParent } = createSimpleGit(iri, cloneDirectoryNamePrefix, branch);
   try {
-    // TODO: Compare SHAs (and maybe behave differently based on number of commits)
-    console.info("Before cloning repo");
-    const cloneOptions = [
-      "--branch", branch,
-      "--single-branch",
-    ];
-    if (depth !== undefined) {
-      cloneOptions.push("--depth", depth.toString());
-    }
-    await git.clone(cloneURL, ".", cloneOptions);
-    console.info("After cloning repo");
+    // TODO RadStr: Not sure if it is better to pull only commits or everything
+    await gitCloneBasic(git, gitInitialDirectory, cloneURL, true, true, branch, depth);
     // await saveChangesInDirectoryToBackendFinalVersion(gitInitialDirectory, iri, gitProvider, true);    // TODO RadStr: Not sure about setting the metadata cache (+ we need it always in the call, so the true should be actaully set inside the called method, and the argument should not be here at all)
     await saveChangesInDirectoryToBackendFinalVersion(gitInitialDirectoryParent, iri, gitProvider, true);    // TODO RadStr: Not sure about setting the metadata cache (+ we need it always in the call, so the true should be actaully set inside the called method, and the argument should not be here at all)
-    console.info("Saved repo");
   }
   catch (cloneError) {
-    // TODO RadStr: We also end up here when repo is created, since creating branch triggers push webhook
-    console.info("Catched clone error: ", { cloneError, cloneURL, iri, depth});
     return false;
   }
   finally {
-    // TODO: Not sure about doing this in finally
     // It is important to not only remove the actual files, but also the .git directory,
     // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
     fs.rmSync(gitInitialDirectory, { recursive: true, force: true });
   }
-
   return true;
 };
