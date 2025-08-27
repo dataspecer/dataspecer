@@ -281,10 +281,10 @@ export interface GitProvider {
 
   /**
    * Copies (or rather create file links, but the end effect is same, we just safe space and actions on hard drive)
-   *  the workflow files (that is for example in case of GitHub the GitHub actions) to the {@link targetPackageIRI}.
-   *  Note that it is package, since the full path is based on both the {@link targetPackageIRI} and the gitProvider.
+   *  the workflow files (that is for example in case of GitHub the GitHub actions) to the {@link copyTo}.
+   *  Note that each provider should have the workflow files specific for their CI/CD.
    */
-  copyWorkflowFiles(targetPackageIRI: string): void;
+  copyWorkflowFiles(copyTo: string): void;
 
   /**
    * @returns True if the given {@link fullpath} is path to directory containing the git provider specific files (like workflow files). False otherwise.

@@ -321,8 +321,8 @@ export class GitHubProvider extends GitProviderBase {
     return this.enableGitHubPages(repoName, repositoryUserName, accessToken)
   }
 
-  copyWorkflowFiles(targetPackageIRI: string): void {
-    const workflowsDirPath = `./test-git-directory2/${targetPackageIRI}/.github/workflows`;
+  copyWorkflowFiles(copyTo: string): void {
+    const workflowsDirPath = `${copyTo}/.github/workflows`;
     if(!fs.existsSync(workflowsDirPath)) {
       fs.mkdirSync(workflowsDirPath, { recursive: true });
     }

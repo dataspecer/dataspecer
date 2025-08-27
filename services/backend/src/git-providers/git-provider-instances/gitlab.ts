@@ -159,7 +159,7 @@ export class GitLabProvider extends GitProviderBase {
     throw new Error("Method not implemented.");
   }
 
-  copyWorkflowFiles(targetPackageIRI: string): void {
+  copyWorkflowFiles(copyTo: string): void {
     throw new Error("Method not implemented.");
   }
 

@@ -177,7 +177,7 @@ export const commitPackageToGit = async (
     };
     createReadmeFile(gitInitialDirectory, readmeData);      // TODO RadStr: Again - should be done only in the initial commit
 
-    gitProvider.copyWorkflowFiles(iri);
+    gitProvider.copyWorkflowFiles(gitInitialDirectory);
 
     const commitResult = await commitGivenFilesToGit(git, ["."], commitMessage, committer.name, committer.email);
     await git.push(repoURLWithAuthorization);
