@@ -48,7 +48,7 @@ export const updateDSRepositoryByPullingGit = async (
   cloneDirectoryNamePrefix: string,
   depth?: number
 ): Promise<boolean> => {
-  const { git, gitInitialDirectory, gitInitialDirectoryParent } = createSimpleGit(iri, cloneDirectoryNamePrefix, branch);
+  const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGit(iri, cloneDirectoryNamePrefix, branch);
   try {
     // TODO RadStr: Not sure if it is better to pull only commits or everything
     await gitCloneBasic(git, gitInitialDirectory, cloneURL, true, true, branch, depth);
@@ -61,7 +61,7 @@ export const updateDSRepositoryByPullingGit = async (
   finally {
     // It is important to not only remove the actual files, but also the .git directory,
     // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
-    fs.rmSync(gitInitialDirectory, { recursive: true, force: true });
+    fs.rmSync(gitDirectoryToRemoveAfterWork, { recursive: true, force: true });
   }
   return true;
 };

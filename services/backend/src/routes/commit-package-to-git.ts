@@ -133,7 +133,7 @@ export const commitPackageToGit = async (
   // const repoURLWithAuthorization = getRepoURLWithAuthorizationUsingDebugPatToken(remoteRepositoryURL, givenRepositoryName);
 
   // Up until here same as exportPackageResource except for own implementation of PackageExporter, now just commit and push
-  const { git, gitInitialDirectory, gitInitialDirectoryParent } = createSimpleGit(iri, "commit-package-to-git-dir", branch ?? undefined);
+  const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGit(iri, "commit-package-to-git-dir", branch ?? undefined);
 
   try {
     await gitCloneBasic(git, gitInitialDirectory, repoURLWithAuthorization, true, false, branch ?? undefined, 1);
@@ -162,32 +162,37 @@ export const commitPackageToGit = async (
     }
     catch(cloneError2: any)  {
       console.error("Can not clone repository before commiting from DS", cloneError, cloneError2);
+      fs.rmSync(gitDirectoryToRemoveAfterWork, { recursive: true, force: true });
       throw cloneError2;    // Just rethrow the error
     }
   }
 
-  const exporter = new PackageExporterByResourceType();
-  await exporter.doExportFromIRI(iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem);
+  try {
+    const exporter = new PackageExporterByResourceType();
+    await exporter.doExportFromIRI(iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem);
 
-  const readmeData: ReadmeTemplateData = {
-    dataspecerUrl: "http://localhost:5174",
-    publicationRepositoryUrl: `${gitProvider.getDomainURL(true)}/${givenRepositoryUserName}/${givenRepositoryName}-publication-repo`,  // TODO RadStr: Have to fix once we will use better mechanism to name the publication repos
-  };
-  createReadmeFile(gitInitialDirectory, readmeData);      // TODO RadStr: Again - should be done only in the initial commit
+    const readmeData: ReadmeTemplateData = {
+      dataspecerUrl: "http://localhost:5174",
+      publicationRepositoryUrl: `${gitProvider.getDomainURL(true)}/${givenRepositoryUserName}/${givenRepositoryName}-publication-repo`,  // TODO RadStr: Have to fix once we will use better mechanism to name the publication repos
+    };
+    createReadmeFile(gitInitialDirectory, readmeData);      // TODO RadStr: Again - should be done only in the initial commit
 
-  gitProvider.copyWorkflowFiles(iri);
+    gitProvider.copyWorkflowFiles(iri);
 
-  const commitResult = await commitGivenFilesToGit(git, ["."], commitMessage, committer.name, committer.email);
-  await git.push(repoURLWithAuthorization);
-  await resourceModel.updateLastCommitHash(iri, commitResult.commit);
+    const commitResult = await commitGivenFilesToGit(git, ["."], commitMessage, committer.name, committer.email);
+    await git.push(repoURLWithAuthorization);
+    await resourceModel.updateLastCommitHash(iri, commitResult.commit);
 
-  // It is important to not only remove the actual files, but also the .git directory,
-  // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
-  fs.rmSync(gitInitialDirectory, { recursive: true, force: true });
+    // It is important to not only remove the actual files, but also the .git directory,
+    // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
+  }
+  finally {
+    fs.rmSync(gitDirectoryToRemoveAfterWork, { recursive: true, force: true });
+  }
 
-  // TODO RadStr: REMOVE THIS !!! (even though it really does not matter since user can't access server logs)
-  // console.info("PUSHING USING", repoURLWithAuthorization);
-  // console.info("BOT PAT TOKEN is as follows", GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN);
+    // TODO RadStr: REMOVE THIS !!! (even though it really does not matter since user can't access server logs)
+    // console.info("PUSHING USING", repoURLWithAuthorization);
+    // console.info("BOT PAT TOKEN is as follows", GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN);
 };
 
 

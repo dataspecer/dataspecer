@@ -59,7 +59,7 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
     // const gitURL = "https://github.com/nodejs/node-addon-examples";
     // const gitURL = "https://github.com/RadStr-bot/example-merge-repo";
 
-    const { git, gitInitialDirectory } = createSimpleGit(query.iri, "fetch-git-commit-history");
+    const { git, gitInitialDirectory, gitDirectoryToRemoveAfterWork } = createSimpleGit(query.iri, "fetch-git-commit-history");
 
     try {
         await gitCloneBasic(git, gitInitialDirectory, gitURL, false, true, undefined, query.historyDepth);
@@ -210,7 +210,7 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
         throw new Error("Error while trying to fetch git history: " + err);
     }
     finally {
-        fs.rmSync(gitInitialDirectory, { recursive: true, force: true });
+        fs.rmSync(gitDirectoryToRemoveAfterWork, { recursive: true, force: true });
     }
 });
 

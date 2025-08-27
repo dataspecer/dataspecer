@@ -59,6 +59,11 @@ export async function gitCloneBasic(
 
 export type UniqueDirectory = {
     /**
+     * The path to directory, which should be removed after the git work.
+     */
+    gitDirectoryToRemoveAfterWork: string,
+
+    /**
      *Is the parent of the gitInitialDirectory. Ends with the branch name
      */
     gitInitialDirectoryParent: string,
@@ -85,13 +90,14 @@ export const createUniqueDirectory = (
 
     while (true) {
         const pathUuid = uuidv4();
-
-        const gitInitialDirectoryParent = `./${cloneDirectoryNamePrefix}/${pathUuid}${branchSuffix}`;
+        const gitDirectoryToRemoveAfterWork = `./${cloneDirectoryNamePrefix}/${pathUuid}`;
+        const gitInitialDirectoryParent = `${gitDirectoryToRemoveAfterWork}${branchSuffix}`;
         let gitInitialDirectory = `${gitInitialDirectoryParent}/${iri}`;
         // We check for parent just to be sure, howevere it is highly unlikely that there was conflict.
         if (!fs.existsSync(gitInitialDirectoryParent)) {
             fs.mkdirSync(gitInitialDirectory, { recursive: true });
             return {
+                gitDirectoryToRemoveAfterWork,
                 gitInitialDirectoryParent,
                 gitInitialDirectory,
             };
