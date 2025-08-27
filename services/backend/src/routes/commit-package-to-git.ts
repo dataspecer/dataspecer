@@ -133,7 +133,7 @@ export const commitPackageToGit = async (
   // const repoURLWithAuthorization = getRepoURLWithAuthorizationUsingDebugPatToken(remoteRepositoryURL, givenRepositoryName);
 
   // Up until here same as exportPackageResource except for own implementation of PackageExporter, now just commit and push
-  const { git, gitInitialDirectory, gitInitialDirectoryParent } = createSimpleGit(iri, "commit-package-to-git-dir");
+  const { git, gitInitialDirectory, gitInitialDirectoryParent } = createSimpleGit(iri, "commit-package-to-git-dir", branch ?? undefined);
 
   try {
     await gitCloneBasic(git, gitInitialDirectory, repoURLWithAuthorization, true, false, branch ?? undefined, 1);

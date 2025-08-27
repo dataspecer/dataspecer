@@ -59,7 +59,7 @@ export async function gitCloneBasic(
 
 export type UniqueDirectory = {
     /**
-     *Is the parent of the gitInitialDirectory. Ends with the branch anme
+     *Is the parent of the gitInitialDirectory. Ends with the branch name
      */
     gitInitialDirectoryParent: string,
     /**
