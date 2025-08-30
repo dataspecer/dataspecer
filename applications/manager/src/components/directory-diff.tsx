@@ -9,6 +9,56 @@ import React, { SetStateAction, useCallback, useEffect, useRef, useState } from 
 import { NodeApi, NodeRendererProps, Tree, TreeApi, } from "react-arborist";
 
 
+// TODO RadStr: Again move into common pakcage, it is also used as type on backend
+export enum AvailableFilesystems {
+  DS_Filesystem = "ds-filesystem",
+  ClassicFilesystem = "classic-filesystem",
+}
+
+
+// TODO RadStr: Move elsewhere in code. Used both in backend and DiffTree dialog
+export type ComparisonData = {
+  oldVersion: FilesystemNode | null;
+  affectedDataStore: DatastoreInfo;
+  newVersion: FilesystemNode | null;
+}
+
+
+// TODO RadStr: Put to package, used both in backend and DiffTree dialog
+type EditableType = "mergeFrom" | "mergeTo";
+
+
+// TODO RadStr: Put into package, used both in backend and in client in the difftree dialog
+export interface MergeState {
+  uuid: string;
+
+  lastCommitHashMergeTo: string;
+  rootFullPathToMetaMergeTo: string;
+  rootIriMergeTo: string;
+  filesystemTypeMergeTo: AvailableFilesystems;
+
+  lastCommitHashMergeFrom: string;
+  rootFullPathToMetaMergeFrom: string;
+  rootIriMergeFrom: string;
+  filesystemTypeMergeFrom: AvailableFilesystems;
+
+  editable: EditableType;
+
+  lastCommonCommitHash: string;
+
+  changedInEditable?: ComparisonData[];
+  removedInEditable?: ComparisonData[];
+  createdInEditable?: ComparisonData[];
+  conflicts?: ComparisonData[];
+  conflictCount: number,
+
+  diffTreeData?: {
+    diffTree: DiffTree,
+    diffTreeSize: number;   // TODO RadStr: Maybe not needed can just compute on client from diffTree
+  };
+}
+
+
 /**
  * Contains all info about datastore - including format, type and the path where it can be found.
  * @example Prefix = 12; FullName = 12345; afterPrefix = 345
@@ -150,10 +200,29 @@ export type DatastoreComparison = {
   newVersion: FilesystemNode | null;
 }
 
-// @ts-ignore TODO RadStr: For now ignore
+async function fetchMergeState(rootIriMergeFrom: string, rootIriMergeTo: string): Promise<MergeState> {
+  try {
+    const queryParams = `rootIriMergeFrom=${rootIriMergeFrom}&rootIriMergeTo=${rootIriMergeTo}&includeDiffData=true`;
+    const fetchResult = await fetch(`${import.meta.env.VITE_BACKEND}/git/get-merge-state?${queryParams}`, {
+      method: "GET",
+    });
+    console.info("fetched data", fetchResult);   // TODO RadStr: Debug
+    const fetchResultAsJson = await fetchResult.json();
+    console.info("fetched data as json", fetchResultAsJson);   // TODO RadStr: Debug
+
+    return fetchResultAsJson;
+  }
+  catch(error) {
+    console.error(`Error when fetching diff tree (for iris: ${rootIriMergeFrom} and ${rootIriMergeTo}). The error: ${error}`);
+    throw error;
+  }
+}
+
+
 /**
  * @returns The difftree and the total number of nodes in the difftree
- */
+*/
+// @ts-ignore TODO RadStr: For now ignore, but we will move it into package
 async function compareFiletrees(
   filesystem1: FilesystemAbstraction,
   treeRoot1Name: string,
@@ -374,8 +443,8 @@ type RenderNode = {
   modifiedDataResourceNameInfo: DataResourceNameInfo,
   reactElementToRender?: React.ReactNode,
   isReactElementToRenderRenderedAsSelected?: boolean,
-  // fullPathInOldTree: string | null,      // TODO RadStr: I will maybe go back to the oldPaths - the idea is that path to any resource (and model) can behave like a identifier (in local filesystem it is actual path, in DS it is the iri of the resource)
-  // fullPathInNewTree: string | null,
+  fullDatastoreInfoInOriginalTree: DatastoreInfo | null,      // TODO RadStr: For now keep together with the ResourceName stuff - but in te end only DatastoreInfo will be enough
+  fullDatastoreInfoInModifiedTree: DatastoreInfo | null,
 };
 type RenderNodeWithAdditionalMethods = RenderNode & { changeActiveModel: ChangeActiveModelMethod };
 
@@ -459,6 +528,14 @@ function createDatastoresRenderRepresentations(datastoreComparisons: DatastoreCo
       newIri = datastoreComparison.newVersion?.metadataCache.iri;
     }
 
+    const fullDatastoreInfoInOriginalTree = datastoreComparison.oldVersion === null ?
+      null :
+      getDatastoreInfoOfGivenDatastoreType(datastoreComparison.oldVersion, datastoreComparison.affectedDataStore.type) ?? null;
+
+    const fullDatastoreInfoInModifiedTree = datastoreComparison.newVersion === null ?
+      null :
+      getDatastoreInfoOfGivenDatastoreType(datastoreComparison.newVersion, datastoreComparison.affectedDataStore.type) ?? null;
+
     const datastoreRenderNode: RenderNode = {
       id: (datastoreComparison?.newVersion?.fullTreePath ?? datastoreComparison?.oldVersion?.fullTreePath ?? "unknown") + datastoreComparison.affectedDataStore.fullName + "-" + treeToExtract,
       name: datastoreComparison.affectedDataStore.fullName,
@@ -468,6 +545,9 @@ function createDatastoresRenderRepresentations(datastoreComparisons: DatastoreCo
       // TODO RadStr: ... Accessing the iri in cache, this is why I want to use the paths instead
       originalDataResourceNameInfo: { resourceIri: oldIri ?? "", modelName: datastoreComparison.affectedDataStore.type },
       modifiedDataResourceNameInfo: { resourceIri: newIri ?? "", modelName: datastoreComparison.affectedDataStore.type },
+
+      fullDatastoreInfoInOriginalTree,
+      fullDatastoreInfoInModifiedTree,
     };
     datastoresRenderRepresentations.push(datastoreRenderNode);
   }
@@ -522,6 +602,8 @@ function createTreeRepresentationForRendering(diffTree: DiffTree, treeToExtract:
       children: children.concat(datastoresRenderRepresentations),
       originalDataResourceNameInfo: { resourceIri: "Empty since we fetch only datastores", modelName: "Empty since we fetch only datastores" },
       modifiedDataResourceNameInfo: { resourceIri: "Empty since we fetch only datastores", modelName: "Empty since we fetch only datastores" },
+      fullDatastoreInfoInModifiedTree: null,
+      fullDatastoreInfoInOriginalTree: null,
       // TODO RadStr: The path as mentioned above
       // fullPathInOldTree: "Empty since we fetch only datastores",
       // fullPathInNewTree: "Empty since we fetch only datastores",
@@ -611,7 +693,8 @@ function StyledNode({
           //   throw new Error("The path to the datastore is empty - new version");
           // }
 
-          node.data.changeActiveModel(node.data.originalDataResourceNameInfo, node.data.modifiedDataResourceNameInfo, true);
+          // TODO RadStr: The ! is just for debug for now !!!!!
+          node.data.changeActiveModel(node.data.fullDatastoreInfoInOriginalTree!, node.data.fullDatastoreInfoInModifiedTree!, true);
         }
       }}
     >
@@ -627,6 +710,7 @@ function StyledNode({
 }
 
 
+// @ts-ignore TODO RadStr: idk maybe no longer needed? We fetch the whole diff tree instead.
 async function fetchTreeData(rootIri: string) {
   try {
     const fetchResult = await fetch(`${import.meta.env.VITE_BACKEND}/dataspecer-package-tree?iri=${rootIri}`, {
@@ -647,6 +731,7 @@ async function fetchTreeData(rootIri: string) {
 /**
  * TODO RadStr: for now mock-up implmentation
  */
+// @ts-ignore TODO RadStr: Will probably use later - since we need to fetch the data from backend (as we do in the cache)
 class FilesystemAbstractionMockupImplmentation implements FilesystemAbstraction {
   // async getDatastoreContent(filesystem: AvailableFilesystems, datastoreInfo: DatastoreInfo, shouldConvertToDatastoreFormat: boolean): Promise<any> {      // TODO RadStr: The correct version
   async getDatastoreContent(resourceWithDatastore: FilesystemNode, datastoreInfo: DatastoreInfo, _shouldConvertToDatastoreFormat: boolean): Promise<any> {
@@ -711,9 +796,6 @@ export const DiffTreeVisualization = (props: {
   isLoadingTreeStructure: boolean,
   setIsLoadingTreeStructure: (value: SetStateAction<boolean>) => void,
 }) => {
-  // TODO RadStr: Better types ... don't use any
-  const [oldFilesystemMap, setOldFilesystemMap] = useState<any>();
-  const [newFilesystemMap, setNewFilesystemMap] = useState<any>();
   const [diffTree, setDiffTree] = useState<DiffTree>();
   const [oldRenderTree, setOldRenderTree] = useState<RenderTree>();
   const [newRenderTree, setNewRenderTree] = useState<RenderTree>();
@@ -825,26 +907,39 @@ export const DiffTreeVisualization = (props: {
     const fetchTrees = async () => {
       props.setIsLoadingTreeStructure(true);
 
-      const fetchedOldFilesystemMap = await fetchTreeData(props.originalDataResourceNameInfo.resourceIri);
-      const fetchedNewFilesystemMap = await fetchTreeData(props.modifiedDataResourceNameInfo.resourceIri);
-      setOldFilesystemMap(fetchedOldFilesystemMap);
-      setNewFilesystemMap(fetchedNewFilesystemMap);
-      console.info({ fetchedOldFilesystemMap, oldFilesystemMap, fetchedNewFilesystemMap, newFilesystemMap });       // TODO RadStr: Debug print
+      const fetchedMergeState = await fetchMergeState(props.originalDataResourceNameInfo.resourceIri, props.modifiedDataResourceNameInfo.resourceIri);
+      const fetchedDiffTree = fetchedMergeState.diffTreeData!.diffTree;
+      const fetchedDiffTreeSize = fetchedMergeState.diffTreeData!.diffTreeSize;
+      setDiffTree(fetchedDiffTree);
+      setDiffTreeNodeCount(fetchedDiffTreeSize);
+      console.info({ fetchedDiffTree });
 
-      const root1 = fetchedOldFilesystemMap[""];
-      const root2 = fetchedNewFilesystemMap[""];
-
-      const filesystemMockup = new FilesystemAbstractionMockupImplmentation();
-      const [computedDiffTree, computedDiffTreeSize] = await compareFiletrees(filesystemMockup, root1.name, root1, fetchedOldFilesystemMap,
-                                                                filesystemMockup, root2.name, root2, fetchedNewFilesystemMap);
-      setDiffTree(computedDiffTree);
-      setDiffTreeNodeCount(computedDiffTreeSize);
-      console.info({computedDiffTree});
-
-      const { oldRenderTree: computedOldRenderTree, newRenderTree: computedNewRenderTree } = createTreeRepresentationsForRendering(computedDiffTree);
+      const { oldRenderTree: computedOldRenderTree, newRenderTree: computedNewRenderTree } = createTreeRepresentationsForRendering(fetchedDiffTree);
       console.info({ computedOldRenderTree, computedNewRenderTree } );     // TODO RadStr: Deug print
       setOldRenderTree(computedOldRenderTree);
       setNewRenderTree(computedNewRenderTree);
+
+
+
+      // TODO RadStr: Old version ... remove after the diff editor is finished
+      // const fetchedOldFilesystemMap = await fetchTreeData(props.originalDataResourceNameInfo.resourceIri);
+      // const fetchedNewFilesystemMap = await fetchTreeData(props.modifiedDataResourceNameInfo.resourceIri);
+      // console.info({ fetchedOldFilesystemMap, fetchedNewFilesystemMap });       // TODO RadStr: Debug print
+
+      // const root1 = fetchedOldFilesystemMap[""];
+      // const root2 = fetchedNewFilesystemMap[""];
+
+      // const filesystemMockup = new FilesystemAbstractionMockupImplmentation();
+      // const [computedDiffTree, computedDiffTreeSize] = await compareFiletrees(filesystemMockup, root1.name, root1, fetchedOldFilesystemMap,
+      //                                                           filesystemMockup, root2.name, root2, fetchedNewFilesystemMap);
+      // setDiffTree(computedDiffTree);
+      // setDiffTreeNodeCount(computedDiffTreeSize);
+      // console.info({computedDiffTree});
+
+      // const { oldRenderTree: computedOldRenderTree, newRenderTree: computedNewRenderTree } = createTreeRepresentationsForRendering(computedDiffTree);
+      // console.info({ computedOldRenderTree, computedNewRenderTree } );     // TODO RadStr: Deug print
+      // setOldRenderTree(computedOldRenderTree);
+      // setNewRenderTree(computedNewRenderTree);
 
       props.setIsLoadingTreeStructure(false);
     }
@@ -904,5 +999,5 @@ function renderTreeWithLoading(isLoadingTreeStructure: boolean, treeComponent: R
     <Loader className="mr-2 h-4 w-4 animate-spin" /> :
     <div>
       {treeComponent}
-    </div>
+    </div>;
   };

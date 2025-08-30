@@ -6,7 +6,8 @@ import { simpleGit } from "simple-git";
 import { GitProvider, GitProviderFactory } from "../git-providers/git-provider-api.ts";
 import { saveChangesInDirectoryToBackendFinalVersion } from "./git-webhook-handler.ts";
 import { resourceModel } from "../main.ts";
-import { createSimpleGit, gitCloneBasic } from "../utils/simple-git-utils.ts";
+import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "../utils/simple-git-utils.ts";
+import { MANUAL_CLONE_PATH_PREFIX } from "../models/git-store-info.ts";
 
 
 
@@ -24,7 +25,7 @@ export const pullRemoteRepository = asyncHandler(async (request: express.Request
 
   const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(resource.linkedGitRepositoryURL);
 
-  const isCloneSuccess = await updateDSRepositoryByPullingGit(query.iri, gitProvider, resource.branch, resource.linkedGitRepositoryURL, "manual-clone");
+  const isCloneSuccess = await updateDSRepositoryByPullingGit(query.iri, gitProvider, resource.branch, resource.linkedGitRepositoryURL, MANUAL_CLONE_PATH_PREFIX, resource.lastCommitHash);
   if (isCloneSuccess) {
     response.sendStatus(200);
     return;
@@ -46,19 +47,30 @@ export const updateDSRepositoryByPullingGit = async (
   branch: string,
   cloneURL: string,
   cloneDirectoryNamePrefix: string,
+  dsLastCommitHash: string,
   depth?: number
 ): Promise<boolean> => {
   const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGit(iri, cloneDirectoryNamePrefix, branch);
+  let hasConflicts: boolean = false;
   try {
     // TODO RadStr: Not sure if it is better to pull only commits or everything
     await gitCloneBasic(git, gitInitialDirectory, cloneURL, true, true, branch, depth);
     // await saveChangesInDirectoryToBackendFinalVersion(gitInitialDirectory, iri, gitProvider, true);    // TODO RadStr: Not sure about setting the metadata cache (+ we need it always in the call, so the true should be actaully set inside the called method, and the argument should not be here at all)
-    await saveChangesInDirectoryToBackendFinalVersion(gitInitialDirectoryParent, iri, gitProvider, true);    // TODO RadStr: Not sure about setting the metadata cache (+ we need it always in the call, so the true should be actaully set inside the called method, and the argument should not be here at all)
+    const gitLastCommitHash = await git.revparse(["HEAD"]);
+    const commonCommit = await getCommonCommitInHistory(git, dsLastCommitHash, gitLastCommitHash);
+    hasConflicts = await saveChangesInDirectoryToBackendFinalVersion(
+      gitInitialDirectoryParent, iri, gitProvider, true,
+      gitLastCommitHash, dsLastCommitHash, commonCommit);    // TODO RadStr: Not sure about setting the metadata cache (+ we need it always in the call, so the true should be actaully set inside the called method, and the argument should not be here at all)
   }
   catch (cloneError) {
+    console.error({cloneError});
+    throw cloneError;     // TODO RadStr: For now rethrow, just for debugging
     return false;
   }
   finally {
+    if (hasConflicts) {
+      return true;
+    }
     // It is important to not only remove the actual files, but also the .git directory,
     // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
     fs.rmSync(gitDirectoryToRemoveAfterWork, { recursive: true, force: true });

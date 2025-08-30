@@ -8,7 +8,7 @@ import { useOnBeforeUnload } from "@/hooks/use-on-before-unload";
 import { useOnKeyDown } from "@/hooks/use-on-key-down";
 import { packageService } from "@/package";
 import * as monaco from 'monaco-editor';
-import { DiffTreeVisualization } from "@/components/directory-diff";
+import { AvailableFilesystems, DatastoreInfo, DiffTreeVisualization } from "@/components/directory-diff";
 import { Loader, RotateCw } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabsContent } from "@radix-ui/react-tabs";
@@ -17,8 +17,8 @@ import { MonacoDiffEditor } from "@/components/monaco-diff-editor";
 
 
 export type ChangeActiveModelMethod = (
-  originalDataResourceNameInfo: DataResourceNameInfo,
-  modifiedDataResourceNameInfo: DataResourceNameInfo,
+  originalDatastoreInfo: DatastoreInfo,
+  modifiedDatastoreInfo: DatastoreInfo,
   useCache: boolean
 ) => Promise<void>;
 
@@ -103,8 +103,19 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
    *  If {@link useCache} is set to true then tries to use cache (if the datastore is present it uses the cache, otherwise updates the cache by fetching from backend),
    *  if set to false, then always fetches from backend and updates cache
    */
-  const changeActiveModel = async (newOriginalDataResourceNameInfo: DataResourceNameInfo, newModifiedDataResourceNameInfo: DataResourceNameInfo, useCache: boolean) => {
+  const changeActiveModel = async (newOriginalDatastoreInfo: DatastoreInfo, newModifiedDatastoreInfo: DatastoreInfo, useCache: boolean) => {
     setIsLoadingTextData(true);
+
+    // TODO RadStr: Just for now so I have something that works, we will need only the DatastoreInfo
+    const newOriginalDataResourceNameInfo: DataResourceNameInfo = {
+      resourceIri: newOriginalDatastoreInfo.fullPath,
+      modelName: newOriginalDatastoreInfo.name,
+    };
+
+    const newModifiedDataResourceNameInfo: DataResourceNameInfo = {
+      resourceIri: newModifiedDatastoreInfo.fullPath,
+      modelName: newModifiedDatastoreInfo.name,
+    };
 
     // Set the edited value in cache
     setCacheForOriginalTextContent(prevState => {
@@ -120,13 +131,58 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
     const isModifiedDataResourceInCache = isDataResourcePresentInCache(cacheForModifiedTextContent, newModifiedDataResourceNameInfo);
     if (!(useCache && isOriginalDataResourceInCache && isModifiedDataResourceInCache)) {
       // TODO RadStr: We have to extend the API by types  - text, JSON, YAML, ...
-      const newOldObjectData = (await packageService.getResourceJsonData(newOriginalDataResourceNameInfo.resourceIri, newOriginalDataResourceNameInfo.modelName)) ?? {};
-      const newModifiedObjectData = (await packageService.getResourceJsonData(newModifiedDataResourceNameInfo.resourceIri, newModifiedDataResourceNameInfo.modelName)) ?? {};
 
-      console.info({newOriginalDataResourceNameInfo, newModifiedDataResourceNameInfo});
+      // TODO RadStr: Copy-paste for modified and old
+      const newOriginalQueryAsObject = {
+        pathToDatastore: encodeURIComponent(newOriginalDatastoreInfo.fullPath),
+        format: newOriginalDatastoreInfo.format,
+        type: newOriginalDatastoreInfo.type,
+        filesystem: AvailableFilesystems.DS_Filesystem,
+        shouldConvertToDatastoreFormat: true,
+      };
+
+      let newOriginalUrl = import.meta.env.VITE_BACKEND + "/git/get-datastore-content?";
+      for (const [key, value] of Object.entries(newOriginalQueryAsObject)) {
+        newOriginalUrl += key;
+        newOriginalUrl += "=";
+        newOriginalUrl += value;
+        newOriginalUrl += "&";
+      }
+      newOriginalUrl = newOriginalUrl.slice(0, -1);
+
+      const newOriginalResponse = await fetch(newOriginalUrl, {
+        method: "GET",
+      });
+
+      const newOriginalObjectData = await newOriginalResponse.json();
+
+      const newModifiedQueryAsObject = {
+        pathToDatastore: encodeURIComponent(newModifiedDatastoreInfo.fullPath),
+        format: newModifiedDatastoreInfo.format,
+        type: newModifiedDatastoreInfo.type,
+        filesystem: AvailableFilesystems.ClassicFilesystem,
+        shouldConvertToDatastoreFormat: true,
+      };
+
+      let newModifiedUrl = import.meta.env.VITE_BACKEND + "/git/get-datastore-content?";
+      for (const [key, value] of Object.entries(newModifiedQueryAsObject)) {
+        newModifiedUrl += key;
+        newModifiedUrl += "=";
+        newModifiedUrl += value;
+        newModifiedUrl += "&";
+      }
+      newModifiedUrl = newModifiedUrl.slice(0, -1);
+
+      const newModifiedResponse = await fetch(newModifiedUrl, {
+        method: "GET",
+      });
+
+      const newModifiedObjectData = await newModifiedResponse.json();
+
+      console.info({newOriginalDataResourceNameInfo: newOriginalDatastoreInfo, newModifiedDataResourceNameInfo: newModifiedDatastoreInfo});
 
       setCacheForOriginalTextContent(prevState => {
-        const changedCacheValue = JSON.stringify(newOldObjectData);
+        const changedCacheValue = JSON.stringify(newOriginalObjectData);
         return createNewContentCache(prevState, newOriginalDataResourceNameInfo, changedCacheValue);
       });
       setCacheForModifiedTextContent(prevState => {
@@ -149,7 +205,8 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
   }
 
   const reloadModelsDataFromBackend = async () => {
-    await changeActiveModel(originalDataResourceNameInfo, modifiedDataResourceNameInfo, false);
+    alert("TODO RadStr: Implement me");
+    // await changeActiveModel(originalDataResourceNameInfo, modifiedDataResourceNameInfo, false);
   }
 
 

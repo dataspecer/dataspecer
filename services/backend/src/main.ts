@@ -46,12 +46,16 @@ import { getDataspecerTree } from "./routes/get-dataspecer-tree.ts";
 import { getDatastoreContentDirectly } from "./routes/datastore-actions.ts";
 import { pullRemoteRepository } from "./routes/pull-remote-repository.ts";
 import { linkToExistingGitRepository } from "./routes/link-to-existing-remote-git-repo.ts";
+import { MergeStateModel } from "./models/merge-state-model.ts";
+import { getMergeState } from "./routes/get-merge-state.ts";
+import { getMergeStates } from "./routes/get-merge-states.ts";
 
 // Create application models
 
 export const storeModel = new LocalStoreModel("./database/stores");
 export const prismaClient = new PrismaClient();
 export const resourceModel = new ResourceModel(storeModel, prismaClient);
+export const mergeStateModel = new MergeStateModel(prismaClient);
 const migration = new Migrate(prismaClient);
 
 let fullUrl: string;
@@ -196,8 +200,12 @@ if (configuration.staticFilesPath) {
 }
 
 // Fetch package tree data
-application.get(apiBasename + "/dataspecer-package-tree", getDataspecerTree);
-application.get(apiBasename + "/get-datastore-content", getDatastoreContentDirectly);
+application.get(apiBasename + "/git/dataspecer-package-tree", getDataspecerTree);
+application.get(apiBasename + "/git/get-datastore-content", getDatastoreContentDirectly);
+application.get(apiBasename + "/git/get-merge-state", getMergeState);
+application.get(apiBasename + "/git/get-merge-states", getMergeStates);
+// TODO RadStr: Implement update-merge-difftree
+// application.get(apiBasename + "/update-merge-difftree", updateMergeDiffTree);
 
 // Test GIT
 application.get(apiBasename + "/git/deprecated-test", currentSession, tryCommitToGitRepo);

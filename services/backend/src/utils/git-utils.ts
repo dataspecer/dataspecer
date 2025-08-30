@@ -2,6 +2,11 @@
 
 import express from "express"
 import YAML from "yaml";
+import { FilesystemAbstraction } from "../export-import/filesystem-abstractions/filesystem-abstraction.ts";
+import { DatastoreInfo, DirectoryNode, FileNode, FilesystemNode } from "../export-import/export-import-data-api.ts";
+import { DatastoreComparison, DiffTree, ResourceComparison, ResourceComparisonResult } from "../models/merge-state-model.ts";
+import { getDatastoreInfoOfGivenDatastoreType } from "../export-import/filesystem-abstractions/implementations/ds-filesystem.ts";
+import _ from "lodash";
 
 
 
@@ -138,4 +143,219 @@ export function extractPartOfRepositoryURL(repositoryURL: string, part: "url-dom
   } catch (error) {
     return null;
   }
+}
+
+
+// TODO RadStr: Move it into package, used in both backend and DiffTree editor
+/**
+ * @returns The difftree and the total number of nodes in the difftree
+*/
+export async function createDiffTree(
+  filesystem1: FilesystemAbstraction,
+  fakeTreeRoot1: DirectoryNode,
+  globalFilesystemMapping1: Record<string, FilesystemNode>,
+  filesystem2: FilesystemAbstraction,
+  fakeTreeRoot2: DirectoryNode,
+  globalFilesystemMapping2: Record<string, FilesystemNode>,
+): Promise<[DiffTree, number]> {
+  const comparisonResult: DiffTree = {};
+
+  const comparisonResultSize = await createDiffTreeInternal(filesystem1, fakeTreeRoot1, globalFilesystemMapping1,
+                                                              filesystem2, fakeTreeRoot2, globalFilesystemMapping2,
+                                                              comparisonResult);
+  return [comparisonResult, comparisonResultSize];
+}
+
+// TODO RadStr: Move it into package, used in both backend and DiffTree editor
+// TODO RadStr: Use objects instead of passing in separate values
+/**
+ * Compares the {@link directory1} to {@link directory2}. That is the {@link result} will contain
+ *  the removed entries from {@link directory1} compared to {@link directory2} and same for changed.
+ *  The created ones will be those present in {@link directory2}, but not in {@link directory1}.
+ *
+ * @returns The number of nodes stored inside the {@link result} (that is the difftree) computed in the method call.
+ */
+async function createDiffTreeInternal(
+  filesystem1: FilesystemAbstraction,
+  directory1: DirectoryNode | undefined,
+  globalFilesystemMapping1: Record<string, FilesystemNode>,
+  filesystem2: FilesystemAbstraction,
+  directory2: DirectoryNode | undefined,
+  globalFilesystemMapping2: Record<string, FilesystemNode>,
+  result: DiffTree,
+): Promise<number> {
+  let resultSize: number = 0;
+
+  for (const [nodeName, nodeValue] of Object.entries(directory1?.content ?? {})) {
+    resultSize++;
+
+    const node2Value = directory2?.content[nodeName];
+    if (node2Value !== undefined && nodeValue.type !== node2Value.type) { // They are not of same type and both exists
+      console.error("Tree comparison error - Compared entries have the same name however they are of different type. One is file, while the other is directory");
+      throw new Error("Tree comparison error - Compared entries have the same name however they are of different type. One is file, while the other is directory");
+    }
+
+    const resourceComparisonResult: ResourceComparisonResult = node2Value === undefined ? "exists-in-old" : "exists-in-both";
+    const currentlyProcessedDiffFilesystemNode: ResourceComparison = {
+      childrenDiffTree: {},
+      datastoreComparisons: [],
+      resource: nodeValue,
+      resourceComparisonResult,
+    };
+    result[nodeName] = currentlyProcessedDiffFilesystemNode;
+
+    // Recursively process "subdirectories"
+    if (nodeValue.type === "directory") {
+      const subtreeSize = await createDiffTreeInternal(filesystem1, nodeValue, globalFilesystemMapping1,
+                                                          filesystem2, node2Value as (DirectoryNode | undefined), globalFilesystemMapping2,
+                                                          currentlyProcessedDiffFilesystemNode.childrenDiffTree);
+      resultSize += subtreeSize;
+    }
+
+    const processedDatastoresInSecondTree: Set<DatastoreInfo> = new Set();
+    for (const datastore1 of nodeValue.datastores) {
+      resultSize++;
+
+      const node2Datastore = node2Value === undefined ? undefined : getDatastoreInfoOfGivenDatastoreType(node2Value, datastore1.type);
+      if (node2Datastore !== undefined) {
+        processedDatastoresInSecondTree.add(node2Datastore);
+
+        if (await areDatastoresDifferent(filesystem1, nodeValue, filesystem2, node2Value as FileNode, datastore1)) {
+          const changed: DatastoreComparison = {
+            oldVersion: nodeValue,
+            newVersion: node2Value ?? null,
+            affectedDataStore: datastore1,
+            datastoreComparisonResult: "modified",
+          };
+          currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(changed);
+        }
+        else {
+          const same: DatastoreComparison = {
+            oldVersion: nodeValue,
+            newVersion: node2Value ?? null,
+            affectedDataStore: datastore1,
+            datastoreComparisonResult: "same",
+          };
+          currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(same);
+        }
+      }
+      else {
+        const removed: DatastoreComparison = {
+          oldVersion: nodeValue,
+          newVersion: null,
+          affectedDataStore: datastore1,
+          datastoreComparisonResult: "removed-in-new"
+        };
+        currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(removed);
+      }
+    }
+
+    // Add those datastores which are present only in the second tree
+    for (const datastore2 of node2Value?.datastores ?? []) {
+      if (!processedDatastoresInSecondTree.has(datastore2)) {
+        const created: DatastoreComparison = {
+          oldVersion: null,
+          newVersion: node2Value!,
+          affectedDataStore: datastore2,
+          datastoreComparisonResult: "created-in-new"
+        };
+        currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(created);
+        resultSize++;
+      }
+    }
+  }
+
+  // Find the filesystem nodes which are present only in the 2nd tree
+  for (const [nodeName, nodeValue] of Object.entries(directory2?.content ?? {})) {
+    if (result[nodeName] !== undefined) {
+      continue;
+    }
+
+    resultSize++;
+    const resourceComparisonResult: ResourceComparisonResult = "exists-in-new";
+    const currentlyProcessedDiffFilesystemNode: ResourceComparison = {
+      childrenDiffTree: {},
+      datastoreComparisons: [],
+      resource: nodeValue,
+      resourceComparisonResult,
+    };
+    result[nodeName] = currentlyProcessedDiffFilesystemNode;
+
+    if (nodeValue.type === "directory") {
+      const subtreeSize = await createDiffTreeInternal(filesystem1, undefined, globalFilesystemMapping1,
+                                                          filesystem2, nodeValue, globalFilesystemMapping2,
+                                                          currentlyProcessedDiffFilesystemNode.childrenDiffTree);
+      resultSize += subtreeSize;
+    }
+
+    for (const datastore of nodeValue.datastores) {
+      // The datastore is not present, since the parent filesystem node does not exist, then it means that all of the datastores are not present neither
+      const created: DatastoreComparison = {
+        datastoreComparisonResult: "created-in-new",
+        oldVersion: null,
+        newVersion: nodeValue,
+        affectedDataStore: datastore,
+      };
+      currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(created);
+      resultSize++;
+    }
+  }
+
+  return resultSize;
+}
+
+
+// TODO RadStr: Move it into package, used in both backend and DiffTree editor
+async function areDatastoresDifferent(
+  filesystem1: FilesystemAbstraction,
+  entry1: FilesystemNode,      // TODO RadStr: Maybe I don't need the entry itself? ... I probably dont when using path, but when using full name I do
+  filesystem2: FilesystemAbstraction,
+  entry2: FilesystemNode,      // TODO RadStr: Maybe I don't need the entry itself?
+  datastore: DatastoreInfo
+): Promise<boolean> {
+  // TODO RadStr: For now just assume, that there is always change
+  const content1 = await filesystem1.getDatastoreContent(entry1.fullTreePath, datastore.type, true);
+  const content2 = await filesystem2.getDatastoreContent(entry2.fullTreePath, datastore.type, true);
+
+  console.info({content1, content2});    // TODO RadStr: DEBUG Print
+
+  return !_.isEqual(content1, content2);
+}
+
+/**
+ * Based on ChatGPT - it removes every "K" property from the type recursively
+ */
+type DeepOmit<T, K extends PropertyKey> = {
+  [P in keyof T as P extends K ? never : P]:
+    T[P] extends object ? DeepOmit<T[P], K> : T[P];
+};
+
+/**
+ * Also ChatGPT
+ */
+function deepOmit<T extends object>(obj: T, keyToRemove: string): any {
+  if (Array.isArray(obj)) {
+    return obj.map(item => deepOmit(item, keyToRemove));
+  } else if (obj && typeof obj === "object") {
+    return Object.fromEntries(
+      Object.entries(obj)
+        .filter(([k]) => k !== keyToRemove)
+        .map(([k, v]) => [k, deepOmit(v, keyToRemove)])
+    );
+  }
+  return obj;
+}
+
+
+
+export function removeCircularDependenciesInDiffTree(diffTree: DiffTree) {
+  return deepOmit(diffTree, "parent");
+}
+
+
+/**
+ * @returns true if the given value equals true ... for some reason zod does not like booleans so we do it explictly
+ */
+export function stringToBoolean(value: string): boolean {
+  return value.toLowerCase() === "true";
 }

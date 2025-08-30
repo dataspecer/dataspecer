@@ -1,20 +1,19 @@
 import { simpleGit, SimpleGit } from "simple-git";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
+import { ROOT_DIRECTORY_FOR_ANY_GIT } from "../models/git-store-info.ts";
 
-export async function getCommonCommitInHistory(git: SimpleGit, commit1: string, commit2: string): Promise<string | null> {
-    try {
-        const result = await git.raw([
-            'merge-base',
-            commit1,
-            commit2
-        ]);
-        return result.trim(); // merge-base hash
-    }
-    catch (err) {
-        console.error('Error finding merge-base:', err);
-        return null;
-    }
+/**
+ * @throws Error on git failure
+ * @returns The last common git commit's hash
+ */
+export async function getCommonCommitInHistory(git: SimpleGit, commit1: string, commit2: string): Promise<string> {
+    const result = await git.raw([
+        "merge-base",
+        commit1,
+        commit2
+    ]);
+    return result.trim(); // merge-base hash
 }
 
 /**
@@ -90,11 +89,11 @@ export const createUniqueDirectory = (
 
     while (true) {
         const pathUuid = uuidv4();
-        const gitDirectoryToRemoveAfterWork = `./${cloneDirectoryNamePrefix}/${pathUuid}`;
+        const gitDirectoryToRemoveAfterWork = `${ROOT_DIRECTORY_FOR_ANY_GIT}/${cloneDirectoryNamePrefix}/${pathUuid}`;
         const gitInitialDirectoryParent = `${gitDirectoryToRemoveAfterWork}${branchSuffix}`;
         let gitInitialDirectory = `${gitInitialDirectoryParent}/${iri}`;
-        // We check for parent just to be sure, howevere it is highly unlikely that there was conflict.
-        if (!fs.existsSync(gitInitialDirectoryParent)) {
+        // We check for first unique part of path, if it exists
+        if (!fs.existsSync(gitDirectoryToRemoveAfterWork)) {
             fs.mkdirSync(gitInitialDirectory, { recursive: true });
             return {
                 gitDirectoryToRemoveAfterWork,

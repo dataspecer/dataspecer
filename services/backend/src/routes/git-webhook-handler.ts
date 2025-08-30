@@ -11,10 +11,12 @@ import { AvailableFilesystems, createFilesystemMappingRoot, FilesystemAbstractio
 import { isDatastoreForMetadata } from "../export-import/export-new.ts";
 import { getDatastoreInfoOfGivenDatastoreType } from "../export-import/filesystem-abstractions/implementations/ds-filesystem.ts";
 import _ from "lodash";
-import { dsPathJoin } from "../utils/git-utils.ts";
+import { createDiffTree, dsPathJoin } from "../utils/git-utils.ts";
 import { GitHubProvider } from "../git-providers/git-provider-instances/github.ts";
-import { resourceModel } from "../main.ts";
+import { mergeStateModel, resourceModel } from "../main.ts";
 import { updateDSRepositoryByPullingGit } from "./pull-remote-repository.ts";
+import { EditableType } from "../models/merge-state-model.ts";
+import { WEBHOOK_PATH_PREFIX } from "../models/git-store-info.ts";
 
 
 export const handleWebhook = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -32,7 +34,12 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
 
   console.info("dataForWebhookProcessing", dataForWebhookProcessing);
 
-  const isCloneSuccess = await updateDSRepositoryByPullingGit(iri, gitProvider, branch, cloneURL, "directory-for-webhooks", commits.length);
+  const resource = await resourceModel.getPackage(iri);
+  if (resource === null) {
+    return;
+  }
+
+  const isCloneSuccess = await updateDSRepositoryByPullingGit(iri, gitProvider, branch, cloneURL, WEBHOOK_PATH_PREFIX, resource.lastCommitHash, commits.length);
   // Actually we don't need to answer based on response, since this comes from git provider, only think we might need is to notify users that there was update
   return;
 });
@@ -178,17 +185,26 @@ async function saveChangesInDirectoryToBackend(directory: string, gitProvider: G
  *   b) If it has both .meta and .model create completely new resource - that is there will be new entry inside the package shown in manager
  *   c) Either only .meta or .model - skip it. We could try to somehow solve it, but we would probably end up in invalid state by some sequence of actions, so it is better to just skip it.
  * TODO RadStr: This should however account for collisions
+ * @returns True if there were conflicts, false otherwise
  */
-export async function saveChangesInDirectoryToBackendFinalVersion(directory: string, iri: string, gitProvider: GitProvider, shouldSetMetadataCache: boolean) {
+export async function saveChangesInDirectoryToBackendFinalVersion(
+  directory: string,
+  iri: string,
+  gitProvider: GitProvider,
+  shouldSetMetadataCache: boolean,
+  dsLastCommitHash: string,
+  gitLastCommitHash: string,
+  commonCommitHash: string,
+): Promise<boolean> {
   const rootLocation: FilesystemNodeLocation = {
     iri: iri,
     fullPath: directory,
     fullTreePath: "",
   };
   const gitFilesystem = await FilesystemFactory.createFileSystem([rootLocation], AvailableFilesystems.ClassicFilesystem, gitProvider);
-  const gitRoot = gitFilesystem.getRoot();    // TODO RadStr: This is the fake root though. but that should not matter
-  const rootDirectory = gitRoot;              // TODO RadStr: Just backwards compatibility with code so I don't have to change much
-  const rootDirectoryName = gitRoot.name;
+  const gitFakeRoot = gitFilesystem.getRoot();    // TODO RadStr: This is the fake root though. but that should not matter
+  const rootDirectory = gitFakeRoot;              // TODO RadStr: Just backwards compatibility with code so I don't have to change much
+  const rootDirectoryName = gitFakeRoot.name;
 
   const fakeRootOld = createFilesystemMappingRoot();
   const mapping: FilesystemMappingType = await createFileSystemMapping(fakeRootOld.content, fakeRootOld, directory, gitProvider, shouldSetMetadataCache);
@@ -198,11 +214,11 @@ export async function saveChangesInDirectoryToBackendFinalVersion(directory: str
   const filesystemNodeEntries = Object.entries(mapping);
   if (!(filesystemNodeEntries.length === 1 && filesystemNodeEntries[0][1].type === "directory")) {
     console.error("The mapping does not have root directory or the root is not a directory");
-    return;
+    return false;
   }
   const [rootDirectoryNameOld, rootDirectoryOld] = filesystemNodeEntries[0];
 
-  console.info("_.isEqual(rootDirectoryOld, gitRoot.content[0])", _.isEqual(rootDirectoryOld, gitRoot.content[0]));
+  console.info("_.isEqual(rootDirectoryOld, gitRoot.content[0])", _.isEqual(rootDirectoryOld, gitFakeRoot.content[0]));
 
 
 
@@ -218,7 +234,58 @@ export async function saveChangesInDirectoryToBackendFinalVersion(directory: str
 
   await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(rootDirectoryName, rootDirectory, directory, gitProvider);      // TODO RadStr: Maybe await is unnecessary
   // TODO RadStr: [WIP] Connect it to the conflict database entry
+  const dsFakeRoot = dsFilesystem.getRoot();
+  const dsRoot = Object.values(dsFakeRoot.content)[0];
+  const gitRoot = Object.values(gitFakeRoot.content)[0];
+  const dsPathToRootMeta = getMetadataDatastoreFile(dsRoot.datastores)?.fullPath;
+  const gitPathToRootMeta = getMetadataDatastoreFile(gitRoot.datastores)?.fullPath;
+  if (dsPathToRootMeta === undefined) {
+    throw new Error("The meta file for ds root is not present");
+  }
+  else if (gitPathToRootMeta === undefined) {
+    throw new Error("The meta file for git root is not present");
+  }
+
+  const [ diffTree, diffTreeSize ] = await createDiffTree(
+    dsFilesystem,
+    dsFakeRoot,
+    dsFilesystem.getGlobalFilesystemMap(),
+    gitFilesystem,
+    gitFakeRoot,
+    gitFilesystem.getGlobalFilesystemMap(),
+  );
+
+
+  await mergeStateModel.clearTable();     // TODO RadStr: Debug
+
+  const editable: EditableType = "mergeFrom";
+  const mergeStateInput = {
+    lastCommonCommitHash: commonCommitHash,
+    editable,
+    rootIriMergeFrom: dsRoot.metadataCache.iri ?? "",
+    rootFullPathToMetaMergeFrom: dsPathToRootMeta,
+    lastCommitHashMergeFrom: dsLastCommitHash,
+    filesystemTypeMergeFrom: AvailableFilesystems.DS_Filesystem,
+    //
+    rootIriMergeTo: gitRoot.metadataCache.iri ?? "",
+    rootFullPathToMetaMergeTo: gitPathToRootMeta,
+    lastCommitHashMergeTo: gitLastCommitHash,
+    filesystemTypeMergeTo: AvailableFilesystems.ClassicFilesystem,
+    changedInEditable: comparisonResult.changed,
+    removedInEditable: comparisonResult.removed,
+    createdInEditable: comparisonResult.created,
+    conflicts: comparisonResult.changed,
+    diffTree,
+    diffTreeSize,
+  };
+
+  // TODO RadStr: Just debug
+  const mergeStateId = await mergeStateModel.createMergeState(mergeStateInput);
+  console.info("Current merge state with:", await mergeStateModel.getMergeStateFromUUID(mergeStateId, true));
+  console.info("Current merge state without:", await mergeStateModel.getMergeStateFromUUID(mergeStateId, false));
   resourceModel.updateIsSynchronizedWithRemote(iri, false);
+
+  return true;
 
 
   // const rootLocation: FilesystemNodeLocation = {
@@ -364,7 +431,7 @@ async function saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(
   }
 }
 
-// TODO RadStr: Move elsewhere to code
+// TODO RadStr: Move elsewhere in code. Used both in backend and DiffTree dialog
 export type ComparisonData = {
   oldVersion: FilesystemNode | null;
   affectedDataStore: DatastoreInfo;
@@ -664,7 +731,7 @@ function setMetadataCache(node: FilesystemNode, directory: string, shouldSetMeta
   if (shouldSetMetadataCache) {
     const metadataDatastore = getMetadataDatastoreFile(node.datastores);
     if (metadataDatastore === undefined) {
-      console.error("Metadata datastore is missing, that is there is no .meta file or its equivalent (depending on filesystem)");
+      console.error("Metadata datastore is missing, that is there is no .meta file or its equivalent (depending on filesystem)", { node, directory, datastores: node.datastores });
       return;
     }
     const fullPath = `${directory}${metadataDatastore.afterPrefix}`;

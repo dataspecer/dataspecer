@@ -19,15 +19,20 @@ export const getDataspecerTree = asyncHandler(async (request: express.Request, r
   const dsFilesystem = await FilesystemFactory.createFileSystem([rootLocation], AvailableFilesystems.DS_Filesystem, null);
   // TODO RadStr: ... Actually sending the root is enough probably
   const globalFilesystemMapping = dsFilesystem.getGlobalFilesystemMap();
-  removeCircuclarDependenciesFromFilesystemAbstraction(globalFilesystemMapping)
-  response.json(globalFilesystemMapping);
+  const strippedMapping = removeCircularDependenciesFromFilesystemAbstraction(globalFilesystemMapping)
+  response.json(strippedMapping);
 });
 
 
-function removeCircuclarDependenciesFromFilesystemAbstraction(globalFilesystemMapping: Record<string, FilesystemNode>) {
-  for (const node of Object.values(globalFilesystemMapping)) {
-    node.parent = null;
+/**
+ * @returns Created copy of {@link globalFilesystemMapping} with parent in each node removed and therefore removing circular dependencies.
+ */
+function removeCircularDependenciesFromFilesystemAbstraction(globalFilesystemMapping: Record<string, FilesystemNode>): Record<string, Omit<FilesystemNode, "parent>">> {
+  const strippedMapping: Record<string, Omit<FilesystemNode, "parent>">> = {};
+
+  for (const [key, {parent, ...rest}] of Object.entries(globalFilesystemMapping)) {
+    strippedMapping[key] = rest as Omit<FilesystemNode, "parent>">;
   }
 
-  return globalFilesystemMapping;
+  return strippedMapping;
 }

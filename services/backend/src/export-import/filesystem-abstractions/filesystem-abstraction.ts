@@ -209,9 +209,10 @@ export function createEmptyFilesystemMapping(): FilesystemMappingType {
   return {};
 }
 
+// TODO RadStr: Again move into common pakcage, it is also used as type on frontend
 export enum AvailableFilesystems {
-  DS_Filesystem,
-  ClassicFilesystem
+  DS_Filesystem = "ds-filesystem",
+  ClassicFilesystem = "classic-filesystem",
 }
 
 export class FilesystemFactory {

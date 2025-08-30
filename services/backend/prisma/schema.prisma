@@ -81,6 +81,60 @@ model Resource {
 }
 
 
+model MergeState {
+  // Internal numerical ID for database purposes
+  id Int @id @default(autoincrement())
+
+  uuid String @unique
+
+  // Note: After thinking about it for some time, there are 3 possible situations when merge occurs
+  //  1) Pulling - Here we have local branch, perform git pull (or rather git clone) and try to merge into our local branch
+  //       - In this case we want to modify our local branch in such a way that eliminate all conflicts and can finally put in the remote changes
+  //  2) Pushing - Here we have local branch with changes and perform git clone followed by git push
+  //       - In this case we may get conflicts from the remote, if there were some new coomits. So we want to once again modify our local branch by incorporating remote changes
+  //       - So here it was reversed, that is we were merging from our local branch and into remote branch
+  //  3) Manually choosing mergeFrom and mergeTo
+  //       - Here both branches are local, however we would still like to modify only one. So here we choose that the mergeTo will be editable.
+  // So what to take from this: We always want to modify our local DS branch and the remote to be unchanged
+  //  - However local branch can be either mergeFrom or mergeTo. And that means that "mergeTo !== must be editable", which I thought is the case at first
+  lastCommitHashMergeTo String @default("")
+  rootFullPathToMetaMergeTo String @default("")
+  rootIriMergeTo String @default("")
+  // Only values from AvailableFilesystem are allowed (for now "ds-filesystem" and "classic-filesystem")
+  filesystemTypeMergeTo String
+
+  lastCommitHashMergeFrom String @default("")
+  rootFullPathToMetaMergeFrom String @default("")
+  rootIriMergeFrom String @default("")
+  // Only values from AvailableFilesystem are allowed (for now "ds-filesystem" and "classic-filesystem")
+  filesystemTypeMergeFrom String
+
+  lastCommonCommitHash String @default("")
+
+  // Can be either "mergeFrom" or "mergeTo"
+  editable String
+
+  conflictCount Int
+  mergeStateData MergeStateData?
+}
+
+// This is separate table, since we want to sometimes only list the overview of the MergeState
+// And we don't actually care about the data, that is the diffTree, conflicts, etc.
+model MergeStateData {
+  id Int @id @default(autoincrement())
+
+  mergeStateId Int   @unique
+  mergeState   MergeState  @relation(fields: [mergeStateId], references: [id], onDelete: Cascade)
+
+  changedInEditable String @default("[]")
+  removedInEditable String @default("[]")
+  createdInEditable String @default("[]")
+  conflicts String @default("[]")
+  diffTree String @default("{}")
+  diffTreeSize Int @default(0)
+}
+
+
 // These tables are preserved for migration purposes.
 
 // Represents a data specification with additional metadata needed for the
