@@ -59,10 +59,11 @@ export interface MergeState {
   removedInEditable?: ComparisonData[];
   createdInEditable?: ComparisonData[];
   conflicts?: ComparisonData[];
-  conflictCount: number,
+  unresolvedConflicts: ComparisonData[];
+  conflictCount: number;
 
   diffTreeData?: {
-    diffTree: DiffTree,
+    diffTree: DiffTree;
     diffTreeSize: number;   // TODO RadStr: Maybe not needed can just compute on client from diffTree
   };
 }
@@ -78,32 +79,46 @@ export class MergeStateModel {
     this.prismaClient = prismaClient;
   }
 
-  private removeRepository(filesystem: AvailableFilesystems, pathToRootMetaFile: string) {
+  private removeRepository(filesystem: AvailableFilesystems, pathToRootMetaFile: string, shouldPrintErrorToConsole: boolean) {
     if (filesystem !== AvailableFilesystems.ClassicFilesystem) {
       return;
     }
 
-    const resolvedPathToRootMetaFile = path.resolve(pathToRootMetaFile);
-    const rootGitDirectory = ALL_GIT_REPOSITORY_ROOTS.find(root => resolvedPathToRootMetaFile.startsWith(root));
-    if (rootGitDirectory === undefined) {
-      throw new Error("Could not remove git directory since it is not in the list of existing git roots");
+
+    try {
+      const resolvedPathToRootMetaFile = path.resolve(pathToRootMetaFile);
+      const rootGitDirectory = ALL_GIT_REPOSITORY_ROOTS.find(root => resolvedPathToRootMetaFile.startsWith(root));
+      if (rootGitDirectory === undefined) {
+        throw new Error("Could not remove git directory since it is not in the list of existing git roots");
+      }
+      let relative = path.relative(rootGitDirectory, resolvedPathToRootMetaFile);
+
+      const parts = relative.split(path.sep);
+      const firstUniquePartOfPath = parts[0];
+      const startIndexInPath = resolvedPathToRootMetaFile.indexOf(firstUniquePartOfPath, rootGitDirectory.length);
+      const dirNameToRemove = resolvedPathToRootMetaFile.substring(0, startIndexInPath + firstUniquePartOfPath.length);
+
+      fs.rmSync(dirNameToRemove, { recursive: true, force: true });
+      return true;
     }
-    let relative = path.relative(rootGitDirectory, resolvedPathToRootMetaFile);
+    catch(error) {
+      // Actually since I am using force, the rmSync probably should not throw error
+      if (shouldPrintErrorToConsole) {
+        // TODO RadStr: Debug prints
+        console.error("The repository could not be removed:", pathToRootMetaFile);
+        console.error("The error:", error);
+      }
 
-    const parts = relative.split(path.sep);
-    const firstUniquePartOfPath = parts[0];
-    const startIndexInPath = resolvedPathToRootMetaFile.indexOf(firstUniquePartOfPath, rootGitDirectory.length);
-    const dirNameToRemove = resolvedPathToRootMetaFile.substring(0, startIndexInPath + firstUniquePartOfPath.length);
-
-    fs.rmSync(dirNameToRemove, { recursive: true, force: true });
+      return false;
+    }
   }
 
   async clearTable() {
     // TODO RadStr: It is important to also remove the repository together with the mergeState
     const mergeStates = await this.prismaClient.mergeState.findMany({include: {mergeStateData: false}});
     for (const mergeState of mergeStates) {
-      this.removeRepository(mergeState.filesystemTypeMergeFrom as AvailableFilesystems, mergeState.rootFullPathToMetaMergeFrom);
-      this.removeRepository(mergeState.filesystemTypeMergeTo as AvailableFilesystems, mergeState.rootFullPathToMetaMergeTo);
+      this.removeRepository(mergeState.filesystemTypeMergeFrom as AvailableFilesystems, mergeState.rootFullPathToMetaMergeFrom, true);
+      this.removeRepository(mergeState.filesystemTypeMergeTo as AvailableFilesystems, mergeState.rootFullPathToMetaMergeTo, true);
       await this.prismaClient.mergeState.delete({where: {id: mergeState.id}});
     }
   }
@@ -277,6 +292,7 @@ export class MergeStateModel {
               changedInEditable: changedInEditableAsString,
               removedInEditable: removedInEditableAsString,
               conflicts: conflictsAsString,
+              unresolvedConflicts: conflictsAsString,
               diffTree: diffTreeAsString,
               diffTreeSize: inputData.diffTreeSize,
             }
@@ -288,14 +304,13 @@ export class MergeStateModel {
   }
 
 
-  async updateMergeState(
+  async updateMergeStateWithObjects(
     uuid: string,
     diffTree: DiffTree,
-    diffTreeSize: number,
     changedInEditable: ComparisonData[],
     removedInEditable: ComparisonData[],
     createdInEditable: ComparisonData[],
-    conflicts: ComparisonData[]
+    unresolvedConflicts: ComparisonData[],
   ) {
     const mergeState = await this.prismaClient.mergeState.findFirst({where: {uuid}});
     if (mergeState === null) {
@@ -304,11 +319,11 @@ export class MergeStateModel {
 
     const {
       changedInEditableAsString,
-      conflictsAsString,
+      conflictsAsString: unresolvedConflictsAsString,
       createdInEditableAsString,
       diffTreeAsString,
       removedInEditableAsString
-    } = this.convertMergeStateDataToString(changedInEditable, removedInEditable, createdInEditable, conflicts, diffTree);
+    } = this.convertMergeStateDataToString(changedInEditable, removedInEditable, createdInEditable, unresolvedConflicts, diffTree);
 
     await this.prismaClient.mergeState.update({
         where: { uuid: uuid },
@@ -318,9 +333,37 @@ export class MergeStateModel {
               changedInEditable: changedInEditableAsString,
               removedInEditable: removedInEditableAsString,
               createdInEditable: createdInEditableAsString,
-              conflicts: conflictsAsString,
+              unresolvedConflicts: unresolvedConflictsAsString,
               diffTree: diffTreeAsString,
-              diffTreeSize: diffTreeSize,
+            }
+          }
+        },
+    });
+  }
+
+  async updateMergeStateWithStrings(
+    uuid: string,
+    diffTree: string,
+    changedInEditable: string,
+    removedInEditable: string,
+    createdInEditable: string,
+    unresolvedConflicts: string,
+  ) {
+    const mergeState = await this.prismaClient.mergeState.findFirst({where: {uuid}});
+    if (mergeState === null) {
+      throw new Error(`There is no such MergeState with uuid: ${uuid}`);
+    }
+
+    await this.prismaClient.mergeState.update({
+        where: { uuid: uuid },
+        data: {
+          mergeStateData: {
+            update: {
+              changedInEditable,
+              removedInEditable,
+              createdInEditable,
+              unresolvedConflicts,
+              diffTree,
             }
           }
         },
@@ -338,6 +381,7 @@ export class MergeStateModel {
     const removedInEditable = includesMergeStateData ? JSON.parse(prismaMergeState.mergeStateData!.removedInEditable) : undefined;
     const createdInEditable = includesMergeStateData ? JSON.parse(prismaMergeState.mergeStateData!.createdInEditable) : undefined;
     const conflicts = includesMergeStateData ? JSON.parse(prismaMergeState.mergeStateData!.conflicts) : undefined;
+    const unresolvedConflicts = includesMergeStateData ? JSON.parse(prismaMergeState.mergeStateData!.unresolvedConflicts) : undefined;
     const diffTree = includesMergeStateData ? JSON.parse(prismaMergeState.mergeStateData!.diffTree): undefined;
 
     const editable = prismaMergeState.editable;
@@ -365,6 +409,7 @@ export class MergeStateModel {
       removedInEditable,
       createdInEditable,
       conflicts,
+      unresolvedConflicts,
       conflictCount: prismaMergeState.conflictCount,
       diffTreeData: includesMergeStateData ? {
         diffTree,
