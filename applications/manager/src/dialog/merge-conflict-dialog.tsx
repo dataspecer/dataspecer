@@ -56,7 +56,7 @@ export const MergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialogProp
 
 const renderMergeState = (mergeState: MergeState, openModal: OpenBetterModal) => {
   return <div className="flex items-baseline space-x-2">
-      <button onClick={() => openModal(TextDiffEditorDialog, {initialOriginalResourceNameInfo: {resourceIri: mergeState.rootIriMergeFrom, modelName: ""}, initialModifiedResourceIri: {resourceIri: mergeState.rootIriMergeTo, modelName: ""}})}>
+      <button onClick={() => openModal(TextDiffEditorDialog, {initialOriginalResourceNameInfo: {resourceIri: mergeState.rootIriMergeFrom, modelName: ""}, initialModifiedResourceIri: {resourceIri: mergeState.rootIriMergeTo, modelName: ""}, editable: mergeState.editable})}>
         <span className="text-lg font-medium">{mergeState.rootIriMergeFrom}</span>
         <span className="text-sm text-gray-500">{mergeState.filesystemTypeMergeFrom}</span>
         <span className="text-sm text-gray-500">{"->"}</span>

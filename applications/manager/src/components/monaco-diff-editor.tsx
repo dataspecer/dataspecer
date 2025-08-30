@@ -4,11 +4,13 @@ import RawMonacoEditor, { DiffEditor } from "@monaco-editor/react";
 import * as monaco from 'monaco-editor';
 import { handleEditorWillMount } from "./monaco-editor";
 import { useTheme } from "next-themes";
+import { EditableType } from "./directory-diff";
 
 export const MonacoDiffEditor: FC<{
   refs: React.MutableRefObject<{ editor: monaco.editor.IStandaloneDiffEditor } | undefined>,
   originalContent: string,
   modifiedContent: string,
+  editable: EditableType,
   language: string,
 } & React.ComponentProps<typeof RawMonacoEditor>> = (props) => {
   const { resolvedTheme } = useTheme();
@@ -31,6 +33,8 @@ export const MonacoDiffEditor: FC<{
         minimap: {
           enabled: false
         },
+        originalEditable: props.editable === "mergeFrom",
+        readOnly: props.editable === "mergeFrom",
       }}
     />
   </div>;

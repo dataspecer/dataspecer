@@ -49,6 +49,7 @@ import { linkToExistingGitRepository } from "./routes/link-to-existing-remote-gi
 import { MergeStateModel } from "./models/merge-state-model.ts";
 import { getMergeState } from "./routes/get-merge-state.ts";
 import { getMergeStates } from "./routes/get-merge-states.ts";
+import { updateMergeState } from "./routes/update-merge-state.ts";
 
 // Create application models
 
@@ -204,8 +205,7 @@ application.get(apiBasename + "/git/dataspecer-package-tree", getDataspecerTree)
 application.get(apiBasename + "/git/get-datastore-content", getDatastoreContentDirectly);
 application.get(apiBasename + "/git/get-merge-state", getMergeState);
 application.get(apiBasename + "/git/get-merge-states", getMergeStates);
-// TODO RadStr: Implement update-merge-difftree
-// application.get(apiBasename + "/update-merge-difftree", updateMergeDiffTree);
+application.get(apiBasename + "/update-merge-state", updateMergeState);
 
 // Test GIT
 application.get(apiBasename + "/git/deprecated-test", currentSession, tryCommitToGitRepo);

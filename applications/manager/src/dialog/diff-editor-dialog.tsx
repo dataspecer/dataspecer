@@ -8,7 +8,7 @@ import { useOnBeforeUnload } from "@/hooks/use-on-before-unload";
 import { useOnKeyDown } from "@/hooks/use-on-key-down";
 import { packageService } from "@/package";
 import * as monaco from 'monaco-editor';
-import { AvailableFilesystems, DatastoreInfo, DiffTreeVisualization } from "@/components/directory-diff";
+import { AvailableFilesystems, DatastoreInfo, DiffTreeVisualization, EditableType } from "@/components/directory-diff";
 import { Loader, RotateCw } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabsContent } from "@radix-ui/react-tabs";
@@ -19,12 +19,13 @@ import { MonacoDiffEditor } from "@/components/monaco-diff-editor";
 export type ChangeActiveModelMethod = (
   originalDatastoreInfo: DatastoreInfo,
   modifiedDatastoreInfo: DatastoreInfo,
-  useCache: boolean
+  useCache: boolean,
 ) => Promise<void>;
 
 type TextDiffEditorDialogProps = {
   initialOriginalResourceNameInfo: DataResourceNameInfo,
   initialModifiedResourceIri: DataResourceNameInfo,
+  editable: EditableType,
 } & BetterModalProps<{
   newResourceContent: string | undefined,
 }>;
@@ -63,7 +64,7 @@ function getDataResourceInCache(cache: CacheContentMap, dataResourceNameInfo: Da
 }
 
 
-export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialModifiedResourceIri, isOpen, resolve, }: TextDiffEditorDialogProps) => {
+export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialModifiedResourceIri, editable, isOpen, resolve, }: TextDiffEditorDialogProps) => {
   const monacoEditor = useRef<{editor: monaco.editor.IStandaloneDiffEditor}>(undefined);
 
   const [cacheForOriginalTextContent, setCacheForOriginalTextContent] = useState<CacheContentMap>({});
@@ -133,11 +134,12 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
       // TODO RadStr: We have to extend the API by types  - text, JSON, YAML, ...
 
       // TODO RadStr: Copy-paste for modified and old
+      // TODO RadStr: Also hardcoded the filesystems just for now
       const newOriginalQueryAsObject = {
         pathToDatastore: encodeURIComponent(newOriginalDatastoreInfo.fullPath),
         format: newOriginalDatastoreInfo.format,
         type: newOriginalDatastoreInfo.type,
-        filesystem: AvailableFilesystems.DS_Filesystem,
+        filesystem: AvailableFilesystems.ClassicFilesystem,
         shouldConvertToDatastoreFormat: true,
       };
 
@@ -160,7 +162,7 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
         pathToDatastore: encodeURIComponent(newModifiedDatastoreInfo.fullPath),
         format: newModifiedDatastoreInfo.format,
         type: newModifiedDatastoreInfo.type,
-        filesystem: AvailableFilesystems.ClassicFilesystem,
+        filesystem: AvailableFilesystems.DS_Filesystem,
         shouldConvertToDatastoreFormat: true,
       };
 
@@ -374,7 +376,7 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
                       <RotateCw className="flex ml-1 h-4 w-4" onClick={() => reloadModelsDataFromBackend()} />
                       {/* The h-screen is needed otherwise the monaco editor is not shown at all */}
                       {/* Also small note - there is loading effect when first starting up the editor, it is not any custom made functionality */}
-                      <MonacoDiffEditor className="flex-1 -ml-16 h-screen" refs={monacoEditor} originalContent={activeOriginalContent} modifiedContent={activeModifiedContent} language="text" />
+                      <MonacoDiffEditor className="flex-1 -ml-16 h-screen" refs={monacoEditor} originalContent={activeOriginalContent} editable={editable} modifiedContent={activeModifiedContent} language="text" />
                     </TabsContent>
                   </div>
                 }

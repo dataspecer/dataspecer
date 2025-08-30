@@ -252,25 +252,25 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
     created,
     removed
   } = await compareTrees(
-    dsFilesystem, dsFakeRoot, dsFilesystem.getGlobalFilesystemMap(),
-    gitFilesystem, gitFakeRoot, gitFilesystem.getGlobalFilesystemMap());
+    gitFilesystem, gitFakeRoot, gitFilesystem.getGlobalFilesystemMap(),
+    dsFilesystem, dsFakeRoot, dsFilesystem.getGlobalFilesystemMap());
 
   await mergeStateModel.clearTable();     // TODO RadStr: Debug
 
-  const editable: EditableType = "mergeFrom";
+  const editable: EditableType = "mergeTo";
 
   const mergeStateInput = {
     lastCommonCommitHash: commonCommitHash,
     editable,
-    rootIriMergeFrom: dsRoot.metadataCache.iri ?? "",
-    rootFullPathToMetaMergeFrom: dsPathToRootMeta,
-    lastCommitHashMergeFrom: dsLastCommitHash,
-    filesystemTypeMergeFrom: AvailableFilesystems.DS_Filesystem,
+    rootIriMergeFrom: gitRoot.metadataCache.iri ?? "",
+    rootFullPathToMetaMergeFrom: gitPathToRootMeta,
+    lastCommitHashMergeFrom: gitLastCommitHash,
+    filesystemTypeMergeFrom: AvailableFilesystems.ClassicFilesystem,
     //
-    rootIriMergeTo: gitRoot.metadataCache.iri ?? "",
-    rootFullPathToMetaMergeTo: gitPathToRootMeta,
-    lastCommitHashMergeTo: gitLastCommitHash,
-    filesystemTypeMergeTo: AvailableFilesystems.ClassicFilesystem,
+    rootIriMergeTo: dsRoot.metadataCache.iri ?? "",
+    rootFullPathToMetaMergeTo: dsPathToRootMeta,
+    lastCommitHashMergeTo: dsLastCommitHash,
+    filesystemTypeMergeTo: AvailableFilesystems.DS_Filesystem,
     changedInEditable: changed,
     removedInEditable: removed,
     createdInEditable: created,

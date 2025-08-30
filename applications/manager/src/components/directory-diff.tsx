@@ -25,7 +25,7 @@ export type ComparisonData = {
 
 
 // TODO RadStr: Put to package, used both in backend and DiffTree dialog
-type EditableType = "mergeFrom" | "mergeTo";
+export type EditableType = "mergeFrom" | "mergeTo";
 
 
 // TODO RadStr: Put into package, used both in backend and in client in the difftree dialog
@@ -50,6 +50,7 @@ export interface MergeState {
   removedInEditable?: ComparisonData[];
   createdInEditable?: ComparisonData[];
   conflicts?: ComparisonData[];
+  unresolvedConflicts?: ComparisonData[];
   conflictCount: number,
 
   diffTreeData?: {
@@ -445,22 +446,39 @@ type RenderNode = {
   isReactElementToRenderRenderedAsSelected?: boolean,
   fullDatastoreInfoInOriginalTree: DatastoreInfo | null,      // TODO RadStr: For now keep together with the ResourceName stuff - but in te end only DatastoreInfo will be enough
   fullDatastoreInfoInModifiedTree: DatastoreInfo | null,
+  isInConflict: boolean,
+  treeType: TreeType,
 };
-type RenderNodeWithAdditionalMethods = RenderNode & { changeActiveModel: ChangeActiveModelMethod };
+type RenderNodeWithAdditionalData = RenderNode & {
+  changeActiveModel: ChangeActiveModelMethod,
+  shouldShowConflicts: boolean,
+};
 
 type RenderStatus = "same" | "modified" | "created" | "removed";
 type TreeType = "old" | "new";
 
 // @ts-ignore TODO RadStr: For now
-function createTreeRepresentationsForRendering(diffTree: DiffTree): { oldRenderTree: RenderTree, newRenderTree: RenderTree } {
-  const oldRenderTree = createTreeRepresentationForRendering(diffTree, "old");
-  const newRenderTree = createTreeRepresentationForRendering(diffTree, "new");
+function createTreeRepresentationsForRendering(conflicts: ComparisonData[], diffTree: DiffTree): { oldRenderTree: RenderTree, newRenderTree: RenderTree } {
+  const oldRenderTree = createTreeRepresentationForRendering(conflicts, diffTree, "old");
+  const newRenderTree = createTreeRepresentationForRendering(conflicts, diffTree, "new");
   return { oldRenderTree, newRenderTree };
 }
 
+type DatastoreRenderRepresentationsData = {
+  datastoresRenderRepresentations: RenderTree,
+  /**
+   * True if there exists at least one node in the {@link datastoresRenderRepresentations}, which is in conflict
+   */
+  hasDatastoreWithConflict: boolean,
+};
 
-function createDatastoresRenderRepresentations(datastoreComparisons: DatastoreComparison[], treeToExtract: TreeType): RenderTree {
+function createDatastoresRenderRepresentations(
+  conflicts: ComparisonData[],
+  datastoreComparisons: DatastoreComparison[],
+  treeToExtract: TreeType
+): DatastoreRenderRepresentationsData {
   const datastoresRenderRepresentations: RenderTree = [];
+  let hasDatastoreWithConflict: boolean = false;
 
   for (const datastoreComparison of datastoreComparisons) {
     let status: RenderStatus;
@@ -536,6 +554,11 @@ function createDatastoresRenderRepresentations(datastoreComparisons: DatastoreCo
       null :
       getDatastoreInfoOfGivenDatastoreType(datastoreComparison.newVersion, datastoreComparison.affectedDataStore.type) ?? null;
 
+    const isInConflict =  conflicts.findIndex(conflict => conflict.affectedDataStore.fullPath === datastoreComparison.affectedDataStore.fullPath) !== -1;
+    if (isInConflict) {
+      hasDatastoreWithConflict = true;
+    }
+
     const datastoreRenderNode: RenderNode = {
       id: (datastoreComparison?.newVersion?.fullTreePath ?? datastoreComparison?.oldVersion?.fullTreePath ?? "unknown") + datastoreComparison.affectedDataStore.fullName + "-" + treeToExtract,
       name: datastoreComparison.affectedDataStore.fullName,
@@ -548,19 +571,21 @@ function createDatastoresRenderRepresentations(datastoreComparisons: DatastoreCo
 
       fullDatastoreInfoInOriginalTree,
       fullDatastoreInfoInModifiedTree,
+      isInConflict,
+      treeType: treeToExtract,
     };
     datastoresRenderRepresentations.push(datastoreRenderNode);
   }
 
-  return datastoresRenderRepresentations;
+  return { datastoresRenderRepresentations, hasDatastoreWithConflict };
 }
 
-function createTreeRepresentationForRendering(diffTree: DiffTree, treeToExtract: TreeType): RenderTree {
+function createTreeRepresentationForRendering(conflicts: ComparisonData[], diffTree: DiffTree, treeToExtract: TreeType): RenderTree {
   const renderTree: RenderTree = [];
 
   for (const [name, node] of Object.entries(diffTree)) {
-    const children = createTreeRepresentationForRendering(node.childrenDiffTree, treeToExtract);
-    const datastoresRenderRepresentations = createDatastoresRenderRepresentations(node.datastoreComparisons, treeToExtract);
+    const children = createTreeRepresentationForRendering(conflicts, node.childrenDiffTree, treeToExtract);
+    const { datastoresRenderRepresentations, hasDatastoreWithConflict } = createDatastoresRenderRepresentations(conflicts, node.datastoreComparisons, treeToExtract);
 
     let status: RenderStatus;
     if (node.resourceComparisonResult === "exists-in-both") {
@@ -607,6 +632,8 @@ function createTreeRepresentationForRendering(diffTree: DiffTree, treeToExtract:
       // TODO RadStr: The path as mentioned above
       // fullPathInOldTree: "Empty since we fetch only datastores",
       // fullPathInNewTree: "Empty since we fetch only datastores",
+      isInConflict: hasDatastoreWithConflict,
+      treeType: treeToExtract,
     };
     renderTree.push(renderNode);
   }
@@ -617,7 +644,7 @@ function StyledNode({
   node,
   style,
   dragHandle,
-}: NodeRendererProps<RenderNodeWithAdditionalMethods>) {
+}: NodeRendererProps<RenderNodeWithAdditionalData>) {
   let color = "black";
   let resourceExists: boolean = true;
 
@@ -635,15 +662,18 @@ function StyledNode({
   const isExpandable = node.data.dataSourceType !== "datastore";
   const textClassName = resourceExists ? "" : "line-through";
 
-  let icon: string;
+  let icon: string = "";
+  if (node.data.shouldShowConflicts) {
+    icon = node.data.isInConflict ? "⚠️" : "";
+  }
   if (node.data.dataSourceType == "datastore") {
-    icon = "📄";
+    icon += "📄";
   }
   else if (node.data.dataSourceType === "directory") {
-    icon = "📂";
+    icon += "📂";
   }
   else if (node.data.dataSourceType === "file") {
-    icon = "📚";
+    icon += "📚";
   }
   else {
     throw new Error(`Programmer error, using unknown data source type: ${node.data.dataSourceType}`);
@@ -698,6 +728,7 @@ function StyledNode({
         }
       }}
     >
+      {node.data.treeType === "old" ? null : <button onClick={() => alert("AA")}>Click me</button>}
       {icon}
       <span className={textClassName}>{node.data.name}</span>
     </div>
@@ -767,7 +798,7 @@ class FilesystemAbstractionMockupImplmentation implements FilesystemAbstraction 
 // @ts-ignore TODO RadStr: Remove I guess, but it was useful
 const getOtherTreeType = (tree: TreeType) => tree === "old" ? "new" : "old";
 
-const createStyledNode = (props: NodeRendererProps<RenderNode>, changeActiveModelData: ChangeActiveModelMethod) => {
+const createStyledNode = (props: NodeRendererProps<RenderNode>, changeActiveModelData: ChangeActiveModelMethod, shouldShowConflicts: boolean) => {
   // TODO RadStr: Don't do this can possibly introduce problems and actually does not improve performance - just remove
   // const nodeData = props.node.data;
   // if (useCachedStyledNode && props.node.data.reactElementToRender !== undefined && (nodeData.isReactElementToRenderRenderedAsSelected === props.node.isSelected)) {
@@ -775,8 +806,9 @@ const createStyledNode = (props: NodeRendererProps<RenderNode>, changeActiveMode
   //   return cachedReactElementToRender;
   // }
 
-  const extendedProps: NodeRendererProps<RenderNodeWithAdditionalMethods> = props as any;
+  const extendedProps: NodeRendererProps<RenderNodeWithAdditionalData> = props as any;
   extendedProps.node.data.changeActiveModel = changeActiveModelData;
+  extendedProps.node.data.shouldShowConflicts = shouldShowConflicts;
   return <StyledNode {...extendedProps} />;
 }
 
@@ -805,6 +837,12 @@ export const DiffTreeVisualization = (props: {
 
   const isProgrammaticFocus = useRef(false);
   const programmaticUnselectTheStopTree = useRef<TreeType | null>(null);
+
+  const [shouldShowConflicts, setShouldShowConflicts] = useState<boolean>(false);
+
+  const handleShowConflictsCheckboxChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
+    setShouldShowConflicts(event.target.checked);
+  };
 
   const changeActiveModel = props.changeActiveModel;
 
@@ -910,11 +948,13 @@ export const DiffTreeVisualization = (props: {
       const fetchedMergeState = await fetchMergeState(props.originalDataResourceNameInfo.resourceIri, props.modifiedDataResourceNameInfo.resourceIri);
       const fetchedDiffTree = fetchedMergeState.diffTreeData!.diffTree;
       const fetchedDiffTreeSize = fetchedMergeState.diffTreeData!.diffTreeSize;
+      // TODO RadStr: Probably also add the option to make resource again in conflict ... but will it anyone ever use though?
+      const fetchedConflicts = fetchedMergeState.unresolvedConflicts ?? [];
       setDiffTree(fetchedDiffTree);
       setDiffTreeNodeCount(fetchedDiffTreeSize);
       console.info({ fetchedDiffTree });
 
-      const { oldRenderTree: computedOldRenderTree, newRenderTree: computedNewRenderTree } = createTreeRepresentationsForRendering(fetchedDiffTree);
+      const { oldRenderTree: computedOldRenderTree, newRenderTree: computedNewRenderTree } = createTreeRepresentationsForRendering(fetchedConflicts, fetchedDiffTree);
       console.info({ computedOldRenderTree, computedNewRenderTree } );     // TODO RadStr: Deug print
       setOldRenderTree(computedOldRenderTree);
       setNewRenderTree(computedNewRenderTree);
@@ -958,12 +998,25 @@ export const DiffTreeVisualization = (props: {
   const treeRowHeightMultiplier = diffTreeNodeCount + 2;    // We have to add a little because there is some padding
 
   return (
+    <div className="h-full">
+    <div >
+      <label className="flex items-center">
+        <input
+          type="checkbox"
+          checked={shouldShowConflicts}
+          onChange={handleShowConflictsCheckboxChange}
+          className="w-4 h-4"
+        />
+        {/* TODO RadStr: Localization */}
+        <span>{shouldShowConflicts ? "Showing conflicts" : "Not showing conflicts"}</span>
+      </label>
+    </div>
     <div className="flex gap-1 h-full">
       <div className="flex-1 border border-stone-200 h-full" style={{height: treeRowHeight*treeRowHeightMultiplier}}>
         <h3>Old:</h3>
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
-            <Tree children={(props) => createStyledNode(props, changeActiveModel)}
+            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldShowConflicts)}
                   ref={oldTreeRef} data={oldRenderTree} width={"100%"}
                   onSelect={(nodes) => onNodesSelect(nodes, "old")}
                   onFocus={(node) => onNodeFocus(node, "old")}
@@ -978,7 +1031,7 @@ export const DiffTreeVisualization = (props: {
         <h3>New:</h3>
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
-            <Tree children={(props) => createStyledNode(props, changeActiveModel)}
+            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldShowConflicts)}
                   ref={newTreeRef} data={newRenderTree} width={"100%"}
                   onSelect={(nodes) => onNodesSelect(nodes, "new")}
                   onFocus={(node) => onNodeFocus(node, "new")}
@@ -990,14 +1043,14 @@ export const DiffTreeVisualization = (props: {
         }
       </div>
     </div>
+    </div>
   );
 }
 
 
 function renderTreeWithLoading(isLoadingTreeStructure: boolean, treeComponent: React.ReactElement) {
-  return isLoadingTreeStructure ?
-    <Loader className="mr-2 h-4 w-4 animate-spin" /> :
+  return isLoadingTreeStructure ? <Loader className="mr-2 h-4 w-4 animate-spin" /> :
     <div>
       {treeComponent}
     </div>;
-  };
+};
