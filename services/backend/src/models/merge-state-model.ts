@@ -104,7 +104,7 @@ export class MergeStateModel {
     for (const mergeState of mergeStates) {
       this.removeRepository(mergeState.filesystemTypeMergeFrom as AvailableFilesystems, mergeState.rootFullPathToMetaMergeFrom);
       this.removeRepository(mergeState.filesystemTypeMergeTo as AvailableFilesystems, mergeState.rootFullPathToMetaMergeTo);
-      this.prismaClient.mergeState.delete({where: {id: mergeState.id}});
+      await this.prismaClient.mergeState.delete({where: {id: mergeState.id}});
     }
   }
 

@@ -11,7 +11,7 @@ import { AvailableFilesystems, createFilesystemMappingRoot, FilesystemAbstractio
 import { isDatastoreForMetadata } from "../export-import/export-new.ts";
 import { getDatastoreInfoOfGivenDatastoreType } from "../export-import/filesystem-abstractions/implementations/ds-filesystem.ts";
 import _ from "lodash";
-import { createDiffTree, dsPathJoin } from "../utils/git-utils.ts";
+import { compareTrees, dsPathJoin } from "../utils/git-utils.ts";
 import { GitHubProvider } from "../git-providers/git-provider-instances/github.ts";
 import { mergeStateModel, resourceModel } from "../main.ts";
 import { updateDSRepositoryByPullingGit } from "./pull-remote-repository.ts";
@@ -228,10 +228,8 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
 
   // TODO RadStr: Following lines (Except the last one) are just for playing with filesystem implementations
   const dsFilesystem = await FilesystemFactory.createFileSystem([rootLocation], AvailableFilesystems.DS_Filesystem, gitProvider);
-  const comparisonResult = await compareFiletrees(gitFilesystem, rootDirectoryName, gitFilesystem.getRoot(), dsFilesystem, rootDirectoryName, dsFilesystem.getRoot());
 
-  console.info({comparisonResult, root1: gitFilesystem.getRoot(), root2: gitFilesystem.getRoot()});
-
+  // TODO RadStr: Rename ... and update based on the conflicts resolution, like we do not want to update when there is conflict
   await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(rootDirectoryName, rootDirectory, directory, gitProvider);      // TODO RadStr: Maybe await is unnecessary
   // TODO RadStr: [WIP] Connect it to the conflict database entry
   const dsFakeRoot = dsFilesystem.getRoot();
@@ -246,19 +244,21 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
     throw new Error("The meta file for git root is not present");
   }
 
-  const [ diffTree, diffTreeSize ] = await createDiffTree(
-    dsFilesystem,
-    dsFakeRoot,
-    dsFilesystem.getGlobalFilesystemMap(),
-    gitFilesystem,
-    gitFakeRoot,
-    gitFilesystem.getGlobalFilesystemMap(),
-  );
-
+  const {
+    diffTree,
+    diffTreeSize,
+    changed,
+    conflicts,
+    created,
+    removed
+  } = await compareTrees(
+    dsFilesystem, dsFakeRoot, dsFilesystem.getGlobalFilesystemMap(),
+    gitFilesystem, gitFakeRoot, gitFilesystem.getGlobalFilesystemMap());
 
   await mergeStateModel.clearTable();     // TODO RadStr: Debug
 
   const editable: EditableType = "mergeFrom";
+
   const mergeStateInput = {
     lastCommonCommitHash: commonCommitHash,
     editable,
@@ -271,10 +271,10 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
     rootFullPathToMetaMergeTo: gitPathToRootMeta,
     lastCommitHashMergeTo: gitLastCommitHash,
     filesystemTypeMergeTo: AvailableFilesystems.ClassicFilesystem,
-    changedInEditable: comparisonResult.changed,
-    removedInEditable: comparisonResult.removed,
-    createdInEditable: comparisonResult.created,
-    conflicts: comparisonResult.changed,
+    changedInEditable: changed,
+    removedInEditable: removed,
+    createdInEditable: created,
+    conflicts: conflicts,
     diffTree,
     diffTreeSize,
   };
@@ -285,7 +285,7 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
   console.info("Current merge state without:", await mergeStateModel.getMergeStateFromUUID(mergeStateId, false));
   resourceModel.updateIsSynchronizedWithRemote(iri, false);
 
-  return true;
+  return conflicts.length > 0;
 
 
   // const rootLocation: FilesystemNodeLocation = {
@@ -445,6 +445,9 @@ type ComparisonResult = {
 }
 
 
+/**
+ * @deprecated Already do it all when I am computing the diff tree
+ */
 async function compareFiletrees(
   filesystem1: FilesystemAbstraction,
   treeRoot1Name: string,

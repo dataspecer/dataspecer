@@ -7,6 +7,7 @@ import { DatastoreInfo, DirectoryNode, FileNode, FilesystemNode } from "../expor
 import { DatastoreComparison, DiffTree, ResourceComparison, ResourceComparisonResult } from "../models/merge-state-model.ts";
 import { getDatastoreInfoOfGivenDatastoreType } from "../export-import/filesystem-abstractions/implementations/ds-filesystem.ts";
 import _ from "lodash";
+import { ComparisonData } from "../routes/git-webhook-handler.ts";
 
 
 
@@ -145,49 +146,74 @@ export function extractPartOfRepositoryURL(repositoryURL: string, part: "url-dom
   }
 }
 
+export type ComparisonFullResult = {
+  diffTree: DiffTree,
+  diffTreeSize: number,
+} & ComparisonDifferences;
+
+type ComparisonDifferences = {
+  created: ComparisonData[],
+  removed: ComparisonData[],
+  changed: ComparisonData[],
+  conflicts: ComparisonData[],
+};
+
 
 // TODO RadStr: Move it into package, used in both backend and DiffTree editor
 /**
  * @returns The difftree and the total number of nodes in the difftree
 */
-export async function createDiffTree(
+export async function compareTrees(
   filesystem1: FilesystemAbstraction,
   fakeTreeRoot1: DirectoryNode,
   globalFilesystemMapping1: Record<string, FilesystemNode>,
   filesystem2: FilesystemAbstraction,
   fakeTreeRoot2: DirectoryNode,
   globalFilesystemMapping2: Record<string, FilesystemNode>,
-): Promise<[DiffTree, number]> {
-  const comparisonResult: DiffTree = {};
+): Promise<ComparisonFullResult> {
+  const diffTree: DiffTree = {};
+  const changed: ComparisonData[] = [];
+  const removed: ComparisonData[] = [];
+  const created: ComparisonData[] = [];
+  const conflicts: ComparisonData[] = [];
 
-  const comparisonResultSize = await createDiffTreeInternal(filesystem1, fakeTreeRoot1, globalFilesystemMapping1,
-                                                              filesystem2, fakeTreeRoot2, globalFilesystemMapping2,
-                                                              comparisonResult);
-  return [comparisonResult, comparisonResultSize];
+
+  const diffTreeSize = await compareTreesInternal(filesystem1, fakeTreeRoot1, globalFilesystemMapping1,
+                                                  filesystem2, fakeTreeRoot2, globalFilesystemMapping2,
+                                                  diffTree, {changed, removed, created, conflicts});
+  return {
+    changed,
+    removed,
+    created,
+    conflicts,
+    diffTree,
+    diffTreeSize,
+  };
 }
 
 // TODO RadStr: Move it into package, used in both backend and DiffTree editor
 // TODO RadStr: Use objects instead of passing in separate values
 /**
- * Compares the {@link directory1} to {@link directory2}. That is the {@link result} will contain
+ * Compares the {@link directory1} to {@link directory2}. That is the {@link diffTree} will contain
  *  the removed entries from {@link directory1} compared to {@link directory2} and same for changed.
  *  The created ones will be those present in {@link directory2}, but not in {@link directory1}.
  *
- * @returns The number of nodes stored inside the {@link result} (that is the difftree) computed in the method call.
+ * @returns The number of nodes stored inside the {@link diffTree} (that is the difftree) computed in the method call.
  */
-async function createDiffTreeInternal(
+async function compareTreesInternal(
   filesystem1: FilesystemAbstraction,
   directory1: DirectoryNode | undefined,
   globalFilesystemMapping1: Record<string, FilesystemNode>,
   filesystem2: FilesystemAbstraction,
   directory2: DirectoryNode | undefined,
   globalFilesystemMapping2: Record<string, FilesystemNode>,
-  result: DiffTree,
+  diffTree: DiffTree,
+  comparisonDifferences: ComparisonDifferences,
 ): Promise<number> {
-  let resultSize: number = 0;
+  let diffTreeSize: number = 0;
 
   for (const [nodeName, nodeValue] of Object.entries(directory1?.content ?? {})) {
-    resultSize++;
+    diffTreeSize++;
 
     const node2Value = directory2?.content[nodeName];
     if (node2Value !== undefined && nodeValue.type !== node2Value.type) { // They are not of same type and both exists
@@ -202,19 +228,20 @@ async function createDiffTreeInternal(
       resource: nodeValue,
       resourceComparisonResult,
     };
-    result[nodeName] = currentlyProcessedDiffFilesystemNode;
+    diffTree[nodeName] = currentlyProcessedDiffFilesystemNode;
 
     // Recursively process "subdirectories"
     if (nodeValue.type === "directory") {
-      const subtreeSize = await createDiffTreeInternal(filesystem1, nodeValue, globalFilesystemMapping1,
-                                                          filesystem2, node2Value as (DirectoryNode | undefined), globalFilesystemMapping2,
-                                                          currentlyProcessedDiffFilesystemNode.childrenDiffTree);
-      resultSize += subtreeSize;
+      const subtreeSize = await compareTreesInternal(filesystem1, nodeValue, globalFilesystemMapping1,
+                                                      filesystem2, node2Value as (DirectoryNode | undefined), globalFilesystemMapping2,
+                                                      currentlyProcessedDiffFilesystemNode.childrenDiffTree,
+                                                      comparisonDifferences);
+      diffTreeSize += subtreeSize;
     }
 
     const processedDatastoresInSecondTree: Set<DatastoreInfo> = new Set();
     for (const datastore1 of nodeValue.datastores) {
-      resultSize++;
+      diffTreeSize++;
 
       const node2Datastore = node2Value === undefined ? undefined : getDatastoreInfoOfGivenDatastoreType(node2Value, datastore1.type);
       if (node2Datastore !== undefined) {
@@ -228,6 +255,8 @@ async function createDiffTreeInternal(
             datastoreComparisonResult: "modified",
           };
           currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(changed);
+          comparisonDifferences.changed.push(changed);
+          comparisonDifferences.conflicts.push(changed);
         }
         else {
           const same: DatastoreComparison = {
@@ -247,6 +276,7 @@ async function createDiffTreeInternal(
           datastoreComparisonResult: "removed-in-new"
         };
         currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(removed);
+        comparisonDifferences.removed.push(removed);
       }
     }
 
@@ -260,18 +290,19 @@ async function createDiffTreeInternal(
           datastoreComparisonResult: "created-in-new"
         };
         currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(created);
-        resultSize++;
+        comparisonDifferences.created.push(created);
+        diffTreeSize++;
       }
     }
   }
 
   // Find the filesystem nodes which are present only in the 2nd tree
   for (const [nodeName, nodeValue] of Object.entries(directory2?.content ?? {})) {
-    if (result[nodeName] !== undefined) {
+    if (diffTree[nodeName] !== undefined) {
       continue;
     }
 
-    resultSize++;
+    diffTreeSize++;
     const resourceComparisonResult: ResourceComparisonResult = "exists-in-new";
     const currentlyProcessedDiffFilesystemNode: ResourceComparison = {
       childrenDiffTree: {},
@@ -279,13 +310,14 @@ async function createDiffTreeInternal(
       resource: nodeValue,
       resourceComparisonResult,
     };
-    result[nodeName] = currentlyProcessedDiffFilesystemNode;
+    diffTree[nodeName] = currentlyProcessedDiffFilesystemNode;
 
     if (nodeValue.type === "directory") {
-      const subtreeSize = await createDiffTreeInternal(filesystem1, undefined, globalFilesystemMapping1,
-                                                          filesystem2, nodeValue, globalFilesystemMapping2,
-                                                          currentlyProcessedDiffFilesystemNode.childrenDiffTree);
-      resultSize += subtreeSize;
+      const subtreeSize = await compareTreesInternal(filesystem1, undefined, globalFilesystemMapping1,
+                                                      filesystem2, nodeValue, globalFilesystemMapping2,
+                                                      currentlyProcessedDiffFilesystemNode.childrenDiffTree,
+                                                      comparisonDifferences);
+      diffTreeSize += subtreeSize;
     }
 
     for (const datastore of nodeValue.datastores) {
@@ -297,11 +329,12 @@ async function createDiffTreeInternal(
         affectedDataStore: datastore,
       };
       currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(created);
-      resultSize++;
+      comparisonDifferences.created.push(created);
+      diffTreeSize++;
     }
   }
 
-  return resultSize;
+  return diffTreeSize;
 }
 
 
