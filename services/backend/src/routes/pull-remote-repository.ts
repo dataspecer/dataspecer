@@ -22,6 +22,11 @@ export const pullRemoteRepository = asyncHandler(async (request: express.Request
     response.status(404).json("The resource (package) does not exist in database");
     return;
   }
+  if (!resource.representsBranchHead) {
+    response.status(400);
+    response.send("Does not point to branch, but commit, can not pull");
+    return;
+  }
 
   const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(resource.linkedGitRepositoryURL);
 
