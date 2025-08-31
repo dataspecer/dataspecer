@@ -4,7 +4,7 @@
 import { DataResourceNameInfo, ChangeActiveModelMethod } from "@/dialog/diff-editor-dialog";
 import { packageService } from "@/package";
 import _ from "lodash";
-import { Loader } from "lucide-react";
+import { Check, Loader, MoveRight, X } from "lucide-react";
 import React, { SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import { NodeApi, NodeRendererProps, Tree, TreeApi, } from "react-arborist";
 
@@ -685,69 +685,72 @@ function StyledNode({
       key={node.data.id}
       className="relative group px-3 py-2 hover:bg-gray-50 focus-within:bg-gray-50 whitespace-nowrap"
     >
-    <div
-      style={{
-        ...style,
-        display: "flex",
-        alignItems: "center",
-        // To match the height of rows, otherwise there are vertical spaces between nodes,
-        // which is problem because if we click in the space,
-        // the upper node is selected - which can be non-leaf and we do not want that
-        height: `${treeRowHeight}px`,
-        width: 600,   // TODO RadStr: Ugly hack to not have text over multiple lines (can't think of any other EASY fix - non-easy fix would be set the width based on longest element or set rowHeight based on over how many lines it goes over)
-        color,
-        cursor: isExpandable ? "pointer" : "default",
-        background: node.isSelected ? "#a2a2a5ff" : undefined,
-      }}
-      ref={dragHandle}
-      // TODO RadStr: Remove- Probably no longer needed. It was fixed by explicitly setting node height to the row height.
-      // onFocusCapture={(e) => {
-      //   if (isExpandable) {
-      //     e.stopPropagation();
-      //   }
-      // }}
-      // onFocus={(e) => {
-      //   if (isExpandable) {
-      //     e.stopPropagation();
-      //   }
-      // }}
-      onClick={(e) => {
-        e.stopPropagation();
-        if (isExpandable) {
-          node.toggle();
-        }
-        else {
-          node.focus();
-          node.select();
-
-          // TODO RadStr: ... the paths as mentioned above
-          // if (node.data.fullPathInOldTree === null) {
-          //   throw new Error("The path to the datastore is empty - old version");
-          // }
-          // else if (node.data.fullPathInNewTree === null) {
-          //   throw new Error("The path to the datastore is empty - new version");
-          // }
-
-          // TODO RadStr: The ! is just for debug for now !!!!!
-          node.data.changeActiveModel(node.data.fullDatastoreInfoInOriginalTree!, node.data.fullDatastoreInfoInModifiedTree!, true);
-        }
-      }}
-    >
-      {node.data.treeType === "old" ? null : <button onClick={() => alert("AA")}>Click me</button>}
-      {icon}
-      <span className={textClassName}>{node.data.name}</span>
       <div
-        style={{ left: `${Math.max(node.data.rightOffsetForRowButtons, 0) + 8}px` }}
-        className="absolute top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto space-x-2 bg-white/70 p-1 rounded"
+        style={{
+          ...style,
+          display: "flex",
+          alignItems: "center",
+          // To match the height of rows, otherwise there are vertical spaces between nodes,
+          // which is problem because if we click in the space,
+          // the upper node is selected - which can be non-leaf and we do not want that
+          height: `${treeRowHeight}px`,
+          width: 600,   // TODO RadStr: Ugly hack to not have text over multiple lines (can't think of any other EASY fix - non-easy fix would be set the width based on longest element or set rowHeight based on over how many lines it goes over)
+          color,
+          cursor: isExpandable ? "pointer" : "default",
+          background: node.isSelected ? "#a2a2a5ff" : undefined,
+        }}
+        ref={dragHandle}
+        // TODO RadStr: Remove- Probably no longer needed. It was fixed by explicitly setting node height to the row height.
+        // onFocusCapture={(e) => {
+        //   if (isExpandable) {
+        //     e.stopPropagation();
+        //   }
+        // }}
+        // onFocus={(e) => {
+        //   if (isExpandable) {
+        //     e.stopPropagation();
+        //   }
+        // }}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (isExpandable) {
+            node.toggle();
+          }
+          else {
+            node.focus();
+            node.select();
+
+            // TODO RadStr: ... the paths as mentioned above
+            // if (node.data.fullPathInOldTree === null) {
+            //   throw new Error("The path to the datastore is empty - old version");
+            // }
+            // else if (node.data.fullPathInNewTree === null) {
+            //   throw new Error("The path to the datastore is empty - new version");
+            // }
+
+            // TODO RadStr: The ! is just for debug for now !!!!!
+            node.data.changeActiveModel(node.data.fullDatastoreInfoInOriginalTree!, node.data.fullDatastoreInfoInModifiedTree!, true);
+          }
+        }}
       >
-        <button className="px-2 py-1 text-sm bg-blue-600 text-white rounded">
-          Edit
-        </button>
-        <button className="px-2 py-1 text-sm bg-red-600 text-white rounded" onClick={(e) => {e.stopPropagation(); alert("delte")}}>
-          Delete
-        </button>
+        {node.data.treeType === "old" ? null : <button onClick={() => alert("AA")}>Click me</button>}
+        {icon}
+        <span className={textClassName}>{node.data.name}</span>
+        <div
+          style={{ left: `${Math.max(node.data.rightOffsetForRowButtons, 0) + 8}px` }}
+          className="absolute top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto bg-white/70 p-1 rounded"
+        >
+          <button title="Mark as resolved" className="mt-2 hover:bg-gray-400 text-sm" onClick={(e) => {e.stopPropagation(); alert("delte")}}>
+            <Check className="h-6 w-6"/>
+          </button>
+          <button title="Mark as unresolved" className="mt-2 hover:bg-gray-400 text-sm" onClick={(e) => {e.stopPropagation(); alert("delte")}}>
+            <X className="h-6 w-6"/>
+          </button>
+          <button title="Replace by other window" className="mt-2 hover:bg-gray-400 text-sm" onClick={(e) => {e.stopPropagation(); alert("delte")}}>
+            <MoveRight className="h-6 w-6"/>
+          </button>
+        </div>
       </div>
-    </div>
     </div>
   </>);
 
@@ -882,7 +885,7 @@ export const DiffTreeVisualization = (props: {
 
     const observer = new ResizeObserver(entries => {
       for (let entry of entries) {
-        setRightOffsetForRowButtons(entry.contentRect.width - 120);
+        setRightOffsetForRowButtons(entry.contentRect.width - 84);
       }
     });
 
