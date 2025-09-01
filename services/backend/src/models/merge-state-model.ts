@@ -7,6 +7,8 @@ import { AvailableFilesystems } from "../export-import/filesystem-abstractions/f
 import fs from "fs";
 import path from "path";
 import { ALL_GIT_REPOSITORY_ROOTS } from "./git-store-info.ts";
+import { ResourceModel } from "./resource-model.ts";
+import { simpleGit } from "simple-git";
 
 export type DiffTree = Record<string, ResourceComparison>;
 
@@ -59,7 +61,7 @@ export interface MergeState {
   removedInEditable?: ComparisonData[];
   createdInEditable?: ComparisonData[];
   conflicts?: ComparisonData[];
-  unresolvedConflicts: ComparisonData[];
+  unresolvedConflicts?: ComparisonData[];
   conflictCount: number;
 
   diffTreeData?: {
@@ -74,16 +76,45 @@ type MergeStateWithData = Prisma.MergeStateGetPayload<{
 
 export class MergeStateModel {
   private prismaClient: PrismaClient;
+  private resourceModel: ResourceModel;
 
-  constructor(prismaClient: PrismaClient) {
+  constructor(prismaClient: PrismaClient, resourceModel: ResourceModel) {
     this.prismaClient = prismaClient;
+    this.resourceModel = resourceModel;
+  }
+
+  /**
+   * This method checks if the list of unresolved conflicts is empty and if so it removes the entry and updates relevant data.
+   *  For example the last commit hash in case of Dataspecer resource
+   */
+  async mergeStateConflictFinisher(mergeState: MergeState) {
+    if (mergeState.unresolvedConflicts?.length !== 0) {
+      return;
+    }
+
+    // TODO: This can be "generalized" to allow updating git
+    if (mergeState.editable === "mergeFrom") {
+      if (mergeState.filesystemTypeMergeFrom === AvailableFilesystems.DS_Filesystem) {
+        const resource = await this.resourceModel.getResource(mergeState.rootIriMergeFrom);
+        if (resource === null) {
+          throw new Error(`Resource no longer exists or it never existed. The merge state: ${mergeState}`);
+        }
+
+      }
+      if (mergeState.filesystemTypeMergeTo === AvailableFilesystems.ClassicFilesystem) {
+        const git = simpleGit(mergeState.rootFullPathToMetaMergeTo);
+        const gitCommitHash = await git.revparse(["HEAD"]);
+
+        this.resourceModel.updateLastCommitHash(mergeState.rootIriMergeFrom, gitCommitHash);
+      }
+    }
+    this.removeMergeState(mergeState.uuid);
   }
 
   private removeRepository(filesystem: AvailableFilesystems, pathToRootMetaFile: string, shouldPrintErrorToConsole: boolean) {
     if (filesystem !== AvailableFilesystems.ClassicFilesystem) {
       return;
     }
-
 
     try {
       const resolvedPathToRootMetaFile = path.resolve(pathToRootMetaFile);
@@ -303,6 +334,38 @@ export class MergeStateModel {
     return uuid;
   }
 
+  /**
+   * TODO RadStr: Still creating the API, just remove the invalid methods after finish
+   */
+  async updateMergeStatePartly(uuid: string, newlyResolvedConflicts: string[]) {
+    const mergeState = await this.prismaClient.mergeState.findFirst({
+      where: {uuid},
+      include: {
+        mergeStateData: true,
+      },
+    });
+    if (mergeState === null) {
+      throw new Error(`There is no such MergeState with uuid: ${uuid}`);
+    }
+
+    const unresolvedConflicts = mergeState.mergeStateData?.unresolvedConflicts;
+    if (unresolvedConflicts === undefined) {
+      throw new Error(`For some reasons the unresolved conflicts are undefined in the MergeState with uuid: ${uuid}. It has to be array`);
+    }
+    const newUnresolvedConflicts: ComparisonData[] = JSON.parse(unresolvedConflicts)
+      .filter((conflict: ComparisonData) => !newlyResolvedConflicts.includes(conflict.affectedDataStore.fullPath));
+
+    await this.prismaClient.mergeState.update({
+        where: { uuid: uuid },
+        data: {
+          mergeStateData: {
+            update: {
+              unresolvedConflicts: JSON.stringify(newUnresolvedConflicts),
+            }
+          }
+        },
+    });
+  }
 
   async updateMergeStateWithObjects(
     uuid: string,

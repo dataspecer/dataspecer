@@ -56,7 +56,7 @@ import { updateMergeState } from "./routes/update-merge-state.ts";
 export const storeModel = new LocalStoreModel("./database/stores");
 export const prismaClient = new PrismaClient();
 export const resourceModel = new ResourceModel(storeModel, prismaClient);
-export const mergeStateModel = new MergeStateModel(prismaClient);
+export const mergeStateModel = new MergeStateModel(prismaClient, resourceModel);
 const migration = new Migrate(prismaClient);
 
 let fullUrl: string;
@@ -204,8 +204,8 @@ if (configuration.staticFilesPath) {
 application.get(apiBasename + "/git/dataspecer-package-tree", getDataspecerTree);
 application.get(apiBasename + "/git/get-datastore-content", getDatastoreContentDirectly);
 application.get(apiBasename + "/git/get-merge-state", getMergeState);
+application.post(apiBasename + "/git/update-merge-state", updateMergeState);
 application.get(apiBasename + "/git/get-merge-states", getMergeStates);
-application.get(apiBasename + "/update-merge-state", updateMergeState);
 
 // Test GIT
 application.get(apiBasename + "/git/deprecated-test", currentSession, tryCommitToGitRepo);

@@ -8,7 +8,7 @@ import { useOnBeforeUnload } from "@/hooks/use-on-before-unload";
 import { useOnKeyDown } from "@/hooks/use-on-key-down";
 import { packageService } from "@/package";
 import * as monaco from 'monaco-editor';
-import { AvailableFilesystems, DatastoreInfo, DiffTreeVisualization, EditableType } from "@/components/directory-diff";
+import { AvailableFilesystems, ComparisonData, DatastoreInfo, DiffTreeVisualization, EditableType, MergeState } from "@/components/directory-diff";
 import { Loader, RotateCw } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabsContent } from "@radix-ui/react-tabs";
@@ -63,9 +63,59 @@ function getDataResourceInCache(cache: CacheContentMap, dataResourceNameInfo: Da
   return cache[dataResourceNameInfo.resourceIri]?.[dataResourceNameInfo.modelName];
 }
 
+/**
+ * TODO RadStr: Put to better place
+ */
+async function fetchMergeState(rootIriMergeFrom: string, rootIriMergeTo: string): Promise<MergeState> {
+  try {
+    const queryParams = `rootIriMergeFrom=${rootIriMergeFrom}&rootIriMergeTo=${rootIriMergeTo}&includeDiffData=true`;
+    const fetchResult = await fetch(`${import.meta.env.VITE_BACKEND}/git/get-merge-state?${queryParams}`, {
+      method: "GET",
+    });
+    console.info("fetched data", fetchResult);   // TODO RadStr: Debug
+    const fetchResultAsJson = await fetchResult.json();
+    console.info("fetched data as json", fetchResultAsJson);   // TODO RadStr: Debug
+
+    return fetchResultAsJson;
+  }
+  catch(error) {
+    console.error(`Error when fetching merge state (for iris: ${rootIriMergeFrom} and ${rootIriMergeTo}). The error: ${error}`);
+    throw error;
+  }
+}
+
+const saveMergeState = async (
+  fetchedMergeState: MergeState,
+  conflictsToBeResolvedOnSave: ComparisonData[]
+) => {
+  try {
+    const fetchResult = await fetch(
+      `${import.meta.env.VITE_BACKEND}/git/update-merge-state`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          uuid: fetchedMergeState.uuid,
+          newlyResolvedConflicts: conflictsToBeResolvedOnSave.map(conflict => conflict.affectedDataStore.fullPath),
+        }),
+      });
+    console.info("update merge state response", fetchResult);   // TODO RadStr: Debug
+
+    return fetchResult;
+  }
+  catch(error) {
+    console.error(`Error when updating merge state (${fetchedMergeState}). The error: ${error}`);
+    throw error;
+  }
+};
+
+
 
 export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialModifiedResourceIri, editable, isOpen, resolve, }: TextDiffEditorDialogProps) => {
   const monacoEditor = useRef<{editor: monaco.editor.IStandaloneDiffEditor}>(undefined);
+
+  // Set once in the useEffect
+  const [examinedMergeState, setExaminedMergeState] = useState<MergeState | null>(null);
+  const [conflictsToBeResolvedOnSave, setConflictsToBeResolvedOnSave] = useState<ComparisonData[]>([]);
 
   const [cacheForOriginalTextContent, setCacheForOriginalTextContent] = useState<CacheContentMap>({});
   const [cacheForModifiedTextContent, setCacheForModifiedTextContent] = useState<CacheContentMap>({});
@@ -79,12 +129,13 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
   useOnKeyDown(e => {
     if (e.key === "s" && e.ctrlKey) {
       e.preventDefault();
-      save();
+      saveFileChanges();
       toast.success("Saved currently opened file to backend");
     }
   });
 
   // When loading the directory structure from backend
+  // Note that the value itself is not set neither here it is passed to the child class
   const [isLoadingTreeStructure, setIsLoadingTreeStructure] = useState<boolean>(true);
   // When loading the concrete file (or rather model) data from backend
   const [isLoadingTextData, setIsLoadingTextData] = useState<boolean>(true);
@@ -94,7 +145,8 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
       setOriginalResourceNameInfo(initialOriginalResourceNameInfo);
       setModifiedResourceNameInfo(initialModifiedResourceIri);
       setIsLoadingTextData(true);
-      setIsLoadingTreeStructure(false);
+      const fetchedMergeState = await fetchMergeState(initialOriginalResourceNameInfo.resourceIri, initialModifiedResourceIri.resourceIri);
+      setExaminedMergeState(fetchedMergeState);
     })();
   }, []);
 
@@ -218,7 +270,15 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
     resolve({ newResourceContent: editedNewVersion });
   };
 
-  const save = async () => {
+  const saveEverything = async () => {
+    await saveFileChanges();
+    if (examinedMergeState !== null) {
+      await saveMergeState(examinedMergeState, conflictsToBeResolvedOnSave);
+    }
+    closeWithSuccess();
+  };
+
+  const saveFileChanges = async () => {
     const editedNewVersion = JSON.parse(monacoEditor.current?.editor.getModifiedEditor().getValue() ?? "{}");
     await packageService.setResourceJsonData(modifiedDataResourceNameInfo.resourceIri, editedNewVersion, modifiedDataResourceNameInfo.modelName);
     await reloadModelsDataFromBackend();
@@ -343,18 +403,26 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
                 </ModalHeader>
                   {/* The overflow-y is needed however it adds a bit horizontal space between the vertical splitter and the Tree structure */}
                   <div className="flex flex-1 flex-col grow overflow-y-auto pr-2 -mr-2 -ml-2 pl-2 h-full w-full">
+                    {
+                      conflictsToBeResolvedOnSave.map(conflictToBeResolvedOnSave => {
+                        return <div>{conflictToBeResolvedOnSave.affectedDataStore.fullPath}</div>;
+                      })
+                    }
                     <DiffTreeVisualization originalDataResourceNameInfo={originalDataResourceNameInfo}
                                             modifiedDataResourceNameInfo={modifiedDataResourceNameInfo}
                                             changeActiveModel={changeActiveModel}
                                             isLoadingTreeStructure={isLoadingTreeStructure}
-                                            setIsLoadingTreeStructure={setIsLoadingTreeStructure} />
+                                            setIsLoadingTreeStructure={setIsLoadingTreeStructure}
+                                            mergeStateFromBackend={examinedMergeState}
+                                            setConflictsToBeResolvedOnSave={setConflictsToBeResolvedOnSave}
+                                            />
                   </div>
                 <div className="flex gap-2 mt-4 justify-start mb-2">
-                  <Button variant="outline" onClick={() => save()}>
-                    Save changes (Ctrl + S)
+                  <Button title="Note that this only saves the changes to files. It does not touch the current merge state, that is conflicts."variant="outline" onClick={() => saveFileChanges()}>
+                    Save file changes (Ctrl + S)
                   </Button>
-                  <Button variant={"default"} onClick={() => save().then(closeWithSuccess)}>
-                    Save & Mark conflict as solved
+                  <Button title="This does save both the changes to files and updates the merge state" variant={"default"} onClick={() => saveEverything()}>
+                    Save changes and update merge state
                   </Button>
                 </div>
               </ResizablePanel>

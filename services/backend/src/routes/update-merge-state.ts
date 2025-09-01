@@ -5,17 +5,23 @@ import express from "express";
 
 
 export const updateMergeState = asyncHandler(async (request: express.Request, response: express.Response) => {
+  // TODO RadStr: WIP API
+  // const bodySchema = z.object({
+  //   uuid: z.string(),
+  //   changedInEditable: z.string(),
+  //   removedInEditable: z.string(),
+  //   createdInEditable: z.string(),
+  //   unresolvedConflicts: z.string(),
+  //   diffTree: z.string(),
+  // });
+
   const bodySchema = z.object({
     uuid: z.string(),
-    changedInEditable: z.string(),
-    removedInEditable: z.string(),
-    createdInEditable: z.string(),
-    unresolvedConflicts: z.string(),
-    diffTree: z.string(),
+    newlyResolvedConflicts: z.array(z.string()),
   });
   const body = bodySchema.parse(request.body);
 
-  await mergeStateModel.updateMergeStateWithStrings(body.uuid, body.diffTree, body.changedInEditable, body.removedInEditable, body.createdInEditable, body.unresolvedConflicts);
+  await mergeStateModel.updateMergeStatePartly(body.uuid, body.newlyResolvedConflicts);
 
   response.sendStatus(200);
   return;
