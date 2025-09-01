@@ -15,6 +15,7 @@
     "@dataspecer/core-v2": "*",
     "@dataspecer/layout": "*",
     "@dataspecer/specification": "*",
+    "@dataspecer/git": "*",
     "@ebay/nice-modal-react": "^1.2.13",
     "@monaco-editor/react": "^4.6.0",
     "@radix-ui/react-dialog": "^1.0.5",
