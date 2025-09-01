@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import { Loader } from "lucide-react";
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { MergeState } from "@/components/directory-diff";
-import { TextDiffEditorDialog } from "./diff-editor-dialog";
 import { Button } from "@/components/ui/button";
+import { TextDiffEditorDialog } from "./diff-editor-dialog";
 
 type MergeStateDialogProps = {
   iri: string,
@@ -44,7 +44,16 @@ export const MergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialogProp
             TODO RadStr: Description
           </ModalDescription>
           {isLoading && <Loader className="mr-2 h-4 w-4 animate-spin" /> }
-          {!isLoading && mergeStates.map(mergeState => renderMergeState(mergeState, openModal))}
+          {
+          !isLoading && <>
+          {/* The header */}
+          <div className="grid grid-cols-2 divide-x divide-gray-300">
+            <div className="flex items-center justify-center">Merge from</div>
+            <div className="flex items-center justify-center">Merge to</div>
+          </div>
+
+          { mergeStates.map(mergeState => renderMergeState(mergeState, openModal)) }
+          </>}
         </ModalHeader>
         <ModalFooter>
           <Button variant="outline" onClick={() => resolve(null)}>Close</Button>
@@ -55,13 +64,18 @@ export const MergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialogProp
 }
 
 const renderMergeState = (mergeState: MergeState, openModal: OpenBetterModal) => {
-  return <div className="flex items-baseline space-x-2">
+  return <div className="flex items-baseline space-x-2 hover:bg-gray-300">
       <button onClick={() => openModal(TextDiffEditorDialog, {initialOriginalResourceNameInfo: {resourceIri: mergeState.rootIriMergeFrom, modelName: ""}, initialModifiedResourceIri: {resourceIri: mergeState.rootIriMergeTo, modelName: ""}, editable: mergeState.editable})}>
-        <span className="text-lg font-medium">{mergeState.rootIriMergeFrom}</span>
-        <span className="text-sm text-gray-500">{mergeState.filesystemTypeMergeFrom}</span>
-        <span className="text-sm text-gray-500">{"->"}</span>
-        <span className="text-lg font-medium">{mergeState.rootIriMergeTo}</span>
-        <span className="text-sm text-gray-500">{mergeState.filesystemTypeMergeTo}</span>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex">
+            <span className="text-base font-medium whitespace-nowrap truncate">{mergeState.rootIriMergeFrom}</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap pt-1">{mergeState.filesystemTypeMergeFrom}</span>
+          </div>
+          <div className="flex">
+            <span className="text-base font-medium whitespace-nowrap truncate">{mergeState.rootIriMergeTo}</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap pt-1">{mergeState.filesystemTypeMergeTo}</span>
+          </div>
+        </div>
       </button>
     </div>;
 }
