@@ -10,6 +10,12 @@ import { ALL_GIT_REPOSITORY_ROOTS } from "./git-store-info.ts";
 import { ResourceModel } from "./resource-model.ts";
 import { simpleGit } from "simple-git";
 
+/**
+ * Says the Cause of the merge. Combined with the "editable" field, that is the field which gives us information about what datasource we were changing,
+ *  will give us the action, which should be performed after the resolving of all the conflicts.
+ */
+export type MergeStateCause = "pull" | "push" | "merge";
+
 export type DiffTree = Record<string, ResourceComparison>;
 
 // TODO RadStr: Also new type, which does not exist on backend
@@ -64,6 +70,8 @@ export interface MergeState {
   unresolvedConflicts?: ComparisonData[];
   conflictCount: number;
 
+  mergeStateCause: MergeStateCause;
+
   diffTreeData?: {
     diffTree: DiffTree;
     diffTreeSize: number;   // TODO RadStr: Maybe not needed can just compute on client from diffTree
@@ -83,32 +91,62 @@ export class MergeStateModel {
     this.resourceModel = resourceModel;
   }
 
+  async mergeStateFinisher(uuid: string) {
+    const mergeState = await this.getMergeStateFromUUID(uuid, false);
+    if (mergeState === null) {
+      throw new Error(`Merge state for uuid (${uuid}) does not exist`);
+    }
+
+    this.mergeStateConflictFinisherInternal(mergeState);
+  }
+
+  private async handlePullFinisher(mergeState: MergeState) {
+    // TODO: This can be "generalized" to allow updating git
+    let filesystemOfTheToUpdate: AvailableFilesystems;
+    let iriOfTheToUpdate: string;
+    let filesystemOfThePulled: AvailableFilesystems;
+    let rRootFullPathToMetaMergeToOfThePulled: string;
+    if (mergeState.editable === "mergeFrom") {
+      filesystemOfTheToUpdate = mergeState.filesystemTypeMergeFrom;
+      iriOfTheToUpdate = mergeState.rootIriMergeFrom;
+      filesystemOfThePulled = mergeState.filesystemTypeMergeTo;
+      rRootFullPathToMetaMergeToOfThePulled = mergeState.rootFullPathToMetaMergeTo;
+    }
+    else {
+      // TODO RadStr: Thinking about it, when I am pulling maybe I don't want to have mergeTo
+      filesystemOfTheToUpdate = mergeState.filesystemTypeMergeTo;
+      iriOfTheToUpdate = mergeState.rootIriMergeTo;
+      filesystemOfThePulled = mergeState.filesystemTypeMergeFrom;
+      rRootFullPathToMetaMergeToOfThePulled = mergeState.rootFullPathToMetaMergeFrom;
+    }
+
+    if (filesystemOfTheToUpdate === AvailableFilesystems.DS_Filesystem) {
+      const resource = await this.resourceModel.getResource(iriOfTheToUpdate);
+      if (resource === null) {
+        throw new Error(`Resource no longer exists or it never existed. The merge state: ${mergeState}`);
+      }
+    }
+    if (filesystemOfThePulled === AvailableFilesystems.ClassicFilesystem) {
+      const git = simpleGit(rRootFullPathToMetaMergeToOfThePulled);
+      const gitCommitHash = await git.revparse(["HEAD"]);
+      this.resourceModel.updateLastCommitHash(iriOfTheToUpdate, gitCommitHash);
+    }
+  }
+
   /**
    * This method checks if the list of unresolved conflicts is empty and if so it removes the entry and updates relevant data.
    *  For example the last commit hash in case of Dataspecer resource
    */
-  async mergeStateConflictFinisher(mergeState: MergeState) {
+  private async mergeStateConflictFinisherInternal(mergeState: MergeState) {
     if (mergeState.unresolvedConflicts?.length !== 0) {
       return;
     }
 
-    // TODO: This can be "generalized" to allow updating git
-    if (mergeState.editable === "mergeFrom") {
-      if (mergeState.filesystemTypeMergeFrom === AvailableFilesystems.DS_Filesystem) {
-        const resource = await this.resourceModel.getResource(mergeState.rootIriMergeFrom);
-        if (resource === null) {
-          throw new Error(`Resource no longer exists or it never existed. The merge state: ${mergeState}`);
-        }
-
-      }
-      if (mergeState.filesystemTypeMergeTo === AvailableFilesystems.ClassicFilesystem) {
-        const git = simpleGit(mergeState.rootFullPathToMetaMergeTo);
-        const gitCommitHash = await git.revparse(["HEAD"]);
-
-        this.resourceModel.updateLastCommitHash(mergeState.rootIriMergeFrom, gitCommitHash);
-      }
+    if (mergeState.mergeStateCause === "pull") {
+      await this.handlePullFinisher(mergeState);
     }
-    this.removeMergeState(mergeState.uuid);
+    // TODO RadStr: The others
+    await this.removeMergeState(mergeState.uuid);
   }
 
   private removeRepository(filesystem: AvailableFilesystems, pathToRootMetaFile: string, shouldPrintErrorToConsole: boolean) {
@@ -260,6 +298,7 @@ export class MergeStateModel {
   async createMergeState(
     inputData: {
       lastCommonCommitHash: string,
+      mergeStateCause: MergeStateCause,
       editable: EditableType,
       //
       rootIriMergeFrom: string,
@@ -306,6 +345,7 @@ export class MergeStateModel {
     await this.prismaClient.mergeState.create({
         data: {
           uuid,
+          mergeStateCause: inputData.mergeStateCause,
           editable: inputData.editable,
           lastCommonCommitHash: inputData.lastCommonCommitHash,
           rootIriMergeFrom: inputData.rootIriMergeFrom,
@@ -467,6 +507,7 @@ export class MergeStateModel {
       filesystemTypeMergeFrom: prismaMergeState.filesystemTypeMergeFrom as AvailableFilesystems,
 
       editable,
+      mergeStateCause: prismaMergeState.mergeStateCause as MergeStateCause,
       lastCommonCommitHash: prismaMergeState.lastCommonCommitHash,
       changedInEditable,
       removedInEditable,

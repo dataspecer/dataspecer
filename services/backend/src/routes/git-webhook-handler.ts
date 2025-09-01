@@ -15,7 +15,7 @@ import { compareTrees, dsPathJoin } from "../utils/git-utils.ts";
 import { GitHubProvider } from "../git-providers/git-provider-instances/github.ts";
 import { mergeStateModel, resourceModel } from "../main.ts";
 import { updateDSRepositoryByPullingGit } from "./pull-remote-repository.ts";
-import { EditableType } from "../models/merge-state-model.ts";
+import { EditableType, MergeStateCause } from "../models/merge-state-model.ts";
 import { WEBHOOK_PATH_PREFIX } from "../models/git-store-info.ts";
 
 
@@ -142,7 +142,6 @@ async function saveChangesInDirectoryToBackend(directory: string, gitProvider: G
   }
 
 
-
   const _directoryContent = fs.readdirSync(directory, { withFileTypes: true });
   const filesInDirectory = _directoryContent.filter(entry => !entry.isDirectory());
   const subDirectories = _directoryContent.filter(entry => entry.isDirectory());
@@ -258,9 +257,11 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
   await mergeStateModel.clearTable();     // TODO RadStr: Debug
 
   const editable: EditableType = "mergeTo";
+  const mergeStateCause: MergeStateCause = "pull";
 
   const mergeStateInput = {
     lastCommonCommitHash: commonCommitHash,
+    mergeStateCause,
     editable,
     rootIriMergeFrom: gitRoot.metadataCache.iri ?? "",
     rootFullPathToMetaMergeFrom: gitPathToRootMeta,

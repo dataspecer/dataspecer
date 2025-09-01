@@ -47,13 +47,14 @@ export const MergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialogProp
           {
           !isLoading && <>
           {/* The header */}
-          <div className="grid grid-cols-2 divide-x divide-gray-300">
-            <div className="flex items-center justify-center">Merge from</div>
-            <div className="flex items-center justify-center">Merge to</div>
-          </div>
+            <div className="grid grid-cols-2 divide-x divide-gray-300">
+              <div className="flex items-center justify-center">Merge from</div>
+              <div className="flex items-center justify-center">Merge to</div>
+            </div>
 
-          { mergeStates.map(mergeState => renderMergeState(mergeState, openModal)) }
-          </>}
+            { mergeStates.map(mergeState => renderMergeState(mergeState, openModal)) }
+          </>
+          }
         </ModalHeader>
         <ModalFooter>
           <Button variant="outline" onClick={() => resolve(null)}>Close</Button>

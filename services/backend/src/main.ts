@@ -50,6 +50,7 @@ import { MergeStateModel } from "./models/merge-state-model.ts";
 import { getMergeState } from "./routes/get-merge-state.ts";
 import { getMergeStates } from "./routes/get-merge-states.ts";
 import { updateMergeState } from "./routes/update-merge-state.ts";
+import { finishMergeState } from "./routes/finish-merge-state.ts";
 
 // Create application models
 
@@ -206,6 +207,7 @@ application.get(apiBasename + "/git/get-datastore-content", getDatastoreContentD
 application.get(apiBasename + "/git/get-merge-state", getMergeState);
 application.post(apiBasename + "/git/update-merge-state", updateMergeState);
 application.get(apiBasename + "/git/get-merge-states", getMergeStates);
+application.post(apiBasename + "/git/finalize-merge-state", finishMergeState);
 
 // Test GIT
 application.get(apiBasename + "/git/deprecated-test", currentSession, tryCommitToGitRepo);

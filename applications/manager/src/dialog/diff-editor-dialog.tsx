@@ -108,6 +108,27 @@ const saveMergeState = async (
   }
 };
 
+const finalizeMergeState = async (mergeStateUUID: string | undefined) => {
+  if (mergeStateUUID === undefined) {
+    // I think that it should be error
+    throw new Error("Error when updating merge state, there is actually no merge state");
+  }
+
+  try {
+    const fetchResult = await fetch(
+      `${import.meta.env.VITE_BACKEND}/git/finalize-merge-state?uuid=${mergeStateUUID}`, {
+        method: "POST",
+      });
+    console.info("Finalize merge state response", fetchResult);   // TODO RadStr: Debug
+
+    return fetchResult;
+  }
+  catch(error) {
+    console.error(`Error when updating merge state (${mergeStateUUID}). The error: ${error}`);
+    throw error;
+  }
+}
+
 
 
 export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialModifiedResourceIri, editable, isOpen, resolve, }: TextDiffEditorDialogProps) => {
@@ -423,6 +444,10 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
                   </Button>
                   <Button title="This does save both the changes to files and updates the merge state" variant={"default"} onClick={() => saveEverything()}>
                     Save changes and update merge state
+                  </Button>
+                  <Button title="This performs the operation, which triggered the merge state. Can be pull/push/merge" variant={"default"} onClick={() => finalizeMergeState(examinedMergeState?.uuid)}>
+                  TODO RadStr: Rename to closing merge state instead of finalizing
+                    Finalize merge state
                   </Button>
                 </div>
               </ResizablePanel>
