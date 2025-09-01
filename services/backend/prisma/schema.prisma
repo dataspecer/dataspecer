@@ -113,6 +113,10 @@ model MergeState {
 
   // Can be either "mergeFrom" or "mergeTo"
   editable String
+  // Can be one of these: "pull" | "push" | "merge"
+  // Says the Cause of the merge. Combined with the "editable" field, that is the field which gives us information about what datasource we were changing,
+  //  will give us the action, which should be performed after the resolving of all the conflicts.
+  mergeStateCause String
 
   conflictCount Int
   mergeStateData MergeStateData?
