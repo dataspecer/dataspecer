@@ -1,14 +1,13 @@
-import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import { BaseResource, ResourceModel } from "../models/resource-model.ts";
 import { v4 as uuidv4 } from 'uuid';
 import { currentVersion } from "../tools/migrations/index.ts";
 import configuration from "../configuration.ts";
-import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, MetadataCacheType, DatastoreInfo } from "./export-import-data-api.ts";
-import { createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaPrefixName, getMetaPrefixType } from "./filesystem-abstractions/filesystem-abstraction.ts";
 
 import path from "path";
 import { ResourceTypes, resourceTypetoTypeDirectoryMapping } from "./export-by-resource-type.ts";
 import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
+import { DatastoreInfo, DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, MetadataCacheType, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaPrefixName, getMetaPrefixType } from "@dataspecer/git";
 
 
 // TODO RadStr: Put this method into some separate file

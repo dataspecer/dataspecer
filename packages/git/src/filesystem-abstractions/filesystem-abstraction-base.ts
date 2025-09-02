@@ -1,9 +1,9 @@
-import { GitProvider } from "@dataspecer/git";
-import { ComparisonData } from "../../routes/git-webhook-handler.ts";
+import { GitProvider } from "../git-provider-api.ts";
 import { FilesystemNode, FilesystemMappingType, MetadataCacheType, DirectoryNode, FilesystemNodeLocation, DatastoreInfo } from "../export-import-data-api.ts";
 import { createEmptyFilesystemMapping, createFilesystemMappingRoot, FilesystemAbstraction, getMetaPrefixType } from "./filesystem-abstraction.ts";
 
 import path from "path";
+import { ComparisonData } from "../diff-types.ts";
 
 export abstract class FilesystemAbstractionBase implements FilesystemAbstraction {
   /////////////////////////////////////

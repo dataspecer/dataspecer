@@ -1,16 +1,13 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
-import { FilesystemMappingType, FilesystemNode, DirectoryNode, MetadataCacheType, FilesystemNodeLocation, DatastoreInfo } from "../../export-import-data-api.ts";
-import { createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaPrefixName, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode } from "../filesystem-abstraction.ts";
-import { ComparisonData } from "../../../routes/git-webhook-handler.ts";
 import { v4 as uuidv4 } from 'uuid';
-import { BaseResource, ResourceModel } from "../../../models/resource-model.ts";
+import { GitProvider, FilesystemAbstractionBase, ComparisonData, DatastoreInfo, DirectoryNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, MetadataCacheType, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaPrefixName, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode } from "@dataspecer/git";
+import { ResourceModel } from "../../../models/resource-model.ts";
+import { deleteBlob, deleteResource, updateBlob } from "../../../routes/resource.ts";
+import { BaseResource } from "@dataspecer/core-v2/project";
+import { convertDatastoreBasedOnFormat } from "../../../utils/git-utils.ts";
+import { isDatastoreForMetadata } from "../../export-new.ts";
 import { currentVersion } from "../../../tools/migrations/index.ts";
 import configuration from "../../../configuration.ts";
-import { isDatastoreForMetadata } from "../../export-new.ts";
-import { deleteBlob, deleteResource, updateBlob } from "../../../routes/resource.ts";
-import { FilesystemAbstractionBase } from "../filesystem-abstraction-base.ts";
-import { GitProvider } from "@dataspecer/git";
-import { convertDatastoreBasedOnFormat } from "../../../utils/git-utils.ts";
 import { resourceModel as mainResourceModel } from "../../../main.ts";
 
 

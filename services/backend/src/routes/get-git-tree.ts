@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
-import { AvailableFilesystems, FilesystemFactory } from "../export-import/filesystem-abstractions/filesystem-abstraction.ts";
-import { FilesystemNodeLocation } from "../export-import/export-import-data-api.ts";
+import { FilesystemNodeLocation } from "@dataspecer/git";
+import { AvailableFilesystems, FilesystemFactory } from "../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 
 export const getGitTree = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({

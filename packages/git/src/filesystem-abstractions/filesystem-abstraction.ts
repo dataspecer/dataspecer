@@ -1,10 +1,8 @@
 // TODO RadStr: Think of better names and the name of the property and of type should be aligned
 
-import { GitProvider } from "@dataspecer/git";
-import { ComparisonData } from "../../routes/git-webhook-handler.ts";
+import { GitProvider } from "../git-provider-api.ts";
 import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, MetadataCacheType, DatastoreInfo } from "../export-import-data-api.ts";
-import { ClassicFilesystem } from "./implementations/classic-filesystem.ts";
-import { DSFilesystem } from "./implementations/ds-filesystem.ts";
+import { ComparisonData } from "../diff-types.ts";
 
 /**
  * This interface represents abstraction over system with data. The name contains filesystem, since we can think of it as abstraction over filesystem, but
@@ -207,25 +205,6 @@ export function createFilesystemMappingRoot(): DirectoryNode {
 
 export function createEmptyFilesystemMapping(): FilesystemMappingType {
   return {};
-}
-
-// TODO RadStr: Again move into common pakcage, it is also used as type on frontend
-export enum AvailableFilesystems {
-  DS_Filesystem = "ds-filesystem",
-  ClassicFilesystem = "classic-filesystem",
-}
-
-export class FilesystemFactory {
-  public static async createFileSystem(roots: FilesystemNodeLocation[], filesystem: AvailableFilesystems, gitProvider: GitProvider | null): Promise<FilesystemAbstraction> {
-    switch(filesystem) {
-      case AvailableFilesystems.DS_Filesystem:
-        return DSFilesystem.createFilesystemAbstraction(roots, gitProvider);     // TODO RadStr: Await or not?
-      case AvailableFilesystems.ClassicFilesystem:
-        return ClassicFilesystem.createFilesystemAbstraction(roots, gitProvider);
-      default:
-        throw new Error("Not available filesystem, you forgot to extend the factory class");
-    }
-  }
 }
 
 export function getMetaPrefixType(): string {

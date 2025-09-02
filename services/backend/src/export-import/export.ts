@@ -4,7 +4,7 @@ import { BaseResource, ResourceModel } from "../models/resource-model.ts";
 import { v4 as uuidv4 } from 'uuid';
 import { currentVersion } from "../tools/migrations/index.ts";
 import configuration from "../configuration.ts";
-import { MetadataCacheType } from "./export-import-data-api.ts";
+import { MetadataCacheType } from "@dataspecer/git";
 
 export class PackageExporter {
   resourceModel: ResourceModel;

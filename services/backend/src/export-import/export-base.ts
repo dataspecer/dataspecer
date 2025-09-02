@@ -1,9 +1,9 @@
+import { DirectoryNode, FilesystemNodeLocation, FilesystemAbstraction } from "@dataspecer/git";
 import { GitHubProvider } from "../git-providers/git-provider-instances/github.ts";
 import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
 import { AllowedExportResults, AvailableExports, ExportActionForFilesystem, ExportActionForZip, ExportActions } from "./export-actions.ts";
 import { PackageExporterByResourceType } from "./export-by-resource-type.ts";
-import { DirectoryNode, FilesystemNodeLocation } from "./export-import-data-api.ts";
-import { AvailableFilesystems, FilesystemAbstraction, FilesystemFactory } from "./filesystem-abstractions/filesystem-abstraction.ts";
+import { AvailableFilesystems, FilesystemFactory } from "./filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 
 export interface PackageExporterInterface {
   doExportFromIRI(

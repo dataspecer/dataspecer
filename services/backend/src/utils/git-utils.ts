@@ -2,12 +2,11 @@
 
 import express from "express"
 import YAML from "yaml";
-import { FilesystemAbstraction } from "../export-import/filesystem-abstractions/filesystem-abstraction.ts";
-import { DatastoreInfo, DirectoryNode, FileNode, FilesystemNode } from "../export-import/export-import-data-api.ts";
 import { DatastoreComparison, DiffTree, ResourceComparison, ResourceComparisonResult } from "../models/merge-state-model.ts";
 import { getDatastoreInfoOfGivenDatastoreType } from "../export-import/filesystem-abstractions/implementations/ds-filesystem.ts";
 import _ from "lodash";
 import { ComparisonData } from "../routes/git-webhook-handler.ts";
+import { DatastoreInfo, DirectoryNode, FileNode, FilesystemNode, FilesystemAbstraction } from "@dataspecer/git";
 
 
 

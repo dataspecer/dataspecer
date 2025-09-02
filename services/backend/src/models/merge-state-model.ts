@@ -1,14 +1,14 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { ComparisonData } from "../routes/git-webhook-handler.ts";
 import { v4 as uuidv4 } from "uuid";
-import { DatastoreInfo, FilesystemNode } from "../export-import/export-import-data-api.ts";
 import { removeCircularDependenciesInDiffTree } from "../utils/git-utils.ts";
-import { AvailableFilesystems } from "../export-import/filesystem-abstractions/filesystem-abstraction.ts";
 import fs from "fs";
 import path from "path";
 import { ALL_GIT_REPOSITORY_ROOTS } from "./git-store-info.ts";
 import { ResourceModel } from "./resource-model.ts";
 import { simpleGit } from "simple-git";
+import { FilesystemNode, DatastoreInfo } from "@dataspecer/git";
+import { AvailableFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 
 /**
  * Says the Cause of the merge. Combined with the "editable" field, that is the field which gives us information about what datasource we were changing,

@@ -1,12 +1,11 @@
 import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
-import { BaseResource, ResourceModel } from "../models/resource-model.ts";
+import { BaseResource } from "../models/resource-model.ts";
 import { currentVersion } from "../tools/migrations/index.ts";
 import configuration from "../configuration.ts";
-import { DirectoryNode, FilesystemNode, MetadataCacheType } from "./export-import-data-api.ts";
-import { getMetaPrefixType } from "./filesystem-abstractions/filesystem-abstraction.ts";
 
 import path from "path";
 import { PackageExporterBase } from "./export-base.ts";
+import { DirectoryNode, FilesystemNode, MetadataCacheType, getMetaPrefixType } from "@dataspecer/git";
 
 
 // TODO RadStr: Put this method into some separate file

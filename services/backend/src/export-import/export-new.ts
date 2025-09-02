@@ -1,5 +1,4 @@
-import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, MetadataCacheType, DatastoreInfo, FilesystemNodeLocation } from "./export-import-data-api.ts";
-import { getMetaPrefixType } from "./filesystem-abstractions/filesystem-abstraction.ts";
+import { DirectoryNode, FilesystemNode, getMetaPrefixType } from "@dataspecer/git";
 import { PackageExporterBase } from "./export-base.ts";
 
 

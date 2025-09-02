@@ -7,8 +7,6 @@ import fs from "fs";
 import { simpleGit } from "simple-git";
 import path from "path";
 import { createResource, updateBlob, updateResourceMetadata } from "./resource.ts";
-import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, DatastoreInfo } from "../export-import/export-import-data-api.ts";
-import { AvailableFilesystems, createFilesystemMappingRoot, FilesystemAbstraction, FilesystemFactory } from "../export-import/filesystem-abstractions/filesystem-abstraction.ts";
 import { isDatastoreForMetadata } from "../export-import/export-new.ts";
 import { getDatastoreInfoOfGivenDatastoreType } from "../export-import/filesystem-abstractions/implementations/ds-filesystem.ts";
 import _ from "lodash";
@@ -18,6 +16,8 @@ import { mergeStateModel, resourceModel } from "../main.ts";
 import { updateDSRepositoryByPullingGit } from "./pull-remote-repository.ts";
 import { EditableType, MergeStateCause } from "../models/merge-state-model.ts";
 import { WEBHOOK_PATH_PREFIX } from "../models/git-store-info.ts";
+import { DatastoreInfo, DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, createFilesystemMappingRoot, FilesystemAbstraction } from "@dataspecer/git";
+import { AvailableFilesystems, FilesystemFactory } from "../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 
 
 export const handleWebhook = asyncHandler(async (request: express.Request, response: express.Response) => {

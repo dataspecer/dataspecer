@@ -26,10 +26,10 @@ import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-
 import { ConfigType } from "../authorization/auth-config.ts";
 import { createReadmeFile } from "../git-readme/readme-generator.ts";
 import { ReadmeTemplateData } from "../git-readme/readme-template.ts";
-import { AvailableFilesystems } from "../export-import/filesystem-abstractions/filesystem-abstraction.ts";
 import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
 import { AvailableExports } from "../export-import/export-actions.ts";
 import { createSimpleGit, gitCloneBasic } from "../utils/simple-git-utils.ts";
+import { AvailableFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 
 
 
