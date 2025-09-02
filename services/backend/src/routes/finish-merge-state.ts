@@ -16,7 +16,15 @@ export const finishMergeState = asyncHandler(async (request: express.Request, re
   const query = querySchema.parse(request.query);
   const { uuid }= query;
 
-  await mergeStateModel.mergeStateFinisher(uuid);
-  response.sendStatus(200);
-  return;
+  const result = await mergeStateModel.mergeStateFinalizer(uuid);
+  if (result === null) {
+    response.status(409);
+    response.json({error: "The merge state still has conflicts"});
+    return;
+  }
+  else {
+    response.status(200);
+    response.json({ uuid, mergeStateCause: result.mergeStateCause });
+    return;
+  }
 });

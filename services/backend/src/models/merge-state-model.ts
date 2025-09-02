@@ -91,16 +91,21 @@ export class MergeStateModel {
     this.resourceModel = resourceModel;
   }
 
-  async mergeStateFinisher(uuid: string) {
+  async mergeStateFinalizer(uuid: string): Promise<MergeState | null> {
     const mergeState = await this.getMergeStateFromUUID(uuid, true);
     if (mergeState === null) {
       throw new Error(`Merge state for uuid (${uuid}) does not exist`);
     }
 
-    await this.mergeStateConflictFinisherInternal(mergeState);
+    const isFinalized = await this.mergeStateConflictFinalizerInternal(mergeState);
+    if (isFinalized) {
+      return mergeState;
+    }
+
+    return null;
   }
 
-  private async handlePullFinisher(mergeState: MergeState) {
+  private async handlePullFinalizer(mergeState: MergeState) {
     // TODO: This can be "generalized" to allow updating git
     let filesystemOfTheToUpdate: AvailableFilesystems;
     let iriOfTheToUpdate: string;
@@ -135,20 +140,38 @@ export class MergeStateModel {
     }
   }
 
+  private async handlePushFinalizer(mergeState: MergeState) {
+    // Same as pull, but we want the user to push, that is to insert the commit message back,
+    //  but that is handled in the request handler, not here
+    await this.handlePullFinalizer(mergeState);
+  }
+
+  private async handleMergeFinalizer(mergeState: MergeState) {
+    // TODO RadStr: Same as pull but with updating the new merge fields in db table
+  }
+
   /**
    * This method checks if the list of unresolved conflicts is empty and if so it removes the entry and updates relevant data.
    *  For example the last commit hash in case of Dataspecer resource
+   * @returns true, when it successfully finalized merge state
    */
-  private async mergeStateConflictFinisherInternal(mergeState: MergeState) {
+  private async mergeStateConflictFinalizerInternal(mergeState: MergeState): Promise<boolean> {
     if (mergeState.unresolvedConflicts?.length !== 0) {
-      return;
+      return false;
     }
 
     if (mergeState.mergeStateCause === "pull") {
-      await this.handlePullFinisher(mergeState);
+      await this.handlePullFinalizer(mergeState);
     }
-    // TODO RadStr: The others
+    else if (mergeState.mergeStateCause === "push") {
+      await this.handlePushFinalizer(mergeState);
+    }
+    else if (mergeState.mergeStateCause === "merge") {
+      await this.handleMergeFinalizer(mergeState);
+    }
     await this.removeMergeState(mergeState.uuid);
+
+    return true;
   }
 
   private removeRepository(filesystem: AvailableFilesystems, pathToRootMetaFile: string, shouldPrintErrorToConsole: boolean) {
