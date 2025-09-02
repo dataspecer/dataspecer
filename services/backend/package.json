@@ -17,6 +17,7 @@
     "@dataspecer/core-v2": "*",
     "@dataspecer/documentation": "*",
     "@dataspecer/genapp": "*",
+    "@dataspecer/git": "*",
     "@dataspecer/json": "*",
     "@dataspecer/ldkit": "*",
     "@dataspecer/rdfs-adapter": "*",
