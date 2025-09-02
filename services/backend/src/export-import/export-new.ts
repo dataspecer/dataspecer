@@ -1,5 +1,5 @@
-import { DirectoryNode, FilesystemNode, getMetaPrefixType } from "@dataspecer/git";
 import { PackageExporterBase } from "./export-base.ts";
+import { DirectoryNode, FilesystemNode, getMetaPrefixType } from "@dataspecer/git";
 
 
 // TODO RadStr: Put this method into some separate file

@@ -11,7 +11,7 @@ import sodium from "libsodium-wrappers-sumo";
 import { CommitReferenceType, createRemoteRepositoryReturnType, GitCredentials, GitProviderEnum, WebhookRequestDataProviderIndependent } from "@dataspecer/git";
 import { GitProviderBase } from "../git-provider-base.ts";
 import { resourceModel } from "../../main.ts";
-import { createLinksForFiles, gitProviderDomains } from "../git-provider-base.ts";
+import { createLinksForFiles, gitProviderDomains } from "../git-provider-factory.ts";
 
 // Note:
 // Even though the request usually work without, the docs demand to specify User-Agent in headers for REST API requests

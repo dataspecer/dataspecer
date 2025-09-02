@@ -2,7 +2,7 @@ import { z } from "zod";
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { CommitReferenceType, GitProvider } from "@dataspecer/git";
-import { GitProviderFactory } from "../git-providers/git-provider-base.ts";
+import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { v4 as uuidv4 } from "uuid";
 import { resourceModel } from "../main.ts";
 

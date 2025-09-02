@@ -18,7 +18,7 @@ import { getRepoURLWithAuthorization, getRepoURLWithAuthorizationUsingDebugPatTo
 import { simpleGit, SimpleGit } from "simple-git";
 import { extractPartOfRepositoryURL } from "../utils/git-utils.ts";
 import { GitCredentials, GitProvider } from "@dataspecer/git";
-import { GitProviderFactory } from "../git-providers/git-provider-base.ts";
+import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
 import YAML from "yaml";
 import { createUniqueCommitMessage } from "../utils/git-utils.ts";

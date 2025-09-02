@@ -5,7 +5,7 @@ import { resourceModel } from "../main.ts";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { extractPartOfRepositoryURL } from "../utils/git-utils.ts";
 import { WEBHOOK_HANDLER_URL } from "@dataspecer/git";
-import { GitProviderFactory } from "../git-providers/git-provider-base.ts";
+import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { commitPackageToGitUsingAuthSession } from "./commit-package-to-git.ts";
 import { transformCommitMessageIfEmpty } from "../utils/git-utils.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-session.ts";

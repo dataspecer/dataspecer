@@ -3,7 +3,7 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import fs from "fs";
 import { GitProvider } from "@dataspecer/git";
-import { GitProviderFactory } from "../git-providers/git-provider-base.ts";
+import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { saveChangesInDirectoryToBackendFinalVersion } from "./git-webhook-handler.ts";
 import { resourceModel } from "../main.ts";
 import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "../utils/simple-git-utils.ts";
