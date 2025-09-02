@@ -57,6 +57,7 @@ model Resource {
   // True if this package represents head of branch. That is, it should move with commits to this branch.
   // Otherwise it should not react to the webhooks from git, neither allow to commit from it to git.
   representsBranchHead Boolean @default(true)
+
   // Is the full hash of the last git commit on this package.
   // Note that this value is one commit ahead, when it comes commiting to git.
   // That is if we commit (or import package from git), it is pointing to the last commit on the relevant branch,
@@ -67,6 +68,15 @@ model Resource {
   lastCommitHash String @default("")
   // If false then there exists commit in remote git repo, which failed to be pushed to DS through webhook, because of conflicts.
   isSynchronizedWithRemote Boolean @default(true)
+  // When this is empty string, then it means the branch has currently no remaining merge commit.
+  // If it is not empty, then it means there is another branch in DS, which finished mergeState, but
+  // merge commit itself was not yet commited and pushed to Git repo.
+  mergeFromHash String @default("")
+  // We only need this for the commit message, otherwise it should be equivalent to using git merge with hash
+  // Note that if this is empty, then it means that we merged directly from commit.
+  // Also note that if the tip of branch moved, then the user should be probably warned, that he is performing merge directly from commit.
+  // (which as said before only reflects in the default commit message).
+  mergeFromBranch String @default("")
 
   // Technical metadata: creation date.
   createdAt DateTime @default(now())
