@@ -1,4 +1,4 @@
-import { GitProvider, FilesystemNodeLocation, FilesystemAbstraction } from "@dataspecer/git";
+import { GitProvider, FilesystemNodeLocation, FilesystemAbstraction, getMetaPrefixType } from "@dataspecer/git";
 import { DSFilesystem } from "./implementations/ds-filesystem.ts";
 import { ClassicFilesystem } from "./implementations/classic-filesystem.ts";
 
@@ -19,4 +19,8 @@ export class FilesystemFactory {
         throw new Error("Not available filesystem, you forgot to extend the factory class");
     }
   }
+}
+
+export function isDatastoreForMetadata(datastoreType: string): boolean {
+  return datastoreType === getMetaPrefixType();
 }

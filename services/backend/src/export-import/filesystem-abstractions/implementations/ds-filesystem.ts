@@ -5,7 +5,7 @@ import { ResourceModel } from "../../../models/resource-model.ts";
 import { deleteBlob, deleteResource, updateBlob } from "../../../routes/resource.ts";
 import { BaseResource } from "@dataspecer/core-v2/project";
 import { convertDatastoreBasedOnFormat } from "../../../utils/git-utils.ts";
-import { isDatastoreForMetadata } from "../../export-new.ts";
+import { isDatastoreForMetadata } from "../backend-filesystem-abstraction-factory.ts";
 import { currentVersion } from "../../../tools/migrations/index.ts";
 import configuration from "../../../configuration.ts";
 import { resourceModel as mainResourceModel } from "../../../main.ts";

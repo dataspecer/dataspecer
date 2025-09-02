@@ -4,7 +4,7 @@ import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, Filesys
 
 import fs from "fs";
 import * as pathLibrary from "path";
-import { isDatastoreForMetadata } from "../../export-new.ts";
+import { isDatastoreForMetadata } from "../backend-filesystem-abstraction-factory.ts";
 import { getDatastoreInfoOfGivenDatastoreType } from "./ds-filesystem.ts";
 import { isArtificialExportDirectory } from "../../export-by-resource-type.ts";
 import { convertDatastoreBasedOnFormat, dsPathJoin } from "../../../utils/git-utils.ts";

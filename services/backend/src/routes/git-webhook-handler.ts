@@ -7,7 +7,7 @@ import fs from "fs";
 import { simpleGit } from "simple-git";
 import path from "path";
 import { createResource, updateBlob, updateResourceMetadata } from "./resource.ts";
-import { isDatastoreForMetadata } from "../export-import/export-new.ts";
+import { isDatastoreForMetadata } from "../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 import { getDatastoreInfoOfGivenDatastoreType } from "../export-import/filesystem-abstractions/implementations/ds-filesystem.ts";
 import _ from "lodash";
 import { compareTrees, dsPathJoin } from "../utils/git-utils.ts";

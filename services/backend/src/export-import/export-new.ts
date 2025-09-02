@@ -1,11 +1,6 @@
 import { PackageExporterBase } from "./export-base.ts";
-import { DirectoryNode, FilesystemNode, getMetaPrefixType } from "@dataspecer/git";
-
-
-// TODO RadStr: Put this method into some separate file
-export function isDatastoreForMetadata(datastoreType: string): boolean {
-  return datastoreType === getMetaPrefixType();
-}
+import { DirectoryNode, FilesystemNode } from "@dataspecer/git";
+import { isDatastoreForMetadata } from "./filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 
 
 export class PackageExporterNew extends PackageExporterBase {
