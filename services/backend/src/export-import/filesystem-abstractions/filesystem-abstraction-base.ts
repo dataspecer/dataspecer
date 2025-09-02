@@ -1,4 +1,4 @@
-import { GitProvider } from "../../git-providers/git-provider-api.ts";
+import { GitProvider } from "@dataspecer/git";
 import { ComparisonData } from "../../routes/git-webhook-handler.ts";
 import { FilesystemNode, FilesystemMappingType, MetadataCacheType, DirectoryNode, FilesystemNodeLocation, DatastoreInfo } from "../export-import-data-api.ts";
 import { createEmptyFilesystemMapping, createFilesystemMappingRoot, FilesystemAbstraction, getMetaPrefixType } from "./filesystem-abstraction.ts";

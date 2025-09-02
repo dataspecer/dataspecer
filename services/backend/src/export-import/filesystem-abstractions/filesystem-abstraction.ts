@@ -1,6 +1,6 @@
 // TODO RadStr: Think of better names and the name of the property and of type should be aligned
 
-import { GitProvider } from "../../git-providers/git-provider-api.ts";
+import { GitProvider } from "@dataspecer/git";
 import { ComparisonData } from "../../routes/git-webhook-handler.ts";
 import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, MetadataCacheType, DatastoreInfo } from "../export-import-data-api.ts";
 import { ClassicFilesystem } from "./implementations/classic-filesystem.ts";

@@ -8,9 +8,10 @@ import fs from "fs";
 
 // Using this one since I could not make the ones for nodeJS (one is not using ES modules and the other one seems to be too old and correctly support types)
 import sodium from "libsodium-wrappers-sumo";
-import { GitProviderEnum, gitProviderDomains, WebhookRequestDataProviderIndependent, GitCredentials, createLinksForFiles, CommitReferenceType, createRemoteRepositoryReturnType } from "../git-provider-api.ts";
+import { CommitReferenceType, createRemoteRepositoryReturnType, GitCredentials, GitProviderEnum, WebhookRequestDataProviderIndependent } from "@dataspecer/git";
 import { GitProviderBase } from "../git-provider-base.ts";
 import { resourceModel } from "../../main.ts";
+import { createLinksForFiles, gitProviderDomains } from "../git-provider-base.ts";
 
 // Note:
 // Even though the request usually work without, the docs demand to specify User-Agent in headers for REST API requests

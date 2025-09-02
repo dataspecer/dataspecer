@@ -2,7 +2,7 @@ import { getSession, Session } from "@auth/express"
 import express, { NextFunction } from "express"
 import { createBasicAuthConfig, ConfigType, createAuthConfigBasedOnAccountScope } from "./auth-config.ts"
 import { asyncHandler } from "../utils/async-handler.ts";
-import { GitCredentials, GitProvider } from "../git-providers/git-provider-api.ts";
+import { GitCredentials, GitProvider } from "@dataspecer/git";
 import { getToken } from "@auth/core/jwt"
 import { AUTH_SECRET } from "../git-never-commit.ts";
 import { convertExpressRequestToNormalRequest } from "../utils/git-utils.ts";

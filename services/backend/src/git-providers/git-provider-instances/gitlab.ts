@@ -1,7 +1,8 @@
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
-import { gitProviderDomains, GitProviderEnum, WebhookRequestDataProviderIndependent, GitCredentials, CommitReferenceType, createRemoteRepositoryReturnType } from "../git-provider-api.ts";
+import { CommitReferenceType, createRemoteRepositoryReturnType, GitCredentials, GitProviderEnum, WebhookRequestDataProviderIndependent } from "@dataspecer/git";
 import { GitProviderBase } from "../git-provider-base.ts";
+import { gitProviderDomains } from "../git-provider-base.ts";
 
 
 export class GitLabProvider extends GitProviderBase {

@@ -14,10 +14,11 @@ import { currentVersion } from "../tools/migrations/index.ts";
 import configuration from "../configuration.ts";
 
 import fs from "fs";
-import { getRepoURLWithAuthorization, getRepoURLWithAuthorizationUsingDebugPatToken, GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN} from "../git-never-commit.ts";
+import { getRepoURLWithAuthorization, getRepoURLWithAuthorizationUsingDebugPatToken } from "../git-never-commit.ts";
 import { simpleGit, SimpleGit } from "simple-git";
 import { extractPartOfRepositoryURL } from "../utils/git-utils.ts";
-import { GitCredentials, GitProvider, GitProviderFactory } from "../git-providers/git-provider-api.ts";
+import { GitCredentials, GitProvider } from "@dataspecer/git";
+import { GitProviderFactory } from "../git-providers/git-provider-base.ts";
 
 import YAML from "yaml";
 import { createUniqueCommitMessage } from "../utils/git-utils.ts";

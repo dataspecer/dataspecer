@@ -3,7 +3,7 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { z } from "zod";
 import { v4 as uuidv4 } from 'uuid';
-import { CommitReferenceType } from "../git-providers/git-provider-api.ts";
+import { CommitReferenceType } from "@dataspecer/git";
 
 export const getResource = asyncHandler(async (request: express.Request, response: express.Response) => {
     const querySchema = z.object({

@@ -9,7 +9,7 @@ import configuration from "../../../configuration.ts";
 import { isDatastoreForMetadata } from "../../export-new.ts";
 import { deleteBlob, deleteResource, updateBlob } from "../../../routes/resource.ts";
 import { FilesystemAbstractionBase } from "../filesystem-abstraction-base.ts";
-import { GitProvider } from "../../../git-providers/git-provider-api.ts";
+import { GitProvider } from "@dataspecer/git";
 import { convertDatastoreBasedOnFormat } from "../../../utils/git-utils.ts";
 import { resourceModel as mainResourceModel } from "../../../main.ts";
 

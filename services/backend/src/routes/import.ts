@@ -26,7 +26,8 @@ import { PackageImporter } from "../export-import/import.ts";
 import { Readable } from "stream";
 import { ReadableStream } from "stream/web";
 import { buffer } from "stream/consumers";
-import { CommitReferenceType, getDefaultCommitReferenceTypeForZipDownload, GitProvider, GitProviderFactory, isCommitReferenceType } from "../git-providers/git-provider-api.ts";
+import { CommitReferenceType, getDefaultCommitReferenceTypeForZipDownload, GitProvider, isCommitReferenceType } from "@dataspecer/git";
+import { GitProviderFactory } from "../git-providers/git-provider-base.ts";
 import { updateGitRelatedDataForPackage } from "./link-to-existing-remote-git-repo.ts";
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {

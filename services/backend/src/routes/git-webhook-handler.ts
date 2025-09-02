@@ -1,6 +1,7 @@
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
-import { GitProvider, GitProviderEnum, GitProviderFactory } from "../git-providers/git-provider-api.ts";
+import { GitProvider, GitProviderEnum } from "@dataspecer/git";
+import { GitProviderFactory } from "../git-providers/git-provider-base.ts";
 import { GIT_RAD_STR_BOT_USERNAME, GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN } from "../git-never-commit.ts";
 import fs from "fs";
 import { simpleGit } from "simple-git";

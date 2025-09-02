@@ -6,7 +6,7 @@ import { storeModel } from './../main.ts';
 import { LocalStoreModel, ModelStore } from "./local-store-model.ts";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { CoreResource } from "@dataspecer/core/core/core-resource";
-import { CommitReferenceType } from "../git-providers/git-provider-api.ts";
+import { CommitReferenceType } from "@dataspecer/git";
 
 /**
  * Base information every resource has or should have.
