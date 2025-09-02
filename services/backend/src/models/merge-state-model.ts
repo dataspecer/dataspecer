@@ -92,12 +92,12 @@ export class MergeStateModel {
   }
 
   async mergeStateFinisher(uuid: string) {
-    const mergeState = await this.getMergeStateFromUUID(uuid, false);
+    const mergeState = await this.getMergeStateFromUUID(uuid, true);
     if (mergeState === null) {
       throw new Error(`Merge state for uuid (${uuid}) does not exist`);
     }
 
-    this.mergeStateConflictFinisherInternal(mergeState);
+    await this.mergeStateConflictFinisherInternal(mergeState);
   }
 
   private async handlePullFinisher(mergeState: MergeState) {
@@ -105,19 +105,19 @@ export class MergeStateModel {
     let filesystemOfTheToUpdate: AvailableFilesystems;
     let iriOfTheToUpdate: string;
     let filesystemOfThePulled: AvailableFilesystems;
-    let rRootFullPathToMetaMergeToOfThePulled: string;
+    let rootFullPathToMetaMergeToOfThePulled: string;
     if (mergeState.editable === "mergeFrom") {
       filesystemOfTheToUpdate = mergeState.filesystemTypeMergeFrom;
       iriOfTheToUpdate = mergeState.rootIriMergeFrom;
       filesystemOfThePulled = mergeState.filesystemTypeMergeTo;
-      rRootFullPathToMetaMergeToOfThePulled = mergeState.rootFullPathToMetaMergeTo;
+      rootFullPathToMetaMergeToOfThePulled = mergeState.rootFullPathToMetaMergeTo;
     }
     else {
       // TODO RadStr: Thinking about it, when I am pulling maybe I don't want to have mergeTo
       filesystemOfTheToUpdate = mergeState.filesystemTypeMergeTo;
       iriOfTheToUpdate = mergeState.rootIriMergeTo;
       filesystemOfThePulled = mergeState.filesystemTypeMergeFrom;
-      rRootFullPathToMetaMergeToOfThePulled = mergeState.rootFullPathToMetaMergeFrom;
+      rootFullPathToMetaMergeToOfThePulled = mergeState.rootFullPathToMetaMergeFrom;
     }
 
     if (filesystemOfTheToUpdate === AvailableFilesystems.DS_Filesystem) {
@@ -127,7 +127,9 @@ export class MergeStateModel {
       }
     }
     if (filesystemOfThePulled === AvailableFilesystems.ClassicFilesystem) {
-      const git = simpleGit(rRootFullPathToMetaMergeToOfThePulled);
+      // We need path to any directory inside repo (path to file causes error)
+      const directory = path.dirname(rootFullPathToMetaMergeToOfThePulled);
+      const git = simpleGit(directory);
       const gitCommitHash = await git.revparse(["HEAD"]);
       this.resourceModel.updateLastCommitHash(iriOfTheToUpdate, gitCommitHash);
     }

@@ -16,7 +16,7 @@ export const finishMergeState = asyncHandler(async (request: express.Request, re
   const query = querySchema.parse(request.query);
   const { uuid }= query;
 
-  mergeStateModel.mergeStateFinisher(uuid);
+  await mergeStateModel.mergeStateFinisher(uuid);
   response.sendStatus(200);
   return;
 });
