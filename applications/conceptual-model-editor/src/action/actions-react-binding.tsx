@@ -136,7 +136,11 @@ import {
   addVisualDiagramNodeForExistingModelToVisualModelAction,
 } from "./create-visual-diagram-node-for-existing-model";
 import { putVisualDiagramNodeContentToVisualModelAction } from "./put-visual-diagram-node-content-to-visual-model";
-import { createAddClassSurroundingsOperation, createCmeOperationExecutor, createReleaseClassSurroundingsOperation } from "../operation";
+import {
+  AddSemanticClassSurroundingsOperation,
+  createCmeOperationExecutor,
+  ReleaseSemanticClassSurroundingsOperation,
+} from "../operation";
 
 const LOG = createLogger(import.meta.url);
 
@@ -1144,27 +1148,26 @@ function createActionsContext(
   const addSemanticClassSurroundings = async (
     semanticModel: ModelDsIdentifier, entity: EntityDsIdentifier,
   ) => {
-    const models = [...graph.models.values()];
-    const visualModels = [...graph.visualModels.values()];
-    const operation = createAddClassSurroundingsOperation({
-      semanticModel, entity
+    const cmeOperationExecutor = createCmeOperationExecutor(
+      [...graph.models.values()], [...graph.visualModels.values()]);
+    await cmeOperationExecutor.execute<AddSemanticClassSurroundingsOperation>({
+      type: "add-class-surroundings-operation",
+      semanticModel,
+      entity,
     });
-    const executor = createCmeOperationExecutor(models, visualModels);
-    await executor.execute(operation);
   }
 
   const releaseSemanticClassSurroundings = async (
     semanticModel: ModelDsIdentifier, entity: EntityDsIdentifier,
   ) => {
-    const models = [...graph.models.values()];
-    const visualModels = [...graph.visualModels.values()];
-    const operation = createReleaseClassSurroundingsOperation({
-      semanticModel, entity
+    const cmeOperationExecutor = createCmeOperationExecutor(
+      [...graph.models.values()], [...graph.visualModels.values()]);
+    await cmeOperationExecutor.execute<ReleaseSemanticClassSurroundingsOperation>({
+      type: "release-class-surroundings-operation",
+      semanticModel,
+      entity,
     });
-    const executor = createCmeOperationExecutor(models, visualModels);
-    await executor.execute(operation);
   }
-
 
   const callbacks: DiagramCallbacks = {
     onShowNodeDetail: (node) => openDetailDialog(node.externalIdentifier),
