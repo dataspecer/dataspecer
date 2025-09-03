@@ -28,7 +28,7 @@ import { ReloadImported } from "./dialog/reload-imported";
 import { AddImported } from "./dialog/add-imported";
 import { ReloadPimWrapper } from "./dialog/reload-pim-wrapper";
 import { stopPropagation } from "./utils/events";
-import { commitToDigDialogOnClickHandler, linkToExistingGitRepositoryHandler, linkToGitRepoOnClickHandler } from "./dialog/git-url";
+import { commitToGitDialogOnClickHandler, linkToExistingGitRepositoryHandler, linkToGitRepoOnClickHandler } from "./dialog/git-url";
 import LoginCard from "./components/login-card";
 import { gitHistoryVisualizationOnClickHandler } from "./components/git-history-visualization";
 import { removeGitLinkFromPackage, switchRepresentsBranchHead } from "./utils/utilities";
@@ -249,9 +249,9 @@ const Row = ({ iri, projectFilter, setProjectFilter, mergeActors, parentIri }: {
             {<DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/git/redirect-to-remote-git-repository?iri=" + encodeURIComponent(iri)}><Eye className="mr-2 h-4 w-4" />Visit the remote repository</a></DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git branch visualization</DropdownMenuItem>}
             <hr className="border-gray-300" />
-            {<DropdownMenuItem onClick={async () => linkToGitRepoOnClickHandler(openModal, iri, resource)}><GitPullRequestIcon className="mr-2 h-4 w-4" />Create remote repository </DropdownMenuItem>}
+            {<DropdownMenuItem onClick={async () => linkToGitRepoOnClickHandler(openModal, iri, resource)}><GitPullRequestIcon className="mr-2 h-4 w-4" />Create remote repository</DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => linkToExistingGitRepositoryHandler(openModal, iri, resource)}><Link className="mr-2 h-4 w-4" />Link to remote repository </DropdownMenuItem>}
-            {<DropdownMenuItem onClick={async () => commitToDigDialogOnClickHandler(openModal, iri, resource)}><GitCommit className="mr-2 h-4 w-4" />Commit </DropdownMenuItem>}
+            {<DropdownMenuItem onClick={async () => commitToGitDialogOnClickHandler(openModal, iri, resource)}><GitCommit className="mr-2 h-4 w-4" />Commit </DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => manualPull(iri)}><Import className="mr-2 h-4 w-4" />Pull</DropdownMenuItem>}
             {<DropdownMenuItem onClick={() => openModal(CreateNewBranchDialog, { sourcePackage: resource })}><GitBranchPlus className="mr-2 h-4 w-4" />Create branch</DropdownMenuItem>}
             <hr className="border-gray-300" />

@@ -1,4 +1,5 @@
 import { modifyPackageRepresentsBranchHead, requestLoadPackage } from "@/package";
+import { toast } from "sonner";
 
 // TODO RadStr: Maybe move into package?
 export function convertToValidRepositoryName(repoName: string): string {
@@ -21,7 +22,7 @@ export enum ConfigType {
  */
 export async function removeGitLinkFromPackage(iri: string) {
   const removeFetchURL = import.meta.env.VITE_BACKEND + "/git/remove-git-repository?iri=" + encodeURIComponent(iri);
-  await fetch(
+  const response = await fetch(
     removeFetchURL,
     {
       credentials: "include",         // TODO RadStr: Important, without this we don't send the authorization cookies.
@@ -29,11 +30,25 @@ export async function removeGitLinkFromPackage(iri: string) {
     }
   );
 
-  requestLoadPackage(iri, true);
+  const irisToUpdate = (await response.json())?.irisToUpdate ?? [];
+  for (const iriToUpdate of irisToUpdate) {
+    await requestLoadPackage(iriToUpdate, true);
+  }
+
+  gitOperationResultToast(response);
 }
 
 // TODO RadStr: Maybe once again put elsewhere, since it is not really a utility function
 export async function switchRepresentsBranchHead(iri: string, isCurrentlyRepresentingBranchHead: boolean) {
   await modifyPackageRepresentsBranchHead(iri, !isCurrentlyRepresentingBranchHead);
   await requestLoadPackage(iri, true);
+}
+
+export function gitOperationResultToast(response: Response) {
+  if (response.ok) {
+    toast.success("Git operation was successful");
+  }
+  else {
+    toast.error("Git operation failed");
+  }
 }

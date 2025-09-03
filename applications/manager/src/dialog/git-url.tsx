@@ -4,7 +4,7 @@ import { BetterModalProps, OpenBetterModal, useBetterModal } from "@/lib/better-
 import { useLayoutEffect, useMemo, useState } from "react";
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
 import { Pencil } from "lucide-react";
-import { convertToValidRepositoryName } from "@/utils/utilities";
+import { convertToValidRepositoryName, gitOperationResultToast } from "@/utils/utilities";
 import { requestLoadPackage } from "@/package";
 import { createIdentifierForHTMLElement, InputComponent } from "@/components/simple-input-component";
 import { Package } from "@dataspecer/core-v2/project";
@@ -174,7 +174,7 @@ export const linkToGitRepoOnClickHandler = async (openModal: OpenBetterModal, ir
     //                                           "&gitProviderURL=" + encodeURIComponent(result.gitProvider ?? "") +
     //                                           "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "");
 
-    await fetch(
+    const response = await fetch(
       url,
       {
         credentials: "include",         // TODO RadStr: Important, without this we don't send the authorization cookies.
@@ -185,14 +185,15 @@ export const linkToGitRepoOnClickHandler = async (openModal: OpenBetterModal, ir
     // console.log("fetch RESPONSE", await response);
 
 
-    requestLoadPackage(iri, true);
+    await requestLoadPackage(iri, true);
+    gitOperationResultToast(response);
   }
 };
 
 
 /**
  * @deprecated {@link DropdownMenuItem} hsa to be used in the tree, when it is part of another component, it is rendered incorrectly.
- *  So we use {@link commitToDigDialogOnClickHandler} instead
+ *  So we use {@link commitToGitDialogOnClickHandler} instead
  */
 export const CommitToGitDialog = (props: { iri: string, inputPackage: Package }) => {
   const openModal = useBetterModal();
@@ -205,25 +206,26 @@ export const CommitToGitDialog = (props: { iri: string, inputPackage: Package })
       if (result) {
         const url = import.meta.env.VITE_BACKEND + "/git/commit-package-to-git?iri=" + encodeURIComponent(iri) +
                                                   "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "");
-        fetch(url);
+        await fetch(url);
       }
       }}><Pencil className="mr-2 h-4 w-4" /> Commit
   </DropdownMenuItem>;
 };
 
 // TODO RadStr: Maybe put on some better place?
-export const commitToDigDialogOnClickHandler = async (openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
+export const commitToGitDialogOnClickHandler = async (openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
   const result = await openModal(GitDialog, {input: iri, inputPackage, type: "commit"});
   if (result) {
     const url = import.meta.env.VITE_BACKEND + "/git/commit-package-to-git?iri=" + encodeURIComponent(iri) +
                                               "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "");
 
-    fetch(
+    const response = await fetch(
       url,
       {
         credentials: "include",         // TODO RadStr: Important, without this we don't send the authorization cookies
         method: "GET",
       });
+    gitOperationResultToast(response);
   }
 };
 
@@ -251,6 +253,5 @@ export const linkToExistingGitRepositoryHandler = async (openModal: OpenBetterMo
       toast.error("Failed updating link to remote git repository");
     }
     requestLoadPackage(iri, true);
-
   }
 };

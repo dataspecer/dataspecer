@@ -97,6 +97,32 @@ export class ResourceModel {
         return await Promise.all(result);
     }
 
+
+    /**
+     * Removes given {@link gitURL} from each resource, which has it.
+     *  This method should be called, when the remote repository was removed
+     * @returns The affected iris, that is iris of resources, which had linkedGitRepositoryURL === {@link gitURL}
+     */
+    async removeGitLinkFromResourceModel(gitURL: string) {
+        const affectedResources = await this.getResourcesForGitUrl(gitURL);
+
+        const result = await this.prismaClient.resource.updateMany({
+            where: {
+                linkedGitRepositoryURL: gitURL
+            },
+            data: {
+                linkedGitRepositoryURL: "{}",
+            },
+        });
+
+        if (result.count !== affectedResources.length) {
+            throw new Error("For some reason the amount of removed git links is not equal to the amount of resources, which had the git link");
+        }
+
+
+        return affectedResources;
+    }
+
     /**
      * @returns The first resource, which is linked to given {@link gitRepositoryUrl}.
      *  If {@link forbiddenIri} is provided, then the returned resource can not have the same iri as {@link forbiddenIri}.
@@ -119,6 +145,16 @@ export class ResourceModel {
         }
 
         return await this.prismaResourceToResource(prismaResource);
+    }
+
+    async getResourcesForGitUrl(gitRepositoryUrl: string): Promise<string[]> {
+        const prismaResources = await this.prismaClient.resource.findMany({
+            where: {
+                linkedGitRepositoryURL: gitRepositoryUrl,
+            }
+        });
+
+        return await Promise.all(prismaResources.map(resource => resource.iri));
     }
 
     /**
