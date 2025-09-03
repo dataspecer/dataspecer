@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabsContent } from "@radix-ui/react-tabs";
 import SvgVisualDiff from "@/components/images-conflict-resolver";
 import { MonacoDiffEditor } from "@/components/monaco-diff-editor";
+import { fetchMergeState } from "./open-merge-state";
 
 
 export type ChangeActiveModelMethod = (
@@ -61,27 +62,6 @@ function isDataResourcePresentInCache(cache: CacheContentMap, dataResourceNameIn
 
 function getDataResourceInCache(cache: CacheContentMap, dataResourceNameInfo: DataResourceNameInfo) {
   return cache[dataResourceNameInfo.resourceIri]?.[dataResourceNameInfo.modelName];
-}
-
-/**
- * TODO RadStr: Put to better place
- */
-async function fetchMergeState(rootIriMergeFrom: string, rootIriMergeTo: string): Promise<MergeState> {
-  try {
-    const queryParams = `rootIriMergeFrom=${rootIriMergeFrom}&rootIriMergeTo=${rootIriMergeTo}&includeDiffData=true`;
-    const fetchResult = await fetch(`${import.meta.env.VITE_BACKEND}/git/get-merge-state?${queryParams}`, {
-      method: "GET",
-    });
-    console.info("fetched data", fetchResult);   // TODO RadStr: Debug
-    const fetchResultAsJson = await fetchResult.json();
-    console.info("fetched data as json", fetchResultAsJson);   // TODO RadStr: Debug
-
-    return fetchResultAsJson;
-  }
-  catch(error) {
-    console.error(`Error when fetching merge state (for iris: ${rootIriMergeFrom} and ${rootIriMergeTo}). The error: ${error}`);
-    throw error;
-  }
 }
 
 const saveMergeState = async (
@@ -166,7 +146,7 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
       setOriginalResourceNameInfo(initialOriginalResourceNameInfo);
       setModifiedResourceNameInfo(initialModifiedResourceIri);
       setIsLoadingTextData(true);
-      const fetchedMergeState = await fetchMergeState(initialOriginalResourceNameInfo.resourceIri, initialModifiedResourceIri.resourceIri);
+      const fetchedMergeState = await fetchMergeState(initialOriginalResourceNameInfo.resourceIri, initialModifiedResourceIri.resourceIri, true);
       setExaminedMergeState(fetchedMergeState);
     })();
   }, []);

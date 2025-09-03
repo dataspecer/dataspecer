@@ -51,6 +51,7 @@ import { getMergeState } from "./routes/get-merge-state.ts";
 import { getMergeStates } from "./routes/get-merge-states.ts";
 import { updateMergeState } from "./routes/update-merge-state.ts";
 import { finishMergeState } from "./routes/finish-merge-state.ts";
+import { createMergeState } from "./routes/create-merge-state.ts";
 
 // Create application models
 
@@ -205,6 +206,7 @@ if (configuration.staticFilesPath) {
 application.get(apiBasename + "/git/dataspecer-package-tree", getDataspecerTree);
 application.get(apiBasename + "/git/get-datastore-content", getDatastoreContentDirectly);
 application.get(apiBasename + "/git/get-merge-state", getMergeState);
+application.post(apiBasename + "/git/create-merge-state", createMergeState);
 application.post(apiBasename + "/git/update-merge-state", updateMergeState);
 application.get(apiBasename + "/git/get-merge-states", getMergeStates);
 application.post(apiBasename + "/git/finalize-merge-state", finishMergeState);

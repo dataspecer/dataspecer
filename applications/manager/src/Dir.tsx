@@ -32,12 +32,12 @@ import { commitToGitDialogOnClickHandler, linkToExistingGitRepositoryHandler, li
 import LoginCard from "./components/login-card";
 import { gitHistoryVisualizationOnClickHandler } from "./components/git-history-visualization";
 import { removeGitLinkFromPackage, switchRepresentsBranchHead } from "./utils/utilities";
-import { TextDiffEditorDialog } from "./dialog/diff-editor-dialog";
 import { MergeActorsType, useMergeActors } from "./hooks/use-merge";
 import { setProjectIriAndBranchDialog } from "./dialog/set-projectIRI-and-branch";
 import { CreateNewBranchDialog } from "./dialog/create-new-branch";
 import { manualPull } from "./components/manual-pull";
 import { MergeStatesDialog } from "./dialog/merge-conflict-dialog";
+import { OpenMergeState } from "./dialog/open-merge-state";
 
 export function lng(text: LanguageString | undefined): string | undefined {
   return text?.["cs"] ?? text?.["en"];
@@ -260,7 +260,7 @@ const Row = ({ iri, projectFilter, setProjectFilter, mergeActors, parentIri }: {
             <hr className="border-gray-300" />
             {<DropdownMenuItem onClick={() => openModal(MergeStatesDialog, { iri })}><EyeIcon className="mr-2 h-4 w-4" /> Show merge states</DropdownMenuItem>}
             {<DropdownMenuItem onClick={() => setProjectFilter(resource.projectIri)}><Filter className="mr-2 h-4 w-4" />Filter projects</DropdownMenuItem>}
-            {mergeActors.mergeFrom !== null && mergeActors.mergeTo !== null && <DropdownMenuItem onClick={() => openModal(TextDiffEditorDialog, {initialOriginalResourceNameInfo: {resourceIri: mergeActors.mergeFrom!, modelName: ""}, initialModifiedResourceIri: {resourceIri: mergeActors.mergeTo!, modelName: ""}, editable: "mergeTo"})}><GitMerge className="mr-2 h-4 w-4" />Text diff editor</DropdownMenuItem>}
+            {mergeActors.mergeFrom !== null && mergeActors.mergeTo !== null && <DropdownMenuItem onClick={() => openModal(OpenMergeState, {mergeFrom: {resourceIri: mergeActors.mergeFrom!, modelName: ""}, mergeTo: {resourceIri: mergeActors.mergeTo!, modelName: ""}, editable: "mergeTo"})}><GitMerge className="mr-2 h-4 w-4" />Text diff editor</DropdownMenuItem>}
             {mergeActors.mergeFrom !== null && mergeActors.mergeFrom !== iri && <DropdownMenuItem onClick={() => mergeActors.setMergeTo(iri)}><ArrowRight className="mr-2 h-4 w-4"/>Merge to</DropdownMenuItem>}
             {<DropdownMenuItem onClick={() => mergeActors.setMergeFrom(iri)}><ArrowLeft className="mr-2 h-4 w-4"/>Merge from</DropdownMenuItem>}
             {<DropdownMenuItem className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={async () => removeGitLinkFromPackage(iri)}><Trash2 className="mr-2 h-4 w-4" />Remove GitHub Repo</DropdownMenuItem>}
