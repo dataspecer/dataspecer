@@ -1,31 +1,31 @@
 import { describe, expect, test } from "vitest";
 
-import { languageStringToString } from "./string";
+import { languageStringToStringNext } from "./string";
 
 describe("languageStringToString", () => {
 
   test("Select preferred from a language string.", () => {
-    const actual = languageStringToString([], "cs", { "cs": "text" });
+    const actual = languageStringToStringNext(["cs"], { "cs": "text" });
     expect(actual).toBe("text");
   });
 
   test("Select using preference from a language string.", () => {
-    const actual = languageStringToString(["en"], "cs", { "en": "text" });
+    const actual = languageStringToStringNext(["cs", "en"], { "en": "text" });
     expect(actual).toBe("text [en]");
   });
 
   test("Select anything from a language string.", () => {
-    const actual = languageStringToString(["de"], "en", { "cs": "text" });
+    const actual = languageStringToStringNext(["en", "de"], { "cs": "text" });
     expect(actual).toBe("text [cs]");
   });
 
   test("Select from an empty language string.", () => {
-    const actual = languageStringToString(["de"], "en", {});
+    const actual = languageStringToStringNext(["en", "de"], {});
     expect(actual).toBe("");
   });
 
   test("Select from a language string should not add empty language.", () => {
-    const actual = languageStringToString([], "en", { "": "text" });
+    const actual = languageStringToStringNext(["en"], { "": "text" });
     expect(actual).toBe("text");
   });
 
