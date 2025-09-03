@@ -14,6 +14,11 @@ export * from "./in-memory-semantic-model";
 export * from "./semantic-model-factory";
 export * from "./semantic-model-utilities";
 
+export {
+  isPrimitiveType as isSemanticPrimitiveType,
+  isComplexType as isSemanticComplexType,
+} from "@dataspecer/core-v2/semantic-model/datatypes";
+
 // This is to compile with TypeScript as we can not use
 // the type directly for aggregator.
 const _SemanticModelAggregatorInstance = new SemanticModelAggregator();
@@ -24,11 +29,11 @@ export type SemanticEntity = Entity;
 
 export type SemanticOperation = Operation;
 
-/**
- * Alias for entity model to express the current use.
- */
 export type SemanticModel = EntityModel;
 
+/**
+ * @deprecated
+ */
 export function isSemanticModelAttributeProfile(
   resource: Entity | null,
 ): resource is SemanticModelRelationshipProfile {
