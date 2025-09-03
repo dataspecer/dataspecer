@@ -6,7 +6,7 @@ import { storeModel } from './../main.ts';
 import { LocalStoreModel, ModelStore } from "./local-store-model.ts";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { CoreResource } from "@dataspecer/core/core/core-resource";
-import { CommitReferenceType } from "@dataspecer/git";
+import { CommitReferenceType, defaultEmptyGitUrlForDatabase } from "@dataspecer/git";
 
 /**
  * Base information every resource has or should have.
@@ -111,7 +111,7 @@ export class ResourceModel {
                 linkedGitRepositoryURL: gitURL
             },
             data: {
-                linkedGitRepositoryURL: "{}",
+                linkedGitRepositoryURL: defaultEmptyGitUrlForDatabase
             },
         });
 
@@ -119,6 +119,10 @@ export class ResourceModel {
             throw new Error("For some reason the amount of removed git links is not equal to the amount of resources, which had the git link");
         }
 
+        for (const affectedResource of affectedResources) {
+            // They are no longer part of the same project.
+            await this.updateResourceProjectIriAndBranch(affectedResource, affectedResource);
+       }
 
         return affectedResources;
     }
@@ -217,12 +221,20 @@ export class ResourceModel {
             linkedGit = linkedGit.substring(0, linkedGit.length - 1);
         }
 
-        const resource = await this.prismaClient.resource.findFirst({where: {iri}});        // TODO RadStr: Why am I looking for resource
+        const resource = await this.prismaClient.resource.findFirst({where: {iri}});
+        if (resource === null) {
+            throw new Error(`The resource with iri (${iri}) is missing. Can't set linked git url: ${linkedGit}`);
+        }
+
+        // We have to set Project iri. If not present, just use the iri of this resource.
+        const projectIri = (await this.getResourceForGitUrl(linkedGit, iri))?.iri ?? iri;
+
         await this.prismaClient.resource.update({
             where: {iri},
 
             data: {
                 linkedGitRepositoryURL: linkedGit,
+                projectIri: projectIri
             }
         });
         await this.updateModificationTime(iri);
