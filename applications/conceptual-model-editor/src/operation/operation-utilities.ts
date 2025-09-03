@@ -2,39 +2,25 @@ import { ModelDsIdentifier } from "../dataspecer/entity-model";
 import { InvalidModel, MissingModel } from "./operation";
 
 /**
- * Execute given callback with model of given type and identifier.
- *
  * @throws MissingModel
  * @throws InvalidModel
  */
-export function withModel<
+export function findModel<
   BaseModelType extends { getId(): string; },
   ModelType extends BaseModelType,
-  ResultType,
 >(
+  models: BaseModelType[],
   guard: (what: BaseModelType) => what is ModelType,
-  models: BaseModelType[], identifier: ModelDsIdentifier,
-  callback: (model: ModelType) => ResultType,
-) {
-  const model = findModel(models, identifier);
-  if (guard(model)) {
-    return callback(model);
-  } else {
-    throw new InvalidModel();
-  }
-}
-
-/**
- * @throws MissingModel
- */
-export function findModel<ModelType extends { getId(): string; }>(
-  models: ModelType[], identifier: ModelDsIdentifier,
+  identifier: ModelDsIdentifier,
 ): ModelType {
   for (const model of models) {
     if (model.getId() !== identifier) {
       continue;
     }
-    return model;
+    if (guard(model)) {
+      return model;
+    }
+    throw new InvalidModel();
   }
   throw new MissingModel(models, identifier);
 }

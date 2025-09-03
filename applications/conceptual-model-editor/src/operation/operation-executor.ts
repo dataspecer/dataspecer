@@ -1,32 +1,35 @@
 import { EntityModel } from "@dataspecer/core-v2";
 import { VisualModel } from "@dataspecer/core-v2/visual-model";
 
-import { CmeOperationExecutor } from "./operation-executor-api";
 import {
-  CmeOperationContext,
+  CmeExecutionContext,
   registeredCmeOperationExecutors,
-} from "./operation-executor-registry";
-import { UnknownOperation } from "./operation";
+} from "./operation-registry";
+import { CmeOperationExecutor, UnknownCmeOperation } from "./operation";
 import { isInMemorySemanticModel } from "../dataspecer/semantic-model";
 
 export function createCmeOperationExecutor(
   entityModels: EntityModel[],
   visualModels: VisualModel[],
 ): CmeOperationExecutor {
-  const context: CmeOperationContext = {
+
+  const context: CmeExecutionContext = {
     semanticModels: entityModels.map(wrapLegacyEntityModel),
     profileModels: entityModels.map(wrapLegacyEntityModel),
-    visualModels
+    visualModels,
   };
+
   const registry = registeredCmeOperationExecutors();
   //
   return {
-    execute: (operation) => {
+    execute: async (operation) => {
       const executor = registry[operation.type];
       if (executor === undefined) {
-        throw new UnknownOperation();
+        throw new UnknownCmeOperation();
       }
-      return executor.executor(context, operation) as any;
+      const result = await executor.executor(context, operation);
+      console.info("[OPERATION]", result);
+      return result;
     },
   };
 }
