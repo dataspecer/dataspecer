@@ -446,7 +446,6 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
                     Save changes and update merge state
                   </Button>
                   <Button title="This performs the operation, which triggered the merge state. Can be pull/push/merge" variant={"default"} onClick={() => finalizeMergeState(examinedMergeState?.uuid)}>
-                  TODO RadStr: Rename to closing merge state instead of finalizing
                     Finalize merge state
                   </Button>
                 </div>
