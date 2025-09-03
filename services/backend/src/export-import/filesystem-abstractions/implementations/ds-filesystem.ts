@@ -1,11 +1,10 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import { v4 as uuidv4 } from 'uuid';
-import { GitProvider, FilesystemAbstractionBase, ComparisonData, DatastoreInfo, DirectoryNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, MetadataCacheType, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaPrefixName, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode } from "@dataspecer/git";
+import { GitProvider, FilesystemAbstractionBase, ComparisonData, DatastoreInfo, DirectoryNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, MetadataCacheType, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaPrefixName, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode, isDatastoreForMetadata } from "@dataspecer/git";
 import { ResourceModel } from "../../../models/resource-model.ts";
 import { deleteBlob, deleteResource, updateBlob } from "../../../routes/resource.ts";
 import { BaseResource } from "@dataspecer/core-v2/project";
 import { convertDatastoreBasedOnFormat } from "../../../utils/git-utils.ts";
-import { isDatastoreForMetadata } from "../backend-filesystem-abstraction-factory.ts";
 import { currentVersion } from "../../../tools/migrations/index.ts";
 import configuration from "../../../configuration.ts";
 import { resourceModel as mainResourceModel } from "../../../main.ts";

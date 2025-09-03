@@ -216,6 +216,14 @@ export function removeDatastoreFromNode(node: FilesystemNode, datastoreType: str
   node.datastores = node.datastores.filter(datastore => datastore.type !== datastoreType);
 }
 
+export function isDatastoreForMetadata(datastoreType: string): boolean {
+  return datastoreType === getMetaPrefixType();
+}
+
+export function getMetadataDatastoreFile(datastores: DatastoreInfo[]): DatastoreInfo | undefined {
+  return datastores.find(datastore => isDatastoreForMetadata(datastore.type));
+}
+
 /**
  * Creates the {@link DatastoreInfo} with given {@link basename}, which describes metadata file.
  */

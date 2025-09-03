@@ -1,6 +1,5 @@
 import { PackageExporterBase } from "./export-base.ts";
-import { DirectoryNode, FilesystemNode } from "@dataspecer/git";
-import { isDatastoreForMetadata } from "./filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
+import { DirectoryNode, FilesystemNode, isDatastoreForMetadata } from "@dataspecer/git";
 
 
 export class PackageExporterNew extends PackageExporterBase {

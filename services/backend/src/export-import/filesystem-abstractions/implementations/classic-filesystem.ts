@@ -1,10 +1,8 @@
-import { GitProvider } from "@dataspecer/git";
+import { GitProvider, isDatastoreForMetadata } from "@dataspecer/git";
 import { ComparisonData } from "../../../routes/git-webhook-handler.ts";
 import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, DatastoreInfo, FilesystemAbstractionBase, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode } from "@dataspecer/git";
 
 import fs from "fs";
-import * as pathLibrary from "path";
-import { isDatastoreForMetadata } from "../backend-filesystem-abstraction-factory.ts";
 import { getDatastoreInfoOfGivenDatastoreType } from "./ds-filesystem.ts";
 import { isArtificialExportDirectory } from "../../export-by-resource-type.ts";
 import { convertDatastoreBasedOnFormat, dsPathJoin } from "../../../utils/git-utils.ts";

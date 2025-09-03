@@ -5,14 +5,7 @@ import configuration from "../configuration.ts";
 
 import path from "path";
 import { PackageExporterBase } from "./export-base.ts";
-import { DirectoryNode, FilesystemNode, MetadataCacheType, getMetaPrefixType } from "@dataspecer/git";
-
-
-// TODO RadStr: Put this method into some separate file
-export function isDatastoreForMetadata(datastoreType: string): boolean {
-  return datastoreType === getMetaPrefixType();
-}
-
+import { DirectoryNode, FilesystemNode, isDatastoreForMetadata, MetadataCacheType } from "@dataspecer/git";
 
 export class PackageExporterByResourceType extends PackageExporterBase {
   async exportDirectory(

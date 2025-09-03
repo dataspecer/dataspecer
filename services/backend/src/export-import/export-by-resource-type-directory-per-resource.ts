@@ -4,16 +4,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { currentVersion } from "../tools/migrations/index.ts";
 import configuration from "../configuration.ts";
 
-import path from "path";
 import { ResourceTypes, resourceTypetoTypeDirectoryMapping } from "./export-by-resource-type.ts";
 import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
-import { DatastoreInfo, DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, MetadataCacheType, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaPrefixName, getMetaPrefixType } from "@dataspecer/git";
-
-
-// TODO RadStr: Put this method into some separate file
-export function isDatastoreForMetadata(datastoreType: string): boolean {
-  return datastoreType === getMetaPrefixType();
-}
+import { DatastoreInfo, DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, MetadataCacheType, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaPrefixName, getMetaPrefixType, isDatastoreForMetadata } from "@dataspecer/git";
 
 
 // TODO RadStr: Trying new API for exporters and importers - so this should in future substitute the PackageExporter and PackageImporter (in the import case)

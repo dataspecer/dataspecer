@@ -1,13 +1,11 @@
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
-import { GitProvider, GitProviderEnum } from "@dataspecer/git";
+import { getMetadataDatastoreFile, GitProvider, GitProviderEnum, isDatastoreForMetadata } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { GIT_RAD_STR_BOT_USERNAME, GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN } from "../git-never-commit.ts";
 import fs from "fs";
-import { simpleGit } from "simple-git";
 import path from "path";
 import { createResource, updateBlob, updateResourceMetadata } from "./resource.ts";
-import { isDatastoreForMetadata } from "../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 import { getDatastoreInfoOfGivenDatastoreType } from "../export-import/filesystem-abstractions/implementations/ds-filesystem.ts";
 import _ from "lodash";
 import { compareTrees, dsPathJoin } from "../utils/git-utils.ts";
@@ -756,10 +754,6 @@ function constructMetadataCache(metadataFilePath: string, oldCache?: object) {
 function readMetadataFile(metadataFilePath: string) {
   const metadata = JSON.parse(fs.readFileSync(metadataFilePath, "utf-8"));
   return metadata;
-}
-
-function getMetadataDatastoreFile(datastores: DatastoreInfo[]): DatastoreInfo | undefined {
-  return datastores.find(datastore => isDatastoreForMetadata(datastore.type));
 }
 
 

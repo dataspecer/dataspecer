@@ -20,7 +20,3 @@ export class FilesystemFactory {
     }
   }
 }
-
-export function isDatastoreForMetadata(datastoreType: string): boolean {
-  return datastoreType === getMetaPrefixType();
-}

@@ -1,7 +1,7 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { ComparisonData } from "../routes/git-webhook-handler.ts";
 import { v4 as uuidv4 } from "uuid";
-import { removeCircularDependenciesInDiffTree } from "../utils/git-utils.ts";
+import { deepOmit, removeCircularDependenciesInDiffTree } from "../utils/git-utils.ts";
 import fs from "fs";
 import path from "path";
 import { ALL_GIT_REPOSITORY_ROOTS } from "./git-store-info.ts";
@@ -280,17 +280,7 @@ export class MergeStateModel {
   }
 
   removeCircularDependenciesFromComparisonData(comparisonData: ComparisonData[]) {
-    const strippedComparisonData = [];
-    for (const comparison of comparisonData) {
-      const strippedComparison = {
-        affectedDataStore: comparison.affectedDataStore,
-        oldVersion: this.removeCircularDependencyFromFilesystemNode(comparison.oldVersion),
-        newVersion: this.removeCircularDependencyFromFilesystemNode(comparison.newVersion),
-      };
-      strippedComparisonData.push(strippedComparison);
-    }
-
-    return strippedComparisonData;
+    return deepOmit(comparisonData, "parent");
   }
 
   private convertMergeStateDataToString(

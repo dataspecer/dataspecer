@@ -354,6 +354,7 @@ async function areDatastoresDifferent(
   return !_.isEqual(content1, content2);
 }
 
+
 /**
  * Based on ChatGPT - it removes every "K" property from the type recursively
  */
@@ -365,7 +366,7 @@ type DeepOmit<T, K extends PropertyKey> = {
 /**
  * Also ChatGPT
  */
-function deepOmit<T extends object>(obj: T, keyToRemove: string): any {
+export function deepOmit<T extends object>(obj: T, keyToRemove: string): any {
   if (Array.isArray(obj)) {
     return obj.map(item => deepOmit(item, keyToRemove));
   } else if (obj && typeof obj === "object") {
