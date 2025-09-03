@@ -52,6 +52,7 @@ import { getMergeStates } from "./routes/get-merge-states.ts";
 import { updateMergeState } from "./routes/update-merge-state.ts";
 import { finishMergeState } from "./routes/finish-merge-state.ts";
 import { createMergeState } from "./routes/create-merge-state.ts";
+import { clearMergeStateTableDebug } from "./routes/debug-clear-merge-state-table.ts";
 
 // Create application models
 
@@ -210,6 +211,9 @@ application.post(apiBasename + "/git/create-merge-state", createMergeState);
 application.post(apiBasename + "/git/update-merge-state", updateMergeState);
 application.get(apiBasename + "/git/get-merge-states", getMergeStates);
 application.post(apiBasename + "/git/finalize-merge-state", finishMergeState);
+
+// TODO RadStr: Just for debugging !
+application.post(apiBasename + "/git/debug-clear-merge-state-table", clearMergeStateTableDebug);
 
 // Test GIT
 application.get(apiBasename + "/git/deprecated-test", currentSession, tryCommitToGitRepo);

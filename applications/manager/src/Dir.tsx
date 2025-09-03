@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { ArrowLeft, ArrowLeftRight, ArrowRight, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, Copy, EllipsisVertical, Eye, EyeIcon, FileText, Filter, FilterX, Folder, FolderDown, GitBranchPlus, GitCommit, GitGraph, GitMerge, GitPullRequestIcon, Import, Link, Menu, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, Sparkles, Trash2, WandSparkles } from "lucide-react";
+import { ArrowLeft, ArrowLeftRight, ArrowRight, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, Copy, EllipsisVertical, Eye, EyeIcon, FileText, Filter, FilterX, Folder, FolderDown, GitBranchPlus, GitCommit, GitGraph, GitMerge, GitPullRequestIcon, Import, Link, Menu, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, ShieldQuestion, Sparkles, Trash2, WandSparkles } from "lucide-react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getValidTime } from "./components/time";
@@ -31,7 +31,7 @@ import { stopPropagation } from "./utils/events";
 import { commitToGitDialogOnClickHandler, linkToExistingGitRepositoryHandler, linkToGitRepoOnClickHandler } from "./dialog/git-url";
 import LoginCard from "./components/login-card";
 import { gitHistoryVisualizationOnClickHandler } from "./components/git-history-visualization";
-import { removeGitLinkFromPackage, switchRepresentsBranchHead } from "./utils/utilities";
+import { debugClearMergeStateDBTable, removeGitLinkFromPackage, switchRepresentsBranchHead } from "./utils/utilities";
 import { MergeActorsType, useMergeActors } from "./hooks/use-merge";
 import { setProjectIriAndBranchDialog } from "./dialog/set-projectIRI-and-branch";
 import { CreateNewBranchDialog } from "./dialog/create-new-branch";
@@ -238,6 +238,7 @@ const Row = ({ iri, projectFilter, setProjectFilter, mergeActors, parentIri }: {
       }
 
       {/* Git actions */}
+
       { (resource.types.includes(LOCAL_PACKAGE) && parentIri === "http://dataspecer.com/packages/local-root") ?
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -246,6 +247,8 @@ const Row = ({ iri, projectFilter, setProjectFilter, mergeActors, parentIri }: {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
+            {/* // TODO RadStr: Just for debugging ! */}
+            {<DropdownMenuItem onClick={() => debugClearMergeStateDBTable()}><ShieldQuestion className="mr-2 h-4 w-4" />DEBUG - Clear merge db state table</DropdownMenuItem>}
             {<DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/git/redirect-to-remote-git-repository?iri=" + encodeURIComponent(iri)}><Eye className="mr-2 h-4 w-4" />Visit the remote repository</a></DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git branch visualization</DropdownMenuItem>}
             <hr className="border-gray-300" />

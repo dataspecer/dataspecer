@@ -52,3 +52,14 @@ export function gitOperationResultToast(response: Response) {
     toast.error("Git operation failed");
   }
 }
+
+// TODO RadStr: Just for debug
+export async function debugClearMergeStateDBTable() {
+  const response = await fetch(import.meta.env.VITE_BACKEND + "/git/debug-clear-merge-state-table", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+  });
+  console.info("debugClearMergeStateDBTable response:", response);
+}
