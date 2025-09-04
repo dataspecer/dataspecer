@@ -1,4 +1,4 @@
-import { ComparisonData } from "../../diff-types.ts";
+import { ComparisonData } from "../../merge/merge-state.ts";
 import { FilesystemNodeLocation, FilesystemMappingType, DirectoryNode, FilesystemNode, DatastoreInfo } from "../../export-import-data-api.ts";
 import { GitProvider } from "../../git-provider-api.ts";
 import { FilesystemAbstractionBase } from "../abstractions/filesystem-abstraction-base.ts";
@@ -22,21 +22,22 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     this.backendApiPath = backendApiPath;
   }
 
-
-  protected createFilesystemMappingRecursive(mappedNodeLocation: FilesystemNodeLocation, filesystemMapping: FilesystemMappingType, parentDirectoryNode: DirectoryNode | null, shouldSetMetadataCache: boolean): Promise<FilesystemMappingType> {
-    throw new Error("Method not implemented.");
-  }
-  async getDatastoreContent(treePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any> {
-    const resourceWithDatastore: FilesystemNode = this.globalFilesystemMapping[treePath];
+  public static async getDatastoreContentForFullPath(
+    resourceWithDatastore: FilesystemNode,
+    datastoreInfo: DatastoreInfo,
+    shouldConvertToDatastoreFormat: boolean,
+    backendApiPath: string,
+    backendFilesystem: AvailableFilesystems
+  ) {
     if (resourceWithDatastore.metadataCache.iri === undefined) {
       throw new Error(`The iri in cache is not set for the resource ${resourceWithDatastore}`);
     }
-    const datastoreInfo: DatastoreInfo = getDatastoreInfoOfGivenDatastoreType(resourceWithDatastore, type);
 
     const pathToDatastore = datastoreInfo.fullPath;
     const format = datastoreInfo.format;
+    const type = datastoreInfo.type;
     try {
-      const fetchResult = await fetch(`${this.backendApiPath}/get-datastore-content?pathToDatastore=${pathToDatastore}&format=${format}&type=${type}&filesystem=${this.backendFilesystem}&shouldConvertToDatastoreFormat=${shouldConvertToDatastoreFormat}`, {
+      const fetchResult = await fetch(`${backendApiPath}/get-datastore-content?pathToDatastore=${pathToDatastore}&format=${format}&type=${type}&filesystem=${backendFilesystem}&shouldConvertToDatastoreFormat=${shouldConvertToDatastoreFormat}`, {
         method: "GET",
       });
       console.info("fetched data", fetchResult);   // TODO RadStr: Debug
@@ -50,8 +51,16 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
       console.error(`Error when fetching data tree data for diff (for iri: ${pathToDatastore}). The error: ${error}`);
       throw error;
     }
+  }
 
-    return null;
+
+  protected createFilesystemMappingRecursive(mappedNodeLocation: FilesystemNodeLocation, filesystemMapping: FilesystemMappingType, parentDirectoryNode: DirectoryNode | null, shouldSetMetadataCache: boolean): Promise<FilesystemMappingType> {
+    throw new Error("Method not implemented.");
+  }
+  async getDatastoreContent(treePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any> {
+    const resourceWithDatastore: FilesystemNode = this.globalFilesystemMapping[treePath];
+    const datastoreInfo: DatastoreInfo = getDatastoreInfoOfGivenDatastoreType(resourceWithDatastore, type);
+    return ClientFilesystem.getDatastoreContentForFullPath(resourceWithDatastore, datastoreInfo, shouldConvertToDatastoreFormat, this.backendApiPath, this.backendFilesystem);
   }
   shouldIgnoreDirectory(directory: string, gitProvider: GitProvider): boolean {
     throw new Error("Method not implemented.");

@@ -4,7 +4,7 @@ import RawMonacoEditor, { DiffEditor } from "@monaco-editor/react";
 import * as monaco from 'monaco-editor';
 import { handleEditorWillMount } from "./monaco-editor";
 import { useTheme } from "next-themes";
-import { EditableType } from "./directory-diff";
+import { EditableType } from "@dataspecer/git";
 
 export const MonacoDiffEditor: FC<{
   refs: React.MutableRefObject<{ editor: monaco.editor.IStandaloneDiffEditor } | undefined>,

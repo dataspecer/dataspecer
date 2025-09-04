@@ -8,13 +8,14 @@ import { useOnBeforeUnload } from "@/hooks/use-on-before-unload";
 import { useOnKeyDown } from "@/hooks/use-on-key-down";
 import { packageService } from "@/package";
 import * as monaco from 'monaco-editor';
-import { AvailableFilesystems, ComparisonData, DatastoreInfo, DiffTreeVisualization, EditableType, MergeState } from "@/components/directory-diff";
+import { DiffTreeVisualization } from "@/components/directory-diff";
 import { Loader, RotateCw } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabsContent } from "@radix-ui/react-tabs";
 import SvgVisualDiff from "@/components/images-conflict-resolver";
 import { MonacoDiffEditor } from "@/components/monaco-diff-editor";
 import { fetchMergeState } from "./open-merge-state";
+import { AvailableFilesystems, ComparisonData, DatastoreInfo, EditableType, MergeState } from "@dataspecer/git";
 
 
 export type ChangeActiveModelMethod = (

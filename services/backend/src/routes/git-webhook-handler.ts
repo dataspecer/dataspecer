@@ -1,18 +1,17 @@
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
-import { AvailableFilesystems, getDatastoreInfoOfGivenDatastoreType, getMetadataDatastoreFile, GitProvider, GitProviderEnum, isDatastoreForMetadata } from "@dataspecer/git";
+import { AvailableFilesystems, compareFileTrees, EditableType, getMetadataDatastoreFile, GitProvider, GitProviderEnum, isDatastoreForMetadata, MergeStateCause } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { GIT_RAD_STR_BOT_USERNAME, GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN } from "../git-never-commit.ts";
 import fs from "fs";
 import path from "path";
 import { createResource, updateBlob, updateResourceMetadata } from "./resource.ts";
 import _ from "lodash";
-import { compareTrees, dsPathJoin } from "../utils/git-utils.ts";
+import { dsPathJoin } from "../utils/git-utils.ts";
 import { mergeStateModel, resourceModel } from "../main.ts";
 import { updateDSRepositoryByPullingGit } from "./pull-remote-repository.ts";
-import { EditableType, MergeStateCause } from "../models/merge-state-model.ts";
 import { WEBHOOK_PATH_PREFIX } from "../models/git-store-info.ts";
-import { DatastoreInfo, DirectoryNode, FileNode, FilesystemNode, FilesystemNodeLocation, FilesystemAbstraction } from "@dataspecer/git";
+import { DatastoreInfo, DirectoryNode, FilesystemNode, FilesystemNodeLocation, FilesystemAbstraction } from "@dataspecer/git";
 import { FilesystemFactory } from "../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 
 
@@ -202,12 +201,6 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
   const rootDirectory = gitFakeRoot;              // TODO RadStr: Just backwards compatibility with code so I don't have to change much
   const rootDirectoryName = gitFakeRoot.name;
 
-
-  // TODO RadStr: Remove the iri
-  // const comparisonResult = compareFiletrees(rootDirectoryName, rootDirectory, rootDirectoryName, rootDirectory);
-  // console.info({comparisonResult});
-
-  // TODO RadStr: Following lines (Except the last one) are just for playing with filesystem implementations
   const dsFilesystem = await FilesystemFactory.createFileSystem([rootLocation], AvailableFilesystems.DS_Filesystem, gitProvider);
 
   // TODO RadStr: Rename ... and update based on the conflicts resolution, like we do not want to update when there is conflict
@@ -232,7 +225,7 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
     conflicts,
     created,
     removed
-  } = await compareTrees(
+  } = await compareFileTrees(
     gitFilesystem, gitFakeRoot, gitFilesystem.getGlobalFilesystemMap(),
     dsFilesystem, dsFakeRoot, dsFilesystem.getGlobalFilesystemMap());
 
@@ -343,110 +336,6 @@ type ComparisonResult = {
   changed: ComparisonData[],
   removed: ComparisonData[],
   created: ComparisonData[],
-}
-
-
-/**
- * @deprecated Already do it all when I am computing the diff tree
- */
-async function compareFiletrees(
-  filesystem1: FilesystemAbstraction,
-  treeRoot1Name: string,
-  treeRoot1: DirectoryNode,
-  filesystem2: FilesystemAbstraction,
-  treeRoot2Name: string,
-  treeRoot2: DirectoryNode,
-) {
-  const comparisonResult: ComparisonResult = {
-    changed: [],
-    removed: [],
-    created: []
-  };
-
-  await compareFiletreesInternal(filesystem1, treeRoot1Name, treeRoot1, filesystem2, treeRoot2Name, treeRoot2, comparisonResult);
-  return comparisonResult;
-}
-
-// TODO RadStr: Use objects instead of passing in separate values
-/**
- * Compares the {@link directory1} to {@link directory2}. That is the {@link result} will contain
- *  the removed entries from {@link directory1} compared to {@link directory2} and same for changed.
- *  The created ones will be those present in {@link directory2}, but not in {@link directory1}.
- */
-async function compareFiletreesInternal(
-  filesystem1: FilesystemAbstraction,
-  directory1Name: string,
-  directory1: DirectoryNode,
-  filesystem2: FilesystemAbstraction,
-  treeRoot2Name: string,
-  directory2: DirectoryNode,
-  result: ComparisonResult,
-) {
-  for (const [nodeName, nodeValue] of Object.entries(directory1.content)) {
-    const node2Value = directory2.content[nodeName];
-    if (node2Value !== undefined && nodeValue.type !== node2Value.type) { // They are not of same type and both exists
-      console.error("Tree comparison error - Compared entries have the same name however they are of different type. One is file, while the other is directory");
-      throw new Error("Tree comparison error - Compared entries have the same name however they are of different type. One is file, while the other is directory");
-    }
-
-    for (const datastore1 of nodeValue.datastores) {
-      const node2Datastore = node2Value === undefined ? undefined : getDatastoreInfoOfGivenDatastoreType(node2Value, datastore1.type);
-      if (node2Datastore !== undefined) {
-        if (nodeValue.type === "directory") {
-          await compareFiletreesInternal(filesystem1, nodeName, nodeValue, filesystem2, nodeName, node2Value as DirectoryNode, result);
-        }
-        else {
-          if (await areDatastoresDifferent(filesystem1, nodeValue, filesystem2, node2Value as FileNode, datastore1)) {
-            const changed: ComparisonData = {
-              oldVersion: nodeValue,
-              newVersion: node2Value,
-              affectedDataStore: datastore1
-            };
-
-            result.changed.push(changed);
-          }
-        }
-      }
-      else {
-        const removed: ComparisonData = {
-          oldVersion: nodeValue,
-          newVersion: null,
-          affectedDataStore: datastore1
-        };
-        result.removed.push(removed);
-      }
-    }
-    // TODO RadStr: Have to also go the way around like in the DiffTree, that is find the datastores2 not present in datastore1
-  }
-
-  for (const [entryName, entryValue] of Object.entries(directory2.content)) {
-    for (const datastore of entryValue.datastores) {
-      if (getDatastoreInfoOfGivenDatastoreType(directory1.content[entryName], datastore.type) === undefined) {
-        const created: ComparisonData = {
-          oldVersion: null,
-          newVersion: entryValue,
-          affectedDataStore: datastore,
-        }
-        result.created.push(created);
-      }
-    }
-  }
-}
-
-async function areDatastoresDifferent(
-  filesystem1: FilesystemAbstraction,
-  entry1: FileNode,
-  filesystem2: FilesystemAbstraction,
-  entry2: FileNode,
-  datastore: DatastoreInfo
-): Promise<boolean> {
-  // TODO RadStr: For now just assume, that there is always change
-  const content1 = await filesystem1.getDatastoreContent(entry1.fullTreePath, datastore.type, true);
-  const content2 = await filesystem2.getDatastoreContent(entry2.fullTreePath, datastore.type, true);
-
-  console.info({content1, content2});    // TODO RadStr: DEBUG Print
-
-  return !_.isEqual(content1, content2);
 }
 
 async function updateFilesystemBasedOnChanges(changes: ComparisonResult, filesystem: FilesystemAbstraction) {

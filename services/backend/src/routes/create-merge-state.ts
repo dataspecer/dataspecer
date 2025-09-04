@@ -2,10 +2,8 @@ import { z } from "zod";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { mergeStateModel } from "../main.ts";
 import express from "express";
-import { compareTrees } from "../utils/git-utils.ts";
-import { EditableType, MergeStateCause } from "../models/merge-state-model.ts";
 import { FilesystemFactory } from "../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
-import { AvailableFilesystems, FilesystemNodeLocation, getMetadataDatastoreFile } from "@dataspecer/git";
+import { AvailableFilesystems, compareFileTrees, EditableType, FilesystemNodeLocation, getMetadataDatastoreFile, MergeStateCause } from "@dataspecer/git";
 
 
 export const createMergeState = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -74,7 +72,7 @@ export async function computeMergeStateForIris(
     conflicts,
     created,
     removed
-  } = await compareTrees(
+  } = await compareFileTrees(
     mergeFromDSFilesystem, mergeFromFakeRoot, mergeFromDSFilesystem.getGlobalFilesystemMap(),
     mergeToDSFilesystem, mergeToFakeRoot, mergeToDSFilesystem.getGlobalFilesystemMap());
 

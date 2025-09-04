@@ -3,7 +3,7 @@ import { FilesystemNode, FilesystemMappingType, MetadataCacheType, DirectoryNode
 import { createEmptyFilesystemMapping, createFilesystemMappingRoot, createInitialNodeToParentMap, FilesystemAbstraction, getMetaPrefixType } from "./filesystem-abstraction.ts";
 
 import path from "path";
-import { ComparisonData } from "../../diff-types.ts";
+import { ComparisonData } from "../../merge/merge-state.ts";
 
 export abstract class FilesystemAbstractionBase implements FilesystemAbstraction {
   /////////////////////////////////////

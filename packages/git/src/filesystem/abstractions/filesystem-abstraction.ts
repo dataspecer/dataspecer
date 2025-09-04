@@ -2,7 +2,7 @@
 
 import { GitProvider } from "../../git-provider-api.ts";
 import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, MetadataCacheType, DatastoreInfo } from "../../export-import-data-api.ts";
-import { ComparisonData } from "../../diff-types.ts";
+import { ComparisonData } from "../../merge/merge-state.ts";
 
 
 export enum AvailableFilesystems {

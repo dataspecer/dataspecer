@@ -2,9 +2,9 @@ import { BetterModalProps, useBetterModal, } from "@/lib/better-modal";
 import { useEffect, useState } from "react";
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
-import { EditableType, MergeState } from "@/components/directory-diff";
 import { DataResourceNameInfo, TextDiffEditorDialog } from "./diff-editor-dialog";
 import { Loader } from "lucide-react";
+import { EditableType, MergeState } from "@dataspecer/git";
 
 export async function fetchMergeState(rootIriMergeFrom: string, rootIriMergeTo: string, shouldPrintMissingStateToConsole: boolean,): Promise<MergeState | null> {
   try {

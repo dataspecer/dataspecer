@@ -2,9 +2,9 @@ import { BetterModalProps, OpenBetterModal, useBetterModal, } from "@/lib/better
 import { useEffect, useState } from "react";
 import { Loader } from "lucide-react";
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
-import { MergeState } from "@/components/directory-diff";
 import { Button } from "@/components/ui/button";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
+import { MergeState } from "@dataspecer/git";
 
 type MergeStateDialogProps = {
   iri: string,
