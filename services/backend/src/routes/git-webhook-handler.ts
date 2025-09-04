@@ -200,24 +200,9 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
     fullTreePath: "",
   };
   const gitFilesystem = await FilesystemFactory.createFileSystem([rootLocation], AvailableFilesystems.ClassicFilesystem, gitProvider);
-  const gitFakeRoot = gitFilesystem.getRoot();    // TODO RadStr: This is the fake root though. but that should not matter
+  const gitFakeRoot = gitFilesystem.getRoot();
   const rootDirectory = gitFakeRoot;              // TODO RadStr: Just backwards compatibility with code so I don't have to change much
   const rootDirectoryName = gitFakeRoot.name;
-
-  const fakeRootOld = createFilesystemMappingRoot();
-  const mapping: FilesystemMappingType = await createFileSystemMapping(fakeRootOld.content, fakeRootOld, directory, gitProvider, shouldSetMetadataCache);
-  console.info("ROOT MAPPING:", mapping)
-  // await saveChangesInDirectoryToBackendFinalVersionRecursive(mapping, directory, gitProvider);      // TODO RadStr: Maybe await is unnecessary
-
-  const filesystemNodeEntries = Object.entries(mapping);
-  if (!(filesystemNodeEntries.length === 1 && filesystemNodeEntries[0][1].type === "directory")) {
-    console.error("The mapping does not have root directory or the root is not a directory");
-    return false;
-  }
-  const [rootDirectoryNameOld, rootDirectoryOld] = filesystemNodeEntries[0];
-
-  console.info("_.isEqual(rootDirectoryOld, gitRoot.content[0])", _.isEqual(rootDirectoryOld, gitFakeRoot.content[0]));
-
 
 
   // TODO RadStr: Remove the iri
@@ -228,7 +213,7 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
   const dsFilesystem = await FilesystemFactory.createFileSystem([rootLocation], AvailableFilesystems.DS_Filesystem, gitProvider);
 
   // TODO RadStr: Rename ... and update based on the conflicts resolution, like we do not want to update when there is conflict
-  await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(rootDirectoryName, rootDirectory, directory, gitProvider);      // TODO RadStr: Maybe await is unnecessary
+  await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(rootDirectoryName, rootDirectory, directory, gitProvider, gitFilesystem);      // TODO RadStr: Maybe await is unnecessary
   // TODO RadStr: [WIP] Connect it to the conflict database entry
   const dsFakeRoot = dsFilesystem.getRoot();
   const dsRoot = Object.values(dsFakeRoot.content)[0];
@@ -326,107 +311,25 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
   // await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(rootDirectoryName, rootDirectory, directory, gitProvider);      // TODO RadStr: Maybe await is unnecessary
 }
 
-/**
- * @deprecated This is just for testing during development when migrating to new implementation
- */
-export async function testMappingMethod() {
-  const gitProvider = new GitHubProvider();
-  const directory = "C:\\Users\\Radek\\ds-test-repo";
-  const iri = "d9971d75-fd1a-4a45-b450-84ad33b7bd24";
-  const shouldSetMetadataCache = true;
-  const rootLocation: FilesystemNodeLocation = {
-    iri: iri,
-    fullPath: directory,
-    fullTreePath: "",
-  };
-  const gitFilesystem = await FilesystemFactory.createFileSystem([rootLocation], AvailableFilesystems.ClassicFilesystem, gitProvider);
-  const gitRoot = gitFilesystem.getRoot();    // TODO RadStr: This is the fake root though. but that should not matter
-  const rootDirectory = gitRoot;              // TODO RadStr: Just backwards compatibility with code so I don't have to change much
-  const rootDirectoryName = gitRoot.name;
-
-  const fakeRootOld = createFilesystemMappingRoot();
-  const mapping: FilesystemMappingType = await createFileSystemMapping(fakeRootOld.content, fakeRootOld, directory, gitProvider, shouldSetMetadataCache);
-  console.info("ROOT MAPPING:", mapping)
-  // await saveChangesInDirectoryToBackendFinalVersionRecursive(mapping, directory, gitProvider);      // TODO RadStr: Maybe await is unnecessary
-
-  // TODO RadStr: Just the old code
-  const filesystemNodeEntries = Object.entries(mapping);
-  if (!(filesystemNodeEntries.length === 1 && filesystemNodeEntries[0][1].type === "directory")) {
-    console.error("The mapping does not have root directory or the root is not a directory");
-    return;
-  }
-  const [rootDirectoryNameOld, rootDirectoryOld] = filesystemNodeEntries[0];
-  console.info("_.isEqual(rootDirectoryOld, gitRoot.content[0])", _.isEqual(rootDirectoryOld, gitRoot.content[0]));
-
-
-
-  // TODO RadStr: Remove the iri
-  // const comparisonResult = compareFiletrees(rootDirectoryName, rootDirectory, rootDirectoryName, rootDirectory);
-  // console.info({comparisonResult});
-
-  // TODO RadStr: Following lines (Except the last one) are just for playing with filesystem implementations
-  const dsFilesystem = await FilesystemFactory.createFileSystem([rootLocation], AvailableFilesystems.DS_Filesystem, gitProvider);
-  const comparisonResult = await compareFiletrees(gitFilesystem, rootDirectoryName, gitFilesystem.getRoot(), dsFilesystem, rootDirectoryName, dsFilesystem.getRoot());
-
-  console.info({comparisonResult, root1: gitFilesystem.getRoot(), root2: gitFilesystem.getRoot()});
-
-  await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(rootDirectoryName, rootDirectory, directory, gitProvider);      // TODO RadStr: Maybe await is unnecessary
-}
-
-async function saveChangesInDirectoryToBackendFinalVersionRecursive(mapping: FilesystemMappingType, directory: string, gitProvider: GitProvider) {
-  // for (const [name, value] of Object.entries(mapping)) {
-  //   // TODO RadStr: Name vs IRI
-  //   await handleResourceUpdateFinalVersion(directory, name, value);
-
-  //   if (value.type === "directory") {
-  //     // TODO RadStr: Name vs IRI
-  //     const newDirectory = dsPathJoin(directory, name);
-  //     await saveChangesInDirectoryToBackendFinalVersionRecursive(value.content, newDirectory, gitProvider);   // TODO RadStr: Maybe await is unnecessary
-  //   }
-  // }
-
-  ///////////////////////////
-  ///////////////////////////
-
-  console.info("RECURSIVE MAPPING", mapping);
-  for (const [name, value] of Object.entries(mapping)) {
-    // TODO RadStr: Name vs IRI
-    await handleResourceUpdateFinalVersion(directory, name, value);
-
-    if (value.type === "directory") {
-      // TODO RadStr: Name vs IRI
-      console.info("RECURSIVE RECURSIVE MAPPING", value.content);
-      for (const [name2, value2] of Object.entries(value.content)) {
-
-        if (value2.type === "directory") {
-          const newDirectory = dsPathJoin(directory, name2);
-          await saveChangesInDirectoryToBackendFinalVersionRecursive(value2.content, newDirectory, gitProvider);
-        }
-        else {
-          await handleResourceUpdateFinalVersion(directory, name2, value2);
-        }
-      }
-    }
-  }
-}
 
 async function saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(
   currentlyProcessedDirectoryNodeName: string,
   currentlyProcessedDirectoryNode: DirectoryNode,
   directory: string,
-  gitProvider: GitProvider
+  gitProvider: GitProvider,
+  filesystem: FilesystemAbstraction,
 ) {
   console.info("RECURSIVE MAPPING", currentlyProcessedDirectoryNode);
-  await handleResourceUpdateFinalVersion(directory, currentlyProcessedDirectoryNodeName, currentlyProcessedDirectoryNode);
+  await handleResourceUpdateFinalVersion(directory, currentlyProcessedDirectoryNodeName, currentlyProcessedDirectoryNode, filesystem);
 
   for (const [name, value] of Object.entries(currentlyProcessedDirectoryNode.content)) {
     // TODO RadStr: Name vs IRI
     if(value.type === "directory") {
       const newDirectory = dsPathJoin(directory, name);
-      await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(name, value, newDirectory, gitProvider);
+      await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(name, value, newDirectory, gitProvider, filesystem);
     }
     else {
-      await handleResourceUpdateFinalVersion(directory, name, value);
+      await handleResourceUpdateFinalVersion(directory, name, value, filesystem);
     }
   }
 }
@@ -577,9 +480,14 @@ function isFileAddedFromGit(datastoreIdentifier: string, datastores: DatastoreIn
   return datastores.length === 1 && datastoreIdentifier === datastores[0].fullName;
 }
 
-async function handleResourceUpdateFinalVersion(fullPathToDirectory: string, datastoreIdentifier: string, filesystemNode: FilesystemNode) {
+async function handleResourceUpdateFinalVersion(
+  fullPathToDirectory: string,
+  datastoreIdentifier: string,
+  filesystemNode: FilesystemNode,
+  filesystem: FilesystemAbstraction
+) {
   if (isFileAddedFromGit(datastoreIdentifier, filesystemNode.datastores)) {
-    const parentIri = filesystemNode.parent?.metadataCache.iri;
+    const parentIri = filesystem.getParentForNode(filesystemNode)?.metadataCache.iri;
     if (parentIri !== undefined) {
       await createNewResourceUploadedFromGit(fullPathToDirectory, parentIri, datastoreIdentifier);
     }
@@ -616,119 +524,6 @@ async function handleResourceUpdateFinalVersion(fullPathToDirectory: string, dat
   }
 }
 
-// TODO RadStr: Move elsewhere
-// TODO RadStr: Git provider also probably is not needed
-/**
- * This method handles the storing of directory content, which usually comes from git clone, back to the DS store.
- * That means:
- *  0) Don't do anything with not changed (or copy them if necessary - depends on implementation of versioning inside DS)
- *  1) Remove removed
- *  2) Change changed
- *  3) Create created
- *   a) If there is new file from Git, which has not .meta and .model, just put it as new model (under the name of the file) to the package - user can edit it under the edit model on package
- *   b) If it has both .meta and .model create completely new resource - that is there will be new entry inside the package shown in manager
- *   c) Either only .meta or .model - skip it. We could try to somehow solve it, but we would probably end up in invalid state by some sequence of actions, so it is better to just skip it.
- * TODO RadStr: This should however account for collisions
- * @deprecated
- */
-async function createFileSystemMapping(
-  mapping: FilesystemMappingType,
-  parentDirectoryNode: DirectoryNode | null,
-  directory: string,
-  gitProvider: GitProvider,
-  shouldSetMetadataCache: boolean,
-) {
-  if (directory.endsWith(".git")) {     // TODO RadStr: Maybe can be better integrated into the ignore file
-    return {};
-  }
-  if (gitProvider.isGitProviderDirectory(directory)) {     // TODO RadStr: Maybe can be better integrated into the ignore file
-    return {};
-  }
-
-  const directoryBasename = path.basename(directory);
-
-  const _directoryContent = fs.readdirSync(directory, { withFileTypes: true });
-  const filesInDirectory = _directoryContent.filter(entry => !entry.isDirectory());
-  const subDirectories = _directoryContent.filter(entry => entry.isDirectory());
-  const directoryContentNames = filesInDirectory.map(content => content.name).filter(name => !ignoredFilesFilter(name));
-  const { prefixGroupings, invalidNames } = groupByPrefixDSSpecific(...directoryContentNames);
-  mapping[directoryBasename] = {
-    name: directoryBasename,
-    type: "directory",
-    content: {},
-    metadataCache: {},
-    datastores: [],
-    parent: parentDirectoryNode,
-    fullTreePath: directory,
-  };
-
-  const parentDirectoryNodeForRecursion = mapping[directoryBasename] as DirectoryNode;
-  const directoryContentContainer = parentDirectoryNodeForRecursion.content;
-
-  if (invalidNames.length > 0) {    // TODO RadStr: For is enough, no need for if
-    // TODO RadStr: ... we need to process them anyways, since they might be valid files from git, so the error + TODO node is no longer valid
-    for (const invalidName of invalidNames) {
-      const prefixName: DatastoreInfo = {
-        fullName: invalidName,
-        afterPrefix: invalidName,
-        type: invalidName,
-        name: invalidName,
-        format: null,
-        fullPath: dsPathJoin(directory, invalidName),
-      };
-      directoryContentContainer[invalidName] = {
-        name: invalidName,
-        type: "file",
-        metadataCache: { iri: invalidName },
-        // TODO RadStr: the old way
-        // datastores: { model: dsPathJoin(directory, invalidName) },
-        datastores: [prefixName],
-        parent: mapping[directoryBasename],
-        fullTreePath: dsPathJoin(directory, invalidName),
-      };
-    }
-
-    // TODO RadStr: No longer valid - remove
-    // We just log the error and move on - TODO RadStr: Probably should log a bit better.
-    // console.error("Some of the files don't have enough separators. That is they don't follow the format [name].[dataStoreId].[format]", { invalidNames });
-  }
-
-  for (const [prefix, valuesForPrefix] of Object.entries(prefixGroupings)) {
-    // TODO RadStr: Previously I tried using map - maybe will get back to it later
-
-    // const datastores: Record<string, string> = {};
-    // valuesForPrefix.forEach(datastore => {
-    //   datastores[datastore.type] = dsPathJoin(directory, datastore.fullName);
-    // });
-
-    if (prefix === "") {    // Directory data
-      mapping[directoryBasename].datastores = valuesForPrefix;
-      const fullPath = directory + "/";    // We have to do it explictly, if we use path.join on empty string, it won't do anything with the result.
-      setMetadataCache(mapping[directoryBasename], fullPath, shouldSetMetadataCache);
-      continue;
-    }
-
-    const fullPath = dsPathJoin(directory, prefix);
-    const fileNode: FilesystemNode = {
-      name: prefix,
-      type: "file",
-      metadataCache: {},
-      datastores: valuesForPrefix,
-      parent: mapping[directoryBasename],
-      fullTreePath: fullPath,
-    };
-
-    setMetadataCache(fileNode, fullPath, shouldSetMetadataCache);
-    directoryContentContainer[prefix] = fileNode;
-  }
-
-  for (const subDirectory of subDirectories) {
-    const fullPath = dsPathJoin(directory, subDirectory.name);
-    await createFileSystemMapping(directoryContentContainer, parentDirectoryNodeForRecursion, fullPath, gitProvider, shouldSetMetadataCache);
-  }
-
-  return mapping;
-}
 
 function setMetadataCache(node: FilesystemNode, directory: string, shouldSetMetadataCache: boolean) {
   if (shouldSetMetadataCache) {

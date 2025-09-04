@@ -175,6 +175,15 @@ export interface FilesystemAbstraction {
    * TODO RadStr: Not sure if I should expose that though
    */
   getGlobalFilesystemMap(): Record<string, FilesystemNode>;
+
+  /**
+   * @returns Returns the mapping of filesystem nodes to their parents.
+   *  The reason why it is separate record and not part of the objects is that
+   *  parents cause circular dependencies, which cause issues in serialzation.
+   */
+  getNodeToParentMap(): Record<string, DirectoryNode | null>;
+
+  getParentForNode(node: FilesystemNode): DirectoryNode | null;
 }
 
 /**
@@ -188,11 +197,11 @@ export type FileSystemAbstractionFactoryMethod = (roots: FilesystemNodeLocation[
 
 /**
  * @returns Returns newly created root, which can and should be used as fake root.
+ *  But note that it does not create the map of root to the parent. That is handled by {@link createInitialNodeToParentMap}
  */
 export function createFilesystemMappingRoot(): DirectoryNode {
   const root: DirectoryNode = {
     type: "directory",
-    parent: null,
     name: "",
     metadataCache: { iri: "fake-root" },
     content: {},
@@ -205,6 +214,12 @@ export function createFilesystemMappingRoot(): DirectoryNode {
 
 export function createEmptyFilesystemMapping(): FilesystemMappingType {
   return {};
+}
+
+export function createInitialNodeToParentMap(fakeRoot: DirectoryNode): Record<string, DirectoryNode | null> {
+  const nodeToParentMap: Record<string, DirectoryNode | null> = {};
+  nodeToParentMap[fakeRoot.fullTreePath] = null;
+  return nodeToParentMap;
 }
 
 export function getMetaPrefixType(): string {

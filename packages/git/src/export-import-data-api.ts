@@ -52,7 +52,6 @@ type DatastructureToExport = {
   name: string,   // TODO RadStr: The name is the same as the key in the FilesystemMappingType
   metadataCache: MetadataCacheType,
   datastores: DatastoreInfo[],     // Could be Record<string, string> ... however I am not sure if there can not technically exist two or more datastores of same type (TODO RadStr:)
-  parent: DirectoryNode | null,
   fullTreePath: string,   // TODO RadStr: We can get it recursively, if we need to (by visiting parents and concating the names). So we don't have to store it.
   extraData?: object  // TODO RadStr: Maybe use later.
 };

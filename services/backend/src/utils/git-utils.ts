@@ -365,6 +365,7 @@ type DeepOmit<T, K extends PropertyKey> = {
 
 /**
  * Also ChatGPT
+ * @deprecated No longer used, but it may be useful in future, so I keep it here
  */
 export function deepOmit<T extends object>(obj: T, keyToRemove: string): any {
   if (Array.isArray(obj)) {
@@ -377,12 +378,6 @@ export function deepOmit<T extends object>(obj: T, keyToRemove: string): any {
     );
   }
   return obj;
-}
-
-
-
-export function removeCircularDependenciesInDiffTree(diffTree: DiffTree) {
-  return deepOmit(diffTree, "parent");
 }
 
 

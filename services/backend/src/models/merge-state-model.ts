@@ -1,7 +1,6 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { ComparisonData } from "../routes/git-webhook-handler.ts";
 import { v4 as uuidv4 } from "uuid";
-import { deepOmit, removeCircularDependenciesInDiffTree } from "../utils/git-utils.ts";
 import fs from "fs";
 import path from "path";
 import { ALL_GIT_REPOSITORY_ROOTS } from "./git-store-info.ts";
@@ -268,21 +267,6 @@ export class MergeStateModel {
     return this.prismaMergeStateToMergeState(mergeState);
   }
 
-  removeCircularDependencyFromFilesystemNode(
-    filesystemNode: FilesystemNode | null
-  ): Omit<FilesystemNode, "parent"> | null {
-    if (filesystemNode === null) {
-      return null;
-    }
-
-    const { parent, ...strippedFilesystemNode } = filesystemNode;
-    return strippedFilesystemNode;
-  }
-
-  removeCircularDependenciesFromComparisonData(comparisonData: ComparisonData[]) {
-    return deepOmit(comparisonData, "parent");
-  }
-
   private convertMergeStateDataToString(
     changedInEditable: ComparisonData[],
     removedInEditable: ComparisonData[],
@@ -290,11 +274,11 @@ export class MergeStateModel {
     conflicts: ComparisonData[],
     diffTree: DiffTree,
   ) {
-    const changedInEditableAsString = JSON.stringify(this.removeCircularDependenciesFromComparisonData(changedInEditable));
-    const removedInEditableAsString = JSON.stringify(this.removeCircularDependenciesFromComparisonData(removedInEditable));
-    const createdInEditableAsString = JSON.stringify(this.removeCircularDependenciesFromComparisonData(createdInEditable));
-    const conflictsAsString = JSON.stringify(this.removeCircularDependenciesFromComparisonData(conflicts));
-    const diffTreeAsString = JSON.stringify(removeCircularDependenciesInDiffTree(diffTree));
+    const changedInEditableAsString = JSON.stringify(changedInEditable);
+    const removedInEditableAsString = JSON.stringify(removedInEditable);
+    const createdInEditableAsString = JSON.stringify(createdInEditable);
+    const conflictsAsString = JSON.stringify(conflicts);
+    const diffTreeAsString = JSON.stringify(diffTree);
 
     return {
       changedInEditableAsString,

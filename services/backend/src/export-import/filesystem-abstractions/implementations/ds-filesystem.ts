@@ -130,7 +130,6 @@ export class DSFilesystem extends FilesystemAbstractionBase {
         metadataCache: {},
         datastores: [],
         content: createEmptyFilesystemMapping(),
-        parent: parentDirectoryNode,
         fullTreePath: newNodeLocation.fullTreePath,
       };
       filesystemNode = directoryNode;
@@ -160,12 +159,11 @@ export class DSFilesystem extends FilesystemAbstractionBase {
         type: "file",
         metadataCache: {},
         datastores: [],
-        parent: parentDirectoryNode,
         fullTreePath: newNodeLocation.fullTreePath,
       }
       filesystemNode = fileNode;
     }
-    this.setValueInFilesystemMapping(newNodeLocation, filesystemMapping, filesystemNode);
+    this.setValueInFilesystemMapping(newNodeLocation, filesystemMapping, filesystemNode, parentDirectoryNode);
 
 
 
@@ -238,7 +236,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
       if (filesystemNode.datastores.length === 0) {       // TODO RadStr: Not sure about this, we will always have metadata, right? or no?
         await deleteResource(filesystemNode.name);
         // TODO RadStr: Just put fullPath inside the FilesystemNode and be done with it
-        this.removeValueInFilesystemMapping(filesystemNode.name, filesystemNode.parent?.content ?? this.root.content);
+        this.removeValueInFilesystemMapping(filesystemNode.name, this.getParentForNode(filesystemNode)?.content ?? this.root.content);
       }
     }
 

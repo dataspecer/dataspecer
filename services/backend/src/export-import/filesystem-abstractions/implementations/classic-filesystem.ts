@@ -84,7 +84,6 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
         metadataCache: {},
         datastores: [],
         content: {},
-        parent: parentDirectoryNode,
         fullTreePath: fullTreePath,
       };
 
@@ -92,7 +91,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
       directoryContentContainer = parentDirectoryNodeForRecursion.content;
 
       // TODO RadStr: It was not here previously however I think that it should be. Because it is missing in the global mapping otherwise
-      this.setValueInFilesystemMapping(directoryNodeFilesystemLocation, filesystemMapping, directoryNode);
+      this.setValueInFilesystemMapping(directoryNodeFilesystemLocation, filesystemMapping, directoryNode, parentDirectoryNode);
     }
     else {
       if (parentDirectoryNode === null) {
@@ -128,11 +127,10 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
           // TODO RadStr: the old way
           // datastores: { model: path.join(directory, invalidName) },
           datastores: [prefixName],
-          parent: parentDirectoryNodeForRecursion,
           fullTreePath: newFileSystemNodeLocation.fullTreePath,
         };
 
-        this.setValueInFilesystemMapping(newFileSystemNodeLocation, directoryContentContainer, newSingleNode);
+        this.setValueInFilesystemMapping(newFileSystemNodeLocation, directoryContentContainer, newSingleNode, parentDirectoryNodeForRecursion);
       }
 
       // TODO RadStr: Remove commented - no longer valid
@@ -183,10 +181,9 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
           type: "file",
           metadataCache: {},
           datastores: valuesForPrefix,
-          parent: parentDirectoryNodeForRecursion,
           fullTreePath: fileNodeLocation.fullTreePath,
         };
-        this.setValueInFilesystemMapping(fileNodeLocation, directoryContentContainer, fileNode);
+        this.setValueInFilesystemMapping(fileNodeLocation, directoryContentContainer, fileNode, parentDirectoryNodeForRecursion);
       }
       else {
         // TODO RadStr: There should be no duplicate - however I don't think that there is a need for check
@@ -259,7 +256,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     if (shouldRemoveFileWhenNoDatastores) {
       if (filesystemNode.datastores.length === 0) {
         fs.rmSync(filesystemNode.fullTreePath);
-        this.removeValueInFilesystemMapping(filesystemNode.name, filesystemNode.parent!.content);
+        this.removeValueInFilesystemMapping(filesystemNode.name, this.getParentForNode(filesystemNode)!.content);
       }
     }
     return true;          // TODO RadStr: Again returning true only

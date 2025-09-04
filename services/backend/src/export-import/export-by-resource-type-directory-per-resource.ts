@@ -209,7 +209,6 @@ export class PackageExporterByResourceType {
         datastores: [],
         name: localNameCandidate,
         content: createEmptyFilesystemMapping(),
-        parent: parentDirectoryNode,
         fullTreePath: fullName,
       };
       filesystemNode = directoryNode;
@@ -228,7 +227,6 @@ export class PackageExporterByResourceType {
         datastores: [],
         metadataCache: {},
         name: localNameCandidate,
-        parent: parentDirectoryNode,
         fullTreePath: fullName,
       }
       filesystemNode = fileNode;

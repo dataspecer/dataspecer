@@ -1,6 +1,6 @@
 import { GitProvider } from "../git-provider-api.ts";
 import { FilesystemNode, FilesystemMappingType, MetadataCacheType, DirectoryNode, FilesystemNodeLocation, DatastoreInfo } from "../export-import-data-api.ts";
-import { createEmptyFilesystemMapping, createFilesystemMappingRoot, FilesystemAbstraction, getMetaPrefixType } from "./filesystem-abstraction.ts";
+import { createEmptyFilesystemMapping, createFilesystemMappingRoot, createInitialNodeToParentMap, FilesystemAbstraction, getMetaPrefixType } from "./filesystem-abstraction.ts";
 
 import path from "path";
 import { ComparisonData } from "../diff-types.ts";
@@ -12,6 +12,7 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
 
   protected root: DirectoryNode;
   protected globalFilesystemMapping: FilesystemMappingType;
+  protected nodeToParentMap: Record<string, DirectoryNode | null>;
 
 
   /////////////////////////////////////
@@ -21,9 +22,10 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
   protected constructor() {
     const emptyMapping = createEmptyFilesystemMapping();
     const topLevelRoot = createFilesystemMappingRoot();
+    this.nodeToParentMap = createInitialNodeToParentMap(topLevelRoot);
     this.globalFilesystemMapping = createEmptyFilesystemMapping();
     this.root = topLevelRoot;
-    this.setValueInFilesystemMapping({iri: "", fullTreePath: ""}, emptyMapping, topLevelRoot);
+    this.setValueInFilesystemMapping({iri: "", fullTreePath: ""}, emptyMapping, topLevelRoot, null);
   }
 
   /////////////////////////////////////
@@ -73,6 +75,15 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
     throw new Error("Method not implemented.");
   }
 
+  getNodeToParentMap(): Record<string, DirectoryNode | null> {
+    return this.nodeToParentMap;
+  }
+
+  getParentForNode(node: FilesystemNode): DirectoryNode | null {
+    const map = this.getNodeToParentMap();
+    return map[node.fullTreePath];
+  }
+
 
   async initializeFilesystem(filesystemRoots: FilesystemNodeLocation[]): Promise<void> {
     for (const givenRoot of filesystemRoots) {
@@ -81,19 +92,28 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
   }
 
   /**
-   * Sets the both recursive and global mapping values correctly
+   * Sets the both recursive and global mapping values correctly. Also sets the nodeToParentMap
    */
-  protected setValueInFilesystemMapping(nodeLocation: Omit<FilesystemNodeLocation, "fullPath">, relativeMapping: FilesystemMappingType, newFilesystemNode: FilesystemNode) {
+  protected setValueInFilesystemMapping(
+    nodeLocation: Omit<FilesystemNodeLocation, "fullPath">,
+    relativeMapping: FilesystemMappingType,
+    newFilesystemNode: FilesystemNode,
+    newFilesystemNodeParent: DirectoryNode | null,
+  ) {
     this.globalFilesystemMapping[nodeLocation.fullTreePath] = newFilesystemNode;
     relativeMapping[nodeLocation.iri] = newFilesystemNode;
+    this.nodeToParentMap[newFilesystemNode.fullTreePath] = newFilesystemNodeParent;
   }
 
   /**
    * Removes the entry with name {@link relativePath} from the provided {@link relativeMapping} and the global mapping present on class.
+   * Also removes the entry from {@link nodeToParentMap}.
    */
   protected removeValueInFilesystemMapping(relativePath: string, relativeMapping: FilesystemMappingType) {
-    delete this.globalFilesystemMapping[relativeMapping[relativePath].fullTreePath];
+    const fullTreePath = relativeMapping[relativePath].fullTreePath;
+    delete this.globalFilesystemMapping[fullTreePath];
     delete relativeMapping[relativePath];
+    delete this.nodeToParentMap[fullTreePath];
   }
 
   async getMetadataObject(treePath: string): Promise<MetadataCacheType> {
