@@ -3,7 +3,7 @@ import fs from "fs";
 import { DSFilesystem } from "../export-import/filesystem-abstractions/implementations/ds-filesystem.ts";
 import { resourceModel } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
-import { convertDatastoreBasedOnFormat, stringToBoolean } from "../utils/git-utils.ts";
+import { convertDatastoreContentBasedOnFormat, stringToBoolean } from "../utils/git-utils.ts";
 import { z } from "zod";
 import { isAccessibleGitRepository } from "../models/git-store-info.ts";
 import { AvailableFilesystems } from "@dataspecer/git";
@@ -37,7 +37,7 @@ export async function getDatastoreContent(
       return { accessDenied: true };
     }
     const content = fs.readFileSync(normalizedGitPath, "utf-8");
-    return convertDatastoreBasedOnFormat(content, format ?? null, shouldConvertToDatastoreFormat);
+    return convertDatastoreContentBasedOnFormat(content, format ?? null, shouldConvertToDatastoreFormat);
   }
   else {
     return await DSFilesystem.getDatastoreContentForPath(resourceModel, pathToDatastore, type, format ?? null, shouldConvertToDatastoreFormat);
@@ -46,7 +46,6 @@ export async function getDatastoreContent(
 
 export const getDatastoreContentDirectly = asyncHandler(async (request: express.Request, response: express.Response) => {
   const availableFilesystems = Object.values(AvailableFilesystems);
-  console.info({ availableFilesystems }); // TODO RadStr: Debug print
 
   const querySchema = z.object({
     pathToDatastore: z.string().min(1),
@@ -73,31 +72,48 @@ export const getDatastoreContentDirectly = asyncHandler(async (request: express.
   }
 });
 
-function findPathToGitRepository(packageIri: string): string {
-  throw new Error("TODO RadStr: Not implemented yet");
+
+export async function setDatastoreContent(
+  pathToDatastore: string,
+  filesystem: AvailableFilesystems,
+  type: string,
+  newContent: string,
+  format?: string
+): Promise<boolean | {accessDenied: true}> {
+  // TODO RadStr: Run conversion on client?
+  if (filesystem === AvailableFilesystems.ClassicFilesystem) {
+    const { isAccessible, normalizedGitPath } = isAccessibleGitRepository(pathToDatastore);
+    // This is very very important, if we didn't do this, we would user allow to esentially query any file stored on server
+    if (!isAccessible) {
+      return { accessDenied: true };
+    }
+    const newContentConverted = convertDatastoreContentBasedOnFormat(newContent, format ?? null, true);
+    fs.writeFileSync(normalizedGitPath, newContentConverted, "utf-8");
+  }
+  else {
+    fix set and correctly return boolean
+    return await DSFilesystem.getDatastoreContentForPath(resourceModel, pathToDatastore, type, format ?? null, shouldConvertToDatastoreFormat);
+  }
 }
 
-// export const modifyDatastoreContentDirectly = asyncHandler(async (request: express.Request, response: express.Response) => {
-//   const availableFilesystems = Object.keys(AvailableFilesystems) as Array<keyof typeof AvailableFilesystems>;
-//   console.info({ availableFilesystems }); // TODO RadStr: Debug print
 
-//   const querySchema = z.object({
-//     pathToDatastore: z.string().min(1),
-//     format: z.string().min(1).optional(),
-//     type: z.string(),
-//     filesystem: z.enum(availableFilesystems as [string, ...string[]]),
-//   });
-//   const query = querySchema.parse(request.query);
+export const updateDatastoreContentDirectly = asyncHandler(async (request: express.Request, response: express.Response) => {
+  const availableFilesystems = Object.values(AvailableFilesystems);
 
-//   const newContent = request.body;
+  const bodySchema = z.object({
+    pathToDatastore: z.string().min(1),
+    format: z.string().min(1).optional(),
+    type: z.string(),
+    filesystem: z.enum(availableFilesystems as [string, ...string[]]),
+    newContent: z.string().min(1),        // TODO RadStr: Or object?
+  });
+  const body = bodySchema.parse(request.body);
 
-//   const filesystem = AvailableFilesystems[query.filesystem as keyof typeof AvailableFilesystems];
-//   console.info({ filesystem }); // TODO RadStr: Debug print
-//   const datastoreContent = await setDatastoreContent(query.pathToDatastore, filesystem, query.type, query.shouldConvertToDatastoreFormat, query.format);
-//   if (query.format === "json") {
-//     response.json(datastoreContent);
-//   }
-//   else {
-//     response.send(datastoreContent);
-//   }
-// });
+  const filesystem: AvailableFilesystems = body.filesystem as AvailableFilesystems;
+  const datastoreContent = await setDatastoreContent(body.pathToDatastore, filesystem, body.type, body.newContent, body.format);
+  if (datastoreContent?.accessDenied === true && Object.keys(datastoreContent).length === 1) {
+    response.status(403);
+    response.json(`Trying to access ${body.pathToDatastore}`);
+    return;
+  }
+});
