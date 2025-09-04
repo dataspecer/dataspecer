@@ -2,7 +2,7 @@ import { BetterModalProps, useBetterModal, } from "@/lib/better-modal";
 import { useEffect, useState } from "react";
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
-import { DataResourceNameInfo, TextDiffEditorDialog } from "./diff-editor-dialog";
+import { TextDiffEditorDialog } from "./diff-editor-dialog";
 import { Loader } from "lucide-react";
 import { EditableType, MergeState } from "@dataspecer/git";
 
@@ -55,8 +55,8 @@ export async function createMergeStateOnBackend(rootIriMergeFrom: string, rootIr
 
 
 type OpenMergeStateProps = {
-  mergeFrom: DataResourceNameInfo,
-  mergeTo: DataResourceNameInfo,
+  mergeFrom: string,
+  mergeTo: string,
   editable: EditableType,
 } & BetterModalProps<{
   newBranch: string,
@@ -78,7 +78,7 @@ export const OpenMergeState = ({ mergeFrom, mergeTo, editable, isOpen, resolve }
   const openModal = useBetterModal();
 
   const handleReplaceExisting = async () => {
-    const createdMergeState = await createMergeStateOnBackend(mergeFrom.resourceIri, mergeTo.resourceIri);
+    const createdMergeState = await createMergeStateOnBackend(mergeFrom, mergeTo);
     setMergeState(createdMergeState);
     if (createdMergeState === null) {
       setMergeStateCreatingFailure(true);
@@ -88,9 +88,9 @@ export const OpenMergeState = ({ mergeFrom, mergeTo, editable, isOpen, resolve }
       openModal(
         TextDiffEditorDialog,
         {
-          initialOriginalResourceNameInfo: {resourceIri: createdMergeState.rootIriMergeFrom, modelName: ""},
-          initialModifiedResourceIri: {resourceIri: createdMergeState.rootIriMergeTo, modelName: ""},
-          editable: editable
+          initialOriginalResourceIri: createdMergeState.rootIriMergeFrom,
+          initialModifiedResourceIri: createdMergeState.rootIriMergeTo,
+          editable: editable,
         }
       );
     }
@@ -100,9 +100,9 @@ export const OpenMergeState = ({ mergeFrom, mergeTo, editable, isOpen, resolve }
     openModal(
       TextDiffEditorDialog,
       {
-        initialOriginalResourceNameInfo: {resourceIri: mergeState!.rootIriMergeFrom, modelName: ""},
-        initialModifiedResourceIri: {resourceIri: mergeState!.rootIriMergeTo, modelName: ""},
-        editable: editable
+        initialOriginalResourceIri: mergeState!.rootIriMergeFrom,
+        initialModifiedResourceIri: mergeState!.rootIriMergeTo,
+        editable: editable,
       }
     );
   }
@@ -111,10 +111,10 @@ export const OpenMergeState = ({ mergeFrom, mergeTo, editable, isOpen, resolve }
   useEffect(() => {
     const initialLoad = async () => {
       setIsLoading(true);
-      let fetchedMergeState = await fetchMergeState(mergeFrom.resourceIri, mergeTo.resourceIri, false);
+      let fetchedMergeState = await fetchMergeState(mergeFrom, mergeTo, false);
       let alreadyExists: boolean;
       if (fetchedMergeState === null) {
-        fetchedMergeState = await createMergeStateOnBackend(mergeFrom.resourceIri, mergeTo.resourceIri);
+        fetchedMergeState = await createMergeStateOnBackend(mergeFrom, mergeTo);
         alreadyExists = false;
       }
       else {
@@ -133,9 +133,9 @@ export const OpenMergeState = ({ mergeFrom, mergeTo, editable, isOpen, resolve }
           openModal(
             TextDiffEditorDialog,
             {
-              initialOriginalResourceNameInfo: {resourceIri: fetchedMergeState.rootIriMergeFrom, modelName: ""},
-              initialModifiedResourceIri: {resourceIri: fetchedMergeState.rootIriMergeTo, modelName: ""},
-              editable: editable
+              initialOriginalResourceIri: fetchedMergeState.rootIriMergeFrom,
+              initialModifiedResourceIri: fetchedMergeState.rootIriMergeTo,
+              editable: editable,
             }
           );
         }

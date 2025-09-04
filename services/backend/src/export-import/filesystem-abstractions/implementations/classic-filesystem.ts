@@ -4,7 +4,7 @@ import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, Filesys
 
 import fs from "fs";
 import { isArtificialExportDirectory } from "../../export-by-resource-type.ts";
-import { convertDatastoreBasedOnFormat, dsPathJoin } from "../../../utils/git-utils.ts";
+import { convertDatastoreContentBasedOnFormat, dsPathJoin } from "../../../utils/git-utils.ts";
 
 
 export class ClassicFilesystem extends FilesystemAbstractionBase {
@@ -222,7 +222,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     const pathToDatastore = datastore.fullPath;
 
     const content = fs.readFileSync(pathToDatastore, "utf-8");
-    return convertDatastoreBasedOnFormat(content, datastore.format, shouldConvertToDatastoreFormat);
+    return convertDatastoreContentBasedOnFormat(content, datastore.format, shouldConvertToDatastoreFormat);
   }
 
   shouldIgnoreDirectory(directory: string, gitProvider: GitProvider): boolean {

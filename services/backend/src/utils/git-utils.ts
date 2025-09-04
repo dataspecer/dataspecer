@@ -54,11 +54,11 @@ export function dsPathJoin(...pathParts: string[]) {
 
 // TODO RadStr: Once again maybe not git-utils
 /**
- * Inverse to {@link stringifyDatastoreBasedOnFormat}
+ * Inverse to {@link stringifyDatastoreContentBasedOnFormat}
  * @param shouldConvert if false then returns the given {@link datastoreContent} without performing any converting action.
  * @returns Returns {@link datastoreContent} in format of string to the format in which is the string content (that is what we got from the name extension, for example .json).
  */
-export function convertDatastoreBasedOnFormat(datastoreContent: string, format: string | null, shouldConvert: boolean): any {
+export function convertDatastoreContentBasedOnFormat(datastoreContent: string, format: string | null, shouldConvert: boolean): any {
   if (!shouldConvert) {
     return datastoreContent;
   }
@@ -76,10 +76,10 @@ export function convertDatastoreBasedOnFormat(datastoreContent: string, format: 
 
 // TODO RadStr: Once again maybe not git-utils
 /**
- * Inverse to {@link convertDatastoreBasedOnFormat}
+ * Inverse to {@link convertDatastoreContentBasedOnFormat}
  * @returns Stringified {@link datastoreContent}, which was on input in given {@link foramt}. If {@link shouldConvert}, then just returns the {@link datastoreContent}.
  */
-export function stringifyDatastoreBasedOnFormat(datastoreContent: any, format: string | null, shouldConvert: boolean): string {
+export function stringifyDatastoreContentBasedOnFormat(datastoreContent: any, format: string | null, shouldConvert: boolean): string {
   if (!shouldConvert) {
     return datastoreContent;
   }

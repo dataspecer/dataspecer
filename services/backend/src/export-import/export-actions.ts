@@ -1,6 +1,6 @@
 
 import { DatastoreInfo } from "@dataspecer/git";
-import { stringifyDatastoreBasedOnFormat } from "../utils/git-utils.ts";
+import { stringifyDatastoreContentBasedOnFormat } from "../utils/git-utils.ts";
 import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
 import fs from "fs";
 import path from "path";
@@ -24,7 +24,7 @@ export class ExportActionForFilesystem implements ExportActions<void> {
     const fullPath = exportPath + datastoreInfo.afterPrefix;
     const directory = path.dirname(fullPath);
     fs.mkdirSync(directory, { recursive: true });
-    const dataAsString = stringifyDatastoreBasedOnFormat(data, datastoreInfo.format, true);
+    const dataAsString = stringifyDatastoreContentBasedOnFormat(data, datastoreInfo.format, true);
     fs.writeFileSync(fullPath, dataAsString);
   }
 
@@ -43,7 +43,7 @@ export class ExportActionForZip implements ExportActions<Buffer<ArrayBufferLike>
   async exportDatastoreAction(exportPath: string, datastoreInfo: DatastoreInfo, data: any): Promise<void> {
     const fullPath = exportPath + datastoreInfo.afterPrefix;
     const stream = this.zipStreamDictionary.writePath(fullPath);
-    const dataAsString = stringifyDatastoreBasedOnFormat(data, datastoreInfo.format, true);
+    const dataAsString = stringifyDatastoreContentBasedOnFormat(data, datastoreInfo.format, true);
     await stream.write(dataAsString);
     stream.close();
   }

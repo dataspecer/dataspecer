@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useOnBeforeUnload } from "@/hooks/use-on-before-unload";
 import { useOnKeyDown } from "@/hooks/use-on-key-down";
-import { packageService } from "@/package";
 import * as monaco from 'monaco-editor';
 import { DiffTreeVisualization } from "@/components/directory-diff";
 import { Loader, RotateCw } from "lucide-react";
@@ -25,49 +24,44 @@ export type ChangeActiveModelMethod = (
 ) => Promise<void>;
 
 type TextDiffEditorDialogProps = {
-  initialOriginalResourceNameInfo: DataResourceNameInfo,
-  initialModifiedResourceIri: DataResourceNameInfo,
+  initialOriginalResourceIri: string,
+  initialModifiedResourceIri: string,
   editable: EditableType,
 } & BetterModalProps<{
   newResourceContent: string | undefined,
 }>;
 
-export type DataResourceNameInfo = {
-  resourceIri: ResourceIri,
-  modelName: ModelName,
-};
-
-type ResourceIri = string;
+type FullPath = string;
 type ModelName = string;
 
-type CacheContentMap = Record<ResourceIri, Record<ModelName, string>>;
+type CacheContentMap = Record<FullPath, Record<ModelName, string>>;
 
 /**
- * Creates copy of {@link oldCache} and changes (or adds if not present) {@link newValue} at {@link dataResourceToChange}
+ * Creates copy of {@link oldCache} and changes (or adds if not present) {@link newValue} at {@link datastoreToChange}
  */
-function createNewContentCache(oldCache: CacheContentMap, dataResourceToChange: DataResourceNameInfo, newValue: string) {
+function createNewContentCache(oldCache: CacheContentMap, datastoreToChange: DatastoreInfo, newValue: string) {
   const newCache = {
     ...oldCache,
-    [dataResourceToChange.resourceIri]: {
-      ...(oldCache[dataResourceToChange.resourceIri] ?? {}),
-      [dataResourceToChange.modelName]: newValue,
+    [datastoreToChange.fullPath]: {
+      ...(oldCache[datastoreToChange.fullPath] ?? {}),
+      [datastoreToChange.type]: newValue,
     },
   };
 
   return newCache;
 }
 
-function isDataResourcePresentInCache(cache: CacheContentMap, dataResourceNameInfo: DataResourceNameInfo): boolean {
-  return getDataResourceInCache(cache, dataResourceNameInfo) !== undefined;
+function isDatastorePresentInCache(cache: CacheContentMap, datastoreInfo: DatastoreInfo): boolean {
+  return getDatastoreInCache(cache, datastoreInfo) !== undefined;
 }
 
-function getDataResourceInCache(cache: CacheContentMap, dataResourceNameInfo: DataResourceNameInfo) {
-  return cache[dataResourceNameInfo.resourceIri]?.[dataResourceNameInfo.modelName];
+function getDatastoreInCache(cache: CacheContentMap, datastoreInfo: DatastoreInfo) {
+  return cache[datastoreInfo.fullPath]?.[datastoreInfo.type];
 }
 
 const saveMergeState = async (
   fetchedMergeState: MergeState,
-  conflictsToBeResolvedOnSave: ComparisonData[]
+  conflictsToBeResolvedOnSave: ComparisonData[],
 ) => {
   try {
     const fetchResult = await fetch(
@@ -110,9 +104,76 @@ const finalizeMergeState = async (mergeStateUUID: string | undefined) => {
   }
 }
 
+async function getDatastoreContentDirectly(
+  datastoreInfo: DatastoreInfo | null,
+  filesystem: AvailableFilesystems | null,
+): Promise<any | null> {
+  if (datastoreInfo === null) {
+    return null;
+  }
+  if (filesystem === null) {
+    return null;
+  }
+
+  const queryAsObject = {
+    pathToDatastore: encodeURIComponent(datastoreInfo.fullPath),
+    format: datastoreInfo.format,
+    type: datastoreInfo.type,
+    filesystem,
+    shouldConvertToDatastoreFormat: true,
+  };
+
+  let url = import.meta.env.VITE_BACKEND + "/git/get-datastore-content?";
+  for (const [key, value] of Object.entries(queryAsObject)) {
+    url += key;
+    url += "=";
+    url += value;
+    url += "&";
+  }
+  url = url.slice(0, -1);
+
+  const response = await fetch(url, {
+    method: "GET",
+  });
+
+  const responseAsJSON = await response.json();
+  console.info("getDatastoreContentDirectly", {responseAsJSON, datastoreInfo});       // TODO RadStr: Debug
+  return responseAsJSON;
+}
+
+async function updateDatastoreContentDirectly(
+  datastoreInfo: DatastoreInfo | null,
+  newContent: string,
+  filesystem: AvailableFilesystems | null,
+) {
+  if (datastoreInfo === null) {
+    console.error("There is not any datastore in editor, we can not perform update.");
+    return;
+  }
+  if (filesystem === null) {
+    console.error("There is not set any filesystem, so the we can not update datastore on backend.");
+    return;
+  }
+
+  const url = import.meta.env.VITE_BACKEND + "/git/update-datastore-content?";
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      pathToDatastore: datastoreInfo.fullPath,
+      filesystem,
+      format: datastoreInfo.format,
+      type: datastoreInfo.type,
+      content: newContent,
+    }),
+  });
+
+  console.info("updateDatastoreContentDirectly", {datastoreInfo, response, newContent});       // TODO RadStr: Debug
+}
 
 
-export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialModifiedResourceIri, editable, isOpen, resolve, }: TextDiffEditorDialogProps) => {
+
+export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifiedResourceIri, editable, isOpen, resolve, }: TextDiffEditorDialogProps) => {
   const monacoEditor = useRef<{editor: monaco.editor.IStandaloneDiffEditor}>(undefined);
 
   // Set once in the useEffect
@@ -121,11 +182,11 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
 
   const [cacheForOriginalTextContent, setCacheForOriginalTextContent] = useState<CacheContentMap>({});
   const [cacheForModifiedTextContent, setCacheForModifiedTextContent] = useState<CacheContentMap>({});
-  const [originalDataResourceNameInfo, setOriginalResourceNameInfo] = useState<DataResourceNameInfo>({ resourceIri: "", modelName: "" });
-  const [modifiedDataResourceNameInfo, setModifiedResourceNameInfo] = useState<DataResourceNameInfo>({ resourceIri: "", modelName: "" });
+  const [originalDatastoreInfo, setOriginalDatastoreInfo] = useState<DatastoreInfo | null>(null);
+  const [modifiedDatastoreInfo, setModifiedDatastoreInfo] = useState<DatastoreInfo | null>(null);
 
-  const activeOriginalContent = cacheForOriginalTextContent[originalDataResourceNameInfo.resourceIri]?.[originalDataResourceNameInfo.modelName] ?? "";
-  const activeModifiedContent = cacheForModifiedTextContent[modifiedDataResourceNameInfo.resourceIri]?.[modifiedDataResourceNameInfo.modelName] ?? "";
+  const activeOriginalContent = originalDatastoreInfo === null ? "" : cacheForOriginalTextContent[originalDatastoreInfo.fullPath]?.[originalDatastoreInfo.type] ?? "";
+  const activeModifiedContent = modifiedDatastoreInfo === null ? "" : cacheForModifiedTextContent[modifiedDatastoreInfo.fullPath]?.[modifiedDatastoreInfo.type] ?? "";
 
   useOnBeforeUnload(true);
   useOnKeyDown(e => {
@@ -143,11 +204,8 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
   const [isLoadingTextData, setIsLoadingTextData] = useState<boolean>(true);
   useEffect(() => {
     (async () => {
-      // TODO RadStr: Fetch the data here
-      setOriginalResourceNameInfo(initialOriginalResourceNameInfo);
-      setModifiedResourceNameInfo(initialModifiedResourceIri);
       setIsLoadingTextData(true);
-      const fetchedMergeState = await fetchMergeState(initialOriginalResourceNameInfo.resourceIri, initialModifiedResourceIri.resourceIri, true);
+      const fetchedMergeState = await fetchMergeState(initialOriginalResourceIri, initialModifiedResourceIri, true);
       setExaminedMergeState(fetchedMergeState);
     })();
   }, []);
@@ -161,108 +219,53 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
   const changeActiveModel = async (newOriginalDatastoreInfo: DatastoreInfo, newModifiedDatastoreInfo: DatastoreInfo, useCache: boolean) => {
     setIsLoadingTextData(true);
 
-    // TODO RadStr: Just for now so I have something that works, we will need only the DatastoreInfo
-    const newOriginalDataResourceNameInfo: DataResourceNameInfo = {
-      resourceIri: newOriginalDatastoreInfo.fullPath,
-      modelName: newOriginalDatastoreInfo.name,
-    };
-
-    const newModifiedDataResourceNameInfo: DataResourceNameInfo = {
-      resourceIri: newModifiedDatastoreInfo.fullPath,
-      modelName: newModifiedDatastoreInfo.name,
-    };
-
     // Set the edited value in cache
     setCacheForOriginalTextContent(prevState => {
       const currentOriginalContentInEditor = monacoEditor.current?.editor.getOriginalEditor().getValue();
-      return createNewContentCache(prevState, originalDataResourceNameInfo, currentOriginalContentInEditor!);
+      return createNewContentCache(prevState, newOriginalDatastoreInfo, currentOriginalContentInEditor!);
     });
     setCacheForModifiedTextContent(prevState => {
       const currentModifiedContentInEditor = monacoEditor.current?.editor.getModifiedEditor().getValue();
-      return createNewContentCache(prevState, modifiedDataResourceNameInfo, currentModifiedContentInEditor!);
+      return createNewContentCache(prevState, newModifiedDatastoreInfo, currentModifiedContentInEditor!);
     });
 
-    const isOriginalDataResourceInCache = isDataResourcePresentInCache(cacheForOriginalTextContent, newOriginalDataResourceNameInfo);
-    const isModifiedDataResourceInCache = isDataResourcePresentInCache(cacheForModifiedTextContent, newModifiedDataResourceNameInfo);
+    const isOriginalDataResourceInCache = isDatastorePresentInCache(cacheForOriginalTextContent, newOriginalDatastoreInfo);
+    const isModifiedDataResourceInCache = isDatastorePresentInCache(cacheForModifiedTextContent, newModifiedDatastoreInfo);
     if (!(useCache && isOriginalDataResourceInCache && isModifiedDataResourceInCache)) {
       // TODO RadStr: We have to extend the API by types  - text, JSON, YAML, ...
-
-      // TODO RadStr: Copy-paste for modified and old
-      // TODO RadStr: Also hardcoded the filesystems just for now
-      const newOriginalQueryAsObject = {
-        pathToDatastore: encodeURIComponent(newOriginalDatastoreInfo.fullPath),
-        format: newOriginalDatastoreInfo.format,
-        type: newOriginalDatastoreInfo.type,
-        filesystem: AvailableFilesystems.ClassicFilesystem,
-        shouldConvertToDatastoreFormat: true,
-      };
-
-      let newOriginalUrl = import.meta.env.VITE_BACKEND + "/git/get-datastore-content?";
-      for (const [key, value] of Object.entries(newOriginalQueryAsObject)) {
-        newOriginalUrl += key;
-        newOriginalUrl += "=";
-        newOriginalUrl += value;
-        newOriginalUrl += "&";
-      }
-      newOriginalUrl = newOriginalUrl.slice(0, -1);
-
-      const newOriginalResponse = await fetch(newOriginalUrl, {
-        method: "GET",
-      });
-
-      const newOriginalObjectData = await newOriginalResponse.json();
-
-      const newModifiedQueryAsObject = {
-        pathToDatastore: encodeURIComponent(newModifiedDatastoreInfo.fullPath),
-        format: newModifiedDatastoreInfo.format,
-        type: newModifiedDatastoreInfo.type,
-        filesystem: AvailableFilesystems.DS_Filesystem,
-        shouldConvertToDatastoreFormat: true,
-      };
-
-      let newModifiedUrl = import.meta.env.VITE_BACKEND + "/git/get-datastore-content?";
-      for (const [key, value] of Object.entries(newModifiedQueryAsObject)) {
-        newModifiedUrl += key;
-        newModifiedUrl += "=";
-        newModifiedUrl += value;
-        newModifiedUrl += "&";
-      }
-      newModifiedUrl = newModifiedUrl.slice(0, -1);
-
-      const newModifiedResponse = await fetch(newModifiedUrl, {
-        method: "GET",
-      });
-
-      const newModifiedObjectData = await newModifiedResponse.json();
+      // TODO RadStr: Also I should use the filesystem and original/modified based on the editable not hardcore it
+      const newOriginalObjectData = await getDatastoreContentDirectly(newOriginalDatastoreInfo, examinedMergeState?.filesystemTypeMergeFrom ?? null);
+      const newModifiedObjectData = await getDatastoreContentDirectly(newModifiedDatastoreInfo, examinedMergeState?.filesystemTypeMergeTo ?? null);
 
       console.info({newOriginalDataResourceNameInfo: newOriginalDatastoreInfo, newModifiedDataResourceNameInfo: newModifiedDatastoreInfo});
 
       setCacheForOriginalTextContent(prevState => {
         const changedCacheValue = JSON.stringify(newOriginalObjectData);
-        return createNewContentCache(prevState, newOriginalDataResourceNameInfo, changedCacheValue);
+        return createNewContentCache(prevState, newOriginalDatastoreInfo, changedCacheValue);
       });
       setCacheForModifiedTextContent(prevState => {
         const changedCacheValue = JSON.stringify(newModifiedObjectData);
-        return createNewContentCache(prevState, newModifiedDataResourceNameInfo, changedCacheValue);
+        return createNewContentCache(prevState, newModifiedDatastoreInfo, changedCacheValue);
       });
     }
 
     // If set to new models, else we are reloading data
-    if (newOriginalDataResourceNameInfo.resourceIri !== originalDataResourceNameInfo.resourceIri || newOriginalDataResourceNameInfo.modelName !== originalDataResourceNameInfo.modelName) {
-      setOriginalResourceNameInfo(newOriginalDataResourceNameInfo);
+    if (newOriginalDatastoreInfo.fullPath !== originalDatastoreInfo?.fullPath || newOriginalDatastoreInfo.type !== originalDatastoreInfo.type) {
+      setOriginalDatastoreInfo(newOriginalDatastoreInfo);
     }
 
     // If set to new models, else we are reloading data
-    if (newModifiedDataResourceNameInfo.resourceIri !== modifiedDataResourceNameInfo.resourceIri || newModifiedDataResourceNameInfo.modelName !== modifiedDataResourceNameInfo.modelName) {
-      setModifiedResourceNameInfo(newModifiedDataResourceNameInfo);
+    if (newModifiedDatastoreInfo.fullPath !== modifiedDatastoreInfo?.fullPath || newModifiedDatastoreInfo.type !== modifiedDatastoreInfo.type) {
+      setModifiedDatastoreInfo(newModifiedDatastoreInfo);
     }
 
     setIsLoadingTextData(false);
   }
 
   const reloadModelsDataFromBackend = async () => {
-    alert("TODO RadStr: Implement me");
-    // await changeActiveModel(originalDataResourceNameInfo, modifiedDataResourceNameInfo, false);
+    if (originalDatastoreInfo !== null && modifiedDatastoreInfo !== null) {
+      await changeActiveModel(originalDatastoreInfo, modifiedDatastoreInfo, false);
+    }
   }
 
 
@@ -282,7 +285,8 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
 
   const saveFileChanges = async () => {
     const editedNewVersion = JSON.parse(monacoEditor.current?.editor.getModifiedEditor().getValue() ?? "{}");
-    await packageService.setResourceJsonData(modifiedDataResourceNameInfo.resourceIri, editedNewVersion, modifiedDataResourceNameInfo.modelName);
+    updateDatastoreContentDirectly(modifiedDatastoreInfo, editedNewVersion, examinedMergeState?.filesystemTypeMergeTo ?? null);
+    // await updateDatastoreDirectly(modifiedDatastoreInfo.resourceIri, editedNewVersion, modifiedDatastoreInfo.modelName);   // TODO RadStr: Remove - old version
     await reloadModelsDataFromBackend();
 
 
@@ -410,9 +414,7 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceNameInfo, initialM
                         return <div>{conflictToBeResolvedOnSave.affectedDataStore.fullPath}</div>;
                       })
                     }
-                    <DiffTreeVisualization originalDataResourceNameInfo={originalDataResourceNameInfo}
-                                            modifiedDataResourceNameInfo={modifiedDataResourceNameInfo}
-                                            changeActiveModel={changeActiveModel}
+                    <DiffTreeVisualization changeActiveModel={changeActiveModel}
                                             isLoadingTreeStructure={isLoadingTreeStructure}
                                             setIsLoadingTreeStructure={setIsLoadingTreeStructure}
                                             mergeStateFromBackend={examinedMergeState}

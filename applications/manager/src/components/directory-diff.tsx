@@ -1,4 +1,4 @@
-import { DataResourceNameInfo, ChangeActiveModelMethod } from "@/dialog/diff-editor-dialog";
+import { ChangeActiveModelMethod } from "@/dialog/diff-editor-dialog";
 import _ from "lodash";
 import { Check, Loader, MoveRight, X } from "lucide-react";
 import React, { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from "react";
@@ -15,8 +15,6 @@ type RenderNode = {
   dataSourceType: DataSourceRenderType,
   children?: RenderNode[];
   datastores: RenderNode[];
-  originalDataResourceNameInfo: DataResourceNameInfo,
-  modifiedDataResourceNameInfo: DataResourceNameInfo,
   reactElementToRender?: React.ReactNode,
   isReactElementToRenderRenderedAsSelected?: boolean,
   fullDatastoreInfoInOriginalTree: DatastoreInfo | null,      // TODO RadStr: For now keep together with the ResourceName stuff - but in te end only DatastoreInfo will be enough
@@ -114,29 +112,6 @@ function createDatastoresRenderRepresentations(
         throw new Error("Programmer or data error");
       }
     }
-    let oldIri: string | null;
-    let newIri: string | null;
-    if (datastoreComparison.oldVersion === null) {
-      oldIri = null;
-    }
-    else {
-      // TODO RadStr: because of the metadataCache ... this is why I want to use the paths instead.
-      if(datastoreComparison.oldVersion?.metadataCache.iri === undefined) {
-        throw new Error(`One of datastore source resource has not defined iri in cache for old resource: ${datastoreComparison.oldVersion}`);
-      }
-
-      oldIri = datastoreComparison.oldVersion?.metadataCache.iri;
-    }
-    if (datastoreComparison.newVersion === null) {
-      newIri = null;
-    }
-    else {
-      if(datastoreComparison.newVersion?.metadataCache.iri === undefined) {
-        throw new Error(`One of datastore source resource has not defined iri in cache for new resource: ${datastoreComparison.newVersion}`);
-      }
-
-      newIri = datastoreComparison.newVersion?.metadataCache.iri;
-    }
 
     const fullDatastoreInfoInOriginalTree = datastoreComparison.oldVersion === null ?
       null :
@@ -163,9 +138,6 @@ function createDatastoresRenderRepresentations(
       dataSourceType: "datastore",
       status,
       datastores: [],
-      // TODO RadStr: ... Accessing the iri in cache, this is why I want to use the paths instead
-      originalDataResourceNameInfo: { resourceIri: oldIri ?? "", modelName: datastoreComparison.affectedDataStore.type },
-      modifiedDataResourceNameInfo: { resourceIri: newIri ?? "", modelName: datastoreComparison.affectedDataStore.type },
 
       fullDatastoreInfoInOriginalTree,
       fullDatastoreInfoInModifiedTree,
@@ -233,8 +205,6 @@ function createTreeRepresentationForRendering(
       dataSourceType: node.resource.type,
       datastores: datastoresRenderRepresentations,
       children: children.concat(datastoresRenderRepresentations),
-      originalDataResourceNameInfo: { resourceIri: "Empty since we fetch only datastores", modelName: "Empty since we fetch only datastores" },
-      modifiedDataResourceNameInfo: { resourceIri: "Empty since we fetch only datastores", modelName: "Empty since we fetch only datastores" },
       fullDatastoreInfoInModifiedTree: null,
       fullDatastoreInfoInOriginalTree: null,
       // TODO RadStr: The path as mentioned above
@@ -500,8 +470,6 @@ const treeRowHeight = 30;
  *  After that the performance does not seem to get worse. This means that it is probably related to the library rather than bad programming.
  */
 export const DiffTreeVisualization = (props: {
-  originalDataResourceNameInfo: DataResourceNameInfo,
-  modifiedDataResourceNameInfo: DataResourceNameInfo,
   changeActiveModel: ChangeActiveModelMethod,
   isLoadingTreeStructure: boolean,
   setIsLoadingTreeStructure: (value: SetStateAction<boolean>) => void,

@@ -4,7 +4,7 @@ import { GitProvider, FilesystemAbstractionBase, ComparisonData, DatastoreInfo, 
 import { ResourceModel } from "../../../models/resource-model.ts";
 import { deleteBlob, deleteResource, updateBlob } from "../../../routes/resource.ts";
 import { BaseResource } from "@dataspecer/core-v2/project";
-import { convertDatastoreBasedOnFormat } from "../../../utils/git-utils.ts";
+import { convertDatastoreContentBasedOnFormat } from "../../../utils/git-utils.ts";
 import { currentVersion } from "../../../tools/migrations/index.ts";
 import configuration from "../../../configuration.ts";
 import { resourceModel as mainResourceModel } from "../../../main.ts";
@@ -51,11 +51,11 @@ export class DSFilesystem extends FilesystemAbstractionBase {
 
       const metadata = DSFilesystem.constructMetadataFromResource(resource);
       const metadataAsString: string = JSON.stringify(metadata);
-      return convertDatastoreBasedOnFormat(metadataAsString, datastoreFormat, shouldConvertToDatastoreFormat);
+      return convertDatastoreContentBasedOnFormat(metadataAsString, datastoreFormat, shouldConvertToDatastoreFormat);
     }
     else {
       const data = await givenResourceModel.storeModel.getModelStore(fullPath).getString();
-      return convertDatastoreBasedOnFormat(data, datastoreFormat, shouldConvertToDatastoreFormat);
+      return convertDatastoreContentBasedOnFormat(data, datastoreFormat, shouldConvertToDatastoreFormat);
     }
   }
 

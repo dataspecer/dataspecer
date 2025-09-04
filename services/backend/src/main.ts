@@ -43,7 +43,7 @@ import { redirectToRemoteGitRepository } from "./routes/redirect-to-remote-git-r
 import { removeGitRepository } from "./routes/remove-git-repository.ts";
 import { fetchGitCommitHistory } from "./routes/fetch-git-commit-history.ts";
 import { getDataspecerTree } from "./routes/get-dataspecer-tree.ts";
-import { getDatastoreContentDirectly } from "./routes/datastore-actions.ts";
+import { getDatastoreContentDirectly, updateDatastoreContentDirectly } from "./routes/datastore-actions.ts";
 import { pullRemoteRepository } from "./routes/pull-remote-repository.ts";
 import { linkToExistingGitRepository } from "./routes/link-to-existing-remote-git-repo.ts";
 import { MergeStateModel } from "./models/merge-state-model.ts";
@@ -206,6 +206,7 @@ if (configuration.staticFilesPath) {
 // Fetch package tree data
 application.get(apiBasename + "/git/dataspecer-package-tree", getDataspecerTree);
 application.get(apiBasename + "/git/get-datastore-content", getDatastoreContentDirectly);
+application.post(apiBasename + "/git/update-datastore-content", updateDatastoreContentDirectly);
 application.get(apiBasename + "/git/get-merge-state", getMergeState);
 application.post(apiBasename + "/git/create-merge-state", createMergeState);
 application.post(apiBasename + "/git/update-merge-state", updateMergeState);
