@@ -7,6 +7,7 @@ import { simpleGit } from "simple-git";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 import { createSimpleGit, gitCloneBasic } from "../utils/simple-git-utils.ts";
+import { FETCH_GIT_HISTORY_PREFIX } from "../models/git-store-info.ts";
 
 // TODO RadStr: On client the rawCommits don't have to be readonly here yes
 type FetchedGitData = {
@@ -59,7 +60,7 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
     // const gitURL = "https://github.com/nodejs/node-addon-examples";
     // const gitURL = "https://github.com/RadStr-bot/example-merge-repo";
 
-    const { git, gitInitialDirectory, gitDirectoryToRemoveAfterWork } = createSimpleGit(query.iri, "fetch-git-commit-history");
+    const { git, gitInitialDirectory, gitDirectoryToRemoveAfterWork } = createSimpleGit(query.iri, FETCH_GIT_HISTORY_PREFIX);
 
     try {
         await gitCloneBasic(git, gitInitialDirectory, gitURL, false, true, undefined, query.historyDepth);

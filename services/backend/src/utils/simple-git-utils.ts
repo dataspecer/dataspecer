@@ -83,16 +83,18 @@ export type SimpleGitUniqueInitialDirectory = UniqueDirectory & {
 export const createUniqueDirectory = (
     iri: string,
     cloneDirectoryNamePrefix: string,
-    branch?: string,
 ): UniqueDirectory => {
-    const branchSuffix = branch === undefined ? "" : `/${branch}`;
-
     while (true) {
-        const pathUuid = uuidv4();
+        const uuidBase = uuidv4();
+        // We have to cut the length as much as possible, because, aximum allowed length for path to the initial git repository
+        //  (that is the directory which contains .git) is 215 characters,
+        // which honestly does not seem right, since the maximum allowed length for Windows is 260 characters.
+        // So if I had to guess then there is internal limit to 220 characters for the .git directory
+        // Note that I tried both setting git long paths and windows long paths
+        const pathUuid = uuidBase.substring(0, 6);
         const gitDirectoryToRemoveAfterWork = `${ROOT_DIRECTORY_FOR_ANY_GIT}/${cloneDirectoryNamePrefix}/${pathUuid}`;
-        const gitInitialDirectoryParent = `${gitDirectoryToRemoveAfterWork}${branchSuffix}`;
-        let gitInitialDirectory = `${gitInitialDirectoryParent}/${iri}`;
-        // We check for first unique part of path, if it exists
+        const gitInitialDirectoryParent = `${gitDirectoryToRemoveAfterWork}`;
+        let gitInitialDirectory = `${gitInitialDirectoryParent}/${iri.substring(0, uuidBase.length - 6)}`;
         if (!fs.existsSync(gitDirectoryToRemoveAfterWork)) {
             fs.mkdirSync(gitInitialDirectory, { recursive: true });
             return {
@@ -108,9 +110,8 @@ export const createUniqueDirectory = (
 export const createSimpleGit = (
     iri: string,
     cloneDirectoryNamePrefix: string,
-    branch?: string,
 ): SimpleGitUniqueInitialDirectory => {
-    const uniqueDirectory = createUniqueDirectory(iri, cloneDirectoryNamePrefix, branch);
+    const uniqueDirectory = createUniqueDirectory(iri, cloneDirectoryNamePrefix);
     const git = simpleGit(uniqueDirectory.gitInitialDirectory);
     return {
         ...uniqueDirectory,

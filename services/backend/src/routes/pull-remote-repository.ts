@@ -55,7 +55,7 @@ export const updateDSRepositoryByPullingGit = async (
   dsLastCommitHash: string,
   depth?: number
 ): Promise<boolean> => {
-  const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGit(iri, cloneDirectoryNamePrefix, branch);
+  const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGit(iri, cloneDirectoryNamePrefix);
   let hasConflicts: boolean = false;
   try {
     // TODO RadStr: Not sure if it is better to pull only commits or everything

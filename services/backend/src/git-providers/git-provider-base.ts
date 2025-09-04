@@ -3,6 +3,7 @@ import { CommitReferenceType, ConvertRepoURLToDownloadZipURLReturnType, createRe
 import { simpleGit } from "simple-git";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
+import { ROOT_DIRECTORY_FOR_ANY_GIT } from "../models/git-store-info.ts";
 
 export abstract class GitProviderBase implements GitProvider {
   abstract getGitProviderEnumValue(): GitProviderEnum;
@@ -38,12 +39,16 @@ export abstract class GitProviderBase implements GitProvider {
       options.push("--revision", commitReference);
     }
 
-    const uuids = [
-      uuidv4(),
-      uuidv4(),
-    ];
-    const uuidPath = uuids.join("");
-    const gitTmpDirectory = `./tmp/${uuidPath}`
+    let gitTmpDirectory: string;
+    while (true) {
+      const uuid = uuidv4();
+      gitTmpDirectory = `${ROOT_DIRECTORY_FOR_ANY_GIT}/tmp/${uuid}`;
+      if (!fs.existsSync(gitTmpDirectory)) {
+        // We found unique directory to put repo into
+        break;
+      }
+    }
+
     try {
       fs.mkdirSync(gitTmpDirectory, { recursive: true });
       const git = simpleGit(gitTmpDirectory);

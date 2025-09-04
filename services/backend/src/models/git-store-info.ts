@@ -3,12 +3,15 @@ import path from "path";
 export const ROOT_DIRECTORY_FOR_ANY_GIT: string = path.resolve("./public-git");
 export const MANUAL_CLONE_PATH_PREFIX = "manual-clone";
 export const ROOT_DIRECTORY_FOR_MANUAL_CLONE: string = path.resolve(ROOT_DIRECTORY_FOR_ANY_GIT + "/" + MANUAL_CLONE_PATH_PREFIX);
-export const WEBHOOK_PATH_PREFIX = "directory-for-webhooks";
+export const WEBHOOK_PATH_PREFIX = "for-webhooks";
 export const ROOT_DIRECTORY_FOR_ANY_WEBHOOK: string = path.resolve(ROOT_DIRECTORY_FOR_ANY_GIT + "/" + WEBHOOK_PATH_PREFIX);
+export const FETCH_GIT_HISTORY_PREFIX = "fetch-history";
+export const ROOT_DIRECTORY_FOR_FETCH_GIT_HISTORY: string = path.resolve(ROOT_DIRECTORY_FOR_ANY_GIT + "/" + FETCH_GIT_HISTORY_PREFIX);
 
 export const PUBLICLY_ACCESSIBLE_GIT_REPOSITORY_ROOTS: string[] = [
   ROOT_DIRECTORY_FOR_ANY_WEBHOOK,
   ROOT_DIRECTORY_FOR_MANUAL_CLONE,
+  ROOT_DIRECTORY_FOR_FETCH_GIT_HISTORY
 ];
 
 /**
