@@ -4,8 +4,8 @@ import { mergeStateModel } from "../main.ts";
 import express from "express";
 import { compareTrees } from "../utils/git-utils.ts";
 import { EditableType, MergeStateCause } from "../models/merge-state-model.ts";
-import { AvailableFilesystems, FilesystemFactory } from "../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
-import { FilesystemNodeLocation, getMetadataDatastoreFile } from "@dataspecer/git";
+import { FilesystemFactory } from "../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
+import { AvailableFilesystems, FilesystemNodeLocation, getMetadataDatastoreFile } from "@dataspecer/git";
 
 
 export const createMergeState = asyncHandler(async (request: express.Request, response: express.Response) => {

@@ -1,12 +1,6 @@
-import { GitProvider, FilesystemNodeLocation, FilesystemAbstraction, getMetaPrefixType } from "@dataspecer/git";
+import { GitProvider, FilesystemNodeLocation, FilesystemAbstraction, getMetaPrefixType, AvailableFilesystems } from "@dataspecer/git";
 import { DSFilesystem } from "./implementations/ds-filesystem.ts";
 import { ClassicFilesystem } from "./implementations/classic-filesystem.ts";
-
-// TODO RadStr: Again move into common pakcage, it is also used as type on frontend
-export enum AvailableFilesystems {
-  DS_Filesystem = "ds-filesystem",
-  ClassicFilesystem = "classic-filesystem",
-}
 
 export class FilesystemFactory {
   public static async createFileSystem(roots: FilesystemNodeLocation[], filesystem: AvailableFilesystems, gitProvider: GitProvider | null): Promise<FilesystemAbstraction> {

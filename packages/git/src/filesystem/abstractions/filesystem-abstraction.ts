@@ -1,8 +1,15 @@
 // TODO RadStr: Think of better names and the name of the property and of type should be aligned
 
-import { GitProvider } from "../git-provider-api.ts";
-import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, MetadataCacheType, DatastoreInfo } from "../export-import-data-api.ts";
-import { ComparisonData } from "../diff-types.ts";
+import { GitProvider } from "../../git-provider-api.ts";
+import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, MetadataCacheType, DatastoreInfo } from "../../export-import-data-api.ts";
+import { ComparisonData } from "../../diff-types.ts";
+
+
+export enum AvailableFilesystems {
+  DS_Filesystem = "ds-filesystem",
+  ClassicFilesystem = "classic-filesystem",
+}
+
 
 /**
  * This interface represents abstraction over system with data. The name contains filesystem, since we can think of it as abstraction over filesystem, but
@@ -253,4 +260,10 @@ export function createMetaPrefixName(basename: string, format: string): Datastor
     format,
     fullPath: basename,     // TODO RadStr: ??? For DS filesystem ok, for classic fileystem not
   };
+}
+
+
+export function getDatastoreInfoOfGivenDatastoreType(filesystemNode: FilesystemNode, type: string) {
+  const relevantDatastore = filesystemNode.datastores.find(datastore => datastore.type === type);
+  return relevantDatastore;
 }

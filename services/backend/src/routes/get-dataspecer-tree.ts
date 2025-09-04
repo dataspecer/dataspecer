@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
-import { FilesystemNode, FilesystemNodeLocation } from "@dataspecer/git";
-import { AvailableFilesystems, FilesystemFactory } from "../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
+import { AvailableFilesystems, FilesystemNodeLocation } from "@dataspecer/git";
+import { FilesystemFactory } from "../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 
 
 export const getDataspecerTree = asyncHandler(async (request: express.Request, response: express.Response) => {

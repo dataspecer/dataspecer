@@ -17,7 +17,7 @@ import fs from "fs";
 import { getRepoURLWithAuthorization, getRepoURLWithAuthorizationUsingDebugPatToken } from "../git-never-commit.ts";
 import { simpleGit, SimpleGit } from "simple-git";
 import { extractPartOfRepositoryURL } from "../utils/git-utils.ts";
-import { GitCredentials, GitProvider } from "@dataspecer/git";
+import { AvailableFilesystems, GitCredentials, GitProvider } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
 import YAML from "yaml";
@@ -29,7 +29,6 @@ import { ReadmeTemplateData } from "../git-readme/readme-template.ts";
 import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
 import { AvailableExports } from "../export-import/export-actions.ts";
 import { createSimpleGit, gitCloneBasic } from "../utils/simple-git-utils.ts";
-import { AvailableFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 
 
 

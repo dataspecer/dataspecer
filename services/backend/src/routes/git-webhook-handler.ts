@@ -1,21 +1,19 @@
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
-import { getMetadataDatastoreFile, GitProvider, GitProviderEnum, isDatastoreForMetadata } from "@dataspecer/git";
+import { AvailableFilesystems, getDatastoreInfoOfGivenDatastoreType, getMetadataDatastoreFile, GitProvider, GitProviderEnum, isDatastoreForMetadata } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { GIT_RAD_STR_BOT_USERNAME, GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN } from "../git-never-commit.ts";
 import fs from "fs";
 import path from "path";
 import { createResource, updateBlob, updateResourceMetadata } from "./resource.ts";
-import { getDatastoreInfoOfGivenDatastoreType } from "../export-import/filesystem-abstractions/implementations/ds-filesystem.ts";
 import _ from "lodash";
 import { compareTrees, dsPathJoin } from "../utils/git-utils.ts";
-import { GitHubProvider } from "../git-providers/git-provider-instances/github.ts";
 import { mergeStateModel, resourceModel } from "../main.ts";
 import { updateDSRepositoryByPullingGit } from "./pull-remote-repository.ts";
 import { EditableType, MergeStateCause } from "../models/merge-state-model.ts";
 import { WEBHOOK_PATH_PREFIX } from "../models/git-store-info.ts";
-import { DatastoreInfo, DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, createFilesystemMappingRoot, FilesystemAbstraction } from "@dataspecer/git";
-import { AvailableFilesystems, FilesystemFactory } from "../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
+import { DatastoreInfo, DirectoryNode, FileNode, FilesystemNode, FilesystemNodeLocation, FilesystemAbstraction } from "@dataspecer/git";
+import { FilesystemFactory } from "../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 
 
 export const handleWebhook = asyncHandler(async (request: express.Request, response: express.Response) => {

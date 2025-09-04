@@ -1,9 +1,9 @@
-import { GitProvider } from "../git-provider-api.ts";
-import { FilesystemNode, FilesystemMappingType, MetadataCacheType, DirectoryNode, FilesystemNodeLocation, DatastoreInfo } from "../export-import-data-api.ts";
+import { GitProvider } from "../../git-provider-api.ts";
+import { FilesystemNode, FilesystemMappingType, MetadataCacheType, DirectoryNode, FilesystemNodeLocation, DatastoreInfo } from "../../export-import-data-api.ts";
 import { createEmptyFilesystemMapping, createFilesystemMappingRoot, createInitialNodeToParentMap, FilesystemAbstraction, getMetaPrefixType } from "./filesystem-abstraction.ts";
 
 import path from "path";
-import { ComparisonData } from "../diff-types.ts";
+import { ComparisonData } from "../../diff-types.ts";
 
 export abstract class FilesystemAbstractionBase implements FilesystemAbstraction {
   /////////////////////////////////////

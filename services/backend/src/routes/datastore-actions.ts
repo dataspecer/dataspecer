@@ -6,7 +6,7 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import { convertDatastoreBasedOnFormat, stringToBoolean } from "../utils/git-utils.ts";
 import { z } from "zod";
 import { isAccessibleGitRepository } from "../models/git-store-info.ts";
-import { AvailableFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
+import { AvailableFilesystems } from "@dataspecer/git";
 
 
 // export async function setDatastoreContent(pathToDatastore: string, filesystem: AvailableFilesystems, type: string, newContent: string, format?: string) {
