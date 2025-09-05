@@ -303,7 +303,7 @@ function StyledNode({
   const styledNode = (<>
     <div
       key={node.data.id}
-      className="relative group px-3 py-2 hover:bg-gray-50 focus-within:bg-gray-50 whitespace-nowrap"
+      className="relative group px-3 hover:bg-gray-50 focus-within:bg-gray-50 whitespace-nowrap"
     >
       <div
         style={{
@@ -455,7 +455,7 @@ const updateConflictsToBeResolvedOnSaveByRemoval = (
   setConflictsToBeResolvedOnSave(oldValues => {
     const filtered = oldValues
       .filter(value => newlyRemoved
-                        .findIndex(toRemove => value.affectedDataStore.fullPath === toRemove.affectedDataStore.fullPath) === -1);
+        .findIndex(toRemove => value.affectedDataStore.fullPath === toRemove.affectedDataStore.fullPath) === -1);
     return [...filtered];
   });
 };
