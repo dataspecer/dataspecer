@@ -42,7 +42,13 @@ export class DSFilesystem extends FilesystemAbstractionBase {
   // Methods
   /////////////////////////////////////
 
-  public static async getDatastoreContentForPath(givenResourceModel: ResourceModel, fullPath: string, type: string, datastoreFormat: string | null, shouldConvertToDatastoreFormat: boolean): Promise<any> {
+  public static async getDatastoreContentForPath(
+    givenResourceModel: ResourceModel,
+    fullPath: string,
+    type: string,
+    datastoreFormat: string | null,
+    shouldConvertToDatastoreFormat: boolean
+  ): Promise<any> {
     if (isDatastoreForMetadata(type)) {
       const resource = (await givenResourceModel.getResource(fullPath));
       if (resource === null) {
@@ -58,6 +64,40 @@ export class DSFilesystem extends FilesystemAbstractionBase {
       return convertDatastoreContentBasedOnFormat(data, datastoreFormat, shouldConvertToDatastoreFormat);
     }
   }
+
+  public static async setDatastoreContentForPath(
+    givenResourceModel: ResourceModel,
+    fullPath: string,
+    datastoreFormat: string | null,
+    type: string,
+    newContent: string
+  ): Promise<boolean> {
+    if (datastoreFormat === null) {
+      datastoreFormat = "json";
+    }
+    const formattedContent = convertDatastoreContentBasedOnFormat(newContent, datastoreFormat, true);
+    // Hardcoded json - DS always works with jsons, it is too much work to make to make it work for everything.
+    // Since we would need to change every component (including cme) to support multiple formats
+    const contentAsJSON = JSON.parse(formattedContent);
+    if (isDatastoreForMetadata(type)) {
+      await givenResourceModel.updateResourceMetadata(fullPath, contentAsJSON);
+    }
+    else {
+      await givenResourceModel.storeModel.getModelStore(fullPath).setJson(contentAsJSON);
+    }
+
+    return true;
+  }
+
+  public static async removeDatastoreContentForPath(
+    givenResourceModel: ResourceModel,
+    parentFilesystemNodeIri: string,
+    type: string,
+  ): Promise<boolean> {
+    await givenResourceModel.deleteModelStore(parentFilesystemNodeIri, type);
+    return true;
+  }
+
 
   async getDatastoreContent(treePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any> {
     // TODO RadStr: As said somewhere else ... improve the PrefixName type
@@ -252,16 +292,9 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     return true;    // TODO RadStr: ... Always returns true
   }
 
-  async updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, content: string): Promise<boolean> {
-    const resource = await this.resourceModel.getResource(filesystemNode.name);      // TODO RadStr: What Am I even getting the resource for??
-    if (resource === null) {
-      throw new Error("The Resource for given datastore does not exist");
-    }
-
-    // TODO RadStr: Maybe just enough to call the updateBlob, it will just throw exception if it does not exist
-    updateBlob(filesystemNode.name, datastoreType, content);
-
-    return true;    // TODO RadStr: ... Always returns true
+  async updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, newContent: string): Promise<boolean> {
+    const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType);
+    return DSFilesystem.setDatastoreContentForPath(this.resourceModel, relevantDatastore.fullPath, relevantDatastore.format, datastoreType, newContent)
   }
 
   createDatastore(otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean> {

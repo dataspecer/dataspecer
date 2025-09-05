@@ -382,14 +382,14 @@ function StyledNode({
               {
               !node.data.isNowInConflict ?
                 <div className="h-6 w-6"/> :  // Not null because we want to keep the button positioning
-                <button title="Mark as resolved" className="mt-2 hover:bg-gray-400 text-sm" onClick={(e) => onClickResolveConflict(e, node.data)}>
+                <button title="Mark as resolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickResolveConflict(e, node.data)}>
                   <Check className="h-6 w-6"/>
                 </button>
               }
-              <button title="Mark as unresolved" className="mt-2 hover:bg-gray-400 text-sm" onClick={(e) => onClickUnresolveConflict(e, node.data)}>
+              <button title="Mark as unresolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickUnresolveConflict(e, node.data)}>
                 <X className="h-6 w-6"/>
               </button>
-              <button title="Replace by other version" className="mt-2 hover:bg-gray-400 text-sm" onClick={(e) => {e.stopPropagation(); alert("delte")}}>
+              <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => {e.stopPropagation(); alert("delte")}}>
                 <MoveRight className="h-6 w-6"/>
               </button>
               {
@@ -399,14 +399,14 @@ function StyledNode({
               }
               {
               node.data.status === "removed" ?
-                <button title="Replace by other version" className="mt-2 hover:bg-gray-400 text-sm" onClick={(e) => onClickCreateDatastore(e, node.data)}>
+                <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickCreateDatastore(e, node.data)}>
                   <Plus className="h-6 w-6"/>
                 </button> :
                 null
               }
               {
               node.data.status === "created" ?
-                <button title="Replace by other version" className="mt-2 hover:bg-gray-400 text-sm" onClick={(e) => onClickRemoveDatastore(e, node.data)}>
+                <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickRemoveDatastore(e, node.data)}>
                   <Minus className="h-6 w-6"/>
                 </button> :
                 null

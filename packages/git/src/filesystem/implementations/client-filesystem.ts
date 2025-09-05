@@ -4,8 +4,16 @@ import { GitProvider } from "../../git-provider-api.ts";
 import { FilesystemAbstractionBase } from "../abstractions/filesystem-abstraction-base.ts";
 import { AvailableFilesystems, FilesystemAbstraction, getDatastoreInfoOfGivenDatastoreType } from "../abstractions/filesystem-abstraction.ts";
 
+
+export type CreateDatastoreFilesystemNodesInfo = {
+  parentIri: string,
+  iri: string,
+  treePath: string,
+  userMetadata: any,
+};
+
 /**
- * Very lightweight filesystem, which just serves as component to load datastore content from backend
+ * Very lightweight filesystem, which just serves as component to to work with datastore content from backend
  */
 export class ClientFilesystem extends FilesystemAbstractionBase {
   private backendFilesystem: AvailableFilesystems;
@@ -27,7 +35,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     shouldConvertToDatastoreFormat: boolean,
     backendApiPath: string,
     backendFilesystem: AvailableFilesystems | null,
-  ) {
+  ): Promise<null | any> {
     if (datastoreInfo === null) {
       return null;
     }
@@ -82,8 +90,57 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
   changeDatastore(otherFilesystem: FilesystemAbstraction, changed: ComparisonData, shouldUpdateMetadataCache: boolean): Promise<boolean> {
     throw new Error("Method not implemented.");
   }
+
+  /**
+   * @param shouldRemoveFileWhenNoDatastores For now always just set to false.
+   * @returns
+   */
+  public static async removeDatastoreDirectly(
+    filesystemNodeIri: string,
+    datastoreInfo: DatastoreInfo | null,
+    backendApiPath: string,
+    backendFilesystem: AvailableFilesystems | null,
+    shouldRemoveFileWhenNoDatastores: boolean,
+  ): Promise<boolean> {
+    if (datastoreInfo === null) {
+      return false;
+    }
+    if (backendFilesystem === null) {
+      return false;
+    }
+
+    const encodedFullPath = encodeURIComponent(datastoreInfo.fullPath);
+
+    const queryAsObject = {
+      filesystemNodeIri,
+      pathToDatastore: encodedFullPath,
+      filesystem: backendFilesystem,
+      type: datastoreInfo.type,
+      shouldRemoveFileWhenNoDatastores,
+    };
+
+    let url = backendApiPath + "/git/remove-datastore-content?";
+    for (const [key, value] of Object.entries(queryAsObject)) {
+      url += key;
+      url += "=";
+      url += value;
+      url += "&";
+    }
+    url = url.slice(0, -1);
+
+    const response = await fetch(url, {
+      method: "DELETE",
+    });
+
+    console.info("removeDatastoreDirectly", { response, datastoreInfo });       // TODO RadStr: Debug
+    return response.ok;
+  }
+
   removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<boolean> {
-    throw new Error("Method not implemented.");
+    const datastoreInfo: DatastoreInfo = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType);
+    return ClientFilesystem.removeDatastoreDirectly(
+      filesystemNode.metadataCache.iri, datastoreInfo, this.backendApiPath,
+      this.backendFilesystem, shouldRemoveFileWhenNoDatastores);
   }
   removeFile(filesystemNode: FilesystemNode): Promise<boolean> {
     throw new Error("Method not implemented.");
@@ -105,7 +162,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
       return false;
     }
 
-    const url = backendApiPath + "/git/update-datastore-content?";
+    const url = backendApiPath + "/git/update-datastore-content";
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -128,8 +185,61 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     const datastoreInfo: DatastoreInfo = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType);
     return ClientFilesystem.updateDatastoreContentDirectly(datastoreInfo, content, this.backendFilesystem, this.backendApiPath);
   }
-  createDatastore(otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean> {
-    throw new Error("Method not implemented.");
+
+
+  public static async createDatastoreDirectly(
+    filesystemNodesInTreePath: CreateDatastoreFilesystemNodesInfo[],
+    content: string,
+    backendFilesystem: AvailableFilesystems | null,
+    datastoreInfo: DatastoreInfo | null,
+    backendApiPath: string,
+  ): Promise<boolean> {
+    if (datastoreInfo === null) {
+      console.error("There is not any datastore in editor, we can not create new datastore on backend.");
+      return false;
+    }
+    if (backendFilesystem === null) {
+      console.error("There is not set any filesystem, so the we can not create new datastore on backend.");
+      return false;
+    }
+
+
+    const url = backendApiPath + "/git/create-datastore-content";
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        filesystemNodesInTreePath,
+        type: datastoreInfo.type,
+        format: datastoreInfo.format,
+        filesystem: backendFilesystem,
+        content,
+      }),
+    });
+
+    console.info("updateDatastoreContentDirectly", {datastoreInfo, response, content});       // TODO RadStr: Debug
+    return response.ok;
   }
 
+
+  async createDatastore(otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean> {
+    const content = await ClientFilesystem.getDatastoreContentDirectly(changedDatastore, true, this.backendApiPath, this.backendFilesystem);
+    const filesystemNodesInTreePath: CreateDatastoreFilesystemNodesInfo[] = [];
+    let currentNode = filesystemNode
+    let parent: DirectoryNode | null = null;
+    while (currentNode !== null) {
+      parent = otherFilesystem.getParentForNode(currentNode);
+      filesystemNodesInTreePath.push({
+        parentIri: parent?.metadataCache.iri ?? "",
+        iri: currentNode.metadataCache.iri,
+        treePath: currentNode.fullTreePath,
+        userMetadata: currentNode.metadataCache,
+      });
+      currentNode = parent;
+    }
+    return ClientFilesystem.createDatastoreDirectly(
+      filesystemNodesInTreePath.reverse(),
+      content,
+      this.backendFilesystem, changedDatastore, this.backendApiPath);
+  }
 }
