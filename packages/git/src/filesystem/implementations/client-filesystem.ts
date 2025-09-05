@@ -22,35 +22,43 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     this.backendApiPath = backendApiPath;
   }
 
-  public static async getDatastoreContentForFullPath(
-    resourceWithDatastore: FilesystemNode,
-    datastoreInfo: DatastoreInfo,
+  public static async getDatastoreContentDirectly(
+    datastoreInfo: DatastoreInfo | null,
     shouldConvertToDatastoreFormat: boolean,
     backendApiPath: string,
-    backendFilesystem: AvailableFilesystems
+    backendFilesystem: AvailableFilesystems | null,
   ) {
-    if (resourceWithDatastore.metadataCache.iri === undefined) {
-      throw new Error(`The iri in cache is not set for the resource ${resourceWithDatastore}`);
+    if (datastoreInfo === null) {
+      return null;
+    }
+    if (backendFilesystem === null) {
+      return null;
     }
 
-    const pathToDatastore = datastoreInfo.fullPath;
-    const format = datastoreInfo.format;
-    const type = datastoreInfo.type;
-    try {
-      const fetchResult = await fetch(`${backendApiPath}/get-datastore-content?pathToDatastore=${pathToDatastore}&format=${format}&type=${type}&filesystem=${backendFilesystem}&shouldConvertToDatastoreFormat=${shouldConvertToDatastoreFormat}`, {
-        method: "GET",
-      });
-      console.info("fetched data", fetchResult);   // TODO RadStr: Debug
-      return fetchResult;
-      // const fetchResultAsJson = await fetchResult.json();
-      // console.info("fetched data as json", fetchResultAsJson);   // TODO RadStr: Debug
+    const queryAsObject = {
+      pathToDatastore: encodeURIComponent(datastoreInfo.fullPath),
+      format: datastoreInfo.format,
+      type: datastoreInfo.type,
+      filesystem: backendFilesystem,
+      shouldConvertToDatastoreFormat,
+    };
 
-      // return fetchResultAsJson;
+    let url = backendApiPath + "/git/get-datastore-content?";
+    for (const [key, value] of Object.entries(queryAsObject)) {
+      url += key;
+      url += "=";
+      url += value;
+      url += "&";
     }
-    catch(error) {
-      console.error(`Error when fetching data tree data for diff (for iri: ${pathToDatastore}). The error: ${error}`);
-      throw error;
-    }
+    url = url.slice(0, -1);
+
+    const response = await fetch(url, {
+      method: "GET",
+    });
+
+    const responseAsJSON = await response.json();
+    console.info("getDatastoreContentDirectly", {responseAsJSON, datastoreInfo});       // TODO RadStr: Debug
+    return responseAsJSON;
   }
 
 
@@ -60,7 +68,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
   async getDatastoreContent(treePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any> {
     const resourceWithDatastore: FilesystemNode = this.globalFilesystemMapping[treePath];
     const datastoreInfo: DatastoreInfo = getDatastoreInfoOfGivenDatastoreType(resourceWithDatastore, type);
-    return ClientFilesystem.getDatastoreContentForFullPath(resourceWithDatastore, datastoreInfo, shouldConvertToDatastoreFormat, this.backendApiPath, this.backendFilesystem);
+    return ClientFilesystem.getDatastoreContentDirectly(datastoreInfo, shouldConvertToDatastoreFormat, this.backendApiPath, this.backendFilesystem);
   }
   shouldIgnoreDirectory(directory: string, gitProvider: GitProvider): boolean {
     throw new Error("Method not implemented.");
@@ -80,8 +88,45 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
   removeFile(filesystemNode: FilesystemNode): Promise<boolean> {
     throw new Error("Method not implemented.");
   }
-  updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, content: string): Promise<boolean> {
-    throw new Error("Method not implemented.");
+
+
+  public static async updateDatastoreContentDirectly(
+    datastoreInfo: DatastoreInfo | null,
+    newContent: string,
+    backendFilesystem: AvailableFilesystems | null,
+    backendApiPath: string,
+  ) {
+    if (datastoreInfo === null) {
+      console.error("There is not any datastore in editor, we can not perform update.");
+      return false;
+    }
+    if (backendFilesystem === null) {
+      console.error("There is not set any filesystem, so the we can not update datastore on backend.");
+      return false;
+    }
+
+    const url = backendApiPath + "/git/update-datastore-content?";
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pathToDatastore: datastoreInfo.fullPath,
+        filesystem: backendFilesystem,
+        format: datastoreInfo.format,
+        type: datastoreInfo.type,
+        newContent,
+      }),
+    });
+
+    console.info("updateDatastoreContentDirectly", {datastoreInfo, response, newContent});       // TODO RadStr: Debug
+
+    return response.ok;
+  }
+
+
+  async updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, content: string): Promise<boolean> {
+    const datastoreInfo: DatastoreInfo = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType);
+    return ClientFilesystem.updateDatastoreContentDirectly(datastoreInfo, content, this.backendFilesystem, this.backendApiPath);
   }
   createDatastore(otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean> {
     throw new Error("Method not implemented.");

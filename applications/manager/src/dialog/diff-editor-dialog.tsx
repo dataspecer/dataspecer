@@ -14,7 +14,7 @@ import { TabsContent } from "@radix-ui/react-tabs";
 import SvgVisualDiff from "@/components/images-conflict-resolver";
 import { MonacoDiffEditor } from "@/components/monaco-diff-editor";
 import { fetchMergeState } from "./open-merge-state";
-import { AvailableFilesystems, ComparisonData, DatastoreInfo, EditableType, MergeState } from "@dataspecer/git";
+import { ClientFilesystem, ComparisonData, DatastoreInfo, EditableType, MergeState } from "@dataspecer/git";
 
 
 export type ChangeActiveModelMethod = (
@@ -107,74 +107,6 @@ const finalizeMergeState = async (mergeStateUUID: string | undefined) => {
   }
 }
 
-async function getDatastoreContentDirectly(
-  datastoreInfo: DatastoreInfo | null,
-  filesystem: AvailableFilesystems | null,
-): Promise<any | null> {
-  if (datastoreInfo === null) {
-    return null;
-  }
-  if (filesystem === null) {
-    return null;
-  }
-
-  const queryAsObject = {
-    pathToDatastore: encodeURIComponent(datastoreInfo.fullPath),
-    format: datastoreInfo.format,
-    type: datastoreInfo.type,
-    filesystem,
-    shouldConvertToDatastoreFormat: true,
-  };
-
-  let url = import.meta.env.VITE_BACKEND + "/git/get-datastore-content?";
-  for (const [key, value] of Object.entries(queryAsObject)) {
-    url += key;
-    url += "=";
-    url += value;
-    url += "&";
-  }
-  url = url.slice(0, -1);
-
-  const response = await fetch(url, {
-    method: "GET",
-  });
-
-  const responseAsJSON = await response.json();
-  console.info("getDatastoreContentDirectly", {responseAsJSON, datastoreInfo});       // TODO RadStr: Debug
-  return responseAsJSON;
-}
-
-async function updateDatastoreContentDirectly(
-  datastoreInfo: DatastoreInfo | null,
-  newContent: string,
-  filesystem: AvailableFilesystems | null,
-) {
-  if (datastoreInfo === null) {
-    console.error("There is not any datastore in editor, we can not perform update.");
-    return;
-  }
-  if (filesystem === null) {
-    console.error("There is not set any filesystem, so the we can not update datastore on backend.");
-    return;
-  }
-
-  const url = import.meta.env.VITE_BACKEND + "/git/update-datastore-content?";
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      pathToDatastore: datastoreInfo.fullPath,
-      filesystem,
-      format: datastoreInfo.format,
-      type: datastoreInfo.type,
-      content: newContent,
-    }),
-  });
-
-  console.info("updateDatastoreContentDirectly", {datastoreInfo, response, newContent});       // TODO RadStr: Debug
-}
-
-
 
 export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifiedResourceIri, editable, isOpen, resolve, }: TextDiffEditorDialogProps) => {
   const monacoEditor = useRef<{editor: monaco.editor.IStandaloneDiffEditor}>(undefined);
@@ -244,8 +176,8 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
     if (!(useCache && isOriginalDataResourceInCache && isModifiedDataResourceInCache)) {
       // TODO RadStr: We have to extend the API by types  - text, JSON, YAML, ...
       // TODO RadStr: Also I should use the filesystem and original/modified based on the editable not hardcore it
-      const newOriginalObjectData = await getDatastoreContentDirectly(newOriginalDatastoreInfo, examinedMergeState?.filesystemTypeMergeFrom ?? null);
-      const newModifiedObjectData = await getDatastoreContentDirectly(newModifiedDatastoreInfo, examinedMergeState?.filesystemTypeMergeTo ?? null);
+      const newOriginalObjectData = await ClientFilesystem.getDatastoreContentDirectly(newOriginalDatastoreInfo, true, import.meta.env.VITE_BACKEND, examinedMergeState?.filesystemTypeMergeFrom ?? null);
+      const newModifiedObjectData = await ClientFilesystem.getDatastoreContentDirectly(newModifiedDatastoreInfo, true, import.meta.env.VITE_BACKEND, examinedMergeState?.filesystemTypeMergeTo ?? null);
 
       console.info({newOriginalDataResourceNameInfo: newOriginalDatastoreInfo, newModifiedDataResourceNameInfo: newModifiedDatastoreInfo});
 
@@ -300,7 +232,7 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
 
   const saveFileChanges = async () => {
     const editedNewVersion = JSON.parse(monacoEditor.current?.editor.getModifiedEditor().getValue() ?? "{}");
-    updateDatastoreContentDirectly(modifiedDatastoreInfo, editedNewVersion, examinedMergeState?.filesystemTypeMergeTo ?? null);
+    ClientFilesystem.updateDatastoreContentDirectly(modifiedDatastoreInfo, editedNewVersion, examinedMergeState?.filesystemTypeMergeTo ?? null, import.meta.env.VITE_BACKEND);
     // await updateDatastoreDirectly(modifiedDatastoreInfo.resourceIri, editedNewVersion, modifiedDatastoreInfo.modelName);   // TODO RadStr: Remove - old version
     await reloadModelsDataFromBackend();
 
