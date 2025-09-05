@@ -18,8 +18,8 @@ import { AvailableFilesystems, ComparisonData, DatastoreInfo, EditableType, Merg
 
 
 export type ChangeActiveModelMethod = (
-  originalDatastoreInfo: DatastoreInfo,
-  modifiedDatastoreInfo: DatastoreInfo,
+  originalDatastoreInfo: DatastoreInfo | null,
+  modifiedDatastoreInfo: DatastoreInfo | null,
   useCache: boolean,
 ) => Promise<void>;
 
@@ -51,7 +51,10 @@ function createNewContentCache(oldCache: CacheContentMap, datastoreToChange: Dat
   return newCache;
 }
 
-function isDatastorePresentInCache(cache: CacheContentMap, datastoreInfo: DatastoreInfo): boolean {
+function isDatastorePresentInCache(cache: CacheContentMap, datastoreInfo: DatastoreInfo | null): boolean {
+  if (datastoreInfo === null) {
+    return false;
+  }
   return getDatastoreInCache(cache, datastoreInfo) !== undefined;
 }
 
@@ -210,24 +213,31 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
     })();
   }, []);
 
-  // @ts-ignore TODO RadStr: Remove ts-ignore later
   /**
    * Changes current active model. That is modifies states to reflect that.
    *  If {@link useCache} is set to true then tries to use cache (if the datastore is present it uses the cache, otherwise updates the cache by fetching from backend),
    *  if set to false, then always fetches from backend and updates cache
    */
-  const changeActiveModel = async (newOriginalDatastoreInfo: DatastoreInfo, newModifiedDatastoreInfo: DatastoreInfo, useCache: boolean) => {
+  const changeActiveModel = async (
+    newOriginalDatastoreInfo: DatastoreInfo | null,
+    newModifiedDatastoreInfo: DatastoreInfo | null,
+    useCache: boolean,
+  ) => {
     setIsLoadingTextData(true);
 
     // Set the edited value in cache
-    setCacheForOriginalTextContent(prevState => {
-      const currentOriginalContentInEditor = monacoEditor.current?.editor.getOriginalEditor().getValue();
-      return createNewContentCache(prevState, newOriginalDatastoreInfo, currentOriginalContentInEditor!);
-    });
-    setCacheForModifiedTextContent(prevState => {
-      const currentModifiedContentInEditor = monacoEditor.current?.editor.getModifiedEditor().getValue();
-      return createNewContentCache(prevState, newModifiedDatastoreInfo, currentModifiedContentInEditor!);
-    });
+    if (newOriginalDatastoreInfo !== null) {
+      setCacheForOriginalTextContent(prevState => {
+        const currentOriginalContentInEditor = monacoEditor.current?.editor.getOriginalEditor().getValue();
+        return createNewContentCache(prevState, newOriginalDatastoreInfo, currentOriginalContentInEditor!);
+      });
+    }
+    if(newModifiedDatastoreInfo !== null) {
+      setCacheForModifiedTextContent(prevState => {
+        const currentModifiedContentInEditor = monacoEditor.current?.editor.getModifiedEditor().getValue();
+        return createNewContentCache(prevState, newModifiedDatastoreInfo, currentModifiedContentInEditor!);
+      });
+    }
 
     const isOriginalDataResourceInCache = isDatastorePresentInCache(cacheForOriginalTextContent, newOriginalDatastoreInfo);
     const isModifiedDataResourceInCache = isDatastorePresentInCache(cacheForModifiedTextContent, newModifiedDatastoreInfo);
@@ -239,23 +249,28 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
 
       console.info({newOriginalDataResourceNameInfo: newOriginalDatastoreInfo, newModifiedDataResourceNameInfo: newModifiedDatastoreInfo});
 
-      setCacheForOriginalTextContent(prevState => {
-        const changedCacheValue = JSON.stringify(newOriginalObjectData);
-        return createNewContentCache(prevState, newOriginalDatastoreInfo, changedCacheValue);
-      });
-      setCacheForModifiedTextContent(prevState => {
-        const changedCacheValue = JSON.stringify(newModifiedObjectData);
-        return createNewContentCache(prevState, newModifiedDatastoreInfo, changedCacheValue);
-      });
+      if (newOriginalObjectData !== null && newOriginalDatastoreInfo !== null) {
+        setCacheForOriginalTextContent(prevState => {
+          const changedCacheValue = JSON.stringify(newOriginalObjectData);
+          return createNewContentCache(prevState, newOriginalDatastoreInfo, changedCacheValue);
+        });
+      }
+
+      if (newModifiedObjectData !== null && newModifiedDatastoreInfo !== null) {
+        setCacheForModifiedTextContent(prevState => {
+          const changedCacheValue = JSON.stringify(newModifiedObjectData);
+          return createNewContentCache(prevState, newModifiedDatastoreInfo, changedCacheValue);
+        });
+      }
     }
 
     // If set to new models, else we are reloading data
-    if (newOriginalDatastoreInfo.fullPath !== originalDatastoreInfo?.fullPath || newOriginalDatastoreInfo.type !== originalDatastoreInfo.type) {
+    if (newOriginalDatastoreInfo?.fullPath !== originalDatastoreInfo?.fullPath || newOriginalDatastoreInfo?.type !== originalDatastoreInfo?.type) {
       setOriginalDatastoreInfo(newOriginalDatastoreInfo);
     }
 
     // If set to new models, else we are reloading data
-    if (newModifiedDatastoreInfo.fullPath !== modifiedDatastoreInfo?.fullPath || newModifiedDatastoreInfo.type !== modifiedDatastoreInfo.type) {
+    if (newModifiedDatastoreInfo?.fullPath !== modifiedDatastoreInfo?.fullPath || newModifiedDatastoreInfo?.type !== modifiedDatastoreInfo?.type) {
       setModifiedDatastoreInfo(newModifiedDatastoreInfo);
     }
 

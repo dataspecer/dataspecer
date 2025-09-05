@@ -364,8 +364,7 @@ function StyledNode({
             //   throw new Error("The path to the datastore is empty - new version");
             // }
 
-            // TODO RadStr: The ! is just for debug for now !!!!!
-            node.data.changeActiveModel(node.data.fullDatastoreInfoInOriginalTree!, node.data.fullDatastoreInfoInModifiedTree!, true);
+            node.data.changeActiveModel(node.data.fullDatastoreInfoInOriginalTree, node.data.fullDatastoreInfoInModifiedTree, true);
           }
         }}
       >
