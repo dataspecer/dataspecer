@@ -1,17 +1,17 @@
-import { SemanticEntityRecord, SemanticModel,  } from "../semantic-model.ts";
+import { ProfileModel, ProfileEntityRecord } from "../profile-model.ts";
 
-class ReadOnlyInMemorySemanticModel implements SemanticModel {
+class ReadOnlyInMemoryProfileModel implements ProfileModel {
 
   readonly identifier: string;
 
   readonly baseIri: string | null;
 
-  readonly entities: SemanticEntityRecord = {};
+  readonly entities: ProfileEntityRecord = {};
 
   constructor(
     identifier: string,
     baseIri: string | null,
-    entities: SemanticEntityRecord,
+    entities: ProfileEntityRecord,
   ) {
     this.identifier = identifier;
     this.baseIri = baseIri;
@@ -23,7 +23,7 @@ class ReadOnlyInMemorySemanticModel implements SemanticModel {
     return this.identifier;
   }
 
-  getEntities(): SemanticEntityRecord {
+  getEntities(): ProfileEntityRecord {
     return this.entities;
   }
 
@@ -33,10 +33,11 @@ class ReadOnlyInMemorySemanticModel implements SemanticModel {
 
 }
 
-export function createReadOnlyInMemoryProfileModel(
+export function createInMemoryProfileModel(args:{
   identifier: string,
   baseIri: string | null,
-  entities: SemanticEntityRecord,
-): SemanticModel {
-  return new ReadOnlyInMemorySemanticModel(identifier, baseIri, entities);
+  entities: ProfileEntityRecord,
+}): ProfileModel {
+  return new ReadOnlyInMemoryProfileModel(
+    args.identifier, args.baseIri, args.entities);
 }

@@ -10,7 +10,7 @@ import {
   SemanticModelRelationshipEnd,
   SemanticEntity,
 } from "./semantic-model.ts";
-import { createReadOnlyInMemoryProfileModel } from "./in-memory/index.ts";
+import { createInMemorySemanticModel } from "./in-memory/index.ts";
 import {
   IdentifiableBuilder,
   SemanticClassBuilder,
@@ -30,7 +30,7 @@ class DefaultSemanticModelBuilder implements SemanticModelBuilder {
 
   readonly identifier: string;
 
-  readonly baseUrl: string;
+  readonly baseIri: string;
 
   readonly urlResolver: Resolver;
 
@@ -45,14 +45,14 @@ class DefaultSemanticModelBuilder implements SemanticModelBuilder {
 
   constructor(
     identifier: string,
-    baseUrl: string,
+    baseIri: string,
     urlResolver: Resolver,
     identifierResolver: Resolver,
   ) {
     this.identifier = identifier;
-    this.baseUrl = baseUrl;
+    this.baseIri = baseIri;
     this.urlResolver = urlResolver;
-    this.absoluteUrlResolver = createIriResolver(baseUrl);
+    this.absoluteUrlResolver = createIriResolver(baseIri);
     this.identifierResolver = identifierResolver
     this.entities = {};
   }
@@ -127,8 +127,11 @@ class DefaultSemanticModelBuilder implements SemanticModelBuilder {
   }
 
   build(): SemanticModel {
-    return createReadOnlyInMemoryProfileModel(
-      this.identifier, this.baseUrl, this.entities);
+    return createInMemorySemanticModel({
+      identifier: this.identifier,
+      baseIri: this.baseIri,
+      entities: this.entities,
+    });
   }
 
 }
@@ -208,16 +211,16 @@ class DefaultSemanticRelationshipBuilder
 
 export function createDefaultSemanticModelBuilder(configuration: {
   baseIdentifier: string,
-  baseUrl: string,
+  baseIri: string,
   /**
    * When true the relative URL of entities are resolved.
    */
   resolveUrl?: boolean,
 }): SemanticModelBuilder {
   const urlResolver: Resolver = configuration.resolveUrl === true ?
-    createIriResolver(configuration.baseUrl) : iri => iri;
+    createIriResolver(configuration.baseIri) : iri => iri;
   return new DefaultSemanticModelBuilder(
-    configuration.baseIdentifier, configuration.baseUrl,
+    configuration.baseIdentifier, configuration.baseIri,
     urlResolver,
     (identifier) => configuration.baseIdentifier + identifier,
   );

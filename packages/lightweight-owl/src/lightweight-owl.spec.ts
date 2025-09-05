@@ -14,7 +14,7 @@ describe("semanticModelToLightweightOwl", () => {
 
     const builder = createDefaultSemanticModelBuilder({
       baseIdentifier: "",
-      baseUrl: "http://example.com/base#",
+      baseIri: "http://example.com/base#",
     });
 
     builder.class({ iri: "relative" });

@@ -7,7 +7,7 @@ describe("flattenProfileModels", () => {
   test("Implementation test I.", () => {
 
     const biology = createDefaultProfileModelBuilder({
-      baseUrl: "http://example.com/first#",
+      baseIri: "http://example.com/first#",
       baseIdentifier: "first:"
     });
 
@@ -21,7 +21,7 @@ describe("flattenProfileModels", () => {
     }).domain(human).range("xsd:short");
 
     const mankind = createDefaultProfileModelBuilder({
-      baseUrl: "http://example.com/second#",
+      baseIri: "http://example.com/second#",
       baseIdentifier: "second:"
     });
 
@@ -36,7 +36,7 @@ describe("flattenProfileModels", () => {
     }).domain(person).range("xsd:string");
 
     const state = createDefaultProfileModelBuilder({
-      baseUrl: "http://example.com/third#",
+      baseIri: "http://example.com/third#",
       baseIdentifier: "third:"
     });
 
@@ -57,7 +57,7 @@ describe("flattenProfileModels", () => {
     // Expected
 
     const expected = createDefaultProfileModelBuilder({
-      baseUrl: "http://example.com/third#",
+      baseIri: "http://example.com/third#",
       baseIdentifier: "third:"
     });
 

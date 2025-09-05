@@ -8,7 +8,7 @@ describe("DefaultProfileModelBuilder", () => {
     const baseUrl = "http://example.com/base#";
     const builder = createDefaultProfileModelBuilder({
       baseIdentifier: "",
-      baseUrl,
+      baseIri: baseUrl,
     });
     builder.class({ id: "000", iri: "relative" });
     const iri = "http://example.com/absolute";
@@ -27,7 +27,7 @@ describe("DefaultProfileModelBuilder", () => {
     const baseUrl = "http://example.com/base#";
     const builder = createDefaultProfileModelBuilder({
       baseIdentifier: "",
-      baseUrl,
+      baseIri: baseUrl,
       resolveUrl: true,
     });
     builder.class({ id: "000", iri: "relative" });

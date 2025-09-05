@@ -11,8 +11,8 @@ import { createStructureModelBuilder } from "./structure-model-builder.ts";
 describe("createStructureModel", () => {
 
   const xsd = createDefaultSemanticModelBuilder({
-    baseUrl: "http://www.w3.org/2001/XMLSchema#",
     baseIdentifier: "xsd:",
+    baseIri: "http://www.w3.org/2001/XMLSchema#",
   });
 
   const xsdString = xsd.class({ iri: "string" });
@@ -22,8 +22,8 @@ describe("createStructureModel", () => {
     // Vocabulary
 
     const vocabulary = createDefaultSemanticModelBuilder({
-      baseUrl: "http://example.com/vocabulary#",
       baseIdentifier: "vocab:",
+      baseIri: "http://example.com/vocabulary#",
     });
 
     const person = vocabulary.class({
@@ -41,8 +41,8 @@ describe("createStructureModel", () => {
     // Profile
 
     const profile = createDefaultProfileModelBuilder({
-      baseUrl: "http://example.com/profile#",
-      baseIdentifier: "profile:"
+      baseIdentifier: "profile:",
+      baseIri: "http://example.com/profile#",
     });
 
     const humanProfile = profile.class({

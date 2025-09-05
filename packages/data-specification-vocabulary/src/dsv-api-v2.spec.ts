@@ -9,7 +9,7 @@ describe("createDataSpecificationVocabulary", () => {
 
   const xsd = createDefaultSemanticModelBuilder({
     baseIdentifier: "xsd#",
-    baseUrl: "http://www.w3.org/2001/XMLSchema#",
+    baseIri: "http://www.w3.org/2001/XMLSchema#",
   });
 
   const xsdString = xsd.class({ iri: "string" });
@@ -20,7 +20,7 @@ describe("createDataSpecificationVocabulary", () => {
 
     const vocabulary = createDefaultSemanticModelBuilder({
       baseIdentifier: "vocabualry#",
-      baseUrl: "http://example.com/vocabulary#",
+      baseIri: "http://example.com/vocabulary#",
     });
 
     const person = vocabulary.class({
@@ -39,7 +39,7 @@ describe("createDataSpecificationVocabulary", () => {
 
     const profile = createDefaultProfileModelBuilder({
       baseIdentifier: "profile#",
-      baseUrl: "http://example.com/profile#",
+      baseIri: "http://example.com/profile#",
     });
 
     const humanProfile = profile.class({

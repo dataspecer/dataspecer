@@ -10,6 +10,11 @@ import {
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { Entity } from "@dataspecer/entity-model";
 import { isSemanticModelGeneralizationProfile } from "./index.ts";
+import {
+  CreatedEntityOperationResult,
+  Operation,
+  OperationResult
+} from "@dataspecer/core-v2/semantic-model/operations";
 
 export {
   SEMANTIC_MODEL_CLASS_PROFILE,
@@ -60,3 +65,15 @@ export type RelationshipEndProfile = SemanticModelRelationshipEndProfile;
 export type GeneralizationProfile = SemanticModelGeneralization;
 
 export const isGeneralizationProfile = isSemanticModelGeneralizationProfile;
+
+export type ProfileOperation = Operation;
+
+export type ProfileOperationResult =
+  OperationResult | CreatedEntityOperationResult;
+
+export interface WritableProfileModel extends ProfileModel {
+
+  executeOperations(operations: ProfileOperation[]):
+    ProfileOperationResult[];
+
+}

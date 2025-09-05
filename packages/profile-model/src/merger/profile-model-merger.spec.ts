@@ -7,14 +7,14 @@ describe("margeProfileModels", () => {
   test("Default merge test.", () => {
 
     const first = createDefaultProfileModelBuilder({
-      baseUrl: "http://example.com/first#",
+      baseIri: "http://example.com/first#",
       baseIdentifier: "first:",
     });
 
     first.class({ iri: "Person" });
 
     const second = createDefaultProfileModelBuilder({
-      baseUrl: "http://example.com/second#",
+      baseIri: "http://example.com/second#",
       baseIdentifier: "second:",
     });
 
@@ -29,7 +29,7 @@ describe("margeProfileModels", () => {
 
     const expected = createDefaultProfileModelBuilder({
       baseIdentifier: "",
-      baseUrl: null,
+      baseIri: null,
     });
 
     expected.class({
@@ -54,7 +54,7 @@ describe("margeProfileModels", () => {
   test("Merge by identifier.", () => {
 
     const first = createDefaultProfileModelBuilder({
-      baseUrl: "http://example.com/first#",
+      baseIri: "http://example.com/first#",
       baseIdentifier: "first:"
     });
 
@@ -64,7 +64,7 @@ describe("margeProfileModels", () => {
     });
 
     const second = createDefaultProfileModelBuilder({
-      baseUrl: "http://example.com/second#",
+      baseIri: "http://example.com/second#",
       baseIdentifier: "first:"
     });
 
@@ -82,7 +82,7 @@ describe("margeProfileModels", () => {
 
     const expected = createDefaultProfileModelBuilder({
       baseIdentifier: "first:",
-      baseUrl: null,
+      baseIri: null,
     });
 
     expected.class({

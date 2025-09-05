@@ -19,7 +19,7 @@ import {
   ProfileRelationshipBuilder,
   PropertyProfile,
 } from "./profile-model-builder.ts";
-import { createReadOnlyInMemoryProfileModel } from "./in-memory/index.ts";
+import { createInMemoryProfileModel } from "./in-memory/index.ts";
 
 const OWL_THING = "http://www.w3.org/2002/07/owl#Thing";
 
@@ -31,7 +31,7 @@ class DefaultProfileModelBuilder implements ProfileModelBuilder {
 
   readonly identifier: string;
 
-  readonly baseUrl: string | null;
+  readonly baseIri: string | null;
 
   readonly urlResolver: Resolver;
 
@@ -41,12 +41,12 @@ class DefaultProfileModelBuilder implements ProfileModelBuilder {
 
   constructor(
     identifier: string,
-    baseUrl: string | null,
+    baseIri: string | null,
     urlResolver: Resolver,
     identifierResolver: Resolver,
   ) {
     this.identifier = identifier;
-    this.baseUrl = baseUrl;
+    this.baseIri = baseIri;
     this.urlResolver = urlResolver;
     this.identifierResolver = identifierResolver
     this.entities = {};
@@ -149,8 +149,11 @@ class DefaultProfileModelBuilder implements ProfileModelBuilder {
   }
 
   build(): ProfileModel {
-    return createReadOnlyInMemoryProfileModel(
-      this.identifier, this.baseUrl, this.entities);
+    return createInMemoryProfileModel({
+      identifier: this.identifier,
+      baseIri: this.baseIri,
+      entities: this.entities,
+    });
   }
 
 }
@@ -309,18 +312,18 @@ class DefaultProfileGeneralizationBuilder
 
 export function createDefaultProfileModelBuilder(configuration: {
   baseIdentifier: string,
-  baseUrl: string | null,
+  baseIri: string | null,
   /**
    * When true the relative URL of entities are resolved.
    */
   resolveUrl?: boolean,
 }): ProfileModelBuilder {
   const urlResolver: Resolver =
-    configuration.resolveUrl === true && configuration.baseUrl !== null
-      ? createIriResolver(configuration.baseUrl)
+    configuration.resolveUrl === true && configuration.baseIri !== null
+      ? createIriResolver(configuration.baseIri)
       : iri => iri;
   return new DefaultProfileModelBuilder(
-    configuration.baseIdentifier, configuration.baseUrl,
+    configuration.baseIdentifier, configuration.baseIri,
     urlResolver, (identifier) => configuration.baseIdentifier + identifier,
   );
 }

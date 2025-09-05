@@ -12,8 +12,8 @@ import {
 describe("createShaclForProfile", () => {
 
   const xsd = createDefaultSemanticModelBuilder({
-    baseUrl: "http://www.w3.org/2001/XMLSchema#",
     baseIdentifier: "xsd:",
+    baseIri: "http://www.w3.org/2001/XMLSchema#",
   });
 
   const xsdString = xsd.class({ iri: "string" });
@@ -23,8 +23,8 @@ describe("createShaclForProfile", () => {
     // Vocabulary
 
     const vocabulary = createDefaultSemanticModelBuilder({
-      baseUrl: "http://example.com/vocabulary#",
       baseIdentifier: "vocab:",
+      baseIri: "http://example.com/vocabulary#",
     });
 
     const object = vocabulary.class({ iri: "object" });
@@ -46,8 +46,8 @@ describe("createShaclForProfile", () => {
     // Profile
 
     const profile = createDefaultProfileModelBuilder({
-      baseUrl: "http://example.com/profile#",
       baseIdentifier: "profile:",
+      baseIri: "http://example.com/profile#",
     });
 
     const objectProfile = profile.class({ iri: "object" })
@@ -98,8 +98,8 @@ describe("createShaclForProfile", () => {
     // Vocabulary
 
     const vocabulary = createDefaultSemanticModelBuilder({
-      baseUrl: "http://example.com/vocabulary#",
       baseIdentifier: "vocab:",
+      baseIri: "http://example.com/vocabulary#",
     });
 
     const person = vocabulary.class({
@@ -117,8 +117,8 @@ describe("createShaclForProfile", () => {
     // Profile
 
     const profile = createDefaultProfileModelBuilder({
-      baseUrl: "http://example.com/profile#",
       baseIdentifier: "profile:",
+      baseIri: "http://example.com/profile#",
     });
 
     const humanProfile = profile.class({iri: "person"})

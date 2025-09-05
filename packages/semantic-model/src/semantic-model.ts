@@ -1,3 +1,8 @@
+import {
+  CreatedEntityOperationResult,
+  Operation,
+  OperationResult,
+} from "@dataspecer/core-v2/semantic-model/operations";
 import { Entity } from "@dataspecer/entity-model";
 
 export {
@@ -38,3 +43,15 @@ export interface SemanticModel {
 export type SemanticEntity = Entity;
 
 export type SemanticEntityRecord = { [identifier: string]: SemanticEntity };
+
+export type SemanticOperation = Operation;
+
+export type SemanticOperationResult =
+  OperationResult | CreatedEntityOperationResult;
+
+export interface WritableSemanticModel extends SemanticModel {
+
+  executeOperations(operations: SemanticOperation[]):
+    SemanticOperationResult[];
+
+}
