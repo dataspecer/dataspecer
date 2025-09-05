@@ -83,14 +83,8 @@ class DefaultProfileModelBuilder implements ProfileModelBuilder {
     return this.identifierResolver(String(this.counter).padStart(3, "0"));
   }
 
-  relationship(
-    value?: Partial<SemanticModelRelationshipProfile>,
-  ): ProfileRelationshipBuilder {
-    throw new Error("Method not implemented.");
-  }
-
   property(
-    value?: Partial<PropertyProfile & { id: string }>,
+    value?: Partial<PropertyProfile>,
   ): ProfileRelationshipBuilder {
     const identifier = value?.id ?? this.nextIdentifier();
     const entity: SemanticModelRelationshipProfile = {

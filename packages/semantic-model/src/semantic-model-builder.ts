@@ -13,20 +13,12 @@ export interface SemanticModelBuilder {
     value?: Partial<SemanticModelClass>,
   ): SemanticClassBuilder;
 
-  relationship(
-    value?: Partial<SemanticModelRelationship>,
-  ): SemanticRelationshipBuilder;
-
   /**
    * Alternative to {@link relationship}.
    */
   property(
     value?: Partial<SemanticModelProperty>,
   ): SemanticRelationshipBuilder;
-
-  generalization(
-    value?: Partial<SemanticModelGeneralization>,
-  ): SemanticGeneralizationBuilder;
 
   build(): SemanticModel;
 
@@ -43,6 +35,7 @@ export interface SemanticClassBuilder extends IdentifiableBuilder {
    * Create a relation with this class as the domain.
    */
   property(value: {
+    id?: string,
     iri?: string,
     name?: LanguageString,
     description?: LanguageString,
@@ -73,6 +66,8 @@ export interface SemanticRelationshipBuilder extends IdentifiableBuilder {
 }
 
 export interface SemanticModelProperty {
+
+  id: string;
 
   iri: string;
 

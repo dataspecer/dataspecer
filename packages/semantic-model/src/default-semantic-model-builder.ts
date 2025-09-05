@@ -81,16 +81,10 @@ class DefaultSemanticModelBuilder implements SemanticModelBuilder {
     return this.identifierResolver(String(this.counter).padStart(3, "0"));
   }
 
-  relationship(
-    value?: Partial<SemanticModelRelationship>,
-  ): SemanticRelationshipBuilder {
-    throw new Error("Method not implemented.");
-  }
-
   property(
     value?: Partial<SemanticModelProperty>,
   ): SemanticRelationshipBuilder {
-    const identifier = this.nextIdentifier();
+    const identifier = value?.id ?? this.nextIdentifier();
     const entity: SemanticModelRelationship = {
       // Entity
       id: identifier,
@@ -118,12 +112,6 @@ class DefaultSemanticModelBuilder implements SemanticModelBuilder {
     };
     this.entities[identifier] = entity;
     return new DefaultSemanticRelationshipBuilder(entity);
-  }
-
-  generalization(
-    value?: Partial<SemanticModelGeneralization>,
-  ): SemanticGeneralizationBuilder {
-    throw new Error("Method not implemented.");
   }
 
   build(): SemanticModel {
@@ -155,6 +143,7 @@ class DefaultSemanticClassBuilder implements SemanticClassBuilder {
   }
 
   property(value: {
+    id?: string,
     iri?: string;
     name?: LanguageString;
     description?: LanguageString,

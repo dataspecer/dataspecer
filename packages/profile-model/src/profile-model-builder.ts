@@ -1,7 +1,6 @@
 import type {
   ProfileModel,
   SemanticModelClassProfile,
-  SemanticModelRelationshipProfile,
 } from "./profile-model.ts";
 
 type LanguageString = { [language: string]: string };
@@ -12,12 +11,8 @@ export interface ProfileModelBuilder {
     value?: Partial<SemanticModelClassProfile>,
   ): ProfileClassBuilder;
 
-  relationship(
-    value?: Partial<SemanticModelRelationshipProfile>,
-  ): ProfileRelationshipBuilder;
-
   property(
-    value?: Partial<PropertyProfile & { id: string }>,
+    value?: Partial<PropertyProfile>,
   ): ProfileRelationshipBuilder;
 
   generalization<
@@ -32,6 +27,8 @@ export interface ProfileModelBuilder {
 }
 
 export interface PropertyProfile {
+
+  id: string;
 
   iri: string;
 
