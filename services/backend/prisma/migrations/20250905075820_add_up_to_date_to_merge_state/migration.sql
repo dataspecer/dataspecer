@@ -1,0 +1,25 @@
+-- RedefineTables
+PRAGMA foreign_keys=OFF;
+CREATE TABLE "new_MergeState" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "uuid" TEXT NOT NULL,
+    "lastCommitHashMergeTo" TEXT NOT NULL DEFAULT '',
+    "rootFullPathToMetaMergeTo" TEXT NOT NULL DEFAULT '',
+    "rootIriMergeTo" TEXT NOT NULL DEFAULT '',
+    "filesystemTypeMergeTo" TEXT NOT NULL,
+    "lastCommitHashMergeFrom" TEXT NOT NULL DEFAULT '',
+    "rootFullPathToMetaMergeFrom" TEXT NOT NULL DEFAULT '',
+    "rootIriMergeFrom" TEXT NOT NULL DEFAULT '',
+    "filesystemTypeMergeFrom" TEXT NOT NULL,
+    "lastCommonCommitHash" TEXT NOT NULL DEFAULT '',
+    "editable" TEXT NOT NULL,
+    "mergeStateCause" TEXT NOT NULL,
+    "isUpToDate" BOOLEAN NOT NULL DEFAULT true,
+    "conflictCount" INTEGER NOT NULL
+);
+INSERT INTO "new_MergeState" ("conflictCount", "editable", "filesystemTypeMergeFrom", "filesystemTypeMergeTo", "id", "lastCommitHashMergeFrom", "lastCommitHashMergeTo", "lastCommonCommitHash", "mergeStateCause", "rootFullPathToMetaMergeFrom", "rootFullPathToMetaMergeTo", "rootIriMergeFrom", "rootIriMergeTo", "uuid") SELECT "conflictCount", "editable", "filesystemTypeMergeFrom", "filesystemTypeMergeTo", "id", "lastCommitHashMergeFrom", "lastCommitHashMergeTo", "lastCommonCommitHash", "mergeStateCause", "rootFullPathToMetaMergeFrom", "rootFullPathToMetaMergeTo", "rootIriMergeFrom", "rootIriMergeTo", "uuid" FROM "MergeState";
+DROP TABLE "MergeState";
+ALTER TABLE "new_MergeState" RENAME TO "MergeState";
+CREATE UNIQUE INDEX "MergeState_uuid_key" ON "MergeState"("uuid");
+PRAGMA foreign_key_check;
+PRAGMA foreign_keys=ON;

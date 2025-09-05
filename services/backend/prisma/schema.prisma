@@ -128,6 +128,12 @@ model MergeState {
   //  will give us the action, which should be performed after the resolving of all the conflicts.
   mergeStateCause String
 
+  // Sometimes users may work in conceptual model editor for example, when merge state is active.
+  // By work on resources they update the DiffTree in existing mergee states,
+  // however recomputing DiffTree differences with each change is not really smart thing to do.
+  // So each update in the relevant packages changes the isUpToDate field to false.
+  // It is then the responsibility of server to provide (and store) recomputed DiffTree, when the merge state is queried.
+  isUpToDate Boolean @default(true)
   conflictCount Int
   mergeStateData MergeStateData?
 }
