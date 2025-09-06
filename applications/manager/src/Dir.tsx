@@ -39,6 +39,7 @@ import { manualPull } from "./components/manual-pull";
 import { MergeStatesDialog } from "./dialog/merge-conflict-dialog";
 import { OpenMergeState } from "./dialog/open-merge-state";
 import { useLogin, UseLoginType } from "./hooks/use-login";
+import SetPrivateSSHKeyDialog from "./dialog/set-private-ssh";
 
 export function lng(text: LanguageString | undefined): string | undefined {
   return text?.["cs"] ?? text?.["en"];
@@ -253,7 +254,7 @@ const Row = ({ iri, projectFilter, setProjectFilter, isSignedIn, mergeActors, pa
             {<DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/git/redirect-to-remote-git-repository?iri=" + encodeURIComponent(iri)}><Eye className="mr-2 h-4 w-4" />Visit the remote repository</a></DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git branch visualization</DropdownMenuItem>}
             <hr className="border-gray-300" />
-            {isSignedIn && <DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Add private SSH key</DropdownMenuItem>}
+            {isSignedIn && <DropdownMenuItem onClick={() => openModal(SetPrivateSSHKeyDialog, {})}><GitGraph className="mr-2 h-4 w-4" />Add private SSH key</DropdownMenuItem>}
             <hr className="border-gray-300" />
             {<DropdownMenuItem onClick={async () => linkToGitRepoOnClickHandler(openModal, iri, resource)}><GitPullRequestIcon className="mr-2 h-4 w-4" />Create remote repository</DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => linkToExistingGitRepositoryHandler(openModal, iri, resource)}><Link className="mr-2 h-4 w-4" />Link to remote repository </DropdownMenuItem>}
