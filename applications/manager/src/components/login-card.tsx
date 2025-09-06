@@ -1,4 +1,4 @@
-import { ConfigType } from '@/utils/utilities';
+import { ConfigType } from '@dataspecer/git';
 import { useEffect, useState } from 'react';
 
 const LoginCard = () => {

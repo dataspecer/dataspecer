@@ -1,8 +1,8 @@
 import { getSession, Session } from "@auth/express"
 import express, { NextFunction } from "express"
-import { createBasicAuthConfig, ConfigType, createAuthConfigBasedOnAccountScope } from "./auth-config.ts"
+import { createBasicAuthConfig, createAuthConfigBasedOnAccountScope } from "./auth-config.ts"
 import { asyncHandler } from "../utils/async-handler.ts";
-import { GitCredentials, GitProvider } from "@dataspecer/git";
+import { ConfigType, GitCredentials, GitProvider } from "@dataspecer/git";
 import { getToken } from "@auth/core/jwt"
 import { AUTH_SECRET } from "../git-never-commit.ts";
 import { convertExpressRequestToNormalRequest } from "../utils/git-utils.ts";
@@ -29,7 +29,7 @@ export async function currentSession(
   // TODO RadStr: Not ideal - I am basically repairing to use it with correct config based on the scope I have stored in session
   // TODO RadStr: I should probably have it stored in cookie (or in database?)
   if (session !== undefined) {
-    const [authConfig] = createAuthConfigBasedOnAccountScope((session?.user as any).scope ?? "");
+    const [authConfig] = createAuthConfigBasedOnAccountScope((session?.user as any).genericScope ?? null);
     session = (await getSession(request, authConfig)) ?? undefined;
   }
 
@@ -86,7 +86,7 @@ export const getGitCredentialsFromSession = (response: express.Response, wantedA
   if (currentSession !== null) {
     committerName = currentSession.user?.name ?? null;
     committerEmail = currentSession.user?.email ?? null;
-    const [, configType] = createAuthConfigBasedOnAccountScope((currentSession.user as any)?.scope ?? null);      // The express request won't be used so just set it to null
+    const [, configType] = createAuthConfigBasedOnAccountScope((currentSession.user as any)?.genericScope ?? null);      // The express request won't be used so just set it to null
     // TODO RadStr: In future if there might be better granulization in permissions then the check should be more complex + should check if we have access to the repo
     if (configType !== null && wantedAccessTokenLevels.includes(configType)) {
       committerAccessToken = (currentSession.user as any)?.accessToken ?? null;

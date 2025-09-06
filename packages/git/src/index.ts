@@ -6,3 +6,4 @@ export * from "./filesystem/implementations/client-filesystem.ts";
 export * from "./utils.ts";
 export * from "./merge/merge-state.ts";
 export * from "./merge/comparison.ts";
+export * from "./auth.ts";

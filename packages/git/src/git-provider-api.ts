@@ -1,4 +1,5 @@
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
+import { Scope } from "./auth.ts";
 
 export type ConvertRepoURLToDownloadZipURLReturnType = {
   zipURL: string,
@@ -237,4 +238,14 @@ export interface GitProvider {
    * @param commitReferenceValue if not provided then it is extracted from the {@link repositoryUrl}.
    */
   getLastCommitHashFromUrl(repositoryUrl: string, commitReferenceType: CommitReferenceType | null, commitReferenceValue: string | null): Promise<string>;
+
+  /**
+   * @returns The scope strings for the specific generic scope. We return array since technically the mapping is not necessarilly 1:1.
+   */
+  convertGenericScopeToProviderScope(scope: Scope): string[];
+
+  /**
+   * @returns The given provider specific {@link scope} to the the generic scope.
+   */
+  convertProviderScopeToGenericScope(scope: string): Scope;
 }

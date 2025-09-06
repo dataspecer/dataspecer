@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { ConfigType } from "../authorization/auth-config.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-session.ts";
 import { extractPartOfRepositoryURL } from "../utils/git-utils.ts";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
@@ -7,6 +6,7 @@ import { resourceModel } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 
 import express from "express";
+import { ConfigType } from "@dataspecer/git";
 
 /**
  * Removes Git repository with iri given in query part of request.

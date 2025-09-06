@@ -10,13 +10,6 @@ export function convertToValidRepositoryName(repoName: string): string {
   return validRepoName;
 }
 
-// TODO RadStr: Put into /packages - we need this from both manager and services/backend
-export enum ConfigType {
-  LoginInfo,
-  FullPublicRepoControl,
-  DeleteRepoControl,      // TODO RadStr: This is just for debugging, normal user won't use this ever (he could, but I would not trust 3rd party software with removal access).
-}
-
 /**
  * TODO RadStr: Maybe not utility function, but can't think of better place now
  */

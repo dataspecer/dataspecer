@@ -94,7 +94,8 @@ export const createUniqueDirectory = (
         const pathUuid = uuidBase.substring(0, 6);
         const gitDirectoryToRemoveAfterWork = `${ROOT_DIRECTORY_FOR_ANY_GIT}/${cloneDirectoryNamePrefix}/${pathUuid}`;
         const gitInitialDirectoryParent = `${gitDirectoryToRemoveAfterWork}`;
-        let gitInitialDirectory = `${gitInitialDirectoryParent}/${iri.substring(0, uuidBase.length - 6)}`;
+        // Use the whole iri, but ideally we would take something like iri.substring(0, uuidBase.length - 6)
+        let gitInitialDirectory = `${gitInitialDirectoryParent}/${iri}`;
         if (!fs.existsSync(gitDirectoryToRemoveAfterWork)) {
             fs.mkdirSync(gitInitialDirectory, { recursive: true });
             return {

@@ -2,9 +2,10 @@ import { ExpressAuth, ExpressAuthConfig } from "@auth/express";
 import { asyncHandler } from "../../utils/async-handler.ts";
 
 import express, { NextFunction } from "express";
-import { ConfigType, createAuthConfigWithCorrectPermissions, createBasicAuthConfig } from "../../authorization/auth-config.ts";
+import { createAuthConfigWithCorrectPermissions, createBasicAuthConfig } from "../../authorization/auth-config.ts";
 import { getRedirectLink } from "./auth-handler.ts";
 import { z } from "zod";
+import { ConfigType } from "@dataspecer/git";
 
 /**
  * Handles the signin request by calling the {@link ExpressAuth} with correct configuration based on request.

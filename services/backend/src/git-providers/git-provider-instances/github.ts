@@ -8,10 +8,13 @@ import fs from "fs";
 
 // Using this one since I could not make the ones for nodeJS (one is not using ES modules and the other one seems to be too old and correctly support types)
 import sodium from "libsodium-wrappers-sumo";
-import { CommitReferenceType, createRemoteRepositoryReturnType, GitCredentials, GitProviderEnum, WebhookRequestDataProviderIndependent } from "@dataspecer/git";
+import { CommitReferenceType, createRemoteRepositoryReturnType, GitCredentials, GitProviderEnum, Scope, WebhookRequestDataProviderIndependent } from "@dataspecer/git";
 import { GitProviderBase } from "../git-provider-base.ts";
 import { resourceModel } from "../../main.ts";
 import { createLinksForFiles, gitProviderDomains } from "../git-provider-factory.ts";
+
+const scopes = ["read:user", "user:email", "public_repo", "workflow", "delete_repo"] as const;
+export type GitHubScope = typeof scopes[number];
 
 // Note:
 // Even though the request usually work without, the docs demand to specify User-Agent in headers for REST API requests
@@ -450,5 +453,47 @@ export class GitHubProvider extends GitProviderBase {
     }
 
     return "https://" + domain + "/" + owner + "/" + repositoryName;
+  }
+
+  public static convertGenericScopeToProviderScopeStatic(scope: Scope): GitHubScope[] {
+    switch(scope) {
+      case "userInfo":
+        return ["read:user"];
+      case "email":
+        return ["user:email"];
+      case "publicRepo":
+        return ["public_repo"];
+      case "workflow":
+        return ["workflow"];
+      case "deleteRepo":
+        return ["delete_repo"];
+      default:
+        throw new Error("Unknown scope.");
+    }
+  }
+
+  convertGenericScopeToProviderScope(scope: Scope): GitHubScope[] {
+    return GitHubProvider.convertGenericScopeToProviderScopeStatic(scope);
+  }
+
+  public static convertProviderScopeToGenericScopeStatic(scope: GitHubScope): Scope {
+    switch(scope) {
+      case "read:user":
+        return "userInfo";
+      case "user:email":
+        return "email";
+      case "public_repo":
+        return "publicRepo";
+      case "workflow":
+        return "workflow";
+      case "delete_repo":
+        return "deleteRepo";
+      default:
+        throw new Error("Unknown scope.");
+    }
+  }
+
+  convertProviderScopeToGenericScope(scope: GitHubScope): Scope {
+    return GitHubProvider.convertProviderScopeToGenericScopeStatic(scope);
   }
 }

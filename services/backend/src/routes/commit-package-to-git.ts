@@ -17,13 +17,12 @@ import fs from "fs";
 import { getRepoURLWithAuthorization, getRepoURLWithAuthorizationUsingDebugPatToken } from "../git-never-commit.ts";
 import { simpleGit, SimpleGit } from "simple-git";
 import { extractPartOfRepositoryURL } from "../utils/git-utils.ts";
-import { AvailableFilesystems, GitCredentials, GitProvider } from "@dataspecer/git";
+import { AvailableFilesystems, ConfigType, GitCredentials, GitProvider } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
 import YAML from "yaml";
 import { createUniqueCommitMessage } from "../utils/git-utils.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-session.ts";
-import { ConfigType } from "../authorization/auth-config.ts";
 import { createReadmeFile } from "../git-readme/readme-generator.ts";
 import { ReadmeTemplateData } from "../git-readme/readme-template.ts";
 import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
@@ -181,13 +180,16 @@ export const commitPackageToGit = async (
     gitProvider.copyWorkflowFiles(gitInitialDirectory);
 
     const commitResult = await commitGivenFilesToGit(git, ["."], commitMessage, committer.name, committer.email);
-    await git.push(repoURLWithAuthorization);
-    await resourceModel.updateLastCommitHash(iri, commitResult.commit);
+    if (commitResult.commit !== "") {
+      await git.push(repoURLWithAuthorization);
+      await resourceModel.updateLastCommitHash(iri, commitResult.commit);
+    }
+    // Else no changes
 
-    // It is important to not only remove the actual files, but also the .git directory,
-    // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
   }
   finally {
+    // It is important to not only remove the actual files, but also the .git directory,
+    // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
     fs.rmSync(gitDirectoryToRemoveAfterWork, { recursive: true, force: true });
   }
 

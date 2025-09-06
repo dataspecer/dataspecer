@@ -5,35 +5,30 @@ import GitHub from "@auth/express/providers/github"
 import GitLab from "@auth/express/providers/gitlab"
 import Google from "@auth/express/providers/google"
 import Keycloak from "@auth/express/providers/keycloak"
+import { ConfigType, Scope } from "@dataspecer/git";
+import { GitHubProvider, GitHubScope } from "../git-providers/git-provider-instances/github.ts";
 
 
 // Possible inspiration for implementation of custom provider (if needed in future) - https://github.com/nextauthjs/next-auth/discussions/9480
 // or take a look at some of the officially implemented ones - https://github.com/nextauthjs/next-auth/blob/main/packages/core/src/providers/github.ts
 
 
-// TODO RadStr: Put into /packages - we need this from both manager and services/backend
-export enum ConfigType {
-  LoginInfo,
-  FullPublicRepoControl,
-  DeleteRepoControl,      // TODO RadStr: This is just for debugging, normal user won't use this ever (he could, but I would not trust 3rd party software with removal access).
-}
-
 /**
- * @param scope is the scope as from the authJS user account - that is the scopes separated by comma (,)
+ * The returned ConfigType is not null if there is {@link ConfigType} which exactly matches provided scope (on permission level of course, not on string level).
+ * @param genericScope is the scope as from the authJS user account - that is the scopes separated by comma (,) but converted to the generic scopes
  * @param callerURL is the URL of the caller to which we can be possibly redirected after request is finished
  */
-export function createAuthConfigBasedOnAccountScope(scope: string | null, callerURL?: string): [ExpressAuthConfig, ConfigType | null] {
-  if (scope === null) {
+export function createAuthConfigBasedOnAccountScope(genericScope: Scope[] | null, callerURL?: string): [ExpressAuthConfig, ConfigType | null] {
+  if (genericScope === null) {
     return [createAuthConfig(null, callerURL), null];
   }
 
-  const parsedScopes = scope.split(",");
   for (const configTypeKey of Object.values(ConfigType).filter(value => typeof value === "number") as number[]) {
     const configType = ConfigType[ConfigType[configTypeKey] as keyof typeof ConfigType];
     const scopesForConfig = getScopesForAuthConfig(configType);
     const coveredScopes: Record<string, true> = {};
-    for (const scope of parsedScopes) {
-      if (scopesForConfig.includes(scope)) {
+    for (const scope of genericScope) {
+      if (scopesForConfig.includes(scope as Scope)) {
         coveredScopes[scope] = true;
       }
       else {
@@ -41,8 +36,8 @@ export function createAuthConfigBasedOnAccountScope(scope: string | null, caller
       }
     }
 
-    const coveredScopesCount = Object.keys(coveredScopes).length;
-    if (coveredScopesCount === scopesForConfig.length && coveredScopesCount === parsedScopes.length) {
+    const coveredScopesCount = Object.keys(coveredScopes).length;   // We covered all the scopes in the config
+    if (coveredScopesCount === scopesForConfig.length && coveredScopesCount === genericScope.length) {
       return [createAuthConfig(configType, callerURL), configType];
     }
   }
@@ -51,25 +46,25 @@ export function createAuthConfigBasedOnAccountScope(scope: string | null, caller
 }
 
 // TODO RadStr: ... well the scopes are once again Git Provider specific, so it should be part of the concrete git Provider.
-function getScopesForAuthConfig(configType: ConfigType | null): string[] {
+function getScopesForAuthConfig(configType: ConfigType | null): Scope[] {
   if (configType === null) {
-    return ["read:user", "user:email"];
+    return ["userInfo", "email"];
   }
 
   // Note that we also need the workflow scope for full control related to commiting/pushing. Othwerwise we will get:
   //  refusing to allow an OAuth App to create or update workflow `.github/workflows/learn-github-actions.yml` without `workflow` scope
   // Using Record instead of switch because for Records compiler forces you to define any newly added enum value
-  const scopes: Record<ConfigType, string[]> = {
-    [ConfigType.LoginInfo]: ["read:user", "user:email"],
-    [ConfigType.FullPublicRepoControl]: ["read:user", "user:email", "public_repo", "workflow"],
-    [ConfigType.DeleteRepoControl]: ["read:user", "user:email", "public_repo", "workflow", "delete_repo"],
+  const scopes: Record<ConfigType, Scope[]> = {
+    [ConfigType.LoginInfo]: ["userInfo", "email"],
+    [ConfigType.FullPublicRepoControl]: ["userInfo", "email", "publicRepo", "workflow"],
+    [ConfigType.DeleteRepoControl]: ["userInfo", "email", "publicRepo", "workflow", "deleteRepo"],
   };
 
   const scope = scopes[configType];
   if (scope === undefined) {
     // It can be undefined only if the given configType is of different type (user did some typecasting)
     console.error("Passing in invalid configType which is not of type ConfigType - Incorrect casting", configType);
-    return ["read:user", "user:email"];
+    return ["userInfo", "email"];
   }
   return scope;
 }
@@ -84,7 +79,7 @@ function getScopesForAuthConfig(configType: ConfigType | null): string[] {
 function createAuthConfig(configType: ConfigType | null, callerURL?: string): ExpressAuthConfig {
 
   // TODO RadStr: Don't forget to put it everywhere not only the GitHub.
-  let scope = getScopesForAuthConfig(configType).join(" ");
+  let scope = getScopesForAuthConfig(configType);
   console.info("TODO RadStr: createAuthConfig", { scope, callerURL, configType });
 
   // This URI stuff needs explaining - so first - the issue - when we get back from github we can redirect only back on the server. ("localhost:3100" if ran locally)
@@ -99,7 +94,7 @@ function createAuthConfig(configType: ConfigType | null, callerURL?: string): Ex
       GitHub({
         clientId: GITHUB_AUTH_CLIENT_ID,
         clientSecret: GITHUB_AUTH_CLIENT_SECRET,
-        authorization: { params: { scope, redirect_uri: githubRedirectUri } },
+        authorization: { params: { scope: scope.map(genericScopeValue => GitHubProvider.convertGenericScopeToProviderScopeStatic(genericScopeValue)).flat().join(" "), redirect_uri: githubRedirectUri } },
         // redirectProxyUrl: "http://localhost:3100/auth/callback/github",
       }),
       // TODO RadStr: 1) I dont have access to create oauths in mff instance; 2) Not sure if the issuer/wellKnown works, the wellKnown probably does not
@@ -138,7 +133,12 @@ function createAuthConfig(configType: ConfigType | null, callerURL?: string): Ex
           token.accessToken = account.access_token;
         }
         if (account) {
-          token.scope = account.scope;
+          if (account.provider === "github") {
+            token.scope = account.scope;
+            token.genericScope = account?.scope
+              ?.split(",")
+              ?.map(providerSpecificScopeValue => GitHubProvider.convertProviderScopeToGenericScopeStatic(providerSpecificScopeValue as GitHubScope)) ?? null;
+          }
         }
 
         return token;
@@ -152,6 +152,7 @@ function createAuthConfig(configType: ConfigType | null, callerURL?: string): Ex
         user.authPermissions = configType;
         // Get the scope from the JWT
         user.scope = token.scope;
+        user.genericScope = token.genericScope;
 
         return session;
       },

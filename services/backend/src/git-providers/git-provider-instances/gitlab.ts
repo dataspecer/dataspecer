@@ -1,6 +1,6 @@
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
-import { CommitReferenceType, createRemoteRepositoryReturnType, GitCredentials, GitProviderEnum, WebhookRequestDataProviderIndependent } from "@dataspecer/git";
+import { CommitReferenceType, createRemoteRepositoryReturnType, GitCredentials, GitProviderEnum, Scope, WebhookRequestDataProviderIndependent } from "@dataspecer/git";
 import { GitProviderBase } from "../git-provider-base.ts";
 import { gitProviderDomains } from "../git-provider-factory.ts";
 
@@ -192,6 +192,13 @@ export class GitLabProvider extends GitProviderBase {
 
   extractDefaultRepositoryUrl(repositoryUrl: string): string {
     // Once again it is possible that it has the same implementation as GitHub.
+    throw new Error("Method not implemented.");
+  }
+
+  convertGenericScopeToProviderScope(scope: Scope): string[] {
+    throw new Error("Method not implemented.");
+  }
+  convertProviderScopeToGenericScope(scope: string): Scope {
     throw new Error("Method not implemented.");
   }
 }

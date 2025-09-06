@@ -1,5 +1,5 @@
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
-import { CommitReferenceType, ConvertRepoURLToDownloadZipURLReturnType, createRemoteRepositoryReturnType, ExtractedCommitReferenceValueFromRepositoryURL, GitCredentials, GitProvider, GitProviderEnum, RepositoryURLParts, WebhookRequestDataProviderIndependent } from "@dataspecer/git";
+import { CommitReferenceType, ConvertRepoURLToDownloadZipURLReturnType, createRemoteRepositoryReturnType, ExtractedCommitReferenceValueFromRepositoryURL, GitCredentials, GitProvider, GitProviderEnum, RepositoryURLParts, Scope, WebhookRequestDataProviderIndependent } from "@dataspecer/git";
 import { simpleGit } from "simple-git";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
@@ -22,6 +22,8 @@ export abstract class GitProviderBase implements GitProvider {
   abstract getDefaultBranch(repositoryURL: string): Promise<string | null>;
   abstract createGitRepositoryURL(userName: string, repoName: string, branch?: string): string;
   abstract extractDefaultRepositoryUrl(repositoryUrl: string): string;
+  abstract convertGenericScopeToProviderScope(scope: Scope): string[];
+  abstract convertProviderScopeToGenericScope(scope: string): Scope;
 
   async getLastCommitHash(userName: string, repoName: string, commitReference?: string, isCommit?: boolean): Promise<string> {
     if (isCommit === true) {
