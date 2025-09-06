@@ -38,6 +38,7 @@ import { CreateNewBranchDialog } from "./dialog/create-new-branch";
 import { manualPull } from "./components/manual-pull";
 import { MergeStatesDialog } from "./dialog/merge-conflict-dialog";
 import { OpenMergeState } from "./dialog/open-merge-state";
+import { useLogin, UseLoginType } from "./hooks/use-login";
 
 export function lng(text: LanguageString | undefined): string | undefined {
   return text?.["cs"] ?? text?.["en"];
@@ -70,7 +71,7 @@ const useSortIris = (iris: string[]) => {
   }, [iris, resources, selectedOption]);
 };
 
-const Row = ({ iri, projectFilter, setProjectFilter, mergeActors, parentIri }: { iri: string, projectFilter: string | null, setProjectFilter: (value: string | null) => void, mergeActors: MergeActorsType, parentIri?: string }) => {
+const Row = ({ iri, projectFilter, setProjectFilter, isSignedIn, mergeActors, parentIri }: { iri: string, projectFilter: string | null, setProjectFilter: (value: string | null) => void, isSignedIn: boolean, mergeActors: MergeActorsType, parentIri?: string }) => {
   const resources = useContext(ResourcesContext);
   const resource = resources[iri]!;
 
@@ -252,6 +253,8 @@ const Row = ({ iri, projectFilter, setProjectFilter, mergeActors, parentIri }: {
             {<DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/git/redirect-to-remote-git-repository?iri=" + encodeURIComponent(iri)}><Eye className="mr-2 h-4 w-4" />Visit the remote repository</a></DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git branch visualization</DropdownMenuItem>}
             <hr className="border-gray-300" />
+            {isSignedIn && <DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Add private SSH key</DropdownMenuItem>}
+            <hr className="border-gray-300" />
             {<DropdownMenuItem onClick={async () => linkToGitRepoOnClickHandler(openModal, iri, resource)}><GitPullRequestIcon className="mr-2 h-4 w-4" />Create remote repository</DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => linkToExistingGitRepositoryHandler(openModal, iri, resource)}><Link className="mr-2 h-4 w-4" />Link to remote repository </DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => commitToGitDialogOnClickHandler(openModal, iri, resource)}><GitCommit className="mr-2 h-4 w-4" />Commit </DropdownMenuItem>}
@@ -302,23 +305,25 @@ const Row = ({ iri, projectFilter, setProjectFilter, mergeActors, parentIri }: {
       </DropdownMenu>
     </div>
     {subResources.length > 0 && isOpen && <ul className="pl-8">
-      {subResources.map(iri => <Row iri={iri} key={iri} parentIri={resource.iri} projectFilter={projectFilter} setProjectFilter={setProjectFilter} mergeActors={mergeActors} />)}
+      {subResources.map(iri => <Row iri={iri} key={iri} parentIri={resource.iri} isSignedIn={isSignedIn} projectFilter={projectFilter} setProjectFilter={setProjectFilter} mergeActors={mergeActors} />)}
     </ul>}
     <ResourceDetail isOpen={detailModalToggle.isOpen} close={detailModalToggle.close} iri={iri} />
   </li>
 };
 
 export default function Component() {
+  const login = useLogin();
+
   return (
     <div>
-      <RootPackage iri={"http://dataspecer.com/packages/local-root"} />
-      <RootPackage iri={"http://dataspecer.com/packages/v1"} />
-      <RootPackage iri={"https://dataspecer.com/resources/import/lod"} defaultToggle={false} />
+      <RootPackage iri={"http://dataspecer.com/packages/local-root"} login={login} />
+      <RootPackage iri={"http://dataspecer.com/packages/v1"} login={login} />
+      <RootPackage iri={"https://dataspecer.com/resources/import/lod"} defaultToggle={false} login={login} />
     </div>
   )
 }
 
-function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean}) {
+function RootPackage({iri, defaultToggle, login}: {iri: string, defaultToggle?: boolean, login: UseLoginType}) {
   const openModal = useBetterModal();
   const resources = useContext(ResourcesContext);
   const pckg = resources[iri];
@@ -351,7 +356,7 @@ function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean
   }
 
   return <div className="mb-12">
-    <LoginCard/>
+    <LoginCard login={login}/>
     <div className="flex flex-row">
       <button onClick={() => setIsOpen(!isOpen)}>
         {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -389,7 +394,7 @@ function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean
     {isOpen &&
       <ul>
         {subResources.map(iri => {
-          return <Row iri={iri} parentIri={pckg.iri} key={iri} projectFilter={projectFilter} setProjectFilter={setProjectFilter} mergeActors={mergeActors} />;
+          return <Row iri={iri} parentIri={pckg.iri} key={iri} isSignedIn={login.isSignedIn} projectFilter={projectFilter} setProjectFilter={setProjectFilter} mergeActors={mergeActors} />;
         })}
       </ul>
     }
