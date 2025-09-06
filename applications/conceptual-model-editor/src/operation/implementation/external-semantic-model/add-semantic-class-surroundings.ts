@@ -3,13 +3,23 @@ import {
   ModelDsIdentifier,
 } from "@/dataspecer/entity-model";
 
-import { CmeOperationArguments, CmeOperationResult } from "../operation";
+import { CmeOperationArguments, CmeOperationResult } from "../../operation";
 import { findModel } from "../operation-utilities";
 import {
   CmeExecutionContext,
   register,
-} from "../operation-registry";
-import { isExternalSemanticModel } from "../../dataspecer/semantic-model";
+} from "../../operation-registry";
+import { isExternalSemanticModel } from "../../../dataspecer/semantic-model";
+
+const AddSemanticClassSurroundingsType =
+  "add-class-surroundings-operation";
+
+register(
+  AddSemanticClassSurroundingsType,
+  addSemanticClassSurroundingsExecutor,
+  "Add semantic class surrounding",
+  "For given semantic class adds its surrounding to its semantic model."
+);
 
 interface AddSemanticClassSurroundingsArguments extends CmeOperationArguments {
 
@@ -20,9 +30,6 @@ interface AddSemanticClassSurroundingsArguments extends CmeOperationArguments {
   entity: EntityDsIdentifier;
 
 }
-
-const AddSemanticClassSurroundingsType =
-  "add-class-surroundings-operation";
 
 type AddClassSurroundingsResult =
   CmeOperationResult<AddSemanticClassSurroundingsArguments>;
@@ -40,10 +47,3 @@ export async function addSemanticClassSurroundingsExecutor(
   await model.allowClassSurroundings(args.entity);
   return { args };
 }
-
-register(
-  AddSemanticClassSurroundingsType,
-  addSemanticClassSurroundingsExecutor,
-  "Add semantic class surrounding",
-  "For given semantic class adds its surrounding to its semantic model."
-);

@@ -1,5 +1,7 @@
 import { Entity, EntityModel } from "@dataspecer/core-v2";
 
+export * from "./in-memory-profile-model";
+
 export type ProfileEntity = Entity;
 
 export type ProfileModel =  EntityModel;

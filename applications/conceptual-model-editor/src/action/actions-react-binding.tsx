@@ -141,6 +141,7 @@ import {
   createCmeOperationExecutor,
   ReleaseSemanticClassSurroundingsOperation,
 } from "../operation";
+import { openProfileModelDialogAction } from "./open-profile-model-dialog";
 
 const LOG = createLogger(import.meta.url);
 
@@ -232,6 +233,10 @@ interface DialogActions {
    * Open dialog to layout visual model.
    */
   openPerformLayoutVisualModelDialog: () => void;
+
+  openSearchExternalSemanticModelDialog: (identifier: ModelDsIdentifier) => void;
+
+  openProfileModelDialog: (model: ModelDsIdentifier) => Promise<void>;
 
 }
 
@@ -445,8 +450,6 @@ export interface ActionsContextType extends DialogActions, VisualModelActions {
   highlightNodeInExplorationModeFromCatalog: (
     classIdentifier: string, modelOfClassWhichStartedHighlighting: string) => void;
 
-  openSearchExternalSemanticModelDialog: (identifier: ModelDsIdentifier) => void;
-
   addSemanticClassSurroundings: (model: ModelDsIdentifier, entity: EntityDsIdentifier) => Promise<void>;
 
   releaseSemanticClassSurroundings: (model: ModelDsIdentifier, entity: EntityDsIdentifier) => Promise<void>;
@@ -509,6 +512,7 @@ const noOperationActionsContext: ActionsContextType = {
   openSearchExternalSemanticModelDialog: noOperation,
   addSemanticClassSurroundings: noOperationAsync,
   releaseSemanticClassSurroundings: noOperationAsync,
+  openProfileModelDialog: noOperationAsync,
   diagram: null,
 };
 
@@ -1169,6 +1173,16 @@ function createActionsContext(
     });
   }
 
+  const openProfileModelDialog = async (model: ModelDsIdentifier) => {
+    withVisualModel(notifications, graph, (visualModel) => {
+      const cmeOperationExecutor = createCmeOperationExecutor(
+        [...graph.models.values()], [...graph.visualModels.values()]);
+      openProfileModelDialogAction(
+        cmeOperationExecutor, options, dialogs, notifications, graph,
+        visualModel, model);
+    });
+  };
+
   const callbacks: DiagramCallbacks = {
     onShowNodeDetail: (node) => openDetailDialog(node.externalIdentifier),
 
@@ -1508,6 +1522,7 @@ function createActionsContext(
     highlightNodeInExplorationModeFromCatalog,
     addSemanticClassSurroundings,
     releaseSemanticClassSurroundings,
+    openProfileModelDialog,
     diagram,
   };
 

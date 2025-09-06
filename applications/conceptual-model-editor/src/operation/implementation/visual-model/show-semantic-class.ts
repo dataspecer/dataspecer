@@ -1,18 +1,29 @@
+import { isWritableVisualModel } from "@dataspecer/core-v2/visual-model";
 
 import {
   EntityDsIdentifier,
   ModelDsIdentifier,
-} from "../../dataspecer/entity-model";
+} from "../../../dataspecer/entity-model";
 import {
   CmeOperationArguments,
   CmeOperationResult,
-} from "../operation";
+} from "../../operation";
 import {
   CmeExecutionContext,
   register,
-} from "../operation-registry";
+} from "../../operation-registry";
 import { findModel } from "../operation-utilities";
-import { isWritableVisualModel } from "@dataspecer/core-v2/visual-model";
+
+
+const ShowSemanticClassType =
+  "show-semantic-class-operation";
+
+register(
+  ShowSemanticClassType,
+  showSemanticClassExecutor,
+  "Show semantic class",
+  "Add semantic class to current visual model."
+);
 
 interface ShowSemanticClassArguments extends CmeOperationArguments {
 
@@ -29,9 +40,6 @@ interface ShowSemanticClassArguments extends CmeOperationArguments {
   y: number;
 
 }
-
-const ShowSemanticClassType =
-  "show-semantic-class-operation";
 
 type ShowSemanticClassResult =
   CmeOperationResult<ShowSemanticClassArguments>;
@@ -65,9 +73,3 @@ async function showSemanticClassExecutor(
   return { args };
 }
 
-register(
-  ShowSemanticClassType,
-  showSemanticClassExecutor,
-  "Show semantic class",
-  "Add semantic class to current visual model."
-);

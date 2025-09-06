@@ -174,6 +174,9 @@ function clickHandled(
   case Actions.ACTION_SEMANTIC_MODEL_EXPAND:
     actions.openSearchExternalSemanticModelDialog(model);
     return;
+  case Actions.ACTION_PROFILE_MODEL:
+    actions.openProfileModelDialog(model);
+    return;
   }
   // Now we continue with nodes.
   if (identifier === undefined || visible === undefined) {

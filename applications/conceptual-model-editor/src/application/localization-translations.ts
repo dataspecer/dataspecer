@@ -138,11 +138,22 @@ const searchExternalSemanticModelDialog = prefix(
   },
 );
 
+const profileModelDialog = prefix(
+  "profile-model-dialog.", {
+    "label": "Profile entities in a model",
+    "ok": "Profile",
+    "cancel": "Close",
+    "source-model": "Source",
+    "target-model": "Target",
+  },
+);
+
 const catalog = prefix(
   "catalog.", {
     "model.show": "Show all entities in the diagram.",
     "model.hide": "Hide all entities in the diagram.",
     "model.edit": "Edit semantic model.",
+    "model.profile": "Profile semantic model.",
     "model.delete": "Delete the semantic model.",
     "model.add": "Add a new semantic model.",
     "model.toggle": "Toggle diagram visibility.",
@@ -217,6 +228,7 @@ export const translations: Record<string, string | Function> = {
   ...dialogVisualNode,
   ...editSemanticModelDialog,
   ...searchExternalSemanticModelDialog,
+  ...profileModelDialog,
   ...catalog,
   ...inputIri,
   //

@@ -3,22 +3,33 @@ import {
   CreatedEntityOperationResult,
 } from "@dataspecer/core-v2/semantic-model/operations";
 
-import { isInMemorySemanticModel } from "../../dataspecer/semantic-model";
 import {
   EntityDsIdentifier,
   LanguageString,
   ModelDsIdentifier,
-} from "../../dataspecer/entity-model";
+} from "../../../dataspecer/entity-model";
 import {
   CmeOperationArguments,
   CmeOperationResult,
-  DataspecerOperationFailed,
-} from "../operation";
+} from "../../operation";
 import {
   CmeExecutionContext,
   register,
-} from "../operation-registry";
-import { findModel } from "../operation-utilities";
+} from "../../operation-registry";
+import {
+  executeCreateSemanticOperation,
+  findSemanticModel,
+} from "../operation-utilities";
+
+const CreateSemanticClassType =
+  "create-semantic-class-operation";
+
+register(
+  CreateSemanticClassType,
+  createSemanticClassExecutor,
+  "Create a semantic class",
+  "Create a semantic class in the given model."
+);
 
 interface CreateSemanticClassArguments extends CmeOperationArguments {
 
@@ -36,9 +47,6 @@ interface CreateSemanticClassArguments extends CmeOperationArguments {
 
 }
 
-const CreateSemanticClassType =
-  "create-semantic-class-operation";
-
 interface CreateSemanticClassResult
   extends CmeOperationResult<CreateSemanticClassArguments> {
 
@@ -49,13 +57,15 @@ interface CreateSemanticClassResult
 export type CreateSemanticClassOperation = [
   CreateSemanticClassArguments, CreateSemanticClassResult];
 
+/**
+ * @throws DataspecerError
+ */
 export async function createSemanticClassExecutor(
   context: CmeExecutionContext,
   args: CreateSemanticClassArguments,
 ): Promise<CreateSemanticClassResult> {
-  const model = findModel(
-    context.semanticModels, isInMemorySemanticModel, args.semanticModel);
-  //
+  const model = findSemanticModel(context, args);
+
   const operation = createClass({
     iri: args.iri,
     name: args.name ?? undefined,
@@ -63,19 +73,9 @@ export async function createSemanticClassExecutor(
     externalDocumentationUrl: args.externalDocumentationUrl ?? null,
   });
 
-  const result = model.executeOperation(operation);
-  if (result.success === false) {
-    throw new DataspecerOperationFailed();
-  }
+  const result = await executeCreateSemanticOperation(model, operation);
   return {
     args,
     created: (result as CreatedEntityOperationResult).id,
   };
 }
-
-register(
-  CreateSemanticClassType,
-  createSemanticClassExecutor,
-  "Create a semantic class",
-  "Create a new semantic class in the given model."
-);

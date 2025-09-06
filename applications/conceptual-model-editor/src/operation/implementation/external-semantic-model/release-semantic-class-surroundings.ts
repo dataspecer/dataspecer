@@ -3,13 +3,23 @@ import {
   ModelDsIdentifier,
 } from "@/dataspecer/entity-model";
 
-import { CmeOperationArguments, CmeOperationResult } from "../operation";
+import { CmeOperationArguments, CmeOperationResult } from "../../operation";
 import { findModel } from "../operation-utilities";
 import {
   CmeExecutionContext,
   register,
-} from "../operation-registry";
-import { isExternalSemanticModel } from "../../dataspecer/semantic-model";
+} from "../../operation-registry";
+import { isExternalSemanticModel } from "../../../dataspecer/semantic-model";
+
+const ReleaseSemanticClassSurroundingsType =
+  "release-class-surroundings-operation";
+
+register(
+  ReleaseSemanticClassSurroundingsType,
+  releaseClassSurroundingsExecutor,
+  "Release semantic class surrounding",
+  "For given semantic class release its surrounding to its semantic model."
+);
 
 export interface ReleaseSemanticClassSurroundingsArguments
   extends CmeOperationArguments {
@@ -21,9 +31,6 @@ export interface ReleaseSemanticClassSurroundingsArguments
   entity: EntityDsIdentifier;
 
 }
-
-const ReleaseSemanticClassSurroundingsType =
-  "release-class-surroundings-operation";
 
 type ReleaseClassSurroundingsResult =
   CmeOperationResult<ReleaseSemanticClassSurroundingsArguments>;
@@ -42,9 +49,3 @@ export async function releaseClassSurroundingsExecutor(
   return { args };
 }
 
-register(
-  ReleaseSemanticClassSurroundingsType,
-  releaseClassSurroundingsExecutor,
-  "Release semantic class surrounding",
-  "For given semantic class release its surrounding to its semantic model."
-);

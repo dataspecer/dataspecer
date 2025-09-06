@@ -38,6 +38,12 @@ export function SemanticModelToolbar(
         ✏
       </Button>
       <Button
+        action={Actions.ACTION_PROFILE_MODEL}
+        title="catalog.model.profile"
+      >
+        🧲
+      </Button>
+      <Button
         action={Actions.ACTION_SEMANTIC_MODEL_DELETE}
         title="catalog.model.delete"
       >
