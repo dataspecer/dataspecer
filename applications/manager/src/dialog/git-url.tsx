@@ -24,6 +24,7 @@ type GitURLDialogProps = {
   user?: string,
   gitProvider?: string,
   commitMessage?: string,
+  isUserRepo?: boolean,
 } | null>;
 
 const gitDialogInputIdPrefix = "git-dialog-prefix";
@@ -45,6 +46,7 @@ export const GitDialog = ({ input: defaultInput, inputPackage, isOpen, resolve, 
   const [user, setUser] = useState<string>("");
   const [gitProvider, setGitProvider] = useState<string>("https://github.com/");
   const [commitMessage, setCommitMessage] = useState<string>("");
+  const [isUserRepo, setIsUserRepo] = useState<boolean>(true);
 
   let suffixNumber = 0;
 
@@ -58,7 +60,7 @@ export const GitDialog = ({ input: defaultInput, inputPackage, isOpen, resolve, 
   const closeWithSuccess = () => {
     // TODO RadStr: Don't like this inputByUser
     const resultingInputByUser = type === "link-to-existing-repository" ? inputByUser : convertToValidRepositoryName(inputByUser);
-    resolve({ inputByUser: resultingInputByUser, user, gitProvider, commitMessage });
+    resolve({ inputByUser: resultingInputByUser, user, gitProvider, commitMessage, isUserRepo });
   }
 
   const shouldDisableConfirm = useMemo(() => {
@@ -98,6 +100,15 @@ export const GitDialog = ({ input: defaultInput, inputPackage, isOpen, resolve, 
         <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="The commit message for git" setInput={setCommitMessage} input={commitMessage} />
         <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git remote repository name" setInput={setInputByUser} input={inputByUser} />
         <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git provider URL (Should contain the schema and end with / - for example https://github.com/)" setInput={setGitProvider} input={gitProvider} />
+        <label className="flex items-center space-x-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isUserRepo}
+            onChange={(e) => setIsUserRepo(e.target.checked)}
+            className="w-5 h-5 border-gray-400 text-blue-600 focus:ring-blue-500"
+          />
+          <span className="text-gray-800">Is user repo (if not checked it is organization repo)</span>
+      </label>
       </div>;
       break;
     case "commit":
@@ -166,7 +177,8 @@ export const linkToGitRepoOnClickHandler = async (openModal: OpenBetterModal, ir
                                               "&givenRepositoryName=" + encodeURIComponent(result.inputByUser) +
                                               "&givenUserName=" + encodeURIComponent(result.user ?? "") +
                                               "&gitProviderURL=" + encodeURIComponent(result.gitProvider ?? "") +
-                                              "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "");
+                                              "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "") +
+                                              "&isUserRepo=" + encodeURIComponent(result.isUserRepo ?? "");
     // TODO RadStr: To test with docker I put the link-package-to-git code into export.zip, because for some reason docker didn't work with new API points
     // const url = import.meta.env.VITE_BACKEND + "/resources/export.zip?iri=" + encodeURIComponent(iri) +
     //                                           "&givenRepositoryName=" + encodeURIComponent(result.inputByUser) +

@@ -3,13 +3,12 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { resourceModel } from "../main.ts";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { extractPartOfRepositoryURL } from "../utils/git-utils.ts";
-import { WEBHOOK_HANDLER_URL } from "@dataspecer/git";
+import { extractPartOfRepositoryURL, stringToBoolean } from "../utils/git-utils.ts";
+import { ConfigType, WEBHOOK_HANDLER_URL } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { commitPackageToGitUsingAuthSession } from "./commit-package-to-git.ts";
 import { transformCommitMessageIfEmpty } from "../utils/git-utils.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-session.ts";
-import { ConfigType } from "../authorization/auth-config.ts";
 
 
 
@@ -34,6 +33,7 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
     givenRepositoryName: z.string().min(1),
     gitProviderURL: z.string().min(1),
     commitMessage: z.string(),
+    isUserRepo: z.string().min(1),
   });
 
   const query = querySchema.parse(request.query);
@@ -49,7 +49,7 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
   const fullLinkedGitRepositoryURL = gitProvider.createGitRepositoryURL(repositoryUserName, repoName);
   console.info("TODO RadStr: Debug gitProvider", { gitProvider, fullLinkedGitRepositoryURL });
 
-  const isUserRepo = repositoryUserName === sessionUserName;
+  const isUserRepo = stringToBoolean(query.isUserRepo);
   const { defaultBranch } = await gitProvider.createRemoteRepository(accessToken, repositoryUserName, repoName, isUserRepo);
   // TODO RadStr: Debug print ... for some reason there is max 10 repositories limit on school gitlab (idk if it is for creations a day or something)
   // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
