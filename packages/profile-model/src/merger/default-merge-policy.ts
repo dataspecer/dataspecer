@@ -1,15 +1,15 @@
 import {
-  ClassProfile,
-  GeneralizationProfile,
-  RelationshipEndProfile,
-  RelationshipProfile,
+  ProfileClass,
+  ProfileGeneralization,
+  ProfileRelationshipEnd,
+  ProfileRelationship,
 } from "../profile-model.ts";
 import { cardinalitiesIntersection } from "../utilities.ts";
 import { ProfileModelMergePolicy } from "./merge-policy.ts";
 
 class DefaultMergePolicy implements ProfileModelMergePolicy {
 
-  mergeClassProfile(left: ClassProfile, right: ClassProfile): ClassProfile {
+  mergeClassProfile(left: ProfileClass, right: ProfileClass): ProfileClass {
     return {
       id: left.id,
       type: left.type,
@@ -31,10 +31,10 @@ class DefaultMergePolicy implements ProfileModelMergePolicy {
   }
 
   mergeRelationshipProfile(
-    left: RelationshipProfile, right: RelationshipProfile,
-  ): RelationshipProfile {
+    left: ProfileRelationship, right: ProfileRelationship,
+  ): ProfileRelationship {
     const endsCount = Math.max(left.ends.length, right.ends.length);
-    const ends: RelationshipEndProfile[] = [];
+    const ends: ProfileRelationshipEnd[] = [];
     for (let index = 0; index < endsCount; ++index) {
       const leftEnd = left.ends[index];
       const rightEnd = right.ends[index];
@@ -49,8 +49,8 @@ class DefaultMergePolicy implements ProfileModelMergePolicy {
   }
 
   mergeGeneralizationProfile(
-    left: GeneralizationProfile, right: GeneralizationProfile,
-  ): GeneralizationProfile {
+    left: ProfileGeneralization, right: ProfileGeneralization,
+  ): ProfileGeneralization {
     return {
       id: left.id,
       type: left.type,
@@ -83,9 +83,9 @@ function mergeLanguageString(
 }
 
 function mergeRelationshipEndProfile(
-  left: RelationshipEndProfile | undefined,
-  right: RelationshipEndProfile | undefined,
-): RelationshipEndProfile {
+  left: ProfileRelationshipEnd | undefined,
+  right: ProfileRelationshipEnd | undefined,
+): ProfileRelationshipEnd {
   if (left === undefined) {
     return right!;
   } else if (right === undefined) {

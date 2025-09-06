@@ -13,7 +13,9 @@ import { createLogger } from "../../application";
 
 const logger = createLogger(import.meta.url);
 
-export interface CmeSemanticModelContext {
+export type CmeSemanticModelContext = CmeSemanticModelState;
+
+interface CmeSemanticModelContextType {
 
   state: CmeSemanticModelState;
 
@@ -24,10 +26,10 @@ export interface CmeSemanticModelContext {
 type Subscriptions = { [identifier: ModelDsIdentifier]: () => void };
 
 const CmeSemanticModelContextReact =
-  React.createContext<CmeSemanticModelContext>(null as any);
+  React.createContext<CmeSemanticModelContextType>(null as any);
 
 export const useCmeSemanticContext = (): CmeSemanticModelContext => {
-  return useContext(CmeSemanticModelContextReact);
+  return useContext(CmeSemanticModelContextReact).state;
 }
 
 export function CmeSemanticModelContextProvider(
@@ -40,7 +42,7 @@ export function CmeSemanticModelContextProvider(
   },
 ) {
 
-  const [state, setState] = useState<CmeSemanticModelContext>({
+  const [state, setState] = useState<CmeSemanticModelContextType>({
     state: createEmptyCmeSemanticModelState(),
     subscriptions: {},
   });
@@ -96,7 +98,7 @@ function updateSubscriptions(
     updated: Record<string, SemanticEntity>,
     removed: string[],
   ) => void,
-  prev: CmeSemanticModelContext,
+  prev: CmeSemanticModelContextType,
   semanticModels: SemanticModel[],
 ): Subscriptions {
   const subscriptions: Subscriptions = {};

@@ -52,19 +52,19 @@ export type ProfileEntity = Entity;
 
 export type ProfileEntityRecord = { [identifier: string]: ProfileEntity };
 
-export type ClassProfile = SemanticModelClassProfile;
+export type ProfileClass = SemanticModelClassProfile;
 
-export const isClassProfile = isSemanticModelClassProfile;
+export const isProfileClass = isSemanticModelClassProfile;
 
-export type RelationshipProfile = SemanticModelRelationshipProfile;
+export type ProfileRelationship = SemanticModelRelationshipProfile;
 
-export const isRelationshipProfile = isSemanticModelRelationshipProfile;
+export const isProfileRelationship = isSemanticModelRelationshipProfile;
 
-export type RelationshipEndProfile = SemanticModelRelationshipEndProfile;
+export type ProfileRelationshipEnd = SemanticModelRelationshipEndProfile;
 
-export type GeneralizationProfile = SemanticModelGeneralization;
+export type ProfileGeneralization = SemanticModelGeneralization;
 
-export const isGeneralizationProfile = isSemanticModelGeneralizationProfile;
+export const isProfileGeneralization = isSemanticModelGeneralizationProfile;
 
 export type ProfileOperation = Operation;
 

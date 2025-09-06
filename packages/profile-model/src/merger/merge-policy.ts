@@ -1,24 +1,24 @@
 import {
-  ClassProfile,
-  GeneralizationProfile,
-  RelationshipProfile,
+  ProfileClass,
+  ProfileGeneralization,
+  ProfileRelationship,
 } from "../profile-model.ts";
 
 export interface ProfileModelMergePolicy {
 
   mergeClassProfile(
-    left: ClassProfile,
-    right: ClassProfile,
-  ): ClassProfile;
+    left: ProfileClass,
+    right: ProfileClass,
+  ): ProfileClass;
 
   mergeRelationshipProfile(
-    left: RelationshipProfile,
-    right: RelationshipProfile,
-  ): RelationshipProfile;
+    left: ProfileRelationship,
+    right: ProfileRelationship,
+  ): ProfileRelationship;
 
   mergeGeneralizationProfile(
-    left: GeneralizationProfile,
-    right: GeneralizationProfile,
-  ): GeneralizationProfile;
+    left: ProfileGeneralization,
+    right: ProfileGeneralization,
+  ): ProfileGeneralization;
 
 }

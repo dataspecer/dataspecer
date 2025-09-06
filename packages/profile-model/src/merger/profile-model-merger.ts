@@ -1,15 +1,15 @@
 import { createIriResolver } from "@dataspecer/utilities";
 
 import {
-  isClassProfile,
-  isGeneralizationProfile,
-  isRelationshipProfile,
+  isProfileClass,
+  isProfileGeneralization,
+  isProfileRelationship,
   ProfileEntity,
   ProfileEntityRecord,
   ProfileModel,
-  ClassProfile,
-  GeneralizationProfile,
-  RelationshipProfile,
+  ProfileClass,
+  ProfileGeneralization,
+  ProfileRelationship,
 } from "../profile-model.ts";
 import { createDefaultMergePolicy } from "./default-merge-policy.ts";
 import { ProfileModelMergePolicy } from "./merge-policy.ts";
@@ -68,24 +68,24 @@ function handleNew(
   urlResolver: UrlResolver,
   entity: ProfileEntity,
 ): ProfileEntity | null {
-  if (isClassProfile(entity)) {
+  if (isProfileClass(entity)) {
     return {
       ...entity,
       iri: urlResolver(entity.iri),
-    } as ClassProfile;
-  } else if (isRelationshipProfile(entity)) {
+    } as ProfileClass;
+  } else if (isProfileRelationship(entity)) {
     return {
       ...entity,
       ends: entity.ends.map(item => ({
         ...item,
         iri: urlResolver(item.iri),
       }))
-    } as RelationshipProfile;
-  } else if (isGeneralizationProfile(entity)) {
+    } as ProfileRelationship;
+  } else if (isProfileGeneralization(entity)) {
     return {
       ...entity,
       iri: urlResolver(entity.iri),
-    } as GeneralizationProfile;
+    } as ProfileGeneralization;
   } else {
     // We ignore unknown entity.
     console.warn("Ignored entity of unknown type for merge.", { entity });
@@ -98,11 +98,11 @@ function handleConflict(
   previous: ProfileEntity,
   next: ProfileEntity,
 ): ProfileEntity | null {
-  if (isClassProfile(previous) && isClassProfile(next)) {
+  if (isProfileClass(previous) && isProfileClass(next)) {
     return policy.mergeClassProfile(previous, next);
-  } else if (isRelationshipProfile(previous) && isRelationshipProfile(next)) {
+  } else if (isProfileRelationship(previous) && isProfileRelationship(next)) {
     return policy.mergeRelationshipProfile(previous, next);
-  } else if (isGeneralizationProfile(previous) && isGeneralizationProfile(next)) {
+  } else if (isProfileGeneralization(previous) && isProfileGeneralization(next)) {
     return policy.mergeGeneralizationProfile(previous, next);
   } else {
     // We ignore type mismatch.

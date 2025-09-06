@@ -1,14 +1,14 @@
 import {
-  ClassProfile,
-  GeneralizationProfile,
-  isClassProfile,
-  isGeneralizationProfile,
-  isRelationshipProfile,
+  ProfileClass,
+  ProfileGeneralization,
+  isProfileClass,
+  isProfileGeneralization,
+  isProfileRelationship,
   ProfileEntity,
   ProfileEntityRecord,
   ProfileModel,
-  RelationshipEndProfile,
-  RelationshipProfile,
+  ProfileRelationshipEnd,
+  ProfileRelationship,
 } from "../profile-model.ts";
 import { cardinalitiesIntersection } from "../utilities.ts";
 
@@ -63,11 +63,11 @@ function createProfileEntityRecord(
 function flattenEntity(
   dependencies: ProfileEntityRecord, entity: ProfileEntity,
 ): ProfileEntity | null {
-  if (isClassProfile(entity)) {
+  if (isProfileClass(entity)) {
     return flattenClassProfile(dependencies, entity);
-  } else if (isRelationshipProfile(entity)) {
+  } else if (isProfileRelationship(entity)) {
     return flattenRelationshipProfile(dependencies, entity);
-  } else if (isGeneralizationProfile(entity)) {
+  } else if (isProfileGeneralization(entity)) {
     return flattenGeneralizationProfile(entity);
   } else {
     // We ignore unknown entity.
@@ -78,12 +78,12 @@ function flattenEntity(
 
 export function flattenClassProfile(
   dependencies: ProfileEntityRecord,
-  profile: ClassProfile,
-): ClassProfile {
+  profile: ProfileClass,
+): ProfileClass {
   // Name
   let name = profile.name;
   let nameFromProfiled = profile.nameFromProfiled;
-  walkProfiles(dependencies, isClassProfile, (next) => {
+  walkProfiles(dependencies, isProfileClass, (next) => {
     name = next.name;
     nameFromProfiled = next.nameFromProfiled;
     return next.nameFromProfiled;
@@ -91,7 +91,7 @@ export function flattenClassProfile(
   // Description
   let description = profile.description;
   let descriptionFromProfiled = profile.descriptionFromProfiled;
-  walkProfiles(dependencies, isClassProfile, (next) => {
+  walkProfiles(dependencies, isProfileClass, (next) => {
     description = next.description;
     descriptionFromProfiled = next.descriptionFromProfiled;
     return next.descriptionFromProfiled;
@@ -99,13 +99,13 @@ export function flattenClassProfile(
   // UsageNote
   let usageNote = profile.usageNote;
   let usageNoteFromProfiled = profile.usageNoteFromProfiled;
-  walkProfiles(dependencies, isClassProfile, (next) => {
+  walkProfiles(dependencies, isProfileClass, (next) => {
     usageNote = next.usageNote;
     usageNoteFromProfiled = next.usageNoteFromProfiled;
     return next.usageNoteFromProfiled;
   }, usageNoteFromProfiled);
   // Profiling
-  let profiling = collectProfiling(dependencies, isClassProfile,
+  let profiling = collectProfiling(dependencies, isProfileClass,
     (next) => next.profiling, profile.profiling);
   return {
     id: profile.id,
@@ -181,8 +181,8 @@ function collectProfiling<ProfileType extends ProfileEntity>(
 
 export function flattenRelationshipProfile(
   dependencies: ProfileEntityRecord,
-  profile: RelationshipProfile,
-): RelationshipProfile {
+  profile: ProfileRelationship,
+): ProfileRelationship {
   return {
     id: profile.id,
     type: profile.type,
@@ -213,7 +213,7 @@ export function flattenRelationshipProfile(
       }, usageNoteFromProfiled, index);
       // Profiling and cardinality.
       let cardinality: [number, number | null] | null = null;
-      let profiling = collectProfiling(dependencies, isRelationshipProfile,
+      let profiling = collectProfiling(dependencies, isProfileRelationship,
         (next) => {
           let nextEnd = next.ends[index];
           if (nextEnd === undefined) {
@@ -246,11 +246,11 @@ export function flattenRelationshipProfile(
 
 function walkRelationshipEndProfiles(
   dependencies: ProfileEntityRecord,
-  callback: (profile: RelationshipEndProfile) => string | null,
+  callback: (profile: ProfileRelationshipEnd) => string | null,
   identifier: string | null,
   index: number,
 ): void {
-  walkProfiles(dependencies, isRelationshipProfile, (next) => {
+  walkProfiles(dependencies, isProfileRelationship, (next) => {
     let nextEnd = next.ends[index];
     if (nextEnd === undefined) {
       return null;
@@ -260,8 +260,8 @@ function walkRelationshipEndProfiles(
 }
 
 export function flattenGeneralizationProfile(
-  profile: GeneralizationProfile,
-): GeneralizationProfile {
+  profile: ProfileGeneralization,
+): ProfileGeneralization {
   // There is nothing to profile, generalization is complete as it is.
   return profile;
 }
