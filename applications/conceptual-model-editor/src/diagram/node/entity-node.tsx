@@ -185,9 +185,9 @@ function ProfileOf({ options, profileOf }: {
   return (
     <div className="text-gray-600">
       profile&nbsp;of&nbsp;
-      <span>
-        {labels.filter(item => item !== null).join(", ")}
-      </span>
+      <ul className="inline-grid">
+        {labels.filter(item => item !== null).map(item => <li>{item}</li>)}
+      </ul>
     </div>
   )
 }
