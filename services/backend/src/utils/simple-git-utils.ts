@@ -114,6 +114,7 @@ export const createSimpleGit = (
 ): SimpleGitUniqueInitialDirectory => {
     const uniqueDirectory = createUniqueDirectory(iri, cloneDirectoryNamePrefix);
     const git = simpleGit(uniqueDirectory.gitInitialDirectory);
+
     return {
         ...uniqueDirectory,
         git,
