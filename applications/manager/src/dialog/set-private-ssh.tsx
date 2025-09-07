@@ -16,6 +16,7 @@ export default function SetPrivateSSHKeyDialog({ isOpen, resolve }: SetPrivateSS
     try {
       const response = await fetch(import.meta.env.VITE_BACKEND + "/git/set-private-ssh-key", {
         method: "POST",
+        credentials: "include",   // We have to include them since we store it under user
         headers: {
           "Content-Type": "application/json",
         },
@@ -45,7 +46,7 @@ export default function SetPrivateSSHKeyDialog({ isOpen, resolve }: SetPrivateSS
           </ModalDescription>
         </ModalHeader>
         <ModalBody>
-          <form onSubmit={handleSubmit} >
+          <form id="send-private-ssh-key-form" onSubmit={handleSubmit} >
             <input
               type="password"
               className="w-full grow"
@@ -57,7 +58,7 @@ export default function SetPrivateSSHKeyDialog({ isOpen, resolve }: SetPrivateSS
         </ModalBody>
         <ModalFooter className="flex flex-row">
           <Button variant="outline" onClick={() => resolve(null)}>Cancel</Button>
-          <Button type="submit" onClick={() => resolve(null)} disabled={privateSSHKey === ""}>Confirm</Button>
+          <Button type="submit" form="send-private-ssh-key-form" disabled={privateSSHKey === ""}>Confirm</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>

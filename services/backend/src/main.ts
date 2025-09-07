@@ -53,6 +53,7 @@ import { updateMergeState } from "./routes/update-merge-state.ts";
 import { finishMergeState } from "./routes/finish-merge-state.ts";
 import { createMergeState } from "./routes/create-merge-state.ts";
 import { clearMergeStateTableDebug } from "./routes/debug-clear-merge-state-table.ts";
+import { storePrivateSSHKey } from "./routes/store-private-ssh-key.ts";
 
 // Create application models
 
@@ -224,6 +225,7 @@ application.get(apiBasename + "/git/deprecated-test", currentSession, tryCommitT
 application.post(apiBasename + "/git/webhook-test", currentSession, handleWebhook);
 application.post(apiBasename + "/git/webhook-test2", currentSession, handleWebhook);
 application.get(apiBasename + "/git/webhook-test", currentSession, createRandomWebook);
+application.post(apiBasename + "/git/set-private-ssh-key", currentSession, storePrivateSSHKey);
 application.get(apiBasename + "/git/link-package-to-git", currentSession, createLinkBetweenPackageAndGit);
 application.get(apiBasename + "/git/commit-package-to-git", currentSession, commitPackageToGitHandler);
 application.get(apiBasename + "/git/remove-git-repository", currentSession, removeGitRepository);

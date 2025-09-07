@@ -134,11 +134,14 @@ function createAuthConfig(configType: ConfigType | null, callerURL?: string): Ex
         }
         if (account) {
           if (account.provider === "github") {
+            token.providerAccountId = account.providerAccountId;
             token.scope = account.scope;
             token.genericScope = account?.scope
               ?.split(",")
               ?.map(providerSpecificScopeValue => GitHubProvider.convertProviderScopeToGenericScopeStatic(providerSpecificScopeValue as GitHubScope)) ?? null;
           }
+
+          token.accountProvider = account.provider;
         }
 
         return token;
@@ -153,6 +156,8 @@ function createAuthConfig(configType: ConfigType | null, callerURL?: string): Ex
         // Get the scope from the JWT
         user.scope = token.scope;
         user.genericScope = token.genericScope;
+        user.accountProvider = token.accountProvider;
+        user.providerAccountId = token.providerAccountId;
 
         return session;
       },
