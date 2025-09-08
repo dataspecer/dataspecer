@@ -28,7 +28,7 @@ import { ReadmeTemplateData } from "../git-readme/readme-template.ts";
 import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
 import { AvailableExports } from "../export-import/export-actions.ts";
 import { createSimpleGit, gitCloneBasic } from "../utils/simple-git-utils.ts";
-import { configPathLinuxSeparators, createUserSSHIdentifier } from "./store-private-ssh-key.ts";
+import { createUserSSHIdentifier } from "./store-private-ssh-key.ts";
 
 
 
@@ -134,19 +134,14 @@ export const commitPackageToGit = async (
   // TODO RadStr:
 
   // const repoURLWithAuthorization = getRepoURLWithAuthorization(remoteRepositoryURL, committer.name, givenRepositoryUserName, givenRepositoryName, committer.accessToken);
-  // const repoURLWithAuthorization = `git@${createUserSSHIdentifier(response.locals.session.user)}:${givenRepositoryUserName}/${givenRepositoryName}.git`
-  const repoURLWithAuthorization = `git@${createUserSSHIdentifier(response.locals.session.user)}:${givenRepositoryUserName}/${givenRepositoryName}.git`
+  // const repoURLWithAuthorization = `git@${createUserSSHIdentifier(response.locals.session.user)}:${givenRepositoryUserName}/${givenRepositoryName}.git`;
+  const repoURLWithAuthorization = `git@${createUserSSHIdentifier(response.locals.session.user)}:${givenRepositoryUserName}/${givenRepositoryName}.git`;
 
   // TODO RadStr: Remove the following line - just the old debug variant
   // const repoURLWithAuthorization = getRepoURLWithAuthorizationUsingDebugPatToken(remoteRepositoryURL, givenRepositoryName);
 
   // Up until here same as exportPackageResource except for own implementation of PackageExporter, now just commit and push
   const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGit(iri, "commit-package-to-git-dir");
-  // We have to use linux path separators (which is better anyways), because putting \\ inside "" results in \\\\ (and without "" it results into empty string)
-  await git.raw(["config", "core.sshCommand", `ssh -F "${configPathLinuxSeparators}"`]);
-  await git.env({
-    GIT_SSH_COMMAND: `ssh -vvv -F "${configPathLinuxSeparators}"`
-  }).raw(["ls-remote", "origin"]);
 
   try {
     await gitCloneBasic(git, gitInitialDirectory, repoURLWithAuthorization, true, false, branch ?? undefined, 1);
@@ -179,6 +174,7 @@ export const commitPackageToGit = async (
       throw cloneError2;    // Just rethrow the error
     }
   }
+
 
   try {
     const exporter = new PackageExporterByResourceType();

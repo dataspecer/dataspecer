@@ -2,7 +2,7 @@ import { getSession, Session } from "@auth/express"
 import express, { NextFunction } from "express"
 import { createBasicAuthConfig, createAuthConfigBasedOnAccountScope } from "./auth-config.ts"
 import { asyncHandler } from "../utils/async-handler.ts";
-import { ConfigType, GitCredentials, GitProvider } from "@dataspecer/git";
+import { AccessToken, AccessTokenType, ConfigType, GitCredentials, GitProvider } from "@dataspecer/git";
 import { getToken } from "@auth/core/jwt"
 import { AUTH_SECRET } from "../git-never-commit.ts";
 import { convertExpressRequestToNormalRequest } from "../utils/git-utils.ts";
@@ -96,7 +96,7 @@ export const getGitCredentialsFromSession = (response: express.Response, wantedA
   return {
     committerName,
     committerEmail,
-    committerAccessToken
+    committerAccessToken,
   };
 };
 
@@ -115,9 +115,38 @@ export const getGitCredentialsFromSessionWithDefaults = (
   const { committerName, committerEmail, committerAccessToken } = getGitCredentialsFromSession(response, wantedAccessTokenLevels);
   const botCredentials = gitProvider.getBotCredentials();
 
+  const isBotName = committerName === null;
+  const isBotEmail = committerEmail === null;
+
+  const botTokens: AccessToken[] = [];
+    if (GIT_RAD_STR_BOT_SSH_ID)
+    {
+      type: AccessTokenType.SSH,
+      value: "TODO RadStr:",
+      isBotAccessToken: true,
+    },
+    {
+      type: AccessTokenType.PAT,
+      value: "TODO RadStr:",
+      isBotAccessToken: true,
+    }
+  ];
+
+  const accessTokens: AccessToken[] = [
+    {
+
+    },
+    {
+
+    },
+    ...botTokens,
+  ]
+
   return {
     name: committerName ?? botCredentials.name,
+    isBotName,
     email: committerEmail ?? botCredentials.email,
-    accessToken: committerAccessToken ?? botCredentials.accessToken,
+    isBotEmail,
+    accessTokens,
   };
 };

@@ -6,10 +6,31 @@ export type ConvertRepoURLToDownloadZipURLReturnType = {
   commitReferenceValueInfo: ExtractedCommitReferenceValueFromRepositoryURL,
 };
 
+export enum AccessTokenType {
+  PAT,
+  SSH,
+}
+
+export interface AccessToken {
+  type: AccessTokenType,
+  value: string;
+  isBotAccessToken: boolean;
+}
+
 export type GitCredentials = {
   name: string;
+  isBotName: boolean;
   email: string;
-  accessToken: string;
+  isBotEmail: boolean;
+  /**
+   * Should be sorted by try order - that is the user ones shoudl be first, bot ones last.
+   *  Right now there are at most 4 possible authorization to repository types:
+   *   1) SSH key for user
+   *   2) Access token from OAuth for user (PAT)
+   *   3) SSH key for bot
+   *   4) Access token from bot (PAT)
+   */
+  accessTokens: AccessToken[];
 };
 // TODO RadStr: Always keep the webhook-test (respectively the part of url after /)
 
