@@ -7,6 +7,7 @@ import { asyncHandler } from "../utils/async-handler.ts";
 
 import express from "express";
 import { ConfigType } from "@dataspecer/git";
+import { findPatAccessToken } from "./create-package-git-link.ts";
 
 /**
  * Removes Git repository with iri given in query part of request.
@@ -41,7 +42,11 @@ export const removeGitRepository = asyncHandler(async (request: express.Request,
   }
 
   const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(repositoryURL);
-  const { accessToken } = getGitCredentialsFromSessionWithDefaults(gitProvider, response, [ConfigType.DeleteRepoControl]);
+  const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, response, [ConfigType.DeleteRepoControl]);
+  const accessToken = findPatAccessToken(accessTokens);
+  if (accessToken === null) {
+    throw new Error("There is neither user or bot pat token to perform the removal of remote git repository.");
+  }
 
 
   // TODO RadStr: Again - I have the full URL, I don't need to deconstruct it and then construct it back

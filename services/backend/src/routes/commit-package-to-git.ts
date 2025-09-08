@@ -14,10 +14,10 @@ import { currentVersion } from "../tools/migrations/index.ts";
 import configuration from "../configuration.ts";
 
 import fs from "fs";
-import { getRepoURLWithAuthorization, getRepoURLWithAuthorizationUsingDebugPatToken } from "../git-never-commit.ts";
+import { getRepoURLWithAuthorizationUsingDebugPatToken } from "../git-never-commit.ts";
 import { simpleGit, SimpleGit } from "simple-git";
-import { extractPartOfRepositoryURL } from "../utils/git-utils.ts";
-import { AvailableFilesystems, ConfigType, GitCredentials, GitProvider } from "@dataspecer/git";
+import { extractPartOfRepositoryURL, getAuthorizationURL } from "../utils/git-utils.ts";
+import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
 import YAML from "yaml";
@@ -28,7 +28,6 @@ import { ReadmeTemplateData } from "../git-readme/readme-template.ts";
 import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
 import { AvailableExports } from "../export-import/export-actions.ts";
 import { createSimpleGit, gitCloneBasic } from "../utils/simple-git-utils.ts";
-import { createUserSSHIdentifier } from "./store-private-ssh-key.ts";
 
 
 
@@ -103,7 +102,7 @@ export const commitPackageToGitUsingAuthSession = async (
   // If gitProvider not given - get it
   gitProvider ??= GitProviderFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL);
   const committer = getGitCredentialsFromSessionWithDefaults(gitProvider, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
-  await commitPackageToGit(iri, remoteRepositoryURL, branch, lastCommitHash, givenRepositoryUserName, givenRepositoryName, committer, commitMessage, gitProvider, response);
+  await commitPackageToGit(iri, remoteRepositoryURL, branch, lastCommitHash, givenRepositoryUserName, givenRepositoryName, committer, commitMessage, gitProvider);
 }
 
 
@@ -119,92 +118,78 @@ export const commitPackageToGit = async (
   lastCommitHash: string,
   givenRepositoryUserName: string,
   givenRepositoryName: string,
-  committer: GitCredentials,
+  gitCredentials: GitCredentials,
   commitMessage: string | null,
   gitProvider: GitProvider,
-  // TODO RadStr: !!! response is just for debug now
-  response: express.Response,
 ) => {
   if (commitMessage === null) {
     commitMessage = createUniqueCommitMessage();
   }
-
-  // TODO RadStr: ... If we fail, then we should try to commit using bot credentials + We should also report the issue
-
-  // TODO RadStr:
-
-  // const repoURLWithAuthorization = getRepoURLWithAuthorization(remoteRepositoryURL, committer.name, givenRepositoryUserName, givenRepositoryName, committer.accessToken);
-  // const repoURLWithAuthorization = `git@${createUserSSHIdentifier(response.locals.session.user)}:${givenRepositoryUserName}/${givenRepositoryName}.git`;
-  const repoURLWithAuthorization = `git@${createUserSSHIdentifier(response.locals.session.user)}:${givenRepositoryUserName}/${givenRepositoryName}.git`;
-
-  // TODO RadStr: Remove the following line - just the old debug variant
-  // const repoURLWithAuthorization = getRepoURLWithAuthorizationUsingDebugPatToken(remoteRepositoryURL, givenRepositoryName);
-
-  // Up until here same as exportPackageResource except for own implementation of PackageExporter, now just commit and push
   const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGit(iri, "commit-package-to-git-dir");
-
-  try {
-    await gitCloneBasic(git, gitInitialDirectory, repoURLWithAuthorization, true, false, branch ?? undefined, 1);
-  }
-  catch (cloneError: any) {
-    const hasSetLastCommit: boolean = lastCommitHash !== "";
+  for (const accessToken of gitCredentials.accessTokens) {
+    const repoURLWithAuthorization = getAuthorizationURL(gitCredentials, accessToken, remoteRepositoryURL, givenRepositoryUserName, givenRepositoryName);
+    const isLastAccessToken = accessToken === gitCredentials.accessTokens.at(-1);
 
     try {
-      // It is possible that the branch is newly created inside DS.
-      // It is newly possible (since Git 2.49 from March 2025) to easily fetch specific commit using git options
-      // https://stackoverflow.com/questions/31278902/how-to-shallow-clone-a-specific-commit-with-depth-1
-      if (hasSetLastCommit) {
-        const options = [
-          "--depth", "1",
-          "--revision", lastCommitHash,
-        ];
-        await git.clone(repoURLWithAuthorization, ".", options);
+      await gitCloneBasic(git, gitInitialDirectory, repoURLWithAuthorization, true, false, branch ?? undefined, 1);
+    }
+    catch (cloneError: any) {
+      const hasSetLastCommit: boolean = lastCommitHash !== "";
+
+      try {
+        // It is possible that the branch is newly created inside DS.
+        // It is newly possible (since Git 2.49 from March 2025) to easily fetch specific commit using git options
+        // https://stackoverflow.com/questions/31278902/how-to-shallow-clone-a-specific-commit-with-depth-1
+        if (hasSetLastCommit) {
+          const options = [
+            "--depth", "1",
+            "--revision", lastCommitHash,
+          ];
+          await git.clone(repoURLWithAuthorization, ".", options);
+        }
+        else {
+          // Just try to get whole history and hopefully it will work.
+          await git.clone(repoURLWithAuthorization, ".");
+        }
+        if (branch !== null) {
+          await git.checkoutLocalBranch(branch);
+        }
       }
-      else {
-        // Just try to get whole history and hopefully it will work.
-        await git.clone(repoURLWithAuthorization, ".");
-      }
-      if (branch !== null) {
-        await git.checkoutLocalBranch(branch);
+      catch(cloneError2: any)  {
+        if (isLastAccessToken) {
+          throw cloneError2;       // Every access token failed
+        }
+        continue;
       }
     }
-    catch(cloneError2: any)  {
-      console.error("Can not clone repository before commiting from DS", cloneError, cloneError2);
+
+
+    try {
+      const exporter = new PackageExporterByResourceType();
+      await exporter.doExportFromIRI(iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem);
+
+      const readmeData: ReadmeTemplateData = {
+        dataspecerUrl: "http://localhost:5174",
+        publicationRepositoryUrl: `${gitProvider.getDomainURL(true)}/${givenRepositoryUserName}/${givenRepositoryName}-publication-repo`,  // TODO RadStr: Have to fix once we will use better mechanism to name the publication repos
+      };
+      createReadmeFile(gitInitialDirectory, readmeData);      // TODO RadStr: Again - should be done only in the initial commit
+
+      gitProvider.copyWorkflowFiles(gitInitialDirectory);
+
+      const commitResult = await commitGivenFilesToGit(git, ["."], commitMessage, gitCredentials.name, gitCredentials.email);
+      if (commitResult.commit !== "") {
+        await git.push(repoURLWithAuthorization);
+        await resourceModel.updateLastCommitHash(iri, commitResult.commit);
+      }
+      // Else no changes
+      break;    // We are done
+    }
+    finally {
+      // It is important to not only remove the actual files, but also the .git directory,
+      // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
       fs.rmSync(gitDirectoryToRemoveAfterWork, { recursive: true, force: true });
-      throw cloneError2;    // Just rethrow the error
     }
   }
-
-
-  try {
-    const exporter = new PackageExporterByResourceType();
-    await exporter.doExportFromIRI(iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem);
-
-    const readmeData: ReadmeTemplateData = {
-      dataspecerUrl: "http://localhost:5174",
-      publicationRepositoryUrl: `${gitProvider.getDomainURL(true)}/${givenRepositoryUserName}/${givenRepositoryName}-publication-repo`,  // TODO RadStr: Have to fix once we will use better mechanism to name the publication repos
-    };
-    createReadmeFile(gitInitialDirectory, readmeData);      // TODO RadStr: Again - should be done only in the initial commit
-
-    gitProvider.copyWorkflowFiles(gitInitialDirectory);
-
-    const commitResult = await commitGivenFilesToGit(git, ["."], commitMessage, committer.name, committer.email);
-    if (commitResult.commit !== "") {
-      await git.push(repoURLWithAuthorization);
-      await resourceModel.updateLastCommitHash(iri, commitResult.commit);
-    }
-    // Else no changes
-
-  }
-  finally {
-    // It is important to not only remove the actual files, but also the .git directory,
-    // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
-    fs.rmSync(gitDirectoryToRemoveAfterWork, { recursive: true, force: true });
-  }
-
-    // TODO RadStr: REMOVE THIS !!! (even though it really does not matter since user can't access server logs)
-    // console.info("PUSHING USING", repoURLWithAuthorization);
-    // console.info("BOT PAT TOKEN is as follows", GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN);
 };
 
 

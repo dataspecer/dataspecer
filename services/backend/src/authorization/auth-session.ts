@@ -2,10 +2,11 @@ import { getSession, Session } from "@auth/express"
 import express, { NextFunction } from "express"
 import { createBasicAuthConfig, createAuthConfigBasedOnAccountScope } from "./auth-config.ts"
 import { asyncHandler } from "../utils/async-handler.ts";
-import { AccessToken, AccessTokenType, ConfigType, GitCredentials, GitProvider } from "@dataspecer/git";
+import { AccessToken, AccessTokenType, ConfigType, CommitterInfo, GitProvider, GitCredentials } from "@dataspecer/git";
 import { getToken } from "@auth/core/jwt"
 import { AUTH_SECRET } from "../git-never-commit.ts";
 import { convertExpressRequestToNormalRequest } from "../utils/git-utils.ts";
+import { createUserSSHIdentifier } from "../routes/store-private-ssh-key.ts";
 
 
 export async function currentSession(
@@ -82,6 +83,8 @@ export const getGitCredentialsFromSession = (response: express.Response, wantedA
   let committerName: string | null = null;
   let committerEmail: string | null = null;
   let committerAccessToken: string | null = null;
+  let committerSSH: string | null = null;
+
   const currentSession = getStoredSession(response);
   if (currentSession !== null) {
     committerName = currentSession.user?.name ?? null;
@@ -91,12 +94,15 @@ export const getGitCredentialsFromSession = (response: express.Response, wantedA
     if (configType !== null && wantedAccessTokenLevels.includes(configType)) {
       committerAccessToken = (currentSession.user as any)?.accessToken ?? null;
     }
+
+    committerSSH = createUserSSHIdentifier(currentSession.user);
   }
 
   return {
     committerName,
     committerEmail,
     committerAccessToken,
+    committerSSH,
   };
 };
 
@@ -112,40 +118,39 @@ export const getGitCredentialsFromSessionWithDefaults = (
   response: express.Response,
   wantedAccessTokenLevels: ConfigType[]
 ): GitCredentials => {
-  const { committerName, committerEmail, committerAccessToken } = getGitCredentialsFromSession(response, wantedAccessTokenLevels);
+  const { committerName, committerEmail, committerAccessToken, committerSSH } = getGitCredentialsFromSession(response, wantedAccessTokenLevels);
   const botCredentials = gitProvider.getBotCredentials();
 
   const isBotName = committerName === null;
   const isBotEmail = committerEmail === null;
 
-  const botTokens: AccessToken[] = [];
-    if (GIT_RAD_STR_BOT_SSH_ID)
-    {
+  const accessTokens: AccessToken[] = [];
+
+  if (committerSSH !== null) {
+    accessTokens.push({
+      isBotAccessToken: false,
       type: AccessTokenType.SSH,
-      value: "TODO RadStr:",
-      isBotAccessToken: true,
-    },
-    {
+      value: committerSSH,
+    });
+  }
+
+
+  if (committerAccessToken !== null) {
+    accessTokens.push({
+      isBotAccessToken: false,
       type: AccessTokenType.PAT,
-      value: "TODO RadStr:",
-      isBotAccessToken: true,
-    }
-  ];
+      value: committerAccessToken,
+    });
+  }
 
-  const accessTokens: AccessToken[] = [
-    {
-
-    },
-    {
-
-    },
-    ...botTokens,
-  ]
+  if (botCredentials !== null) {
+    accessTokens.push(...botCredentials.accessTokens);
+  }
 
   return {
-    name: committerName ?? botCredentials.name,
+    name: committerName ?? botCredentials?.name ?? "uknown-name",
     isBotName,
-    email: committerEmail ?? botCredentials.email,
+    email: committerEmail ?? botCredentials?.email ?? "unknown-email",
     isBotEmail,
     accessTokens,
   };

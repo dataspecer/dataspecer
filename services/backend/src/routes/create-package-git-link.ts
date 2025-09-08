@@ -4,7 +4,7 @@ import express from "express";
 import { resourceModel } from "../main.ts";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { extractPartOfRepositoryURL, stringToBoolean } from "../utils/git-utils.ts";
-import { ConfigType, WEBHOOK_HANDLER_URL } from "@dataspecer/git";
+import { AccessToken, AccessTokenType, ConfigType, WEBHOOK_HANDLER_URL } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { commitPackageToGitUsingAuthSession } from "./commit-package-to-git.ts";
 import { transformCommitMessageIfEmpty } from "../utils/git-utils.ts";
@@ -20,6 +20,11 @@ import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-
 
 function getName(name: LanguageString | undefined, defaultName: string) {
   return name?.["cs"] || name?.["en"] || defaultName;
+}
+
+export function findPatAccessToken(accessTokens: AccessToken[] | null | undefined): string | null {
+  const accessToken = accessTokens?.find(token => token.type === AccessTokenType.PAT)?.value;
+  return accessToken ?? null;
 }
 
 
@@ -39,7 +44,12 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
   const query = querySchema.parse(request.query);
 
   const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(query.gitProviderURL);
-  const { name: sessionUserName, accessToken } = getGitCredentialsFromSessionWithDefaults(gitProvider, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
+  const { name: sessionUserName, accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
+  const accessToken = findPatAccessToken(accessTokens);
+  if (accessToken === null) {
+    throw new Error("There is neither user or bot pat token to perform operations needed to create the link. For example creating remote repo");
+  }
+
   const repositoryUserName = query.givenUserName.length === 0 ? sessionUserName : query.givenUserName;
 
   const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
@@ -59,10 +69,18 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
 
   // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
   // console.info({createPublicationRepositoryResult});
-  const setRepositorySecretResult = await gitProvider.setRepositorySecret(repositoryUserName, repoName, accessToken, "BOT_PAT_TOKEN", gitProvider.getBotCredentials().accessToken);
 
-  // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
-  // console.info({setRepositorySecretResult});
+  const botAccessToken = findPatAccessToken(gitProvider.getBotCredentials()?.accessTokens);
+  if (botAccessToken === null) {
+    // TODO RadStr: Somehow give this text to user so he knwos that he has to set the pat token to the repo so we can push to publish repo
+    console.error("The bot has not defined access token");
+  }
+  else {
+    const setRepositorySecretResult = await gitProvider.setRepositorySecret(repositoryUserName, repoName, accessToken, "BOT_PAT_TOKEN", botAccessToken);
+    // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
+    // console.info({setRepositorySecretResult});
+  }
+
 
   await gitProvider.createWebhook(accessToken, repositoryUserName, repoName, WEBHOOK_HANDLER_URL, ["push"]);
 
@@ -110,7 +128,11 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
     return;
   }
   // TODO: Maybe also provide variant which takes the full URL, since above I am splitting it for no reason
-  const { accessToken } = getGitCredentialsFromSessionWithDefaults(gitProvider, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
+  const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
+  const accessToken = findPatAccessToken(accessTokens);
+  if (accessToken === null) {
+    throw new Error("There is neither user or bot pat token to perform operations needed to create the link. For example creating remote repo");
+  }
   await gitProvider.createWebhook(accessToken, repositoryUserName, repoName, WEBHOOK_HANDLER_URL, ["push"]);
 
   // TODO RadStr: Not sure about the "" if I decide to use it, but I can not use anything else

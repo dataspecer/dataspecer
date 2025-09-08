@@ -1,6 +1,6 @@
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
-import { CommitReferenceType, createRemoteRepositoryReturnType, GitCredentials, GitProviderEnum, Scope, WebhookRequestDataProviderIndependent } from "@dataspecer/git";
+import { CommitReferenceType, createRemoteRepositoryReturnType, CommitterInfo, GitProviderEnum, Scope, WebhookRequestDataProviderIndependent, GitCredentials } from "@dataspecer/git";
 import { GitProviderBase } from "../git-provider-base.ts";
 import { gitProviderDomains } from "../git-provider-factory.ts";
 
@@ -136,7 +136,7 @@ export class GitLabProvider extends GitProviderBase {
     };
   }
 
-  getBotCredentials(): GitCredentials {
+  getBotCredentials(): GitCredentials | null {
     // TODO RadStr: ... We won't, I am not giving out PAT for my mff account
     // TODO RadStr: So definitely remove the credentials and keep the error after we are done with testing
     // TODO RadStr: Just remove

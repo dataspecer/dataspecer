@@ -1,17 +1,18 @@
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
 
-import { GIT_RAD_STR_BOT_EMAIL, GIT_RAD_STR_BOT_USERNAME, GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN } from "../../git-never-commit.ts";
+import { GIT_RAD_STR_BOT_EMAIL, GIT_RAD_STR_BOT_SSH_ID, GIT_RAD_STR_BOT_USERNAME, GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN } from "../../git-never-commit.ts";
 import { GITHUB_USER_AGENT } from "../../utils/git-utils.ts";
 
 import fs from "fs";
 
 // Using this one since I could not make the ones for nodeJS (one is not using ES modules and the other one seems to be too old and correctly support types)
 import sodium from "libsodium-wrappers-sumo";
-import { CommitReferenceType, createRemoteRepositoryReturnType, GitCredentials, GitProviderEnum, Scope, WebhookRequestDataProviderIndependent } from "@dataspecer/git";
+import { CommitReferenceType, createRemoteRepositoryReturnType, CommitterInfo, GitProviderEnum, Scope, WebhookRequestDataProviderIndependent, GitCredentials, AccessToken, AccessTokenType } from "@dataspecer/git";
 import { GitProviderBase } from "../git-provider-base.ts";
 import { resourceModel } from "../../main.ts";
 import { createLinksForFiles, gitProviderDomains } from "../git-provider-factory.ts";
+import { findPatAccessToken } from "../../routes/create-package-git-link.ts";
 
 const scopes = ["read:user", "user:email", "public_repo", "workflow", "delete_repo"] as const;
 export type GitHubScope = typeof scopes[number];
@@ -179,11 +180,34 @@ export class GitHubProvider extends GitProviderBase {
     };
   }
 
-  getBotCredentials(): GitCredentials {
+  getBotCredentials(): GitCredentials | null {
+    const accessTokens: AccessToken[] = [];
+
+    if (GIT_RAD_STR_BOT_SSH_ID !== undefined) {
+      accessTokens.push({
+        isBotAccessToken: true,
+        type: AccessTokenType.SSH,
+        value: GIT_RAD_STR_BOT_SSH_ID,
+      });
+    }
+    if (GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN !== undefined) {
+      accessTokens.push({
+        isBotAccessToken: true,
+        type: AccessTokenType.PAT,
+        value: GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN,
+      });
+    }
+
+    if (accessTokens.length === 0 || GIT_RAD_STR_BOT_USERNAME === undefined || GIT_RAD_STR_BOT_EMAIL === undefined) {
+      return null;
+    }
+
     return {
       name: GIT_RAD_STR_BOT_USERNAME,
+      isBotName: true,
       email: GIT_RAD_STR_BOT_EMAIL,
-      accessToken: GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN,
+      isBotEmail: true,
+      accessTokens,
     };
   }
 
@@ -195,8 +219,12 @@ export class GitHubProvider extends GitProviderBase {
 
     // Adding collaborator
     // https://docs.github.com/en/rest/collaborators/collaborators?apiVersion=2022-11-28#add-a-repository-collaborator
+    const botCredentials = this.getBotCredentials();
+    if (botCredentials === null) {
+      throw new Error("Name of bot is not defined, we can not add him as a collaborator to repository");
+    }
 
-    const restEndPointToAddCollaborator = `https://api.github.com/repos/${repositoryUserName}/${repoName}/collaborators/${GIT_RAD_STR_BOT_USERNAME}`;
+    const restEndPointToAddCollaborator = `https://api.github.com/repos/${repositoryUserName}/${repoName}/collaborators/${botCredentials.name}`;
 
     // TODO RadStr: Maybe better permissions - or also could specify them in given method arguments
     const payload = {
@@ -227,7 +255,10 @@ export class GitHubProvider extends GitProviderBase {
 
     // Accepting invitation
     // https://docs.github.com/en/rest/collaborators/invitations?apiVersion=2022-11-28#accept-a-repository-invitation
-    const botAccessToken = this.getBotCredentials().accessToken;
+    const botAccessToken = findPatAccessToken(botCredentials.accessTokens);
+    if (botAccessToken === null) {
+      throw new Error("There is not defined bot access token, so bot can not accept collaborator invitation");
+    }
     const acceptInvitationRestEndpoint = `https://api.github.com/user/repository_invitations/${invitationIdentifier}`;
 
     const acceptInvitationFetchResponse = httpFetch(acceptInvitationRestEndpoint, {
@@ -318,8 +349,17 @@ export class GitHubProvider extends GitProviderBase {
 
   async createPublicationRepository(repoName: string, isUserRepo: boolean, repositoryUserName?: string, accessToken?: string): Promise<FetchResponse> {
     const botCredentials = this.getBotCredentials();
+    if (botCredentials === null) {
+      throw new Error("Can not create publication repository, since there are no bot credentials");
+    }
+    const botAccessToken = findPatAccessToken(botCredentials.accessTokens);
+
     repositoryUserName = repositoryUserName ?? botCredentials.name;
-    accessToken = accessToken ?? botCredentials.accessToken;
+    accessToken = accessToken ?? (botAccessToken ?? undefined);
+    if (accessToken === undefined) {
+      throw new Error("Can not create publication repository, since there is no access token - neiter from user and from bot");
+    }
+
     await this.createRemoteRepository(accessToken, repositoryUserName, repoName, isUserRepo);
     await this.setBotAsCollaborator(repositoryUserName, repoName, accessToken);
     return this.enableGitHubPages(repoName, repositoryUserName, accessToken)

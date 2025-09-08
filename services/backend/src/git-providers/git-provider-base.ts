@@ -1,5 +1,5 @@
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
-import { CommitReferenceType, ConvertRepoURLToDownloadZipURLReturnType, createRemoteRepositoryReturnType, ExtractedCommitReferenceValueFromRepositoryURL, GitCredentials, GitProvider, GitProviderEnum, RepositoryURLParts, Scope, WebhookRequestDataProviderIndependent } from "@dataspecer/git";
+import { CommitReferenceType, ConvertRepoURLToDownloadZipURLReturnType, createRemoteRepositoryReturnType, ExtractedCommitReferenceValueFromRepositoryURL, CommitterInfo, GitProvider, GitProviderEnum, RepositoryURLParts, Scope, WebhookRequestDataProviderIndependent, GitCredentials } from "@dataspecer/git";
 import { simpleGit } from "simple-git";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
@@ -13,7 +13,7 @@ export abstract class GitProviderBase implements GitProvider {
   abstract createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean): Promise<createRemoteRepositoryReturnType>;
   abstract removeRemoteRepository(authToken: string, repositoryUserName: string, repoName: string): Promise<FetchResponse>;
   abstract createWebhook(authToken: string, repositoryOwner: string, repositoryName: string, webhookHandlerURL: string, webhookEvents: string[]): Promise<FetchResponse>;
-  abstract getBotCredentials(): GitCredentials;
+  abstract getBotCredentials(): GitCredentials | null;
   abstract setBotAsCollaborator(repositoryUserName: string, repoName: string, accessToken: string): Promise<FetchResponse>;
   abstract setRepositorySecret(repositoryUserName: string, repoName: string, accessToken: string, secretKey: string, secretValue: string): Promise<FetchResponse>;
   abstract createPublicationRepository(repoName: string, isUserRepo: boolean, repositoryUserName?: string, accessToken?: string): Promise<FetchResponse>;
