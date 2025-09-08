@@ -9,6 +9,7 @@ export function toCmeProfileRelationshipAggregate(
     return {
       type: "cme-profile-relationship-aggregate",
       identifier: next.identifier,
+      model: next.model,
       dependencies: [next.identifier],
       profileModels: [next.model],
       iri: next.iri,
@@ -34,6 +35,7 @@ export function toCmeProfileRelationshipAggregate(
     return {
       type: "cme-profile-relationship-aggregate",
       identifier: next.identifier,
+      model: previous.model,
       dependencies: [next.identifier, ...previous.dependencies],
       profileModels: [next.model, ...previous.profileModels],
       iri: next.iri,

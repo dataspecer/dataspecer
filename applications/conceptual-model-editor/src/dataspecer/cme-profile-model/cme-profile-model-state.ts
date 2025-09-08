@@ -1,46 +1,46 @@
 import {
-  isSemanticModelClass,
-  isSemanticModelGeneralization,
-  isSemanticModelRelationship,
-} from "@dataspecer/core-v2/semantic-model/concepts";
+  isSemanticModelClassProfile,
+  isSemanticModelGeneralizationProfile,
+  isSemanticModelRelationshipProfile,
+} from "@dataspecer/profile-model";
 
 import {
-  CmeSemanticClass,
-  CmeSemanticGeneralization,
-  CmeSemanticModel,
-  CmeSemanticRelationship,
-  isCmeSemanticModelReadOnly,
+  CmeProfileClass,
+  CmeProfileGeneralization,
+  CmeProfileModel,
+  CmeProfileRelationship,
+  isCmeProfileModelReadOnly,
 } from "./model";
-import { SemanticEntity, SemanticModel } from "../semantic-model";
+import { ProfileEntity, ProfileModel } from "../profile-model";
 import { ModelDsIdentifier } from "../entity-model";
 import {
-  toCmeSemanticClass,
-  toCmeSemanticGeneralization,
-  toCmeSemanticModel,
-  toCmeSemanticRelationship,
+  toCmeProfileClass,
+  toCmeProfileGeneralization,
+  toCmeProfileModel,
+  toCmeProfileRelationship,
 } from "./adapter";
-import { CmeSemanticEntity } from "./model/cme-semantic-entity";
+import { CmeProfileEntity } from "./model/cme-profile-entity";
 import { EntityDsIdentifier } from "../entity-model";
 
-export interface CmeSemanticModelState {
+export interface CmeProfileModelState {
 
-  classes: CmeSemanticClass[];
+  classes: CmeProfileClass[];
+
+  /**
+   * Warning! This contains both semantic and profile generalizations.
+   */
+  generalizations: CmeProfileGeneralization[];
+
+  relationships: CmeProfileRelationship[];
 
   /**
    * Warning! This contains both semantic and profile data.
    */
-  generalizations: CmeSemanticGeneralization[];
-
-  relationships: CmeSemanticRelationship[];
-
-  /**
-   * Warning! This contains both semantic and profile data.
-   */
-  models: CmeSemanticModel[];
+  models: CmeProfileModel[];
 
 }
 
-export function createEmptyCmeSemanticModelState(): CmeSemanticModelState {
+export function createEmptyCmeProfileModelState(): CmeProfileModelState {
   return {
     classes: [],
     generalizations: [],
@@ -49,36 +49,33 @@ export function createEmptyCmeSemanticModelState(): CmeSemanticModelState {
   };
 }
 
-/**
- * @returns A new state with updated entities.
- */
-export function updateEntitiesInSemanticModel(
-  state: CmeSemanticModelState,
-  model: CmeSemanticModel,
-  entities: SemanticEntity[],
-): CmeSemanticModelState {
-  const readOnly = isCmeSemanticModelReadOnly(model);
+export function updateEntitiesInProfileModel(
+  state: CmeProfileModelState,
+  model: CmeProfileModel,
+  entities: ProfileEntity[],
+): CmeProfileModelState {
+  const readOnly = isCmeProfileModelReadOnly(model)
   // We start with nulls and only create an array when we need it.
   let classes = null;
   let generalizations = null;
-  let relationships = null; ``
+  let relationships = null;
   for (const entity of entities) {
-    if (isSemanticModelClass(entity)) {
-      const next = toCmeSemanticClass(
+    if (isSemanticModelClassProfile(entity)) {
+      const next = toCmeProfileClass(
         model.identifier, readOnly, entity);
       if (classes === null) {
         classes = [...state.classes];
       }
       updateOrAddEntity(classes, next);
-    } else if (isSemanticModelGeneralization(entity)) {
-      const next = toCmeSemanticGeneralization(
+    } else if (isSemanticModelGeneralizationProfile(entity)) {
+      const next = toCmeProfileGeneralization(
         model.identifier, readOnly, entity);
       if (generalizations === null) {
         generalizations = [...state.generalizations];
       }
       updateOrAddEntity(generalizations, next);
-    } else if (isSemanticModelRelationship(entity)) {
-      const next = toCmeSemanticRelationship(
+    } else if (isSemanticModelRelationshipProfile(entity)) {
+      const next = toCmeProfileRelationship(
         model.identifier, readOnly, entity);
       if (relationships === null) {
         relationships = [...state.relationships];
@@ -100,7 +97,7 @@ export function updateEntitiesInSemanticModel(
 /**
  * Update entity in-place or add it to the end.
  */
-function updateOrAddEntity<Type extends CmeSemanticEntity>(
+function updateOrAddEntity<Type extends CmeProfileEntity>(
   items: Type[],
   value: Type,
 ): void {
@@ -115,14 +112,11 @@ function updateOrAddEntity<Type extends CmeSemanticEntity>(
   }
 }
 
-/**
- * @returns A new state with removed entities.
- */
-export function removeEntitiesFromSemanticModel(
-  state: CmeSemanticModelState,
+export function removeEntitiesFromProfileModel(
+  state: CmeProfileModelState,
   model: ModelDsIdentifier,
-  entities: EntityDsIdentifier[]
-): CmeSemanticModelState {
+  entities: EntityDsIdentifier[],
+): CmeProfileModelState {
   return {
     ...state,
     classes: removeEntities(state.classes, model, entities),
@@ -131,7 +125,7 @@ export function removeEntitiesFromSemanticModel(
   };
 }
 
-function removeEntities<Type extends CmeSemanticEntity>(
+function removeEntities<Type extends CmeProfileEntity>(
   items: Type[],
   model: ModelDsIdentifier,
   removed: EntityDsIdentifier[],
@@ -143,15 +137,15 @@ function removeEntities<Type extends CmeSemanticEntity>(
 /**
  * @returns A new state reflecting change in models.
  */
-export function updateSemanticModels(
-  prev: CmeSemanticModelState,
-  semanticModels: SemanticModel[],
-): CmeSemanticModelState {
+export function updateProfileModels(
+  prev: CmeProfileModelState,
+  ProfileModels: ProfileModel[],
+): CmeProfileModelState {
 
-  const models: CmeSemanticModel[] = [];
+  const models: CmeProfileModel[] = [];
 
-  // Collect removed models and add new models.
-  const nextIdentifiers = semanticModels.map(item => item.getId());
+  // Collect removed models.
+  const nextIdentifiers = ProfileModels.map(item => item.getId());
   const removedModels: ModelDsIdentifier[] = [];
   for (const model of prev.models) {
     const identifier = model.identifier;
@@ -164,22 +158,22 @@ export function updateSemanticModels(
 
   // Collect new models.
   const prevIdentifiers = prev.models.map(item => item.identifier);
-  const addedModels: [SemanticModel, CmeSemanticModel][] = [];
-  for (const model of semanticModels) {
+  const addedModels: [ProfileModel, CmeProfileModel][] = [];
+  for (const model of ProfileModels) {
     const identifier = model.getId()
     if (prevIdentifiers.includes(identifier)) {
       // We already have representation of the model.
       continue;
     } else {
       // Add a new model.
-      const newModel = toCmeSemanticModel(model);
+      const newModel = toCmeProfileModel(model);
       models.push(newModel);
       addedModels.push([model, newModel]);
     }
   }
 
   // Prepare new state.
-  let result: CmeSemanticModelState =
+  let result: CmeProfileModelState =
     removedModels.length === 0 ? {
       ...prev,
       models,
@@ -193,26 +187,26 @@ export function updateSemanticModels(
       models,
     };
 
-  // We just use the update method on all entities.
+  // Add entities from new model
   addedModels.forEach(([model, cmeModel]) => {
-    result = updateEntitiesInSemanticModel(
+    result = updateEntitiesInProfileModel(
       result, cmeModel, Object.values(model.getEntities()));
   });
 
   return result;
 }
 
-function removeEntitiesByModels<Type extends CmeSemanticEntity>(
+function removeEntitiesByModels<Type extends CmeProfileEntity>(
   items: Type[],
   removedModels: ModelDsIdentifier[],
 ): Type[] {
   return items.filter(item => !removedModels.includes(item.model));
 }
 
-export function createCmeSemanticModelState(
-  semanticModels: SemanticModel[],
-): CmeSemanticModelState {
-  return updateSemanticModels(
-    createEmptyCmeSemanticModelState(),
-    semanticModels);
+export function createCmeProfileModelState(
+  profileModels: ProfileModel[],
+): CmeProfileModelState {
+  return updateProfileModels(
+    createEmptyCmeProfileModelState(),
+    profileModels);
 }

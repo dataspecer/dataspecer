@@ -1,10 +1,16 @@
-import { EntityDsIdentifier } from "../../entity-model";
+import { EntityDsIdentifier, ModelDsIdentifier } from "../../entity-model";
 
 export interface CmeEntityAggregate {
 
   type: string;
 
   identifier: EntityDsIdentifier;
+
+  /**
+   * Identifier of a primary model where this entity belongs.
+   * Use this to select a color.
+   */
+  model: ModelDsIdentifier;
 
   /**
    * Identifiers of entities this entity aggregate depends on.

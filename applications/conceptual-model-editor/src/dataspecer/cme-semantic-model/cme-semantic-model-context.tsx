@@ -5,17 +5,15 @@ import { ModelDsIdentifier } from "../entity-model";
 import {
   CmeSemanticModelState,
   createEmptyCmeSemanticModelState,
-  removeEntitiesFromModel,
-  updateEntitiesInModel,
+  removeEntitiesFromSemanticModel,
+  updateEntitiesInSemanticModel,
   updateSemanticModels,
 } from "./cme-semantic-model-state";
 import { createLogger } from "../../application";
 
 const logger = createLogger(import.meta.url);
 
-export type CmeSemanticModelContext = CmeSemanticModelState;
-
-interface CmeSemanticModelContextType {
+interface CmeSemanticModelContext {
 
   state: CmeSemanticModelState;
 
@@ -26,13 +24,13 @@ interface CmeSemanticModelContextType {
 type Subscriptions = { [identifier: ModelDsIdentifier]: () => void };
 
 const CmeSemanticModelContextReact =
-  React.createContext<CmeSemanticModelContextType>(null as any);
+  React.createContext<CmeSemanticModelContext>(null as any);
 
-export const useCmeSemanticContext = (): CmeSemanticModelContext => {
+export const useCmeSemanticModelState = (): CmeSemanticModelState => {
   return useContext(CmeSemanticModelContextReact).state;
 }
 
-export function CmeSemanticModelContextProvider(
+export function CmeSemanticModelProvider(
   props: {
     /**
      * The value must change if there is a new model.
@@ -42,7 +40,7 @@ export function CmeSemanticModelContextProvider(
   },
 ) {
 
-  const [state, setState] = useState<CmeSemanticModelContextType>({
+  const [state, setState] = useState<CmeSemanticModelContext>({
     state: createEmptyCmeSemanticModelState(),
     subscriptions: {},
   });
@@ -61,8 +59,8 @@ export function CmeSemanticModelContextProvider(
         return prev;
       }
       //
-      const state = removeEntitiesFromModel(
-        updateEntitiesInModel(prev.state, model, Object.values(updated)),
+      const state = removeEntitiesFromSemanticModel(
+        updateEntitiesInSemanticModel(prev.state, model, Object.values(updated)),
         model.identifier, removed);
       return {
         ...prev,
@@ -76,8 +74,7 @@ export function CmeSemanticModelContextProvider(
     setState(prev => {
       const subscriptions = updateSubscriptions(
         onEntitiesDidChange, prev, semanticModels);
-      const state = updateSemanticModels(
-        prev.state, semanticModels);
+      const state = updateSemanticModels(prev.state, semanticModels);
       return {
         subscriptions,
         state,
@@ -98,7 +95,7 @@ function updateSubscriptions(
     updated: Record<string, SemanticEntity>,
     removed: string[],
   ) => void,
-  prev: CmeSemanticModelContextType,
+  prev: CmeSemanticModelContext,
   semanticModels: SemanticModel[],
 ): Subscriptions {
   const subscriptions: Subscriptions = {};

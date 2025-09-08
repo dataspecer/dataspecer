@@ -9,6 +9,7 @@ export function toCmeSemanticRelationshipAggregate(
     return {
       type: "cme-semantic-relationship-aggregate",
       identifier: next.identifier,
+      model: next.model,
       dependencies: [next.identifier],
       semanticModels: [next.model],
       iri: next.iri,
@@ -25,6 +26,7 @@ export function toCmeSemanticRelationshipAggregate(
     return {
       type: "cme-semantic-relationship-aggregate",
       identifier: next.identifier,
+      model: previous.model,
       dependencies: [next.identifier, ...previous.dependencies],
       semanticModels: [next.model, ...previous.semanticModels],
       iri: next.iri,

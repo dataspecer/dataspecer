@@ -9,6 +9,7 @@ export function toCmeSemanticClassAggregate(
     return {
       type: "cme-semantic-class-aggregate",
       identifier: next.identifier,
+      model: next.model,
       dependencies: [next.identifier],
       semanticModels: [next.model],
       iri: next.iri,
@@ -21,6 +22,7 @@ export function toCmeSemanticClassAggregate(
     return {
       type: "cme-semantic-class-aggregate",
       identifier: previous.identifier,
+      model: previous.model,
       dependencies: [next.identifier, ...previous.dependencies],
       semanticModels: [next.model, ...previous.semanticModels],
       iri: next.iri,

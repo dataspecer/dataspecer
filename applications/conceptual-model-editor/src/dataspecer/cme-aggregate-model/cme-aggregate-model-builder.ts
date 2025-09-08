@@ -16,7 +16,8 @@ import {
   toCmeSemanticClassAggregate,
   toCmeSemanticRelationshipAggregate,
 } from "./adapter";
-import { CmeAggregateModelContext } from "./cme-aggregate-model-context";
+import { CmeAggregateModelApi } from "./cme-aggregate-model-api";
+import { CmeAggregateModelState } from "./cme-aggregate-model-state";
 import {
   CmeGeneralizationAggregate,
   CmeProfileClassAggregate,
@@ -24,17 +25,19 @@ import {
   CmeSemanticClassAggregate,
   CmeSemanticRelationshipAggregate,
 } from "./model";
-import { resolveSources } from "./utilities";
+import { resolveSources } from "./utilities-internal";
 
-interface CmeAggregateModelBuilder {
+interface CmeAggregateModel {
 
   fromClassesContext(context: ClassesContextType): void;
 
-  buildContext(): CmeAggregateModelContext;
+  buildApi(): CmeAggregateModelApi;
+
+  buildState(): CmeAggregateModelState;
 
 }
 
-class DefaultCmeAggregateModelBuilder implements CmeAggregateModelBuilder {
+class DefaultCmeAggregateModelBuilder implements CmeAggregateModel {
 
   profileModels: Record<string, CmeProfileModel> = {};
 
@@ -85,6 +88,7 @@ class DefaultCmeAggregateModelBuilder implements CmeAggregateModelBuilder {
       this.generalizations[semantic.identifier] = {
         type: "cme-generalization-aggregate",
         identifier: semantic.identifier,
+        model: semantic.model,
         models: [semantic.model],
         dependencies: [semantic.identifier],
         readOnly: false,
@@ -95,66 +99,75 @@ class DefaultCmeAggregateModelBuilder implements CmeAggregateModelBuilder {
     });
   }
 
-  buildContext(): CmeAggregateModelContext {
-
-    resolveSources(this.semanticClasses, this.profileClasses,
-      item => item.nameSource,
-      item => item.name,
-      item => item.name,
-      (item, value) => ({ ...item, nameAggregate: value }));
-    resolveSources(this.semanticClasses, this.profileClasses,
-      item => item.descriptionSource,
-      item => item.description,
-      item => item.description,
-      (item, value) => ({ ...item, descriptionAggregate: value }));
-    resolveSources(this.semanticClasses, this.profileClasses,
-      item => item.usageNoteSource,
-      () => null,
-      item => item.usageNote,
-      (item, value) => ({ ...item, usageNoteAggregate: value }));
-
-    resolveSources(this.semanticRelationships, this.profileRelationships,
-      item => item.nameSource,
-      item => item.name,
-      item => item.name,
-      (item, value) => ({ ...item, nameAggregate: value }));
-    resolveSources(this.semanticRelationships, this.profileRelationships,
-      item => item.descriptionSource,
-      item => item.description,
-      item => item.description,
-      (item, value) => ({ ...item, descriptionAggregate: value }));
-    resolveSources(this.semanticRelationships, this.profileRelationships,
-      item => item.usageNoteSource,
-      () => null,
-      item => item.usageNote,
-      (item, value) => ({ ...item, usageNoteAggregate: value }));
-
+  buildApi(): CmeAggregateModelApi {
+    this.resolveSources();
     return {
-      profileModels: Object.values(this.profileModels),
-      profileClasses: Object.values(this.profileClasses),
       profileClass: id => this.profileClasses[id] ?? null,
-      profileRelationships: Object.values(this.profileRelationships),
       profileRelationship: id => this.profileRelationships[id] ?? null,
-      semanticModels: Object.values(this.semanticModels),
-      semanticClasses: Object.values(this.semanticClasses),
       semanticClass: id => this.semanticClasses[id] ?? null,
-      semanticRelationships: Object.values(this.semanticRelationships),
       semanticRelationship: id => this.semanticRelationships[id] ?? null,
-      generalizations: Object.values(this.generalizations),
       generalization: id => this.generalizations[id] ?? null,
+    };
+  }
+
+  private resolveSources() {
+    // Profiles classes
+    resolveSources(this.semanticClasses, this.profileClasses,
+      item => item.nameSource,
+      item => item.name,
+      item => item.name,
+      (item, value) => ({ ...item, nameAggregate: value }));
+    resolveSources(this.semanticClasses, this.profileClasses,
+      item => item.descriptionSource,
+      item => item.description,
+      item => item.description,
+      (item, value) => ({ ...item, descriptionAggregate: value }));
+    resolveSources(this.semanticClasses, this.profileClasses,
+      item => item.usageNoteSource,
+      () => null,
+      item => item.usageNote,
+      (item, value) => ({ ...item, usageNoteAggregate: value }));
+    // Profile relationships
+    resolveSources(this.semanticRelationships, this.profileRelationships,
+      item => item.nameSource,
+      item => item.name,
+      item => item.name,
+      (item, value) => ({ ...item, nameAggregate: value }));
+    resolveSources(this.semanticRelationships, this.profileRelationships,
+      item => item.descriptionSource,
+      item => item.description,
+      item => item.description,
+      (item, value) => ({ ...item, descriptionAggregate: value }));
+    resolveSources(this.semanticRelationships, this.profileRelationships,
+      item => item.usageNoteSource,
+      () => null,
+      item => item.usageNote,
+      (item, value) => ({ ...item, usageNoteAggregate: value }));
+  }
+
+  buildState(): CmeAggregateModelState {
+    this.resolveSources();
+    return {
+      profileModels: this.profileModels,
+      profileClasses: this.profileClasses,
+      profileRelationships: this.profileRelationships,
+      semanticModels: this.semanticModels,
+      semanticClasses: this.semanticClasses,
+      semanticRelationships: this.semanticRelationships,
+      generalizations: this.generalizations,
     };
   }
 
 }
 
-export function createCmeAggregateModelBuilder(): CmeAggregateModelBuilder {
+export function createCmeAggregateModelBuilder(): CmeAggregateModel {
   return new DefaultCmeAggregateModelBuilder();
 }
 
 export function createCmeAggregateModelContextFromClassesContext(
   context: ClassesContextType,
-): CmeAggregateModelContext {
+): CmeAggregateModelState {
   const builder = new DefaultCmeAggregateModelBuilder();
   builder.fromClassesContext(context);
-  return builder.buildContext();
+  return builder.buildState();
 }
