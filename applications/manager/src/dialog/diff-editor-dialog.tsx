@@ -14,7 +14,8 @@ import { TabsContent } from "@radix-ui/react-tabs";
 import SvgVisualDiff from "@/components/images-conflict-resolver";
 import { MonacoDiffEditor } from "@/components/monaco-diff-editor";
 import { fetchMergeState } from "./open-merge-state";
-import { ClientFilesystem, ComparisonData, DatastoreInfo, EditableType, MergeState } from "@dataspecer/git";
+import { ClientFilesystem, ComparisonData, DatastoreInfo, EditableType, MergeResolverStrategy, MergeState } from "@dataspecer/git";
+import { MergeStrategyComponent } from "@/components/merge-strategy-component";
 
 
 export type ChangeActiveModelMethod = (
@@ -123,8 +124,6 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
   const activeOriginalContent = originalDatastoreInfo === null ? "" : cacheForOriginalTextContent[originalDatastoreInfo.fullPath]?.[originalDatastoreInfo.type] ?? "";
   const activeModifiedContent = modifiedDatastoreInfo === null ? "" : cacheForModifiedTextContent[modifiedDatastoreInfo.fullPath]?.[modifiedDatastoreInfo.type] ?? "";
 
-  const [_mergeStrategy, setMergeStrategy] = useState<string>("");
-
   useOnBeforeUnload(true);
   useOnKeyDown(e => {
     if (e.key === "s" && e.ctrlKey) {
@@ -215,8 +214,12 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
     if (originalDatastoreInfo !== null && modifiedDatastoreInfo !== null) {
       await changeActiveModel(originalDatastoreInfo, modifiedDatastoreInfo, false);
     }
-  }
+  };
 
+  const handleMergeStateResolving = (mergeStrategy: MergeResolverStrategy) => {
+    const mergeResolveResult = mergeStrategy.resolve(activeOriginalContent, activeModifiedContent);
+    console.info({mergeResolveResult});     // TODO RadStr: For now just print
+  };
 
   const closeWithSuccess = () => {
     // TODO RadStr: Don't know if it can ever be undefined, so for now just ?, but in future change the type to string only and use !. instead of ?.
@@ -398,31 +401,9 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
                     </TabsContent>
                     <TabsContent value="text-compare">
                       <div className="flex items-center space-x-4">
-                      <div className="flex flex-row">
-                        <label htmlFor="merge-strategy" className="font-black text-base">
-                          Merge strategy:
-                        </label>
+                        <MergeStrategyComponent handleMergeStateResolving={handleMergeStateResolving}/>
+                        <RotateCw className="flex ml-1 h-4 w-4" onClick={() => reloadModelsDataFromBackend()} />
                       </div>
-                      <div className="flex flex-row">
-                        <select id="merge-strategy-select"
-                          className="px-2 py-1 text-base text-gray-900 bg-gray-100 border
-                            border-gray-300 shadow-[inset_1px_1px_0_#fff] focus:outline-none focus:ring-0 "
-                          value="operation-merge-strategy"
-                          onChange={(event) => setMergeStrategy(event.target.value)}>
-                          <option value="operation-merge-strategy">
-                            Operation merge strategy
-                          </option>
-                          <option value="do-nothing-merge-strategy">
-                            Do nothing merge strategy
-                          </option>
-                          <option value="force-overwrite-merge-strategy">
-                            Force overwrite merge strategy
-                          </option>
-                        </select>
-                      </div>
-                      <Button className="p-2 bg-blue-500 text-white rounded">Resolve using merge strategy</Button>
-                      </div>
-                      <RotateCw className="flex ml-1 h-4 w-4" onClick={() => reloadModelsDataFromBackend()} />
                       {/* The h-screen is needed otherwise the monaco editor is not shown at all */}
                       {/* Also small note - there is loading effect when first starting up the editor, it is not any custom made functionality */}
                       <MonacoDiffEditor className="flex-1 -ml-16 h-screen" refs={monacoEditor} originalContent={activeOriginalContent} editable={editable} modifiedContent={activeModifiedContent} language="text" />
