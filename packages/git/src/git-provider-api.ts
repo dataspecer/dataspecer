@@ -17,11 +17,14 @@ export interface AccessToken {
   isBotAccessToken: boolean;
 }
 
-export type GitCredentials = {
+export type CommitterInfo = {
   name: string;
   isBotName: boolean;
   email: string;
   isBotEmail: boolean;
+};
+
+export type GitCredentials = CommitterInfo & {
   /**
    * Should be sorted by try order - that is the user ones shoudl be first, bot ones last.
    *  Right now there are at most 4 possible authorization to repository types:
@@ -153,7 +156,7 @@ export interface GitProvider {
   /**
    * Returns the bot credentials for the concrete git provider.
    */
-  getBotCredentials(): GitCredentials;
+  getBotCredentials(): GitCredentials | null;
 
   /**
    * Sets default bot for this git provider as a collaborator for given {@link}

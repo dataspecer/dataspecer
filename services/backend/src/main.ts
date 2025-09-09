@@ -53,9 +53,14 @@ import { updateMergeState } from "./routes/update-merge-state.ts";
 import { finishMergeState } from "./routes/finish-merge-state.ts";
 import { createMergeState } from "./routes/create-merge-state.ts";
 import { clearMergeStateTableDebug } from "./routes/debug-clear-merge-state-table.ts";
-import { storePrivateSSHKey } from "./routes/store-private-ssh-key.ts";
+import { storeNewPrivateSSHKeyToBackend, storePrivateSSHKey } from "./routes/store-private-ssh-key.ts";
+import { GIT_RAD_STR_BOT_SSH_ID, GIT_RAD_STR_BOT_SSH_PRIVATE_KEY } from "./git-never-commit.ts";
 
 // Create application models
+
+if (GIT_RAD_STR_BOT_SSH_PRIVATE_KEY !== undefined && GIT_RAD_STR_BOT_SSH_ID !== undefined) {
+  storeNewPrivateSSHKeyToBackend(GIT_RAD_STR_BOT_SSH_PRIVATE_KEY, GIT_RAD_STR_BOT_SSH_ID);
+}
 
 export const storeModel = new LocalStoreModel("./database/stores");
 export const prismaClient = new PrismaClient();

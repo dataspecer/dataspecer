@@ -675,7 +675,7 @@ export const createRandomWebook = asyncHandler(async (request: express.Request, 
   // The token has to have commiting rights
   const webhookResponse = GitProviderFactory
     .createGitProvider(GitProviderEnum.GitHub)
-    .createWebhook(GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN, OWNER, REPO, WEBHOOK_HANDLER_URL, ["push", "pull_request"]);
+    .createWebhook(GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN ?? "", OWNER ?? "undefined-owner", REPO, WEBHOOK_HANDLER_URL, ["push", "pull_request"]);
 
   const data = (await webhookResponse).json();
   console.log("Fetched webhook response: ", data);

@@ -30,6 +30,7 @@ const relativizeAgainstHomeDir = (givenPath: string): string => {
 
 const sshKeysRootDirectory = path.resolve("./ds-users/.ssh");
 export const sshDSConfigPath = path.resolve(`${sshKeysRootDirectory}/config`);
+fs.rmdirSync(sshKeysRootDirectory);      // TODO RadStr: Not sure if we should remove it. However for debugging it is necessary.
 const sshDSConfigPathRelativeToHomeDir = relativizeAgainstHomeDir(sshDSConfigPath);
 
 
@@ -44,14 +45,30 @@ export const storePrivateSSHKey = asyncHandler(async (request: express.Request, 
     response.sendStatus(401);
     return;
   }
+  const userSSHIdentifer = createUserSSHIdentifier(authenticatedUser);
 
   const { privateSSHKey } = bodySchema.parse(request.body);
 
+  storeNewPrivateSSHKeyToBackend(privateSSHKey, userSSHIdentifer);
+
+  response.status(200);
+  return;
+});
+
+
+export const createUserSSHIdentifier = (authenticatedUser: any | null | undefined): string | null => {
+  if (authenticatedUser === null || authenticatedUser === undefined) {
+    return null;
+  }
+  const userSSHIdentifer = `${authenticatedUser.accountProvider}-${authenticatedUser.providerAccountId}`;
+  return userSSHIdentifer;
+};
+
+export function storeNewPrivateSSHKeyToBackend(privateSSHKey: string, userSSHIdentifer: string | null) {
   const fileContent = wrapPrivateKey(privateSSHKey);
 
-  fs.mkdirSync(sshKeysRootDirectory, {recursive: true});
+  fs.mkdirSync(sshKeysRootDirectory, { recursive: true });
 
-  const userSSHIdentifer = createUserSSHIdentifier(authenticatedUser);
   const privateSSHKeyFilePath = path.normalize(`${sshKeysRootDirectory}/private-ssh-key-${userSSHIdentifer}`);
   fs.writeFileSync(privateSSHKeyFilePath, fileContent);
 
@@ -74,13 +91,4 @@ export const storePrivateSSHKey = asyncHandler(async (request: express.Request, 
       fs.appendFileSync(homeDirectorySSHConfigPath, `\n${includesStringForConfig}`);
     }
   }
-
-  response.status(200);
-  return;
-});
-
-
-export const createUserSSHIdentifier = (authenticatedUser: any) => {
-  const userSSHIdentifer = `${authenticatedUser.accountProvider}-${authenticatedUser.providerAccountId}`;
-  return userSSHIdentifer;
-};
+}
