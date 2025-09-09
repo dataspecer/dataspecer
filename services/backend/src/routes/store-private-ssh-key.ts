@@ -51,7 +51,7 @@ export const storePrivateSSHKey = asyncHandler(async (request: express.Request, 
 
   storeNewPrivateSSHKeyToBackend(privateSSHKey, userSSHIdentifer);
 
-  response.status(200);
+  response.sendStatus(200);
   return;
 });
 
