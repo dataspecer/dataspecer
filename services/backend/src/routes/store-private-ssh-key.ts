@@ -30,7 +30,7 @@ const relativizeAgainstHomeDir = (givenPath: string): string => {
 
 const sshKeysRootDirectory = path.resolve("./ds-users/.ssh");
 export const sshDSConfigPath = path.resolve(`${sshKeysRootDirectory}/config`);
-fs.rmdirSync(sshKeysRootDirectory);      // TODO RadStr: Not sure if we should remove it. However for debugging it is necessary.
+fs.rmSync(sshKeysRootDirectory, { recursive: true, force: true });      // TODO RadStr: Not sure if we should remove it. However for debugging it is necessary.
 const sshDSConfigPathRelativeToHomeDir = relativizeAgainstHomeDir(sshDSConfigPath);
 
 
@@ -73,12 +73,16 @@ export function storeNewPrivateSSHKeyToBackend(privateSSHKey: string, userSSHIde
   fs.writeFileSync(privateSSHKeyFilePath, fileContent);
 
   // Hardcoded for github
-  const newConfigEntry = `Host ${userSSHIdentifer}
+  const configIdentifier = `Host ${userSSHIdentifer}`;
+  const identityFileLine = `    IdentityFile ${privateSSHKeyFilePath}`;
+  const newConfigEntry = `${configIdentifier}
     HostName github.com
     User git
-    IdentityFile ${privateSSHKeyFilePath}\n\n`;
+${identityFileLine}\n\n`;
 
-  fs.appendFileSync(sshDSConfigPath, newConfigEntry);
+  if (!replaceSSHConfigEntry(sshDSConfigPath, configIdentifier, identityFileLine)) {
+    fs.appendFileSync(sshDSConfigPath, newConfigEntry);     // It was not present, just append it
+  }
 
   // Include our config into the config in home directory
   const homeDirectorySSHConfigPath = path.join(os.homedir(), ".ssh", "config");
@@ -91,4 +95,35 @@ export function storeNewPrivateSSHKeyToBackend(privateSSHKey: string, userSSHIde
       fs.appendFileSync(homeDirectorySSHConfigPath, `\n${includesStringForConfig}`);
     }
   }
+}
+
+
+/**
+ * Generated with ChatGPT's help
+ * @returns True if the entry was present, false if it was not
+ */
+function replaceSSHConfigEntry(filePath: string, matchLineToReplace: string, identityFileLine: string): boolean {
+  // Read file into array of lines
+  let lines: string[];
+  try {
+    lines = fs.readFileSync(filePath, "utf-8").split(/\r?\n/);
+  }
+  catch (error) {
+    return false;
+  }
+
+  // Find the index of the matching line
+  const index = lines.findIndex(line => line.includes(matchLineToReplace));
+
+  if (index === -1) {
+    return false;
+  }
+
+  // Replace the path
+  lines[index + 3] = identityFileLine;
+
+  // Write back to file
+  fs.writeFileSync(filePath, lines.join("\n"), "utf-8");
+
+  return true;
 }
