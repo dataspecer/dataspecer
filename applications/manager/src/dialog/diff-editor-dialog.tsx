@@ -330,24 +330,14 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
   };
 
 
-  // TODO RadStr: ... Don't load unless it contains svg in name
-  // let originalSvg: string;
-  // try {
-  //   originalSvg = JSON.parse(activeOriginalContent)?.svg ?? "";
-  // }
-  // catch(e) {
-  //   originalSvg = "";
-  // }
-
-  // let modifiedSvg: string;
-  // try {
-  //   modifiedSvg = JSON.parse(activeModifiedContent)?.svg ?? "";
-  // }
-  // catch(e) {
-  //   modifiedSvg = "";
-  // }
-  const originalSvg: string = "";
-  const modifiedSvg: string = "";
+  let originalSvg: string = "";
+  if (originalDatastoreInfo?.type === "svg") {
+    originalSvg = JSON.parse(activeOriginalContent)?.svg ?? "";
+  }
+  let modifiedSvg: string = "";
+  if (modifiedDatastoreInfo?.type === "svg") {
+    modifiedSvg = JSON.parse(activeModifiedContent)?.svg ?? "";
+  }
 
   return (
     <Tabs defaultValue="text-compare">
