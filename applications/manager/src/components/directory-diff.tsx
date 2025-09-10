@@ -372,7 +372,7 @@ function StyledNode({
         <span className={textClassName}>{node.data.name}</span>
         <div
           style={{ left: `${Math.max(node.data.rightOffsetForRowButtons, 0) + 8}px` }}
-          className="absolute text-black top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto p-1"
+          className="absolute text-black top-1/2 -translate-y-1/2 flex opacity-0 bg-white group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto p-1"
         >
           {
           // node.data.treeType === "old" || !node.data.canBeInCoflict || isExpandable ?
@@ -547,7 +547,7 @@ export const DiffTreeVisualization = (props: {
 
     const observer = new ResizeObserver(entries => {
       const buttonWidth = 28;
-      const buttonCount = 4;
+      const buttonCount = 3;
       const totalButtonsWidth = buttonWidth * buttonCount;
       for (let entry of entries) {
         setRightOffsetForRowButtons(entry.contentRect.width - totalButtonsWidth);
