@@ -6,13 +6,13 @@ export const MergeStrategyComponent = (props: {handleMergeStateResolving: (merge
   const [mergeStrategy, setMergeStrategy] = useState<MergeResolverStrategy>(mergeResolverStrategies[0]);
 
   return <div className="flex flex-row">
-    <label htmlFor="merge-strategy" className="font-black text-base">
+    <label htmlFor="merge-strategy" className="font-black text-base py-1 px-2">
       Merge strategy:
     </label>
     <select id="merge-strategy-select"
-      className="px-2 py-1 text-base text-gray-900 bg-gray-100 border
+      className="text-base text-gray-900 bg-gray-100 border
         border-gray-300 shadow-[inset_1px_1px_0_#fff] focus:outline-none focus:ring-0 "
-      value="operation-merge-strategy"
+      value={mergeStrategy.key}
       onChange={(event) => setMergeStrategy(mergeResolverStrategies.find(strategy => strategy.key === event.target.value)!)}>
       {
         mergeResolverStrategies.map(strategy => {

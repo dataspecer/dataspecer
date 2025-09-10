@@ -1,6 +1,6 @@
 import { Modal, ModalBody, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@/components/modal";
 import { BetterModalProps } from "@/lib/better-modal";
-import { useEffect, useRef, useState } from "react";
+import { SetStateAction, useEffect, useRef, useState } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -108,6 +108,16 @@ const finalizeMergeState = async (mergeStateUUID: string | undefined) => {
   }
 }
 
+const updateCacheContentEntry = (
+    cacheSetter: (value: SetStateAction<CacheContentMap>) => void,
+    datastoreInfo: DatastoreInfo,
+    newValue: string,
+  ) => {
+    cacheSetter(prevState => {
+      return createNewContentCache(prevState, datastoreInfo, newValue);
+    });
+  }
+
 
 export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifiedResourceIri, editable, isOpen, resolve, }: TextDiffEditorDialogProps) => {
   const monacoEditor = useRef<{editor: monaco.editor.IStandaloneDiffEditor}>(undefined);
@@ -160,16 +170,12 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
 
     // Set the edited value in cache
     if (newOriginalDatastoreInfo !== null) {
-      setCacheForOriginalTextContent(prevState => {
-        const currentOriginalContentInEditor = monacoEditor.current?.editor.getOriginalEditor().getValue();
-        return createNewContentCache(prevState, newOriginalDatastoreInfo, currentOriginalContentInEditor!);
-      });
+      const currentOriginalContentInEditor = monacoEditor.current?.editor.getOriginalEditor().getValue()!;
+      updateCacheContentEntry(setCacheForOriginalTextContent, newOriginalDatastoreInfo, currentOriginalContentInEditor);
     }
     if(newModifiedDatastoreInfo !== null) {
-      setCacheForModifiedTextContent(prevState => {
-        const currentModifiedContentInEditor = monacoEditor.current?.editor.getModifiedEditor().getValue();
-        return createNewContentCache(prevState, newModifiedDatastoreInfo, currentModifiedContentInEditor!);
-      });
+      const currentModifiedContentInEditor = monacoEditor.current?.editor.getModifiedEditor().getValue()!;
+      updateCacheContentEntry(setCacheForModifiedTextContent, newModifiedDatastoreInfo, currentModifiedContentInEditor);
     }
 
     const isOriginalDataResourceInCache = isDatastorePresentInCache(cacheForOriginalTextContent, newOriginalDatastoreInfo);
@@ -183,17 +189,13 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
       console.info({newOriginalDataResourceNameInfo: newOriginalDatastoreInfo, newModifiedDataResourceNameInfo: newModifiedDatastoreInfo});
 
       if (newOriginalObjectData !== null && newOriginalDatastoreInfo !== null) {
-        setCacheForOriginalTextContent(prevState => {
-          const changedCacheValue = JSON.stringify(newOriginalObjectData);
-          return createNewContentCache(prevState, newOriginalDatastoreInfo, changedCacheValue);
-        });
+        const changedCacheValue = JSON.stringify(newOriginalObjectData);
+        updateCacheContentEntry(setCacheForOriginalTextContent, newOriginalDatastoreInfo, changedCacheValue);
       }
 
       if (newModifiedObjectData !== null && newModifiedDatastoreInfo !== null) {
-        setCacheForModifiedTextContent(prevState => {
-          const changedCacheValue = JSON.stringify(newModifiedObjectData);
-          return createNewContentCache(prevState, newModifiedDatastoreInfo, changedCacheValue);
-        });
+        const changedCacheValue = JSON.stringify(newModifiedObjectData);
+        updateCacheContentEntry(setCacheForModifiedTextContent, newModifiedDatastoreInfo, changedCacheValue);
       }
     }
 
@@ -216,9 +218,15 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
     }
   };
 
+
   const handleMergeStateResolving = (mergeStrategy: MergeResolverStrategy) => {
+    if (modifiedDatastoreInfo === null) {
+      return;
+    }
+
     const mergeResolveResult = mergeStrategy.resolve(activeOriginalContent, activeModifiedContent);
-    console.info({mergeResolveResult});     // TODO RadStr: For now just print
+    console.info(activeModifiedContent === mergeResolveResult, {activeModifiedContent, mergeResolveResult});
+    updateCacheContentEntry(setCacheForModifiedTextContent, modifiedDatastoreInfo, mergeResolveResult);
   };
 
   const closeWithSuccess = () => {
@@ -401,8 +409,8 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
                     </TabsContent>
                     <TabsContent value="text-compare">
                       <div className="flex items-center space-x-4">
-                        <MergeStrategyComponent handleMergeStateResolving={handleMergeStateResolving}/>
                         <RotateCw className="flex ml-1 h-4 w-4" onClick={() => reloadModelsDataFromBackend()} />
+                        <MergeStrategyComponent handleMergeStateResolving={handleMergeStateResolving}/>
                       </div>
                       {/* The h-screen is needed otherwise the monaco editor is not shown at all */}
                       {/* Also small note - there is loading effect when first starting up the editor, it is not any custom made functionality */}
