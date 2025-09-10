@@ -130,11 +130,34 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
   const [cacheForModifiedTextContent, setCacheForModifiedTextContent] = useState<CacheContentMap>({});
   const [originalDatastoreInfo, setOriginalDatastoreInfo] = useState<DatastoreInfo | null>(null);
   const [modifiedDatastoreInfo, setModifiedDatastoreInfo] = useState<DatastoreInfo | null>(null);
+  const [originalSvg, setOriginalSvg] = useState<any | "">("");
+  const [modifiedSvg, setModifiedSvg] = useState<any | "">("");
 
   const [comparisonTabType, setComparisonTabType] = useState<"image-compare" | "text-compare">("text-compare");
 
   const activeOriginalContent = originalDatastoreInfo === null ? "" : cacheForOriginalTextContent[originalDatastoreInfo.fullPath]?.[originalDatastoreInfo.type] ?? "";
   const activeModifiedContent = modifiedDatastoreInfo === null ? "" : cacheForModifiedTextContent[modifiedDatastoreInfo.fullPath]?.[modifiedDatastoreInfo.type] ?? "";
+
+  useEffect(() => {
+    if (comparisonTabType !== "image-compare") {
+      return;
+    }
+
+
+    if (originalDatastoreInfo?.type === "svg") {
+      setOriginalSvg(JSON.parse(activeOriginalContent)?.svg ?? "");
+    }
+    else {
+      setOriginalSvg("");
+    }
+    if (modifiedDatastoreInfo?.type === "svg") {
+      setModifiedSvg(JSON.parse(activeModifiedContent)?.svg ?? "");
+    }
+    else {
+      setModifiedSvg("");
+    }
+  }, [comparisonTabType, originalDatastoreInfo, modifiedDatastoreInfo]);
+
 
   useOnBeforeUnload(true);
   useOnKeyDown(e => {
@@ -170,19 +193,22 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
   ) => {
     setIsLoadingTextData(true);
 
-    if (newOriginalDatastoreInfo?.type === "svg" || newModifiedDatastoreInfo?.type === "svg") {
-      setComparisonTabType("image-compare");
-    }
-    else {
-      setComparisonTabType("text-compare");
+    if (originalDatastoreInfo?.fullPath !== newOriginalDatastoreInfo?.fullPath || modifiedDatastoreInfo !== null && modifiedDatastoreInfo?.fullPath !== newModifiedDatastoreInfo?.fullPath) {
+      // Switched to different datastore
+      if (newOriginalDatastoreInfo?.type === "svg" || newModifiedDatastoreInfo?.type === "svg") {
+        setComparisonTabType("image-compare");
+      }
+      else {
+        setComparisonTabType("text-compare");
+      }
     }
 
     // Set the edited value in cache
-    if (originalDatastoreInfo !== null && originalDatastoreInfo?.fullPath !== newOriginalDatastoreInfo?.fullPath) {
+    if (originalDatastoreInfo !== null) {
       const currentOriginalContentInEditor = monacoEditor.current?.editor.getOriginalEditor().getValue()!;
       updateCacheContentEntry(setCacheForOriginalTextContent, originalDatastoreInfo, currentOriginalContentInEditor);
     }
-    if(modifiedDatastoreInfo !== null && modifiedDatastoreInfo?.fullPath !== newModifiedDatastoreInfo?.fullPath) {
+    if (modifiedDatastoreInfo !== null) {
       const currentModifiedContentInEditor = monacoEditor.current?.editor.getModifiedEditor().getValue()!;
       updateCacheContentEntry(setCacheForModifiedTextContent, modifiedDatastoreInfo, currentModifiedContentInEditor);
     }
@@ -339,15 +365,6 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
   };
 
 
-  let originalSvg: string = "";
-  if (originalDatastoreInfo?.type === "svg") {
-    originalSvg = JSON.parse(activeOriginalContent)?.svg ?? "";
-  }
-  let modifiedSvg: string = "";
-  if (modifiedDatastoreInfo?.type === "svg") {
-    modifiedSvg = JSON.parse(activeModifiedContent)?.svg ?? "";
-  }
-
   return (
     <Tabs defaultValue="text-compare">
       <Modal open={isOpen} onOpenChange={(value: boolean) => value ? null : closeWithSuccess()}>
@@ -357,8 +374,8 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
             <ResizablePanelGroup direction="horizontal" className="overflow-hidden pr-2">
               <ResizablePanel defaultSize={20} className="flex flex-col pr-16 pl-1 my-6">
                 <ModalHeader className="mb-4">
-                  <Tabs value={comparisonTabType}>
-                    <TabsList className="grid w-full grid-cols-2" content="image-compare">
+                  <Tabs value={comparisonTabType} onValueChange={setComparisonTabType as any}>
+                    <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="text-compare">Text comparison</TabsTrigger>
                       <TabsTrigger value="image-compare">Image comparison</TabsTrigger>
                     </TabsList>
@@ -402,21 +419,23 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
                 }
                 { !isLoadingTextData &&
                    <div className="flex flex-col flex-1 h-screen">
-                    <TabsContent value="image-compare">
-                      <RotateCw className="flex ml-1 h-4 w-4" onClick={() => reloadModelsDataFromBackend()} />
-                      <div>
-                        <SvgVisualDiff originalSvg={originalSvg} modifiedSvg={modifiedSvg} />
-                      </div>
-                    </TabsContent>
-                    <TabsContent value="text-compare">
-                      <div className="flex items-center space-x-4">
+                    <Tabs value={comparisonTabType}>
+                      <TabsContent value="image-compare">
                         <RotateCw className="flex ml-1 h-4 w-4" onClick={() => reloadModelsDataFromBackend()} />
-                        <MergeStrategyComponent handleMergeStateResolving={handleMergeStateResolving}/>
-                      </div>
-                      {/* The h-screen is needed otherwise the monaco editor is not shown at all */}
-                      {/* Also small note - there is loading effect when first starting up the editor, it is not any custom made functionality */}
-                      <MonacoDiffEditor className="flex-1 -ml-16 h-screen" refs={monacoEditor} originalContent={activeOriginalContent} editable={editable} modifiedContent={activeModifiedContent} language="text" />
-                    </TabsContent>
+                        <div>
+                          <SvgVisualDiff originalSvg={originalSvg} modifiedSvg={modifiedSvg} />
+                        </div>
+                      </TabsContent>
+                      <TabsContent value="text-compare">
+                        <div className="flex items-center space-x-4">
+                          <RotateCw className="flex ml-1 h-4 w-4" onClick={() => reloadModelsDataFromBackend()} />
+                          <MergeStrategyComponent handleMergeStateResolving={handleMergeStateResolving}/>
+                        </div>
+                        {/* The h-screen is needed otherwise the monaco editor is not shown at all */}
+                        {/* Also small note - there is loading effect when first starting up the editor, it is not any custom made functionality */}
+                        <MonacoDiffEditor className="flex-1 -ml-16 h-screen" refs={monacoEditor} originalContent={activeOriginalContent} editable={editable} modifiedContent={activeModifiedContent} language="text" />
+                      </TabsContent>
+                    </Tabs>
                   </div>
                 }
               </ResizablePanel>
