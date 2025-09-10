@@ -131,6 +131,8 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
   const [originalDatastoreInfo, setOriginalDatastoreInfo] = useState<DatastoreInfo | null>(null);
   const [modifiedDatastoreInfo, setModifiedDatastoreInfo] = useState<DatastoreInfo | null>(null);
 
+  const [comparisonTabType, setComparisonTabType] = useState<"image-compare" | "text-compare">("text-compare");
+
   const activeOriginalContent = originalDatastoreInfo === null ? "" : cacheForOriginalTextContent[originalDatastoreInfo.fullPath]?.[originalDatastoreInfo.type] ?? "";
   const activeModifiedContent = modifiedDatastoreInfo === null ? "" : cacheForModifiedTextContent[modifiedDatastoreInfo.fullPath]?.[modifiedDatastoreInfo.type] ?? "";
 
@@ -167,6 +169,13 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
     useCache: boolean,
   ) => {
     setIsLoadingTextData(true);
+
+    if (newOriginalDatastoreInfo?.type === "svg" || newModifiedDatastoreInfo?.type === "svg") {
+      setComparisonTabType("image-compare");
+    }
+    else {
+      setComparisonTabType("text-compare");
+    }
 
     // Set the edited value in cache
     if (originalDatastoreInfo !== null && originalDatastoreInfo?.fullPath !== newOriginalDatastoreInfo?.fullPath) {
@@ -348,10 +357,12 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
             <ResizablePanelGroup direction="horizontal" className="overflow-hidden pr-2">
               <ResizablePanel defaultSize={20} className="flex flex-col pr-16 pl-1 my-6">
                 <ModalHeader className="mb-4">
-                      <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="text-compare">Text comparison</TabsTrigger>
-                        <TabsTrigger value="image-compare">Image comparison</TabsTrigger>
-                      </TabsList>
+                  <Tabs value={comparisonTabType}>
+                    <TabsList className="grid w-full grid-cols-2" content="image-compare">
+                      <TabsTrigger value="text-compare">Text comparison</TabsTrigger>
+                      <TabsTrigger value="image-compare">Image comparison</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
                   <ModalTitle>Text diff editor</ModalTitle>
                   <ModalDescription>
                     {/* TODO RadStr: Empty for now */}
