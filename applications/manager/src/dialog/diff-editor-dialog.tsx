@@ -169,13 +169,13 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
     setIsLoadingTextData(true);
 
     // Set the edited value in cache
-    if (newOriginalDatastoreInfo !== null) {
+    if (originalDatastoreInfo !== null && originalDatastoreInfo?.fullPath !== newOriginalDatastoreInfo?.fullPath) {
       const currentOriginalContentInEditor = monacoEditor.current?.editor.getOriginalEditor().getValue()!;
-      updateCacheContentEntry(setCacheForOriginalTextContent, newOriginalDatastoreInfo, currentOriginalContentInEditor);
+      updateCacheContentEntry(setCacheForOriginalTextContent, originalDatastoreInfo, currentOriginalContentInEditor);
     }
-    if(newModifiedDatastoreInfo !== null) {
+    if(modifiedDatastoreInfo !== null && modifiedDatastoreInfo?.fullPath !== newModifiedDatastoreInfo?.fullPath) {
       const currentModifiedContentInEditor = monacoEditor.current?.editor.getModifiedEditor().getValue()!;
-      updateCacheContentEntry(setCacheForModifiedTextContent, newModifiedDatastoreInfo, currentModifiedContentInEditor);
+      updateCacheContentEntry(setCacheForModifiedTextContent, modifiedDatastoreInfo, currentModifiedContentInEditor);
     }
 
     const isOriginalDataResourceInCache = isDatastorePresentInCache(cacheForOriginalTextContent, newOriginalDatastoreInfo);
