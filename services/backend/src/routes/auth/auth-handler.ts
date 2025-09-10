@@ -5,6 +5,7 @@ import { handleSignout } from "./auth-signout-handler.ts";
 import { createBasicAuthConfig } from "../../authorization/auth-config.ts";
 import { ExpressAuth } from "@auth/express";
 import { handleSignin } from "./auth-signin-handler.ts";
+import { getBaseUrl } from "../../utils/git-utils.ts";
 
 /**
  * Handles all the authentication requests and calls relevant methods based on the handled url
@@ -24,7 +25,8 @@ export const authHandler = asyncHandler(async (request: express.Request, respons
   }
   else {
     // Else it is enough to work with the default read scope. We need the scope only of the signin to get the correct scope from request to GitHub.
-    const authConfig = createBasicAuthConfig();
+    const dsBackendURL = getBaseUrl(request);
+    const authConfig = createBasicAuthConfig(dsBackendURL);
     const expressAuth = ExpressAuth(authConfig);
     return expressAuth(request, response, next);
   }

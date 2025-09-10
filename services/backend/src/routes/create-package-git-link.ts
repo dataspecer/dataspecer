@@ -44,7 +44,7 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
   const query = querySchema.parse(request.query);
 
   const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(query.gitProviderURL);
-  const { name: sessionUserName, accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
+  const { name: sessionUserName, accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
   const accessToken = findPatAccessToken(accessTokens);
   if (accessToken === null) {
     throw new Error("There is neither user or bot pat token to perform operations needed to create the link. For example creating remote repo");
@@ -86,7 +86,7 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
 
   await resourceModel.updateResourceProjectIriAndBranch(query.iri, undefined, defaultBranch ?? undefined);
 
-  await commitPackageToGitUsingAuthSession(query.iri, fullLinkedGitRepositoryURL, defaultBranch, "", repositoryUserName, repoName, commitMessage, response);
+  await commitPackageToGitUsingAuthSession(request, query.iri, fullLinkedGitRepositoryURL, defaultBranch, "", repositoryUserName, repoName, commitMessage, response);
   await resourceModel.updateResourceGitLink(query.iri, fullLinkedGitRepositoryURL);
 
   response.sendStatus(200);
@@ -128,7 +128,7 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
     return;
   }
   // TODO: Maybe also provide variant which takes the full URL, since above I am splitting it for no reason
-  const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
+  const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
   const accessToken = findPatAccessToken(accessTokens);
   if (accessToken === null) {
     throw new Error("There is neither user or bot pat token to perform operations needed to create the link. For example creating remote repo");
@@ -136,7 +136,7 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
   await gitProvider.createWebhook(accessToken, repositoryUserName, repoName, WEBHOOK_HANDLER_URL, ["push"]);
 
   // TODO RadStr: Not sure about the "" if I decide to use it, but I can not use anything else
-  commitPackageToGitUsingAuthSession(query.iri, query.gitRepositoryURL, branchName, "", repositoryUserName, repoName, commitMessage, response);
+  commitPackageToGitUsingAuthSession(request, query.iri, query.gitRepositoryURL, branchName, "", repositoryUserName, repoName, commitMessage, response);
 });
 
 export async function getRepositoryNameFromDatabase(linkedPackageIri: string): Promise<string | null> {

@@ -42,7 +42,7 @@ export const removeGitRepository = asyncHandler(async (request: express.Request,
   }
 
   const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(repositoryURL);
-  const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, response, [ConfigType.DeleteRepoControl]);
+  const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.DeleteRepoControl]);
   const accessToken = findPatAccessToken(accessTokens);
   if (accessToken === null) {
     throw new Error("There is neither user or bot pat token to perform the removal of remote git repository.");

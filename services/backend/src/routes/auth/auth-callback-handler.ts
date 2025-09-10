@@ -4,6 +4,7 @@ import { asyncHandler } from "../../utils/async-handler.ts";
 import express, { NextFunction } from "express";
 import { createBasicAuthConfig } from "../../authorization/auth-config.ts";
 import { z } from "zod";
+import { getBaseUrl } from "../../utils/git-utils.ts";
 
 /**
  * Handles the callbacks from the Auth Provider - that is the auth/callback/* for example (auth/callback/github), similarly for keycloak it will auth/callback/keycloak
@@ -14,10 +15,11 @@ export const authCallbackHandler = asyncHandler(async (request: express.Request,
     internalCallbackUrl: z.string(),
   });
   const query = querySchema.parse(request.query);
+  const dsBackendURL = getBaseUrl(request);
 
   // If the query is empty, then the callerURL is also empty, which results into redirecting to default URL instead of the one we came from.
   // This happens if the redirect flow was not as usual - User for some reason opened the login url without visiting the main page of dataspecer first.
-  const authConfig = createBasicAuthConfig(query.internalCallbackUrl);
+  const authConfig = createBasicAuthConfig(dsBackendURL, query.internalCallbackUrl);
   const expressAuth = ExpressAuth(authConfig);
   return expressAuth(request, response, next);
 });

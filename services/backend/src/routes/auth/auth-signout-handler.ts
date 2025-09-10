@@ -3,6 +3,7 @@ import { asyncHandler } from "../../utils/async-handler.ts";
 import { createBasicAuthConfig } from "../../authorization/auth-config.ts";
 import { ExpressAuth, ExpressAuthConfig } from "@auth/express";
 import { getRedirectLink } from "./auth-handler.ts";
+import { getBaseUrl } from "../../utils/git-utils.ts";
 
 /**
  * Handles the signout request. What this method does extra unlike classic auth signout is to set the correct redirect link to go to after the signout is done.
@@ -17,16 +18,17 @@ export const handleSignout = asyncHandler(async (request: express.Request, respo
     if (linkContainingRedirect === "") {
       // The case when user probably went straight to the signout URL
       // We look at the URL and check if it contains the redirectURL
-      authConfig = createAuthConfigForSignout(request.originalUrl);
+      authConfig = createAuthConfigForSignout(request, request.originalUrl);
     }
     else {
       // The user clicked the signout button, we still have to check if it was not modified to something invalid or even dangerous.
       // But we do that later just before the redirect itself.
-      authConfig = createAuthConfigForSignout(linkContainingRedirect);
+      authConfig = createAuthConfigForSignout(request, linkContainingRedirect);
     }
   }
   catch (e) {
-    authConfig = createBasicAuthConfig("http://localhost:5175");      // TODO RadStr: Instead of localhost:5175 use the provided (when starting up the server) allowed frontends
+    const dsBackendURL = getBaseUrl(request);
+    authConfig = createBasicAuthConfig(dsBackendURL, "http://localhost:5175");      // TODO RadStr: Instead of localhost:5175 use the provided (when starting up the server) allowed frontends
   }
 
   const expressAuth = ExpressAuth(authConfig);
@@ -38,16 +40,17 @@ export const handleSignout = asyncHandler(async (request: express.Request, respo
  * If these is none, sets default redirect URL.
  * @returns The {@link ExpressAuthConfig}
  */
-function createAuthConfigForSignout(linkContainingRedirect: string): ExpressAuthConfig {
+function createAuthConfigForSignout(request: express.Request, linkContainingRedirect: string): ExpressAuthConfig {
   let authConfig: ExpressAuthConfig;
 
   const linkContainingRedirectAsURL = new URL(linkContainingRedirect);
   const redirectURL = linkContainingRedirectAsURL.searchParams.get("redirectURL");
+  const dsBackendURL = getBaseUrl(request);
   if (redirectURL !== null) {
-    authConfig = createBasicAuthConfig(redirectURL);
+    authConfig = createBasicAuthConfig(dsBackendURL, redirectURL);
   }
   else {
-    authConfig = createBasicAuthConfig("http://localhost:5175");      // TODO RadStr: Instead of localhost:5175 use the provided (when starting up the server) allowed frontends
+    authConfig = createBasicAuthConfig(dsBackendURL, "http://localhost:5175");      // TODO RadStr: Instead of localhost:5175 use the provided (when starting up the server) allowed frontends
   }
 
   return authConfig;

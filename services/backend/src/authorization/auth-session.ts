@@ -2,10 +2,10 @@ import { getSession, Session } from "@auth/express"
 import express, { NextFunction } from "express"
 import { createBasicAuthConfig, createAuthConfigBasedOnAccountScope } from "./auth-config.ts"
 import { asyncHandler } from "../utils/async-handler.ts";
-import { AccessToken, AccessTokenType, ConfigType, CommitterInfo, GitProvider, GitCredentials } from "@dataspecer/git";
+import { AccessToken, AccessTokenType, ConfigType, GitProvider, GitCredentials } from "@dataspecer/git";
 import { getToken } from "@auth/core/jwt"
 import { AUTH_SECRET } from "../git-never-commit.ts";
-import { convertExpressRequestToNormalRequest } from "../utils/git-utils.ts";
+import { convertExpressRequestToNormalRequest, getBaseUrl } from "../utils/git-utils.ts";
 import { createUserSSHIdentifier } from "../routes/store-private-ssh-key.ts";
 
 
@@ -14,6 +14,8 @@ export async function currentSession(
   response: express.Response,
   next: NextFunction,
 ) {
+  const dsBackendURL = getBaseUrl(request);
+
   // TODO RadStr: Debug prints
   // console.info("request.headers.cookie", request.headers.cookie);
   // console.info("request.headers", request.headers);
@@ -23,14 +25,14 @@ export async function currentSession(
   // const callerURL = createURLFromExpressRequest(request);
   const callerURL = request.get("Referer") ?? "";
 
-  const basicAuthConfigInstance = createBasicAuthConfig()
+  const basicAuthConfigInstance = createBasicAuthConfig(dsBackendURL)
   let session = (await getSession(request, basicAuthConfigInstance)) ?? undefined;
 
   // TODO RadStr: .... Do I even need the following if??? Only the scope is different and it seems that isn't the important part when it comes to the getSession method !
   // TODO RadStr: Not ideal - I am basically repairing to use it with correct config based on the scope I have stored in session
   // TODO RadStr: I should probably have it stored in cookie (or in database?)
   if (session !== undefined) {
-    const [authConfig] = createAuthConfigBasedOnAccountScope((session?.user as any).genericScope ?? null);
+    const [authConfig] = createAuthConfigBasedOnAccountScope((session?.user as any).genericScope ?? null, dsBackendURL);
     session = (await getSession(request, authConfig)) ?? undefined;
   }
 
@@ -60,9 +62,11 @@ export function getStoredSession(response: express.Response): Session | null {
  * @deprecated I didn't know that session is exposed on the http://localhost:3100/auth/session endpoint
  */
 export const getBasicUserInfo = asyncHandler(async (request: express.Request, response: express.Response) => {
+  const dsBackendURL = getBaseUrl(request);
+
   // TODO RadStr: Here it should not matter that I am using the basicAuthConfig instead of the correct one
 
-  const session = (await getSession(request, createBasicAuthConfig())) ?? undefined;
+  const session = (await getSession(request, createBasicAuthConfig(dsBackendURL))) ?? undefined;
   const basicUserInfo = {
     name: session?.user?.name ?? null,
     email: session?.user?.email ?? null,
@@ -79,17 +83,18 @@ export const getBasicUserInfo = asyncHandler(async (request: express.Request, re
  *  ... TODO RadStr: Just be careful that if we extend ConfigType by new value, we have to extend all the places where we want certain level of accessToken permissions
  *  ................ Can't think of anything though - maybe just provide the string value describing permission (but that does not work for different Git providers)
  */
-export const getGitCredentialsFromSession = (response: express.Response, wantedAccessTokenLevels: ConfigType[]) => {
+export const getGitCredentialsFromSession = (request: express.Request, response: express.Response, wantedAccessTokenLevels: ConfigType[]) => {
   let committerName: string | null = null;
   let committerEmail: string | null = null;
   let committerAccessToken: string | null = null;
   let committerSSH: string | null = null;
+  const dsBackendURL = getBaseUrl(request);
 
   const currentSession = getStoredSession(response);
   if (currentSession !== null) {
     committerName = currentSession.user?.name ?? null;
     committerEmail = currentSession.user?.email ?? null;
-    const [, configType] = createAuthConfigBasedOnAccountScope((currentSession.user as any)?.genericScope ?? null);      // The express request won't be used so just set it to null
+    const [, configType] = createAuthConfigBasedOnAccountScope((currentSession.user as any)?.genericScope ?? null, dsBackendURL);      // The express request won't be used so just set it to null
     // TODO RadStr: In future if there might be better granulization in permissions then the check should be more complex + should check if we have access to the repo
     if (configType !== null && wantedAccessTokenLevels.includes(configType)) {
       committerAccessToken = (currentSession.user as any)?.accessToken ?? null;
@@ -115,10 +120,16 @@ export const getGitCredentialsFromSession = (response: express.Response, wantedA
  */
 export const getGitCredentialsFromSessionWithDefaults = (
   gitProvider: GitProvider,
+  request: express.Request,
   response: express.Response,
   wantedAccessTokenLevels: ConfigType[]
 ): GitCredentials => {
-  const { committerName, committerEmail, committerAccessToken, committerSSH } = getGitCredentialsFromSession(response, wantedAccessTokenLevels);
+  const {
+    committerName,
+    committerEmail,
+    committerAccessToken,
+    committerSSH
+  } = getGitCredentialsFromSession(request, response, wantedAccessTokenLevels);
   const botCredentials = gitProvider.getBotCredentials();
 
   const isBotName = committerName === null;

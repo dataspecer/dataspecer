@@ -7,7 +7,6 @@ import { AccessToken, AccessTokenType, CommitterInfo } from "@dataspecer/git";
 import { getHttpsRepoURLWithAuthorization } from "../git-never-commit.ts";
 
 
-
 // TODO RadStr: Change to Dataspecer after debugging stage
 export const GITHUB_USER_AGENT = "Dataspecer-test";
 
@@ -194,4 +193,9 @@ export function deepOmit<T extends object>(obj: T, keyToRemove: string): any {
  */
 export function stringToBoolean(value: string): boolean {
   return value.toLowerCase() === "true";
+}
+
+export function getBaseUrl(request: express.Request) {
+  const baseURL = request.protocol + '://' + request.get("host");
+  return baseURL;
 }

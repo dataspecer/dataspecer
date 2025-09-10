@@ -16,11 +16,12 @@ import { GitHubProvider, GitHubScope } from "../git-providers/git-provider-insta
 /**
  * The returned ConfigType is not null if there is {@link ConfigType} which exactly matches provided scope (on permission level of course, not on string level).
  * @param genericScope is the scope as from the authJS user account - that is the scopes separated by comma (,) but converted to the generic scopes
+ * @param dsBackendURL is the url of the ds backend
  * @param callerURL is the URL of the caller to which we can be possibly redirected after request is finished
  */
-export function createAuthConfigBasedOnAccountScope(genericScope: Scope[] | null, callerURL?: string): [ExpressAuthConfig, ConfigType | null] {
+export function createAuthConfigBasedOnAccountScope(genericScope: Scope[] | null, dsBackendURL: string, callerURL?: string): [ExpressAuthConfig, ConfigType | null] {
   if (genericScope === null) {
-    return [createAuthConfig(null, callerURL), null];
+    return [createAuthConfig(null, dsBackendURL, callerURL), null];
   }
 
   for (const configTypeKey of Object.values(ConfigType).filter(value => typeof value === "number") as number[]) {
@@ -38,11 +39,11 @@ export function createAuthConfigBasedOnAccountScope(genericScope: Scope[] | null
 
     const coveredScopesCount = Object.keys(coveredScopes).length;   // We covered all the scopes in the config
     if (coveredScopesCount === scopesForConfig.length && coveredScopesCount === genericScope.length) {
-      return [createAuthConfig(configType, callerURL), configType];
+      return [createAuthConfig(configType, dsBackendURL, callerURL), configType];
     }
   }
 
-  return [createAuthConfig(null, callerURL), null];
+  return [createAuthConfig(null, dsBackendURL, callerURL), null];
 }
 
 // TODO RadStr: ... well the scopes are once again Git Provider specific, so it should be part of the concrete git Provider.
@@ -76,7 +77,7 @@ function getScopesForAuthConfig(configType: ConfigType | null): Scope[] {
  * @param callerURL is the URL of the caller to which we will be redirected after the auth request is finished
  * @returns
  */
-function createAuthConfig(configType: ConfigType | null, callerURL?: string): ExpressAuthConfig {
+function createAuthConfig(configType: ConfigType | null, dsBackendURL: string, callerURL?: string): ExpressAuthConfig {
 
   // TODO RadStr: Don't forget to put it everywhere not only the GitHub.
   let scope = getScopesForAuthConfig(configType);
@@ -85,7 +86,7 @@ function createAuthConfig(configType: ConfigType | null, callerURL?: string): Ex
   // This URI stuff needs explaining - so first - the issue - when we get back from github we can redirect only back on the server. ("localhost:3100" if ran locally)
   //                                                          so we need some workaround to get back on the url we came from
   // So we store the callerURL to the uri to which we are redirected from github and later retrieve the query part to redirect to the URL to which we came from
-  const githubRedirectUri = `http://localhost:3100/auth/callback/github${callerURL === undefined ? "" : `?internalCallbackUrl=${encodeURIComponent(callerURL)}`}`;
+  const githubRedirectUri = `${dsBackendURL}/auth/callback/github${callerURL === undefined ? "" : `?internalCallbackUrl=${encodeURIComponent(callerURL)}`}`;
 
   const createdAuthConfig: ExpressAuthConfig = {
     secret: AUTH_SECRET,
@@ -179,24 +180,27 @@ function createAuthConfig(configType: ConfigType | null, callerURL?: string): Ex
 /**
  *
  * @param authPermissions are the request authPermissions which should be in the created instance.
+ * @param dsBackendURL the URL of the ds backend
  * @param callerURL is the URL of the caller to which we can be possibly redirected after request is finished
  */
-export function createAuthConfigWithCorrectPermissions(authPermissions: string, callerURL?: string) {
+export function createAuthConfigWithCorrectPermissions(authPermissions: string, dsBackendURL: string, callerURL?: string) {
   const configType = ConfigType[authPermissions as keyof typeof ConfigType];
-  return createAuthConfig(configType, callerURL);
+  return createAuthConfig(configType, dsBackendURL, callerURL);
 }
 
 // TODO RadStr: For perfomance reasons try later create one basic auth config, which will be used everywhere where we don't need redirect or scope.
 
 /**
  * Contains just the info needed for login. The user info and e-mail.
+ * @param dsBackendURL is the url of the ds backend
  * @param callerURL is the URL of the caller to which we can be possibly redirected after request is finished
  */
-export const createBasicAuthConfig = (callerURL?: string) => createAuthConfig(ConfigType.LoginInfo, callerURL);
+export const createBasicAuthConfig = (dsBackendURL: string, callerURL?: string) => createAuthConfig(ConfigType.LoginInfo, dsBackendURL, callerURL);
 
 /**
  * Contains full repo control - Used to create repo or give access to bot to commit to repository (that is add it as a collaborator).
  * @param callerURL is the URL of the caller to which we can be possibly redirected after request is finished
+ * @param dsBackendURL is the url of the ds backend
  * @deprecated The {@link createBasicAuthConfig} is enough to use
  */
-export const createFullRepoControlAuthConfig = (callerURL?: string) => createAuthConfig(ConfigType.FullPublicRepoControl, callerURL);
+export const createFullRepoControlAuthConfig = (dsBackendURL: string, callerURL?: string) => createAuthConfig(ConfigType.FullPublicRepoControl, dsBackendURL, callerURL);

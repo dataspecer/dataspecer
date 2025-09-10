@@ -79,7 +79,7 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
   }
 
   const branch = resource.branch === "main." ? null : resource.branch;
-  await commitPackageToGitUsingAuthSession(iri, gitLink, branch, resource.lastCommitHash, userName, repoName, commitMessage, response);
+  await commitPackageToGitUsingAuthSession(request, iri, gitLink, branch, resource.lastCommitHash, userName, repoName, commitMessage, response);
   response.sendStatus(200);
 });
 
@@ -89,6 +89,7 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
  *  and uses that information for the commit.
  */
 export const commitPackageToGitUsingAuthSession = async (
+  request: express.Request,
   iri: string,
   remoteRepositoryURL: string,
   branch: string | null,
@@ -101,7 +102,7 @@ export const commitPackageToGitUsingAuthSession = async (
 ) => {
   // If gitProvider not given - get it
   gitProvider ??= GitProviderFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL);
-  const committer = getGitCredentialsFromSessionWithDefaults(gitProvider, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
+  const committer = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
   await commitPackageToGit(iri, remoteRepositoryURL, branch, lastCommitHash, givenRepositoryUserName, givenRepositoryName, committer, commitMessage, gitProvider);
 }
 

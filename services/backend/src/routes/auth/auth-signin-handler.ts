@@ -6,6 +6,7 @@ import { createAuthConfigWithCorrectPermissions, createBasicAuthConfig } from ".
 import { getRedirectLink } from "./auth-handler.ts";
 import { z } from "zod";
 import { ConfigType } from "@dataspecer/git";
+import { getBaseUrl } from "../../utils/git-utils.ts";
 
 /**
  * Handles the signin request by calling the {@link ExpressAuth} with correct configuration based on request.
@@ -22,12 +23,13 @@ export const handleSignin = asyncHandler(async (request: express.Request, respon
     // This if represents the first part of signin process - after clicking the signin inside manager
     const query = querySchema.parse(request.query);
     const authPermissions = query.authPermissions;
+    const dsBackendURL = getBaseUrl(request);
 
     if (authPermissions === undefined || authPermissions.length === 0) {
-      authConfig = createBasicAuthConfig(redirectLink);
+      authConfig = createBasicAuthConfig(dsBackendURL, redirectLink);
     }
     else {
-      authConfig = createAuthConfigWithCorrectPermissions(authPermissions, redirectLink);
+      authConfig = createAuthConfigWithCorrectPermissions(authPermissions, dsBackendURL, redirectLink);
     }
   }
   else if (request.originalUrl.startsWith("/auth/signin/") && request.originalUrl.length > "/auth/signin/".length) {
@@ -42,7 +44,8 @@ export const handleSignin = asyncHandler(async (request: express.Request, respon
     const redirectLinkAsURL = new URL(redirectLink);
     const authPermissions = redirectLinkAsURL.searchParams.get("authPermissions") ?? ConfigType.LoginInfo.toString();
     // Get Auth config
-    authConfig = createAuthConfigWithCorrectPermissions(authPermissions, callerURL);
+    const dsBackendURL = getBaseUrl(request);
+    authConfig = createAuthConfigWithCorrectPermissions(authPermissions, dsBackendURL, callerURL);
   }
   else {
     throw new Error("Processing signin, however the url is actually not a signin");        // TODO RadStr: Better error handling
