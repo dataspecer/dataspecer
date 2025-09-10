@@ -1,6 +1,6 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import { v4 as uuidv4 } from 'uuid';
-import { GitProvider, FilesystemAbstractionBase, ComparisonData, DatastoreInfo, DirectoryNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, MetadataCacheType, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaPrefixName, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode, isDatastoreForMetadata, getDatastoreInfoOfGivenDatastoreType } from "@dataspecer/git";
+import { GitProvider, FilesystemAbstractionBase, ComparisonData, DatastoreInfo, DirectoryNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, MetadataCacheType, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaDatastoreInfo, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode, isDatastoreForMetadata, getDatastoreInfoOfGivenDatastoreType } from "@dataspecer/git";
 import { ResourceModel } from "../../../models/resource-model.ts";
 import { deleteBlob, deleteResource, updateBlob } from "../../../routes/resource.ts";
 import { BaseResource } from "@dataspecer/core-v2/project";
@@ -205,14 +205,14 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     }
     this.setValueInFilesystemMapping(newNodeLocation, filesystemMapping, filesystemNode, parentDirectoryNode);
 
-
-
-    const metaPrefixName: DatastoreInfo = createMetaPrefixName(localNameCandidate, "json");
-    filesystemNode.datastores.push(metaPrefixName);
+    // Maybe in future we will have something else than JSONs on backend, but right now always use JSONs for DS filesystem
     if (shouldSetMetadataCache) {
       const metadata = DSFilesystem.constructMetadataFromResource(resource);
       filesystemNode.metadataCache = metadata;
     }
+    // TODO RadStr: Once again using the iri, otherwise we crash ... so yeah it is no longer cache.
+    const metaDatastoreInfo: DatastoreInfo = createMetaDatastoreInfo(filesystemNode.metadataCache.iri ?? localNameCandidate, "json");
+    filesystemNode.datastores.push(metaDatastoreInfo);
 
     // TODO RadStr: The export code - remove later
     // const metadata = this.constructMetadataFromResource(resource);

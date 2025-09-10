@@ -40,134 +40,6 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
   return;
 });
 
-/**
- * @deprecated The old version - TODO RadStr: Remove
- */
-async function saveChangesInDirectoryToBackendOldVersion(directory: string, gitProvider: GitProvider) {
-  if (directory.endsWith(".git")) {
-    return;
-  }
-
-  const directoryContent = fs.readdirSync(directory, { withFileTypes: true });
-  const specialFiles = {
-    model: ".model.json",
-    meta: ".meta.json",
-  };
-
-  const packageModelFile = directoryContent.find(file => file.name === specialFiles.model);
-  const packageMetaFile = directoryContent.find(file => file.name === specialFiles.meta);
-
-  const processedFiles: Record<string, boolean> = {};
-  directoryContent.forEach(file => {
-    processedFiles[file.name] = false;
-  });
-
-
-  for (const entry of directoryContent) {
-    const fullPath = dsPathJoin(directory, entry.name);
-    if (gitProvider.isGitProviderDirectory(fullPath)) {     // TODO RadStr: Maybe can be better integrated into the ignore file
-      continue;
-    }
-    if (entry.isDirectory()) {
-      processedFiles[entry.name] = true;
-      await saveChangesInDirectoryToBackend(fullPath, gitProvider);
-    }
-    else {
-      console.info("entry.name", entry);
-      if(entry.name === "test") {
-        const iri = await createResource("8724f51d-76b5-4ef4-83cc-a609d7e92020", "added-from-git-type", entry.name + "-resource", undefined);
-        updateBlob(iri, "added-from-git-type", JSON.parse(fs.readFileSync(fullPath, "utf-8")));
-        continue;
-      }
-
-      // Skip the files for the package itself
-      if (Object.values(specialFiles).includes(entry.name)) {
-        processedFiles[entry.name] = true;
-        continue;
-      }
-
-      if (!entry.name.endsWith(specialFiles.meta)) {
-        continue;
-      }
-
-      processedFiles[entry.name] = true;
-
-      // TODO: Again should probably iterate through the modelStore entries or how is it named, but I would have to get the resource from the database first and check against it
-      const nameWithoutSuffix = entry.name.substring(0, entry.name.lastIndexOf(specialFiles.meta));
-      // Find the content for the model file.
-      const modelFile = directoryContent.find(file => file.name.startsWith(nameWithoutSuffix));
-      if (modelFile === undefined) {
-        console.error("Missing model file");
-        continue;
-      }
-
-
-      processedFiles[modelFile.name] = true;
-
-      console.info("Processing file:", {nameWithoutSuffix, modelFile, processedFiles, entry});
-      await updateResourceFullyOldVersion(entry, modelFile);
-
-    }
-  }
-
-  console.info("Processing package", directory, directoryContent);
-  await updateResourceFullyOldVersion(packageMetaFile, packageModelFile);
-
-  // TODO: Should handle the not processedFiles
-}
-
-
-/**
- * This method handles the storing of directory content, which usually comes from git clone, back to the DS store.
- * That means:
- *  0) Don't do anything with not changed (or copy them if necessary - depends on implementation of versioning inside DS)
- *  1) Remove removed
- *  2) Change changed
- *  3) Create created
- *   a) If there is new file from Git, which has not .meta and .model, just put it as new model (under the name of the file) to the package - user can edit it under the edit model on package
- *   b) If it has both .meta and .model create completely new resource - that is there will be new entry inside the package shown in manager
- *   c) Either only .meta or .model - skip it. We could try to somehow solve it, but we would probably end up in invalid state by some sequence of actions, so it is better to just skip it.
- * TODO RadStr: This should however account for collisions
- */
-async function saveChangesInDirectoryToBackend(directory: string, gitProvider: GitProvider) {
-  if (directory.endsWith(".git")) {     // TODO RadStr: Maybe can be better integrated into the ignore file
-    return;
-  }
-  if (gitProvider.isGitProviderDirectory(directory)) {     // TODO RadStr: Maybe can be better integrated into the ignore file
-    return;
-  }
-
-
-  const _directoryContent = fs.readdirSync(directory, { withFileTypes: true });
-  const filesInDirectory = _directoryContent.filter(entry => !entry.isDirectory());
-  const subDirectories = _directoryContent.filter(entry => entry.isDirectory());
-  const directoryContentNames = filesInDirectory.map(content => content.name).filter(name => !ignoredFilesFilter(name));
-  const { prefixGroupings, invalidNames } = groupByPrefixDSSpecific(...directoryContentNames);
-
-  if (invalidNames.length > 0) {
-    // TODO RadStr: ... we need to process them anyways, since they might be valid files from git, so the error + TODO node is no longer valid
-    for (const invalidName of invalidNames) {
-      // TODO RadStr: The base name expects that the directory is the IRI, which might not be the case, the repo may have different name than the repository
-      await createNewResourceUploadedFromGit(directory, path.basename(directory), invalidName);
-    }
-
-    // TODO RadStr: Remove
-    // We just log the error and move on - TODO RadStr: Probably should log a bit better.
-    // console.error("Some of the files don't have enough separators. That is they don't follow the format [name].[dataStoreId].[format]", { invalidNames });
-  }
-
-  for (const [prefix, valuesForPrefix] of Object.entries(prefixGroupings)) {
-    const datastores = valuesForPrefix;
-    await updateResourceFully(directory, prefix, datastores);
-  }
-
-  for (const subDirectory of subDirectories) {
-    const fullPath = dsPathJoin(directory, subDirectory.name);
-    await saveChangesInDirectoryToBackend(fullPath, gitProvider);
-  }
-}
-
-
 
 /**
  * This method handles the storing of directory content, which usually comes from git clone, back to the DS store.
@@ -306,21 +178,21 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
 async function saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(
   currentlyProcessedDirectoryNodeName: string,
   currentlyProcessedDirectoryNode: DirectoryNode,
-  directory: string,
+  treePath: string,
   gitProvider: GitProvider,
   filesystem: FilesystemAbstraction,
 ) {
   console.info("RECURSIVE MAPPING", currentlyProcessedDirectoryNode);
-  await handleResourceUpdateFinalVersion(directory, currentlyProcessedDirectoryNodeName, currentlyProcessedDirectoryNode, filesystem);
+  await handleResourceUpdateFinalVersion(treePath, currentlyProcessedDirectoryNodeName, currentlyProcessedDirectoryNode, filesystem);
 
   for (const [name, value] of Object.entries(currentlyProcessedDirectoryNode.content)) {
     // TODO RadStr: Name vs IRI
     if(value.type === "directory") {
-      const newDirectory = dsPathJoin(directory, name);
+      const newDirectory = dsPathJoin(treePath, name);
       await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(name, value, newDirectory, gitProvider, filesystem);
     }
     else {
-      await handleResourceUpdateFinalVersion(directory, name, value, filesystem);
+      await handleResourceUpdateFinalVersion(treePath, name, value, filesystem);
     }
   }
 }
@@ -368,15 +240,15 @@ function isFileAddedFromGit(datastoreIdentifier: string, datastores: DatastoreIn
 }
 
 async function handleResourceUpdateFinalVersion(
-  fullPathToDirectory: string,
-  datastoreIdentifier: string,
+  treePath: string,
+  filesystemNodeName: string,
   filesystemNode: FilesystemNode,
   filesystem: FilesystemAbstraction
 ) {
-  if (isFileAddedFromGit(datastoreIdentifier, filesystemNode.datastores)) {
+  if (isFileAddedFromGit(filesystemNodeName, filesystemNode.datastores)) {
     const parentIri = filesystem.getParentForNode(filesystemNode)?.metadataCache.iri;
     if (parentIri !== undefined) {
-      await createNewResourceUploadedFromGit(fullPathToDirectory, parentIri, datastoreIdentifier);
+      await createNewResourceUploadedFromGit(parentIri, treePath, filesystemNodeName);
     }
     else {
       console.error("Missing parent IRI, so we can not create");    // TODO RadStr: Not sure, this probably should not happen, I should always have the parentIri available
@@ -394,19 +266,23 @@ async function handleResourceUpdateFinalVersion(
       console.info("Directroy");
     }
 
-    const fullPathToDatastore = dsPathJoin(fullPathToDirectory, datastore.fullName);
+    // TODO RadStr: This really means that metadataCache is not a cache but a hardcoded thing which always has to exist
+    // TODO RadStr:  - since the iri may differ from name for example in the case of imported DCAT-AP
+    const nodeIri = filesystemNode.metadataCache.iri ?? filesystemNodeName;
 
     // TODO RadStr: Should check if it already exists, or if not it should be created
     if (isDatastoreForMetadata(datastore.type)) {
       // TODO: Just for now - I don't know about used encodings, etc. - but this is just detail
-      const metaFileContent = JSON.parse(fs.readFileSync(fullPathToDatastore, "utf-8"));
-      await updateResourceMetadata(datastoreIdentifier, metaFileContent!.userMetadata);
+      const metaFileContent = JSON.parse(fs.readFileSync(datastore.fullPath, "utf-8"));
+      // TODO RadStr: This really means that metadataCache is not a cache but a hardcoded thing which always has to exist
+      // TODO RadStr:  - since the iri may differ from name for example in the case of imported DCAT-AP
+      await updateResourceMetadata(nodeIri, metaFileContent!.userMetadata);
       continue;
     }
     else {
         // TODO: Just for now - I don't know about used encodings, etc. - but this is just detail
-      const packageModelFileContent = JSON.parse(fs.readFileSync(fullPathToDatastore, "utf-8"));
-      await updateBlob(datastoreIdentifier, datastore.type, packageModelFileContent);
+      const packageModelFileContent = JSON.parse(fs.readFileSync(datastore.fullPath, "utf-8"));
+      await updateBlob(nodeIri, datastore.type, packageModelFileContent);
     }
   }
 }
@@ -644,7 +520,7 @@ async function updateResourceFully(fullPathToDirectory: string, datastoreIdentif
   }
 }
 
-async function createNewResourceUploadedFromGit(fullPathToDirectory: string, parentIri: string, name: string) {
+async function createNewResourceUploadedFromGit(parentIri: string, path: string, name: string) {
   // TODO RadStr: If I want to create separate file ... however there are issues, which stem from the fact that there becomes incosistency between DS filesystem (there is new .meta and .model file) and git system (only one file)
 
   // const iri = await createResource(parentIri, "added-from-git-type", name, {"label": {"cs": name}});
@@ -659,8 +535,10 @@ async function createNewResourceUploadedFromGit(fullPathToDirectory: string, par
   // ... This is better, we will end up only with one file. Only one issue is that we have to solve the problem when user decides to explicitly create .meta and .model
   //     in git, because he would like to have metadata for this file ... however what it means - it means that user removed the old file so we remove the resource
   //       and then added new .meta and .model file, so all we have to do is just handle the cases, where new .meta and .model file is added to the git
-  const fullPathToFile = dsPathJoin(fullPathToDirectory, name);
-  const fileContent = fs.readFileSync(fullPathToFile, "utf-8");
+
+  throw new Error("TODO RadStr: I will fix it later, the issue is that I am using treePath instead classic path and storing it to the parent as a model")
+
+  const fileContent = fs.readFileSync(path, "utf-8");
   await updateBlob(parentIri, name, fileContent);
 }
 

@@ -6,7 +6,7 @@ import configuration from "../configuration.ts";
 
 import { ResourceTypes, resourceTypetoTypeDirectoryMapping } from "./export-by-resource-type.ts";
 import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
-import { DatastoreInfo, DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, MetadataCacheType, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaPrefixName, getMetaPrefixType, isDatastoreForMetadata } from "@dataspecer/git";
+import { DatastoreInfo, DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, MetadataCacheType, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaDatastoreInfo, getMetaPrefixType, isDatastoreForMetadata } from "@dataspecer/git";
 
 
 // TODO RadStr: Trying new API for exporters and importers - so this should in future substitute the PackageExporter and PackageImporter (in the import case)
@@ -235,7 +235,7 @@ export class PackageExporterByResourceType {
 
 
 
-    const metaPrefixName: DatastoreInfo = createMetaPrefixName(localNameCandidate, "json");
+    const metaPrefixName: DatastoreInfo = createMetaDatastoreInfo(localNameCandidate, "json");
     filesystemNode.datastores.push(metaPrefixName);
     if (shouldSetMetadataCache) {
       const metadata = this.constructMetadataFromResource(resource);

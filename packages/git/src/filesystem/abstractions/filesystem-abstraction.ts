@@ -249,8 +249,8 @@ export function getMetadataDatastoreFile(datastores: DatastoreInfo[]): Datastore
 /**
  * Creates the {@link DatastoreInfo} with given {@link basename}, which describes metadata file.
  */
-export function createMetaPrefixName(basename: string, format: string): DatastoreInfo {
-  const afterPrefix = ".meta.json";
+export function createMetaDatastoreInfo(basename: string, format: string): DatastoreInfo {
+  const afterPrefix = `.meta.${format}`;
 
   return {
     fullName: `${basename}${afterPrefix}`,
