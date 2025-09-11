@@ -6,7 +6,8 @@ import path from "path";
 import { ALL_GIT_REPOSITORY_ROOTS } from "./git-store-info.ts";
 import { ResourceModel } from "./resource-model.ts";
 import { simpleGit } from "simple-git";
-import { AvailableFilesystems, DiffTree, EditableType, isEditableType, MergeState, MergeStateCause } from "@dataspecer/git";
+import { AvailableFilesystems, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, FilesystemNode, isEditableType, MergeState, MergeStateCause, MergeStateOnBackend } from "@dataspecer/git";
+import { getLastCommitHash } from "../utils/git-utils.ts";
 
 
 type MergeStateWithData = Prisma.MergeStateGetPayload<{
@@ -22,21 +23,90 @@ export class MergeStateModel {
     this.resourceModel = resourceModel;
   }
 
-  async mergeStateFinalizer(uuid: string): Promise<MergeState | null> {
+  /**
+   * @returns Id of the created merge state, if the state was created (there was more than one conflict). otherwise returns null.
+   */
+  async createMergeStateIfNecessary(
+    rootResourceIri: string,
+    mergeStateCause: MergeStateCause,
+    diffTreeComparisonResult: ComparisonFullResult,
+    lastCommitHashMergeFrom: string,
+    lastCommitHashMergeTo: string,
+    commonCommitHash: string,
+    rootMergeFrom: FilesystemNode,
+    pathToRootMetaMergeFrom: string,
+    filesystemTypeMergeFrom: AvailableFilesystems,
+    rootMergeTo: FilesystemNode,
+    rootFullPathToMetaMergeTo: string,
+    filesystemTypeMergeTo: AvailableFilesystems,
+  ): Promise<string | null> {
+    const {
+      changed, conflicts, created, removed,
+      diffTree, diffTreeSize
+    } = diffTreeComparisonResult;
+
+    if (conflicts.length === 0) {
+      return null;
+    }
+
+    await this.clearTable();     // TODO RadStr: Debug
+
+    const editable: EditableType = convertMergeStateCauseToEditable(mergeStateCause);
+
+
+    const mergeStateInput = {
+      lastCommonCommitHash: commonCommitHash,
+      mergeStateCause,
+      editable,
+      rootIriMergeFrom: rootMergeFrom.metadataCache.iri ?? "",
+      rootFullPathToMetaMergeFrom: pathToRootMetaMergeFrom,
+      lastCommitHashMergeFrom,
+      filesystemTypeMergeFrom,
+      //
+      rootIriMergeTo: rootMergeTo.metadataCache.iri ?? "",
+      rootFullPathToMetaMergeTo,
+      lastCommitHashMergeTo,
+      filesystemTypeMergeTo,
+      changedInEditable: changed,
+      removedInEditable: removed,
+      createdInEditable: created,
+      conflicts: conflicts,
+      diffTree,
+      diffTreeSize,
+    };
+
+    // TODO RadStr: Just debug
+    const mergeStateId = await this.createMergeState(mergeStateInput);
+    console.info("Current merge state with:", await this.getMergeStateFromUUID(mergeStateId, true));
+    console.info("Current merge state without:", await this.getMergeStateFromUUID(mergeStateId, false));
+    if (mergeStateCause !== "merge") {
+      // In case of merge we do not know what is the state of synchronization, we perform it on local ds packages
+      await this.resourceModel.updateIsSynchronizedWithRemote(rootResourceIri, false);
+    }
+
+    return mergeStateId;
+  }
+
+  async propagateResourceChange(packageIri: string, resourceIri: string): Promise<string[]> {
+    throw new Error("TODO RadStr: Implement");
+  }
+
+  async mergeStateFinalizer(uuid: string): Promise<MergeStateOnBackend | null> {
     const mergeState = await this.getMergeStateFromUUID(uuid, true);
     if (mergeState === null) {
       throw new Error(`Merge state for uuid (${uuid}) does not exist`);
     }
+    throw new Error(`TODO RadStr: Not as simple as I thought`);
 
-    const isFinalized = await this.mergeStateConflictFinalizerInternal(mergeState);
-    if (isFinalized) {
-      return mergeState;
-    }
+    // const isFinalized = await this.mergeStateConflictFinalizerInternal(mergeState);
+    // if (isFinalized) {
+    //   return mergeState;
+    // }
 
-    return null;
+    // return null;
   }
 
-  private async handlePullFinalizer(mergeState: MergeState) {
+  private async handlePullFinalizer(mergeState: MergeStateOnBackend) {
     // TODO: This can be "generalized" to allow updating git
     let filesystemOfTheToUpdate: AvailableFilesystems;
     let iriOfTheToUpdate: string;
@@ -66,18 +136,18 @@ export class MergeStateModel {
       // We need path to any directory inside repo (path to file causes error)
       const directory = path.dirname(rootFullPathToMetaMergeToOfThePulled);
       const git = simpleGit(directory);
-      const gitCommitHash = await git.revparse(["HEAD"]);
+      const gitCommitHash = await getLastCommitHash(git);
       this.resourceModel.updateLastCommitHash(iriOfTheToUpdate, gitCommitHash);
     }
   }
 
-  private async handlePushFinalizer(mergeState: MergeState) {
+  private async handlePushFinalizer(mergeState: MergeStateOnBackend) {
     // Same as pull, but we want the user to push, that is to insert the commit message back,
     //  but that is handled in the request handler, not here
     await this.handlePullFinalizer(mergeState);
   }
 
-  private async handleMergeFinalizer(mergeState: MergeState) {
+  private async handleMergeFinalizer(mergeState: MergeStateOnBackend) {
     // TODO RadStr: Same as pull but with updating the new merge fields in db table
   }
 
@@ -86,7 +156,7 @@ export class MergeStateModel {
    *  For example the last commit hash in case of Dataspecer resource
    * @returns true, when it successfully finalized merge state
    */
-  private async mergeStateConflictFinalizerInternal(mergeState: MergeState): Promise<boolean> {
+  private async mergeStateConflictFinalizerInternal(mergeState: MergeStateOnBackend): Promise<boolean> {
     if (mergeState.unresolvedConflicts?.length !== 0) {
       return false;
     }

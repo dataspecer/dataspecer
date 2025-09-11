@@ -30,6 +30,10 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     this.backendApiPath = backendApiPath;
   }
 
+  public getFilesystemType(): AvailableFilesystems {
+    return this.backendFilesystem;
+  }
+
   public static async getDatastoreContentDirectly(
     datastoreInfo: DatastoreInfo | null,
     shouldConvertToDatastoreFormat: boolean,

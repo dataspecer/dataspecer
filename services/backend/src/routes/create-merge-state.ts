@@ -1,9 +1,12 @@
 import { z } from "zod";
 import { asyncHandler } from "../utils/async-handler.ts";
-import { mergeStateModel } from "../main.ts";
+import { mergeStateModel, resourceModel } from "../main.ts";
 import express from "express";
 import { FilesystemFactory } from "../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
-import { AvailableFilesystems, compareFileTrees, EditableType, FilesystemNodeLocation, getMetadataDatastoreFile, MergeStateCause } from "@dataspecer/git";
+import { AvailableFilesystems, compareFileTrees, EditableType, FilesystemNodeLocation, getMergeFromMergeToForGitAndDS, getMetadataDatastoreFile, MergeStateCause } from "@dataspecer/git";
+import { compareBackendFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
+import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "../utils/simple-git-utils.ts";
+import { SimpleGit } from "simple-git";
 
 
 export const createMergeState = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -16,7 +19,23 @@ export const createMergeState = asyncHandler(async (request: express.Request, re
 
   const { mergeFromIri, mergeToIri } = querySchema.parse(request.query);
 
-  const uuid = await computeMergeStateForIris(mergeFromIri, mergeToIri);
+  const mergeFromResource = await resourceModel.getResource(mergeFromIri);
+  const mergeToResource = await resourceModel.getResource(mergeToIri);
+
+  if (mergeFromResource === null || mergeToResource === null) {
+    response.status(404).send({error: `The Merge from or Merge to does not exists in the Dataspecer. The map of iri to boolean if it exists (from and to) ${mergeFromIri}: ${mergeFromResource !== null}, ${mergeToIri}: ${mergeFromResource !== null}`});
+    throw new Error("Missing ")
+  }
+  const { git, gitInitialDirectory } = createSimpleGit(mergeFromIri, "merge-conflicts");
+  await gitCloneBasic(git, gitInitialDirectory, mergeFromResource.linkedGitRepositoryURL, false, true, undefined);
+
+  const uuid = await computeMergeStateForIris(git, mergeFromIri, mergeFromResource.lastCommitHash, mergeToIri, mergeToResource.lastCommitHash);
+
+  if (uuid === null) {
+    response.status(200);
+    response.json(null);
+    return;
+  }
 
   const mergeState = await mergeStateModel.getMergeStateFromUUID(uuid, false);
 
@@ -35,75 +54,27 @@ export const createMergeState = asyncHandler(async (request: express.Request, re
 
 
 export async function computeMergeStateForIris(
-  mergeFromIri: string,
-  mergeToIri: string,
-): Promise<string> {
-  const mergeFromRootLocation: FilesystemNodeLocation = {
-    iri: mergeFromIri,
-    fullPath: "",
-    fullTreePath: "",
-  };
-  const mergeToRootLocation: FilesystemNodeLocation = {
-    iri: mergeToIri,
-    fullPath: "",
-    fullTreePath: "",
-  };
-
-  const mergeFromDSFilesystem = await FilesystemFactory.createFileSystem([mergeFromRootLocation], AvailableFilesystems.DS_Filesystem, null);
-  const mergeToDSFilesystem = await FilesystemFactory.createFileSystem([mergeToRootLocation], AvailableFilesystems.DS_Filesystem, null);
-
-  const mergeFromFakeRoot = mergeFromDSFilesystem.getRoot();
-  const mergeToFakeRoot = mergeToDSFilesystem.getRoot();
-  const mergeFromRoot = Object.values(mergeFromFakeRoot.content)[0];
-  const mergeToRoot = Object.values(mergeToFakeRoot.content)[0];
-  const mergefromPathToRootMeta = getMetadataDatastoreFile(mergeFromRoot.datastores)?.fullPath;
-  const mergeToPathToRootMeta = getMetadataDatastoreFile(mergeToRoot.datastores)?.fullPath;
-  if (mergefromPathToRootMeta === undefined) {
-    throw new Error("The meta file for merge from root is not present");
-  }
-  else if (mergeToPathToRootMeta === undefined) {
-    throw new Error("The meta file for merge to root is not present");
-  }
-
+  git: SimpleGit,
+  mergeFromRootIri: string,
+  mergeFromLastCommitHash: string,
+  mergeToRootIri: string,
+  mergeToLastCommitHash: string,
+): Promise<string | null> {
   const {
-    diffTree,
-    diffTreeSize,
-    changed,
-    conflicts,
-    created,
-    removed
-  } = await compareFileTrees(
-    mergeFromDSFilesystem, mergeFromFakeRoot, mergeFromDSFilesystem.getGlobalFilesystemMap(),
-    mergeToDSFilesystem, mergeToFakeRoot, mergeToDSFilesystem.getGlobalFilesystemMap());
+    diffTreeComparisonResult,
+    rootMergeFrom, pathToRootMetaMergeFrom,
+    filesystemMergeTo, fakeRootMergeTo, rootMergeTo, pathToRootMetaMergeTo,
+  } = await compareBackendFilesystems(null, null,
+    mergeFromRootIri, "", AvailableFilesystems.DS_Filesystem,
+    mergeToRootIri, "", AvailableFilesystems.DS_Filesystem);
 
-  await mergeStateModel.clearTable();     // TODO RadStr: Debug
+    const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS("pull", mergeFromLastCommitHash, mergeToLastCommitHash);
+    const commonCommitHash = await getCommonCommitInHistory(git, mergeFromLastCommitHash, mergeToLastCommitHash);
 
-  const editable: EditableType = "mergeTo";
-  const mergeStateCause: MergeStateCause = "merge";
-
-  const mergeStateInput = {
-    lastCommonCommitHash: "",        // TODO RadStr: I don't know, we probably should set the hashes
-    mergeStateCause,
-    editable,
-    rootIriMergeFrom: mergeFromIri,
-    rootFullPathToMetaMergeFrom: mergefromPathToRootMeta,
-    lastCommitHashMergeFrom: "",        // TODO RadStr: I don't know, we probably should set the hashes
-    filesystemTypeMergeFrom: AvailableFilesystems.DS_Filesystem,
-    //
-    rootIriMergeTo: mergeToIri,
-    rootFullPathToMetaMergeTo: mergeToPathToRootMeta,
-    lastCommitHashMergeTo: "",        // TODO RadStr: I don't know, we probably should set the hashes
-    filesystemTypeMergeTo: AvailableFilesystems.DS_Filesystem,
-    changedInEditable: changed,
-    removedInEditable: removed,
-    createdInEditable: created,
-    conflicts: conflicts,
-    diffTree,
-    diffTreeSize,
-  };
-
-  // TODO RadStr: Just debug
-  const mergeStateId = await mergeStateModel.createMergeState(mergeStateInput);
-
-  return mergeStateId;
+    const createdMergeStateId = mergeStateModel.createMergeStateIfNecessary(
+      mergeFromRootIri, "merge", diffTreeComparisonResult,
+      lastHashMergeFrom, lastHashMergeTo, commonCommitHash,
+      rootMergeFrom, pathToRootMetaMergeFrom, AvailableFilesystems.DS_Filesystem,
+      rootMergeTo, pathToRootMetaMergeTo, AvailableFilesystems.DS_Filesystem);
+    return createdMergeStateId;
 }

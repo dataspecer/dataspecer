@@ -1,6 +1,6 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import { v4 as uuidv4 } from 'uuid';
-import { GitProvider, FilesystemAbstractionBase, ComparisonData, DatastoreInfo, DirectoryNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, MetadataCacheType, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaDatastoreInfo, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode, isDatastoreForMetadata, getDatastoreInfoOfGivenDatastoreType } from "@dataspecer/git";
+import { GitProvider, FilesystemAbstractionBase, ComparisonData, DatastoreInfo, DirectoryNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, MetadataCacheType, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaDatastoreInfo, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode, isDatastoreForMetadata, getDatastoreInfoOfGivenDatastoreType, AvailableFilesystems } from "@dataspecer/git";
 import { ResourceModel } from "../../../models/resource-model.ts";
 import { deleteBlob, deleteResource, updateBlob } from "../../../routes/resource.ts";
 import { BaseResource } from "@dataspecer/core-v2/project";
@@ -41,6 +41,10 @@ export class DSFilesystem extends FilesystemAbstractionBase {
   /////////////////////////////////////
   // Methods
   /////////////////////////////////////
+
+  public getFilesystemType(): AvailableFilesystems {
+    return AvailableFilesystems.DS_Filesystem;
+  }
 
   public static async getDatastoreContentForPath(
     givenResourceModel: ResourceModel,

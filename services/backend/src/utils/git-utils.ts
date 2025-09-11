@@ -5,6 +5,7 @@ import YAML from "yaml";
 import _ from "lodash";
 import { AccessToken, AccessTokenType, CommitterInfo } from "@dataspecer/git";
 import { getHttpsRepoURLWithAuthorization } from "../git-never-commit.ts";
+import { SimpleGit } from "simple-git";
 
 
 // TODO RadStr: Change to Dataspecer after debugging stage
@@ -198,4 +199,14 @@ export function stringToBoolean(value: string): boolean {
 export function getBaseUrl(request: express.Request) {
   const baseURL = request.protocol + '://' + request.get("host");
   return baseURL;
+}
+
+export async function getLastCommitHash(git: SimpleGit) {
+  const gitLastCommitHash = await git.revparse(["HEAD"]);
+  return gitLastCommitHash;
+}
+
+export function shouldCheckForConflicts(commonCommitHash: string, lastCommitHash1: string, lastCommitHash2: string) {
+  const canSafelyMerge = commonCommitHash === lastCommitHash1 || commonCommitHash === lastCommitHash2;
+  return !canSafelyMerge;
 }

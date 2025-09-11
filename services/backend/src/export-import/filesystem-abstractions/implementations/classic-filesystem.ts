@@ -1,4 +1,4 @@
-import { getDatastoreInfoOfGivenDatastoreType, GitProvider, isDatastoreForMetadata } from "@dataspecer/git";
+import { AvailableFilesystems, getDatastoreInfoOfGivenDatastoreType, GitProvider, isDatastoreForMetadata } from "@dataspecer/git";
 import { ComparisonData } from "../../../routes/git-webhook-handler.ts";
 import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, DatastoreInfo, FilesystemAbstractionBase, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode } from "@dataspecer/git";
 
@@ -39,6 +39,10 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
   /////////////////////////////////////
   // Methods
   /////////////////////////////////////
+  public getFilesystemType(): AvailableFilesystems {
+    return AvailableFilesystems.ClassicFilesystem;
+  }
+
   protected async createFilesystemMappingRecursive(
     mappedNodeLocation: FilesystemNodeLocation,
     filesystemMapping: FilesystemMappingType,

@@ -1,6 +1,6 @@
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
-import { AvailableFilesystems, compareFileTrees, EditableType, getMetadataDatastoreFile, GitProvider, GitProviderEnum, isDatastoreForMetadata, MergeStateCause } from "@dataspecer/git";
+import { getMergeFromMergeToMappingForGitAndDS, getMetadataDatastoreFile, GitProvider, GitProviderEnum, isDatastoreForMetadata, MergeStateCause } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { GIT_RAD_STR_BOT_USERNAME, GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN } from "../git-never-commit.ts";
 import fs from "fs";
@@ -11,8 +11,8 @@ import { dsPathJoin } from "../utils/git-utils.ts";
 import { mergeStateModel, resourceModel } from "../main.ts";
 import { updateDSRepositoryByPullingGit } from "./pull-remote-repository.ts";
 import { WEBHOOK_PATH_PREFIX } from "../models/git-store-info.ts";
-import { DatastoreInfo, DirectoryNode, FilesystemNode, FilesystemNodeLocation, FilesystemAbstraction } from "@dataspecer/git";
-import { FilesystemFactory } from "../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
+import { DatastoreInfo, DirectoryNode, FilesystemNode, FilesystemAbstraction, getMergeFromMergeToForGitAndDS } from "@dataspecer/git";
+import { compareGitAndDSFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 
 
 export const handleWebhook = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -55,123 +55,38 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
  * @returns True if there were conflicts, false otherwise
  */
 export async function saveChangesInDirectoryToBackendFinalVersion(
-  directory: string,
+  gitInitialDirectoryParent: string,
   iri: string,
   gitProvider: GitProvider,
   shouldSetMetadataCache: boolean,
   dsLastCommitHash: string,
   gitLastCommitHash: string,
   commonCommitHash: string,
+  mergeStateCause: Omit<MergeStateCause, "merge">,
 ): Promise<boolean> {
-  const rootLocation: FilesystemNodeLocation = {
-    iri: iri,
-    fullPath: directory,
-    fullTreePath: "",
-  };
-  const gitFilesystem = await FilesystemFactory.createFileSystem([rootLocation], AvailableFilesystems.ClassicFilesystem, gitProvider);
-  const gitFakeRoot = gitFilesystem.getRoot();
-  const rootDirectory = gitFakeRoot;              // TODO RadStr: Just backwards compatibility with code so I don't have to change much
-  const rootDirectoryName = gitFakeRoot.name;
+  // Merge from is DS
+  const {
+    diffTreeComparisonResult,
+    filesystemMergeFrom, fakeRootMergeFrom, rootMergeFrom, pathToRootMetaMergeFrom,
+    filesystemMergeTo, fakeRootMergeTo, rootMergeTo, pathToRootMetaMergeTo,
+  } = await compareGitAndDSFilesystems(gitProvider, iri, gitInitialDirectoryParent, mergeStateCause);
 
-  const dsFilesystem = await FilesystemFactory.createFileSystem([rootLocation], AvailableFilesystems.DS_Filesystem, gitProvider);
+  const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS(mergeStateCause, dsLastCommitHash, gitLastCommitHash);
+  const filesystemFakeRoots = { fakeRootMergeFrom, fakeRootMergeTo };
+  const { gitResultNameSuffix } = getMergeFromMergeToMappingForGitAndDS(mergeStateCause);
+
+  const gitRootDirectory = filesystemFakeRoots["fakeRoot" + gitResultNameSuffix as keyof typeof filesystemFakeRoots];              // TODO RadStr: Just backwards compatibility with code so I don't have to change much
+  const gitRootDirectoryName = gitRootDirectory.name;
 
   // TODO RadStr: Rename ... and update based on the conflicts resolution, like we do not want to update when there is conflict
-  await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(rootDirectoryName, rootDirectory, directory, gitProvider, gitFilesystem);      // TODO RadStr: Maybe await is unnecessary
-  // TODO RadStr: [WIP] Connect it to the conflict database entry
-  const dsFakeRoot = dsFilesystem.getRoot();
-  const dsRoot = Object.values(dsFakeRoot.content)[0];
-  const gitRoot = Object.values(gitFakeRoot.content)[0];
-  const dsPathToRootMeta = getMetadataDatastoreFile(dsRoot.datastores)?.fullPath;
-  const gitPathToRootMeta = getMetadataDatastoreFile(gitRoot.datastores)?.fullPath;
-  if (dsPathToRootMeta === undefined) {
-    throw new Error("The meta file for ds root is not present");
-  }
-  else if (gitPathToRootMeta === undefined) {
-    throw new Error("The meta file for git root is not present");
-  }
+  await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(gitRootDirectoryName, gitRootDirectory, gitInitialDirectoryParent, gitProvider, filesystemMergeTo);      // TODO RadStr: Maybe await is unnecessary
 
-  const {
-    diffTree,
-    diffTreeSize,
-    changed,
-    conflicts,
-    created,
-    removed
-  } = await compareFileTrees(
-    gitFilesystem, gitFakeRoot, gitFilesystem.getGlobalFilesystemMap(),
-    dsFilesystem, dsFakeRoot, dsFilesystem.getGlobalFilesystemMap());
-
-  await mergeStateModel.clearTable();     // TODO RadStr: Debug
-
-  const editable: EditableType = "mergeTo";
-  const mergeStateCause: MergeStateCause = "pull";
-
-  const mergeStateInput = {
-    lastCommonCommitHash: commonCommitHash,
-    mergeStateCause,
-    editable,
-    rootIriMergeFrom: gitRoot.metadataCache.iri ?? "",
-    rootFullPathToMetaMergeFrom: gitPathToRootMeta,
-    lastCommitHashMergeFrom: gitLastCommitHash,
-    filesystemTypeMergeFrom: AvailableFilesystems.ClassicFilesystem,
-    //
-    rootIriMergeTo: dsRoot.metadataCache.iri ?? "",
-    rootFullPathToMetaMergeTo: dsPathToRootMeta,
-    lastCommitHashMergeTo: dsLastCommitHash,
-    filesystemTypeMergeTo: AvailableFilesystems.DS_Filesystem,
-    changedInEditable: changed,
-    removedInEditable: removed,
-    createdInEditable: created,
-    conflicts: conflicts,
-    diffTree,
-    diffTreeSize,
-  };
-
-  // TODO RadStr: Just debug
-  const mergeStateId = await mergeStateModel.createMergeState(mergeStateInput);
-  console.info("Current merge state with:", await mergeStateModel.getMergeStateFromUUID(mergeStateId, true));
-  console.info("Current merge state without:", await mergeStateModel.getMergeStateFromUUID(mergeStateId, false));
-  resourceModel.updateIsSynchronizedWithRemote(iri, false);
-
-  return conflicts.length > 0;
-
-
-  // const rootLocation: FilesystemNodeLocation = {
-  //   iri: iri,
-  //   fullPath: directory,
-  //   fullTreePath: "",
-  // };
-  // const gitFilesystem = await FilesystemFactory.createFileSystem([rootLocation], AvailableFilesystems.ClassicFilesystem, gitProvider);
-  // const gitRoot = gitFilesystem.getRoot();    // TODO RadStr: This is the fake root though. but that should not matter
-  // const rootDirectory = gitRoot;              // TODO RadStr: Just backwards compatibility with code so I don't have to change much
-  // const rootDirectoryName = gitRoot.name;
-
-  // TODO RadStr: The old variant - what I am testing against
-  // // const fakeRoot = createFilesystemMappingRoot();
-  // // const mapping: FilesystemMappingType = await createFileSystemMapping(fakeRoot.content, fakeRoot, directory, gitProvider, shouldSetMetadataCache);
-  // // console.info("ROOT MAPPING:", mapping)
-  // // // await saveChangesInDirectoryToBackendFinalVersionRecursive(mapping, directory, gitProvider);      // TODO RadStr: Maybe await is unnecessary
-
-  // // const filesystemNodeEntries = Object.entries(mapping);
-  // // if (!(filesystemNodeEntries.length === 1 && filesystemNodeEntries[0][1].type === "directory")) {
-  // //   console.error("The mapping does not have root directory or the root is not a directory");
-  // //   return;
-  // // }
-  // // const [rootDirectoryName, rootDirectory] = filesystemNodeEntries[0];
-
-
-
-  // // TODO RadStr: Remove the iri
-  // // const comparisonResult = compareFiletrees(rootDirectoryName, rootDirectory, rootDirectoryName, rootDirectory);
-  // // console.info({comparisonResult});
-
-  // // TODO RadStr: Following lines (Except the last one) are just for playing with filesystem implementations
-  // const dsFilesystem = await FilesystemFactory.createFileSystem([rootLocation], AvailableFilesystems.DS_Filesystem, gitProvider);
-  // const comparisonResult = compareFiletrees(rootDirectoryName, gitFilesystem.getRoot(), rootDirectoryName, dsFilesystem.getRoot());
-
-  // console.info({comparisonResult, root1: gitFilesystem.getRoot(), root2: gitFilesystem.getRoot()});
-
-  // await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(rootDirectoryName, rootDirectory, directory, gitProvider);      // TODO RadStr: Maybe await is unnecessary
+  const createdMergeStateId = mergeStateModel.createMergeStateIfNecessary(
+    iri, "pull", diffTreeComparisonResult,
+    lastHashMergeFrom, lastHashMergeTo, commonCommitHash,
+    rootMergeFrom, pathToRootMetaMergeFrom, filesystemMergeFrom.getFilesystemType(),
+    rootMergeTo, pathToRootMetaMergeTo, filesystemMergeTo.getFilesystemType());
+  return createdMergeStateId !== null;
 }
 
 

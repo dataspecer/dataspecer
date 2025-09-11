@@ -7,6 +7,10 @@ export const WEBHOOK_PATH_PREFIX = "for-webhooks";
 export const ROOT_DIRECTORY_FOR_ANY_WEBHOOK: string = path.resolve(ROOT_DIRECTORY_FOR_ANY_GIT + "/" + WEBHOOK_PATH_PREFIX);
 export const FETCH_GIT_HISTORY_PREFIX = "fetch-history";
 export const ROOT_DIRECTORY_FOR_FETCH_GIT_HISTORY: string = path.resolve(ROOT_DIRECTORY_FOR_ANY_GIT + "/" + FETCH_GIT_HISTORY_PREFIX);
+export const MERGE_DS_CONFLICTS_PREFIX = "merge-conflicts";
+export const ROOT_DIRECTORY_FOR_MERGE_DS_CONFLICTS: string = path.resolve(ROOT_DIRECTORY_FOR_ANY_GIT + "/" + MERGE_DS_CONFLICTS_PREFIX);
+
+export type AllowedPublicPrefixes = typeof MANUAL_CLONE_PATH_PREFIX | typeof WEBHOOK_PATH_PREFIX | typeof FETCH_GIT_HISTORY_PREFIX | typeof MERGE_DS_CONFLICTS_PREFIX;
 
 export const PUBLICLY_ACCESSIBLE_GIT_REPOSITORY_ROOTS: string[] = [
   ROOT_DIRECTORY_FOR_ANY_WEBHOOK,

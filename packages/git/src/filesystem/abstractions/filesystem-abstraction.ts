@@ -22,6 +22,8 @@ export enum AvailableFilesystems {
  */
 export interface FilesystemAbstraction {
 
+  getFilesystemType(): AvailableFilesystems;
+
   /**
    * This method behaves basically like constructor. It should initialize the filesystem with given {@link filesystemRoots}.
    * By nature of filesystems, this method is asynchronous.

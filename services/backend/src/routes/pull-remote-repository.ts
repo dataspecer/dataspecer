@@ -7,7 +7,8 @@ import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { saveChangesInDirectoryToBackendFinalVersion } from "./git-webhook-handler.ts";
 import { resourceModel } from "../main.ts";
 import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "../utils/simple-git-utils.ts";
-import { MANUAL_CLONE_PATH_PREFIX } from "../models/git-store-info.ts";
+import { AllowedPublicPrefixes, MANUAL_CLONE_PATH_PREFIX } from "../models/git-store-info.ts";
+import { getLastCommitHash } from "../utils/git-utils.ts";
 
 
 
@@ -51,7 +52,7 @@ export const updateDSRepositoryByPullingGit = async (
   gitProvider: GitProvider,
   branch: string,
   cloneURL: string,
-  cloneDirectoryNamePrefix: string,
+  cloneDirectoryNamePrefix: AllowedPublicPrefixes,
   dsLastCommitHash: string,
   depth?: number
 ): Promise<boolean> => {
@@ -61,11 +62,11 @@ export const updateDSRepositoryByPullingGit = async (
     // TODO RadStr: Not sure if it is better to pull only commits or everything
     await gitCloneBasic(git, gitInitialDirectory, cloneURL, true, true, branch, depth);
     // await saveChangesInDirectoryToBackendFinalVersion(gitInitialDirectory, iri, gitProvider, true);    // TODO RadStr: Not sure about setting the metadata cache (+ we need it always in the call, so the true should be actaully set inside the called method, and the argument should not be here at all)
-    const gitLastCommitHash = await git.revparse(["HEAD"]);
+    const gitLastCommitHash = await getLastCommitHash(git);
     const commonCommit = await getCommonCommitInHistory(git, dsLastCommitHash, gitLastCommitHash);
     hasConflicts = await saveChangesInDirectoryToBackendFinalVersion(
       gitInitialDirectoryParent, iri, gitProvider, true,
-      gitLastCommitHash, dsLastCommitHash, commonCommit);    // TODO RadStr: Not sure about setting the metadata cache (+ we need it always in the call, so the true should be actaully set inside the called method, and the argument should not be here at all)
+      gitLastCommitHash, dsLastCommitHash, commonCommit, "pull");    // TODO RadStr: Not sure about setting the metadata cache (+ we need it always in the call, so the true should be actaully set inside the called method, and the argument should not be here at all)
   }
   catch (cloneError) {
     console.error({cloneError});

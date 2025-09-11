@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
-import { resourceModel } from "../main.ts";
+import { mergeStateModel, resourceModel } from "../main.ts";
 
 
 import { LanguageString } from "@dataspecer/core/core/core-resource";
@@ -16,8 +16,8 @@ import configuration from "../configuration.ts";
 import fs from "fs";
 import { getRepoURLWithAuthorizationUsingDebugPatToken } from "../git-never-commit.ts";
 import { simpleGit, SimpleGit } from "simple-git";
-import { extractPartOfRepositoryURL, getAuthorizationURL } from "../utils/git-utils.ts";
-import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials } from "@dataspecer/git";
+import { extractPartOfRepositoryURL, getAuthorizationURL, getLastCommitHash, shouldCheckForConflicts } from "../utils/git-utils.ts";
+import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
 import YAML from "yaml";
@@ -27,7 +27,8 @@ import { createReadmeFile } from "../git-readme/readme-generator.ts";
 import { ReadmeTemplateData } from "../git-readme/readme-template.ts";
 import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
 import { AvailableExports } from "../export-import/export-actions.ts";
-import { createSimpleGit, gitCloneBasic } from "../utils/simple-git-utils.ts";
+import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "../utils/simple-git-utils.ts";
+import { compareGitAndDSFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 
 
 
@@ -93,7 +94,7 @@ export const commitPackageToGitUsingAuthSession = async (
   iri: string,
   remoteRepositoryURL: string,
   branch: string | null,
-  lastCommitHash: string,
+  localLastCommitHash: string,
   givenRepositoryUserName: string,
   givenRepositoryName: string,
   commitMessage: string | null,
@@ -103,7 +104,7 @@ export const commitPackageToGitUsingAuthSession = async (
   // If gitProvider not given - get it
   gitProvider ??= GitProviderFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL);
   const committer = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
-  await commitPackageToGit(iri, remoteRepositoryURL, branch, lastCommitHash, givenRepositoryUserName, givenRepositoryName, committer, commitMessage, gitProvider);
+  await commitPackageToGit(iri, remoteRepositoryURL, branch, localLastCommitHash, givenRepositoryUserName, givenRepositoryName, committer, commitMessage, gitProvider);
 }
 
 
@@ -116,7 +117,7 @@ export const commitPackageToGit = async (
   iri: string,
   remoteRepositoryURL: string,
   branch: string | null,
-  lastCommitHash: string,
+  localLastCommitHash: string,
   givenRepositoryUserName: string,
   givenRepositoryName: string,
   gitCredentials: GitCredentials,
@@ -131,11 +132,13 @@ export const commitPackageToGit = async (
     const repoURLWithAuthorization = getAuthorizationURL(gitCredentials, accessToken, remoteRepositoryURL, givenRepositoryUserName, givenRepositoryName);
     const isLastAccessToken = accessToken === gitCredentials.accessTokens.at(-1);
 
+    let isNewlyCreatedBranchInDS = false;
+
     try {
       await gitCloneBasic(git, gitInitialDirectory, repoURLWithAuthorization, true, false, branch ?? undefined, 1);
     }
     catch (cloneError: any) {
-      const hasSetLastCommit: boolean = lastCommitHash !== "";
+      const hasSetLastCommit: boolean = localLastCommitHash !== "";
 
       try {
         // It is possible that the branch is newly created inside DS.
@@ -144,9 +147,10 @@ export const commitPackageToGit = async (
         if (hasSetLastCommit) {
           const options = [
             "--depth", "1",
-            "--revision", lastCommitHash,
+            "--revision", localLastCommitHash,
           ];
           await git.clone(repoURLWithAuthorization, ".", options);
+          isNewlyCreatedBranchInDS = true;
         }
         else {
           // Just try to get whole history and hopefully it will work.
@@ -162,6 +166,30 @@ export const commitPackageToGit = async (
         }
         continue;
       }
+    }
+
+    const remoteRepositoryLastCommitHash = await getLastCommitHash(git);
+    const commonCommitHash = await getCommonCommitInHistory(git, localLastCommitHash, remoteRepositoryLastCommitHash);
+    const shouldTryCreateMergeState = shouldCheckForConflicts(commonCommitHash, localLastCommitHash, remoteRepositoryLastCommitHash);
+    if (shouldTryCreateMergeState) {
+      const {
+        diffTreeComparisonResult,
+        rootMergeFrom,
+        pathToRootMetaMergeFrom,
+        filesystemMergeFrom,
+        rootMergeTo,
+        pathToRootMetaMergeTo,
+        filesystemMergeTo,
+       } = await compareGitAndDSFilesystems(gitProvider, iri, gitInitialDirectoryParent, "push");
+
+      const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS("push", localLastCommitHash, remoteRepositoryLastCommitHash);
+      const createdMergeStateId = mergeStateModel.createMergeStateIfNecessary(
+        iri, "push", diffTreeComparisonResult,
+        lastHashMergeFrom, lastHashMergeTo, commonCommitHash,
+        rootMergeFrom, pathToRootMetaMergeFrom, filesystemMergeFrom.getFilesystemType(),
+        rootMergeTo, pathToRootMetaMergeTo, filesystemMergeTo.getFilesystemType());
+
+      throw new Error("TODO RadStr: Implement me");
     }
 
 

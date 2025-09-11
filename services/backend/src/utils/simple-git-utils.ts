@@ -1,7 +1,7 @@
 import { simpleGit, SimpleGit } from "simple-git";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
-import { ROOT_DIRECTORY_FOR_ANY_GIT } from "../models/git-store-info.ts";
+import { AllowedPublicPrefixes, ROOT_DIRECTORY_FOR_ANY_GIT } from "../models/git-store-info.ts";
 
 /**
  * @throws Error on git failure
@@ -107,7 +107,9 @@ export const createUniqueDirectory = (
     }
 }
 
-
+/**
+ * @param cloneDirectoryNamePrefix string since we want to also allow non-public repositories to be stored in ds. However check for the pulibc ones {@link AllowedPublicPrefixes}.
+ */
 export const createSimpleGit = (
     iri: string,
     cloneDirectoryNamePrefix: string,
