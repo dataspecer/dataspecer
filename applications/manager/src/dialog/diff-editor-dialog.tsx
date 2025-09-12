@@ -220,7 +220,7 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
     const isOriginalDataResourceInCache = isDatastorePresentInCache(cacheForOriginalTextContent, newOriginalDatastoreInfo);
     const isModifiedDataResourceInCache = isDatastorePresentInCache(cacheForModifiedTextContent, newModifiedDatastoreInfo);
     if (!(useCache && isOriginalDataResourceInCache && isModifiedDataResourceInCache)) {
-      // TODO RadStr: We have to extend the API by types  - text, JSON, YAML, ...
+      // TODO RadStr: We have to extend the API by types - text, JSON, YAML, ...
       // TODO RadStr: Also I should use the filesystem and original/modified based on the editable not hardcore it
       const newOriginalObjectData = await ClientFilesystem.getDatastoreContentDirectly(newOriginalDatastoreInfo, true, import.meta.env.VITE_BACKEND, examinedMergeState?.filesystemTypeMergeFrom ?? null);
       const newModifiedObjectData = await ClientFilesystem.getDatastoreContentDirectly(newModifiedDatastoreInfo, true, import.meta.env.VITE_BACKEND, examinedMergeState?.filesystemTypeMergeTo ?? null);
@@ -384,7 +384,7 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
             <ResizablePanelGroup direction="horizontal" className="overflow-hidden pr-2">
               <ResizablePanel defaultSize={20} className="flex flex-col pr-16 pl-1 my-6">
                 <ModalHeader className="mb-4">
-                  <h1>Diff editor to resolve {examinedMergeState?.mergeStateCause} conflict</h1>
+                  <h1 className="font-bold text-lg">Diff editor to resolve {examinedMergeState?.mergeStateCause} conflict</h1>
                   <Tabs value={comparisonTabType} onValueChange={setComparisonTabType as any}>
                     <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="text-compare">Text comparison</TabsTrigger>
