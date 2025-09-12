@@ -177,6 +177,10 @@ export const updateDatastoreContentDirectly = asyncHandler(async (request: expre
   });
   const body = bodySchema.parse(request.body);
 
+  console.info({body});
+  response.sendStatus(404);
+  return;
+
   const filesystem: AvailableFilesystems = body.filesystem as AvailableFilesystems;
   const datastoreContent = await updateDatastoreContent(body.pathToDatastore, filesystem, body.type, body.newContent, body.format);
   if (datastoreContent.accessDenied) {

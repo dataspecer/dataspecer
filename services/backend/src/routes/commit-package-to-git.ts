@@ -171,7 +171,7 @@ export const commitPackageToGit = async (
     const remoteRepositoryLastCommitHash = await getLastCommitHash(git);
     const commonCommitHash = await getCommonCommitInHistory(git, localLastCommitHash, remoteRepositoryLastCommitHash);
     const shouldTryCreateMergeState = shouldCheckForConflicts(commonCommitHash, localLastCommitHash, remoteRepositoryLastCommitHash);
-    if (shouldTryCreateMergeState) {
+    // if (shouldTryCreateMergeState) {
       const {
         diffTreeComparisonResult,
         rootMergeFrom,
@@ -190,34 +190,34 @@ export const commitPackageToGit = async (
         rootMergeTo, pathToRootMetaMergeTo, filesystemMergeTo.getFilesystemType());
 
       throw new Error("TODO RadStr: Implement me");
-    }
+    // }
 
 
-    try {
-      const exporter = new PackageExporterByResourceType();
-      await exporter.doExportFromIRI(iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem);
+    // try {
+    //   const exporter = new PackageExporterByResourceType();
+    //   await exporter.doExportFromIRI(iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem);
 
-      const readmeData: ReadmeTemplateData = {
-        dataspecerUrl: "http://localhost:5174",
-        publicationRepositoryUrl: `${gitProvider.getDomainURL(true)}/${givenRepositoryUserName}/${givenRepositoryName}-publication-repo`,  // TODO RadStr: Have to fix once we will use better mechanism to name the publication repos
-      };
-      createReadmeFile(gitInitialDirectory, readmeData);      // TODO RadStr: Again - should be done only in the initial commit
+    //   const readmeData: ReadmeTemplateData = {
+    //     dataspecerUrl: "http://localhost:5174",
+    //     publicationRepositoryUrl: `${gitProvider.getDomainURL(true)}/${givenRepositoryUserName}/${givenRepositoryName}-publication-repo`,  // TODO RadStr: Have to fix once we will use better mechanism to name the publication repos
+    //   };
+    //   createReadmeFile(gitInitialDirectory, readmeData);      // TODO RadStr: Again - should be done only in the initial commit
 
-      gitProvider.copyWorkflowFiles(gitInitialDirectory);
+    //   gitProvider.copyWorkflowFiles(gitInitialDirectory);
 
-      const commitResult = await commitGivenFilesToGit(git, ["."], commitMessage, gitCredentials.name, gitCredentials.email);
-      if (commitResult.commit !== "") {
-        await git.push(repoURLWithAuthorization);
-        await resourceModel.updateLastCommitHash(iri, commitResult.commit);
-      }
-      // Else no changes
-      break;    // We are done
-    }
-    finally {
-      // It is important to not only remove the actual files, but also the .git directory,
-      // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
-      fs.rmSync(gitDirectoryToRemoveAfterWork, { recursive: true, force: true });
-    }
+    //   const commitResult = await commitGivenFilesToGit(git, ["."], commitMessage, gitCredentials.name, gitCredentials.email);
+    //   if (commitResult.commit !== "") {
+    //     await git.push(repoURLWithAuthorization);
+    //     await resourceModel.updateLastCommitHash(iri, commitResult.commit);
+    //   }
+    //   // Else no changes
+    //   break;    // We are done
+    // }
+    // finally {
+    //   // It is important to not only remove the actual files, but also the .git directory,
+    //   // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
+    //   fs.rmSync(gitDirectoryToRemoveAfterWork, { recursive: true, force: true });
+    // }
   }
 };
 
