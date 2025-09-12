@@ -252,8 +252,8 @@ const onClickResolveConflict = (
     console.error("This is most-likely programmer error or corrupted data, the conflict to be resolved, could not be found.");
     return;
   }
-  nodeToResolve.isNowInConflict = false;
   updateConflictsToBeResolvedOnSave(nodeToResolve.setConflictsToBeResolvedOnSave, conflictToBeResolved);
+  nodeToResolve.isNowInConflict = false;
 }
 
 const onClickUnresolveConflict = (
@@ -534,6 +534,7 @@ export const DiffTreeVisualization = (props: {
   isLoadingTreeStructure: boolean,
   setIsLoadingTreeStructure: (value: SetStateAction<boolean>) => void,
   mergeStateFromBackend: MergeState | null,
+  // conflictRemovalsFromParentComponent: ComparisonData[],
   setConflictsToBeResolvedOnSave: Dispatch<SetStateAction<ComparisonData[]>>,
 }) => {
   const setConflictsToBeResolvedOnSave = props.setConflictsToBeResolvedOnSave;
@@ -556,6 +557,14 @@ export const DiffTreeVisualization = (props: {
   const programmaticUnselectTheStopTree = useRef<TreeType | null>(null);
 
   const [shouldOnlyShowConflicts, setShouldShowOnlyConflicts] = useState<boolean>(false);
+
+  // useEffect(() => {
+  //   for (const conflict of props.conflictRemovalsFromParentComponent) {
+  //     oldRenderTree?.find(node => node.id === conflict.oldVersion)
+  //   }
+  //     conflict
+  //   }
+  // }, [props.conflictRemovalsFromParentComponent]);
 
   const [oldRenderTreeDataToRender, setOldRenderTreeDataToRender] = useState<RenderTree>();
   useEffect(() => {

@@ -16,6 +16,8 @@ import { MonacoDiffEditor } from "@/components/monaco-diff-editor";
 import { fetchMergeState } from "./open-merge-state";
 import { ClientFilesystem, ComparisonData, DatastoreInfo, EditableType, MergeResolverStrategy, MergeState } from "@dataspecer/git";
 import { MergeStrategyComponent } from "@/components/merge-strategy-component";
+import ExpandableList from "@/components/expandable-list";
+import { RemoveFromToBeResolvedReactComponent } from "@/components/remove-from-to-be-resolved";
 
 
 export type ChangeActiveModelMethod = (
@@ -280,6 +282,12 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
     closeWithSuccess();
   };
 
+  const unresolveToBeResolvedConflict = (comparisonData: ComparisonData) => {
+    setConflictsToBeResolvedOnSave(prev => {
+      return prev.filter(iteratedComparison => iteratedComparison === comparisonData);
+    });
+  };
+
   const saveFileChanges = async () => {
     const editedNewVersion = JSON.parse(monacoEditor.current?.editor.getModifiedEditor().getValue() ?? "{}");
     ClientFilesystem.updateDatastoreContentDirectly(modifiedDatastoreInfo, editedNewVersion, examinedMergeState?.filesystemTypeMergeTo ?? null, import.meta.env.VITE_BACKEND);
@@ -390,11 +398,9 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
                 </ModalHeader>
                   {/* The overflow-y is needed however it adds a bit horizontal space between the vertical splitter and the Tree structure */}
                   <div className="flex flex-1 flex-col grow overflow-y-auto pr-2 -mr-2 -ml-2 pl-2 h-full w-full">
-                    {
-                      conflictsToBeResolvedOnSave.map(conflictToBeResolvedOnSave => {
-                        return <div>{conflictToBeResolvedOnSave.affectedDataStore.fullPath}</div>;
-                      })
-                    }
+                    <div className="mb-2">
+                      <ExpandableList title="Marked as resolved" items={conflictsToBeResolvedOnSave} buttonComponentContent={RemoveFromToBeResolvedReactComponent} onClickAction={unresolveToBeResolvedConflict} />
+                    </div>
                     <DiffTreeVisualization changeActiveModel={changeActiveModel}
                                             isLoadingTreeStructure={isLoadingTreeStructure}
                                             setIsLoadingTreeStructure={setIsLoadingTreeStructure}
@@ -424,14 +430,14 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
                    <div className="flex flex-col flex-1 h-screen">
                     <Tabs value={comparisonTabType}>
                       <TabsContent value="image-compare">
-                        <RotateCw className="flex ml-1 h-4 w-4" onClick={() => reloadModelsDataFromBackend()} />
+                        <RotateCw className="flex ml-1 h-4 w-4" onClick={reloadModelsDataFromBackend} />
                         <div>
                           <SvgVisualDiff originalSvg={originalSvg} modifiedSvg={modifiedSvg} />
                         </div>
                       </TabsContent>
                       <TabsContent value="text-compare">
                         <div className="flex items-center space-x-4">
-                          <RotateCw className="flex ml-1 h-4 w-4" onClick={() => reloadModelsDataFromBackend()} />
+                          <RotateCw className="flex ml-1 h-4 w-4" onClick={reloadModelsDataFromBackend} />
                           <MergeStrategyComponent handleMergeStateResolving={handleMergeStateResolving}/>
                         </div>
                         {/* The h-screen is needed otherwise the monaco editor is not shown at all */}
