@@ -143,7 +143,7 @@ function createDatastoresRenderRepresentations(
 
     const datastoreRenderNode: RenderNode = {
       id: (datastoreComparison?.newVersion?.fullTreePath ?? datastoreComparison?.oldVersion?.fullTreePath ?? "unknown") + datastoreComparison.affectedDataStore.fullName + "-" + treeToExtract,
-      name: datastoreComparison.affectedDataStore.fullName,
+      name: datastoreComparison.affectedDataStore.type,
       dataSourceType: "datastore",
       status,
       datastores: [],
