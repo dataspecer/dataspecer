@@ -312,9 +312,8 @@ function StyledNode({
   const textClassName = resourceExists ? "" : "line-through";
 
   let icon: string = "";
-  if (node.data.shouldShowConflicts) {
-    icon = node.data.isNowInConflict ? "⚠️" : "";
-  }
+
+  icon = node.data.isNowInConflict ? "⚠️" : "";   // Always show the conflict mark
   if (node.data.dataSourceType == "datastore") {
     icon += "📄";
   }
@@ -328,106 +327,108 @@ function StyledNode({
     throw new Error(`Programmer error, using unknown data source type: ${node.data.dataSourceType}`);
   }
 
-  const styledNode = (<>
-    <div
-      key={node.data.id}
-      className="relative group px-3 hover:bg-gray-50 focus-within:bg-gray-50 whitespace-nowrap"
-    >
+  const styledNode = (
+    <>
       <div
-        style={{
-          ...style,
-          display: "flex",
-          alignItems: "center",
-          // To match the height of rows, otherwise there are vertical spaces between nodes,
-          // which is problem because if we click in the space,
-          // the upper node is selected - which can be non-leaf and we do not want that
-          height: `${treeRowHeight}px`,
-          width: 600,   // TODO RadStr: Ugly hack to not have text over multiple lines (can't think of any other EASY fix - non-easy fix would be set the width based on longest element or set rowHeight based on over how many lines it goes over)
-          color,
-          cursor: isExpandable ? "pointer" : "default",
-          background: node.isSelected ? "#a2a2a5ff" : undefined,
-        }}
-        ref={dragHandle}
-        // TODO RadStr: Remove- Probably no longer needed. It was fixed by explicitly setting node height to the row height.
-        // onFocusCapture={(e) => {
-        //   if (isExpandable) {
-        //     e.stopPropagation();
-        //   }
-        // }}
-        // onFocus={(e) => {
-        //   if (isExpandable) {
-        //     e.stopPropagation();
-        //   }
-        // }}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (isExpandable) {
-            node.toggle();
-          }
-          else {
-            node.focus();
-            node.select();
-
-            // TODO RadStr: ... the paths as mentioned above
-            // if (node.data.fullPathInOldTree === null) {
-            //   throw new Error("The path to the datastore is empty - old version");
-            // }
-            // else if (node.data.fullPathInNewTree === null) {
-            //   throw new Error("The path to the datastore is empty - new version");
-            // }
-
-            node.data.changeActiveModel(node.data.fullDatastoreInfoInOriginalTree, node.data.fullDatastoreInfoInModifiedTree, true);
-          }
-        }}
+        key={node.data.id}
+        className="relative group px-3 hover:bg-gray-50 focus-within:bg-gray-50 whitespace-nowrap"
       >
-        {icon}
-        <span className={textClassName}>{node.data.name}</span>
-        {
-          !node.data.isInEditableTree || isExpandable ?
-          null :
-          <div
-            style={{ left: `${Math.max(node.data.rightOffsetForRowButtons, 0) + 8}px` }}
-            className="absolute text-black top-1/2 -translate-y-1/2 flex opacity-0 bg-white group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto p-1"
-          >
-            <>
-              {
-              !node.data.isNowInConflict ?
-                <div className="h-6 w-6"/> :  // Not null because we want to keep the button positioning
-                <button title="Mark as resolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickResolveConflict(e, node.data)}>
-                  <Check className="h-6 w-6"/>
+        <div
+          style={{
+            ...style,
+            display: "flex",
+            alignItems: "center",
+            // To match the height of rows, otherwise there are vertical spaces between nodes,
+            // which is problem because if we click in the space,
+            // the upper node is selected - which can be non-leaf and we do not want that
+            height: `${treeRowHeight}px`,
+            width: 600,   // TODO RadStr: Ugly hack to not have text over multiple lines (can't think of any other EASY fix - non-easy fix would be set the width based on longest element or set rowHeight based on over how many lines it goes over)
+            color,
+            cursor: isExpandable ? "pointer" : "default",
+            background: node.isSelected ? "#a2a2a5ff" : undefined,
+          }}
+          ref={dragHandle}
+          // TODO RadStr: Remove- Probably no longer needed. It was fixed by explicitly setting node height to the row height.
+          // onFocusCapture={(e) => {
+          //   if (isExpandable) {
+          //     e.stopPropagation();
+          //   }
+          // }}
+          // onFocus={(e) => {
+          //   if (isExpandable) {
+          //     e.stopPropagation();
+          //   }
+          // }}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isExpandable) {
+              node.toggle();
+            }
+            else {
+              node.focus();
+              node.select();
+
+              // TODO RadStr: ... the paths as mentioned above
+              // if (node.data.fullPathInOldTree === null) {
+              //   throw new Error("The path to the datastore is empty - old version");
+              // }
+              // else if (node.data.fullPathInNewTree === null) {
+              //   throw new Error("The path to the datastore is empty - new version");
+              // }
+
+              node.data.changeActiveModel(node.data.fullDatastoreInfoInOriginalTree, node.data.fullDatastoreInfoInModifiedTree, true);
+            }
+          }}
+        >
+          {icon}
+          <span className={textClassName}>{node.data.name}</span>
+          {
+            !node.data.isInEditableTree || isExpandable ?
+            null :
+            <div
+              style={{ left: `${Math.max(node.data.rightOffsetForRowButtons, 0) + 8}px` }}
+              className="absolute text-black top-1/2 -translate-y-1/2 flex opacity-0 bg-white group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto p-1"
+            >
+              <>
+                {
+                !node.data.isNowInConflict ?
+                  <div className="h-6 w-6"/> :  // Not null because we want to keep the button positioning
+                  <button title="Mark as resolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickResolveConflict(e, node.data)}>
+                    <Check className="h-6 w-6"/>
+                  </button>
+                }
+                <button title="Mark as unresolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickUnresolveConflict(e, node.data)}>
+                  <X className="h-6 w-6"/>
                 </button>
-              }
-              <button title="Mark as unresolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickUnresolveConflict(e, node.data)}>
-                <X className="h-6 w-6"/>
-              </button>
-              <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => {e.stopPropagation(); alert("delte")}}>
-                { node.data.treeType === "new" ? <MoveRight className="h-6 w-6"/> : <MoveLeft className="h-6 w-6"/> }
-              </button>
-              {
-              (node.data.status === "modified" || node.data.status === "same") ?
-                <div className="h-6 w-6"/> :
-                null
-              }
-              {
-              node.data.status === "removed" ?
-                <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickCreateDatastore(e, node.data)}>
-                  <Plus className="h-6 w-6"/>
-                </button> :
-                null
-              }
-              {
-              node.data.status === "created" ?
-                <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickRemoveDatastore(e, node.data)}>
-                  <Minus className="h-6 w-6"/>
-                </button> :
-                null
-              }
-            </>
-          </div>
-          }
+                <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => {e.stopPropagation(); alert("delte")}}>
+                  { node.data.treeType === "new" ? <MoveRight className="h-6 w-6"/> : <MoveLeft className="h-6 w-6"/> }
+                </button>
+                {
+                (node.data.status === "modified" || node.data.status === "same") ?
+                  <div className="h-6 w-6"/> :
+                  null
+                }
+                {
+                node.data.status === "removed" ?
+                  <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickCreateDatastore(e, node.data)}>
+                    <Plus className="h-6 w-6"/>
+                  </button> :
+                  null
+                }
+                {
+                node.data.status === "created" ?
+                  <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickRemoveDatastore(e, node.data)}>
+                    <Minus className="h-6 w-6"/>
+                  </button> :
+                  null
+                }
+              </>
+            </div>
+            }
+        </div>
       </div>
-    </div>
-  </>);
+    </>);
+
 
   // TODO RadStr: Remove this react element optimization
   node.data.reactElementToRender = styledNode;
@@ -506,6 +507,19 @@ const updateConflictsToBeResolvedOnSaveByRemoval = (
   });
 };
 
+function filterOutNonConflicts(renderTree: RenderTree | undefined) {
+  if (renderTree === undefined) {
+    return undefined;
+  }
+
+  const filteredTree = [...renderTree.filter(node => node.isNowInConflict).map(node => ({...node}))];
+  for (const filteredNode of filteredTree) {
+    filteredNode.children = filterOutNonConflicts(filteredNode.children);
+  }
+
+  return [...filteredTree.map(node => ({...node}))];
+}
+
 const treeRowHeight = 30;
 
 // TODO RadStr: Probably put into separate file from the diff tree creation
@@ -528,6 +542,7 @@ export const DiffTreeVisualization = (props: {
   const [diffTree, setDiffTree] = useState<DiffTree>();
   const [oldRenderTree, setOldRenderTree] = useState<RenderTree>();
   const [newRenderTree, setNewRenderTree] = useState<RenderTree>();
+
   const [diffTreeNodeCount, setDiffTreeNodeCount] = useState<number>(0);
   const oldTreeRef = useRef<TreeApi<RenderNode>>(null);
   const newTreeRef = useRef<TreeApi<RenderNode>>(null);
@@ -540,10 +555,22 @@ export const DiffTreeVisualization = (props: {
   const isProgrammaticFocus = useRef(false);
   const programmaticUnselectTheStopTree = useRef<TreeType | null>(null);
 
-  const [shouldShowConflicts, setShouldShowConflicts] = useState<boolean>(false);
+  const [shouldOnlyShowConflicts, setShouldShowOnlyConflicts] = useState<boolean>(false);
+
+  const [oldRenderTreeDataToRender, setOldRenderTreeDataToRender] = useState<RenderTree>();
+  useEffect(() => {
+    const treeToRender = !shouldOnlyShowConflicts ? oldRenderTree : filterOutNonConflicts(oldRenderTree);
+    setOldRenderTreeDataToRender(treeToRender)
+  }, [oldRenderTree, shouldOnlyShowConflicts])
+
+  const [newRenderTreeDataToRender, setNewRenderTreeDataToRender] = useState<RenderTree>();
+  useEffect(() => {
+    const treeToRender = !shouldOnlyShowConflicts ? newRenderTree : filterOutNonConflicts(newRenderTree);
+    setNewRenderTreeDataToRender(treeToRender)
+  }, [newRenderTree, shouldOnlyShowConflicts])
 
   const handleShowConflictsCheckboxChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
-    setShouldShowConflicts(event.target.checked);
+    setShouldShowOnlyConflicts(event.target.checked);
   };
 
   const changeActiveModel = props.changeActiveModel;
@@ -730,12 +757,12 @@ export const DiffTreeVisualization = (props: {
       <label className="flex items-center">
         <input
           type="checkbox"
-          checked={shouldShowConflicts}
+          checked={shouldOnlyShowConflicts}
           onChange={handleShowConflictsCheckboxChange}
           className="w-4 h-4"
         />
         {/* TODO RadStr: Localization */}
-        <span>{shouldShowConflicts ? "Showing conflicts" : "Not showing conflicts"}</span>
+        <span>{shouldOnlyShowConflicts ? "Showing only conflicts" : "Showing all"}</span>
       </label>
     </div>
     <div className="flex gap-1 h-full">
@@ -743,8 +770,8 @@ export const DiffTreeVisualization = (props: {
         <h3>{mergeStateFromBackend?.editable === "mergeFrom" ? <DiffEditorEditIcon/> : <DiffEditorCrossedOutEditIcon/>}</h3>
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
-            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldShowConflicts, rightOffsetForRowButtons, mergeStateFromBackend?.conflicts ?? [], setConflictsToBeResolvedOnSave)}
-                  ref={oldTreeRef} data={oldRenderTree} width={"100%"}
+            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, rightOffsetForRowButtons, mergeStateFromBackend?.conflicts ?? [], setConflictsToBeResolvedOnSave)}
+                  ref={oldTreeRef} data={oldRenderTreeDataToRender} width={"100%"}
                   onSelect={(nodes) => onNodesSelect(nodes, "old")}
                   onFocus={(node) => onNodeFocus(node, "old")}
                   onToggle={(id: string) => onNodeToggle(id, "old")}
@@ -758,8 +785,8 @@ export const DiffTreeVisualization = (props: {
         <h3>{mergeStateFromBackend?.editable === "mergeFrom" ? <DiffEditorCrossedOutEditIcon/> : <DiffEditorEditIcon/>}</h3>
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
-            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldShowConflicts, rightOffsetForRowButtons, mergeStateFromBackend?.conflicts ?? [], setConflictsToBeResolvedOnSave)}
-                  ref={newTreeRef} data={newRenderTree} width={"100%"}
+            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, rightOffsetForRowButtons, mergeStateFromBackend?.conflicts ?? [], setConflictsToBeResolvedOnSave)}
+                  ref={newTreeRef} data={newRenderTreeDataToRender} width={"100%"}
                   onSelect={(nodes) => onNodesSelect(nodes, "new")}
                   onFocus={(node) => onNodeFocus(node, "new")}
                   onToggle={(id: string) => onNodeToggle(id, "new")}
