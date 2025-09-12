@@ -109,15 +109,17 @@ const finalizeMergeState = async (mergeStateUUID: string | undefined) => {
 }
 
 const updateCacheContentEntry = (
-    cacheSetter: (value: SetStateAction<CacheContentMap>) => void,
-    datastoreInfo: DatastoreInfo,
-    newValue: string,
-  ) => {
-    cacheSetter(prevState => {
-      return createNewContentCache(prevState, datastoreInfo, newValue);
-    });
-  }
+  cacheSetter: (value: SetStateAction<CacheContentMap>) => void,
+  datastoreInfo: DatastoreInfo,
+  newValue: string,
+) => {
+  cacheSetter(prevState => {
+    return createNewContentCache(prevState, datastoreInfo, newValue);
+  });
+}
 
+export const DIFF_EDITOR_EDIT_ICON_TAILWIND_WIDTH = "w-6";
+export const DIFF_EDITOR_EDIT_ICON_TAILWIND_HEIGHT = "h-6";
 
 export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifiedResourceIri, editable, isOpen, resolve, }: TextDiffEditorDialogProps) => {
   const monacoEditor = useRef<{editor: monaco.editor.IStandaloneDiffEditor}>(undefined);
@@ -369,11 +371,12 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
     <Tabs defaultValue="text-compare">
       <Modal open={isOpen} onOpenChange={(value: boolean) => value ? null : closeWithSuccess()}>
         <ModalContent className="max-w-none h-[100%]">
-            <ModalBody className="grow flex overflow-hidden">
+          <ModalBody className="grow flex overflow-hidden">
             {/* The pr-2 is there so the cross at the top right corner is seen */}
             <ResizablePanelGroup direction="horizontal" className="overflow-hidden pr-2">
               <ResizablePanel defaultSize={20} className="flex flex-col pr-16 pl-1 my-6">
                 <ModalHeader className="mb-4">
+                  <h1>Diff editor to resolve {examinedMergeState?.mergeStateCause} conflict</h1>
                   <Tabs value={comparisonTabType} onValueChange={setComparisonTabType as any}>
                     <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="text-compare">Text comparison</TabsTrigger>

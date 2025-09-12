@@ -1,9 +1,10 @@
 import { ChangeActiveModelMethod } from "@/dialog/diff-editor-dialog";
 import _ from "lodash";
-import { Check, Loader, Minus, MoveRight, Plus, X } from "lucide-react";
+import { Check, Loader, Minus, MoveLeft, MoveRight, Plus, X } from "lucide-react";
 import React, { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import { NodeApi, NodeRendererProps, Tree, TreeApi, } from "react-arborist";
-import { ComparisonData, DatastoreComparison, DatastoreInfo, DiffTree, getDatastoreInfoOfGivenDatastoreType, MergeState } from "@dataspecer/git";
+import { ComparisonData, DatastoreComparison, DatastoreInfo, DiffTree, EditableType, getDatastoreInfoOfGivenDatastoreType, MergeState } from "@dataspecer/git";
+import { DiffEditorCrossedOutEditIcon, DiffEditorEditIcon } from "./crossed-out-icon";
 
 
 type DataSourceRenderType = "datastore" | "directory" | "file";
@@ -12,19 +13,20 @@ type RenderNode = {
   id: string;
   name: string;
   status: RenderStatus;
-  dataSourceType: DataSourceRenderType,
+  dataSourceType: DataSourceRenderType;
   children?: RenderNode[];
   datastores: RenderNode[];
-  reactElementToRender?: React.ReactNode,
-  isReactElementToRenderRenderedAsSelected?: boolean,
-  fullDatastoreInfoInOriginalTree: DatastoreInfo | null,      // TODO RadStr: For now keep together with the ResourceName stuff - but in te end only DatastoreInfo will be enough
-  fullDatastoreInfoInModifiedTree: DatastoreInfo | null,
+  reactElementToRender?: React.ReactNode;
+  isReactElementToRenderRenderedAsSelected?: boolean;
+  fullDatastoreInfoInOriginalTree: DatastoreInfo | null;      // TODO RadStr: For now keep together with the ResourceName stuff - but in te end only DatastoreInfo will be enough
+  fullDatastoreInfoInModifiedTree: DatastoreInfo | null;
   /**
    * If is right now in conflict. To check if it can be part of conflict that is it either was or is right now, check {@link canBeInConflict}.
    */
-  isNowInConflict: boolean,
-  canBeInCoflict: boolean,
-  treeType: TreeType,
+  isNowInConflict: boolean;
+  canBeInCoflict: boolean;
+  treeType: TreeType;
+  isInEditableTree: boolean;
 };
 type RenderNodeWithAdditionalData = RenderNode & {
   changeActiveModel: ChangeActiveModelMethod,
@@ -42,9 +44,10 @@ function createTreeRepresentationsForRendering(
   allConflicts: ComparisonData[],
   unreslovedConflicts: ComparisonData[],
   diffTree: DiffTree,
+  editableTree: EditableType
 ): { oldRenderTree: RenderTree, newRenderTree: RenderTree } {
-  const oldRenderTree = createTreeRepresentationForRendering(allConflicts, unreslovedConflicts, diffTree, "old");
-  const newRenderTree = createTreeRepresentationForRendering(allConflicts, unreslovedConflicts, diffTree, "new");
+  const oldRenderTree = createTreeRepresentationForRendering(allConflicts, unreslovedConflicts, diffTree, "old", editableTree);
+  const newRenderTree = createTreeRepresentationForRendering(allConflicts, unreslovedConflicts, diffTree, "new", editableTree);
   return { oldRenderTree, newRenderTree };
 }
 
@@ -60,11 +63,17 @@ type DatastoreRenderRepresentationsData = {
   canHaveDatastoreWithConflict: boolean,
 };
 
+function checkIfIsInEditableTree(treeToExtract: TreeType, editableTree: EditableType) {
+  const convertedEditableToTreeType: TreeType = editableTree === "mergeFrom" ? "old" : "new";
+  return treeToExtract === convertedEditableToTreeType;
+}
+
 function createDatastoresRenderRepresentations(
   allConflicts: ComparisonData[],
   unresolvedConflicts: ComparisonData[],
   datastoreComparisons: DatastoreComparison[],
-  treeToExtract: TreeType
+  treeToExtract: TreeType,
+  editableTree: EditableType,
 ): DatastoreRenderRepresentationsData {
   const datastoresRenderRepresentations: RenderTree = [];
   let hasDatastoreWithConflict: boolean = false;
@@ -144,6 +153,7 @@ function createDatastoresRenderRepresentations(
       isNowInConflict,
       canBeInCoflict,
       treeType: treeToExtract,
+      isInEditableTree: checkIfIsInEditableTree(treeToExtract, editableTree),
     };
     datastoresRenderRepresentations.push(datastoreRenderNode);
   }
@@ -155,17 +165,18 @@ function createTreeRepresentationForRendering(
   allConflicts: ComparisonData[],
   unresolvedConflicts: ComparisonData[],
   diffTree: DiffTree,
-  treeToExtract: TreeType
+  treeToExtract: TreeType,
+  editableTree: EditableType,
 ): RenderTree {
   const renderTree: RenderTree = [];
 
   for (const [name, node] of Object.entries(diffTree)) {
-    const children = createTreeRepresentationForRendering(allConflicts, unresolvedConflicts, node.childrenDiffTree, treeToExtract);
+    const children = createTreeRepresentationForRendering(allConflicts, unresolvedConflicts, node.childrenDiffTree, treeToExtract, editableTree);
     const {
       datastoresRenderRepresentations,
       hasDatastoreWithConflict,
       canHaveDatastoreWithConflict,
-    } = createDatastoresRenderRepresentations(allConflicts, unresolvedConflicts, node.datastoreComparisons, treeToExtract);
+    } = createDatastoresRenderRepresentations(allConflicts, unresolvedConflicts, node.datastoreComparisons, treeToExtract, editableTree);
 
     let status: RenderStatus;
     if (node.resourceComparisonResult === "exists-in-both") {
@@ -213,6 +224,7 @@ function createTreeRepresentationForRendering(
       isNowInConflict: hasDatastoreWithConflict,
       canBeInCoflict: canHaveDatastoreWithConflict,
       treeType: treeToExtract,
+      isInEditableTree: checkIfIsInEditableTree(treeToExtract, editableTree),
     };
     renderTree.push(renderNode);
   }
@@ -370,14 +382,13 @@ function StyledNode({
       >
         {icon}
         <span className={textClassName}>{node.data.name}</span>
-        <div
-          style={{ left: `${Math.max(node.data.rightOffsetForRowButtons, 0) + 8}px` }}
-          className="absolute text-black top-1/2 -translate-y-1/2 flex opacity-0 bg-white group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto p-1"
-        >
-          {
-          // node.data.treeType === "old" || !node.data.canBeInCoflict || isExpandable ?
-          node.data.treeType === "old" || isExpandable ?
-            null :
+        {
+          !node.data.isInEditableTree || isExpandable ?
+          null :
+          <div
+            style={{ left: `${Math.max(node.data.rightOffsetForRowButtons, 0) + 8}px` }}
+            className="absolute text-black top-1/2 -translate-y-1/2 flex opacity-0 bg-white group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto p-1"
+          >
             <>
               {
               !node.data.isNowInConflict ?
@@ -390,7 +401,7 @@ function StyledNode({
                 <X className="h-6 w-6"/>
               </button>
               <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => {e.stopPropagation(); alert("delte")}}>
-                <MoveRight className="h-6 w-6"/>
+                { node.data.treeType === "new" ? <MoveRight className="h-6 w-6"/> : <MoveLeft className="h-6 w-6"/> }
               </button>
               {
               (node.data.status === "modified" || node.data.status === "same") ?
@@ -412,8 +423,8 @@ function StyledNode({
                 null
               }
             </>
+          </div>
           }
-        </div>
       </div>
     </div>
   </>);
@@ -670,7 +681,7 @@ export const DiffTreeVisualization = (props: {
       setDiffTreeNodeCount(fetchedDiffTreeSize);
       console.info({ fetchedDiffTree });
 
-      const { oldRenderTree: computedOldRenderTree, newRenderTree: computedNewRenderTree } = createTreeRepresentationsForRendering(fetchedConflicts, fetchedUnresolvedConflicts, fetchedDiffTree);
+      const { oldRenderTree: computedOldRenderTree, newRenderTree: computedNewRenderTree } = createTreeRepresentationsForRendering(fetchedConflicts, fetchedUnresolvedConflicts, fetchedDiffTree, fetchedMergeState.editable);
       console.info({ computedOldRenderTree, computedNewRenderTree } );     // TODO RadStr: Deug print
       setOldRenderTree(computedOldRenderTree);
       setNewRenderTree(computedNewRenderTree);
@@ -729,7 +740,7 @@ export const DiffTreeVisualization = (props: {
     </div>
     <div className="flex gap-1 h-full">
       <div className="flex-1 border border-stone-200 h-full" style={{height: treeRowHeight*treeRowHeightMultiplier}}>
-        <h3>Old:</h3>
+        <h3>{mergeStateFromBackend?.editable === "mergeFrom" ? <DiffEditorEditIcon/> : <DiffEditorCrossedOutEditIcon/>}</h3>
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
             <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldShowConflicts, rightOffsetForRowButtons, mergeStateFromBackend?.conflicts ?? [], setConflictsToBeResolvedOnSave)}
@@ -744,7 +755,7 @@ export const DiffTreeVisualization = (props: {
         }
       </div>
       <div ref={treeWrapperRef} className="flex-1 border border-stone-200 h-full" style={{height: treeRowHeight*treeRowHeightMultiplier}}>
-        <h3>New:</h3>
+        <h3>{mergeStateFromBackend?.editable === "mergeFrom" ? <DiffEditorCrossedOutEditIcon/> : <DiffEditorEditIcon/>}</h3>
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
             <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldShowConflicts, rightOffsetForRowButtons, mergeStateFromBackend?.conflicts ?? [], setConflictsToBeResolvedOnSave)}
