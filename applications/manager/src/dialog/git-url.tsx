@@ -238,6 +238,7 @@ export const commitToGitDialogOnClickHandler = async (openModal: OpenBetterModal
         method: "GET",
       });
     gitOperationResultToast(response);
+    requestLoadPackage(iri, true);
   }
 };
 
