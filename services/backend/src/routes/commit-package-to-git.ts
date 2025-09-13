@@ -29,6 +29,7 @@ import { PackageExporterByResourceType } from "../export-import/export-by-resour
 import { AvailableExports } from "../export-import/export-actions.ts";
 import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "../utils/simple-git-utils.ts";
 import { compareGitAndDSFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
+import { PUSH_PREFIX } from "../models/git-store-info.ts";
 
 
 
@@ -127,7 +128,7 @@ export const commitPackageToGit = async (
   if (commitMessage === null) {
     commitMessage = createUniqueCommitMessage();
   }
-  const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGit(iri, "commit-package-to-git-dir");
+  const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGit(iri, PUSH_PREFIX);
   for (const accessToken of gitCredentials.accessTokens) {
     const repoURLWithAuthorization = getAuthorizationURL(gitCredentials, accessToken, remoteRepositoryURL, givenRepositoryUserName, givenRepositoryName);
     const isLastAccessToken = accessToken === gitCredentials.accessTokens.at(-1);
