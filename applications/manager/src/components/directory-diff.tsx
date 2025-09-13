@@ -3,7 +3,7 @@ import _ from "lodash";
 import { Check, Loader, Minus, MoveLeft, MoveRight, Plus, X } from "lucide-react";
 import React, { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import { NodeApi, NodeRendererProps, Tree, TreeApi, } from "react-arborist";
-import { ComparisonData, DatastoreComparison, DatastoreInfo, DiffTree, EditableType, getDatastoreInfoOfGivenDatastoreType, MergeState } from "@dataspecer/git";
+import { ComparisonData, DatastoreComparison, DatastoreInfo, DiffTree, EditableType, getDatastoreInfoOfGivenDatastoreType, MergeState, ResourceComparison } from "@dataspecer/git";
 import { DiffEditorCrossedOutEditIcon, DiffEditorEditIcon } from "./crossed-out-icon";
 
 
@@ -65,6 +65,10 @@ type DatastoreRenderRepresentationsData = {
 function checkIfIsInEditableTree(treeToExtract: TreeType, editableTree: EditableType) {
   const convertedEditableToTreeType: TreeType = editableTree === "mergeFrom" ? "old" : "new";
   return treeToExtract === convertedEditableToTreeType;
+}
+
+function createIdForDatastoreRenderNode(datastoreComparison: DatastoreComparison, treeToExtract: TreeType) {
+  return (datastoreComparison?.newVersion?.fullTreePath ?? datastoreComparison?.oldVersion?.fullTreePath ?? "unknown") + datastoreComparison.affectedDataStore.fullName + "-" + treeToExtract;
 }
 
 function createDatastoresRenderRepresentations(
@@ -141,7 +145,7 @@ function createDatastoresRenderRepresentations(
     }
 
     const datastoreRenderNode: RenderNode = {
-      id: (datastoreComparison?.newVersion?.fullTreePath ?? datastoreComparison?.oldVersion?.fullTreePath ?? "unknown") + datastoreComparison.affectedDataStore.fullName + "-" + treeToExtract,
+      id: createIdForDatastoreRenderNode(datastoreComparison, treeToExtract),
       name: datastoreComparison.affectedDataStore.type,
       dataSourceType: "datastore",
       status,
@@ -158,6 +162,10 @@ function createDatastoresRenderRepresentations(
   }
 
   return { datastoresRenderRepresentations, hasDatastoreWithConflict, canHaveDatastoreWithConflict };
+}
+
+function createIdForFilesystemRenderNode(resourceComparison: ResourceComparison, treeToExtract: TreeType) {
+  return resourceComparison.resource.fullTreePath + "-" + treeToExtract;
 }
 
 function createTreeRepresentationForRendering(
@@ -209,7 +217,7 @@ function createTreeRepresentationForRendering(
     console.info("id:", node.resource.fullTreePath + "-" + treeToExtract);
 
     const renderNode: RenderNode = {
-      id: node.resource.fullTreePath + "-" + treeToExtract,
+      id: createIdForFilesystemRenderNode(node, treeToExtract),
       name: name,
       status,
       dataSourceType: node.resource.type,
@@ -240,35 +248,43 @@ const findConflictForNode = (nodeToResolve: RenderNodeWithAdditionalData) => {
 
 const onClickResolveConflict = (
   event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-  nodeToResolve: RenderNodeWithAdditionalData,
+  nodeToResolve: NodeApi<RenderNodeWithAdditionalData>,
 ) => {
   event.stopPropagation();
 
 
-  const conflictToBeResolved = findConflictForNode(nodeToResolve);
+  const conflictToBeResolved = findConflictForNode(nodeToResolve.data);
 
   if (conflictToBeResolved === null) {
     console.error("This is most-likely programmer error or corrupted data, the conflict to be resolved, could not be found.");
     return;
   }
-  updateConflictsToBeResolvedOnSave(nodeToResolve.setConflictsToBeResolvedOnSave, conflictToBeResolved);
-  nodeToResolve.isNowInConflict = false;
+  updateConflictsToBeResolvedOnSave(nodeToResolve.data.setConflictsToBeResolvedOnSave, conflictToBeResolved);
+  let recursiveNode: NodeApi<RenderNodeWithAdditionalData> | null = nodeToResolve;
+  while (recursiveNode !== null) {
+    recursiveNode.data.isNowInConflict = false;
+    recursiveNode = recursiveNode.parent
+  }
 }
 
 const onClickUnresolveConflict = (
   event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-  nodeToResolve: RenderNodeWithAdditionalData,
+  nodeToUnresolve: NodeApi<RenderNodeWithAdditionalData>,
 ) => {
   event.stopPropagation();
-  const conflictToBeUnresolved = findConflictForNode(nodeToResolve);
+  const conflictToBeUnresolved = findConflictForNode(nodeToUnresolve.data);
 
   if (conflictToBeUnresolved === null) {
     console.error("This is most-likely programmer error or corrupted data, the conflict to be resolved, could not be found.");
     return;
   }
 
-  updateConflictsToBeResolvedOnSaveByRemoval(nodeToResolve.setConflictsToBeResolvedOnSave, conflictToBeUnresolved);
-  nodeToResolve.isNowInConflict = true;
+  updateConflictsToBeResolvedOnSaveByRemoval(nodeToUnresolve.data.setConflictsToBeResolvedOnSave, conflictToBeUnresolved);
+  let recursiveNode: NodeApi<RenderNodeWithAdditionalData> | null = nodeToUnresolve;
+  while (recursiveNode !== null) {
+    recursiveNode.data.isNowInConflict = true;
+    recursiveNode = recursiveNode.parent
+  }
 }
 
 const onClickRemoveDatastore = (
@@ -393,11 +409,11 @@ function StyledNode({
                 {
                 !node.data.isNowInConflict ?
                   <div className="h-6 w-6"/> :  // Not null because we want to keep the button positioning
-                  <button title="Mark as resolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickResolveConflict(e, node.data)}>
+                  <button title="Mark as resolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickResolveConflict(e, node)}>
                     <Check className="h-6 w-6"/>
                   </button>
                 }
-                <button title="Mark as unresolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickUnresolveConflict(e, node.data)}>
+                <button title="Mark as unresolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickUnresolveConflict(e, node)}>
                   <X className="h-6 w-6"/>
                 </button>
                 <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => {e.stopPropagation(); alert("delte")}}>
@@ -518,6 +534,42 @@ function filterOutNonConflicts(renderTree: RenderTree | undefined) {
   return [...filteredTree.map(node => ({...node}))];
 }
 
+/**
+ * Finds the given conflict in tree and all its parents
+ */
+function findGivenConflictInTree(conflict: ComparisonData, tree: RenderTree) {
+  const visitedNodes: RenderNode[] = [];
+  if (findGivenConflictInTreeInternal(conflict, tree, visitedNodes)) {
+    return visitedNodes;
+  }
+  return [];
+}
+
+/**
+ * @returns true if matched
+ */
+function findGivenConflictInTreeInternal(conflict: ComparisonData, tree: RenderTree, visitedNodes: RenderNode[]): boolean {
+  for (const node of tree) {
+    visitedNodes.push(node);
+    const relevantDatastore = node.datastores.find(datastore => datastore.name === conflict.affectedDataStore.type);
+    if (relevantDatastore?.fullDatastoreInfoInModifiedTree?.fullPath === conflict.affectedDataStore.fullPath ||
+        relevantDatastore?.fullDatastoreInfoInOriginalTree?.fullPath === conflict.affectedDataStore.fullPath) {
+      // We found it
+      visitedNodes.push(relevantDatastore)
+      return true;
+    }
+
+    // Check children maybe it is there
+    if (findGivenConflictInTreeInternal(conflict, node.children ?? [], visitedNodes)) {
+      return true;
+    }
+    visitedNodes.pop();
+  }
+
+
+  return false;
+}
+
 const treeRowHeight = 30;
 
 // TODO RadStr: Probably put into separate file from the diff tree creation
@@ -532,7 +584,7 @@ export const DiffTreeVisualization = (props: {
   isLoadingTreeStructure: boolean,
   setIsLoadingTreeStructure: (value: SetStateAction<boolean>) => void,
   mergeStateFromBackend: MergeState | null,
-  // conflictRemovalsFromParentComponent: ComparisonData[],
+  conflictsToBeResolvedOnSaveFromParent: ComparisonData[],
   setConflictsToBeResolvedOnSave: Dispatch<SetStateAction<ComparisonData[]>>,
 }) => {
   const setConflictsToBeResolvedOnSave = props.setConflictsToBeResolvedOnSave;
@@ -545,6 +597,27 @@ export const DiffTreeVisualization = (props: {
   const [diffTreeNodeCount, setDiffTreeNodeCount] = useState<number>(0);
   const oldTreeRef = useRef<TreeApi<RenderNode>>(null);
   const newTreeRef = useRef<TreeApi<RenderNode>>(null);
+
+  const [conflictsToBeResolvedOnSaveInThisComponent, setConflictsToBeResolvedOnSaveInThisComponent] = useState<ComparisonData[]>([]);
+  useEffect(() => {
+    const newlyUnresolvedConflicts = conflictsToBeResolvedOnSaveInThisComponent.filter(conflict => !props.conflictsToBeResolvedOnSaveFromParent.includes(conflict));
+    for (const newlyUnresolvedConflict of newlyUnresolvedConflicts) {
+      if (oldRenderTree !== undefined) {
+        const nodesRelatedToConflict = findGivenConflictInTree(newlyUnresolvedConflict, oldRenderTree);
+        for (const nodeRelatedToConflict of nodesRelatedToConflict) {
+          nodeRelatedToConflict.isNowInConflict = true;
+        }
+      }
+      // Same but for the new render tree
+      if (newRenderTree !== undefined) {
+        const nodesRelatedToConflict = findGivenConflictInTree(newlyUnresolvedConflict, newRenderTree);
+        for (const nodeRelatedToConflict of nodesRelatedToConflict) {
+          nodeRelatedToConflict.isNowInConflict = true;
+        }
+      }
+    }
+    setConflictsToBeResolvedOnSaveInThisComponent(props.conflictsToBeResolvedOnSaveFromParent);
+  }, [props.conflictsToBeResolvedOnSaveFromParent]);
 
 
   const isProgrammaticFocus = useRef(false);
@@ -692,7 +765,7 @@ export const DiffTreeVisualization = (props: {
       console.info({ fetchedDiffTree });
 
       const { oldRenderTree: computedOldRenderTree, newRenderTree: computedNewRenderTree } = createTreeRepresentationsForRendering(fetchedConflicts, fetchedUnresolvedConflicts, fetchedDiffTree, fetchedMergeState.editable);
-      console.info({ computedOldRenderTree, computedNewRenderTree } );     // TODO RadStr: Deug print
+      console.info({ computedOldRenderTree, computedNewRenderTree } );     // TODO RadStr: Debug print
       setOldRenderTree(computedOldRenderTree);
       setNewRenderTree(computedNewRenderTree);
 

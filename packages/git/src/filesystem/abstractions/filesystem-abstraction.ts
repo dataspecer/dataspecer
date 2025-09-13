@@ -266,6 +266,10 @@ export function createMetaDatastoreInfo(basename: string, format: string): Datas
 
 
 export function getDatastoreInfoOfGivenDatastoreType(filesystemNode: FilesystemNode, type: string) {
-  const relevantDatastore = filesystemNode.datastores.find(datastore => datastore.type === type);
+  return findDatastoreInfoOfGivenDatastoreType(filesystemNode.datastores, type);
+}
+
+function findDatastoreInfoOfGivenDatastoreType(datastores: DatastoreInfo[], type: string) {
+  const relevantDatastore = datastores.find(datastore => datastore.type === type);
   return relevantDatastore;
 }

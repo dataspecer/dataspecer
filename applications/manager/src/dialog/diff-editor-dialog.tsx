@@ -284,7 +284,7 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
 
   const unresolveToBeResolvedConflict = (comparisonData: ComparisonData) => {
     setConflictsToBeResolvedOnSave(prev => {
-      return prev.filter(iteratedComparison => iteratedComparison === comparisonData);
+      return prev.filter(iteratedComparison => iteratedComparison !== comparisonData);
     });
   };
 
@@ -405,6 +405,7 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
                                             isLoadingTreeStructure={isLoadingTreeStructure}
                                             setIsLoadingTreeStructure={setIsLoadingTreeStructure}
                                             mergeStateFromBackend={examinedMergeState}
+                                            conflictsToBeResolvedOnSaveFromParent={conflictsToBeResolvedOnSave}
                                             setConflictsToBeResolvedOnSave={setConflictsToBeResolvedOnSave}
                                             />
                   </div>
