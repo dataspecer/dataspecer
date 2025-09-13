@@ -23,8 +23,8 @@ type RenderNode = {
   /**
    * If is right now in conflict. To check if it can be part of conflict that is it either was or is right now, check {@link canBeInConflict}.
    */
-  isNowInConflict: boolean;
-  canBeInCoflict: boolean;
+  nowInConflictCount: number;
+  canBeInCoflictCount: number;
   treeType: TreeType;
   isInEditableTree: boolean;
 };
@@ -55,11 +55,11 @@ type DatastoreRenderRepresentationsData = {
   /**
    * True if there exists at least one node in the {@link datastoresRenderRepresentations}, which is in conflict
    */
-  hasDatastoreWithConflict: boolean,
+  datastoresWithConflictCount: number,
   /**
    * Same as {@link hasDatastoreWithConflict}, but it does not have to be in conflict right now.
    */
-  canHaveDatastoreWithConflict: boolean,
+  totalDatastoresWithConflictCount: number,
 };
 
 function checkIfIsInEditableTree(treeToExtract: TreeType, editableTree: EditableType) {
@@ -79,8 +79,8 @@ function createDatastoresRenderRepresentations(
   editableTree: EditableType,
 ): DatastoreRenderRepresentationsData {
   const datastoresRenderRepresentations: RenderTree = [];
-  let hasDatastoreWithConflict: boolean = false;
-  let canHaveDatastoreWithConflict: boolean = false;
+  let datastoresWithConflictCount: number = 0;
+  let totalDatastoresWithConflictCount: number = 0;
 
   for (const datastoreComparison of datastoreComparisons) {
     let status: RenderStatus;
@@ -135,13 +135,13 @@ function createDatastoresRenderRepresentations(
 
     const isNowInConflict = unresolvedConflicts.findIndex(conflict => conflict.affectedDataStore.fullPath === datastoreComparison.affectedDataStore.fullPath) !== -1;
     if (isNowInConflict) {
-      hasDatastoreWithConflict = true;
+      datastoresWithConflictCount++;
     }
 
     // The ternary operator is just optimization, searching allConflicts is always enough
     const canBeInCoflict = isNowInConflict ? isNowInConflict : allConflicts.findIndex(conflict => conflict.affectedDataStore.fullPath === datastoreComparison.affectedDataStore.fullPath) !== -1;
     if (canBeInCoflict) {
-      canHaveDatastoreWithConflict = true;
+      totalDatastoresWithConflictCount++;
     }
 
     const datastoreRenderNode: RenderNode = {
@@ -153,15 +153,15 @@ function createDatastoresRenderRepresentations(
 
       fullDatastoreInfoInOriginalTree,
       fullDatastoreInfoInModifiedTree,
-      isNowInConflict,
-      canBeInCoflict,
+      nowInConflictCount: isNowInConflict ? 1 : 0,
+      canBeInCoflictCount: canBeInCoflict ? 1 : 0,
       treeType: treeToExtract,
       isInEditableTree: checkIfIsInEditableTree(treeToExtract, editableTree),
     };
     datastoresRenderRepresentations.push(datastoreRenderNode);
   }
 
-  return { datastoresRenderRepresentations, hasDatastoreWithConflict, canHaveDatastoreWithConflict };
+  return { datastoresRenderRepresentations, datastoresWithConflictCount, totalDatastoresWithConflictCount };
 }
 
 function createIdForFilesystemRenderNode(resourceComparison: ResourceComparison, treeToExtract: TreeType) {
@@ -181,8 +181,8 @@ function createTreeRepresentationForRendering(
     const children = createTreeRepresentationForRendering(allConflicts, unresolvedConflicts, node.childrenDiffTree, treeToExtract, editableTree);
     const {
       datastoresRenderRepresentations,
-      hasDatastoreWithConflict,
-      canHaveDatastoreWithConflict,
+      datastoresWithConflictCount,
+      totalDatastoresWithConflictCount
     } = createDatastoresRenderRepresentations(allConflicts, unresolvedConflicts, node.datastoreComparisons, treeToExtract, editableTree);
 
     let status: RenderStatus;
@@ -216,6 +216,13 @@ function createTreeRepresentationForRendering(
 
     console.info("id:", node.resource.fullTreePath + "-" + treeToExtract);
 
+    let nowInConflictCountInExpandableChildren = 0;
+    let totalConflictCountInExpandableChildren = 0;
+    for (const child of children) {
+      nowInConflictCountInExpandableChildren += child.nowInConflictCount;
+      totalConflictCountInExpandableChildren += child.canBeInCoflictCount;
+    }
+
     const renderNode: RenderNode = {
       id: createIdForFilesystemRenderNode(node, treeToExtract),
       name: name,
@@ -228,8 +235,8 @@ function createTreeRepresentationForRendering(
       // TODO RadStr: The path as mentioned above
       // fullPathInOldTree: "Empty since we fetch only datastores",
       // fullPathInNewTree: "Empty since we fetch only datastores",
-      isNowInConflict: hasDatastoreWithConflict,
-      canBeInCoflict: canHaveDatastoreWithConflict,
+      nowInConflictCount: datastoresWithConflictCount + nowInConflictCountInExpandableChildren,
+      canBeInCoflictCount: totalDatastoresWithConflictCount + totalConflictCountInExpandableChildren,
       treeType: treeToExtract,
       isInEditableTree: checkIfIsInEditableTree(treeToExtract, editableTree),
     };
@@ -262,7 +269,7 @@ const onClickResolveConflict = (
   updateConflictsToBeResolvedOnSave(nodeToResolve.data.setConflictsToBeResolvedOnSave, conflictToBeResolved);
   let recursiveNode: NodeApi<RenderNodeWithAdditionalData> | null = nodeToResolve;
   while (recursiveNode !== null) {
-    recursiveNode.data.isNowInConflict = false;
+    recursiveNode.data.nowInConflictCount--;
     recursiveNode = recursiveNode.parent
   }
 }
@@ -282,7 +289,7 @@ const onClickUnresolveConflict = (
   updateConflictsToBeResolvedOnSaveByRemoval(nodeToUnresolve.data.setConflictsToBeResolvedOnSave, conflictToBeUnresolved);
   let recursiveNode: NodeApi<RenderNodeWithAdditionalData> | null = nodeToUnresolve;
   while (recursiveNode !== null) {
-    recursiveNode.data.isNowInConflict = true;
+    recursiveNode.data.nowInConflictCount++;
     recursiveNode = recursiveNode.parent
   }
 }
@@ -328,7 +335,7 @@ function StyledNode({
 
   let icon: string = "";
 
-  icon = node.data.isNowInConflict ? "⚠️" : "";   // Always show the conflict mark
+  icon = node.data.nowInConflictCount === 0 ? "" : "⚠️";   // Always show the conflict mark
   if (node.data.dataSourceType == "datastore") {
     icon += "📄";
   }
@@ -407,7 +414,7 @@ function StyledNode({
             >
               <>
                 {
-                !node.data.isNowInConflict ?
+                node.data.nowInConflictCount === 0 ?
                   <div className="h-6 w-6"/> :  // Not null because we want to keep the button positioning
                   <button title="Mark as resolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickResolveConflict(e, node)}>
                     <Check className="h-6 w-6"/>
@@ -526,7 +533,7 @@ function filterOutNonConflicts(renderTree: RenderTree | undefined) {
     return undefined;
   }
 
-  const filteredTree = [...renderTree.filter(node => node.isNowInConflict).map(node => ({...node}))];
+  const filteredTree = [...renderTree.filter(node => node.nowInConflictCount).map(node => ({...node}))];
   for (const filteredNode of filteredTree) {
     filteredNode.children = filterOutNonConflicts(filteredNode.children);
   }
@@ -605,14 +612,14 @@ export const DiffTreeVisualization = (props: {
       if (oldRenderTree !== undefined) {
         const nodesRelatedToConflict = findGivenConflictInTree(newlyUnresolvedConflict, oldRenderTree);
         for (const nodeRelatedToConflict of nodesRelatedToConflict) {
-          nodeRelatedToConflict.isNowInConflict = true;
+          nodeRelatedToConflict.nowInConflictCount++;
         }
       }
       // Same but for the new render tree
       if (newRenderTree !== undefined) {
         const nodesRelatedToConflict = findGivenConflictInTree(newlyUnresolvedConflict, newRenderTree);
         for (const nodeRelatedToConflict of nodesRelatedToConflict) {
-          nodeRelatedToConflict.isNowInConflict = true;
+          nodeRelatedToConflict.nowInConflictCount++;
         }
       }
     }
