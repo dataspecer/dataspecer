@@ -7,7 +7,7 @@ import { asyncHandler } from "../utils/async-handler.ts";
 
 import express from "express";
 import { ConfigType } from "@dataspecer/git";
-import { findPatAccessToken } from "./create-package-git-link.ts";
+import { findPatAccessTokens } from "./create-package-git-link.ts";
 
 /**
  * Removes Git repository with iri given in query part of request.
@@ -43,27 +43,40 @@ export const removeGitRepository = asyncHandler(async (request: express.Request,
 
   const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(repositoryURL);
   const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.DeleteRepoControl]);
-  const accessToken = findPatAccessToken(accessTokens);
-  if (accessToken === null) {
-    throw new Error("There is neither user or bot pat token to perform the removal of remote git repository.");
+  const patAccessTokens = findPatAccessTokens(accessTokens);
+  let successfullyRemovedRemoteRepository = false;
+  let successfullyRemovedPublicationRepository = false;
+  for (const patAccessToken of patAccessTokens) {
+    try {
+      if (!successfullyRemovedRemoteRepository) {
+        // TODO RadStr: Again - I have the full URL, I don't need to deconstruct it and then construct it back
+        const fetchResponseForRemove = await gitProvider.removeRemoteRepository(patAccessToken.value, repositoryUserName, repoName);
+        // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
+        // console.info("fetchResponse for GitHub repository delete", fetchResponseForRemove);
+        successfullyRemovedRemoteRepository = true;
+      }
+
+      if (!successfullyRemovedPublicationRepository) {
+        // TODO RadStr: Well the name of repository might be different in future, but this is anyways just for debugging now
+        const fetchResponseForPublicationRepositoryRemove = await gitProvider.removeRemoteRepository(patAccessToken.value, repositoryUserName, repoName + "-publication-repo");
+        // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
+        // console.info("fetchResponse for GitHub repository delete", fetchResponseForPublicationRepositoryRemove);
+        successfullyRemovedPublicationRepository = true;
+      }
+
+      // TODO: Should only remove on success
+      console.info("Git link before removal:", (await resourceModel.getResource(query.iri))?.linkedGitRepositoryURL);
+      const irisToUpdate = await resourceModel.removeGitLinkFromResourceModel(repositoryURL);
+      console.info("Git link after removal:", (await resourceModel.getResource(query.iri))?.linkedGitRepositoryURL);
+
+      response.status(200);
+      response.json({irisToUpdate})
+      return;
+    }
+    catch {
+      // Empty
+    }
   }
 
-
-  // TODO RadStr: Again - I have the full URL, I don't need to deconstruct it and then construct it back
-  const fetchResponseForRemove = await gitProvider.removeRemoteRepository(accessToken, repositoryUserName, repoName);
-  // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
-  // console.info("fetchResponse for GitHub repository delete", fetchResponseForRemove);
-
-  // TODO RadStr: Well the name of repository might be different in future, but this is anyways just for debugging now
-  const fetchResponseForPublicationRepositoryRemove = await gitProvider.removeRemoteRepository(accessToken, repositoryUserName, repoName + "-publication-repo");
-  // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
-  // console.info("fetchResponse for GitHub repository delete", fetchResponseForPublicationRepositoryRemove);
-
-  // TODO: Should only remove on success
-  console.info("Git link before removal:", (await resourceModel.getResource(query.iri))?.linkedGitRepositoryURL);
-  const irisToUpdate = await resourceModel.removeGitLinkFromResourceModel(repositoryURL);
-  console.info("Git link after removal:", (await resourceModel.getResource(query.iri))?.linkedGitRepositoryURL);
-
-  response.status(200);
-  response.json({irisToUpdate})
+  throw new Error(`Removal result: Removed remote repository: ${successfullyRemovedRemoteRepository}, Removed publication repository: ${successfullyRemovedPublicationRepository}`);
 });

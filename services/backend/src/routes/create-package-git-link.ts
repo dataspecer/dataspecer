@@ -22,11 +22,15 @@ function getName(name: LanguageString | undefined, defaultName: string) {
   return name?.["cs"] || name?.["en"] || defaultName;
 }
 
-export function findPatAccessToken(accessTokens: AccessToken[] | null | undefined): string | null {
-  const accessToken = accessTokens?.find(token => token.type === AccessTokenType.PAT)?.value;
+export function findPatAccessToken(accessTokens: AccessToken[] | null | undefined): AccessToken | null {
+  const accessToken = accessTokens?.find(token => token.type === AccessTokenType.PAT);
   return accessToken ?? null;
 }
 
+export function findPatAccessTokens(accessTokens: AccessToken[] | null | undefined): AccessToken[] {
+  const patAccessToken = accessTokens?.filter(token => token.type === AccessTokenType.PAT);
+  return patAccessToken ?? [];
+}
 
 /**
  * Creates GitHub repo with content equal to the package with given iri inside the query part of express http request.
@@ -45,51 +49,67 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
 
   const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(query.gitProviderURL);
   const { name: sessionUserName, accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
-  const accessToken = findPatAccessToken(accessTokens);
-  if (accessToken === null) {
-    throw new Error("There is neither user or bot pat token to perform operations needed to create the link. For example creating remote repo");
+  const patAccessTokens = findPatAccessTokens(accessTokens);
+  // Either the user has create repo access AND it has access to the "user", then we are good
+  // Or it has create repo access, but does not have access to the "user". Then we have two possibilities
+  //  either we fail, or we will try the bot token to create the repositories. To me the second one makes more sense. So that is the implemented variant.
+  for (const patAccessToken of patAccessTokens) {
+    try {
+      const repositoryUserName = query.givenUserName.length === 0 ? sessionUserName : query.givenUserName;
+
+      const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
+      const repoName = query.givenRepositoryName;
+
+      const fullLinkedGitRepositoryURL = gitProvider.createGitRepositoryURL(repositoryUserName, repoName);
+      console.info("TODO RadStr: Debug gitProvider", { gitProvider, fullLinkedGitRepositoryURL });
+
+      const isUserRepo = stringToBoolean(query.isUserRepo);
+      if (isUserRepo) {
+        // If it is user repo then the owner of the pat access token have to be the user of the user part of repository url
+        // In other words if it is bot token then the repositoryUserName has to be bot name
+        if (patAccessToken.isBotAccessToken && repositoryUserName !== gitProvider.getBotCredentials()?.name) {
+          continue;
+        }
+      }
+
+      const { defaultBranch } = await gitProvider.createRemoteRepository(patAccessToken.value, repositoryUserName, repoName, isUserRepo);
+      // TODO RadStr: Debug print ... for some reason there is max 10 repositories limit on school gitlab (idk if it is for creations a day or something)
+      // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
+      // console.info({createRemoteRepositoryResult});
+
+      const createPublicationRepositoryResult = await gitProvider.createPublicationRepository(repoName + "-publication-repo", isUserRepo, repositoryUserName, patAccessToken.value);
+
+      // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
+      // console.info({createPublicationRepositoryResult});
+
+      const botAccessToken = findPatAccessToken(gitProvider.getBotCredentials()?.accessTokens);
+      if (botAccessToken === null) {
+        // TODO RadStr: Somehow give this text to user so he knwos that he has to set the pat token to the repo so we can push to publish repo
+        console.error("The bot has not defined access token");
+      }
+      else {
+        const setRepositorySecretResult = await gitProvider.setRepositorySecret(repositoryUserName, repoName, patAccessToken.value, "BOT_PAT_TOKEN", botAccessToken.value);
+        // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
+        // console.info({setRepositorySecretResult});
+      }
+
+
+      await gitProvider.createWebhook(patAccessToken.value, repositoryUserName, repoName, WEBHOOK_HANDLER_URL, ["push"]);
+
+      await resourceModel.updateResourceProjectIriAndBranch(query.iri, undefined, defaultBranch ?? undefined);
+      await resourceModel.updateResourceGitLink(query.iri, fullLinkedGitRepositoryURL);
+
+      await commitPackageToGitUsingAuthSession(request, query.iri, fullLinkedGitRepositoryURL, defaultBranch, "", repositoryUserName, repoName, commitMessage, response);
+
+      response.sendStatus(200);
+      return;
+    }
+    catch {
+      // EMPTY, we just want to try another iteration, don't care about errors
+    }
   }
 
-  const repositoryUserName = query.givenUserName.length === 0 ? sessionUserName : query.givenUserName;
-
-  const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
-  const repoName = query.givenRepositoryName;
-
-
-  const fullLinkedGitRepositoryURL = gitProvider.createGitRepositoryURL(repositoryUserName, repoName);
-  console.info("TODO RadStr: Debug gitProvider", { gitProvider, fullLinkedGitRepositoryURL });
-
-  const isUserRepo = stringToBoolean(query.isUserRepo);
-  const { defaultBranch } = await gitProvider.createRemoteRepository(accessToken, repositoryUserName, repoName, isUserRepo);
-  // TODO RadStr: Debug print ... for some reason there is max 10 repositories limit on school gitlab (idk if it is for creations a day or something)
-  // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
-  // console.info({createRemoteRepositoryResult});
-
-  const createPublicationRepositoryResult = await gitProvider.createPublicationRepository(repoName + "-publication-repo", isUserRepo, repositoryUserName, accessToken);
-
-  // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
-  // console.info({createPublicationRepositoryResult});
-
-  const botAccessToken = findPatAccessToken(gitProvider.getBotCredentials()?.accessTokens);
-  if (botAccessToken === null) {
-    // TODO RadStr: Somehow give this text to user so he knwos that he has to set the pat token to the repo so we can push to publish repo
-    console.error("The bot has not defined access token");
-  }
-  else {
-    const setRepositorySecretResult = await gitProvider.setRepositorySecret(repositoryUserName, repoName, accessToken, "BOT_PAT_TOKEN", botAccessToken);
-    // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
-    // console.info({setRepositorySecretResult});
-  }
-
-
-  await gitProvider.createWebhook(accessToken, repositoryUserName, repoName, WEBHOOK_HANDLER_URL, ["push"]);
-
-  await resourceModel.updateResourceProjectIriAndBranch(query.iri, undefined, defaultBranch ?? undefined);
-  await resourceModel.updateResourceGitLink(query.iri, fullLinkedGitRepositoryURL);
-
-  await commitPackageToGitUsingAuthSession(request, query.iri, fullLinkedGitRepositoryURL, defaultBranch, "", repositoryUserName, repoName, commitMessage, response);
-
-  response.sendStatus(200);
+  throw new Error("There is neither user or bot pat token to perform operations needed to create the link. For example creating remote repo");
 });
 
 
@@ -133,7 +153,7 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
   if (accessToken === null) {
     throw new Error("There is neither user or bot pat token to perform operations needed to create the link. For example creating remote repo");
   }
-  await gitProvider.createWebhook(accessToken, repositoryUserName, repoName, WEBHOOK_HANDLER_URL, ["push"]);
+  await gitProvider.createWebhook(accessToken.value, repositoryUserName, repoName, WEBHOOK_HANDLER_URL, ["push"]);
 
   // TODO RadStr: Not sure about the "" if I decide to use it, but I can not use anything else
   commitPackageToGitUsingAuthSession(request, query.iri, query.gitRepositoryURL, branchName, "", repositoryUserName, repoName, commitMessage, response);

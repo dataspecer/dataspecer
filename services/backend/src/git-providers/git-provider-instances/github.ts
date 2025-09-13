@@ -352,7 +352,7 @@ export class GitHubProvider extends GitProviderBase {
     if (botCredentials === null) {
       throw new Error("Can not create publication repository, since there are no bot credentials");
     }
-    const botAccessToken = findPatAccessToken(botCredentials.accessTokens);
+    const botAccessToken = findPatAccessToken(botCredentials.accessTokens)?.value;
 
     repositoryUserName = repositoryUserName ?? botCredentials.name;
     accessToken = accessToken ?? (botAccessToken ?? undefined);
