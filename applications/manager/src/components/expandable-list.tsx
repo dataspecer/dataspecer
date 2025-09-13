@@ -3,7 +3,6 @@
 
 import { ComparisonData } from "@dataspecer/git";
 import React, { ReactNode, useState } from "react";
-import { Button } from "./ui/button";
 
 type ExpandableListProps = {
   title: string;
@@ -16,11 +15,11 @@ const ExpandableList: React.FC<ExpandableListProps> = ({ title, items, buttonCom
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="w-96 border shadow p-2 bg-white">
+    <div className="full-w border shadow p-2 bg-white">
       {/* Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex justify-between items-center w-full text-left font-medium text-sm"
+        className=""
       >
         {title}
         <span className="text-gray-500">{isExpanded ? "▲" : "▼"}</span>
@@ -28,14 +27,14 @@ const ExpandableList: React.FC<ExpandableListProps> = ({ title, items, buttonCom
 
       {/* Expandable content */}
       {isExpanded && (
-        <ul className="mt-2 space-y-1 pl-4 list-disc text-gray-700 text-sm">
+        <ul className="">
           {items.map((item, idx) => (
-            <li key={idx}>
+            <li key={idx} className="flex">
               {item.affectedDataStore.fullName}
-              <Button onClick={() => onClickAction(item)} >
+              <button className="hover:bg-gray-300" onClick={() => onClickAction(item)} >
                 {buttonComponentContent}
-              </Button>
-              </li>
+              </button>
+            </li>
           ))}
         </ul>
       )}
