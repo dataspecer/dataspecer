@@ -290,6 +290,7 @@ const onClickUnresolveConflict = (
   let recursiveNode: NodeApi<RenderNodeWithAdditionalData> | null = nodeToUnresolve;
   while (recursiveNode !== null) {
     recursiveNode.data.nowInConflictCount++;
+    alert(">>" + recursiveNode.data.nowInConflictCount);
     recursiveNode = recursiveNode.parent
   }
 }
