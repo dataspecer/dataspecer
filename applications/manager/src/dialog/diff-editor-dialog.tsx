@@ -14,7 +14,7 @@ import { TabsContent } from "@radix-ui/react-tabs";
 import SvgVisualDiff from "@/components/images-conflict-resolver";
 import { MonacoDiffEditor } from "@/components/monaco-diff-editor";
 import { fetchMergeState } from "./open-merge-state";
-import { ClientFilesystem, ComparisonData, DatastoreInfo, EditableType, MergeResolverStrategy, MergeState } from "@dataspecer/git";
+import { AvailableFilesystems, ClientFilesystem, ComparisonData, convertDatastoreContentBasedOnFormat, DatastoreInfo, EditableType, MergeResolverStrategy, MergeState, stringifyDatastoreContentBasedOnFormat } from "@dataspecer/git";
 import { MergeStrategyComponent } from "@/components/merge-strategy-component";
 import ExpandableList from "@/components/expandable-list";
 import { RemoveFromToBeResolvedReactComponent } from "@/components/remove-from-to-be-resolved";
@@ -110,6 +110,24 @@ const finalizeMergeState = async (mergeStateUUID: string | undefined) => {
   }
 }
 
+const updateCacheContentEntryEverywhere = (
+  cacheSetter: (value: SetStateAction<CacheContentMap>) => void,
+  cacheConvertedSetter: (value: SetStateAction<CacheContentMap>) => void,
+  datastoreInfo: DatastoreInfo,
+  newValue: string,
+  format: string,
+) => {
+  cacheSetter(prevState => {
+    return createNewContentCache(prevState, datastoreInfo, newValue);
+  });
+
+  const convertedNewValue = convertDatastoreContentBasedOnFormat(newValue, format, true);
+  const stringifiedConvertedNewValue = stringifyDatastoreContentBasedOnFormat(convertedNewValue, format, true);
+  cacheConvertedSetter(prevState => {
+    return createNewContentCache(prevState, datastoreInfo, stringifiedConvertedNewValue);
+  });
+}
+
 const updateCacheContentEntry = (
   cacheSetter: (value: SetStateAction<CacheContentMap>) => void,
   datastoreInfo: DatastoreInfo,
@@ -132,6 +150,8 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
 
   const [cacheForOriginalTextContent, setCacheForOriginalTextContent] = useState<CacheContentMap>({});
   const [cacheForModifiedTextContent, setCacheForModifiedTextContent] = useState<CacheContentMap>({});
+  const [convertedCacheForOriginalTextContent, setConvertedCacheForOriginalTextContent] = useState<CacheContentMap>({});
+  const [convertedCacheForModifiedTextContent, setConvertedCacheForModifiedTextContent] = useState<CacheContentMap>({});
   const [originalDatastoreInfo, setOriginalDatastoreInfo] = useState<DatastoreInfo | null>(null);
   const [modifiedDatastoreInfo, setModifiedDatastoreInfo] = useState<DatastoreInfo | null>(null);
   const [originalSvg, setOriginalSvg] = useState<any | "">("");
@@ -140,7 +160,13 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
   const [comparisonTabType, setComparisonTabType] = useState<"image-compare" | "text-compare">("text-compare");
 
   const activeOriginalContent = originalDatastoreInfo === null ? "" : cacheForOriginalTextContent[originalDatastoreInfo.fullPath]?.[originalDatastoreInfo.type] ?? "";
+  const activeOriginalContentConverted = originalDatastoreInfo === null ? "" : convertedCacheForOriginalTextContent[originalDatastoreInfo.fullPath]?.[originalDatastoreInfo.type] ?? "";
   const activeModifiedContent = modifiedDatastoreInfo === null ? "" : cacheForModifiedTextContent[modifiedDatastoreInfo.fullPath]?.[modifiedDatastoreInfo.type] ?? "";
+  const activeModifiedContentConverted = modifiedDatastoreInfo === null ? "" : convertedCacheForModifiedTextContent[modifiedDatastoreInfo.fullPath]?.[modifiedDatastoreInfo.type] ?? "";
+
+  const [format, setFormat] = useState<string>("text");
+
+
 
   useEffect(() => {
     if (comparisonTabType !== "image-compare") {
@@ -207,14 +233,17 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
       }
     }
 
+    const newFormat = (examinedMergeState?.filesystemTypeMergeFrom === AvailableFilesystems.ClassicFilesystem ? newOriginalDatastoreInfo?.format : newModifiedDatastoreInfo?.format) ?? "text";
+    setFormat(newFormat);
+
     // Set the edited value in cache
     if (originalDatastoreInfo !== null) {
       const currentOriginalContentInEditor = monacoEditor.current?.editor.getOriginalEditor().getValue()!;
-      updateCacheContentEntry(setCacheForOriginalTextContent, originalDatastoreInfo, currentOriginalContentInEditor);
+      updateCacheContentEntryEverywhere(setCacheForOriginalTextContent, setConvertedCacheForOriginalTextContent, originalDatastoreInfo, currentOriginalContentInEditor, newFormat);
     }
     if (modifiedDatastoreInfo !== null) {
       const currentModifiedContentInEditor = monacoEditor.current?.editor.getModifiedEditor().getValue()!;
-      updateCacheContentEntry(setCacheForModifiedTextContent, modifiedDatastoreInfo, currentModifiedContentInEditor);
+      updateCacheContentEntryEverywhere(setCacheForModifiedTextContent, setConvertedCacheForModifiedTextContent, modifiedDatastoreInfo, currentModifiedContentInEditor, newFormat);
     }
 
     const isOriginalDataResourceInCache = isDatastorePresentInCache(cacheForOriginalTextContent, newOriginalDatastoreInfo);
@@ -222,19 +251,21 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
     if (!(useCache && isOriginalDataResourceInCache && isModifiedDataResourceInCache)) {
       // TODO RadStr: We have to extend the API by types - text, JSON, YAML, ...
       // TODO RadStr: Also I should use the filesystem and original/modified based on the editable not hardcore it
-      const newOriginalObjectData = await ClientFilesystem.getDatastoreContentDirectly(newOriginalDatastoreInfo, true, import.meta.env.VITE_BACKEND, examinedMergeState?.filesystemTypeMergeFrom ?? null);
-      const newModifiedObjectData = await ClientFilesystem.getDatastoreContentDirectly(newModifiedDatastoreInfo, true, import.meta.env.VITE_BACKEND, examinedMergeState?.filesystemTypeMergeTo ?? null);
+      const newOriginalDataAsText = await ClientFilesystem.getDatastoreContentDirectly(newOriginalDatastoreInfo, false, import.meta.env.VITE_BACKEND, examinedMergeState?.filesystemTypeMergeFrom ?? null);
+      const newModifiedDataAsText = await ClientFilesystem.getDatastoreContentDirectly(newModifiedDatastoreInfo, false, import.meta.env.VITE_BACKEND, examinedMergeState?.filesystemTypeMergeTo ?? null);
 
       console.info({newOriginalDataResourceNameInfo: newOriginalDatastoreInfo, newModifiedDataResourceNameInfo: newModifiedDatastoreInfo});
 
-      if (newOriginalObjectData !== null && newOriginalDatastoreInfo !== null) {
-        const changedCacheValue = JSON.stringify(newOriginalObjectData);
-        updateCacheContentEntry(setCacheForOriginalTextContent, newOriginalDatastoreInfo, changedCacheValue);
+      if (newOriginalDataAsText !== null && newOriginalDatastoreInfo !== null) {
+        const convertedCacheValue = convertDatastoreContentBasedOnFormat(newOriginalDataAsText, newOriginalDatastoreInfo.format, true);
+        const stringifiedCachevalue = stringifyDatastoreContentBasedOnFormat(convertedCacheValue, newFormat, true);
+        updateCacheContentEntryEverywhere(setCacheForOriginalTextContent, setConvertedCacheForOriginalTextContent, newOriginalDatastoreInfo, stringifiedCachevalue, newFormat);
       }
 
-      if (newModifiedObjectData !== null && newModifiedDatastoreInfo !== null) {
-        const changedCacheValue = JSON.stringify(newModifiedObjectData);
-        updateCacheContentEntry(setCacheForModifiedTextContent, newModifiedDatastoreInfo, changedCacheValue);
+      if (newModifiedDataAsText !== null && newModifiedDatastoreInfo !== null) {
+        const convertedCacheValue = convertDatastoreContentBasedOnFormat(newModifiedDataAsText, newModifiedDatastoreInfo.format, true);
+        const stringifiedCachevalue = stringifyDatastoreContentBasedOnFormat(convertedCacheValue, newFormat, true);
+        updateCacheContentEntryEverywhere(setCacheForModifiedTextContent, setConvertedCacheForModifiedTextContent, newModifiedDatastoreInfo, stringifiedCachevalue, newFormat);
       }
     }
 
@@ -443,7 +474,7 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
                         </div>
                         {/* The h-screen is needed otherwise the monaco editor is not shown at all */}
                         {/* Also small note - there is loading effect when first starting up the editor, it is not any custom made functionality */}
-                        <MonacoDiffEditor className="flex-1 -ml-16 h-screen" refs={monacoEditor} originalContent={activeOriginalContent} editable={editable} modifiedContent={activeModifiedContent} language="text" />
+                        <MonacoDiffEditor className="flex-1 -ml-16 h-screen" refs={monacoEditor} originalContent={activeOriginalContentConverted} editable={editable} modifiedContent={activeModifiedContentConverted} format={format} />
                       </TabsContent>
                     </Tabs>
                   </div>

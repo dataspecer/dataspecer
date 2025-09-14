@@ -3,10 +3,10 @@ import fs from "fs";
 import { DSFilesystem } from "../export-import/filesystem-abstractions/implementations/ds-filesystem.ts";
 import { resourceModel } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
-import { convertDatastoreContentBasedOnFormat, stringToBoolean } from "../utils/git-utils.ts";
+import { stringToBoolean } from "../utils/git-utils.ts";
 import { z } from "zod";
 import { isAccessibleGitRepository } from "../models/git-store-info.ts";
-import { AvailableFilesystems, CreateDatastoreFilesystemNodesInfo } from "@dataspecer/git";
+import { AvailableFilesystems, CreateDatastoreFilesystemNodesInfo, convertDatastoreContentBasedOnFormat } from "@dataspecer/git";
 import path from "path";
 
 
@@ -65,12 +65,7 @@ export const getDatastoreContentDirectly = asyncHandler(async (request: express.
     return;
   }
 
-  if (query.format === "json") {
-    response.json(datastoreContent);
-  }
-  else {
-    response.send(datastoreContent);
-  }
+  response.send(datastoreContent);
 });
 
 

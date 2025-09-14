@@ -15,7 +15,8 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@dataspecer/core": "*"
+    "@dataspecer/core": "*",
+    "yaml": "2.8.0"
   },
   "peerDependencies": {
 

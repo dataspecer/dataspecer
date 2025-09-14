@@ -1,10 +1,10 @@
-import { AvailableFilesystems, getDatastoreInfoOfGivenDatastoreType, GitProvider, isDatastoreForMetadata } from "@dataspecer/git";
+import { AvailableFilesystems, convertDatastoreContentBasedOnFormat, getDatastoreInfoOfGivenDatastoreType, GitProvider, isDatastoreForMetadata } from "@dataspecer/git";
 import { ComparisonData } from "../../../routes/git-webhook-handler.ts";
 import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, DatastoreInfo, FilesystemAbstractionBase, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode } from "@dataspecer/git";
 
 import fs from "fs";
 import { isArtificialExportDirectory } from "../../export-by-resource-type.ts";
-import { convertDatastoreContentBasedOnFormat, dsPathJoin } from "../../../utils/git-utils.ts";
+import { dsPathJoin } from "../../../utils/git-utils.ts";
 
 
 export class ClassicFilesystem extends FilesystemAbstractionBase {
@@ -291,16 +291,16 @@ function setMetadataCache(node: FilesystemNode, directory: string, shouldSetMeta
       return;
     }
     const fullPath = `${directory}${metadataDatastore.afterPrefix}`;
-    node.metadataCache = constructMetadataCache(fullPath, node.metadataCache);
+    node.metadataCache = constructMetadataCache(fullPath, metadataDatastore.format, node.metadataCache);
   }
   // TODO RadStr: Maybe also do something if shouldSetMetadataCache === false
 }
 
-function constructMetadataCache(metadataFilePath: string, oldCache?: object) {
+function constructMetadataCache(metadataFilePath: string, format: string | null, oldCache?: object) {
   oldCache ??= {};
   return {
     ...oldCache,
-    ...readMetadataFile(metadataFilePath),
+    ...readMetadataFile(metadataFilePath, format),
   };
 }
 
@@ -308,8 +308,8 @@ function constructMetadataCache(metadataFilePath: string, oldCache?: object) {
 /**
  * @deprecated Probably once again deprecated - use the filesystem instead
  */
-function readMetadataFile(metadataFilePath: string) {
-  const metadata = JSON.parse(fs.readFileSync(metadataFilePath, "utf-8"));
+function readMetadataFile(metadataFilePath: string, format: string | null) {
+  const metadata = convertDatastoreContentBasedOnFormat(fs.readFileSync(metadataFilePath, "utf-8"), format, true);
   return metadata;
 }
 

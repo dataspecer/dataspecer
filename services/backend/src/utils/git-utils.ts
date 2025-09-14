@@ -1,7 +1,6 @@
 // TODO RadStr: Move the content of this file into package probably
 
 import express from "express"
-import YAML from "yaml";
 import _ from "lodash";
 import { AccessToken, AccessTokenType, CommitterInfo } from "@dataspecer/git";
 import { getHttpsRepoURLWithAuthorization } from "../git-never-commit.ts";
@@ -72,50 +71,6 @@ export function dsPathJoin(...pathParts: string[]) {
   return pathParts.join("/");
 }
 
-
-// TODO RadStr: Once again maybe not git-utils
-/**
- * Inverse to {@link stringifyDatastoreContentBasedOnFormat}
- * @param shouldConvert if false then returns the given {@link datastoreContent} without performing any converting action.
- * @returns Returns {@link datastoreContent} in format of string to the format in which is the string content (that is what we got from the name extension, for example .json).
- */
-export function convertDatastoreContentBasedOnFormat(datastoreContent: string, format: string | null, shouldConvert: boolean): any {
-  if (!shouldConvert) {
-    return datastoreContent;
-  }
-
-  if (format === "json") {
-    return JSON.parse(datastoreContent);
-  }
-  else if (format === "yaml") {
-    return YAML.parse(datastoreContent);
-  }
-
-  return datastoreContent;
-}
-
-
-// TODO RadStr: Once again maybe not git-utils
-/**
- * Inverse to {@link convertDatastoreContentBasedOnFormat}
- * @returns Stringified {@link datastoreContent}, which was on input in given {@link foramt}. If {@link shouldConvert}, then just returns the {@link datastoreContent}.
- */
-export function stringifyDatastoreContentBasedOnFormat(datastoreContent: any, format: string | null, shouldConvert: boolean): string {
-  if (!shouldConvert) {
-    return datastoreContent;
-  }
-
-  const indent = 2;
-
-  if (format === "json") {
-    return JSON.stringify(datastoreContent, null, indent);
-  }
-  else if (format === "yaml") {
-    return YAML.stringify(datastoreContent, { indent });
-  }
-
-  return datastoreContent;
-}
 // TODO: Maybe put into different utils file
 /**
  * @param repositoryURL is the URL of the repository

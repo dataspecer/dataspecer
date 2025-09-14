@@ -39,7 +39,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     shouldConvertToDatastoreFormat: boolean,
     backendApiPath: string,
     backendFilesystem: AvailableFilesystems | null,
-  ): Promise<null | any> {
+  ): Promise<string | any> {
     if (datastoreInfo === null) {
       return null;
     }
@@ -68,9 +68,9 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
       method: "GET",
     });
 
-    const responseAsJSON = await response.json();
-    console.info("getDatastoreContentDirectly", {responseAsJSON, datastoreInfo});       // TODO RadStr: Debug
-    return responseAsJSON;
+    const textResponse = await response.text();
+    console.info("getDatastoreContentDirectly", {textResponse, datastoreInfo});       // TODO RadStr: Debug
+    return textResponse;
   }
 
 

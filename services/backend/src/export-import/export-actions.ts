@@ -1,6 +1,5 @@
 
-import { DatastoreInfo } from "@dataspecer/git";
-import { stringifyDatastoreContentBasedOnFormat } from "../utils/git-utils.ts";
+import { DatastoreInfo, stringifyDatastoreContentBasedOnFormat } from "@dataspecer/git";
 import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
 import fs from "fs";
 import path from "path";
@@ -21,6 +20,9 @@ export interface ExportActions<T extends AllowedExportResults> {
 
 export class ExportActionForFilesystem implements ExportActions<void> {
   async exportDatastoreAction(exportPath: string, datastoreInfo: DatastoreInfo, data: any): Promise<void> {
+    // TODO RadStr: If we want to export yaml
+    // datastoreInfo.format = "yaml";
+    // datastoreInfo.afterPrefix = datastoreInfo.afterPrefix.replace("json", "yaml");
     const fullPath = exportPath + datastoreInfo.afterPrefix;
     const directory = path.dirname(fullPath);
     fs.mkdirSync(directory, { recursive: true });

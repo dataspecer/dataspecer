@@ -10,8 +10,8 @@ export const MonacoDiffEditor: FC<{
   refs: React.MutableRefObject<{ editor: monaco.editor.IStandaloneDiffEditor } | undefined>,
   originalContent: string,
   modifiedContent: string,
+  format: string
   editable: EditableType,
-  language: string,
 } & React.ComponentProps<typeof RawMonacoEditor>> = (props) => {
   const { resolvedTheme } = useTheme();
 
@@ -23,7 +23,7 @@ export const MonacoDiffEditor: FC<{
         props.refs.current = {editor};
       }}
       theme={resolvedTheme === "dark" ? "dataspecer-dark" : "vs"}
-      language={props.language}
+      language={props.format}
       original={props.originalContent}
       modified={props.modifiedContent}
       beforeMount={handleEditorWillMount}
