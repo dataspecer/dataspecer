@@ -268,9 +268,9 @@ const onClickResolveConflict = (
   }
   updateConflictsToBeResolvedOnSave(nodeToResolve.data.setConflictsToBeResolvedOnSave, conflictToBeResolved);
   let recursiveNode: NodeApi<RenderNodeWithAdditionalData> | null = nodeToResolve;
-  while (recursiveNode !== null) {
+  while (recursiveNode?.parent !== null) {
     recursiveNode.data.nowInConflictCount--;
-    recursiveNode = recursiveNode.parent
+    recursiveNode = recursiveNode.parent;
   }
 }
 
@@ -288,10 +288,10 @@ const onClickUnresolveConflict = (
 
   updateConflictsToBeResolvedOnSaveByRemoval(nodeToUnresolve.data.setConflictsToBeResolvedOnSave, conflictToBeUnresolved);
   let recursiveNode: NodeApi<RenderNodeWithAdditionalData> | null = nodeToUnresolve;
-  while (recursiveNode !== null) {
+  // Note that we are checking for parent. That is because there is artificial root created by the rendering library.
+  while (recursiveNode?.parent !== null) {
     recursiveNode.data.nowInConflictCount++;
-    alert(">>" + recursiveNode.data.nowInConflictCount);
-    recursiveNode = recursiveNode.parent
+    recursiveNode = recursiveNode.parent;
   }
 }
 
@@ -336,7 +336,7 @@ function StyledNode({
 
   let icon: string = "";
 
-  icon = node.data.nowInConflictCount === 0 ? "" : "⚠️";   // Always show the conflict mark
+  icon = node.data.isInEditableTree && node.data.nowInConflictCount > 0 ? "⚠️" : "";   // Always show the conflict mark
   if (node.data.dataSourceType == "datastore") {
     icon += "📄";
   }
@@ -421,9 +421,13 @@ function StyledNode({
                     <Check className="h-6 w-6"/>
                   </button>
                 }
-                <button title="Mark as unresolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickUnresolveConflict(e, node)}>
-                  <X className="h-6 w-6"/>
-                </button>
+                {
+                node.data.canBeInCoflictCount === 0 || node.data.nowInConflictCount !== 0 ?
+                  <div className="h-6 w-6"/> :
+                  <button title="Mark as unresolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickUnresolveConflict(e, node)}>
+                    <X className="h-6 w-6"/>
+                  </button>
+                }
                 <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => {e.stopPropagation(); alert("delte")}}>
                   { node.data.treeType === "new" ? <MoveRight className="h-6 w-6"/> : <MoveLeft className="h-6 w-6"/> }
                 </button>
@@ -606,7 +610,20 @@ export const DiffTreeVisualization = (props: {
   const oldTreeRef = useRef<TreeApi<RenderNode>>(null);
   const newTreeRef = useRef<TreeApi<RenderNode>>(null);
 
+  /**
+   * Not the best design decision, but we somehow want to allow to modify the conflicts to be resolved from multiple components
+   * And we want to correctly update visualization based on that
+   */
   const [conflictsToBeResolvedOnSaveInThisComponent, setConflictsToBeResolvedOnSaveInThisComponent] = useState<ComparisonData[]>([]);
+  // Actually based on ChatGPT response
+  const setConfictsToBeResolvedForBoth = useCallback((): React.Dispatch<React.SetStateAction<ComparisonData[]>> => {
+    return (valueOrUpdater) => {
+      // The order matters, however I really expected the order to be the opposite
+      setConflictsToBeResolvedOnSave(valueOrUpdater);
+      setConflictsToBeResolvedOnSaveInThisComponent(valueOrUpdater);
+    };
+  }, [setConflictsToBeResolvedOnSaveInThisComponent, props.setConflictsToBeResolvedOnSave]);
+
   useEffect(() => {
     const newlyUnresolvedConflicts = conflictsToBeResolvedOnSaveInThisComponent.filter(conflict => !props.conflictsToBeResolvedOnSaveFromParent.includes(conflict));
     for (const newlyUnresolvedConflict of newlyUnresolvedConflicts) {
@@ -834,7 +851,7 @@ export const DiffTreeVisualization = (props: {
         <h3>{mergeStateFromBackend?.editable === "mergeFrom" ? <DiffEditorEditIcon/> : <DiffEditorCrossedOutEditIcon/>}</h3>
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
-            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConflictsToBeResolvedOnSave)}
+            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth())}
                   ref={oldTreeRef} data={oldRenderTreeDataToRender} width={"100%"}
                   onSelect={(nodes) => onNodesSelect(nodes, "old")}
                   onFocus={(node) => onNodeFocus(node, "old")}
@@ -849,7 +866,7 @@ export const DiffTreeVisualization = (props: {
         <h3>{mergeStateFromBackend?.editable === "mergeFrom" ? <DiffEditorCrossedOutEditIcon/> : <DiffEditorEditIcon/>}</h3>
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
-            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConflictsToBeResolvedOnSave)}
+            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth())}
                   ref={newTreeRef} data={newRenderTreeDataToRender} width={"100%"}
                   onSelect={(nodes) => onNodesSelect(nodes, "new")}
                   onFocus={(node) => onNodeFocus(node, "new")}
