@@ -11,13 +11,15 @@ export interface PackageExporterInterface {
     directory: string,
     pathToExportStartDirectory: string,
     importFilesystem: AvailableFilesystems,
-    exportType: AvailableExports
+    exportType: AvailableExports,
+    exportFormat: string,
   ): Promise<AllowedExportResults>;
 }
 
 export abstract class PackageExporterBase implements PackageExporterInterface {
   protected exportActions!: ExportActions<AllowedExportResults>;      // TODO RadStr: !
   protected importFilesystem!: FilesystemAbstraction;                 // TODO RadStr: !
+  protected exportFormat!: string;                                    // TODO RadStr: !
 
   public static createExportActionsForFilesystem(exportType: AvailableExports): ExportActions<AllowedExportResults> {
     switch(exportType) {
@@ -36,7 +38,8 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
     directory: string,
     pathToExportStartDirectory: string,
     importFilesystem: AvailableFilesystems,
-    exportType: AvailableExports
+    exportType: AvailableExports,
+    exportFormat: string,
   ): Promise<AllowedExportResults> {
     const filesystemLocationToIri: FilesystemNodeLocation = {
       iri,
@@ -53,6 +56,7 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
 
     this.importFilesystem = filesystem;
     this.exportActions = PackageExporterByResourceType.createExportActionsForFilesystem(exportType);
+    this.exportFormat = exportFormat;
 
 
     pathToExportStartDirectory = pathToExportStartDirectory.length === 0 ? rootDirectoryName : `${pathToExportStartDirectory}/${rootDirectoryName}`

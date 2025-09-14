@@ -43,6 +43,7 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
     gitProviderURL: z.string().min(1),
     commitMessage: z.string(),
     isUserRepo: z.string().min(1),
+    exportFormat: z.string().min(1).optional(),
   });
 
   const query = querySchema.parse(request.query);
@@ -99,7 +100,9 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
       await resourceModel.updateResourceProjectIriAndBranch(query.iri, undefined, defaultBranch ?? undefined);
       await resourceModel.updateResourceGitLink(query.iri, fullLinkedGitRepositoryURL);
 
-      await commitPackageToGitUsingAuthSession(request, query.iri, fullLinkedGitRepositoryURL, defaultBranch, "", repositoryUserName, repoName, commitMessage, response);
+      await commitPackageToGitUsingAuthSession(
+        request, query.iri, fullLinkedGitRepositoryURL, defaultBranch, "", repositoryUserName,
+        repoName, commitMessage, response, query.exportFormat ?? null);
 
       response.sendStatus(200);
       return;
@@ -127,6 +130,7 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
     iri: z.string().min(1),
     gitRepositoryURL: z.string().min(1),
     commitMessage: z.string(),
+    exportFormat: z.string().min(1).optional(),
   });
 
   const query = querySchema.parse(request.query);
@@ -156,7 +160,9 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
   await gitProvider.createWebhook(accessToken.value, repositoryUserName, repoName, WEBHOOK_HANDLER_URL, ["push"]);
 
   // TODO RadStr: Not sure about the "" if I decide to use it, but I can not use anything else
-  commitPackageToGitUsingAuthSession(request, query.iri, query.gitRepositoryURL, branchName, "", repositoryUserName, repoName, commitMessage, response);
+  commitPackageToGitUsingAuthSession(
+    request, query.iri, query.gitRepositoryURL, branchName, "", repositoryUserName,
+    repoName, commitMessage, response, query.exportFormat ?? null);
 });
 
 export async function getRepositoryNameFromDatabase(linkedPackageIri: string): Promise<string | null> {

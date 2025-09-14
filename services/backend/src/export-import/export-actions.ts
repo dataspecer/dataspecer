@@ -10,7 +10,7 @@ export type AllowedExportResults = void | Buffer<ArrayBufferLike>;
 
 export interface ExportActions<T extends AllowedExportResults> {
   // TODO RadStr: the/path/to/resource/with/nameWithoutSuffix ... put into documentation
-  exportDatastoreAction: (exportPath: string, datastoreInfo: DatastoreInfo, data: any) => Promise<void>;
+  exportDatastoreAction: (exportPath: string, datastoreInfo: DatastoreInfo, data: any, exportFormat: string) => Promise<void>;
 
   /**
    * Finishes the export and returns the result
@@ -19,14 +19,19 @@ export interface ExportActions<T extends AllowedExportResults> {
 }
 
 export class ExportActionForFilesystem implements ExportActions<void> {
-  async exportDatastoreAction(exportPath: string, datastoreInfo: DatastoreInfo, data: any): Promise<void> {
-    // TODO RadStr: If we want to export yaml
-    // datastoreInfo.format = "yaml";
-    // datastoreInfo.afterPrefix = datastoreInfo.afterPrefix.replace("json", "yaml");
-    const fullPath = exportPath + datastoreInfo.afterPrefix;
+  async exportDatastoreAction(
+    exportPath: string,
+    datastoreInfo: DatastoreInfo,
+    data: any,
+    exportFormat: string,
+  ): Promise<void> {
+    const afterPrefixForExport = datastoreInfo.format === null ?
+      datastoreInfo.format :
+      datastoreInfo.afterPrefix.replace(datastoreInfo.format, exportFormat);
+    const fullPath = exportPath + afterPrefixForExport;
     const directory = path.dirname(fullPath);
     fs.mkdirSync(directory, { recursive: true });
-    const dataAsString = stringifyDatastoreContentBasedOnFormat(data, datastoreInfo.format, true);
+    const dataAsString = stringifyDatastoreContentBasedOnFormat(data, exportFormat, true);
     fs.writeFileSync(fullPath, dataAsString);
   }
 
@@ -42,10 +47,18 @@ export class ExportActionForZip implements ExportActions<Buffer<ArrayBufferLike>
     this.zipStreamDictionary = zipStreamDictionary;
   }
 
-  async exportDatastoreAction(exportPath: string, datastoreInfo: DatastoreInfo, data: any): Promise<void> {
-    const fullPath = exportPath + datastoreInfo.afterPrefix;
+  async exportDatastoreAction(
+    exportPath: string,
+    datastoreInfo: DatastoreInfo,
+    data: any,
+    exportFormat: string,
+  ): Promise<void> {
+    const afterPrefixForExport = datastoreInfo.format === null ?
+      datastoreInfo.format :
+      datastoreInfo.afterPrefix.replace(datastoreInfo.format, exportFormat);
+    const fullPath = exportPath + afterPrefixForExport;
     const stream = this.zipStreamDictionary.writePath(fullPath);
-    const dataAsString = stringifyDatastoreContentBasedOnFormat(data, datastoreInfo.format, true);
+    const dataAsString = stringifyDatastoreContentBasedOnFormat(data, exportFormat, true);
     await stream.write(dataAsString);
     stream.close();
   }

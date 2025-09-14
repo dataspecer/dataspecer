@@ -18,6 +18,7 @@ function getName(name: LanguageString | undefined, defaultName: string) {
 export const exportPackageResource = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
     iri: z.string().min(1),
+    exportFormat: z.string().min(1).optional(),
   });
 
   const query = querySchema.parse(request.query);
@@ -29,7 +30,7 @@ export const exportPackageResource = asyncHandler(async (request: express.Reques
   // const buffer = await exporter.doExportFromIRI(query.iri, "", `radstr/export/directory`, AvailableFilesystems.DS_Filesystem, AvailableExports.Zip);
 
   const exporter = new PackageExporterByResourceType();
-  const buffer = await exporter.doExportFromIRI(query.iri, "", `radstr/export/directory`, AvailableFilesystems.DS_Filesystem, AvailableExports.Zip);
+  const buffer = await exporter.doExportFromIRI(query.iri, "", `radstr/export/directory`, AvailableFilesystems.DS_Filesystem, AvailableExports.Zip, query.exportFormat ?? "json");
   // TODO RadStr: Debug exporters ... maybe can use in tests (with non-local paths of course).
   // const buffer = await exporter.doExportFromIRI(query.iri);
   // const buffer = await exporter.doExportFromIRI(query.iri, "", `radstr/export/directory`, AvailableFilesystems.DS_Filesystem, AvailableExports.Zip);

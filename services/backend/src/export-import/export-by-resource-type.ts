@@ -70,7 +70,7 @@ export class PackageExporterByResourceType extends PackageExporterBase {
         // fullname = pathToDirectory + filesystemNode.name;
       }
 
-      await this.exportActions.exportDatastoreAction(exportFullName, datastore, data);
+      await this.exportActions.exportDatastoreAction(exportFullName, datastore, data, this.exportFormat);
       // await this.writeBlob(fullname, datastore.type, data);
     }
   }

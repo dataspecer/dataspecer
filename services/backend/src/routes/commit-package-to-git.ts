@@ -51,6 +51,7 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
   const querySchema = z.object({
     iri: z.string().min(1),
     commitMessage: z.string(),
+    exportFormat: z.string().min(1).optional(),
   });
 
   const query = querySchema.parse(request.query);
@@ -81,7 +82,9 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
   }
 
   const branch = resource.branch === "main." ? null : resource.branch;
-  await commitPackageToGitUsingAuthSession(request, iri, gitLink, branch, resource.lastCommitHash, userName, repoName, commitMessage, response);
+  await commitPackageToGitUsingAuthSession(
+    request, iri, gitLink, branch, resource.lastCommitHash, userName,
+    repoName, commitMessage, response, query.exportFormat ?? null);
   response.sendStatus(200);
 });
 
@@ -100,12 +103,13 @@ export const commitPackageToGitUsingAuthSession = async (
   givenRepositoryName: string,
   commitMessage: string | null,
   response: express.Response,
+  exportFormat: string | null,
   gitProvider?: GitProvider,
 ) => {
   // If gitProvider not given - get it
   gitProvider ??= GitProviderFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL);
   const committer = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
-  await commitPackageToGit(iri, remoteRepositoryURL, branch, localLastCommitHash, givenRepositoryUserName, givenRepositoryName, committer, commitMessage, gitProvider);
+  await commitPackageToGit(iri, remoteRepositoryURL, branch, localLastCommitHash, givenRepositoryUserName, givenRepositoryName, committer, commitMessage, gitProvider, exportFormat);
 }
 
 
@@ -124,6 +128,7 @@ export const commitPackageToGit = async (
   gitCredentials: GitCredentials,
   commitMessage: string | null,
   gitProvider: GitProvider,
+  exportFormat: string | null,
 ) => {
   if (commitMessage === null) {
     commitMessage = createUniqueCommitMessage();
@@ -199,7 +204,7 @@ export const commitPackageToGit = async (
 
       try {
         const exporter = new PackageExporterByResourceType();
-        await exporter.doExportFromIRI(iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem);
+        await exporter.doExportFromIRI(iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem, exportFormat ?? "json");
 
         const readmeData: ReadmeTemplateData = {
           dataspecerUrl: "http://localhost:5174",

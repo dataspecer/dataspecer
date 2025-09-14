@@ -42,7 +42,7 @@ export class PackageExporterNew extends PackageExporterBase {
         // fullname = pathToDirectory + filesystemNode.name;
       }
 
-      await this.exportActions.exportDatastoreAction(exportFullName, datastore, data);
+      await this.exportActions.exportDatastoreAction(exportFullName, datastore, data, this.exportFormat);
     }
   }
 }

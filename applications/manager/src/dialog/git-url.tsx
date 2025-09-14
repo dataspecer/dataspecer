@@ -9,6 +9,8 @@ import { requestLoadPackage } from "@/package";
 import { createIdentifierForHTMLElement, InputComponent } from "@/components/simple-input-component";
 import { Package } from "@dataspecer/core-v2/project";
 import { toast } from "sonner";
+import { ExportFormatRadioButtons, ExportFormatType } from "@/components/export-format-radio-buttons";
+
 
 // TODO RadStr: Maybe use enum instead of TS string enum
 /**
@@ -21,6 +23,7 @@ type GitURLDialogProps = {
   type?: "create-new-repository-and-commit" | "commit" | "link-to-existing-repository"
 } & BetterModalProps<{
   inputByUser: string,
+  exportFormat: ExportFormatType,
   user?: string,
   gitProvider?: string,
   commitMessage?: string,
@@ -47,6 +50,7 @@ export const GitDialog = ({ input: defaultInput, inputPackage, isOpen, resolve, 
   const [gitProvider, setGitProvider] = useState<string>("https://github.com/");
   const [commitMessage, setCommitMessage] = useState<string>("");
   const [isUserRepo, setIsUserRepo] = useState<boolean>(true);
+  const [exportFormat, setExportFormat] = useState<ExportFormatType>("json");
 
   let suffixNumber = 0;
 
@@ -60,7 +64,7 @@ export const GitDialog = ({ input: defaultInput, inputPackage, isOpen, resolve, 
   const closeWithSuccess = () => {
     // TODO RadStr: Don't like this inputByUser
     const resultingInputByUser = type === "link-to-existing-repository" ? inputByUser : convertToValidRepositoryName(inputByUser);
-    resolve({ inputByUser: resultingInputByUser, user, gitProvider, commitMessage, isUserRepo });
+    resolve({ inputByUser: resultingInputByUser, user, gitProvider, commitMessage, isUserRepo, exportFormat });
   }
 
   const shouldDisableConfirm = useMemo(() => {
@@ -100,6 +104,7 @@ export const GitDialog = ({ input: defaultInput, inputPackage, isOpen, resolve, 
         <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="The commit message for git" setInput={setCommitMessage} input={commitMessage} />
         <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git remote repository name" setInput={setInputByUser} input={inputByUser} />
         <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git provider URL (Should contain the schema and end with / - for example https://github.com/)" setInput={setGitProvider} input={gitProvider} />
+        <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
         <label className="flex items-center space-x-2 cursor-pointer">
           <input
             type="checkbox"
@@ -112,7 +117,10 @@ export const GitDialog = ({ input: defaultInput, inputPackage, isOpen, resolve, 
       </div>;
       break;
     case "commit":
-      modalBody = <InputComponent disabled={shouldDisableConfirm} idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="The commit message for git" setInput={setCommitMessage} input={commitMessage} />;
+      modalBody = <div>
+        <InputComponent disabled={shouldDisableConfirm} idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="The commit message for git" setInput={setCommitMessage} input={commitMessage} />;
+        <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
+        </div>
       break;
     case "link-to-existing-repository":
       modalBody = <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git remote repository URL" setInput={setInputByUser} input={inputByUser} />;
@@ -146,7 +154,7 @@ export const GitDialog = ({ input: defaultInput, inputPackage, isOpen, resolve, 
 
 /**
  * @deprecated {@link DropdownMenuItem} hsa to be used in the tree, when it is part of another component, it is rendered incorrectly.
- *  So we use {@link linkToGitRepoOnClickHandler} instead.
+ *  So we use {@link createNewRemoteRepositoryHandler} instead.
  */
 export const LinkToGitRepoDialog = (props: { iri: string, inputPackage: Package }) => {
   const openModal = useBetterModal();
@@ -170,7 +178,7 @@ export const LinkToGitRepoDialog = (props: { iri: string, inputPackage: Package 
 };
 
 // TODO RadStr: Maybe put on some better place?
-export const linkToGitRepoOnClickHandler = async (openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
+export const createNewRemoteRepositoryHandler = async (openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
   const result = await openModal(GitDialog, {input: iri, inputPackage, type: "create-new-repository-and-commit"});
   if (result) {
     const url = import.meta.env.VITE_BACKEND + "/git/link-package-to-git?iri=" + encodeURIComponent(iri) +
@@ -178,7 +186,8 @@ export const linkToGitRepoOnClickHandler = async (openModal: OpenBetterModal, ir
                                               "&givenUserName=" + encodeURIComponent(result.user ?? "") +
                                               "&gitProviderURL=" + encodeURIComponent(result.gitProvider ?? "") +
                                               "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "") +
-                                              "&isUserRepo=" + encodeURIComponent(result.isUserRepo ?? "");
+                                              "&isUserRepo=" + encodeURIComponent(result.isUserRepo ?? "") +
+                                              "&exportFormat=" + result.exportFormat;
     // TODO RadStr: To test with docker I put the link-package-to-git code into export.zip, because for some reason docker didn't work with new API points
     // const url = import.meta.env.VITE_BACKEND + "/resources/export.zip?iri=" + encodeURIComponent(iri) +
     //                                           "&givenRepositoryName=" + encodeURIComponent(result.inputByUser) +
@@ -229,7 +238,8 @@ export const commitToGitDialogOnClickHandler = async (openModal: OpenBetterModal
   const result = await openModal(GitDialog, {input: iri, inputPackage, type: "commit"});
   if (result) {
     const url = import.meta.env.VITE_BACKEND + "/git/commit-package-to-git?iri=" + encodeURIComponent(iri) +
-                                              "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "");
+                                              "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "") +
+                                              "&exportFormat=" + result.exportFormat;
 
     const response = await fetch(
       url,
