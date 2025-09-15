@@ -17,11 +17,11 @@ export const updateMergeState = asyncHandler(async (request: express.Request, re
 
   const bodySchema = z.object({
     uuid: z.string(),
-    newlyResolvedConflicts: z.array(z.string()),
+    currentlyUnresolvedConflicts: z.array(z.string()),
   });
   const body = bodySchema.parse(request.body);
 
-  await mergeStateModel.updateMergeStatePartly(body.uuid, body.newlyResolvedConflicts);
+  await mergeStateModel.updateMergeStatePartly(body.uuid, body.currentlyUnresolvedConflicts);
 
   response.sendStatus(200);
   return;

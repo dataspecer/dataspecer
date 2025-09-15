@@ -70,15 +70,20 @@ const saveMergeState = async (
   conflictsToBeResolvedOnSave: ComparisonData[],
 ) => {
   try {
+    const pathsForConflictsToBeResolvedOnSave = conflictsToBeResolvedOnSave.map(conflict => conflict.affectedDataStore.fullPath);
+
     const fetchResult = await fetch(
       `${import.meta.env.VITE_BACKEND}/git/update-merge-state`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           uuid: fetchedMergeState.uuid,
-          newlyResolvedConflicts: conflictsToBeResolvedOnSave.map(conflict => conflict.affectedDataStore.fullPath),
+          currentlyUnresolvedConflicts: fetchedMergeState.unresolvedConflicts
+            ?.filter(unresolvedConflict => !pathsForConflictsToBeResolvedOnSave.includes(unresolvedConflict.affectedDataStore.fullPath))
+            .map(conflict => conflict.affectedDataStore.fullPath),
         }),
       });
+
     console.info("update merge state response", fetchResult);   // TODO RadStr: Debug
 
     return fetchResult;
