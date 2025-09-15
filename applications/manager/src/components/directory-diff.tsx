@@ -399,7 +399,9 @@ function StyledNode({
               //   throw new Error("The path to the datastore is empty - new version");
               // }
 
-              node.data.changeActiveModel(node.data.fullDatastoreInfoInOriginalTree, node.data.fullDatastoreInfoInModifiedTree, true);
+              const parentId = node.parent?.data.id!;   // The parent exists and it is not datastore
+              const parentTreePath = parentId.substring(0, parentId?.length - "-new".length);
+              node.data.changeActiveModel(parentTreePath, node.data.fullDatastoreInfoInOriginalTree, node.data.fullDatastoreInfoInModifiedTree, true);
             }
           }}
         >

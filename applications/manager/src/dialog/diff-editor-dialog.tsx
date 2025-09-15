@@ -21,6 +21,7 @@ import { RemoveFromToBeResolvedReactComponent } from "@/components/remove-from-t
 
 
 export type ChangeActiveModelMethod = (
+  treePathToNodeContainingDatastore: string,
   originalDatastoreInfo: DatastoreInfo | null,
   modifiedDatastoreInfo: DatastoreInfo | null,
   useCache: boolean,
@@ -34,18 +35,23 @@ type TextDiffEditorDialogProps = {
   newResourceContent: string | undefined,
 }>;
 
-type FullPath = string;
+type FullTreePath = string;
 type ModelName = string;
 
-type CacheContentMap = Record<FullPath, Record<ModelName, string>>;
+type CacheContentMap = Record<FullTreePath, Record<ModelName, string>>;
 
 /**
  * Creates copy of {@link oldCache} and changes (or adds if not present) {@link newValue} at {@link datastoreToChange}
  */
-function createNewContentCache(oldCache: CacheContentMap, datastoreToChange: DatastoreInfo, newValue: string) {
+function createNewContentCache(
+  oldCache: CacheContentMap,
+  treePathToNodeContainingDatastore: string,
+  datastoreToChange: DatastoreInfo,
+  newValue: string
+) {
   const newCache = {
     ...oldCache,
-    [datastoreToChange.fullPath]: {
+    [treePathToNodeContainingDatastore]: {
       ...(oldCache[datastoreToChange.fullPath] ?? {}),
       [datastoreToChange.type]: newValue,
     },
@@ -115,33 +121,47 @@ const finalizeMergeState = async (mergeStateUUID: string | undefined) => {
   }
 }
 
+const sendCacheToBackend = async (
+  _datastoreInfosForCacheEntries: DatastoreInfosCache,
+  _formatsForCacheEntries: FormatsCache,
+  _convertedCacheForOriginalContent: CacheContentMap,
+  _convertedCacheForModifiedContent: CacheContentMap,
+) => {
+  throw new Error("TODO RadStr: Implement");
+};
+
 const updateCacheContentEntryEverywhere = (
   cacheSetter: (value: SetStateAction<CacheContentMap>) => void,
   cacheConvertedSetter: (value: SetStateAction<CacheContentMap>) => void,
+  treePathToNodeContainingDatastore: string,
   datastoreInfo: DatastoreInfo,
   newValue: string,
   format: string,
 ) => {
   cacheSetter(prevState => {
-    return createNewContentCache(prevState, datastoreInfo, newValue);
+    return createNewContentCache(prevState, treePathToNodeContainingDatastore, datastoreInfo, newValue);
   });
 
   const convertedNewValue = convertDatastoreContentBasedOnFormat(newValue, format, true);
   const stringifiedConvertedNewValue = stringifyDatastoreContentBasedOnFormat(convertedNewValue, format, true);
   cacheConvertedSetter(prevState => {
-    return createNewContentCache(prevState, datastoreInfo, stringifiedConvertedNewValue);
+    return createNewContentCache(prevState, treePathToNodeContainingDatastore, datastoreInfo, stringifiedConvertedNewValue);
   });
 }
 
 const updateCacheContentEntry = (
   cacheSetter: (value: SetStateAction<CacheContentMap>) => void,
+  treePathToNodeContainingDatastore: string,
   datastoreInfo: DatastoreInfo,
   newValue: string,
 ) => {
   cacheSetter(prevState => {
-    return createNewContentCache(prevState, datastoreInfo, newValue);
+    return createNewContentCache(prevState, treePathToNodeContainingDatastore, datastoreInfo, newValue);
   });
 }
+
+type DatastoreInfosCache = Record<FullTreePath, Record<ModelName, {original: DatastoreInfo | null, modified: DatastoreInfo | null}>>;
+type FormatsCache = Record<FullTreePath, Record<ModelName, string>>;
 
 export const DIFF_EDITOR_EDIT_ICON_TAILWIND_WIDTH = "w-6";
 export const DIFF_EDITOR_EDIT_ICON_TAILWIND_HEIGHT = "h-6";
@@ -153,10 +173,13 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
   const [examinedMergeState, setExaminedMergeState] = useState<MergeState | null>(null);
   const [conflictsToBeResolvedOnSave, setConflictsToBeResolvedOnSave] = useState<ComparisonData[]>([]);
 
+  const [currentTreePathToNodeContainingDatastore, setCurrentTreePathToNodeContainingDatastore] = useState<string>("");
+  const [formatsForCacheEntries, setFormatsForCacheEntries] = useState<FormatsCache>({});
+  const [datastoreInfosForCacheEntries, setDatastoreInfosForCacheEntries] = useState<DatastoreInfosCache>({});
   const [cacheForOriginalTextContent, setCacheForOriginalTextContent] = useState<CacheContentMap>({});
   const [cacheForModifiedTextContent, setCacheForModifiedTextContent] = useState<CacheContentMap>({});
-  const [convertedCacheForOriginalTextContent, setConvertedCacheForOriginalTextContent] = useState<CacheContentMap>({});
-  const [convertedCacheForModifiedTextContent, setConvertedCacheForModifiedTextContent] = useState<CacheContentMap>({});
+  const [convertedCacheForOriginalContent, setConvertedCacheForOriginalContent] = useState<CacheContentMap>({});
+  const [convertedCacheForModifiedContent, setConvertedCacheForModifiedContent] = useState<CacheContentMap>({});
   const [originalDatastoreInfo, setOriginalDatastoreInfo] = useState<DatastoreInfo | null>(null);
   const [modifiedDatastoreInfo, setModifiedDatastoreInfo] = useState<DatastoreInfo | null>(null);
   const [originalSvg, setOriginalSvg] = useState<any | "">("");
@@ -164,13 +187,12 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
 
   const [comparisonTabType, setComparisonTabType] = useState<"image-compare" | "text-compare">("text-compare");
 
-  const activeOriginalContent = originalDatastoreInfo === null ? "" : cacheForOriginalTextContent[originalDatastoreInfo.fullPath]?.[originalDatastoreInfo.type] ?? "";
-  const activeOriginalContentConverted = originalDatastoreInfo === null ? "" : convertedCacheForOriginalTextContent[originalDatastoreInfo.fullPath]?.[originalDatastoreInfo.type] ?? "";
-  const activeModifiedContent = modifiedDatastoreInfo === null ? "" : cacheForModifiedTextContent[modifiedDatastoreInfo.fullPath]?.[modifiedDatastoreInfo.type] ?? "";
-  const activeModifiedContentConverted = modifiedDatastoreInfo === null ? "" : convertedCacheForModifiedTextContent[modifiedDatastoreInfo.fullPath]?.[modifiedDatastoreInfo.type] ?? "";
+  const activeOriginalContent = originalDatastoreInfo === null ? "" : cacheForOriginalTextContent[currentTreePathToNodeContainingDatastore]?.[originalDatastoreInfo.type] ?? "";
+  const activeOriginalContentConverted = originalDatastoreInfo === null ? "" : convertedCacheForOriginalContent[currentTreePathToNodeContainingDatastore]?.[originalDatastoreInfo.type] ?? "";
+  const activeModifiedContent = modifiedDatastoreInfo === null ? "" : cacheForModifiedTextContent[currentTreePathToNodeContainingDatastore]?.[modifiedDatastoreInfo.type] ?? "";
+  const activeModifiedContentConverted = modifiedDatastoreInfo === null ? "" : convertedCacheForModifiedContent[currentTreePathToNodeContainingDatastore]?.[modifiedDatastoreInfo.type] ?? "";
 
-  const [format, setFormat] = useState<string>("text");
-
+  const activeFormat = (modifiedDatastoreInfo === null && originalDatastoreInfo === null) ? "" : formatsForCacheEntries[currentTreePathToNodeContainingDatastore]?.[(modifiedDatastoreInfo?.type ?? originalDatastoreInfo?.type) as string] ?? "";
 
 
   useEffect(() => {
@@ -222,11 +244,41 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
    *  if set to false, then always fetches from backend and updates cache
    */
   const changeActiveModel = async (
+    treePathToNodeContainingDatastore: string,
     newOriginalDatastoreInfo: DatastoreInfo | null,
     newModifiedDatastoreInfo: DatastoreInfo | null,
     useCache: boolean,
   ) => {
+    if (newOriginalDatastoreInfo === null && newModifiedDatastoreInfo === null) {
+      // TOOD RadStr: Not sure about this special case, but I think this should be the correct way to handle it
+      setOriginalDatastoreInfo(null);
+      setModifiedDatastoreInfo(null);
+      setCurrentTreePathToNodeContainingDatastore(treePathToNodeContainingDatastore);
+      return;
+    }
+    // Note that it must be always string because of the if guard for both nulls at the start of method
+    const newDatastoreType = (newOriginalDatastoreInfo?.type ?? newModifiedDatastoreInfo?.type) as string;
+
+
     setIsLoadingTextData(true);
+
+    setCurrentTreePathToNodeContainingDatastore(treePathToNodeContainingDatastore);
+    const newFormat = (examinedMergeState?.filesystemTypeMergeFrom === AvailableFilesystems.ClassicFilesystem ? newOriginalDatastoreInfo?.format : newModifiedDatastoreInfo?.format) ?? "text";
+    setFormatsForCacheEntries((prev) => ({
+      ...prev,
+      [treePathToNodeContainingDatastore]: {
+        ...prev[treePathToNodeContainingDatastore],
+        [newDatastoreType]: newFormat,
+      }
+    }));
+
+    setDatastoreInfosForCacheEntries(prev => ({
+      ...prev,
+      [treePathToNodeContainingDatastore]: {
+        ...prev[treePathToNodeContainingDatastore],
+        [newDatastoreType]: {original: newOriginalDatastoreInfo, modified: newModifiedDatastoreInfo},
+      }
+    }));
 
     if (originalDatastoreInfo?.fullPath !== newOriginalDatastoreInfo?.fullPath || modifiedDatastoreInfo !== null && modifiedDatastoreInfo?.fullPath !== newModifiedDatastoreInfo?.fullPath) {
       // Switched to different datastore
@@ -238,17 +290,16 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
       }
     }
 
-    const newFormat = (examinedMergeState?.filesystemTypeMergeFrom === AvailableFilesystems.ClassicFilesystem ? newOriginalDatastoreInfo?.format : newModifiedDatastoreInfo?.format) ?? "text";
-    setFormat(newFormat);
-
     // Set the edited value in cache
     if (originalDatastoreInfo !== null) {
       const currentOriginalContentInEditor = monacoEditor.current?.editor.getOriginalEditor().getValue()!;
-      updateCacheContentEntryEverywhere(setCacheForOriginalTextContent, setConvertedCacheForOriginalTextContent, originalDatastoreInfo, currentOriginalContentInEditor, newFormat);
+      updateCacheContentEntryEverywhere(setCacheForOriginalTextContent, setConvertedCacheForOriginalContent,
+        treePathToNodeContainingDatastore, originalDatastoreInfo, currentOriginalContentInEditor, newFormat);
     }
     if (modifiedDatastoreInfo !== null) {
       const currentModifiedContentInEditor = monacoEditor.current?.editor.getModifiedEditor().getValue()!;
-      updateCacheContentEntryEverywhere(setCacheForModifiedTextContent, setConvertedCacheForModifiedTextContent, modifiedDatastoreInfo, currentModifiedContentInEditor, newFormat);
+      updateCacheContentEntryEverywhere(setCacheForModifiedTextContent, setConvertedCacheForModifiedContent,
+        treePathToNodeContainingDatastore, modifiedDatastoreInfo, currentModifiedContentInEditor, newFormat);
     }
 
     const isOriginalDataResourceInCache = isDatastorePresentInCache(cacheForOriginalTextContent, newOriginalDatastoreInfo);
@@ -264,13 +315,15 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
       if (newOriginalDataAsText !== null && newOriginalDatastoreInfo !== null) {
         const convertedCacheValue = convertDatastoreContentBasedOnFormat(newOriginalDataAsText, newOriginalDatastoreInfo.format, true);
         const stringifiedCachevalue = stringifyDatastoreContentBasedOnFormat(convertedCacheValue, newFormat, true);
-        updateCacheContentEntryEverywhere(setCacheForOriginalTextContent, setConvertedCacheForOriginalTextContent, newOriginalDatastoreInfo, stringifiedCachevalue, newFormat);
+        updateCacheContentEntryEverywhere(setCacheForOriginalTextContent, setConvertedCacheForOriginalContent,
+          treePathToNodeContainingDatastore, newOriginalDatastoreInfo, stringifiedCachevalue, newFormat);
       }
 
       if (newModifiedDataAsText !== null && newModifiedDatastoreInfo !== null) {
         const convertedCacheValue = convertDatastoreContentBasedOnFormat(newModifiedDataAsText, newModifiedDatastoreInfo.format, true);
         const stringifiedCachevalue = stringifyDatastoreContentBasedOnFormat(convertedCacheValue, newFormat, true);
-        updateCacheContentEntryEverywhere(setCacheForModifiedTextContent, setConvertedCacheForModifiedTextContent, newModifiedDatastoreInfo, stringifiedCachevalue, newFormat);
+        updateCacheContentEntryEverywhere(setCacheForModifiedTextContent, setConvertedCacheForModifiedContent,
+          treePathToNodeContainingDatastore, newModifiedDatastoreInfo, stringifiedCachevalue, newFormat);
       }
     }
 
@@ -289,7 +342,7 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
 
   const reloadModelsDataFromBackend = async () => {
     if (originalDatastoreInfo !== null && modifiedDatastoreInfo !== null) {
-      await changeActiveModel(originalDatastoreInfo, modifiedDatastoreInfo, false);
+      await changeActiveModel(currentTreePathToNodeContainingDatastore, originalDatastoreInfo, modifiedDatastoreInfo, false);
     }
   };
 
@@ -301,7 +354,7 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
 
     const mergeResolveResult = mergeStrategy.resolve(activeOriginalContent, activeModifiedContent);
     console.info(activeModifiedContent === mergeResolveResult, {activeModifiedContent, mergeResolveResult});
-    updateCacheContentEntry(setCacheForModifiedTextContent, modifiedDatastoreInfo, mergeResolveResult);
+    updateCacheContentEntry(setCacheForModifiedTextContent, currentTreePathToNodeContainingDatastore, modifiedDatastoreInfo, mergeResolveResult);
   };
 
   const closeWithSuccess = () => {
@@ -314,6 +367,9 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
     await saveFileChanges();
     if (examinedMergeState !== null) {
       await saveMergeState(examinedMergeState, conflictsToBeResolvedOnSave);
+      await sendCacheToBackend(
+        datastoreInfosForCacheEntries, formatsForCacheEntries,
+        convertedCacheForOriginalContent, convertedCacheForModifiedContent);
     }
     closeWithSuccess();
   };
@@ -479,7 +535,7 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
                         </div>
                         {/* The h-screen is needed otherwise the monaco editor is not shown at all */}
                         {/* Also small note - there is loading effect when first starting up the editor, it is not any custom made functionality */}
-                        <MonacoDiffEditor className="flex-1 -ml-16 h-screen" refs={monacoEditor} originalContent={activeOriginalContentConverted} editable={editable} modifiedContent={activeModifiedContentConverted} format={format} />
+                        <MonacoDiffEditor className="flex-1 -ml-16 h-screen" refs={monacoEditor} originalContent={activeOriginalContentConverted} editable={editable} modifiedContent={activeModifiedContentConverted} format={activeFormat} />
                       </TabsContent>
                     </Tabs>
                   </div>

@@ -21,6 +21,19 @@ export function convertDatastoreContentBasedOnFormat(datastoreContent: string, f
   return datastoreContent;
 }
 
+/**
+ * @returns The given {@link datastoreContent}, which is in {@link inputFormat} converted to string of format {@link outputFormat}
+ */
+export function convertDatastoreContentForInputFormatToOutputFormat(
+  datastoreContent: string,
+  inputFormat: string,
+  outputFormat: string,
+  shouldConvert: boolean
+): string {
+  const datastoreAsObject: any = convertDatastoreContentBasedOnFormat(datastoreContent, inputFormat, shouldConvert);
+  return stringifyDatastoreContentBasedOnFormat(datastoreAsObject, outputFormat, shouldConvert);
+}
+
 
 /**
  * Inverse to {@link convertDatastoreContentBasedOnFormat}

@@ -33,7 +33,7 @@ export async function getDatastoreContent(
   // TODO RadStr: Run conversion on client?
   if (filesystem === AvailableFilesystems.ClassicFilesystem) {
     const { isAccessible, normalizedGitPath } = isAccessibleGitRepository(pathToDatastore);
-    // This is very very important, if we didn't do this, we would user allow to esentially query any file stored on server
+    // This is very very important, if we didn't do this, we would allow user to esentially query any file stored on server
     if (!isAccessible) {
       return { accessDenied: true };
     }
