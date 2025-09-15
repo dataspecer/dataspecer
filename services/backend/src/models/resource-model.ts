@@ -256,6 +256,19 @@ export class ResourceModel {
         await this.updateModificationTime(iri);
     }
 
+    async updateMergeData(iri: string, mergeFromHash: string, mergeFromBranch: string) {
+        const resource = await this.prismaClient.resource.findFirst({where: {iri}});        // TODO RadStr: Why am I looking for resource
+        await this.prismaClient.resource.update({
+            where: {iri},
+            data: {
+                mergeFromHash,
+                mergeFromBranch,
+            }
+        });
+        await this.updateModificationTime(iri);
+    }
+
+
     async updateRepresentsBranchHead(iri: string, commitReferenceType: CommitReferenceType) {
         const resource = await this.prismaClient.resource.findFirst({where: {iri}});        // TODO RadStr: Why am I looking for resource
         await this.prismaClient.resource.update({

@@ -16,7 +16,7 @@ import configuration from "../configuration.ts";
 import fs from "fs";
 import { getRepoURLWithAuthorizationUsingDebugPatToken } from "../git-never-commit.ts";
 import { simpleGit, SimpleGit } from "simple-git";
-import { extractPartOfRepositoryURL, getAuthorizationURL, getLastCommitHash, shouldCheckForConflicts } from "../utils/git-utils.ts";
+import { extractPartOfRepositoryURL, getAuthorizationURL, getLastCommitHash } from "../utils/git-utils.ts";
 import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
@@ -143,7 +143,7 @@ export const commitPackageToGit = async (
     const hasSetLastCommit: boolean = localLastCommitHash !== "";
 
     try {
-      await gitCloneBasic(git, gitInitialDirectory, repoURLWithAuthorization, true, false, branch ?? undefined, 1);
+      await gitCloneBasic(git, gitInitialDirectory, repoURLWithAuthorization, true, false, branch ?? undefined);
     }
     catch (cloneError: any) {
       try {
@@ -175,58 +175,60 @@ export const commitPackageToGit = async (
     }
 
     if (hasSetLastCommit) {
-      const remoteRepositoryLastCommitHash = await getLastCommitHash(git);
-      const commonCommitHash = await getCommonCommitInHistory(git, localLastCommitHash, remoteRepositoryLastCommitHash);
-      const shouldTryCreateMergeState = shouldCheckForConflicts(commonCommitHash, localLastCommitHash, remoteRepositoryLastCommitHash);
-      // if (shouldTryCreateMergeState) {
-        const {
-          diffTreeComparisonResult,
-          rootMergeFrom,
-          pathToRootMetaMergeFrom,
-          filesystemMergeFrom,
-          rootMergeTo,
-          pathToRootMetaMergeTo,
-          filesystemMergeTo,
-        } = await compareGitAndDSFilesystems(gitProvider, iri, gitInitialDirectoryParent, "push");
-
-        const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS("push", localLastCommitHash, remoteRepositoryLastCommitHash);
-        const createdMergeStateId = mergeStateModel.createMergeStateIfNecessary(
-          iri, "push", diffTreeComparisonResult,
-          lastHashMergeFrom, lastHashMergeTo, commonCommitHash,
-          rootMergeFrom, pathToRootMetaMergeFrom, filesystemMergeFrom.getFilesystemType(),
-          rootMergeTo, pathToRootMetaMergeTo, filesystemMergeTo.getFilesystemType());
-
-        throw new Error("TODO RadStr: Implement me");
-      // }
-    }
-    else {
-      // TODO RadStr: This block of code won't be in this else, it is just for now
-
       try {
-        const exporter = new PackageExporterByResourceType();
-        await exporter.doExportFromIRI(iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem, exportFormat ?? "json");
+        const remoteRepositoryLastCommitHash = await getLastCommitHash(git);
+        const shouldTryCreateMergeState = localLastCommitHash !== remoteRepositoryLastCommitHash;
+        const commonCommitHash = await getCommonCommitInHistory(git, localLastCommitHash, remoteRepositoryLastCommitHash);
+        if (shouldTryCreateMergeState) {
+          const {
+            diffTreeComparisonResult,
+            rootMergeFrom,
+            pathToRootMetaMergeFrom,
+            filesystemMergeFrom,
+            rootMergeTo,
+            pathToRootMetaMergeTo,
+            filesystemMergeTo,
+          } = await compareGitAndDSFilesystems(gitProvider, iri, gitInitialDirectoryParent, "push");
 
-        const readmeData: ReadmeTemplateData = {
-          dataspecerUrl: "http://localhost:5174",
-          publicationRepositoryUrl: `${gitProvider.getDomainURL(true)}/${givenRepositoryUserName}/${givenRepositoryName}-publication-repo`,  // TODO RadStr: Have to fix once we will use better mechanism to name the publication repos
-        };
-        createReadmeFile(gitInitialDirectory, readmeData);      // TODO RadStr: Again - should be done only in the initial commit
-
-        gitProvider.copyWorkflowFiles(gitInitialDirectory);
-
-        const commitResult = await commitGivenFilesToGit(git, ["."], commitMessage, gitCredentials.name, gitCredentials.email);
-        if (commitResult.commit !== "") {
-          await git.push(repoURLWithAuthorization);
-          await resourceModel.updateLastCommitHash(iri, commitResult.commit);
+          const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS("push", localLastCommitHash, remoteRepositoryLastCommitHash);
+          const createdMergeStateId = mergeStateModel.createMergeStateIfNecessary(
+            iri, "push", diffTreeComparisonResult,
+            lastHashMergeFrom, lastHashMergeTo, commonCommitHash,
+            rootMergeFrom, pathToRootMetaMergeFrom, filesystemMergeFrom.getFilesystemType(),
+            rootMergeTo, pathToRootMetaMergeTo, filesystemMergeTo.getFilesystemType());
+          return;
         }
-        // Else no changes
-        break;    // We are done
       }
-      finally {
-        // It is important to not only remove the actual files, but also the .git directory,
-        // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
+      catch(error) {
+        // Remove only on failure, otherwise there is conflict and we want to keep it for merge state
         fs.rmSync(gitDirectoryToRemoveAfterWork, { recursive: true, force: true });
+        throw error;      // Rethrow
       }
+    }
+    try {
+      const exporter = new PackageExporterByResourceType();
+      await exporter.doExportFromIRI(iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem, exportFormat ?? "json");
+
+      const readmeData: ReadmeTemplateData = {
+        dataspecerUrl: "http://localhost:5174",
+        publicationRepositoryUrl: `${gitProvider.getDomainURL(true)}/${givenRepositoryUserName}/${givenRepositoryName}-publication-repo`,  // TODO RadStr: Have to fix once we will use better mechanism to name the publication repos
+      };
+      createReadmeFile(gitInitialDirectory, readmeData);      // TODO RadStr: Again - should be done only in the initial commit
+
+      gitProvider.copyWorkflowFiles(gitInitialDirectory);
+
+      const commitResult = await commitGivenFilesToGit(git, ["."], commitMessage, gitCredentials.name, gitCredentials.email);
+      if (commitResult.commit !== "") {
+        await git.push(repoURLWithAuthorization);
+        await resourceModel.updateLastCommitHash(iri, commitResult.commit);
+      }
+      // Else no changes
+      break;    // We are done
+    }
+    finally {
+      // It is important to not only remove the actual files, but also the .git directory,
+      // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
+      fs.rmSync(gitDirectoryToRemoveAfterWork, { recursive: true, force: true });
     }
   }
 };

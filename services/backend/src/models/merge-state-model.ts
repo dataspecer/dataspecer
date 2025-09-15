@@ -108,47 +108,60 @@ export class MergeStateModel {
 
   private async handlePullFinalizer(mergeState: MergeStateOnBackend) {
     // TODO: This can be "generalized" to allow updating git
-    let filesystemOfTheToUpdate: AvailableFilesystems;
-    let iriOfTheToUpdate: string;
-    let filesystemOfThePulled: AvailableFilesystems;
-    let rootFullPathToMetaMergeToOfThePulled: string;
+    let filesystemToUpdate: AvailableFilesystems;
+    let rootIriToUpdate: string;
+    // Here we name it static - that is the one, which was not editable
+    let filesystemOfTheStatic: AvailableFilesystems;
+    let rootFullPathToMetaMergeToOfTheStatic: string;
     if (mergeState.editable === "mergeFrom") {
-      filesystemOfTheToUpdate = mergeState.filesystemTypeMergeFrom;
-      iriOfTheToUpdate = mergeState.rootIriMergeFrom;
-      filesystemOfThePulled = mergeState.filesystemTypeMergeTo;
-      rootFullPathToMetaMergeToOfThePulled = mergeState.rootFullPathToMetaMergeTo;
+      filesystemToUpdate = mergeState.filesystemTypeMergeFrom;
+      rootIriToUpdate = mergeState.rootIriMergeFrom;
+      filesystemOfTheStatic = mergeState.filesystemTypeMergeTo;
+      rootFullPathToMetaMergeToOfTheStatic = mergeState.rootFullPathToMetaMergeTo;
     }
     else {
       // TODO RadStr: Thinking about it, when I am pulling maybe I don't want to have mergeTo
-      filesystemOfTheToUpdate = mergeState.filesystemTypeMergeTo;
-      iriOfTheToUpdate = mergeState.rootIriMergeTo;
-      filesystemOfThePulled = mergeState.filesystemTypeMergeFrom;
-      rootFullPathToMetaMergeToOfThePulled = mergeState.rootFullPathToMetaMergeFrom;
+      filesystemToUpdate = mergeState.filesystemTypeMergeTo;
+      rootIriToUpdate = mergeState.rootIriMergeTo;
+      filesystemOfTheStatic = mergeState.filesystemTypeMergeFrom;
+      rootFullPathToMetaMergeToOfTheStatic = mergeState.rootFullPathToMetaMergeFrom;
     }
 
-    if (filesystemOfTheToUpdate === AvailableFilesystems.DS_Filesystem) {
-      const resource = await this.resourceModel.getResource(iriOfTheToUpdate);
+    if (filesystemToUpdate === AvailableFilesystems.DS_Filesystem) {
+      const resource = await this.resourceModel.getResource(rootIriToUpdate);
       if (resource === null) {
         throw new Error(`Resource no longer exists or it never existed. The merge state: ${mergeState}`);
       }
     }
-    if (filesystemOfThePulled === AvailableFilesystems.ClassicFilesystem) {
+    if (filesystemOfTheStatic === AvailableFilesystems.ClassicFilesystem) {
       // We need path to any directory inside repo (path to file causes error)
-      const directory = path.dirname(rootFullPathToMetaMergeToOfThePulled);
+      const directory = path.dirname(rootFullPathToMetaMergeToOfTheStatic);
       const git = simpleGit(directory);
       const gitCommitHash = await getLastCommitHash(git);
-      this.resourceModel.updateLastCommitHash(iriOfTheToUpdate, gitCommitHash);
+      this.resourceModel.updateLastCommitHash(rootIriToUpdate, gitCommitHash);
     }
+
+    return {
+      filesystemToUpdate,
+      rootIriToUpdate,
+      filesystemOfTheStatic,
+      rootFullPathToMetaMergeToOfTheStatic,
+    };
   }
 
   private async handlePushFinalizer(mergeState: MergeStateOnBackend) {
     // Same as pull, but we want the user to push, that is to insert the commit message back,
     //  but that is handled in the request handler, not here
     await this.handlePullFinalizer(mergeState);
+    // TODO RadStr: Or just for now don't do anything about it ... make the user commit again
   }
 
   private async handleMergeFinalizer(mergeState: MergeStateOnBackend) {
-    // TODO RadStr: Same as pull but with updating the new merge fields in db table
+    const mergeFromResource = await this.resourceModel.getResource(mergeState.rootIriMergeFrom);
+    if (mergeFromResource === null) {
+      throw new Error("The merge from resource does not exist");
+    }
+    await this.resourceModel.updateMergeData(mergeState.rootIriMergeTo, mergeFromResource.lastCommitHash, mergeFromResource.branch);
   }
 
   /**
