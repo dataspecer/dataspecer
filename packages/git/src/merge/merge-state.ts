@@ -137,10 +137,3 @@ export interface MergeState {
     diffTreeSize: number;   // TODO RadStr: Maybe not needed can just compute on client from diffTree
   };
 }
-
-/**
- * @deprecated TODO RadStr: Depreacted for now, I will see how will I handle the updates
- */
-export interface MergeStateOnBackend extends MergeState {
-  usUpToDate: boolean
-}

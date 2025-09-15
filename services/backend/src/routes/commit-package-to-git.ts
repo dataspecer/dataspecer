@@ -219,11 +219,16 @@ export const commitPackageToGit = async (
 
       const commitResult = await commitGivenFilesToGit(git, ["."], commitMessage, gitCredentials.name, gitCredentials.email);
       if (commitResult.commit !== "") {
+        // We do not need any --force or --force-with-leash options, this is enough
         await git.push(repoURLWithAuthorization);
         await resourceModel.updateLastCommitHash(iri, commitResult.commit);
       }
       // Else no changes
       break;    // We are done
+    }
+    catch(error) {
+      console.error({error});
+      // Don't rethrow error
     }
     finally {
       // It is important to not only remove the actual files, but also the .git directory,

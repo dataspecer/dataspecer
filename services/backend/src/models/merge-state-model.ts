@@ -6,7 +6,7 @@ import path from "path";
 import { ALL_GIT_REPOSITORY_ROOTS } from "./git-store-info.ts";
 import { ResourceModel } from "./resource-model.ts";
 import { simpleGit } from "simple-git";
-import { AvailableFilesystems, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, FilesystemNode, isEditableType, MergeState, MergeStateCause, MergeStateOnBackend } from "@dataspecer/git";
+import { AvailableFilesystems, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, FilesystemNode, isEditableType, MergeState, MergeStateCause } from "@dataspecer/git";
 import { getLastCommitHash } from "../utils/git-utils.ts";
 
 
@@ -91,22 +91,20 @@ export class MergeStateModel {
     throw new Error("TODO RadStr: Implement");
   }
 
-  async mergeStateFinalizer(uuid: string): Promise<MergeStateOnBackend | null> {
+  async mergeStateFinalizer(uuid: string): Promise<MergeState | null> {
     const mergeState = await this.getMergeStateFromUUID(uuid, true);
     if (mergeState === null) {
       throw new Error(`Merge state for uuid (${uuid}) does not exist`);
     }
-    throw new Error(`TODO RadStr: Not as simple as I thought`);
+    const isFinalized = await this.mergeStateConflictFinalizerInternal(mergeState);
+    if (isFinalized) {
+      return mergeState;
+    }
 
-    // const isFinalized = await this.mergeStateConflictFinalizerInternal(mergeState);
-    // if (isFinalized) {
-    //   return mergeState;
-    // }
-
-    // return null;
+    return null;
   }
 
-  private async handlePullFinalizer(mergeState: MergeStateOnBackend) {
+  private async handlePullFinalizer(mergeState: MergeState) {
     // TODO: This can be "generalized" to allow updating git
     let filesystemToUpdate: AvailableFilesystems;
     let rootIriToUpdate: string;
@@ -149,14 +147,14 @@ export class MergeStateModel {
     };
   }
 
-  private async handlePushFinalizer(mergeState: MergeStateOnBackend) {
+  private async handlePushFinalizer(mergeState: MergeState) {
     // Same as pull, but we want the user to push, that is to insert the commit message back,
     //  but that is handled in the request handler, not here
     await this.handlePullFinalizer(mergeState);
     // TODO RadStr: Or just for now don't do anything about it ... make the user commit again
   }
 
-  private async handleMergeFinalizer(mergeState: MergeStateOnBackend) {
+  private async handleMergeFinalizer(mergeState: MergeState) {
     const mergeFromResource = await this.resourceModel.getResource(mergeState.rootIriMergeFrom);
     if (mergeFromResource === null) {
       throw new Error("The merge from resource does not exist");
@@ -169,7 +167,7 @@ export class MergeStateModel {
    *  For example the last commit hash in case of Dataspecer resource
    * @returns true, when it successfully finalized merge state
    */
-  private async mergeStateConflictFinalizerInternal(mergeState: MergeStateOnBackend): Promise<boolean> {
+  private async mergeStateConflictFinalizerInternal(mergeState: MergeState): Promise<boolean> {
     if (mergeState.unresolvedConflicts?.length !== 0) {
       return false;
     }
