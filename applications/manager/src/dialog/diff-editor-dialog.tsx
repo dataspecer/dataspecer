@@ -14,7 +14,7 @@ import { TabsContent } from "@radix-ui/react-tabs";
 import SvgVisualDiff from "@/components/images-conflict-resolver";
 import { MonacoDiffEditor } from "@/components/monaco-diff-editor";
 import { fetchMergeState } from "./open-merge-state";
-import { AvailableFilesystems, ClientFilesystem, ComparisonData, convertDatastoreContentBasedOnFormat, DatastoreInfo, EditableType, MergeResolverStrategy, MergeState, stringifyDatastoreContentBasedOnFormat } from "@dataspecer/git";
+import { AvailableFilesystems, ClientFilesystem, ComparisonData, convertDatastoreContentBasedOnFormat, convertDatastoreContentForInputFormatToOutputFormat, DatastoreInfo, EditableType, MergeResolverStrategy, MergeState, stringifyDatastoreContentBasedOnFormat } from "@dataspecer/git";
 import { MergeStrategyComponent } from "@/components/merge-strategy-component";
 import ExpandableList from "@/components/expandable-list";
 import { RemoveFromToBeResolvedReactComponent } from "@/components/remove-from-to-be-resolved";
@@ -381,8 +381,14 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
   };
 
   const saveFileChanges = async () => {
-    const editedNewVersion = JSON.parse(monacoEditor.current?.editor.getModifiedEditor().getValue() ?? "{}");
-    ClientFilesystem.updateDatastoreContentDirectly(modifiedDatastoreInfo, editedNewVersion, examinedMergeState?.filesystemTypeMergeTo ?? null, import.meta.env.VITE_BACKEND);
+    const editorValue = monacoEditor.current?.editor.getModifiedEditor().getValue();
+    if (editorValue === undefined) {
+      return;
+    }
+    const editedNewVersion = convertDatastoreContentForInputFormatToOutputFormat(
+      editorValue, activeFormat, "json", true);
+    const editedNewVersionAsString = JSON.stringify(editedNewVersion);
+    ClientFilesystem.updateDatastoreContentDirectly(modifiedDatastoreInfo, editedNewVersionAsString, examinedMergeState?.filesystemTypeMergeTo ?? null, import.meta.env.VITE_BACKEND);
     // await updateDatastoreDirectly(modifiedDatastoreInfo.resourceIri, editedNewVersion, modifiedDatastoreInfo.modelName);   // TODO RadStr: Remove - old version
     await reloadModelsDataFromBackend();
 

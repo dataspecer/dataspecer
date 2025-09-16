@@ -8,19 +8,49 @@ import { ResourceModel } from "./resource-model.ts";
 import { simpleGit } from "simple-git";
 import { AvailableFilesystems, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, FilesystemNode, isEditableType, MergeState, MergeStateCause } from "@dataspecer/git";
 import { getLastCommitHash } from "../utils/git-utils.ts";
+import { ResourceChangeListener, ResourceChangeType } from "./resource-change-observer.ts";
 
 
 type MergeStateWithData = Prisma.MergeStateGetPayload<{
   include: { mergeStateData: true }
 }>;
 
-export class MergeStateModel {
+export class MergeStateModel implements ResourceChangeListener {
   private prismaClient: PrismaClient;
   private resourceModel: ResourceModel;
 
   constructor(prismaClient: PrismaClient, resourceModel: ResourceModel) {
     this.prismaClient = prismaClient;
     this.resourceModel = resourceModel;
+    resourceModel.addResourceChangeListener(this);
+  }
+
+  async updateBasedOnResourceChange(
+    resourceIri: string,
+    changedModel: string,
+    changeType: ResourceChangeType,
+  ): Promise<void> {
+    const resource = await this.resourceModel.getRootResourceForIri(resourceIri);
+    if (resource === null) {
+      throw new Error(`Resource for iri ${resourceIri} actually does not exist`);
+    }
+
+    const mergeStates = await this.getMergeStates(resource.iri, false);
+    for (const mergeState of mergeStates) {
+      const shouldBeTargetedWithUpToDateChange =
+      (
+        mergeState.filesystemTypeMergeFrom === AvailableFilesystems.DS_Filesystem &&
+        mergeState.rootIriMergeFrom === resource.iri
+      ) ||
+      (
+        mergeState.filesystemTypeMergeTo === AvailableFilesystems.DS_Filesystem &&
+        mergeState.rootIriMergeTo === resource.iri
+      );
+      if (shouldBeTargetedWithUpToDateChange) {
+          await this.setMergeStateIsUpToDate(mergeState.uuid, false);
+      }
+
+    }
   }
 
   /**
@@ -302,6 +332,17 @@ export class MergeStateModel {
     };
   }
 
+  private async setMergeStateIsUpToDate(mergeStateId: string, isUpToDate: boolean) {
+    await this.prismaClient.mergeState.update({
+      where: {
+        uuid: mergeStateId,
+      },
+      data: {
+        isUpToDate
+      }
+    });
+  }
+
   /**
    * Note that this method modifies the given data in {@link changedInEditable}, {@link createdInEditable}, {@link removedInEditable}, {@link conflicts},
    * by removing circular dependency
@@ -531,6 +572,7 @@ export class MergeStateModel {
         diffTree,
         diffTreeSize: prismaMergeState.mergeStateData!.diffTreeSize,
       } : undefined,
+      isUpToDate: prismaMergeState.isUpToDate,
     };
 
     return result;

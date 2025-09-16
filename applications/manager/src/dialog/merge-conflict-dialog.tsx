@@ -46,7 +46,7 @@ export const MergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialogProp
           {isLoading && <Loader className="mr-2 h-4 w-4 animate-spin" /> }
           {
           !isLoading && <>
-          {/* The header */}
+            {/* The header */}
             <div className="grid grid-cols-2 divide-x divide-gray-300">
               <div className="flex items-center justify-center">Merge from</div>
               <div className="flex items-center justify-center">Merge to</div>
@@ -65,7 +65,7 @@ export const MergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialogProp
 }
 
 const renderMergeState = (mergeState: MergeState, openModal: OpenBetterModal) => {
-  return <div className="flex items-baseline space-x-2 hover:bg-gray-300">
+  return <div className={`flex ${mergeState.isUpToDate ? "" : "bg-red-500"} items-baseline space-x-2 hover:bg-gray-300`}>
       <button onClick={() => openModal(TextDiffEditorDialog, { initialOriginalResourceIri: mergeState.rootIriMergeFrom, initialModifiedResourceIri: mergeState.rootIriMergeTo, editable: mergeState.editable})}>
         <div className="grid grid-cols-2 gap-4">
           <div className="flex">

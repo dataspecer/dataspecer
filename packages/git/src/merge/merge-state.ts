@@ -136,4 +136,6 @@ export interface MergeState {
     diffTree: DiffTree;
     diffTreeSize: number;   // TODO RadStr: Maybe not needed can just compute on client from diffTree
   };
+
+  isUpToDate: boolean;
 }

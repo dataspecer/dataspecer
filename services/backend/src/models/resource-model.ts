@@ -7,6 +7,7 @@ import { LocalStoreModel, ModelStore } from "./local-store-model.ts";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { CoreResource } from "@dataspecer/core/core/core-resource";
 import { CommitReferenceType, defaultEmptyGitUrlForDatabase } from "@dataspecer/git";
+import { ResourceChangeListener, ResourceChangeObserverBase, ResourceChangeType } from "./resource-change-observer.ts";
 
 /**
  * Base information every resource has or should have.
@@ -64,10 +65,19 @@ export interface Package extends BaseResource {
 export class ResourceModel {
     readonly storeModel: LocalStoreModel;
     private readonly prismaClient: PrismaClient;
+    private resourceChangeObserver: ResourceChangeObserverBase;
 
     constructor(storeModel: LocalStoreModel, prismaClient: PrismaClient) {
         this.storeModel = storeModel;
         this.prismaClient = prismaClient;
+        this.resourceChangeObserver = new ResourceChangeObserverBase();
+    }
+
+    addResourceChangeListener(listener: ResourceChangeListener) {
+        this.resourceChangeObserver.addListener(listener);
+    }
+    removeResourceChangeListener(listener: ResourceChangeListener) {
+        this.resourceChangeObserver.removeListener(listener);
     }
 
     async getRootResources(): Promise<BaseResource[]> {
@@ -86,6 +96,45 @@ export class ResourceModel {
         }
 
         return await this.prismaResourceToResource(prismaResource);
+    }
+
+    /**
+     * Returns a single resource or null if the resource does not exist.
+     */
+    async getResourceForId(id: number): Promise<BaseResource | null> {
+        const prismaResource = await this.prismaClient.resource.findFirst({where: {id}});
+        if (prismaResource === null) {
+            return null;
+        }
+
+        return await this.prismaResourceToResource(prismaResource);
+    }
+
+    /**
+     * Returns a root resource for the given {@link iri}, note that this is not the absolute root,
+     *  meaning the root which we get by running getRoots
+     */
+    async getRootResourceForIri(iri: string): Promise<BaseResource | null> {
+        const prismaResource = await this.prismaClient.resource.findFirst({where: {iri}});
+        if (prismaResource === null) {
+            return null;
+        }
+
+        const absoluteRoots = await this.prismaClient.resource.findMany({where: {parentResourceId: null}});
+        const absoluteRootsIds = absoluteRoots.map(root => root.id);
+
+        let parentId: number = prismaResource.id;
+        let currentPrismaResource = prismaResource;
+        while (!(currentPrismaResource.parentResourceId === null || absoluteRootsIds.includes(currentPrismaResource.parentResourceId))) {
+            parentId = currentPrismaResource.parentResourceId;
+            const parentResource = await this.prismaClient.resource.findFirst({where: {id: parentId}});
+            if (parentResource === null) {
+                break;
+            }
+            currentPrismaResource = parentResource;
+        }
+
+        return await this.prismaResourceToResource(currentPrismaResource);
     }
 
     /**
@@ -122,7 +171,7 @@ export class ResourceModel {
         for (const affectedResource of affectedResources) {
             // They are no longer part of the same project.
             await this.updateResourceProjectIriAndBranch(affectedResource, affectedResource);
-       }
+        }
 
         return affectedResources;
     }
@@ -192,7 +241,7 @@ export class ResourceModel {
                 userMetadata: JSON.stringify(metadata),
             }
         });
-        await this.updateModificationTime(iri);
+        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified);
     }
 
     /**
@@ -210,7 +259,7 @@ export class ResourceModel {
                 lastCommitHash: lastCommitHash,
             }
         });
-        await this.updateModificationTime(iri);
+        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified);
     }
 
     /**
@@ -237,7 +286,7 @@ export class ResourceModel {
                 projectIri: projectIri
             }
         });
-        await this.updateModificationTime(iri);
+        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified);
     }
 
     /**
@@ -253,7 +302,7 @@ export class ResourceModel {
                 projectIri
             }
         });
-        await this.updateModificationTime(iri);
+        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified);
     }
 
     async updateMergeData(iri: string, mergeFromHash: string, mergeFromBranch: string) {
@@ -265,7 +314,7 @@ export class ResourceModel {
                 mergeFromBranch,
             }
         });
-        await this.updateModificationTime(iri);
+        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified);
     }
 
 
@@ -277,7 +326,7 @@ export class ResourceModel {
                 representsBranchHead: commitReferenceType === "branch",
             }
         });
-        await this.updateModificationTime(iri);
+        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified);
     }
 
     async updateIsSynchronizedWithRemote(iri: string, isSynchronizedWithRemote: boolean) {
@@ -288,7 +337,7 @@ export class ResourceModel {
                 isSynchronizedWithRemote: isSynchronizedWithRemote
             }
         });
-        await this.updateModificationTime(iri);
+        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified);
     }
 
     /**
@@ -326,6 +375,8 @@ export class ResourceModel {
             throw new Error("Resource not found.");
         }
 
+        // TODO RadStr: ? Again don't know what iri to provide
+        await this.updateModificationTime(iri, "resource", ResourceChangeType.Removed);
         await this.prismaClient.resource.delete({where: {id: prismaResource.id}});
 
         for (const storeId of Object.values(JSON.parse(prismaResource.dataStoreId))) {
@@ -493,6 +544,8 @@ export class ResourceModel {
         });
 
         if (parentResourceId !== null) {
+            // TODO RadStr: ? Again don't know what iri to provide
+            await this.updateModificationTime(parentIri ?? iri, "resource", ResourceChangeType.Created);
             await this.updateModificationTimeById(parentResourceId);
         }
     }
@@ -503,7 +556,7 @@ export class ResourceModel {
             throw new Error("Resource not found.");
         }
 
-        const onUpdate = () => this.updateModificationTime(iri);
+        const onUpdate = () => this.updateModificationTime(iri, storeName, ResourceChangeType.Modified);
 
         const dataStoreId = JSON.parse(prismaResource.dataStoreId);
 
@@ -520,7 +573,7 @@ export class ResourceModel {
             throw new Error("Resource not found.");
         }
 
-        const onUpdate = () => this.updateModificationTime(iri);
+        const onUpdate = () => this.updateModificationTime(iri, storeName, ResourceChangeType.Modified);
 
         const dataStoreId = JSON.parse(prismaResource.dataStoreId);
 
@@ -535,6 +588,7 @@ export class ResourceModel {
                     dataStoreId: JSON.stringify(dataStoreId)
                 }
             });
+            await this.updateModificationTime(iri, storeName, ResourceChangeType.Created);
             return this.storeModel.getModelStore(store.uuid, [onUpdate]);
         }
     }
@@ -562,7 +616,7 @@ export class ResourceModel {
             }
         });
 
-        await this.updateModificationTime(iri);
+        await this.updateModificationTime(iri, storeName, ResourceChangeType.Removed);
     }
 
     /**
@@ -583,20 +637,22 @@ export class ResourceModel {
             }
         });
 
-        await this.updateModificationTime(iri);
+        // TODO RadStr: Or modified? does it even matter?
+        await this.updateModificationTime(iri, storeName, ResourceChangeType.Created);
     }
 
     /**
      * Updates modification time of the resource and all its parent packages.
      * @param iri
      */
-    async updateModificationTime(iri: string) {
+    async updateModificationTime(iri: string, updatedModel: string, updateReason: ResourceChangeType) {
         const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri}});
         if (prismaResource === null) {
             throw new Error("Cannot update modification time. Resource does not exists.");
         }
 
         let id: number | null = prismaResource.id;
+        await this.resourceChangeObserver.notifyListeners(iri, updatedModel, updateReason);
         await this.updateModificationTimeById(id);
     }
 

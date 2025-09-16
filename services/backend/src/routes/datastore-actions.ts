@@ -168,7 +168,7 @@ export const updateDatastoreContentDirectly = asyncHandler(async (request: expre
     format: z.string().min(1).optional(),
     type: z.string(),
     filesystem: z.enum(availableFilesystems as [string, ...string[]]),
-    newContent: z.string().min(1),        // TODO RadStr: Or object?
+    newContent: z.string(),        // TODO RadStr: Or object?
   });
   const body = bodySchema.parse(request.body);
 
