@@ -100,10 +100,11 @@ const saveMergeState = async (
   }
 };
 
-const finalizeMergeState = async (mergeStateUUID: string | undefined) => {
+const finalizeMergeState = async (mergeStateUUID: string | undefined): Promise<boolean> => {
   if (mergeStateUUID === undefined) {
     // I think that it should be error
-    throw new Error("Error when updating merge state, there is actually no merge state");
+    console.error("Error when updating merge state, there is actually no merge state");
+    return false;
   }
 
   try {
@@ -113,11 +114,11 @@ const finalizeMergeState = async (mergeStateUUID: string | undefined) => {
       });
     console.info("Finalize merge state response", fetchResult);   // TODO RadStr: Debug
 
-    return fetchResult;
+    return fetchResult.ok;
   }
   catch(error) {
     console.error(`Error when updating merge state (${mergeStateUUID}). The error: ${error}`);
-    throw error;
+    return false;
   }
 }
 
@@ -408,6 +409,13 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
     // // mergeToEditor?.dispose();
   };
 
+  const finalizeMergeStateHandler = async () => {
+    const isSuccessfullyFinalized = await finalizeMergeState(examinedMergeState?.uuid);
+    if (isSuccessfullyFinalized) {
+      closeWithSuccess();
+    }
+  };
+
 
   return (
     <Tabs defaultValue="text-compare">
@@ -447,7 +455,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
                   <Button title="This does save both the changes to files and updates the merge state" variant={"default"} onClick={() => saveEverything()}>
                     Save changes and update merge state (Ctrl + S)
                   </Button>
-                  <Button title="This performs the operation, which triggered the merge state. Can be pull/push/merge" variant={"default"} onClick={() => finalizeMergeState(examinedMergeState?.uuid)}>
+                  <Button title="This performs the operation, which triggered the merge state. Can be pull/push/merge" variant={"default"} onClick={finalizeMergeStateHandler}>
                     Finalize merge state
                   </Button>
                 </div>
