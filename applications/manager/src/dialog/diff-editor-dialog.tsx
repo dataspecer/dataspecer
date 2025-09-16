@@ -161,14 +161,28 @@ const updateCacheContentEntry = (
   });
 }
 
-function getEditedEditor(
+
+function getEditorsInOriginalOrder(
   diffEditorRef: RefObject<{editor: monaco.editor.IStandaloneDiffEditor} | undefined>,
   editable: EditableType,
-) {
+): { mergeFromEditor: monaco.editor.IStandaloneCodeEditor | null, mergeToEditor: monaco.editor.IStandaloneCodeEditor | null } {
   // TODO RadStr: Don't know if it can ever be undefined, so for now just ?, but in future change the type to string only and use !. instead of ?.
   const diffEditor = diffEditorRef.current?.editor;
-  return editable === "mergeFrom" ? diffEditor?.getOriginalEditor() : diffEditor?.getModifiedEditor();
+  if (editable === "mergeFrom") {
+    return {
+      mergeFromEditor: diffEditor?.getModifiedEditor() ?? null,
+      mergeToEditor: diffEditor?.getOriginalEditor() ?? null,
+    };
+  }
+  else {
+    return {
+      mergeFromEditor: diffEditor?.getOriginalEditor() ?? null,
+      mergeToEditor: diffEditor?.getModifiedEditor() ?? null,
+    };
+  }
 }
+
+
 
 type DatastoreInfosCache = Record<FullTreePath, Record<ModelName, {mergeFrom: DatastoreInfo | null, mergeTo: DatastoreInfo | null}>>;
 type FormatsCache = Record<FullTreePath, Record<ModelName, string>>;
@@ -300,14 +314,16 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
       }
     }
 
+    const editors = getEditorsInOriginalOrder(monacoEditor, editable);
+
     // Set the edited value in cache
     if (mergeFromDatastoreInfo !== null) {
-      const currentMergeFromContentInEditor = monacoEditor.current?.editor.getOriginalEditor().getValue()!;
+      const currentMergeFromContentInEditor = editors.mergeFromEditor?.getValue()!;
       updateCacheContentEntryEverywhere(setCacheForMergeFromTextContent, setConvertedCacheForMergeFromContent,
         treePathToNodeContainingDatastore, mergeFromDatastoreInfo, currentMergeFromContentInEditor, newFormat);
     }
     if (mergeToDatastoreInfo !== null) {
-      const currentMergeToContentInEditor = monacoEditor.current?.editor.getModifiedEditor().getValue()!;
+      const currentMergeToContentInEditor = editors.mergeToEditor?.getValue()!;
       updateCacheContentEntryEverywhere(setCacheForMergeToTextContent, setConvertedCacheForMergeToContent,
         treePathToNodeContainingDatastore, mergeToDatastoreInfo, currentMergeToContentInEditor, newFormat);
     }
@@ -371,7 +387,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
   };
 
   const closeWithSuccess = () => {
-    const editedNewVersion = getEditedEditor(monacoEditor, editable)?.getValue();
+    const editedNewVersion = monacoEditor.current?.editor.getModifiedEditor()?.getValue();
     resolve({ newResourceContent: editedNewVersion });
   };
 
@@ -393,7 +409,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
   };
 
   const saveFileChanges = async () => {
-    const editorValue = getEditedEditor(monacoEditor, editable)?.getValue();
+    const editorValue = monacoEditor.current?.editor.getModifiedEditor()?.getValue();
     if (editorValue === undefined) {
       return;
     }

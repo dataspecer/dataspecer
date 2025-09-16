@@ -850,7 +850,7 @@ export const DiffTreeVisualization = (props: {
     </div>
     <div className="flex gap-1 h-full">
       <div className="flex-1 border border-stone-200 h-full" style={{height: treeRowHeight*treeRowHeightMultiplier}}>
-        <h3>{mergeStateFromBackend?.editable === "mergeFrom" ? <DiffEditorEditIcon/> : <DiffEditorCrossedOutEditIcon/>}</h3>
+        <h3><DiffEditorCrossedOutEditIcon/></h3>
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
             <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth())}
@@ -865,7 +865,7 @@ export const DiffTreeVisualization = (props: {
         }
       </div>
       <div className="flex-1 border border-stone-200 h-full" style={{height: treeRowHeight*treeRowHeightMultiplier}}>
-        <h3>{mergeStateFromBackend?.editable === "mergeFrom" ? <DiffEditorCrossedOutEditIcon/> : <DiffEditorEditIcon/>}</h3>
+        <h3><DiffEditorEditIcon/></h3>
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
             <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth())}
