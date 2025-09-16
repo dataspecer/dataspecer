@@ -220,7 +220,7 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
   useOnKeyDown(e => {
     if (e.key === "s" && e.ctrlKey) {
       e.preventDefault();
-      saveFileChanges();
+      saveEverything();
       toast.success("Saved currently opened file to backend");
     }
   });
@@ -502,11 +502,8 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
                                             />
                   </div>
                 <div className="flex gap-2 mt-4 justify-start mb-2">
-                  <Button title="Note that this only saves the changes to files. It does not touch the current merge state, that is conflicts."variant="outline" onClick={() => saveFileChanges()}>
-                    Save file changes (Ctrl + S)
-                  </Button>
                   <Button title="This does save both the changes to files and updates the merge state" variant={"default"} onClick={() => saveEverything()}>
-                    Save changes and update merge state
+                    Save changes and update merge state (Ctrl + S)
                   </Button>
                   <Button title="This performs the operation, which triggered the merge state. Can be pull/push/merge" variant={"default"} onClick={() => finalizeMergeState(examinedMergeState?.uuid)}>
                     Finalize merge state
