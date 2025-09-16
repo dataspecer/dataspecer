@@ -66,7 +66,7 @@ export const MergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialogProp
 
 const renderMergeState = (mergeState: MergeState, openModal: OpenBetterModal) => {
   return <div className={`flex ${mergeState.isUpToDate ? "" : "bg-red-500"} items-baseline space-x-2 hover:bg-gray-300`}>
-      <button onClick={() => openModal(TextDiffEditorDialog, { initialOriginalResourceIri: mergeState.rootIriMergeFrom, initialModifiedResourceIri: mergeState.rootIriMergeTo, editable: mergeState.editable})}>
+      <button onClick={() => openModal(TextDiffEditorDialog, { initialMergeFromResourceIri: mergeState.rootIriMergeFrom, initialMergeToResourceIri: mergeState.rootIriMergeTo, editable: mergeState.editable})}>
         <div className="grid grid-cols-2 gap-4">
           <div className="flex">
             <span className="text-base font-medium whitespace-nowrap truncate">{mergeState.rootIriMergeFrom}</span>

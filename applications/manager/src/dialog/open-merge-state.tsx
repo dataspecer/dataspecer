@@ -88,8 +88,8 @@ export const OpenMergeState = ({ mergeFrom, mergeTo, editable, isOpen, resolve }
       openModal(
         TextDiffEditorDialog,
         {
-          initialOriginalResourceIri: createdMergeState.rootIriMergeFrom,
-          initialModifiedResourceIri: createdMergeState.rootIriMergeTo,
+          initialMergeFromResourceIri: createdMergeState.rootIriMergeFrom,
+          initialMergeToResourceIri: createdMergeState.rootIriMergeTo,
           editable: editable,
         }
       );
@@ -100,8 +100,8 @@ export const OpenMergeState = ({ mergeFrom, mergeTo, editable, isOpen, resolve }
     openModal(
       TextDiffEditorDialog,
       {
-        initialOriginalResourceIri: mergeState!.rootIriMergeFrom,
-        initialModifiedResourceIri: mergeState!.rootIriMergeTo,
+        initialMergeFromResourceIri: mergeState!.rootIriMergeFrom,
+        initialMergeToResourceIri: mergeState!.rootIriMergeTo,
         editable: editable,
       }
     );
@@ -133,8 +133,8 @@ export const OpenMergeState = ({ mergeFrom, mergeTo, editable, isOpen, resolve }
           openModal(
             TextDiffEditorDialog,
             {
-              initialOriginalResourceIri: fetchedMergeState.rootIriMergeFrom,
-              initialModifiedResourceIri: fetchedMergeState.rootIriMergeTo,
+              initialMergeFromResourceIri: fetchedMergeState.rootIriMergeFrom,
+              initialMergeToResourceIri: fetchedMergeState.rootIriMergeTo,
               editable: editable,
             }
           );

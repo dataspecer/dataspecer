@@ -2,14 +2,14 @@ import { useState } from "react";
 
 type SvgVersion = "original" | "modified";
 
-const SvgVisualDiff = (props: { originalSvg: string, modifiedSvg: string }) => {
+const SvgVisualDiff = (props: { mergeFromSvg: string, mergeToSvg: string }) => {
   const [selected, setSelected] = useState<SvgVersion>("modified");
 
   return (
     <div className="flex h-screen">
-      <SvgImage svgString={props.originalSvg} selected={selected === "original"} onClick={() => setSelected("original")} />
+      <SvgImage svgString={props.mergeFromSvg} selected={selected === "original"} onClick={() => setSelected("original")} />
       <div className="border-l border-gray-400" />
-      <SvgImage svgString={props.modifiedSvg} selected={selected === "modified"} onClick={() => setSelected("modified")} />
+      <SvgImage svgString={props.mergeToSvg} selected={selected === "modified"} onClick={() => setSelected("modified")} />
     </div>
   );
 };

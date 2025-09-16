@@ -78,15 +78,16 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     if (datastoreFormat === null) {
       datastoreFormat = "json";
     }
-    const formattedContent = convertDatastoreContentBasedOnFormat(newContent, datastoreFormat, true);
-    // Hardcoded json - DS always works with jsons, it is too much work to make to make it work for everything.
-    // Since we would need to change every component (including cme) to support multiple formats
-    const contentAsJSON = JSON.parse(formattedContent);
+    // Note that DS always works with jsons, it is too much work to make to make it work for everything.
+    // Since we would need to change every component (including cme) to support multiple formats.
+    // So we just convert it to js object and store it.
+    const contentAsObject = convertDatastoreContentBasedOnFormat(newContent, datastoreFormat, true);
     if (isDatastoreForMetadata(type)) {
-      await givenResourceModel.updateResourceMetadata(fullPath, contentAsJSON);
+      // Pass in only the userMetadata
+      await givenResourceModel.updateResourceMetadata(fullPath, contentAsObject.userMetadata ?? {});
     }
     else {
-      await givenResourceModel.storeModel.getModelStore(fullPath).setJson(contentAsJSON);
+      await givenResourceModel.storeModel.getModelStore(fullPath).setJson(contentAsObject);
     }
 
     return true;

@@ -8,8 +8,8 @@ import { EditableType } from "@dataspecer/git";
 
 export const MonacoDiffEditor: FC<{
   refs: React.MutableRefObject<{ editor: monaco.editor.IStandaloneDiffEditor } | undefined>,
-  originalContent: string,
-  modifiedContent: string,
+  mergeFromContent: string,
+  mergeToContent: string,
   format: string
   editable: EditableType,
 } & React.ComponentProps<typeof RawMonacoEditor>> = (props) => {
@@ -24,8 +24,8 @@ export const MonacoDiffEditor: FC<{
       }}
       theme={resolvedTheme === "dark" ? "dataspecer-dark" : "vs"}
       language={props.format}
-      original={props.originalContent}
-      modified={props.modifiedContent}
+      original={props.mergeFromContent}
+      modified={props.mergeToContent}
       beforeMount={handleEditorWillMount}
 
       options={{

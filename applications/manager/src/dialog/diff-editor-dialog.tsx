@@ -1,6 +1,6 @@
 import { Modal, ModalBody, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@/components/modal";
 import { BetterModalProps } from "@/lib/better-modal";
-import { SetStateAction, useEffect, useRef, useState } from "react";
+import { RefObject, SetStateAction, useEffect, useRef, useState } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -14,7 +14,7 @@ import { TabsContent } from "@radix-ui/react-tabs";
 import SvgVisualDiff from "@/components/images-conflict-resolver";
 import { MonacoDiffEditor } from "@/components/monaco-diff-editor";
 import { fetchMergeState } from "./open-merge-state";
-import { AvailableFilesystems, ClientFilesystem, ComparisonData, convertDatastoreContentBasedOnFormat, convertDatastoreContentForInputFormatToOutputFormat, DatastoreInfo, EditableType, MergeResolverStrategy, MergeState, stringifyDatastoreContentBasedOnFormat } from "@dataspecer/git";
+import { AvailableFilesystems, ClientFilesystem, ComparisonData, convertDatastoreContentBasedOnFormat, convertDatastoreContentForInputFormatToOutputFormat, DatastoreInfo, EditableType, MergeResolverStrategy, MergeState, stringifyDatastoreContentBasedOnFormat, getEditableValue, getEditableAndNonEditableValue } from "@dataspecer/git";
 import { MergeStrategyComponent } from "@/components/merge-strategy-component";
 import ExpandableList from "@/components/expandable-list";
 import { RemoveFromToBeResolvedReactComponent } from "@/components/remove-from-to-be-resolved";
@@ -22,14 +22,14 @@ import { RemoveFromToBeResolvedReactComponent } from "@/components/remove-from-t
 
 export type ChangeActiveModelMethod = (
   treePathToNodeContainingDatastore: string,
-  originalDatastoreInfo: DatastoreInfo | null,
-  modifiedDatastoreInfo: DatastoreInfo | null,
+  mergeFromDatastoreInfo: DatastoreInfo | null,
+  mergeToDatastoreInfo: DatastoreInfo | null,
   useCache: boolean,
 ) => Promise<void>;
 
 type TextDiffEditorDialogProps = {
-  initialOriginalResourceIri: string,
-  initialModifiedResourceIri: string,
+  initialMergeFromResourceIri: string,
+  initialMergeToResourceIri: string,
   editable: EditableType,
 } & BetterModalProps<{
   newResourceContent: string | undefined,
@@ -124,8 +124,8 @@ const finalizeMergeState = async (mergeStateUUID: string | undefined) => {
 const sendCacheToBackend = async (
   _datastoreInfosForCacheEntries: DatastoreInfosCache,
   _formatsForCacheEntries: FormatsCache,
-  _convertedCacheForOriginalContent: CacheContentMap,
-  _convertedCacheForModifiedContent: CacheContentMap,
+  _convertedCacheForMergeFromContent: CacheContentMap,
+  _convertedCacheForMergeToContent: CacheContentMap,
 ) => {
   throw new Error("TODO RadStr: Implement");
 };
@@ -160,13 +160,22 @@ const updateCacheContentEntry = (
   });
 }
 
-type DatastoreInfosCache = Record<FullTreePath, Record<ModelName, {original: DatastoreInfo | null, modified: DatastoreInfo | null}>>;
+function getEditedEditor(
+  diffEditorRef: RefObject<{editor: monaco.editor.IStandaloneDiffEditor} | undefined>,
+  editable: EditableType,
+) {
+  // TODO RadStr: Don't know if it can ever be undefined, so for now just ?, but in future change the type to string only and use !. instead of ?.
+  const diffEditor = diffEditorRef.current?.editor;
+  return editable === "mergeFrom" ? diffEditor?.getOriginalEditor() : diffEditor?.getModifiedEditor();
+}
+
+type DatastoreInfosCache = Record<FullTreePath, Record<ModelName, {mergeFrom: DatastoreInfo | null, mergeTo: DatastoreInfo | null}>>;
 type FormatsCache = Record<FullTreePath, Record<ModelName, string>>;
 
 export const DIFF_EDITOR_EDIT_ICON_TAILWIND_WIDTH = "w-6";
 export const DIFF_EDITOR_EDIT_ICON_TAILWIND_HEIGHT = "h-6";
 
-export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifiedResourceIri, editable, isOpen, resolve, }: TextDiffEditorDialogProps) => {
+export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMergeToResourceIri, editable, isOpen, resolve, }: TextDiffEditorDialogProps) => {
   const monacoEditor = useRef<{editor: monaco.editor.IStandaloneDiffEditor}>(undefined);
 
   // Set once in the useEffect
@@ -176,23 +185,23 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
   const [currentTreePathToNodeContainingDatastore, setCurrentTreePathToNodeContainingDatastore] = useState<string>("");
   const [formatsForCacheEntries, setFormatsForCacheEntries] = useState<FormatsCache>({});
   const [datastoreInfosForCacheEntries, setDatastoreInfosForCacheEntries] = useState<DatastoreInfosCache>({});
-  const [cacheForOriginalTextContent, setCacheForOriginalTextContent] = useState<CacheContentMap>({});
-  const [cacheForModifiedTextContent, setCacheForModifiedTextContent] = useState<CacheContentMap>({});
-  const [convertedCacheForOriginalContent, setConvertedCacheForOriginalContent] = useState<CacheContentMap>({});
-  const [convertedCacheForModifiedContent, setConvertedCacheForModifiedContent] = useState<CacheContentMap>({});
-  const [originalDatastoreInfo, setOriginalDatastoreInfo] = useState<DatastoreInfo | null>(null);
-  const [modifiedDatastoreInfo, setModifiedDatastoreInfo] = useState<DatastoreInfo | null>(null);
-  const [originalSvg, setOriginalSvg] = useState<any | "">("");
-  const [modifiedSvg, setModifiedSvg] = useState<any | "">("");
+  const [cacheForMergeFromTextContent, setCacheForMergeFromTextContent] = useState<CacheContentMap>({});
+  const [cacheForMergeToTextContent, setCacheForMergeToTextContent] = useState<CacheContentMap>({});
+  const [convertedCacheForMergeFromContent, setConvertedCacheForMergeFromContent] = useState<CacheContentMap>({});
+  const [convertedCacheForMergeToContent, setConvertedCacheForMergeToContent] = useState<CacheContentMap>({});
+  const [mergeFromDatastoreInfo, setMergeFromDatastoreInfo] = useState<DatastoreInfo | null>(null);
+  const [mergeToDatastoreInfo, setMergeToDatastoreInfo] = useState<DatastoreInfo | null>(null);
+  const [mergeFromSvg, setMergeFromSvg] = useState<any | "">("");
+  const [mergeToSvg, setMergeToSvg] = useState<any | "">("");
 
   const [comparisonTabType, setComparisonTabType] = useState<"image-compare" | "text-compare">("text-compare");
 
-  const activeOriginalContent = originalDatastoreInfo === null ? "" : cacheForOriginalTextContent[currentTreePathToNodeContainingDatastore]?.[originalDatastoreInfo.type] ?? "";
-  const activeOriginalContentConverted = originalDatastoreInfo === null ? "" : convertedCacheForOriginalContent[currentTreePathToNodeContainingDatastore]?.[originalDatastoreInfo.type] ?? "";
-  const activeModifiedContent = modifiedDatastoreInfo === null ? "" : cacheForModifiedTextContent[currentTreePathToNodeContainingDatastore]?.[modifiedDatastoreInfo.type] ?? "";
-  const activeModifiedContentConverted = modifiedDatastoreInfo === null ? "" : convertedCacheForModifiedContent[currentTreePathToNodeContainingDatastore]?.[modifiedDatastoreInfo.type] ?? "";
+  const activeMergeFromContent = mergeFromDatastoreInfo === null ? "" : cacheForMergeFromTextContent[currentTreePathToNodeContainingDatastore]?.[mergeFromDatastoreInfo.type] ?? "";
+  const activeMergeFromContentConverted = mergeFromDatastoreInfo === null ? "" : convertedCacheForMergeFromContent[currentTreePathToNodeContainingDatastore]?.[mergeFromDatastoreInfo.type] ?? "";
+  const activeMergeToContent = mergeToDatastoreInfo === null ? "" : cacheForMergeToTextContent[currentTreePathToNodeContainingDatastore]?.[mergeToDatastoreInfo.type] ?? "";
+  const activeMergeToContentConverted = mergeToDatastoreInfo === null ? "" : convertedCacheForMergeToContent[currentTreePathToNodeContainingDatastore]?.[mergeToDatastoreInfo.type] ?? "";
 
-  const activeFormat = (modifiedDatastoreInfo === null && originalDatastoreInfo === null) ? "" : formatsForCacheEntries[currentTreePathToNodeContainingDatastore]?.[(modifiedDatastoreInfo?.type ?? originalDatastoreInfo?.type) as string] ?? "";
+  const activeFormat = (mergeToDatastoreInfo === null && mergeFromDatastoreInfo === null) ? "" : formatsForCacheEntries[currentTreePathToNodeContainingDatastore]?.[(mergeToDatastoreInfo?.type ?? mergeFromDatastoreInfo?.type) as string] ?? "";
 
 
   useEffect(() => {
@@ -201,19 +210,19 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
     }
 
 
-    if (originalDatastoreInfo?.type === "svg") {
-      setOriginalSvg(JSON.parse(activeOriginalContent)?.svg ?? "");
+    if (mergeFromDatastoreInfo?.type === "svg") {
+      setMergeFromSvg(JSON.parse(activeMergeFromContent)?.svg ?? "");
     }
     else {
-      setOriginalSvg("");
+      setMergeFromSvg("");
     }
-    if (modifiedDatastoreInfo?.type === "svg") {
-      setModifiedSvg(JSON.parse(activeModifiedContent)?.svg ?? "");
+    if (mergeToDatastoreInfo?.type === "svg") {
+      setMergeToSvg(JSON.parse(activeMergeToContent)?.svg ?? "");
     }
     else {
-      setModifiedSvg("");
+      setMergeToSvg("");
     }
-  }, [comparisonTabType, originalDatastoreInfo, modifiedDatastoreInfo]);
+  }, [comparisonTabType, mergeFromDatastoreInfo, mergeToDatastoreInfo]);
 
 
   useOnBeforeUnload(true);
@@ -233,7 +242,7 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
   useEffect(() => {
     (async () => {
       setIsLoadingTextData(true);
-      const fetchedMergeState = await fetchMergeState(initialOriginalResourceIri, initialModifiedResourceIri, true);
+      const fetchedMergeState = await fetchMergeState(initialMergeFromResourceIri, initialMergeToResourceIri, true);
       setExaminedMergeState(fetchedMergeState);
     })();
   }, []);
@@ -245,25 +254,25 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
    */
   const changeActiveModel = async (
     treePathToNodeContainingDatastore: string,
-    newOriginalDatastoreInfo: DatastoreInfo | null,
-    newModifiedDatastoreInfo: DatastoreInfo | null,
+    newMergeFromDatastoreInfo: DatastoreInfo | null,
+    newMergeToDatastoreInfo: DatastoreInfo | null,
     useCache: boolean,
   ) => {
-    if (newOriginalDatastoreInfo === null && newModifiedDatastoreInfo === null) {
+    if (newMergeFromDatastoreInfo === null && newMergeToDatastoreInfo === null) {
       // TOOD RadStr: Not sure about this special case, but I think this should be the correct way to handle it
-      setOriginalDatastoreInfo(null);
-      setModifiedDatastoreInfo(null);
+      setMergeFromDatastoreInfo(null);
+      setMergeToDatastoreInfo(null);
       setCurrentTreePathToNodeContainingDatastore(treePathToNodeContainingDatastore);
       return;
     }
     // Note that it must be always string because of the if guard for both nulls at the start of method
-    const newDatastoreType = (newOriginalDatastoreInfo?.type ?? newModifiedDatastoreInfo?.type) as string;
+    const newDatastoreType = (newMergeFromDatastoreInfo?.type ?? newMergeToDatastoreInfo?.type) as string;
 
 
     setIsLoadingTextData(true);
 
     setCurrentTreePathToNodeContainingDatastore(treePathToNodeContainingDatastore);
-    const newFormat = (examinedMergeState?.filesystemTypeMergeFrom === AvailableFilesystems.ClassicFilesystem ? newOriginalDatastoreInfo?.format : newModifiedDatastoreInfo?.format) ?? "text";
+    const newFormat = (examinedMergeState?.filesystemTypeMergeFrom === AvailableFilesystems.ClassicFilesystem ? newMergeFromDatastoreInfo?.format : newMergeToDatastoreInfo?.format) ?? "text";
     setFormatsForCacheEntries((prev) => ({
       ...prev,
       [treePathToNodeContainingDatastore]: {
@@ -276,13 +285,13 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
       ...prev,
       [treePathToNodeContainingDatastore]: {
         ...prev[treePathToNodeContainingDatastore],
-        [newDatastoreType]: {original: newOriginalDatastoreInfo, modified: newModifiedDatastoreInfo},
+        [newDatastoreType]: {mergeFrom: newMergeFromDatastoreInfo, mergeTo: newMergeToDatastoreInfo},
       }
     }));
 
-    if (originalDatastoreInfo?.fullPath !== newOriginalDatastoreInfo?.fullPath || modifiedDatastoreInfo !== null && modifiedDatastoreInfo?.fullPath !== newModifiedDatastoreInfo?.fullPath) {
+    if (mergeFromDatastoreInfo?.fullPath !== newMergeFromDatastoreInfo?.fullPath || mergeToDatastoreInfo !== null && mergeToDatastoreInfo?.fullPath !== newMergeToDatastoreInfo?.fullPath) {
       // Switched to different datastore
-      if (newOriginalDatastoreInfo?.type === "svg" || newModifiedDatastoreInfo?.type === "svg") {
+      if (newMergeFromDatastoreInfo?.type === "svg" || newMergeToDatastoreInfo?.type === "svg") {
         setComparisonTabType("image-compare");
       }
       else {
@@ -291,75 +300,77 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
     }
 
     // Set the edited value in cache
-    if (originalDatastoreInfo !== null) {
-      const currentOriginalContentInEditor = monacoEditor.current?.editor.getOriginalEditor().getValue()!;
-      updateCacheContentEntryEverywhere(setCacheForOriginalTextContent, setConvertedCacheForOriginalContent,
-        treePathToNodeContainingDatastore, originalDatastoreInfo, currentOriginalContentInEditor, newFormat);
+    if (mergeFromDatastoreInfo !== null) {
+      const currentMergeFromContentInEditor = monacoEditor.current?.editor.getOriginalEditor().getValue()!;
+      updateCacheContentEntryEverywhere(setCacheForMergeFromTextContent, setConvertedCacheForMergeFromContent,
+        treePathToNodeContainingDatastore, mergeFromDatastoreInfo, currentMergeFromContentInEditor, newFormat);
     }
-    if (modifiedDatastoreInfo !== null) {
-      const currentModifiedContentInEditor = monacoEditor.current?.editor.getModifiedEditor().getValue()!;
-      updateCacheContentEntryEverywhere(setCacheForModifiedTextContent, setConvertedCacheForModifiedContent,
-        treePathToNodeContainingDatastore, modifiedDatastoreInfo, currentModifiedContentInEditor, newFormat);
+    if (mergeToDatastoreInfo !== null) {
+      const currentMergeToContentInEditor = monacoEditor.current?.editor.getModifiedEditor().getValue()!;
+      updateCacheContentEntryEverywhere(setCacheForMergeToTextContent, setConvertedCacheForMergeToContent,
+        treePathToNodeContainingDatastore, mergeToDatastoreInfo, currentMergeToContentInEditor, newFormat);
     }
 
-    const isOriginalDataResourceInCache = isDatastorePresentInCache(cacheForOriginalTextContent, newOriginalDatastoreInfo);
-    const isModifiedDataResourceInCache = isDatastorePresentInCache(cacheForModifiedTextContent, newModifiedDatastoreInfo);
-    if (!(useCache && isOriginalDataResourceInCache && isModifiedDataResourceInCache)) {
+    const isMergeFromDataResourceInCache = isDatastorePresentInCache(cacheForMergeFromTextContent, newMergeFromDatastoreInfo);
+    const isMergeToDataResourceInCache = isDatastorePresentInCache(cacheForMergeToTextContent, newMergeToDatastoreInfo);
+    if (!(useCache && isMergeFromDataResourceInCache && isMergeToDataResourceInCache)) {
       // TODO RadStr: We have to extend the API by types - text, JSON, YAML, ...
-      // TODO RadStr: Also I should use the filesystem and original/modified based on the editable not hardcore it
-      const newOriginalDataAsText = await ClientFilesystem.getDatastoreContentDirectly(newOriginalDatastoreInfo, false, import.meta.env.VITE_BACKEND, examinedMergeState?.filesystemTypeMergeFrom ?? null);
-      const newModifiedDataAsText = await ClientFilesystem.getDatastoreContentDirectly(newModifiedDatastoreInfo, false, import.meta.env.VITE_BACKEND, examinedMergeState?.filesystemTypeMergeTo ?? null);
+      // TODO RadStr: Also I should use the filesystem and mergeFrom/mergeTo based on the editable not hardcore it
+      const newMergeFromDataAsText = await ClientFilesystem.getDatastoreContentDirectly(newMergeFromDatastoreInfo, false, import.meta.env.VITE_BACKEND, examinedMergeState?.filesystemTypeMergeFrom ?? null);
+      const newMergeToDataAsText = await ClientFilesystem.getDatastoreContentDirectly(newMergeToDatastoreInfo, false, import.meta.env.VITE_BACKEND, examinedMergeState?.filesystemTypeMergeTo ?? null);
 
-      console.info({newOriginalDataResourceNameInfo: newOriginalDatastoreInfo, newModifiedDataResourceNameInfo: newModifiedDatastoreInfo});
+      console.info({newMergeFromDataResourceNameInfo: newMergeFromDatastoreInfo, newMergeToDataResourceNameInfo: newMergeToDatastoreInfo});
 
-      if (newOriginalDataAsText !== null && newOriginalDatastoreInfo !== null) {
-        const convertedCacheValue = convertDatastoreContentBasedOnFormat(newOriginalDataAsText, newOriginalDatastoreInfo.format, true);
+      if (newMergeFromDataAsText !== null && newMergeFromDatastoreInfo !== null) {
+        const convertedCacheValue = convertDatastoreContentBasedOnFormat(newMergeFromDataAsText, newMergeFromDatastoreInfo.format, true);
         const stringifiedCachevalue = stringifyDatastoreContentBasedOnFormat(convertedCacheValue, newFormat, true);
-        updateCacheContentEntryEverywhere(setCacheForOriginalTextContent, setConvertedCacheForOriginalContent,
-          treePathToNodeContainingDatastore, newOriginalDatastoreInfo, stringifiedCachevalue, newFormat);
+        updateCacheContentEntryEverywhere(setCacheForMergeFromTextContent, setConvertedCacheForMergeFromContent,
+          treePathToNodeContainingDatastore, newMergeFromDatastoreInfo, stringifiedCachevalue, newFormat);
       }
 
-      if (newModifiedDataAsText !== null && newModifiedDatastoreInfo !== null) {
-        const convertedCacheValue = convertDatastoreContentBasedOnFormat(newModifiedDataAsText, newModifiedDatastoreInfo.format, true);
+      if (newMergeToDataAsText !== null && newMergeToDatastoreInfo !== null) {
+        const convertedCacheValue = convertDatastoreContentBasedOnFormat(newMergeToDataAsText, newMergeToDatastoreInfo.format, true);
         const stringifiedCachevalue = stringifyDatastoreContentBasedOnFormat(convertedCacheValue, newFormat, true);
-        updateCacheContentEntryEverywhere(setCacheForModifiedTextContent, setConvertedCacheForModifiedContent,
-          treePathToNodeContainingDatastore, newModifiedDatastoreInfo, stringifiedCachevalue, newFormat);
+        updateCacheContentEntryEverywhere(setCacheForMergeToTextContent, setConvertedCacheForMergeToContent,
+          treePathToNodeContainingDatastore, newMergeToDatastoreInfo, stringifiedCachevalue, newFormat);
       }
     }
 
     // If set to new models, else we are reloading data
-    if (newOriginalDatastoreInfo?.fullPath !== originalDatastoreInfo?.fullPath || newOriginalDatastoreInfo?.type !== originalDatastoreInfo?.type) {
-      setOriginalDatastoreInfo(newOriginalDatastoreInfo);
+    if (newMergeFromDatastoreInfo?.fullPath !== mergeFromDatastoreInfo?.fullPath || newMergeFromDatastoreInfo?.type !== mergeFromDatastoreInfo?.type) {
+      setMergeFromDatastoreInfo(newMergeFromDatastoreInfo);
     }
 
     // If set to new models, else we are reloading data
-    if (newModifiedDatastoreInfo?.fullPath !== modifiedDatastoreInfo?.fullPath || newModifiedDatastoreInfo?.type !== modifiedDatastoreInfo?.type) {
-      setModifiedDatastoreInfo(newModifiedDatastoreInfo);
+    if (newMergeToDatastoreInfo?.fullPath !== mergeToDatastoreInfo?.fullPath || newMergeToDatastoreInfo?.type !== mergeToDatastoreInfo?.type) {
+      setMergeToDatastoreInfo(newMergeToDatastoreInfo);
     }
 
     setIsLoadingTextData(false);
   }
 
   const reloadModelsDataFromBackend = async () => {
-    if (originalDatastoreInfo !== null && modifiedDatastoreInfo !== null) {
-      await changeActiveModel(currentTreePathToNodeContainingDatastore, originalDatastoreInfo, modifiedDatastoreInfo, false);
+    if (mergeFromDatastoreInfo !== null && mergeToDatastoreInfo !== null) {
+      await changeActiveModel(currentTreePathToNodeContainingDatastore, mergeFromDatastoreInfo, mergeToDatastoreInfo, false);
     }
   };
 
 
-  const handleMergeStateResolving = (mergeStrategy: MergeResolverStrategy) => {
-    if (modifiedDatastoreInfo === null) {
+  const applyAutomaticMergeStateResolver = (mergeStrategy: MergeResolverStrategy) => {
+    const datastoreInfoForEditable = getEditableValue(editable, mergeFromDatastoreInfo, mergeToDatastoreInfo);
+    if (datastoreInfoForEditable === null) {
       return;
     }
 
-    const mergeResolveResult = mergeStrategy.resolve(activeOriginalContent, activeModifiedContent);
-    console.info(activeModifiedContent === mergeResolveResult, {activeModifiedContent, mergeResolveResult});
-    updateCacheContentEntry(setCacheForModifiedTextContent, currentTreePathToNodeContainingDatastore, modifiedDatastoreInfo, mergeResolveResult);
+    const setCacheToTextContentForEditable = getEditableValue(editable, setConvertedCacheForMergeFromContent, setConvertedCacheForMergeToContent);
+    const activeMergeContents = getEditableAndNonEditableValue(editable, activeMergeFromContent, activeMergeToContent);
+
+    const mergeResolveResult = mergeStrategy.resolve(activeMergeContents.nonEditable, activeMergeContents.editable);
+    updateCacheContentEntry(setCacheToTextContentForEditable, currentTreePathToNodeContainingDatastore, datastoreInfoForEditable, mergeResolveResult);
   };
 
   const closeWithSuccess = () => {
-    // TODO RadStr: Don't know if it can ever be undefined, so for now just ?, but in future change the type to string only and use !. instead of ?.
-    const editedNewVersion = monacoEditor.current?.editor.getModifiedEditor().getValue();
+    const editedNewVersion = getEditedEditor(monacoEditor, editable)?.getValue();
     resolve({ newResourceContent: editedNewVersion });
   };
 
@@ -369,7 +380,7 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
       await saveMergeState(examinedMergeState, conflictsToBeResolvedOnSave);
       await sendCacheToBackend(
         datastoreInfosForCacheEntries, formatsForCacheEntries,
-        convertedCacheForOriginalContent, convertedCacheForModifiedContent);
+        convertedCacheForMergeFromContent, convertedCacheForMergeToContent);
     }
     closeWithSuccess();
   };
@@ -381,21 +392,20 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
   };
 
   const saveFileChanges = async () => {
-    const editorValue = monacoEditor.current?.editor.getModifiedEditor().getValue();
+    const editorValue = getEditedEditor(monacoEditor, editable)?.getValue();
     if (editorValue === undefined) {
       return;
     }
-    const editedNewVersion = convertDatastoreContentForInputFormatToOutputFormat(
-      editorValue, activeFormat, "json", true);
-    const editedNewVersionAsString = JSON.stringify(editedNewVersion);
-    ClientFilesystem.updateDatastoreContentDirectly(modifiedDatastoreInfo, editedNewVersionAsString, examinedMergeState?.filesystemTypeMergeTo ?? null, import.meta.env.VITE_BACKEND);
-    // await updateDatastoreDirectly(modifiedDatastoreInfo.resourceIri, editedNewVersion, modifiedDatastoreInfo.modelName);   // TODO RadStr: Remove - old version
+    const editedNewVersion = convertDatastoreContentForInputFormatToOutputFormat(editorValue, activeFormat, "json", true);
+    const editableFilesystem = getEditableValue(editable, examinedMergeState?.filesystemTypeMergeFrom, examinedMergeState?.filesystemTypeMergeTo) ?? null;
+    const datastoreInfoForEdited = getEditableValue(editable, mergeFromDatastoreInfo, mergeToDatastoreInfo);
+    await ClientFilesystem.updateDatastoreContentDirectly(datastoreInfoForEdited, editedNewVersion, editableFilesystem, import.meta.env.VITE_BACKEND);
     await reloadModelsDataFromBackend();
 
 
     // // Remove all listeners first
-    // const modifiedEditor = monacoEditor.current?.editor.getModifiedEditor();
-    // // modifiedEditor?.dispose();
+    // const mergeToEditor = monacoEditor.current?.editor.getMergeToEditor();
+    // // mergeToEditor?.dispose();
   };
 
 
@@ -445,7 +455,7 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
               {/* The minus "ml" shenanigans in classNames are because of some weird spaces caused by overflow-y-auto in the diff editor */}
               <ResizableHandle className="-ml-16" withHandle autoFocus={false} />
               <ResizablePanel className="overflow-hidden flex flex-col pt-1 h-screen bg-white z-10">
-                { isLoadingTextData && Object.keys(cacheForOriginalTextContent).length !== 0 &&     // The check for non-empty objects is there se we don't show loading on initial load
+                { isLoadingTextData && Object.keys(cacheForMergeFromTextContent).length !== 0 &&     // The check for non-empty objects is there se we don't show loading on initial load
                   <Loader className="mr-2 h-4 w-4 animate-spin" />
                 }
                 { !isLoadingTextData &&
@@ -454,17 +464,17 @@ export const TextDiffEditorDialog = ({ initialOriginalResourceIri, initialModifi
                       <TabsContent value="image-compare">
                         <RotateCw className="flex ml-1 h-4 w-4" onClick={reloadModelsDataFromBackend} />
                         <div>
-                          <SvgVisualDiff originalSvg={originalSvg} modifiedSvg={modifiedSvg} />
+                          <SvgVisualDiff mergeFromSvg={mergeFromSvg} mergeToSvg={mergeToSvg} />
                         </div>
                       </TabsContent>
                       <TabsContent value="text-compare">
                         <div className="flex items-center space-x-4">
                           <RotateCw className="flex ml-1 h-4 w-4" onClick={reloadModelsDataFromBackend} />
-                          <MergeStrategyComponent handleMergeStateResolving={handleMergeStateResolving}/>
+                          <MergeStrategyComponent handleMergeStateResolving={applyAutomaticMergeStateResolver}/>
                         </div>
                         {/* The h-screen is needed otherwise the monaco editor is not shown at all */}
                         {/* Also small note - there is loading effect when first starting up the editor, it is not any custom made functionality */}
-                        <MonacoDiffEditor className="flex-1 -ml-16 h-screen" refs={monacoEditor} originalContent={activeOriginalContentConverted} editable={editable} modifiedContent={activeModifiedContentConverted} format={activeFormat} />
+                        <MonacoDiffEditor className="flex-1 -ml-16 h-screen" refs={monacoEditor} mergeFromContent={activeMergeFromContentConverted} editable={editable} mergeToContent={activeMergeToContentConverted} format={activeFormat} />
                       </TabsContent>
                     </Tabs>
                   </div>

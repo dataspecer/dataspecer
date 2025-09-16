@@ -51,6 +51,42 @@ export function getMergeFromMergeToForGitAndDS(
   };
 }
 
+export function getEditableValue<T>(
+  editable: EditableType,
+  mergeFrom: T,
+  mergeTo: T,
+): T {
+  switch(editable) {
+    case "mergeFrom":
+      return mergeFrom;
+    case "mergeTo":
+      return mergeTo;
+    default:
+      throw new Error(`Unknown editable: ${editable}`);
+  };
+}
+
+export function getEditableAndNonEditableValue<T>(
+  editable: EditableType,
+  mergeFrom: T,
+  mergeTo: T,
+): {editable: T, nonEditable: T} {
+  switch(editable) {
+    case "mergeFrom":
+      return {
+        editable: mergeFrom,
+        nonEditable: mergeTo,
+      };
+    case "mergeTo":
+      return {
+        editable: mergeTo,
+        nonEditable: mergeFrom,
+      };
+    default:
+      throw new Error(`Unknown editable: ${editable}`);
+  };
+}
+
 /**
  * Says the Cause of the merge. Combined with the "editable" field, that is the field which gives us information about what datasource we were changing,
  *  will give us the action, which should be performed after the resolving of all the conflicts.
