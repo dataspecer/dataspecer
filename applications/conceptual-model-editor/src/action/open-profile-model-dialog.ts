@@ -34,7 +34,8 @@ export function openProfileModelDialogAction(
       type: "profile-entities-operation",
       entities: Object.keys(semanticModel.getEntities()),
       profileModel: state.targetModel.identifier,
-    })
+    });
+    notifications.success("Profiles has been created.");
   };
 
   dialogs.openDialog(createProfileModelDialog(initialState, onConfirm));
