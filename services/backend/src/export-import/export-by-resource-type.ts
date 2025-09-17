@@ -1,4 +1,4 @@
-import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import { BaseResource } from "../models/resource-model.ts";
 import { currentVersion } from "../tools/migrations/index.ts";
 import configuration from "../configuration.ts";
@@ -6,8 +6,13 @@ import configuration from "../configuration.ts";
 import path from "path";
 import { PackageExporterBase } from "./export-base.ts";
 import { DirectoryNode, FilesystemNode, isDatastoreForMetadata, MetadataCacheType } from "@dataspecer/git";
+import { resourceTypetoTypeDirectoryMapping, ResourceTypes } from "./export.ts";
 
 export class PackageExporterByResourceType extends PackageExporterBase {
+  getExportVersion(): number {
+    return 2;
+  }
+
   async exportDirectory(
     directory: DirectoryNode,
     pathToDirectory: string,
@@ -50,6 +55,7 @@ export class PackageExporterByResourceType extends PackageExporterBase {
       }
       if (isDatastoreForMetadata(datastore.type)) {
         data = filesystemNode.metadataCache;
+        this.setExportVersionInternal(data);
         // fullname = path.join(pathToDirectory, datastore.afterPrefix);
         // fullname = pathToDirectory;
         // const stream = this.zipStreamDictionary.writePath(fullname);
@@ -278,39 +284,4 @@ export class PackageExporterByResourceType extends PackageExporterBase {
   //   await stream.write(JSON.stringify(data, null, 2));
   //   stream.close();
   // }
-}
-
-
-// TODO RadStr: Can be handled better maybe - at least the V1
-// TODO RadStr: Think if I should put it into the class as static or keep it outside - probably static
-export type ResourceTypes = typeof LOCAL_PACKAGE |
-                            typeof LOCAL_VISUAL_MODEL |
-                            typeof LOCAL_SEMANTIC_MODEL |
-                            typeof API_SPECIFICATION_MODEL |
-                            typeof APPLICATION_GRAPH |
-                            "http://dataspecer.com/resources/v1/cim" | // typeof V1.CIM
-                            "http://dataspecer.com/resources/v1/generator-configuration" | // typeof V1.GENERATOR_CONFIGURATION
-                            "http://dataspecer.com/resources/v1/pim" | // typeof V1.PIM
-                            "http://dataspecer.com/resources/v1/psm" | // typeof V1.PSM
-                            "https://dataspecer.com/core/model-descriptor/sgov" |
-                            "https://dataspecer.com/core/model-descriptor/pim-store-wrapper";
-
-export const resourceTypetoTypeDirectoryMapping: Record<ResourceTypes, string> = {
-  "http://dataspecer.com/resources/local/package": "directories",
-  "http://dataspecer.com/resources/local/visual-model": "visual-models",
-  "http://dataspecer.com/resources/local/semantic-model": "semantic-models",
-  "http://dataspecer.com/resources/local/api-specification": "api-specifications",
-  "http://dataspecer.com/resources/local/application-graph": "application-graphs",
-  "http://dataspecer.com/resources/v1/cim": "cims",
-  "http://dataspecer.com/resources/v1/generator-configuration": "generator-configurations",
-  "http://dataspecer.com/resources/v1/pim": "pims",
-  "http://dataspecer.com/resources/v1/psm": "psms",
-  "https://dataspecer.com/core/model-descriptor/sgov": "sgovs",
-  "https://dataspecer.com/core/model-descriptor/pim-store-wrapper": "pim-wrappers",
-};
-
-const typeExportArtificialDirectories = Object.values(resourceTypetoTypeDirectoryMapping);
-
-export function isArtificialExportDirectory(directoryName: string): boolean {
-  return typeExportArtificialDirectories.includes(directoryName);
 }

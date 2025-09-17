@@ -2,24 +2,21 @@ import { DirectoryNode, FilesystemNodeLocation, FilesystemAbstraction, Available
 import { GitHubProvider } from "../git-providers/git-provider-instances/github.ts";
 import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
 import { AllowedExportResults, AvailableExports, ExportActionForFilesystem, ExportActionForZip, ExportActions } from "./export-actions.ts";
-import { PackageExporterByResourceType } from "./export-by-resource-type.ts";
 import { FilesystemFactory } from "./filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
-
-export interface PackageExporterInterface {
-  doExportFromIRI(
-    iri: string,
-    directory: string,
-    pathToExportStartDirectory: string,
-    importFilesystem: AvailableFilesystems,
-    exportType: AvailableExports,
-    exportFormat: string,
-  ): Promise<AllowedExportResults>;
-}
+import { PackageExporterInterface } from "./export.ts";
 
 export abstract class PackageExporterBase implements PackageExporterInterface {
   protected exportActions!: ExportActions<AllowedExportResults>;      // TODO RadStr: !
   protected importFilesystem!: FilesystemAbstraction;                 // TODO RadStr: !
   protected exportFormat!: string;                                    // TODO RadStr: !
+
+  public static setExportVersion(metaObject: any, exportVersion: number) {
+    metaObject._exportVersion = exportVersion;
+  }
+
+  protected setExportVersionInternal(metaObject: any) {
+    PackageExporterBase.setExportVersion(metaObject, this.getExportVersion());
+  }
 
   public static createExportActionsForFilesystem(exportType: AvailableExports): ExportActions<AllowedExportResults> {
     switch(exportType) {
@@ -55,7 +52,7 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
     const rootDirectory = root;
 
     this.importFilesystem = filesystem;
-    this.exportActions = PackageExporterByResourceType.createExportActionsForFilesystem(exportType);
+    this.exportActions = PackageExporterBase.createExportActionsForFilesystem(exportType);
     this.exportFormat = exportFormat;
 
 
@@ -63,6 +60,8 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
     await this.doExportFromRootDirectory(rootDirectoryName, rootDirectory, pathToExportStartDirectory);
     return await this.exportActions.finishExport();      // TODO RadStr: I already do this inside the doExportFromRootDirectory
   }
+
+  abstract getExportVersion(): number;
 
   private async doExportFromRootDirectory(
     rootDirectoryName: string,

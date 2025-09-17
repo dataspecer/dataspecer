@@ -3,7 +3,7 @@ import { ComparisonData } from "../../../routes/git-webhook-handler.ts";
 import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, DatastoreInfo, FilesystemAbstractionBase, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode } from "@dataspecer/git";
 
 import fs from "fs";
-import { isArtificialExportDirectory } from "../../export-by-resource-type.ts";
+import { isArtificialExportDirectory } from "../../export.ts";
 import { dsPathJoin } from "../../../utils/git-utils.ts";
 
 

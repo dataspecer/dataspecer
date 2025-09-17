@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { currentVersion } from "../tools/migrations/index.ts";
 import configuration from "../configuration.ts";
 
-import { ResourceTypes, resourceTypetoTypeDirectoryMapping } from "./export-by-resource-type.ts";
+import { ResourceTypes, resourceTypetoTypeDirectoryMapping } from "./export.ts";
 import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
 import { DatastoreInfo, DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, MetadataCacheType, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaDatastoreInfo, getMetaPrefixType, isDatastoreForMetadata } from "@dataspecer/git";
 

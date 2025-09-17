@@ -3,6 +3,10 @@ import { DirectoryNode, FilesystemNode, isDatastoreForMetadata } from "@dataspec
 
 
 export class PackageExporterNew extends PackageExporterBase {
+  getExportVersion(): number {
+    return 1;
+  }
+
   async exportDirectory(directory: DirectoryNode, pathToDirectory: string, pathToExportDirectory: string) {
     await this.exportDatastores(directory, pathToDirectory, pathToExportDirectory);
     for (const [name, filesystemNode] of Object.entries(directory.content)) {
@@ -27,6 +31,7 @@ export class PackageExporterNew extends PackageExporterBase {
       exportFullName = pathToExportDirectory + filesystemNode.name;
       if (isDatastoreForMetadata(datastore.type)) {
         data = filesystemNode.metadataCache;
+        this.setExportVersionInternal(data);
         // fullname = path.join(pathToDirectory, datastore.afterPrefix);
         // fullname = pathToDirectory;
         // const stream = this.zipStreamDictionary.writePath(fullname);

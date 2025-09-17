@@ -243,7 +243,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     return filesystemMapping;
   }
 
-  private static constructMetadataFromResource(resource: BaseResource): MetadataCacheType {
+  public static constructMetadataFromResource(resource: BaseResource): MetadataCacheType {
     return {
       iri: resource.iri,
       projectIri: resource.projectIri,
@@ -251,7 +251,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
       userMetadata: resource.userMetadata,
       metadata: resource.metadata,
       _version: currentVersion,
-      _exportVersion: 1,
+      _exportVersion: -1,   // This has to be rewritten by the exporter for the root resource! That is why it is -1 so we know that it is wrong on check
       _exportedAt: new Date().toISOString(),
       _exportedBy: configuration.host,
     };

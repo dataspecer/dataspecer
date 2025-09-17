@@ -1,72 +1,56 @@
-import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
-import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
-import { BaseResource, ResourceModel } from "../models/resource-model.ts";
-import { v4 as uuidv4 } from 'uuid';
-import { currentVersion } from "../tools/migrations/index.ts";
-import configuration from "../configuration.ts";
-import { MetadataCacheType } from "@dataspecer/git";
+import { LOCAL_PACKAGE, LOCAL_VISUAL_MODEL, LOCAL_SEMANTIC_MODEL, API_SPECIFICATION_MODEL, APPLICATION_GRAPH } from "@dataspecer/core-v2/model/known-models";
+import { AvailableFilesystems } from "@dataspecer/git";
+import { AvailableExports, AllowedExportResults } from "./export-actions.ts";
 
-export class PackageExporter {
-  resourceModel: ResourceModel;
-  zipStreamDictionary!: ZipStreamDictionary;
 
-  constructor(resourceModel: ResourceModel) {
-    this.resourceModel = resourceModel;
-  }
+/**
+ * Use the {@link PackageExporterBase} as base class for implementation of new exporters.
+ *  Note that there are some quirks in implementation. The biggest (and maybe only) one being setting "_exportVersion" in the meta of root resource.
+ *  For simplicity and consistency we update the value for each exported meta file.
+ */
+export interface PackageExporterInterface {
+  doExportFromIRI(
+    iri: string,
+    directory: string,
+    pathToExportStartDirectory: string,
+    importFilesystem: AvailableFilesystems,
+    exportType: AvailableExports,
+    exportFormat: string
+  ): Promise<AllowedExportResults>;
 
-  async doExport(iri: string): Promise<Buffer> {
-    this.zipStreamDictionary = new ZipStreamDictionary();
-    await this.exportResource(iri, "");
-    return await this.zipStreamDictionary.save();
-  }
+  getExportVersion(): number;
+}
 
-  private async exportResource(iri: string, path: string) {
-    const resource = (await this.resourceModel.getResource(iri))!;
 
-    let localNameCandidate = iri;
-    if (iri.startsWith(path)) {
-      localNameCandidate = iri.slice(path.length);
-    }
-    if (localNameCandidate.includes("/") || localNameCandidate.length === 0) {
-      localNameCandidate = uuidv4();
-    }
-    let fullName = path + localNameCandidate;
+// TODO RadStr: Can be handled better maybe - at least the V1
+// TODO RadStr: Think if I should put it into the class as static or keep it outside - probably static
+export type ResourceTypes = typeof LOCAL_PACKAGE |
+  typeof LOCAL_VISUAL_MODEL |
+  typeof LOCAL_SEMANTIC_MODEL |
+  typeof API_SPECIFICATION_MODEL |
+  typeof APPLICATION_GRAPH |
+  "http://dataspecer.com/resources/v1/cim" | // typeof V1.CIM
+  "http://dataspecer.com/resources/v1/generator-configuration" | // typeof V1.GENERATOR_CONFIGURATION
+  "http://dataspecer.com/resources/v1/pim" | // typeof V1.PIM
+  "http://dataspecer.com/resources/v1/psm" | // typeof V1.PSM
+  "https://dataspecer.com/core/model-descriptor/sgov" |
+  "https://dataspecer.com/core/model-descriptor/pim-store-wrapper";
 
-    if (resource.types.includes(LOCAL_PACKAGE)) {
-      fullName += "/"; // Create directory
+export const resourceTypetoTypeDirectoryMapping: Record<ResourceTypes, string> = {
+  "http://dataspecer.com/resources/local/package": "directories",
+  "http://dataspecer.com/resources/local/visual-model": "visual-models",
+  "http://dataspecer.com/resources/local/semantic-model": "semantic-models",
+  "http://dataspecer.com/resources/local/api-specification": "api-specifications",
+  "http://dataspecer.com/resources/local/application-graph": "application-graphs",
+  "http://dataspecer.com/resources/v1/cim": "cims",
+  "http://dataspecer.com/resources/v1/generator-configuration": "generator-configurations",
+  "http://dataspecer.com/resources/v1/pim": "pims",
+  "http://dataspecer.com/resources/v1/psm": "psms",
+  "https://dataspecer.com/core/model-descriptor/sgov": "sgovs",
+  "https://dataspecer.com/core/model-descriptor/pim-store-wrapper": "pim-wrappers",
+};
+const typeExportArtificialDirectories = Object.values(resourceTypetoTypeDirectoryMapping);
 
-      const pckg = (await this.resourceModel.getPackage(iri))!;
-
-      for (const subResource of pckg.subResources) {
-        await this.exportResource(subResource.iri, fullName);
-      }
-    }
-
-    const metadata = this.constructMetadataFromResource(resource);
-    await this.writeBlob(fullName, "meta", metadata);
-
-    for (const [blobName, storeId] of Object.entries(resource.dataStores)) {
-      const data = await this.resourceModel.storeModel.getModelStore(storeId).getJson();
-      await this.writeBlob(fullName, blobName, data);
-    }
-  }
-
-  private constructMetadataFromResource(resource: BaseResource): MetadataCacheType {
-    return {
-      iri: resource.iri,
-      types: resource.types,
-      userMetadata: resource.userMetadata,
-      metadata: resource.metadata,
-      _version: currentVersion,
-      _exportVersion: 1,
-      _exportedAt: new Date().toISOString(),
-      _exportedBy: configuration.host,
-    };
-  }
-
-  private async writeBlob(iri: string, blobName: string, data: object) {
-    const stream = this.zipStreamDictionary.writePath(iri + "." + blobName + ".json");
-    await stream.write(JSON.stringify(data, null, 2));
-    stream.close();
-  }
+export function isArtificialExportDirectory(directoryName: string): boolean {
+  return typeExportArtificialDirectories.includes(directoryName);
 }

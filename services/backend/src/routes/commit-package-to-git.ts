@@ -25,11 +25,12 @@ import { createUniqueCommitMessage } from "../utils/git-utils.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-session.ts";
 import { createReadmeFile } from "../git-readme/readme-generator.ts";
 import { ReadmeTemplateData } from "../git-readme/readme-template.ts";
-import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
 import { AvailableExports } from "../export-import/export-actions.ts";
 import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "../utils/simple-git-utils.ts";
 import { compareGitAndDSFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { PUSH_PREFIX } from "../models/git-store-info.ts";
+import { DSFilesystem } from "../export-import/filesystem-abstractions/implementations/ds-filesystem.ts";
+import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
 
 
 
@@ -366,7 +367,7 @@ export class PackageExporterToFileSystem {
       }
     }
 
-    const metadata = this.constructMetadataFromResource(resource);
+    const metadata = DSFilesystem.constructMetadataFromResource(resource);
     this.writeBlob(fullName, "meta", metadata);
 
     for (const [blobName, storeId] of Object.entries(resource.dataStores)) {
@@ -375,19 +376,6 @@ export class PackageExporterToFileSystem {
       // TODO RadStr: Commented code - remove later
       this.writeBlob(fullName, blobName, data);
       // this.writeYAMLBlob(fullName, blobName, yamlData);
-    }
-  }
-
-  private constructMetadataFromResource(resource: BaseResource): object {
-    return {
-      iri: resource.iri,
-      types: resource.types,
-      userMetadata: resource.userMetadata,
-      metadata: resource.metadata,
-      _version: currentVersion,
-      _exportVersion: 1,
-      _exportedAt: new Date().toISOString(),
-      _exportedBy: configuration.host,
     }
   }
 
