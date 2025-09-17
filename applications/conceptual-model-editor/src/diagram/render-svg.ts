@@ -21,8 +21,6 @@ async function getSvg(nodes: NodeType[], edges: EdgeType[], width: number, heigh
 
   const transformation = `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`;
   return renderToSvg(element as HTMLElement, { width, height, transformation });
-  // 75.2 Kb
-  //
 };
 
 function getBounds(nodes: NodeType[], edges: EdgeType[]): Rect {
@@ -235,11 +233,8 @@ const HTML_STYLE_WHITE_LIST = new Set([
   "bottom",
   "box-sizing",
   "color",
-  "direction",
   "display",
   "font-family",
-  "font-kerning",
-  "font-optical-sizing",
   "font-palette",
   "font-size",
   "font-size-adjust",
@@ -439,7 +434,6 @@ function nodeToDataURL(node: Node, width: number, height: number): string {
 function svgToDataURL(svg: SVGElement): string {
   const xml = new XMLSerializer().serializeToString(svg);
   const prettyXml = formatXml(xml);
-  console.log(prettyXml);
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(prettyXml)}`;
 }
 
