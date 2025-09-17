@@ -3,8 +3,13 @@ import { ModelIdentifier } from "./entity-model/entity-model.ts";
 import { EntityIdentifier } from "./entity-model/entity.ts";
 import { LanguageString } from "./entity-model/labeled-model.ts";
 import { UnsubscribeCallback } from "./entity-model/observable-entity-model.ts";
-import { VisualNode, VisualDiagramNode, VisualRelationship, VisualProfileRelationship, VisualGroup, VisualEntity, HexColor, VisualView } from "./visual-entity.ts";
-import { RepresentedEntityIdentifier, VisualModelData, VisualModelDataVersion, VisualModelListener, WritableVisualModel } from "./visual-model.ts";
+import {
+  VisualNode, VisualDiagramNode, VisualRelationship,
+  VisualProfileRelationship, VisualGroup, VisualEntity,
+  HexColor, VisualView, RepresentedEntityIdentifier, VisualModelData,
+} from "./concepts/index.ts";
+import { VisualModelDataVersion, VisualModelListener } from "./visual-model.ts";
+import { WritableVisualModel } from "./writable-visual-model.ts";
 
 const colorGenerator: ColorGenerator = createColorGenerator();
 

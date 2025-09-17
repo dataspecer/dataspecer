@@ -1,5 +1,5 @@
+import { HexColor } from "./concepts/index.ts";
 import { ModelIdentifier } from "./entity-model/entity-model.ts";
-import { HexColor } from "./visual-entity.ts";
 
 export interface ColorGenerator {
 

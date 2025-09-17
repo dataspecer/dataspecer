@@ -1,46 +1,40 @@
 import { LOCAL_VISUAL_MODEL } from "../model/known-models.ts";
-
 import {
-  MODEL_VISUAL_TYPE,
-  ModelVisualInformation,
-  UNKNOWN_ENTITY,
-  UNKNOWN_MODEL,
-  VISUAL_GROUP_TYPE,
-  VISUAL_NODE_TYPE,
-  VISUAL_PROFILE_RELATIONSHIP_TYPE,
-  VISUAL_RELATIONSHIP_TYPE,
-  VISUAL_VIEW_TYPE,
-  VisualEntity,
-  VisualGroup,
-  VisualNode,
-  VisualProfileRelationship,
-  VisualRelationship,
-  VisualDiagramNode,
-  VisualView,
-  isModelVisualInformation,
-  isVisualGroup,
-  isVisualNode,
-  isVisualProfileRelationship,
-  isVisualRelationship,
-  isVisualView,
-  isVisualDiagramNode,
-  VISUAL_DIAGRAM_NODE_TYPE,
-} from "./visual-entity.ts";
-import {
-  WritableVisualModel,
-  SynchronousUnderlyingVisualModel,
-  VisualModelListener,
-  RepresentedEntityIdentifier,
-  VisualModelData,
-  VisualModelType,
-  WritableVisualModelType,
-  VisualModelDataVersion,
-} from "./visual-model.ts";
-import { HexColor } from "./visual-entity.ts";
-import { EntityEventListener, UnsubscribeCallback } from "./entity-model/observable-entity-model.ts";
+  EntityEventListener,
+  UnsubscribeCallback,
+} from "./entity-model/observable-entity-model.ts";
 import { Entity, EntityIdentifier } from "./entity-model/entity.ts";
 import { LanguageString } from "./entity-model/labeled-model.ts";
 import { addToMapArray, removeFromMapArray } from "../utils/functional.ts";
+import {
+  WritableVisualModel, WRITABLE_VISUAL_MODEL_TYPE,
+} from "./writable-visual-model.ts";
+import { SynchronousUnderlyingVisualModel } from "./visual-model-factory.ts";
+import {
+  VISUAL_MODE_TYPE, VisualModelDataVersion, VisualModelListener,
+} from "./visual-model.ts";
+import {
+  HexColor, isModelVisualInformation, isVisualDiagramNode, isVisualGroup,
+  isVisualNode, isVisualProfileRelationship, isVisualRelationship,
+  isVisualView, RepresentedEntityIdentifier, VISUAL_DIAGRAM_NODE_TYPE,
+  VISUAL_GROUP_TYPE, VISUAL_MODEL_DATA_TYPE, VISUAL_NODE_TYPE,
+  VISUAL_PROFILE_RELATIONSHIP_TYPE, VISUAL_RELATIONSHIP_TYPE,
+  VISUAL_VIEW_TYPE, VisualDiagramNode, VisualEntity, VisualGroup,
+  VisualModelData, VisualNode, VisualProfileRelationship,
+  VisualRelationship, VisualView
+} from "./concepts/index.ts";
+
+/**
+ * Used for migration as the model can not be determined from the
+ * visual model alone in version 0.
+ */
+const UNKNOWN_MODEL = "unknown-model";
+
+/**
+ * Used for migration as the visual entity can not be determined from the
+ * visual model alone in version 0.
+ */
+const UNKNOWN_ENTITY = "unknown-entity";
 
 /**
  * This is how data were stored in the initial version of the visual model.
@@ -77,7 +71,8 @@ interface VisualModelEntityV0 {
 
 }
 
-export class DefaultVisualModel implements WritableVisualModel, EntityEventListener {
+export class DefaultVisualModel
+  implements WritableVisualModel, EntityEventListener {
 
   private model: SynchronousUnderlyingVisualModel;
 
@@ -91,7 +86,8 @@ export class DefaultVisualModel implements WritableVisualModel, EntityEventListe
   /**
    * Cached mapping from represented to entity identifiers.
    */
-  private representedToEntity: Map<RepresentedEntityIdentifier, EntityIdentifier[]> = new Map();
+  private representedToEntity:
+    Map<RepresentedEntityIdentifier, EntityIdentifier[]> = new Map();
 
   /**
    * Map from model identifier to the model data.
@@ -102,7 +98,8 @@ export class DefaultVisualModel implements WritableVisualModel, EntityEventListe
    * When model is loaded version of the source data is saved here.
    * This allows for additional migration on higher level.
    */
-  private sourceDataVersion: VisualModelDataVersion = VisualModelDataVersion.VERSION_1;
+  private sourceDataVersion: VisualModelDataVersion
+    = VisualModelDataVersion.VERSION_1;
 
   /**
    * Cached visual view identifier or null when there is no such entity.
@@ -117,17 +114,16 @@ export class DefaultVisualModel implements WritableVisualModel, EntityEventListe
   }
 
   getTypes(): string[] {
-    return [VisualModelType, WritableVisualModelType];
+    return [VISUAL_MODE_TYPE, WRITABLE_VISUAL_MODEL_TYPE];
   }
 
   /**
-   * Load data from the underlying model so we can provide synchronous interface
-   * on top on asynchronous model.
+   * Load data from the underlying model so we can provide synchronous
+   * interface on top on asynchronous model.
    */
   protected loadFromEntities() {
     const entities = this.model.getEntitiesSync();
     for (const entity of entities) {
-      // We utilize the method reacting on new entity added to the model.
       this.onEntityDidCreate(entity);
     }
   }
@@ -140,7 +136,9 @@ export class DefaultVisualModel implements WritableVisualModel, EntityEventListe
     return this.entities.get(identifier) ?? null;
   }
 
-  getVisualEntitiesForRepresented(represented: RepresentedEntityIdentifier): VisualEntity[] {
+  getVisualEntitiesForRepresented(
+    represented: RepresentedEntityIdentifier,
+  ): VisualEntity[] {
     const identifiers = this.representedToEntity.get(represented);
     if (identifiers === undefined) {
       return [];
@@ -151,10 +149,10 @@ export class DefaultVisualModel implements WritableVisualModel, EntityEventListe
     return visualEntities;
   }
 
-  hasVisualEntityForRepresented(represented: RepresentedEntityIdentifier): boolean {
+  hasVisualEntityForRepresented(
+    represented: RepresentedEntityIdentifier,
+  ): boolean {
     const identifiers = this.representedToEntity.get(represented);
-    // I think that technically the identifiers should never have length 0,
-    // but the check costs very little, so it is better to be sure.
     return identifiers !== undefined && identifiers.length > 0;
   }
 
@@ -199,17 +197,20 @@ export class DefaultVisualModel implements WritableVisualModel, EntityEventListe
     });
   }
 
-  addVisualDiagramNode(entity: Omit<VisualDiagramNode, "identifier" | "type">): string {
+  addVisualDiagramNode(
+    entity: Omit<VisualDiagramNode, "identifier" | "type">,
+  ): string {
     // This will trigger update in underlying model and invoke callback.
     // We react to changes using the callback.
-
     return this.model.createEntitySync({
       ...entity,
       type: [VISUAL_DIAGRAM_NODE_TYPE],
     });
   }
 
-  addVisualRelationship(entity: Omit<VisualRelationship, "identifier" | "type">): string {
+  addVisualRelationship(
+    entity: Omit<VisualRelationship, "identifier" | "type">,
+  ): string {
     // This will trigger update in underlying model and invoke callback.
     // We react to changes using the callback.
     return this.model.createEntitySync({
@@ -218,7 +219,9 @@ export class DefaultVisualModel implements WritableVisualModel, EntityEventListe
     });
   }
 
-  addVisualProfileRelationship(entity: Omit<VisualProfileRelationship, "identifier" | "type">): string {
+  addVisualProfileRelationship(
+    entity: Omit<VisualProfileRelationship, "identifier" | "type">,
+  ): string {
     // This will trigger update in underlying model and invoke callback.
     // We react to changes using the callback.
     return this.model.createEntitySync({
@@ -227,7 +230,9 @@ export class DefaultVisualModel implements WritableVisualModel, EntityEventListe
     });
   }
 
-  addVisualGroup(entity: Omit<VisualGroup, "identifier" | "type">): string {
+  addVisualGroup(
+    entity: Omit<VisualGroup, "identifier" | "type">,
+  ): string {
     // This will trigger update in underlying model and invoke callback.
     // We react to changes using the callback.
     return this.model.createEntitySync({
@@ -236,7 +241,10 @@ export class DefaultVisualModel implements WritableVisualModel, EntityEventListe
     });
   }
 
-  updateVisualEntity<T extends VisualEntity>(identifier: EntityIdentifier, entity: Partial<Omit<T, "identifier" | "type">>): void {
+  updateVisualEntity<T extends VisualEntity>(
+    identifier: EntityIdentifier,
+    entity: Partial<Omit<T, "identifier" | "type">>,
+  ): void {
     // This will trigger update in underlying model and invoke callback.
     // We react to changes using the callback.
     this.model.changeEntitySync(identifier, entity);
@@ -249,7 +257,7 @@ export class DefaultVisualModel implements WritableVisualModel, EntityEventListe
   }
 
   setModelColor(identifier: string, color: HexColor): void {
-    const entityIdentifier = this.models.get(identifier)?.entity;
+    const entityIdentifier = this.models.get(identifier)?.identifier;
     if (entityIdentifier === undefined) {
       // We need to create new model entity.
       this.createModelEntity(identifier, color);
@@ -263,7 +271,7 @@ export class DefaultVisualModel implements WritableVisualModel, EntityEventListe
     }
     // This will trigger update in underlying model and invoke callback.
     // We react to changes using the callback.
-    this.model.changeEntitySync<ModelVisualInformation>(entityIdentifier, { color });
+    this.model.changeEntitySync(entityIdentifier, { color });
   }
 
   protected createModelEntity(model: string, color: HexColor): void {
@@ -271,8 +279,8 @@ export class DefaultVisualModel implements WritableVisualModel, EntityEventListe
     // We react to changes using the callback.
     // The same way to create a ModelVisualInformation is used in the
     // deserializeModelV0 method!
-    this.model.createEntitySync<ModelVisualInformation>({
-      type: [MODEL_VISUAL_TYPE],
+    this.model.createEntitySync<VisualModelData>({
+      type: [VISUAL_MODEL_DATA_TYPE],
       representedModel: model,
       color
     });
@@ -285,7 +293,7 @@ export class DefaultVisualModel implements WritableVisualModel, EntityEventListe
 
   deleteModelData(identifier: string): void {
     // We need to get entity identifier.
-    const entityIdentifier = this.models.get(identifier)?.entity;
+    const entityIdentifier = this.models.get(identifier)?.identifier;
     if (entityIdentifier === undefined) {
       return;
     }
@@ -388,7 +396,8 @@ export class DefaultVisualModel implements WritableVisualModel, EntityEventListe
     // Migrate label.
     this.model.setLabel({ "en": value.modelAlias ?? "Anonymous model" });
     // Print debug information about migration
-    console.log("Visual model migration done.", { v0: value, current: this.model.getEntitiesSync() })
+    console.log("Visual model migration done.",
+      { v0: value, current: this.model.getEntitiesSync() })
   }
 
   protected deserializeModelV1(value: object): void {
@@ -407,17 +416,23 @@ export class DefaultVisualModel implements WritableVisualModel, EntityEventListe
   protected onEntityDidCreate(entity: Entity) {
     if (isVisualDiagramNode(entity)) {
       this.entities.set(entity.identifier, entity);
-      addToMapArray(entity.representedVisualModel, entity.identifier, this.representedToEntity);
+      addToMapArray(
+        entity.representedVisualModel, entity.identifier,
+        this.representedToEntity);
       this.notifyObserversOnEntityChangeOrDelete(null, entity);
     }
     if (isVisualNode(entity)) {
       this.entities.set(entity.identifier, entity);
-      addToMapArray(entity.representedEntity, entity.identifier, this.representedToEntity);
+      addToMapArray(
+        entity.representedEntity, entity.identifier,
+        this.representedToEntity);
       this.notifyObserversOnEntityChangeOrDelete(null, entity);
     }
     if (isVisualRelationship(entity)) {
       this.entities.set(entity.identifier, entity);
-      addToMapArray(entity.representedRelationship, entity.identifier, this.representedToEntity);
+      addToMapArray(
+        entity.representedRelationship, entity.identifier,
+        this.representedToEntity);
       this.notifyObserversOnEntityChangeOrDelete(null, entity);
     }
     if (isVisualGroup(entity)) {
@@ -426,11 +441,7 @@ export class DefaultVisualModel implements WritableVisualModel, EntityEventListe
     }
     if (isModelVisualInformation(entity)) {
       this.entities.set(entity.identifier, entity);
-      this.models.set(entity.representedModel, {
-        representedModel: entity.representedModel,
-        entity: entity.identifier,
-        color: entity.color,
-      });
+      this.models.set(entity.representedModel, entity);
       this.notifyObserversOnModelChange(null, entity);
       this.notifyObserversOnEntityChangeOrDelete(null, entity);
     }
@@ -445,54 +456,66 @@ export class DefaultVisualModel implements WritableVisualModel, EntityEventListe
     }
   }
 
-  protected notifyObserversOnEntityChangeOrDelete(previous: VisualEntity | null, next: VisualEntity | null): void {
-    this.observers.forEach(observer => observer.visualEntitiesDidChange([{ previous, next }]));
+  protected notifyObserversOnEntityChangeOrDelete(
+    previous: VisualEntity | null, next: VisualEntity | null,
+  ): void {
+    this.observers.forEach(observer =>
+      observer.visualEntitiesDidChange([{ previous, next }]));
   }
 
-  protected notifyObserversOnModelChange(previous: ModelVisualInformation | null, next: ModelVisualInformation | null) {
+  protected notifyObserversOnModelChange(
+    previous: VisualModelData | null,
+    next: VisualModelData | null,
+  ) {
     // We know that at leas one of then is not null, unfortunately TS
     // is not capable of detecting that.
-    const modelIdentifier = (previous?.representedModel ?? next?.representedModel) as string;
+    const modelIdentifier =
+      (previous?.representedModel ?? next?.representedModel) as string;
     const color = next?.color ?? null;
-    this.observers.forEach(observer => observer.modelColorDidChange(modelIdentifier, color));
+    this.observers.forEach(observer =>
+      observer.modelColorDidChange(modelIdentifier, color));
   }
 
   protected onEntityDidChange(entity: Entity) {
     const previous = this.entities.get(entity.identifier);
     if (isVisualDiagramNode(entity)) {
       this.entities.set(entity.identifier, entity);
-      this.notifyObserversOnEntityChangeOrDelete(previous as VisualEntity, entity);
+      this.notifyObserversOnEntityChangeOrDelete(
+        previous as VisualEntity, entity);
     }
     if (isVisualNode(entity)) {
       this.entities.set(entity.identifier, entity);
-      this.notifyObserversOnEntityChangeOrDelete(previous as VisualEntity, entity);
+      this.notifyObserversOnEntityChangeOrDelete(
+        previous as VisualEntity, entity);
     }
     if (isVisualRelationship(entity)) {
       this.entities.set(entity.identifier, entity);
-      this.notifyObserversOnEntityChangeOrDelete(previous as VisualEntity, entity);
+      this.notifyObserversOnEntityChangeOrDelete(
+        previous as VisualEntity, entity);
     }
     if (isVisualGroup(entity)) {
       this.entities.set(entity.identifier, entity);
-      this.notifyObserversOnEntityChangeOrDelete(previous as VisualEntity, entity);
+      this.notifyObserversOnEntityChangeOrDelete(
+        previous as VisualEntity, entity);
     }
     if (isModelVisualInformation(entity)) {
       this.entities.set(entity.identifier, entity);
-      this.models.set(entity.representedModel, {
-        color: entity.color,
-        entity: entity.identifier,
-        representedModel: entity.representedModel,
-      });
-      this.notifyObserversOnModelChange(previous as ModelVisualInformation, entity);
-      this.notifyObserversOnEntityChangeOrDelete(previous as VisualEntity, entity);
+      this.models.set(entity.representedModel, entity);
+      this.notifyObserversOnModelChange(
+        previous as VisualModelData, entity);
+      this.notifyObserversOnEntityChangeOrDelete(
+        previous as VisualEntity, entity);
     }
     if (isVisualProfileRelationship(entity)) {
       this.entities.set(entity.identifier, entity);
-      this.notifyObserversOnEntityChangeOrDelete(previous as VisualEntity, entity);
+      this.notifyObserversOnEntityChangeOrDelete(
+        previous as VisualEntity, entity);
     }
     if (isVisualView(entity)) {
       this.entities.set(entity.identifier, entity);
       this.visualViewIdentifier = entity.identifier;
-      this.notifyObserversOnEntityChangeOrDelete(previous as VisualEntity, entity);
+      this.notifyObserversOnEntityChangeOrDelete(
+        previous as VisualEntity, entity);
     }
   }
 
@@ -507,15 +530,18 @@ export class DefaultVisualModel implements WritableVisualModel, EntityEventListe
     this.entities.delete(identifier);
     // Notify listeners.
     if (isVisualDiagramNode(previous)) {
-      removeFromMapArray(this.representedToEntity, previous.representedVisualModel, identifier);
+      removeFromMapArray(
+        this.representedToEntity, previous.representedVisualModel, identifier);
       this.notifyObserversOnEntityChangeOrDelete(previous, null);
     }
     if (isVisualNode(previous)) {
-      removeFromMapArray(this.representedToEntity, previous.representedEntity, identifier);
+      removeFromMapArray(
+        this.representedToEntity, previous.representedEntity, identifier);
       this.notifyObserversOnEntityChangeOrDelete(previous, null);
     }
     if (isVisualRelationship(previous)) {
-      removeFromMapArray(this.representedToEntity, previous.representedRelationship, identifier);
+      removeFromMapArray(
+        this.representedToEntity, previous.representedRelationship, identifier);
       this.notifyObserversOnEntityChangeOrDelete(previous, null);
     }
     if (isVisualGroup(previous)) {
@@ -541,4 +567,3 @@ function isEntityModelV0(what: object): what is VisualModelJsonSerializationV0 {
   return (what as any).modelColors !== undefined
     || (what as any).visualEntities !== undefined;
 }
-

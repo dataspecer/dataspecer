@@ -1,7 +1,8 @@
 import { createDefaultEntityModel } from "./entity-model/default-entity-model.ts";
-import { MODEL_VISUAL_TYPE, VisualEntity, VisualNode, isVisualNode } from "./visual-entity.ts";
-import { WritableVisualModel } from "./visual-model.ts";
+import { VisualEntity, VisualNode, isVisualNode } from "./concepts/index.ts";
 import { createDefaultVisualModelFactory } from "./visual-model-factory.ts";
+import { WritableVisualModel } from "./writable-visual-model.ts";
+import { VISUAL_MODE_TYPE } from "./visual-model.ts";
 
 const factory = createDefaultVisualModelFactory();
 
@@ -13,7 +14,7 @@ test("Create default visual model.", () => {
 });
 
 function createModel(identifier: string) : WritableVisualModel {
-  const internal = createDefaultEntityModel(MODEL_VISUAL_TYPE, identifier);
+  const internal = createDefaultEntityModel(VISUAL_MODE_TYPE, identifier);
   const model = factory.createWritableVisualModelSyncNoWrap(internal);
   expect(model).not.toBeNull;
   // TypeScript does not infer the not null from previous line.
