@@ -19,6 +19,7 @@ export class PackageImporter {
   private inputPathsToCanonicalMapping!: Record<string, string>;    // TODO RadStr: Hack with ! - Also I am not sure what should be instance methods and what not when it comes to creation of the mapping
   private canonicalPathsToInputMapping!: Record<string, string>;    // TODO RadStr: Hack with ! - Also I am not sure what should be instance methods and what not when it comes to creation of the mapping
   private resourcesIriSuffix: string = "";
+  private shouldGenerateNewIris!: boolean;
 
   constructor(resourceModel: ResourceModel) {
     this.resourceModel = resourceModel;
@@ -90,7 +91,6 @@ export class PackageImporter {
     };
   }
 
-  // TODO RadStr: Just use the string[] instead of the Record<> for inputMapping
   private createImportMappingToCanonical(exportVariant: number, inputMapping: Record<string, JSZip.JSZipObject>): ImportMapping {
     switch(exportVariant) {
       case 1:
@@ -103,6 +103,7 @@ export class PackageImporter {
   }
 
   async doImport(buffer: Buffer, resourcesIriSuffix?: string): Promise<string[]> {
+    this.shouldGenerateNewIris = resourcesIriSuffix === undefined ? false : true;
     this.resourcesIriSuffix = resourcesIriSuffix ?? "";
     this.zip = new JSZip();
     await this.zip.loadAsync(buffer);
