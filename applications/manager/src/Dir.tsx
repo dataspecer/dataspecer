@@ -257,7 +257,7 @@ const Row = ({ iri, projectFilter, setProjectFilter, isSignedIn, mergeActors, pa
             {isSignedIn && <DropdownMenuItem onClick={() => openModal(SetPrivateSSHKeyDialog, {})}><GitGraph className="mr-2 h-4 w-4" />Add private SSH key</DropdownMenuItem>}
             <hr className="border-gray-300" />
             {<DropdownMenuItem onClick={async () => createNewRemoteRepositoryHandler(openModal, iri, resource)}><GitPullRequestIcon className="mr-2 h-4 w-4" />Create remote repository</DropdownMenuItem>}
-            {<DropdownMenuItem onClick={async () => linkToExistingGitRepositoryHandler(openModal, iri, resource)}><Link className="mr-2 h-4 w-4" />Link to remote repository </DropdownMenuItem>}
+            {<DropdownMenuItem onClick={async () => linkToExistingGitRepositoryHandler(openModal, iri, resource)}><Link className="mr-2 h-4 w-4" />Link to remote repository</DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => commitToGitDialogOnClickHandler(openModal, iri, resource)}><GitCommit className="mr-2 h-4 w-4" />Commit </DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => manualPull(iri)}><Import className="mr-2 h-4 w-4" />Pull</DropdownMenuItem>}
             {<DropdownMenuItem onClick={() => openModal(CreateNewBranchDialog, { sourcePackage: resource })}><GitBranchPlus className="mr-2 h-4 w-4" />Create branch</DropdownMenuItem>}
