@@ -1896,7 +1896,7 @@ const createActions = (
       }
     },
     renderToSvgString() {
-      return diagramContentAsSvg(reactFlow.getNodes());
+      return diagramContentAsSvg(reactFlow.getNodes(), reactFlow.getEdges());
     },
     openDragEdgeToCanvasMenu(sourceNode, canvasPosition) {
       console.log("openDragEdgeToCanvasToolbar", { sourceNode, canvasPosition });

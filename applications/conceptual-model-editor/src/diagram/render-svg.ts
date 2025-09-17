@@ -1,17 +1,17 @@
-import { getNodesBounds, getViewportForBounds } from "@xyflow/react";
+import { getNodesBounds, getViewportForBounds, Rect } from "@xyflow/react";
 
-import { NodeType } from "./diagram-controller";
+import { EdgeType, NodeType } from "./diagram-controller";
 
-export async function diagramContentAsSvg(nodes: NodeType[]): Promise<string | null> {
-  return await getSvg(nodes, 1024, 768);
+export async function diagramContentAsSvg(nodes: NodeType[], edges: EdgeType[]): Promise<string | null> {
+  return await getSvg(nodes, edges, 1024, 768);
 }
 
-async function getSvg(nodes: NodeType[], width: number, height: number): Promise<string | null> {
+async function getSvg(nodes: NodeType[], edges: EdgeType[], width: number, height: number): Promise<string | null> {
   // We calculate a transform for the nodes so that all nodes are visible.
   // We then overwrite the transform of the `.react-flow__viewport`
   // so the whole diagram fits into the view - amount we can fit is determined
   // by the min-zoom argument.
-  const bounds = getNodesBounds(nodes);
+  const bounds = getBounds(nodes, edges);
   const viewport = getViewportForBounds(bounds, width, height, 0.00001, 1, 0.001);
 
   const element = document.querySelector(".react-flow__viewport");
@@ -21,7 +21,36 @@ async function getSvg(nodes: NodeType[], width: number, height: number): Promise
 
   const transformation = `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`;
   return renderToSvg(element as HTMLElement, { width, height, transformation });
+  // 75.2 Kb
+  //
 };
+
+function getBounds(nodes: NodeType[], edges: EdgeType[]): Rect {
+  const bounds = getNodesBounds(nodes);
+  // Then we add edges.
+  let minX = bounds.x;
+  let maxX = bounds.x + bounds.width;
+  let minY = bounds.y;
+  let maxY = bounds.y + bounds.height;
+  for (const edge of edges) {
+    if (edge.data === undefined) {
+      continue;
+    }
+    for (const {x, y} of edge.data.waypoints) {
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
+    }
+  }
+  const border = 2;
+  return {
+    x: minX - border,
+    y: minY - border,
+    width: (maxX - minX) + border,
+    height: (maxY - minY) + border,
+  };
+}
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -410,6 +439,7 @@ function nodeToDataURL(node: Node, width: number, height: number): string {
 function svgToDataURL(svg: SVGElement): string {
   const xml = new XMLSerializer().serializeToString(svg);
   const prettyXml = formatXml(xml);
+  console.log(prettyXml);
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(prettyXml)}`;
 }
 
