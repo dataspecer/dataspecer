@@ -132,20 +132,15 @@ const sendCacheToBackend = async (
 };
 
 const updateCacheContentEntryEverywhere = (
-  cacheSetter: (value: SetStateAction<CacheContentMap>) => void,
-  cacheConvertedSetter: (value: SetStateAction<CacheContentMap>) => void,
+  convertedCacheSetter: (value: SetStateAction<CacheContentMap>) => void,
   treePathToNodeContainingDatastore: string,
   datastoreInfo: DatastoreInfo,
   newValue: string,
   format: string,
 ) => {
-  cacheSetter(prevState => {
-    return createNewContentCache(prevState, treePathToNodeContainingDatastore, datastoreInfo, newValue);
-  });
-
   const convertedNewValue = convertDatastoreContentBasedOnFormat(newValue, format, true);
   const stringifiedConvertedNewValue = stringifyDatastoreContentBasedOnFormat(convertedNewValue, format, true);
-  cacheConvertedSetter(prevState => {
+  convertedCacheSetter(prevState => {
     return createNewContentCache(prevState, treePathToNodeContainingDatastore, datastoreInfo, stringifiedConvertedNewValue);
   });
 }
@@ -200,8 +195,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
   const [currentTreePathToNodeContainingDatastore, setCurrentTreePathToNodeContainingDatastore] = useState<string>("");
   const [formatsForCacheEntries, setFormatsForCacheEntries] = useState<FormatsCache>({});
   const [datastoreInfosForCacheEntries, setDatastoreInfosForCacheEntries] = useState<DatastoreInfosCache>({});
-  const [cacheForMergeFromTextContent, setCacheForMergeFromTextContent] = useState<CacheContentMap>({});
-  const [cacheForMergeToTextContent, setCacheForMergeToTextContent] = useState<CacheContentMap>({});
+  // Converted cache because it is string, but in one of the formats to which it was converted
   const [convertedCacheForMergeFromContent, setConvertedCacheForMergeFromContent] = useState<CacheContentMap>({});
   const [convertedCacheForMergeToContent, setConvertedCacheForMergeToContent] = useState<CacheContentMap>({});
   const [mergeFromDatastoreInfo, setMergeFromDatastoreInfo] = useState<DatastoreInfo | null>(null);
@@ -211,9 +205,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
 
   const [comparisonTabType, setComparisonTabType] = useState<"image-compare" | "text-compare">("text-compare");
 
-  const activeMergeFromContent = mergeFromDatastoreInfo === null ? "" : cacheForMergeFromTextContent[currentTreePathToNodeContainingDatastore]?.[mergeFromDatastoreInfo.type] ?? "";
   const activeMergeFromContentConverted = mergeFromDatastoreInfo === null ? "" : convertedCacheForMergeFromContent[currentTreePathToNodeContainingDatastore]?.[mergeFromDatastoreInfo.type] ?? "";
-  const activeMergeToContent = mergeToDatastoreInfo === null ? "" : cacheForMergeToTextContent[currentTreePathToNodeContainingDatastore]?.[mergeToDatastoreInfo.type] ?? "";
   const activeMergeToContentConverted = mergeToDatastoreInfo === null ? "" : convertedCacheForMergeToContent[currentTreePathToNodeContainingDatastore]?.[mergeToDatastoreInfo.type] ?? "";
 
   const activeFormat = (mergeToDatastoreInfo === null && mergeFromDatastoreInfo === null) ? "" : formatsForCacheEntries[currentTreePathToNodeContainingDatastore]?.[(mergeToDatastoreInfo?.type ?? mergeFromDatastoreInfo?.type) as string] ?? "";
@@ -226,13 +218,13 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
 
 
     if (mergeFromDatastoreInfo?.type === "svg") {
-      setMergeFromSvg(JSON.parse(activeMergeFromContent)?.svg ?? "");
+      setMergeFromSvg(convertDatastoreContentBasedOnFormat(activeMergeFromContentConverted, activeFormat, true)?.svg ?? "");
     }
     else {
       setMergeFromSvg("");
     }
     if (mergeToDatastoreInfo?.type === "svg") {
-      setMergeToSvg(JSON.parse(activeMergeToContent)?.svg ?? "");
+      setMergeToSvg(convertDatastoreContentBasedOnFormat(activeMergeToContentConverted, activeFormat, true)?.svg ?? "");
     }
     else {
       setMergeToSvg("");
@@ -319,17 +311,17 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
     // Set the edited value in cache
     if (mergeFromDatastoreInfo !== null) {
       const currentMergeFromContentInEditor = editors.mergeFromEditor?.getValue()!;
-      updateCacheContentEntryEverywhere(setCacheForMergeFromTextContent, setConvertedCacheForMergeFromContent,
+      updateCacheContentEntryEverywhere(setConvertedCacheForMergeFromContent,
         treePathToNodeContainingDatastore, mergeFromDatastoreInfo, currentMergeFromContentInEditor, newFormat);
     }
     if (mergeToDatastoreInfo !== null) {
       const currentMergeToContentInEditor = editors.mergeToEditor?.getValue()!;
-      updateCacheContentEntryEverywhere(setCacheForMergeToTextContent, setConvertedCacheForMergeToContent,
+      updateCacheContentEntryEverywhere(setConvertedCacheForMergeToContent,
         treePathToNodeContainingDatastore, mergeToDatastoreInfo, currentMergeToContentInEditor, newFormat);
     }
 
-    const isMergeFromDataResourceInCache = isDatastorePresentInCache(cacheForMergeFromTextContent, newMergeFromDatastoreInfo);
-    const isMergeToDataResourceInCache = isDatastorePresentInCache(cacheForMergeToTextContent, newMergeToDatastoreInfo);
+    const isMergeFromDataResourceInCache = isDatastorePresentInCache(convertedCacheForMergeFromContent, newMergeFromDatastoreInfo);
+    const isMergeToDataResourceInCache = isDatastorePresentInCache(convertedCacheForMergeToContent, newMergeToDatastoreInfo);
     if (!(useCache && isMergeFromDataResourceInCache && isMergeToDataResourceInCache)) {
       // TODO RadStr: We have to extend the API by types - text, JSON, YAML, ...
       // TODO RadStr: Also I should use the filesystem and mergeFrom/mergeTo based on the editable not hardcore it
@@ -341,14 +333,14 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
       if (newMergeFromDataAsText !== null && newMergeFromDatastoreInfo !== null) {
         const convertedCacheValue = convertDatastoreContentBasedOnFormat(newMergeFromDataAsText, newMergeFromDatastoreInfo.format, true);
         const stringifiedCachevalue = stringifyDatastoreContentBasedOnFormat(convertedCacheValue, newFormat, true);
-        updateCacheContentEntryEverywhere(setCacheForMergeFromTextContent, setConvertedCacheForMergeFromContent,
+        updateCacheContentEntryEverywhere(setConvertedCacheForMergeFromContent,
           treePathToNodeContainingDatastore, newMergeFromDatastoreInfo, stringifiedCachevalue, newFormat);
       }
 
       if (newMergeToDataAsText !== null && newMergeToDatastoreInfo !== null) {
         const convertedCacheValue = convertDatastoreContentBasedOnFormat(newMergeToDataAsText, newMergeToDatastoreInfo.format, true);
         const stringifiedCachevalue = stringifyDatastoreContentBasedOnFormat(convertedCacheValue, newFormat, true);
-        updateCacheContentEntryEverywhere(setCacheForMergeToTextContent, setConvertedCacheForMergeToContent,
+        updateCacheContentEntryEverywhere(setConvertedCacheForMergeToContent,
           treePathToNodeContainingDatastore, newMergeToDatastoreInfo, stringifiedCachevalue, newFormat);
       }
     }
@@ -380,7 +372,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
     }
 
     const setCacheToTextContentForEditable = getEditableValue(editable, setConvertedCacheForMergeFromContent, setConvertedCacheForMergeToContent);
-    const activeMergeContents = getEditableAndNonEditableValue(editable, activeMergeFromContent, activeMergeToContent);
+    const activeMergeContents = getEditableAndNonEditableValue(editable, activeMergeFromContentConverted, activeMergeToContentConverted);
 
     const mergeResolveResult = mergeStrategy.resolve(activeMergeContents.nonEditable, activeMergeContents.editable);
     updateCacheContentEntry(setCacheToTextContentForEditable, currentTreePathToNodeContainingDatastore, datastoreInfoForEditable, mergeResolveResult);
@@ -479,7 +471,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
               {/* The minus "ml" shenanigans in classNames are because of some weird spaces caused by overflow-y-auto in the diff editor */}
               <ResizableHandle className="-ml-16" withHandle autoFocus={false} />
               <ResizablePanel className="overflow-hidden flex flex-col pt-1 h-screen bg-white z-10">
-                { isLoadingTextData && Object.keys(cacheForMergeFromTextContent).length !== 0 &&     // The check for non-empty objects is there se we don't show loading on initial load
+                { isLoadingTextData && Object.keys(convertedCacheForMergeFromContent).length !== 0 &&     // The check for non-empty objects is there se we don't show loading on initial load
                   <Loader className="mr-2 h-4 w-4 animate-spin" />
                 }
                 { !isLoadingTextData &&
