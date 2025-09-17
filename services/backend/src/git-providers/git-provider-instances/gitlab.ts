@@ -164,6 +164,10 @@ export class GitLabProvider extends GitProviderBase {
     throw new Error("Method not implemented.");
   }
 
+  getWorkflowFilesDirectoryName(): string {
+    throw new Error("Method not implemented.");
+  }
+
   isGitProviderDirectory(fullPath: string): boolean {
     throw new Error("Method not implemented.");
   }

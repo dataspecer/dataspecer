@@ -374,6 +374,10 @@ export class GitHubProvider extends GitProviderBase {
     createLinksForFiles("./git-workflows/github/workflows", workflowsDirPath);
   }
 
+  getWorkflowFilesDirectoryName(): string {
+    return ".github";
+  }
+
   isGitProviderDirectory(fullPath: string): boolean {
     return fullPath.endsWith(".github");
   }

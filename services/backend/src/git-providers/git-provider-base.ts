@@ -18,6 +18,7 @@ export abstract class GitProviderBase implements GitProvider {
   abstract setRepositorySecret(repositoryUserName: string, repoName: string, accessToken: string, secretKey: string, secretValue: string): Promise<FetchResponse>;
   abstract createPublicationRepository(repoName: string, isUserRepo: boolean, repositoryUserName?: string, accessToken?: string): Promise<FetchResponse>;
   abstract copyWorkflowFiles(copyTo: string): void;
+  abstract getWorkflowFilesDirectoryName(): string;
   abstract isGitProviderDirectory(fullPath: string): boolean;
   abstract getDefaultBranch(repositoryURL: string): Promise<string | null>;
   abstract createGitRepositoryURL(userName: string, repoName: string, branch?: string): string;

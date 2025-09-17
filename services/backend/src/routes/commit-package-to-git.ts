@@ -208,7 +208,7 @@ export const commitPackageToGit = async (
       // Remove the content of the git directory and then replace it with the export
       // Alternatively we could keep the content and run await git.rm(['-r', '.']) ... however that would to know exactly
       //  what files were exported. So we can add them explicitly instead of running git add .
-      removeEverythingExcept(gitInitialDirectory, ["README.md", ".git"]);
+      removeEverythingExcept(gitInitialDirectory, ["README.md", ".git", gitProvider.getWorkflowFilesDirectoryName()]);
 
       const exporter = new PackageExporterByResourceType();
       await exporter.doExportFromIRI(iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem, exportFormat ?? "json");
@@ -217,9 +217,13 @@ export const commitPackageToGit = async (
         dataspecerUrl: "http://localhost:5174",
         publicationRepositoryUrl: `${gitProvider.getDomainURL(true)}/${givenRepositoryUserName}/${givenRepositoryName}-publication-repo`,  // TODO RadStr: Have to fix once we will use better mechanism to name the publication repos
       };
-      createReadmeFile(gitInitialDirectory, readmeData);      // TODO RadStr: Again - should be done only in the initial commit
 
-      gitProvider.copyWorkflowFiles(gitInitialDirectory);
+
+
+      if (!hasSetLastCommit) {
+        createReadmeFile(gitInitialDirectory, readmeData);      // TODO RadStr: Again - should be done only in the initial commit
+        gitProvider.copyWorkflowFiles(gitInitialDirectory);
+      }
 
       const commitResult = await commitGivenFilesToGit(git, ["."], commitMessage, gitCredentials.name, gitCredentials.email);
       if (commitResult.commit !== "") {

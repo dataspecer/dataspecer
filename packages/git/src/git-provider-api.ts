@@ -195,6 +195,11 @@ export interface GitProvider {
   copyWorkflowFiles(copyTo: string): void;
 
   /**
+   * @returns The name of he directory under which are stored the workflow files in the corresponding git provider.
+   */
+  getWorkflowFilesDirectoryName(): string;
+
+  /**
    * @returns True if the given {@link fullpath} is path to directory containing the git provider specific files (like workflow files). False otherwise.
    */
   isGitProviderDirectory(fullPath: string): boolean;
