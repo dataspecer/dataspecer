@@ -160,7 +160,7 @@ export class PackageImporter {
     const meta = JSON.parse(metaFile);
 
     const thisPackageIri = meta.iri + this.resourcesIriSuffix;
-    await this.resourceModel.createPackage(parentPackageIri, thisPackageIri, meta.userMetadata);
+    await this.resourceModel.createPackage(parentPackageIri, thisPackageIri, meta.userMetadata, meta.projectIri);
     await this.setBlobsForResource(canonicalDirPath, thisPackageIri);
 
     for (const file of Object.keys(this.zip.files)) {
@@ -195,7 +195,7 @@ export class PackageImporter {
     const meta = JSON.parse(metaFile);
 
     const thisResourceIri = meta.iri + this.resourcesIriSuffix;
-    await this.resourceModel.createResource(parentPackageIri, thisResourceIri, meta.types[0], meta.userMetadata);
+    await this.resourceModel.createResource(parentPackageIri, thisResourceIri, meta.types[0], meta.userMetadata, meta.projectIri);
     await this.setBlobsForResource(canonicalDirPath, thisResourceIri);
   }
 

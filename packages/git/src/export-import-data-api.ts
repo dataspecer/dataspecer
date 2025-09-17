@@ -44,6 +44,7 @@ export type ExportDictionary = Record<string, DatastructureToExport>;
 
 export type MetadataCacheType = {
   iri?: string;
+  projectIri?: string;
   [key: string]: any;
 };
 

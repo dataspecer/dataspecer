@@ -246,6 +246,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
   private static constructMetadataFromResource(resource: BaseResource): MetadataCacheType {
     return {
       iri: resource.iri,
+      projectIri: resource.projectIri,
       types: resource.types,
       userMetadata: resource.userMetadata,
       metadata: resource.metadata,

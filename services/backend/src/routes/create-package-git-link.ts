@@ -98,7 +98,7 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
       await gitProvider.createWebhook(patAccessToken.value, repositoryUserName, repoName, WEBHOOK_HANDLER_URL, ["push"]);
 
       await resourceModel.updateResourceProjectIriAndBranch(query.iri, undefined, defaultBranch ?? undefined);
-      await resourceModel.updateResourceGitLink(query.iri, fullLinkedGitRepositoryURL);
+      await resourceModel.updateResourceGitLink(query.iri, fullLinkedGitRepositoryURL, true);
 
       await commitPackageToGitUsingAuthSession(
         request, query.iri, fullLinkedGitRepositoryURL, defaultBranch, "", repositoryUserName,

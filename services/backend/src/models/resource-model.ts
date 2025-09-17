@@ -180,7 +180,7 @@ export class ResourceModel {
      * @returns The first resource, which is linked to given {@link gitRepositoryUrl}.
      *  If {@link forbiddenIri} is provided, then the returned resource can not have the same iri as {@link forbiddenIri}.
      */
-    async getResourceForGitUrl(gitRepositoryUrl: string, forbiddenIri?: string): Promise<BaseResource | null> {
+    async getResourceForGitUrl(gitRepositoryUrl: string, forbiddenIri?: string): Promise<{ resource: BaseResource, resourceId: number } | null> {
         let prismaResource;
         if (forbiddenIri === undefined) {
             prismaResource = await this.prismaClient.resource.findFirst({where: { linkedGitRepositoryURL: gitRepositoryUrl }});
@@ -197,7 +197,11 @@ export class ResourceModel {
             return null;
         }
 
-        return await this.prismaResourceToResource(prismaResource);
+        const resourceToReturn = await this.prismaResourceToResource(prismaResource);
+        return {
+            resource: resourceToReturn,
+            resourceId: prismaResource.id,
+        };
     }
 
     async getResourcesForGitUrl(gitRepositoryUrl: string): Promise<string[]> {
@@ -265,28 +269,72 @@ export class ResourceModel {
     /**
      * Updates user metadata of the resource with given {@link linkedGit}.
      */
-    async updateResourceGitLink(iri: string, linkedGit: string) {
+    async updateResourceGitLink(iri: string, linkedGit: string, shouldTryUpdateChildrenProjectIris: boolean) {
         if (linkedGit.endsWith("/")) {
             linkedGit = linkedGit.substring(0, linkedGit.length - 1);
         }
 
-        const resource = await this.prismaClient.resource.findFirst({where: {iri}});
-        if (resource === null) {
+        const resourceToUpdate = await this.prismaClient.resource.findFirst({where: {iri}});
+        if (resourceToUpdate === null) {
             throw new Error(`The resource with iri (${iri}) is missing. Can't set linked git url: ${linkedGit}`);
         }
 
-        // We have to set Project iri. If not present, just use the iri of this resource.
-        const projectIri = (await this.getResourceForGitUrl(linkedGit, iri))?.iri ?? iri;
+        if (shouldTryUpdateChildrenProjectIris) {
+            // We have to set Project iri. If not present, just use the iri of this resource.
+            const sourceForProjectResource = await this.getResourceForGitUrl(linkedGit, iri);
+            const projectIri = sourceForProjectResource?.resource.iri ?? iri;
 
-        await this.prismaClient.resource.update({
-            where: {iri},
+            await this.prismaClient.resource.update({
+                where: {iri},
 
-            data: {
-                linkedGitRepositoryURL: linkedGit,
-                projectIri: projectIri
+                data: {
+                    linkedGitRepositoryURL: linkedGit,
+                    projectIri: projectIri
+                }
+            });
+            await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified);
+
+
+            if (sourceForProjectResource !== null) {
+                // This needs explanation.
+                // Since it is not obvious why we don't set the projectIri of children to the found project.
+                // For this we have to think, when we actaully update to projectIri.
+                // 1) We created new repo from DS - Then sourceForProjectResource === null, so we perform the recursive copy in the "else"
+                // 2) We imported git repo. Well we store projectIri in the export, therefore the projectIri should be already set
+                // 3) We created branch in DS, well since creation of a branch is only a copy, we also copied to projectIris
+                // 4) We linked to existing repo - well here I don't know, but I feel like the linking to existing has only one use-case:
+                //     - That is the REST API to create repo did not work. Therefore we just created empty repo and linked it manually
+                //      - So I would say that we are basically in case 1)
+                // This is all. There are no other ways to set git link.
+                return;
             }
-        });
-        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified);
+            await this.copyIriToProjectIriForChildrenRecursively(resourceToUpdate.id);
+
+        }
+        else {
+            await this.prismaClient.resource.update({
+                where: {iri},
+
+                data: {
+                    linkedGitRepositoryURL: linkedGit,
+                }
+            });
+            await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified);
+        }
+    }
+
+    private async copyIriToProjectIriForChildrenRecursively(parentResourceId: number) {
+        const resourcesToUpdate = await this.prismaClient.resource.findMany({where: {parentResourceId}});
+        for (const resourceToUpdate of resourcesToUpdate) {
+            this.prismaClient.resource.update({
+                where: {iri: resourceToUpdate.iri},
+
+                data: {
+                    projectIri: resourceToUpdate.iri,
+                }
+            });
+        }
+
     }
 
     /**
@@ -452,8 +500,8 @@ export class ResourceModel {
     /**
      * Creates resource of type LOCAL_PACKAGE.
      */
-    createPackage(parentIri: string | null, iri: string, userMetadata: {}) {
-        return this.createResource(parentIri, iri, LOCAL_PACKAGE, userMetadata);
+    createPackage(parentIri: string | null, iri: string, userMetadata: {}, projectIri?: string) {
+        return this.createResource(parentIri, iri, LOCAL_PACKAGE, userMetadata, projectIri);
     }
 
     /**
@@ -471,7 +519,7 @@ export class ResourceModel {
             if (prismaResource === null) {
                 throw new Error("Resource to copy not found.");
             }
-            await this.createResource(parentIri, newIri, prismaResource.representationType, JSON.parse(prismaResource.userMetadata));
+            await this.createResource(parentIri, newIri, prismaResource.representationType, JSON.parse(prismaResource.userMetadata), prismaResource.projectIri);
             const newDataStoreId = {} as Record<string, string>;
             for (const [key, store] of Object.entries(JSON.parse(prismaResource.dataStoreId))) {
                 const newStore = await this.storeModel.create();
@@ -503,7 +551,7 @@ export class ResourceModel {
         const sourcePrismaResource = await this.prismaClient.resource.findFirst({where: { iri }});
         const sourceGitLink = sourcePrismaResource?.linkedGitRepositoryURL;
         if (sourceGitLink !== undefined) {
-            await this.updateResourceGitLink(newRootIri, sourceGitLink);
+            await this.updateResourceGitLink(newRootIri, sourceGitLink, false);
         }
         await this.updateLastCommitHash(newRootIri, sourcePrismaResource?.lastCommitHash ?? "");
 
@@ -516,7 +564,7 @@ export class ResourceModel {
      * Low level function to create a resource.
      * If parent IRI is null, the resource is created as root resource.
      */
-    async createResource(parentIri: string | null, iri: string, type: string, userMetadata: {}) {
+    async createResource(parentIri: string | null, iri: string, type: string, userMetadata: {}, projectIri?: string) {
         let parentResourceId: number | null = null;
 
         if (parentIri !== null) {
@@ -537,6 +585,7 @@ export class ResourceModel {
         await this.prismaClient.resource.create({
             data: {
                 iri: iri,
+                projectIri: projectIri ?? iri,
                 parentResourceId: parentResourceId,
                 representationType: type,
                 userMetadata: JSON.stringify(userMetadata),
