@@ -14,7 +14,7 @@ import { v4 as uuidv4 } from 'uuid';
 import fs from "fs";
 import { getRepoURLWithAuthorizationUsingDebugPatToken } from "../git-never-commit.ts";
 import { simpleGit, SimpleGit } from "simple-git";
-import { extractPartOfRepositoryURL, getAuthorizationURL, getLastCommitHash } from "../utils/git-utils.ts";
+import { extractPartOfRepositoryURL, getAuthorizationURL, getLastCommitHash, removeEverythingExcept } from "../utils/git-utils.ts";
 import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
@@ -205,6 +205,11 @@ export const commitPackageToGit = async (
       }
     }
     try {
+      // Remove the content of the git directory and then replace it with the export
+      // Alternatively we could keep the content and run await git.rm(['-r', '.']) ... however that would to know exactly
+      //  what files were exported. So we can add them explicitly instead of running git add .
+      removeEverythingExcept(gitInitialDirectory, ["README.md", ".git"]);
+
       const exporter = new PackageExporterByResourceType();
       await exporter.doExportFromIRI(iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem, exportFormat ?? "json");
 

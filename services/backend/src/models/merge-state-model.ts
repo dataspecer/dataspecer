@@ -37,8 +37,7 @@ export class MergeStateModel implements ResourceChangeListener {
 
     const mergeStates = await this.getMergeStates(resource.iri, false);
     for (const mergeState of mergeStates) {
-      const shouldBeTargetedWithUpToDateChange =
-      (
+      const shouldBeTargetedWithUpToDateChange = (
         mergeState.filesystemTypeMergeFrom === AvailableFilesystems.DS_Filesystem &&
         mergeState.rootIriMergeFrom === resource.iri
       ) ||

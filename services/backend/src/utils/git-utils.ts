@@ -5,6 +5,8 @@ import _ from "lodash";
 import { AccessToken, AccessTokenType, CommitterInfo } from "@dataspecer/git";
 import { getHttpsRepoURLWithAuthorization } from "../git-never-commit.ts";
 import { SimpleGit } from "simple-git";
+import fs from "fs";
+import path from "path";
 
 
 // TODO RadStr: Change to Dataspecer after debugging stage
@@ -159,4 +161,17 @@ export function getBaseUrl(request: express.Request) {
 export async function getLastCommitHash(git: SimpleGit) {
   const gitLastCommitHash = await git.revparse(["HEAD"]);
   return gitLastCommitHash;
+}
+
+export function removeEverythingExcept(rootDirectory: string, exceptions: string[]) {
+  const directoryEntries = fs.readdirSync(rootDirectory);
+
+  for (const entry of directoryEntries) {
+    if (exceptions.includes(entry)) {
+      continue;
+    }
+
+    const fullPath = path.join(rootDirectory, entry);
+    fs.rmSync(fullPath, { recursive: true, force: true });
+  }
 }
