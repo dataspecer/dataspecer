@@ -32,17 +32,11 @@ export const updateGitRelatedDataForPackage = async (
   const defaultRepositoryUrl = gitProvider.extractDefaultRepositoryUrl(repositoryURL);
   console.info("defaultRepositoryUrl", defaultRepositoryUrl);
   // If we call it before we set the git link for the imported package, then we make the database query faster (we don't need to check for forbidden iri)
-  const anotherPackageWithSameGitLink = await resourceModel.getResourceForGitUrl(defaultRepositoryUrl);
-  resourceModel.updateResourceGitLink(iri, defaultRepositoryUrl);
+  resourceModel.updateResourceGitLink(iri, defaultRepositoryUrl, false);
   // If commitReferenceType still not set, just use null, the method will use its default
   const lastCommitHash = await gitProvider.getLastCommitHashFromUrl(defaultRepositoryUrl, commitReferenceType ?? null, commitReferenceValue);
   resourceModel.updateLastCommitHash(iri, lastCommitHash);
 
-  // TODO RadStr: I already check on client if the branch already does not exist, but maybe I should also here?
-  resourceModel.updateResourceProjectIriAndBranch(
-    iri,
-    anotherPackageWithSameGitLink?.projectIri ?? uuidv4(),
-    commitReferenceValue ?? undefined);
   // If undefined just assume that it is reference to commit, so if it is not user have to explictly switch it to branch
   resourceModel.updateRepresentsBranchHead(iri, commitReferenceType ?? "commit");
 };
