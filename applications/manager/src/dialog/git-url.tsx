@@ -4,12 +4,13 @@ import { BetterModalProps, OpenBetterModal, useBetterModal } from "@/lib/better-
 import { useLayoutEffect, useMemo, useState } from "react";
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
 import { Pencil } from "lucide-react";
-import { convertToValidRepositoryName, gitOperationResultToast } from "@/utils/utilities";
+import { gitOperationResultToast } from "@/utils/utilities";
 import { requestLoadPackage } from "@/package";
 import { createIdentifierForHTMLElement, InputComponent } from "@/components/simple-input-component";
 import { Package } from "@dataspecer/core-v2/project";
 import { toast } from "sonner";
 import { ExportFormatRadioButtons, ExportFormatType } from "@/components/export-format-radio-buttons";
+import { convertToValidGitName } from "@dataspecer/git";
 
 
 // TODO RadStr: Maybe use enum instead of TS string enum
@@ -63,7 +64,7 @@ export const GitDialog = ({ input: defaultInput, inputPackage, isOpen, resolve, 
 
   const closeWithSuccess = () => {
     // TODO RadStr: Don't like this inputByUser
-    const resultingInputByUser = type === "link-to-existing-repository" ? inputByUser : convertToValidRepositoryName(inputByUser);
+    const resultingInputByUser = type === "link-to-existing-repository" ? inputByUser : convertToValidGitName(inputByUser);
     resolve({ inputByUser: resultingInputByUser, user, gitProvider, commitMessage, isUserRepo, exportFormat });
   }
 

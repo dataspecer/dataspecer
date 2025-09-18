@@ -1,11 +1,12 @@
-import { Dispatch, SetStateAction } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label"
+
+type SetStringState = (value: string) => void;
 
 export type InputComponentProps = {
   idPrefix: string;
   idSuffix: number;
-  setInput: Dispatch<SetStateAction<string>>;
+  setInput: SetStringState;
   disabled?: boolean;
   input?: string;
   label?: string;

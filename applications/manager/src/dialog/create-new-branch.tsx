@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { modifyPackageProjectData, modifyPackageRepresentsBranchHead, packageService, requestLoadPackage, ResourcesContext } from "@/package";
 import { createIdentifierForHTMLElement, InputComponent } from "@/components/simple-input-component";
 import { toast } from "sonner";
+import { convertToValidGitName } from "@dataspecer/git";
 
 export enum BranchAction {
   CreateNewBranch,
@@ -26,6 +27,10 @@ const rootURL = "http://dataspecer.com/packages/local-root";
 
 export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, resolve }: CreateBranchDialogProps) => {
   const [branch, setBranch] = useState<string>(sourcePackage.branch);
+  const setValidBranch = (newBranch: string) => {
+    const validBranchName = convertToValidGitName(newBranch);
+    setBranch(validBranchName);
+  }
 
   useLayoutEffect(() => {
     if (isOpen) {
@@ -85,7 +90,7 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
         </ModalDescription>
       </ModalHeader>
         <ModalContent>
-          <InputComponent idPrefix={idPrefix} idSuffix={0} label="Set branch name" input={branch} setInput={setBranch} />
+          <InputComponent idPrefix={idPrefix} idSuffix={0} label="Set branch name" input={branch} setInput={setValidBranch} />
           <ModalFooter>
             <Button variant="outline" onClick={handleDialogCloseWithoutSave}>Close</Button>
             <Button variant="outline" onClick={handleDialogSave}>Confirm</Button>

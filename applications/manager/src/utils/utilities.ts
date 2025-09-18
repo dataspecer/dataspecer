@@ -4,15 +4,6 @@ import { modifyPackageProjectData, modifyPackageRepresentsBranchHead, requestLoa
 import { Package } from "@dataspecer/core-v2/project";
 import { toast } from "sonner";
 
-// TODO RadStr: Maybe move into package?
-export function convertToValidRepositoryName(repoName: string): string {
-  // Based on ChatGPT
-  console.info("Repo name before:", repoName);
-  const validRepoName = repoName.trim().replace(/\s+/g, " ").replace(/ /g, "-");
-  console.info("Repo name after:", validRepoName);
-  return validRepoName;
-}
-
 /**
  * TODO RadStr: Maybe not utility function, but can't think of better place now
  */
