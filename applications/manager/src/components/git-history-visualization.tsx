@@ -244,12 +244,15 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
 
   return (
     <Modal open={isOpen} onClose={() => resolve(null)}>
-      {/* <ModalContent className="sm:max-w-[1700px] max-w-[90%]"> */}
       <ModalContent className="max-w-[90%]">
         <ModalHeader>
           <ModalTitle>Project history in Git</ModalTitle>
           <ModalDescription>
-            TODO RadStr: Modal description
+            The "in DS" next to the branch means that the branch is tracked in DS.
+            <br/>
+            Similarly the text "DS" on the commit bubble marks the fact that the commit exists in DS.
+            <br/>
+            Note that you can click on text (or the bubble) to perform further actions.
           </ModalDescription>
         </ModalHeader>
         <ModalBody className="overflow-y-auto max-h-[60vh]">    {/* TODO RadStr: Needed for the scrolling, the padding (p) so there isn't any part missing */}
@@ -344,7 +347,7 @@ function renderLabel(branch: any) {
     <rect
       x={0.5}
       y={0.5}
-      width={branch.name.length * 10 + 40} // rough estimate
+      width={branch.name.length * 10 + 54} // rough estimate, the +54 is for the (in DS)
       height={30} // adjust based on font size
       fill="none"
       stroke={branch.computedColor}
