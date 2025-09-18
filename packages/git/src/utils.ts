@@ -14,3 +14,10 @@ export function convertToValidGitName(gitName: string): string {
   const validGitName = gitName.trim().replace(/\s+/g, " ").replace(/ /g, "-");
   return validGitName;
 }
+
+export function createSetterWithGitValidation(setter: (value: string) => void) {
+  return (newValueForSetter: string) => {
+    const validValue = convertToValidGitName(newValueForSetter);
+    setter(validValue);
+  };
+}

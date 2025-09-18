@@ -10,25 +10,20 @@ import { createIdentifierForHTMLElement, InputComponent } from "@/components/sim
 import { Package } from "@dataspecer/core-v2/project";
 import { toast } from "sonner";
 import { ExportFormatRadioButtons, ExportFormatType } from "@/components/export-format-radio-buttons";
-import { convertToValidGitName } from "@dataspecer/git";
+import { createSetterWithGitValidation } from "@dataspecer/git";
 
 
-// TODO RadStr: Maybe use enum instead of TS string enum
-/**
- * input - when type === "create-new-repository", then it is the name of the repository
- *         when type === "link-to-existing-repository", then it is the URL of the repository (the branch URL)
- */
-type GitURLDialogProps = {
+type GitActionsDialogProps = {
   inputPackage: Package,
-  input?: string,
   type?: "create-new-repository-and-commit" | "commit" | "link-to-existing-repository"
 } & BetterModalProps<{
-  inputByUser: string,
   exportFormat: ExportFormatType,
-  user?: string,
-  gitProvider?: string,
-  commitMessage?: string,
-  isUserRepo?: boolean,
+  repositoryName: string,
+  remoteRepositoryURL: string,
+  user: string,
+  gitProvider: string,
+  commitMessage: string,
+  isUserRepo: boolean,
 } | null>;
 
 const gitDialogInputIdPrefix = "git-dialog-prefix";
@@ -41,12 +36,11 @@ const gitDialogInputIdPrefix = "git-dialog-prefix";
  *
  * The type of shown dialog depends on the "type" property.
  */
-export const GitDialog = ({ input: defaultInput, inputPackage, isOpen, resolve, type }: GitURLDialogProps) => {
+export const GitActionsDialog = ({ inputPackage, isOpen, resolve, type }: GitActionsDialogProps) => {
   type = type ?? "create-new-repository-and-commit";
 
-  // TODO RadStr: Not sure about the defaults
-  // TODO RadStr: Maybe better name for the input by user?
-  const [inputByUser, setInputByUser] = useState<string>(defaultInput ?? "");
+  const [repositoryName, setRepositoryName] = useState<string>(inputPackage.iri);
+  const [remoteRepositoryURL, setRemoteRepositoryURL] = useState<string>("https://github.com/userName/repositoryName")
   const [user, setUser] = useState<string>("");
   const [gitProvider, setGitProvider] = useState<string>("https://github.com/");
   const [commitMessage, setCommitMessage] = useState<string>("");
@@ -63,9 +57,7 @@ export const GitDialog = ({ input: defaultInput, inputPackage, isOpen, resolve, 
   }, []);
 
   const closeWithSuccess = () => {
-    // TODO RadStr: Don't like this inputByUser
-    const resultingInputByUser = type === "link-to-existing-repository" ? inputByUser : convertToValidGitName(inputByUser);
-    resolve({ inputByUser: resultingInputByUser, user, gitProvider, commitMessage, isUserRepo, exportFormat });
+    resolve({ user, repositoryName, remoteRepositoryURL, gitProvider, commitMessage, isUserRepo, exportFormat });
   }
 
   const shouldDisableConfirm = useMemo(() => {
@@ -101,9 +93,9 @@ export const GitDialog = ({ input: defaultInput, inputPackage, isOpen, resolve, 
   switch(type) {
     case "create-new-repository-and-commit":
       modalBody = <div>
-        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git user (or org) name under which should be the repository created. If empty - auth user name is used, if not logged in or user did not provide rights to create repo, bot name is used" setInput={setUser} input={user} />
+        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git user (or org) name under which should be the repository created. If empty - auth user name is used, if not logged in or user did not provide rights to create repo, bot name is used" setInput={createSetterWithGitValidation(setUser)} input={user} />
         <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="The commit message for git" setInput={setCommitMessage} input={commitMessage} />
-        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git remote repository name" setInput={setInputByUser} input={inputByUser} />
+        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git remote repository name" setInput={createSetterWithGitValidation(setRepositoryName)} input={repositoryName} />
         <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git provider URL (Should contain the schema and end with / - for example https://github.com/)" setInput={setGitProvider} input={gitProvider} />
         <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
         <label className="flex items-center space-x-2 cursor-pointer">
@@ -121,10 +113,10 @@ export const GitDialog = ({ input: defaultInput, inputPackage, isOpen, resolve, 
       modalBody = <div>
         <InputComponent disabled={shouldDisableConfirm} idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="The commit message for git" setInput={setCommitMessage} input={commitMessage} />
         <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
-        </div>
+        </div>;
       break;
     case "link-to-existing-repository":
-      modalBody = <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git remote repository URL" setInput={setInputByUser} input={inputByUser} />;
+      modalBody = <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git remote repository URL" setInput={setRemoteRepositoryURL} input={remoteRepositoryURL} />;
       break;
     default:
       modalBody = <div/>;
@@ -164,10 +156,10 @@ export const LinkToGitRepoDialog = (props: { iri: string, inputPackage: Package 
 
   return <DropdownMenuItem
     onClick={async () => {
-      const result = await openModal(GitDialog, {input: iri, inputPackage, type: "create-new-repository-and-commit"});
+      const result = await openModal(GitActionsDialog, { inputPackage, type: "create-new-repository-and-commit" });
       if (result) {
         const url = import.meta.env.VITE_BACKEND + "/git/link-package-to-git?iri=" + encodeURIComponent(iri) +
-                                                  "&givenRepositoryName=" + encodeURIComponent(result.inputByUser) +
+                                                  "&givenRepositoryName=" + encodeURIComponent(result.repositoryName) +
                                                   "&givenUserName=" + encodeURIComponent(result.user ?? "") +
                                                   "&gitProviderURL=" + encodeURIComponent(result.gitProvider ?? "") +
                                                   "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "");
@@ -180,10 +172,10 @@ export const LinkToGitRepoDialog = (props: { iri: string, inputPackage: Package 
 
 // TODO RadStr: Maybe put on some better place?
 export const createNewRemoteRepositoryHandler = async (openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
-  const result = await openModal(GitDialog, {input: iri, inputPackage, type: "create-new-repository-and-commit"});
+  const result = await openModal(GitActionsDialog, { inputPackage, type: "create-new-repository-and-commit" });
   if (result) {
     const url = import.meta.env.VITE_BACKEND + "/git/link-package-to-git?iri=" + encodeURIComponent(iri) +
-                                              "&givenRepositoryName=" + encodeURIComponent(result.inputByUser) +
+                                              "&givenRepositoryName=" + encodeURIComponent(result.repositoryName) +
                                               "&givenUserName=" + encodeURIComponent(result.user ?? "") +
                                               "&gitProviderURL=" + encodeURIComponent(result.gitProvider ?? "") +
                                               "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "") +
@@ -224,7 +216,7 @@ export const CommitToGitDialog = (props: { iri: string, inputPackage: Package })
 
   return <DropdownMenuItem
     onClick={async () => {
-      const result = await openModal(GitDialog, {input: iri, inputPackage, type: "commit"});
+      const result = await openModal(GitActionsDialog, { inputPackage, type: "commit" });
       if (result) {
         const url = import.meta.env.VITE_BACKEND + "/git/commit-package-to-git?iri=" + encodeURIComponent(iri) +
                                                   "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "");
@@ -236,7 +228,7 @@ export const CommitToGitDialog = (props: { iri: string, inputPackage: Package })
 
 // TODO RadStr: Maybe put on some better place?
 export const commitToGitDialogOnClickHandler = async (openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
-  const result = await openModal(GitDialog, {input: iri, inputPackage, type: "commit"});
+  const result = await openModal(GitActionsDialog, { inputPackage, type: "commit" });
   if (result) {
     const url = import.meta.env.VITE_BACKEND + "/git/commit-package-to-git?iri=" + encodeURIComponent(iri) +
                                               "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "") +
@@ -256,10 +248,10 @@ export const commitToGitDialogOnClickHandler = async (openModal: OpenBetterModal
 
 // TODO RadStr: Maybe put on some better place?
 export const linkToExistingGitRepositoryHandler = async (openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
-  const result = await openModal(GitDialog, {input: iri, inputPackage, type: "link-to-existing-repository"});
+  const result = await openModal(GitActionsDialog, { inputPackage, type: "link-to-existing-repository" });
   if (result) {
     const url = import.meta.env.VITE_BACKEND + "/git/link-to-existing-git-repository?iri=" + encodeURIComponent(iri) +
-                                              "&repositoryURL=" + encodeURIComponent(result.inputByUser);
+                                              "&repositoryURL=" + encodeURIComponent(result.remoteRepositoryURL);
 
     const response = await fetch(
       url,
