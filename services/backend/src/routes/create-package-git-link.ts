@@ -4,7 +4,7 @@ import express from "express";
 import { resourceModel } from "../main.ts";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { extractPartOfRepositoryURL, stringToBoolean } from "../utils/git-utils.ts";
-import { AccessToken, AccessTokenType, ConfigType, WEBHOOK_HANDLER_URL } from "@dataspecer/git";
+import { AccessToken, AccessTokenType, ConfigType, convertToValidGitName, WEBHOOK_HANDLER_URL } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { commitPackageToGitUsingAuthSession } from "./commit-package-to-git.ts";
 import { transformCommitMessageIfEmpty } from "../utils/git-utils.ts";
@@ -56,10 +56,10 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
   //  either we fail, or we will try the bot token to create the repositories. To me the second one makes more sense. So that is the implemented variant.
   for (const patAccessToken of patAccessTokens) {
     try {
-      const repositoryUserName = query.givenUserName.length === 0 ? sessionUserName : query.givenUserName;
+      const repositoryUserName = convertToValidGitName(query.givenUserName.length === 0 ? sessionUserName : query.givenUserName);
 
       const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
-      const repoName = query.givenRepositoryName;
+      const repoName = convertToValidGitName(query.givenRepositoryName);
 
       const fullLinkedGitRepositoryURL = gitProvider.createGitRepositoryURL(repositoryUserName, repoName);
       console.info("TODO RadStr: Debug gitProvider", { gitProvider, fullLinkedGitRepositoryURL });

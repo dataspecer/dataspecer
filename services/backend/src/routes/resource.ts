@@ -3,7 +3,7 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { z } from "zod";
 import { v4 as uuidv4 } from 'uuid';
-import { CommitReferenceType } from "@dataspecer/git";
+import { CommitReferenceType, convertToValidGitName } from "@dataspecer/git";
 
 export const getResource = asyncHandler(async (request: express.Request, response: express.Response) => {
     const querySchema = z.object({
@@ -109,8 +109,9 @@ export const updateResourceProjectIriAndBranchHandler = asyncHandler(async (requ
         branch: z.string().optional(),
     }).strict();
     const body = bodySchema.parse(request.body);
+    const branch = body.branch === undefined ? undefined : convertToValidGitName(body.branch);
 
-    await resourceModel.updateResourceProjectIriAndBranch(query.iri, body.projectIri, body.branch);
+    await resourceModel.updateResourceProjectIriAndBranch(query.iri, body.projectIri, branch);
 
     response.send(await resourceModel.getResource(query.iri));
     return;
