@@ -81,10 +81,16 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
   }
 
   const branch = resource.branch === "main." ? null : resource.branch;
-  await commitPackageToGitUsingAuthSession(
+  const commitResult = await commitPackageToGitUsingAuthSession(
     request, iri, gitLink, branch, resource.lastCommitHash, userName,
     repoName, commitMessage, response, query.exportFormat ?? null);
+
+  if (!commitResult) {
+    response.sendStatus(409);
+    return;
+  }
   response.sendStatus(200);
+  return;
 });
 
 
@@ -108,7 +114,7 @@ export const commitPackageToGitUsingAuthSession = async (
   // If gitProvider not given - get it
   gitProvider ??= GitProviderFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL);
   const committer = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
-  await commitPackageToGit(iri, remoteRepositoryURL, branch, localLastCommitHash, givenRepositoryUserName, givenRepositoryName, committer, commitMessage, gitProvider, exportFormat);
+  return await commitPackageToGit(iri, remoteRepositoryURL, branch, localLastCommitHash, givenRepositoryUserName, givenRepositoryName, committer, commitMessage, gitProvider, exportFormat);
 }
 
 
@@ -116,6 +122,7 @@ export const commitPackageToGitUsingAuthSession = async (
 /**
  * Commit to the repository for package identifier by given iri.
  * @param commitMessage if null then default message is used.
+ * @returns true on successful commit. False when merge state was created (that is there were conflicts).
  */
 export const commitPackageToGit = async (
   iri: string,
@@ -128,7 +135,7 @@ export const commitPackageToGit = async (
   commitMessage: string | null,
   gitProvider: GitProvider,
   exportFormat: string | null,
-) => {
+): Promise<boolean> => {
   if (commitMessage === null) {
     commitMessage = createUniqueCommitMessage();
   }
@@ -195,7 +202,9 @@ export const commitPackageToGit = async (
             lastHashMergeFrom, lastHashMergeTo, commonCommitHash,
             rootMergeFrom, pathToRootMetaMergeFrom, filesystemMergeFrom.getFilesystemType(),
             rootMergeTo, pathToRootMetaMergeTo, filesystemMergeTo.getFilesystemType());
-          return;
+          if (createdMergeStateId !== null) {
+            return false;
+          }
         }
       }
       catch(error) {
@@ -219,12 +228,18 @@ export const commitPackageToGit = async (
       };
 
 
-
       if (!hasSetLastCommit) {
         createReadmeFile(gitInitialDirectory, readmeData);      // TODO RadStr: Again - should be done only in the initial commit
         gitProvider.copyWorkflowFiles(gitInitialDirectory);
       }
+    }
+    catch(error) {
+      console.error("Failure when creating the export of repository for commit");
+      fs.rmSync(gitDirectoryToRemoveAfterWork, { recursive: true, force: true });
+      throw error;
+    }
 
+    try {
       const commitResult = await commitGivenFilesToGit(git, ["."], commitMessage, gitCredentials.name, gitCredentials.email);
       if (commitResult.commit !== "") {
         // We do not need any --force or --force-with-leash options, this is enough
@@ -232,11 +247,19 @@ export const commitPackageToGit = async (
         await resourceModel.updateLastCommitHash(iri, commitResult.commit);
       }
       // Else no changes
-      break;    // We are done
+
+      return true;    // We are done
     }
     catch(error) {
-      console.error({error});
-      // Don't rethrow error
+      // Error can be caused by Not sufficient rights for the pushing - then we have to try all and fail on last
+      if (isLastAccessToken) {
+        // If it is last then rethrow. Otherwise try again.
+        throw error;
+      }
+      else {
+        // TODO RadStr: Print it for now, however it really should be only issue with rights
+        console.error({error});
+      }
     }
     finally {
       // It is important to not only remove the actual files, but also the .git directory,
@@ -244,6 +267,8 @@ export const commitPackageToGit = async (
       fs.rmSync(gitDirectoryToRemoveAfterWork, { recursive: true, force: true });
     }
   }
+
+  throw new Error("Unknown error when commiting. This should be unreachable code. There were probably no access tokens available in DS at all");
 };
 
 
