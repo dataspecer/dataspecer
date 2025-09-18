@@ -1,9 +1,10 @@
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
-import { CommitReferenceType, createRemoteRepositoryReturnType, CommitterInfo, GitProviderEnum, Scope, WebhookRequestDataProviderIndependent, GitCredentials } from "@dataspecer/git";
+import { CommitReferenceType, createRemoteRepositoryReturnType, CommitterInfo, GitProviderEnum, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials } from "@dataspecer/git";
 import { GitProviderBase } from "../git-provider-base.ts";
 import { gitProviderDomains } from "../git-provider-factory.ts";
 
+// Note that students for some reason there have max 10 repositories limit on school mff gitlab (idk if it is for creations a day or something)
 
 export class GitLabProvider extends GitProviderBase {
   ////////////////////////////
@@ -35,7 +36,7 @@ export class GitLabProvider extends GitProviderBase {
     this.domainURL = newDomainURL;
   }
 
-  async extractDataForWebhookProcessing(webhookPayload: any): Promise<WebhookRequestDataProviderIndependent | null> {
+  async extractDataForWebhookProcessing(webhookPayload: any): Promise<WebhookRequestDataGitProviderIndependent | null> {
     const repoName = webhookPayload.repository.name;
     // TODO: In future I will find it through the URL inside the prisma database instead
     const iri = String(repoName).split("-").at(-1);
@@ -107,7 +108,7 @@ export class GitLabProvider extends GitProviderBase {
     //         "name": "new_project", "description": "New Project", "path": "new_project",
     //         "namespace_id": "42", "initialize_with_readme": "true"}' \
     //      --url "https://gitlab.example.com/api/v4/projects/"
-    // TODO RadStr: ? Maybe I won't do it - but this expects that the given authToken is for user and it is userRepo, not organization repo
+    // Note that this expects that the given authToken is for user and it is userRepo, not organization repo
     const payload = {
       "name": repoName,
       "description": "Auto-generated repository to test Dataspecer connection",
@@ -137,14 +138,6 @@ export class GitLabProvider extends GitProviderBase {
   }
 
   getBotCredentials(): GitCredentials | null {
-    // TODO RadStr: ... We won't, I am not giving out PAT for my mff account
-    // TODO RadStr: So definitely remove the credentials and keep the error after we are done with testing
-    // TODO RadStr: Just remove
-    // return {
-    //   name: GIT_RAD_STR_BOT_USERNAME,
-    //   email: GIT_RAD_STR_BOT_EMAIL,
-    //   accessToken: GITLAB_MFF_PERSONAL_API_CONTROL_TOKEN,
-    // };
     throw new Error("Method not implemented. We currently don't have any GitLab bot.");
   }
 

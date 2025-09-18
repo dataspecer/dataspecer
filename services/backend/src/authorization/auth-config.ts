@@ -46,7 +46,6 @@ export function createAuthConfigBasedOnAccountScope(genericScope: Scope[] | null
   return [createAuthConfig(null, dsBackendURL, callerURL), null];
 }
 
-// TODO RadStr: ... well the scopes are once again Git Provider specific, so it should be part of the concrete git Provider.
 function getScopesForAuthConfig(configType: ConfigType | null): Scope[] {
   if (configType === null) {
     return ["userInfo", "email"];

@@ -35,7 +35,6 @@ import { authJSRedirectCallback } from "./routes/auth/auth-redirect-to-frontend-
 import { authHandler } from "./routes/auth/auth-handler.ts";
 import { corsOriginHandler } from "./utils/cors-related.ts";
 import { currentSession } from "./authorization/auth-session.ts";
-import { tryCommitToGitRepo } from "./routes/git-test.ts";
 import { createRandomWebook, handleWebhook } from "./routes/git-webhook-handler.ts";
 import { createLinkBetweenPackageAndGit, createPackageFromExistingGitRepository } from "./routes/create-package-git-link.ts";
 import { commitPackageToGitHandler } from "./routes/commit-package-to-git.ts";
@@ -101,11 +100,6 @@ const application = express();
 application.set('trust proxy', true);
 
 application.use(cors(corsOriginHandler));
-// TODO RadStr: Remove the commented code after commit - just so I have it somewhere
-// application.use(cors({
-//   // origin: (origin, callback) => { callback(null, origin) },   // TODO RadStr: Allow any front-end - this is dangerous, don't do it in actual final version
-//   // origin: "http://localhost:5174",      // TODO RadStr: Hardcoded front-end, but we have to specify the exact front-end, otherwise we can not use cookies
-// }));
 
 application.use(express.json({ limit: configuration.payloadSizeLimit }));
 application.use(express.urlencoded({ extended: false, limit: configuration.payloadSizeLimit }));
@@ -116,9 +110,6 @@ application.use(express.urlencoded({ extended: true, limit: configuration.payloa
 application.get(apiBasename + "/auth-handler/personal-callback/*", authJSRedirectCallback);
 // We have to handle everything related to authorization under this handler - for some reason handlers for specific subparts (like /auth/callback/*) do not work.
 application.use(apiBasename + "/auth/*", authHandler);
-// TODO RadStr: This line of code is not currently needed, it will be once we add Git ... it should be probably like this and not define it for every path
-//                                                                                        Since we will want to have route protection in future
-// application.use(currentSession);
 
 
 // Api for packages (core-v2)
@@ -224,8 +215,6 @@ application.post(apiBasename + "/git/finalize-merge-state", finishMergeState);
 // TODO RadStr: Just for debugging !
 application.post(apiBasename + "/git/debug-clear-merge-state-table", clearMergeStateTableDebug);
 
-// Test GIT
-application.get(apiBasename + "/git/deprecated-test", currentSession, tryCommitToGitRepo);
 // TODO RadStr: Once I update the URL don't forget to update the ngrok URL in git providers to the same URL suffix
 application.post(apiBasename + "/git/webhook-test", currentSession, handleWebhook);
 application.post(apiBasename + "/git/webhook-test2", currentSession, handleWebhook);

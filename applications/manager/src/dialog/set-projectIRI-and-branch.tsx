@@ -1,7 +1,7 @@
 import { BetterModalProps, } from "@/lib/better-modal";
 import { useLayoutEffect, useState } from "react";
 import { Package } from "@dataspecer/core-v2/project";
-import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
+import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { modifyPackageProjectData, requestLoadPackage } from "@/package";
 import { createIdentifierForHTMLElement, InputComponent } from "@/components/simple-input-component";
@@ -38,13 +38,10 @@ export const setProjectIriAndBranchDialog = ({ examinedPackage, isOpen, resolve 
 
   return (
     <Modal open={isOpen} onClose={() => resolve(null)}>
-      <ModalHeader>
-        <ModalTitle>Perform action on git commit</ModalTitle>
-        <ModalDescription>
-          TODO RadStr: Set Modal description
-        </ModalDescription>
-      </ModalHeader>
         <ModalContent>
+          <ModalHeader>
+            <ModalTitle>Set project iri and branch name for package</ModalTitle>
+          </ModalHeader>
           <InputComponent idPrefix={idPrefix} idSuffix={0} label="Set branch" input={branch} setInput={setBranch} />
           <InputComponent idPrefix={idPrefix} idSuffix={1} label="Set project iri" input={projectIri} setInput={setProjectIri} />
           <ModalFooter>

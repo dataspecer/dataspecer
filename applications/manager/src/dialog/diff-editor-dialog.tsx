@@ -1,4 +1,4 @@
-import { Modal, ModalBody, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@/components/modal";
+import { Modal, ModalBody, ModalContent, ModalHeader } from "@/components/modal";
 import { BetterModalProps } from "@/lib/better-modal";
 import { RefObject, SetStateAction, useEffect, useRef, useState } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
@@ -441,10 +441,6 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
                       <TabsTrigger value="image-compare">Image comparison</TabsTrigger>
                     </TabsList>
                   </Tabs>
-                  <ModalTitle>Text diff editor</ModalTitle>
-                  <ModalDescription>
-                    {/* TODO RadStr: Empty for now */}
-                  </ModalDescription>
                 </ModalHeader>
                   {/* The overflow-y is needed however it adds a bit horizontal space between the vertical splitter and the Tree structure */}
                   <div className="flex flex-1 flex-col grow overflow-y-auto pr-2 -mr-2 -ml-2 pl-2 h-full w-full">

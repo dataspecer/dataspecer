@@ -239,7 +239,6 @@ export class MergeStateModel implements ResourceChangeListener {
     catch(error) {
       // Actually since I am using force, the rmSync probably should not throw error
       if (shouldPrintErrorToConsole) {
-        // TODO RadStr: Debug prints
         console.error("The repository could not be removed:", pathToRootMetaFile);
         console.error("The error:", error);
       }

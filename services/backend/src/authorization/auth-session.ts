@@ -15,14 +15,6 @@ export async function currentSession(
   next: NextFunction,
 ) {
   const dsBackendURL = getBaseUrl(request);
-
-  // TODO RadStr: Debug prints
-  // console.info("request.headers.cookie", request.headers.cookie);
-  // console.info("request.headers", request.headers);
-  // console.info("request.url", request.url);
-
-
-  // const callerURL = createURLFromExpressRequest(request);
   const callerURL = request.get("Referer") ?? "";
 
   const basicAuthConfigInstance = createBasicAuthConfig(dsBackendURL)

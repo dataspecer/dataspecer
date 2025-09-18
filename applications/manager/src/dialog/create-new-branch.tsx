@@ -77,16 +77,24 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
     resolve(null);
   };
 
+  const modalTitle = actionOnConfirm === BranchAction.CreateNewBranch ?
+    `Create new branch in project (Project name: ${sourcePackage.projectIri})` :
+    `Set name for branch to be created from static commit`;
+
+  const modalDescription = actionOnConfirm === BranchAction.CreateNewBranch ?
+    `On confirm creates new package, which is copy of the source package and has branch set to given name` :
+    `On confirm sets branch of chosen package`;
+
   return (
     <Modal open={isOpen} onClose={() => resolve(null)}>
-      <ModalHeader>
-        <ModalTitle>Create new branch in project (Project name: {sourcePackage.projectIri})</ModalTitle>
-        <ModalDescription>
-          TODO RadStr: Set Modal description
-        </ModalDescription>
-      </ModalHeader>
         <ModalContent>
+          <ModalHeader>
+            <ModalTitle>{modalTitle}</ModalTitle>
+            <ModalDescription>{modalDescription}</ModalDescription>
+          </ModalHeader>
+
           <InputComponent idPrefix={idPrefix} idSuffix={0} label="Set branch name" input={branch} setInput={createSetterWithGitValidation(setBranch)} />
+
           <ModalFooter>
             <Button variant="outline" onClick={handleDialogCloseWithoutSave}>Close</Button>
             <Button variant="outline" onClick={handleDialogSave}>Confirm</Button>

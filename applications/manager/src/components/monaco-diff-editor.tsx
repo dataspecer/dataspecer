@@ -30,7 +30,6 @@ export const MonacoDiffEditor: FC<{
       beforeMount={handleEditorWillMount}
 
       options={{
-        glyphMargin: true,       // TODO RadStr: Have to enable if we want to show something next the line numbers ... however that was just for testing of possibilities
         minimap: {
           enabled: false
         },

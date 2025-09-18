@@ -20,12 +20,11 @@ export const useLogin = (): UseLoginType => {
 
     useEffect(() => {
       fetch(import.meta.env.VITE_BACKEND + "/auth/session", {
-        credentials: "include",         // TODO RadStr: Important, without this we don't send the authorization cookies
+        credentials: "include",         // Important, without this we don't send the authorization cookies
         method: "GET",
       })
         .then((res) => res.json())
         .then((data) => {
-          console.info("data", data);   // TODO RadStr: Debug
           if (data !== null) {
             setUsername(data.user.name);
             setUserEmail(data.user.email);
@@ -39,7 +38,8 @@ export const useLogin = (): UseLoginType => {
           setCanSignIn(true);
         })
         .catch((_error) => {
-          // TODO RadStr: I am not sure if there can be any other error, which can cause this other than the cors errors
+          // I am not sure if there can be any other error,
+          // which can cause this other than the cors errors, so maybe possible TODO: in future
           setCanSignIn(false);
           setIsSignedIn(false);
         });

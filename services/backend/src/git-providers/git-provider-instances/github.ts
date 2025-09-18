@@ -8,7 +8,7 @@ import fs from "fs";
 
 // Using this one since I could not make the ones for nodeJS (one is not using ES modules and the other one seems to be too old and correctly support types)
 import sodium from "libsodium-wrappers-sumo";
-import { CommitReferenceType, createRemoteRepositoryReturnType, CommitterInfo, GitProviderEnum, Scope, WebhookRequestDataProviderIndependent, GitCredentials, AccessToken, AccessTokenType } from "@dataspecer/git";
+import { CommitReferenceType, createRemoteRepositoryReturnType, CommitterInfo, GitProviderEnum, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, AccessToken, AccessTokenType } from "@dataspecer/git";
 import { GitProviderBase } from "../git-provider-base.ts";
 import { resourceModel } from "../../main.ts";
 import { createLinksForFiles, gitProviderDomains } from "../git-provider-factory.ts";
@@ -47,7 +47,7 @@ export class GitHubProvider extends GitProviderBase {
     // EMPTY - GitHub has only one domain
   }
 
-  async extractDataForWebhookProcessing(webhookPayload: any): Promise<WebhookRequestDataProviderIndependent | null> {
+  async extractDataForWebhookProcessing(webhookPayload: any): Promise<WebhookRequestDataGitProviderIndependent | null> {
     // https://docs.github.com/en/webhooks/webhook-events-and-payloads#push
 
     // TODO RadStr: Taking more data since I might use some of them in future

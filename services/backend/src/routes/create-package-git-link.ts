@@ -57,12 +57,9 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
   for (const patAccessToken of patAccessTokens) {
     try {
       const repositoryUserName = convertToValidGitName(query.givenUserName.length === 0 ? sessionUserName : query.givenUserName);
-
       const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
       const repoName = convertToValidGitName(query.givenRepositoryName);
-
       const fullLinkedGitRepositoryURL = gitProvider.createGitRepositoryURL(repositoryUserName, repoName);
-      console.info("TODO RadStr: Debug gitProvider", { gitProvider, fullLinkedGitRepositoryURL });
 
       const isUserRepo = stringToBoolean(query.isUserRepo);
       if (isUserRepo) {
@@ -74,10 +71,6 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
       }
 
       const { defaultBranch } = await gitProvider.createRemoteRepository(patAccessToken.value, repositoryUserName, repoName, isUserRepo);
-      // TODO RadStr: Debug print ... for some reason there is max 10 repositories limit on school gitlab (idk if it is for creations a day or something)
-      // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
-      // console.info({createRemoteRepositoryResult});
-
       const createPublicationRepositoryResult = await gitProvider.createPublicationRepository(repoName + "-publication-repo", isUserRepo, repositoryUserName, patAccessToken.value);
 
       // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
@@ -90,8 +83,6 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
       }
       else {
         const setRepositorySecretResult = await gitProvider.setRepositorySecret(repositoryUserName, repoName, patAccessToken.value, "BOT_PAT_TOKEN", botAccessToken.value);
-        // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
-        // console.info({setRepositorySecretResult});
       }
 
 

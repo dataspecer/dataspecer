@@ -256,7 +256,6 @@ export class ResourceModel {
             throw new Error("Updating lastCommitHash to invalid hash, is not of length 40 or 0");        // TODO RadStr: maybe better error handling
         }
 
-        const resource = await this.prismaClient.resource.findFirst({where: {iri}});        // TODO RadStr: Why am I looking for resource
         await this.prismaClient.resource.update({
             where: {iri},
             data: {
@@ -341,7 +340,6 @@ export class ResourceModel {
      * Updates {@link projectIri} and {@link branch} if given for resource identified by {@link iri}. If not given the previous value is kept.
      */
     async updateResourceProjectIriAndBranch(iri: string, projectIri?: string, branch?: string) {
-        const resource = await this.prismaClient.resource.findFirst({where: {iri}});        // TODO RadStr: Why am I looking for resource
         await this.prismaClient.resource.update({
             where: {iri},
             data: {
@@ -354,7 +352,6 @@ export class ResourceModel {
     }
 
     async updateMergeData(iri: string, mergeFromHash: string, mergeFromBranch: string) {
-        const resource = await this.prismaClient.resource.findFirst({where: {iri}});        // TODO RadStr: Why am I looking for resource
         await this.prismaClient.resource.update({
             where: {iri},
             data: {
@@ -367,7 +364,6 @@ export class ResourceModel {
 
 
     async updateRepresentsBranchHead(iri: string, commitReferenceType: CommitReferenceType) {
-        const resource = await this.prismaClient.resource.findFirst({where: {iri}});        // TODO RadStr: Why am I looking for resource
         await this.prismaClient.resource.update({
             where: {iri},
             data: {
@@ -378,7 +374,6 @@ export class ResourceModel {
     }
 
     async updateIsSynchronizedWithRemote(iri: string, isSynchronizedWithRemote: boolean) {
-        const resource = await this.prismaClient.resource.findFirst({where: {iri}});        // TODO RadStr: Why am I looking for resource
         await this.prismaClient.resource.update({
             where: {iri},
             data: {

@@ -49,7 +49,7 @@ export enum GitProviderEnum {
  * TODO RadStr: Also the repoName/iri might not be needed in future
  */
 
-export type WebhookRequestDataProviderIndependent = {
+export type WebhookRequestDataGitProviderIndependent = {
   cloneURL: string;
   commits: object[];
   repoName: string;
@@ -114,7 +114,7 @@ export interface GitProvider {
    * @param request is the original data from request as it came in webhook converted to JSON.
    * @returns Returns null if new branch was added to git, but the branch does not have equivalent in the DS.
    */
-  extractDataForWebhookProcessing(webhookPayload: any): Promise<WebhookRequestDataProviderIndependent | null>;
+  extractDataForWebhookProcessing(webhookPayload: any): Promise<WebhookRequestDataGitProviderIndependent | null>;
 
   // TODO RadStr: Maybe everywhere use repository instead of repositoryUserName
   /**

@@ -16,8 +16,6 @@ type WebhookRequestProviderSpecificData = {
 
 export abstract class GitProviderFactory {
   static createGitProviderFromWebhookRequest(request: express.Request): WebhookRequestProviderSpecificData {
-    // TODO RadStr: Debug print
-    // console.info("Request body", request.body);
     if (request.body !== undefined && request.body.payload === undefined) {
       return {
         gitProvider: new GitLabProvider(),

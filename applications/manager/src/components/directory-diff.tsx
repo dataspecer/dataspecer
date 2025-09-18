@@ -16,8 +16,6 @@ type RenderNode = {
   dataSourceType: DataSourceRenderType;
   children?: RenderNode[];
   datastores: RenderNode[];
-  reactElementToRender?: React.ReactNode;
-  isReactElementToRenderRenderedAsSelected?: boolean;
   fullDatastoreInfoInOriginalTree: DatastoreInfo | null;      // TODO RadStr: For now keep together with the ResourceName stuff - but in te end only DatastoreInfo will be enough
   fullDatastoreInfoInModifiedTree: DatastoreInfo | null;
   /**
@@ -459,10 +457,6 @@ function StyledNode({
       </div>
     </>);
 
-
-  // TODO RadStr: Remove this react element optimization
-  node.data.reactElementToRender = styledNode;
-  node.data.isReactElementToRenderRenderedAsSelected = node.isSelected;
   return styledNode;
 }
 
@@ -473,10 +467,7 @@ async function fetchTreeData(rootIri: string) {
     const fetchResult = await fetch(`${import.meta.env.VITE_BACKEND}/dataspecer-package-tree?iri=${rootIri}`, {
       method: "GET",
     });
-    console.info("fetched data", fetchResult);   // TODO RadStr: Debug
     const fetchResultAsJson = await fetchResult.json();
-    console.info("fetched data as json", fetchResultAsJson);   // TODO RadStr: Debug
-
     return fetchResultAsJson;
   }
   catch(error) {
@@ -496,13 +487,6 @@ const createStyledNode = (
   allConficts: ComparisonData[],
   setConflictsToBeResolvedOnSave: (value: React.SetStateAction<ComparisonData[]>) => void,
 ) => {
-  // TODO RadStr: Don't do this can possibly introduce problems and actually does not improve performance - just remove
-  // const nodeData = props.node.data;
-  // if (useCachedStyledNode && props.node.data.reactElementToRender !== undefined && (nodeData.isReactElementToRenderRenderedAsSelected === props.node.isSelected)) {
-  //   const cachedReactElementToRender = nodeData.reactElementToRender;
-  //   return cachedReactElementToRender;
-  // }
-
   const extendedProps: NodeRendererProps<RenderNodeWithAdditionalData> = props as any;
   extendedProps.node.data.changeActiveModel = changeActiveModelData;
   extendedProps.node.data.shouldShowConflicts = shouldShowConflicts;
@@ -778,45 +762,22 @@ export const DiffTreeVisualization = (props: {
     const fetchTrees = async () => {
       props.setIsLoadingTreeStructure(true);
 
-      const fetchedMergeState = mergeStateFromBackend;      // TODO RadStr: This is just rename for the old code, that is remove this line of code later
-      if (fetchedMergeState === null) {
+      if (mergeStateFromBackend === null) {
         return;
       }
-      const fetchedDiffTree = fetchedMergeState.diffTreeData!.diffTree;
-      const fetchedDiffTreeSize = fetchedMergeState.diffTreeData!.diffTreeSize;
+      const fetchedDiffTree = mergeStateFromBackend.diffTreeData!.diffTree;
+      const fetchedDiffTreeSize = mergeStateFromBackend.diffTreeData!.diffTreeSize;
       // TODO RadStr: Probably also add the option to make resource again in conflict ... but will it anyone ever use though?
-      const fetchedUnresolvedConflicts = fetchedMergeState.unresolvedConflicts ?? [];
-      const fetchedConflicts = fetchedMergeState.conflicts ?? [];
+      const fetchedUnresolvedConflicts = mergeStateFromBackend.unresolvedConflicts ?? [];
+      const fetchedConflicts = mergeStateFromBackend.conflicts ?? [];
       setDiffTree(fetchedDiffTree);
       setDiffTreeNodeCount(fetchedDiffTreeSize);
       console.info({ fetchedDiffTree });
 
-      const { oldRenderTree: computedOldRenderTree, newRenderTree: computedNewRenderTree } = createTreeRepresentationsForRendering(fetchedConflicts, fetchedUnresolvedConflicts, fetchedDiffTree, fetchedMergeState.editable);
+      const { oldRenderTree: computedOldRenderTree, newRenderTree: computedNewRenderTree } = createTreeRepresentationsForRendering(fetchedConflicts, fetchedUnresolvedConflicts, fetchedDiffTree, mergeStateFromBackend.editable);
       console.info({ computedOldRenderTree, computedNewRenderTree } );     // TODO RadStr: Debug print
       setOldRenderTree(computedOldRenderTree);
       setNewRenderTree(computedNewRenderTree);
-
-
-
-      // TODO RadStr: Old version ... remove after the diff editor is finished
-      // const fetchedOldFilesystemMap = await fetchTreeData(props.originalDataResourceNameInfo.resourceIri);
-      // const fetchedNewFilesystemMap = await fetchTreeData(props.modifiedDataResourceNameInfo.resourceIri);
-      // console.info({ fetchedOldFilesystemMap, fetchedNewFilesystemMap });       // TODO RadStr: Debug print
-
-      // const root1 = fetchedOldFilesystemMap[""];
-      // const root2 = fetchedNewFilesystemMap[""];
-
-      // const filesystemMockup = new FilesystemAbstractionMockupImplmentation();
-      // const [computedDiffTree, computedDiffTreeSize] = await compareFiletrees(filesystemMockup, root1.name, root1, fetchedOldFilesystemMap,
-      //                                                           filesystemMockup, root2.name, root2, fetchedNewFilesystemMap);
-      // setDiffTree(computedDiffTree);
-      // setDiffTreeNodeCount(computedDiffTreeSize);
-      // console.info({computedDiffTree});
-
-      // const { oldRenderTree: computedOldRenderTree, newRenderTree: computedNewRenderTree } = createTreeRepresentationsForRendering(computedDiffTree);
-      // console.info({ computedOldRenderTree, computedNewRenderTree } );     // TODO RadStr: Deug print
-      // setOldRenderTree(computedOldRenderTree);
-      // setNewRenderTree(computedNewRenderTree);
 
       props.setIsLoadingTreeStructure(false);
     }
@@ -859,8 +820,6 @@ export const DiffTreeVisualization = (props: {
                   onFocus={(node) => onNodeFocus(node, "old")}
                   onToggle={(id: string) => onNodeToggle(id, "old")}
                   rowHeight={treeRowHeight} height={treeRowHeight*treeRowHeightMultiplier} openByDefault>
-              {/* TODO RadStr: Remove the StyledNode from here ... it is the same as putting it in children prop */}
-              {/* {StyledNode} */}
             </Tree>)
         }
       </div>
@@ -874,8 +833,6 @@ export const DiffTreeVisualization = (props: {
                   onFocus={(node) => onNodeFocus(node, "new")}
                   onToggle={(id: string) => onNodeToggle(id, "new")}
                   rowHeight={treeRowHeight} height={treeRowHeight*treeRowHeightMultiplier} openByDefault>
-              {/* TODO RadStr: Remove the StyledNode from here ... it is the same as putting it in children prop */}
-              {/* {StyledNode} */}
             </Tree>)
         }
       </div>

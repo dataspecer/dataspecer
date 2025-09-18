@@ -229,7 +229,7 @@ export const commitPackageToGit = async (
 
 
       if (!hasSetLastCommit) {
-        createReadmeFile(gitInitialDirectory, readmeData);      // TODO RadStr: Again - should be done only in the initial commit
+        createReadmeFile(gitInitialDirectory, readmeData);
         gitProvider.copyWorkflowFiles(gitInitialDirectory);
       }
     }
@@ -342,11 +342,7 @@ async function commitGivenFilesToGit(
   committerName: string,
   committerEmail: string,
 ) {
-  // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
-  // console.info("Commit status before: ", await git.status());
   await git.add(files);
-  // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
-  // console.info("Commit status after: ", await git.status());
   const committerNameToUse = committerName;
   const committerEmailToUse = committerEmail;
   await git.addConfig("user.name", committerNameToUse);
@@ -354,70 +350,4 @@ async function commitGivenFilesToGit(
 
   // We should already be on the correct branch
   return await git.commit(commitMessage);
-}
-
-
-/**
- * @deprecated Can be safely removed - It was Replaced by new implementation of PackageExporter using resource types (also implemented the variant without types)
- */
-export class PackageExporterToFileSystem {
-  resourceModel: ResourceModel;
-
-  constructor(resourceModel: ResourceModel) {
-    this.resourceModel = resourceModel;
-  }
-
-  async doExport(iri: string, startDirectory: string): Promise<void> {
-    await this.exportResource(iri, "", startDirectory);
-  }
-
-  // TODO: Added startDirectory but it is not nice - since startDirectory is something which has purpose only on the first call and not in the subsequent recursive ones.
-  private async exportResource(iri: string, path: string, startDirectory: string) {
-    const resource = (await this.resourceModel.getResource(iri))!;
-
-    let localNameCandidate = iri;
-    if (iri.startsWith(path)) {
-      localNameCandidate = iri.slice(path.length);
-    }
-    if (localNameCandidate.includes("/") || localNameCandidate.length === 0) {
-      localNameCandidate = uuidv4();
-    }
-    let fullName = startDirectory + path + localNameCandidate;
-
-    console.info("resource.types.includes(LOCAL_PACKAGE)", resource, iri, startDirectory);
-    if (resource.types.includes(LOCAL_PACKAGE)) {
-      if(!fs.existsSync(fullName)) {
-        console.info("Creating directory: ", fullName);
-        fs.mkdirSync(fullName);
-      }
-      fullName += "/"; // Create directory
-
-      const pckg = (await this.resourceModel.getPackage(iri))!;
-
-      for (const subResource of pckg.subResources) {
-        await this.exportResource(subResource.iri, fullName, "");
-      }
-    }
-
-    const metadata = DSFilesystem.constructMetadataFromResource(resource);
-    this.writeBlob(fullName, "meta", metadata);
-
-    for (const [blobName, storeId] of Object.entries(resource.dataStores)) {
-      const data = await this.resourceModel.storeModel.getModelStore(storeId).getJson();
-      const yamlData = YAML.stringify(data);
-      // TODO RadStr: Commented code - remove later
-      this.writeBlob(fullName, blobName, data);
-      // this.writeYAMLBlob(fullName, blobName, yamlData);
-    }
-  }
-
-  private writeBlob(iri: string, blobName: string, data: object) {
-    const fullpath = iri + "." + blobName + ".json";
-    fs.writeFileSync(fullpath, JSON.stringify(data));
-  }
-
-  private writeYAMLBlob(iri: string, blobName: string, yaml: string) {
-    const fullpath = iri + "." + blobName + ".yaml";
-    fs.writeFileSync(fullpath, yaml);
-  }
 }

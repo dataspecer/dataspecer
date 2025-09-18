@@ -36,12 +36,6 @@ export type DatastoreInfo = {
   fullPath: string;
 }
 
-/**
- * Mapping the path to the data structure, which can be easily exported.
- * @deprecated TODO RadStr: just write out the type explicitly
- */
-export type ExportDictionary = Record<string, DatastructureToExport>;
-
 export type MetadataCacheType = {
   iri?: string;
   projectIri?: string;
@@ -56,13 +50,6 @@ type DatastructureToExport = {
   fullTreePath: string,   // TODO RadStr: We can get it recursively, if we need to (by visiting parents and concating the names). So we don't have to store it.
   extraData?: object  // TODO RadStr: Maybe use later.
 };
-
-// TODO Radstr: Does not represent the root in the same way as rest
-// export type FilesystemMappingType = {
-//   directories: Record<string, FilesystemMappingType>,
-//   files: Record<string, DatastructureToExport>,
-// } & DatastructureToExport;
-
 
 export type FileNode = {
   type: "file";

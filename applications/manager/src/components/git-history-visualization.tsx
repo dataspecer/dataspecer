@@ -1,4 +1,4 @@
-// TODO RadStr: Taken from https://github.com/nicoespeon/gitgraph.js/tree/master/packages/gitgraph-react
+// Inspired by https://github.com/nicoespeon/gitgraph.js/tree/master/packages/gitgraph-react
 
 // Use this as a reference https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-5-templates--without-commit-author
 
@@ -6,7 +6,7 @@ import { BetterModalProps, OpenBetterModal, useBetterModal } from "@/lib/better-
 import { Gitgraph, templateExtend, TemplateName } from "@gitgraph/react";
 import { Modal, ModalBody, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "./modal";
 import { Button } from "./ui/button";
-import { useLayoutEffect, useState } from "react";
+import React, { useLayoutEffect, useState } from "react";
 import { BaseResource, Package } from "@dataspecer/core-v2/project";
 import { CommitActionsDialog } from "@/dialog/git-commit-actions-dialog";
 import { Loader } from "lucide-react";
@@ -72,7 +72,7 @@ type GitHistoryVisualizationProps = {
 /**
  * @returns The hash of commit mapped to branches, which it is part of. And the commit hash mapped to the commit
  */
-// TODO RadStr: Ignore for now, I might use it in future
+// TODO RadStr: Ignore for now, might use it in future for better implementation of import git log to gitGraph
 // @ts-ignore
 function mapCommitsToBranches(gitHistory: GitHistory): {
   commitToBranchesMap: Record<string, string[]>,
@@ -139,7 +139,7 @@ function getUniqueCommits(commitToBranchesMap: Record<string, string[]>, hashToC
 
 function createGitToPackagesForProjectMapping(rootPackages: BaseResource[] | undefined) {
   // Create all the ds package for the current project, so we can visualize them on the client compared to the git ones
-  // TODO RadStr: ... Allow only one branch? I mean to me it makes sense, why would you want to have the same branch multiple times in DS, just create new one going from the head, if you want it
+  // Allow only one branch? I mean to me it makes sense, why would you want to have the same branch multiple times in DS, just create new one going from the head, if you want it
   const dsPackagesInProjectForBranches: Record<string, DSPackageInProjectVisualizationData> = {};          // Maps the branch name to the package in the project
   const dsPackagesInProjectForNonBranches: Record<string, DSPackageInProjectVisualizationData[]> = {};     // Maps the last commit hash to all ds packages, which are non-branches and have that last commit hash
   const dsPackagesInProjectForAll: Record<string, DSPackageInProjectVisualizationData[]> = {};             // Maps the last commit hash to all ds packages, which have that last commit hash
@@ -179,11 +179,9 @@ function createGitToPackagesForProjectMapping(rootPackages: BaseResource[] | und
 
 
 export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allResources }: GitHistoryVisualizationProps) => {
-  // TODO RadStr: Should be JSX.element not ANY
-  // TODO RadStr: For some reason I have to put the gitgraph component into component stored in variable,
+  // For some reason I have to put the gitgraph component into component stored in variable,
   // if I put it inside the JSX tree in this component, it does not update on react change
-
-  const [gitGraphElement, setGitGraphElement] = useState<any | null>(null);
+  const [gitGraphElement, setGitGraphElement] = useState<React.ReactNode | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const openModal = useBetterModal();
 
@@ -206,8 +204,6 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
         })
           .then((res) => res.json())
           .then((data: FetchedGitData) => {
-            console.info("git data", data);   // TODO RadStr: Debug
-
             const convertedCommits = convertFetchedCommitsFormat(data.rawCommits);
 
             const gitGraphTemplate = templateExtend(TemplateName.Metro, {
@@ -255,7 +251,7 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
             Note that you can click on text (or the bubble) to perform further actions.
           </ModalDescription>
         </ModalHeader>
-        <ModalBody className="overflow-y-auto max-h-[60vh]">    {/* TODO RadStr: Needed for the scrolling, the padding (p) so there isn't any part missing */}
+        <ModalBody className="overflow-y-auto max-h-[60vh]">    {/* Needed for the scrolling */}
           {isLoading ?
             <Loader className="mr-2 h-4 w-4 animate-spin" /> :
             gitGraphElement
@@ -286,7 +282,6 @@ const createGitGraph = (
         // TODO RadStr: Not ideal, but it shows, that creating the branch history as it should be is highly non-trivial issue
         //              Also we should add the onClick properties to the objects stored in the "importedGitGraph".
         // TODO RadStr: Maybe try to fix my solution in future - it is better by focusing on the main and old/new branches, but it does not work correctly unfortunately
-        let isFirst = true; // TODO RadStr: Debug variable
         for (const commit of Object.values(commits) as any) {
           // TODO RadStr: remove this - just put from backend only the stuff that is needed instead of deleting
 
@@ -303,14 +298,10 @@ const createGitGraph = (
           delete commit["body"];
           delete commit["notes"];
           delete commit["stats"];
-          if (isFirst) {
-            console.info({commit});
-          }
-          isFirst = false;
-          commit.onClick = (gitGraphCommit: any) => {                        // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-dot-click
+          commit.onClick = (gitGraphCommit: any) => {                        // Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-dot-click
             commitOnClickHandler(openModal, examinedPackage, gitGraphCommit, dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches[gitGraphCommit.hash]);
           };
-          commit.onMessageClick = (gitGraphCommit: any) => {                 // TODO RadStr: Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-message-click
+          commit.onMessageClick = (gitGraphCommit: any) => {                 // Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-message-click
             commitOnClickHandler(openModal, examinedPackage, gitGraphCommit, dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches[gitGraphCommit.hash]);
           };
           if (dsPackagesInProjectForAll[commit.hash] !== undefined) {
@@ -323,7 +314,6 @@ const createGitGraph = (
         // Access private property to get information about branches and commits
         const userApi = gitgraph.import(commits);
 
-        // @ts-ignore
         const coreGraph = (userApi as any)._graph;
         for (const branch of Object.keys(dsPackagesInProjectForBranches)) {
           let branchRender = coreGraph.branches.get(branch);

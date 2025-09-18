@@ -148,13 +148,13 @@ export const OpenMergeState = ({ mergeFrom, mergeTo, editable, isOpen, resolve }
 
   return (
     <Modal open={isOpen} onClose={() => resolve(null)}>
-      <ModalHeader>
-        <ModalTitle>Open merge state</ModalTitle>
-        <ModalDescription>
-          TODO RadStr: Set Modal description
-        </ModalDescription>
-      </ModalHeader>
         <ModalContent>
+        <ModalHeader>
+          <ModalTitle>Perform merge on DS packages</ModalTitle>
+          <ModalDescription>
+            Tries to perform merge from one DS package to another. In case of conflicts creates new merge state, which needs to be resolved
+          </ModalDescription>
+        </ModalHeader>
           { isLoading ? <Loader className="mr-2 h-4 w-4 animate-spin" /> : null }
           { mergeStateCreationFailure ? "There was some failure when fetching/creating merge state, check console for more info." : null }
           { !isLoading && !mergeStateCreationFailure && <div>Root iri merge from: {mergeState?.rootIriMergeFrom}</div> }
