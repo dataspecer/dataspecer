@@ -1,4 +1,7 @@
-import { modifyPackageRepresentsBranchHead, requestLoadPackage } from "@/package";
+import { BranchAction, CreateNewBranchDialog } from "@/dialog/create-new-branch";
+import { OpenBetterModal } from "@/lib/better-modal";
+import { modifyPackageProjectData, modifyPackageRepresentsBranchHead, requestLoadPackage } from "@/package";
+import { Package } from "@dataspecer/core-v2/project";
 import { toast } from "sonner";
 
 // TODO RadStr: Maybe move into package?
@@ -32,9 +35,17 @@ export async function removeGitLinkFromPackage(iri: string) {
 }
 
 // TODO RadStr: Maybe once again put elsewhere, since it is not really a utility function
-export async function switchRepresentsBranchHead(iri: string, isCurrentlyRepresentingBranchHead: boolean) {
-  await modifyPackageRepresentsBranchHead(iri, !isCurrentlyRepresentingBranchHead);
-  await requestLoadPackage(iri, true);
+export async function switchRepresentsBranchHead(examinedPackage: Package, openModal: OpenBetterModal) {
+  const { iri, projectIri, representsBranchHead: isCurrentlyRepresentingBranchHead } = examinedPackage;
+  if (isCurrentlyRepresentingBranchHead) {
+    const lastCommitHash = examinedPackage.lastCommitHash;
+    await modifyPackageRepresentsBranchHead(iri, !isCurrentlyRepresentingBranchHead);
+    await modifyPackageProjectData(iri, projectIri, lastCommitHash);
+    await requestLoadPackage(iri, true);
+  }
+  else {
+    openModal(CreateNewBranchDialog, { sourcePackage: examinedPackage, actionOnConfirm: BranchAction.TurnExistingIntoBranch });
+  }
 }
 
 export function gitOperationResultToast(response: Response) {

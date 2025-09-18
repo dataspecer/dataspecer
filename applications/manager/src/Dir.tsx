@@ -34,7 +34,7 @@ import { gitHistoryVisualizationOnClickHandler } from "./components/git-history-
 import { debugClearMergeStateDBTable, removeGitLinkFromPackage, switchRepresentsBranchHead } from "./utils/utilities";
 import { MergeActorsType, useMergeActors } from "./hooks/use-merge";
 import { setProjectIriAndBranchDialog } from "./dialog/set-projectIRI-and-branch";
-import { CreateNewBranchDialog } from "./dialog/create-new-branch";
+import { BranchAction, CreateNewBranchDialog } from "./dialog/create-new-branch";
 import { manualPull } from "./components/manual-pull";
 import { MergeStatesDialog } from "./dialog/merge-conflict-dialog";
 import { OpenMergeState } from "./dialog/open-merge-state";
@@ -260,10 +260,10 @@ const Row = ({ iri, projectFilter, setProjectFilter, isSignedIn, mergeActors, pa
             {<DropdownMenuItem onClick={async () => linkToExistingGitRepositoryHandler(openModal, iri, resource)}><Link className="mr-2 h-4 w-4" />Link to remote repository</DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => commitToGitDialogOnClickHandler(openModal, iri, resource)}><GitCommit className="mr-2 h-4 w-4" />Commit </DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => manualPull(iri)}><Import className="mr-2 h-4 w-4" />Pull</DropdownMenuItem>}
-            {<DropdownMenuItem onClick={() => openModal(CreateNewBranchDialog, { sourcePackage: resource })}><GitBranchPlus className="mr-2 h-4 w-4" />Create branch</DropdownMenuItem>}
+            {<DropdownMenuItem onClick={() => openModal(CreateNewBranchDialog, { sourcePackage: resource, actionOnConfirm: BranchAction.CreateNewBranch })}><GitBranchPlus className="mr-2 h-4 w-4" />Create branch</DropdownMenuItem>}
             <hr className="border-gray-300" />
             {<DropdownMenuItem onClick={() => openModal(setProjectIriAndBranchDialog, { examinedPackage: resource })}><Pencil className="mr-2 h-4 w-4" />Set project branch and/or project IRI</DropdownMenuItem>}
-            {<DropdownMenuItem onClick={() => switchRepresentsBranchHead(iri, resource.representsBranchHead)}><ArrowLeftRight className="mr-2 h-4 w-4" /> Convert to {resource.representsBranchHead ? "tag" : "branch"}</DropdownMenuItem>}
+            {<DropdownMenuItem onClick={() => switchRepresentsBranchHead(resource, openModal)}><ArrowLeftRight className="mr-2 h-4 w-4" /> Convert to {resource.representsBranchHead ? "tag" : "branch"}</DropdownMenuItem>}
             <hr className="border-gray-300" />
             {<DropdownMenuItem onClick={() => openModal(MergeStatesDialog, { iri })}><EyeIcon className="mr-2 h-4 w-4" /> Show merge states</DropdownMenuItem>}
             {<DropdownMenuItem onClick={() => setProjectFilter(resource.projectIri)}><Filter className="mr-2 h-4 w-4" />Filter projects</DropdownMenuItem>}

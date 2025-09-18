@@ -3,12 +3,18 @@ import { useContext, useLayoutEffect, useState } from "react";
 import { Package } from "@dataspecer/core-v2/project";
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
-import { modifyPackageProjectData, packageService, requestLoadPackage, ResourcesContext } from "@/package";
+import { modifyPackageProjectData, modifyPackageRepresentsBranchHead, packageService, requestLoadPackage, ResourcesContext } from "@/package";
 import { createIdentifierForHTMLElement, InputComponent } from "@/components/simple-input-component";
 import { toast } from "sonner";
 
-type SetProjectIriAndBranchDialogProps = {
+export enum BranchAction {
+  CreateNewBranch,
+  TurnExistingIntoBranch,
+}
+
+type CreateBranchDialogProps = {
   sourcePackage: Package,
+  actionOnConfirm: BranchAction,
 } & BetterModalProps<{
   newBranch: string,
 } | null>;
@@ -18,7 +24,7 @@ const idPrefix = "createNewbranch";
 const rootURL = "http://dataspecer.com/packages/local-root";
 
 
-export const CreateNewBranchDialog = ({ sourcePackage, isOpen, resolve }: SetProjectIriAndBranchDialogProps) => {
+export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, resolve }: CreateBranchDialogProps) => {
   const [branch, setBranch] = useState<string>(sourcePackage.branch);
 
   useLayoutEffect(() => {
@@ -48,14 +54,22 @@ export const CreateNewBranchDialog = ({ sourcePackage, isOpen, resolve }: SetPro
       return;
     }
 
-    const response = await packageService.copyRecursively(sourcePackage.iri, rootURL);
-    console.info("Created resource response:", { response });
-    const newRootIri: string | undefined = response?.newRootIri;
-    if (newRootIri === undefined) {
-      return;
+    let response: any;
+    if (actionOnConfirm === BranchAction.CreateNewBranch) {
+      response = await packageService.copyRecursively(sourcePackage.iri, rootURL);
+      console.info("Created resource response:", { response });
+      const newRootIri: string | undefined = response?.newRootIri;
+      if (newRootIri === undefined) {
+        return;
+      }
+      await modifyPackageProjectData(newRootIri, sourcePackage.projectIri, branch);
+      await requestLoadPackage(rootURL, true);
     }
-    await modifyPackageProjectData(newRootIri, sourcePackage.projectIri, branch);
-    await requestLoadPackage(rootURL, true);
+    else {
+      response = await modifyPackageRepresentsBranchHead(sourcePackage.iri, !sourcePackage.representsBranchHead);
+      await modifyPackageProjectData(sourcePackage.iri, sourcePackage.projectIri, branch);
+      await requestLoadPackage(sourcePackage.iri, true);
+    }
     resolve({ newBranch: branch, });
   };
   const handleDialogCloseWithoutSave = () => {
