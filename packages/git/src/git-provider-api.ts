@@ -218,7 +218,7 @@ export interface GitProvider {
    *  (which can be found by querying the REST endpoint for the repository,
    *    at least in github case or by cloning the repository and checking on which branch we end up). and the {@link fallbackToDefaultBranch} is set to true in such case.
    */
-  getCommitReferenceValue(repoURL: string, commitReferenceType: CommitReferenceType): Promise<ExtractedCommitReferenceValueFromRepositoryURL>;
+  extractCommitReferenceValue(repoURL: string, commitReferenceType: CommitReferenceType): Promise<ExtractedCommitReferenceValueFromRepositoryURL>;
 
   /**
    * Note that this method has default implementation in {@link GitProviderBase}.

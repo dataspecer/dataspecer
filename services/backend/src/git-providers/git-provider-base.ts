@@ -88,7 +88,7 @@ export abstract class GitProviderBase implements GitProvider {
       throw new Error(`Could not extract repoName from given ${repositoryUrl}`);
     }
     if (commitReferenceValue === null) {
-      commitReferenceValue = (await this.getCommitReferenceValue(repositoryUrl, commitReferenceType)).commitReferenceValue;
+      commitReferenceValue = (await this.extractCommitReferenceValue(repositoryUrl, commitReferenceType)).commitReferenceValue;
     }
 
     return this.getLastCommitHash(userName, repoName, commitReferenceValue ?? undefined, commitReferenceType === "commit");
@@ -101,7 +101,10 @@ export abstract class GitProviderBase implements GitProvider {
    */
   protected abstract extractCommitReferenceValueFromRepositoryURLSplit(repositoryURLSplit: string[], commitReferenceType: CommitReferenceType): string | null;
 
-  async getCommitReferenceValue(repositoryURL: string, commitReferenceType: CommitReferenceType): Promise<ExtractedCommitReferenceValueFromRepositoryURL> {
+  async extractCommitReferenceValue(
+    repositoryURL: string,
+    commitReferenceType: CommitReferenceType
+  ): Promise<ExtractedCommitReferenceValueFromRepositoryURL> {
     const commitReferenceValue = this.extractPartOfRepositoryURL(repositoryURL, commitReferenceType);
 
     if (commitReferenceValue === null) {
@@ -150,7 +153,7 @@ export abstract class GitProviderBase implements GitProvider {
   async convertRepoURLToDownloadZipURL(repositoryURL: string, commitReferenceType: CommitReferenceType): Promise<ConvertRepoURLToDownloadZipURLReturnType> {
     const repo = this.extractPartOfRepositoryURL(repositoryURL, "repository-name");
     const owner = this.extractPartOfRepositoryURL(repositoryURL, "user-name");     // TODO RadStr: Rename user to owner everywhere
-    const commitReferenceValueInfo = await this.getCommitReferenceValue(repositoryURL, commitReferenceType);
+    const commitReferenceValueInfo = await this.extractCommitReferenceValue(repositoryURL, commitReferenceType);
 
     if (owner === null) {
       throw new Error(`Could not extract the owner (${owner}) from ${repositoryURL}`);

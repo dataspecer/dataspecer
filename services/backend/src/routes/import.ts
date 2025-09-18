@@ -437,11 +437,7 @@ export async function importFromGitUrl(repositoryURL: string, commitReferenceTyp
 
 
   const importer = new PackageImporter(resourceModel);
-
-  const commitReferenceValue =  gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue;
-  const rootIriSuffix = commitReferenceValue === null ? "" : `-${commitReferenceValue}`;
-
-  const imported = await importer.doImport(zipBuffer, rootIriSuffix);
+  const imported = await importer.doImport(zipBuffer, true);
 
   if (imported.length > 0) {
     await updateGitRelatedDataForPackage(imported[0], gitProvider, repositoryURL, gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue, commitReferenceType);

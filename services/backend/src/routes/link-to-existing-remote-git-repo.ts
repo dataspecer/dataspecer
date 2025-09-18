@@ -15,7 +15,7 @@ export const linkToExistingGitRepository = asyncHandler(async (request: express.
   const { iri, repositoryURL } = querySchema.parse(request.query);
   const gitProvider: GitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(repositoryURL);
   const commitReferenceType: CommitReferenceType = "branch";
-  const commitReferenceValue = (await gitProvider.getCommitReferenceValue(repositoryURL, commitReferenceType)).commitReferenceValue;
+  const commitReferenceValue = (await gitProvider.extractCommitReferenceValue(repositoryURL, commitReferenceType)).commitReferenceValue;
   await updateGitRelatedDataForPackage(iri, gitProvider, repositoryURL, commitReferenceValue, commitReferenceType);
   // Ok, I think that if there was some failure, then it caused error and errors are handled by asyncHandler.
   response.sendStatus(200);
@@ -39,4 +39,10 @@ export const updateGitRelatedDataForPackage = async (
 
   // If undefined just assume that it is reference to commit, so if it is not user have to explictly switch it to branch
   resourceModel.updateRepresentsBranchHead(iri, commitReferenceType ?? "commit");
+  if (commitReferenceType === "branch") {
+    resourceModel.updateResourceProjectIriAndBranch(
+      iri,
+      undefined,
+      commitReferenceValue ?? undefined);
+  }
 };

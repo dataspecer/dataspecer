@@ -711,7 +711,7 @@ async function generateSpecificationFromFileSystem() {
   // fs.writeFileSync(`test-debug-zip-file/zip-soubor.zip`, zipDataFromFilesystem);
 
   const importer = new PackageImporter(resourceModel);
-  const imported = await importer.doImport(zipDataFromFilesystem);
+  const imported = await importer.doImport(zipDataFromFilesystem, false);
 
   await generateArtifactsFromImported(imported);
   process.exit(0);

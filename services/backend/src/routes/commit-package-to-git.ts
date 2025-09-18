@@ -184,7 +184,6 @@ export const commitPackageToGit = async (
       try {
         const remoteRepositoryLastCommitHash = await getLastCommitHash(git);
         const shouldTryCreateMergeState = localLastCommitHash !== remoteRepositoryLastCommitHash;
-        const commonCommitHash = await getCommonCommitInHistory(git, localLastCommitHash, remoteRepositoryLastCommitHash);
         if (shouldTryCreateMergeState) {
           const {
             diffTreeComparisonResult,
@@ -196,6 +195,7 @@ export const commitPackageToGit = async (
             filesystemMergeTo,
           } = await compareGitAndDSFilesystems(gitProvider, iri, gitInitialDirectoryParent, "push");
 
+          const commonCommitHash = await getCommonCommitInHistory(git, localLastCommitHash, remoteRepositoryLastCommitHash);
           const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS("push", localLastCommitHash, remoteRepositoryLastCommitHash);
           const createdMergeStateId = mergeStateModel.createMergeStateIfNecessary(
             iri, "push", diffTreeComparisonResult,

@@ -1,6 +1,7 @@
 import JSZip from "jszip";
 import { ResourceModel } from "../models/resource-model.ts";
 import { isArtificialExportDirectory } from "./export.ts";
+import { v4 as uuidv4 } from "uuid";
 
 
 const FILE_EXTENSION_REGEX = /^\.([-0-9a-zA-Z]+)\.json$/;
@@ -18,8 +19,8 @@ export class PackageImporter {
   private rootToWrite = "http://dataspecer.com/packages/local-root";
   private inputPathsToCanonicalMapping!: Record<string, string>;    // TODO RadStr: Hack with ! - Also I am not sure what should be instance methods and what not when it comes to creation of the mapping
   private canonicalPathsToInputMapping!: Record<string, string>;    // TODO RadStr: Hack with ! - Also I am not sure what should be instance methods and what not when it comes to creation of the mapping
-  private resourcesIriSuffix: string = "";
   private shouldGenerateNewIris!: boolean;
+  private mapToNewIds!: Record<string, string>;
 
   constructor(resourceModel: ResourceModel) {
     this.resourceModel = resourceModel;
@@ -102,10 +103,10 @@ export class PackageImporter {
     }
   }
 
-  async doImport(buffer: Buffer, resourcesIriSuffix?: string): Promise<string[]> {
-    this.shouldGenerateNewIris = resourcesIriSuffix === undefined ? false : true;
-    this.resourcesIriSuffix = resourcesIriSuffix ?? "";
+  async doImport(buffer: Buffer, shouldGenerateNewIris: boolean): Promise<string[]> {
+    this.shouldGenerateNewIris = shouldGenerateNewIris;
     this.zip = new JSZip();
+    this.mapToNewIds = {};
     await this.zip.loadAsync(buffer);
 
     const files = Object.keys(this.zip.files);
@@ -160,7 +161,8 @@ export class PackageImporter {
     const metaFile = await this.zip.file(metaFileNameOnInput)!.async("text");
     const meta = JSON.parse(metaFile);
 
-    const thisPackageIri = meta.iri + this.resourcesIriSuffix;
+    const thisPackageIri: string = this.createNewIdForResource(meta.iri);
+
     await this.resourceModel.createPackage(parentPackageIri, thisPackageIri, meta.userMetadata, meta.projectIri);
     await this.setBlobsForResource(canonicalDirPath, thisPackageIri);
 
@@ -195,7 +197,7 @@ export class PackageImporter {
     const metaFile = await this.zip.file(metaFileNameOnInput)!.async("text");
     const meta = JSON.parse(metaFile);
 
-    const thisResourceIri = meta.iri + this.resourcesIriSuffix;
+    const thisResourceIri = this.createNewIdForResource(meta.iri);
     await this.resourceModel.createResource(parentPackageIri, thisResourceIri, meta.types[0], meta.userMetadata, meta.projectIri);
     await this.setBlobsForResource(canonicalDirPath, thisResourceIri);
   }
@@ -231,5 +233,23 @@ export class PackageImporter {
         await store.setJson(blobJson);
       }
     }
+  }
+
+  /**
+   * @returns The originalIri if we should not generate new iris, otherwise creates new one and sets the {@link mapToNewIds}.
+   */
+  private createNewIdForResource(originalIri: string) {
+    let thisPackageIri: string;
+
+    if (this.shouldGenerateNewIris) {
+      const newId = uuidv4();
+      this.mapToNewIds[originalIri] = newId;
+      thisPackageIri = newId;
+    }
+    else {
+      thisPackageIri = originalIri;
+    }
+
+    return thisPackageIri;
   }
 }

@@ -46,7 +46,7 @@ export const importPackageResource = asyncHandler(async (request: express.Reques
   const file = request.file!.buffer;
 
   const importer = new PackageImporter(resourceModel);
-  const imported = await importer.doImport(file);
+  const imported = await importer.doImport(file, false);
 
   response.send(await Promise.all(imported.map(iri => resourceModel.getPackage(iri))));
 });
