@@ -113,12 +113,12 @@ export const GitDialog = ({ input: defaultInput, inputPackage, isOpen, resolve, 
             className="w-5 h-5 border-gray-400 text-blue-600 focus:ring-blue-500"
           />
           <span className="text-gray-800">Is user repo (if not checked it is organization repo)</span>
-      </label>
+        </label>
       </div>;
       break;
     case "commit":
       modalBody = <div>
-        <InputComponent disabled={shouldDisableConfirm} idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="The commit message for git" setInput={setCommitMessage} input={commitMessage} />;
+        <InputComponent disabled={shouldDisableConfirm} idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="The commit message for git" setInput={setCommitMessage} input={commitMessage} />
         <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
         </div>
       break;

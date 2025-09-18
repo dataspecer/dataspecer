@@ -73,7 +73,9 @@ export const CommitActionsDialog = ({ examinedPackage, branch, commitHash, branc
             <br/>
             {branchAlreadyExistsInDS ?
               <div>
-                Note that branch already exists inside DS, so we can not create new one. If you want one you have to first create new branch with new name
+                <p>Note that <strong>branch already exists</strong> inside DS, so we can not create new one. Technically we could, but it is disabled for your own good. (Desynchronization issues, working on wrong DS package, etc.)
+                <br/>
+                If you want one you can do that by importing commit and then turning the commit into branch with new name. Or just click on create branch in the git menu.</p>
                 <br/>
                 <br/>
               </div> :
