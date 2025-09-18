@@ -65,6 +65,8 @@ model Resource {
   // It does not matter, since we don't commit the hash into Git (at least not yet), but it should be noted anyways.
   // Also note that if decided to export the hash, it has to work this way. It is simply not possible to compute commit hash
   // and then store it here and then commit, since the change of this value would change the computed commit hash.
+  // Another thing to note is that it needs to be full hash since abbreviated hash is enough in the time of checking, but not necessary for the future checks,
+  // since conflicts for first few characters may occur as time goes on
   lastCommitHash String @default("")
   // If false then there exists commit in remote git repo, which failed to be pushed to DS through webhook, because of conflicts.
   isSynchronizedWithRemote Boolean @default(true)

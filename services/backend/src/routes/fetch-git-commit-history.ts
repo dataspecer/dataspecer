@@ -2,10 +2,8 @@ import { z } from "zod";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { resourceModel } from "../main.ts";
 import express from "express";
-import { simpleGit } from "simple-git";
 
 import fs from "fs";
-import { v4 as uuidv4 } from "uuid";
 import { createSimpleGit, gitCloneBasic } from "../utils/simple-git-utils.ts";
 import { FETCH_GIT_HISTORY_PREFIX } from "../models/git-store-info.ts";
 
@@ -169,7 +167,6 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
             "--all": null,
         });
 
-        // TODO RadStr: Use abbreviated hashes instead?
         const logGraph = await git.raw(["log", "--graph", "--oneline", "--all", "--format=%H"]);
         console.info("logGraph", logGraph);
         console.info("customLogResult", customLogResult);
