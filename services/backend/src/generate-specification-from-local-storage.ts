@@ -655,7 +655,7 @@ async function generateArtifactsFromImported(imported: string[]) {
 }
 
 
-// TODO RadStr: Something kinda like .gitignore
+// Something kinda like .gitignore
 const namesToIgnoreInHomeDirectory: string[] = [
   "README.md",
   ".git",

@@ -136,7 +136,7 @@ application.patch(apiBasename + "/resources/packages", updateResourceMetadataHan
 application.delete(apiBasename + "/resources/packages", deleteResourceHandler); // same
 
 application.patch(apiBasename + "/resources/packages/update-project-iri-and-branch", updateResourceProjectIriAndBranchHandler);     // TODO RadStr: Testing manual udpate of projectIri and branch
-application.patch(apiBasename + "/resources/packages/update-represents-branch-head", updateRepresentsBranchHeadOnResourceHandler);     // TODO RadStr: Testing manual udpate of projectIri and branch
+application.patch(apiBasename + "/resources/packages/update-represents-branch-head", updateRepresentsBranchHeadOnResourceHandler);
 
 // Special operation to list all root packages
 application.get(apiBasename + "/resources/root-resources", getRootPackages); // ---

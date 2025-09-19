@@ -77,10 +77,8 @@ function getScopesForAuthConfig(configType: ConfigType | null): Scope[] {
  * @returns
  */
 function createAuthConfig(configType: ConfigType | null, dsBackendURL: string, callerURL?: string): ExpressAuthConfig {
-
-  // TODO RadStr: Don't forget to put it everywhere not only the GitHub.
+  // NOTE: ! Don't forget to set the scopes everywhere not only for the GitHub.
   let scope = getScopesForAuthConfig(configType);
-  console.info("TODO RadStr: createAuthConfig", { scope, callerURL, configType });
 
   // This URI stuff needs explaining - so first - the issue - when we get back from github we can redirect only back on the server. ("localhost:3100" if ran locally)
   //                                                          so we need some workaround to get back on the url we came from
@@ -95,9 +93,10 @@ function createAuthConfig(configType: ConfigType | null, dsBackendURL: string, c
         clientId: GITHUB_AUTH_CLIENT_ID,
         clientSecret: GITHUB_AUTH_CLIENT_SECRET,
         authorization: { params: { scope: scope.map(genericScopeValue => GitHubProvider.convertGenericScopeToProviderScopeStatic(genericScopeValue)).flat().join(" "), redirect_uri: githubRedirectUri } },
-        // redirectProxyUrl: "http://localhost:3100/auth/callback/github",
       }),
-      // TODO RadStr: 1) I dont have access to create oauths in mff instance; 2) Not sure if the issuer/wellKnown works, the wellKnown probably does not
+      // TODO RadStr Idea: Implementing GitLab authentication, but
+      //                    1) I dont have access to create oauths in mff instance;
+      //                    2) Not sure if the issuer/wellKnown works, the wellKnown probably does not
       // GitLab({
       //   clientId: GITLAB_AUTH_CLIENT_ID,
       //   clientSecret: GITLAB_AUTH_CLIENT_SECRET,
@@ -146,10 +145,10 @@ function createAuthConfig(configType: ConfigType | null, dsBackendURL: string, c
 
         return token;
       },
-      // TODO RadStr: !!!! SESSION IS EXPOSED THROUGH AUTHJS API - DON'T EVER EXPOSE ANYTHING IMPORTANT (LIKE OAUTH tokens with full repository access)
+      // !!!! SESSION IS EXPOSED THROUGH AUTHJS API - DON'T EVER EXPOSE ANYTHING IMPORTANT (LIKE OAUTH tokens with full repository access)
       session({ session, token }) {
         // Based on https://authjs.dev/guides/extending-the-session
-        // TODO RadStr: Isn't there a better way with the typing?
+        // TODO RadStr Idea: Isn't there a better way with the typing?
         const user: any = session.user;
         user.id = token.id;
         user.authPermissions = configType;
@@ -187,7 +186,7 @@ export function createAuthConfigWithCorrectPermissions(authPermissions: string, 
   return createAuthConfig(configType, dsBackendURL, callerURL);
 }
 
-// TODO RadStr: For perfomance reasons try later create one basic auth config, which will be used everywhere where we don't need redirect or scope.
+// TODO RadStr Idea: For performance reasons try later create one basic auth config, which will be used everywhere where we don't need redirect or scope.
 
 /**
  * Contains just the info needed for login. The user info and e-mail.

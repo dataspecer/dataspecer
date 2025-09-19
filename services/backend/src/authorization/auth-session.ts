@@ -72,8 +72,9 @@ export const getBasicUserInfo = asyncHandler(async (request: express.Request, re
  *  For missing values returns null instead.
  * @param wantedAccessTokenLevels - If the user has "weak" scope for access token (it does not matches any of the provided ones),
  *  then null is returned instead for the committerAccessToken.
- *  ... TODO RadStr: Just be careful that if we extend ConfigType by new value, we have to extend all the places where we want certain level of accessToken permissions
- *  ................ Can't think of anything though - maybe just provide the string value describing permission (but that does not work for different Git providers)
+ *  ... Just be careful that if we extend ConfigType by new value, we have to extend all the places where we want certain level of accessToken permissions
+ *  ... Can't think of anything though - maybe just provide the string value describing permission (but that does not work for different Git providers)
+ *  ... so possible future TODO RadStr Idea:
  */
 export const getGitCredentialsFromSession = (request: express.Request, response: express.Response, wantedAccessTokenLevels: ConfigType[]) => {
   let committerName: string | null = null;
@@ -87,7 +88,7 @@ export const getGitCredentialsFromSession = (request: express.Request, response:
     committerName = currentSession.user?.name ?? null;
     committerEmail = currentSession.user?.email ?? null;
     const [, configType] = createAuthConfigBasedOnAccountScope((currentSession.user as any)?.genericScope ?? null, dsBackendURL);      // The express request won't be used so just set it to null
-    // TODO RadStr: In future if there might be better granulization in permissions then the check should be more complex + should check if we have access to the repo
+    // TODO RadStr Idea: In future if there will be better granulization in permissions then the check should be more complex + should check if we have access to the repo
     if (configType !== null && wantedAccessTokenLevels.includes(configType)) {
       committerAccessToken = (currentSession.user as any)?.accessToken ?? null;
     }
@@ -107,8 +108,6 @@ export const getGitCredentialsFromSession = (request: express.Request, response:
  * Calls {@link getGitCredentialsFromSession}, but sets defaults for missing values based on set bot for given {@link gitProvider}
  * @param wantedAccessTokenLevels - If the user has "weak" scope for access token (it does not matches any of the provided ones),
  *  the bot one is returned for the accessToken instead of the session one.
- *  ... TODO RadStr: Just be careful that if we extend ConfigType by new value, we have to extend all the places where we want certain level of accessToken permissions
- *  ................ Can't think of anything though - maybe just provide the string value describing permission (but that does not work for different Git providers)
  */
 export const getGitCredentialsFromSessionWithDefaults = (
   gitProvider: GitProvider,

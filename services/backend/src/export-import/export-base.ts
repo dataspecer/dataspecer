@@ -58,8 +58,7 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
 
 
     pathToExportStartDirectory = pathToExportStartDirectory.length === 0 ? rootDirectoryName : `${pathToExportStartDirectory}/${rootDirectoryName}`
-    await this.doExportFromRootDirectory(rootDirectoryName, rootDirectory, pathToExportStartDirectory);
-    return await this.exportActions.finishExport();      // TODO RadStr: I already do this inside the doExportFromRootDirectory
+    return await this.doExportFromRootDirectory(rootDirectoryName, rootDirectory, pathToExportStartDirectory);
   }
 
   abstract getExportVersion(): number;

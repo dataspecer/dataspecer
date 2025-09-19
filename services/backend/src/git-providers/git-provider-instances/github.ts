@@ -52,7 +52,6 @@ export class GitHubProvider extends GitProviderBase {
 
     // TODO RadStr: Taking more data since I might use some of them in future
 
-    // TODO: Currently without branches
     const beforeCommit = webhookPayload.before;
     const afterCommit = webhookPayload.after;
     const refPrefix = "refs/heads/";
@@ -64,7 +63,7 @@ export class GitHubProvider extends GitProviderBase {
     const iri = resourceToUpdateInWebhook?.iri;
     if (iri === undefined) {
       // This means that new branch was added to git, but the branch does not have equivalent in the DS
-      // TODO RadStr: We could create new package automatically, but I am not sure if we want that
+      // TODO RadStr Idea: We could create new package automatically, but I am not sure if we want that
       return null;
     }
 
