@@ -79,8 +79,10 @@ export class GitLabProvider extends GitProviderBase {
     webhookHandlerURL: string,
     webhookEvents: string[]
   ): Promise<FetchResponse> {
+    // !!! TODO: NOTE that this code ignores webhookEvents from arguments, so it needs fixing !!!
+
+
     // https://docs.gitlab.com/api/project_webhooks/#add-a-webhook-to-a-project
-    // TODO RadStr: Ignoring webhookEvents
     // Unlike GitHub, the GitLab allows description for webhooks
     const payload = {
       "url": webhookHandlerURL,

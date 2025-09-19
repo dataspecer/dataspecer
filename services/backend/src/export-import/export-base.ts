@@ -6,9 +6,9 @@ import { FilesystemFactory } from "./filesystem-abstractions/backend-filesystem-
 import { PackageExporterInterface } from "./export.ts";
 
 export abstract class PackageExporterBase implements PackageExporterInterface {
-  protected exportActions!: ExportActions<AllowedExportResults>;      // TODO RadStr: !
-  protected importFilesystem!: FilesystemAbstraction;                 // TODO RadStr: !
-  protected exportFormat!: string;                                    // TODO RadStr: !
+  protected exportActions!: ExportActions<AllowedExportResults>;
+  protected importFilesystem!: FilesystemAbstraction;
+  protected exportFormat!: string;
 
   public static setExportVersion(metaObject: any, exportVersion: number) {
     metaObject._exportVersion = exportVersion;
@@ -30,6 +30,7 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
     }
   }
 
+  // Note that this is the only public export method
   public async doExportFromIRI(
     iri: string,
     directory: string,
@@ -72,5 +73,5 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
     return await this.exportActions.finishExport();
   }
 
-  abstract exportDirectory(directory: DirectoryNode, pathToDirectory: string, pathToExportDirectory: string): Promise<void>;
+  protected abstract exportDirectory(directory: DirectoryNode, pathToDirectory: string, pathToExportDirectory: string): Promise<void>;
 }

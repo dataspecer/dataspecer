@@ -163,6 +163,9 @@ export async function getLastCommitHash(git: SimpleGit) {
   return gitLastCommitHash;
 }
 
+/**
+ * Removes everything inside the {@link rootDirectory} in filesystem, except the given {@link exceptions}. The exceptions should be the name of entries to skip inside the dir.
+ */
 export function removeEverythingExcept(rootDirectory: string, exceptions: string[]) {
   const directoryEntries = fs.readdirSync(rootDirectory);
 

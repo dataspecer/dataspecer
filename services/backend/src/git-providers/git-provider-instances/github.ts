@@ -140,10 +140,6 @@ export class GitHubProvider extends GitProviderBase {
     // vs
     // https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#create-a-repository-for-the-authenticated-user - user repo
 
-    // TODO RadStr: REMOVE THIS !!! (even though it really does not matter since user can't access server logs)
-    // console.info("create remote repo USING", authToken, repositoryUserName, repoName);
-    // console.info("BOT PAT TOKEN is as follows", GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN);
-
     const payload = {
       "name": repoName,
       "description": "Auto-generated repository to test Dataspecer connection",
@@ -388,9 +384,6 @@ export class GitHubProvider extends GitProviderBase {
    */
   async enableGitHubPages(repoName: string, repositoryUserName: string, accessToken: string): Promise<FetchResponse> {
     // https://docs.github.com/en/rest/pages/pages?apiVersion=2022-11-28#create-a-github-pages-site
-
-    const restEndPoint = `https://api.github.com/repos/${repositoryUserName}/${repoName}/pages`;
-
     // TODO RadStr: Maybe better permissions - or also could specify them in given method arguments
     const payload = {
       source: {
@@ -399,6 +392,7 @@ export class GitHubProvider extends GitProviderBase {
       }
     };
 
+    const restEndPoint = `https://api.github.com/repos/${repositoryUserName}/${repoName}/pages`;
     const fetchResponse = httpFetch(restEndPoint, {
       method: "POST",
       headers: {
@@ -410,21 +404,6 @@ export class GitHubProvider extends GitProviderBase {
       },
       body: JSON.stringify(payload),
     });
-
-
-    // const fetchResponse = httpFetch(restEndPoint, {
-    //   method: "POST",
-    //   headers: {
-    //     "Authorization": `Bearer ${accessToken}`,
-    //     "X-GitHub-Api-Version": "2022-11-28",
-    //     "Accept": "application/vnd.github+json",
-    //     "User-Agent": GITHUB_USER_AGENT,
-    //   },
-    // });
-
-
-    // TODO RadStr: Debug print
-    // console.info("enableGitHubPages fetchResponse:", await fetchResponse);
 
     return fetchResponse;
   }

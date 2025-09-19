@@ -8,7 +8,9 @@ import { currentVersion } from "../../../tools/migrations/index.ts";
 import configuration from "../../../configuration.ts";
 import { resourceModel as mainResourceModel } from "../../../main.ts";
 
-
+// Note that DS always works with jsons as formats for datastores, it is too much work to make to make it work for everything.
+// Since we would need to change every component (including cme) to support multiple formats.
+// So we just convert it to js object and store it. and similiarly when creating mapping we just use json as format to the datastore info
 
 export class DSFilesystem extends FilesystemAbstractionBase {
   /////////////////////////////////////
@@ -78,9 +80,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     if (datastoreFormat === null) {
       datastoreFormat = "json";
     }
-    // Note that DS always works with jsons, it is too much work to make to make it work for everything.
-    // Since we would need to change every component (including cme) to support multiple formats.
-    // So we just convert it to js object and store it.
+    // Hardcoded JSON. Check top of file for more info.
     const contentAsObject = convertDatastoreContentBasedOnFormat(newContent, datastoreFormat, true);
     if (isDatastoreForMetadata(type)) {
       // Pass in only the userMetadata
@@ -181,8 +181,6 @@ export class DSFilesystem extends FilesystemAbstractionBase {
       const pckg = (await this.resourceModel.getPackage(iri))!;
 
       for (const subResource of pckg.subResources) {
-        // await this.exportResource(subResource.iri, fullName);      // TODO RadStr: Remove
-
         const newDirectoryNodeLocation: FilesystemNodeLocation = {
           iri: subResource.iri,
           fullPath: subResource.iri,      // TODO RadStr: Either that or the fullName, I think it should be the iri
@@ -209,35 +207,29 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     }
     this.setValueInFilesystemMapping(newNodeLocation, filesystemMapping, filesystemNode, parentDirectoryNode);
 
-    // Maybe in future we will have something else than JSONs on backend, but right now always use JSONs for DS filesystem
+    // Maybe in future we will have something else than JSONs on backend, but right now always use JSONs for DS filesystem.
+    // Check top of file for more info.
     if (shouldSetMetadataCache) {
       const metadata = DSFilesystem.constructMetadataFromResource(resource);
       filesystemNode.metadataCache = metadata;
     }
     // TODO RadStr: Once again using the iri, otherwise we crash ... so yeah it is no longer cache.
+    // For Dataspecer fileystem hardcode JSONs as format. Check top of file for more info.
     const metaDatastoreInfo: DatastoreInfo = createMetaDatastoreInfo(filesystemNode.metadataCache.iri ?? localNameCandidate, "json");
     filesystemNode.datastores.push(metaDatastoreInfo);
-
-    // TODO RadStr: The export code - remove later
-    // const metadata = this.constructMetadataFromResource(resource);
-    // await this.writeBlob(fullName, "meta", metadata);
 
     for (const [blobName, storeId] of Object.entries(resource.dataStores)) {
       const format = "json";
       const afterPrefix = `.${blobName}.${format}`;
       const prefixName: DatastoreInfo = {
         fullName: `${storeId}${afterPrefix}`,
-        afterPrefix, // TODO RadStr: .json ... well probably not? or yes?
+        afterPrefix,
         type: blobName,
         name: storeId,
         format,
         fullPath: storeId,
       }
       filesystemNode.datastores.push(prefixName);
-
-      // TODO RadStr: The export code - remove later
-      // const data = await this.resourceModel.storeModel.getModelStore(storeId).getJson();
-      // await this.writeBlob(fullName, blobName, data);
     }
 
     return filesystemMapping;

@@ -12,7 +12,7 @@ export async function removeGitLinkFromPackage(iri: string) {
   const response = await fetch(
     removeFetchURL,
     {
-      credentials: "include",         // TODO RadStr: Important, without this we don't send the authorization cookies.
+      credentials: "include",         // Important, without this we don't send the authorization cookies.
       method: "GET",
     }
   );
@@ -48,7 +48,10 @@ export function gitOperationResultToast(response: Response) {
   }
 }
 
-// TODO RadStr: Just for debug
+
+/**
+ * @todo TODO RadStr: Just for debug
+ */
 export async function debugClearMergeStateDBTable() {
   const response = await fetch(import.meta.env.VITE_BACKEND + "/git/debug-clear-merge-state-table", {
     method: "POST",

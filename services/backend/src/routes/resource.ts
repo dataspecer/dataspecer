@@ -128,7 +128,7 @@ export const updateRepresentsBranchHeadOnResourceHandler = asyncHandler(async (r
     }).strict();
     const body = bodySchema.parse(request.body);
 
-    // TODO RadStr: Maybe also differ between commit/tag? but I think that it is unnecessary. jsut have branch and tag (commit ... but i tihnk that tag is better)
+    // We could also differ between commit and a tag, but for now it is enough. And they are the same thing from Dataspecer's view anyways
     const commitReferenceType: CommitReferenceType = body.representsBranchHead ? "branch" : "tag";
     await resourceModel.updateRepresentsBranchHead(query.iri, commitReferenceType);
 

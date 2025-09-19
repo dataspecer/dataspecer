@@ -13,7 +13,7 @@ export class PackageExporterByResourceType extends PackageExporterBase {
     return 2;
   }
 
-  async exportDirectory(
+  protected async exportDirectory(
     directory: DirectoryNode,
     pathToDirectory: string,
     pathToExportDirectory: string,
@@ -47,7 +47,6 @@ export class PackageExporterByResourceType extends PackageExporterBase {
       if (filesystemNode.type === "directory") {
         fullName = pathToDirectory;
         exportFullName = pathToExportDirectory;
-        console.info("directory", {fullname: fullName, pathToDirectory, pathToExportDirectory});   // TODO RadStr: Debug print
       }
       else {
         fullName = this.createPathBasedOnResourceType(pathToDirectory, filesystemNode.name, filesystemNode.metadataCache.types[0]);

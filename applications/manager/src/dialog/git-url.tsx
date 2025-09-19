@@ -191,7 +191,7 @@ export const createNewRemoteRepositoryHandler = async (openModal: OpenBetterModa
     const response = await fetch(
       url,
       {
-        credentials: "include",         // TODO RadStr: Important, without this we don't send the authorization cookies.
+        credentials: "include",         // Important, without this we don't send the authorization cookies.
         method: "GET",
       });
     // TODO RadStr: Debug

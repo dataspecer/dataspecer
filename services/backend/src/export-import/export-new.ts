@@ -7,7 +7,7 @@ export class PackageExporterNew extends PackageExporterBase {
     return 1;
   }
 
-  async exportDirectory(directory: DirectoryNode, pathToDirectory: string, pathToExportDirectory: string) {
+  protected async exportDirectory(directory: DirectoryNode, pathToDirectory: string, pathToExportDirectory: string) {
     await this.exportDatastores(directory, pathToDirectory, pathToExportDirectory);
     for (const [name, filesystemNode] of Object.entries(directory.content)) {
       if (filesystemNode.type === "directory") {
