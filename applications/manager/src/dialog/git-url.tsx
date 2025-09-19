@@ -194,10 +194,6 @@ export const createNewRemoteRepositoryHandler = async (openModal: OpenBetterModa
         credentials: "include",         // Important, without this we don't send the authorization cookies.
         method: "GET",
       });
-    // TODO RadStr: Debug
-    // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token) - this one is almost surely fine, but just in case
-    // console.log("fetch RESPONSE", await response);
-
 
     await requestLoadPackage(iri, true);
     gitOperationResultToast(response);
@@ -237,7 +233,7 @@ export const commitToGitDialogOnClickHandler = async (openModal: OpenBetterModal
     const response = await fetch(
       url,
       {
-        credentials: "include",         // TODO RadStr: Important, without this we don't send the authorization cookies
+        credentials: "include",         // Important, without this we don't send the authorization cookies
         method: "GET",
       });
     gitOperationResultToast(response);
@@ -256,16 +252,16 @@ export const linkToExistingGitRepositoryHandler = async (openModal: OpenBetterMo
     const response = await fetch(
       url,
       {
-        credentials: "include",         // TODO RadStr: Important, without this we don't send the authorization cookies, however in this case we might not need it
+        // Note that we do not set the credentials here.
         method: "GET",
       });
 
     if (response.ok) {
-      // TODO: Localization
+      // TODO RadStr later: Localization
       toast.success("Sucessfully updated link to remote git repository");
     }
     else {
-      // TODO: Localization
+      // TODO RadStr later: Localization
       toast.error("Failed updating link to remote git repository");
     }
     requestLoadPackage(iri, true);

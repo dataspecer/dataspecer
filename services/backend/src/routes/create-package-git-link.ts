@@ -3,24 +3,13 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { resourceModel } from "../main.ts";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { extractPartOfRepositoryURL, stringToBoolean } from "../utils/git-utils.ts";
+import { checkErrorBoundaryForCommitAction, extractPartOfRepositoryURL, stringToBoolean } from "../utils/git-utils.ts";
 import { AccessToken, AccessTokenType, ConfigType, convertToValidGitName, WEBHOOK_HANDLER_URL } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { commitPackageToGitUsingAuthSession } from "./commit-package-to-git.ts";
 import { transformCommitMessageIfEmpty } from "../utils/git-utils.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-session.ts";
 
-
-
-//////////////////////////////////
-//////////////////////////////////
-// TODO: Based on exportPackageResource, just to have proof-of-concept
-//////////////////////////////////
-//////////////////////////////////
-
-function getName(name: LanguageString | undefined, defaultName: string) {
-  return name?.["cs"] || name?.["en"] || defaultName;
-}
 
 export function findPatAccessToken(accessTokens: AccessToken[] | null | undefined): AccessToken | null {
   const accessToken = accessTokens?.find(token => token.type === AccessTokenType.PAT);
@@ -84,7 +73,6 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
 
 
       await gitProvider.createWebhook(patAccessToken.value, repositoryUserName, repoName, WEBHOOK_HANDLER_URL, ["push"]);
-
       await resourceModel.updateResourceProjectIriAndBranch(query.iri, undefined, defaultBranch ?? undefined);
       await resourceModel.updateResourceGitLink(query.iri, fullLinkedGitRepositoryURL, true);
 
@@ -134,36 +122,27 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
   const repositoryUserName = gitProvider.extractPartOfRepositoryURL(query.gitRepositoryURL, "user-name");
   const branchName = gitProvider.extractPartOfRepositoryURL(query.gitRepositoryURL, "branch");
 
-  if (repoName === null) {
-    // TODO RadStr: Better error handling
-    console.error("Repository name could not be extracted from the repository URL");
-    return;
-  }
-  if (repositoryUserName === null) {
-    // TODO RadStr: Better error handling
-    console.error("User name could not be extracted from the repository URL");
-    return;
-  }
-  // TODO: Maybe also provide variant which takes the full URL, since above I am splitting it for no reason
+  checkErrorBoundaryForCommitAction(query.gitRepositoryURL, repoName, repositoryUserName);
+
   const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
   const accessToken = findPatAccessToken(accessTokens);
   if (accessToken === null) {
     throw new Error("There is neither user or bot pat token to perform operations needed to create the link. For example creating remote repo");
   }
-  await gitProvider.createWebhook(accessToken.value, repositoryUserName, repoName, WEBHOOK_HANDLER_URL, ["push"]);
+  await gitProvider.createWebhook(accessToken.value, repositoryUserName!, repoName!, WEBHOOK_HANDLER_URL, ["push"]);
 
-  // TODO RadStr: Not sure about the "" if I decide to use it, but I can not use anything else
   await commitPackageToGitUsingAuthSession(
-    request, query.iri, query.gitRepositoryURL, branchName, "", repositoryUserName,
-    repoName, commitMessage, response, query.exportFormat ?? null);
+    request, query.iri, query.gitRepositoryURL, branchName, "", repositoryUserName!,
+    repoName!, commitMessage, response, query.exportFormat ?? null);
 });
 
-export async function getRepositoryNameFromDatabase(linkedPackageIri: string): Promise<string | null> {
+/**
+ * TODO RadStr After: Not used
+ */
+async function getRepositoryNameFromDatabase(linkedPackageIri: string): Promise<string | null> {
   const resource = await resourceModel.getResource(linkedPackageIri);
   if (resource === null) {
-    // TODO: Better error handling
-    console.error(`Package with given iri: ${linkedPackageIri} does not exist.`);
-    return null;
+    throw new Error(`Package with given iri: ${linkedPackageIri} does not exist.`);
   }
 
   return extractPartOfRepositoryURL(resource.linkedGitRepositoryURL, "repository-name");

@@ -323,8 +323,6 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
     const isMergeFromDataResourceInCache = isDatastorePresentInCache(convertedCacheForMergeFromContent, newMergeFromDatastoreInfo);
     const isMergeToDataResourceInCache = isDatastorePresentInCache(convertedCacheForMergeToContent, newMergeToDatastoreInfo);
     if (!(useCache && isMergeFromDataResourceInCache && isMergeToDataResourceInCache)) {
-      // TODO RadStr: We have to extend the API by types - text, JSON, YAML, ...
-      // TODO RadStr: Also I should use the filesystem and mergeFrom/mergeTo based on the editable not hardcore it
       const newMergeFromDataAsText = await ClientFilesystem.getDatastoreContentDirectly(newMergeFromDatastoreInfo, false, import.meta.env.VITE_BACKEND, examinedMergeState?.filesystemTypeMergeFrom ?? null);
       const newMergeToDataAsText = await ClientFilesystem.getDatastoreContentDirectly(newMergeToDatastoreInfo, false, import.meta.env.VITE_BACKEND, examinedMergeState?.filesystemTypeMergeTo ?? null);
 

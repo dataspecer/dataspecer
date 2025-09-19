@@ -178,3 +178,21 @@ export function removeEverythingExcept(rootDirectory: string, exceptions: string
     fs.rmSync(fullPath, { recursive: true, force: true });
   }
 }
+
+/**
+ * Throws error if {@link repoName} or {@link userName} are null
+ */
+export function checkErrorBoundaryForCommitAction(
+  gitLink: string,
+  repoName: string | null,
+  userName: string | null
+): repoName is NonNullable<string> {
+  if (repoName === null) {
+    throw new Error(`Repository name could not be extracted from the repository URL: ${gitLink}`);
+  }
+  if (userName === null) {
+    throw new Error(`User name could not be extracted from the repository URL: ${gitLink}`);
+  }
+
+  return true;
+}

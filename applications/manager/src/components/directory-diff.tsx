@@ -16,7 +16,7 @@ type RenderNode = {
   dataSourceType: DataSourceRenderType;
   children?: RenderNode[];
   datastores: RenderNode[];
-  fullDatastoreInfoInOriginalTree: DatastoreInfo | null;      // TODO RadStr: For now keep together with the ResourceName stuff - but in te end only DatastoreInfo will be enough
+  fullDatastoreInfoInOriginalTree: DatastoreInfo | null;
   fullDatastoreInfoInModifiedTree: DatastoreInfo | null;
   /**
    * If is right now in conflict. To check if it can be part of conflict that is it either was or is right now, check {@link canBeInConflict}.
@@ -81,9 +81,6 @@ function createDatastoresRenderRepresentations(
 
   for (const datastoreComparison of datastoreComparisons) {
     let status: RenderStatus;
-    // TODO RadStr: As said before, maybe I will still rewrite it using paths instead of 2-level identifiers
-    // let fullPathInOldTree = datastoreComparison.oldVersion === null ? null : (getDatastoreInfoOfGivenDatastoreType(datastoreComparison.oldVersion, datastoreComparison.affectedDataStore.type)?.fullPath ?? null);
-    // let fullPathInNewTree = datastoreComparison.newVersion === null ? null : (getDatastoreInfoOfGivenDatastoreType(datastoreComparison.newVersion, datastoreComparison.affectedDataStore.type)?.fullPath ?? null);
 
     if (datastoreComparison.datastoreComparisonResult === "modified") {
       status = "modified"
@@ -229,9 +226,6 @@ function createTreeRepresentationForRendering(
       children: children.concat(datastoresRenderRepresentations),
       fullDatastoreInfoInModifiedTree: null,
       fullDatastoreInfoInOriginalTree: null,
-      // TODO RadStr: The path as mentioned above
-      // fullPathInOldTree: "Empty since we fetch only datastores",
-      // fullPathInNewTree: "Empty since we fetch only datastores",
       nowInConflictCount: datastoresWithConflictCount + nowInConflictCountInExpandableChildren,
       canBeInCoflictCount: totalDatastoresWithConflictCount + totalConflictCountInExpandableChildren,
       treeType: treeToExtract,
@@ -387,14 +381,6 @@ function StyledNode({
             else {
               node.focus();
               node.select();
-
-              // TODO RadStr: ... the paths as mentioned above
-              // if (node.data.fullPathInOldTree === null) {
-              //   throw new Error("The path to the datastore is empty - old version");
-              // }
-              // else if (node.data.fullPathInNewTree === null) {
-              //   throw new Error("The path to the datastore is empty - new version");
-              // }
 
               const parentId = node.parent?.data.id!;   // The parent exists and it is not datastore
               const parentTreePath = parentId.substring(0, parentId?.length - "-new".length);
@@ -788,7 +774,7 @@ export const DiffTreeVisualization = (props: {
     // This is needed otherwise the Tree gets focus and shows black rectangle around it
     // (Disabling outline in css/tailwind did not work)
     activeElement?.blur();
-  }, [diffTree]);   // TODO RadStr: Use the reference to filesystem or something
+  }, [diffTree]);
 
   console.info({ diffTree, oldRenderTree, newRenderTree });
 
@@ -804,7 +790,7 @@ export const DiffTreeVisualization = (props: {
           onChange={handleShowConflictsCheckboxChange}
           className="w-4 h-4"
         />
-        {/* TODO RadStr: Localization */}
+        {/* TODO RadStr Later: Localization */}
         <span>{shouldOnlyShowConflicts ? "Showing only conflicts" : "Showing all"}</span>
       </label>
     </div>

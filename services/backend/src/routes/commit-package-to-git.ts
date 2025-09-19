@@ -3,22 +3,13 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { mergeStateModel, resourceModel } from "../main.ts";
 
-
-import { LanguageString } from "@dataspecer/core/core/core-resource";
-
-
-import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
-import { ResourceModel } from "../models/resource-model.ts";
-import { v4 as uuidv4 } from 'uuid';
-
 import fs from "fs";
 import { getRepoURLWithAuthorizationUsingDebugPatToken } from "../git-never-commit.ts";
 import { simpleGit, SimpleGit } from "simple-git";
-import { extractPartOfRepositoryURL, getAuthorizationURL, getLastCommitHash, removeEverythingExcept } from "../utils/git-utils.ts";
+import { checkErrorBoundaryForCommitAction, extractPartOfRepositoryURL, getAuthorizationURL, getLastCommitHash, removeEverythingExcept } from "../utils/git-utils.ts";
 import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
-import YAML from "yaml";
 import { createUniqueCommitMessage } from "../utils/git-utils.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-session.ts";
 import { createReadmeFile } from "../git-readme/readme-generator.ts";
@@ -27,21 +18,8 @@ import { AvailableExports } from "../export-import/export-actions.ts";
 import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "../utils/simple-git-utils.ts";
 import { compareGitAndDSFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { PUSH_PREFIX } from "../models/git-store-info.ts";
-import { DSFilesystem } from "../export-import/filesystem-abstractions/implementations/ds-filesystem.ts";
 import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
 
-
-
-
-//////////////////////////////////
-//////////////////////////////////
-// TODO: Based on exportPackageResource, just to have proof-of-concept
-//////////////////////////////////
-//////////////////////////////////
-
-function getName(name: LanguageString | undefined, defaultName: string) {
-  return name?.["cs"] || name?.["en"] || defaultName;
-}
 
 /**
  * Commit to the repository for package identifier by given iri inside the query part of express http request.
@@ -59,31 +37,17 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
   const commitMessage = query.commitMessage.length === 0 ? null : query.commitMessage;
   const resource = await resourceModel.getResource(iri);
   if (resource === null) {
-    // TODO RadStr: Better error handling
-    console.error("Can not commit to Git since the resource does not exist");
-    return;
+    throw new Error(`Can not commit to git since the resource (iri: ${iri}) does not exist`);
   }
   const gitLink = resource.linkedGitRepositoryURL;
-
-  // TODO: Also kind of copy paste of the error boundaries for userName and repoName from the createPackageFromExistingGitRepository
   const userName = extractPartOfRepositoryURL(gitLink, "user-name");
   const repoName = extractPartOfRepositoryURL(gitLink, "repository-name");
-
-  if (repoName === null) {
-    // TODO RadStr: Better error handling
-    console.error("Repository name could not be extracted from the repository URL");
-    return;
-  }
-  if (userName === null) {
-    // TODO RadStr: Better error handling
-    console.error("User name could not be extracted from the repository URL");
-    return;
-  }
+  checkErrorBoundaryForCommitAction(gitLink, repoName, userName);
 
   const branch = resource.branch === "main." ? null : resource.branch;
   const commitResult = await commitPackageToGitUsingAuthSession(
-    request, iri, gitLink, branch, resource.lastCommitHash, userName,
-    repoName, commitMessage, response, query.exportFormat ?? null);
+    request, iri, gitLink, branch, resource.lastCommitHash, userName!,
+    repoName!, commitMessage, response, query.exportFormat ?? null);
 
   if (!commitResult) {
     response.sendStatus(409);
@@ -118,10 +82,14 @@ export const commitPackageToGitUsingAuthSession = async (
 }
 
 
-// TODO RadStr: Teoreticky bych mohl mit defaultni commit message ulozenou v konfiguraci (na druhou stranu vzdy chci zadat nejakou commit message)
+// TODO RadStr Idea: Teoreticky bych mohl mit defaultni commit message ulozenou v konfiguraci (na druhou stranu vzdy chci zadat nejakou commit message)
 /**
  * Commit to the repository for package identifier by given iri.
  * @param commitMessage if null then default message is used.
+ * @param localLastCommitHash if empty string then there is no check for conflicts -
+ *  it is expected to be the first commit on repository
+ *  (however it also works the if we just want to set new last commit and
+ *   do not want to cause any conflicts, we just commit current content and push it)
  * @returns true on successful commit. False when merge state was created (that is there were conflicts).
  */
 export const commitPackageToGit = async (
@@ -326,8 +294,6 @@ export const gitWorktreeExample = async (
   await git.raw(['worktree', 'add', "./my-repo-branch2", 'branch2']);
   console.log(`Worktree for 'branch2' created at: ./my-repo-branch2`);
   const currentWorktree = await git.raw(['worktree', 'list']);
-  // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
-  // console.info("Current worktree", currentWorktree);
 };
 
 /**

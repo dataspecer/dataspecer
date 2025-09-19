@@ -40,13 +40,13 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
     const branchAlreadyExists = existingBranchesForProject.includes(branch);
 
     if (branch === "") {
-      // TODO RadStr: Localization
+      // TODO RadStr Later: Localization
       toast.error("Given branch name is empty");
       resolve(null);
       return;
     }
     else if (branchAlreadyExists) {
-      // TODO RadStr: Localization
+      // TODO RadStr Later: Localization
       toast.error("Branch already exists");
       resolve(null);
       return;

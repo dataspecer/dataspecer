@@ -228,7 +228,7 @@ application.get(apiBasename + "/git/test-docker", currentSession, exportPackageR
 application.get(apiBasename + "/git/redirect-to-remote-git-repository", currentSession, redirectToRemoteGitRepository);
 application.get(apiBasename + "/git/fetch-git-commit-history", currentSession, fetchGitCommitHistory);
 application.get(apiBasename + "/git/pull", currentSession, pullRemoteRepository);
-application.get(apiBasename + "/git/link-to-existing-git-repository", currentSession, linkToExistingGitRepository);
+application.get(apiBasename + "/git/link-to-existing-git-repository", linkToExistingGitRepository);
 
 // TODO RadStr: Have to await, because of the generate-specification
 await (async () => {
