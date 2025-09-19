@@ -45,7 +45,7 @@ model Resource {
   // or some of the branches
   // (for example https://github.com/mff-uk/dataspecer/tree/stable)
   // Should not end with "/"
-  linkedGitRepositoryURL String @default("{}")
+  linkedGitRepositoryURL String @default("")
 
   // Note that it ends with ".". This is not oversight, "main." is invalid branch name
   // (the git branches can not end with "." (See https://stackoverflow.com/questions/3651860/which-characters-are-illegal-within-a-branch-name))
