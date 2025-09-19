@@ -73,7 +73,7 @@ type GitHistoryVisualizationProps = {
 /**
  * @returns The hash of commit mapped to branches, which it is part of. And the commit hash mapped to the commit
  */
-// TODO RadStr: Ignore for now, might use it in future for better implementation of import git log to gitGraph
+// TODO RadStr checked: Unused - Ignore for now, Might be useful in future for better implementation of import git log to gitGraph
 // @ts-ignore
 function mapCommitsToBranches(gitHistory: GitHistory): {
   commitToBranchesMap: Record<string, string[]>,
@@ -104,7 +104,7 @@ function mapCommitsToBranches(gitHistory: GitHistory): {
 /**
  * @returns The unique commits mapped to relevant branches (keys = branches, values = unique commits).
  */
-// TODO RadStr: Ignore for now, I might use it in future
+// TODO RadStr checked: Unused - Ignore for now, Might be useful in future for better implementation of import git log to gitGraph
 // @ts-ignore
 function getUniqueCommits(commitToBranchesMap: Record<string, string[]>, hashToCommitMap: Record<string, Commit>): {
   branchToUniqueCommitsMap: Record<string, Commit[]>,
@@ -191,8 +191,9 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
         console.info("useLayoutEffect for git-history-vis");
         setIsLoading(true);
 
-        // TODO RadStr: Here we load the history for the relevant branches given in properties
-        // TODO RadStr: Once again we already have the git link, we don't need to send the package iri, we can send the git url instead
+        // Here we load the git history
+        // Note that we could send the the git link directly and don't need to send the package iri and then find the link on backend
+        // But we do it like this because there might be some possible attack by requesting some kind of weird url (can't think of any now though)
         const urlQuery = `?iri=${examinedPackage.iri}`;
         // Theoretically we can just fetch it directly from GitHub (or other provider) without calling the DS server, BUT:
         // Somebody has to implement it. We have to implement it for each provider.
@@ -280,9 +281,15 @@ const createGitGraph = (
   return <div>
     <Gitgraph options={{template: gitGraphTemplate}}>
       {(gitgraph) => {
-        // TODO RadStr: Not ideal, but it shows, that creating the branch history as it should be is highly non-trivial issue
-        //              Also we should add the onClick properties to the objects stored in the "importedGitGraph".
-        // TODO RadStr: Maybe try to fix my solution in future - it is better by focusing on the main and old/new branches, but it does not work correctly unfortunately
+        // Settled for the imort method in the visualization library, but note that it is not optimal - there are situations when it does not exactly reflect the commit history
+        // (Note that it is impossible to visualize commit history always correctly - there are ambiguous histories)
+        // I tried implementing custom solution here - https://github.com/dataspecer/dataspecer/commit/9713144648eee3a11b1e37a700840af2cc314744
+        // The idea was quite simple - we provide git history but each commits remember on which branches it is.
+        // Then we build the git history from the start starting on main branch:
+        // If the commit is on branch which was yet put into renderer put it onto the oldest (or newest?) one
+        // If not create new branch. Either chosen randomly or with some heuristic
+        // Alternative solutions was to parse the git log --graph command
+        // We should also somehow reflect that some branches are in DS and some not, etc. it is really non-trivial problem
         for (const commit of Object.values(commits) as any) {
           // TODO RadStr: remove this - just put from backend only the stuff that is needed instead of deleting
 
@@ -404,8 +411,11 @@ function findBranchToPutIntoGitGraph(currentBranchProcessingState: Record<string
 }
 
 
-export const gitHistoryVisualizationOnClickHandler = async (openModal: OpenBetterModal, examinedPackage: Package, allResources: Record<string, ResourceWithIris>) => {
-  // TODO RadStr: These are DS branches - note that those are different from the git branches
+export const gitHistoryVisualizationOnClickHandler = async (
+  openModal: OpenBetterModal,
+  examinedPackage: Package,
+  allResources: Record<string, ResourceWithIris>
+) => {
   await openModal(GitHistoryVisualization, { examinedPackage, allResources });
 }
 

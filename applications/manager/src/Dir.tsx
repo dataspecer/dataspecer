@@ -40,7 +40,7 @@ import { MergeStatesDialog } from "./dialog/merge-conflict-dialog";
 import { OpenMergeState } from "./dialog/open-merge-state";
 import { useLogin, UseLoginType } from "./hooks/use-login";
 import SetPrivateSSHKeyDialog from "./dialog/set-private-ssh";
-import { PACKAGE_ROOT } from "@dataspecer/git";
+import { isGitUrlSet, PACKAGE_ROOT } from "@dataspecer/git";
 
 export function lng(text: LanguageString | undefined): string | undefined {
   return text?.["cs"] ?? text?.["en"];
@@ -135,13 +135,11 @@ const Row = ({ iri, projectFilter, setProjectFilter, isSignedIn, mergeActors, pa
             {resource.lastCommitHash.substring(0, 6)}
           </span>
           <div className="truncate px-8">
-            { /* TODO RadStr: Make it span or not? */ }
-            { /* TODO RadStr: Use some invalid characters as a default - but maybe {} are invalid URLs */ }
-            { /* TODO RadStr: Don't forget to set to {} or other default after removing the link, right now I use "", probably should always use "" */}
-            { (resource.linkedGitRepositoryURL === "{}" || resource.linkedGitRepositoryURL === "") ?
-              null :
-              <a href={resource.linkedGitRepositoryURL} className={resource.isSynchronizedWithRemote ? "text-green-400" : "text-red-400" } >GIT</a>
-              }
+            {
+              isGitUrlSet(resource.linkedGitRepositoryURL) ?
+                <a href={resource.linkedGitRepositoryURL} className={resource.isSynchronizedWithRemote ? "text-green-400" : "text-red-400" } >GIT</a> :
+                null
+            }
           </div>
         </div>
       </div>
@@ -250,7 +248,7 @@ const Row = ({ iri, projectFilter, setProjectFilter, isSignedIn, mergeActors, pa
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            {/* // TODO RadStr: Just for debugging ! */}
+            {/* TODO RadStr: Just for debugging ! */}
             {<DropdownMenuItem onClick={() => debugClearMergeStateDBTable()}><ShieldQuestion className="mr-2 h-4 w-4" />DEBUG - Clear merge db state table</DropdownMenuItem>}
             {<DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/git/redirect-to-remote-git-repository?iri=" + encodeURIComponent(iri)}><Eye className="mr-2 h-4 w-4" />Visit the remote repository</a></DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git branch visualization</DropdownMenuItem>}

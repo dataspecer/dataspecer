@@ -1,8 +1,8 @@
 export function isGitUrlSet(gitUrl: string | undefined | null) {
-  return !(gitUrl === "" || gitUrl === "{}");
+  return !(gitUrl === "");
 }
 
-export const defaultEmptyGitUrlForDatabase = "{}";
+export const defaultEmptyGitUrlForDatabase = "";
 
 
 /**
