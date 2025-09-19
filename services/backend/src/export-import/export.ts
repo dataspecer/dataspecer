@@ -22,17 +22,15 @@ export interface PackageExporterInterface {
 }
 
 
-// TODO RadStr: Can be handled better maybe - at least the V1
-// TODO RadStr: Think if I should put it into the class as static or keep it outside - probably static
 export type ResourceTypes = typeof LOCAL_PACKAGE |
   typeof LOCAL_VISUAL_MODEL |
   typeof LOCAL_SEMANTIC_MODEL |
   typeof API_SPECIFICATION_MODEL |
   typeof APPLICATION_GRAPH |
-  "http://dataspecer.com/resources/v1/cim" | // typeof V1.CIM
-  "http://dataspecer.com/resources/v1/generator-configuration" | // typeof V1.GENERATOR_CONFIGURATION
-  "http://dataspecer.com/resources/v1/pim" | // typeof V1.PIM
-  "http://dataspecer.com/resources/v1/psm" | // typeof V1.PSM
+  "http://dataspecer.com/resources/v1/cim" |
+  "http://dataspecer.com/resources/v1/generator-configuration" |
+  "http://dataspecer.com/resources/v1/pim" |
+  "http://dataspecer.com/resources/v1/psm" |
   "https://dataspecer.com/core/model-descriptor/sgov" |
   "https://dataspecer.com/core/model-descriptor/pim-store-wrapper";
 

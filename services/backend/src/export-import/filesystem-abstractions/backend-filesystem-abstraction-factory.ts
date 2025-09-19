@@ -6,7 +6,7 @@ export class FilesystemFactory {
   public static async createFileSystem(roots: FilesystemNodeLocation[], filesystem: AvailableFilesystems, gitProvider: GitProvider | null): Promise<FilesystemAbstraction> {
     switch(filesystem) {
       case AvailableFilesystems.DS_Filesystem:
-        return DSFilesystem.createFilesystemAbstraction(roots, gitProvider);     // TODO RadStr: Await or not?
+        return DSFilesystem.createFilesystemAbstraction(roots, gitProvider);
       case AvailableFilesystems.ClassicFilesystem:
         return ClassicFilesystem.createFilesystemAbstraction(roots, gitProvider);
       default:

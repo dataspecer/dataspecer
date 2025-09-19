@@ -18,8 +18,8 @@ export class PackageImporter {
   private readonly resourceModel: ResourceModel;
   private zip!: JSZip;
   private rootToWrite = PACKAGE_ROOT;
-  private inputPathsToCanonicalMapping!: Record<string, string>;    // TODO RadStr: Hack with ! - Also I am not sure what should be instance methods and what not when it comes to creation of the mapping
-  private canonicalPathsToInputMapping!: Record<string, string>;    // TODO RadStr: Hack with ! - Also I am not sure what should be instance methods and what not when it comes to creation of the mapping
+  private inputPathsToCanonicalMapping!: Record<string, string>;
+  private canonicalPathsToInputMapping!: Record<string, string>;
   private shouldGenerateNewIris!: boolean;
   private mapToNewIds!: Record<string, string>;
 
@@ -104,6 +104,9 @@ export class PackageImporter {
     }
   }
 
+  /**
+   * Basically the only public method of class. The internal values in class are dependent on calling this method first.
+   */
   async doImport(buffer: Buffer, shouldGenerateNewIris: boolean): Promise<string[]> {
     this.shouldGenerateNewIris = shouldGenerateNewIris;
     this.zip = new JSZip();
@@ -127,7 +130,7 @@ export class PackageImporter {
         break;
       }
     }
-    console.info("rootPackagesMeta", rootPackagesMeta);		// TODO RadStr: Debug print
+    console.info("rootPackagesMeta", rootPackagesMeta);		// TODO RadStr DEBUG: Debug print
     const rootPackagesIds = rootPackagesMeta.map((file) => {
       const splitBetweenIdAndType = file.lastIndexOf("/");
       return file.substring(0, splitBetweenIdAndType);
@@ -140,14 +143,14 @@ export class PackageImporter {
     this.canonicalPathsToInputMapping = mappings.canonicalToImported;
     this.inputPathsToCanonicalMapping = mappings.importedToCanonical;
 
-    // TODO RadStr: Debug print
+    // TODO RadStr DEBUG: Debug print
     console.info("exportVariant", {exportVariant, inputPathsToCanonicalMapping: this.inputPathsToCanonicalMapping});
 
     const createdPackages = [];
     for (const rootPackageId of rootPackagesIds) {
       const importedRootPackageId: string = rootPackageId + "/";
       const canonicalRootPackageId = this.inputPathsToCanonicalMapping[importedRootPackageId];
-      console.info({rootPackageId, canonicalRootPackageId});		// TODO RadStr: Debug print
+      console.info({rootPackageId, canonicalRootPackageId});		// TODO RadStr DEBUG: Debug print
 
       const iri = await this.importPackage(canonicalRootPackageId, this.rootToWrite);
       createdPackages.push(iri);
@@ -158,7 +161,7 @@ export class PackageImporter {
   async importPackage(canonicalDirPath: string, parentPackageIri: string): Promise<string> {
     const metaFileName = canonicalDirPath + ".meta.json";
     const metaFileNameOnInput = this.canonicalPathsToInputMapping[metaFileName]
-    console.info({metaFileName, metaFileNameOnInput, canonicalDirPath});		// TODO RadStr: Debug print
+    console.info({metaFileName, metaFileNameOnInput, canonicalDirPath});		// TODO RadStr DEBUG: Debug print
     const metaFile = await this.zip.file(metaFileNameOnInput)!.async("text");
     const meta = JSON.parse(metaFile);
 

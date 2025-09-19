@@ -15,7 +15,7 @@ export const createMergeState = asyncHandler(async (request: express.Request, re
     mergeToIri: z.string().min(1),
   });
 
-  console.info("TODO RadStr: createMergeState");    // TODO RadStr: Debug print
+  console.info("TODO RadStr: createMergeState");    // TODO RadStr DEBUG: Debug print
 
   const { mergeFromIri, mergeToIri } = querySchema.parse(request.query);
 

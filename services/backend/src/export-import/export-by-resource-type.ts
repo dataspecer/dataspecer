@@ -1,8 +1,4 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
-import { BaseResource } from "../models/resource-model.ts";
-import { currentVersion } from "../tools/migrations/index.ts";
-import configuration from "../configuration.ts";
-
 import path from "path";
 import { PackageExporterBase } from "./export-base.ts";
 import { DirectoryNode, FilesystemNode, isDatastoreForMetadata, MetadataCacheType } from "@dataspecer/git";
@@ -72,7 +68,7 @@ export class PackageExporterByResourceType extends PackageExporterBase {
 
     // Notice that there is not / between the first two variables - the path already ends with "/", because local_packages ends with "/" as seen in return of this method
     const result = `${pathToResource}${resourceDirectory}/${filesystemNodeName}`;
-    // TODO RadStr: Debug prints
+    // TODO RadStr DEBUG: Debug prints
     console.info("result");
     console.info(result);
     console.info(path.join(pathToResource, resourceDirectory, filesystemNodeName));

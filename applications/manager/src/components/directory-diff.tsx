@@ -760,7 +760,7 @@ export const DiffTreeVisualization = (props: {
       console.info({ fetchedDiffTree });
 
       const { oldRenderTree: computedOldRenderTree, newRenderTree: computedNewRenderTree } = createTreeRepresentationsForRendering(fetchedConflicts, fetchedUnresolvedConflicts, fetchedDiffTree, mergeStateFromBackend.editable);
-      console.info({ computedOldRenderTree, computedNewRenderTree } );     // TODO RadStr: Debug print
+      console.info({ computedOldRenderTree, computedNewRenderTree } );     // TODO RadStr DEBUG: Debug print
       setOldRenderTree(computedOldRenderTree);
       setNewRenderTree(computedNewRenderTree);
 

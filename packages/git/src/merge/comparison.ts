@@ -203,7 +203,7 @@ export async function areDatastoresDifferent(
   const content1 = await filesystem1.getDatastoreContent(entry1.fullTreePath, datastore.type, true);
   const content2 = await filesystem2.getDatastoreContent(entry2.fullTreePath, datastore.type, true);
 
-  console.info({content1, content2});    // TODO RadStr: DEBUG Print
+  console.info({content1, content2});    // TODO RadStr DEBUG: DEBUG Print
 
   return !_.isEqual(content1, content2);
 }

@@ -267,15 +267,13 @@ export const gitWorktreeExample = async (
     console.info("Cloned repo");
   }
   catch (cloneError) {
-    // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
-    // console.info("Catched clone error: ", cloneError);
+    console.error(`Error when cloning ${remoteRepositoryURL}`);
     await git.init();
     try {
       await git.pull(repoURLWithAuthorization);
     }
     catch (pullError) {
-      // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
-      // console.info("Catched pull error: ", pullError);
+      throw new Error(`Error when pulling ${remoteRepositoryURL}`);
     }
   }
 
