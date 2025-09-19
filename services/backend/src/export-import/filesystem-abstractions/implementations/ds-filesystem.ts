@@ -16,7 +16,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
   /////////////////////////////////////
   // Properties
   /////////////////////////////////////
-  private resourceModel: ResourceModel;   // TODO RadStr: Do I even need this? 1) in class instance, 2) in this file at all? can't I just use the extracted stuff inside the file with deleteBlob, etc.?
+  private resourceModel: ResourceModel;
 
 
   /////////////////////////////////////

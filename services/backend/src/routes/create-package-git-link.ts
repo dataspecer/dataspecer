@@ -73,9 +73,6 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
       const { defaultBranch } = await gitProvider.createRemoteRepository(patAccessToken.value, repositoryUserName, repoName, isUserRepo);
       const createPublicationRepositoryResult = await gitProvider.createPublicationRepository(repoName + "-publication-repo", isUserRepo, repositoryUserName, patAccessToken.value);
 
-      // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
-      // console.info({createPublicationRepositoryResult});
-
       const botAccessToken = findPatAccessToken(gitProvider.getBotCredentials()?.accessTokens);
       if (botAccessToken === null) {
         // TODO RadStr: Somehow give this text to user so he knwos that he has to set the pat token to the repo so we can push to publish repo

@@ -13,7 +13,7 @@ import LayeredAlgorithmDirectionDropdown from "./direction-graphic-combobox/reac
 type MainType = "main";
 type MainOrGeneralType = MainType | "general";
 
-// TODO RadStr: Kinda deprecated, as a normal user you should use the dialog in CME
+// TODO RadStr Checked: Kinda deprecated, as a normal user you should use the dialog in CME
 //              It works, but it uses the old implementation of dialog
 //              CME uses different types of dialog and it is different component,
 //              so it would be hard to share it somehow

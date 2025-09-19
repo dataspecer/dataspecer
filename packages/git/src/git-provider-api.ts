@@ -45,7 +45,6 @@ export enum GitProviderEnum {
 }
 
 /**
- * TODO RadStr: Maybe there is a better name?
  * TODO RadStr: Also the repoName/iri might not be needed in future
  */
 

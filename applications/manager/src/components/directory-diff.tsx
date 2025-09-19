@@ -36,7 +36,6 @@ type RenderNodeWithAdditionalData = RenderNode & {
 type RenderStatus = "same" | "modified" | "created" | "removed";
 type TreeType = "old" | "new";
 
-// @ts-ignore TODO RadStr: For now
 function createTreeRepresentationsForRendering(
   allConflicts: ComparisonData[],
   unreslovedConflicts: ComparisonData[],
@@ -461,7 +460,7 @@ function StyledNode({
 }
 
 
-// @ts-ignore TODO RadStr: idk maybe no longer needed? We fetch the whole diff tree instead.
+// @ts-ignore TODO RadStr Checked: idk maybe no longer needed? We fetch the whole diff tree instead. Maybe still useful, we will see after I am done.
 async function fetchTreeData(rootIri: string) {
   try {
     const fetchResult = await fetch(`${import.meta.env.VITE_BACKEND}/dataspecer-package-tree?iri=${rootIri}`, {
@@ -477,7 +476,7 @@ async function fetchTreeData(rootIri: string) {
 }
 
 
-// @ts-ignore TODO RadStr: Remove I guess, but it was useful
+// @ts-ignore TODO RadStr Checked: Not used currently, but it was useful at one point
 const getOtherTreeType = (tree: TreeType) => tree === "old" ? "new" : "old";
 
 const createStyledNode = (

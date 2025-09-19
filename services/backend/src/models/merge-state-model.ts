@@ -134,7 +134,7 @@ export class MergeStateModel implements ResourceChangeListener {
   }
 
   private async handlePullFinalizer(mergeState: MergeState) {
-    // TODO: This can be "generalized" to allow updating git
+    // TODO: This can be "generalized" to allow updating git (classic filesystem)
     let filesystemToUpdate: AvailableFilesystems;
     let rootIriToUpdate: string;
     // Here we name it static - that is the one, which was not editable
@@ -248,12 +248,12 @@ export class MergeStateModel implements ResourceChangeListener {
   }
 
   async clearTable() {
-    // TODO RadStr: It is important to also remove the repository together with the mergeState
+    // It is important to also remove the repository together with the mergeState
     const mergeStates = await this.prismaClient.mergeState.findMany({include: {mergeStateData: false}});
     for (const mergeState of mergeStates) {
+      await this.prismaClient.mergeState.delete({where: {id: mergeState.id}});
       this.removeRepository(mergeState.filesystemTypeMergeFrom as AvailableFilesystems, mergeState.rootFullPathToMetaMergeFrom, true);
       this.removeRepository(mergeState.filesystemTypeMergeTo as AvailableFilesystems, mergeState.rootFullPathToMetaMergeTo, true);
-      await this.prismaClient.mergeState.delete({where: {id: mergeState.id}});
     }
   }
 
@@ -342,9 +342,7 @@ export class MergeStateModel implements ResourceChangeListener {
   }
 
   /**
-   * Note that this method modifies the given data in {@link changedInEditable}, {@link createdInEditable}, {@link removedInEditable}, {@link conflicts},
-   * by removing circular dependency
-   * TODO RadStr: That won't be the case after the rewrite
+   * @returns The uuid of the newly created merge state in database
    */
   async createMergeState(
     inputData: {
@@ -540,7 +538,6 @@ export class MergeStateModel implements ResourceChangeListener {
 
     const editable = prismaMergeState.editable;
     if (!isEditableType(editable)) {
-      // TODO RadStr: Maybe better error handling
       throw new Error(`Database is in corrupted state, editable has following value ${editable}, which is not valid`);
     }
 

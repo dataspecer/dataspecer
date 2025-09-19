@@ -29,7 +29,6 @@ export abstract class GitProviderBase implements GitProvider {
   async getLastCommitHash(userName: string, repoName: string, commitReference?: string, isCommit?: boolean): Promise<string> {
     if (isCommit === true) {
       if (commitReference === undefined) {
-        // TODO RadStr: Maybe better error handling
         throw new Error(`When trying to get last commit for userName: ${userName} and repoName: ${repoName}. It was supposed to be commit, however the value of commmit was not given`);
       }
       return commitReference;
@@ -64,7 +63,7 @@ export abstract class GitProviderBase implements GitProvider {
       const hash = gitLog.latest?.hash;
 
       if (hash === undefined) {
-        throw new Error(`Could not get the last commit from given userName: ${userName}, repoName: ${repoName}, branch: ${commitReference}`);        // TODO RadStr: Maybe better error handling
+        throw new Error(`Could not get the last commit from given userName: ${userName}, repoName: ${repoName}, branch: ${commitReference}`);
       }
       return hash;
     }

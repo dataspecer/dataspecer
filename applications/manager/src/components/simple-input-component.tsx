@@ -30,6 +30,5 @@ export const InputComponent = ({ idPrefix, idSuffix, input, label, setInput, dis
       </Label>
       <Input id={inputId} value={input} className="grow" onChange={target => setInput(target.target.value)} disabled={disabled ?? false} />
     </div>
-    {/* <button type="submit" className="hidden" /> TODO RadStr: I don't know why I put it here, I did based on another dialog component, but I have no idea if it served any purpose there */}
   </div>;
 };
