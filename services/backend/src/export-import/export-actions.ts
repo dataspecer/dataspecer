@@ -9,7 +9,11 @@ import path from "path";
 export type AllowedExportResults = void | Buffer<ArrayBufferLike>;
 
 export interface ExportActions<T extends AllowedExportResults> {
-  // TODO RadStr: the/path/to/resource/with/nameWithoutSuffix ... put into documentation
+  /**
+   * @param exportPath The path is in format the/path/to/resource/with/nameWithoutSuffix
+   *  ... where the suffix is the .meta.json for example - that is type and format of datastore
+   *  In case of directories, they should end with /
+   */
   exportDatastoreAction: (exportPath: string, datastoreInfo: DatastoreInfo, data: any, exportFormat: string) => Promise<void>;
 
   /**
