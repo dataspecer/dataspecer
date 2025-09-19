@@ -12,6 +12,7 @@ import { CommitActionsDialog } from "@/dialog/git-commit-actions-dialog";
 import { Loader } from "lucide-react";
 import { Template } from "@gitgraph/core/lib/template";
 import { ResourceWithIris } from "@/package";
+import { PACKAGE_ROOT } from "@dataspecer/git";
 
 // TODO RadStr: Put these types into shared package between frontend and backend
 type DSPackageInProjectVisualizationData = {
@@ -218,7 +219,7 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
               },
             });
 
-            const root = allResources["http://dataspecer.com/packages/local-root"];
+            const root = allResources[PACKAGE_ROOT];
             const rootPackages = root.subResourcesIri
               .map(rootPackage => allResources[rootPackage])
               ?.filter(rootPackage => rootPackage !== undefined && rootPackage.projectIri === examinedPackage.projectIri);

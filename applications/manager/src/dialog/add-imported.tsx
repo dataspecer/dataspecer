@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { BetterModalProps } from "@/lib/better-modal";
-import { requestLoadPackage } from "@/package";
+import { refreshRootPackage, requestLoadPackage } from "@/package";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -106,8 +106,7 @@ export const AddImported = ({ id, isOpen, resolve }: AddImportedProps & BetterMo
 
     if (result.ok) {
       toast.success(t("add-imported.success"));
-      // TODO RadStr: Well not really on me, but I would put the rootURL into some variable.
-      requestLoadPackage("http://dataspecer.com/packages/local-root", true);
+      await refreshRootPackage();
       resolve(true);
     } else {
       toast.error(t("add-imported.error"));

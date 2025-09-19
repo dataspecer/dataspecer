@@ -49,18 +49,13 @@ export const removeGitRepository = asyncHandler(async (request: express.Request,
   for (const patAccessToken of patAccessTokens) {
     try {
       if (!successfullyRemovedRemoteRepository) {
-        // TODO RadStr: Again - I have the full URL, I don't need to deconstruct it and then construct it back
         const fetchResponseForRemove = await gitProvider.removeRemoteRepository(patAccessToken.value, repositoryUserName, repoName);
-        // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
-        // console.info("fetchResponse for GitHub repository delete", fetchResponseForRemove);
         successfullyRemovedRemoteRepository = true;
       }
 
       if (!successfullyRemovedPublicationRepository) {
         // TODO RadStr: Well the name of repository might be different in future, but this is anyways just for debugging now
         const fetchResponseForPublicationRepositoryRemove = await gitProvider.removeRemoteRepository(patAccessToken.value, repositoryUserName, repoName + "-publication-repo");
-        // TODO RadStr: Debug print with potentionally sensitive stuff (it may contain PAT token)
-        // console.info("fetchResponse for GitHub repository delete", fetchResponseForPublicationRepositoryRemove);
         successfullyRemovedPublicationRepository = true;
       }
 

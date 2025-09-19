@@ -409,7 +409,7 @@ export async function importFromGitUrl(repositoryURL: string, commitReferenceTyp
 
   // https://stackoverflow.com/questions/11944932/how-to-download-a-file-with-node-js-without-using-third-party-libraries
   // and https://medium.com/deno-the-complete-reference/download-file-with-fetch-in-node-js-57dd370c973a
-  // TODO RadStr: Using fetch instead of internal httpFetch, since that one does not support zip files
+  // Note: Using fetch instead of internal httpFetch, since that one does not support zip files
   const downloadZipResponse = await fetch(gitZipDownloadURLData.zipURL, {
     method: "GET",
   });

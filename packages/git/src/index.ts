@@ -13,3 +13,4 @@ export * from "./merge/resolvers/implementations/do-nothing-resolver.ts";
 export * from "./merge/resolvers/implementations/operation-resolver.ts";
 export * from "./merge/resolvers/implementations/use-other-resolver.ts";
 export * from "./datastore-type-converter.ts";
+export * from "./constants.ts";

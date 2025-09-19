@@ -48,7 +48,11 @@ export const handleSignin = asyncHandler(async (request: express.Request, respon
     authConfig = createAuthConfigWithCorrectPermissions(authPermissions, dsBackendURL, callerURL);
   }
   else {
-    throw new Error("Processing signin, however the url is actually not a signin");        // TODO RadStr: Better error handling
+    response.status(400).json({
+      error: "Bad Request",
+      message: "Processing signin, however the url is actually not a signin"
+    });
+    return;
   }
 
 

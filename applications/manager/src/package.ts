@@ -4,6 +4,7 @@ import { createContext, useRef, useState } from "react";
 import { StructureEditorBackendService } from "@dataspecer/backend-utils/connectors/specification";
 import { LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { createModelInstructions } from "./known-models";
+import { PACKAGE_ROOT } from "@dataspecer/git";
 
 const backendUrl = import.meta.env.VITE_BACKEND;
 
@@ -47,6 +48,10 @@ export async function requestLoadPackage(iri: string, forceUpdate = false) {
     copiedResourcesMemory[iri] = pckg;
     setResourcesReact(copiedResourcesMemory);
     resourcesMemory.current = copiedResourcesMemory;
+}
+
+export async function refreshRootPackage() {
+    requestLoadPackage(PACKAGE_ROOT, true);
 }
 
 export async function modifyPackageRepresentsBranchHead(iri: string, representsBranchHead: boolean) {

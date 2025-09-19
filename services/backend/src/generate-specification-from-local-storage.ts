@@ -109,7 +109,7 @@
 // //   method: "GET",
 // // });
 
-// // const response = await httpFetch(`http://localhost:3100/resources/import?parentIri=${encodeURIComponent("http://dataspecer.com/packages/local-root")}&url=${encodeURIComponent("https://mff-uk.github.io/specifications/dcat-ap/")}`, {
+// // const response = await httpFetch(`http://localhost:3100/resources/import?parentIri=${encodeURIComponent(PACKAGE_ROOT)}&url=${encodeURIComponent("https://mff-uk.github.io/specifications/dcat-ap/")}`, {
 // //   method: "GET",
 // // });
 
@@ -503,7 +503,7 @@
 
 // (async () => {
 
-//   const [result] = await importFromUrl("http://dataspecer.com/packages/local-root", "https://mff-uk.github.io/specifications/dcat-ap/");
+//   const [result] = await importFromUrl(PACKAGE_ROOT, "https://mff-uk.github.io/specifications/dcat-ap/");
 //   console.info("importFromURL result", result);
 
 //   if (result === null) {

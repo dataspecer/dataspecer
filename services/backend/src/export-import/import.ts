@@ -2,6 +2,7 @@ import JSZip from "jszip";
 import { ResourceModel } from "../models/resource-model.ts";
 import { isArtificialExportDirectory } from "./export.ts";
 import { v4 as uuidv4 } from "uuid";
+import { PACKAGE_ROOT } from "@dataspecer/git";
 
 
 const FILE_EXTENSION_REGEX = /^\.([-0-9a-zA-Z]+)\.json$/;
@@ -16,7 +17,7 @@ type ImportMapping = {
 export class PackageImporter {
   private readonly resourceModel: ResourceModel;
   private zip!: JSZip;
-  private rootToWrite = "http://dataspecer.com/packages/local-root";
+  private rootToWrite = PACKAGE_ROOT;
   private inputPathsToCanonicalMapping!: Record<string, string>;    // TODO RadStr: Hack with ! - Also I am not sure what should be instance methods and what not when it comes to creation of the mapping
   private canonicalPathsToInputMapping!: Record<string, string>;    // TODO RadStr: Hack with ! - Also I am not sure what should be instance methods and what not when it comes to creation of the mapping
   private shouldGenerateNewIris!: boolean;

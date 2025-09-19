@@ -3,10 +3,10 @@ import { useContext, useLayoutEffect, useState } from "react";
 import { Package } from "@dataspecer/core-v2/project";
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
-import { modifyPackageProjectData, modifyPackageRepresentsBranchHead, packageService, requestLoadPackage, ResourcesContext } from "@/package";
+import { modifyPackageProjectData, modifyPackageRepresentsBranchHead, packageService, refreshRootPackage, requestLoadPackage, ResourcesContext } from "@/package";
 import { createIdentifierForHTMLElement, InputComponent } from "@/components/simple-input-component";
 import { toast } from "sonner";
-import { createSetterWithGitValidation } from "@dataspecer/git";
+import { createSetterWithGitValidation, PACKAGE_ROOT } from "@dataspecer/git";
 
 export enum BranchAction {
   CreateNewBranch,
@@ -21,9 +21,6 @@ type CreateBranchDialogProps = {
 } | null>;
 
 const idPrefix = "createNewbranch";
-// TODO RadStr: Well not really on me, but I would put the rootURL into some exported variable.
-const rootURL = "http://dataspecer.com/packages/local-root";
-
 
 export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, resolve }: CreateBranchDialogProps) => {
   const [branch, setBranch] = useState<string>(sourcePackage.branch);
@@ -57,14 +54,14 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
 
     let response: any;
     if (actionOnConfirm === BranchAction.CreateNewBranch) {
-      response = await packageService.copyRecursively(sourcePackage.iri, rootURL);
+      response = await packageService.copyRecursively(sourcePackage.iri, PACKAGE_ROOT);
       console.info("Created resource response:", { response });
       const newRootIri: string | undefined = response?.newRootIri;
       if (newRootIri === undefined) {
         return;
       }
       await modifyPackageProjectData(newRootIri, sourcePackage.projectIri, branch);
-      await requestLoadPackage(rootURL, true);
+      await refreshRootPackage();
     }
     else {
       response = await modifyPackageRepresentsBranchHead(sourcePackage.iri, !sourcePackage.representsBranchHead);

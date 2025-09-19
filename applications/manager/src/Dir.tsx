@@ -40,6 +40,7 @@ import { MergeStatesDialog } from "./dialog/merge-conflict-dialog";
 import { OpenMergeState } from "./dialog/open-merge-state";
 import { useLogin, UseLoginType } from "./hooks/use-login";
 import SetPrivateSSHKeyDialog from "./dialog/set-private-ssh";
+import { PACKAGE_ROOT } from "@dataspecer/git";
 
 export function lng(text: LanguageString | undefined): string | undefined {
   return text?.["cs"] ?? text?.["en"];
@@ -241,7 +242,7 @@ const Row = ({ iri, projectFilter, setProjectFilter, isSignedIn, mergeActors, pa
 
       {/* Git actions */}
 
-      { (resource.types.includes(LOCAL_PACKAGE) && parentIri === "http://dataspecer.com/packages/local-root") ?
+      { (resource.types.includes(LOCAL_PACKAGE) && parentIri === PACKAGE_ROOT) ?
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="shrink-0">
@@ -318,7 +319,7 @@ export default function Component() {
 
   return (
     <div>
-      <RootPackage iri={"http://dataspecer.com/packages/local-root"} login={login} />
+      <RootPackage iri={PACKAGE_ROOT} login={login} />
       <RootPackage iri={"http://dataspecer.com/packages/v1"} login={login} />
       <RootPackage iri={"https://dataspecer.com/resources/import/lod"} defaultToggle={false} login={login} />
     </div>

@@ -4,7 +4,8 @@ import { Package } from "@dataspecer/core-v2/project";
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { Loader } from "lucide-react";
-import { requestLoadPackage } from "@/package";
+import { refreshRootPackage } from "@/package";
+import { PACKAGE_ROOT } from "@dataspecer/git";
 
 type CommitActionsDialogProps = {
   examinedPackage: Package,
@@ -45,14 +46,13 @@ export const CommitActionsDialog = ({ examinedPackage, branch, commitHash, branc
 
     const defaultGitURL = examinedPackage.linkedGitRepositoryURL;
     const gitURL = defaultGitURL + `/tree/${commitPointer}`;     // TODO RadStr: Same as the redirect ... again need the git providers code from backend
-    const rootURL = "http://dataspecer.com/packages/local-root";
     await fetch(import.meta.env.VITE_BACKEND +
-      "/resources/import-from-git?parentIri=" + encodeURIComponent(rootURL) +
+      "/resources/import-from-git?parentIri=" + encodeURIComponent(PACKAGE_ROOT) +
       "&gitURL=" + encodeURIComponent(gitURL) +
       `&commitReferenceType=${importType}`, {
       method: "POST",
     });
-    requestLoadPackage(rootURL, true);
+    await refreshRootPackage();
 
     setIsPerformingAction(false);
     resolve(null);
