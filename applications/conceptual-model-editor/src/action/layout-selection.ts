@@ -7,7 +7,7 @@ import {
   isVisualProfileRelationship,
   isVisualRelationship,
   type WritableVisualModel,
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 import { ExplicitAnchors, performLayout, UserGivenAlgorithmConfigurations, XY } from "@dataspecer/layout";
 import { getBoundingBoxInfo } from "./utilities";
 import { createExactNodeDimensionsQueryHandler, processLayoutResult } from "./layout-visual-model";

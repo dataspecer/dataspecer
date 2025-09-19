@@ -1,9 +1,8 @@
-import { Package } from "../../project/index.ts";
 import { TypedObject } from "./typed-object.ts";
 
 export interface EntityModelFactory {
 
-  createFromPackage<T extends TypedObject>(value: Package, types: string[]): Promise<T | null>;
+  // TODO Implement method to create entity model from a package information?
 
   /**
    * Create model using Dataspecer API JSON response.

@@ -1,4 +1,4 @@
-import { VisualModel } from "@dataspecer/core-v2/visual-model";
+import { VisualModel } from "@dataspecer/visual-model";
 import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import {
   CmeSemanticModel,

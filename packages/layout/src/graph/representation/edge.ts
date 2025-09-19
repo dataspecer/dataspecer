@@ -2,7 +2,7 @@ import { SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-m
 import { VisualEntitiesWithOutsiders, XY } from "../../index.ts";
 import { Graph } from "./graph.ts";
 import { isSemanticModelGeneralization, SemanticModelGeneralization, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
-import { VISUAL_PROFILE_RELATIONSHIP_TYPE, VISUAL_RELATIONSHIP_TYPE, VisualModel, VisualProfileRelationship, VisualRelationship } from "@dataspecer/core-v2/visual-model";
+import { VISUAL_PROFILE_RELATIONSHIP_TYPE, VISUAL_RELATIONSHIP_TYPE, VisualModel, VisualProfileRelationship, VisualRelationship } from "@dataspecer/visual-model";
 import { AllowedEdgeBundleTypes, ExtractedModels } from "../../layout-algorithms/entity-bundles.ts";
 import { capitalizeFirstLetter, createIdentifier } from "../../util/utils.ts";
 import { Node } from "./node.ts";

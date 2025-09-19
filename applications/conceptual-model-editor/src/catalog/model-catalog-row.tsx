@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import type { WritableVisualModel } from "@dataspecer/core-v2/visual-model";
+import type { WritableVisualModel } from "@dataspecer/visual-model";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 
 import { shortenStringTo } from "../util/utils";

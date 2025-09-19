@@ -1,6 +1,6 @@
 import { EntityModel } from "@dataspecer/core-v2";
 import { CmeSemanticModel, CmeSemanticModelType } from "./model/cme-semantic-model";
-import { VisualModel } from "@dataspecer/core-v2/visual-model";
+import { VisualModel } from "@dataspecer/visual-model";
 import { semanticModelMapToCmeSemanticModel } from "./adapter";
 import { configuration, t } from "../../application";
 

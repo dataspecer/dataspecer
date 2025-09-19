@@ -1,4 +1,4 @@
-import { isVisualDiagramNode, isVisualProfileRelationship, isVisualRelationship, Position, VisualNode, VisualProfileRelationship, VisualRelationship } from "@dataspecer/core-v2/visual-model";
+import { isVisualDiagramNode, isVisualProfileRelationship, isVisualRelationship, Position, VisualNode, VisualProfileRelationship, VisualRelationship } from "@dataspecer/visual-model";
 import { ElkConfiguration } from "../../configurations/elk/elk-configurations.ts";
 import { VisualNodeComplete } from "../../graph/representation/node.ts";
 import { GraphTransformer } from "./graph-transformer-interface.ts";

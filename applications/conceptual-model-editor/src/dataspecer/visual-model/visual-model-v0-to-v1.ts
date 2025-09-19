@@ -6,7 +6,7 @@ import {
   type WritableVisualModel,
   isVisualNode,
   isVisualRelationship,
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 import {
   isSemanticModelClass,
   isSemanticModelGeneralization,

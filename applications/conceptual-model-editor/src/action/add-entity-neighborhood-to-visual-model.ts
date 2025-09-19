@@ -1,4 +1,4 @@
-import { isVisualNode, isVisualRelationship, WritableVisualModel } from "@dataspecer/core-v2/visual-model";
+import { isVisualNode, isVisualRelationship, WritableVisualModel } from "@dataspecer/visual-model";
 import { ClassesContextType } from "../context/classes-context";
 import { ModelGraphContextType } from "../context/model-context";
 import { UseDiagramType } from "../diagram/diagram-hook";

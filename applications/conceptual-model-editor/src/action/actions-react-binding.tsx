@@ -8,7 +8,7 @@ import {
   isVisualProfileRelationship,
   isVisualRelationship,
   isWritableVisualModel
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 
 import { type DialogApiContextType } from "../dialog/dialog-service";
 import { DialogApiContext } from "../dialog/dialog-context";

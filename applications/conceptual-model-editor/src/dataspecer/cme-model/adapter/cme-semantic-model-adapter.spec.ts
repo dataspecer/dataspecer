@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { VisualModel } from "@dataspecer/core-v2/visual-model";
+import { VisualModel } from "@dataspecer/visual-model";
 import { EntityModel } from "@dataspecer/core-v2";
 
 import { CmeSemanticModelType } from "../model";

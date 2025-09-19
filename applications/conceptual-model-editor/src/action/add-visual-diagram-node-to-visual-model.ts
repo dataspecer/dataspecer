@@ -3,7 +3,7 @@ import {
   isVisualRelationship,
   VisualDiagramNode,
   WritableVisualModel
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 import {
   getViewportCenterForClassPlacement,
 } from "./utilities";

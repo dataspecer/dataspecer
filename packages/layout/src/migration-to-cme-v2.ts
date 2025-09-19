@@ -1,4 +1,4 @@
-import { VisualModelData, VisualEntity } from "@dataspecer/core-v2/visual-model";
+import { VisualModelData, VisualEntity } from "@dataspecer/visual-model";
 
 // Newly the actual mapping in cme-v2 is using the id of visual entity as key
 type VisualEntityIdentifier = string;

@@ -1,4 +1,4 @@
-import { VisualNode, WritableVisualModel, isVisualNode } from "@dataspecer/core-v2/visual-model";
+import { VisualNode, WritableVisualModel, isVisualNode } from "@dataspecer/visual-model";
 import {
   AnchorOverrideSetting,
   ExplicitAnchors,

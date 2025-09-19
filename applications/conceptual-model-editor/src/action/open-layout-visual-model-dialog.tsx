@@ -9,7 +9,7 @@ import { ClassesContextType } from "@/context/classes-context";
 import { UseNotificationServiceWriterType } from "@/notification/notification-service-context";
 import { UseDiagramType } from "@/diagram/diagram-hook";
 import { ModelGraphContextType } from "@/context/model-context";
-import { WritableVisualModel } from "@dataspecer/core-v2/visual-model";
+import { WritableVisualModel } from "@dataspecer/visual-model";
 import { LayoutConfigurationContextType } from "@/context/layout-configuration-context";
 
 /**

@@ -24,7 +24,7 @@ import {
   representUndefinedClassProfile,
   sortRepresentatives,
 } from "../utilities/dialog-utilities";
-import { VisualModel } from "@dataspecer/core-v2/visual-model";
+import { VisualModel } from "@dataspecer/visual-model";
 import { EntityDsIdentifier } from "../../dataspecer/entity-model";
 import { semanticModelMapToCmeSemanticModel } from "../../dataspecer/cme-model/adapter";
 import { configuration, createLogger, t } from "../../application";

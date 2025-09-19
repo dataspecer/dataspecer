@@ -1,0 +1,24 @@
+{
+  "name": "@dataspecer/visual-model",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "prebuild": "rimraf lib",
+    "test": "vitest run --pass-with-no-tests",
+    "test:watch": "vitest"
+  },
+  "exports": {
+    ".": "./lib/index.js"
+  },
+  "dependencies": {
+    "@dataspecer/entity-model": "*",
+    "@dataspecer/utilities": "*"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
+  }
+}

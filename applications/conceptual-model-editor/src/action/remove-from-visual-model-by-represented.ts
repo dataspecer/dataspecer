@@ -5,7 +5,7 @@ import {
   VisualEntity,
   VisualModel,
   WritableVisualModel,
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 
 import type { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { collectDirectVisualEntitiesToRemove } from "./remove-from-visual-model-by-visual";

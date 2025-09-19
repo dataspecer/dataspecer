@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { type EntityModel } from "@dataspecer/core-v2/entity-model";
 import { BackendPackageService } from "@dataspecer/core-v2/project";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
-import type { VisualModel } from "@dataspecer/core-v2/visual-model";
+import type { VisualModel } from "@dataspecer/visual-model";
 import { createLayoutConfiguration } from "@dataspecer/layout";
 import { createDefaultConfigurationModelFromJsonObject } from "@dataspecer/core-v2/configuration-model";
 

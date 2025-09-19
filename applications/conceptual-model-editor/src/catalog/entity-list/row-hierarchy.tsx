@@ -22,7 +22,7 @@ import {
   SemanticModelRelationshipProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { isSemanticModelAttributeProfile } from "../../dataspecer/semantic-model";
-import { VisualModel } from "@dataspecer/core-v2/visual-model";
+import { VisualModel } from "@dataspecer/visual-model";
 
 export const RowHierarchy = (props: {
   entity: SemanticModelClass | SemanticModelRelationship

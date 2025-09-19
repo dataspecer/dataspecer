@@ -8,7 +8,7 @@ import { DataspecerError } from "../dataspecer-error";
 import { removeFromArray } from "../../utilities/functional";
 import { updateUrlQuery } from "./url-query";
 import { savePackageModels } from "../dataspecer-service";
-import { VisualModel } from "@dataspecer/core-v2/visual-model";
+import { VisualModel } from "@dataspecer/visual-model";
 
 const LOG = createLogger(import.meta.url);
 

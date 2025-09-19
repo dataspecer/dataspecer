@@ -10,7 +10,7 @@ import {
   VisualNode,
   VisualProfileRelationship,
   WritableVisualModel
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 import {
   SemanticModelAggregatorView,
 } from "@dataspecer/core-v2/semantic-model/aggregator";

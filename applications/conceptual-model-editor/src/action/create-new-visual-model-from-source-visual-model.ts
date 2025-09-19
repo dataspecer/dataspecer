@@ -7,7 +7,7 @@ import {
   VisualProfileRelationship,
   VisualRelationship,
   WritableVisualModel
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 import { ModelGraphContextType, UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { LanguageString } from "@dataspecer/core/core/core-resource";

@@ -3,7 +3,7 @@
  */
 
 import { expect, test } from "vitest";
-import { isVisualProfileRelationship, isVisualRelationship } from "@dataspecer/core-v2/visual-model";
+import { isVisualProfileRelationship, isVisualRelationship } from "@dataspecer/visual-model";
 import { ActionsTestSuite, notificationMockup, TestedSemanticConnectionType } from "./test/actions-test-suite";
 import { extendSelectionAction, ExtensionType, NodeSelection, VisibilityFilter } from "./extend-selection-action";
 

@@ -6,7 +6,7 @@ import {
   isVisualRelationship,
   VisualEntity,
   VisualModel,
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 
 import { EntityDsIdentifier, ModelDsIdentifier } from "../entity-model";
 import { configuration } from "../../application";

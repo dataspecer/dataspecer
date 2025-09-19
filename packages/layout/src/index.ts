@@ -1,5 +1,5 @@
 import { isSemanticModelGeneralization, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
-import { Position, VisualModel } from "@dataspecer/core-v2/visual-model";
+import { Position, VisualModel } from "@dataspecer/visual-model";
 
 import {
 	DefaultGraphConversionActionConfiguration,

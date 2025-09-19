@@ -5,7 +5,7 @@ import { createRdfsModel, createSgovModel } from "../../semantic-model/simplifie
 import { createInMemorySemanticModel } from "../../semantic-model/simplified/in-memory-semantic-model.ts";
 import { createVisualModel } from "../../semantic-model/simplified/visual-model.ts";
 import { PimStoreWrapper } from "../../semantic-model/v1-adapters/index.ts";
-import { VisualModel } from "../../visual-model/index.ts";
+import { VisualModel } from "@dataspecer/visual-model";
 import { BaseResource, Package, ResourceEditable } from "../resource/resource.ts";
 import { PackageService, SemanticModelPackageService } from "./package-service.ts";
 

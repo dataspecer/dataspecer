@@ -1,4 +1,4 @@
-import { isVisualNode, WritableVisualModel } from "@dataspecer/core-v2/visual-model";
+import { isVisualNode, WritableVisualModel } from "@dataspecer/visual-model";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { addSemanticAttributeToVisualNodeAction } from "./add-semantic-attribute-to-visual-node";
 

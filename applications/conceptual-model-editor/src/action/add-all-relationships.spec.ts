@@ -8,7 +8,7 @@ import {
   createDefaultVisualModelFactory,
   VisualDiagramNode,
   VisualRelationship
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 
 import { notificationMockup, TestedSemanticConnectionType } from "./test/actions-test-suite";
 import { ActionsTestSuite } from "./test/actions-test-suite";
@@ -28,7 +28,7 @@ test("Try to call the action when all edges are missing, " +
   const firstNodeInModel = ActionsTestSuite.createNewVisualNodeForTesting(visualModel, model.getId(), "4");
   const secondNodeInModel = ActionsTestSuite.createNewVisualNodeForTesting(visualModel, model.getId(), "5");
 
-  const referencedVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync();
+  const referencedVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync(null);
   ActionsTestSuite.createNewVisualNodeForTesting(referencedVisualModel, model.getId(), "6");
   ActionsTestSuite.createNewVisualNodeForTesting(referencedVisualModel, model.getId(), "7");
   graph.aggregator.addModel(referencedVisualModel);
@@ -98,12 +98,12 @@ test("Creating edges between two visual diagram nodes", () => {
   const model = modelsAsArray[2];
   const firstNodeInModel = ActionsTestSuite.createNewVisualNodeForTesting(visualModel, model.getId(), "4");
 
-  const firstReferencedVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync();
+  const firstReferencedVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync(null);
   ActionsTestSuite.createNewVisualNodeForTesting(firstReferencedVisualModel, model.getId(), "6");
   ActionsTestSuite.createNewVisualNodeForTesting(firstReferencedVisualModel, model.getId(), "7");
   graph.aggregator.addModel(firstReferencedVisualModel);
 
-  const secondReferencedVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync();
+  const secondReferencedVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync(null);
   ActionsTestSuite.createNewVisualNodeForTesting(secondReferencedVisualModel, model.getId(), "5");
   graph.aggregator.addModel(secondReferencedVisualModel);
 

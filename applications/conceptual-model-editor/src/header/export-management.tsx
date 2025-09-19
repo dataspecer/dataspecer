@@ -4,7 +4,7 @@ import type { SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/con
 import { BackendPackageService } from "@dataspecer/core-v2/project";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import { type Entities, type Entity, type EntityModel } from "@dataspecer/core-v2/entity-model";
-import type { VisualModel, WritableVisualModel } from "@dataspecer/core-v2/visual-model";
+import type { VisualModel, WritableVisualModel } from "@dataspecer/visual-model";
 import {
   type ExportedConfigurationType,
   modelsToWorkspaceString,

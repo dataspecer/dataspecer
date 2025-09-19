@@ -19,7 +19,7 @@ import {
   cmeRelationshipToUiRelationship,
   cmeSemanticModelToUiSemanticModel,
 } from "./adapter";
-import { HexColor, VisualModel } from "@dataspecer/core-v2/visual-model";
+import { HexColor, VisualModel } from "@dataspecer/visual-model";
 import { SemanticModel } from "../semantic-model";
 import { createLogger } from "../../application";
 import { createUiAdapterContext, UiAdapterContext } from "./adapter/adapter-context";

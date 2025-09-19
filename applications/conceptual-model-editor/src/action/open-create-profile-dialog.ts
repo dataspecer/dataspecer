@@ -4,7 +4,7 @@ import {
   isSemanticModelGeneralization,
   isSemanticModelRelationship,
 } from "@dataspecer/core-v2/semantic-model/concepts";
-import { WritableVisualModel, isWritableVisualModel } from "@dataspecer/core-v2/visual-model";
+import { WritableVisualModel, isWritableVisualModel } from "@dataspecer/visual-model";
 
 import { ModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";

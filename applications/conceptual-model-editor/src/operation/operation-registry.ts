@@ -1,6 +1,6 @@
 import { SemanticModel } from "@dataspecer/semantic-model";
 import { ProfileModel } from "@dataspecer/profile-model";
-import { VisualModel } from "@dataspecer/core-v2/visual-model";
+import { VisualModel } from "@dataspecer/visual-model";
 
 import { CmeOperationArguments, CmeOperationResult } from "./operation";
 

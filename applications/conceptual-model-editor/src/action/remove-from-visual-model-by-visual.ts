@@ -5,7 +5,7 @@ import {
   isVisualGroup,
   isVisualProfileRelationship,
   isVisualRelationship,
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 import { removeVisualEntitiesFromVisualModelAction } from "./remove-visual-entities-from-visual-model";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { isVisualEdgeEnd } from "./utilities";

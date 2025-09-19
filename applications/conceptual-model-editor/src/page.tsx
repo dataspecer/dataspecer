@@ -8,7 +8,7 @@ import {
   type WritableVisualModel,
   isVisualModel,
   isWritableVisualModel,
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 import {
   type AggregatedEntityWrapper,
   SemanticModelAggregator,

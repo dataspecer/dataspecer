@@ -1,5 +1,5 @@
 import { EntityModel } from "@dataspecer/core-v2";
-import { VisualModel } from "@dataspecer/core-v2/visual-model";
+import { VisualModel } from "@dataspecer/visual-model";
 
 import {
   CmeExecutionContext,

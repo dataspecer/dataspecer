@@ -5,7 +5,7 @@ import {
   type VisualEntity,
   type Waypoint,
   type WritableVisualModel,
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 import { DataspecerError } from "../../dataspecer-error";
 import { EntityDsIdentifier, ModelDsIdentifier } from "../../entity-model";
 

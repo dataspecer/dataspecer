@@ -1,4 +1,4 @@
-import { WritableVisualModel } from "@dataspecer/core-v2/visual-model";
+import { WritableVisualModel } from "@dataspecer/visual-model";
 import { ModelGraphContextType, UseModelGraphContextType } from "../context/model-context";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { Options } from "../application";

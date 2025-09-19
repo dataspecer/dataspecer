@@ -1,6 +1,6 @@
 import { EntityModel } from "@dataspecer/core-v2";
 import { BackendPackageService } from "@dataspecer/core-v2/project";
-import { VisualModel } from "@dataspecer/core-v2/visual-model";
+import { VisualModel } from "@dataspecer/visual-model";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 
 // We keep one instance-wide copy of backend service.

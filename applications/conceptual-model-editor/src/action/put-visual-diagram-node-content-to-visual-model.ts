@@ -8,7 +8,7 @@ import { isVisualDiagramNode,
   VisualModel,
   VisualRelationship,
   WritableVisualModel
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 import { VisualModelDiagramNode } from "@/diagram";
 import { ModelGraphContextType } from "@/context/model-context";
 import { UseNotificationServiceWriterType } from "@/notification/notification-service-context";

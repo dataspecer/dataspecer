@@ -17,7 +17,7 @@ import {
   SemanticModelClassProfile,
   SemanticModelRelationshipProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { VisualModel } from "@dataspecer/core-v2/visual-model";
+import { VisualModel } from "@dataspecer/visual-model";
 import { semanticModelMapToCmeSemanticModel } from "../../dataspecer/cme-model/adapter";
 import { dataTypeUriToName } from "../../dataspecer/semantic-model/data-type";
 import {

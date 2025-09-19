@@ -32,7 +32,9 @@ export interface VisualModelFactory {
    *
    * @deprecated Use other method instead.
    */
-  createNewWritableVisualModelSync(): WritableVisualModel;
+  createNewWritableVisualModelSync(
+    identifier: string | null,
+  ): WritableVisualModel;
 
   /**
    * Create default visual model by wrapping other model.
@@ -54,8 +56,10 @@ export interface VisualModelFactory {
 
 class DefaultVisualModelFactory implements VisualModelFactory {
 
-  createNewWritableVisualModelSync() {
-    const identifier = createIdentifier();
+  createNewWritableVisualModelSync(identifier: string | null) {
+    if (identifier === null) {
+      identifier = createIdentifier();
+    }
     const internal = createDefaultEntityModel(
       VISUAL_MODEL_DATA_TYPE, identifier);
     return this.createWritableVisualModelSync(internal);

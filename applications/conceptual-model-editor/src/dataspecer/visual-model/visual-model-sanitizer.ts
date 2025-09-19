@@ -2,7 +2,7 @@ import { EntityModel } from "@dataspecer/core-v2";
 import { AggregatedEntityWrapper } from "@dataspecer/core-v2/semantic-model/aggregator";
 import { isSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import { isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { isModelVisualInformation, isVisualNode, WritableVisualModel } from "@dataspecer/core-v2/visual-model";
+import { isModelVisualInformation, isVisualNode, WritableVisualModel } from "@dataspecer/visual-model";
 import { getDomainAndRangeConcepts } from "../../util/relationship-utils";
 
 /**

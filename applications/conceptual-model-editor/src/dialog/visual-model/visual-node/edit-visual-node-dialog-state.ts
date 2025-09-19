@@ -1,4 +1,4 @@
-import { isVisualNode, VisualModel } from "@dataspecer/core-v2/visual-model";
+import { isVisualNode, VisualModel } from "@dataspecer/visual-model";
 import { CmeReference } from "../../../dataspecer/cme-model/model";
 import { configuration, createLogger } from "../../../application";
 import { InvalidState } from "../../../application/error";

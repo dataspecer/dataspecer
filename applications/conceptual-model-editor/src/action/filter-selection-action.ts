@@ -8,7 +8,7 @@ import {
   isEntityInVisualModel
 } from "./extend-selection-action";
 import { ClassesContextType } from "../context/classes-context";
-import { VisualModel } from "@dataspecer/core-v2/visual-model";
+import { VisualModel } from "@dataspecer/visual-model";
 import { ModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 

@@ -1,5 +1,5 @@
 
-import { VisualModel, isVisualNode, isWritableVisualModel } from "@dataspecer/core-v2/visual-model";
+import { VisualModel, isVisualNode, isWritableVisualModel } from "@dataspecer/visual-model";
 import { ClassesContextType } from "../context/classes-context";
 import { ModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";

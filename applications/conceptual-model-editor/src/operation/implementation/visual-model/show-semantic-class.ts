@@ -1,4 +1,4 @@
-import { isWritableVisualModel } from "@dataspecer/core-v2/visual-model";
+import { isWritableVisualModel } from "@dataspecer/visual-model";
 
 import {
   EntityDsIdentifier,

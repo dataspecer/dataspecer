@@ -19,7 +19,7 @@ import { RowHierarchy } from "./row-hierarchy";
 import { shortenStringTo } from "../../util/utils";
 import { ActionsContextType, useActions } from "../../action/actions-react-binding";
 import { ExpandModelButton } from "../components/expand-model";
-import { type VisualEntity, VisualNode, isVisualNode, isVisualRelationship } from "@dataspecer/core-v2/visual-model";
+import { type VisualEntity, VisualNode, isVisualNode, isVisualRelationship } from "@dataspecer/visual-model";
 import {
   isSemanticModelClassProfile,
   isSemanticModelRelationshipProfile,

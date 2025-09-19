@@ -9,7 +9,7 @@ import { applyLayoutConfiguration, createLayoutConfiguration, performLayoutOfSem
 import { Loader } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { useConfigDialog } from "./layout-dialog";
-import { createVisualModelData } from "@dataspecer/core-v2/visual-model";
+import { createVisualModelData } from "@dataspecer/visual-model";
 import { createDefaultConfigurationModelFromJsonObject } from "@dataspecer/core-v2/configuration-model";
 
 

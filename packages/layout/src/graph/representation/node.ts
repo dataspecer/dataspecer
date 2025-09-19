@@ -1,4 +1,4 @@
-import { VISUAL_NODE_TYPE, VisualDiagramNode, VisualModel, VisualNode } from "@dataspecer/core-v2/visual-model";
+import { VISUAL_NODE_TYPE, VisualDiagramNode, VisualModel, VisualNode } from "@dataspecer/visual-model";
 import { addToRecordArray, createIdentifier, placePositionOnGrid } from "../../util/utils.ts";
 import { Graph, MainGraph } from "./graph.ts";
 import { SemanticModelEntity, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";

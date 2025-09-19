@@ -1,11 +1,9 @@
-import { LOCAL_VISUAL_MODEL } from "../model/known-models.ts";
 import {
   EntityEventListener,
   UnsubscribeCallback,
 } from "./entity-model/observable-entity-model.ts";
 import { Entity, EntityIdentifier } from "./entity-model/entity.ts";
 import { LanguageString } from "./entity-model/labeled-model.ts";
-import { addToMapArray, removeFromMapArray } from "../utils/functional.ts";
 import {
   WritableVisualModel, WRITABLE_VISUAL_MODEL_TYPE,
 } from "./writable-visual-model.ts";
@@ -23,6 +21,7 @@ import {
   VisualModelData, VisualNode, VisualProfileRelationship,
   VisualRelationship, VisualView
 } from "./concepts/index.ts";
+import { addToMapArray, removeFromMapArray } from "@dataspecer/utilities";
 
 /**
  * Used for migration as the model can not be determined from the
@@ -35,6 +34,9 @@ const UNKNOWN_MODEL = "unknown-model";
  * visual model alone in version 0.
  */
 const UNKNOWN_ENTITY = "unknown-entity";
+
+const LOCAL_VISUAL_MODEL =
+  "http://dataspecer.com/resources/local/visual-model";
 
 /**
  * This is how data were stored in the initial version of the visual model.

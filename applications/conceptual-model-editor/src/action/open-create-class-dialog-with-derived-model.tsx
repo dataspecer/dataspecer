@@ -3,7 +3,7 @@ import { UseNotificationServiceWriterType } from "../notification/notification-s
 import { placePositionOnGrid } from "@dataspecer/layout";
 import { Options, configuration } from "../application";
 import { openCreateClassDialogAction } from "./open-create-class-dialog";
-import { isVisualNode, WritableVisualModel } from "@dataspecer/core-v2/visual-model";
+import { isVisualNode, WritableVisualModel } from "@dataspecer/visual-model";
 import { ClassesContextType } from "../context/classes-context";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { Position } from "../diagram";

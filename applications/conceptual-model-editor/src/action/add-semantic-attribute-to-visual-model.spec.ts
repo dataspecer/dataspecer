@@ -6,7 +6,7 @@
  */
 
 import { expect, test } from "vitest";
-import { VisualNode } from "@dataspecer/core-v2/visual-model";
+import { VisualNode } from "@dataspecer/visual-model";
 import { ActionsTestSuite, notificationMockup, TestedSemanticConnectionType } from "./test/actions-test-suite";
 import { addSemanticAttributeToVisualNodeAction } from "./add-semantic-attribute-to-visual-node";
 

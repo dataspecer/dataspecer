@@ -11,7 +11,7 @@ import {
   VisualNode,
   VisualRelationship,
   WritableVisualModel,
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 
 import { getDomainAndRange, getDomainAndRangeConcepts } from "../../util/relationship-utils";
 import { createLogger } from "../../application";
