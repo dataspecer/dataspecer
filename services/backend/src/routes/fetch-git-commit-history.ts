@@ -6,36 +6,7 @@ import express from "express";
 import fs from "fs";
 import { createSimpleGit, gitCloneBasic } from "../utils/simple-git-utils.ts";
 import { FETCH_GIT_HISTORY_PREFIX } from "../models/git-store-info.ts";
-
-// TODO RadStr: On client the rawCommits don't have to be readonly here yes
-type FetchedGitData = {
-    rawCommits: readonly RawCommit[],
-    logGraph: string,
-}
-
-type RawCommit = {
-    hash: string,
-    authorName: string,
-    authorEmail: string,
-    authorTimestamp: string,
-    commitMessage: string,
-    date: string,
-    parents: string,
-    refs: string,
-}
-
-type BranchHistory = {
-  name: string;
-  commits: RawCommit[];
-}
-
-type GitHistory = {
-  branches: BranchHistory[];
-  /**
-   * The default branch - the branch you end up on when doing git clone - usually main/master, but may be develop
-   */
-  defaultBranch: string;
-}
+import { GitRawHistoryToSendToClient, GitHistory, BranchHistory, RawCommit } from "@dataspecer/git";
 
 
 export const fetchGitCommitHistory = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -62,20 +33,18 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
 
     try {
         await gitCloneBasic(git, gitInitialDirectory, gitURL, false, true, undefined, query.historyDepth);
-        console.info("After cloning");
-        // const log = await git.log();
-        // console.info("log", {log});
 
-        const defaultbranchGit = await git.branch(["-vv"]);
-        const defaultBranchLabel = defaultbranchGit.branches[defaultbranchGit.current].label;
-        const defaultBranchName = defaultBranchLabel.substring(1, defaultBranchLabel.indexOf("]"));     // Inside the [] there is tracked branch - that is the remote to use
-        console.info({defaultBranchLabel, defaultBranch: defaultBranchName});
+        // const defaultbranchGit = await git.branch(["-vv"]);
+        // const defaultBranchLabel = defaultbranchGit.branches[defaultbranchGit.current].label;
+        // const defaultBranchName = defaultBranchLabel.substring(1, defaultBranchLabel.indexOf("]"));     // Inside the [] there is tracked branch - that is the remote to use
+        // console.info({defaultBranchLabel, defaultBranch: defaultBranchName});
 
-        const gitHistory: GitHistory = {
-            branches: [],
-            defaultBranch: defaultBranchName,
-        };
+        // const gitHistory: GitHistory = {
+        //     branches: [],
+        //     defaultBranch: defaultBranchName,
+        // };
 
+        // Note: We can not have composite formats - so for example have object author - and for it have name: "%an", email ... etc.
         const logFormat = {
             hash: "%H",
             parents: "%P",          // The commit parents are separated by " "
@@ -85,123 +54,95 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
             date: "%ai",
 
             refs: "%d",
-            // author: {                        // Does not work
-            //     name: "%an",
-            //     email: "%ae",
-            //     timestamp: "%at",
-            // },
             authorTimestamp: "%at",
             subject: "%s",
         };
-        let firstCommit: any | null = null;
+        // let firstCommit: any | null = null;
 
-        const remoteBranches = await git.branch(["--remotes"]);
-        for (const remoteBranch of remoteBranches.all) {
-            // const branchLog = await git.log([remoteBranch]);
-            const firstCommitHash = await git.firstCommit();
-            const branchLog = await git.log({
-                // from: "^",      // This throws error for some reason
-                from: firstCommitHash,      // As in https://www.npmjs.com/package/simple-git git log part ... however the first commit is not included
-                to: remoteBranch,
-                format: logFormat,
-            });
+        // const remoteBranches = await git.branch(["--remotes"]);
+        // for (const remoteBranch of remoteBranches.all) {
+        //     // const branchLog = await git.log([remoteBranch]);
+        //     const firstCommitHash = await git.firstCommit();
+        //     const branchLog = await git.log({
+        //         // from: "^",      // This throws error for some reason
+        //         from: firstCommitHash,      // As in https://www.npmjs.com/package/simple-git git log part ... however the first commit is not included
+        //         to: remoteBranch,
+        //         format: logFormat,
+        //     });
 
-            // We have to solve the first commit explicitly by hack
-            if (firstCommit === null) {
-                const rawFirstCommitFromLog = await git.log([firstCommitHash]);
-                if (rawFirstCommitFromLog.latest?.hash === undefined) {
-                    // There is not even a first commit in the repo
-                    throw new Error("Not a single commit in the repo");     // TODO RadStr: Once again, probably better error handling
-                }
+        //     // We have to solve the first commit explicitly by hack
+        //     if (firstCommit === null) {
+        //         const rawFirstCommitFromLog = await git.log([firstCommitHash]);
+        //         if (rawFirstCommitFromLog.latest?.hash === undefined) {
+        //             // There is not even a first commit in the repo
+        //             throw new Error("Not a single commit in the repo");
+        //         }
 
-                firstCommit = {
-                    hash: rawFirstCommitFromLog.latest?.hash,
-                    authorName: rawFirstCommitFromLog.latest?.author_name,
-                    authorEmail: rawFirstCommitFromLog.latest?.author_email,
-                    commitMessage: rawFirstCommitFromLog.latest?.message,
-                    date: rawFirstCommitFromLog.latest?.date,
-                    parents: "",
-                };
-            }
+        //         firstCommit = {
+        //             hash: rawFirstCommitFromLog.latest?.hash,
+        //             authorName: rawFirstCommitFromLog.latest?.author_name,
+        //             authorEmail: rawFirstCommitFromLog.latest?.author_email,
+        //             commitMessage: rawFirstCommitFromLog.latest?.message,
+        //             date: rawFirstCommitFromLog.latest?.date,
+        //             parents: "",
+        //         };
+        //     }
 
-            console.info({branchLog});
-            // TODO RadStr: Now it is just debug, the transforamtion itself is identity, we can jsut use branchLog.all
-            const commits = branchLog.all.map(commit => {
-                console.info({commit});
-                return {
-                    hash: commit.hash,
-                    authorName: commit.authorName,
-                    authorEmail: commit.authorEmail,
-                    authorTimestamp: commit.authorTimestamp,
-                    commitMessage: commit.commitMessage,
-                    date: commit.date,
-                    parents: commit.parents,
-                    refs: commit.refs,
-                }
-            });
+        //     console.info({branchLog});
+        //     // TODO RadStr checked: Now it is just debug, the transforamtion itself is identity, we can jsut use branchLog.all
+        //     const commits = branchLog.all.map(commit => {
+        //         console.info({commit});
+        //         return {
+        //             hash: commit.hash,
+        //             authorName: commit.authorName,
+        //             authorEmail: commit.authorEmail,
+        //             authorTimestamp: commit.authorTimestamp,
+        //             commitMessage: commit.commitMessage,
+        //             date: commit.date,
+        //             parents: commit.parents,
+        //             refs: commit.refs,
+        //         }
+        //     });
 
-            gitHistory.branches.push({
-                name: remoteBranch,
-                commits: commits.concat(firstCommit),
-            })
-        }
+        //     gitHistory.branches.push({
+        //         name: remoteBranch,
+        //         commits: commits.concat(firstCommit),
+        //     })
+        // }
 
-        // const commits = log.all.map(commit => ({
-        //   hash: commit.hash,
-        //   authorName: commit.author_name,
-        //   authorEmail: commit.author_email,
-        //   commitMessage: commit.message,
-        // }));
+        // // const commits = log.all.map(commit => ({
+        // //   hash: commit.hash,
+        // //   authorName: commit.author_name,
+        // //   authorEmail: commit.author_email,
+        // //   commitMessage: commit.message,
+        // // }));
 
-        // TODO RadStr: One branch only
-        // const gitHistory: GitHistory = {
-        //     branches: [{
-        //         name: "main",
-        //         commits,
-        //     }]
-        // };
+        // const logGraph = await git.raw(["log", "--graph", "--oneline", "--all", "--format=%H"]);
+        // console.info("logGraph", logGraph);
 
-        // TODO RadStr: Remove the explicit log branch stuff before this - I am not using it
+        // const mapBranchToHeadCommitRaw = await git.raw([
+        //     "for-each-ref",
+        //     "--format=%(refname:short) %(objectname)",
+        //     "refs/remotes/"
+        // ]);
+        // const mapBranchToHeadCommitAsArray: string[] = mapBranchToHeadCommitRaw.split("\n");
+        // const mapBranchToHeadCommit: Record<string, string> = {};
+        // mapBranchToHeadCommitAsArray.forEach(keyAndvalue => {
+        //     const [branch, commitHash] = keyAndvalue.split(" ");
+        //     mapBranchToHeadCommit[branch] = commitHash;
+        // });
+
         const customLogResult = await git.log({
             format: logFormat,
             "--all": null,
         });
 
-        const logGraph = await git.raw(["log", "--graph", "--oneline", "--all", "--format=%H"]);
-        console.info("logGraph", logGraph);
         console.info("customLogResult", customLogResult);
 
-        // console.info("Branches:", await git.branch());
-        // // response.json(gitHistory);
-
-        const mapBranchToHeadCommitRaw = await git.raw([
-            "for-each-ref",
-            "--format=%(refname:short) %(objectname)",
-            "refs/remotes/"
-        ]);
-        const mapBranchToHeadCommitAsArray: string[] = mapBranchToHeadCommitRaw.split("\n");
-        const mapBranchToHeadCommit: Record<string, string> = {};
-        mapBranchToHeadCommitAsArray.forEach(keyAndvalue => {
-            const [branch, commitHash] = keyAndvalue.split(" ");
-            mapBranchToHeadCommit[branch] = commitHash;
-        });
-
-
-        // const jsonResponse = {
-        //     git2json: git2jsonRun,
-        //     logGraph,
-        // };
-
-        console.info(customLogResult);
-        const jsonResponse: FetchedGitData = {
+        const jsonResponse: GitRawHistoryToSendToClient = {
             rawCommits: customLogResult.all,
-            logGraph,
         };
-
         response.json(jsonResponse);
-        // git2json
-        //     .run({ paths })
-        //     .then((myGitLogJSON: any) => {console.log(myGitLogJSON); response.json(myGitLogJSON); });
     }
     catch(err) {
         console.info("Error either in git log or git clone", err);
@@ -217,7 +158,7 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
  * Test methods
  * @example Example Usage: createTestGitHistory([3, 4, 6])
  * @param commitCounts
- * @returns
+ * @deprecated We are using the data from git log and not parse it ourselves (the commented code) like we used to
  */
 function createTestGitHistory(commitCounts: number[]): GitHistory {
     const gitHistory: GitHistory = {
@@ -242,6 +183,9 @@ function createTestGitHistory(commitCounts: number[]): GitHistory {
 }
 
 
+/**
+ * @deprecated for same reason as {@link createTestGitHistory}
+ */
 function createTestCommits(branchName: string, commitCount: number): RawCommit[] {
     const commits: RawCommit[] = [];
     for (let i = 0; i < commitCount; i++) {

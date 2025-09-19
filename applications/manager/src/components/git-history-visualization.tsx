@@ -12,56 +12,13 @@ import { CommitActionsDialog } from "@/dialog/git-commit-actions-dialog";
 import { Loader } from "lucide-react";
 import { Template } from "@gitgraph/core/lib/template";
 import { ResourceWithIris } from "@/package";
-import { PACKAGE_ROOT } from "@dataspecer/git";
+import { PACKAGE_ROOT, CommitInfo, RawCommit, BranchHistory, FetchedGitRawHistory } from "@dataspecer/git";
 
-// TODO RadStr: Put these types into shared package between frontend and backend
 type DSPackageInProjectVisualizationData = {
   iri: string;
   lastCommitHash: string;
   representsBranch: boolean;
   branch: string;
-}
-
-type FetchedGitData = {
-  rawCommits: RawCommit[],      // TODO RadStr: Note that on server here needs to be readonly
-  logGraph: string,             // TODO RadStr: Remove then if I won't use it
-}
-
-type RawCommit = {
-    hash: string,
-    authorName: string,
-    authorEmail: string,
-    authorTimestamp: string,
-    commitMessage: string,
-    date: string,
-    parents: string,
-    refs: string,
-}
-
-type Commit = {
-  author: {
-    name: string,
-    email: string,
-    timestamp: string,
-  };
-  subject: string;      // Commit message
-  hash: string;         // Commit hash
-  date: string;         // Author date of commit in iso8601
-  parents: string[];
-  refs: string[];       // The refs which points to this commit (HEADs of branches, i.e. the last commit on branch)
-}
-
-type BranchHistory = {
-  name: string;
-  commits: Commit[];
-}
-
-type GitHistory = {
-  branches: BranchHistory[];
-  /**
-   * The default branch - the branch you end up on when doing git clone - usually main/master, but may be develop
-   */
-  defaultBranch: string;
 }
 
 type GitHistoryVisualizationProps = {
@@ -77,10 +34,10 @@ type GitHistoryVisualizationProps = {
 // @ts-ignore
 function mapCommitsToBranches(gitHistory: GitHistory): {
   commitToBranchesMap: Record<string, string[]>,
-  hashToCommitMap: Record<string, Commit>,
+  hashToCommitMap: Record<string, CommitInfo>,
  } {
   const commitToBranchesMap: Record<string, string[]> = {};
-  const hashToCommitMap: Record<string, Commit> = {};
+  const hashToCommitMap: Record<string, CommitInfo> = {};
   for (const branch of gitHistory.branches) {
     for (const commit of branch.commits) {
       if (hashToCommitMap[commit.hash] === undefined) {
@@ -106,12 +63,12 @@ function mapCommitsToBranches(gitHistory: GitHistory): {
  */
 // TODO RadStr checked: Unused - Ignore for now, Might be useful in future for better implementation of import git log to gitGraph
 // @ts-ignore
-function getUniqueCommits(commitToBranchesMap: Record<string, string[]>, hashToCommitMap: Record<string, Commit>): {
-  branchToUniqueCommitsMap: Record<string, Commit[]>,
-  uniqueCommits: Record<string, Commit>,
+function getUniqueCommits(commitToBranchesMap: Record<string, string[]>, hashToCommitMap: Record<string, CommitInfo>): {
+  branchToUniqueCommitsMap: Record<string, CommitInfo[]>,
+  uniqueCommits: Record<string, CommitInfo>,
 } {
-  const branchToUniqueCommitsMap: Record<string, Commit[]> = {};
-  const uniqueCommits: Record<string, Commit> = {};
+  const branchToUniqueCommitsMap: Record<string, CommitInfo[]> = {};
+  const uniqueCommits: Record<string, CommitInfo> = {};
 
   for (const [commitHash, branches] of Object.entries(commitToBranchesMap)) {
     if (branches.length === 1) {
@@ -205,7 +162,7 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
           method: "GET",
         })
           .then((res) => res.json())
-          .then((data: FetchedGitData) => {
+          .then((data: FetchedGitRawHistory) => {
             const convertedCommits = convertFetchedCommitsFormat(data.rawCommits);
 
             const gitGraphTemplate = templateExtend(TemplateName.Metro, {
@@ -273,7 +230,7 @@ const createGitGraph = (
   openModal: OpenBetterModal,
   examinedPackage: Package,
   gitGraphTemplate: Template,
-  commits: Commit[],
+  commits: CommitInfo[],
   dsPackagesInProjectForBranches: Record<string, DSPackageInProjectVisualizationData>,
   dsPackagesInProjectForNonBranches: Record<string, DSPackageInProjectVisualizationData[]>,
   dsPackagesInProjectForAll: Record<string, DSPackageInProjectVisualizationData[]>,
@@ -291,21 +248,12 @@ const createGitGraph = (
         // Alternative solutions was to parse the git log --graph command
         // We should also somehow reflect that some branches are in DS and some not, etc. it is really non-trivial problem
         for (const commit of Object.values(commits) as any) {
-          // TODO RadStr: remove this - just put from backend only the stuff that is needed instead of deleting
-
+          // These are the needed properties on the commit object for import to work
           // delete commit["refs"];
           // delete commit["hash"];
-          delete commit["hashAbbrev"];
-          delete commit["tree"];
-          delete commit["treeAbbrev"];
           // delete commit["parents"];
-          delete commit["parentsAbbrev"];
           // delete commit["author"];
-          delete commit["committer"];
           // delete commit["subject"];
-          delete commit["body"];
-          delete commit["notes"];
-          delete commit["stats"];
           commit.onClick = (gitGraphCommit: any) => {                        // Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-dot-click
             commitOnClickHandler(openModal, examinedPackage, gitGraphCommit, dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches[gitGraphCommit.hash]);
           };
@@ -424,7 +372,7 @@ function convertFetchedCommitsFormat(rawCommits: RawCommit[]) {
   return convertedCommits;
 }
 
-function convertRawCommitToCommit(rawCommit: RawCommit): Commit {
+function convertRawCommitToCommit(rawCommit: RawCommit): CommitInfo {
   return {
       author: convertAuthorDataToAuthorObject(rawCommit.authorName, rawCommit.authorEmail, rawCommit.authorTimestamp),
       refs: convertRefsToGit2JsonFormat(rawCommit.refs),
@@ -465,7 +413,7 @@ function convertAuthorDataToAuthorObject(authorName: string, authorEmail: string
 // /**
 //  * @returns The mapping of branch to the last commit on the branch
 //  */
-// function getRefs(commits: Commit[]): Record<string, string> {
+// function getRefs(commits: CommitInfo[]): Record<string, string> {
 //   const branchToLastCommitMap: Record<string, string> = {};
 
 //   for (const commit of commits) {
