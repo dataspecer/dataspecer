@@ -122,15 +122,6 @@ const finalizeMergeState = async (mergeStateUUID: string | undefined): Promise<b
   }
 }
 
-const sendCacheToBackend = async (
-  _datastoreInfosForCacheEntries: DatastoreInfosCache,
-  _formatsForCacheEntries: FormatsCache,
-  _convertedCacheForMergeFromContent: CacheContentMap,
-  _convertedCacheForMergeToContent: CacheContentMap,
-) => {
-  throw new Error("TODO RadStr: Implement");
-};
-
 const updateCacheContentEntryEverywhere = (
   convertedCacheSetter: (value: SetStateAction<CacheContentMap>) => void,
   treePathToNodeContainingDatastore: string,
@@ -272,11 +263,11 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
       setCurrentTreePathToNodeContainingDatastore(treePathToNodeContainingDatastore);
       return;
     }
-    // Note that it must be always string because of the if guard for both nulls at the start of method
-    const newDatastoreType = (newMergeFromDatastoreInfo?.type ?? newMergeToDatastoreInfo?.type) as string;
 
 
     setIsLoadingTextData(true);
+    // Note that it must be always string because of the if guard for both nulls at the start of method
+    const newDatastoreType = (newMergeFromDatastoreInfo?.type ?? newMergeToDatastoreInfo?.type) as string;
 
     setCurrentTreePathToNodeContainingDatastore(treePathToNodeContainingDatastore);
     const newFormat = (examinedMergeState?.filesystemTypeMergeFrom === AvailableFilesystems.ClassicFilesystem ? newMergeFromDatastoreInfo?.format : newMergeToDatastoreInfo?.format) ?? "text";
@@ -362,6 +353,12 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
     }
   };
 
+  const saveChangesToCache = async () => {
+    if (mergeFromDatastoreInfo !== null && mergeToDatastoreInfo !== null) {
+      await changeActiveModel(currentTreePathToNodeContainingDatastore, mergeFromDatastoreInfo, mergeToDatastoreInfo, true);
+    }
+  };
+
 
   const applyAutomaticMergeStateResolver = (mergeStrategy: MergeResolverStrategy) => {
     const datastoreInfoForEditable = getEditableValue(editable, mergeFromDatastoreInfo, mergeToDatastoreInfo);
@@ -382,12 +379,10 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
   };
 
   const saveEverything = async () => {
+    await saveChangesToCache();
     await saveFileChanges();
     if (examinedMergeState !== null) {
       await saveMergeState(examinedMergeState, conflictsToBeResolvedOnSave);
-      await sendCacheToBackend(
-        datastoreInfosForCacheEntries, formatsForCacheEntries,
-        convertedCacheForMergeFromContent, convertedCacheForMergeToContent);
     }
     closeWithSuccess();
   };
@@ -399,15 +394,19 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
   };
 
   const saveFileChanges = async () => {
-    const editorValue = monacoEditor.current?.editor.getModifiedEditor()?.getValue();
-    if (editorValue === undefined) {
-      return;
+    const editableCacheContents = getEditableValue(editable, convertedCacheForMergeFromContent, convertedCacheForMergeToContent);
+
+    for (const [nodeTreePath, datastoreInfoMap] of Object.entries(datastoreInfosForCacheEntries)) {
+      for (const [modelName, datastoreInfo] of Object.entries(datastoreInfoMap)) {
+        const format = formatsForCacheEntries[nodeTreePath][modelName];
+        const newValue = editableCacheContents[nodeTreePath][modelName];
+        const newValueAsJSON = convertDatastoreContentForInputFormatToOutputFormat(newValue, format, "json", true);
+        const editableFilesystem = getEditableValue(editable, examinedMergeState?.filesystemTypeMergeFrom, examinedMergeState?.filesystemTypeMergeTo) ?? null;
+        const relevantDatastoreInfo = getEditableValue(editable, datastoreInfo.mergeFrom, datastoreInfo.mergeTo);
+        await ClientFilesystem.updateDatastoreContentDirectly(relevantDatastoreInfo, newValueAsJSON, editableFilesystem, import.meta.env.VITE_BACKEND);
+        await reloadModelsDataFromBackend();
+      }
     }
-    const editedNewVersion = convertDatastoreContentForInputFormatToOutputFormat(editorValue, activeFormat, "json", true);
-    const editableFilesystem = getEditableValue(editable, examinedMergeState?.filesystemTypeMergeFrom, examinedMergeState?.filesystemTypeMergeTo) ?? null;
-    const datastoreInfoForEdited = getEditableValue(editable, mergeFromDatastoreInfo, mergeToDatastoreInfo);
-    await ClientFilesystem.updateDatastoreContentDirectly(datastoreInfoForEdited, editedNewVersion, editableFilesystem, import.meta.env.VITE_BACKEND);
-    await reloadModelsDataFromBackend();
 
 
     // // Remove all listeners first
