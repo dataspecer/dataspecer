@@ -24,7 +24,7 @@ export const createMergeState = asyncHandler(async (request: express.Request, re
 
   if (mergeFromResource === null || mergeToResource === null) {
     response.status(404).send({error: `The Merge from or Merge to does not exists in the Dataspecer. The map of iri to boolean if it exists (from and to) ${mergeFromIri}: ${mergeFromResource !== null}, ${mergeToIri}: ${mergeFromResource !== null}`});
-    throw new Error("Missing ")
+    return;
   }
   const { git, gitInitialDirectory } = createSimpleGit(mergeFromIri, "merge-conflicts");
   await gitCloneBasic(git, gitInitialDirectory, mergeFromResource.linkedGitRepositoryURL, false, true, undefined);

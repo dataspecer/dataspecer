@@ -163,6 +163,10 @@ export async function getLastCommitHash(git: SimpleGit) {
   return gitLastCommitHash;
 }
 
+export async function getLastCommit(git: SimpleGit) {
+  return (await git.log({ maxCount: 1 })).latest;
+}
+
 /**
  * Removes everything inside the {@link rootDirectory} in filesystem, except the given {@link exceptions}. The exceptions should be the name of entries to skip inside the dir.
  */

@@ -76,9 +76,10 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
       await resourceModel.updateResourceProjectIriAndBranch(query.iri, undefined, defaultBranch ?? undefined);
       await resourceModel.updateResourceGitLink(query.iri, fullLinkedGitRepositoryURL, true);
 
+      // // Just provide empty merge from values, since we are newly creating the link we can not perform merge right away anyways
       const commitResult = await commitPackageToGitUsingAuthSession(
-        request, query.iri, fullLinkedGitRepositoryURL, defaultBranch, "", repositoryUserName,
-        repoName, commitMessage, response, query.exportFormat ?? null);
+        request, query.iri, fullLinkedGitRepositoryURL, defaultBranch, "", "", "",
+        repositoryUserName, repoName, commitMessage, response, query.exportFormat ?? null);
 
       if (!commitResult) {
         response.sendStatus(409);
@@ -131,8 +132,9 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
   }
   await gitProvider.createWebhook(accessToken.value, repositoryUserName!, repoName!, WEBHOOK_HANDLER_URL, ["push"]);
 
+  // Just provide empty merge from values, since we are newly creating the link we can not perform merge right away anyways
   await commitPackageToGitUsingAuthSession(
-    request, query.iri, query.gitRepositoryURL, branchName, "", repositoryUserName!,
+    request, query.iri, query.gitRepositoryURL, branchName, "", "", "", repositoryUserName!,
     repoName!, commitMessage, response, query.exportFormat ?? null);
 });
 
