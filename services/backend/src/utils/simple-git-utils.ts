@@ -72,7 +72,7 @@ export type UniqueDirectory = {
     gitInitialDirectory: string,
 }
 
-export type SimpleGitUniqueInitialDirectory = UniqueDirectory & {
+export type CreateSimpleGitResult = UniqueDirectory & {
     /**
      * Is initiated instance of git with the {@link gitInitialDirectory}.
      */
@@ -113,7 +113,7 @@ export const createUniqueDirectory = (
 export const createSimpleGit = (
     iri: string,
     cloneDirectoryNamePrefix: string,
-): SimpleGitUniqueInitialDirectory => {
+): CreateSimpleGitResult => {
     const uniqueDirectory = createUniqueDirectory(iri, cloneDirectoryNamePrefix);
     const git = simpleGit(uniqueDirectory.gitInitialDirectory);
 

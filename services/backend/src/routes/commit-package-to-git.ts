@@ -6,7 +6,7 @@ import { mergeStateModel, resourceModel } from "../main.ts";
 import fs from "fs";
 import { CommitResult, SimpleGit } from "simple-git";
 import { checkErrorBoundaryForCommitAction, extractPartOfRepositoryURL, getAuthorizationURL, getLastCommit, getLastCommitHash, removeEverythingExcept } from "../utils/git-utils.ts";
-import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS } from "@dataspecer/git";
+import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS, CommitInfo } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
 import { createUniqueCommitMessage } from "../utils/git-utils.ts";
@@ -14,10 +14,61 @@ import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-
 import { createReadmeFile } from "../git-readme/readme-generator.ts";
 import { ReadmeTemplateData } from "../git-readme/readme-template.ts";
 import { AvailableExports } from "../export-import/export-actions.ts";
-import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "../utils/simple-git-utils.ts";
+import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic, CreateSimpleGitResult, UniqueDirectory } from "../utils/simple-git-utils.ts";
 import { compareGitAndDSFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { MERGE_DS_CONFLICTS_PREFIX, PUSH_PREFIX } from "../models/git-store-info.ts";
 import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
+import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
+
+
+export type RepositoryIdentificationInfo = {
+  givenRepositoryUserName: string,
+  givenRepositoryName: string,
+}
+
+/**
+ * {@link GitCommitToCreateInfoBasic} but no more ambiguities, everything is set
+ */
+type GitCommitToCreateInfoExplicitWithCredentials = {
+  gitCredentials: GitCredentials,
+  commitMessage: string,
+  gitProvider: GitProvider,
+  exportFormat: string | null,
+}
+
+export type GitCommitToCreateInfoBasic = {
+  commitMessage: string | null,
+  gitProvider?: GitProvider,
+  exportFormat: string | null,
+}
+
+export type CommitBranchAndHashInfo = {
+  localBranch: string | null,
+  localLastCommitHash: string,
+  mergeFromBranch: string,
+  mergeFromCommitHash: string,
+}
+
+
+/**
+ * Same as {@link CommitBranchAndHashInfo}, but with renamed fields to mergeTo
+ */
+type CommitBranchAndHashInfoForMerge = {
+  mergeToBranch: string | null,
+  mergeToCommitHash: string,
+  mergeFromBranch: string,
+  mergeFromCommitHash: string,
+}
+
+function convertBranchAndHashToMergeInfo(input: CommitBranchAndHashInfo): CommitBranchAndHashInfoForMerge {
+  return {
+    mergeToBranch: input.localBranch,
+    mergeToCommitHash: input.localLastCommitHash,
+    mergeFromBranch: input.mergeFromBranch,
+    mergeFromCommitHash: input.mergeFromCommitHash,
+  }
+}
+
 
 
 /**
@@ -44,9 +95,26 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
   checkErrorBoundaryForCommitAction(gitLink, repoName, userName);
 
   const branch = resource.branch === "main." ? null : resource.branch;
+  const repositoryIdentificationInfo: RepositoryIdentificationInfo = {
+    givenRepositoryUserName: userName!,
+    givenRepositoryName: repoName!,
+  };
+
+  const branchAndLastCommit: CommitBranchAndHashInfo = {
+    localBranch: branch,
+    localLastCommitHash: resource.lastCommitHash,
+    mergeFromBranch: resource.mergeFromBranch,
+    mergeFromCommitHash: resource.mergeFromHash,
+  };
+
+  const gitCommitInfo: GitCommitToCreateInfoBasic = {
+    commitMessage,
+    gitProvider: undefined,
+    exportFormat: query.exportFormat ?? null
+  };
+
   const commitResult = await commitPackageToGitUsingAuthSession(
-    request, iri, gitLink, branch, resource.lastCommitHash, resource.mergeFromBranch, resource.mergeFromHash,
-    userName!, repoName!, commitMessage, response, query.exportFormat ?? null);
+    request, iri, gitLink, branchAndLastCommit, repositoryIdentificationInfo, response, gitCommitInfo);
 
   if (!commitResult) {
     response.sendStatus(409);
@@ -65,23 +133,21 @@ export const commitPackageToGitUsingAuthSession = async (
   request: express.Request,
   iri: string,
   remoteRepositoryURL: string,
-  branch: string | null,
-  localLastCommitHash: string,
-  mergeFromBranch: string,
-  mergeFromCommitHash: string,
-  givenRepositoryUserName: string,
-  givenRepositoryName: string,
-  commitMessage: string | null,
+  branchAndLastCommit: CommitBranchAndHashInfo,
+  repositoryIdentificationInfo: RepositoryIdentificationInfo,
   response: express.Response,
-  exportFormat: string | null,
-  gitProvider?: GitProvider,
+  gitCommitInfoBasic: GitCommitToCreateInfoBasic,
 ) => {
-  // If gitProvider not given - get it
-  gitProvider ??= GitProviderFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL);
+  // If gitProvider not given - extract it from url
+  const gitProvider = gitCommitInfoBasic.gitProvider ?? GitProviderFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL);
   const committer = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
-  return await commitPackageToGit(
-    iri, remoteRepositoryURL, branch, localLastCommitHash, mergeFromBranch, mergeFromCommitHash,
-    givenRepositoryUserName, givenRepositoryName, committer, commitMessage, gitProvider, exportFormat);
+  const commitInfo: GitCommitToCreateInfoExplicitWithCredentials = {
+    gitCredentials: committer,
+    commitMessage: gitCommitInfoBasic.commitMessage ?? createUniqueCommitMessage(),
+    gitProvider: gitProvider,
+    exportFormat: gitCommitInfoBasic.exportFormat,
+  };
+  return await commitPackageToGit(iri, remoteRepositoryURL, branchAndLastCommit, repositoryIdentificationInfo, commitInfo);
 }
 
 
@@ -98,32 +164,19 @@ export const commitPackageToGitUsingAuthSession = async (
 export const commitPackageToGit = async (
   iri: string,
   remoteRepositoryURL: string,
-  branch: string | null,
-  localLastCommitHash: string,
-  mergeFromBranch: string,
-  mergeFromCommitHash: string,
-  givenRepositoryUserName: string,
-  givenRepositoryName: string,
-  gitCredentials: GitCredentials,
-  commitMessage: string | null,
-  gitProvider: GitProvider,
-  exportFormat: string | null,
+  branchAndLastCommit: CommitBranchAndHashInfo,
+  repositoryIdentificationInfo: RepositoryIdentificationInfo,
+  commitInfo: GitCommitToCreateInfoExplicitWithCredentials,
 ): Promise<boolean> => {
-  if (commitMessage === null) {
-    commitMessage = createUniqueCommitMessage();
-  }
-
   // Note that the logic for both is similiar create git, clone, check if should create merge state conflict, perform export and "force" push.
-  if (mergeFromCommitHash === "") {
+  if (branchAndLastCommit.mergeFromCommitHash === "") {
     return await commitClassicToGit(
-      iri, remoteRepositoryURL, branch, localLastCommitHash, givenRepositoryUserName,
-      givenRepositoryName, gitCredentials, commitMessage, gitProvider, exportFormat);
+      iri, remoteRepositoryURL, branchAndLastCommit.localBranch, branchAndLastCommit.localLastCommitHash,
+      repositoryIdentificationInfo, commitInfo);
   }
   else {
-    return await commitDSMergeToGit(
-      iri, remoteRepositoryURL, givenRepositoryUserName, givenRepositoryName,
-      commitMessage, exportFormat, gitProvider, gitCredentials,
-      mergeFromBranch, mergeFromCommitHash, branch, localLastCommitHash);
+    const mergeInfo = convertBranchAndHashToMergeInfo(branchAndLastCommit);
+    return await commitDSMergeToGit(iri, remoteRepositoryURL, repositoryIdentificationInfo, commitInfo, mergeInfo);
   }
 };
 
@@ -132,28 +185,25 @@ export const commitPackageToGit = async (
 async function commitDSMergeToGit(
   iri: string,
   remoteRepositoryURL: string,
-  givenRepositoryUserName: string,
-  givenRepositoryName: string,
-  commitMessage: string,
-  exportFormat: string | null,
-  gitProvider: GitProvider,
-  gitCredentials: GitCredentials,
-
-  mergeFromBranch: string,
-  mergeFromCommit: string,
-  mergeToBranch: string | null,
-  mergeToCommit: string,
+  repositoryIdentificationInfo: RepositoryIdentificationInfo,
+  commitInfo: GitCommitToCreateInfoExplicitWithCredentials,
+  mergeInfo: CommitBranchAndHashInfoForMerge,
 ): Promise<boolean> {
   // Note that the logic follows the commit method logic - create git, clone, check if should create merge state conflict, perform export and "force" merge/push.
+  const { mergeFromBranch, mergeFromCommitHash, mergeToBranch, mergeToCommitHash } = mergeInfo;
+  const { givenRepositoryUserName, givenRepositoryName } = repositoryIdentificationInfo;
+  const { gitCredentials, gitProvider } = commitInfo;
 
-  const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGit(iri, MERGE_DS_CONFLICTS_PREFIX);
+
+  const createSimpleGitResult: CreateSimpleGitResult = createSimpleGit(iri, MERGE_DS_CONFLICTS_PREFIX);
+  const { git, gitInitialDirectory, gitInitialDirectoryParent } = createSimpleGitResult;
 
   for (const accessToken of gitCredentials.accessTokens) {
 
     const repoURLWithAuthorization = getAuthorizationURL(gitCredentials, accessToken, remoteRepositoryURL, givenRepositoryUserName, givenRepositoryName);
     const isLastAccessToken = accessToken === gitCredentials.accessTokens.at(-1);
 
-    const hasSetLastCommit: boolean = mergeToCommit !== "";
+    const hasSetLastCommit: boolean = mergeToCommitHash !== "";
 
 
     const cloneResult = await cloneBeforeMerge(git, gitInitialDirectory, repoURLWithAuthorization, mergeFromBranch, mergeToBranch, isLastAccessToken);
@@ -164,7 +214,7 @@ async function commitDSMergeToGit(
 
     const mergeFromBranchLog = await git.log([mergeFromBranch]);
     const lastMergeFromBranchCommitInGit = mergeFromBranchLog.latest?.hash;
-    const shouldTryCreateMergeState = lastMergeFromBranchCommitInGit !== mergeFromCommit;
+    const shouldTryCreateMergeState = lastMergeFromBranchCommitInGit !== mergeFromCommitHash;
 
     if (shouldTryCreateMergeState) {
       const {
@@ -177,13 +227,23 @@ async function commitDSMergeToGit(
         filesystemMergeTo,
       } = await compareGitAndDSFilesystems(gitProvider, iri, gitInitialDirectoryParent, "merge");
 
-      const commonCommitHash = await getCommonCommitInHistory(git, mergeFromCommit, mergeToCommit);
+      const commonCommitHash = await getCommonCommitInHistory(git, mergeFromCommitHash, mergeToCommitHash);
+
+      const mergeFromInfo: MergeEndInfoWithRootNode = {
+        rootNode: rootMergeFrom,
+        filesystemType: filesystemMergeFrom.getFilesystemType(),
+        lastCommitHash: mergeFromCommitHash,
+        rootFullPathToMeta: pathToRootMetaMergeFrom,
+      };
+      const mergeToInfo: MergeEndInfoWithRootNode = {
+        rootNode: rootMergeTo,
+        filesystemType: filesystemMergeTo.getFilesystemType(),
+        lastCommitHash: mergeToCommitHash,
+        rootFullPathToMeta: pathToRootMetaMergeTo,
+      };
 
       const createdMergeStateId = await mergeStateModel.createMergeStateIfNecessary(
-        iri, "merge", diffTreeComparisonResult,
-        mergeFromCommit, mergeToCommit, commonCommitHash,
-        rootMergeFrom, pathToRootMetaMergeFrom, filesystemMergeFrom.getFilesystemType(),
-        rootMergeTo, pathToRootMetaMergeTo, filesystemMergeTo.getFilesystemType());
+        iri, "merge", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
       if (createdMergeStateId !== null) {
         return false;
       }
@@ -199,9 +259,10 @@ async function commitDSMergeToGit(
       await git.checkout(mergeToBranchExplicit);
     }
 
+
     const pushResult = await exportAndPushToGit(
-      git, iri, repoURLWithAuthorization, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork,
-      givenRepositoryUserName, givenRepositoryName, gitCredentials, commitMessage, gitProvider, exportFormat, hasSetLastCommit, mergeFromBranch, isLastAccessToken);
+      createSimpleGitResult, iri, repoURLWithAuthorization, repositoryIdentificationInfo,
+      commitInfo, hasSetLastCommit, mergeFromBranch, isLastAccessToken);
     if (pushResult) {
       return pushResult;
     }
@@ -214,14 +275,15 @@ async function commitClassicToGit(
   remoteRepositoryURL: string,
   branch: string | null,
   localLastCommitHash: string,
-  givenRepositoryUserName: string,
-  givenRepositoryName: string,
-  gitCredentials: GitCredentials,
-  commitMessage: string,
-  gitProvider: GitProvider,
-  exportFormat: string | null,
+  repositoryIdentificationInfo: RepositoryIdentificationInfo,
+  commitInfo: GitCommitToCreateInfoExplicitWithCredentials,
 ) {
-  const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGit(iri, PUSH_PREFIX);
+  const { gitCredentials, gitProvider } = commitInfo;
+  const { givenRepositoryUserName, givenRepositoryName } = repositoryIdentificationInfo;
+
+
+  const createSimpleGitResult: CreateSimpleGitResult = createSimpleGit(iri, PUSH_PREFIX);
+  const { git, gitDirectoryToRemoveAfterWork, gitInitialDirectory, gitInitialDirectoryParent } = createSimpleGitResult;
 
   for (const accessToken of gitCredentials.accessTokens) {
 
@@ -254,11 +316,22 @@ async function commitClassicToGit(
 
           const commonCommitHash = await getCommonCommitInHistory(git, localLastCommitHash, remoteRepositoryLastCommitHash);
           const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS("push", localLastCommitHash, remoteRepositoryLastCommitHash);
+          const mergeFromInfo: MergeEndInfoWithRootNode = {
+            rootNode: rootMergeFrom,
+            filesystemType: filesystemMergeFrom.getFilesystemType(),
+            lastCommitHash: lastHashMergeFrom,
+            rootFullPathToMeta: pathToRootMetaMergeFrom,
+          };
+          const mergeToInfo: MergeEndInfoWithRootNode = {
+            rootNode: rootMergeTo,
+            filesystemType: filesystemMergeTo.getFilesystemType(),
+            lastCommitHash: lastHashMergeTo,
+            rootFullPathToMeta: pathToRootMetaMergeTo,
+          };
+
+
           const createdMergeStateId = await mergeStateModel.createMergeStateIfNecessary(
-            iri, "push", diffTreeComparisonResult,
-            lastHashMergeFrom, lastHashMergeTo, commonCommitHash,
-            rootMergeFrom, pathToRootMetaMergeFrom, filesystemMergeFrom.getFilesystemType(),
-            rootMergeTo, pathToRootMetaMergeTo, filesystemMergeTo.getFilesystemType());
+            iri, "push", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
           if (createdMergeStateId !== null) {
             return false;
           }
@@ -272,8 +345,8 @@ async function commitClassicToGit(
     }
 
     const pushResult = await exportAndPushToGit(
-      git, iri, repoURLWithAuthorization, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork,
-      givenRepositoryUserName, givenRepositoryName, gitCredentials, commitMessage, gitProvider, exportFormat, hasSetLastCommit, null, isLastAccessToken);
+      createSimpleGitResult, iri, repoURLWithAuthorization, repositoryIdentificationInfo,
+      commitInfo, hasSetLastCommit, null, isLastAccessToken);
     if (pushResult) {
       return pushResult;
     }
@@ -287,25 +360,19 @@ async function commitClassicToGit(
  * @returns True if successful. False if not and throws error if the failure was for the last access token
  */
 async function exportAndPushToGit(
-  git: SimpleGit,
+  createSimpleGitResult: CreateSimpleGitResult,
   iri: string,
   repoURLWithAuthorization: string,
-  gitInitialDirectory: string,
-  gitInitialDirectoryParent: string,
-  gitDirectoryToRemoveAfterWork: string,
-  givenRepositoryUserName: string,
-  givenRepositoryName: string,
-  gitCredentials: GitCredentials,
-  commitMessage: string,
-  gitProvider: GitProvider,
-  exportFormat: string | null,
+  repositoryIdentificationInfo: RepositoryIdentificationInfo,
+  commitInfo: GitCommitToCreateInfoExplicitWithCredentials,
   hasSetLastCommit: boolean,
   mergeFromBranch: string | null,
   isLastAccessToken: boolean,
 ): Promise<boolean> {
-  await fillGitDirectoryWithExport(
-    iri, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork,
-    gitProvider, exportFormat, givenRepositoryUserName, givenRepositoryName, hasSetLastCommit);
+  const { git, gitDirectoryToRemoveAfterWork } = createSimpleGitResult;
+  const { commitMessage, gitCredentials } = commitInfo;
+
+  await fillGitDirectoryWithExport(iri, createSimpleGitResult, commitInfo.gitProvider, commitInfo.exportFormat, repositoryIdentificationInfo, hasSetLastCommit);
 
   try {
     let commitResult: CommitResult;
@@ -346,15 +413,14 @@ async function exportAndPushToGit(
 
 async function fillGitDirectoryWithExport(
   iri: string,
-  gitInitialDirectory: string,
-  gitInitialDirectoryParent: string,
-  gitDirectoryToRemoveAfterWork: string,
+  gitPaths: UniqueDirectory,
   gitProvider: GitProvider,
   exportFormat: string | null,
-  givenRepositoryUserName: string,
-  givenRepositoryName: string,
+  repositoryIdentificationInfo: RepositoryIdentificationInfo,
   hasSetLastCommit: boolean,
 ) {
+  const { gitDirectoryToRemoveAfterWork, gitInitialDirectory, gitInitialDirectoryParent } = gitPaths;
+
   try {
     // Remove the content of the git directory and then replace it with the export
     // Alternatively we could keep the content and run await git.rm(['-r', '.']) ... however that would to know exactly
@@ -362,6 +428,8 @@ async function fillGitDirectoryWithExport(
     removeEverythingExcept(gitInitialDirectory, ["README.md", ".git", gitProvider.getWorkflowFilesDirectoryName()]);
     const exporter = new PackageExporterByResourceType();
     await exporter.doExportFromIRI(iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem, exportFormat ?? "json");
+
+    const { givenRepositoryName, givenRepositoryUserName } = repositoryIdentificationInfo;
 
     const readmeData: ReadmeTemplateData = {
       dataspecerUrl: "http://localhost:5174",

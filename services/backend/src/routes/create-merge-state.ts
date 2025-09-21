@@ -7,6 +7,7 @@ import { AvailableFilesystems, compareFileTrees, EditableType, FilesystemNodeLoc
 import { compareBackendFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "../utils/simple-git-utils.ts";
 import { SimpleGit } from "simple-git";
+import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
 
 
 export const createMergeState = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -71,10 +72,23 @@ export async function computeMergeStateForIris(
     const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS("pull", mergeFromLastCommitHash, mergeToLastCommitHash);
     const commonCommitHash = await getCommonCommitInHistory(git, mergeFromLastCommitHash, mergeToLastCommitHash);
 
+
+    const mergeFromInfo: MergeEndInfoWithRootNode = {
+      rootNode: rootMergeFrom,
+      filesystemType: AvailableFilesystems.DS_Filesystem,
+      lastCommitHash: lastHashMergeFrom,
+      rootFullPathToMeta: pathToRootMetaMergeFrom,
+    };
+
+    const mergeToInfo: MergeEndInfoWithRootNode = {
+      rootNode: rootMergeTo,
+      filesystemType: AvailableFilesystems.DS_Filesystem,
+      lastCommitHash: lastHashMergeTo,
+      rootFullPathToMeta: pathToRootMetaMergeTo,
+    };
+
     const createdMergeStateId = mergeStateModel.createMergeStateIfNecessary(
       mergeFromRootIri, "merge", diffTreeComparisonResult,
-      lastHashMergeFrom, lastHashMergeTo, commonCommitHash,
-      rootMergeFrom, pathToRootMetaMergeFrom, AvailableFilesystems.DS_Filesystem,
-      rootMergeTo, pathToRootMetaMergeTo, AvailableFilesystems.DS_Filesystem);
+      commonCommitHash, mergeFromInfo, mergeToInfo);
     return createdMergeStateId;
 }

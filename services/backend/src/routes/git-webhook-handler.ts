@@ -13,6 +13,7 @@ import { updateDSRepositoryByPullingGit } from "./pull-remote-repository.ts";
 import { WEBHOOK_PATH_PREFIX } from "../models/git-store-info.ts";
 import { DatastoreInfo, DirectoryNode, FilesystemNode, FilesystemAbstraction, getMergeFromMergeToForGitAndDS } from "@dataspecer/git";
 import { compareGitAndDSFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
+import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
 
 
 export const handleWebhook = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -81,11 +82,21 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
   // TODO RadStr: Rename ... and update based on the conflicts resolution, like we do not want to update when there is conflict
   await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(gitRootDirectoryName, gitRootDirectory, gitInitialDirectoryParent, gitProvider, filesystemMergeTo);      // TODO RadStr: Maybe await is unnecessary
 
+  const mergeFromInfo: MergeEndInfoWithRootNode = {
+    rootNode: rootMergeFrom,
+    filesystemType: filesystemMergeFrom.getFilesystemType(),
+    lastCommitHash: lastHashMergeFrom,
+    rootFullPathToMeta: pathToRootMetaMergeFrom,
+  };
+  const mergeToInfo: MergeEndInfoWithRootNode = {
+    rootNode: rootMergeTo,
+    filesystemType: filesystemMergeTo.getFilesystemType(),
+    lastCommitHash: lastHashMergeTo,
+    rootFullPathToMeta: pathToRootMetaMergeTo,
+  };
+
   const createdMergeStateId = mergeStateModel.createMergeStateIfNecessary(
-    iri, "pull", diffTreeComparisonResult,
-    lastHashMergeFrom, lastHashMergeTo, commonCommitHash,
-    rootMergeFrom, pathToRootMetaMergeFrom, filesystemMergeFrom.getFilesystemType(),
-    rootMergeTo, pathToRootMetaMergeTo, filesystemMergeTo.getFilesystemType());
+    iri, "pull", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
   return createdMergeStateId !== null;
 }
 

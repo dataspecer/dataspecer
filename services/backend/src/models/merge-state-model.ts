@@ -11,6 +11,29 @@ import { getLastCommitHash } from "../utils/git-utils.ts";
 import { ResourceChangeListener, ResourceChangeType } from "./resource-change-observer.ts";
 
 
+type MergeEndInfoInternal = {
+  lastCommitHash: string;
+  rootFullPathToMeta: string;
+  filesystemType: AvailableFilesystems;
+}
+
+export type MergeEndInfoWithRootNode = {
+  rootNode: FilesystemNode;
+} & MergeEndInfoInternal;
+
+type MergeEndInfoWithRootIri = {
+  rootIri: string;
+} & MergeEndInfoInternal;
+
+function convertToMergeInfoWithIri(input: MergeEndInfoWithRootNode): MergeEndInfoWithRootIri {
+  return {
+    filesystemType: input.filesystemType,
+    lastCommitHash: input.lastCommitHash,
+    rootFullPathToMeta: input.rootFullPathToMeta,
+    rootIri: input.rootNode.metadataCache.iri ?? "",
+  };
+}
+
 type MergeStateWithData = Prisma.MergeStateGetPayload<{
   include: { mergeStateData: true }
 }>;
@@ -52,6 +75,7 @@ export class MergeStateModel implements ResourceChangeListener {
     }
   }
 
+
   /**
    * @returns Id of the created merge state, if the state was created (there was more than one conflict). otherwise returns null.
    */
@@ -59,15 +83,9 @@ export class MergeStateModel implements ResourceChangeListener {
     rootResourceIri: string,
     mergeStateCause: MergeStateCause,
     diffTreeComparisonResult: ComparisonFullResult,
-    lastCommitHashMergeFrom: string,
-    lastCommitHashMergeTo: string,
     commonCommitHash: string,
-    rootMergeFrom: FilesystemNode,
-    pathToRootMetaMergeFrom: string,
-    filesystemTypeMergeFrom: AvailableFilesystems,
-    rootMergeTo: FilesystemNode,
-    rootFullPathToMetaMergeTo: string,
-    filesystemTypeMergeTo: AvailableFilesystems,
+    mergeFromInfo: MergeEndInfoWithRootNode,
+    mergeToInfo: MergeEndInfoWithRootNode,
   ): Promise<string | null> {
     const {
       changed, conflicts, created, removed,
@@ -82,20 +100,12 @@ export class MergeStateModel implements ResourceChangeListener {
 
     const editable: EditableType = convertMergeStateCauseToEditable(mergeStateCause);
 
-
     const mergeStateInput = {
       lastCommonCommitHash: commonCommitHash,
       mergeStateCause,
       editable,
-      rootIriMergeFrom: rootMergeFrom.metadataCache.iri ?? "",
-      rootFullPathToMetaMergeFrom: pathToRootMetaMergeFrom,
-      lastCommitHashMergeFrom,
-      filesystemTypeMergeFrom,
-      //
-      rootIriMergeTo: rootMergeTo.metadataCache.iri ?? "",
-      rootFullPathToMetaMergeTo,
-      lastCommitHashMergeTo,
-      filesystemTypeMergeTo,
+      mergeFromInfo: convertToMergeInfoWithIri(mergeFromInfo),
+      mergeToInfo: convertToMergeInfoWithIri(mergeToInfo),
       changedInEditable: changed,
       removedInEditable: removed,
       createdInEditable: created,
@@ -350,15 +360,8 @@ export class MergeStateModel implements ResourceChangeListener {
       mergeStateCause: MergeStateCause,
       editable: EditableType,
       //
-      rootIriMergeFrom: string,
-      rootFullPathToMetaMergeFrom: string,
-      lastCommitHashMergeFrom: string,
-      filesystemTypeMergeFrom: AvailableFilesystems,
-      //
-      rootIriMergeTo: string,
-      rootFullPathToMetaMergeTo: string,
-      lastCommitHashMergeTo: string,
-      filesystemTypeMergeTo: AvailableFilesystems,
+      mergeFromInfo: MergeEndInfoWithRootIri,
+      mergeToInfo: MergeEndInfoWithRootIri,
       //
       changedInEditable: ComparisonData[],
       removedInEditable: ComparisonData[],
@@ -371,8 +374,8 @@ export class MergeStateModel implements ResourceChangeListener {
     // Test if the merge state already exists
     const existingMergeState = await this.prismaClient.mergeState.findFirst({
       where: {
-        rootFullPathToMetaMergeFrom: inputData.rootFullPathToMetaMergeFrom,
-        rootFullPathToMetaMergeTo: inputData.rootFullPathToMetaMergeTo
+        rootFullPathToMetaMergeFrom: inputData.mergeFromInfo.rootFullPathToMeta,
+        rootFullPathToMetaMergeTo: inputData.mergeToInfo.rootFullPathToMeta,
       }
     });
 
@@ -397,14 +400,14 @@ export class MergeStateModel implements ResourceChangeListener {
           mergeStateCause: inputData.mergeStateCause,
           editable: inputData.editable,
           lastCommonCommitHash: inputData.lastCommonCommitHash,
-          rootIriMergeFrom: inputData.rootIriMergeFrom,
-          rootFullPathToMetaMergeFrom: inputData.rootFullPathToMetaMergeFrom,
-          lastCommitHashMergeFrom: inputData.lastCommitHashMergeFrom,
-          filesystemTypeMergeFrom: inputData.filesystemTypeMergeFrom,
-          rootIriMergeTo: inputData.rootIriMergeTo,
-          rootFullPathToMetaMergeTo: inputData.rootFullPathToMetaMergeTo,
-          lastCommitHashMergeTo: inputData.lastCommitHashMergeTo,
-          filesystemTypeMergeTo: inputData.filesystemTypeMergeTo,
+          rootIriMergeFrom: inputData.mergeFromInfo.rootIri,
+          rootFullPathToMetaMergeFrom: inputData.mergeFromInfo.rootFullPathToMeta,
+          lastCommitHashMergeFrom: inputData.mergeFromInfo.lastCommitHash,
+          filesystemTypeMergeFrom: inputData.mergeFromInfo.filesystemType,
+          rootIriMergeTo: inputData.mergeToInfo.rootIri,
+          rootFullPathToMetaMergeTo: inputData.mergeToInfo.rootFullPathToMeta,
+          lastCommitHashMergeTo: inputData.mergeToInfo.lastCommitHash,
+          filesystemTypeMergeTo: inputData.mergeToInfo.filesystemType,
           conflictCount: inputData.conflicts.length,
           mergeStateData: {
             create: {

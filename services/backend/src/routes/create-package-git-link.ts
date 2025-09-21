@@ -2,11 +2,10 @@ import { z } from "zod";
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { resourceModel } from "../main.ts";
-import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { checkErrorBoundaryForCommitAction, extractPartOfRepositoryURL, stringToBoolean } from "../utils/git-utils.ts";
 import { AccessToken, AccessTokenType, ConfigType, convertToValidGitName, WEBHOOK_HANDLER_URL } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
-import { commitPackageToGitUsingAuthSession } from "./commit-package-to-git.ts";
+import { CommitBranchAndHashInfo, commitPackageToGitUsingAuthSession, GitCommitToCreateInfoBasic, RepositoryIdentificationInfo } from "./commit-package-to-git.ts";
 import { transformCommitMessageIfEmpty } from "../utils/git-utils.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-session.ts";
 
@@ -76,10 +75,26 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
       await resourceModel.updateResourceProjectIriAndBranch(query.iri, undefined, defaultBranch ?? undefined);
       await resourceModel.updateResourceGitLink(query.iri, fullLinkedGitRepositoryURL, true);
 
-      // // Just provide empty merge from values, since we are newly creating the link we can not perform merge right away anyways
+      const repositoryIdentificationInfo: RepositoryIdentificationInfo = {
+        givenRepositoryUserName: repositoryUserName,
+        givenRepositoryName: repoName,
+      };
+      const commitInfo: GitCommitToCreateInfoBasic = {
+        commitMessage,
+        exportFormat: query.exportFormat ?? null
+      };
+
+      const commitBranchAndHashInfo: CommitBranchAndHashInfo = {
+        localBranch: defaultBranch,
+        localLastCommitHash: "",
+        mergeFromBranch: "",
+        mergeFromCommitHash: "",
+      };
+
+      // Just provide empty merge from values, since we are newly creating the link we can not perform merge right away anyways
       const commitResult = await commitPackageToGitUsingAuthSession(
-        request, query.iri, fullLinkedGitRepositoryURL, defaultBranch, "", "", "",
-        repositoryUserName, repoName, commitMessage, response, query.exportFormat ?? null);
+        request, query.iri, fullLinkedGitRepositoryURL, commitBranchAndHashInfo,
+        repositoryIdentificationInfo, response, commitInfo);
 
       if (!commitResult) {
         response.sendStatus(409);
@@ -132,10 +147,26 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
   }
   await gitProvider.createWebhook(accessToken.value, repositoryUserName!, repoName!, WEBHOOK_HANDLER_URL, ["push"]);
 
+  const repositoryIdentificationInfo: RepositoryIdentificationInfo = {
+    givenRepositoryUserName: repositoryUserName!,
+    givenRepositoryName: repoName!,
+  };
+  const commitInfo: GitCommitToCreateInfoBasic = {
+    commitMessage,
+    exportFormat: query.exportFormat ?? null
+  };
+
+  const commitBranchAndHashInfo: CommitBranchAndHashInfo = {
+    localBranch: branchName,
+    localLastCommitHash: "",
+    mergeFromBranch: "",
+    mergeFromCommitHash: "",
+  };
+
   // Just provide empty merge from values, since we are newly creating the link we can not perform merge right away anyways
   await commitPackageToGitUsingAuthSession(
-    request, query.iri, query.gitRepositoryURL, branchName, "", "", "", repositoryUserName!,
-    repoName!, commitMessage, response, query.exportFormat ?? null);
+    request, query.iri, query.gitRepositoryURL, commitBranchAndHashInfo,
+    repositoryIdentificationInfo, response, commitInfo);
 });
 
 /**
