@@ -272,4 +272,11 @@ export interface GitProvider {
    * @returns The given provider specific {@link scope} to the the generic scope.
    */
   convertProviderScopeToGenericScope(scope: string): Scope;
+
+  /**
+   * Removes the given {@link personalAccessToken} from git provider. We have to do this since AuthJS does not do it automatically on log off.
+   *  If we did not do that then if somebody gets the access token he can safely use your github as long as you do not manually revoke it in Git provider.
+   * @returns The git provider response from REST API (or possibly other API in future, like GraphQL)
+   */
+  revokePAT(personalAccessToken: string): Promise<FetchResponse>;
 }

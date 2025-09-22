@@ -5,8 +5,9 @@ import GitHub from "@auth/express/providers/github"
 import GitLab from "@auth/express/providers/gitlab"
 import Google from "@auth/express/providers/google"
 import Keycloak from "@auth/express/providers/keycloak"
-import { ConfigType, Scope } from "@dataspecer/git";
+import { ConfigType, GitProviderEnum, Scope } from "@dataspecer/git";
 import { GitHubProvider, GitHubScope } from "../git-providers/git-provider-instances/github.ts";
+import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
 
 // Possible inspiration for implementation of custom provider (if needed in future) - https://github.com/nextauthjs/next-auth/discussions/9480
@@ -113,6 +114,27 @@ function createAuthConfig(configType: ConfigType | null, dsBackendURL: string, c
       // Note that if we refresh the page, the token shows new expiration date, however that one is not used, the first one is (the one from sign-in)
       // maxAge: 30,    // Seconds
       strategy: "jwt",
+    },
+    events: {
+      async signOut(message) {
+        // Revoke the PAT since the AuthJS does not do it automatically
+
+        // TODO RadStr Future: Has to be changed for database one. Just hover on the method to see what I mean
+        if ((message as any)?.token === undefined) {
+          return;
+        }
+        const token = (message as any)?.token;
+
+        if (token?.accessToken !== undefined) {
+          if (token?.accountProvider === "github") {
+            const gitProvider = GitProviderFactory.createGitProvider(GitProviderEnum.GitHub);
+            const response = await gitProvider.revokePAT(token.accessToken);
+            if (response.status !== 204) {
+              console.error("Could not revoke PAT for some reason");
+            }
+          }
+        }
+      },
     },
     callbacks: {
       // Ok the way I understand the JWT and session relation:

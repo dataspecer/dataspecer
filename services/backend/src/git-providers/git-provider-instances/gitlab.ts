@@ -200,4 +200,8 @@ export class GitLabProvider extends GitProviderBase {
   convertProviderScopeToGenericScope(scope: string): Scope {
     throw new Error("Method not implemented.");
   }
+
+  revokePAT(personalAccessToken: string): Promise<FetchResponse> {
+    throw new Error("Method not implemented.");
+  }
 }

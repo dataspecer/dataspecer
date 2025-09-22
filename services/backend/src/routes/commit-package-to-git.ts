@@ -199,7 +199,6 @@ async function commitDSMergeToGit(
   const { git, gitInitialDirectory, gitInitialDirectoryParent } = createSimpleGitResult;
 
   for (const accessToken of gitCredentials.accessTokens) {
-
     const repoURLWithAuthorization = getAuthorizationURL(gitCredentials, accessToken, remoteRepositoryURL, givenRepositoryUserName, givenRepositoryName);
     const isLastAccessToken = accessToken === gitCredentials.accessTokens.at(-1);
 

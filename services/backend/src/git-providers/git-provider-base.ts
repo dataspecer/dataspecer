@@ -25,6 +25,7 @@ export abstract class GitProviderBase implements GitProvider {
   abstract extractDefaultRepositoryUrl(repositoryUrl: string): string;
   abstract convertGenericScopeToProviderScope(scope: Scope): string[];
   abstract convertProviderScopeToGenericScope(scope: string): Scope;
+  abstract revokePAT(personalAccessToken: string): Promise<FetchResponse>;
 
   async getLastCommitHash(userName: string, repoName: string, commitReference?: string, isCommit?: boolean): Promise<string> {
     if (isCommit === true) {
