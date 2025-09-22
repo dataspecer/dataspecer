@@ -90,7 +90,7 @@ const saveMergeState = async (
         }),
       });
 
-    console.info("update merge state response", fetchResult);   // TODO RadStr: Debug
+    console.info("update merge state response", fetchResult);   // TODO RadStr Debug:
 
     return fetchResult;
   }
@@ -112,7 +112,7 @@ const finalizeMergeState = async (mergeStateUUID: string | undefined): Promise<b
       `${import.meta.env.VITE_BACKEND}/git/finalize-merge-state?uuid=${mergeStateUUID}`, {
         method: "POST",
       });
-    console.info("Finalize merge state response", fetchResult);   // TODO RadStr: Debug
+    console.info("Finalize merge state response", fetchResult);   // TODO RadStr Debug:
 
     return fetchResult.ok;
   }

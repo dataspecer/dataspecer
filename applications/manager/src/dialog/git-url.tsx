@@ -1,9 +1,7 @@
 import { Modal, ModalBody, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
-import { BetterModalProps, OpenBetterModal, useBetterModal } from "@/lib/better-modal";
+import { BetterModalProps, OpenBetterModal } from "@/lib/better-modal";
 import { useLayoutEffect, useMemo, useState } from "react";
-import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
-import { Pencil } from "lucide-react";
 import { gitOperationResultToast } from "@/utils/utilities";
 import { requestLoadPackage } from "@/package";
 import { createIdentifierForHTMLElement, InputComponent } from "@/components/simple-input-component";
@@ -144,34 +142,9 @@ export const GitActionsDialog = ({ inputPackage, isOpen, resolve, type }: GitAct
   );
 };
 
-
-/**
- * @deprecated {@link DropdownMenuItem} hsa to be used in the tree, when it is part of another component, it is rendered incorrectly.
- *  So we use {@link createNewRemoteRepositoryHandler} instead.
- */
-export const LinkToGitRepoDialog = (props: { iri: string, inputPackage: Package }) => {
-  const openModal = useBetterModal();
-  const iri = props.iri;
-  const inputPackage = props.inputPackage;
-
-  return <DropdownMenuItem
-    onClick={async () => {
-      const result = await openModal(GitActionsDialog, { inputPackage, type: "create-new-repository-and-commit" });
-      if (result) {
-        const url = import.meta.env.VITE_BACKEND + "/git/link-package-to-git?iri=" + encodeURIComponent(iri) +
-                                                  "&givenRepositoryName=" + encodeURIComponent(result.repositoryName) +
-                                                  "&givenUserName=" + encodeURIComponent(result.user ?? "") +
-                                                  "&gitProviderURL=" + encodeURIComponent(result.gitProvider ?? "") +
-                                                  "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "");
-
-        fetch(url);
-      }
-      }}><Pencil className="mr-2 h-4 w-4" /> Link to GitHub REPO
-  </DropdownMenuItem>
-};
-
-// TODO RadStr: Maybe put on some better place?
 export const createNewRemoteRepositoryHandler = async (openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
+  // {@link DropdownMenuItem} has to be used in the tree, when it is part of another component, it is rendered incorrectly,
+  // that is why we implement it like this and not like react component
   const result = await openModal(GitActionsDialog, { inputPackage, type: "create-new-repository-and-commit" });
   if (result) {
     const url = import.meta.env.VITE_BACKEND + "/git/link-package-to-git?iri=" + encodeURIComponent(iri) +
@@ -201,28 +174,6 @@ export const createNewRemoteRepositoryHandler = async (openModal: OpenBetterModa
 };
 
 
-/**
- * @deprecated {@link DropdownMenuItem} hsa to be used in the tree, when it is part of another component, it is rendered incorrectly.
- *  So we use {@link commitToGitDialogOnClickHandler} instead
- */
-export const CommitToGitDialog = (props: { iri: string, inputPackage: Package }) => {
-  const openModal = useBetterModal();
-  const iri = props.iri;
-  const inputPackage = props.inputPackage;
-
-  return <DropdownMenuItem
-    onClick={async () => {
-      const result = await openModal(GitActionsDialog, { inputPackage, type: "commit" });
-      if (result) {
-        const url = import.meta.env.VITE_BACKEND + "/git/commit-package-to-git?iri=" + encodeURIComponent(iri) +
-                                                  "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "");
-        await fetch(url);
-      }
-      }}><Pencil className="mr-2 h-4 w-4" /> Commit
-  </DropdownMenuItem>;
-};
-
-// TODO RadStr: Maybe put on some better place?
 export const commitToGitDialogOnClickHandler = async (openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
   const result = await openModal(GitActionsDialog, { inputPackage, type: "commit" });
   if (result) {
@@ -242,7 +193,6 @@ export const commitToGitDialogOnClickHandler = async (openModal: OpenBetterModal
 };
 
 
-// TODO RadStr: Maybe put on some better place?
 export const linkToExistingGitRepositoryHandler = async (openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
   const result = await openModal(GitActionsDialog, { inputPackage, type: "link-to-existing-repository" });
   if (result) {

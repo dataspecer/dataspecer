@@ -39,9 +39,9 @@ export const MergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialogProp
     <Modal open={isOpen} onClose={() => resolve(null)}>
       <ModalContent className="min-w-[650px]">
         <ModalHeader>
-          <ModalTitle>Merge states:</ModalTitle>
+          <ModalTitle>List of currently opened merge states for chosen package</ModalTitle>
           <ModalDescription>
-            TODO RadStr: Description
+            Diff editor is opened on click
           </ModalDescription>
           {isLoading && <Loader className="mr-2 h-4 w-4 animate-spin" /> }
           {

@@ -33,7 +33,7 @@ export const MonacoDiffEditor: FC<{
         minimap: {
           enabled: false
         },
-        // TODO RadStr: Remove later - this is if we want to editable editor to be different than the right one
+        // This is if we want to editable editor to be different than the right one
         // originalEditable: props.editable === "mergeFrom",
         // readOnly: props.editable === "mergeFrom",
       }}

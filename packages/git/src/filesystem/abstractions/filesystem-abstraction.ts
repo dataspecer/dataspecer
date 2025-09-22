@@ -181,7 +181,6 @@ export interface FilesystemAbstraction {
 
   /**
    * @returns The global mapping. It contains the whole filesystem, keys are absolute paths.
-   * TODO RadStr: Not sure if I should expose that though
    */
   getGlobalFilesystemMap(): Record<string, FilesystemNode>;
 
@@ -235,7 +234,6 @@ export function getMetaPrefixType(): string {
   return "meta";
 }
 
-// TODO RadStr: Implement the datastores as map - then we don't need this method and it should be slightly faster.
 export function removeDatastoreFromNode(node: FilesystemNode, datastoreType: string) {
   node.datastores = node.datastores.filter(datastore => datastore.type !== datastoreType);
 }

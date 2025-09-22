@@ -1,8 +1,7 @@
 
-// TODO RadStr: These comments need revision.
 /**
  * Contains all info about datastore - including format, type and the path where it can be found.
- * @example Prefix = 12; FullName = 12345; afterPrefix = 345
+ * @example fullName = 12345; name = 12; afterPrefix = 345
  */
 export type DatastoreInfo = {
   /**
@@ -18,7 +17,7 @@ export type DatastoreInfo = {
   /**
    * Is the type - for example "model", or "meta"
    */
-  type: string;       // TODO radStr: Maybe rename to model?
+  type: string;
 
   /**
    * Is the name of the datastore. It does not contain the format or the type. It is simply the name.
@@ -32,6 +31,8 @@ export type DatastoreInfo = {
 
   /**
    * Is the fullpath to the datastore. This is the value to use to get the content of the datastore from the filesystem.
+   * Important note: When it comes to to the fullpath - use the /, don't use filesystem specific separators (that is path.sep).
+   * It is for simplicity sake (see {@link dsPathJoin} documentation)
    */
   fullPath: string;
 }
@@ -42,39 +43,60 @@ export type MetadataCacheType = {
   [key: string]: any;
 };
 
-// TODO RadStr: Also when it comes to to the fullpath - use the /, don't use filesystem specific separators (that is path.sep)
-type DatastructureToExport = {
-  name: string,   // TODO RadStr: The name is the same as the key in the FilesystemMappingType
+/**
+ * Important note: When it comes to to the fullTrePpath - use the /, don't use filesystem specific separators (that is path.sep)
+ */
+type FilesystemNodeCommonData = {
+  /**
+   * Name of the filesystem node.
+   */
+  name: string,
+
+  // TODO RadStr: Retype and rename - it is not cache
   metadataCache: MetadataCacheType,
-  datastores: DatastoreInfo[],     // Could be Record<string, string> ... however I am not sure if there can not technically exist two or more datastores of same type (TODO RadStr:)
-  fullTreePath: string,   // TODO RadStr: We can get it recursively, if we need to (by visiting parents and concating the names). So we don't have to store it.
-  extraData?: object  // TODO RadStr: Maybe use later.
+  /**
+   * TODO RadStr Idea: Could be Record<DatastoreType, string>. Note that the record variant would expect to have at most 1 datastore of given type
+   */
+  datastores: DatastoreInfo[],
+  /**
+   * path/to/node. Note that we can reconstruct it recursively if need to by visiting parents in the filesystem abstraction.
+   */
+  fullTreePath: string,
+  /**
+   * Currently unusued
+   */
+  extraData?: object
 };
 
 export type FileNode = {
   type: "file";
-} & DatastructureToExport;
+} & FilesystemNodeCommonData;
 
 export type DirectoryNode = {
   type: "directory";
   content: FilesystemMappingType;
-} & DatastructureToExport;
+} & FilesystemNodeCommonData;
 
 export type FilesystemNode = FileNode | DirectoryNode;
 
+/**
+ * The key is the name of the filesystem node.
+ */
 export type FilesystemMappingType = Record<string, FilesystemNode>;
 
-// TODO RadStr: I use it a bit differently - the fullPaths are without the IRI
 /**
- * Contains information about the filesystem's node's location
+ * Contains information about the filesystem's node's location.
  */
 export type FilesystemNodeLocation = {
   /**
    * Is the iri of the resource. That is the last part of the fullTreePath. In case of DS filesystem this is the only necessary
    */
   iri: string;
+  // TODO RadStr: I don't like this, maybe just rename it in the methods and pass as parametr or idk. This usage on context is weird.
   /**
    * Is the full path to the node within filesystem, which can be used to access the node.
+   * This value is kind of weird. It depends on used context. It is either the full path, which can be accessed the resource,
+   * or it is path which should be used for export. Sometimes it is also just path to parent (that is without the iri).
    */
   fullPath: string;
   /**

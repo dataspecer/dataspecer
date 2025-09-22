@@ -12,9 +12,9 @@ export async function fetchMergeState(rootIriMergeFrom: string, rootIriMergeTo: 
     const fetchResult = await fetch(`${import.meta.env.VITE_BACKEND}/git/get-merge-state?${queryParams}`, {
       method: "GET",
     });
-    console.info("fetched data", fetchResult);   // TODO RadStr: Debug
+    console.info("fetched data", fetchResult);   // TODO RadStr Debug:
     const fetchResultAsJson = await fetchResult.json();
-    console.info("fetched data as json", fetchResultAsJson);   // TODO RadStr: Debug
+    console.info("fetched data as json", fetchResultAsJson);   // TODO RadStr Debug:
     if (fetchResultAsJson?.error !== undefined) {
       if (shouldPrintMissingStateToConsole) {
         console.error(fetchResultAsJson.error);
@@ -38,9 +38,9 @@ export async function createMergeStateOnBackend(rootIriMergeFrom: string, rootIr
       method: "POST",
       headers: { "Content-Type": "application/json" },
     });
-    console.info("fetched data for create merge state", fetchResult);   // TODO RadStr: Debug
+    console.info("fetched data for create merge state", fetchResult);   // TODO RadStr Debug:
     const fetchResultAsJson = await fetchResult.json();
-    console.info("fetched data for create merge state as json", fetchResultAsJson);   // TODO RadStr: Debug
+    console.info("fetched data for create merge state as json", fetchResultAsJson);   // TODO RadStr Debug:
     if (fetchResultAsJson.error !== undefined) {
       console.error(fetchResultAsJson.error)
       return null;
@@ -121,7 +121,7 @@ export const OpenMergeState = ({ mergeFrom, mergeTo, editable, isOpen, resolve }
         alreadyExists = true;
       }
       setMergeState(fetchedMergeState);
-      console.info({fetchedMergeState, editable});    // TODO RadStr: Debug
+      console.info({fetchedMergeState, editable});    // TODO RadStr Debug:
       setAlreadyExisted(alreadyExists);
       setIsLoading(false);
       if (fetchedMergeState === null) {
