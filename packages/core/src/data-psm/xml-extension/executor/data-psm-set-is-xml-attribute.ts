@@ -11,7 +11,7 @@ export async function executeDataPsmSetIsXmlAttribute(
   operation: DataPsmSetIsXmlAttribute
 ): Promise<CoreExecutorResult> {
   const resource = await reader.readResource(operation.dataPsmProperty) as DataPsmXmlPropertyExtension;
-  if (resource == null || (!DataPsmAttribute.is(resource) && DataPsmAssociationEnd.is(resource))) {
+  if (resource == null || (!DataPsmAttribute.is(resource) && !DataPsmAssociationEnd.is(resource))) {
     return DataPsmExecutorResultFactory.invalidType(
       resource,
       "data-psm attribute or association end"
