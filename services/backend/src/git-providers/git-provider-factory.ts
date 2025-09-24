@@ -86,19 +86,29 @@ export const createGitRepositoryURLForKnownProviders = (gitProvider: GitProvider
   const url = `https://${baseURL}/${userName}/${repoName}${branchSuffix}`;
   return url;
 };
+
+const sshURLPrefix = "git@";
 /**
  *
- * @param repositoryURL It is enough the for the repositoryURL to contain just the hostname part.
+ * @param repositoryURL It is enough the for the repositoryURL to contain just the hostname part. Can also be "ssh url" (for example git@github.com:dataspecer/dataspecer.git)
  * @returns the main provider of the repository, so for example if the URL looks like "https://gitlab.com/...", then main provider is gitlab,
  *  but also when it looks like "https://gitlab.my.org.com/..."
  */
 export const getMainGitProviderFromRepositoryURL = (repositoryURL: string): GitProviderEnum | null => {
-  const parsedUrl = new URL(repositoryURL);
+  let stringToCheckForProvider: string;
+  if (repositoryURL.startsWith(sshURLPrefix)) {
+    stringToCheckForProvider = repositoryURL.substring(sshURLPrefix.length);
+  }
+  else {
+    const parsedUrl = new URL(repositoryURL);
+    stringToCheckForProvider = parsedUrl.hostname;
+  }
 
-  if (parsedUrl.hostname === "github.com") {
+
+  if (stringToCheckForProvider.startsWith("github.com")) {
     return GitProviderEnum.GitHub;
   }
-  else if (parsedUrl.hostname.startsWith("gitlab.")) {
+  else if (stringToCheckForProvider.startsWith("gitlab.")) {
     return GitProviderEnum.GitLab;
   }
 
