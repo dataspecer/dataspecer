@@ -1,5 +1,6 @@
-export function isGitUrlSet(gitUrl: string | undefined | null) {
-  return !(gitUrl === "");
+export function isGitUrlSet(gitUrl: string | undefined | null): boolean {
+  const length = gitUrl?.length;
+  return length !== undefined && length > 0;
 }
 
 export const defaultEmptyGitUrlForDatabase = "";

@@ -2,15 +2,14 @@ import { z } from "zod";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { mergeStateModel, resourceModel } from "../main.ts";
 import express from "express";
-import { FilesystemFactory } from "../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
-import { AvailableFilesystems, compareFileTrees, EditableType, FilesystemNodeLocation, getMergeFromMergeToForGitAndDS, getMetadataDatastoreFile, MergeStateCause } from "@dataspecer/git";
+import { AvailableFilesystems, getMergeFromMergeToForGitAndDS, GitProvider, MergeStateCause } from "@dataspecer/git";
 import { compareBackendFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "../utils/simple-git-utils.ts";
 import { SimpleGit } from "simple-git";
 import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
 
 
-export const createMergeState = asyncHandler(async (request: express.Request, response: express.Response) => {
+export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
     mergeFromIri: z.string().min(1),
     mergeToIri: z.string().min(1),
@@ -30,7 +29,7 @@ export const createMergeState = asyncHandler(async (request: express.Request, re
   const { git, gitInitialDirectory } = createSimpleGit(mergeFromIri, "merge-conflicts");
   await gitCloneBasic(git, gitInitialDirectory, mergeFromResource.linkedGitRepositoryURL, false, true, undefined);
 
-  const uuid = await computeMergeStateForIris(git, mergeFromIri, mergeFromResource.lastCommitHash, mergeToIri, mergeToResource.lastCommitHash);
+  const uuid = await createMergeStateBetweenDSPackages(git, mergeFromIri, mergeFromResource.lastCommitHash, mergeToIri, mergeToResource.lastCommitHash);
 
   if (uuid === null) {
     response.status(200);
@@ -54,20 +53,31 @@ export const createMergeState = asyncHandler(async (request: express.Request, re
 
 
 
-export async function computeMergeStateForIris(
+export async function createMergeStateBetweenDSPackages(
   git: SimpleGit,
   mergeFromRootIri: string,
   mergeFromLastCommitHash: string,
   mergeToRootIri: string,
   mergeToLastCommitHash: string,
 ): Promise<string | null> {
+  const mergeFromForComparison: MergeEndpointForComparison = {
+    rootIri: mergeFromRootIri,
+    filesystemType: AvailableFilesystems.DS_Filesystem,
+    fullPath: "",
+    gitProvider: null,
+  };
+  const mergeToForComparison: MergeEndpointForComparison = {
+    rootIri: mergeToRootIri,
+    filesystemType: AvailableFilesystems.DS_Filesystem,
+    fullPath: "",
+    gitProvider: null,
+  };
+
   const {
     diffTreeComparisonResult,
     rootMergeFrom, pathToRootMetaMergeFrom,
     filesystemMergeTo, fakeRootMergeTo, rootMergeTo, pathToRootMetaMergeTo,
-  } = await compareBackendFilesystems(null, null,
-    mergeFromRootIri, "", AvailableFilesystems.DS_Filesystem,
-    mergeToRootIri, "", AvailableFilesystems.DS_Filesystem);
+  } = await compareBackendFilesystems(mergeFromForComparison, mergeToForComparison);
 
     const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS("pull", mergeFromLastCommitHash, mergeToLastCommitHash);
     const commonCommitHash = await getCommonCommitInHistory(git, mergeFromLastCommitHash, mergeToLastCommitHash);
@@ -90,5 +100,76 @@ export async function computeMergeStateForIris(
     const createdMergeStateId = mergeStateModel.createMergeStateIfNecessary(
       mergeFromRootIri, "merge", diffTreeComparisonResult,
       commonCommitHash, mergeFromInfo, mergeToInfo);
+    return createdMergeStateId;
+}
+
+type MergeEndpointBase = {
+  rootIri: string,
+  filesystemType: AvailableFilesystems,
+  fullPath: string,
+}
+
+export type MergeEndpointForComparison = {
+  gitProvider: GitProvider | null,
+} & MergeEndpointBase
+
+export type MergeEndpointToCreate = {
+  git: SimpleGit | null,
+  lastCommitHash: string,
+} & MergeEndpointForComparison
+
+export async function createMergeStateGeneral(
+  mergeFrom: MergeEndpointToCreate,
+  mergeTo: MergeEndpointToCreate,
+  mergeStateCause: MergeStateCause,
+): Promise<string | null> {
+  const {
+    diffTreeComparisonResult,
+    rootMergeFrom, pathToRootMetaMergeFrom,
+    filesystemMergeTo, fakeRootMergeTo, rootMergeTo, pathToRootMetaMergeTo,
+  } = await compareBackendFilesystems(mergeFrom, mergeTo);
+
+    let commonCommitHash: string | null = null;
+    const gitsToTry = [];
+    if (mergeFrom.git !== null) {
+      gitsToTry.push(mergeFrom.git);
+    }
+    if (mergeTo.git !== null) {
+      gitsToTry.push(mergeTo.git);
+    }
+
+
+    for (const [index, gitToTry] of gitsToTry.entries()) {
+      const isLast = index === gitsToTry.length - 1;
+      try {
+        commonCommitHash = await getCommonCommitInHistory(gitToTry, mergeFrom.lastCommitHash, mergeTo.lastCommitHash);
+        break;      // If we found common commit. Otherwise it may be the case that one git is newer than the other one so it may be in the other one
+      }
+      catch(error) {
+        if (isLast) {
+          throw error;
+        }
+      }
+    }
+
+
+    const mergeFromInfo: MergeEndInfoWithRootNode = {
+      rootNode: rootMergeFrom,
+      filesystemType: mergeFrom.filesystemType,
+      lastCommitHash: mergeFrom.lastCommitHash,
+      rootFullPathToMeta: pathToRootMetaMergeFrom,
+    };
+
+    const mergeToInfo: MergeEndInfoWithRootNode = {
+      rootNode: rootMergeTo,
+      filesystemType: mergeTo.filesystemType,
+      lastCommitHash: mergeTo.lastCommitHash,
+      rootFullPathToMeta: pathToRootMetaMergeTo,
+    };
+
+    const rootResourceIri: string = mergeFrom.rootIri;    // TODO RadStr: Not sure now about the iris, but we will see
+    const createdMergeStateId = mergeStateModel.createMergeStateIfNecessary(
+      rootResourceIri, mergeStateCause, diffTreeComparisonResult,
+      commonCommitHash!, mergeFromInfo, mergeToInfo);
     return createdMergeStateId;
 }

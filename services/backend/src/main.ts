@@ -50,7 +50,7 @@ import { getMergeState } from "./routes/get-merge-state.ts";
 import { getMergeStates } from "./routes/get-merge-states.ts";
 import { updateMergeState } from "./routes/update-merge-state.ts";
 import { finalizeMergeState as finalizeMergeState } from "./routes/finish-merge-state.ts";
-import { createMergeState } from "./routes/create-merge-state.ts";
+import { createMergeStateBetweenDSPackagesHandler } from "./routes/create-merge-state.ts";
 import { clearMergeStateTableDebug } from "./routes/debug-clear-merge-state-table.ts";
 import { storeNewPrivateSSHKeyToBackend, storePrivateSSHKey } from "./routes/store-private-ssh-key.ts";
 import { GIT_RAD_STR_BOT_SSH_ID, GIT_RAD_STR_BOT_SSH_PRIVATE_KEY } from "./git-never-commit.ts";
@@ -207,7 +207,7 @@ application.post(apiBasename + "/git/update-datastore-content", updateDatastoreC
 application.post(apiBasename + "/git/create-datastore-content", createDatastoreContentDirectly);
 application.delete(apiBasename + "/git/remove-datastore-content", removeDatastoreContentDirectly);
 application.get(apiBasename + "/git/get-merge-state", getMergeState);
-application.post(apiBasename + "/git/create-merge-state", createMergeState);
+application.post(apiBasename + "/git/create-merge-state-between-ds-packages", createMergeStateBetweenDSPackagesHandler);
 application.post(apiBasename + "/git/update-merge-state", updateMergeState);
 application.get(apiBasename + "/git/get-merge-states", getMergeStates);
 application.post(apiBasename + "/git/finalize-merge-state", finalizeMergeState);

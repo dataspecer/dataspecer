@@ -5,10 +5,12 @@ import fs from "fs";
 import path from "path";
 import { ALL_GIT_REPOSITORY_ROOTS } from "./git-store-info.ts";
 import { ResourceModel } from "./resource-model.ts";
-import { simpleGit } from "simple-git";
-import { AvailableFilesystems, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, FilesystemNode, isEditableType, MergeState, MergeStateCause } from "@dataspecer/git";
+import { SimpleGit, simpleGit } from "simple-git";
+import { AvailableFilesystems, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, FilesystemNode, GitProvider, isEditableType, isGitUrlSet, MergeState, MergeStateCause } from "@dataspecer/git";
 import { getLastCommitHash } from "../utils/git-utils.ts";
 import { ResourceChangeListener, ResourceChangeType } from "./resource-change-observer.ts";
+import { createMergeStateGeneral, MergeEndpointToCreate } from "../routes/create-merge-state.ts";
+import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
 
 type MergeEndInfoInternal = {
@@ -529,7 +531,78 @@ export class MergeStateModel implements ResourceChangeListener {
     await this.prismaClient.mergeState.delete({where: {uuid: uuid}});
   }
 
+  private async createMergeEndPointGitData(
+    rootIri: string,
+    filesystemType: string,
+    rootFullPathToMeta: string,
+  ): Promise<{
+    git: SimpleGit | null,
+    gitProvider: GitProvider | null,
+  }> {
+    const git = filesystemType as AvailableFilesystems === AvailableFilesystems.ClassicFilesystem ?
+      simpleGit(rootFullPathToMeta):
+      null;
+    let gitProvider: GitProvider | null = null;
+    if (git !== null) {
+      const gitRemotes = await git.getRemotes(true);
+      const originUrl = gitRemotes.find(remote => remote.name === "origin")?.refs.fetch;
+      if (originUrl !== undefined) {
+        gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(originUrl);
+      }
+      // Else null
+    }
+    else {
+      const pckg = await this.resourceModel.getPackage(rootIri);
+      if (isGitUrlSet(pckg?.linkedGitRepositoryURL)) {
+        gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(pckg!.linkedGitRepositoryURL);
+      }
+      // Else null
+    }
+
+    return {
+      git,
+      gitProvider,
+    };
+  }
+
   async prismaMergeStateToMergeState(prismaMergeState: MergeStateWithData): Promise<MergeState> {
+    if (!prismaMergeState.isUpToDate) {
+      const { git: gitForMergeFrom, gitProvider: gitProviderForMergeFrom } = await this.createMergeEndPointGitData(
+        prismaMergeState.rootIriMergeFrom, prismaMergeState.filesystemTypeMergeFrom, prismaMergeState.rootFullPathToMetaMergeFrom);
+      const mergeFrom: MergeEndpointToCreate = {
+        rootIri: prismaMergeState.rootIriMergeFrom,
+        filesystemType: prismaMergeState.filesystemTypeMergeFrom as AvailableFilesystems,
+        fullPath: prismaMergeState.rootFullPathToMetaMergeFrom,
+        git: gitForMergeFrom,
+        gitProvider: gitProviderForMergeFrom,
+        lastCommitHash: prismaMergeState.lastCommitHashMergeFrom,
+      };
+
+
+      const { git: gitForMergeTo, gitProvider: gitProviderForMergeTo } = await this.createMergeEndPointGitData(
+        prismaMergeState.rootIriMergeTo, prismaMergeState.filesystemTypeMergeTo, prismaMergeState.rootFullPathToMetaMergeTo);
+      const mergeTo: MergeEndpointToCreate = {
+        rootIri: prismaMergeState.rootIriMergeTo,
+        filesystemType: prismaMergeState.filesystemTypeMergeTo as AvailableFilesystems,
+        fullPath: prismaMergeState.rootFullPathToMetaMergeTo,
+        git: gitForMergeTo,
+        gitProvider: gitProviderForMergeTo,
+        lastCommitHash: prismaMergeState.lastCommitHashMergeTo,
+      };
+
+      const createdMergeStateId = await createMergeStateGeneral(mergeFrom, mergeTo, prismaMergeState.mergeStateCause as MergeStateCause);
+      if (createdMergeStateId === null) {
+        throw new Error(`The merge state exists, but it is no longer up to date and when updating, error occurred: ${{rootIriMergeFrom: prismaMergeState.rootIriMergeFrom, rootIriMergeTo: prismaMergeState.rootIriMergeTo}}`);
+      }
+      const createdMergeState = await this.getMergeStateFromUUID(createdMergeStateId, prismaMergeState.mergeStateData !== null);
+      if (createdMergeState === null) {
+        // I don't think that this could ever happen
+        throw new Error(`The merge state exists, it was no longer up to date, new one was created, however for some unknown reason it is not present in database after update: ${{rootIriMergeFrom: prismaMergeState.rootIriMergeFrom, rootIriMergeTo: prismaMergeState.rootIriMergeTo}}`);
+      }
+
+      return createdMergeState;
+    }
+
     const includesMergeStateData = !(prismaMergeState.mergeStateData === null || prismaMergeState.mergeStateData === undefined);
 
     const changedInEditable = includesMergeStateData ? JSON.parse(prismaMergeState.mergeStateData!.changedInEditable) : undefined;

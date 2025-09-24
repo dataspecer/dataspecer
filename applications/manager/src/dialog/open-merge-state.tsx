@@ -34,7 +34,7 @@ export async function fetchMergeState(rootIriMergeFrom: string, rootIriMergeTo: 
 export async function createMergeStateOnBackend(rootIriMergeFrom: string, rootIriMergeTo: string): Promise<MergeState | null> {
   try {
     const queryParams = `mergeFromIri=${rootIriMergeFrom}&mergeToIri=${rootIriMergeTo}`;
-    const fetchResult = await fetch(`${import.meta.env.VITE_BACKEND}/git/create-merge-state?${queryParams}`, {
+    const fetchResult = await fetch(`${import.meta.env.VITE_BACKEND}/git/create-merge-state-between-ds-packages?${queryParams}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
     });

@@ -8,6 +8,7 @@ import {
   MergeStateCause
 } from "@dataspecer/git";
 import { FilesystemFactory } from "./backend-filesystem-abstraction-factory.ts";
+import { MergeEndpointForComparison } from "../../routes/create-merge-state.ts";
 
 export async function compareGitAndDSFilesystems(
   gitProvider: GitProvider,
@@ -27,12 +28,21 @@ export async function compareGitAndDSFilesystems(
     mergeToFilesystemType = AvailableFilesystems.DS_Filesystem;
   }
 
-  const generalResult = await compareBackendFilesystems(
+  const mergeFrom: MergeEndpointForComparison = {
     gitProvider,
+    rootIri,
+    filesystemType: mergeFromFilesystemType,
+    fullPath: gitInitialDirectoryParent,
+  };
+
+  const mergeTo: MergeEndpointForComparison = {
     gitProvider,
-    rootIri, gitInitialDirectoryParent, mergeFromFilesystemType,
-    rootIri, gitInitialDirectoryParent, mergeToFilesystemType,
-  );
+    rootIri,
+    filesystemType: mergeToFilesystemType,
+    fullPath: gitInitialDirectoryParent,
+  };
+
+  const generalResult = await compareBackendFilesystems(mergeFrom, mergeTo);
 
 
   // TODO RadStr: Maybe return like ds and git filesystem - but I think that it is better to just return the general result
@@ -40,24 +50,22 @@ export async function compareGitAndDSFilesystems(
 }
 
 export async function compareBackendFilesystems(
-  mergeFromGitProvider: GitProvider | null,
-  mergeToGitProvider: GitProvider | null,
-  mergeFromRootIri: string, mergeFromFullPath: string, mergeFromFilesystemType: AvailableFilesystems,
-  mergeToRootIri: string, mergeToFullPath: string, mergeToFilesystemType: AvailableFilesystems,
+  mergeFrom: MergeEndpointForComparison,
+  mergeTo: MergeEndpointForComparison,
 ) {
   const mergeFromRootLocation: FilesystemNodeLocation = {
-    iri: mergeFromRootIri,
-    fullPath: mergeFromFullPath,
+    iri: mergeFrom.rootIri,
+    fullPath: mergeFrom.fullPath,
     fullTreePath: "",
   };
   const mergeToRootLocation: FilesystemNodeLocation = {
-    iri: mergeToRootIri,
-    fullPath: mergeToFullPath,
+    iri: mergeTo.rootIri,
+    fullPath: mergeTo.fullPath,
     fullTreePath: "",
   };
 
-  const filesystemMergeFrom = await FilesystemFactory.createFileSystem([mergeFromRootLocation], mergeFromFilesystemType, mergeFromGitProvider);
-  const filesystemMergeTo = await FilesystemFactory.createFileSystem([mergeToRootLocation], mergeToFilesystemType, mergeToGitProvider);
+  const filesystemMergeFrom = await FilesystemFactory.createFileSystem([mergeFromRootLocation], mergeFrom.filesystemType, mergeFrom.gitProvider);
+  const filesystemMergeTo = await FilesystemFactory.createFileSystem([mergeToRootLocation], mergeTo.filesystemType, mergeTo.gitProvider);
 
   const fakeRootMergeFrom = filesystemMergeFrom.getRoot();
   const fakeRootMergeTo = filesystemMergeTo.getRoot();
