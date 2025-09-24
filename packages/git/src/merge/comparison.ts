@@ -101,7 +101,16 @@ async function compareTreesInternal(
       if (node2Datastore !== undefined) {
         processedDatastoresInSecondTree.add(node2Datastore);
 
-        if (await areDatastoresDifferent(filesystem1, nodeValue, filesystem2, node2Value as FileNode, datastore1)) {
+        if (await compareDatastoresContents(filesystem1, nodeValue, filesystem2, node2Value as FileNode, datastore1)) {
+          const same: DatastoreComparison = {
+            oldVersion: nodeValue,
+            newVersion: node2Value ?? null,
+            affectedDataStore: datastore1,
+            datastoreComparisonResult: "same",
+          };
+          currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(same);
+        }
+        else {
           const changed: DatastoreComparison = {
             oldVersion: nodeValue,
             newVersion: node2Value ?? null,
@@ -111,15 +120,6 @@ async function compareTreesInternal(
           currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(changed);
           comparisonDifferences.changed.push(changed);
           comparisonDifferences.conflicts.push(changed);
-        }
-        else {
-          const same: DatastoreComparison = {
-            oldVersion: nodeValue,
-            newVersion: node2Value ?? null,
-            affectedDataStore: datastore1,
-            datastoreComparisonResult: "same",
-          };
-          currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(same);
         }
       }
       else {
@@ -191,8 +191,10 @@ async function compareTreesInternal(
   return diffTreeSize;
 }
 
-
-export async function areDatastoresDifferent(
+/**
+ * @returns True if the datastores contents are equal. False otherwise
+ */
+export async function compareDatastoresContents(
   filesystem1: FilesystemAbstraction,
   entry1: FilesystemNode,      // TODO RadStr: Maybe I don't need the entry itself? ... I probably dont when using path, but when using full name I do
   filesystem2: FilesystemAbstraction,
@@ -205,5 +207,5 @@ export async function areDatastoresDifferent(
 
   console.info({content1, content2});    // TODO RadStr DEBUG: DEBUG Print
 
-  return !_.isEqual(content1, content2);
+  return _.isEqual(content1, content2);
 }
