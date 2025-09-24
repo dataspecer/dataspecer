@@ -9,9 +9,37 @@ import { SimpleGit, simpleGit } from "simple-git";
 import { AvailableFilesystems, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, FilesystemNode, GitProvider, isEditableType, isGitUrlSet, MergeState, MergeStateCause } from "@dataspecer/git";
 import { getLastCommitHash } from "../utils/git-utils.ts";
 import { ResourceChangeListener, ResourceChangeType } from "./resource-change-observer.ts";
-import { createMergeStateGeneral, MergeEndpointToCreate } from "../routes/create-merge-state.ts";
+import { updateMergeStateToBeUpToDate, MergeEndpointForStateUpdate } from "../routes/create-merge-state.ts";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
+type Nullable<T> = {
+    [P in keyof T]: T[P] | null;
+};
+
+type InputForConvertMergeDataToStringMethod = Nullable<CreateDataToConvertToString & { unresolvedConflicts: ComparisonData[] }>;
+
+type CreateDataToConvertToString = {
+  changedInEditable: ComparisonData[],
+  removedInEditable: ComparisonData[],
+  createdInEditable: ComparisonData[],
+  allConflicts: ComparisonData[],
+  diffTree: DiffTree,
+};
+
+type CreateMergeStateInput = {
+  lastCommonCommitHash: string,
+  mergeStateCause: MergeStateCause,
+  editable: EditableType,
+  //
+  mergeFromInfo: MergeEndInfoWithRootIri,
+  mergeToInfo: MergeEndInfoWithRootIri,
+  //
+  diffTreeSize: number,
+} & CreateDataToConvertToString;
+
+type UpdateMergeStateInput = {
+  unresolvedConflicts: ComparisonData[],
+} & CreateMergeStateInput;
 
 type MergeEndInfoInternal = {
   lastCommitHash: string;
@@ -79,6 +107,48 @@ export class MergeStateModel implements ResourceChangeListener {
 
 
   /**
+   * @returns True if it was successfully updated, false if there are 0 conflicts (TODO RadStr:)
+   */
+  async updateMergeStateToBeUpToDate(
+    uuid: string,
+    mergeStateCause: MergeStateCause,
+    diffTreeComparisonResult: ComparisonFullResult,
+    commonCommitHash: string,
+    mergeFromInfo: MergeEndInfoWithRootNode,
+    mergeToInfo: MergeEndInfoWithRootNode,
+  ): Promise<boolean> {
+    // Note that: If it has 0 conflicts we don't do anything with it, even though it could be finalized. User have to do it explicitly
+    const {
+      changed, conflicts, created, removed,
+      diffTree, diffTreeSize
+    } = diffTreeComparisonResult;
+
+
+    await this.clearTable();     // TODO RadStr: Debug
+
+    const editable: EditableType = convertMergeStateCauseToEditable(mergeStateCause);
+
+    const mergeStateInput: UpdateMergeStateInput = {
+      lastCommonCommitHash: commonCommitHash,
+      mergeStateCause,
+      editable,
+      mergeFromInfo: convertToMergeInfoWithIri(mergeFromInfo),
+      mergeToInfo: convertToMergeInfoWithIri(mergeToInfo),
+      changedInEditable: changed,
+      removedInEditable: removed,
+      createdInEditable: created,
+      allConflicts: conflicts,
+      unresolvedConflicts: conflicts,     // TODO RadStr: I don't know, I should probably keep the existing ones
+      diffTree,
+      diffTreeSize,
+    };
+
+    await this.updateMergeState(uuid, mergeStateInput);
+    return true;
+  }
+
+
+  /**
    * @returns Id of the created merge state, if the state was created (there was more than one conflict). otherwise returns null.
    */
   async createMergeStateIfNecessary(
@@ -111,7 +181,7 @@ export class MergeStateModel implements ResourceChangeListener {
       changedInEditable: changed,
       removedInEditable: removed,
       createdInEditable: created,
-      conflicts: conflicts,
+      allConflicts: conflicts,
       diffTree,
       diffTreeSize,
     };
@@ -320,25 +390,25 @@ export class MergeStateModel implements ResourceChangeListener {
     return this.prismaMergeStateToMergeState(mergeState);
   }
 
-  private convertMergeStateDataToString(
-    changedInEditable: ComparisonData[],
-    removedInEditable: ComparisonData[],
-    createdInEditable: ComparisonData[],
-    conflicts: ComparisonData[],
-    diffTree: DiffTree,
-  ) {
-    const changedInEditableAsString = JSON.stringify(changedInEditable);
-    const removedInEditableAsString = JSON.stringify(removedInEditable);
-    const createdInEditableAsString = JSON.stringify(createdInEditable);
-    const conflictsAsString = JSON.stringify(conflicts);
-    const diffTreeAsString = JSON.stringify(diffTree);
+  /**
+   * @returns The inputs as string. Or undefined if null is provided (that is skip the update of parameter).
+   *  The output of this method can be directly used to set the data in prisma database.
+   */
+  private convertMergeStateDataToString(inputToConvert: InputForConvertMergeDataToStringMethod) {
+    const changedInEditable = inputToConvert === null ? undefined : JSON.stringify(inputToConvert.changedInEditable);
+    const removedInEditable = inputToConvert === null ? undefined : JSON.stringify(inputToConvert.removedInEditable);
+    const createdInEditable = inputToConvert === null ? undefined : JSON.stringify(inputToConvert.createdInEditable);
+    const conflicts = inputToConvert === null ? undefined : JSON.stringify(inputToConvert.allConflicts);
+    const unresolvedConflicts = inputToConvert === null ? undefined : JSON.stringify(inputToConvert.unresolvedConflicts);
+    const diffTree = inputToConvert === null ? undefined : JSON.stringify(inputToConvert.diffTree);
 
     return {
-      changedInEditableAsString,
-      removedInEditableAsString,
-      createdInEditableAsString,
-      conflictsAsString,
-      diffTreeAsString,
+      changedInEditable,
+      removedInEditable,
+      createdInEditable,
+      conflicts,
+      unresolvedConflicts,
+      diffTree,
     };
   }
 
@@ -353,26 +423,42 @@ export class MergeStateModel implements ResourceChangeListener {
     });
   }
 
+
+  async updateMergeState(uuid: string, inputData: UpdateMergeStateInput) {
+    const convertedMergeStateData = this.convertMergeStateDataToString(inputData);
+
+    await this.prismaClient.mergeState.update({
+        where: {
+          uuid
+        },
+        data: {
+          isUpToDate: true,
+          mergeStateCause: inputData.mergeStateCause,
+          editable: inputData.editable,
+          lastCommonCommitHash: inputData.lastCommonCommitHash,
+          rootIriMergeFrom: inputData.mergeFromInfo.rootIri,
+          rootFullPathToMetaMergeFrom: inputData.mergeFromInfo.rootFullPathToMeta,
+          lastCommitHashMergeFrom: inputData.mergeFromInfo.lastCommitHash,
+          filesystemTypeMergeFrom: inputData.mergeFromInfo.filesystemType,
+          rootIriMergeTo: inputData.mergeToInfo.rootIri,
+          rootFullPathToMetaMergeTo: inputData.mergeToInfo.rootFullPathToMeta,
+          lastCommitHashMergeTo: inputData.mergeToInfo.lastCommitHash,
+          filesystemTypeMergeTo: inputData.mergeToInfo.filesystemType,
+          conflictCount: inputData.allConflicts.length,
+          mergeStateData: {
+            update: {
+              ...convertedMergeStateData,
+              diffTreeSize: inputData.diffTreeSize,
+            }
+          }
+        }
+    });
+  }
+
   /**
    * @returns The uuid of the newly created merge state in database
    */
-  async createMergeState(
-    inputData: {
-      lastCommonCommitHash: string,
-      mergeStateCause: MergeStateCause,
-      editable: EditableType,
-      //
-      mergeFromInfo: MergeEndInfoWithRootIri,
-      mergeToInfo: MergeEndInfoWithRootIri,
-      //
-      changedInEditable: ComparisonData[],
-      removedInEditable: ComparisonData[],
-      createdInEditable: ComparisonData[],
-      conflicts: ComparisonData[],
-      diffTree: DiffTree,
-      diffTreeSize: number,
-    }
-  ) {
+  async createMergeState(inputData: CreateMergeStateInput) {
     // Test if the merge state already exists
     const existingMergeState = await this.prismaClient.mergeState.findFirst({
       where: {
@@ -382,18 +468,12 @@ export class MergeStateModel implements ResourceChangeListener {
     });
 
     if (existingMergeState !== null) {
-        throw new Error("Cannot create merge state because it already exists.");
+      throw new Error("Cannot create merge state because it already exists.");
     }
 
     const uuid = uuidv4();
 
-    const {
-      changedInEditableAsString,
-      conflictsAsString,
-      createdInEditableAsString,
-      diffTreeAsString,
-      removedInEditableAsString
-    } = this.convertMergeStateDataToString(inputData.changedInEditable, inputData.removedInEditable, inputData.createdInEditable, inputData.conflicts, inputData.diffTree);
+    const convertedMergeStateData = this.convertMergeStateDataToString({...inputData, unresolvedConflicts: inputData.allConflicts});
 
     // Create the state
     await this.prismaClient.mergeState.create({
@@ -410,15 +490,10 @@ export class MergeStateModel implements ResourceChangeListener {
           rootFullPathToMetaMergeTo: inputData.mergeToInfo.rootFullPathToMeta,
           lastCommitHashMergeTo: inputData.mergeToInfo.lastCommitHash,
           filesystemTypeMergeTo: inputData.mergeToInfo.filesystemType,
-          conflictCount: inputData.conflicts.length,
+          conflictCount: inputData.allConflicts.length,
           mergeStateData: {
             create: {
-              createdInEditable: createdInEditableAsString,
-              changedInEditable: changedInEditableAsString,
-              removedInEditable: removedInEditableAsString,
-              conflicts: conflictsAsString,
-              unresolvedConflicts: conflictsAsString,
-              diffTree: diffTreeAsString,
+              ...convertedMergeStateData,
               diffTreeSize: inputData.diffTreeSize,
             }
           }
@@ -431,7 +506,7 @@ export class MergeStateModel implements ResourceChangeListener {
   /**
    * TODO RadStr: Still creating the API, just remove the invalid methods after finish
    */
-  async updateMergeStatePartly(uuid: string, currentlyUnresolvedConflicts: string[]) {
+  async updateMergeStateConflictList(uuid: string, currentlyUnresolvedConflicts: string[]) {
     const mergeState = await this.prismaClient.mergeState.findFirst({
       where: {uuid},
       include: {
@@ -461,6 +536,10 @@ export class MergeStateModel implements ResourceChangeListener {
     });
   }
 
+
+  /**
+   * @todo TODO RadStr: Probably remove, I am not using it from anywhere
+   */
   async updateMergeStateWithObjects(
     uuid: string,
     diffTree: DiffTree,
@@ -474,24 +553,22 @@ export class MergeStateModel implements ResourceChangeListener {
       throw new Error(`There is no such MergeState with uuid: ${uuid}`);
     }
 
-    const {
-      changedInEditableAsString,
-      conflictsAsString: unresolvedConflictsAsString,
-      createdInEditableAsString,
-      diffTreeAsString,
-      removedInEditableAsString
-    } = this.convertMergeStateDataToString(changedInEditable, removedInEditable, createdInEditable, unresolvedConflicts, diffTree);
+    const inputToConvert: InputForConvertMergeDataToStringMethod = {
+      allConflicts: null,
+      changedInEditable,
+      removedInEditable,
+      diffTree,
+      unresolvedConflicts,
+      createdInEditable
+    }
+    const convertedMergeStateData = this.convertMergeStateDataToString(inputToConvert);
 
     await this.prismaClient.mergeState.update({
         where: { uuid: uuid },
         data: {
           mergeStateData: {
             update: {
-              changedInEditable: changedInEditableAsString,
-              removedInEditable: removedInEditableAsString,
-              createdInEditable: createdInEditableAsString,
-              unresolvedConflicts: unresolvedConflictsAsString,
-              diffTree: diffTreeAsString,
+              ...convertedMergeStateData,
             }
           }
         },
@@ -569,7 +646,7 @@ export class MergeStateModel implements ResourceChangeListener {
     if (!prismaMergeState.isUpToDate) {
       const { git: gitForMergeFrom, gitProvider: gitProviderForMergeFrom } = await this.createMergeEndPointGitData(
         prismaMergeState.rootIriMergeFrom, prismaMergeState.filesystemTypeMergeFrom, prismaMergeState.rootFullPathToMetaMergeFrom);
-      const mergeFrom: MergeEndpointToCreate = {
+      const mergeFrom: MergeEndpointForStateUpdate = {
         rootIri: prismaMergeState.rootIriMergeFrom,
         filesystemType: prismaMergeState.filesystemTypeMergeFrom as AvailableFilesystems,
         fullPath: prismaMergeState.rootFullPathToMetaMergeFrom,
@@ -581,7 +658,7 @@ export class MergeStateModel implements ResourceChangeListener {
 
       const { git: gitForMergeTo, gitProvider: gitProviderForMergeTo } = await this.createMergeEndPointGitData(
         prismaMergeState.rootIriMergeTo, prismaMergeState.filesystemTypeMergeTo, prismaMergeState.rootFullPathToMetaMergeTo);
-      const mergeTo: MergeEndpointToCreate = {
+      const mergeTo: MergeEndpointForStateUpdate = {
         rootIri: prismaMergeState.rootIriMergeTo,
         filesystemType: prismaMergeState.filesystemTypeMergeTo as AvailableFilesystems,
         fullPath: prismaMergeState.rootFullPathToMetaMergeTo,
@@ -590,11 +667,11 @@ export class MergeStateModel implements ResourceChangeListener {
         lastCommitHash: prismaMergeState.lastCommitHashMergeTo,
       };
 
-      const createdMergeStateId = await createMergeStateGeneral(mergeFrom, mergeTo, prismaMergeState.mergeStateCause as MergeStateCause);
-      if (createdMergeStateId === null) {
-        throw new Error(`The merge state exists, but it is no longer up to date and when updating, error occurred: ${{rootIriMergeFrom: prismaMergeState.rootIriMergeFrom, rootIriMergeTo: prismaMergeState.rootIriMergeTo}}`);
+      const updatedMergeStateResult = await updateMergeStateToBeUpToDate(prismaMergeState.uuid, mergeFrom, mergeTo, prismaMergeState.mergeStateCause as MergeStateCause);
+      if (!updatedMergeStateResult) {
+        throw new Error("Could not update merge state to be up to date, when trying to get it from database");
       }
-      const createdMergeState = await this.getMergeStateFromUUID(createdMergeStateId, prismaMergeState.mergeStateData !== null);
+      const createdMergeState = await this.getMergeStateFromUUID(prismaMergeState.uuid, prismaMergeState.mergeStateData !== null);
       if (createdMergeState === null) {
         // I don't think that this could ever happen
         throw new Error(`The merge state exists, it was no longer up to date, new one was created, however for some unknown reason it is not present in database after update: ${{rootIriMergeFrom: prismaMergeState.rootIriMergeFrom, rootIriMergeTo: prismaMergeState.rootIriMergeTo}}`);

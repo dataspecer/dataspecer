@@ -21,7 +21,7 @@ export const updateMergeState = asyncHandler(async (request: express.Request, re
   });
   const body = bodySchema.parse(request.body);
 
-  await mergeStateModel.updateMergeStatePartly(body.uuid, body.currentlyUnresolvedConflicts);
+  await mergeStateModel.updateMergeStateConflictList(body.uuid, body.currentlyUnresolvedConflicts);
 
   response.sendStatus(200);
   return;

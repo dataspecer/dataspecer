@@ -97,7 +97,7 @@ export async function createMergeStateBetweenDSPackages(
       rootFullPathToMeta: pathToRootMetaMergeTo,
     };
 
-    const createdMergeStateId = mergeStateModel.createMergeStateIfNecessary(
+    const createdMergeStateId = await mergeStateModel.createMergeStateIfNecessary(
       mergeFromRootIri, "merge", diffTreeComparisonResult,
       commonCommitHash, mergeFromInfo, mergeToInfo);
     return createdMergeStateId;
@@ -113,16 +113,17 @@ export type MergeEndpointForComparison = {
   gitProvider: GitProvider | null,
 } & MergeEndpointBase
 
-export type MergeEndpointToCreate = {
+export type MergeEndpointForStateUpdate = {
   git: SimpleGit | null,
   lastCommitHash: string,
 } & MergeEndpointForComparison
 
-export async function createMergeStateGeneral(
-  mergeFrom: MergeEndpointToCreate,
-  mergeTo: MergeEndpointToCreate,
+export async function updateMergeStateToBeUpToDate(
+  uuid: string,
+  mergeFrom: MergeEndpointForStateUpdate,
+  mergeTo: MergeEndpointForStateUpdate,
   mergeStateCause: MergeStateCause,
-): Promise<string | null> {
+): Promise<boolean> {
   const {
     diffTreeComparisonResult,
     rootMergeFrom, pathToRootMetaMergeFrom,
@@ -152,7 +153,6 @@ export async function createMergeStateGeneral(
       }
     }
 
-
     const mergeFromInfo: MergeEndInfoWithRootNode = {
       rootNode: rootMergeFrom,
       filesystemType: mergeFrom.filesystemType,
@@ -168,8 +168,8 @@ export async function createMergeStateGeneral(
     };
 
     const rootResourceIri: string = mergeFrom.rootIri;    // TODO RadStr: Not sure now about the iris, but we will see
-    const createdMergeStateId = mergeStateModel.createMergeStateIfNecessary(
-      rootResourceIri, mergeStateCause, diffTreeComparisonResult,
+    const isSuccessfullyUpdated = await mergeStateModel.updateMergeStateToBeUpToDate(
+      uuid, mergeStateCause, diffTreeComparisonResult,
       commonCommitHash!, mergeFromInfo, mergeToInfo);
-    return createdMergeStateId;
+    return isSuccessfullyUpdated;
 }

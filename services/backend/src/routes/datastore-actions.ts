@@ -8,6 +8,7 @@ import { z } from "zod";
 import { isAccessibleGitRepository } from "../models/git-store-info.ts";
 import { AvailableFilesystems, CreateDatastoreFilesystemNodesInfo, convertDatastoreContentBasedOnFormat } from "@dataspecer/git";
 import path from "path";
+import { updateBlob } from "./resource.ts";
 
 
 // export async function setDatastoreContent(pathToDatastore: string, filesystem: AvailableFilesystems, type: string, newContent: string, format?: string) {
@@ -154,7 +155,7 @@ export async function createDatastoreContent(
     }
     const newContentConverted = convertDatastoreContentBasedOnFormat(content, format ?? null, true);
     const contentAsJSON = JSON.parse(newContentConverted);
-    (await resourceModel.getOrCreateResourceModelStore(lastFilesystemNode.iri, type)).setJson(contentAsJSON);
+    await updateBlob(lastFilesystemNode.iri, type, contentAsJSON);
   }
   return { success: true, accessDenied: false };
 }
