@@ -569,6 +569,10 @@ export const DiffTreeVisualization = (props: {
   mergeStateFromBackend: MergeState | null,
   conflictsToBeResolvedOnSaveFromParent: ComparisonData[],
   setConflictsToBeResolvedOnSave: Dispatch<SetStateAction<ComparisonData[]>>,
+  createdDatastores: ComparisonData[],
+  setCreatedDatastores: Dispatch<SetStateAction<ComparisonData[]>>,
+  removedDatastores: ComparisonData[],
+  setRemovedDatastores: Dispatch<SetStateAction<ComparisonData[]>>,
 }) => {
   const setConflictsToBeResolvedOnSave = props.setConflictsToBeResolvedOnSave;
   const mergeStateFromBackend: MergeState | null = props.mergeStateFromBackend;

@@ -48,6 +48,8 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
     monacoEditor,
     examinedMergeState,
     conflictsToBeResolvedOnSave, setConflictsToBeResolvedOnSave,
+    removedDatastores, setRemovedDatastores,
+    createdDatastores, setCreatedDatastores,
     convertedCacheForMergeFromContent,
     mergeFromSvg,
     mergeToSvg,
@@ -106,6 +108,10 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
                                             mergeStateFromBackend={examinedMergeState}
                                             conflictsToBeResolvedOnSaveFromParent={conflictsToBeResolvedOnSave}
                                             setConflictsToBeResolvedOnSave={setConflictsToBeResolvedOnSave}
+                                            createdDatastores={createdDatastores}
+                                            setCreatedDatastores={setCreatedDatastores}
+                                            removedDatastores={removedDatastores}
+                                            setRemovedDatastores={setRemovedDatastores}
                                             />
                   </div>
                 <div className="flex gap-2 mt-4 justify-start mb-2">
@@ -297,6 +303,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
   // Set once in the useEffect
   const [examinedMergeState, setExaminedMergeState] = useState<MergeState | null>(null);
   const [conflictsToBeResolvedOnSave, setConflictsToBeResolvedOnSave] = useState<ComparisonData[]>([]);
+  const [removedDatastores, setRemovedDatastores] = useState<ComparisonData[]>([]);
+  const [createdDatastores, setCreatedDatastores] = useState<ComparisonData[]>([]);
 
   const [currentTreePathToNodeContainingDatastore, setCurrentTreePathToNodeContainingDatastore] = useState<string>("");
   const [formatsForCacheEntries, setFormatsForCacheEntries] = useState<FormatsCache>({});
@@ -325,6 +333,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
   const resetUseStates = () => {
     setExaminedMergeState(null);
     setConflictsToBeResolvedOnSave([]);
+    setCreatedDatastores([]);
+    setRemovedDatastores([]);
     setCurrentTreePathToNodeContainingDatastore("");
     setFormatsForCacheEntries({});
     setDatastoreInfosForCacheEntries({});
@@ -549,6 +559,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     monacoEditor,
     examinedMergeState, setExaminedMergeState,
     conflictsToBeResolvedOnSave, setConflictsToBeResolvedOnSave,
+    removedDatastores, setRemovedDatastores,
+    createdDatastores, setCreatedDatastores,
     currentTreePathToNodeContainingDatastore, setCurrentTreePathToNodeContainingDatastore,
     formatsForCacheEntries, setFormatsForCacheEntries,
     datastoreInfosForCacheEntries, setDatastoreInfosForCacheEntries,
