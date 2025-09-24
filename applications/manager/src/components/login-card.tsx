@@ -9,7 +9,7 @@ const LoginCard = (props: {login: UseLoginType}) => {
       null :
       <div className="login-card">
         {!isSignedIn ?
-          <div>Note that if you provide git permissions. The token itself is still valid after logging out. So for safety reasons you should remove the permissions provided to this page inside GitHub</div> :
+          <div>Note that if you provide git permissions. The token with permissions should be revoked after, unless some error happened, if so then for safety reasons you should remove the permissions provided to this page inside GitHub (or the used git provider)</div> :
           <div className="user-info">
             <img src={imageUrl} alt="User Avatar" className="avatar" />
             <h2>{username}</h2>
