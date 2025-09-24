@@ -107,7 +107,7 @@ export class MergeStateModel implements ResourceChangeListener {
 
 
   /**
-   * @returns True if it was successfully updated, false if there are 0 conflicts (TODO RadStr:)
+   * @returns True if it was successfully updated
    */
   async updateMergeStateToBeUpToDate(
     uuid: string,
