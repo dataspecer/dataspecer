@@ -3,9 +3,8 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { mergeStateModel, resourceModel } from "../main.ts";
 
-import fs from "fs";
 import { CommitResult, SimpleGit } from "simple-git";
-import { checkErrorBoundaryForCommitAction, extractPartOfRepositoryURL, getAuthorizationURL, getLastCommit, getLastCommitHash, removeEverythingExcept } from "../utils/git-utils.ts";
+import { checkErrorBoundaryForCommitAction, extractPartOfRepositoryURL, getAuthorizationURL, getLastCommit, getLastCommitHash, removeEverythingExcept, removePathRecursively } from "../utils/git-utils.ts";
 import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS, CommitInfo } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
@@ -15,10 +14,11 @@ import { createReadmeFile } from "../git-readme/readme-generator.ts";
 import { ReadmeTemplateData } from "../git-readme/readme-template.ts";
 import { AvailableExports } from "../export-import/export-actions.ts";
 import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic, CreateSimpleGitResult, UniqueDirectory } from "../utils/simple-git-utils.ts";
-import { compareGitAndDSFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
+import { compareBackendFilesystems, compareGitAndDSFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { MERGE_DS_CONFLICTS_PREFIX, PUSH_PREFIX } from "../models/git-store-info.ts";
 import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
 import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
+import { MergeEndpointForComparison } from "./create-merge-state.ts";
 
 
 export type RepositoryIdentificationInfo = {
@@ -224,7 +224,23 @@ async function commitDSMergeToGit(
         rootMergeTo,
         pathToRootMetaMergeTo,
         filesystemMergeTo,
-      } = await compareGitAndDSFilesystems(gitProvider, iri, gitInitialDirectoryParent, "merge");
+      } = await compareBackendFilesystems(gitProvider, iri, gitInitialDirectoryParent, "merge");
+
+        const mergeFrom: MergeEndpointForComparison = {
+          gitProvider: commitInfo.gitProvider,
+          rootIri: mergeFromRootIri,
+          filesystemType: AvailableFilesystems.DS_Filesystem,
+          fullPath: gitInitialDirectoryParent,
+        };
+
+        const mergeTo: MergeEndpointForComparison = {
+          gitProvider: commitInfo.gitProvider,
+          rootIri: mergeToRootIri,
+          filesystemType: AvailableFilesystems.DS_Filesystem,
+          fullPath: gitInitialDirectoryParent,
+        };
+
+        const generalResult = await compareBackendFilesystems(mergeFrom, mergeTo);
 
       const commonCommitHash = await getCommonCommitInHistory(git, mergeFromCommitHash, mergeToCommitHash);
 
@@ -243,7 +259,7 @@ async function commitDSMergeToGit(
 
       const createdMergeStateId = await mergeStateModel.createMergeStateIfNecessary(
         iri, "merge", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
-      if (createdMergeStateId !== null) {
+      if (diffTreeComparisonResult.conflicts.length > 0) {
         return false;
       }
       // Well now what? For some reason the merge state was not created, but I think that it always should be, since we are not matching the commit hashes.
@@ -331,14 +347,14 @@ async function commitClassicToGit(
 
           const createdMergeStateId = await mergeStateModel.createMergeStateIfNecessary(
             iri, "push", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
-          if (createdMergeStateId !== null) {
+          if (diffTreeComparisonResult.conflicts.length > 0) {
             return false;
           }
         }
       }
       catch(error) {
         // Remove only on failure, otherwise there is conflict and we want to keep it for merge state
-        fs.rmSync(gitDirectoryToRemoveAfterWork, { recursive: true, force: true });
+        removePathRecursively(gitDirectoryToRemoveAfterWork);
         throw error;      // Rethrow
       }
     }
@@ -373,6 +389,29 @@ async function exportAndPushToGit(
 
   await fillGitDirectoryWithExport(iri, createSimpleGitResult, commitInfo.gitProvider, commitInfo.exportFormat, repositoryIdentificationInfo, hasSetLastCommit);
 
+  // TODO RadStr: Debug print to remove
+  for (let i = 0; i < 10; i++) {
+    console.info("*****************************************************");
+  }
+
+  try {
+    // Get list of all branches (local + remote)
+    const branches = await git.branch(['-a']);
+
+    for (const branchName of Object.keys(branches.branches)) {
+      console.log(`\n=== History for branch: ${branchName} ===`);
+
+      // Get commit history of each branch
+      const log = await git.log([branchName]);
+
+      log.all.forEach(commit => {
+        console.log(`${commit.date} | ${commit.hash} | ${commit.message} | ${commit.author_name}`);
+      });
+    }
+  } catch (err) {
+    console.error('Error fetching history:', err);
+  }
+
   try {
     let commitResult: CommitResult;
     if (mergeFromBranch === null) {
@@ -381,6 +420,30 @@ async function exportAndPushToGit(
     else {
       commitResult = await createMergeCommit(git, ["."], commitMessage, gitCredentials.name, gitCredentials.email, mergeFromBranch);
     }
+
+  // TODO RadStr: Debug print to remove
+  for (let i = 0; i < 10; i++) {
+    console.info("-----------------------------------------------");
+  }
+  try {
+    // Get list of all branches (local + remote)
+    const branches = await git.branch(['-a']);
+
+    for (const branchName of Object.keys(branches.branches)) {
+      console.log(`\n=== History for branch: ${branchName} ===`);
+
+      // Get commit history of each branch
+      const log = await git.log([branchName]);
+
+      log.all.forEach(commit => {
+        console.log(`${commit.date} | ${commit.hash} | ${commit.message} | ${commit.author_name}`);
+      });
+    }
+  } catch (err) {
+    console.error('Error fetching history:', err);
+  }
+
+
     if (commitResult.commit !== "") {
       // We do not need any --force or --force-with-leash options, this is enough
       await git.push(repoURLWithAuthorization);
@@ -391,6 +454,7 @@ async function exportAndPushToGit(
     return true;    // We are done
   }
   catch(error) {
+    throw error;      // TODO RadStr: Throw now for debug purposes
     // Error can be caused by Not sufficient rights for the pushing - then we have to try all and fail on last
     if (isLastAccessToken) {
       // If it is last then rethrow. Otherwise try again.
@@ -405,7 +469,7 @@ async function exportAndPushToGit(
   finally {
     // It is important to not only remove the actual files, but also the .git directory,
     // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
-    fs.rmSync(gitDirectoryToRemoveAfterWork, { recursive: true, force: true });
+    removePathRecursively(gitDirectoryToRemoveAfterWork);
   }
 }
 
@@ -443,7 +507,7 @@ async function fillGitDirectoryWithExport(
   }
   catch(error) {
     console.error("Failure when creating the export of repository for commit");
-    fs.rmSync(gitDirectoryToRemoveAfterWork, { recursive: true, force: true });
+    removePathRecursively(gitDirectoryToRemoveAfterWork);
     throw error;
   }
 }
