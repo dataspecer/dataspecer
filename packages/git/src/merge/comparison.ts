@@ -119,7 +119,7 @@ async function compareTreesInternal(
           };
           currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(changed);
           comparisonDifferences.changed.push(changed);
-          comparisonDifferences.conflicts.push(changed);
+          // comparisonDifferences.conflicts.push(changed);
         }
       }
       else {
@@ -131,6 +131,7 @@ async function compareTreesInternal(
         };
         currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(removed);
         comparisonDifferences.removed.push(removed);
+        // comparisonDifferences.conflicts.push(removed);
       }
     }
 
@@ -145,6 +146,7 @@ async function compareTreesInternal(
         };
         currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(created);
         comparisonDifferences.created.push(created);
+        // comparisonDifferences.conflicts.push(created);
         diffTreeSize++;
       }
     }
