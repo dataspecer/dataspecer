@@ -179,8 +179,15 @@ export function removeEverythingExcept(rootDirectory: string, exceptions: string
     }
 
     const fullPath = path.join(rootDirectory, entry);
-    fs.rmSync(fullPath, { recursive: true, force: true });
+    removePathRecursively(fullPath);
   }
+}
+
+/**
+ * Just calls fs.rmSync(path, { recursive: true, force: true }); to remove everything on path and further
+ */
+export function removePathRecursively(path: string) {
+  fs.rmSync(path, { recursive: true, force: true });
 }
 
 /**

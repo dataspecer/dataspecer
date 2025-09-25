@@ -4,6 +4,7 @@ import { simpleGit } from "simple-git";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 import { ROOT_DIRECTORY_FOR_ANY_GIT } from "../models/git-store-info.ts";
+import { removePathRecursively } from "../utils/git-utils.ts";
 
 export abstract class GitProviderBase implements GitProvider {
   abstract getGitProviderEnumValue(): GitProviderEnum;
@@ -72,7 +73,7 @@ export abstract class GitProviderBase implements GitProvider {
       throw error;    // Just rethrow it.
     }
     finally {
-      fs.rmSync(gitTmpDirectory, { recursive: true, force: true });
+      removePathRecursively(gitTmpDirectory);
     }
   }
 

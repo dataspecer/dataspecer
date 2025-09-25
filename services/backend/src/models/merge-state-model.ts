@@ -7,7 +7,7 @@ import { ALL_GIT_REPOSITORY_ROOTS } from "./git-store-info.ts";
 import { ResourceModel } from "./resource-model.ts";
 import { SimpleGit, simpleGit } from "simple-git";
 import { AvailableFilesystems, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, FilesystemNode, GitProvider, isEditableType, isGitUrlSet, MergeState, MergeStateCause } from "@dataspecer/git";
-import { getLastCommitHash } from "../utils/git-utils.ts";
+import { getLastCommitHash, removePathRecursively } from "../utils/git-utils.ts";
 import { ResourceChangeListener, ResourceChangeType } from "./resource-change-observer.ts";
 import { updateMergeStateToBeUpToDate, MergeEndpointForStateUpdate } from "../routes/create-merge-state.ts";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
@@ -66,6 +66,10 @@ function convertToMergeInfoWithIri(input: MergeEndInfoWithRootNode): MergeEndInf
 
 type MergeStateWithData = Prisma.MergeStateGetPayload<{
   include: { mergeStateData: true }
+}>;
+
+type MergeStateWithoutData = Prisma.MergeStateGetPayload<{
+  include: { mergeStateData: false }
 }>;
 
 export class MergeStateModel implements ResourceChangeListener {
@@ -158,15 +162,15 @@ export class MergeStateModel implements ResourceChangeListener {
     commonCommitHash: string,
     mergeFromInfo: MergeEndInfoWithRootNode,
     mergeToInfo: MergeEndInfoWithRootNode,
-  ): Promise<string | null> {
+  ): Promise<string> {
+    // If there are no conflicts. Create it anyway. It is up to user if he really wants to finalize the merge operation.
+    // TODO RadStr Idea: We could finalize right away and save creating database entry. But it is rare case and another place to prone to error.
+    //                   So it can be done in future by somebody else
+
     const {
       changed, conflicts, created, removed,
       diffTree, diffTreeSize
     } = diffTreeComparisonResult;
-
-    if (conflicts.length === 0) {
-      return null;
-    }
 
     await this.clearTable();     // TODO RadStr: Debug
 
@@ -292,7 +296,7 @@ export class MergeStateModel implements ResourceChangeListener {
     else if (mergeState.mergeStateCause === "merge") {
       await this.handleMergeFinalizer(mergeState);
     }
-    await this.removeMergeState(mergeState.uuid);
+    await this.removeMergeState(mergeState);
 
     return true;
   }
@@ -315,7 +319,7 @@ export class MergeStateModel implements ResourceChangeListener {
       const startIndexInPath = resolvedPathToRootMetaFile.indexOf(firstUniquePartOfPath, rootGitDirectory.length);
       const dirNameToRemove = resolvedPathToRootMetaFile.substring(0, startIndexInPath + firstUniquePartOfPath.length);
 
-      fs.rmSync(dirNameToRemove, { recursive: true, force: true });
+      removePathRecursively(dirNameToRemove);
       return true;
     }
     catch(error) {
@@ -333,9 +337,7 @@ export class MergeStateModel implements ResourceChangeListener {
     // It is important to also remove the repository together with the mergeState
     const mergeStates = await this.prismaClient.mergeState.findMany({include: {mergeStateData: false}});
     for (const mergeState of mergeStates) {
-      await this.prismaClient.mergeState.delete({where: {id: mergeState.id}});
-      this.removeRepository(mergeState.filesystemTypeMergeFrom as AvailableFilesystems, mergeState.rootFullPathToMetaMergeFrom, true);
-      this.removeRepository(mergeState.filesystemTypeMergeTo as AvailableFilesystems, mergeState.rootFullPathToMetaMergeTo, true);
+      this.removeMergeState(mergeState);
     }
   }
 
@@ -604,8 +606,10 @@ export class MergeStateModel implements ResourceChangeListener {
     });
   }
 
-  async removeMergeState(uuid: string) {
-    await this.prismaClient.mergeState.delete({where: {uuid: uuid}});
+  async removeMergeState(mergeState: MergeStateWithoutData | MergeState) {
+    await this.prismaClient.mergeState.delete({where: {uuid: mergeState.uuid}});
+    this.removeRepository(mergeState.filesystemTypeMergeFrom as AvailableFilesystems, mergeState.rootFullPathToMetaMergeFrom, true);
+    this.removeRepository(mergeState.filesystemTypeMergeTo as AvailableFilesystems, mergeState.rootFullPathToMetaMergeTo, true);
   }
 
   private async createMergeEndPointGitData(

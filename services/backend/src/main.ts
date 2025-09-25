@@ -49,11 +49,12 @@ import { MergeStateModel } from "./models/merge-state-model.ts";
 import { getMergeState } from "./routes/get-merge-state.ts";
 import { getMergeStates } from "./routes/get-merge-states.ts";
 import { updateMergeState } from "./routes/update-merge-state.ts";
-import { finalizeMergeState as finalizeMergeState } from "./routes/finish-merge-state.ts";
+import { finalizeMergeState } from "./routes/finalize-merge-state.ts";
 import { createMergeStateBetweenDSPackagesHandler } from "./routes/create-merge-state.ts";
 import { clearMergeStateTableDebug } from "./routes/debug-clear-merge-state-table.ts";
 import { storeNewPrivateSSHKeyToBackend, storePrivateSSHKey } from "./routes/store-private-ssh-key.ts";
 import { GIT_RAD_STR_BOT_SSH_ID, GIT_RAD_STR_BOT_SSH_PRIVATE_KEY } from "./git-never-commit.ts";
+import { removeMergeState } from "./routes/remove-merge-state.ts";
 
 // Create application models
 
@@ -211,6 +212,7 @@ application.post(apiBasename + "/git/create-merge-state-between-ds-packages", cr
 application.post(apiBasename + "/git/update-merge-state", updateMergeState);
 application.get(apiBasename + "/git/get-merge-states", getMergeStates);
 application.post(apiBasename + "/git/finalize-merge-state", finalizeMergeState);
+application.post(apiBasename + "/git/remove-merge-state", removeMergeState);
 
 // TODO RadStr: Just for debugging !
 application.post(apiBasename + "/git/debug-clear-merge-state-table", clearMergeStateTableDebug);
