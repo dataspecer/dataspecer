@@ -79,6 +79,8 @@ model Resource {
   // Also note that if the tip of branch moved, then the user should be probably warned, that he is performing merge directly from commit.
   // (which as said before only reflects in the default commit message).
   mergeFromBranch String @default("")
+  // The merge from is only for branches inside DS. So they have iri available.
+  mergeFromIri String @default("")
 
   // Technical metadata: creation date.
   createdAt DateTime @default(now())
