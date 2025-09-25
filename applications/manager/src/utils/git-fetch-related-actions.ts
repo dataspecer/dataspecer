@@ -1,9 +1,9 @@
+import { modifyPackageProjectData, modifyPackageRepresentsBranchHead, requestLoadPackage } from "@/package";
 import { Package } from "@dataspecer/core-v2/project";
-import { OpenBetterModal } from "./lib/better-modal";
-import { modifyPackageProjectData, modifyPackageRepresentsBranchHead, requestLoadPackage } from "./package";
-import { gitOperationResultToast } from "./utils/utilities";
-import { BranchAction, CreateNewBranchDialog } from "./dialog/create-new-branch";
 import { toast } from "sonner";
+import { gitOperationResultToast } from "./utilities";
+import { BranchAction, CreateNewBranchDialog } from "@/dialog/create-new-branch";
+import { OpenBetterModal } from "@/lib/better-modal";
 
 
 export async function manualPull(iri: string) {
@@ -52,18 +52,4 @@ export async function switchRepresentsBranchHead(examinedPackage: Package, openM
   else {
     openModal(CreateNewBranchDialog, { sourcePackage: examinedPackage, actionOnConfirm: BranchAction.TurnExistingIntoBranch });
   }
-}
-
-
-/**
- * @todo TODO RadStr: Just for debug
- */
-export async function debugClearMergeStateDBTable() {
-  const response = await fetch(import.meta.env.VITE_BACKEND + "/git/debug-clear-merge-state-table", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-  });
-  console.info("debugClearMergeStateDBTable response:", response);
 }

@@ -39,7 +39,8 @@ import { OpenMergeState } from "./dialog/open-merge-state";
 import { useLogin, UseLoginType } from "./hooks/use-login";
 import SetPrivateSSHKeyDialog from "./dialog/set-private-ssh";
 import { isGitUrlSet, PACKAGE_ROOT } from "@dataspecer/git";
-import { debugClearMergeStateDBTable, manualPull, removeGitLinkFromPackage, switchRepresentsBranchHead } from "./git-fetch-related-actions";
+import { debugClearMergeStateDBTable } from "./utils/merge-state-fetch-methods";
+import { manualPull, removeGitLinkFromPackage, switchRepresentsBranchHead } from "./utils/git-fetch-related-actions";
 
 export function lng(text: LanguageString | undefined): string | undefined {
   return text?.["cs"] ?? text?.["en"];

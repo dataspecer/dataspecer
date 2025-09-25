@@ -18,6 +18,7 @@ import { AvailableFilesystems, ClientFilesystem, ComparisonData, convertDatastor
 import { MergeStrategyComponent } from "@/components/merge-strategy-component";
 import ExpandableList from "@/components/expandable-list";
 import { RemoveFromToBeResolvedReactComponent } from "@/components/remove-from-to-be-resolved";
+import { finalizeMergeState, saveMergeState } from "@/utils/merge-state-fetch-methods";
 
 export type ChangeActiveModelMethod = (
   treePathToNodeContainingDatastore: string,
@@ -198,57 +199,6 @@ function isDatastorePresentInCache(cache: CacheContentMap, datastoreInfo: Datast
 
 function getDatastoreInCache(cache: CacheContentMap, datastoreInfo: DatastoreInfo) {
   return cache[datastoreInfo.fullPath]?.[datastoreInfo.type];
-}
-
-const saveMergeState = async (
-  fetchedMergeState: MergeState,
-  conflictsToBeResolvedOnSave: ComparisonData[],
-) => {
-  try {
-    const pathsForConflictsToBeResolvedOnSave = conflictsToBeResolvedOnSave.map(conflict => conflict.affectedDataStore.fullPath);
-
-    const fetchResult = await fetch(
-      `${import.meta.env.VITE_BACKEND}/git/update-merge-state`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          uuid: fetchedMergeState.uuid,
-          currentlyUnresolvedConflicts: fetchedMergeState.unresolvedConflicts
-            ?.filter(unresolvedConflict => !pathsForConflictsToBeResolvedOnSave.includes(unresolvedConflict.affectedDataStore.fullPath))
-            .map(conflict => conflict.affectedDataStore.fullPath),
-        }),
-      });
-
-    console.info("update merge state response", fetchResult);   // TODO RadStr Debug:
-
-    return fetchResult;
-  }
-  catch(error) {
-    console.error(`Error when updating merge state (${fetchedMergeState}). The error: ${error}`);
-    throw error;
-  }
-};
-
-const finalizeMergeState = async (mergeStateUUID: string | undefined): Promise<boolean> => {
-  if (mergeStateUUID === undefined) {
-    // I think that it should be error
-    console.error("Error when updating merge state, there is actually no merge state");
-    return false;
-  }
-
-  try {
-    const fetchResult = await fetch(
-      `${import.meta.env.VITE_BACKEND}/git/finalize-merge-state?uuid=${mergeStateUUID}`, {
-        method: "POST",
-      });
-    console.info("Finalize merge state response", fetchResult);   // TODO RadStr Debug:
-
-    return fetchResult.ok;
-  }
-  catch(error) {
-    console.error(`Error when updating merge state (${mergeStateUUID}). The error: ${error}`);
-    return false;
-  }
 }
 
 const updateCacheContentEntryEverywhere = (
