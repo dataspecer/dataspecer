@@ -303,8 +303,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
   // Set once in the useEffect
   const [examinedMergeState, setExaminedMergeState] = useState<MergeState | null>(null);
   const [conflictsToBeResolvedOnSave, setConflictsToBeResolvedOnSave] = useState<ComparisonData[]>([]);
-  const [removedDatastores, setRemovedDatastores] = useState<ComparisonData[]>([]);
-  const [createdDatastores, setCreatedDatastores] = useState<ComparisonData[]>([]);
+  const [removedDatastores, setRemovedDatastores] = useState<DatastoreInfo[]>([]);
+  const [createdDatastores, setCreatedDatastores] = useState<DatastoreInfo[]>([]);
 
   const [currentTreePathToNodeContainingDatastore, setCurrentTreePathToNodeContainingDatastore] = useState<string>("");
   const [formatsForCacheEntries, setFormatsForCacheEntries] = useState<FormatsCache>({});
@@ -529,15 +529,23 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
 
   const saveFileChanges = async () => {
     const editableCacheContents = getEditableValue(editable, convertedCacheForMergeFromContent, convertedCacheForMergeToContent);
+    const editableFilesystem = getEditableValue(editable, examinedMergeState?.filesystemTypeMergeFrom, examinedMergeState?.filesystemTypeMergeTo) ?? null;
 
     for (const [nodeTreePath, datastoreInfoMap] of Object.entries(datastoreInfosForCacheEntries)) {
       for (const [modelName, datastoreInfo] of Object.entries(datastoreInfoMap)) {
+        const datastoreInfoForEditable = getEditableValue(editable, datastoreInfo.mergeFrom, datastoreInfo.mergeTo);
+
+        let removedDatastore: DatastoreInfo | undefined;
+        if ((removedDatastore = removedDatastores.find(datastore => datastore.fullPath === datastoreInfoForEditable?.fullPath)) !== undefined) {
+          const datastoreParentIri = examinedMergeState?.diffTreeData?.diffTree[nodeTreePath].resource.metadataCache.iri!;
+          await ClientFilesystem.removeDatastoreDirectly(datastoreParentIri, removedDatastore, import.meta.env.VITE_BACKEND , editableFilesystem, false);
+          continue;
+        }
+
         const format = formatsForCacheEntries[nodeTreePath][modelName];
         const newValue = editableCacheContents[nodeTreePath][modelName];
         const newValueAsJSON = convertDatastoreContentForInputFormatToOutputFormat(newValue, format, "json", true);
-        const editableFilesystem = getEditableValue(editable, examinedMergeState?.filesystemTypeMergeFrom, examinedMergeState?.filesystemTypeMergeTo) ?? null;
-        const relevantDatastoreInfo = getEditableValue(editable, datastoreInfo.mergeFrom, datastoreInfo.mergeTo);
-        await ClientFilesystem.updateDatastoreContentDirectly(relevantDatastoreInfo, newValueAsJSON, editableFilesystem, import.meta.env.VITE_BACKEND);
+        await ClientFilesystem.updateDatastoreContentDirectly(datastoreInfoForEditable, newValueAsJSON, editableFilesystem, import.meta.env.VITE_BACKEND);
         await reloadModelsDataFromBackend();
       }
     }

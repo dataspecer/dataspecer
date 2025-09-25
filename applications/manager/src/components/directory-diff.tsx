@@ -31,6 +31,8 @@ type RenderNodeWithAdditionalData = RenderNode & {
   shouldShowConflicts: boolean,
   allConficts: ComparisonData[],
   setConflictsToBeResolvedOnSave: (value: React.SetStateAction<ComparisonData[]>) => void,
+  setCreatedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void,
+  setRemovedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void,
 };
 
 type RenderStatus = "same" | "modified" | "created" | "removed";
@@ -291,6 +293,7 @@ const onClickRemoveDatastore = (
   nodeToResolve: RenderNodeWithAdditionalData,
 ) => {
   event.stopPropagation();
+  nodeToResolve.setRemovedDatastores(prev => [...prev, nodeToResolve.fullDatastoreInfoInModifiedTree!]);
   alert(`Remove datastore for ${nodeToResolve.name}`);
 }
 
@@ -299,6 +302,7 @@ const onClickCreateDatastore = (
   nodeToResolve: RenderNodeWithAdditionalData,
 ) => {
   event.stopPropagation();
+  nodeToResolve.setCreatedDatastores(prev => [...prev, nodeToResolve.fullDatastoreInfoInOriginalTree!]);
   alert(`Create datastore for ${nodeToResolve.name}`);
 }
 
@@ -413,9 +417,13 @@ function StyledNode({
                     <X className="h-6 w-6"/>
                   </button>
                 }
-                <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => {e.stopPropagation(); alert("delte")}}>
-                  { node.data.treeType === "new" ? <MoveRight className="h-6 w-6"/> : <MoveLeft className="h-6 w-6"/> }
-                </button>
+                {
+                node.data.status === "modified" ?
+                  <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => {e.stopPropagation(); alert("delte")}}>
+                    { node.data.treeType === "new" ? <MoveRight className="h-6 w-6"/> : <MoveLeft className="h-6 w-6"/> }
+                  </button> :
+                  <div className="h-6 w-6"/>
+                }
                 {
                 (node.data.status === "modified" || node.data.status === "same") ?
                   <div className="h-6 w-6"/> :
@@ -423,14 +431,14 @@ function StyledNode({
                 }
                 {
                 node.data.status === "removed" ?
-                  <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickCreateDatastore(e, node.data)}>
+                  <button title="Create datastore" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickCreateDatastore(e, node.data)}>
                     <Plus className="h-6 w-6"/>
                   </button> :
                   null
                 }
                 {
                 node.data.status === "created" ?
-                  <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickRemoveDatastore(e, node.data)}>
+                  <button title="Remove datastore" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickRemoveDatastore(e, node.data)}>
                     <Minus className="h-6 w-6"/>
                   </button> :
                   null
@@ -471,12 +479,19 @@ const createStyledNode = (
   shouldShowConflicts: boolean,
   allConficts: ComparisonData[],
   setConflictsToBeResolvedOnSave: (value: React.SetStateAction<ComparisonData[]>) => void,
+  setCreatedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void,
+  setRemovedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void,
 ) => {
   const extendedProps: NodeRendererProps<RenderNodeWithAdditionalData> = props as any;
   extendedProps.node.data.changeActiveModel = changeActiveModelData;
   extendedProps.node.data.shouldShowConflicts = shouldShowConflicts;
   extendedProps.node.data.allConficts = allConficts;
   extendedProps.node.data.setConflictsToBeResolvedOnSave = setConflictsToBeResolvedOnSave;
+  extendedProps.node.data.setCreatedDatastores = setCreatedDatastores;
+  extendedProps.node.data.setRemovedDatastores = setRemovedDatastores;
+
+
+  alert("Calling createStyledNode ...");
   return <StyledNode {...extendedProps} />;
 }
 
@@ -569,11 +584,13 @@ export const DiffTreeVisualization = (props: {
   mergeStateFromBackend: MergeState | null,
   conflictsToBeResolvedOnSaveFromParent: ComparisonData[],
   setConflictsToBeResolvedOnSave: Dispatch<SetStateAction<ComparisonData[]>>,
-  createdDatastores: ComparisonData[],
-  setCreatedDatastores: Dispatch<SetStateAction<ComparisonData[]>>,
-  removedDatastores: ComparisonData[],
-  setRemovedDatastores: Dispatch<SetStateAction<ComparisonData[]>>,
+  createdDatastores: DatastoreInfo[],
+  setCreatedDatastores: Dispatch<SetStateAction<DatastoreInfo[]>>,
+  removedDatastores: DatastoreInfo[],
+  setRemovedDatastores: Dispatch<SetStateAction<DatastoreInfo[]>>,
 }) => {
+  const setCreatedDatastores = props.setCreatedDatastores;
+  const setRemovedDatastores = props.setRemovedDatastores;
   const setConflictsToBeResolvedOnSave = props.setConflictsToBeResolvedOnSave;
   const mergeStateFromBackend: MergeState | null = props.mergeStateFromBackend;
 
@@ -803,7 +820,7 @@ export const DiffTreeVisualization = (props: {
         <h3><DiffEditorCrossedOutEditIcon/></h3>
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
-            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth())}
+            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), setCreatedDatastores, setRemovedDatastores)}
                   ref={oldTreeRef} data={oldRenderTreeDataToRender} width={"100%"}
                   onSelect={(nodes) => onNodesSelect(nodes, "old")}
                   onFocus={(node) => onNodeFocus(node, "old")}
@@ -816,7 +833,7 @@ export const DiffTreeVisualization = (props: {
         <h3><DiffEditorEditIcon/></h3>
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
-            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth())}
+            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), setCreatedDatastores, setRemovedDatastores)}
                   ref={newTreeRef} data={newRenderTreeDataToRender} width={"100%"}
                   onSelect={(nodes) => onNodesSelect(nodes, "new")}
                   onFocus={(node) => onNodeFocus(node, "new")}
