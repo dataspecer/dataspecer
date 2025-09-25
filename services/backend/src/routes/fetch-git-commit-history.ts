@@ -7,6 +7,7 @@ import fs from "fs";
 import { createSimpleGit, gitCloneBasic } from "../utils/simple-git-utils.ts";
 import { FETCH_GIT_HISTORY_PREFIX } from "../models/git-store-info.ts";
 import { GitRawHistoryToSendToClient, GitHistory, BranchHistory, RawCommit } from "@dataspecer/git";
+import { removePathRecursively } from "../utils/git-utils.ts";
 
 
 export const fetchGitCommitHistory = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -149,7 +150,7 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
         throw new Error("Error while trying to fetch git history: " + err);
     }
     finally {
-        fs.rmSync(gitDirectoryToRemoveAfterWork, { recursive: true, force: true });
+        removePathRecursively(gitDirectoryToRemoveAfterWork);
     }
 });
 

@@ -7,6 +7,7 @@ import { compareBackendFilesystems } from "../export-import/filesystem-abstracti
 import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "../utils/simple-git-utils.ts";
 import { SimpleGit } from "simple-git";
 import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
+import { removePathRecursively } from "../utils/git-utils.ts";
 
 
 export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -26,29 +27,38 @@ export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (requ
     response.status(404).send({error: `The Merge from or Merge to does not exists in the Dataspecer. The map of iri to boolean if it exists (from and to) ${mergeFromIri}: ${mergeFromResource !== null}, ${mergeToIri}: ${mergeFromResource !== null}`});
     return;
   }
-  const { git, gitInitialDirectory } = createSimpleGit(mergeFromIri, "merge-conflicts");
-  await gitCloneBasic(git, gitInitialDirectory, mergeFromResource.linkedGitRepositoryURL, false, true, undefined);
 
-  const uuid = await createMergeStateBetweenDSPackages(git, mergeFromIri, mergeFromResource.lastCommitHash, mergeToIri, mergeToResource.lastCommitHash);
+  const { git, gitInitialDirectory, gitDirectoryToRemoveAfterWork } = createSimpleGit(mergeFromIri, "merge-conflicts");
+  try {
+    await gitCloneBasic(git, gitInitialDirectory, mergeFromResource.linkedGitRepositoryURL, false, true, undefined);
 
-  if (uuid === null) {
+    const { createdMergeStateId, hasConflicts } = await createMergeStateBetweenDSPackages(git, mergeFromIri, mergeFromResource.lastCommitHash, mergeToIri, mergeToResource.lastCommitHash);
+
+    if (!hasConflicts) {
+      response.status(200);
+      response.json({ noConflicts: true, mergeStateId: createdMergeStateId });
+      return;
+    }
+
+    const mergeState = await mergeStateModel.getMergeStateFromUUID(createdMergeStateId, false);
+
+    if (mergeState === null) {
+      response.status(400).send({error: `Can not create new merge state for merge from iri ${mergeFromIri} and merge to iri ${mergeToIri}.
+        It might have been server error, but most-likely you just provided bad iris.`});
+      return;
+    }
+
+
     response.status(200);
-    response.json(null);
+    response.json(mergeState);
     return;
   }
-
-  const mergeState = await mergeStateModel.getMergeStateFromUUID(uuid, false);
-
-  if (mergeState === null) {
-    response.status(400).send({error: `Can not create new merge state for merge from iri ${mergeFromIri} and merge to iri ${mergeToIri}.
-      It might have been server error, but most-likely you just provided bad iris.`});
-    return;
+  catch (error) {
+    throw error;
   }
-
-
-  response.status(200);
-  response.json(mergeState);
-  return;
+  finally {
+    removePathRecursively(gitDirectoryToRemoveAfterWork);
+  }
 });
 
 
@@ -59,7 +69,7 @@ export async function createMergeStateBetweenDSPackages(
   mergeFromLastCommitHash: string,
   mergeToRootIri: string,
   mergeToLastCommitHash: string,
-): Promise<string | null> {
+): Promise<{ createdMergeStateId: string, hasConflicts: boolean }> {
   const mergeFromForComparison: MergeEndpointForComparison = {
     rootIri: mergeFromRootIri,
     filesystemType: AvailableFilesystems.DS_Filesystem,
@@ -100,7 +110,10 @@ export async function createMergeStateBetweenDSPackages(
     const createdMergeStateId = await mergeStateModel.createMergeStateIfNecessary(
       mergeFromRootIri, "merge", diffTreeComparisonResult,
       commonCommitHash, mergeFromInfo, mergeToInfo);
-    return createdMergeStateId;
+    return {
+      createdMergeStateId,
+      hasConflicts: diffTreeComparisonResult.conflicts.length > 0,
+    };
 }
 
 type MergeEndpointBase = {

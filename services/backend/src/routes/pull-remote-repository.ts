@@ -8,7 +8,7 @@ import { saveChangesInDirectoryToBackendFinalVersion } from "./git-webhook-handl
 import { resourceModel } from "../main.ts";
 import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "../utils/simple-git-utils.ts";
 import { AllowedPublicPrefixes, MANUAL_CLONE_PATH_PREFIX } from "../models/git-store-info.ts";
-import { getLastCommitHash } from "../utils/git-utils.ts";
+import { getLastCommitHash, removePathRecursively } from "../utils/git-utils.ts";
 
 
 
@@ -79,7 +79,7 @@ export const updateDSRepositoryByPullingGit = async (
     }
     // It is important to not only remove the actual files, but also the .git directory,
     // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
-    fs.rmSync(gitDirectoryToRemoveAfterWork, { recursive: true, force: true });
+    removePathRecursively(gitDirectoryToRemoveAfterWork);
   }
   return true;
 };
