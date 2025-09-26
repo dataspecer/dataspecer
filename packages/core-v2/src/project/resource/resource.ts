@@ -35,6 +35,7 @@ export interface BaseResource {
     isSynchronizedWithRemote: boolean;
     mergeFromHash: string;
     mergeFromBranch: string;
+    mergeFromIri: string;
 }
 
 export interface Package extends BaseResource {

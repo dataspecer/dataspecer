@@ -274,7 +274,9 @@ export class MergeStateModel implements ResourceChangeListener {
     if (mergeFromResource === null) {
       throw new Error("The merge from resource does not exist");
     }
-    await this.resourceModel.updateMergeData(mergeState.rootIriMergeTo, mergeFromResource.lastCommitHash, mergeFromResource.branch);
+    await this.resourceModel.updateMergeData(
+      mergeState.rootIriMergeTo, mergeFromResource.lastCommitHash,
+      mergeFromResource.branch, mergeFromResource.iri);
   }
 
   /**
