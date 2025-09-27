@@ -85,3 +85,16 @@ export async function debugClearMergeStateDBTable() {
   });
   console.info("debugClearMergeStateDBTable response:", response);
 }
+
+/**
+ * @todo TODO RadStr: Just for debug
+ */
+export async function debugClearMergeFromDataFromResource(iri: string) {
+  const response = await fetch(import.meta.env.VITE_BACKEND + "/git/debug-clear-merge-from-data-from-resource?iri=" + iri, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+  });
+  console.info("debugClearMergeStateDBTable response:", response);
+}

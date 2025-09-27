@@ -89,6 +89,7 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
         localLastCommitHash: "",
         mergeFromBranch: "",
         mergeFromCommitHash: "",
+        mergeFromIri: "",
       };
 
       // Just provide empty merge from values, since we are newly creating the link we can not perform merge right away anyways
@@ -161,13 +162,14 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
     localLastCommitHash: "",
     mergeFromBranch: "",
     mergeFromCommitHash: "",
+    mergeFromIri: "",
   };
 
   // Just provide empty merge from values, since we are newly creating the link we can not perform merge right away anyways
   await commitPackageToGitUsingAuthSession(
     request, query.iri, query.gitRepositoryURL, commitBranchAndHashInfo,
     repositoryIdentificationInfo, response, commitInfo);
-});
+  });
 
 /**
  * TODO RadStr After: Not used
