@@ -3,7 +3,7 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { mergeStateModel, resourceModel } from "../main.ts";
 
-import { CommitResult, SimpleGit } from "simple-git";
+import { BranchSummary, CommitResult, MergeResult, SimpleGit } from "simple-git";
 import { checkErrorBoundaryForCommitAction, extractPartOfRepositoryURL, getAuthorizationURL, getLastCommit, getLastCommitHash, removeEverythingExcept, removePathRecursively } from "../utils/git-utils.ts";
 import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS, CommitInfo } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
@@ -19,6 +19,7 @@ import { MERGE_DS_CONFLICTS_PREFIX, PUSH_PREFIX } from "../models/git-store-info
 import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
 import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
 import { MergeEndpointForComparison } from "./create-merge-state.ts";
+import fs from "fs";
 
 
 export type RepositoryIdentificationInfo = {
@@ -47,6 +48,7 @@ export type CommitBranchAndHashInfo = {
   localLastCommitHash: string,
   mergeFromBranch: string,
   mergeFromCommitHash: string,
+  mergeFromIri: string,
 }
 
 
@@ -58,6 +60,7 @@ type CommitBranchAndHashInfoForMerge = {
   mergeToCommitHash: string,
   mergeFromBranch: string,
   mergeFromCommitHash: string,
+  mergeFromIri: string,
 }
 
 function convertBranchAndHashToMergeInfo(input: CommitBranchAndHashInfo): CommitBranchAndHashInfoForMerge {
@@ -66,7 +69,8 @@ function convertBranchAndHashToMergeInfo(input: CommitBranchAndHashInfo): Commit
     mergeToCommitHash: input.localLastCommitHash,
     mergeFromBranch: input.mergeFromBranch,
     mergeFromCommitHash: input.mergeFromCommitHash,
-  }
+    mergeFromIri: input.mergeFromIri,
+  };
 }
 
 
@@ -105,6 +109,7 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
     localLastCommitHash: resource.lastCommitHash,
     mergeFromBranch: resource.mergeFromBranch,
     mergeFromCommitHash: resource.mergeFromHash,
+    mergeFromIri: resource.mergeFromIri,
   };
 
   const gitCommitInfo: GitCommitToCreateInfoBasic = {
@@ -216,6 +221,20 @@ async function commitDSMergeToGit(
     const shouldTryCreateMergeState = lastMergeFromBranchCommitInGit !== mergeFromCommitHash;
 
     if (shouldTryCreateMergeState) {
+      const mergeFrom: MergeEndpointForComparison = {
+        gitProvider: commitInfo.gitProvider,
+        rootIri: mergeInfo.mergeFromIri,
+        filesystemType: AvailableFilesystems.DS_Filesystem,
+        fullPath: gitInitialDirectoryParent,
+      };
+
+      const mergeTo: MergeEndpointForComparison = {
+        gitProvider: commitInfo.gitProvider,
+        rootIri: mergeInfo.mergeFromIri,
+        filesystemType: AvailableFilesystems.DS_Filesystem,
+        fullPath: gitInitialDirectoryParent,
+      };
+
       const {
         diffTreeComparisonResult,
         rootMergeFrom,
@@ -224,23 +243,7 @@ async function commitDSMergeToGit(
         rootMergeTo,
         pathToRootMetaMergeTo,
         filesystemMergeTo,
-      } = await compareBackendFilesystems(gitProvider, iri, gitInitialDirectoryParent, "merge");
-
-        const mergeFrom: MergeEndpointForComparison = {
-          gitProvider: commitInfo.gitProvider,
-          rootIri: mergeFromRootIri,
-          filesystemType: AvailableFilesystems.DS_Filesystem,
-          fullPath: gitInitialDirectoryParent,
-        };
-
-        const mergeTo: MergeEndpointForComparison = {
-          gitProvider: commitInfo.gitProvider,
-          rootIri: mergeToRootIri,
-          filesystemType: AvailableFilesystems.DS_Filesystem,
-          fullPath: gitInitialDirectoryParent,
-        };
-
-        const generalResult = await compareBackendFilesystems(mergeFrom, mergeTo);
+      } = await compareBackendFilesystems(mergeFrom, mergeTo);
 
       const commonCommitHash = await getCommonCommitInHistory(git, mergeFromCommitHash, mergeToCommitHash);
 
@@ -267,12 +270,16 @@ async function commitDSMergeToGit(
     }
 
 
-    // If the merge from does not exist in git - push it
-    if (!cloneResult.mergeFromBranchExists) {
-      await git.checkout(mergeFromBranch);
-      await git.push(repoURLWithAuthorization);
-      await git.checkout(mergeToBranchExplicit);
-    }
+    // If the merge from branch does not exist in git - push it
+    // TODO RadStr: For now ... I guess that I will just force the user to create it otherwise he can not merge
+    // TODO RadStr: Also sideways note ... I want to always perform merge on DS and GIT, since if I have perform merge on 2 DS branches, there is "small" issue -
+    //              - The user can modify the merge from package, that is problem since then we are not actually performing merge in git (That is from fixed point in time),
+    //                 but some weird semi-state merge
+    // if (!cloneResult.mergeFromBranchExists) {
+    //   await git.checkout(mergeFromBranch);
+    //   await git.push(repoURLWithAuthorization);
+    //   await git.checkout(mergeToBranchExplicit);
+    // }
 
 
     const pushResult = await exportAndPushToGit(
@@ -387,6 +394,19 @@ async function exportAndPushToGit(
   const { git, gitDirectoryToRemoveAfterWork } = createSimpleGitResult;
   const { commitMessage, gitCredentials } = commitInfo;
 
+  let mergeMessage: string = "";
+  if (mergeFromBranch !== null) {
+    try {
+      const mergeResult = await git.merge(["--no-commit", "--no-ff", mergeFromBranch]);
+      console.info({mergeResult});    // TODO RadStr: Debug print
+    }
+    catch(mergeError) {
+      console.info(mergeError);       // TODO RadStr: Debug print
+    }
+    const fullMergeMessagge = fs.readFileSync(`${createSimpleGitResult.gitInitialDirectory}/.git/MERGE_MSG`, "utf-8");
+    mergeMessage = fullMergeMessagge.substring(0, fullMergeMessagge.indexOf("\n"));
+  }
+
   await fillGitDirectoryWithExport(iri, createSimpleGitResult, commitInfo.gitProvider, commitInfo.exportFormat, repositoryIdentificationInfo, hasSetLastCommit);
 
   // TODO RadStr: Debug print to remove
@@ -418,30 +438,31 @@ async function exportAndPushToGit(
       commitResult = await createClassicGitCommit(git, ["."], commitMessage, gitCredentials.name, gitCredentials.email);
     }
     else {
-      commitResult = await createMergeCommit(git, ["."], commitMessage, gitCredentials.name, gitCredentials.email, mergeFromBranch);
+      commitResult = await createMergeCommit(git, ["."], mergeMessage, commitMessage, gitCredentials.name, gitCredentials.email, mergeFromBranch);
     }
 
-  // TODO RadStr: Debug print to remove
-  for (let i = 0; i < 10; i++) {
-    console.info("-----------------------------------------------");
-  }
-  try {
-    // Get list of all branches (local + remote)
-    const branches = await git.branch(['-a']);
-
-    for (const branchName of Object.keys(branches.branches)) {
-      console.log(`\n=== History for branch: ${branchName} ===`);
-
-      // Get commit history of each branch
-      const log = await git.log([branchName]);
-
-      log.all.forEach(commit => {
-        console.log(`${commit.date} | ${commit.hash} | ${commit.message} | ${commit.author_name}`);
-      });
+    // TODO RadStr: Debug print to remove
+    for (let i = 0; i < 10; i++) {
+      console.info("-----------------------------------------------");
     }
-  } catch (err) {
-    console.error('Error fetching history:', err);
-  }
+    try {
+      // Get list of all branches (local + remote)
+      const branches = await git.branch(['-a']);
+
+      for (const branchName of Object.keys(branches.branches)) {
+        console.log(`\n=== History for branch: ${branchName} ===`);
+
+        // Get commit history of each branch
+        const log = await git.log([branchName]);
+
+        log.all.forEach(commit => {
+          console.log(`${commit.date} | ${commit.hash} | ${commit.message} | ${commit.author_name}`);
+        });
+      }
+    }
+    catch (err) {
+      console.error('Error fetching history:', err);
+    }
 
 
     if (commitResult.commit !== "") {
@@ -518,6 +539,26 @@ type CloneBeforeMergeResult = {
   isClonedSuccessfully: boolean;
 }
 
+function isBranchPresentInBranchList(branches: BranchSummary, branch: string) {
+  // We have to look for remotes of matching branch name. Because in git the local branch is not visible unless it was previously checkouted.
+  const mergeFromBranchAsRemote = "remotes/origin/" + branch;
+  const branchExists = branches.all.find(currBranch => mergeFromBranchAsRemote === currBranch) !== undefined;
+  return branchExists;
+}
+
+async function checkoutBranchIfExists(git: SimpleGit, branches: BranchSummary, branch: string): Promise<boolean> {
+  const branchExists = isBranchPresentInBranchList(branches, branch);
+  if (branchExists) {
+    await git.checkout(branch);
+  }
+  else {
+    throw new Error("TODO RadStr: This is wrong. We have to create new branch from the other package content. If we ran just the git.branch([mergeFromBranch]), then we create branch with the same exact content as mergeTo. Which we do not want. We want mergeFrom");
+    await git.checkoutLocalBranch(branch);
+  }
+
+  return branchExists;
+}
+
 /**
  * Note that switches to the {@link mergeToBranch}
  */
@@ -542,23 +583,13 @@ async function cloneBeforeMerge(
       mergeToBranchExists = true;
     }
     else {
-      if (branches.all.includes(mergeToBranch)) {
-        await git.checkout(mergeToBranch);
-        mergeToBranchExists = true;
-      }
-      else {
-        await git.checkoutLocalBranch(mergeToBranch);
-        mergeToBranchExists = false;
-      }
+      mergeToBranchExists = await checkoutBranchIfExists(git, branches, mergeToBranch);
     }
 
-    if (branches.all.includes(mergeFromBranch)) {
-      mergeFromBranchExists = true;
-    }
-    else {
-      mergeFromBranchExists = false;
-      await git.branch([mergeFromBranch]);
-    }
+
+    const currentBranch = (await git.branch()).current;
+    mergeFromBranchExists = await checkoutBranchIfExists(git, branches, mergeFromBranch);
+    await git.checkout(currentBranch);      // Go back to the mergeToBranch
 
     cloneResult = {
       mergeFromBranchExists,
@@ -577,6 +608,7 @@ async function cloneBeforeMerge(
   if (isLastAccessToken && !cloneResult.isClonedSuccessfully) {
     throw new Error("Clone for merge failed for the last access token to check.");
   }
+
   return cloneResult;
 }
 
@@ -655,21 +687,36 @@ async function createClassicGitCommit(
 async function createMergeCommit(
   git: SimpleGit,
   files: string[],
+  mergeDefaultCommitMessage: string,
   commitMessage: string,
   committerName: string,
   committerEmail: string,
   mergeFromBranchName: string,
 ) {
-  await git.add(files);
-  await setUserConfigForGitInstance(git, committerName, committerEmail);
+  // TODO RadStr: Trying the following idea:
+  // 1) Create merge state in git using git merge --no-ff
+  //   - This tries merging, but never creates the actual merge commit
+  // 2) Only reason why we did that is the get the default merge commit message, we get that from ".git/MERGE_MSG"
+  // 3) Then we abort using --abort option
+  // 4) Now to actally create the merge:
+  //  a) Create normal commit
+  //  b) Turn that commit into merge commit
+  //  c) Modify the commit message
+  // ... At first I thought that it is enough to use merge -s ours, however that does not consider staged file
+  // ... Other alternative would be to Run "git merge --no-ff", remove the content of repository as we do. Then put in the new exported content and run git commit.
+  // First we commit the current content of the repository
 
-  // We should already be on the correct branch
-  // Put in the content of the mergeToBranch (that is the -s -ours)
-  await git.merge([mergeFromBranchName, "-s", "ours"]);
+  console.info("Status before:");
+  console.info(await git.status());
+  await git.add(files);
+  console.info("Status after add:");
+  console.info(await git.status());
+  await setUserConfigForGitInstance(git, committerName, committerEmail);
+  await git.commit(mergeDefaultCommitMessage);
   const lastCommitMessage = (await getLastCommit(git))?.message ?? "";
   // Modify the message ... it keeps the old default text, but adds the new one
   // The --no-edit option is not needed since we provide the commit message explictly (othwerise the option ensures not open editor for the amend)
-  return await git.commit([commitMessage, lastCommitMessage], undefined, { "--amend": null, });
+  return await git.commit([mergeDefaultCommitMessage, commitMessage], undefined, { "--amend": null, });
 }
 
 async function setUserConfigForGitInstance(git: SimpleGit, committerName: string, committerEmail: string) {

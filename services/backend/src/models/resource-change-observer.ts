@@ -26,7 +26,7 @@ export class ResourceChangeObserverBase implements ResourceChangeObserver {
   }
   async notifyListeners(resourceIri: string, changedModel: string, changeType: ResourceChangeType): Promise<void> {
     for (const listener of this.listeners) {
-      listener.updateBasedOnResourceChange(resourceIri, changedModel, changeType);
+      await listener.updateBasedOnResourceChange(resourceIri, changedModel, changeType);
     }
   }
 }

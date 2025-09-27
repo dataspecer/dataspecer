@@ -491,7 +491,6 @@ const createStyledNode = (
   extendedProps.node.data.setRemovedDatastores = setRemovedDatastores;
 
 
-  alert("Calling createStyledNode ...");
   return <StyledNode {...extendedProps} />;
 }
 
