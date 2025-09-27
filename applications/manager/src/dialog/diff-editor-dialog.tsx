@@ -354,7 +354,12 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     const newDatastoreType = (newMergeFromDatastoreInfo?.type ?? newMergeToDatastoreInfo?.type) as string;
 
     setCurrentTreePathToNodeContainingDatastore(treePathToNodeContainingDatastore);
-    const newFormat = (examinedMergeState?.filesystemTypeMergeFrom === AvailableFilesystems.ClassicFilesystem ? newMergeFromDatastoreInfo?.format : newMergeToDatastoreInfo?.format) ?? "text";
+    // Pick the format in the classic filesystem. If the datastore does not exist (it was deleted datastore), then pick format from the other one. If none present pick text
+    const newFormat = (
+      examinedMergeState?.filesystemTypeMergeFrom === AvailableFilesystems.ClassicFilesystem ?
+        (newMergeFromDatastoreInfo?.format ?? newMergeToDatastoreInfo?.format) :
+        (newMergeToDatastoreInfo?.format ?? newMergeFromDatastoreInfo?.format)
+      ) ?? "text";
     setFormatsForCacheEntries((prev) => ({
       ...prev,
       [treePathToNodeContainingDatastore]: {
