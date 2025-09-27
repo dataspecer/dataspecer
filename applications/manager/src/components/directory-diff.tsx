@@ -399,7 +399,7 @@ function StyledNode({
             !node.data.isInEditableTree || isExpandable ?
             null :
             <div
-              style={{ right: "-24px" }}
+              style={{ right: "-4px" }}
               className="absolute text-black top-1/2 -translate-y-1/2 flex opacity-0 bg-white group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto p-1"
             >
               <>
