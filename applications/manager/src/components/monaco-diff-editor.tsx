@@ -1,5 +1,4 @@
-import * as React from "react";
-import {FC} from "react";
+import {FC, useEffect} from "react";
 import RawMonacoEditor, { DiffEditor } from "@monaco-editor/react";
 import * as monaco from 'monaco-editor';
 import { handleEditorWillMount } from "./monaco-editor";
@@ -7,7 +6,7 @@ import { useTheme } from "next-themes";
 import { EditableType, getEditableAndNonEditableValue } from "@dataspecer/git";
 
 export const MonacoDiffEditor: FC<{
-  refs: React.MutableRefObject<{ editor: monaco.editor.IStandaloneDiffEditor } | undefined>,
+  editorRef: React.MutableRefObject<{ editor: monaco.editor.IStandaloneDiffEditor } | undefined>,
   mergeFromContent: string,
   mergeToContent: string,
   format: string
@@ -16,12 +15,23 @@ export const MonacoDiffEditor: FC<{
   const { resolvedTheme } = useTheme();
   const editorsContent = getEditableAndNonEditableValue(props.editable, props.mergeFromContent, props.mergeToContent);
 
+  useEffect(() => {
+    if (props.editorRef.current === undefined) {
+      return;
+    }
+
+    const model = props.editorRef.current.editor.getModel();
+    if (model !== null) {
+      model.original.setValue(editorsContent.nonEditable);
+      model.modified.setValue(editorsContent.editable);
+    }
+  }, [props.mergeFromContent, props.mergeToContent]);
 
   return <div className="flex flex-col grow overflow-hidden">
     <DiffEditor
       {...props}
       onMount={editor => {
-        props.refs.current = {editor};
+        props.editorRef.current = {editor};
       }}
       theme={resolvedTheme === "dark" ? "dataspecer-dark" : "vs"}
       language={props.format}

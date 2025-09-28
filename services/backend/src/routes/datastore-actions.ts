@@ -190,7 +190,7 @@ export const createDatastoreContentDirectly = asyncHandler(async (request: expre
   const availableFilesystems = Object.values(AvailableFilesystems);
 
   const bodySchema = z.object({
-    filesystemNodesInTreePath: z.array(
+    createdFilesystemNodesInTreePath: z.array(
       z.object({
         parentIri: z.string().min(1),
         iri: z.string().min(1),
@@ -207,7 +207,7 @@ export const createDatastoreContentDirectly = asyncHandler(async (request: expre
 
   const filesystem: AvailableFilesystems = body.filesystem as AvailableFilesystems;
 
-  const datastoreContent = await createDatastoreContent(body.filesystemNodesInTreePath, filesystem, body.type, body.content, body.format);
+  const datastoreContent = await createDatastoreContent(body.createdFilesystemNodesInTreePath, filesystem, body.type, body.content, body.format);
   if (datastoreContent.accessDenied) {
     response.status(403);
     response.json(`Trying to access ${body.type}`);

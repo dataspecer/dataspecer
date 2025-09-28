@@ -192,7 +192,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
 
 
   public static async createDatastoreDirectly(
-    filesystemNodesInTreePath: CreateDatastoreFilesystemNodesInfo[],
+    createdFilesystemNodesInTreePath: CreateDatastoreFilesystemNodesInfo[],
     content: string,
     backendFilesystem: AvailableFilesystems | null,
     datastoreInfo: DatastoreInfo | null,
@@ -213,7 +213,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        filesystemNodesInTreePath,
+        createdFilesystemNodesInTreePath,
         type: datastoreInfo.type,
         format: datastoreInfo.format,
         filesystem: backendFilesystem,
@@ -221,7 +221,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
       }),
     });
 
-    console.info("updateDatastoreContentDirectly", {datastoreInfo, response, content});       // TODO RadStr Debug:
+    console.info("createDatastoreContentDirectly", {datastoreInfo, response, content});       // TODO RadStr Debug:
     return response.ok;
   }
 

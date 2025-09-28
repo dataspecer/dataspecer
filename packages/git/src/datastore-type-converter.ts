@@ -1,5 +1,9 @@
 import YAML from "yaml";
 
+export function getDefaultValueForFormat(format: string) {
+  return "null";
+}
+
 
 /**
  * Inverse to {@link stringifyDatastoreContentBasedOnFormat}
