@@ -1,5 +1,5 @@
 import { ComparisonData } from "../../merge/merge-state.ts";
-import { FilesystemNodeLocation, FilesystemMappingType, DirectoryNode, FilesystemNode, DatastoreInfo, ExportMetadataCacheType, isMetadataCacheExplicitType, throwErrorForInvalidMetadataCacheExplicitType } from "../../export-import-data-api.ts";
+import { FilesystemNodeLocation, FilesystemMappingType, DirectoryNode, FilesystemNode, DatastoreInfo, ExportMetadataCacheType } from "../../export-import-data-api.ts";
 import { GitProvider } from "../../git-provider-api.ts";
 import { FilesystemAbstractionBase } from "../abstractions/filesystem-abstraction-base.ts";
 import { AvailableFilesystems, FilesystemAbstraction, getDatastoreInfoOfGivenDatastoreType } from "../abstractions/filesystem-abstraction.ts";
@@ -233,11 +233,6 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     let currentNode = filesystemNode;
     let parent: DirectoryNode | null = null;
     while (currentNode !== null) {
-      if (!isMetadataCacheExplicitType(currentNode.metadataCache)) {
-        throwErrorForInvalidMetadataCacheExplicitType(currentNode.metadataCache);
-        return;
-      }
-
       parent = otherFilesystem.getParentForNode(currentNode);
       filesystemNodesInTreePath.push({
         parentProjectIri: parent.metadataCache.projectIri ?? "",

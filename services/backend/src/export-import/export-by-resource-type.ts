@@ -1,7 +1,7 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import path from "path";
 import { PackageExporterBase } from "./export-base.ts";
-import { DirectoryNode, FilesystemNode, isDatastoreForMetadata, isMetadataCacheExplicitType, throwErrorForInvalidMetadataCacheExplicitType } from "@dataspecer/git";
+import { DirectoryNode, FilesystemNode, isDatastoreForMetadata } from "@dataspecer/git";
 import { resourceTypetoTypeDirectoryMapping, ResourceTypes } from "./export.ts";
 
 export class PackageExporterByResourceType extends PackageExporterBase {
@@ -17,11 +17,6 @@ export class PackageExporterByResourceType extends PackageExporterBase {
     await this.exportDatastores(directory, pathToDirectory, pathToExportDirectory);
     for (const [name, filesystemNode] of Object.entries(directory.content)) {
       if (filesystemNode.type === "directory") {
-        if (!isMetadataCacheExplicitType(filesystemNode.metadataCache)) {
-          throwErrorForInvalidMetadataCacheExplicitType(filesystemNode.metadataCache);
-          return;
-        }
-
         const fullPath = this.createPathBasedOnResourceType(pathToDirectory, filesystemNode.name, filesystemNode.metadataCache.types[0]);
         const exportFullPath = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.name, filesystemNode.metadataCache.types[0]);
         await this.exportDirectory(filesystemNode, fullPath, exportFullPath);
@@ -45,10 +40,6 @@ export class PackageExporterByResourceType extends PackageExporterBase {
       exportFullName = pathToExportDirectory;
     }
     else {
-      if (!isMetadataCacheExplicitType(filesystemNode.metadataCache)) {
-        throwErrorForInvalidMetadataCacheExplicitType(filesystemNode.metadataCache);
-        return;
-      }
       fullName = this.createPathBasedOnResourceType(pathToDirectory, filesystemNode.name, filesystemNode.metadataCache.types[0]);
       exportFullName = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.name, filesystemNode.metadataCache.types[0]);
     }

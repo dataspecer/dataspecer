@@ -37,17 +37,6 @@ export type DatastoreInfo = {
   fullPath: string;
 }
 
-/**
- * The type expects to contain iri, projectIri and types however due to code structure, etc. this is mandatory in the type. Since often we create the type and add
- * the values later. So there exists the {@link ExportMetadataCacheType}, which actually has those fields mandatory
- * @deprecated We will use the explicit type, can probably remove everything related to this type (including the type) later. (We just cast it and set the values later, which solves the mandatory fields issue)
- */
-export type MetadataCacheType = {
-  iri?: string;
-  projectIri?: string;
-  types?: string[];
-  [key: string]: any;
-};
 
 export type ExportMetadataCacheType = {
   iri: string;
@@ -68,24 +57,6 @@ export function convertExportMetadataCacheToDatabaseOne(metadata: ExportMetadata
   delete metadata.projectIri;
   delete metadata.types;
   return metadata;
-}
-
-/**
- * @deprecated TODO RadStr: Can be removed
- */
-export function isMetadataCacheExplicitType(metadata: MetadataCacheType): metadata is ExportMetadataCacheType {
-  if (metadata.iri === undefined || metadata.projectIri === undefined || metadata.types === undefined) {
-    return false;
-  }
-
-  return true;
-}
-
-/**
- * @deprecated TODO RadStr: Can be removed
- */
-export function throwErrorForInvalidMetadataCacheExplicitType(metadata: MetadataCacheType) {
-  throw new Error(`Can not convert ${metadata} to MetadataCacheExplicitType, some of requeired fields is not present (that is, it is undefined)`);
 }
 
 /**
