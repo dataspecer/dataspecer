@@ -118,7 +118,7 @@ export type ResourceComparisonResult = "exists-in-both" | "exists-in-new" | "exi
 
 // TODO RadStr: Also new type, which does not exist on backend
 export type ResourceComparison = {
-  resource: FilesystemNode;
+  resources: { old: FilesystemNode | null, new: FilesystemNode | null };
   resourceComparisonResult: ResourceComparisonResult;
   datastoreComparisons: DatastoreComparison[];
   childrenDiffTree: DiffTree;     // Empty if the type of resource is file

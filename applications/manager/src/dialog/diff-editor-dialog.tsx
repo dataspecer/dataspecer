@@ -14,7 +14,7 @@ import { TabsContent } from "@radix-ui/react-tabs";
 import SvgVisualDiff from "@/components/images-conflict-resolver";
 import { MonacoDiffEditor } from "@/components/monaco-diff-editor";
 import { fetchMergeState } from "./open-merge-state";
-import { AvailableFilesystems, ClientFilesystem, ComparisonData, convertDatastoreContentBasedOnFormat, convertDatastoreContentForInputFormatToOutputFormat, DatastoreInfo, EditableType, MergeResolverStrategy, MergeState, stringifyDatastoreContentBasedOnFormat, getEditableValue, getEditableAndNonEditableValue, CreateDatastoreFilesystemNodesInfo, ResourceComparison, getDefaultValueForFormat } from "@dataspecer/git";
+import { AvailableFilesystems, ClientFilesystem, ComparisonData, convertDatastoreContentBasedOnFormat, convertDatastoreContentForInputFormatToOutputFormat, DatastoreInfo, EditableType, MergeResolverStrategy, MergeState, stringifyDatastoreContentBasedOnFormat, getEditableValue, getEditableAndNonEditableValue, CreateDatastoreFilesystemNodesInfo, ResourceComparison, getDefaultValueForFormat, FilesystemNode } from "@dataspecer/git";
 import { MergeStrategyComponent } from "@/components/merge-strategy-component";
 import ExpandableList from "@/components/expandable-list";
 import { RemoveFromToBeResolvedReactComponent } from "@/components/remove-from-to-be-resolved";
@@ -503,7 +503,9 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
 
         let removedDatastore: DatastoreInfo | undefined;
         if ((removedDatastore = removedDatastores.find(datastore => datastore.fullPath === datastoreInfoForEditable?.fullPath)) !== undefined) {
-          const datastoreParentIri = examinedMergeState!.diffTreeData!.diffTree[nodeTreePath].resource.metadataCache.iri;
+          const diffTreeNode = examinedMergeState!.diffTreeData!.diffTree[nodeTreePath];
+          const relevantResource: FilesystemNode = getEditableValue(editable, diffTreeNode.resources.old, diffTreeNode.resources.new)!;
+          const datastoreParentIri = relevantResource.metadataCache.iri;
           await ClientFilesystem.removeDatastoreDirectly(datastoreParentIri, removedDatastore, import.meta.env.VITE_BACKEND , editableFilesystem, false);
           continue;
         }
@@ -536,24 +538,22 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
                 currentIri = currentNodeTreePath.substring(0, treePathSeparatorIndex);
                 currentNodeTreePath = currentNodeTreePath.substring(treePathSeparatorIndex + 1);
               }
-              // TODO RadStr: We have to have both resources in the diff tree because of the iris
-              //              ... Another thing is that we have to first create the resources and then skip the created ones.
-              // if (isFirstIteration) {
-              //   firstExistingParentIri = getEditableValue(parentDiffTree[currentIri].leftResource.metadataCache.iri, parentDiffTree[currentIri].rightResource.metadataCache.iri);
-              // }
 
-              const currentNode = parentDiffTree?.[currentIri];
-              console.info({lastTreePathSeparatorIndex: treePathSeparatorIndex, len: currentNodeTreePath.length, currentIri, currentNodeTreePath, nodeTreePath, currentNode, difftree: examinedMergeState?.diffTreeData?.diffTree});    // TODO RadStr DEBUG: Debug print
+              const currentDiffNode = parentDiffTree?.[currentIri];
 
-              if (currentNode === undefined) {
+              if (currentDiffNode === undefined) {
                 throw new Error(`The parent of node does not exist for some reason: ${currentNodeTreePath}, in which we ended up from ${nodeTreePath}`);
               }
-              if (currentNode.resourceComparisonResult === "exists-in-old") {
+              if (currentDiffNode.resourceComparisonResult === "exists-in-old") {
+                // Using the !, since the value is relevant only when the old (non-editable) value exists
+                const { nonEditable: existingResource } = getEditableAndNonEditableValue(editable, currentDiffNode?.resources.old, currentDiffNode?.resources.new);
+                console.info({lastTreePathSeparatorIndex: treePathSeparatorIndex, len: currentNodeTreePath.length, currentIri, currentNodeTreePath, nodeTreePath, currentNode: currentDiffNode, difftree: examinedMergeState?.diffTreeData?.diffTree});    // TODO RadStr DEBUG: Debug print
+
                 console.info({editableCacheContents})
-                const metadata = editableCacheContents?.[currentNode?.resource.fullTreePath!]?.["meta"] ?? getDefaultValueForFormat(format);
+                const metadata = editableCacheContents?.[existingResource!.fullTreePath!]?.["meta"] ?? getDefaultValueForFormat(format);
                 const metadataAsJSON = convertDatastoreContentBasedOnFormat(metadata, format, true);
                 console.info({convertedCacheForMergeFromContent, convertedCacheForMergeToContent});   // TODO RadStr DEBUG: Debug print
-                console.info({metadataAsJSON, PATH_FOR_METADATA: currentNode?.resource.fullTreePath!, editableCacheContents});   // TODO RadStr DEBUG: Debug print
+                console.info({metadataAsJSON, PATH_FOR_METADATA: existingResource!.fullTreePath!, editableCacheContents});   // TODO RadStr DEBUG: Debug print
 
                 visitedFirstNodeToCreate = true;
                 if (parentNode === undefined) {
@@ -562,9 +562,9 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
                 }
 
                 createdFilesystemNodesInTreePath.push({
-                  parentProjectIri: parentNode.resource.metadataCache.projectIri,
-                  treePath: currentNode?.resource.fullTreePath!,           // TODO RadStr: !
-                  userMetadata: metadataAsJSON,       // TODO RadStr:
+                  parentProjectIri: existingResource!.metadataCache.projectIri,
+                  treePath: existingResource!.fullTreePath,
+                  userMetadata: metadataAsJSON,
                 });
               }
               else {
@@ -572,8 +572,13 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
                   hasChildrenToCreate = false;
                 }
               }
-              parentNode = currentNode;
+              parentNode = currentDiffNode;
               parentDiffTree = parentNode?.childrenDiffTree;
+
+              if (!visitedFirstNodeToCreate) {
+                // The value has to be string since we have not yet visited node which does not exists in the editable tree (otherwise the condition if would not pass)
+                firstExistingParentIri = getEditableValue(editable, currentDiffNode?.resources.old?.metadataCache.iri, currentDiffNode?.resources.new?.metadataCache.iri)!;
+              }
             }
 
             console.info({createdFilesystemNodesInTreePath});   // TODO RadStr DEBUG: Debug print

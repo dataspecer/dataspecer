@@ -3,7 +3,7 @@ import _ from "lodash";
 import { Check, Loader, Minus, MoveLeft, MoveRight, Plus, X } from "lucide-react";
 import React, { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import { NodeApi, NodeRendererProps, Tree, TreeApi, } from "react-arborist";
-import { ComparisonData, DatastoreComparison, DatastoreInfo, DiffTree, EditableType, getDatastoreInfoOfGivenDatastoreType, MergeState, ResourceComparison } from "@dataspecer/git";
+import { ComparisonData, DatastoreComparison, DatastoreInfo, DiffTree, EditableType, FilesystemNode, getDatastoreInfoOfGivenDatastoreType, MergeState, ResourceComparison } from "@dataspecer/git";
 import { DiffEditorCrossedOutEditIcon, DiffEditorEditIcon } from "./crossed-out-icon";
 
 
@@ -161,7 +161,9 @@ function createDatastoresRenderRepresentations(
 }
 
 function createIdForFilesystemRenderNode(resourceComparison: ResourceComparison, treeToExtract: TreeType) {
-  return resourceComparison.resource.fullTreePath + "-" + treeToExtract;
+  resourceComparison
+  const nonEmptyFilesystemNode: FilesystemNode = (resourceComparison.resources.old ?? resourceComparison.resources.new)!;
+  return nonEmptyFilesystemNode.fullTreePath + "-" + treeToExtract;
 }
 
 function createTreeRepresentationForRendering(
@@ -210,8 +212,6 @@ function createTreeRepresentationForRendering(
       }
     }
 
-    console.info("id:", node.resource.fullTreePath + "-" + treeToExtract);
-
     let nowInConflictCountInExpandableChildren = 0;
     let totalConflictCountInExpandableChildren = 0;
     for (const child of children) {
@@ -223,7 +223,7 @@ function createTreeRepresentationForRendering(
       id: createIdForFilesystemRenderNode(node, treeToExtract),
       name: name,
       status,
-      dataSourceType: node.resource.type,
+      dataSourceType: (node.resources.old?.type ?? node.resources.new?.type)!,
       datastores: datastoresRenderRepresentations,
       children: children.concat(datastoresRenderRepresentations),
       fullDatastoreInfoInModifiedTree: null,

@@ -79,7 +79,7 @@ async function compareTreesInternal(
     const currentlyProcessedDiffFilesystemNode: ResourceComparison = {
       childrenDiffTree: {},
       datastoreComparisons: [],
-      resource: nodeValue,
+      resources: { old: nodeValue, new: node2Value ?? null },
       resourceComparisonResult,
     };
     diffTree[nodeName] = currentlyProcessedDiffFilesystemNode;
@@ -163,7 +163,7 @@ async function compareTreesInternal(
     const currentlyProcessedDiffFilesystemNode: ResourceComparison = {
       childrenDiffTree: {},
       datastoreComparisons: [],
-      resource: nodeValue,
+      resources: { old: null, new: nodeValue },
       resourceComparisonResult,
     };
     diffTree[nodeName] = currentlyProcessedDiffFilesystemNode;
