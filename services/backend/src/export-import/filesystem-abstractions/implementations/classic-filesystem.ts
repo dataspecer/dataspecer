@@ -1,4 +1,4 @@
-import { AvailableFilesystems, convertDatastoreContentBasedOnFormat, getDatastoreInfoOfGivenDatastoreType, GitProvider, isDatastoreForMetadata } from "@dataspecer/git";
+import { AvailableFilesystems, convertDatastoreContentBasedOnFormat, getDatastoreInfoOfGivenDatastoreType, GitProvider, isDatastoreForMetadata, ExportMetadataCacheType } from "@dataspecer/git";
 import { ComparisonData } from "../../../routes/git-webhook-handler.ts";
 import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, DatastoreInfo, FilesystemAbstractionBase, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode } from "@dataspecer/git";
 
@@ -84,7 +84,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
       const directoryNode: DirectoryNode = {
         name: iri,
         type: "directory",
-        metadataCache: {},
+        metadataCache: {} as ExportMetadataCacheType,    // We are not using the value in the course of creating the mapping! We set them later
         datastores: [],
         content: {},
         fullTreePath: fullTreePath,
@@ -126,7 +126,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
         const newSingleNode: FileNode = {
           name: invalidName,
           type: "file",
-          metadataCache: { iri: invalidName },
+          metadataCache: { iri: invalidName, types: ["from-git-unknown"], projectIri: iri },      // TODO RadStr: I don't know about this.
           // TODO RadStr: the old way
           // datastores: { model: path.join(directory, invalidName) },
           datastores: [prefixName],
@@ -182,7 +182,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
         fileNode = {
           name: prefix,
           type: "file",
-          metadataCache: {},
+          metadataCache: {} as ExportMetadataCacheType,    // We are not using the value in the course of creating the mapping!
           datastores: valuesForPrefix,
           fullTreePath: fileNodeLocation.fullTreePath,
         };
@@ -275,7 +275,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     fs.writeFileSync(relevantDatastore.fullPath, content);
     return true;          // TODO RadStr: Again returning true only
   }
-  async createDatastore(otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean> {
+  async createDatastore(parentIriInToBeChangedFilesystem: string, otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean> {
     throw new Error("Method not implemented.");
   }
 }

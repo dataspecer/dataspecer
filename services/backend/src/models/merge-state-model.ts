@@ -39,7 +39,8 @@ type CreateMergeStateInput = {
 
 type UpdateMergeStateInput = {
   unresolvedConflicts: ComparisonData[],
-} & CreateMergeStateInput;
+  lastCommonCommitHash: string | undefined,
+} & Omit<CreateMergeStateInput, "lastCommonCommitHash">;
 
 type MergeEndInfoInternal = {
   lastCommitHash: string;
@@ -111,13 +112,14 @@ export class MergeStateModel implements ResourceChangeListener {
 
 
   /**
+   * @param commonCommitHash if undefined, then use the old one
    * @returns True if it was successfully updated
    */
   async updateMergeStateToBeUpToDate(
     uuid: string,
     mergeStateCause: MergeStateCause,
     diffTreeComparisonResult: ComparisonFullResult,
-    commonCommitHash: string,
+    commonCommitHash: string | undefined,
     mergeFromInfo: MergeEndInfoWithRootNode,
     mergeToInfo: MergeEndInfoWithRootNode,
   ): Promise<boolean> {
@@ -128,7 +130,7 @@ export class MergeStateModel implements ResourceChangeListener {
     } = diffTreeComparisonResult;
 
 
-    await this.clearTable();     // TODO RadStr: Debug
+    // await this.clearTable();     // TODO RadStr: Debug - Remove
 
     const editable: EditableType = convertMergeStateCauseToEditable(mergeStateCause);
 
@@ -172,7 +174,7 @@ export class MergeStateModel implements ResourceChangeListener {
       diffTree, diffTreeSize
     } = diffTreeComparisonResult;
 
-    await this.clearTable();     // TODO RadStr: Debug
+    // await this.clearTable();     // TODO RadStr: Debug - Remove
 
     const editable: EditableType = convertMergeStateCauseToEditable(mergeStateCause);
 
@@ -339,7 +341,7 @@ export class MergeStateModel implements ResourceChangeListener {
     // It is important to also remove the repository together with the mergeState
     const mergeStates = await this.prismaClient.mergeState.findMany({include: {mergeStateData: false}});
     for (const mergeState of mergeStates) {
-      this.removeMergeState(mergeState);
+      await this.removeMergeState(mergeState);
     }
   }
 

@@ -136,23 +136,27 @@ type ComparisonResult = {
   created: ComparisonData[],
 }
 
+/**
+ * @deprecated TODO RadStr: I guess? I added the parentIri to createDatastore and since I am not calling from anywhere we can probably just remove this method.
+ */
 async function updateFilesystemBasedOnChanges(changes: ComparisonResult, filesystem: FilesystemAbstraction) {
-  for (const removed of changes.removed) {
-    filesystem.removeDatastore(removed.oldVersion!, removed.affectedDataStore.type, false);
-  }
-  for (const changed of changes.changed) {
-    filesystem.changeDatastore(filesystem, changed, true);
-  }
+  throw new Error("Calling deprecated method, which was not yet extend by the new api which contains parentIri")
+  // for (const removed of changes.removed) {
+  //   filesystem.removeDatastore(removed.oldVersion!, removed.affectedDataStore.type, false);
+  // }
+  // for (const changed of changes.changed) {
+  //   filesystem.changeDatastore(filesystem, changed, true);
+  // }
 
-  const createdDirectories = changes.created.filter(created => created.newVersion?.type === "directory");
-  const createdFiles = changes.created.filter(created => created.newVersion?.type === "file");
-  for (const createdDirectory of createdDirectories) {    // First create the directories
-    filesystem.createDatastore(filesystem, createdDirectory.newVersion!, createdDirectory.affectedDataStore);
-  }
+  // const createdDirectories = changes.created.filter(created => created.newVersion?.type === "directory");
+  // const createdFiles = changes.created.filter(created => created.newVersion?.type === "file");
+  // for (const createdDirectory of createdDirectories) {    // First create the directories
+  //   filesystem.createDatastore(filesystem, createdDirectory.newVersion!, createdDirectory.affectedDataStore);
+  // }
 
-  for (const createdFile of createdFiles) {
-    filesystem.createDatastore(filesystem, createdFile.newVersion!, createdFile.affectedDataStore);
-  }
+  // for (const createdFile of createdFiles) {
+  //   filesystem.createDatastore(filesystem, createdFile.newVersion!, createdFile.affectedDataStore);
+  // }
 }
 
 // TODO RadStr: Better name for the datastoreIdentifier maybe filesystemNodeIdentifier?

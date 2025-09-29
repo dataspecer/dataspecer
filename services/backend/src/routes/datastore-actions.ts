@@ -9,6 +9,7 @@ import { isAccessibleGitRepository } from "../models/git-store-info.ts";
 import { AvailableFilesystems, CreateDatastoreFilesystemNodesInfo, convertDatastoreContentBasedOnFormat } from "@dataspecer/git";
 import path from "path";
 import { updateBlob } from "./resource.ts";
+import { v4 as uuidv4 } from "uuid";
 
 
 // export async function setDatastoreContent(pathToDatastore: string, filesystem: AvailableFilesystems, type: string, newContent: string, format?: string) {
@@ -125,8 +126,12 @@ export async function removeDatastoreContent(
   return { success: true, accessDenied: false };
 }
 
+/**
+ * @param parentIri This is the actual iri of the first parent (not project iri), under which we will connect the chain of new
+ */
 export async function createDatastoreContent(
   filesystemNodesInTreePath: CreateDatastoreFilesystemNodesInfo[],
+  parentIri: string,
   filesystem: AvailableFilesystems,
   type: string,
   content: string,
@@ -148,14 +153,17 @@ export async function createDatastoreContent(
   }
   else {
     let lastFilesystemNode = filesystemNodesInTreePath[0];
+    let currentNewIri: string;
+    let currentParentIri: string = parentIri;
     for (const filesystemNodeInTreePath of filesystemNodesInTreePath) {
-      const userMetadata = filesystemNodeInTreePath.userMetadata;
-      resourceModel.createResource(filesystemNodeInTreePath.parentIri, filesystemNodeInTreePath.iri, userMetadata.types[0], userMetadata.userMetadata);
+      currentNewIri = uuidv4();
+      const userMetadata = filesystemNodeInTreePath.userMetadata ?? {};
+      await resourceModel.createResource(currentParentIri, currentNewIri, userMetadata.types[0], userMetadata.userMetadata, filesystemNodeInTreePath.userMetadata.projectIri);
       lastFilesystemNode = filesystemNodeInTreePath;
+      currentParentIri = currentNewIri;
     }
-    const newContentConverted = convertDatastoreContentBasedOnFormat(content, format ?? null, true);
-    const contentAsJSON = JSON.parse(newContentConverted);
-    await updateBlob(lastFilesystemNode.iri, type, contentAsJSON);
+    const newContentAsJSON = convertDatastoreContentBasedOnFormat(content, format ?? null, true);
+    await updateBlob(lastFilesystemNode.userMetadata.iri, type, newContentAsJSON);
   }
   return { success: true, accessDenied: false };
 }
@@ -192,12 +200,16 @@ export const createDatastoreContentDirectly = asyncHandler(async (request: expre
   const bodySchema = z.object({
     createdFilesystemNodesInTreePath: z.array(
       z.object({
-        parentIri: z.string().min(1),
-        iri: z.string().min(1),
+        parentProjectIri: z.string().min(1),
         treePath: z.string().min(1),
-        userMetadata: z.record(z.string()),
+        userMetadata: z.object({
+          iri: z.string(),
+          projectIri: z.string(),
+          types: z.array(z.string()),
+        }).catchall(z.any()), // allows arbitrary extra keys of any type,
       })
     ),
+    parentIri: z.string().min(1),     // This is the actual iri of the first parent (not project iri), under which we will connect the chain of new
     filesystem: z.enum(availableFilesystems as [string, ...string[]]),
     type: z.string(),
     content: z.string(),
@@ -207,7 +219,7 @@ export const createDatastoreContentDirectly = asyncHandler(async (request: expre
 
   const filesystem: AvailableFilesystems = body.filesystem as AvailableFilesystems;
 
-  const datastoreContent = await createDatastoreContent(body.createdFilesystemNodesInTreePath, filesystem, body.type, body.content, body.format);
+  const datastoreContent = await createDatastoreContent(body.createdFilesystemNodesInTreePath, body.parentIri, filesystem, body.type, body.content, body.format);
   if (datastoreContent.accessDenied) {
     response.status(403);
     response.json(`Trying to access ${body.type}`);

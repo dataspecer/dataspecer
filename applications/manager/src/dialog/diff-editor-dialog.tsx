@@ -14,7 +14,7 @@ import { TabsContent } from "@radix-ui/react-tabs";
 import SvgVisualDiff from "@/components/images-conflict-resolver";
 import { MonacoDiffEditor } from "@/components/monaco-diff-editor";
 import { fetchMergeState } from "./open-merge-state";
-import { AvailableFilesystems, ClientFilesystem, ComparisonData, convertDatastoreContentBasedOnFormat, convertDatastoreContentForInputFormatToOutputFormat, DatastoreInfo, EditableType, MergeResolverStrategy, MergeState, stringifyDatastoreContentBasedOnFormat, getEditableValue, getEditableAndNonEditableValue, CreateDatastoreFilesystemNodesInfo, ResourceComparison, PACKAGE_ROOT, getDefaultValueForFormat } from "@dataspecer/git";
+import { AvailableFilesystems, ClientFilesystem, ComparisonData, convertDatastoreContentBasedOnFormat, convertDatastoreContentForInputFormatToOutputFormat, DatastoreInfo, EditableType, MergeResolverStrategy, MergeState, stringifyDatastoreContentBasedOnFormat, getEditableValue, getEditableAndNonEditableValue, CreateDatastoreFilesystemNodesInfo, ResourceComparison, getDefaultValueForFormat } from "@dataspecer/git";
 import { MergeStrategyComponent } from "@/components/merge-strategy-component";
 import ExpandableList from "@/components/expandable-list";
 import { RemoveFromToBeResolvedReactComponent } from "@/components/remove-from-to-be-resolved";
@@ -265,6 +265,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
   const [mergeToSvg, setMergeToSvg] = useState<any | "">("");
 
   const [comparisonTabType, setComparisonTabType] = useState<"image-compare" | "text-compare">("text-compare");
+  // Internal state used to track that cache was explictly updated
+  const [cacheExplicitUpdateTracker, setCacheExplicitUpdateTracker] = useState<number>(0);
 
   // When loading the specific file (or rather model) data from backend
   const [isLoadingTextData, setIsLoadingTextData] = useState<boolean>(true);
@@ -295,6 +297,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     setComparisonTabType("text-compare");
     setIsLoadingTextData(true);
     setIsLoadingTreeStructure(true);
+    setCacheExplicitUpdateTracker(0);
   };
 
   const reloadMergeState = async () => {
@@ -398,8 +401,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     }
     setCurrentTreePathToNodeContainingDatastore(treePathToNodeContainingDatastore);
 
-    const isMergeFromDataResourceInCache = isDatastorePresentInCache(convertedCacheForMergeFromContent, treePathToNodeContainingDatastore, newMergeFromDatastoreInfo?.type ?? null);
-    const isMergeToDataResourceInCache = isDatastorePresentInCache(convertedCacheForMergeToContent, treePathToNodeContainingDatastore, newMergeToDatastoreInfo?.type ?? null);
+    const isMergeFromDataResourceInCache = isDatastorePresentInCache(convertedCacheForMergeFromContent, treePathToNodeContainingDatastore, newDatastoreType);
+    const isMergeToDataResourceInCache = isDatastorePresentInCache(convertedCacheForMergeToContent, treePathToNodeContainingDatastore, newDatastoreType);
     if (!(useCache && (isMergeFromDataResourceInCache || isMergeToDataResourceInCache))) {
       // Update cache values
       const newMergeFromDataAsText = await ClientFilesystem.getDatastoreContentDirectly(newMergeFromDatastoreInfo, false, import.meta.env.VITE_BACKEND, examinedMergeState?.filesystemTypeMergeFrom ?? null);
@@ -422,20 +425,20 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
       }
     }
 
-      setMergeFromDatastoreInfo(newMergeFromDatastoreInfo);
+    setMergeFromDatastoreInfo(newMergeFromDatastoreInfo);
     setMergeToDatastoreInfo(newMergeToDatastoreInfo);
 
     setIsLoadingTextData(false);
   }
 
   const reloadModelsDataFromBackend = async () => {
-    if (mergeFromDatastoreInfo !== null && mergeToDatastoreInfo !== null) {
+    if (mergeFromDatastoreInfo !== null || mergeToDatastoreInfo !== null) {
       await changeActiveModel(currentTreePathToNodeContainingDatastore, mergeFromDatastoreInfo, mergeToDatastoreInfo, false);
     }
   };
 
   const saveChangesToCache = async () => {
-    if (mergeFromDatastoreInfo !== null && mergeToDatastoreInfo !== null) {
+    if (mergeFromDatastoreInfo !== null || mergeToDatastoreInfo !== null) {
       await changeActiveModel(currentTreePathToNodeContainingDatastore, mergeFromDatastoreInfo, mergeToDatastoreInfo, true);
     }
   };
@@ -459,14 +462,27 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     resolve({ newResourceContent: editedNewVersion });
   };
 
+  // Not really clean, but can't think of anything better new. We want to update the cache and then use the values. So we use useEffect
+  // Other solution could be to use ref next to the state tracking cache, or some other combinations, but I don't see them being too much better than this one
   const saveEverything = async () => {
     await saveChangesToCache();
-    await saveFileChanges();
-    if (examinedMergeState !== null) {
-      await saveMergeState(examinedMergeState, conflictsToBeResolvedOnSave);
-    }
-    closeWithSuccess();
+    setCacheExplicitUpdateTracker(prev => prev + 1);
   };
+  useEffect(() => {
+    if (cacheExplicitUpdateTracker === 0) {
+      // Skip initial load
+      return;
+    }
+
+    const saveToBackend = async () => {
+      await saveFileChanges();
+      if (examinedMergeState !== null) {
+        await saveMergeState(examinedMergeState, conflictsToBeResolvedOnSave);
+      }
+      closeWithSuccess();
+    };
+    saveToBackend();
+  }, [cacheExplicitUpdateTracker]);
 
   const unresolveToBeResolvedConflict = (comparisonData: ComparisonData) => {
     setConflictsToBeResolvedOnSave(prev => {
@@ -487,7 +503,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
 
         let removedDatastore: DatastoreInfo | undefined;
         if ((removedDatastore = removedDatastores.find(datastore => datastore.fullPath === datastoreInfoForEditable?.fullPath)) !== undefined) {
-          const datastoreParentIri = examinedMergeState?.diffTreeData?.diffTree[nodeTreePath].resource.metadataCache.iri!;
+          const datastoreParentIri = examinedMergeState!.diffTreeData!.diffTree[nodeTreePath].resource.metadataCache.iri;
           await ClientFilesystem.removeDatastoreDirectly(datastoreParentIri, removedDatastore, import.meta.env.VITE_BACKEND , editableFilesystem, false);
           continue;
         }
@@ -495,60 +511,81 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
         const format = formatsForCacheEntries[nodeTreePath][modelName];
         const newValue = editableCacheContents?.[nodeTreePath]?.[modelName] ?? getDefaultValueForFormat(format);
         const newValueAsJSON = convertDatastoreContentForInputFormatToOutputFormat(newValue, format, "json", true);
-        if (datastoreInfoForEditable === null && createdDatastores.find(createdDatastore => createdDatastore.fullPath === datastoreInfoForNonEditable?.fullPath)) {
-          const createdFilesystemNodesInTreePath: CreateDatastoreFilesystemNodesInfo[] = [];
-          let hasChildrenToCreate = true;
-          let currentNodeTreePath = nodeTreePath;
-          let visitedFirstNodeToCreate = false;
-          let parentNode: ResourceComparison | undefined;
-          let parentDiffTree = examinedMergeState?.diffTreeData?.diffTree;
-          while (hasChildrenToCreate) {
-            const treePathSeparatorIndex = currentNodeTreePath.indexOf("/");
-            let currentIri: string;
-            if (treePathSeparatorIndex === -1) {
-              hasChildrenToCreate = false;
-              currentIri = currentNodeTreePath;
-              currentNodeTreePath = "";
-            }
-            else {
-              currentIri = currentNodeTreePath.substring(0, treePathSeparatorIndex);
-              currentNodeTreePath = currentNodeTreePath.substring(treePathSeparatorIndex + 1);
-            }
-            const currentNode = parentDiffTree?.[currentIri];
-            console.info({lastTreePathSeparatorIndex: treePathSeparatorIndex, len: currentNodeTreePath.length, currentIri, currentNodeTreePath, nodeTreePath, currentNode, difftree: examinedMergeState?.diffTreeData?.diffTree});    // TODO RadStr DEBUG: Debug print
-
-            if (currentNode === undefined) {
-              throw new Error(`The parent of node does not exist for some reason: ${currentNodeTreePath}, in which we ended up from ${nodeTreePath}`)
-            }
-            if (currentNode.resourceComparisonResult === "exists-in-old") {
-              const metadata = editableCacheContents?.[currentNode?.resource.fullTreePath!]?.["meta"] ?? getDefaultValueForFormat(format);
-              const metadataAsJSON = convertDatastoreContentBasedOnFormat(metadata, format, true);
-              console.info({metadataAsJSON});   // TODO RadStr DEBUG: Debug print
-
-              visitedFirstNodeToCreate = true;
-              createdFilesystemNodesInTreePath.push({
-                parentIri: parentNode === undefined ? PACKAGE_ROOT : parentNode.resource.metadataCache.iri!,      // TODO RadStr: !
-                iri: currentNode?.resource.metadataCache.iri!,           // TODO RadStr: !
-                treePath: currentNode?.resource.fullTreePath!,           // TODO RadStr: !
-                userMetadata: metadataAsJSON,       // TODO RadStr:
-              });
-            }
-            else {
-              if (visitedFirstNodeToCreate) {   // We are after the node to create
-                hasChildrenToCreate = false;
-              }
-            }
-            parentNode = currentNode;
-            parentDiffTree = parentNode?.childrenDiffTree;
-          }
-
-          console.info({createdFilesystemNodesInTreePath});   // TODO RadStr DEBUG: Debug print
-          alert("About to create datastore");      // TODO RadStr DEBUG: Debug alert
-          await ClientFilesystem.createDatastoreDirectly(createdFilesystemNodesInTreePath, newValueAsJSON, editableFilesystem, datastoreInfoForNonEditable, import.meta.env.VITE_BACKEND);
-          continue;
+        if (datastoreInfoForEditable !== null) {
+          await ClientFilesystem.updateDatastoreContentDirectly(datastoreInfoForEditable, newValueAsJSON, editableFilesystem, import.meta.env.VITE_BACKEND);
         }
+        else {
+          if (createdDatastores.find(createdDatastore => createdDatastore.fullPath === datastoreInfoForNonEditable?.fullPath)) {
+            let firstExistingParentIri: string | null = null;
 
-        await ClientFilesystem.updateDatastoreContentDirectly(datastoreInfoForEditable, newValueAsJSON, editableFilesystem, import.meta.env.VITE_BACKEND);
+            const createdFilesystemNodesInTreePath: CreateDatastoreFilesystemNodesInfo[] = [];
+            let hasChildrenToCreate = true;
+            let currentNodeTreePath = nodeTreePath;
+            let visitedFirstNodeToCreate = false;
+            let parentNode: ResourceComparison | undefined;
+            let parentDiffTree = examinedMergeState!.diffTreeData!.diffTree;
+            while (hasChildrenToCreate) {
+              const treePathSeparatorIndex = currentNodeTreePath.indexOf("/");
+              let currentIri: string;
+              if (treePathSeparatorIndex === -1) {
+                hasChildrenToCreate = false;
+                currentIri = currentNodeTreePath;
+                currentNodeTreePath = "";
+              }
+              else {
+                currentIri = currentNodeTreePath.substring(0, treePathSeparatorIndex);
+                currentNodeTreePath = currentNodeTreePath.substring(treePathSeparatorIndex + 1);
+              }
+              // TODO RadStr: We have to have both resources in the diff tree because of the iris
+              //              ... Another thing is that we have to first create the resources and then skip the created ones.
+              // if (isFirstIteration) {
+              //   firstExistingParentIri = getEditableValue(parentDiffTree[currentIri].leftResource.metadataCache.iri, parentDiffTree[currentIri].rightResource.metadataCache.iri);
+              // }
+
+              const currentNode = parentDiffTree?.[currentIri];
+              console.info({lastTreePathSeparatorIndex: treePathSeparatorIndex, len: currentNodeTreePath.length, currentIri, currentNodeTreePath, nodeTreePath, currentNode, difftree: examinedMergeState?.diffTreeData?.diffTree});    // TODO RadStr DEBUG: Debug print
+
+              if (currentNode === undefined) {
+                throw new Error(`The parent of node does not exist for some reason: ${currentNodeTreePath}, in which we ended up from ${nodeTreePath}`);
+              }
+              if (currentNode.resourceComparisonResult === "exists-in-old") {
+                console.info({editableCacheContents})
+                const metadata = editableCacheContents?.[currentNode?.resource.fullTreePath!]?.["meta"] ?? getDefaultValueForFormat(format);
+                const metadataAsJSON = convertDatastoreContentBasedOnFormat(metadata, format, true);
+                console.info({convertedCacheForMergeFromContent, convertedCacheForMergeToContent});   // TODO RadStr DEBUG: Debug print
+                console.info({metadataAsJSON, PATH_FOR_METADATA: currentNode?.resource.fullTreePath!, editableCacheContents});   // TODO RadStr DEBUG: Debug print
+
+                visitedFirstNodeToCreate = true;
+                if (parentNode === undefined) {
+                  toast.error("Fatal Merge error, check console");
+                  throw new Error("We can not (at least currently) have 2 roots. That is both packages have to have one common root.");
+                }
+
+                createdFilesystemNodesInTreePath.push({
+                  parentProjectIri: parentNode.resource.metadataCache.projectIri,
+                  treePath: currentNode?.resource.fullTreePath!,           // TODO RadStr: !
+                  userMetadata: metadataAsJSON,       // TODO RadStr:
+                });
+              }
+              else {
+                if (visitedFirstNodeToCreate) {   // We are after the node to create
+                  hasChildrenToCreate = false;
+                }
+              }
+              parentNode = currentNode;
+              parentDiffTree = parentNode?.childrenDiffTree;
+            }
+
+            console.info({createdFilesystemNodesInTreePath});   // TODO RadStr DEBUG: Debug print
+            alert("About to create datastore");      // TODO RadStr DEBUG: Debug alert
+            if (firstExistingParentIri === null) {
+              toast.error("Fatal Merge error, check console");
+              throw new Error("We can not (at least currently) have 2 roots. That is both packages have to have one common root.");
+            }
+            await ClientFilesystem.createDatastoreDirectly(createdFilesystemNodesInTreePath, firstExistingParentIri, newValueAsJSON, editableFilesystem, datastoreInfoForNonEditable, import.meta.env.VITE_BACKEND);
+            continue;
+          }
+        }
         await reloadModelsDataFromBackend();
       }
     }

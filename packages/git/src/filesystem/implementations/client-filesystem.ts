@@ -1,15 +1,14 @@
 import { ComparisonData } from "../../merge/merge-state.ts";
-import { FilesystemNodeLocation, FilesystemMappingType, DirectoryNode, FilesystemNode, DatastoreInfo } from "../../export-import-data-api.ts";
+import { FilesystemNodeLocation, FilesystemMappingType, DirectoryNode, FilesystemNode, DatastoreInfo, ExportMetadataCacheType, isMetadataCacheExplicitType, throwErrorForInvalidMetadataCacheExplicitType } from "../../export-import-data-api.ts";
 import { GitProvider } from "../../git-provider-api.ts";
 import { FilesystemAbstractionBase } from "../abstractions/filesystem-abstraction-base.ts";
 import { AvailableFilesystems, FilesystemAbstraction, getDatastoreInfoOfGivenDatastoreType } from "../abstractions/filesystem-abstraction.ts";
 
 
 export type CreateDatastoreFilesystemNodesInfo = {
-  parentIri: string,
-  iri: string,
+  parentProjectIri: string,
   treePath: string,
-  userMetadata: any,
+  userMetadata: ExportMetadataCacheType,
 };
 
 /**
@@ -193,6 +192,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
 
   public static async createDatastoreDirectly(
     createdFilesystemNodesInTreePath: CreateDatastoreFilesystemNodesInfo[],
+    parentIri: string,
     content: string,
     backendFilesystem: AvailableFilesystems | null,
     datastoreInfo: DatastoreInfo | null,
@@ -213,6 +213,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        parentIri,
         createdFilesystemNodesInTreePath,
         type: datastoreInfo.type,
         format: datastoreInfo.format,
@@ -226,16 +227,20 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
   }
 
 
-  async createDatastore(otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean> {
+  async createDatastore(parentIriInToBeChangedFilesystem: string, otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean> {
     const content = await ClientFilesystem.getDatastoreContentDirectly(changedDatastore, true, this.backendApiPath, this.backendFilesystem);
     const filesystemNodesInTreePath: CreateDatastoreFilesystemNodesInfo[] = [];
-    let currentNode = filesystemNode
+    let currentNode = filesystemNode;
     let parent: DirectoryNode | null = null;
     while (currentNode !== null) {
+      if (!isMetadataCacheExplicitType(currentNode.metadataCache)) {
+        throwErrorForInvalidMetadataCacheExplicitType(currentNode.metadataCache);
+        return;
+      }
+
       parent = otherFilesystem.getParentForNode(currentNode);
       filesystemNodesInTreePath.push({
-        parentIri: parent?.metadataCache.iri ?? "",
-        iri: currentNode.metadataCache.iri,
+        parentProjectIri: parent.metadataCache.projectIri ?? "",
         treePath: currentNode.fullTreePath,
         userMetadata: currentNode.metadataCache,
       });
@@ -243,7 +248,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     }
     return ClientFilesystem.createDatastoreDirectly(
       filesystemNodesInTreePath.reverse(),
-      content,
+      parentIriInToBeChangedFilesystem, content,
       this.backendFilesystem, changedDatastore, this.backendApiPath);
   }
 }

@@ -143,7 +143,7 @@ export async function updateMergeStateToBeUpToDate(
     filesystemMergeTo, fakeRootMergeTo, rootMergeTo, pathToRootMetaMergeTo,
   } = await compareBackendFilesystems(mergeFrom, mergeTo);
 
-    let commonCommitHash: string | null = null;
+    let commonCommitHash: string | undefined = undefined;
     const gitsToTry = [];
     if (mergeFrom.git !== null) {
       gitsToTry.push(mergeFrom.git);
@@ -183,6 +183,6 @@ export async function updateMergeStateToBeUpToDate(
     const rootResourceIri: string = mergeFrom.rootIri;    // TODO RadStr: Not sure now about the iris, but we will see
     const isSuccessfullyUpdated = await mergeStateModel.updateMergeStateToBeUpToDate(
       uuid, mergeStateCause, diffTreeComparisonResult,
-      commonCommitHash!, mergeFromInfo, mergeToInfo);
+      commonCommitHash, mergeFromInfo, mergeToInfo);
     return isSuccessfullyUpdated;
 }

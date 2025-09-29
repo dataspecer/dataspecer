@@ -1,5 +1,5 @@
 import { GitProvider } from "../../git-provider-api.ts";
-import { FilesystemNode, FilesystemMappingType, MetadataCacheType, DirectoryNode, FilesystemNodeLocation, DatastoreInfo } from "../../export-import-data-api.ts";
+import { FilesystemNode, FilesystemMappingType, DirectoryNode, FilesystemNodeLocation, DatastoreInfo, ExportMetadataCacheType } from "../../export-import-data-api.ts";
 import { AvailableFilesystems, createEmptyFilesystemMapping, createFilesystemMappingRoot, createInitialNodeToParentMap, FilesystemAbstraction, getMetaPrefixType } from "./filesystem-abstraction.ts";
 
 import path from "path";
@@ -116,9 +116,9 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
     delete this.nodeToParentMap[fullTreePath];
   }
 
-  async getMetadataObject(treePath: string): Promise<MetadataCacheType> {
+  async getMetadataObject(treePath: string): Promise<ExportMetadataCacheType> {
     const metaContent = await this.getDatastoreContent(treePath, getMetaPrefixType(), true);
-    return metaContent as unknown as MetadataCacheType;
+    return metaContent as unknown as ExportMetadataCacheType;
   }
 
   // TODO RadStr: This is no longer the case - iri is not the last part of the path - it is the name after the path
@@ -142,5 +142,5 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
   abstract removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<boolean>;
   abstract removeFile(filesystemNode: FilesystemNode): Promise<boolean>;
   abstract updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, content: string): Promise<boolean>;
-  abstract createDatastore(otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean>;
+  abstract createDatastore(parentIriInToBeChangedFilesystem: string, otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean>;
 }

@@ -1,7 +1,7 @@
 // TODO RadStr: Think of better names and the name of the property and of type should be aligned
 
 import { GitProvider } from "../../git-provider-api.ts";
-import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, MetadataCacheType, DatastoreInfo } from "../../export-import-data-api.ts";
+import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, DatastoreInfo, ExportMetadataCacheType } from "../../export-import-data-api.ts";
 import { ComparisonData } from "../../merge/merge-state.ts";
 
 
@@ -71,7 +71,7 @@ export interface FilesystemAbstraction {
    * @param treePath is the path the resource. However the name contains the basis in case of filesystem (it does not contain the .meta suffix). In case of DS filesystem it is the IRI of resource.
    * @returns The metadata for given {@link treePath}
    */
-  getMetadataObject(treePath: string): Promise<MetadataCacheType>;
+  getMetadataObject(treePath: string): Promise<ExportMetadataCacheType>;
 
   /**
    *
@@ -166,7 +166,7 @@ export interface FilesystemAbstraction {
    *  Note that if some parent directories are missing, then hey are created also. Also if the node with the datastore does not exist, it is created as well.
    * @returns True if the datastore (and its content) was sucessfully created, false on failure.
    */
-  createDatastore(otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean>;
+  createDatastore(parentIriInToBeChangedFilesystem: string, otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean>;
 
   /**
    * @returns The root of the filesystem. Note that each implmentation should have exactly one root. And it should be "fake" root,
@@ -211,7 +211,7 @@ export function createFilesystemMappingRoot(): DirectoryNode {
   const root: DirectoryNode = {
     type: "directory",
     name: "",
-    metadataCache: { iri: "fake-root" },
+    metadataCache: { iri: "fake-root", projectIri: "fake-root-project-iri", types: [] },
     content: {},
     datastores: [],
     fullTreePath: "",

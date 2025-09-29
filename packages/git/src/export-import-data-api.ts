@@ -37,11 +37,56 @@ export type DatastoreInfo = {
   fullPath: string;
 }
 
+/**
+ * The type expects to contain iri, projectIri and types however due to code structure, etc. this is mandatory in the type. Since often we create the type and add
+ * the values later. So there exists the {@link ExportMetadataCacheType}, which actually has those fields mandatory
+ * @deprecated We will use the explicit type, can probably remove everything related to this type (including the type) later. (We just cast it and set the values later, which solves the mandatory fields issue)
+ */
 export type MetadataCacheType = {
   iri?: string;
   projectIri?: string;
+  types?: string[];
   [key: string]: any;
 };
+
+export type ExportMetadataCacheType = {
+  iri: string;
+  projectIri: string;
+  types: string[];
+  [key: string]: any;
+};
+
+export type DatabaseMetadataCacheType = {
+  [key: string]: any;
+};
+
+/**
+ * Removes the required fields from the given {@link metadata}
+ */
+export function convertExportMetadataCacheToDatabaseOne(metadata: ExportMetadataCacheType): DatabaseMetadataCacheType {
+  delete metadata.iri;
+  delete metadata.projectIri;
+  delete metadata.types;
+  return metadata;
+}
+
+/**
+ * @deprecated TODO RadStr: Can be removed
+ */
+export function isMetadataCacheExplicitType(metadata: MetadataCacheType): metadata is ExportMetadataCacheType {
+  if (metadata.iri === undefined || metadata.projectIri === undefined || metadata.types === undefined) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * @deprecated TODO RadStr: Can be removed
+ */
+export function throwErrorForInvalidMetadataCacheExplicitType(metadata: MetadataCacheType) {
+  throw new Error(`Can not convert ${metadata} to MetadataCacheExplicitType, some of requeired fields is not present (that is, it is undefined)`);
+}
 
 /**
  * Important note: When it comes to to the fullTrePpath - use the /, don't use filesystem specific separators (that is path.sep)
@@ -53,7 +98,7 @@ type FilesystemNodeCommonData = {
   name: string,
 
   // TODO RadStr: Retype and rename - it is not cache
-  metadataCache: MetadataCacheType,
+  metadataCache: ExportMetadataCacheType,
   /**
    * TODO RadStr Idea: Could be Record<DatastoreType, string>. Note that the record variant would expect to have at most 1 datastore of given type
    */

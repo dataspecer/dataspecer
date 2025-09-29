@@ -1,6 +1,6 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import { v4 as uuidv4 } from 'uuid';
-import { GitProvider, FilesystemAbstractionBase, ComparisonData, DatastoreInfo, DirectoryNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, MetadataCacheType, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaDatastoreInfo, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode, isDatastoreForMetadata, getDatastoreInfoOfGivenDatastoreType, AvailableFilesystems, convertDatastoreContentBasedOnFormat } from "@dataspecer/git";
+import { GitProvider, FilesystemAbstractionBase, ComparisonData, DatastoreInfo, DirectoryNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaDatastoreInfo, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode, isDatastoreForMetadata, getDatastoreInfoOfGivenDatastoreType, AvailableFilesystems, convertDatastoreContentBasedOnFormat, ExportMetadataCacheType, MetadataCacheType } from "@dataspecer/git";
 import { ResourceModel } from "../../../models/resource-model.ts";
 import { deleteBlob, deleteResource } from "../../../routes/resource.ts";
 import { BaseResource } from "@dataspecer/core-v2/project";
@@ -171,7 +171,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
       const directoryNode: DirectoryNode = {
         name: newNodeLocation.iri,
         type: "directory",
-        metadataCache: {},
+        metadataCache: {} as ExportMetadataCacheType,    // We are not using the value in the course of creating the mapping!
         datastores: [],
         content: createEmptyFilesystemMapping(),
         fullTreePath: newNodeLocation.fullTreePath,
@@ -199,7 +199,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
       const fileNode: FilesystemNode = {
         name: newNodeLocation.iri,
         type: "file",
-        metadataCache: {},
+        metadataCache: {} as ExportMetadataCacheType,    // We are not using the value in the course of creating the mapping!
         datastores: [],
         fullTreePath: newNodeLocation.fullTreePath,
       }
@@ -235,7 +235,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     return filesystemMapping;
   }
 
-  public static constructMetadataFromResource(resource: BaseResource): MetadataCacheType {
+  public static constructMetadataFromResource(resource: BaseResource): ExportMetadataCacheType {
     return {
       iri: resource.iri,
       projectIri: resource.projectIri,
@@ -294,7 +294,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     return DSFilesystem.setDatastoreContentForPath(this.resourceModel, relevantDatastore.fullPath, relevantDatastore.format, datastoreType, newContent)
   }
 
-  createDatastore(otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean> {
+  createDatastore(parentIriInToBeChangedFilesystem: string, otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean> {
     // this.resourceModel.createPackage(parentIri, directoryNode.name, userMetadata)
     // createPackageResource()
     // const metadata = ;
