@@ -399,20 +399,20 @@ function StyledNode({
             !node.data.isInEditableTree || isExpandable ?
             null :
             <div
-              style={{ right: "-4px" }}
+              style={{ right: "-3px" }}
               className="absolute text-black top-1/2 -translate-y-1/2 flex opacity-0 bg-white group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto p-1"
             >
               <>
                 {
                 node.data.nowInConflictCount === 0 ?
-                  <div className="h-6 w-6"/> :  // Not null because we want to keep the button positioning
+                  null :
                   <button title="Mark as resolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickResolveConflict(e, node)}>
                     <Check className="h-6 w-6"/>
                   </button>
                 }
                 {
-                node.data.canBeInCoflictCount === 0 || node.data.nowInConflictCount !== 0 ?
-                  <div className="h-6 w-6"/> :
+                node.data.canBeInCoflictCount !== 0 && node.data.nowInConflictCount !== 0 ?
+                  null :
                   <button title="Mark as unresolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickUnresolveConflict(e, node)}>
                     <X className="h-6 w-6"/>
                   </button>
@@ -422,11 +422,11 @@ function StyledNode({
                   <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => {e.stopPropagation(); alert("delte")}}>
                     { node.data.treeType === "new" ? <MoveRight className="h-6 w-6"/> : <MoveLeft className="h-6 w-6"/> }
                   </button> :
-                  <div className="h-6 w-6"/>
+                  null
                 }
                 {
-                (node.data.status === "modified" || node.data.status === "same") ?
-                  <div className="h-6 w-6"/> :
+                (node.data.status === "same") ?
+                  <div className="h-6 w-6"/> :    // Not null because we want to keep the button positioning
                   null
                 }
                 {
