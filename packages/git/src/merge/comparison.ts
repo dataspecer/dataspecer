@@ -84,15 +84,6 @@ async function compareTreesInternal(
     };
     diffTree[nodeName] = currentlyProcessedDiffFilesystemNode;
 
-    // Recursively process "subdirectories"
-    if (nodeValue.type === "directory") {
-      const subtreeSize = await compareTreesInternal(filesystem1, nodeValue, globalFilesystemMapping1,
-                                                      filesystem2, node2Value as (DirectoryNode | undefined), globalFilesystemMapping2,
-                                                      currentlyProcessedDiffFilesystemNode.childrenDiffTree,
-                                                      comparisonDifferences);
-      diffTreeSize += subtreeSize;
-    }
-
     const processedDatastoresInSecondTree: Set<DatastoreInfo> = new Set();
     for (const datastore1 of nodeValue.datastores) {
       diffTreeSize++;
@@ -133,6 +124,15 @@ async function compareTreesInternal(
         comparisonDifferences.conflicts.push(removed);
         comparisonDifferences.removed.push(removed);
       }
+    }
+
+    // Recursively process "subdirectories"
+    if (nodeValue.type === "directory") {
+      const subtreeSize = await compareTreesInternal(filesystem1, nodeValue, globalFilesystemMapping1,
+                                                      filesystem2, node2Value as (DirectoryNode | undefined), globalFilesystemMapping2,
+                                                      currentlyProcessedDiffFilesystemNode.childrenDiffTree,
+                                                      comparisonDifferences);
+      diffTreeSize += subtreeSize;
     }
 
     // Add those datastores which are present only in the second tree
