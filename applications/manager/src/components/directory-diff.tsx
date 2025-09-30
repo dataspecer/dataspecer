@@ -307,6 +307,20 @@ const onClickCreateDatastore = (
   alert(`Create datastore for ${nodeToResolve.name}`);
 }
 
+const handleMouseHoverHighlightingForNode = (node: NodeApi<RenderNodeWithAdditionalData>, shouldSetHighlightingOn: boolean) => {
+  let recursiveNode = node;
+  // Note that we are checking for parent. That is because there is artificial root created by the rendering library.
+  while (recursiveNode?.parent !== null) {
+    recursiveNode.data.setShouldBeHighlighted(shouldSetHighlightingOn);
+    recursiveNode = recursiveNode.parent;
+  }
+  for (const child of node.children ?? []) {
+    if (child.data.dataSourceType === "datastore") {
+      child.data.setShouldBeHighlighted(shouldSetHighlightingOn);
+    }
+  }
+}
+
 
 function StyledNode({
   node,
@@ -401,32 +415,13 @@ function StyledNode({
             }
           }}
           onMouseOver={(_e) => {
-            let recursiveNode = node;
-            // Note that we are checking for parent. That is because there is artificial root created by the rendering library.
-            while (recursiveNode?.parent !== null) {
-              recursiveNode.data.setShouldBeHighlighted(true);
-              recursiveNode = recursiveNode.parent;
-            }
-            for (const child of node.children ?? []) {
-              if (child.data.dataSourceType === "datastore") {
-                child.data.setShouldBeHighlighted(true);
-              }
-            }
+            handleMouseHoverHighlightingForNode(node, true);
           }}
           onMouseLeave={(_e) => {
-            let recursiveNode = node;
-            // Note that we are checking for parent. That is because there is artificial root created by the rendering library.
-            while (recursiveNode?.parent !== null) {
-              recursiveNode.data.setShouldBeHighlighted(false);
-              recursiveNode = recursiveNode.parent;
-            }
-            for (const child of node.children ?? []) {
-              if (child.data.dataSourceType === "datastore") {
-                child.data.setShouldBeHighlighted(false);
-              }
-            }
+            handleMouseHoverHighlightingForNode(node, false);
           }}
         >
+          {<p className={`font-bold pt-1 pr-1 text-xs ${Math.random() > 0.5 ? "invisible" : "visible"}`}>C</p>}
           {icon}
           <span className={textClassName}>{node.data.name}</span>
           {
