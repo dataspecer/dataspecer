@@ -40,9 +40,15 @@ export type DatastoreInfo = {
 
 export type ExportMetadataCacheType = {
   iri: string;
+  [key: string]: any;
+} & ShareableMetadata;
+
+/**
+ * Metadata which can be shared when copying, etc.
+ */
+export type ShareableMetadata = {
   projectIri: string;
   types: string[];
-  [key: string]: any;
 };
 
 export type DatabaseMetadataCacheType = {
@@ -57,6 +63,13 @@ export function convertExportMetadataCacheToDatabaseOne(metadata: ExportMetadata
   delete metadata.projectIri;
   delete metadata.types;
   return metadata;
+}
+
+export function pickShareableMetadata(metadata: ExportMetadataCacheType): ShareableMetadata {
+  return {
+    projectIri: metadata.projectIri,
+    types: metadata.types,
+  };
 }
 
 /**

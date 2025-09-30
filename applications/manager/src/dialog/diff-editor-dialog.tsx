@@ -14,7 +14,26 @@ import { TabsContent } from "@radix-ui/react-tabs";
 import SvgVisualDiff from "@/components/images-conflict-resolver";
 import { MonacoDiffEditor } from "@/components/monaco-diff-editor";
 import { fetchMergeState } from "./open-merge-state";
-import { AvailableFilesystems, ClientFilesystem, ComparisonData, convertDatastoreContentBasedOnFormat, convertDatastoreContentForInputFormatToOutputFormat, DatastoreInfo, EditableType, MergeResolverStrategy, MergeState, stringifyDatastoreContentBasedOnFormat, getEditableValue, getEditableAndNonEditableValue, CreateDatastoreFilesystemNodesInfo, ResourceComparison, getDefaultValueForFormat, FilesystemNode } from "@dataspecer/git";
+import {
+  AvailableFilesystems,
+  ClientFilesystem,
+  ComparisonData,
+  convertDatastoreContentBasedOnFormat,
+  convertDatastoreContentForInputFormatToOutputFormat,
+  DatastoreInfo,
+  EditableType,
+  MergeResolverStrategy,
+  MergeState,
+  stringifyDatastoreContentBasedOnFormat,
+  getEditableValue,
+  getEditableAndNonEditableValue,
+  CreateDatastoreFilesystemNodesInfo,
+  ResourceComparison,
+  getDefaultValueForFormat,
+  FilesystemNode,
+  stringifyShareableMetadataInfoFromDatastoreContent,
+  extractShareableMetadata,
+} from "@dataspecer/git";
 import { MergeStrategyComponent } from "@/components/merge-strategy-component";
 import ExpandableList from "@/components/expandable-list";
 import { RemoveFromToBeResolvedReactComponent } from "@/components/remove-from-to-be-resolved";
@@ -245,6 +264,36 @@ function getEditorsInOriginalOrder(
   }
 }
 
+function getFirstNotUndefinedDatastoreValue(
+  nodeTreePath: string,
+  datastoreType: string | null,
+  activeFormat: string,
+  cachesToCheck: CacheContentMap[],
+): string {
+  if (datastoreType === null) {
+    return getDefaultValueForFormat(activeFormat)
+  }
+  const cacheWithValue = cachesToCheck.find(cacheToCheck => cacheToCheck[nodeTreePath]?.[datastoreType] !== undefined);
+  if (cacheWithValue === undefined) {
+    return getDefaultValueForFormat(activeFormat);
+  }
+
+  const cacheContent = cacheWithValue[nodeTreePath][datastoreType];
+  if (cacheWithValue === cachesToCheck[0]) {
+    // If it is the primary or not meta, just return it
+    return cacheWithValue[nodeTreePath][datastoreType];
+  }
+  else {
+    if (datastoreType === "meta") {
+      // If meta and not primary then pick the relevant stuff
+      return stringifyShareableMetadataInfoFromDatastoreContent(cacheContent, activeFormat);
+    }
+    else {
+      return getDefaultValueForFormat(activeFormat);
+    }
+  }
+}
+
 export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri, initialMergeToResourceIri, resolve}: TextDiffEditorHookProps) => {
   const monacoEditor = useRef<{editor: monaco.editor.IStandaloneDiffEditor}>(undefined);
 
@@ -277,8 +326,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
 
   const activeDatastoreType = mergeToDatastoreInfo?.type ?? mergeFromDatastoreInfo?.type ?? null;
   const activeFormat = activeDatastoreType === null ? "" : formatsForCacheEntries[currentTreePathToNodeContainingDatastore]?.[activeDatastoreType] ?? "";
-  const activeMergeFromContentConverted = activeDatastoreType === null ? getDefaultValueForFormat(activeFormat) : convertedCacheForMergeFromContent[currentTreePathToNodeContainingDatastore]?.[activeDatastoreType] ?? getDefaultValueForFormat(activeFormat);
-  const activeMergeToContentConverted = activeDatastoreType === null ? getDefaultValueForFormat(activeFormat) : convertedCacheForMergeToContent[currentTreePathToNodeContainingDatastore]?.[activeDatastoreType] ?? getDefaultValueForFormat(activeFormat);
+  const activeMergeFromContentConverted = getFirstNotUndefinedDatastoreValue(currentTreePathToNodeContainingDatastore, activeDatastoreType, activeFormat, [convertedCacheForMergeFromContent, convertedCacheForMergeToContent]);
+  const activeMergeToContentConverted = getFirstNotUndefinedDatastoreValue(currentTreePathToNodeContainingDatastore, activeDatastoreType, activeFormat, [convertedCacheForMergeToContent, convertedCacheForMergeFromContent]);
 
   const resetUseStates = () => {
     setExaminedMergeState(null);
@@ -491,7 +540,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
   };
 
   const saveFileChanges = async () => {
-    const editableCacheContents = getEditableValue(editable, convertedCacheForMergeFromContent, convertedCacheForMergeToContent);
+    const { editable: editableCacheContents, nonEditable: nonEditableCacheContent } = getEditableAndNonEditableValue(editable, convertedCacheForMergeFromContent, convertedCacheForMergeToContent);
     const editableFilesystem = getEditableValue(editable, examinedMergeState?.filesystemTypeMergeFrom, examinedMergeState?.filesystemTypeMergeTo) ?? null;
 
     for (const [nodeTreePath, datastoreInfoMap] of Object.entries(datastoreInfosForCacheEntries)) {
@@ -549,9 +598,19 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
                 const { nonEditable: existingResource } = getEditableAndNonEditableValue(editable, currentDiffNode?.resources.old, currentDiffNode?.resources.new);
                 console.info({lastTreePathSeparatorIndex: treePathSeparatorIndex, len: currentNodeTreePath.length, currentIri, currentNodeTreePath, nodeTreePath, currentNode: currentDiffNode, difftree: examinedMergeState?.diffTreeData?.diffTree});    // TODO RadStr DEBUG: Debug print
 
-                console.info({editableCacheContents})
-                const metadata = editableCacheContents?.[existingResource!.fullTreePath!]?.["meta"] ?? getDefaultValueForFormat(format);
-                const metadataAsJSON = convertDatastoreContentBasedOnFormat(metadata, format, true);
+                console.info({editableCacheContents});
+                const metadataCandidateFromEditable = editableCacheContents?.[existingResource!.fullTreePath!]?.["meta"];
+                getDefaultValueForFormat(format);
+                let metadataAsJSON: any;
+                if (metadataCandidateFromEditable === undefined) {
+                  // We take the metadata from the other one. But pick just the relevant ones (parentIri, ...)
+                  const nonEditableMeta = nonEditableCacheContent?.[existingResource!.fullTreePath!]?.["meta"];
+                  metadataAsJSON = extractShareableMetadata(nonEditableMeta, format);
+                }
+                else {
+                  metadataAsJSON = convertDatastoreContentBasedOnFormat(metadataCandidateFromEditable, format, true);
+                }
+
                 console.info({convertedCacheForMergeFromContent, convertedCacheForMergeToContent});   // TODO RadStr DEBUG: Debug print
                 console.info({metadataAsJSON, PATH_FOR_METADATA: existingResource!.fullTreePath!, editableCacheContents});   // TODO RadStr DEBUG: Debug print
 

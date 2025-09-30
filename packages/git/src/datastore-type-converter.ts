@@ -1,4 +1,5 @@
 import YAML from "yaml";
+import { pickShareableMetadata, ShareableMetadata } from "./export-import-data-api.ts";
 
 export function getDefaultValueForFormat(format: string) {
   return "null";
@@ -54,9 +55,19 @@ export function stringifyDatastoreContentBasedOnFormat(datastoreContent: any, fo
     return JSON.stringify(datastoreContent, null, indent);
   }
   else if (format === "yaml") {
-    YAML
     return YAML.stringify(datastoreContent, { indent });
   }
 
   return datastoreContent;
+}
+
+export function stringifyShareableMetadataInfoFromDatastoreContent(metadataContent: string, format: string | null) {
+  const strippedContent = extractShareableMetadata(metadataContent, format)
+  return stringifyDatastoreContentBasedOnFormat(strippedContent, format, true);
+}
+
+export function extractShareableMetadata(metadataContent: string, format: string | null): ShareableMetadata {
+  const metadataContentAsJSON = convertDatastoreContentBasedOnFormat(metadataContent, format, true);
+  const strippedContent = pickShareableMetadata(metadataContentAsJSON);
+  return strippedContent;
 }
