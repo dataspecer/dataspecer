@@ -3,6 +3,32 @@ import { DocumentationConfiguration } from "./configuration.ts";
 export const defaultConfiguration: DocumentationConfiguration = {
   partials: {
     // [DOCUMENTATION_MAIN_TEMPLATE_PARTIAL]
+    abstract: `<section id="abstract">
+      <p>
+      {{#iflng "cs"}}Tento soubor dokumentuje{{lng}}This file documents{{/iflng}}
+      {{#translate label}}<strong>{{translation}}</strong>{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}.</p>
+      </section>`,
+    introduction: `<section>
+    <h2>Introduction</h2>
+    <p>This is introduction</p>
+    </section>`,
+    localBiblio: `localBiblio: {
+      "DCAT-AP": {
+          title: "DCAT Application Profile for data portals in Europe",
+          href: "https://semiceu.github.io/DCAT-AP/releases/3.0.1/",
+          date: "2024"
+      },
+      "GeoDCAT-AP": {
+          title: "GeoDCAT Application Profile for data portals in Europe",
+          href: "https://semiceu.github.io/GeoDCAT-AP/releases/3.0.0/",
+          date: "2024"
+      },
+      "DCAT-AP-HVD": {
+          title: "DCAT-AP HVD Application Profile",
+          href: "https://semiceu.github.io/DCAT-AP/releases/3.0.0-hvd/",
+          date: "2024"
+      }
+  },`,
     specification: `{{> definitions}}
 <!DOCTYPE html>
 <html {{#iflng "cs"}}lang="cs"{{lng}}lang="en"{{/iflng}}>
@@ -11,11 +37,9 @@ export const defaultConfiguration: DocumentationConfiguration = {
   </head>
   <body>
     <p class="copyright"></p>
-    <section id="abstract">
-      <p>
-        {{#iflng "cs"}}Tento soubor dokumentuje{{lng}}This file documents{{/iflng}}
-        {{#translate label}}<strong>{{translation}}</strong>{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}.</p>
-    </section>
+    {{> abstract}}
+
+    {{> introduction}}
 
     <section>
       <h2>{{#iflng "cs"}}Přehled{{lng}}Overview{{/iflng}}</h2>
@@ -460,6 +484,28 @@ export const defaultConfiguration: DocumentationConfiguration = {
     </tbody>
   </table>
 </section>`,
+    "respecConfig": `// All config options at https://respec.org/docs/
+  var respecConfig = {
+    specStatus: "base",
+    editors: [{ name: "Dataspecer", url: "https://dataspecer.com" }],
+    //github: "some-org/mySpec",
+    shortName: "todo",
+    historyURI: null,
+    //thisVersion: "https://xx.github.io/yy/",
+    //latestVersion: "https://xx.github.io/yy/",
+    //publishDate: "2025-09-29",
+    //github: "https://github.com/org/repo",
+    //xref: "web-platform",
+    //group: "my-working-group",
+    //otherLinks: [{
+    //    key: "Repository",
+    //    data: [{
+    //        value: "GitHub",
+    //        href: "https://github.com/org/repo"
+    //    }],
+    //}],
+    {{> localBiblio}}
+  };`,
 
     "html-head": `<meta charset="utf-8" />
 <title>{{translate label}}</title>
@@ -473,14 +519,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
   defer
 ></script>
 <script class="remove">
-  // All config options at https://respec.org/docs/
-  var respecConfig = {
-    specStatus: "base",
-    editors: [{ name: "Dataspecer", url: "https://dataspecer.com" }],
-    //github: "some-org/mySpec",
-    shortName: "todo",
-    //xref: "web-platform",
-    //group: "my-working-group",
+  {{> respecConfig}
   };
 </script>
 
