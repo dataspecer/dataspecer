@@ -519,7 +519,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
   defer
 ></script>
 <script class="remove">
-  {{> respecConfig}
+  {{> respecConfig}}
   };
 </script>
 
