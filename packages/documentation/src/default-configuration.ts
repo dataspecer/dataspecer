@@ -4,14 +4,18 @@ export const defaultConfiguration: DocumentationConfiguration = {
   partials: {
     // [DOCUMENTATION_MAIN_TEMPLATE_PARTIAL]
     abstract: `<section id="abstract">
-      <p>
-      {{#iflng "cs"}}Tento soubor dokumentuje{{lng}}This file documents{{/iflng}}
-      {{#translate label}}<strong>{{translation}}</strong>{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}.</p>
-      </section>`,
+  <p>
+  {{#iflng "cs"}}Tento soubor dokumentuje{{lng}}This file documents{{/iflng}}
+  {{#translate label}}<strong>{{translation}}</strong>{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}.</p>
+</section>`,
     introduction: `<section>
-    <h2>Introduction</h2>
-    <p>This is introduction</p>
-    </section>`,
+  {{#iflng "cs"}}<h2>Úvod</h2>
+  <p>Toto je úvod</p>
+  {{lng}}
+  <h2>Introduction</h2>
+  <p>This is introduction</p>
+  {{/iflng}}
+</section>`,
     localBiblio: `localBiblio: {
       "DCAT-AP": {
           title: "DCAT Application Profile for data portals in Europe",
