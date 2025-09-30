@@ -485,27 +485,27 @@ export const defaultConfiguration: DocumentationConfiguration = {
   </table>
 </section>`,
     "respecConfig": `// All config options at https://respec.org/docs/
-  var respecConfig = {
-    specStatus: "base",
-    editors: [{ name: "Dataspecer", url: "https://dataspecer.com" }],
-    //github: "some-org/mySpec",
-    shortName: "todo",
-    historyURI: null,
-    //thisVersion: "https://xx.github.io/yy/",
-    //latestVersion: "https://xx.github.io/yy/",
-    //publishDate: "2025-09-29",
-    //github: "https://github.com/org/repo",
-    //xref: "web-platform",
-    //group: "my-working-group",
-    //otherLinks: [{
-    //    key: "Repository",
-    //    data: [{
-    //        value: "GitHub",
-    //        href: "https://github.com/org/repo"
-    //    }],
-    //}],
-    {{> localBiblio}}
-  };`,
+var respecConfig = {
+  specStatus: "base",
+  editors: [{ name: "Dataspecer", url: "https://dataspecer.com" }],
+  //github: "some-org/mySpec",
+  shortName: "todo",
+  historyURI: null,
+  //thisVersion: "https://xx.github.io/yy/",
+  //latestVersion: "https://xx.github.io/yy/",
+  //publishDate: "2025-09-29",
+  //github: "https://github.com/org/repo",
+  //xref: "web-platform",
+  //group: "my-working-group",
+  //otherLinks: [{
+  //    key: "Repository",
+  //    data: [{
+  //        value: "GitHub",
+  //        href: "https://github.com/org/repo"
+  //    }],
+  //}],
+  {{> localBiblio}}
+};`,
 
     "html-head": `<meta charset="utf-8" />
 <title>{{translate label}}</title>
@@ -519,8 +519,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
   defer
 ></script>
 <script class="remove">
-  {{> respecConfig}}
-  };
+{{> respecConfig}}
 </script>
 
 <style>
