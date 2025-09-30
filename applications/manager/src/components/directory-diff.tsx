@@ -27,12 +27,14 @@ type RenderNode = {
   isInEditableTree: boolean;
 };
 type RenderNodeWithAdditionalData = RenderNode & {
-  changeActiveModel: ChangeActiveModelMethod,
-  shouldShowConflicts: boolean,
-  allConficts: ComparisonData[],
-  setConflictsToBeResolvedOnSave: (value: React.SetStateAction<ComparisonData[]>) => void,
-  setCreatedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void,
-  setRemovedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void,
+  changeActiveModel: ChangeActiveModelMethod;
+  shouldShowConflicts: boolean;
+  allConficts: ComparisonData[];
+  setConflictsToBeResolvedOnSave: (value: React.SetStateAction<ComparisonData[]>) => void;
+  setCreatedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void;
+  setRemovedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void;
+  shouldBeHighlighted: boolean;
+  setShouldBeHighlighted: (value: React.SetStateAction<boolean>) => void;
 };
 
 type RenderStatus = "same" | "modified" | "created" | "removed";
@@ -161,7 +163,6 @@ function createDatastoresRenderRepresentations(
 }
 
 function createIdForFilesystemRenderNode(resourceComparison: ResourceComparison, treeToExtract: TreeType) {
-  resourceComparison
   const nonEmptyFilesystemNode: FilesystemNode = (resourceComparison.resources.old ?? resourceComparison.resources.new)!;
   return nonEmptyFilesystemNode.fullTreePath + "-" + treeToExtract;
 }
@@ -196,7 +197,7 @@ function createTreeRepresentationForRendering(
           status = "created";
         }
         else {
-          throw new Error(`Either invalid data or programmer error, unknown diff type: ${node.resourceComparisonResult}`)
+          throw new Error(`Either invalid data or programmer error, unknown diff type: ${node.resourceComparisonResult}`);
         }
       }
       else {
@@ -345,6 +346,14 @@ function StyledNode({
     throw new Error(`Programmer error, using unknown data source type: ${node.data.dataSourceType}`);
   }
 
+  let backgroundColor: string | undefined = undefined;
+  if (node.isSelected) {
+    backgroundColor = "#a2a2a5ff";
+  }
+  else if (node.data.shouldBeHighlighted) {
+    backgroundColor = "#afb3c5ff";
+  }
+
   const styledNode = (
     <>
       <div
@@ -363,7 +372,7 @@ function StyledNode({
             width: 600,   // TODO RadStr: Ugly hack to not have text over multiple lines (can't think of any other EASY fix - non-easy fix would be set the width based on longest element or set rowHeight based on over how many lines it goes over)
             color,
             cursor: isExpandable ? "pointer" : "default",
-            background: node.isSelected ? "#a2a2a5ff" : undefined,
+            background: backgroundColor,
           }}
           ref={dragHandle}
           // TODO RadStr: Remove- Probably no longer needed. It was fixed by explicitly setting node height to the row height.
@@ -389,6 +398,32 @@ function StyledNode({
               const parentId = node.parent?.data.id!;   // The parent exists and it is not datastore
               const parentTreePath = parentId.substring(0, parentId?.length - "-new".length);
               node.data.changeActiveModel(parentTreePath, node.data.fullDatastoreInfoInOriginalTree, node.data.fullDatastoreInfoInModifiedTree, true);
+            }
+          }}
+          onMouseOver={(_e) => {
+            let recursiveNode = node;
+            // Note that we are checking for parent. That is because there is artificial root created by the rendering library.
+            while (recursiveNode?.parent !== null) {
+              recursiveNode.data.setShouldBeHighlighted(true);
+              recursiveNode = recursiveNode.parent;
+            }
+            for (const child of node.children ?? []) {
+              if (child.data.dataSourceType === "datastore") {
+                child.data.setShouldBeHighlighted(true);
+              }
+            }
+          }}
+          onMouseLeave={(_e) => {
+            let recursiveNode = node;
+            // Note that we are checking for parent. That is because there is artificial root created by the rendering library.
+            while (recursiveNode?.parent !== null) {
+              recursiveNode.data.setShouldBeHighlighted(false);
+              recursiveNode = recursiveNode.parent;
+            }
+            for (const child of node.children ?? []) {
+              if (child.data.dataSourceType === "datastore") {
+                child.data.setShouldBeHighlighted(false);
+              }
             }
           }}
         >
@@ -490,6 +525,9 @@ const createStyledNode = (
   extendedProps.node.data.setCreatedDatastores = setCreatedDatastores;
   extendedProps.node.data.setRemovedDatastores = setRemovedDatastores;
 
+  const [shouldBeHighlighted, setShouldBeHighlighted] = useState<boolean>(false);
+  extendedProps.node.data.shouldBeHighlighted = shouldBeHighlighted;
+  extendedProps.node.data.setShouldBeHighlighted = setShouldBeHighlighted;
 
   return <StyledNode {...extendedProps} />;
 }
