@@ -32,15 +32,15 @@ export const updateGitRelatedDataForPackage = async (
   const defaultRepositoryUrl = gitProvider.extractDefaultRepositoryUrl(repositoryURL);
   console.info("defaultRepositoryUrl", defaultRepositoryUrl);
   // If we call it before we set the git link for the imported package, then we make the database query faster (we don't need to check for forbidden iri)
-  resourceModel.updateResourceGitLink(iri, defaultRepositoryUrl, false);
+  await resourceModel.updateResourceGitLink(iri, defaultRepositoryUrl, false);
   // If commitReferenceType still not set, just use null, the method will use its default
   const lastCommitHash = await gitProvider.getLastCommitHashFromUrl(defaultRepositoryUrl, commitReferenceType ?? null, commitReferenceValue);
-  resourceModel.updateLastCommitHash(iri, lastCommitHash);
+  await resourceModel.updateLastCommitHash(iri, lastCommitHash);
 
   // If undefined just assume that it is reference to commit, so if it is not user have to explictly switch it to branch
-  resourceModel.updateRepresentsBranchHead(iri, commitReferenceType ?? "commit");
+  await resourceModel.updateRepresentsBranchHead(iri, commitReferenceType ?? "commit");
   if (commitReferenceType === "branch") {
-    resourceModel.updateResourceProjectIriAndBranch(
+    await resourceModel.updateResourceProjectIriAndBranch(
       iri,
       undefined,
       commitReferenceValue ?? undefined);
