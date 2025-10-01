@@ -441,12 +441,14 @@ export async function importFromGitUrl(repositoryURL: string, commitReferenceTyp
   const importer = new PackageImporter(resourceModel);
   const imported = await importer.doImport(zipBuffer, true);
 
+  const basicRepositoryUrl = gitProvider.extractDefaultRepositoryUrl(repositoryURL);
+
   const isCommitReferenceTypeKnown = gitZipDownloadURLData.commitReferenceValueInfo.fallbackToDefaultBranch || gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue === null;
   if (!isCommitReferenceTypeKnown) {
-    commitReferenceType = await getCommitReferenceTypeUsingGitClone(imported[0], repositoryURL, gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue);
+    commitReferenceType = await getCommitReferenceTypeUsingGitClone(imported[0], basicRepositoryUrl, gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue);
   }
   if (imported.length > 0) {
-    await updateGitRelatedDataForPackage(imported[0], gitProvider, repositoryURL, gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue, commitReferenceType);
+    await updateGitRelatedDataForPackage(imported[0], gitProvider, basicRepositoryUrl, gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue, commitReferenceType);
   }
 
   return imported;
@@ -459,7 +461,7 @@ async function getCommitReferenceTypeUsingGitClone(iri: string, repositoryURL: s
     await gitCloneBasic(git, gitInitialDirectory, repositoryURL, true, true, commitReferenceValue, 1);
     commitReferenceType = "branch";
   }
-  catch {
+  catch(error) {
     // It happened because we failed to clone branch, which means it has to be a tag.
     commitReferenceType = "commit";
   }
