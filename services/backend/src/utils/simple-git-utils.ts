@@ -1,7 +1,7 @@
 import { simpleGit, SimpleGit } from "simple-git";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
-import { AllowedPublicPrefixes, ROOT_DIRECTORY_FOR_ANY_GIT } from "../models/git-store-info.ts";
+import { AllowedPublicPrefixes, ROOT_DIRECTORY_FOR_PRIVATE_GITS, ROOT_DIRECTORY_FOR_PUBLIC_GITS } from "../models/git-store-info.ts";
 
 /**
  * @throws Error on git failure
@@ -83,7 +83,9 @@ export type CreateSimpleGitResult = UniqueDirectory & {
 export const createUniqueDirectory = (
     iri: string,
     cloneDirectoryNamePrefix: string,
+    isPublicGit: boolean,
 ): UniqueDirectory => {
+    const gitCommonPrefix = isPublicGit ? ROOT_DIRECTORY_FOR_PUBLIC_GITS : ROOT_DIRECTORY_FOR_PRIVATE_GITS;
     while (true) {
         const uuidBase = uuidv4();
         // We have to cut the length as much as possible, because, aximum allowed length for path to the initial git repository
@@ -92,7 +94,7 @@ export const createUniqueDirectory = (
         // So if I had to guess then there is internal limit to 220 characters for the .git directory
         // Note that I tried both setting git long paths and windows long paths
         const pathUuid = uuidBase.substring(0, 6);
-        const gitDirectoryToRemoveAfterWork = `${ROOT_DIRECTORY_FOR_ANY_GIT}/${cloneDirectoryNamePrefix}/${pathUuid}`;
+        const gitDirectoryToRemoveAfterWork = `${gitCommonPrefix}/${cloneDirectoryNamePrefix}/${pathUuid}`;
         const gitInitialDirectoryParent = `${gitDirectoryToRemoveAfterWork}`;
         // Use the whole iri, but ideally we would take something like iri.substring(0, uuidBase.length - 6)
         let gitInitialDirectory = `${gitInitialDirectoryParent}/${iri}`;
@@ -109,12 +111,14 @@ export const createUniqueDirectory = (
 
 /**
  * @param cloneDirectoryNamePrefix string since we want to also allow non-public repositories to be stored in ds. However check for the pulibc ones {@link AllowedPublicPrefixes}.
+ * @param isPublicGit if true then the git is fetcheable and modifiable from client, otherwise not.
  */
 export const createSimpleGit = (
     iri: string,
     cloneDirectoryNamePrefix: string,
+    isPublicGit: boolean,
 ): CreateSimpleGitResult => {
-    const uniqueDirectory = createUniqueDirectory(iri, cloneDirectoryNamePrefix);
+    const uniqueDirectory = createUniqueDirectory(iri, cloneDirectoryNamePrefix, isPublicGit);
     const git = simpleGit(uniqueDirectory.gitInitialDirectory);
 
     return {

@@ -207,7 +207,7 @@ async function commitDSMergeToGit(
   const { gitCredentials, gitProvider } = commitInfo;
 
 
-  const createSimpleGitResult: CreateSimpleGitResult = createSimpleGit(iri, MERGE_DS_CONFLICTS_PREFIX);
+  const createSimpleGitResult: CreateSimpleGitResult = createSimpleGit(iri, MERGE_DS_CONFLICTS_PREFIX, true);
   const { git, gitInitialDirectory, gitInitialDirectoryParent } = createSimpleGitResult;
 
   for (const accessToken of gitCredentials.accessTokens) {
@@ -312,7 +312,7 @@ async function commitClassicToGit(
   const { givenRepositoryUserName, givenRepositoryName } = repositoryIdentificationInfo;
 
 
-  const createSimpleGitResult: CreateSimpleGitResult = createSimpleGit(iri, PUSH_PREFIX);
+  const createSimpleGitResult: CreateSimpleGitResult = createSimpleGit(iri, PUSH_PREFIX, true);
   const { git, gitDirectoryToRemoveAfterWork, gitInitialDirectory, gitInitialDirectoryParent } = createSimpleGitResult;
 
   for (const accessToken of gitCredentials.accessTokens) {

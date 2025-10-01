@@ -8,6 +8,7 @@ import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "../uti
 import { SimpleGit } from "simple-git";
 import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
 import { removePathRecursively } from "../utils/git-utils.ts";
+import { MERGE_CONFLICTS_PRIVATE } from "../models/git-store-info.ts";
 
 
 export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -28,7 +29,7 @@ export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (requ
     return;
   }
 
-  const { git, gitInitialDirectory, gitDirectoryToRemoveAfterWork } = createSimpleGit(mergeFromIri, "merge-conflicts");
+  const { git, gitInitialDirectory, gitDirectoryToRemoveAfterWork } = createSimpleGit(mergeFromIri, MERGE_CONFLICTS_PRIVATE, false);
   try {
     await gitCloneBasic(git, gitInitialDirectory, mergeFromResource.linkedGitRepositoryURL, false, true, undefined);
 

@@ -3,7 +3,6 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import { resourceModel } from "../main.ts";
 import express from "express";
 
-import fs from "fs";
 import { createSimpleGit, gitCloneBasic } from "../utils/simple-git-utils.ts";
 import { FETCH_GIT_HISTORY_PREFIX } from "../models/git-store-info.ts";
 import { GitRawHistoryToSendToClient, GitHistory, BranchHistory, RawCommit } from "@dataspecer/git";
@@ -30,7 +29,7 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
     // const gitURL = "https://github.com/nodejs/node-addon-examples";
     // const gitURL = "https://github.com/RadStr-bot/example-merge-repo";
 
-    const { git, gitInitialDirectory, gitDirectoryToRemoveAfterWork } = createSimpleGit(query.iri, FETCH_GIT_HISTORY_PREFIX);
+    const { git, gitInitialDirectory, gitDirectoryToRemoveAfterWork } = createSimpleGit(query.iri, FETCH_GIT_HISTORY_PREFIX, false);
 
     try {
         await gitCloneBasic(git, gitInitialDirectory, gitURL, false, true, undefined, query.historyDepth);
