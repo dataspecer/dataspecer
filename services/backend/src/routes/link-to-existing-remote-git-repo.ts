@@ -30,7 +30,9 @@ export const updateGitRelatedDataForPackage = async (
   commitReferenceType?: CommitReferenceType,
 ) => {
   const defaultRepositoryUrl = gitProvider.extractDefaultRepositoryUrl(repositoryURL);
-  console.info("defaultRepositoryUrl", defaultRepositoryUrl);
+  console.info("defaultRepositoryUrl", defaultRepositoryUrl);     // TODO RadStr Debug: Debug print
+  // TODO RadStr: Ideally we should update all at once so we do not call the merge state isUpToDate setter unnecesarily
+
   // If we call it before we set the git link for the imported package, then we make the database query faster (we don't need to check for forbidden iri)
   await resourceModel.updateResourceGitLink(iri, defaultRepositoryUrl, false);
   // If commitReferenceType still not set, just use null, the method will use its default

@@ -1,4 +1,4 @@
-import { ChangeActiveModelMethod } from "@/dialog/diff-editor-dialog";
+import { ChangeActiveModelMethod, EntriesAffectedByCreateType } from "@/dialog/diff-editor-dialog";
 import _ from "lodash";
 import { Check, Loader, Minus, MoveLeft, MoveRight, Plus, X } from "lucide-react";
 import React, { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from "react";
@@ -624,6 +624,7 @@ export const DiffTreeVisualization = (props: {
   mergeStateFromBackend: MergeState | null,
   conflictsToBeResolvedOnSaveFromParent: ComparisonData[],
   setConflictsToBeResolvedOnSave: Dispatch<SetStateAction<ComparisonData[]>>,
+  entriesAffectedByCreate: Record<string, EntriesAffectedByCreateType>,
   createdDatastores: DatastoreInfo[],
   setCreatedDatastores: Dispatch<SetStateAction<DatastoreInfo[]>>,
   removedDatastores: DatastoreInfo[],
