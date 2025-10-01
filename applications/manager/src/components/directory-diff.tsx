@@ -31,7 +31,9 @@ type RenderNodeWithAdditionalData = RenderNode & {
   shouldShowConflicts: boolean;
   allConficts: ComparisonData[];
   setConflictsToBeResolvedOnSave: (value: React.SetStateAction<ComparisonData[]>) => void;
+  isNewlyCreated: boolean,
   setCreatedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void;
+  isNewlyRemoved: boolean,
   setRemovedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void;
   shouldBeHighlighted: boolean;
   setShouldBeHighlighted: (value: React.SetStateAction<boolean>) => void;
@@ -421,7 +423,9 @@ function StyledNode({
             handleMouseHoverHighlightingForNode(node, false);
           }}
         >
-          {<p className={`font-bold pt-1 pr-1 text-xs ${Math.random() > 0.5 ? "invisible" : "visible"}`}>C</p>}
+          {<p className={`font-bold pt-1 pr-1 text-xs ${node.data.isNewlyCreated ? "invisible" : "visible"}`}>C</p>}
+          {<p className={`font-bold pt-1 pr-1 text-xs ${node.data.isNewlyRemoved ? "invisible" : "visible"}`}>D</p>}
+          {<p className={`font-bold pt-1 pr-1 text-xs ${Math.random() > 0.5 ? "invisible" : "visible"}`}>Rand</p>}
           {icon}
           <span className={textClassName}>{node.data.name}</span>
           {
@@ -509,7 +513,9 @@ const createStyledNode = (
   shouldShowConflicts: boolean,
   allConficts: ComparisonData[],
   setConflictsToBeResolvedOnSave: (value: React.SetStateAction<ComparisonData[]>) => void,
+  createdDatastores: DatastoreInfo[],
   setCreatedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void,
+  removedDatastores: DatastoreInfo[],
   setRemovedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void,
 ) => {
   const extendedProps: NodeRendererProps<RenderNodeWithAdditionalData> = props as any;
@@ -517,7 +523,9 @@ const createStyledNode = (
   extendedProps.node.data.shouldShowConflicts = shouldShowConflicts;
   extendedProps.node.data.allConficts = allConficts;
   extendedProps.node.data.setConflictsToBeResolvedOnSave = setConflictsToBeResolvedOnSave;
+  extendedProps.node.data.isNewlyCreated = createdDatastores.find(createdDatastore => createdDatastore.fullPath === extendedProps.node.data.fullDatastoreInfoInOriginalTree?.fullPath) === undefined;
   extendedProps.node.data.setCreatedDatastores = setCreatedDatastores;
+  extendedProps.node.data.isNewlyRemoved = removedDatastores.find(removedDatastore => removedDatastore.fullPath === extendedProps.node.data.fullDatastoreInfoInModifiedTree?.fullPath) === undefined;
   extendedProps.node.data.setRemovedDatastores = setRemovedDatastores;
 
   const [shouldBeHighlighted, setShouldBeHighlighted] = useState<boolean>(false);
@@ -621,8 +629,7 @@ export const DiffTreeVisualization = (props: {
   removedDatastores: DatastoreInfo[],
   setRemovedDatastores: Dispatch<SetStateAction<DatastoreInfo[]>>,
 }) => {
-  const setCreatedDatastores = props.setCreatedDatastores;
-  const setRemovedDatastores = props.setRemovedDatastores;
+  const { createdDatastores, setCreatedDatastores, removedDatastores, setRemovedDatastores } = props;
   const setConflictsToBeResolvedOnSave = props.setConflictsToBeResolvedOnSave;
   const mergeStateFromBackend: MergeState | null = props.mergeStateFromBackend;
 
@@ -852,7 +859,7 @@ export const DiffTreeVisualization = (props: {
         <h3><DiffEditorCrossedOutEditIcon/></h3>
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
-            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), setCreatedDatastores, setRemovedDatastores)}
+            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdDatastores, setCreatedDatastores, removedDatastores, setRemovedDatastores)}
                   ref={oldTreeRef} data={oldRenderTreeDataToRender} width={"100%"}
                   onSelect={(nodes) => onNodesSelect(nodes, "old")}
                   onFocus={(node) => onNodeFocus(node, "old")}
@@ -865,7 +872,7 @@ export const DiffTreeVisualization = (props: {
         <h3><DiffEditorEditIcon/></h3>
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
-            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), setCreatedDatastores, setRemovedDatastores)}
+            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdDatastores, setCreatedDatastores, removedDatastores, setRemovedDatastores)}
                   ref={newTreeRef} data={newRenderTreeDataToRender} width={"100%"}
                   onSelect={(nodes) => onNodesSelect(nodes, "new")}
                   onFocus={(node) => onNodeFocus(node, "new")}
