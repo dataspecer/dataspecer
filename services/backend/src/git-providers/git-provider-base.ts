@@ -1,9 +1,9 @@
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
-import { CommitReferenceType, ConvertRepoURLToDownloadZipURLReturnType, createRemoteRepositoryReturnType, ExtractedCommitReferenceValueFromRepositoryURL, CommitterInfo, GitProvider, GitProviderEnum, RepositoryURLParts, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials } from "@dataspecer/git";
+import { CommitReferenceType, ConvertRepoURLToDownloadZipURLReturnType, createRemoteRepositoryReturnType, GitProvider, GitProviderEnum, RepositoryURLPart, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, ExtractedCommitReferenceValueFromRepositoryURLExplicit, ExtractedCommitReferenceValueFromRepositoryURL } from "@dataspecer/git";
 import { simpleGit } from "simple-git";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
-import { ROOT_DIRECTORY_FOR_ANY_GIT } from "../models/git-store-info.ts";
+import { ROOT_DIRECTORY_FOR_PRIVATE_GITS } from "../models/git-store-info.ts";
 import { removePathRecursively } from "../utils/git-utils.ts";
 
 export abstract class GitProviderBase implements GitProvider {
@@ -46,7 +46,7 @@ export abstract class GitProviderBase implements GitProvider {
     let gitTmpDirectory: string;
     while (true) {
       const uuid = uuidv4();
-      gitTmpDirectory = `${ROOT_DIRECTORY_FOR_ANY_GIT}/tmp/${uuid}`;
+      gitTmpDirectory = `${ROOT_DIRECTORY_FOR_PRIVATE_GITS}/tmp/${uuid}`;
       if (!fs.existsSync(gitTmpDirectory)) {
         // We found unique directory to put repo into
         break;
@@ -118,7 +118,7 @@ export abstract class GitProviderBase implements GitProvider {
     return { commitReferenceValue, fallbackToDefaultBranch: false };
   }
 
-  extractPartOfRepositoryURL(repositoryURL: string, part: RepositoryURLParts): string | null {
+  extractPartOfRepositoryURL(repositoryURL: string, part: RepositoryURLPart): string | null {
     try {
       const parsedUrl = new URL(repositoryURL);
 
@@ -172,7 +172,7 @@ export abstract class GitProviderBase implements GitProvider {
     const zipURL = this.getZipDownloadLink(owner, repo, commitReferenceValueInfo.commitReferenceValue, commitReferenceTypeWithFallback);
     return {
       zipURL,
-      commitReferenceValueInfo,
+      commitReferenceValueInfo: commitReferenceValueInfo as ExtractedCommitReferenceValueFromRepositoryURLExplicit,   // If it was nullable we threw error
     };
   }
 

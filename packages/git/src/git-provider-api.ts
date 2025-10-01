@@ -3,7 +3,7 @@ import { Scope } from "./auth.ts";
 
 export type ConvertRepoURLToDownloadZipURLReturnType = {
   zipURL: string,
-  commitReferenceValueInfo: ExtractedCommitReferenceValueFromRepositoryURL,
+  commitReferenceValueInfo: ExtractedCommitReferenceValueFromRepositoryURLExplicit,
 };
 
 export enum AccessTokenType {
@@ -54,7 +54,7 @@ export type WebhookRequestDataGitProviderIndependent = {
 
 export type CommitReferenceType = "commit" | "branch" | "tag";
 
-export type RepositoryURLParts = CommitReferenceType | ("url-domain" | "repository-name" | "user-name");
+export type RepositoryURLPart = CommitReferenceType | ("url-domain" | "repository-name" | "user-name");
 
 export function isCommitReferenceType(value: string): value is CommitReferenceType {
   return value === "commit" || value === "branch" || value === "tag";
@@ -69,9 +69,14 @@ export function getDefaultCommitReferenceTypeForZipDownload(): CommitReferenceTy
 }
 
 export type ExtractedCommitReferenceValueFromRepositoryURL = {
-  commitReferenceValue: string | null,
-  fallbackToDefaultBranch: boolean,
-};
+  commitReferenceValue: string | null;
+  fallbackToDefaultBranch: boolean;
+}
+
+export type ExtractedCommitReferenceValueFromRepositoryURLExplicit = {
+  commitReferenceValue: string;
+  fallbackToDefaultBranch: boolean;
+}
 
 export type createRemoteRepositoryReturnType = {
   defaultBranch: string | null,
@@ -224,7 +229,7 @@ export interface GitProvider {
    *  In the example mff-uk is "user-name" and dataspecer is "repository-name".
    *  For "branch" returns null, if it not explicitly provided in the {@link repositoryURL}.
    */
-  extractPartOfRepositoryURL(repositoryURL: string, part: RepositoryURLParts): string | null;
+  extractPartOfRepositoryURL(repositoryURL: string, part: RepositoryURLPart): string | null;
 
   /**
    * Converts given {@link repositoryURL} to zip download link. Note that this method is implemented in {@link GitProviderBase}.

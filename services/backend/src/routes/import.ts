@@ -29,6 +29,9 @@ import { buffer } from "stream/consumers";
 import { CommitReferenceType, getDefaultCommitReferenceTypeForZipDownload, GitProvider, isCommitReferenceType } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { updateGitRelatedDataForPackage } from "./link-to-existing-remote-git-repo.ts";
+import { createSimpleGit, gitCloneBasic } from "../utils/simple-git-utils.ts";
+import { INTERNAL_COMPUTATION_FOR_IMPORT } from "../models/git-store-info.ts";
+import { removePathRecursively } from "../utils/git-utils.ts";
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
   const result: LanguageString = {};
@@ -435,15 +438,36 @@ export async function importFromGitUrl(repositoryURL: string, commitReferenceTyp
   // Create buffer from them stream, no need to touch filesystem.
   const zipBuffer: Buffer = await buffer(webReadableStream);
 
-
   const importer = new PackageImporter(resourceModel);
   const imported = await importer.doImport(zipBuffer, true);
 
+  const isCommitReferenceTypeKnown = gitZipDownloadURLData.commitReferenceValueInfo.fallbackToDefaultBranch || gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue === null;
+  if (!isCommitReferenceTypeKnown) {
+    commitReferenceType = await getCommitReferenceTypeUsingGitClone(imported[0], repositoryURL, gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue);
+  }
   if (imported.length > 0) {
     await updateGitRelatedDataForPackage(imported[0], gitProvider, repositoryURL, gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue, commitReferenceType);
   }
 
   return imported;
+}
+
+async function getCommitReferenceTypeUsingGitClone(iri: string, repositoryURL: string, commitReferenceValue: string): Promise<CommitReferenceType> {
+  const { git, gitInitialDirectory, gitDirectoryToRemoveAfterWork } = createSimpleGit(iri, INTERNAL_COMPUTATION_FOR_IMPORT, false);
+  let commitReferenceType: CommitReferenceType;
+  try {
+    await gitCloneBasic(git, gitInitialDirectory, repositoryURL, true, true, commitReferenceValue, 1);
+    commitReferenceType = "branch";
+  }
+  catch {
+    // It happened because we failed to clone branch, which means it has to be a tag.
+    commitReferenceType = "commit";
+  }
+  finally {
+    removePathRecursively(gitDirectoryToRemoveAfterWork);
+  }
+
+  return commitReferenceType;
 }
 
 /**
@@ -460,15 +484,14 @@ export const importPackageFromGit = asyncHandler(async (request: express.Request
   });
 
   const query = querySchema.parse(request.query);
-
-  const commitReferenceType = query.commitReferenceType;
+  const { gitURL, commitReferenceType } = query;
 
   if (commitReferenceType !== undefined && !isCommitReferenceType(commitReferenceType)) {
     response.status(404).json(`Invalid commitReferenctType: ${commitReferenceType}`);
     return;
   }
 
-  const [result] = await importFromGitUrl(query.gitURL, commitReferenceType);
+  const [result] = await importFromGitUrl(gitURL, commitReferenceType);
 
   response.send(result);
   return;
