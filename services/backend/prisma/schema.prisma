@@ -70,17 +70,6 @@ model Resource {
   lastCommitHash String @default("")
   // If false then there exists commit in remote git repo, which failed to be pushed to DS through webhook, because of conflicts.
   isSynchronizedWithRemote Boolean @default(true)
-  // When this is empty string, then it means the branch has currently no remaining merge commit.
-  // If it is not empty, then it means there is another branch in DS, which finished mergeState, but
-  // merge commit itself was not yet commited and pushed to Git repo.
-  mergeFromHash String @default("")
-  // We only need this for the commit message, otherwise it should be equivalent to using git merge with hash
-  // Note that if this is empty, then it means that we merged directly from commit.
-  // Also note that if the tip of branch moved, then the user should be probably warned, that he is performing merge directly from commit.
-  // (which as said before only reflects in the default commit message).
-  mergeFromBranch String @default("")
-  // The merge from is only for branches inside DS. So they have iri available.
-  mergeFromIri String @default("")
 
   // Technical metadata: creation date.
   createdAt DateTime @default(now())
@@ -112,12 +101,18 @@ model MergeState {
   // So what to take from this: We always want to modify our local DS branch and the remote to be unchanged
   //  - However local branch can be either mergeFrom or mergeTo. And that means that "mergeTo !== must be editable", which I thought is the case at first
   lastCommitHashMergeTo String @default("")
+  branchMergeTo String
   rootFullPathToMetaMergeTo String @default("")
   rootIriMergeTo String @default("")
   // Only values from AvailableFilesystem are allowed (for now "ds-filesystem" and "classic-filesystem")
   filesystemTypeMergeTo String
 
   lastCommitHashMergeFrom String @default("")
+  // We only need this for the commit message, otherwise it should be equivalent to using git merge with hash
+  // Note that if this is empty, then it means that we merged directly from commit.
+  // Also note that if the tip of branch moved, then the user should be probably warned, that he is performing merge directly from commit.
+  // (which as said before only reflects in the default commit message).
+  branchMergeFrom String
   rootFullPathToMetaMergeFrom String @default("")
   rootIriMergeFrom String @default("")
   // Only values from AvailableFilesystem are allowed (for now "ds-filesystem" and "classic-filesystem")

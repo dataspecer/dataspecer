@@ -44,6 +44,7 @@ type UpdateMergeStateInput = {
 
 type MergeEndInfoInternal = {
   lastCommitHash: string;
+  branch: string;
   rootFullPathToMeta: string;
   filesystemType: AvailableFilesystems;
 }
@@ -62,6 +63,7 @@ function convertToMergeInfoWithIri(input: MergeEndInfoWithRootNode): MergeEndInf
     lastCommitHash: input.lastCommitHash,
     rootFullPathToMeta: input.rootFullPathToMeta,
     rootIri: input.rootNode.metadataCache.iri ?? "",
+    branch: input.branch,
   };
 }
 
@@ -271,15 +273,6 @@ export class MergeStateModel implements ResourceChangeListener {
     // TODO RadStr: Or just for now don't do anything about it ... make the user commit again
   }
 
-  private async handleMergeFinalizer(mergeState: MergeState) {
-    const mergeFromResource = await this.resourceModel.getResource(mergeState.rootIriMergeFrom);
-    if (mergeFromResource === null) {
-      throw new Error("The merge from resource does not exist");
-    }
-    await this.resourceModel.updateMergeData(
-      mergeState.rootIriMergeTo, mergeFromResource.lastCommitHash,
-      mergeFromResource.branch, mergeFromResource.iri);
-  }
 
   /**
    * This method checks if the list of unresolved conflicts is empty and if so it removes the entry and updates relevant data.
@@ -298,7 +291,9 @@ export class MergeStateModel implements ResourceChangeListener {
       await this.handlePushFinalizer(mergeState);
     }
     else if (mergeState.mergeStateCause === "merge") {
-      await this.handleMergeFinalizer(mergeState);
+      // In case of merge it is removed on successful merge commit by user
+      // TODO RadStr: But when to finalize?
+      return true;
     }
     await this.removeMergeState(mergeState);
 
@@ -396,6 +391,22 @@ export class MergeStateModel implements ResourceChangeListener {
     return this.prismaMergeStateToMergeState(mergeState);
   }
 
+  async getMergeStatesForMergeTo(
+    rootIriMergeTo: string,
+    shouldIncludeMergeStateData: boolean
+  ): Promise<MergeStateWithoutData[] | MergeStateWithData[]> {
+    const mergeStates = await this.prismaClient.mergeState.findMany({
+      where: {
+        rootIriMergeTo: rootIriMergeTo,
+      },
+      include: {
+        mergeStateData: shouldIncludeMergeStateData,
+      },
+    });
+
+    return mergeStates;
+  }
+
   /**
    * @returns The inputs as string. Or undefined if null is provided (that is skip the update of parameter).
    *  The output of this method can be directly used to set the data in prisma database.
@@ -445,10 +456,12 @@ export class MergeStateModel implements ResourceChangeListener {
           rootIriMergeFrom: inputData.mergeFromInfo.rootIri,
           rootFullPathToMetaMergeFrom: inputData.mergeFromInfo.rootFullPathToMeta,
           lastCommitHashMergeFrom: inputData.mergeFromInfo.lastCommitHash,
+          branchMergeFrom: inputData.mergeFromInfo.branch,
           filesystemTypeMergeFrom: inputData.mergeFromInfo.filesystemType,
           rootIriMergeTo: inputData.mergeToInfo.rootIri,
           rootFullPathToMetaMergeTo: inputData.mergeToInfo.rootFullPathToMeta,
           lastCommitHashMergeTo: inputData.mergeToInfo.lastCommitHash,
+          branchMergeTo: inputData.mergeToInfo.branch,
           filesystemTypeMergeTo: inputData.mergeToInfo.filesystemType,
           conflictCount: inputData.allConflicts.length,
           mergeStateData: {
@@ -491,10 +504,12 @@ export class MergeStateModel implements ResourceChangeListener {
           rootIriMergeFrom: inputData.mergeFromInfo.rootIri,
           rootFullPathToMetaMergeFrom: inputData.mergeFromInfo.rootFullPathToMeta,
           lastCommitHashMergeFrom: inputData.mergeFromInfo.lastCommitHash,
+          branchMergeFrom: inputData.mergeFromInfo.branch,
           filesystemTypeMergeFrom: inputData.mergeFromInfo.filesystemType,
           rootIriMergeTo: inputData.mergeToInfo.rootIri,
           rootFullPathToMetaMergeTo: inputData.mergeToInfo.rootFullPathToMeta,
           lastCommitHashMergeTo: inputData.mergeToInfo.lastCommitHash,
+          branchMergeTo: inputData.mergeToInfo.branch,
           filesystemTypeMergeTo: inputData.mergeToInfo.filesystemType,
           conflictCount: inputData.allConflicts.length,
           mergeStateData: {
@@ -661,6 +676,7 @@ export class MergeStateModel implements ResourceChangeListener {
         git: gitForMergeFrom,
         gitProvider: gitProviderForMergeFrom,
         lastCommitHash: prismaMergeState.lastCommitHashMergeFrom,
+        branch: prismaMergeState.branchMergeFrom,
       };
 
 
@@ -673,6 +689,7 @@ export class MergeStateModel implements ResourceChangeListener {
         git: gitForMergeTo,
         gitProvider: gitProviderForMergeTo,
         lastCommitHash: prismaMergeState.lastCommitHashMergeTo,
+        branch: prismaMergeState.branchMergeTo,
       };
 
       const updatedMergeStateResult = await updateMergeStateToBeUpToDate(prismaMergeState.uuid, mergeFrom, mergeTo, prismaMergeState.mergeStateCause as MergeStateCause);

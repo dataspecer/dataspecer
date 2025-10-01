@@ -32,7 +32,10 @@ export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (requ
   try {
     await gitCloneBasic(git, gitInitialDirectory, mergeFromResource.linkedGitRepositoryURL, false, true, undefined);
 
-    const { createdMergeStateId, hasConflicts } = await createMergeStateBetweenDSPackages(git, mergeFromIri, mergeFromResource.lastCommitHash, mergeToIri, mergeToResource.lastCommitHash);
+    const { createdMergeStateId, hasConflicts } = await createMergeStateBetweenDSPackages(
+      git,
+      mergeFromIri, mergeFromResource.lastCommitHash, mergeFromResource.branch,
+      mergeToIri, mergeToResource.lastCommitHash, mergeToResource.branch);
 
     if (!hasConflicts) {
       response.status(200);
@@ -67,8 +70,10 @@ export async function createMergeStateBetweenDSPackages(
   git: SimpleGit,
   mergeFromRootIri: string,
   mergeFromLastCommitHash: string,
+  mergeFromBranch: string,
   mergeToRootIri: string,
   mergeToLastCommitHash: string,
+  mergeToBranch: string,
 ): Promise<{ createdMergeStateId: string, hasConflicts: boolean }> {
   const mergeFromForComparison: MergeEndpointForComparison = {
     rootIri: mergeFromRootIri,
@@ -97,6 +102,7 @@ export async function createMergeStateBetweenDSPackages(
       rootNode: rootMergeFrom,
       filesystemType: AvailableFilesystems.DS_Filesystem,
       lastCommitHash: lastHashMergeFrom,
+      branch: mergeFromBranch,
       rootFullPathToMeta: pathToRootMetaMergeFrom,
     };
 
@@ -104,6 +110,7 @@ export async function createMergeStateBetweenDSPackages(
       rootNode: rootMergeTo,
       filesystemType: AvailableFilesystems.DS_Filesystem,
       lastCommitHash: lastHashMergeTo,
+      branch: mergeToBranch,
       rootFullPathToMeta: pathToRootMetaMergeTo,
     };
 
@@ -129,6 +136,7 @@ export type MergeEndpointForComparison = {
 export type MergeEndpointForStateUpdate = {
   git: SimpleGit | null,
   lastCommitHash: string,
+  branch: string,
 } & MergeEndpointForComparison
 
 export async function updateMergeStateToBeUpToDate(
@@ -170,6 +178,7 @@ export async function updateMergeStateToBeUpToDate(
       rootNode: rootMergeFrom,
       filesystemType: mergeFrom.filesystemType,
       lastCommitHash: mergeFrom.lastCommitHash,
+      branch: mergeFrom.branch,
       rootFullPathToMeta: pathToRootMetaMergeFrom,
     };
 
@@ -177,6 +186,7 @@ export async function updateMergeStateToBeUpToDate(
       rootNode: rootMergeTo,
       filesystemType: mergeTo.filesystemType,
       lastCommitHash: mergeTo.lastCommitHash,
+      branch: mergeTo.branch,
       rootFullPathToMeta: pathToRootMetaMergeTo,
     };
 

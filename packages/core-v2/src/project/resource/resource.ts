@@ -33,9 +33,6 @@ export interface BaseResource {
     branch: string;
     lastCommitHash: string;
     isSynchronizedWithRemote: boolean;
-    mergeFromHash: string;
-    mergeFromBranch: string;
-    mergeFromIri: string;
 }
 
 export interface Package extends BaseResource {

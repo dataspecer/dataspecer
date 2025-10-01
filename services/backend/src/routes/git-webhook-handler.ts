@@ -63,6 +63,7 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
   dsLastCommitHash: string,
   gitLastCommitHash: string,
   commonCommitHash: string,
+  branch: string,
   mergeStateCause: Omit<MergeStateCause, "merge">,
 ): Promise<boolean> {
   // Merge from is DS
@@ -86,12 +87,14 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
     rootNode: rootMergeFrom,
     filesystemType: filesystemMergeFrom.getFilesystemType(),
     lastCommitHash: lastHashMergeFrom,
+    branch: branch,
     rootFullPathToMeta: pathToRootMetaMergeFrom,
   };
   const mergeToInfo: MergeEndInfoWithRootNode = {
     rootNode: rootMergeTo,
     filesystemType: filesystemMergeTo.getFilesystemType(),
     lastCommitHash: lastHashMergeTo,
+    branch: branch,
     rootFullPathToMeta: pathToRootMetaMergeTo,
   };
 

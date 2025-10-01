@@ -12,19 +12,3 @@ export const clearMergeStateTableDebug = asyncHandler(async (request: express.Re
   response.sendStatus(200);
   return;
 });
-
-
-/**
- * TODO RadStr: Just for debugging
- */
-export const clearMergeFromDataFromResourceDebug = asyncHandler(async (request: express.Request, response: express.Response) => {
-  const querySchema = z.object({
-    iri: z.string().min(1),
-  });
-
-  const { iri } = querySchema.parse(request.query);
-  await resourceModel.updateMergeData(iri, "", "", "");
-
-  response.sendStatus(200);
-  return;
-});

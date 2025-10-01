@@ -81,14 +81,10 @@ async function serializePackageModel(packageModel: PackageModel): Promise<Packag
     representsBranchHead: true,       // TODO RadStr: I don't know about this, probably should be specified
     lastCommitHash: "",               // TODO RadStr: I don't know about this, probably should be specified
     isSynchronizedWithRemote: true,   // TODO RadStr: I don't know about this, probably should be specified
-    mergeFromHash: "",                // TODO RadStr: I don't know about this, probably should be specified
-    mergeFromBranch: "",              // TODO RadStr: I don't know about this, probably should be specified
-    mergeFromIri: "",              // TODO RadStr: I don't know about this, probably should be specified
 
 
-
-    subResources
-  }
+    subResources,
+  };
 
 }
 

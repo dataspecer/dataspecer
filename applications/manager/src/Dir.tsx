@@ -39,7 +39,7 @@ import { OpenMergeState } from "./dialog/open-merge-state";
 import { useLogin, UseLoginType } from "./hooks/use-login";
 import SetPrivateSSHKeyDialog from "./dialog/set-private-ssh";
 import { isGitUrlSet, PACKAGE_ROOT } from "@dataspecer/git";
-import { debugClearMergeFromDataFromResource, debugClearMergeStateDBTable } from "./utils/merge-state-fetch-methods";
+import { debugClearMergeStateDBTable } from "./utils/merge-state-fetch-methods";
 import { manualPull, removeGitLinkFromPackage, switchRepresentsBranchHead } from "./utils/git-fetch-related-actions";
 
 export function lng(text: LanguageString | undefined): string | undefined {
@@ -249,7 +249,6 @@ const Row = ({ iri, projectFilter, setProjectFilter, isSignedIn, mergeActors, pa
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             {/* TODO RadStr: Just for debugging ! */}
-            {<DropdownMenuItem onClick={() => debugClearMergeFromDataFromResource(iri)}><ShieldQuestion className="mr-2 h-4 w-4" />DEBUG - Clear merge from data</DropdownMenuItem>}
             {<DropdownMenuItem onClick={() => debugClearMergeStateDBTable()}><ShieldQuestion className="mr-2 h-4 w-4" />DEBUG - Clear merge db state table</DropdownMenuItem>}
             {<DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/git/redirect-to-remote-git-repository?iri=" + encodeURIComponent(iri)}><Eye className="mr-2 h-4 w-4" />Visit the remote repository</a></DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git branch visualization</DropdownMenuItem>}

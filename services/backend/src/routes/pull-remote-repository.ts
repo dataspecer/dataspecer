@@ -66,7 +66,7 @@ export const updateDSRepositoryByPullingGit = async (
     const commonCommit = await getCommonCommitInHistory(git, dsLastCommitHash, gitLastCommitHash);
     hasConflicts = await saveChangesInDirectoryToBackendFinalVersion(
       gitInitialDirectoryParent, iri, gitProvider, true,
-      gitLastCommitHash, dsLastCommitHash, commonCommit, "pull");    // TODO RadStr: Not sure about setting the metadata cache (+ we need it always in the call, so the true should be actaully set inside the called method, and the argument should not be here at all)
+      dsLastCommitHash, gitLastCommitHash, commonCommit, branch, "pull");    // TODO RadStr: Not sure about setting the metadata cache (+ we need it always in the call, so the true should be actaully set inside the called method, and the argument should not be here at all)
   }
   catch (cloneError) {
     console.error({cloneError});

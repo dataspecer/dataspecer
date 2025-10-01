@@ -104,12 +104,19 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
     givenRepositoryName: repoName!,
   };
 
+  // TODO RadStr: Not entirely sure about this ... I guess that I should just call merge commit explictly when finalizing instead of doing this, it will be easier to implement
+  const mergeStatesForResource = await mergeStateModel.getMergeStatesForMergeTo(resource.iri, false);
+  if (mergeStatesForResource.length > 1) {
+    throw new Error(`Too many merge states, where the given resource (${resource.iri}) figures as mergeTo actor`);
+  }
+
+
   const branchAndLastCommit: CommitBranchAndHashInfo = {
     localBranch: branch,
     localLastCommitHash: resource.lastCommitHash,
-    mergeFromBranch: resource.mergeFromBranch,
-    mergeFromCommitHash: resource.mergeFromHash,
-    mergeFromIri: resource.mergeFromIri,
+    mergeFromBranch: mergeStatesForResource[0].branchMergeFrom,
+    mergeFromCommitHash: mergeStatesForResource[0].lastCommitHashMergeFrom,
+    mergeFromIri: mergeStatesForResource[0].rootIriMergeFrom,
   };
 
   const gitCommitInfo: GitCommitToCreateInfoBasic = {
@@ -214,7 +221,6 @@ async function commitDSMergeToGit(
     if (!cloneResult.isClonedSuccessfully) {
       continue;
     }
-    const mergeToBranchExplicit: string = (await git.branch()).current;
 
     const mergeFromBranchLog = await git.log([mergeFromBranch]);
     const lastMergeFromBranchCommitInGit = mergeFromBranchLog.latest?.hash;
@@ -251,12 +257,14 @@ async function commitDSMergeToGit(
         rootNode: rootMergeFrom,
         filesystemType: filesystemMergeFrom.getFilesystemType(),
         lastCommitHash: mergeFromCommitHash,
+        branch: mergeFromBranch,
         rootFullPathToMeta: pathToRootMetaMergeFrom,
       };
       const mergeToInfo: MergeEndInfoWithRootNode = {
         rootNode: rootMergeTo,
         filesystemType: filesystemMergeTo.getFilesystemType(),
         lastCommitHash: mergeToCommitHash,
+        branch: cloneResult.mergeToBranchExplicitName,
         rootFullPathToMeta: pathToRootMetaMergeTo,
       };
 
@@ -336,18 +344,21 @@ async function commitClassicToGit(
             filesystemMergeTo,
           } = await compareGitAndDSFilesystems(gitProvider, iri, gitInitialDirectoryParent, "push");
 
+          const branchExplicit = (await git.branch()).current;
           const commonCommitHash = await getCommonCommitInHistory(git, localLastCommitHash, remoteRepositoryLastCommitHash);
           const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS("push", localLastCommitHash, remoteRepositoryLastCommitHash);
           const mergeFromInfo: MergeEndInfoWithRootNode = {
             rootNode: rootMergeFrom,
             filesystemType: filesystemMergeFrom.getFilesystemType(),
             lastCommitHash: lastHashMergeFrom,
+            branch: branchExplicit,
             rootFullPathToMeta: pathToRootMetaMergeFrom,
           };
           const mergeToInfo: MergeEndInfoWithRootNode = {
             rootNode: rootMergeTo,
             filesystemType: filesystemMergeTo.getFilesystemType(),
             lastCommitHash: lastHashMergeTo,
+            branch: branchExplicit,
             rootFullPathToMeta: pathToRootMetaMergeTo,
           };
 
@@ -536,6 +547,7 @@ async function fillGitDirectoryWithExport(
 type CloneBeforeMergeResult = {
   mergeFromBranchExists: boolean;
   mergeToBranchExists: boolean;
+  mergeToBranchExplicitName: string;
   isClonedSuccessfully: boolean;
 }
 
@@ -585,6 +597,7 @@ async function cloneBeforeMerge(
     else {
       mergeToBranchExists = await checkoutBranchIfExists(git, branches, mergeToBranch);
     }
+    const mergeToBranchExplicitName = (await git.branch()).current;
 
 
     const currentBranch = (await git.branch()).current;
@@ -594,6 +607,7 @@ async function cloneBeforeMerge(
     cloneResult = {
       mergeFromBranchExists,
       mergeToBranchExists,
+      mergeToBranchExplicitName: mergeToBranchExplicitName,
       isClonedSuccessfully: true,
     };
   }
@@ -601,6 +615,7 @@ async function cloneBeforeMerge(
     cloneResult = {
       mergeFromBranchExists,
       mergeToBranchExists,
+      mergeToBranchExplicitName: "",    // We failed anyways, so no need to provide correct value if it is present
       isClonedSuccessfully: false,
     };
   }

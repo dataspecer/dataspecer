@@ -51,7 +51,7 @@ import { getMergeStates } from "./routes/get-merge-states.ts";
 import { updateMergeState } from "./routes/update-merge-state.ts";
 import { finalizeMergeState } from "./routes/finalize-merge-state.ts";
 import { createMergeStateBetweenDSPackagesHandler } from "./routes/create-merge-state.ts";
-import { clearMergeFromDataFromResourceDebug, clearMergeStateTableDebug } from "./routes/debug-clear-merge-state-table.ts";
+import { clearMergeStateTableDebug } from "./routes/debug-clear-merge-state-table.ts";
 import { storeNewPrivateSSHKeyToBackend, storePrivateSSHKey } from "./routes/store-private-ssh-key.ts";
 import { GIT_RAD_STR_BOT_SSH_ID, GIT_RAD_STR_BOT_SSH_PRIVATE_KEY } from "./git-never-commit.ts";
 import { removeMergeState } from "./routes/remove-merge-state.ts";
@@ -216,7 +216,6 @@ application.post(apiBasename + "/git/remove-merge-state", removeMergeState);
 
 // TODO RadStr: Just for debugging !
 application.post(apiBasename + "/git/debug-clear-merge-state-table", clearMergeStateTableDebug);
-application.post(apiBasename + "/git/debug-clear-merge-from-data-from-resource", clearMergeFromDataFromResourceDebug);
 
 // TODO RadStr: Once I update the URL don't forget to update the ngrok URL in git providers to the same URL suffix
 application.post(apiBasename + "/git/webhook-test", currentSession, handleWebhook);

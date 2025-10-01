@@ -44,10 +44,6 @@ export interface BaseResource {
     representsBranchHead: boolean;
     lastCommitHash: string;
     isSynchronizedWithRemote: boolean;
-    mergeFromHash: string;
-    mergeFromBranch: string;
-    mergeFromIri: string;
-
 
     dataStores: Record<string, string>;
 }
@@ -352,19 +348,6 @@ export class ResourceModel {
         await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified);
     }
 
-    async updateMergeData(iri: string, mergeFromHash: string, mergeFromBranch: string, mergeFromIri: string) {
-        await this.prismaClient.resource.update({
-            where: {iri},
-            data: {
-                mergeFromHash,
-                mergeFromBranch,
-                mergeFromIri,
-            }
-        });
-        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified);
-    }
-
-
     async updateRepresentsBranchHead(iri: string, commitReferenceType: CommitReferenceType) {
         await this.prismaClient.resource.update({
             where: {iri},
@@ -473,9 +456,6 @@ export class ResourceModel {
             representsBranchHead: prismaResource.representsBranchHead,
             lastCommitHash: prismaResource.lastCommitHash,
             isSynchronizedWithRemote: prismaResource.isSynchronizedWithRemote,
-            mergeFromHash: prismaResource.mergeFromHash,
-            mergeFromBranch: prismaResource.mergeFromBranch,
-            mergeFromIri: prismaResource.mergeFromIri,
         }
     }
 
