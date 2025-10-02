@@ -8,6 +8,12 @@ import { AvailableFilesystems, FilesystemAbstraction, getDatastoreInfoOfGivenDat
 export type CreateDatastoreFilesystemNodesInfo = {
   parentProjectIri: string,
   treePath: string,
+  userMetadataDatastoreInfo: DatastoreInfo,
+};
+
+export type CreateDatastoreFilesystemNodesData = {
+  parentProjectIri: string,
+  treePath: string,
   userMetadata: ExportMetadataCacheType,
 };
 
@@ -191,7 +197,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
 
 
   public static async createDatastoreDirectly(
-    createdFilesystemNodesInTreePath: CreateDatastoreFilesystemNodesInfo[],
+    createdFilesystemNodesInTreePath: CreateDatastoreFilesystemNodesData[],
     parentIri: string,
     content: string,
     backendFilesystem: AvailableFilesystems | null,
@@ -229,7 +235,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
 
   async createDatastore(parentIriInToBeChangedFilesystem: string, otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean> {
     const content = await ClientFilesystem.getDatastoreContentDirectly(changedDatastore, true, this.backendApiPath, this.backendFilesystem);
-    const filesystemNodesInTreePath: CreateDatastoreFilesystemNodesInfo[] = [];
+    const filesystemNodesInTreePath: CreateDatastoreFilesystemNodesData[] = [];
     let currentNode = filesystemNode;
     let parent: DirectoryNode | null = null;
     while (currentNode !== null) {

@@ -6,24 +6,11 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import { stringToBoolean } from "../utils/git-utils.ts";
 import { z } from "zod";
 import { isAccessibleGitRepository } from "../models/git-store-info.ts";
-import { AvailableFilesystems, CreateDatastoreFilesystemNodesInfo, convertDatastoreContentBasedOnFormat } from "@dataspecer/git";
+import { AvailableFilesystems, CreateDatastoreFilesystemNodesData, convertDatastoreContentBasedOnFormat } from "@dataspecer/git";
 import path from "path";
 import { updateBlob } from "./resource.ts";
 import { v4 as uuidv4 } from "uuid";
 
-
-// export async function setDatastoreContent(pathToDatastore: string, filesystem: AvailableFilesystems, type: string, newContent: string, format?: string) {
-//   throw new Error("TODO:");
-
-//   // TODO RadStr: Run conversion on client?
-//   if (filesystem === AvailableFilesystems.ClassicFilesystem) {
-//     const content = fs.readFileSync(pathToDatastore, "utf-8");
-//     return convertDatastoreBasedOnFormat(content, format ?? null, shouldConvertToDatastoreFormat);
-//   }
-//   else {
-//     return await DSFilesystem.getDatastoreContentForPath(resourceModel, pathToDatastore, type, format ?? null, shouldConvertToDatastoreFormat);
-//   }
-// }
 
 export async function getDatastoreContent(
   pathToDatastore: string,
@@ -130,7 +117,7 @@ export async function removeDatastoreContent(
  * @param parentIri This is the actual iri of the first parent (not project iri), under which we will connect the chain of new
  */
 export async function createDatastoreContent(
-  filesystemNodesInTreePath: CreateDatastoreFilesystemNodesInfo[],
+  filesystemNodesInTreePath: CreateDatastoreFilesystemNodesData[],
   parentIri: string,
   filesystem: AvailableFilesystems,
   type: string,

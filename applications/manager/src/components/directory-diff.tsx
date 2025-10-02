@@ -414,7 +414,7 @@ function StyledNode({
 
               const parentId = node.parent?.data.id!;   // The parent exists and it is not datastore
               const parentTreePath = parentId.substring(0, parentId?.length - "-new".length);
-              node.data.changeActiveModel(parentTreePath, node.data.fullDatastoreInfoInOriginalTree, node.data.fullDatastoreInfoInModifiedTree, true);
+              node.data.changeActiveModel(parentTreePath, node.data.fullDatastoreInfoInOriginalTree, node.data.fullDatastoreInfoInModifiedTree, true, true);
             }
           }}
           onMouseOver={(_e) => {
@@ -424,8 +424,8 @@ function StyledNode({
             handleMouseHoverHighlightingForNode(node, false);
           }}
         >
-          {<p className={`font-bold pt-1 pr-1 text-xs ${node.data.isNewlyCreated || node.data.isAffectedByCreate ? "invisible" : "visible"}`}>C</p>}
-          {<p className={`font-bold pt-1 pr-1 text-xs ${node.data.isNewlyRemoved ? "invisible" : "visible"}`}>D</p>}
+          {<p className={`font-bold pt-1 pr-1 text-xs ${(node.data.isNewlyCreated || node.data.isAffectedByCreate) ? "visible": "invisible"}`}>C</p>}
+          {<p className={`font-bold pt-1 pr-1 text-xs ${node.data.isNewlyRemoved ? "visible" : "invisible"}`}>D</p>}
           {<p className={`font-bold pt-1 pr-1 text-xs ${Math.random() > 0.5 ? "invisible" : "visible"}`}>Rand</p>}
           {icon}
           <span className={textClassName}>{node.data.name}</span>
@@ -514,7 +514,7 @@ const createStyledNode = (
   shouldShowConflicts: boolean,
   allConficts: ComparisonData[],
   setConflictsToBeResolvedOnSave: (value: React.SetStateAction<ComparisonData[]>) => void,
-  entriesAffectedByCreateAsArray: CreateDatastoreFilesystemNodesInfo[],
+  createdFilesystemNodesAsArray: CreateDatastoreFilesystemNodesInfo[],
   createdDatastores: DatastoreInfo[],
   setCreatedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void,
   removedDatastores: DatastoreInfo[],
@@ -525,11 +525,13 @@ const createStyledNode = (
   extendedProps.node.data.shouldShowConflicts = shouldShowConflicts;
   extendedProps.node.data.allConficts = allConficts;
   extendedProps.node.data.setConflictsToBeResolvedOnSave = setConflictsToBeResolvedOnSave;
-  extendedProps.node.data.isNewlyCreated = createdDatastores.find(createdDatastore => createdDatastore.fullPath === extendedProps.node.data.fullDatastoreInfoInOriginalTree?.fullPath) === undefined;
-  extendedProps.node.data.isAffectedByCreate = entriesAffectedByCreateAsArray
-    .find(entry => entry.treePath === extendedProps.node.data.id.slice(0, "-new".length)) !== undefined;
+  extendedProps.node.data.isNewlyCreated = createdDatastores.find(createdDatastore => createdDatastore.fullPath === extendedProps.node.data.fullDatastoreInfoInOriginalTree?.fullPath) !== undefined;
+  extendedProps.node.data.isAffectedByCreate = createdFilesystemNodesAsArray
+    .find(filesystemNode => {
+      return filesystemNode.treePath === extendedProps.node.data.id.slice(0, -"-new".length);
+    }) !== undefined;
   extendedProps.node.data.setCreatedDatastores = setCreatedDatastores;
-  extendedProps.node.data.isNewlyRemoved = removedDatastores.find(removedDatastore => removedDatastore.fullPath === extendedProps.node.data.fullDatastoreInfoInModifiedTree?.fullPath) === undefined;
+  extendedProps.node.data.isNewlyRemoved = removedDatastores.find(removedDatastore => removedDatastore.fullPath === extendedProps.node.data.fullDatastoreInfoInModifiedTree?.fullPath) !== undefined;
   extendedProps.node.data.setRemovedDatastores = setRemovedDatastores;
 
   const [shouldBeHighlighted, setShouldBeHighlighted] = useState<boolean>(false);
@@ -628,7 +630,7 @@ export const DiffTreeVisualization = (props: {
   mergeStateFromBackend: MergeState | null,
   conflictsToBeResolvedOnSaveFromParent: ComparisonData[],
   setConflictsToBeResolvedOnSave: Dispatch<SetStateAction<ComparisonData[]>>,
-  entriesAffectedByCreate: Record<string, EntriesAffectedByCreateType>,
+  createdFilesystemNodes: Record<string, EntriesAffectedByCreateType>,
   createdDatastores: DatastoreInfo[],
   setCreatedDatastores: Dispatch<SetStateAction<DatastoreInfo[]>>,
   removedDatastores: DatastoreInfo[],
@@ -637,9 +639,9 @@ export const DiffTreeVisualization = (props: {
   const {
     createdDatastores, setCreatedDatastores,
     removedDatastores, setRemovedDatastores,
-    setConflictsToBeResolvedOnSave, entriesAffectedByCreate
+    setConflictsToBeResolvedOnSave, createdFilesystemNodes
   } = props;
-  const entriesAffectedByCreateAsArray = Object.values(entriesAffectedByCreate).map(entry => entry.createdFilesystemNodes).flat();
+  const createdFilesystemNodesAsArray = Object.values(createdFilesystemNodes).map(filesystemNode => filesystemNode.createdFilesystemNodes).flat();
 
   const mergeStateFromBackend: MergeState | null = props.mergeStateFromBackend;
 
@@ -869,7 +871,7 @@ export const DiffTreeVisualization = (props: {
         <h3><DiffEditorCrossedOutEditIcon/></h3>
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
-            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), entriesAffectedByCreateAsArray, createdDatastores, setCreatedDatastores, removedDatastores, setRemovedDatastores)}
+            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, setCreatedDatastores, removedDatastores, setRemovedDatastores)}
                   ref={oldTreeRef} data={oldRenderTreeDataToRender} width={"100%"}
                   onSelect={(nodes) => onNodesSelect(nodes, "old")}
                   onFocus={(node) => onNodeFocus(node, "old")}
@@ -882,7 +884,7 @@ export const DiffTreeVisualization = (props: {
         <h3><DiffEditorEditIcon/></h3>
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
-            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), entriesAffectedByCreateAsArray, createdDatastores, setCreatedDatastores, removedDatastores, setRemovedDatastores)}
+            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, setCreatedDatastores, removedDatastores, setRemovedDatastores)}
                   ref={newTreeRef} data={newRenderTreeDataToRender} width={"100%"}
                   onSelect={(nodes) => onNodesSelect(nodes, "new")}
                   onFocus={(node) => onNodeFocus(node, "new")}
