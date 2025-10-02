@@ -396,6 +396,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
         createdDatastoresInPreviousIteration.current
           .find(previouslyCreatedDatastore => previouslyCreatedDatastore.fullPath === createdDatastore.fullPath) === undefined);
 
+    console.info({newlyCreatedDatastores, createdDatastores, createdDatastoresInPreviousIteration});
+
 
     const { editable: editableCacheContents, nonEditable: nonEditableCacheContent } = getEditableAndNonEditableValue(editable, convertedCacheForMergeFromContent, convertedCacheForMergeToContent);
     for (const [nodeTreePath, datastoreInfoMap] of Object.entries(datastoreInfosForCacheEntries)) {
@@ -437,10 +439,9 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
             throw new Error(`The parent of node does not exist for some reason: ${currentNodeTreePath}, in which we ended up from ${nodeTreePath}`);
           }
           if (currentDiffNode.resourceComparisonResult === "exists-in-old") {
-            // Using the !, since the value is relevant only when the old (non-editable) value exists
+            // Using the ! on existingResouce, since the value is relevant only when the old (non-editable) value exists
             const { nonEditable: existingResource } = getEditableAndNonEditableValue(editable, currentDiffNode?.resources.old, currentDiffNode?.resources.new);
             console.info({lastTreePathSeparatorIndex: treePathSeparatorIndex, len: currentNodeTreePath.length, currentIri, currentNodeTreePath, nodeTreePath, currentNode: currentDiffNode, difftree: examinedMergeState?.diffTreeData?.diffTree});    // TODO RadStr DEBUG: Debug print
-
             const metadataCandidateFromEditable = editableCacheContents?.[existingResource!.fullTreePath!]?.["meta"];
             let metadataAsJSON: any;
             if (metadataCandidateFromEditable === undefined) {

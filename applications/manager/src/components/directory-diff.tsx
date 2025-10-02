@@ -3,7 +3,7 @@ import _ from "lodash";
 import { Check, Loader, Minus, MoveLeft, MoveRight, Plus, X } from "lucide-react";
 import React, { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import { NodeApi, NodeRendererProps, Tree, TreeApi, } from "react-arborist";
-import { ComparisonData, DatastoreComparison, DatastoreInfo, DiffTree, EditableType, FilesystemNode, getDatastoreInfoOfGivenDatastoreType, MergeState, ResourceComparison } from "@dataspecer/git";
+import { ComparisonData, CreateDatastoreFilesystemNodesInfo, DatastoreComparison, DatastoreInfo, DiffTree, EditableType, FilesystemNode, getDatastoreInfoOfGivenDatastoreType, MergeState, ResourceComparison } from "@dataspecer/git";
 import { DiffEditorCrossedOutEditIcon, DiffEditorEditIcon } from "./crossed-out-icon";
 
 
@@ -31,6 +31,7 @@ type RenderNodeWithAdditionalData = RenderNode & {
   shouldShowConflicts: boolean;
   allConficts: ComparisonData[];
   setConflictsToBeResolvedOnSave: (value: React.SetStateAction<ComparisonData[]>) => void;
+  isAffectedByCreate: boolean;
   isNewlyCreated: boolean,
   setCreatedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void;
   isNewlyRemoved: boolean,
@@ -423,7 +424,7 @@ function StyledNode({
             handleMouseHoverHighlightingForNode(node, false);
           }}
         >
-          {<p className={`font-bold pt-1 pr-1 text-xs ${node.data.isNewlyCreated ? "invisible" : "visible"}`}>C</p>}
+          {<p className={`font-bold pt-1 pr-1 text-xs ${node.data.isNewlyCreated || node.data.isAffectedByCreate ? "invisible" : "visible"}`}>C</p>}
           {<p className={`font-bold pt-1 pr-1 text-xs ${node.data.isNewlyRemoved ? "invisible" : "visible"}`}>D</p>}
           {<p className={`font-bold pt-1 pr-1 text-xs ${Math.random() > 0.5 ? "invisible" : "visible"}`}>Rand</p>}
           {icon}
@@ -513,6 +514,7 @@ const createStyledNode = (
   shouldShowConflicts: boolean,
   allConficts: ComparisonData[],
   setConflictsToBeResolvedOnSave: (value: React.SetStateAction<ComparisonData[]>) => void,
+  entriesAffectedByCreateAsArray: CreateDatastoreFilesystemNodesInfo[],
   createdDatastores: DatastoreInfo[],
   setCreatedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void,
   removedDatastores: DatastoreInfo[],
@@ -524,6 +526,8 @@ const createStyledNode = (
   extendedProps.node.data.allConficts = allConficts;
   extendedProps.node.data.setConflictsToBeResolvedOnSave = setConflictsToBeResolvedOnSave;
   extendedProps.node.data.isNewlyCreated = createdDatastores.find(createdDatastore => createdDatastore.fullPath === extendedProps.node.data.fullDatastoreInfoInOriginalTree?.fullPath) === undefined;
+  extendedProps.node.data.isAffectedByCreate = entriesAffectedByCreateAsArray
+    .find(entry => entry.treePath === extendedProps.node.data.id.slice(0, "-new".length)) !== undefined;
   extendedProps.node.data.setCreatedDatastores = setCreatedDatastores;
   extendedProps.node.data.isNewlyRemoved = removedDatastores.find(removedDatastore => removedDatastore.fullPath === extendedProps.node.data.fullDatastoreInfoInModifiedTree?.fullPath) === undefined;
   extendedProps.node.data.setRemovedDatastores = setRemovedDatastores;
@@ -630,8 +634,13 @@ export const DiffTreeVisualization = (props: {
   removedDatastores: DatastoreInfo[],
   setRemovedDatastores: Dispatch<SetStateAction<DatastoreInfo[]>>,
 }) => {
-  const { createdDatastores, setCreatedDatastores, removedDatastores, setRemovedDatastores } = props;
-  const setConflictsToBeResolvedOnSave = props.setConflictsToBeResolvedOnSave;
+  const {
+    createdDatastores, setCreatedDatastores,
+    removedDatastores, setRemovedDatastores,
+    setConflictsToBeResolvedOnSave, entriesAffectedByCreate
+  } = props;
+  const entriesAffectedByCreateAsArray = Object.values(entriesAffectedByCreate).map(entry => entry.createdFilesystemNodes).flat();
+
   const mergeStateFromBackend: MergeState | null = props.mergeStateFromBackend;
 
   const [diffTree, setDiffTree] = useState<DiffTree>();
@@ -860,7 +869,7 @@ export const DiffTreeVisualization = (props: {
         <h3><DiffEditorCrossedOutEditIcon/></h3>
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
-            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdDatastores, setCreatedDatastores, removedDatastores, setRemovedDatastores)}
+            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), entriesAffectedByCreateAsArray, createdDatastores, setCreatedDatastores, removedDatastores, setRemovedDatastores)}
                   ref={oldTreeRef} data={oldRenderTreeDataToRender} width={"100%"}
                   onSelect={(nodes) => onNodesSelect(nodes, "old")}
                   onFocus={(node) => onNodeFocus(node, "old")}
@@ -873,7 +882,7 @@ export const DiffTreeVisualization = (props: {
         <h3><DiffEditorEditIcon/></h3>
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
-            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdDatastores, setCreatedDatastores, removedDatastores, setRemovedDatastores)}
+            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), entriesAffectedByCreateAsArray, createdDatastores, setCreatedDatastores, removedDatastores, setRemovedDatastores)}
                   ref={newTreeRef} data={newRenderTreeDataToRender} width={"100%"}
                   onSelect={(nodes) => onNodesSelect(nodes, "new")}
                   onFocus={(node) => onNodeFocus(node, "new")}
