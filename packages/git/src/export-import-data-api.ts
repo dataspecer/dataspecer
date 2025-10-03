@@ -37,16 +37,20 @@ export type DatastoreInfo = {
   fullPath: string;
 }
 
+export type ExportShareableMetadataCacheType = {
+  [key: string]: any;
+} & ShareableMetadata;
+
 
 export type ExportMetadataCacheType = {
   iri: string;
-  [key: string]: any;
-} & ShareableMetadata;
+} & ExportShareableMetadataCacheType;
 
 /**
  * Metadata which can be shared when copying, etc.
  */
 export type ShareableMetadata = {
+  userMetadata: NonNullable<object>,
   projectIri: string;
   types: string[];
 };
@@ -69,6 +73,7 @@ export function pickShareableMetadata(metadata: ExportMetadataCacheType): Sharea
   return {
     projectIri: metadata.projectIri,
     types: metadata.types,
+    userMetadata: metadata.userMetadata ?? {},
   };
 }
 

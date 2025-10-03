@@ -139,21 +139,83 @@ export async function createDatastoreContent(
     // fs.writeFileSync(normalizedGitPath, newContentConverted, {encoding: "utf-8"});
   }
   else {
-    let lastFilesystemNode = filesystemNodesInTreePath[0];
     let currentNewIri: string;
     let currentParentIri: string = parentIri;
     for (const filesystemNodeInTreePath of filesystemNodesInTreePath) {
       currentNewIri = uuidv4();
       const userMetadata = filesystemNodeInTreePath.userMetadata ?? {};
       await resourceModel.createResource(currentParentIri, currentNewIri, userMetadata.types[0], userMetadata.userMetadata, filesystemNodeInTreePath.userMetadata.projectIri);
-      lastFilesystemNode = filesystemNodeInTreePath;
       currentParentIri = currentNewIri;
     }
     const newContentAsJSON = convertDatastoreContentBasedOnFormat(content, format ?? null, true);
-    await updateBlob(lastFilesystemNode.userMetadata.iri, type, newContentAsJSON);
+    await updateBlob(currentParentIri, type, newContentAsJSON);
   }
   return { success: true, accessDenied: false };
 }
+
+
+/**
+ * @param parentIri This is the actual iri of the first parent (not project iri), under which we will connect the chain of new filesystemNodes
+ */
+export async function createFilesystemNodes(
+  filesystemNodesToCreate: CreateDatastoreFilesystemNodesData[],
+  parentIri: string,
+  filesystem: AvailableFilesystems,
+): Promise<{ success: boolean, accessDenied: boolean, createdIris: string[]}> {
+  // TODO RadStr: Run conversion on client?
+
+  const createdIris: string[] = [];
+  if (filesystem === AvailableFilesystems.ClassicFilesystem) {
+    // TODO RadStr: Also note that here you would have to use the format inside the CreateDatastoreFilesystemNodesData, to convert since we pass the data as JSON object
+    throw new Error("Not implemented, we would have to pass it filesystem path, which we do not need for DS");
+  }
+  else {
+    let currentNewIri: string;
+    let currentParentIri: string = parentIri;
+    for (const filesystemNodeInTreePath of filesystemNodesToCreate) {
+      currentNewIri = uuidv4();
+      createdIris.push(currentNewIri);
+      const userMetadata = filesystemNodeInTreePath.userMetadata ?? {};
+      await resourceModel.createResource(currentParentIri, currentNewIri, userMetadata.types[0], userMetadata.userMetadata, filesystemNodeInTreePath.userMetadata.projectIri);
+      currentParentIri = currentNewIri;
+    }
+  }
+
+  return { success: true, accessDenied: false, createdIris };
+}
+
+export const createFilesystemNodesDirectly = asyncHandler(async (request: express.Request, response: express.Response) => {
+  const availableFilesystems = Object.values(AvailableFilesystems);
+  const bodySchema = z.object({
+    createdFilesystemNodesInTreePath: z.array(
+      z.object({
+        parentProjectIri: z.string().min(1),
+        treePath: z.string().min(1),
+        format: z.string().min(1).nullable(),
+        userMetadata: z.object({
+          projectIri: z.string(),
+          types: z.array(z.string()),
+          userMetadata: z.object({}).catchall(z.any()),
+        }).catchall(z.any()), // allows arbitrary extra keys of any type,
+      })
+    ),
+    parentIri: z.string().min(1),     // This is the actual iri of the first parent (not project iri), under which we will connect the chain of new
+    filesystem: z.enum(availableFilesystems as [string, ...string[]]),
+  });
+  const body = bodySchema.parse(request.body);
+
+  const filesystem: AvailableFilesystems = body.filesystem as AvailableFilesystems;
+
+  const createdFilesystemNodesResult = await createFilesystemNodes(body.createdFilesystemNodesInTreePath, body.parentIri, filesystem);
+  if (createdFilesystemNodesResult.accessDenied) {
+    response.status(403);
+    response.json(`Trying to access some filesystem node under the ${body.parentIri}, but we are not allowed to modify anything there`);
+    return;
+  }
+
+  response.status(200).json(createdFilesystemNodesResult.createdIris);
+  return;
+});
 
 
 export const updateDatastoreContentDirectly = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -189,10 +251,11 @@ export const createDatastoreContentDirectly = asyncHandler(async (request: expre
       z.object({
         parentProjectIri: z.string().min(1),
         treePath: z.string().min(1),
+        format: z.string().min(1).nullable(),
         userMetadata: z.object({
-          iri: z.string(),
           projectIri: z.string(),
           types: z.array(z.string()),
+          userMetadata: z.object({}).catchall(z.any()),
         }).catchall(z.any()), // allows arbitrary extra keys of any type,
       })
     ),

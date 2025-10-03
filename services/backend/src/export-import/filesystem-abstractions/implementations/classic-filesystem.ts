@@ -126,7 +126,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
         const newSingleNode: FileNode = {
           name: invalidName,
           type: "file",
-          metadataCache: { iri: invalidName, types: ["from-git-unknown"], projectIri: iri },      // TODO RadStr: I don't know about this.
+          metadataCache: { iri: invalidName, types: ["from-git-unknown"], projectIri: iri, userMetadata: {} },      // TODO RadStr: I don't know about this.
           // TODO RadStr: the old way
           // datastores: { model: path.join(directory, invalidName) },
           datastores: [prefixName],

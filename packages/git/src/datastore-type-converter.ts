@@ -1,7 +1,7 @@
 import YAML from "yaml";
 import { pickShareableMetadata, ShareableMetadata } from "./export-import-data-api.ts";
 
-export function getDefaultValueForFormat(format: string) {
+export function getDefaultValueForFormat(format: string | null) {
   return "null";
 }
 

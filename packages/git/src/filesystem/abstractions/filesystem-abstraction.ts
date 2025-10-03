@@ -211,7 +211,7 @@ export function createFilesystemMappingRoot(): DirectoryNode {
   const root: DirectoryNode = {
     type: "directory",
     name: "",
-    metadataCache: { iri: "fake-root", projectIri: "fake-root-project-iri", types: [] },
+    metadataCache: { iri: "fake-root", projectIri: "fake-root-project-iri", types: [], userMetadata: {} },
     content: {},
     datastores: [],
     fullTreePath: "",

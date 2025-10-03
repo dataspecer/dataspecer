@@ -87,6 +87,23 @@ export function getEditableAndNonEditableValue<T>(
   };
 }
 
+export function setEditableValue<T>(
+  editable: EditableType,
+  entryToChange: { mergeFrom: T, mergeTo: T },
+  newContent: T,
+): void {
+  switch(editable) {
+    case "mergeFrom":
+      entryToChange.mergeFrom = newContent;
+      break;
+    case "mergeTo":
+      entryToChange.mergeTo = newContent;
+      break;
+    default:
+      throw new Error(`Unknown editable: ${editable}`);
+  };
+}
+
 /**
  * Says the Cause of the merge. Combined with the "editable" field, that is the field which gives us information about what datasource we were changing,
  *  will give us the action, which should be performed after the resolving of all the conflicts.

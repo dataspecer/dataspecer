@@ -1,5 +1,5 @@
 import { ComparisonData } from "../../merge/merge-state.ts";
-import { FilesystemNodeLocation, FilesystemMappingType, DirectoryNode, FilesystemNode, DatastoreInfo, ExportMetadataCacheType } from "../../export-import-data-api.ts";
+import { FilesystemNodeLocation, FilesystemMappingType, DirectoryNode, FilesystemNode, DatastoreInfo, ExportMetadataCacheType, ShareableMetadata, ExportShareableMetadataCacheType } from "../../export-import-data-api.ts";
 import { GitProvider } from "../../git-provider-api.ts";
 import { FilesystemAbstractionBase } from "../abstractions/filesystem-abstraction-base.ts";
 import { AvailableFilesystems, FilesystemAbstraction, getDatastoreInfoOfGivenDatastoreType } from "../abstractions/filesystem-abstraction.ts";
@@ -14,8 +14,10 @@ export type CreateDatastoreFilesystemNodesInfo = {
 export type CreateDatastoreFilesystemNodesData = {
   parentProjectIri: string,
   treePath: string,
-  userMetadata: ExportMetadataCacheType,
+  userMetadata: ExportShareableMetadataCacheType,
+  format: string | null,
 };
+
 
 /**
  * Very lightweight filesystem, which just serves as component to to work with datastore content from backend
@@ -196,7 +198,40 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
   }
 
 
-  public static async createDatastoreDirectly(
+  public static async createFilesystemNodesDirectly(
+    createdFilesystemNodesInTreePath: CreateDatastoreFilesystemNodesData[],
+    parentIri: string,
+    backendFilesystem: AvailableFilesystems | null,
+    backendApiPath: string,
+  ): Promise<string[]> {
+    if (backendFilesystem === null) {
+      console.error("There is not set any filesystem, so the we can not create new filesystem nodes on backend.");
+      return [];
+    }
+
+
+    const url = backendApiPath + "/git/create-filesystem-nodes";
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        parentIri,
+        createdFilesystemNodesInTreePath,
+        filesystem: backendFilesystem,
+      }),
+    });
+
+    console.info("createFilesystemNodesDirectly", {response});       // TODO RadStr Debug:
+    if (!response.ok) {
+      console.error(response);
+      throw new Error("Failed to create filesystem nodes directly");
+    }
+
+    return (await response.json()) as string[];
+  }
+
+
+  public static async createDatastoreDirectlyWithParents(
     createdFilesystemNodesInTreePath: CreateDatastoreFilesystemNodesData[],
     parentIri: string,
     content: string,
@@ -228,7 +263,46 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
       }),
     });
 
-    console.info("createDatastoreContentDirectly", {datastoreInfo, response, content});       // TODO RadStr Debug:
+    console.info("createDatastoreDirectlyWithParents", {datastoreInfo, response, content});       // TODO RadStr Debug:
+    return response.ok;
+  }
+
+  public static async createDatastoreDirectly(
+    parentIri: string | null,
+    content: string,
+    backendFilesystem: AvailableFilesystems | null,
+    datastoreInfo: DatastoreInfo | null,
+    backendApiPath: string,
+  ): Promise<boolean> {
+    if (parentIri === null) {
+      console.error("The parent iri was not provided, we do not know under which filesystem node should be the datastore put.");
+      return false;
+    }
+    if (datastoreInfo === null) {
+      console.error("There is not any datastore in editor, we can not create new datastore on backend.");
+      return false;
+    }
+    if (backendFilesystem === null) {
+      console.error("There is not set any filesystem, so the we can not create new datastore on backend.");
+      return false;
+    }
+
+
+    const url = backendApiPath + "/git/create-datastore-content";
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        createdFilesystemNodesInTreePath: [],
+        parentIri,
+        type: datastoreInfo.type,
+        format: datastoreInfo.format,
+        filesystem: backendFilesystem,
+        content,
+      }),
+    });
+
+    console.info("createDatastoreDirectly", {datastoreInfo, response, content});       // TODO RadStr Debug:
     return response.ok;
   }
 
@@ -244,10 +318,11 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
         parentProjectIri: parent.metadataCache.projectIri ?? "",
         treePath: currentNode.fullTreePath,
         userMetadata: currentNode.metadataCache,
+        format: changedDatastore.format,
       });
       currentNode = parent;
     }
-    return ClientFilesystem.createDatastoreDirectly(
+    return ClientFilesystem.createDatastoreDirectlyWithParents(
       filesystemNodesInTreePath.reverse(),
       parentIriInToBeChangedFilesystem, content,
       this.backendFilesystem, changedDatastore, this.backendApiPath);
