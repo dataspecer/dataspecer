@@ -38,6 +38,8 @@ type RenderNodeWithAdditionalData = RenderNode & {
   setRemovedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void;
   shouldBeHighlighted: boolean;
   setShouldBeHighlighted: (value: React.SetStateAction<boolean>) => void;
+  removedTreePaths: string[];
+  setRemovedTreePaths: (value: React.SetStateAction<string[]>) => void;
 };
 
 type RenderStatus = "same" | "modified" | "created" | "removed";
@@ -170,6 +172,15 @@ function createIdForFilesystemRenderNode(resourceComparison: ResourceComparison,
   return nonEmptyFilesystemNode.fullTreePath + "-" + treeToExtract;
 }
 
+
+function extractTreePathFromNodeId(id: string) {
+  return id.slice(0, -"-new".length);
+}
+
+function extractTreePathFromNode(node: NodeApi<RenderNodeWithAdditionalData>) {
+  return extractTreePathFromNodeId(node.data.id);
+}
+
 function createTreeRepresentationForRendering(
   allConflicts: ComparisonData[],
   unresolvedConflicts: ComparisonData[],
@@ -292,13 +303,50 @@ const onClickUnresolveConflict = (
   }
 }
 
+
+const getAllChildrenRecursively = (node: NodeApi<RenderNodeWithAdditionalData> | null): NodeApi<RenderNodeWithAdditionalData>[]  => {
+  const children: NodeApi<RenderNodeWithAdditionalData>[] = [];
+  getAllChildrenRecursivelyInternal(node, children);
+  return children;
+}
+
+const getAllChildrenRecursivelyInternal = (node: NodeApi<RenderNodeWithAdditionalData> | null, children: NodeApi<RenderNodeWithAdditionalData>[]) => {
+  if (node === null) {
+    return;
+  }
+
+  for (const child of node.children ?? []) {
+    children.push(child);
+    getAllChildrenRecursivelyInternal(child, children);
+  }
+}
+
 const onClickRemoveDatastore = (
   event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-  nodeToResolve: RenderNodeWithAdditionalData,
+  nodeToResolve: NodeApi<RenderNodeWithAdditionalData>,
 ) => {
   event.stopPropagation();
-  nodeToResolve.setRemovedDatastores(prev => [...prev, nodeToResolve.fullDatastoreInfoInModifiedTree!]);
-  alert(`Remove datastore for ${nodeToResolve.name}`);
+  if (nodeToResolve.data.fullDatastoreInfoInModifiedTree?.type === "meta") {
+    const parent = nodeToResolve.parent;
+    const allNodesInSubTree = getAllChildrenRecursively(parent);
+    const filesystemNodeTreePathsInSubTree = allNodesInSubTree
+      .filter(node => (node.children ?? []).length > 0)
+      .map(node => extractTreePathFromNode(node));
+    const datastoresInSubTree = allNodesInSubTree
+      .filter(node => (node.children ?? []).length === 0)
+      .map(datastore => datastore.data.fullDatastoreInfoInModifiedTree!);
+
+    console.info({filesystemNodeTreePathsInSubTree, datastoresInSubTree});
+
+    nodeToResolve.data.setRemovedDatastores(prev => [...prev, ...datastoresInSubTree]);
+    if (parent !== null) {
+      nodeToResolve.data.setRemovedTreePaths(prev => [...prev, extractTreePathFromNode(parent), ...filesystemNodeTreePathsInSubTree]);
+    }
+  }
+  else {
+    nodeToResolve.data.setRemovedDatastores(prev => [...prev, nodeToResolve.data.fullDatastoreInfoInModifiedTree!]);
+  }
+  alert(`Remove datastore for ${nodeToResolve.data.name}`);
 }
 
 const onClickCreateDatastore = (
@@ -412,8 +460,7 @@ function StyledNode({
               node.focus();
               node.select();
 
-              const parentId = node.parent?.data.id!;   // The parent exists and it is not datastore
-              const parentTreePath = parentId.substring(0, parentId?.length - "-new".length);
+              const parentTreePath = extractTreePathFromNode(node.parent!);
               node.data.changeActiveModel(parentTreePath, node.data.fullDatastoreInfoInOriginalTree, node.data.fullDatastoreInfoInModifiedTree, true, true);
             }
           }}
@@ -426,7 +473,6 @@ function StyledNode({
         >
           {<p className={`font-bold pt-1 pr-1 text-xs ${(node.data.isNewlyCreated || node.data.isAffectedByCreate) ? "visible": "invisible"}`}>C</p>}
           {<p className={`font-bold pt-1 pr-1 text-xs ${node.data.isNewlyRemoved ? "visible" : "invisible"}`}>D</p>}
-          {<p className={`font-bold pt-1 pr-1 text-xs ${Math.random() > 0.5 ? "invisible" : "visible"}`}>Rand</p>}
           {icon}
           <span className={textClassName}>{node.data.name}</span>
           {
@@ -473,7 +519,7 @@ function StyledNode({
                 }
                 {
                 node.data.status === "created" ?
-                  <button title="Remove datastore" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickRemoveDatastore(e, node.data)}>
+                  <button title="Remove datastore" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickRemoveDatastore(e, node)}>
                     <Minus className="h-6 w-6"/>
                   </button> :
                   null
@@ -519,8 +565,12 @@ const createStyledNode = (
   setCreatedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void,
   removedDatastores: DatastoreInfo[],
   setRemovedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void,
+  removedTreePaths: string[],
+  setRemovedTreePaths: (value: React.SetStateAction<string[]>) => void,
 ) => {
+
   const extendedProps: NodeRendererProps<RenderNodeWithAdditionalData> = props as any;
+  const currentNodeTreePath = extractTreePathFromNode(extendedProps.node);    // Just for internal computations, it does not necessary have to be the treePath in case of datastores
   extendedProps.node.data.changeActiveModel = changeActiveModelData;
   extendedProps.node.data.shouldShowConflicts = shouldShowConflicts;
   extendedProps.node.data.allConficts = allConficts;
@@ -528,11 +578,17 @@ const createStyledNode = (
   extendedProps.node.data.isNewlyCreated = createdDatastores.find(createdDatastore => createdDatastore.fullPath === extendedProps.node.data.fullDatastoreInfoInOriginalTree?.fullPath) !== undefined;
   extendedProps.node.data.isAffectedByCreate = createdFilesystemNodesAsArray
     .find(filesystemNode => {
-      return filesystemNode.treePath === extendedProps.node.data.id.slice(0, -"-new".length);
+      return filesystemNode.treePath === currentNodeTreePath;
     }) !== undefined;
   extendedProps.node.data.setCreatedDatastores = setCreatedDatastores;
   extendedProps.node.data.isNewlyRemoved = removedDatastores.find(removedDatastore => removedDatastore.fullPath === extendedProps.node.data.fullDatastoreInfoInModifiedTree?.fullPath) !== undefined;
   extendedProps.node.data.setRemovedDatastores = setRemovedDatastores;
+  extendedProps.node.data.removedTreePaths = removedTreePaths;
+  extendedProps.node.data.setRemovedTreePaths = setRemovedTreePaths;
+  extendedProps.node.data.isNewlyRemoved ||= removedTreePaths
+    .find(treePath => {
+      return treePath === currentNodeTreePath;
+    }) !== undefined;
 
   const [shouldBeHighlighted, setShouldBeHighlighted] = useState<boolean>(false);
   extendedProps.node.data.shouldBeHighlighted = shouldBeHighlighted;
@@ -635,11 +691,14 @@ export const DiffTreeVisualization = (props: {
   setCreatedDatastores: Dispatch<SetStateAction<DatastoreInfo[]>>,
   removedDatastores: DatastoreInfo[],
   setRemovedDatastores: Dispatch<SetStateAction<DatastoreInfo[]>>,
+  removedTreePaths: string[],
+  setRemovedTreePaths: Dispatch<SetStateAction<string[]>>,
 }) => {
   const {
     createdDatastores, setCreatedDatastores,
     removedDatastores, setRemovedDatastores,
-    setConflictsToBeResolvedOnSave, createdFilesystemNodes
+    setConflictsToBeResolvedOnSave, createdFilesystemNodes,
+    removedTreePaths, setRemovedTreePaths,
   } = props;
   const createdFilesystemNodesAsArray = Object.values(createdFilesystemNodes).map(filesystemNode => filesystemNode.createdFilesystemNodes).flat();
 
@@ -736,7 +795,7 @@ export const DiffTreeVisualization = (props: {
     }
 
     const isOpen = tree?.get(id)?.isOpen;
-    const otherId = id.substring(0, id.length - "old".length) + otherTreeType;
+    const otherId = extractTreePathFromNodeId(id) + otherTreeType;
     if (isOpen) {
       otherTree?.open(otherId);
     }
@@ -769,7 +828,7 @@ export const DiffTreeVisualization = (props: {
     }
 
     const id = node.id;
-    const otherId = id.substring(0, id.length - "old".length) + otherTreeType;
+    const otherId = extractTreePathFromNodeId(id) + otherTreeType;
     const otherNode = otherTree?.get(otherId);
     isProgrammaticFocus.current = true;
 
@@ -871,7 +930,7 @@ export const DiffTreeVisualization = (props: {
         <h3><DiffEditorCrossedOutEditIcon/></h3>
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
-            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, setCreatedDatastores, removedDatastores, setRemovedDatastores)}
+            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, setCreatedDatastores, removedDatastores, setRemovedDatastores, removedTreePaths, setRemovedTreePaths)}
                   ref={oldTreeRef} data={oldRenderTreeDataToRender} width={"100%"}
                   onSelect={(nodes) => onNodesSelect(nodes, "old")}
                   onFocus={(node) => onNodeFocus(node, "old")}
@@ -884,7 +943,7 @@ export const DiffTreeVisualization = (props: {
         <h3><DiffEditorEditIcon/></h3>
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
-            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, setCreatedDatastores, removedDatastores, setRemovedDatastores)}
+            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, setCreatedDatastores, removedDatastores, setRemovedDatastores, removedTreePaths, setRemovedTreePaths)}
                   ref={newTreeRef} data={newRenderTreeDataToRender} width={"100%"}
                   onSelect={(nodes) => onNodesSelect(nodes, "new")}
                   onFocus={(node) => onNodeFocus(node, "new")}

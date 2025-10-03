@@ -74,6 +74,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
     removedDatastores, setRemovedDatastores,
     createdDatastores, setCreatedDatastores,
     createdFilesystemNodes,
+    removedTreePaths, setRemovedTreePaths,
     convertedCacheForMergeFromContent,
     mergeFromSvg,
     mergeToSvg,
@@ -137,6 +138,8 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
                                             setCreatedDatastores={setCreatedDatastores}
                                             removedDatastores={removedDatastores}
                                             setRemovedDatastores={setRemovedDatastores}
+                                            removedTreePaths={removedTreePaths}
+                                            setRemovedTreePaths={setRemovedTreePaths}
                                             />
                   </div>
                 <div className="flex gap-2 mt-4 justify-start mb-2">
@@ -319,11 +322,13 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
   // Set once in the useEffect
   const [examinedMergeState, setExaminedMergeState] = useState<MergeState | null>(null);
   const [conflictsToBeResolvedOnSave, setConflictsToBeResolvedOnSave] = useState<ComparisonData[]>([]);
-  const [removedDatastores, setRemovedDatastores] = useState<DatastoreInfo[]>([]);
   const [createdDatastores, setCreatedDatastores] = useState<DatastoreInfo[]>([]);
   const [createdFilesystemNodes, setCreatedFilesystemNodes] = useState<Record<string, EntriesAffectedByCreateType>>({});
   const currentlyInAsyncUpdateOfCreatedFilesystemNodes = useRef<boolean>(false);
   const createdDatastoresInPreviousIteration = useRef<DatastoreInfo[]>([]);
+  // Removed datastores are a bit simpler to solve - basically. Removal of Meta = removal of all datastores together with filesystem node (recursively), but that is handled in directory diff editor.
+  const [removedDatastores, setRemovedDatastores] = useState<DatastoreInfo[]>([]);
+  const [removedTreePaths, setRemovedTreePaths] = useState<string[]>([]);
 
   const [currentTreePathToNodeContainingDatastore, setCurrentTreePathToNodeContainingDatastore] = useState<string>("");
   const [formatsForCacheEntries, setFormatsForCacheEntries] = useState<FormatsCache>({});
@@ -754,6 +759,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     removedDatastores, setRemovedDatastores,
     createdDatastores, setCreatedDatastores,
     createdFilesystemNodes, setCreatedFilesystemNodes,
+    removedTreePaths, setRemovedTreePaths,
     currentTreePathToNodeContainingDatastore, setCurrentTreePathToNodeContainingDatastore,
     formatsForCacheEntries, setFormatsForCacheEntries,
     datastoreInfosForCacheEntries, setDatastoreInfosForCacheEntries,
