@@ -836,10 +836,10 @@ async function onCascadeUpdateForCreatedDatastores(
       const isFilesystemNodeNotYetAdded = createdFilesystemNodesAsArray.find(alreadyCreated => alreadyCreated.treePath === existingResource!.fullTreePath) === undefined;
       if (isFilesystemNodeNotYetAdded) {
         visitedFirstNodeToCreate = true;
-        // if (parentNode === null) {
-        //   toast.error("Fatal Merge error, check console");
-        //   throw new Error("We can not (at least currently) have 2 roots. That is both packages have to have one common root.");
-        // }
+        if (parentNode === null) {
+          toast.error("Fatal Merge error, check console");
+          throw new Error("We can not (at least currently) have 2 roots. That is both packages have to have one common root.");
+        }
 
         const mergeFromMetadataInfo = (currentDiffNode?.resources.old === undefined || currentDiffNode?.resources.old === null) ? null : getDatastoreInfoOfGivenDatastoreType(currentDiffNode?.resources.old, "meta");
         const mergeToMetadataInfo = (currentDiffNode?.resources.new === undefined || currentDiffNode?.resources.new === null) ? null : getDatastoreInfoOfGivenDatastoreType(currentDiffNode?.resources.new, "meta");
@@ -848,7 +848,7 @@ async function onCascadeUpdateForCreatedDatastores(
         setCreatedDatastores(prev => [...prev, metadataInfo]);
 
         const newFilesystemNodeToCreate = {
-          parentProjectIri: parentNode?.metadataCache.projectIri ?? "8d80a465-a081-4743-a825-b34db7f2aaf6",
+          parentProjectIri: parentNode.metadataCache.projectIri,
           treePath: existingResource!.fullTreePath,
           userMetadataDatastoreInfo: metadataInfo,
         };
@@ -873,7 +873,7 @@ async function onCascadeUpdateForCreatedDatastores(
   setCreatedFilesystemNodes(prev => ({
     ...prev,
     [datastoreCausingTheUpdate!.fullPath]: {
-      firstExistingParentIri: firstExistingParentIri ?? "87dc454a-91fc-4a03-9830-7370d7ae14f8",
+      firstExistingParentIri: firstExistingParentIri,
       createdFilesystemNodes: createdFilesystemNodesInTreePath,
     }
   }));
