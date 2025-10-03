@@ -31,7 +31,6 @@ type RenderNodeWithAdditionalData = RenderNode & {
   shouldShowConflicts: boolean;
   allConficts: ComparisonData[];
   setConflictsToBeResolvedOnSave: (value: React.SetStateAction<ComparisonData[]>) => void;
-  isAffectedByCreate: boolean;
   isNewlyCreated: boolean,
   setCreatedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void;
   isNewlyRemoved: boolean,
@@ -471,7 +470,7 @@ function StyledNode({
             handleMouseHoverHighlightingForNode(node, false);
           }}
         >
-          {<p className={`font-bold pt-1 pr-1 text-xs ${(node.data.isNewlyCreated || node.data.isAffectedByCreate) ? "visible": "invisible"}`}>C</p>}
+          {<p className={`font-bold pt-1 pr-1 text-xs ${node.data.isNewlyCreated ? "visible": "invisible"}`}>C</p>}
           {<p className={`font-bold pt-1 pr-1 text-xs ${node.data.isNewlyRemoved ? "visible" : "invisible"}`}>D</p>}
           {icon}
           <span className={textClassName}>{node.data.name}</span>
@@ -570,13 +569,13 @@ const createStyledNode = (
 ) => {
 
   const extendedProps: NodeRendererProps<RenderNodeWithAdditionalData> = props as any;
-  const currentNodeTreePath = extractTreePathFromNode(extendedProps.node);    // Just for internal computations, it does not necessary have to be the treePath in case of datastores
+  const currentNodeTreePath = extractTreePathFromNode(extendedProps.node);    // Just for internal computations does not even have to be the treePath in case of datastore.
   extendedProps.node.data.changeActiveModel = changeActiveModelData;
   extendedProps.node.data.shouldShowConflicts = shouldShowConflicts;
   extendedProps.node.data.allConficts = allConficts;
   extendedProps.node.data.setConflictsToBeResolvedOnSave = setConflictsToBeResolvedOnSave;
   extendedProps.node.data.isNewlyCreated = createdDatastores.find(createdDatastore => createdDatastore.fullPath === extendedProps.node.data.fullDatastoreInfoInOriginalTree?.fullPath) !== undefined;
-  extendedProps.node.data.isAffectedByCreate = createdFilesystemNodesAsArray
+  extendedProps.node.data.isNewlyCreated ||= createdFilesystemNodesAsArray
     .find(filesystemNode => {
       return filesystemNode.treePath === currentNodeTreePath;
     }) !== undefined;
