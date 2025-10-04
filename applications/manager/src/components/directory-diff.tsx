@@ -1,10 +1,11 @@
-import { ChangeActiveModelMethod, EntriesAffectedByCreateType } from "@/dialog/diff-editor-dialog";
+import { ChangeActiveModelMethod } from "@/dialog/diff-editor-dialog";
 import _ from "lodash";
 import { Check, Loader, Minus, MoveLeft, MoveRight, Plus, X } from "lucide-react";
 import React, { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import { NodeApi, NodeRendererProps, Tree, TreeApi, } from "react-arborist";
 import { ComparisonData, CreateDatastoreFilesystemNodesInfo, DatastoreComparison, DatastoreInfo, DiffTree, EditableType, FilesystemNode, getDatastoreInfoOfGivenDatastoreType, MergeState, ResourceComparison } from "@dataspecer/git";
 import { DiffEditorCrossedOutEditIcon, DiffEditorEditIcon } from "./crossed-out-icon";
+import { EntriesAffectedByCreateType } from "@/hooks/use-diff-editor-dialog-props";
 
 
 type DataSourceRenderType = "datastore" | "directory" | "file";
@@ -567,7 +568,6 @@ const createStyledNode = (
   removedTreePaths: string[],
   setRemovedTreePaths: (value: React.SetStateAction<string[]>) => void,
 ) => {
-
   const extendedProps: NodeRendererProps<RenderNodeWithAdditionalData> = props as any;
   const currentNodeTreePath = extractTreePathFromNode(extendedProps.node);    // Just for internal computations does not even have to be the treePath in case of datastore.
   extendedProps.node.data.changeActiveModel = changeActiveModelData;

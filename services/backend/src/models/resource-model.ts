@@ -534,7 +534,6 @@ export class ResourceModel {
         await this.updateLastCommitHash(newRootIri, sourcePrismaResource?.lastCommitHash ?? "");
 
         await this.updateModificationTimeById(prismaParentResource.id);
-
         return newRootIri;
     }
 

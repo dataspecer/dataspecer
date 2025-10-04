@@ -41,6 +41,37 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     return this.backendFilesystem;
   }
 
+  public static async removeFilesystemNodeDirectly(
+    filesystemNodeTreePath: string,
+    backendApiPath: string,
+    backendFilesystem: AvailableFilesystems | null,
+  ): Promise<boolean> {
+    if (backendFilesystem === null) {
+      return false;
+    }
+
+    const queryAsObject = {
+      filesystemNodeTreePath,
+      filesystem: backendFilesystem,
+    };
+
+    let url = backendApiPath + "/git/remove-filesystem-node?";
+    for (const [key, value] of Object.entries(queryAsObject)) {
+      url += key;
+      url += "=";
+      url += value;
+      url += "&";
+    }
+    url = url.slice(0, -1);
+
+    const response = await fetch(url, {
+      method: "DELETE",
+    });
+
+    console.info("removeFilesystemNodeDirectly", { response, filesystemNodeTreePath });       // TODO RadStr Debug:
+    return response.ok;
+  }
+
   public static async getDatastoreContentDirectly(
     datastoreInfo: DatastoreInfo | null,
     shouldConvertToDatastoreFormat: boolean,

@@ -184,6 +184,45 @@ export async function createFilesystemNodes(
   return { success: true, accessDenied: false, createdIris };
 }
 
+const removeFilesystemNode = async (
+  filesystemNodeTreePath: string,
+  filesystem: AvailableFilesystems,
+): Promise<{accessDenied: boolean}> => {
+  if (filesystem === AvailableFilesystems.ClassicFilesystem) {
+    // TODO RadStr: Removal implementation only for DS. We do not need the git one anyways. The DS is enough
+    throw new Error("Not implemented, we would have to pass it filesystem path, which we do not need for DS");
+  }
+  else {
+    const lastPathPartStartIndex = filesystemNodeTreePath.lastIndexOf("/");
+    const iri = lastPathPartStartIndex === -1 ? filesystemNodeTreePath : filesystemNodeTreePath.substring(lastPathPartStartIndex + 1);
+    await resourceModel.deleteResource(iri);
+  }
+
+  return {accessDenied: false};
+}
+
+export const removeFilesystemNodeDirectly = asyncHandler(async (request: express.Request, response: express.Response) => {
+  const availableFilesystems = Object.values(AvailableFilesystems);
+  const querySchema = z.object({
+    filesystemNodeTreePath: z.string().min(1),     // This is the actual iri of the first parent (not project iri), under which we will connect the chain of new
+    filesystem: z.enum(availableFilesystems as [string, ...string[]]),
+  });
+  const query = querySchema.parse(request.query);
+
+  const filesystem: AvailableFilesystems = query.filesystem as AvailableFilesystems;
+
+  const createdFilesystemNodesResult = await removeFilesystemNode(query.filesystemNodeTreePath, filesystem);
+  if (createdFilesystemNodesResult.accessDenied) {
+    response.status(403);
+    response.json(`Trying to access some filesystem node under the ${query.filesystemNodeTreePath}, but we are not allowed to modify anything there`);
+    return;
+  }
+
+  response.status(200);
+  return;
+});
+
+
 export const createFilesystemNodesDirectly = asyncHandler(async (request: express.Request, response: express.Response) => {
   const availableFilesystems = Object.values(AvailableFilesystems);
   const bodySchema = z.object({
