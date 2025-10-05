@@ -1,4 +1,4 @@
-import { Dispatch, RefObject, SetStateAction, useEffect, useRef, useState } from "react";
+import { Dispatch, RefObject, SetStateAction, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import * as monaco from 'monaco-editor';
 import {
@@ -180,10 +180,16 @@ type TextDiffEditorDialogProps = {
 }
 
 type TextDiffEditorHookProps = Omit<TextDiffEditorBetterModalProps, "isOpen">;
+type MergeFromMergeToStrings = { mergeFrom: string | null, mergeTo: string | null };
+type IriMappings = {
+  iriToProjectIriMap: Record<string, string>,
+  projectIriToIriMap: Record<string, MergeFromMergeToStrings>,
+};
 
 // Note that the hook is not useful for anything else than the diff editor dialog, but since it is quite large I put it into separate file
 export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri, initialMergeToResourceIri, resolve}: TextDiffEditorHookProps) => {
   const monacoEditor = useRef<{editor: monaco.editor.IStandaloneDiffEditor}>(undefined);
+
 
   // Set once in the useEffect
   const [examinedMergeState, setExaminedMergeState] = useState<MergeState | null>(null);
@@ -215,6 +221,39 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
   // When loading the directory structure from backend
   // Note that the value itself is not set neither here it is passed to the child class
   const [isLoadingTreeStructure, setIsLoadingTreeStructure] = useState<boolean>(true);
+
+  const { iriToProjectIriMap, projectIriToIriMap } = useMemo<IriMappings>(() => {
+    const iriToProjectIriMapStorage: Record<string, string> = {};
+    const projectIriToIriMapStorage: Record<string, MergeFromMergeToStrings> = {};
+
+    for (const diffNode of Object.values(examinedMergeState?.diffTreeData?.diffTree ?? {})) {
+      const { old: mergeFromResource, new: mergeToResource } = diffNode.resources;
+      const projectIri = mergeFromResource?.metadataCache.projectIri ?? mergeToResource?.metadataCache.projectIri;
+      if (projectIri === undefined) {
+        throw new Error(`The diff node inside diff tree does not have defined neither old and neither new resource for some reason: ${diffNode}`);
+      }
+      const mapValue: MergeFromMergeToStrings = {
+        mergeFrom: mergeFromResource?.metadataCache.iri ?? null,
+        mergeTo: mergeToResource?.metadataCache.iri ?? null,
+      };
+
+      mapValue.mergeFrom ??= (projectIriToIriMapStorage[projectIri]?.mergeFrom ?? null);
+      mapValue.mergeTo ??= (projectIriToIriMapStorage[projectIri]?.mergeTo ?? null);
+      projectIriToIriMapStorage[projectIri] = mapValue;
+      if (mapValue.mergeFrom !== null) {
+        iriToProjectIriMapStorage[mapValue.mergeFrom] = projectIri;
+      }
+      if (mapValue.mergeTo !== null) {
+        iriToProjectIriMapStorage[mapValue.mergeTo] = projectIri;
+      }
+    }
+
+    return {
+      iriToProjectIriMap: iriToProjectIriMapStorage,
+      projectIriToIriMap: projectIriToIriMapStorage,
+    };
+  }, [examinedMergeState]);
+  console.info({iriToProjectIriMap, projectIriToIriMap});     // TODO RadStr DEBUG: Debug print, also currently exists so we do not get compilation warning for not using the values
 
 
   const activeDatastoreType = mergeToDatastoreInfo?.type ?? mergeFromDatastoreInfo?.type ?? null;
@@ -559,7 +598,6 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
         console.info("After");
         console.info(datastoreInfosForCacheEntries[filesystemNodesBatchToCreate.createdFilesystemNodes[i].treePath][type]);
       }
-
     }
 
 
