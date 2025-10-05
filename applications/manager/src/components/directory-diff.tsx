@@ -480,8 +480,8 @@ function StyledNode({
             !node.data.isInEditableTree || isExpandable ?
             null :
             <div
-              style={{ right: "-3px" }}
-              className="absolute text-black top-1/2 -translate-y-1/2 flex opacity-0 bg-white group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto p-1"
+              style={{ right: "-3px", background: backgroundColor }}
+              className="absolute text-black top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto"
             >
               <>
                 {
