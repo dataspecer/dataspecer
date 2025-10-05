@@ -1,4 +1,4 @@
-import { AvailableFilesystems, convertDatastoreContentBasedOnFormat, getDatastoreInfoOfGivenDatastoreType, GitProvider, isDatastoreForMetadata, ExportMetadataCacheType } from "@dataspecer/git";
+import { AvailableFilesystems, convertDatastoreContentBasedOnFormat, getDatastoreInfoOfGivenDatastoreType, GitProvider, isDatastoreForMetadata, ExportMetadataType } from "@dataspecer/git";
 import { ComparisonData } from "../../../routes/git-webhook-handler.ts";
 import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, DatastoreInfo, FilesystemAbstractionBase, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode } from "@dataspecer/git";
 
@@ -47,7 +47,6 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     mappedNodeLocation: FilesystemNodeLocation,
     filesystemMapping: FilesystemMappingType,
     parentDirectoryNode: DirectoryNode | null,
-    shouldSetMetadataCache: boolean
   ) {
     const { iri } = mappedNodeLocation;
     const fullPath: string = dsPathJoin(mappedNodeLocation.fullPath, iri);
@@ -84,7 +83,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
       const directoryNode: DirectoryNode = {
         name: iri,
         type: "directory",
-        metadataCache: {} as ExportMetadataCacheType,    // We are not using the value in the course of creating the mapping! We set them later
+        metadata: {} as ExportMetadataType,    // We are not using the value in the course of creating the mapping! We set them later
         datastores: [],
         content: {},
         fullTreePath: fullTreePath,
@@ -126,7 +125,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
         const newSingleNode: FileNode = {
           name: invalidName,
           type: "file",
-          metadataCache: { iri: invalidName, types: ["from-git-unknown"], projectIri: iri, userMetadata: {} },      // TODO RadStr: I don't know about this.
+          metadata: { iri: invalidName, types: ["from-git-unknown"], projectIri: iri, userMetadata: {} },      // TODO RadStr: I don't know about this.
           // TODO RadStr: the old way
           // datastores: { model: path.join(directory, invalidName) },
           datastores: [prefixName],
@@ -152,11 +151,11 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
       if (prefix === "") {    // Directory data
         const relevantDirectoryNode = this.globalFilesystemMapping[fullTreePath];
         if (relevantDirectoryNode !== undefined) {
-          if (shouldSetMetadataCache && Object.values(relevantDirectoryNode.metadataCache).length === 0) {
+          if (Object.values(relevantDirectoryNode.metadata).length === 0) {
             parentDirectoryNodeForRecursion.datastores = parentDirectoryNodeForRecursion.datastores.concat(valuesForPrefix);
             const newFullPath = fullPath + "/";    // We have to do it explictly, if we use path.join on empty string, it won't do anything with the result.
             if (getMetadataDatastoreFile(parentDirectoryNodeForRecursion.datastores) !== undefined) {
-              setMetadataCache(parentDirectoryNodeForRecursion, newFullPath, shouldSetMetadataCache);
+              setMetadata(parentDirectoryNodeForRecursion, newFullPath);
             }
           }
           else {
@@ -182,7 +181,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
         fileNode = {
           name: prefix,
           type: "file",
-          metadataCache: {} as ExportMetadataCacheType,    // We are not using the value in the course of creating the mapping!
+          metadata: {} as ExportMetadataType,    // We are not using the value in the course of creating the mapping!
           datastores: valuesForPrefix,
           fullTreePath: fileNodeLocation.fullTreePath,
         };
@@ -194,7 +193,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
       }
 
       if (getMetadataDatastoreFile(fileNode.datastores) !== undefined) {
-        setMetadataCache(fileNode, fileNodeLocation.fullPath, shouldSetMetadataCache);
+        setMetadata(fileNode, fileNodeLocation.fullPath);
       }
     }
 
@@ -206,7 +205,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
         fullTreePath: fullTreePath,
       };
 
-      await this.createFilesystemMappingRecursive(newDirectoryLocation, directoryContentContainer, parentDirectoryNodeForRecursion, shouldSetMetadataCache);
+      await this.createFilesystemMappingRecursive(newDirectoryLocation, directoryContentContainer, parentDirectoryNodeForRecursion);
     }
 
     return filesystemMapping;
@@ -243,10 +242,10 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     return file === "README.md";
   }
 
-  createFilesystemMapping(root: FilesystemNodeLocation, shouldSetMetadataCache: boolean): Promise<FilesystemMappingType> {
+  createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType> {
     throw new Error("Method not implemented.");
   }
-  async changeDatastore(otherFilesystem: FilesystemAbstraction, changed: ComparisonData, shouldUpdateMetadataCache: boolean): Promise<boolean> {
+  async changeDatastore(otherFilesystem: FilesystemAbstraction, changed: ComparisonData): Promise<boolean> {
     const newContent = await otherFilesystem.getDatastoreContent(changed.newVersion!.name, changed.affectedDataStore.type, false);
     return this.updateDatastore(changed.oldVersion!, changed.affectedDataStore.type, newContent);
   }
@@ -283,20 +282,17 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
 
 
 
-function setMetadataCache(node: FilesystemNode, directory: string, shouldSetMetadataCache: boolean) {
-  if (shouldSetMetadataCache) {
-    const metadataDatastore = getMetadataDatastoreFile(node.datastores);
-    if (metadataDatastore === undefined) {
-      console.error("Metadata datastore is missing, that is there is no .meta file or its equivalent (depending on filesystem)");
-      return;
-    }
-    const fullPath = `${directory}${metadataDatastore.afterPrefix}`;
-    node.metadataCache = constructMetadataCache(fullPath, metadataDatastore.format, node.metadataCache);
+function setMetadata(node: FilesystemNode, directory: string) {
+  const metadataDatastore = getMetadataDatastoreFile(node.datastores);
+  if (metadataDatastore === undefined) {
+    console.error("Metadata datastore is missing, that is there is no .meta file or its equivalent (depending on filesystem)");
+    return;
   }
-  // TODO RadStr: Maybe also do something if shouldSetMetadataCache === false
+  const fullPath = `${directory}${metadataDatastore.afterPrefix}`;
+  node.metadata = constructMetadata(fullPath, metadataDatastore.format, node.metadata);
 }
 
-function constructMetadataCache(metadataFilePath: string, format: string | null, oldCache?: object) {
+function constructMetadata(metadataFilePath: string, format: string | null, oldCache?: object) {
   oldCache ??= {};
   return {
     ...oldCache,
@@ -306,7 +302,7 @@ function constructMetadataCache(metadataFilePath: string, format: string | null,
 
 
 /**
- * @deprecated Probably once again deprecated - use the filesystem instead
+ * @deprecated Probably once again deprecated - use the filesystem one instead
  */
 function readMetadataFile(metadataFilePath: string, format: string | null) {
   const metadata = convertDatastoreContentBasedOnFormat(fs.readFileSync(metadataFilePath, "utf-8"), format, true);

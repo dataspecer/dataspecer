@@ -62,7 +62,7 @@ function convertToMergeInfoWithIri(input: MergeEndInfoWithRootNode): MergeEndInf
     filesystemType: input.filesystemType,
     lastCommitHash: input.lastCommitHash,
     rootFullPathToMeta: input.rootFullPathToMeta,
-    rootIri: input.rootNode.metadataCache.iri ?? "",
+    rootIri: input.rootNode.metadata.iri,
     branch: input.branch,
   };
 }

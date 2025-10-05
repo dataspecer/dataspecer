@@ -1,6 +1,6 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import { v4 as uuidv4 } from 'uuid';
-import { GitProvider, FilesystemAbstractionBase, ComparisonData, DatastoreInfo, DirectoryNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaDatastoreInfo, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode, isDatastoreForMetadata, getDatastoreInfoOfGivenDatastoreType, AvailableFilesystems, convertDatastoreContentBasedOnFormat, ExportMetadataCacheType } from "@dataspecer/git";
+import { GitProvider, FilesystemAbstractionBase, ComparisonData, DatastoreInfo, DirectoryNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaDatastoreInfo, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode, isDatastoreForMetadata, getDatastoreInfoOfGivenDatastoreType, AvailableFilesystems, convertDatastoreContentBasedOnFormat, ExportMetadataType } from "@dataspecer/git";
 import { ResourceModel } from "../../../models/resource-model.ts";
 import { deleteBlob, deleteResource } from "../../../routes/resource.ts";
 import { BaseResource } from "@dataspecer/core-v2/project";
@@ -131,9 +131,9 @@ export class DSFilesystem extends FilesystemAbstractionBase {
   /**
    * @deprecated Calling the Recursive variant straight from constructor ... remove later
    */
-  async createFilesystemMapping(root: FilesystemNodeLocation, shouldSetMetadataCache: boolean): Promise<FilesystemMappingType> {
+  async createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType> {
     const rootDirectoryNode = createFilesystemMappingRoot();
-    return this.createFilesystemMappingRecursive(root, rootDirectoryNode.content, rootDirectoryNode, shouldSetMetadataCache);   // TODO RadStr: Once again - should I use await?
+    return this.createFilesystemMappingRecursive(root, rootDirectoryNode.content, rootDirectoryNode);   // TODO RadStr: Once again - should I use await?
   }
 
   // TODO RadStr: Rename to not contain the Recursive in name, since we removed the top level method
@@ -141,7 +141,6 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     mappedNodeLocation: FilesystemNodeLocation,
     filesystemMapping: FilesystemMappingType,
     parentDirectoryNode: DirectoryNode | null,
-    shouldSetMetadataCache: boolean,
   ): Promise<FilesystemMappingType> {
     const { iri, fullTreePath } = mappedNodeLocation;     // Note that we are not using the fullPath
 
@@ -171,7 +170,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
       const directoryNode: DirectoryNode = {
         name: newNodeLocation.iri,
         type: "directory",
-        metadataCache: {} as ExportMetadataCacheType,    // We are not using the value in the course of creating the mapping!
+        metadata: {} as ExportMetadataType,    // We are not using the value in the course of creating the mapping!
         datastores: [],
         content: createEmptyFilesystemMapping(),
         fullTreePath: newNodeLocation.fullTreePath,
@@ -186,7 +185,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
           fullPath: subResource.iri,      // TODO RadStr: Either that or the fullName, I think it should be the iri
           fullTreePath: fullName
         };
-        await this.createFilesystemMappingRecursive(newDirectoryNodeLocation, filesystemNode.content, filesystemNode, shouldSetMetadataCache);
+        await this.createFilesystemMappingRecursive(newDirectoryNodeLocation, filesystemNode.content, filesystemNode);
       }
     }
     else {  // Not a package
@@ -199,7 +198,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
       const fileNode: FilesystemNode = {
         name: newNodeLocation.iri,
         type: "file",
-        metadataCache: {} as ExportMetadataCacheType,    // We are not using the value in the course of creating the mapping!
+        metadata: {} as ExportMetadataType,    // We are not using the value in the course of creating the mapping!
         datastores: [],
         fullTreePath: newNodeLocation.fullTreePath,
       }
@@ -209,13 +208,12 @@ export class DSFilesystem extends FilesystemAbstractionBase {
 
     // Maybe in future we will have something else than JSONs on backend, but right now always use JSONs for DS filesystem.
     // Check top of file for more info.
-    if (shouldSetMetadataCache) {
-      const metadata = DSFilesystem.constructMetadataFromResource(resource);
-      filesystemNode.metadataCache = metadata;
-    }
+    const metadata = DSFilesystem.constructMetadataFromResource(resource);
+    filesystemNode.metadata = metadata;
+
     // TODO RadStr: Once again using the iri, otherwise we crash ... so yeah it is no longer cache.
     // For Dataspecer fileystem hardcode JSONs as format. Check top of file for more info.
-    const metaDatastoreInfo: DatastoreInfo = createMetaDatastoreInfo(filesystemNode.metadataCache.iri ?? localNameCandidate, "json");
+    const metaDatastoreInfo: DatastoreInfo = createMetaDatastoreInfo(filesystemNode.metadata.iri , "json");
     filesystemNode.datastores.push(metaDatastoreInfo);
 
     for (const [blobName, storeId] of Object.entries(resource.dataStores)) {
@@ -235,7 +233,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     return filesystemMapping;
   }
 
-  public static constructMetadataFromResource(resource: BaseResource): ExportMetadataCacheType {
+  public static constructMetadataFromResource(resource: BaseResource): ExportMetadataType {
     return {
       iri: resource.iri,
       projectIri: resource.projectIri,
@@ -249,7 +247,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     };
   }
 
-  async changeDatastore(otherFilesystem: FilesystemAbstraction, changed: ComparisonData, shouldUpdateMetadataCache: boolean): Promise<boolean> {
+  async changeDatastore(otherFilesystem: FilesystemAbstraction, changed: ComparisonData): Promise<boolean> {
     // Here we just update the blob
 
     const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(changed.oldVersion!, changed.affectedDataStore.type);

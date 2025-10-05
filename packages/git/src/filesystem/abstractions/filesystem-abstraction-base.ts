@@ -1,5 +1,5 @@
 import { GitProvider } from "../../git-provider-api.ts";
-import { FilesystemNode, FilesystemMappingType, DirectoryNode, FilesystemNodeLocation, DatastoreInfo, ExportMetadataCacheType } from "../../export-import-data-api.ts";
+import { FilesystemNode, FilesystemMappingType, DirectoryNode, FilesystemNodeLocation, DatastoreInfo, ExportMetadataType } from "../../export-import-data-api.ts";
 import { AvailableFilesystems, createEmptyFilesystemMapping, createFilesystemMappingRoot, createInitialNodeToParentMap, FilesystemAbstraction, getMetaPrefixType } from "./filesystem-abstraction.ts";
 
 import path from "path";
@@ -87,7 +87,7 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
 
   async initializeFilesystem(filesystemRoots: FilesystemNodeLocation[]): Promise<void> {
     for (const givenRoot of filesystemRoots) {
-      await this.createFilesystemMappingRecursive(givenRoot, this.root.content, this.root, true);
+      await this.createFilesystemMappingRecursive(givenRoot, this.root.content, this.root);
     }
   }
 
@@ -116,9 +116,9 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
     delete this.nodeToParentMap[fullTreePath];
   }
 
-  async getMetadataObject(treePath: string): Promise<ExportMetadataCacheType> {
+  async getMetadataObject(treePath: string): Promise<ExportMetadataType> {
     const metaContent = await this.getDatastoreContent(treePath, getMetaPrefixType(), true);
-    return metaContent as unknown as ExportMetadataCacheType;
+    return metaContent as ExportMetadataType;
   }
 
   // TODO RadStr: This is no longer the case - iri is not the last part of the path - it is the name after the path
@@ -130,15 +130,14 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
     mappedNodeLocation: FilesystemNodeLocation,
     filesystemMapping: FilesystemMappingType,
     parentDirectoryNode: DirectoryNode | null,
-    shouldSetMetadataCache: boolean
   ): Promise<FilesystemMappingType>
 
   abstract getFilesystemType(): AvailableFilesystems;
   abstract getDatastoreContent(treePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any>;
   abstract shouldIgnoreDirectory(directory: string, gitProvider: GitProvider): boolean;
   abstract shouldIgnoreFile(file: string): boolean;
-  abstract createFilesystemMapping(root: FilesystemNodeLocation, shouldSetMetadataCache: boolean): Promise<FilesystemMappingType>;
-  abstract changeDatastore(otherFilesystem: FilesystemAbstraction, changed: ComparisonData, shouldUpdateMetadataCache: boolean): Promise<boolean>;
+  abstract createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType>;
+  abstract changeDatastore(otherFilesystem: FilesystemAbstraction, changed: ComparisonData): Promise<boolean>;
   abstract removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<boolean>;
   abstract removeFile(filesystemNode: FilesystemNode): Promise<boolean>;
   abstract updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, content: string): Promise<boolean>;

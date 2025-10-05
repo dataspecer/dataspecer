@@ -27,7 +27,7 @@ export class PackageExporterNew extends PackageExporterBase {
     for(const datastore of filesystemNode.datastores) {
       let data;
       if (isDatastoreForMetadata(datastore.type)) {
-        data = filesystemNode.metadataCache;
+        data = filesystemNode.metadata;
         this.setExportVersionInternal(data);
       }
       else {

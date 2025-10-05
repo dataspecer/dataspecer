@@ -37,14 +37,14 @@ export type DatastoreInfo = {
   fullPath: string;
 }
 
-export type ExportShareableMetadataCacheType = {
+export type ExportShareableMetadataType = {
   [key: string]: any;
 } & ShareableMetadata;
 
 
-export type ExportMetadataCacheType = {
+export type ExportMetadataType = {
   iri: string;
-} & ExportShareableMetadataCacheType;
+} & ExportShareableMetadataType;
 
 /**
  * Metadata which can be shared when copying, etc.
@@ -55,21 +55,21 @@ export type ShareableMetadata = {
   types: string[];
 };
 
-export type DatabaseMetadataCacheType = {
+export type DatabaseMetadataType = {
   [key: string]: any;
 };
 
 /**
  * Removes the required fields from the given {@link metadata}
  */
-export function convertExportMetadataCacheToDatabaseOne(metadata: ExportMetadataCacheType): DatabaseMetadataCacheType {
+export function convertExportMetadataToDatabaseOne(metadata: ExportMetadataType): DatabaseMetadataType {
   delete metadata.iri;
   delete metadata.projectIri;
   delete metadata.types;
   return metadata;
 }
 
-export function pickShareableMetadata(metadata: ExportMetadataCacheType): ShareableMetadata {
+export function pickShareableMetadata(metadata: ExportMetadataType): ShareableMetadata {
   return {
     projectIri: metadata.projectIri,
     types: metadata.types,
@@ -78,7 +78,8 @@ export function pickShareableMetadata(metadata: ExportMetadataCacheType): Sharea
 }
 
 /**
- * Important note: When it comes to to the fullTrePpath - use the /, don't use filesystem specific separators (that is path.sep)
+ * Important note: When it comes to to the fullTrePpath - use the /, don't use filesystem specific separators (that is path.sep).
+ * To further understand what is FilesystemNode check the comment for {@link metadata}. But in short it is the DS resource stored in database.
  */
 type FilesystemNodeCommonData = {
   /**
@@ -87,7 +88,13 @@ type FilesystemNodeCommonData = {
   name: string,
 
   // TODO RadStr: Retype and rename - it is not cache
-  metadataCache: ExportMetadataCacheType,
+  /**
+   * The metadata for the filesystem node. Basically what we find under the .meta. There is a very impossible note which I noticed With hindsight.
+   *  Filesystem node = DS resource. That means the meta and the resource are one entity, even though in the git it lives as a separate entity.
+   *  (That is the reason why at one point it was not metadata but metadata cache. Note that it still could be implemented -
+   *   basically fetch the metadata on demand, but it is too mcuh of a headache to make it work for basically 0 gain)
+   */
+  metadata: ExportMetadataType,
   /**
    * TODO RadStr Idea: Could be Record<DatastoreType, string>. Note that the record variant would expect to have at most 1 datastore of given type
    */

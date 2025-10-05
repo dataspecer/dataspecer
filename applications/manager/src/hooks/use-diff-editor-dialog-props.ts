@@ -228,13 +228,13 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
 
     for (const diffNode of Object.values(examinedMergeState?.diffTreeData?.diffTree ?? {})) {
       const { old: mergeFromResource, new: mergeToResource } = diffNode.resources;
-      const projectIri = mergeFromResource?.metadataCache.projectIri ?? mergeToResource?.metadataCache.projectIri;
+      const projectIri = mergeFromResource?.metadata.projectIri ?? mergeToResource?.metadata.projectIri;
       if (projectIri === undefined) {
         throw new Error(`The diff node inside diff tree does not have defined neither old and neither new resource for some reason: ${diffNode}`);
       }
       const mapValue: MergeFromMergeToStrings = {
-        mergeFrom: mergeFromResource?.metadataCache.iri ?? null,
-        mergeTo: mergeToResource?.metadataCache.iri ?? null,
+        mergeFrom: mergeFromResource?.metadata.iri ?? null,
+        mergeTo: mergeToResource?.metadata.iri ?? null,
       };
 
       mapValue.mergeFrom ??= (projectIriToIriMapStorage[projectIri]?.mergeFrom ?? null);
@@ -626,7 +626,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
         if ((removedDatastore = removedDatastores.find(datastore => datastore.fullPath === datastoreInfoForEditable?.fullPath)) !== undefined) {
           const diffTreeNode = examinedMergeState!.diffTreeData!.diffTree[nodeTreePath];
           const relevantResource: FilesystemNode = getEditableValue(editable, diffTreeNode.resources.old, diffTreeNode.resources.new)!;
-          const datastoreParentIri = relevantResource.metadataCache.iri;
+          const datastoreParentIri = relevantResource.metadata.iri;
           await ClientFilesystem.removeDatastoreDirectly(datastoreParentIri, removedDatastore, import.meta.env.VITE_BACKEND, editableFilesystem, false);
           continue;
         }
@@ -769,7 +769,7 @@ async function onCascadeUpdateForCreatedDatastores(
         setCreatedDatastores(prev => [...prev, metadataInfo]);
 
         const newFilesystemNodeToCreate = {
-          parentProjectIri: parentNode.metadataCache.projectIri,
+          parentProjectIri: parentNode.metadata.projectIri,
           treePath: existingResource!.fullTreePath,
           userMetadataDatastoreInfo: metadataInfo,
         };
@@ -788,7 +788,7 @@ async function onCascadeUpdateForCreatedDatastores(
 
     if (!visitedFirstNodeToCreate) {
       // The value has to be string since we have not yet visited node which does not exists in the editable tree (otherwise the condition if would not pass)
-      firstExistingParentIri = getEditableValue(editable, currentDiffNode?.resources.old?.metadataCache.iri, currentDiffNode?.resources.new?.metadataCache.iri)!;
+      firstExistingParentIri = getEditableValue(editable, currentDiffNode?.resources.old?.metadata.iri, currentDiffNode?.resources.new?.metadata.iri)!;
     }
   }
   setCreatedFilesystemNodes(prev => ({

@@ -1,5 +1,5 @@
 import { ComparisonData } from "../../merge/merge-state.ts";
-import { FilesystemNodeLocation, FilesystemMappingType, DirectoryNode, FilesystemNode, DatastoreInfo, ExportMetadataCacheType, ShareableMetadata, ExportShareableMetadataCacheType } from "../../export-import-data-api.ts";
+import { FilesystemNodeLocation, FilesystemMappingType, DirectoryNode, FilesystemNode, DatastoreInfo, ExportMetadataType, ShareableMetadata, ExportShareableMetadataType } from "../../export-import-data-api.ts";
 import { GitProvider } from "../../git-provider-api.ts";
 import { FilesystemAbstractionBase } from "../abstractions/filesystem-abstraction-base.ts";
 import { AvailableFilesystems, FilesystemAbstraction, getDatastoreInfoOfGivenDatastoreType } from "../abstractions/filesystem-abstraction.ts";
@@ -14,7 +14,7 @@ export type CreateDatastoreFilesystemNodesInfo = {
 export type CreateDatastoreFilesystemNodesData = {
   parentProjectIri: string,
   treePath: string,
-  userMetadata: ExportShareableMetadataCacheType,
+  userMetadata: ExportShareableMetadataType,
   format: string | null,
 };
 
@@ -112,7 +112,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
   }
 
 
-  protected createFilesystemMappingRecursive(mappedNodeLocation: FilesystemNodeLocation, filesystemMapping: FilesystemMappingType, parentDirectoryNode: DirectoryNode | null, shouldSetMetadataCache: boolean): Promise<FilesystemMappingType> {
+  protected createFilesystemMappingRecursive(mappedNodeLocation: FilesystemNodeLocation, filesystemMapping: FilesystemMappingType, parentDirectoryNode: DirectoryNode | null): Promise<FilesystemMappingType> {
     throw new Error("Method not implemented.");
   }
   async getDatastoreContent(treePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any> {
@@ -126,10 +126,10 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
   shouldIgnoreFile(file: string): boolean {
     throw new Error("Method not implemented.");
   }
-  createFilesystemMapping(root: FilesystemNodeLocation, shouldSetMetadataCache: boolean): Promise<FilesystemMappingType> {
+  createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType> {
     throw new Error("Method not implemented.");
   }
-  changeDatastore(otherFilesystem: FilesystemAbstraction, changed: ComparisonData, shouldUpdateMetadataCache: boolean): Promise<boolean> {
+  changeDatastore(otherFilesystem: FilesystemAbstraction, changed: ComparisonData): Promise<boolean> {
     throw new Error("Method not implemented.");
   }
 
@@ -181,7 +181,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
   removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<boolean> {
     const datastoreInfo: DatastoreInfo = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType);
     return ClientFilesystem.removeDatastoreDirectly(
-      filesystemNode.metadataCache.iri, datastoreInfo, this.backendApiPath,
+      filesystemNode.metadata.iri, datastoreInfo, this.backendApiPath,
       this.backendFilesystem, shouldRemoveFileWhenNoDatastores);
   }
   removeFile(filesystemNode: FilesystemNode): Promise<boolean> {
@@ -346,9 +346,9 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     while (currentNode !== null) {
       parent = otherFilesystem.getParentForNode(currentNode);
       filesystemNodesInTreePath.push({
-        parentProjectIri: parent.metadataCache.projectIri ?? "",
+        parentProjectIri: parent.metadata.projectIri,
         treePath: currentNode.fullTreePath,
-        userMetadata: currentNode.metadataCache,
+        userMetadata: currentNode.metadata,
         format: changedDatastore.format,
       });
       currentNode = parent;

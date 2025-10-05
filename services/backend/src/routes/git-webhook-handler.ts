@@ -59,7 +59,6 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
   gitInitialDirectoryParent: string,
   iri: string,
   gitProvider: GitProvider,
-  shouldSetMetadataCache: boolean,
   dsLastCommitHash: string,
   gitLastCommitHash: string,
   commonCommitHash: string,
@@ -179,7 +178,7 @@ async function handleResourceUpdateFinalVersion(
   filesystem: FilesystemAbstraction
 ) {
   if (isFileAddedFromGit(filesystemNodeName, filesystemNode.datastores)) {
-    const parentIri = filesystem.getParentForNode(filesystemNode)?.metadataCache.iri;
+    const parentIri = filesystem.getParentForNode(filesystemNode)?.metadata.iri;
     if (parentIri !== undefined) {
       await createNewResourceUploadedFromGit(parentIri, treePath, filesystemNodeName);
     }
@@ -199,15 +198,13 @@ async function handleResourceUpdateFinalVersion(
       console.info("Directroy");
     }
 
-    // TODO RadStr: This really means that metadataCache is not a cache but a hardcoded thing which always has to exist
     // TODO RadStr:  - since the iri may differ from name for example in the case of imported DCAT-AP
-    const nodeIri = filesystemNode.metadataCache.iri ?? filesystemNodeName;
+    const nodeIri = filesystemNode.metadata.iri ?? filesystemNodeName;
 
     // TODO RadStr: Should check if it already exists, or if not it should be created
     if (isDatastoreForMetadata(datastore.type)) {
       // TODO: Just for now - I don't know about used encodings, etc. - but this is just detail
       const metaFileContent = JSON.parse(fs.readFileSync(datastore.fullPath, "utf-8"));
-      // TODO RadStr: This really means that metadataCache is not a cache but a hardcoded thing which always has to exist
       // TODO RadStr:  - since the iri may differ from name for example in the case of imported DCAT-AP
       await updateResourceMetadata(nodeIri, metaFileContent!.userMetadata);
       continue;
@@ -218,28 +215,6 @@ async function handleResourceUpdateFinalVersion(
       await updateBlob(nodeIri, datastore.type, packageModelFileContent);
     }
   }
-}
-
-
-function setMetadataCache(node: FilesystemNode, directory: string, shouldSetMetadataCache: boolean) {
-  if (shouldSetMetadataCache) {
-    const metadataDatastore = getMetadataDatastoreFile(node.datastores);
-    if (metadataDatastore === undefined) {
-      console.error("Metadata datastore is missing, that is there is no .meta file or its equivalent (depending on filesystem)", { node, directory, datastores: node.datastores });
-      return;
-    }
-    const fullPath = `${directory}${metadataDatastore.afterPrefix}`;
-    node.metadataCache = constructMetadataCache(fullPath, node.metadataCache);
-  }
-  // TODO RadStr: Maybe also do something if shouldSetMetadataCache === false
-}
-
-function constructMetadataCache(metadataFilePath: string, oldCache?: object) {
-  oldCache ??= {};
-  return {
-    ...oldCache,
-    ...readMetadataFile(metadataFilePath),
-  };
 }
 
 function readMetadataFile(metadataFilePath: string) {

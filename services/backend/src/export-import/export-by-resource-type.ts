@@ -17,8 +17,8 @@ export class PackageExporterByResourceType extends PackageExporterBase {
     await this.exportDatastores(directory, pathToDirectory, pathToExportDirectory);
     for (const [name, filesystemNode] of Object.entries(directory.content)) {
       if (filesystemNode.type === "directory") {
-        const fullPath = this.createPathBasedOnResourceType(pathToDirectory, filesystemNode.name, filesystemNode.metadataCache.types[0]);
-        const exportFullPath = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.name, filesystemNode.metadataCache.types[0]);
+        const fullPath = this.createPathBasedOnResourceType(pathToDirectory, filesystemNode.name, filesystemNode.metadata.types[0]);
+        const exportFullPath = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.name, filesystemNode.metadata.types[0]);
         await this.exportDirectory(filesystemNode, fullPath, exportFullPath);
       }
       else {
@@ -40,14 +40,14 @@ export class PackageExporterByResourceType extends PackageExporterBase {
       exportFullName = pathToExportDirectory;
     }
     else {
-      fullName = this.createPathBasedOnResourceType(pathToDirectory, filesystemNode.name, filesystemNode.metadataCache.types[0]);
-      exportFullName = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.name, filesystemNode.metadataCache.types[0]);
+      fullName = this.createPathBasedOnResourceType(pathToDirectory, filesystemNode.name, filesystemNode.metadata.types[0]);
+      exportFullName = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.name, filesystemNode.metadata.types[0]);
     }
 
     for(const datastore of filesystemNode.datastores) {
       let data;
       if (isDatastoreForMetadata(datastore.type)) {
-        data = filesystemNode.metadataCache;
+        data = filesystemNode.metadata;
         this.setExportVersionInternal(data);
       }
       else {

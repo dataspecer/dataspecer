@@ -1,7 +1,7 @@
 // TODO RadStr: Think of better names and the name of the property and of type should be aligned
 
 import { GitProvider } from "../../git-provider-api.ts";
-import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, DatastoreInfo, ExportMetadataCacheType } from "../../export-import-data-api.ts";
+import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, DatastoreInfo, ExportMetadataType } from "../../export-import-data-api.ts";
 import { ComparisonData } from "../../merge/merge-state.ts";
 
 
@@ -71,7 +71,7 @@ export interface FilesystemAbstraction {
    * @param treePath is the path the resource. However the name contains the basis in case of filesystem (it does not contain the .meta suffix). In case of DS filesystem it is the IRI of resource.
    * @returns The metadata for given {@link treePath}
    */
-  getMetadataObject(treePath: string): Promise<ExportMetadataCacheType>;
+  getMetadataObject(treePath: string): Promise<ExportMetadataType>;
 
   /**
    *
@@ -107,20 +107,17 @@ export interface FilesystemAbstraction {
 
   /**
    * @param root is the location info of the root needed to build the filesystem tree.
-   * @param shouldSetMetadataCache if true then also sets the metadata cache. In case of DS this is basically free operation, in case of Filesystem, we have to read metadata file.
    */
-  createFilesystemMapping(root: FilesystemNodeLocation, shouldSetMetadataCache: boolean): Promise<FilesystemMappingType>
+  createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType>
 
   // TODO RadStr: After I am done with the implementation fix the docs here - for example I newly added datastoreType: string, but I'm not sure if it will stay.
   // TODO RadStr: I don't know - the api could also be oldFileSystemNode, newFileSystemNode (and its abstraction). and it just replaces stuff
   /**
-   * Changes content of the given version of datastore inside {@link ComparisonData} to the new version inside the filesystem
-   *  and if {@link shouldUpdateMetadataCache} is provided then also updates cache accordingly, otherwise the abstraction is unchanged.
+   * Changes content of the given version of datastore inside {@link ComparisonData} to the new version inside the filesystem.
    *  {@link otherFilesystem} is the other filesystem containing the data of the new version.
-   * TODO RadStr: Move the metadata away probably? I don't know what ot do with the metadata yet
    * @returns True if the file was sucessfully changed, false on failure.
    */
-  changeDatastore(otherFilesystem: FilesystemAbstraction, changed: ComparisonData, shouldUpdateMetadataCache: boolean): Promise<boolean>;
+  changeDatastore(otherFilesystem: FilesystemAbstraction, changed: ComparisonData): Promise<boolean>;
 
   /**
    * Removes datastore from the {@link filesystemNode}, if it was the last {@link datastoreType} inside the node, also removes the whole node.
@@ -211,7 +208,7 @@ export function createFilesystemMappingRoot(): DirectoryNode {
   const root: DirectoryNode = {
     type: "directory",
     name: "",
-    metadataCache: { iri: "fake-root", projectIri: "fake-root-project-iri", types: [], userMetadata: {} },
+    metadata: { iri: "fake-root", projectIri: "fake-root-project-iri", types: [], userMetadata: {} },
     content: {},
     datastores: [],
     fullTreePath: "",
