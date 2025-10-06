@@ -23,7 +23,7 @@ export function findPatAccessTokens(accessTokens: AccessToken[] | null | undefin
 /**
  * Creates GitHub repo with content equal to the package with given iri inside the query part of express http request.
  */
-export const createLinkBetweenPackageAndGit = asyncHandler(async (request: express.Request, response: express.Response) => {
+export const createNewGitRepositoryWithPackageContent = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
     iri: z.string().min(1),
     givenUserName: z.string(),
@@ -81,7 +81,7 @@ export const createLinkBetweenPackageAndGit = asyncHandler(async (request: expre
       };
       const commitInfo: GitCommitToCreateInfoBasic = {
         commitMessage,
-        exportFormat: query.exportFormat ?? null
+        exportFormat: query.exportFormat ?? null,
       };
 
       const commitBranchAndHashInfo: CommitBranchAndHashInfo = {

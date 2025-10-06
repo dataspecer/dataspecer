@@ -224,7 +224,7 @@ application.post(apiBasename + "/git/webhook-test", currentSession, handleWebhoo
 application.post(apiBasename + "/git/webhook-test2", currentSession, handleWebhook);
 application.get(apiBasename + "/git/webhook-test", currentSession, createRandomWebook);
 application.post(apiBasename + "/git/set-private-ssh-key", currentSession, storePrivateSSHKey);
-application.get(apiBasename + "/git/link-package-to-git", currentSession, createLinkBetweenPackageAndGit);
+application.get(apiBasename + "/git/create-new-git-repository-with-package-content", currentSession, createLinkBetweenPackageAndGit);
 application.get(apiBasename + "/git/commit-package-to-git", currentSession, commitPackageToGitHandler);
 application.get(apiBasename + "/git/remove-git-repository", currentSession, removeGitRepository);
 application.get(apiBasename + "/git/create-package-from-existing-git-repository", currentSession, createPackageFromExistingGitRepository);    // TODO RadStr: Not called for naywhere

@@ -147,7 +147,7 @@ export const createNewRemoteRepositoryHandler = async (openModal: OpenBetterModa
   // that is why we implement it like this and not like react component
   const result = await openModal(GitActionsDialog, { inputPackage, type: "create-new-repository-and-commit" });
   if (result) {
-    const url = import.meta.env.VITE_BACKEND + "/git/link-package-to-git?iri=" + encodeURIComponent(iri) +
+    const url = import.meta.env.VITE_BACKEND + "/git/create-new-git-repository-with-package-content?iri=" + encodeURIComponent(iri) +
                                               "&givenRepositoryName=" + encodeURIComponent(result.repositoryName) +
                                               "&givenUserName=" + encodeURIComponent(result.user ?? "") +
                                               "&gitProviderURL=" + encodeURIComponent(result.gitProvider ?? "") +
