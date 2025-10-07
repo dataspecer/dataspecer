@@ -18,10 +18,10 @@ import {
   getDefaultValueForFormat,
   stringifyShareableMetadataInfoFromDatastoreContent,
   getDatastoreInfoOfGivenDatastoreType,
-  CreateDatastoreFilesystemNodesData,
   FilesystemNode,
   convertDatastoreContentForInputFormatToOutputFormat,
   setEditableValue,
+  ExportShareableMetadataType,
 } from "@dataspecer/git";
 import { finalizeMergeState, saveMergeState } from "@/utils/merge-state-fetch-methods";
 import { fetchMergeState } from "@/dialog/open-merge-state";
@@ -549,20 +549,13 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     const createdMetas: Set<string> = new Set();
 
     for (const [_, filesystemNodesBatchToCreate] of Object.entries(createdFilesystemNodes)) {
-      const filesystemNodesBatchWithData: CreateDatastoreFilesystemNodesData[] = [];
+      const filesystemNodesBatchMetadata: ExportShareableMetadataType[] = [];
 
       for (const filesystemNodeToCreate of filesystemNodesBatchToCreate.createdFilesystemNodes) {
         createdMetas.add(filesystemNodeToCreate.treePath);
         console.info({editableCacheContents, "treePath": filesystemNodeToCreate.treePath, "userMetadataDatastoreInfo": filesystemNodeToCreate.userMetadataDatastoreInfo})
         const filesystemNodeMetadata = getDatastoreInCacheAsObject(editableCacheContents, nonEditableCacheContents, filesystemNodeToCreate.treePath, filesystemNodeToCreate.userMetadataDatastoreInfo, removedDatastores);
-        // TODO RadStr PROJECTIRIS: userMetadata should be enough and maybe also parentProejctIri, but nothing anything else
-        const dataInsteadOfInfo: CreateDatastoreFilesystemNodesData = {
-          parentProjectIri: filesystemNodeToCreate.parentProjectIri,
-          treePath: filesystemNodeToCreate.treePath,
-          userMetadata: filesystemNodeMetadata,
-          format: filesystemNodeToCreate.userMetadataDatastoreInfo.format,
-        };
-        filesystemNodesBatchWithData.push(dataInsteadOfInfo);
+        filesystemNodesBatchMetadata.push(filesystemNodeMetadata);
       }
 
       if (filesystemNodesBatchToCreate.firstExistingParentIri === null) {
@@ -573,7 +566,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
       alert("Before CREATED IRIS");
 
       const createdIris = await ClientFilesystem.createFilesystemNodesDirectly(
-        filesystemNodesBatchWithData, filesystemNodesBatchToCreate.firstExistingParentIri,
+        filesystemNodesBatchMetadata, filesystemNodesBatchToCreate.firstExistingParentIri,
         editableFilesystem, import.meta.env.VITE_BACKEND);
 
       alert("CREATED IRIS");

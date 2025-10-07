@@ -6,7 +6,7 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import { stringToBoolean } from "../utils/git-utils.ts";
 import { z } from "zod";
 import { isAccessibleGitRepository } from "../models/git-store-info.ts";
-import { AvailableFilesystems, CreateDatastoreFilesystemNodesData, convertDatastoreContentBasedOnFormat } from "@dataspecer/git";
+import { AvailableFilesystems, ExportShareableMetadataType, convertDatastoreContentBasedOnFormat } from "@dataspecer/git";
 import path from "path";
 import { updateBlob } from "./resource.ts";
 import { v4 as uuidv4 } from "uuid";
@@ -117,7 +117,7 @@ export async function removeDatastoreContent(
  * @param parentIri This is the actual iri of the first parent (not project iri), under which we will connect the chain of new
  */
 export async function createDatastoreContent(
-  filesystemNodesInTreePath: CreateDatastoreFilesystemNodesData[],
+  filesystemNodesInTreePath: ExportShareableMetadataType[],
   parentIri: string,
   filesystem: AvailableFilesystems,
   type: string,
@@ -143,8 +143,8 @@ export async function createDatastoreContent(
     let currentParentIri: string = parentIri;
     for (const filesystemNodeInTreePath of filesystemNodesInTreePath) {
       currentNewIri = uuidv4();
-      const userMetadata = filesystemNodeInTreePath.userMetadata ?? {};
-      await resourceModel.createResource(currentParentIri, currentNewIri, userMetadata.types[0], userMetadata.userMetadata, filesystemNodeInTreePath.userMetadata.projectIri);
+      const userMetadata = filesystemNodeInTreePath ?? {};
+      await resourceModel.createResource(currentParentIri, currentNewIri, userMetadata.types[0], userMetadata.userMetadata, userMetadata.projectIri);
       currentParentIri = currentNewIri;
     }
     const newContentAsJSON = convertDatastoreContentBasedOnFormat(content, format ?? null, true);
@@ -158,7 +158,7 @@ export async function createDatastoreContent(
  * @param parentIri This is the actual iri of the first parent (not project iri), under which we will connect the chain of new filesystemNodes
  */
 export async function createFilesystemNodes(
-  filesystemNodesToCreate: CreateDatastoreFilesystemNodesData[],
+  filesystemNodesInTreePath: ExportShareableMetadataType[],
   parentIri: string,
   filesystem: AvailableFilesystems,
 ): Promise<{ success: boolean, accessDenied: boolean, createdIris: string[]}> {
@@ -172,11 +172,11 @@ export async function createFilesystemNodes(
   else {
     let currentNewIri: string;
     let currentParentIri: string = parentIri;
-    for (const filesystemNodeInTreePath of filesystemNodesToCreate) {
+    for (const filesystemNodeInTreePath of filesystemNodesInTreePath) {
       currentNewIri = uuidv4();
       createdIris.push(currentNewIri);
-      const userMetadata = filesystemNodeInTreePath.userMetadata ?? {};
-      await resourceModel.createResource(currentParentIri, currentNewIri, userMetadata.types[0], userMetadata.userMetadata, filesystemNodeInTreePath.userMetadata.projectIri);
+      const userMetadata = filesystemNodeInTreePath ?? {};
+      await resourceModel.createResource(currentParentIri, currentNewIri, userMetadata.types[0], userMetadata.userMetadata, userMetadata.projectIri);
       currentParentIri = currentNewIri;
     }
   }
@@ -228,15 +228,10 @@ export const createFilesystemNodesDirectly = asyncHandler(async (request: expres
   const bodySchema = z.object({
     createdFilesystemNodesInTreePath: z.array(
       z.object({
-        parentProjectIri: z.string().min(1),
-        treePath: z.string().min(1),
-        format: z.string().min(1).nullable(),
-        userMetadata: z.object({
-          projectIri: z.string(),
-          types: z.array(z.string()),
-          userMetadata: z.object({}).catchall(z.any()),
-        }).catchall(z.any()), // allows arbitrary extra keys of any type,
-      })
+        projectIri: z.string(),
+        types: z.array(z.string()),
+        userMetadata: z.object({}).catchall(z.any()),
+      }).catchall(z.any())  // allows arbitrary extra keys of any type,
     ),
     parentIri: z.string().min(1),     // This is the actual iri of the first parent (not project iri), under which we will connect the chain of new
     filesystem: z.enum(availableFilesystems as [string, ...string[]]),
@@ -287,16 +282,12 @@ export const createDatastoreContentDirectly = asyncHandler(async (request: expre
 
   const bodySchema = z.object({
     createdFilesystemNodesInTreePath: z.array(
+
       z.object({
-        parentProjectIri: z.string().min(1),
-        treePath: z.string().min(1),
-        format: z.string().min(1).nullable(),
-        userMetadata: z.object({
-          projectIri: z.string(),
-          types: z.array(z.string()),
-          userMetadata: z.object({}).catchall(z.any()),
-        }).catchall(z.any()), // allows arbitrary extra keys of any type,
-      })
+        projectIri: z.string(),
+        types: z.array(z.string()),
+        userMetadata: z.object({}).catchall(z.any()),
+      }).catchall(z.any())   // allows arbitrary extra keys of any type,
     ),
     parentIri: z.string().min(1),     // This is the actual iri of the first parent (not project iri), under which we will connect the chain of new
     filesystem: z.enum(availableFilesystems as [string, ...string[]]),

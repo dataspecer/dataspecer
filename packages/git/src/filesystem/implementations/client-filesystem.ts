@@ -11,13 +11,6 @@ export type CreateDatastoreFilesystemNodesInfo = {
   userMetadataDatastoreInfo: DatastoreInfo,
 };
 
-export type CreateDatastoreFilesystemNodesData = {
-  parentProjectIri: string,
-  treePath: string,
-  userMetadata: ExportShareableMetadataType,
-  format: string | null,
-};
-
 
 /**
  * Very lightweight filesystem, which just serves as component to to work with datastore content from backend
@@ -232,7 +225,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
 
 
   public static async createFilesystemNodesDirectly(
-    createdFilesystemNodesInTreePath: CreateDatastoreFilesystemNodesData[],
+    createdFilesystemNodesInTreePath: ExportShareableMetadataType[],
     parentIri: string,
     backendFilesystem: AvailableFilesystems | null,
     backendApiPath: string,
@@ -265,7 +258,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
 
 
   public static async createDatastoreDirectlyWithParents(
-    createdFilesystemNodesInTreePath: CreateDatastoreFilesystemNodesData[],
+    createdFilesystemNodesInTreePath: ExportShareableMetadataType[],
     parentIri: string,
     content: string,
     backendFilesystem: AvailableFilesystems | null,
@@ -342,18 +335,12 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
 
   async createDatastore(parentIriInToBeChangedFilesystem: string, otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean> {
     const content = await ClientFilesystem.getDatastoreContentDirectly(changedDatastore, true, this.backendApiPath, this.backendFilesystem);
-    const filesystemNodesInTreePath: CreateDatastoreFilesystemNodesData[] = [];
+    const filesystemNodesInTreePath: ExportShareableMetadataType[] = [];
     let currentNode = filesystemNode;
     let parent: DirectoryNode | null = null;
     while (currentNode !== null) {
       parent = otherFilesystem.getParentForNode(currentNode);
-      // TODO RadStr PROJECTIRIS: userMetadata should be enough
-      filesystemNodesInTreePath.push({
-        parentProjectIri: parent.metadata.projectIri,
-        treePath: currentNode.irisTreePath,
-        userMetadata: currentNode.metadata,
-        format: changedDatastore.format,
-      });
+      filesystemNodesInTreePath.push(currentNode.metadata);
       currentNode = parent;
     }
     return ClientFilesystem.createDatastoreDirectlyWithParents(
