@@ -23,7 +23,8 @@ export const CommitActionsDialog = ({ examinedPackage, branch, commitHash, branc
     const defaultGitURL = examinedPackage.linkedGitRepositoryURL;
     const gitURL = defaultGitURL + `/tree/${commitHash}`;     // TODO RadStr: Hardcoded - we somehoew have to share the Git providers code from backend here on frontend
     //                                                        // TODO RadStr: (... without the credentials code ... we just need small subset - just the factory and create URL)
-    window.location.href = gitURL;
+    const newTab = window.open(gitURL, "_blank");
+    newTab?.focus();
   };
 
   const handleImportGitCommitToDS = async () => {
