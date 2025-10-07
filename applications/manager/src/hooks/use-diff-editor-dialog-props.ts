@@ -1,4 +1,4 @@
-import { Dispatch, RefObject, SetStateAction, useEffect, useMemo, useRef, useState } from "react";
+import { Dispatch, RefObject, SetStateAction, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import * as monaco from 'monaco-editor';
 import {
@@ -181,6 +181,10 @@ type TextDiffEditorDialogProps = {
 
 type TextDiffEditorHookProps = Omit<TextDiffEditorBetterModalProps, "isOpen">;
 type MergeFromMergeToStrings = { mergeFrom: string | null, mergeTo: string | null };
+/**
+ * @deprecated Not needed I guess, we just use the mapping directly from backend - so TODO RadStr Later: Remove together with the commented code using it down below after it will be clear it is really useless
+ */
+// @ts-ignore
 type IriMappings = {
   iriToProjectIriMap: Record<string, string>,
   projectIriToIriMap: Record<string, MergeFromMergeToStrings>,
@@ -222,38 +226,38 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
   // Note that the value itself is not set neither here it is passed to the child class
   const [isLoadingTreeStructure, setIsLoadingTreeStructure] = useState<boolean>(true);
 
-  const { iriToProjectIriMap, projectIriToIriMap } = useMemo<IriMappings>(() => {
-    const iriToProjectIriMapStorage: Record<string, string> = {};
-    const projectIriToIriMapStorage: Record<string, MergeFromMergeToStrings> = {};
+  // TODO RadStr: Not needed then I guess
+  // const { iriToProjectIriMap, projectIriToIriMap } = useMemo<IriMappings>(() => {
+  //   const iriToProjectIriMapStorage: Record<string, string> = {};
+  //   const projectIriToIriMapStorage: Record<string, MergeFromMergeToStrings> = {};
 
-    for (const diffNode of Object.values(examinedMergeState?.diffTreeData?.diffTree ?? {})) {
-      const { old: mergeFromResource, new: mergeToResource } = diffNode.resources;
-      const projectIri = mergeFromResource?.metadata.projectIri ?? mergeToResource?.metadata.projectIri;
-      if (projectIri === undefined) {
-        throw new Error(`The diff node inside diff tree does not have defined neither old and neither new resource for some reason: ${diffNode}`);
-      }
-      const mapValue: MergeFromMergeToStrings = {
-        mergeFrom: mergeFromResource?.metadata.iri ?? null,
-        mergeTo: mergeToResource?.metadata.iri ?? null,
-      };
+  //   for (const diffNode of Object.values(examinedMergeState?.diffTreeData?.diffTree ?? {})) {
+  //     const { old: mergeFromResource, new: mergeToResource } = diffNode.resources;
+  //     const projectIri = mergeFromResource?.metadata.projectIri ?? mergeToResource?.metadata.projectIri;
+  //     if (projectIri === undefined) {
+  //       throw new Error(`The diff node inside diff tree does not have defined neither old and neither new resource for some reason: ${diffNode}`);
+  //     }
+  //     const mapValue: MergeFromMergeToStrings = {
+  //       mergeFrom: mergeFromResource?.metadata.iri ?? null,
+  //       mergeTo: mergeToResource?.metadata.iri ?? null,
+  //     };
 
-      mapValue.mergeFrom ??= (projectIriToIriMapStorage[projectIri]?.mergeFrom ?? null);
-      mapValue.mergeTo ??= (projectIriToIriMapStorage[projectIri]?.mergeTo ?? null);
-      projectIriToIriMapStorage[projectIri] = mapValue;
-      if (mapValue.mergeFrom !== null) {
-        iriToProjectIriMapStorage[mapValue.mergeFrom] = projectIri;
-      }
-      if (mapValue.mergeTo !== null) {
-        iriToProjectIriMapStorage[mapValue.mergeTo] = projectIri;
-      }
-    }
+  //     mapValue.mergeFrom ??= (projectIriToIriMapStorage[projectIri]?.mergeFrom ?? null);
+  //     mapValue.mergeTo ??= (projectIriToIriMapStorage[projectIri]?.mergeTo ?? null);
+  //     projectIriToIriMapStorage[projectIri] = mapValue;
+  //     if (mapValue.mergeFrom !== null) {
+  //       iriToProjectIriMapStorage[mapValue.mergeFrom] = projectIri;
+  //     }
+  //     if (mapValue.mergeTo !== null) {
+  //       iriToProjectIriMapStorage[mapValue.mergeTo] = projectIri;
+  //     }
+  //   }
 
-    return {
-      iriToProjectIriMap: iriToProjectIriMapStorage,
-      projectIriToIriMap: projectIriToIriMapStorage,
-    };
-  }, [examinedMergeState]);
-  console.info({iriToProjectIriMap, projectIriToIriMap});     // TODO RadStr DEBUG: Debug print, also currently exists so we do not get compilation warning for not using the values
+  //   return {
+  //     iriToProjectIriMap: iriToProjectIriMapStorage,
+  //     projectIriToIriMap: projectIriToIriMapStorage,
+  //   };
+  // }, [examinedMergeState]);
 
 
   const activeDatastoreType = mergeToDatastoreInfo?.type ?? mergeFromDatastoreInfo?.type ?? null;

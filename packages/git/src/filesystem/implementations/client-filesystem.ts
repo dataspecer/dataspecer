@@ -1,5 +1,5 @@
 import { ComparisonData } from "../../merge/merge-state.ts";
-import { FilesystemNodeLocation, FilesystemMappingType, DirectoryNode, FilesystemNode, DatastoreInfo, ExportMetadataType, ShareableMetadata, ExportShareableMetadataType } from "../../export-import-data-api.ts";
+import { FilesystemNodeLocation, FilesystemMappingType, DirectoryNode, FilesystemNode, DatastoreInfo, ExportShareableMetadataType } from "../../export-import-data-api.ts";
 import { GitProvider } from "../../git-provider-api.ts";
 import { FilesystemAbstractionBase } from "../abstractions/filesystem-abstraction-base.ts";
 import { AvailableFilesystems, FilesystemAbstraction, getDatastoreInfoOfGivenDatastoreType } from "../abstractions/filesystem-abstraction.ts";
