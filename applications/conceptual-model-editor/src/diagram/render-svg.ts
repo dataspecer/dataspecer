@@ -307,6 +307,7 @@ const HTML_STYLE_WHITE_LIST = new Set([
   "word-break",
   "word-spacing",
   "z-index",
+  "list-style-type",
 ]);
 
 function updateProfileEdge(source: SVGElement, target: SVGElement) {
