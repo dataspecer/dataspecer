@@ -678,7 +678,7 @@ export class ResourceModel {
      * Updates modification time of the resource and all its parent packages.
      * @param iri
      */
-    async updateModificationTime(iri: string, updatedModel: string, updateReason: ResourceChangeType) {
+    async updateModificationTime(iri: string, updatedModel: string | null, updateReason: ResourceChangeType) {
         const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri}});
         if (prismaResource === null) {
             throw new Error("Cannot update modification time. Resource does not exists.");

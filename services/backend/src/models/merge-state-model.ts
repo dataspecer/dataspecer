@@ -75,6 +75,8 @@ type MergeStateWithoutData = Prisma.MergeStateGetPayload<{
   include: { mergeStateData: false }
 }>;
 
+
+
 export class MergeStateModel implements ResourceChangeListener {
   private prismaClient: PrismaClient;
   private resourceModel: ResourceModel;
@@ -87,9 +89,18 @@ export class MergeStateModel implements ResourceChangeListener {
 
   async updateBasedOnResourceChange(
     resourceIri: string,
-    changedModel: string,
+    changedModel: string | null,
     changeType: ResourceChangeType,
   ): Promise<void> {
+    if (changedModel === null && changeType === ResourceChangeType.Removed) {
+      // Remove all the merge states related to the iri since, we removed it
+      const mergeStates = await this.getMergeStates(resourceIri, false);
+      for (const mergeState of mergeStates) {
+        this.removeMergeState(mergeState);
+      }
+      return;
+    }
+
     const resource = await this.resourceModel.getRootResourceForIri(resourceIri);
     if (resource === null) {
       throw new Error(`Resource for iri ${resourceIri} actually does not exist`);
@@ -353,7 +364,7 @@ export class MergeStateModel implements ResourceChangeListener {
       },
     });
 
-    return await Promise.all(mergeStates.map(mergeState => this.prismaMergeStateToMergeState(mergeState)));
+    return await Promise.all(mergeStates.map(mergeState => this.prismaMergeStateToMergeState(mergeState, false)));
   }
 
   async getMergeStateFromUUID(uuid: string, shouldIncludeMergeStateData: boolean): Promise<MergeState | null> {
@@ -370,7 +381,7 @@ export class MergeStateModel implements ResourceChangeListener {
       return null;
     }
 
-    return this.prismaMergeStateToMergeState(mergeState);
+    return this.prismaMergeStateToMergeState(mergeState, true);
   }
 
   async getMergeState(rootIriMergeFrom: string, rootIriMergeTo: string, shouldIncludeMergeStateData: boolean): Promise<MergeState | null> {
@@ -388,7 +399,7 @@ export class MergeStateModel implements ResourceChangeListener {
       return null;
     }
 
-    return this.prismaMergeStateToMergeState(mergeState);
+    return this.prismaMergeStateToMergeState(mergeState, true);
   }
 
   async getMergeStatesForMergeTo(
@@ -665,8 +676,8 @@ export class MergeStateModel implements ResourceChangeListener {
     };
   }
 
-  async prismaMergeStateToMergeState(prismaMergeState: MergeStateWithData): Promise<MergeState> {
-    if (!prismaMergeState.isUpToDate) {
+  async prismaMergeStateToMergeState(prismaMergeState: MergeStateWithData, shouldUpdateIfNotUpToDate: boolean): Promise<MergeState> {
+    if (shouldUpdateIfNotUpToDate && !prismaMergeState.isUpToDate) {
       const { git: gitForMergeFrom, gitProvider: gitProviderForMergeFrom } = await this.createMergeEndPointGitData(
         prismaMergeState.rootIriMergeFrom, prismaMergeState.filesystemTypeMergeFrom, prismaMergeState.rootFullPathToMetaMergeFrom);
       const mergeFrom: MergeEndpointForStateUpdate = {

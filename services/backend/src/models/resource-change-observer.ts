@@ -5,7 +5,10 @@ export enum ResourceChangeType {
 }
 
 export interface ResourceChangeListener {
-  updateBasedOnResourceChange(resourceIri: string, changedModel: string, changeType: ResourceChangeType): Promise<void>;
+  /**
+   * @param changedModel If null then the resource itself was changed
+   */
+  updateBasedOnResourceChange(resourceIri: string, changedModel: string | null, changeType: ResourceChangeType): Promise<void>;
 }
 
 export interface ResourceChangeObserver {
@@ -24,7 +27,7 @@ export class ResourceChangeObserverBase implements ResourceChangeObserver {
     this.listeners = this.listeners
       .filter(existingListeners => existingListeners !== listener);
   }
-  async notifyListeners(resourceIri: string, changedModel: string, changeType: ResourceChangeType): Promise<void> {
+  async notifyListeners(resourceIri: string, changedModel: string | null, changeType: ResourceChangeType): Promise<void> {
     for (const listener of this.listeners) {
       await listener.updateBasedOnResourceChange(resourceIri, changedModel, changeType);
     }
