@@ -42,7 +42,8 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
     const filesystemLocationToIri: FilesystemNodeLocation = {
       iri,
       fullPath: directory,
-      fullTreePath: ""
+      irisTreePath: "",
+      projectIrisTreePath: "",
     };
     // TODO RadStr: the createFileSystem just needs methods for ignore directory/file, nothing else ... so remove the hardcoded GitHubProvier
     const filesystem = await FilesystemFactory.createFileSystem([filesystemLocationToIri], importFilesystem, new GitHubProvider());

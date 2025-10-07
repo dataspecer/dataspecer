@@ -1,3 +1,8 @@
+// TODO RadStr Write somewhere else also, since it is important observation:
+//  We currently do not support the fact to have 2 same project iris within one package
+//  (that would happen if somebody imported the same git repo under package UNDER the same level - the same level since in the filesystems we identify using the tree path and not the iri)
+//  Possible future solutions would be to generate new iri as project iri on import inside resource (or only if there is conflict)
+
 import { GitProvider } from "../../git-provider-api.ts";
 import { FilesystemNode, FilesystemMappingType, DirectoryNode, FilesystemNodeLocation, DatastoreInfo, ExportMetadataType } from "../../export-import-data-api.ts";
 import { AvailableFilesystems, createEmptyFilesystemMapping, createFilesystemMappingRoot, createInitialNodeToParentMap, FilesystemAbstraction, getMetaPrefixType } from "./filesystem-abstraction.ts";
@@ -11,7 +16,16 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
   /////////////////////////////////////
 
   protected root: DirectoryNode;
-  protected globalFilesystemMapping: FilesystemMappingType;
+  /**
+   * The keys are tree paths created by putting projectIri (NOT IRIS) in the path joined by "/"
+   * @deprecated Maybe deprecated? I think that using the project iris will be enough
+   */
+  protected globalFilesystemMappingForProjectIris: FilesystemMappingType;
+  /**
+   * The keys are tree paths created by putting iris (NOT PROJECTIRIS) in the path joined by "/". Note that for the git this is same as proejct iris map.
+   *  However for DS it is not, since it is not uniquely identifiable projectIri (+ repo path), so there we need the actual iris.
+   */
+  protected globalFilesystemMappingForIris: FilesystemMappingType;
   protected nodeToParentMap: Record<string, DirectoryNode | null>;
 
 
@@ -23,9 +37,10 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
     const emptyMapping = createEmptyFilesystemMapping();
     const topLevelRoot = createFilesystemMappingRoot();
     this.nodeToParentMap = createInitialNodeToParentMap(topLevelRoot);
-    this.globalFilesystemMapping = createEmptyFilesystemMapping();
+    this.globalFilesystemMappingForProjectIris = createEmptyFilesystemMapping();
+    this.globalFilesystemMappingForIris = createEmptyFilesystemMapping();
     this.root = topLevelRoot;
-    this.setValueInFilesystemMapping({iri: "", fullTreePath: ""}, emptyMapping, topLevelRoot, null);
+    this.setValueInFilesystemMapping("", {iri: "", irisTreePath: "", projectIrisTreePath: ""}, emptyMapping, topLevelRoot, null);
   }
 
   /////////////////////////////////////
@@ -40,20 +55,24 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
     this.root.content = newRootContent;
   }
 
-  getGlobalFilesystemMap(): Record<string, FilesystemNode> {
-    return this.globalFilesystemMapping;
+  getGlobalFilesystemMapForProjectIris(): FilesystemMappingType {
+    return this.globalFilesystemMappingForProjectIris;
+  }
+
+  getGlobalFilesystemMapForIris(): FilesystemMappingType {
+    return this.globalFilesystemMappingForIris;
   }
 
   isDirectory(treePath: string): boolean {
-    return this.globalFilesystemMapping[treePath].type === "directory";
+    return this.globalFilesystemMappingForIris[treePath].type === "directory";
   }
 
   getDatastoreTypes(treePath: string): DatastoreInfo[] {
-    return this.globalFilesystemMapping[treePath].datastores;
+    return this.globalFilesystemMappingForIris[treePath].datastores;
   }
 
   readDirectory(directory: string): FilesystemNode[] {
-    const directoryNode = this.globalFilesystemMapping[directory];
+    const directoryNode = this.globalFilesystemMappingForIris[directory];
     if (directoryNode.type !== "directory") {
       throw new Error("the read directory is not a directory");   // TODO RadStr: Better Error handling
     }
@@ -81,7 +100,7 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
 
   getParentForNode(node: FilesystemNode): DirectoryNode | null {
     const map = this.getNodeToParentMap();
-    return map[node.fullTreePath];
+    return map[node.irisTreePath];
   }
 
 
@@ -95,14 +114,16 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
    * Sets the both recursive and global mapping values correctly. Also sets the nodeToParentMap
    */
   protected setValueInFilesystemMapping(
+    projectIri: string,
     nodeLocation: Omit<FilesystemNodeLocation, "fullPath">,
     relativeMapping: FilesystemMappingType,
     newFilesystemNode: FilesystemNode,
     newFilesystemNodeParent: DirectoryNode | null,
   ) {
-    this.globalFilesystemMapping[nodeLocation.fullTreePath] = newFilesystemNode;
-    relativeMapping[nodeLocation.iri] = newFilesystemNode;
-    this.nodeToParentMap[newFilesystemNode.fullTreePath] = newFilesystemNodeParent;
+    this.globalFilesystemMappingForProjectIris[nodeLocation.projectIrisTreePath] = newFilesystemNode;
+    this.globalFilesystemMappingForIris[nodeLocation.irisTreePath] = newFilesystemNode;
+    relativeMapping[projectIri] = newFilesystemNode;
+    this.nodeToParentMap[newFilesystemNode.irisTreePath] = newFilesystemNodeParent;
   }
 
   /**
@@ -110,10 +131,12 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
    * Also removes the entry from {@link nodeToParentMap}.
    */
   protected removeValueInFilesystemMapping(relativePath: string, relativeMapping: FilesystemMappingType) {
-    const fullTreePath = relativeMapping[relativePath].fullTreePath;
-    delete this.globalFilesystemMapping[fullTreePath];
+    const irisTreePath = relativeMapping[relativePath].irisTreePath;
+    const projectIrisTreePath = relativeMapping[relativePath].projectIrisTreePath;
+    delete this.globalFilesystemMappingForProjectIris[projectIrisTreePath];
+    delete this.globalFilesystemMappingForIris[irisTreePath];
     delete relativeMapping[relativePath];
-    delete this.nodeToParentMap[fullTreePath];
+    delete this.nodeToParentMap[irisTreePath];
   }
 
   async getMetadataObject(treePath: string): Promise<ExportMetadataType> {
@@ -133,7 +156,7 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
   ): Promise<FilesystemMappingType>
 
   abstract getFilesystemType(): AvailableFilesystems;
-  abstract getDatastoreContent(treePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any>;
+  abstract getDatastoreContent(irisTreePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any>;
   abstract shouldIgnoreDirectory(directory: string, gitProvider: GitProvider): boolean;
   abstract shouldIgnoreFile(file: string): boolean;
   abstract createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType>;

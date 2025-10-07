@@ -15,7 +15,8 @@ export const getGitTree = asyncHandler(async (request: express.Request, response
   const rootLocation: FilesystemNodeLocation = {
     iri: query.iri,
     fullPath: fullPathToGitRepository,
-    fullTreePath: "",
+    irisTreePath: "",
+    projectIrisTreePath: "",
   };
   const dsFilesystem = FilesystemFactory.createFileSystem([rootLocation], AvailableFilesystems.ClassicFilesystem, null);
   // TODO RadStr: Decide if we want to use global mapping or getRoot (of course if we want to use the direct access at all)

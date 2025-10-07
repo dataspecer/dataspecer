@@ -551,6 +551,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
         createdMetas.add(filesystemNodeToCreate.treePath);
         console.info({editableCacheContents, "treePath": filesystemNodeToCreate.treePath, "userMetadataDatastoreInfo": filesystemNodeToCreate.userMetadataDatastoreInfo})
         const filesystemNodeMetadata = getDatastoreInCacheAsObject(editableCacheContents, nonEditableCacheContents, filesystemNodeToCreate.treePath, filesystemNodeToCreate.userMetadataDatastoreInfo, removedDatastores);
+        // TODO RadStr PROJECTIRIS: userMetadata should be enough and maybe also parentProejctIri, but nothing anything else
         const dataInsteadOfInfo: CreateDatastoreFilesystemNodesData = {
           parentProjectIri: filesystemNodeToCreate.parentProjectIri,
           treePath: filesystemNodeToCreate.treePath,
@@ -752,9 +753,9 @@ async function onCascadeUpdateForCreatedDatastores(
       console.info({ lastTreePathSeparatorIndex: treePathSeparatorIndex, len: currentNodeTreePath.length, currentIri, currentNodeTreePath, nodeTreePath, currentNode: currentDiffNode, difftree: examinedMergeState?.diffTreeData?.diffTree }); // TODO RadStr DEBUG: Debug print
 
       console.info({ convertedCacheForMergeFromContent, convertedCacheForMergeToContent }); // TODO RadStr DEBUG: Debug print
-      console.info({ metadataAsJSON: metadataInfo, PATH_FOR_METADATA: existingResource!.fullTreePath! }); // TODO RadStr DEBUG: Debug print
+      console.info({ metadataAsJSON: metadataInfo, PATH_FOR_METADATA: existingResource!.irisTreePath! }); // TODO RadStr DEBUG: Debug print
 
-      const isFilesystemNodeNotYetAdded = createdFilesystemNodesAsArray.find(alreadyCreated => alreadyCreated.treePath === existingResource!.fullTreePath) === undefined;
+      const isFilesystemNodeNotYetAdded = createdFilesystemNodesAsArray.find(alreadyCreated => alreadyCreated.treePath === existingResource!.irisTreePath) === undefined;
       if (isFilesystemNodeNotYetAdded) {
         visitedFirstNodeToCreate = true;
         if (parentNode === null) {
@@ -765,12 +766,13 @@ async function onCascadeUpdateForCreatedDatastores(
         const mergeFromMetadataInfo = (currentDiffNode?.resources.old === undefined || currentDiffNode?.resources.old === null) ? null : getDatastoreInfoOfGivenDatastoreType(currentDiffNode?.resources.old, "meta");
         const mergeToMetadataInfo = (currentDiffNode?.resources.new === undefined || currentDiffNode?.resources.new === null) ? null : getDatastoreInfoOfGivenDatastoreType(currentDiffNode?.resources.new, "meta");
         console.info({mergeFromMetadataInfo, mergeToMetadataInfo});
-        await updateModelDataWithoutActiveModelChange(existingResource!.fullTreePath, mergeFromMetadataInfo, mergeToMetadataInfo);
+        await updateModelDataWithoutActiveModelChange(existingResource!.irisTreePath, mergeFromMetadataInfo, mergeToMetadataInfo);
         setCreatedDatastores(prev => [...prev, metadataInfo]);
 
+        // TODO RadStr PROJECTIRIS: userMetadata should be enough - just for the metadata and the projectIri
         const newFilesystemNodeToCreate = {
           parentProjectIri: parentNode.metadata.projectIri,
-          treePath: existingResource!.fullTreePath,
+          treePath: existingResource!.irisTreePath,
           userMetadataDatastoreInfo: metadataInfo,
         };
         createdFilesystemNodesInTreePath.push(newFilesystemNodeToCreate);

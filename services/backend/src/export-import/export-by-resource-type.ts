@@ -51,7 +51,7 @@ export class PackageExporterByResourceType extends PackageExporterBase {
         this.setExportVersionInternal(data);
       }
       else {
-        data = await this.importFilesystem.getDatastoreContent(filesystemNode.fullTreePath, datastore.type, true);
+        data = await this.importFilesystem.getDatastoreContent(filesystemNode.irisTreePath, datastore.type, true);
       }
 
       await this.exportActions.exportDatastoreAction(exportFullName, datastore, data, this.exportFormat);

@@ -56,12 +56,14 @@ export async function compareBackendFilesystems(
   const mergeFromRootLocation: FilesystemNodeLocation = {
     iri: mergeFrom.rootIri,
     fullPath: mergeFrom.fullPath,
-    fullTreePath: "",
+    irisTreePath: "",
+    projectIrisTreePath: "",
   };
   const mergeToRootLocation: FilesystemNodeLocation = {
     iri: mergeTo.rootIri,
     fullPath: mergeTo.fullPath,
-    fullTreePath: "",
+    irisTreePath: "",
+    projectIrisTreePath: "",
   };
 
   const filesystemMergeFrom = await FilesystemFactory.createFileSystem([mergeFromRootLocation], mergeFrom.filesystemType, mergeFrom.gitProvider);
@@ -81,8 +83,8 @@ export async function compareBackendFilesystems(
   }
 
   const diffTreeComparisonResult = await compareFileTrees(
-    filesystemMergeFrom, fakeRootMergeFrom, filesystemMergeFrom.getGlobalFilesystemMap(),
-    filesystemMergeTo, fakeRootMergeTo, filesystemMergeTo.getGlobalFilesystemMap());
+    filesystemMergeFrom, fakeRootMergeFrom,
+    filesystemMergeTo, fakeRootMergeTo);
 
   return {
     diffTreeComparisonResult,

@@ -5,6 +5,9 @@ import { AvailableFilesystems, FilesystemNodeLocation } from "@dataspecer/git";
 import { FilesystemFactory } from "../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 
 
+/**
+ * @deprecated ... not exactly deprecated, but we are no longer using it. But it should work
+ */
 export const getDataspecerTree = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
     iri: z.string().min(1),
@@ -14,10 +17,11 @@ export const getDataspecerTree = asyncHandler(async (request: express.Request, r
   const rootLocation: FilesystemNodeLocation = {
     iri: query.iri,
     fullPath: "",
-    fullTreePath: ""
+    irisTreePath: "",
+    projectIrisTreePath: "",
   };
   const dsFilesystem = await FilesystemFactory.createFileSystem([rootLocation], AvailableFilesystems.DS_Filesystem, null);
   // TODO RadStr: ... Actually sending the root is enough probably
-  const globalFilesystemMapping = dsFilesystem.getGlobalFilesystemMap();
+  const globalFilesystemMapping = dsFilesystem.getGlobalFilesystemMapForProjectIris();
   response.json(globalFilesystemMapping);
 });

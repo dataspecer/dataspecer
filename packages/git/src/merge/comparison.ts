@@ -22,10 +22,8 @@ export type ComparisonDifferences = {
 export async function compareFileTrees(
   filesystem1: FilesystemAbstraction,
   fakeTreeRoot1: DirectoryNode,
-  globalFilesystemMapping1: Record<string, FilesystemNode>,
   filesystem2: FilesystemAbstraction,
   fakeTreeRoot2: DirectoryNode,
-  globalFilesystemMapping2: Record<string, FilesystemNode>,
 ): Promise<ComparisonFullResult> {
   const diffTree: DiffTree = {};
   const changed: ComparisonData[] = [];
@@ -34,8 +32,8 @@ export async function compareFileTrees(
   const conflicts: ComparisonData[] = [];
 
 
-  const diffTreeSize = await compareTreesInternal(filesystem1, fakeTreeRoot1, globalFilesystemMapping1,
-                                                  filesystem2, fakeTreeRoot2, globalFilesystemMapping2,
+  const diffTreeSize = await compareTreesInternal(filesystem1, fakeTreeRoot1,
+                                                  filesystem2, fakeTreeRoot2,
                                                   diffTree, {changed, removed, created, conflicts});
   return {
     changed,
@@ -57,10 +55,8 @@ export async function compareFileTrees(
 async function compareTreesInternal(
   filesystem1: FilesystemAbstraction,
   directory1: DirectoryNode | undefined,
-  globalFilesystemMapping1: Record<string, FilesystemNode>,
   filesystem2: FilesystemAbstraction,
   directory2: DirectoryNode | undefined,
-  globalFilesystemMapping2: Record<string, FilesystemNode>,
   diffTree: DiffTree,
   comparisonDifferences: ComparisonDifferences,
 ): Promise<number> {
@@ -128,8 +124,8 @@ async function compareTreesInternal(
 
     // Recursively process "subdirectories"
     if (nodeValue.type === "directory") {
-      const subtreeSize = await compareTreesInternal(filesystem1, nodeValue, globalFilesystemMapping1,
-                                                      filesystem2, node2Value as (DirectoryNode | undefined), globalFilesystemMapping2,
+      const subtreeSize = await compareTreesInternal(filesystem1, nodeValue,
+                                                      filesystem2, node2Value as (DirectoryNode | undefined),
                                                       currentlyProcessedDiffFilesystemNode.childrenDiffTree,
                                                       comparisonDifferences);
       diffTreeSize += subtreeSize;
@@ -169,8 +165,8 @@ async function compareTreesInternal(
     diffTree[nodeName] = currentlyProcessedDiffFilesystemNode;
 
     if (nodeValue.type === "directory") {
-      const subtreeSize = await compareTreesInternal(filesystem1, undefined, globalFilesystemMapping1,
-                                                      filesystem2, nodeValue, globalFilesystemMapping2,
+      const subtreeSize = await compareTreesInternal(filesystem1, undefined,
+                                                      filesystem2, nodeValue,
                                                       currentlyProcessedDiffFilesystemNode.childrenDiffTree,
                                                       comparisonDifferences);
       diffTreeSize += subtreeSize;
@@ -204,8 +200,8 @@ export async function compareDatastoresContents(
   datastore: DatastoreInfo,
 ): Promise<boolean> {
   // TODO RadStr: For now just assume, that there is always change
-  const content1 = await filesystem1.getDatastoreContent(entry1.fullTreePath, datastore.type, true);
-  const content2 = await filesystem2.getDatastoreContent(entry2.fullTreePath, datastore.type, true);
+  const content1 = await filesystem1.getDatastoreContent(entry1.irisTreePath, datastore.type, true);
+  const content2 = await filesystem2.getDatastoreContent(entry2.irisTreePath, datastore.type, true);
 
   console.info({content1, content2});    // TODO RadStr DEBUG: DEBUG Print
 

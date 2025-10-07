@@ -74,7 +74,7 @@ function checkIfIsInEditableTree(treeToExtract: TreeType, editableTree: Editable
 }
 
 function createIdForDatastoreRenderNode(datastoreComparison: DatastoreComparison, treeToExtract: TreeType) {
-  return (datastoreComparison?.newVersion?.fullTreePath ?? datastoreComparison?.oldVersion?.fullTreePath ?? "unknown") + datastoreComparison.affectedDataStore.fullName + "-" + treeToExtract;
+  return (datastoreComparison?.newVersion?.irisTreePath ?? datastoreComparison?.oldVersion?.irisTreePath ?? "unknown") + datastoreComparison.affectedDataStore.fullName + "-" + treeToExtract;
 }
 
 function createDatastoresRenderRepresentations(
@@ -169,7 +169,7 @@ function createDatastoresRenderRepresentations(
 
 function createIdForFilesystemRenderNode(resourceComparison: ResourceComparison, treeToExtract: TreeType) {
   const nonEmptyFilesystemNode: FilesystemNode = (resourceComparison.resources.old ?? resourceComparison.resources.new)!;
-  return nonEmptyFilesystemNode.fullTreePath + "-" + treeToExtract;
+  return nonEmptyFilesystemNode.irisTreePath + "-" + treeToExtract;
 }
 
 

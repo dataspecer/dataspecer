@@ -12,7 +12,7 @@ import { CommitReferenceType, createRemoteRepositoryReturnType, CommitterInfo, G
 import { GitProviderBase } from "../git-provider-base.ts";
 import { resourceModel } from "../../main.ts";
 import { createLinksForFiles, gitProviderDomains } from "../git-provider-factory.ts";
-import { findPatAccessToken } from "../../routes/create-package-git-link.ts";
+import { findPatAccessToken } from "../../routes/create-new-git-repository-with-package-content.ts";
 
 const scopes = ["read:user", "user:email", "public_repo", "workflow", "delete_repo"] as const;
 export type GitHubScope = typeof scopes[number];

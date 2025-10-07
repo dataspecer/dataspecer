@@ -48,18 +48,22 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     filesystemMapping: FilesystemMappingType,
     parentDirectoryNode: DirectoryNode | null,
   ) {
-    const { iri } = mappedNodeLocation;
-    const fullPath: string = dsPathJoin(mappedNodeLocation.fullPath, iri);
-    let fullTreePath: string;
-    const isArtificialDirectory = isArtificialExportDirectory(iri);
+    const projectIri = mappedNodeLocation.iri;    // Not a mistake! iri is the same as projectIri in case of git (classic filesystem)
+                                                  // So also the tree path for iris and projectIris will be the same.
+    const fullPath: string = dsPathJoin(mappedNodeLocation.fullPath, projectIri);
+    let irisTreePath: string;
+    let projectIrisTreePath: string;
+    const isArtificialDirectory = isArtificialExportDirectory(projectIri);
     if (isArtificialDirectory) {
-      fullTreePath = mappedNodeLocation.fullTreePath;
+      irisTreePath = mappedNodeLocation.irisTreePath;
+      projectIrisTreePath = mappedNodeLocation.projectIrisTreePath;
     }
     else {
-      fullTreePath = dsPathJoin(mappedNodeLocation.fullTreePath, iri);
+      irisTreePath = dsPathJoin(mappedNodeLocation.irisTreePath, projectIri);
+      projectIrisTreePath = dsPathJoin(mappedNodeLocation.projectIrisTreePath, projectIri);
     }
 
-    if (this.shouldIgnoreDirectory(fullTreePath, this.gitProvider)) {      // TODO RadStr: treePath or fullPath? ... I would use treePath
+    if (this.shouldIgnoreDirectory(irisTreePath, this.gitProvider)) {      // TODO RadStr: treePath or fullPath? ... I would use treePath
       return {};
     }
 
@@ -67,7 +71,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     const filesInDirectory = _directoryContent.filter(entry => !entry.isDirectory());
     const subDirectories = _directoryContent.filter(entry => entry.isDirectory());
     const directoryContentNames = filesInDirectory.map(content => content.name).filter(name => !this.shouldIgnoreFile(name));
-    const { prefixGroupings, invalidNames } = groupByPrefixDSSpecific(fullPath, ...directoryContentNames);
+    const { datastoreInfoGroupings, invalidNames } = groupByPrefixDSSpecific(fullPath, ...directoryContentNames);
 
 
     let parentDirectoryNodeForRecursion: DirectoryNode;
@@ -75,25 +79,27 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
 
     if (!isArtificialDirectory) {
       const directoryNodeFilesystemLocation: FilesystemNodeLocation = {
-        iri,
+        iri: projectIri,
         fullPath,
-        fullTreePath,
+        irisTreePath,
+        projectIrisTreePath,
       };
 
       const directoryNode: DirectoryNode = {
-        name: iri,
+        name: projectIri,
         type: "directory",
         metadata: {} as ExportMetadataType,    // We are not using the value in the course of creating the mapping! We set them later
         datastores: [],
         content: {},
-        fullTreePath: fullTreePath,
+        irisTreePath,
+        projectIrisTreePath,
       };
 
       parentDirectoryNodeForRecursion = directoryNode;
       directoryContentContainer = parentDirectoryNodeForRecursion.content;
 
       // TODO RadStr: It was not here previously however I think that it should be. Because it is missing in the global mapping otherwise
-      this.setValueInFilesystemMapping(directoryNodeFilesystemLocation, filesystemMapping, directoryNode, parentDirectoryNode);
+      this.setValueInFilesystemMapping(projectIri, directoryNodeFilesystemLocation, filesystemMapping, directoryNode, parentDirectoryNode);
     }
     else {
       if (parentDirectoryNode === null) {
@@ -111,10 +117,11 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
         const newFileSystemNodeLocation: FilesystemNodeLocation = {
           iri: invalidName,
           fullPath: dsPathJoin(fullPath, invalidName),
-          fullTreePath: dsPathJoin(fullTreePath, invalidName),
+          irisTreePath: dsPathJoin(irisTreePath, invalidName),
+          projectIrisTreePath: dsPathJoin(projectIrisTreePath, invalidName),
         };
 
-        const prefixName: DatastoreInfo = {
+        const datastoreInfo: DatastoreInfo = {
           fullName: invalidName,
           afterPrefix: invalidName,
           type: invalidName,
@@ -125,14 +132,16 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
         const newSingleNode: FileNode = {
           name: invalidName,
           type: "file",
-          metadata: { iri: invalidName, types: ["from-git-unknown"], projectIri: iri, userMetadata: {} },      // TODO RadStr: I don't know about this.
+          // TODO RadStr: Here I don't know if iri should equal the projectIri
+          metadata: { iri: invalidName, types: ["from-git-unknown"], projectIri: invalidName, userMetadata: {} },      // TODO RadStr: I don't know about this.
           // TODO RadStr: the old way
           // datastores: { model: path.join(directory, invalidName) },
-          datastores: [prefixName],
-          fullTreePath: newFileSystemNodeLocation.fullTreePath,
+          datastores: [datastoreInfo],
+          irisTreePath: newFileSystemNodeLocation.irisTreePath,
+          projectIrisTreePath: newFileSystemNodeLocation.projectIrisTreePath,
         };
 
-        this.setValueInFilesystemMapping(newFileSystemNodeLocation, directoryContentContainer, newSingleNode, parentDirectoryNodeForRecursion);
+        this.setValueInFilesystemMapping(invalidName, newFileSystemNodeLocation, directoryContentContainer, newSingleNode, parentDirectoryNodeForRecursion);
       }
 
       // TODO RadStr: Remove commented - no longer valid
@@ -140,7 +149,8 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
       // console.error("Some of the files don't have enough separators. That is they don't follow the format [name].[dataStoreId].[format]", { invalidNames });
     }
 
-    for (const [prefix, valuesForPrefix] of Object.entries(prefixGroupings)) {
+    // Shared name here is the name without the postfix (that is the format and type)
+    for (const [sharedProjectIri, datastoresForSharedName] of Object.entries(datastoreInfoGroupings)) {
       // TODO RadStr: Previously I tried using map - maybe will get back to it later
 
       // const datastores: Record<string, string> = {};
@@ -148,11 +158,11 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
       //   datastores[datastore.type] = path.join(directory, datastore.fullName);
       // });
 
-      if (prefix === "") {    // Directory data
-        const relevantDirectoryNode = this.globalFilesystemMapping[fullTreePath];
+      if (sharedProjectIri === "") {    // Directory data
+        const relevantDirectoryNode = this.globalFilesystemMappingForIris[irisTreePath];
         if (relevantDirectoryNode !== undefined) {
           if (Object.values(relevantDirectoryNode.metadata).length === 0) {
-            parentDirectoryNodeForRecursion.datastores = parentDirectoryNodeForRecursion.datastores.concat(valuesForPrefix);
+            parentDirectoryNodeForRecursion.datastores = parentDirectoryNodeForRecursion.datastores.concat(datastoresForSharedName);
             const newFullPath = fullPath + "/";    // We have to do it explictly, if we use path.join on empty string, it won't do anything with the result.
             if (getMetadataDatastoreFile(parentDirectoryNodeForRecursion.datastores) !== undefined) {
               setMetadata(parentDirectoryNodeForRecursion, newFullPath);
@@ -168,28 +178,31 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
         continue;
       }
 
-      const newFullPath = dsPathJoin(fullPath, prefix);
-      const newFullTreePath = dsPathJoin(fullTreePath, prefix);
+      const newFullPath = dsPathJoin(fullPath, sharedProjectIri);
+      const newFullTreePath = dsPathJoin(irisTreePath, sharedProjectIri);
+      const newProjectIriFullTreePath = dsPathJoin(projectIrisTreePath, sharedProjectIri);
       const fileNodeLocation: FilesystemNodeLocation = {
-        iri: prefix,
+        iri: sharedProjectIri,
         fullPath: newFullPath,
-        fullTreePath: newFullTreePath,
+        irisTreePath: newFullTreePath,
+        projectIrisTreePath: newProjectIriFullTreePath,
       };
 
-      let fileNode: FilesystemNode | undefined = this.globalFilesystemMapping[newFullTreePath];
+      let fileNode: FilesystemNode | undefined = this.globalFilesystemMappingForIris[newFullTreePath];
       if (fileNode === undefined) {
         fileNode = {
-          name: prefix,
+          name: sharedProjectIri,
           type: "file",
           metadata: {} as ExportMetadataType,    // We are not using the value in the course of creating the mapping!
-          datastores: valuesForPrefix,
-          fullTreePath: fileNodeLocation.fullTreePath,
+          datastores: datastoresForSharedName,
+          irisTreePath: fileNodeLocation.irisTreePath,
+          projectIrisTreePath: fileNodeLocation.projectIrisTreePath,
         };
-        this.setValueInFilesystemMapping(fileNodeLocation, directoryContentContainer, fileNode, parentDirectoryNodeForRecursion);
+        this.setValueInFilesystemMapping(sharedProjectIri, fileNodeLocation, directoryContentContainer, fileNode, parentDirectoryNodeForRecursion);
       }
       else {
         // TODO RadStr: There should be no duplicate - however I don't think that there is a need for check
-        fileNode.datastores = fileNode.datastores.concat(valuesForPrefix);
+        fileNode.datastores = fileNode.datastores.concat(datastoresForSharedName);
       }
 
       if (getMetadataDatastoreFile(fileNode.datastores) !== undefined) {
@@ -202,7 +215,8 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
       const newDirectoryLocation: FilesystemNodeLocation = {
         iri: subDirectory.name,
         fullPath: fullPath,
-        fullTreePath: fullTreePath,
+        irisTreePath,
+        projectIrisTreePath,
       };
 
       await this.createFilesystemMappingRecursive(newDirectoryLocation, directoryContentContainer, parentDirectoryNodeForRecursion);
@@ -211,15 +225,15 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     return filesystemMapping;
   }
 
-  async getDatastoreContent(treePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any> {
-    const node = this.globalFilesystemMapping[treePath];
+  async getDatastoreContent(irisTreePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any> {
+    const node = this.globalFilesystemMappingForIris[irisTreePath];
     if (node === undefined) {
-      throw new Error(`Given datastore in ${treePath} of type ${type} is not present in abstracted filesystem.`);    // TODO RadStr: Better error handling
+      throw new Error(`Given datastore in ${irisTreePath} of type ${type} is not present in abstracted filesystem.`);    // TODO RadStr: Better error handling
     }
     const datastore = getDatastoreInfoOfGivenDatastoreType(node, type);
 
     if (datastore === undefined) {
-      throw new Error(`Given datastore in ${treePath} of type ${type} is not present in abstracted filesystem.`);    // TODO RadStr: Better error handling
+      throw new Error(`Given datastore in ${irisTreePath} of type ${type} is not present in abstracted filesystem.`);    // TODO RadStr: Better error handling
     }
 
     const pathToDatastore = datastore.fullPath;
@@ -257,7 +271,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
 
     if (shouldRemoveFileWhenNoDatastores) {
       if (filesystemNode.datastores.length === 0) {
-        fs.rmSync(filesystemNode.fullTreePath);
+        fs.rmSync(filesystemNode.irisTreePath);
         this.removeValueInFilesystemMapping(filesystemNode.name, this.getParentForNode(filesystemNode)!.content);
       }
     }
@@ -320,7 +334,7 @@ function getMetadataDatastoreFile(datastores: DatastoreInfo[]): DatastoreInfo | 
  * Takes the list of names in {@link names} and {@link prefixSeparator}, which you can think of as separator of prefix chunks, which can be joined to create longest prefix.
  * @returns Groups the {@link names} by longest prefix and the invalid names should be in this case probably things, which don't have a single {@link prefixSeparator}.
  *
- * @todo We are using {@link groupByPrefix} instead, which is simpler to implement and covers the current use-case
+ * @todo We are using {@link groupDatastoreInfosByName} instead, which is simpler to implement and covers the current use-case
  * @deprecated See todo
  *
  * @example The call of groupByLongestPrefix(".", "hello.svg.json", "hello.model.json", "hell.svg.json", "ahoj.model.json")
@@ -332,12 +346,15 @@ function getMetadataDatastoreFile(datastores: DatastoreInfo[]): DatastoreInfo | 
  *  ahoj: [ { fullName: ahoj.svg.json, afterPrefix: .svg.json } ],
  * }
  */
-function groupByLongestPrefix(prefixSeparator: string, ...names: string[]): PrefixResult {
+function groupByLongestPrefix(prefixSeparator: string, ...names: string[]): DatastoreInfosBySharedName {
   throw new Error("Not implented, since it is overkill for current implementatio of DS resources.");
 }
 
-type PrefixResult = {
-  prefixGroupings: Record<string, DatastoreInfo[]>,
+type DatastoreInfosBySharedName = {
+  /**
+   * Groupings by name without the postifx (the type and format ... that is the .type.format)
+   */
+  datastoreInfoGroupings: Record<string, DatastoreInfo[]>,
   invalidNames: string[],
 };
 
@@ -381,6 +398,8 @@ function extractTypeAndFormat(value: string, separator: string): SplitDatastoreN
 
 
 /**
+ * This methods groups datastore infos by their name (name stripped of the suffix - that is the "".format.type")
+ *
  * This method takes {@link names}, remove the last {@link postfixCount} chunks, which starts with {@link prefixSeparator}.
  *
  * This method covers current use-case where the files have the following names [name].[dataStoreId].[format], (In the result the datastoreId is stored inside type property)
@@ -402,11 +421,11 @@ function extractTypeAndFormat(value: string, separator: string): SplitDatastoreN
  *  ahoj: [ { fullName: ahoj.svg.json, afterPrefix: .svg.json, type: svg } ],
  * }
  */
-function groupByPrefix(pathToDirectory: string, prefixSeparator: string, postfixCount: number, ...names: string[]): PrefixResult {
+function groupDatastoreInfosByName(pathToDirectory: string, prefixSeparator: string, postfixCount: number, ...names: string[]): DatastoreInfosBySharedName {
   // TODO RadStr: Once we will have different layouts of the directories (for example group by type - for each type 1 directory)
   //              We no longer need the grouping - we will just extract the basename and based on that find correct file in filesystem and then insert the datastore info into it
   const invalidNames: string[] = [];
-  const prefixGroupings: Record<string, DatastoreInfo[]> = {};
+  const datastoreInfoGroupings: Record<string, DatastoreInfo[]> = {};
   names
     .forEach(name => {
       const { basename, type, format } = extractTypeAndFormat(name, prefixSeparator);
@@ -415,8 +434,8 @@ function groupByPrefix(pathToDirectory: string, prefixSeparator: string, postfix
         return null;
       }
 
-      if (prefixGroupings[basename] === undefined) {
-        prefixGroupings[basename] = [];
+      if (datastoreInfoGroupings[basename] === undefined) {
+        datastoreInfoGroupings[basename] = [];
       }
 
 
@@ -428,11 +447,11 @@ function groupByPrefix(pathToDirectory: string, prefixSeparator: string, postfix
         format,
         fullPath: dsPathJoin(pathToDirectory, name),
       };
-      prefixGroupings[basename].push(prefixName);
+      datastoreInfoGroupings[basename].push(prefixName);
     });
 
   return {
-    prefixGroupings,
+    datastoreInfoGroupings,
     invalidNames
   };
 }
@@ -456,8 +475,8 @@ function findNthlastSeparator(value: string, separator: string, n: number): numb
 
 /**
  * @param pathToDirectory is the path to directory which contain given {@link names}
- * Just calls {@link groupByPrefix} with prefixSeparator === "." and postfixCount === 2
+ * Just calls {@link groupDatastoreInfosByName} with prefixSeparator === "." and postfixCount === 2
  */
-function groupByPrefixDSSpecific(pathToDirectory: string, ...names: string[]): PrefixResult {
-  return groupByPrefix(pathToDirectory, ".", 2, ...names);
+function groupByPrefixDSSpecific(pathToDirectory: string, ...names: string[]): DatastoreInfosBySharedName {
+  return groupDatastoreInfosByName(pathToDirectory, ".", 2, ...names);
 }

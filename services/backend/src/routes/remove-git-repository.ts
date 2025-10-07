@@ -7,7 +7,7 @@ import { asyncHandler } from "../utils/async-handler.ts";
 
 import express from "express";
 import { ConfigType } from "@dataspecer/git";
-import { findPatAccessTokens } from "./create-package-git-link.ts";
+import { findPatAccessTokens } from "./create-new-git-repository-with-package-content.ts";
 
 /**
  * Removes Git repository with iri given in query part of request.

@@ -3,10 +3,14 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { CommitReferenceType, GitProvider } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
-import { v4 as uuidv4 } from "uuid";
 import { resourceModel } from "../main.ts";
 
 
+/**
+ * Only time you should ever use this is if you don't want to create repository from DS.
+ * So you create EMPTY (!!!) repository and link it. Note that if it is not empty the behavior may get really weird. Because of the project iris.
+ *
+ */
 export const linkToExistingGitRepository = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
     iri: z.string().min(1),
@@ -33,8 +37,9 @@ export const updateGitRelatedDataForPackage = async (
   console.info("defaultRepositoryUrl", defaultRepositoryUrl);     // TODO RadStr Debug: Debug print
   // TODO RadStr: Ideally we should update all at once so we do not call the merge state isUpToDate setter unnecesarily
 
-  // If we call it before we set the git link for the imported package, then we make the database query faster (we don't need to check for forbidden iri)
-  await resourceModel.updateResourceGitLink(iri, defaultRepositoryUrl, false);
+  // The true here is important - it sets the projectIri to the existing resources if they exist. That being said in case of import those should be already set from the meta file
+  //  (so possible TODO: Remove the linkToExistingGitRepository and then we can call this with false)
+  await resourceModel.updateResourceGitLink(iri, defaultRepositoryUrl, true);
   // If commitReferenceType still not set, just use null, the method will use its default
   const lastCommitHash = await gitProvider.getLastCommitHashFromUrl(defaultRepositoryUrl, commitReferenceType ?? null, commitReferenceValue);
   await resourceModel.updateLastCommitHash(iri, lastCommitHash);
@@ -44,7 +49,7 @@ export const updateGitRelatedDataForPackage = async (
   if (commitReferenceType === "branch") {
     await resourceModel.updateResourceProjectIriAndBranch(
       iri,
-      undefined,
+      undefined,      // Should be already set correctly
       commitReferenceValue ?? undefined);
   }
 };

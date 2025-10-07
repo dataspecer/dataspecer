@@ -72,6 +72,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
 
 
       await gitProvider.createWebhook(patAccessToken.value, repositoryUserName, repoName, WEBHOOK_HANDLER_URL, ["push"]);
+      // The projectIri is undefiend since it should be already set from the time we created the resource
       await resourceModel.updateResourceProjectIriAndBranch(query.iri, undefined, defaultBranch ?? undefined);
       await resourceModel.updateResourceGitLink(query.iri, fullLinkedGitRepositoryURL, true);
 

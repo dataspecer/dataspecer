@@ -36,7 +36,7 @@ import { authHandler } from "./routes/auth/auth-handler.ts";
 import { corsOriginHandler } from "./utils/cors-related.ts";
 import { currentSession } from "./authorization/auth-session.ts";
 import { createRandomWebook, handleWebhook } from "./routes/git-webhook-handler.ts";
-import { createLinkBetweenPackageAndGit, createPackageFromExistingGitRepository } from "./routes/create-package-git-link.ts";
+import { createNewGitRepositoryWithPackageContent, createPackageFromExistingGitRepository } from "./routes/create-new-git-repository-with-package-content.ts";
 import { commitPackageToGitHandler } from "./routes/commit-package-to-git.ts";
 import { redirectToRemoteGitRepository } from "./routes/redirect-to-remote-git-repository.ts";
 import { removeGitRepository } from "./routes/remove-git-repository.ts";
@@ -224,7 +224,7 @@ application.post(apiBasename + "/git/webhook-test", currentSession, handleWebhoo
 application.post(apiBasename + "/git/webhook-test2", currentSession, handleWebhook);
 application.get(apiBasename + "/git/webhook-test", currentSession, createRandomWebook);
 application.post(apiBasename + "/git/set-private-ssh-key", currentSession, storePrivateSSHKey);
-application.get(apiBasename + "/git/create-new-git-repository-with-package-content", currentSession, createLinkBetweenPackageAndGit);
+application.get(apiBasename + "/git/create-new-git-repository-with-package-content", currentSession, createNewGitRepositoryWithPackageContent);
 application.get(apiBasename + "/git/commit-package-to-git", currentSession, commitPackageToGitHandler);
 application.get(apiBasename + "/git/remove-git-repository", currentSession, removeGitRepository);
 application.get(apiBasename + "/git/create-package-from-existing-git-repository", currentSession, createPackageFromExistingGitRepository);    // TODO RadStr: Not called for naywhere

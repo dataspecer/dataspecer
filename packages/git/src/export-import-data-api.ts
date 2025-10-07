@@ -43,7 +43,7 @@ export type ExportShareableMetadataType = {
 
 
 export type ExportMetadataType = {
-  iri: string;
+  iri: string;      // TODO RadStr: We actually don't need the iri at all, it is just identifier within DS. So we need it when we work inside DS, but not on the actual import
 } & ExportShareableMetadataType;
 
 /**
@@ -54,20 +54,6 @@ export type ShareableMetadata = {
   projectIri: string;
   types: string[];
 };
-
-export type DatabaseMetadataType = {
-  [key: string]: any;
-};
-
-/**
- * Removes the required fields from the given {@link metadata}
- */
-export function convertExportMetadataToDatabaseOne(metadata: ExportMetadataType): DatabaseMetadataType {
-  delete metadata.iri;
-  delete metadata.projectIri;
-  delete metadata.types;
-  return metadata;
-}
 
 export function pickShareableMetadata(metadata: ExportMetadataType): ShareableMetadata {
   return {
@@ -102,7 +88,11 @@ type FilesystemNodeCommonData = {
   /**
    * path/to/node. Note that we can reconstruct it recursively if need to by visiting parents in the filesystem abstraction.
    */
-  fullTreePath: string,
+  irisTreePath: string,
+  /**
+   * Same as {@link irisTreePath}, but with project iris instead.
+   */
+  projectIrisTreePath: string,
   /**
    * Currently unusued
    */
@@ -130,9 +120,15 @@ export type FilesystemMappingType = Record<string, FilesystemNode>;
  */
 export type FilesystemNodeLocation = {
   /**
-   * Is the iri of the resource. That is the last part of the fullTreePath. In case of DS filesystem this is the only necessary
+   * Is the iri of the resource. That is the last part of the fullTreePath. In case of DS filesystem this is the only necessary.
+   * !!! Very important note related to iris. We do not need projectIri, because:
+   *  1) For DS - we need the iri to find the resource, after we have the resource we can extract the projectIri. The iri is unique identifier to find the package.
+   *  2) For Git (ClassicFilesystem) - The resources are identified by projectIri (which is in their case same as iri) and the fullPath for their meta file.
+   *     That is in this case the uniqueness is given by projectIri and system path (where is the git repository located).
    */
   iri: string;
+
+
   // TODO RadStr: I don't like this, maybe just rename it in the methods and pass as parametr or idk. This usage on context is weird.
   /**
    * Is the full path to the node within filesystem, which can be used to access the node.
@@ -145,5 +141,10 @@ export type FilesystemNodeLocation = {
    * We can use this to access the resource using global mapping of tree paths to nodes.
    * The last part should be the IRI.
    */
-  fullTreePath: string;
+  irisTreePath: string;
+
+  /**
+   * Same as {@link iriTreePath} but with projectIris instead.
+   */
+  projectIrisTreePath: string
 };

@@ -167,7 +167,8 @@ export class PackageImporter {
 
     const thisPackageIri: string = this.createNewIdForResource(meta.iri);
 
-    await this.resourceModel.createPackage(parentPackageIri, thisPackageIri, meta.userMetadata, meta.projectIri);
+    const projectIri = this.getProjectIriFromMeta(meta, canonicalDirPath);
+    await this.resourceModel.createPackage(parentPackageIri, thisPackageIri, meta.userMetadata, projectIri);
     await this.setBlobsForResource(canonicalDirPath, thisPackageIri);
 
     for (const file of Object.keys(this.zip.files)) {
@@ -197,13 +198,44 @@ export class PackageImporter {
    */
   async importResource(canonicalDirPath: string, parentPackageIri: string) {
     const metaFileName = canonicalDirPath + ".meta.json";
-    const metaFileNameOnInput = this.canonicalPathsToInputMapping[metaFileName]
+    const metaFileNameOnInput = this.canonicalPathsToInputMapping[metaFileName];
     const metaFile = await this.zip.file(metaFileNameOnInput)!.async("text");
     const meta = JSON.parse(metaFile);
 
     const thisResourceIri = this.createNewIdForResource(meta.iri);
-    await this.resourceModel.createResource(parentPackageIri, thisResourceIri, meta.types[0], meta.userMetadata, meta.projectIri);
+    const projectIri = this.getProjectIriFromMeta(meta, canonicalDirPath);
+    await this.resourceModel.createResource(parentPackageIri, thisResourceIri, meta.types[0], meta.userMetadata, projectIri);
     await this.setBlobsForResource(canonicalDirPath, thisResourceIri);
+  }
+
+  private getProjectIriFromMeta(meta: any, canonicalDirPath: string): string {
+    // This code is basically the reflection of the original export code.
+    let projectIri: string;
+    if (meta.projectIri !== undefined) {
+      projectIri = meta.projectIri;
+    }
+    else {
+      // We check if the iri starts with the path (this probably happens when we perform duplicate).
+      let candidateForProjectIri = meta.iri;
+      if (candidateForProjectIri.startsWith(canonicalDirPath)) {
+        candidateForProjectIri = candidateForProjectIri.slice(canonicalDirPath);
+        // If it is empty after that use the original Iri - in the export this resulted into new uuid
+        if (candidateForProjectIri.length === 0) {
+          candidateForProjectIri = meta.iri;
+        }
+      }
+
+      if (meta.iri.includes("/")) {
+        // / clashes with paths, so we create new projectIri for this
+        projectIri = uuidv4();
+      }
+      else {
+        // Just us the candidate - it is either the meta.iri or the sliced
+        projectIri = candidateForProjectIri;
+      }
+    }
+
+    return projectIri;
   }
 
   /**

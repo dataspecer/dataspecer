@@ -28,12 +28,14 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
 
   constructor(
     backendFilesystem: AvailableFilesystems,
-    globalFilesystemMapping: FilesystemMappingType,
+    globalFilesystemMappingForProjectIris: FilesystemMappingType,
+    globalFilesystemMappingForIris: FilesystemMappingType,
     backendApiPath: string,
   ) {
     super();
     this.backendFilesystem = backendFilesystem;
-    this.globalFilesystemMapping = globalFilesystemMapping;
+    this.globalFilesystemMappingForProjectIris = globalFilesystemMappingForProjectIris;
+    this.globalFilesystemMappingForIris = globalFilesystemMappingForIris;
     this.backendApiPath = backendApiPath;
   }
 
@@ -115,8 +117,8 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
   protected createFilesystemMappingRecursive(mappedNodeLocation: FilesystemNodeLocation, filesystemMapping: FilesystemMappingType, parentDirectoryNode: DirectoryNode | null): Promise<FilesystemMappingType> {
     throw new Error("Method not implemented.");
   }
-  async getDatastoreContent(treePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any> {
-    const resourceWithDatastore: FilesystemNode = this.globalFilesystemMapping[treePath];
+  async getDatastoreContent(irisTreePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any> {
+    const resourceWithDatastore: FilesystemNode = this.globalFilesystemMappingForIris[irisTreePath];
     const datastoreInfo: DatastoreInfo = getDatastoreInfoOfGivenDatastoreType(resourceWithDatastore, type);
     return ClientFilesystem.getDatastoreContentDirectly(datastoreInfo, shouldConvertToDatastoreFormat, this.backendApiPath, this.backendFilesystem);
   }
@@ -345,9 +347,10 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     let parent: DirectoryNode | null = null;
     while (currentNode !== null) {
       parent = otherFilesystem.getParentForNode(currentNode);
+      // TODO RadStr PROJECTIRIS: userMetadata should be enough
       filesystemNodesInTreePath.push({
         parentProjectIri: parent.metadata.projectIri,
-        treePath: currentNode.fullTreePath,
+        treePath: currentNode.irisTreePath,
         userMetadata: currentNode.metadata,
         format: changedDatastore.format,
       });

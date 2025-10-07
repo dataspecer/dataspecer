@@ -146,7 +146,7 @@ export class ResourceModel {
 
     /**
      * Removes given {@link gitURL} from each resource, which has it.
-     *  This method should be called, when the remote repository was removed
+     *  This method should be called, when the remote repository was removed.
      * @returns The affected iris, that is iris of resources, which had linkedGitRepositoryURL === {@link gitURL}
      */
     async removeGitLinkFromResourceModel(gitURL: string) {
@@ -166,8 +166,13 @@ export class ResourceModel {
         }
 
         for (const affectedResource of affectedResources) {
+            // TODO RadStr: Commented code - at first we were resetting all the projectIris and branches, but because of possible moving to different repository we don't do anything.
+            // TODO RadStr Don't know by myself, but probably shouldnt reset the project iris and branch: Well should we really?
+            //  I don't know on one side - yeah we removed the repo so the packages are no longer connected. On other side what if we somehow want to move them to different repository?
+            // ... Yeah I will not remove it then because of the moving to different repository !!!
             // They are no longer part of the same project.
-            await this.updateResourceProjectIriAndBranch(affectedResource, affectedResource);
+            // await this.updateResourceProjectIriAndBranch(affectedResource, affectedResource, defaultBranchForPackageInDatabase);
+            await this.updateModificationTime(affectedResource, "meta", ResourceChangeType.Modified);
         }
 
         return affectedResources;
@@ -264,8 +269,14 @@ export class ResourceModel {
 
     /**
      * Updates user metadata of the resource with given {@link linkedGit}.
+     *  It is important to note that setting {@link shouldSetProjectIris} does not behave as you probably think it does.
+     * If it is true, we always set the projectIri either to the projectIri of existing resource or to the iri of the resource we are updating.
+     * But for the children? We can not map between resources, we don't have data by which we could link the resources together - we have just iris and project iris.
+     * Well and iris are different between the different packages representing the same git url and projectIris either don't match or they should match.
+     * So if it is true we just set the projectIri to the iri of the resource itself. But note that this should be already the case after creating the resource.
+     * @param shouldSetProjectIris Should be probably always false - TODO RadStr: because it is unnecessary I think - so we could just remove it together with the code in if
      */
-    async updateResourceGitLink(iri: string, linkedGit: string, shouldTryUpdateChildrenProjectIris: boolean) {
+    async updateResourceGitLink(iri: string, linkedGit: string, shouldSetProjectIris: boolean) {
         if (linkedGit.endsWith("/")) {
             linkedGit = linkedGit.substring(0, linkedGit.length - 1);
         }
@@ -275,14 +286,13 @@ export class ResourceModel {
             throw new Error(`The resource with iri (${iri}) is missing. Can't set linked git url: ${linkedGit}`);
         }
 
-        if (shouldTryUpdateChildrenProjectIris) {
+        if (shouldSetProjectIris) {
             // We have to set Project iri. If not present, just use the iri of this resource.
             const sourceForProjectResource = await this.getResourceForGitUrl(linkedGit, iri);
-            const projectIri = sourceForProjectResource?.resource.iri ?? iri;
+            const projectIri = sourceForProjectResource?.resource.projectIri ?? iri;
 
             await this.prismaClient.resource.update({
                 where: {iri},
-
                 data: {
                     linkedGitRepositoryURL: linkedGit,
                     projectIri: projectIri
@@ -290,11 +300,10 @@ export class ResourceModel {
             });
             await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified);
 
-
             if (sourceForProjectResource !== null) {
                 // This needs explanation.
                 // Since it is not obvious why we don't set the projectIri of children to the found project.
-                // For this we have to think, when we actaully update to projectIri.
+                // For this we have to think, when we actually update to projectIri.
                 // 1) We created new repo from DS - Then sourceForProjectResource === null, so we perform the recursive copy in the "else"
                 // 2) We imported git repo. Well we store projectIri in the export, therefore the projectIri should be already set
                 // 3) We created branch in DS, well since creation of a branch is only a copy, we also copied to projectIris
@@ -310,12 +319,10 @@ export class ResourceModel {
         else {
             await this.prismaClient.resource.update({
                 where: {iri},
-
                 data: {
                     linkedGitRepositoryURL: linkedGit,
                 }
             });
-            await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified);
         }
     }
 
@@ -324,13 +331,13 @@ export class ResourceModel {
         for (const resourceToUpdate of resourcesToUpdate) {
             this.prismaClient.resource.update({
                 where: {iri: resourceToUpdate.iri},
-
                 data: {
-                    projectIri: resourceToUpdate.iri,
+                    projectIri: resourceToUpdate.projectIri ?? resourceToUpdate.iri,
                 }
             });
+            await this.updateModificationTime(resourceToUpdate.iri, "meta", ResourceChangeType.Modified);
+            await this.copyIriToProjectIriForChildrenRecursively(resourceToUpdate.id);
         }
-
     }
 
     /**

@@ -103,10 +103,10 @@ export class DSFilesystem extends FilesystemAbstractionBase {
   }
 
 
-  async getDatastoreContent(treePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any> {
+  async getDatastoreContent(irisTreePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any> {
     // TODO RadStr: As said somewhere else ... improve the PrefixName type
     //              ... already improved now fix the code
-    const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(this.globalFilesystemMapping[treePath], type);
+    const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(this.globalFilesystemMappingForIris[irisTreePath], type);
     if (relevantDatastore === undefined) {
       throw new Error(`Datastore with given type (${type}), does not exist`);     // TODO RadStr: Better error handling
     }
@@ -142,29 +142,49 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     filesystemMapping: FilesystemMappingType,
     parentDirectoryNode: DirectoryNode | null,
   ): Promise<FilesystemMappingType> {
-    const { iri, fullTreePath } = mappedNodeLocation;     // Note that we are not using the fullPath
+    const { iri, irisTreePath, projectIrisTreePath } = mappedNodeLocation;     // Note that we are not using the fullPath
 
     const resource = (await this.resourceModel.getResource(iri))!;
+    const projectIri = resource.projectIri;
 
-    let localNameCandidate = iri;
-    if (iri.startsWith(fullTreePath)) {
-      localNameCandidate = iri.slice(fullTreePath.length);
+    let localProjectIriNameCandidate = projectIri;
+    // Unless we made a mistake we take care of it on import (we do it on import and not here because of the create branch inside DS)
+    // TODO RadStr I don't know: Keep it or not?
+    if (projectIri.startsWith(projectIrisTreePath) && projectIrisTreePath.length > 0) {
+      console.info({projectIri, projectIrisTreePath});
+      localProjectIriNameCandidate = projectIri.slice(projectIrisTreePath.length);
+      throw new Error("Should not happen for projectIri");
     }
-    if (localNameCandidate.includes("/") || localNameCandidate.length === 0) {
-      localNameCandidate = uuidv4();
+    if (localProjectIriNameCandidate.includes("/") || localProjectIriNameCandidate.length === 0) {
+      localProjectIriNameCandidate = uuidv4();
+      console.info({localProjectIriNameCandidate});
+      throw new Error("Should not happen for projectIri");
     }
-    let fullName = fullTreePath + localNameCandidate;
+    let fullProjectIriName = projectIrisTreePath + localProjectIriNameCandidate;
+
+    // Same as for projectIri, but here we actually do it right here and not on import
+    let localIriNameCandidate = iri;
+    if (iri.startsWith(irisTreePath)) {
+      localIriNameCandidate = iri.slice(irisTreePath.length);
+    }
+    if (localIriNameCandidate.includes("/") || localIriNameCandidate.length === 0) {
+      localIriNameCandidate = uuidv4();
+    }
+    let fullIriName = irisTreePath + localIriNameCandidate;
+
+
     let newNodeLocation: FilesystemNodeLocation | null = null;
-
     let filesystemNode: FilesystemNode;
 
     if (resource.types.includes(LOCAL_PACKAGE)) {
-      fullName += "/"; // Create directory
+      fullProjectIriName += "/"; // Create directory
+      fullIriName += "/";
 
       newNodeLocation = {
-        iri: localNameCandidate,
-        fullPath: localNameCandidate,
-        fullTreePath: fullName,
+        iri: localIriNameCandidate,
+        fullPath: localIriNameCandidate,
+        irisTreePath: fullIriName,
+        projectIrisTreePath: fullProjectIriName,
       };
 
       const directoryNode: DirectoryNode = {
@@ -173,7 +193,8 @@ export class DSFilesystem extends FilesystemAbstractionBase {
         metadata: {} as ExportMetadataType,    // We are not using the value in the course of creating the mapping!
         datastores: [],
         content: createEmptyFilesystemMapping(),
-        fullTreePath: newNodeLocation.fullTreePath,
+        irisTreePath: newNodeLocation.irisTreePath,
+        projectIrisTreePath: newNodeLocation.projectIrisTreePath,
       };
       filesystemNode = directoryNode;
 
@@ -183,16 +204,18 @@ export class DSFilesystem extends FilesystemAbstractionBase {
         const newDirectoryNodeLocation: FilesystemNodeLocation = {
           iri: subResource.iri,
           fullPath: subResource.iri,      // TODO RadStr: Either that or the fullName, I think it should be the iri
-          fullTreePath: fullName
+          irisTreePath: fullIriName,
+          projectIrisTreePath: fullProjectIriName,
         };
         await this.createFilesystemMappingRecursive(newDirectoryNodeLocation, filesystemNode.content, filesystemNode);
       }
     }
     else {  // Not a package
       newNodeLocation = {
-        iri: localNameCandidate,
-        fullPath: localNameCandidate,
-        fullTreePath: fullName,
+        iri: localIriNameCandidate,
+        fullPath: localIriNameCandidate,
+        irisTreePath: fullIriName,
+        projectIrisTreePath: fullProjectIriName,
       };
 
       const fileNode: FilesystemNode = {
@@ -200,11 +223,12 @@ export class DSFilesystem extends FilesystemAbstractionBase {
         type: "file",
         metadata: {} as ExportMetadataType,    // We are not using the value in the course of creating the mapping!
         datastores: [],
-        fullTreePath: newNodeLocation.fullTreePath,
-      }
+        irisTreePath: newNodeLocation.irisTreePath,
+        projectIrisTreePath: newNodeLocation.projectIrisTreePath,
+      };
       filesystemNode = fileNode;
     }
-    this.setValueInFilesystemMapping(newNodeLocation, filesystemMapping, filesystemNode, parentDirectoryNode);
+    this.setValueInFilesystemMapping(projectIri, newNodeLocation, filesystemMapping, filesystemNode, parentDirectoryNode);
 
     // Maybe in future we will have something else than JSONs on backend, but right now always use JSONs for DS filesystem.
     // Check top of file for more info.
@@ -255,7 +279,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
       throw new Error(`Datastore with given type (${changed.affectedDataStore.type}), does not exist`);     // TODO RadStr: Better error handling
     }
 
-    const newContent = await otherFilesystem.getDatastoreContent(changed.newVersion!.fullTreePath, changed.affectedDataStore.type, false);
+    const newContent = await otherFilesystem.getDatastoreContent(changed.newVersion!.irisTreePath, changed.affectedDataStore.type, false);
     await this.updateDatastore(changed.oldVersion!, changed.affectedDataStore.type, newContent);
 
     return true;      // TODO RadStr: ... Always returns true

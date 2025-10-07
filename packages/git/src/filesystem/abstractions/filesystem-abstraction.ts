@@ -75,14 +75,14 @@ export interface FilesystemAbstraction {
 
   /**
    *
-   * @param treePath is path to the directory in which we can find the {@link file}. In case of filesystem it is actual path, in case of DS FileSystem it is the resource IRI.
+   * @param irisTreePath is path to the directory in which we can find the {@link file}. In case of filesystem it is actual path, in case of DS FileSystem it is the resource IRI.
    *  It is the full path to the file, but without the possible suffix (for example .model.json if we are on filesystem)
    * @param type is the type of the datastore to get
    * @returns Returns the content of datastore (file) as string if {@link shouldConvertToDatastoreFormat} is false,
    *  otherwise it tries to return object (for example if the datastore has .json or .yaml extension).
    *  In case of filesystem it is actual file. In case of DS filesystem too, but we call it datastore.
    */
-  getDatastoreContent(treePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any>;
+  getDatastoreContent(irisTreePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any>;
 
   /**
    * TODO RadStr: Similar TODOs as in {@link getMetadataObject}
@@ -115,6 +115,7 @@ export interface FilesystemAbstraction {
   /**
    * Changes content of the given version of datastore inside {@link ComparisonData} to the new version inside the filesystem.
    *  {@link otherFilesystem} is the other filesystem containing the data of the new version.
+   * @deprecated We are not using it in the end
    * @returns True if the file was sucessfully changed, false on failure.
    */
   changeDatastore(otherFilesystem: FilesystemAbstraction, changed: ComparisonData): Promise<boolean>;
@@ -177,9 +178,15 @@ export interface FilesystemAbstraction {
   setRootContent(newRootContent: FilesystemMappingType): void;
 
   /**
-   * @returns The global mapping. It contains the whole filesystem, keys are absolute paths.
+   * @deprecated Should probably just use the {@link getGlobalFilesystemMapForIris}
+   * @returns The global mapping. It contains the whole filesystem, keys are absolute paths created from project iris joined by "/".
    */
-  getGlobalFilesystemMap(): Record<string, FilesystemNode>;
+  getGlobalFilesystemMapForProjectIris(): FilesystemMappingType;
+
+  /**
+   * The global mapping. It contains the whole filesystem, keys are absolute paths created from iris (not project iris) joined by "/".
+   */
+  getGlobalFilesystemMapForIris(): FilesystemMappingType;
 
   /**
    * @returns Returns the mapping of filesystem nodes to their parents.
@@ -211,7 +218,8 @@ export function createFilesystemMappingRoot(): DirectoryNode {
     metadata: { iri: "fake-root", projectIri: "fake-root-project-iri", types: [], userMetadata: {} },
     content: {},
     datastores: [],
-    fullTreePath: "",
+    irisTreePath: "",
+    projectIrisTreePath: "",
   };
   return root;
 }
@@ -223,7 +231,7 @@ export function createEmptyFilesystemMapping(): FilesystemMappingType {
 
 export function createInitialNodeToParentMap(fakeRoot: DirectoryNode): Record<string, DirectoryNode | null> {
   const nodeToParentMap: Record<string, DirectoryNode | null> = {};
-  nodeToParentMap[fakeRoot.fullTreePath] = null;
+  nodeToParentMap[fakeRoot.irisTreePath] = null;
   return nodeToParentMap;
 }
 
