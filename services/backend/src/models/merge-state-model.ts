@@ -489,47 +489,34 @@ export class MergeStateModel implements ResourceChangeListener {
    * @returns The uuid of the newly created merge state in database
    */
   async createMergeState(inputData: CreateMergeStateInput) {
-    // Test if the merge state already exists
-    const existingMergeState = await this.prismaClient.mergeState.findFirst({
-      where: {
-        rootFullPathToMetaMergeFrom: inputData.mergeFromInfo.rootFullPathToMeta,
-        rootFullPathToMetaMergeTo: inputData.mergeToInfo.rootFullPathToMeta,
-      }
-    });
-
-    if (existingMergeState !== null) {
-      throw new Error("Cannot create merge state because it already exists.");
-    }
-
     const uuid = uuidv4();
-
     const convertedMergeStateData = this.convertMergeStateDataToString({...inputData, unresolvedConflicts: inputData.allConflicts});
 
     // Create the state
     await this.prismaClient.mergeState.create({
-        data: {
-          uuid,
-          mergeStateCause: inputData.mergeStateCause,
-          editable: inputData.editable,
-          lastCommonCommitHash: inputData.lastCommonCommitHash,
-          rootIriMergeFrom: inputData.mergeFromInfo.rootIri,
-          rootFullPathToMetaMergeFrom: inputData.mergeFromInfo.rootFullPathToMeta,
-          lastCommitHashMergeFrom: inputData.mergeFromInfo.lastCommitHash,
-          branchMergeFrom: inputData.mergeFromInfo.branch,
-          filesystemTypeMergeFrom: inputData.mergeFromInfo.filesystemType,
-          rootIriMergeTo: inputData.mergeToInfo.rootIri,
-          rootFullPathToMetaMergeTo: inputData.mergeToInfo.rootFullPathToMeta,
-          lastCommitHashMergeTo: inputData.mergeToInfo.lastCommitHash,
-          branchMergeTo: inputData.mergeToInfo.branch,
-          filesystemTypeMergeTo: inputData.mergeToInfo.filesystemType,
-          conflictCount: inputData.allConflicts.length,
-          mergeStateData: {
-            create: {
-              ...convertedMergeStateData,
-              diffTreeSize: inputData.diffTreeSize,
-            }
+      data: {
+        uuid,
+        mergeStateCause: inputData.mergeStateCause,
+        editable: inputData.editable,
+        lastCommonCommitHash: inputData.lastCommonCommitHash,
+        rootIriMergeFrom: inputData.mergeFromInfo.rootIri,
+        rootFullPathToMetaMergeFrom: inputData.mergeFromInfo.rootFullPathToMeta,
+        lastCommitHashMergeFrom: inputData.mergeFromInfo.lastCommitHash,
+        branchMergeFrom: inputData.mergeFromInfo.branch,
+        filesystemTypeMergeFrom: inputData.mergeFromInfo.filesystemType,
+        rootIriMergeTo: inputData.mergeToInfo.rootIri,
+        rootFullPathToMetaMergeTo: inputData.mergeToInfo.rootFullPathToMeta,
+        lastCommitHashMergeTo: inputData.mergeToInfo.lastCommitHash,
+        branchMergeTo: inputData.mergeToInfo.branch,
+        filesystemTypeMergeTo: inputData.mergeToInfo.filesystemType,
+        conflictCount: inputData.allConflicts.length,
+        mergeStateData: {
+          create: {
+            ...convertedMergeStateData,
+            diffTreeSize: inputData.diffTreeSize,
           }
         }
+      }
     });
 
     return uuid;
