@@ -240,7 +240,7 @@ function createTreeRepresentationForRendering(
       status,
       dataSourceType: (node.resources.old?.type ?? node.resources.new?.type)!,
       datastores: datastoresRenderRepresentations,
-      children: children.concat(datastoresRenderRepresentations),
+      children: datastoresRenderRepresentations.concat(children),     // Order of concat matters - we want to show the related datastores first (right under their filesystem node)
       fullDatastoreInfoInModifiedTree: null,
       fullDatastoreInfoInOriginalTree: null,
       nowInConflictCount: datastoresWithConflictCount + nowInConflictCountInExpandableChildren,
@@ -480,7 +480,7 @@ function StyledNode({
             !node.data.isInEditableTree || isExpandable ?
             null :
             <div
-              style={{ right: "-3px", background: backgroundColor }}
+              style={{ right: "0px", background: backgroundColor }}
               className="absolute text-black top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto"
             >
               <>
