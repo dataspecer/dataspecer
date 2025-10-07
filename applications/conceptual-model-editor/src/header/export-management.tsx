@@ -20,8 +20,10 @@ import * as DataSpecificationVocabulary from "@dataspecer/data-specification-voc
 import { isInMemorySemanticModel } from "../dataspecer/semantic-model";
 import { createShaclForProfile, shaclToRdf, createSemicShaclStylePolicy } from "@dataspecer/shacl-v2";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
+import { useActions } from "../action/actions-react-binding";
 
 export const ExportManagement = () => {
+  const actions = useActions();
   const { aggregator, aggregatorView, models, visualModels, setAggregatorView, replaceModels } =
     useModelGraphContext();
   const { sourceModelOfEntityMap } = useClassesContext();
@@ -99,6 +101,16 @@ export const ExportManagement = () => {
         download(generatedLightweightOwl, `dscme-lw-ontology-${date}.ttl`, "text/plain");
       })
       .catch((err) => console.log("couldn't generate lw-ontology", err));
+  };
+
+  const handleExportSVG = async () => {
+    const svg = await actions.diagram?.actions().renderToSvgString();
+    if (svg === null || svg === undefined) {
+      console.error("Can not export SVG file.")
+      return;
+    }
+    const date = Date.now();
+    download(svg, `dscme-workspace-${date}.svg`, "image/svg+xml");
   };
 
   const handleLoadWorkspaceFromJson = () => {
@@ -187,6 +199,9 @@ export const ExportManagement = () => {
 
   return (
     <div className="my-auto mr-2 flex flex-row">
+      <ExportButton title="Download current view as SVG file." onClick={handleExportSVG}>
+        💾svg
+      </ExportButton>
       <ExportButton title="Open workspace from configuration file" onClick={handleLoadWorkspaceFromJson}>
         📥ws
       </ExportButton>

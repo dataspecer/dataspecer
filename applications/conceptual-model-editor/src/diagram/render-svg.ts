@@ -429,14 +429,11 @@ function nodeToDataURL(node: Node, width: number, height: number): string {
   svg.style.backgroundColor =
     `light-dark(${lightBackgroundColor},${darkBackgroundColor})`;
 
-  return svgToDataURL(svg);
-}
-
-function svgToDataURL(svg: SVGElement): string {
   const xml = new XMLSerializer().serializeToString(svg);
   const prettyXml = formatXml(xml);
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(prettyXml)}`;
+  return prettyXml;
 }
+
 
 /**
  * Given XML string return a pretty printed version.
