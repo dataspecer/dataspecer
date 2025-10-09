@@ -152,6 +152,7 @@ test.skip(testPrefix + "root has abstract element", async () => {
   expectTrue(elementType.abstract);
   expect(elementType.complexDefinition).toEqual({
     xsType: "sequence",
+    xsAny: false,
     contents: [
       {
         cardinalityMin: 0,
