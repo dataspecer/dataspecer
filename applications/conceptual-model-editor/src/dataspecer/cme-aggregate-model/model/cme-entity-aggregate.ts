@@ -8,7 +8,7 @@ export interface CmeEntityAggregate {
 
   /**
    * Identifier of a primary model where this entity belongs.
-   * Use this to select a color.
+   * Use this to select a default color.
    */
   model: ModelDsIdentifier;
 
