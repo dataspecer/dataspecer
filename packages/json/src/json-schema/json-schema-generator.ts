@@ -206,7 +206,7 @@ export class JsonSchemaGenerator implements ArtefactGenerator {
         classes: structureModel.getClasses().filter(cls => cls.properties.length !== 0),
         structureModelLinkId: function() {
           function normalizeLabel(label: string) {
-            return label.replace(/ /g, "-").toLowerCase();
+            return label?.replace(/ /g, "-").toLowerCase() ?? "";
           }
 
           const structureLabel = structureModel.technicalLabel || normalizeLabel(selectLanguage(structureModel.humanLabel, ["en"])); // This is an identifier that should be independent of the language

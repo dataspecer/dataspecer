@@ -106,6 +106,11 @@ class StructureModelAdapter {
       model.jsonLdDefinedPrefixes = classData.jsonLdDefinedPrefixes ?? {};
       model.jsonLdTypeMapping = classData.jsonLdDefinedTypeMapping ?? {};
     }
+    if (DataPsmContainer.is(classData)) {
+      model.containerType = classData.dataPsmContainerType as "choice" | "sequence";
+    } else {
+      model.containerType = null;
+    }
     this.classes[classData.iri] = model;
     //
     this.psmClassToModel(classData, model);

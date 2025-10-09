@@ -83,11 +83,13 @@ async function writeJsonSchemaObject(
     await writeJsonDefinition(propWriter, schema.additionalProperties);
     await propWriter.closeObject();
   }
-  const required = writer.array("required");
-  for (const key of schema.required) {
-    await required.value(key);
+  if (Object.keys(schema.required).length > 0) {
+    const required = writer.array("required");
+    for (const key of schema.required) {
+      await required.value(key);
+    }
+    await required.closeArray();
   }
-  await required.closeArray();
   if (schema.objectExamples.length > 0) {
     const examples = writer.array("examples");
     for (const example of schema.objectExamples) {
@@ -95,13 +97,42 @@ async function writeJsonSchemaObject(
     }
     await examples.closeArray();
   }
-  const properties = writer.object("properties");
-  for (const [key, value] of Object.entries(schema.properties)) {
-    const property = properties.object(key);
-    await writeJsonDefinition(property, value);
+  if (Object.keys(schema.properties).length > 0) {
+    const properties = writer.object("properties");
+    for (const [key, value] of Object.entries(schema.properties)) {
+      const property = properties.object(key);
+      await writeJsonDefinition(property, value);
+      await properties.closeObject();
+    }
     await properties.closeObject();
   }
-  await properties.closeObject();
+  if (schema.anyOf.length > 0) {
+    const anyOf = writer.array("anyOf");
+    for (const definition of schema.anyOf) {
+      const valueWriter = anyOf.object();
+      await writeJsonDefinition(valueWriter, definition);
+      await valueWriter.closeObject();
+    }
+    await anyOf.closeArray();
+  }
+  if (schema.oneOf.length > 0) {
+    const oneOf = writer.array("oneOf");
+    for (const definition of schema.oneOf) {
+      const valueWriter = oneOf.object();
+      await writeJsonDefinition(valueWriter, definition);
+      await valueWriter.closeObject();
+    }
+    await oneOf.closeArray();
+  }
+  if (schema.allOf.length > 0) {
+    const allOf = writer.array("allOf");
+    for (const definition of schema.allOf) {
+      const valueWriter = allOf.object();
+      await writeJsonDefinition(valueWriter, definition);
+      await valueWriter.closeObject();
+    }
+    await allOf.closeArray();
+  }
 }
 
 async function writeJsonSchemaArray(
