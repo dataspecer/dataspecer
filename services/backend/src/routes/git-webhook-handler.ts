@@ -1,6 +1,6 @@
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
-import { getMergeFromMergeToMappingForGitAndDS, getMetadataDatastoreFile, GitProvider, GitProviderEnum, isDatastoreForMetadata, MergeStateCause } from "@dataspecer/git";
+import { ComparisonData, getMergeFromMergeToMappingForGitAndDS, GitProvider, GitProviderEnum, isDatastoreForMetadata, MergeStateCause } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { GIT_RAD_STR_BOT_USERNAME, GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN } from "../git-never-commit.ts";
 import fs from "fs";
@@ -123,13 +123,6 @@ async function saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(
       await handleResourceUpdateFinalVersion(treePath, name, value, filesystem);
     }
   }
-}
-
-// TODO RadStr: Move elsewhere in code. Used both in backend and DiffTree dialog
-export type ComparisonData = {
-  oldVersion: FilesystemNode | null;
-  affectedDataStore: DatastoreInfo;
-  newVersion: FilesystemNode | null;
 }
 
 type ComparisonResult = {
