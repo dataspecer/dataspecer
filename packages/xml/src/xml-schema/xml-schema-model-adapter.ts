@@ -88,7 +88,7 @@ export async function structureModelToXmlSchema(
 
 const XML_IMPORT = {
   namespace: "http://www.w3.org/XML/1998/namespace",
-  schemaLocation: "http://www.w3.org/XML/1998/namespace",
+  schemaLocation: "http://www.w3.org/2001/xml.xsd",
   model: null,
 } satisfies XmlSchemaImportDeclaration;
 
