@@ -225,6 +225,14 @@ export class XmlSchemaComplexContainer extends XmlSchemaComplexItem {
  */
 export class XmlSchemaComplexSequence extends XmlSchemaComplexContainer {
   declare xsType: "sequence";
+
+  /**
+   * Whether this container allows additional elements at the END of the sequence.
+   */
+  xsAny: false | {
+    processContents: "lax" | "skip" | "strict";
+    namespace: string;
+  } & XmlSchemaComplexContent = false;
 }
 
 /**

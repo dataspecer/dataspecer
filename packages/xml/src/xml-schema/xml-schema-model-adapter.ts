@@ -312,6 +312,7 @@ class XmlSchemaAdapter {
         complexDefinition: {
           xsType: "sequence",
           contents: [complexContent],
+          xsAny: false,
         } as XmlSchemaComplexSequence,
         mixed: false,
         abstract: null,
@@ -432,6 +433,16 @@ class XmlSchemaAdapter {
         if (iriElement) {
           complexDefinition.contents = [iriElement, ...complexDefinition.contents];
         }
+      }
+
+      // Inject xs:any if open content is allowed
+      if (!cls.isClosed) {
+        complexDefinition.xsAny = {
+          cardinalityMin: 0,
+          cardinalityMax: null,
+          processContents: "lax",
+          namespace: "##any",
+        };
       }
 
       const type = {
