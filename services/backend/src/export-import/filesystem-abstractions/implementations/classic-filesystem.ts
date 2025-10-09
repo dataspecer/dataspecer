@@ -231,7 +231,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     }
     const datastore = getDatastoreInfoOfGivenDatastoreType(node, type);
 
-    if (datastore === undefined) {
+    if (datastore === null) {
       throw new Error(`Given datastore in ${irisTreePath} of type ${type} is not present in abstracted filesystem.`);    // TODO RadStr: Better error handling
     }
 
@@ -259,8 +259,8 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     throw new Error("Method not implemented.");
   }
   async changeDatastore(otherFilesystem: FilesystemAbstraction, changed: ComparisonData): Promise<boolean> {
-    const newContent = await otherFilesystem.getDatastoreContent(changed.newVersion!.name, changed.affectedDataStore.type, false);
-    return this.updateDatastore(changed.oldVersion!, changed.affectedDataStore.type, newContent);
+    const newContent = await otherFilesystem.getDatastoreContent(changed.new!.name, changed.affectedDataStore.type, false);
+    return this.updateDatastore(changed.old!, changed.affectedDataStore.type, newContent);
   }
   async removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<boolean> {
     const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType)!;

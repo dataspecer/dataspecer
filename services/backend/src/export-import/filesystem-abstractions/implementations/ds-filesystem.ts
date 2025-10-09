@@ -107,7 +107,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     // TODO RadStr: As said somewhere else ... improve the PrefixName type
     //              ... already improved now fix the code
     const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(this.globalFilesystemMappingForIris[irisTreePath], type);
-    if (relevantDatastore === undefined) {
+    if (relevantDatastore === null) {
       throw new Error(`Datastore with given type (${type}), does not exist`);     // TODO RadStr: Better error handling
     }
     const datastoreFormat = relevantDatastore.format;
@@ -274,13 +274,13 @@ export class DSFilesystem extends FilesystemAbstractionBase {
   async changeDatastore(otherFilesystem: FilesystemAbstraction, changed: ComparisonData): Promise<boolean> {
     // Here we just update the blob
 
-    const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(changed.oldVersion!, changed.affectedDataStore.type);
-    if (relevantDatastore === undefined) {
+    const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(changed.old!, changed.affectedDataStore.type);
+    if (relevantDatastore === null) {
       throw new Error(`Datastore with given type (${changed.affectedDataStore.type}), does not exist`);     // TODO RadStr: Better error handling
     }
 
-    const newContent = await otherFilesystem.getDatastoreContent(changed.newVersion!.irisTreePath, changed.affectedDataStore.type, false);
-    await this.updateDatastore(changed.oldVersion!, changed.affectedDataStore.type, newContent);
+    const newContent = await otherFilesystem.getDatastoreContent(changed.new!.irisTreePath, changed.affectedDataStore.type, false);
+    await this.updateDatastore(changed.old!, changed.affectedDataStore.type, newContent);
 
     return true;      // TODO RadStr: ... Always returns true
   }
@@ -313,6 +313,9 @@ export class DSFilesystem extends FilesystemAbstractionBase {
 
   async updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, newContent: string): Promise<boolean> {
     const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType);
+    if (relevantDatastore === null) {
+      throw new Error(`Could not update datastore of type ${datastoreType} inside ${filesystemNode.projectIrisTreePath}, since it does not exist on the node`);
+    }
     return DSFilesystem.setDatastoreContentForPath(this.resourceModel, relevantDatastore.fullPath, relevantDatastore.format, datastoreType, newContent)
   }
 

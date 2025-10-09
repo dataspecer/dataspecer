@@ -1,9 +1,9 @@
-import { ChangeActiveModelMethod } from "@/dialog/diff-editor-dialog";
+import { UpdateModelDataMethod } from "@/dialog/diff-editor-dialog";
 import _ from "lodash";
 import { Check, Loader, Minus, MoveLeft, MoveRight, Plus, X } from "lucide-react";
 import React, { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import { NodeApi, NodeRendererProps, Tree, TreeApi, } from "react-arborist";
-import { ComparisonData, CreateDatastoreFilesystemNodesInfo, DatastoreComparison, DatastoreInfo, DiffTree, EditableType, FilesystemNode, getDatastoreInfoOfGivenDatastoreType, MergeState, ResourceComparison } from "@dataspecer/git";
+import { ComparisonData, CreateDatastoreFilesystemNodesInfo, DatastoreComparison, DatastoreInfo, DiffTree, EditableType, FilesystemNode, getDatastoreInfoOfGivenDatastoreType, MergeState, OldNewFilesystemNode, ResourceComparison } from "@dataspecer/git";
 import { DiffEditorCrossedOutEditIcon, DiffEditorEditIcon } from "./crossed-out-icon";
 import { EntriesAffectedByCreateType } from "@/hooks/use-diff-editor-dialog-props";
 
@@ -26,15 +26,19 @@ type RenderNode = {
   canBeInCoflictCount: number;
   treeType: TreeType;
   isInEditableTree: boolean;
+  /**
+   * Is null for the datastores
+   */
+  resourceComparison: ResourceComparison | null;
 };
 type RenderNodeWithAdditionalData = RenderNode & {
-  changeActiveModel: ChangeActiveModelMethod;
+  updateModelData: UpdateModelDataMethod;
   shouldShowConflicts: boolean;
   allConficts: ComparisonData[];
   setConflictsToBeResolvedOnSave: (value: React.SetStateAction<ComparisonData[]>) => void;
-  isNewlyCreated: boolean,
-  setCreatedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void;
-  isNewlyRemoved: boolean,
+  isNewlyCreated: boolean;
+  setCreatedDatastores: (parentProjectIrisTreePath: string, datastoreInfoToCreate: DatastoreInfo, metadataDatastoreInfoToCreate: DatastoreInfo | null) => Promise<void>;
+  isNewlyRemoved: boolean;
   setRemovedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void;
   shouldBeHighlighted: boolean;
   setShouldBeHighlighted: (value: React.SetStateAction<boolean>) => void;
@@ -73,8 +77,17 @@ function checkIfIsInEditableTree(treeToExtract: TreeType, editableTree: Editable
   return treeToExtract === convertedEditableToTreeType;
 }
 
+function extractFirstNonEmptyFieldFromComparison(comparison: OldNewFilesystemNode | null, comparisonFieldToExtract: keyof FilesystemNode) {
+  if (comparison === null) {
+    return null;
+  }
+  return (comparison.old?.[comparisonFieldToExtract] ?? comparison.new?.[comparisonFieldToExtract]);
+}
+
 function createIdForDatastoreRenderNode(datastoreComparison: DatastoreComparison, treeToExtract: TreeType) {
-  return (datastoreComparison?.newVersion?.irisTreePath ?? datastoreComparison?.oldVersion?.irisTreePath ?? "unknown") + datastoreComparison.affectedDataStore.fullName + "-" + treeToExtract;
+  // It should be projectIris - so we can swap between the two trees easily by removing the treeToExtract suffix - TODO RadStr: However we might remove the left tree since it is useless
+   // Note that at least one is not empty that is why we can type it to string
+  return extractFirstNonEmptyFieldFromComparison(datastoreComparison, "projectIrisTreePath") as string + datastoreComparison.affectedDataStore.fullName + "-" + treeToExtract;
 }
 
 function createDatastoresRenderRepresentations(
@@ -128,13 +141,13 @@ function createDatastoresRenderRepresentations(
       }
     }
 
-    const fullDatastoreInfoInOriginalTree = datastoreComparison.oldVersion === null ?
+    const fullDatastoreInfoInOriginalTree = datastoreComparison.old === null ?
       null :
-      getDatastoreInfoOfGivenDatastoreType(datastoreComparison.oldVersion, datastoreComparison.affectedDataStore.type) ?? null;
+      getDatastoreInfoOfGivenDatastoreType(datastoreComparison.old, datastoreComparison.affectedDataStore.type) ?? null;
 
-    const fullDatastoreInfoInModifiedTree = datastoreComparison.newVersion === null ?
+    const fullDatastoreInfoInModifiedTree = datastoreComparison.new === null ?
       null :
-      getDatastoreInfoOfGivenDatastoreType(datastoreComparison.newVersion, datastoreComparison.affectedDataStore.type) ?? null;
+      getDatastoreInfoOfGivenDatastoreType(datastoreComparison.new, datastoreComparison.affectedDataStore.type) ?? null;
 
     const isNowInConflict = unresolvedConflicts.findIndex(conflict => conflict.affectedDataStore.fullPath === datastoreComparison.affectedDataStore.fullPath) !== -1;
     if (isNowInConflict) {
@@ -160,6 +173,7 @@ function createDatastoresRenderRepresentations(
       canBeInCoflictCount: canBeInCoflict ? 1 : 0,
       treeType: treeToExtract,
       isInEditableTree: checkIfIsInEditableTree(treeToExtract, editableTree),
+      resourceComparison: null,
     };
     datastoresRenderRepresentations.push(datastoreRenderNode);
   }
@@ -168,8 +182,9 @@ function createDatastoresRenderRepresentations(
 }
 
 function createIdForFilesystemRenderNode(resourceComparison: ResourceComparison, treeToExtract: TreeType) {
-  const nonEmptyFilesystemNode: FilesystemNode = (resourceComparison.resources.old ?? resourceComparison.resources.new)!;
-  return nonEmptyFilesystemNode.irisTreePath + "-" + treeToExtract;
+  // As for {@link createIdForDatastoreRenderNode} has to be projectIri to easily swap between trees.
+  // Note that at least one is not empty that is why we can type it to string
+  return extractFirstNonEmptyFieldFromComparison(resourceComparison?.resources ?? null, "projectIrisTreePath") as string + "-" + treeToExtract;
 }
 
 
@@ -247,6 +262,7 @@ function createTreeRepresentationForRendering(
       canBeInCoflictCount: totalDatastoresWithConflictCount + totalConflictCountInExpandableChildren,
       treeType: treeToExtract,
       isInEditableTree: checkIfIsInEditableTree(treeToExtract, editableTree),
+      resourceComparison: node,
     };
     renderTree.push(renderNode);
   }
@@ -331,7 +347,7 @@ const onClickRemoveDatastore = (
     const allNodesInSubTree = getAllChildrenRecursively(parent);
     const filesystemNodeTreePathsInSubTree = allNodesInSubTree
       .filter(node => (node.children ?? []).length > 0)
-      .map(node => extractTreePathFromNode(node));
+      .map(node => extractFirstNonEmptyFieldFromComparison(node.data.resourceComparison?.resources ?? null, "projectIrisTreePath") as string);
     const datastoresInSubTree = allNodesInSubTree
       .filter(node => (node.children ?? []).length === 0)
       .map(datastore => datastore.data.fullDatastoreInfoInModifiedTree!);
@@ -340,7 +356,11 @@ const onClickRemoveDatastore = (
 
     nodeToResolve.data.setRemovedDatastores(prev => [...prev, ...datastoresInSubTree]);
     if (parent !== null) {
-      nodeToResolve.data.setRemovedTreePaths(prev => [...prev, extractTreePathFromNode(parent), ...filesystemNodeTreePathsInSubTree]);
+      nodeToResolve.data.setRemovedTreePaths(prev => [
+        ...prev,
+        extractFirstNonEmptyFieldFromComparison(parent.data.resourceComparison?.resources ?? null, "projectIrisTreePath") as string,
+        ...filesystemNodeTreePathsInSubTree],
+      );
     }
   }
   else {
@@ -351,11 +371,14 @@ const onClickRemoveDatastore = (
 
 const onClickCreateDatastore = (
   event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-  nodeToResolve: RenderNodeWithAdditionalData,
+  filesystemNodeContainingDatastoreToCreate: RenderNodeWithAdditionalData | undefined,
+  datastoreToCreate: RenderNodeWithAdditionalData,
 ) => {
   event.stopPropagation();
-  nodeToResolve.setCreatedDatastores(prev => [...prev, nodeToResolve.fullDatastoreInfoInOriginalTree!]);
-  alert(`Create datastore for ${nodeToResolve.name}`);
+  const oldResource = filesystemNodeContainingDatastoreToCreate?.resourceComparison?.resources?.old ?? null;
+  const metaDatastoreInfo = oldResource === null ? null : getDatastoreInfoOfGivenDatastoreType(oldResource, "meta");
+  datastoreToCreate.setCreatedDatastores(oldResource?.projectIrisTreePath!, datastoreToCreate.fullDatastoreInfoInOriginalTree!, metaDatastoreInfo);
+  alert(`Create datastore for ${datastoreToCreate.name}`);
 }
 
 const handleMouseHoverHighlightingForNode = (node: NodeApi<RenderNodeWithAdditionalData>, shouldSetHighlightingOn: boolean) => {
@@ -460,8 +483,8 @@ function StyledNode({
               node.focus();
               node.select();
 
-              const parentTreePath = extractTreePathFromNode(node.parent!);
-              node.data.changeActiveModel(parentTreePath, node.data.fullDatastoreInfoInOriginalTree, node.data.fullDatastoreInfoInModifiedTree, true, true);
+              const parentTreePath = extractFirstNonEmptyFieldFromComparison(node.parent?.data.resourceComparison?.resources ?? null, "projectIrisTreePath") as string;
+              node.data.updateModelData(parentTreePath, node.data.fullDatastoreInfoInOriginalTree, node.data.fullDatastoreInfoInModifiedTree, true, true);
             }
           }}
           onMouseOver={(_e) => {
@@ -512,7 +535,7 @@ function StyledNode({
                 }
                 {
                 node.data.status === "removed" ?
-                  <button title="Create datastore" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickCreateDatastore(e, node.data)}>
+                  <button title="Create datastore" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickCreateDatastore(e, node.parent?.data, node.data)}>
                     <Plus className="h-6 w-6"/>
                   </button> :
                   null
@@ -556,28 +579,28 @@ const getOtherTreeType = (tree: TreeType) => tree === "old" ? "new" : "old";
 
 const createStyledNode = (
   props: NodeRendererProps<RenderNode>,
-  changeActiveModelData: ChangeActiveModelMethod,
+  updateModelData: UpdateModelDataMethod,
   shouldShowConflicts: boolean,
   allConficts: ComparisonData[],
   setConflictsToBeResolvedOnSave: (value: React.SetStateAction<ComparisonData[]>) => void,
   createdFilesystemNodesAsArray: CreateDatastoreFilesystemNodesInfo[],
   createdDatastores: DatastoreInfo[],
-  setCreatedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void,
+  setCreatedDatastores: (parentProjectIrisTreePath: string, datastoreInfoToCreate: DatastoreInfo, metadataDatastoreInfoToCreate: DatastoreInfo | null) => Promise<void>,
   removedDatastores: DatastoreInfo[],
   setRemovedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void,
   removedTreePaths: string[],
   setRemovedTreePaths: (value: React.SetStateAction<string[]>) => void,
 ) => {
   const extendedProps: NodeRendererProps<RenderNodeWithAdditionalData> = props as any;
-  const currentNodeTreePath = extractTreePathFromNode(extendedProps.node);    // Just for internal computations does not even have to be the treePath in case of datastore.
-  extendedProps.node.data.changeActiveModel = changeActiveModelData;
+  const currentNodeTreePath = extractTreePathFromNode(extendedProps.node);
+  extendedProps.node.data.updateModelData = updateModelData;
   extendedProps.node.data.shouldShowConflicts = shouldShowConflicts;
   extendedProps.node.data.allConficts = allConficts;
   extendedProps.node.data.setConflictsToBeResolvedOnSave = setConflictsToBeResolvedOnSave;
   extendedProps.node.data.isNewlyCreated = createdDatastores.find(createdDatastore => createdDatastore.fullPath === extendedProps.node.data.fullDatastoreInfoInOriginalTree?.fullPath) !== undefined;
   extendedProps.node.data.isNewlyCreated ||= createdFilesystemNodesAsArray
     .find(filesystemNode => {
-      return filesystemNode.treePath === currentNodeTreePath;
+      return filesystemNode.projectIrisTreePath === currentNodeTreePath;
     }) !== undefined;
   extendedProps.node.data.setCreatedDatastores = setCreatedDatastores;
   extendedProps.node.data.isNewlyRemoved = removedDatastores.find(removedDatastore => removedDatastore.fullPath === extendedProps.node.data.fullDatastoreInfoInModifiedTree?.fullPath) !== undefined;
@@ -679,7 +702,7 @@ const treeRowHeight = 30;
  *  After that the performance does not seem to get worse. This means that it is probably related to the library rather than bad programming.
  */
 export const DiffTreeVisualization = (props: {
-  changeActiveModel: ChangeActiveModelMethod,
+  updateModelData: UpdateModelDataMethod,
   isLoadingTreeStructure: boolean,
   setIsLoadingTreeStructure: (value: SetStateAction<boolean>) => void,
   mergeStateFromBackend: MergeState | null,
@@ -687,7 +710,7 @@ export const DiffTreeVisualization = (props: {
   setConflictsToBeResolvedOnSave: Dispatch<SetStateAction<ComparisonData[]>>,
   createdFilesystemNodes: Record<string, EntriesAffectedByCreateType>,
   createdDatastores: DatastoreInfo[],
-  setCreatedDatastores: Dispatch<SetStateAction<DatastoreInfo[]>>,
+  setCreatedDatastores: (parentProjectIrisTreePath: string, datastoreInfoToCreate: DatastoreInfo, metadataDatastoreInfoToCreate: DatastoreInfo | null) => Promise<void>,
   removedDatastores: DatastoreInfo[],
   setRemovedDatastores: Dispatch<SetStateAction<DatastoreInfo[]>>,
   removedTreePaths: string[],
@@ -698,6 +721,7 @@ export const DiffTreeVisualization = (props: {
     removedDatastores, setRemovedDatastores,
     setConflictsToBeResolvedOnSave, createdFilesystemNodes,
     removedTreePaths, setRemovedTreePaths,
+    updateModelData
   } = props;
   const createdFilesystemNodesAsArray = Object.values(createdFilesystemNodes).map(filesystemNode => filesystemNode.createdFilesystemNodes).flat();
 
@@ -774,8 +798,6 @@ export const DiffTreeVisualization = (props: {
   const handleShowConflictsCheckboxChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
     setShouldShowOnlyConflicts(event.target.checked);
   };
-
-  const changeActiveModel = props.changeActiveModel;
 
 
   const onNodeToggle = useCallback((id: string, treeType: TreeType) => {
@@ -929,7 +951,7 @@ export const DiffTreeVisualization = (props: {
         <h3><DiffEditorCrossedOutEditIcon/></h3>
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
-            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, setCreatedDatastores, removedDatastores, setRemovedDatastores, removedTreePaths, setRemovedTreePaths)}
+            <Tree children={(props) => createStyledNode(props, updateModelData, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, setCreatedDatastores, removedDatastores, setRemovedDatastores, removedTreePaths, setRemovedTreePaths)}
                   ref={oldTreeRef} data={oldRenderTreeDataToRender} width={"100%"}
                   onSelect={(nodes) => onNodesSelect(nodes, "old")}
                   onFocus={(node) => onNodeFocus(node, "old")}
@@ -942,7 +964,7 @@ export const DiffTreeVisualization = (props: {
         <h3><DiffEditorEditIcon/></h3>
         {
           renderTreeWithLoading(props.isLoadingTreeStructure,
-            <Tree children={(props) => createStyledNode(props, changeActiveModel, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, setCreatedDatastores, removedDatastores, setRemovedDatastores, removedTreePaths, setRemovedTreePaths)}
+            <Tree children={(props) => createStyledNode(props, updateModelData, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, setCreatedDatastores, removedDatastores, setRemovedDatastores, removedTreePaths, setRemovedTreePaths)}
                   ref={newTreeRef} data={newRenderTreeDataToRender} width={"100%"}
                   onSelect={(nodes) => onNodesSelect(nodes, "new")}
                   onFocus={(node) => onNodeFocus(node, "new")}

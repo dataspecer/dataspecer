@@ -208,7 +208,7 @@ application.post(apiBasename + "/git/update-datastore-content", updateDatastoreC
 application.post(apiBasename + "/git/create-datastore-content", createDatastoreContentDirectly);
 application.delete(apiBasename + "/git/remove-datastore-content", removeDatastoreContentDirectly);
 application.post(apiBasename + "/git/create-filesystem-nodes", createFilesystemNodesDirectly);
-application.post(apiBasename + "/git/remove-filesystem-node", removeFilesystemNodeDirectly);
+application.delete(apiBasename + "/git/remove-filesystem-node", removeFilesystemNodeDirectly);
 application.get(apiBasename + "/git/get-merge-state", getMergeState);
 application.post(apiBasename + "/git/create-merge-state-between-ds-packages", createMergeStateBetweenDSPackagesHandler);
 application.post(apiBasename + "/git/update-merge-state", updateMergeState);

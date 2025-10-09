@@ -90,8 +90,8 @@ async function compareTreesInternal(
 
         if (await compareDatastoresContents(filesystem1, nodeValue, filesystem2, node2Value as FileNode, datastore1)) {
           const same: DatastoreComparison = {
-            oldVersion: nodeValue,
-            newVersion: node2Value ?? null,
+            old: nodeValue,
+            new: node2Value ?? null,
             affectedDataStore: datastore1,
             datastoreComparisonResult: "same",
           };
@@ -99,8 +99,8 @@ async function compareTreesInternal(
         }
         else {
           const changed: DatastoreComparison = {
-            oldVersion: nodeValue,
-            newVersion: node2Value ?? null,
+            old: nodeValue,
+            new: node2Value ?? null,
             affectedDataStore: datastore1,
             datastoreComparisonResult: "modified",
           };
@@ -111,8 +111,8 @@ async function compareTreesInternal(
       }
       else {
         const removed: DatastoreComparison = {
-          oldVersion: nodeValue,
-          newVersion: null,
+          old: nodeValue,
+          new: null,
           affectedDataStore: datastore1,
           datastoreComparisonResult: "removed-in-new"
         };
@@ -135,8 +135,8 @@ async function compareTreesInternal(
     for (const datastore2 of node2Value?.datastores ?? []) {
       if (!processedDatastoresInSecondTree.has(datastore2)) {
         const created: DatastoreComparison = {
-          oldVersion: null,
-          newVersion: node2Value!,
+          old: null,
+          new: node2Value!,
           affectedDataStore: datastore2,
           datastoreComparisonResult: "created-in-new"
         };
@@ -176,8 +176,8 @@ async function compareTreesInternal(
       // The datastore is not present, since the parent filesystem node does not exist, then it means that all of the datastores are not present neither
       const created: DatastoreComparison = {
         datastoreComparisonResult: "created-in-new",
-        oldVersion: null,
-        newVersion: nodeValue,
+        old: null,
+        new: nodeValue,
         affectedDataStore: datastore,
       };
       currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(created);
@@ -206,4 +206,24 @@ export async function compareDatastoresContents(
   console.info({content1, content2});    // TODO RadStr DEBUG: DEBUG Print
 
   return _.isEqual(content1, content2);
+}
+
+export function getDiffNodeFromDiffTree(
+  diffTree: DiffTree,
+  projectIrisTreePath: string
+): ResourceComparison | null {
+  const parts = projectIrisTreePath.split("/");
+  let currentDiffTree: DiffTree = diffTree;
+  let diffNode: ResourceComparison;
+
+
+  for (const part of parts) {
+    if (currentDiffTree === undefined) {
+      return null;    // Path is too long
+    }
+    diffNode = currentDiffTree[part];
+    currentDiffTree = diffNode.childrenDiffTree;
+  }
+
+  return diffNode ?? null;
 }

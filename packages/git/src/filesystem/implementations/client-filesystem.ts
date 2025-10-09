@@ -7,7 +7,7 @@ import { AvailableFilesystems, FilesystemAbstraction, getDatastoreInfoOfGivenDat
 
 export type CreateDatastoreFilesystemNodesInfo = {
   parentProjectIri: string,
-  treePath: string,
+  projectIrisTreePath: string,
   userMetadataDatastoreInfo: DatastoreInfo,
 };
 
@@ -301,6 +301,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     backendApiPath: string,
   ): Promise<boolean> {
     if (parentIri === null) {
+      console.error({datastoreInfo});
       console.error("The parent iri was not provided, we do not know under which filesystem node should be the datastore put.");
       return false;
     }

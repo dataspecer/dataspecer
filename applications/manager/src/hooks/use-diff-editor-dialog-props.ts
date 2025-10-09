@@ -22,6 +22,7 @@ import {
   convertDatastoreContentForInputFormatToOutputFormat,
   setEditableValue,
   ExportShareableMetadataType,
+  getDiffNodeFromDiffTree,
 } from "@dataspecer/git";
 import { finalizeMergeState, saveMergeState } from "@/utils/merge-state-fetch-methods";
 import { fetchMergeState } from "@/dialog/open-merge-state";
@@ -342,17 +343,16 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
           }
 
           const { nonEditable: datastoreCausingTheUpdate } = getEditableAndNonEditableValue(editable, datastoreInfo.mergeFrom, datastoreInfo.mergeTo);
+          console.info({newlyCreatedDatastores, datastoreCausingTheUpdate});
+          alert(`Handling update2`);
 
-          // Create new one. For that we have to find all the related datastores/nodes
+          // Skip if iti s not newly created
           if (newlyCreatedDatastores.find(createdDatastore => createdDatastore.fullPath === datastoreCausingTheUpdate?.fullPath) === undefined) {
             continue;
           }
-
-
           await onCascadeUpdateForCreatedDatastores(
             nodeTreePath, examinedMergeState, editable, datastoreCausingTheUpdate,
-            convertedCacheForMergeFromContent, convertedCacheForMergeToContent, updateModelDataWithoutActiveModelChange,
-            setCreatedDatastores, setCreatedFilesystemNodes, createdFilesystemNodesAsArray);
+            updateModelDataWithoutActiveModelChange, setCreatedDatastores, setCreatedFilesystemNodes, createdFilesystemNodesAsArray);
           console.info({convertedCacheForMergeFromContent, convertedCacheForMergeToContent});
         }
       }
@@ -362,6 +362,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     handleCreatedFilesystemNodesUpdate();
     createdDatastoresInPreviousIteration.current = createdDatastores;
   }, [createdDatastores]);
+
 
   /**
    * Updates models related data. If {@link shouldChangeActiveModel} is true Changes current active model, that is modifies states to reflect that.
@@ -386,7 +387,6 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
       setCurrentTreePathToNodeContainingDatastore(treePathToNodeContainingDatastore);
       return;
     }
-
 
     setIsLoadingTextData(true);
     // Note that it must be always string because of the if guard for both nulls at the start of method
@@ -545,16 +545,99 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     const { editable: editableCacheContents, nonEditable: nonEditableCacheContents } = getEditableAndNonEditableValue(editable, convertedCacheForMergeFromContent, convertedCacheForMergeToContent);
     const editableFilesystem = getEditableValue(editable, examinedMergeState?.filesystemTypeMergeFrom, examinedMergeState?.filesystemTypeMergeTo) ?? null;
 
-    // TODO RadStr: Not used ... I have to think about it a bit - when exactly I need to (not) update the metas in the code after this
+    await saveCreatedFilesystemNodesToBackend(editableCacheContents, nonEditableCacheContents, editableFilesystem);
+
+
+    let filesystemNodeParentIri: string | null = null;
+
+    for (const [nodeTreePath, datastoreInfoMap] of Object.entries(datastoreInfosForCacheEntries)) {
+      if (removedTreePaths.includes(nodeTreePath)) {
+        await ClientFilesystem.removeFilesystemNodeDirectly(nodeTreePath, import.meta.env.VITE_BACKEND, editableFilesystem);
+        continue;
+      }
+
+      // Set the filesystemNodeParentIri
+      const diffTreeNode = getDiffNodeFromDiffTree(examinedMergeState!.diffTreeData!.diffTree, nodeTreePath);
+      const filesystemNodeWithMetaMergeTo = diffTreeNode?.datastoreComparisons.find(datastoreComparison => datastoreComparison.affectedDataStore.type === "meta")?.new ?? null;
+      if (filesystemNodeWithMetaMergeTo === null) {
+        filesystemNodeParentIri = null;
+      }
+      else {
+        const metaMergeTo = getDatastoreInfoOfGivenDatastoreType(filesystemNodeWithMetaMergeTo, "meta");
+        console.info({datastoreInfoMap, datastoreInfosForCacheEntries, diffTreeNode, metaMergeTo, diffTree: examinedMergeState!.diffTreeData!.diffTree});    // TODO RadStr DEBUG: Debug
+        filesystemNodeParentIri = metaMergeTo === null ?
+          null :
+          getDatastoreInCacheAsObject(editableCacheContents, nonEditableCacheContents, nodeTreePath, metaMergeTo, removedDatastores).iri;
+      }
+
+      for (const [modelName, datastoreInfo] of Object.entries(datastoreInfoMap)) {
+        const {
+          editable: datastoreInfoForEditable,
+          nonEditable: datastoreInfoForNonEditable
+        } = getEditableAndNonEditableValue(editable, datastoreInfo.mergeFrom, datastoreInfo.mergeTo);
+
+        if (modelName === "meta") {
+          if (datastoreInfoForNonEditable !== null && createdDatastores.includes(datastoreInfoForNonEditable)) {
+            continue;
+          }
+        }
+
+        // Handle Remove
+        let removedDatastore: DatastoreInfo | undefined;
+        if ((removedDatastore = removedDatastores.find(datastore => datastore.fullPath === datastoreInfoForEditable?.fullPath)) !== undefined) {
+          alert("Handling remove");
+          const diffTreeNode = getDiffNodeFromDiffTree(examinedMergeState!.diffTreeData!.diffTree, nodeTreePath);
+          if (diffTreeNode === null) {
+            throw new Error(`The node (${nodeTreePath}) to remove does not exist inside diffTree`);
+          }
+          const relevantResource: FilesystemNode = getEditableValue(editable, diffTreeNode.resources.old, diffTreeNode.resources.new)!;
+          const datastoreParentIri = relevantResource.metadata.iri;
+          alert("Handling remove2");
+          await ClientFilesystem.removeDatastoreDirectly(datastoreParentIri, removedDatastore, import.meta.env.VITE_BACKEND, editableFilesystem, false);
+          continue;
+        }
+
+        const format = formatsForCacheEntries[nodeTreePath][modelName];
+        const newValue = editableCacheContents?.[nodeTreePath]?.[modelName] ?? getDefaultValueForFormat(format);
+        const newValueAsJSON = convertDatastoreContentForInputFormatToOutputFormat(newValue, format, "json", true);
+        if (datastoreInfoForEditable !== null) {
+          // Just update, it does exist
+          await ClientFilesystem.updateDatastoreContentDirectly(datastoreInfoForEditable, newValueAsJSON, editableFilesystem, import.meta.env.VITE_BACKEND);
+        }
+        else {
+          // Create new one.
+          await ClientFilesystem.createDatastoreDirectly(filesystemNodeParentIri, newValueAsJSON, editableFilesystem, datastoreInfoForNonEditable, import.meta.env.VITE_BACKEND);
+          continue;
+        }
+        await reloadModelsDataFromBackend();
+      }
+    }
+
+    setCreatedDatastores([]);
+    setRemovedDatastores([]);
+    setRemovedTreePaths([]);
+    setCreatedFilesystemNodes({});
+
+    // // Remove all listeners first
+    // const mergeToEditor = monacoEditor.current?.editor.getMergeToEditor();
+    // // mergeToEditor?.dispose();
+  };
+
+  const saveCreatedFilesystemNodesToBackend = async (
+    editableCacheContents: CacheContentMap,
+    nonEditableCacheContents: CacheContentMap,
+    editableFilesystem: AvailableFilesystems | null,
+  ): Promise<void> => {
+    // TODO RadStr: Set Not used ... I have to think about it a bit - when exactly I need to (not) update the metas in the code after this
     const createdMetas: Set<string> = new Set();
 
     for (const [_, filesystemNodesBatchToCreate] of Object.entries(createdFilesystemNodes)) {
       const filesystemNodesBatchMetadata: ExportShareableMetadataType[] = [];
 
       for (const filesystemNodeToCreate of filesystemNodesBatchToCreate.createdFilesystemNodes) {
-        createdMetas.add(filesystemNodeToCreate.treePath);
-        console.info({editableCacheContents, "treePath": filesystemNodeToCreate.treePath, "userMetadataDatastoreInfo": filesystemNodeToCreate.userMetadataDatastoreInfo})
-        const filesystemNodeMetadata = getDatastoreInCacheAsObject(editableCacheContents, nonEditableCacheContents, filesystemNodeToCreate.treePath, filesystemNodeToCreate.userMetadataDatastoreInfo, removedDatastores);
+        createdMetas.add(filesystemNodeToCreate.projectIrisTreePath);
+        console.info({editableCacheContents, "treePath": filesystemNodeToCreate.projectIrisTreePath, "userMetadataDatastoreInfo": filesystemNodeToCreate.userMetadataDatastoreInfo})
+        const filesystemNodeMetadata = getDatastoreInCacheAsObject(editableCacheContents, nonEditableCacheContents, filesystemNodeToCreate.projectIrisTreePath, filesystemNodeToCreate.userMetadataDatastoreInfo, removedDatastores);
         filesystemNodesBatchMetadata.push(filesystemNodeMetadata);
       }
 
@@ -591,71 +674,13 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
 
         console.info("Before");
         console.info({datastoreInfosForCacheEntries, currentIri});
-        console.info(datastoreInfosForCacheEntries[filesystemNodesBatchToCreate.createdFilesystemNodes[i].treePath][type]);
-        setEditableValue(editable, datastoreInfosForCacheEntries[filesystemNodesBatchToCreate.createdFilesystemNodes[i].treePath][type], createdDatastoreInfo);
+        const projectIrisTreePathForCreatedNode = filesystemNodesBatchToCreate.createdFilesystemNodes[i].projectIrisTreePath;
+        console.info(datastoreInfosForCacheEntries[projectIrisTreePathForCreatedNode][type]);
+        setEditableValue(editable, datastoreInfosForCacheEntries[projectIrisTreePathForCreatedNode][type], createdDatastoreInfo);
         console.info("After");
-        console.info(datastoreInfosForCacheEntries[filesystemNodesBatchToCreate.createdFilesystemNodes[i].treePath][type]);
+        console.info(datastoreInfosForCacheEntries[projectIrisTreePathForCreatedNode][type]);
       }
     }
-
-
-    let filesystemNodeParentIri: string | null = null;
-
-    for (const [nodeTreePath, datastoreInfoMap] of Object.entries(datastoreInfosForCacheEntries)) {
-      if (removedTreePaths.includes(nodeTreePath)) {
-        ClientFilesystem.removeFilesystemNodeDirectly(nodeTreePath, import.meta.env.VITE_BACKEND, editableFilesystem);
-        continue;
-      }
-
-      for (const [modelName, datastoreInfo] of Object.entries(datastoreInfoMap)) {
-        const {
-          editable: datastoreInfoForEditable,
-          nonEditable: datastoreInfoForNonEditable
-        } = getEditableAndNonEditableValue(editable, datastoreInfo.mergeFrom, datastoreInfo.mergeTo);
-
-        if (modelName === "meta") {
-          if (datastoreInfoForNonEditable !== null && createdDatastores.includes(datastoreInfoForNonEditable)) {
-            continue;
-          }
-        }
-
-        // Handle Remove
-        let removedDatastore: DatastoreInfo | undefined;
-        if ((removedDatastore = removedDatastores.find(datastore => datastore.fullPath === datastoreInfoForEditable?.fullPath)) !== undefined) {
-          const diffTreeNode = examinedMergeState!.diffTreeData!.diffTree[nodeTreePath];
-          const relevantResource: FilesystemNode = getEditableValue(editable, diffTreeNode.resources.old, diffTreeNode.resources.new)!;
-          const datastoreParentIri = relevantResource.metadata.iri;
-          await ClientFilesystem.removeDatastoreDirectly(datastoreParentIri, removedDatastore, import.meta.env.VITE_BACKEND, editableFilesystem, false);
-          continue;
-        }
-
-        const format = formatsForCacheEntries[nodeTreePath][modelName];
-        const newValue = editableCacheContents?.[nodeTreePath]?.[modelName] ?? getDefaultValueForFormat(format);
-        const newValueAsJSON = convertDatastoreContentForInputFormatToOutputFormat(newValue, format, "json", true);
-        if (datastoreInfoForEditable !== null) {
-          // Just update, it does exist
-          await ClientFilesystem.updateDatastoreContentDirectly(datastoreInfoForEditable, newValueAsJSON, editableFilesystem, import.meta.env.VITE_BACKEND);
-        }
-        else {
-          // Create new one.
-          await ClientFilesystem.createDatastoreDirectly(filesystemNodeParentIri, newValueAsJSON, editableFilesystem, datastoreInfoForNonEditable, import.meta.env.VITE_BACKEND);
-          continue;
-        }
-        await reloadModelsDataFromBackend();
-      }
-      filesystemNodeParentIri = datastoreInfoMap["meta"].mergeTo === null ?
-        null :
-        getDatastoreInCacheAsObject(editableCacheContents, nonEditableCacheContents, nodeTreePath, datastoreInfoMap["meta"].mergeTo, removedDatastores).iri;
-    }
-
-    setCreatedDatastores([]);
-    setRemovedDatastores([]);
-    setRemovedTreePaths([]);
-    setCreatedFilesystemNodes({});
-
-    // // Remove all listeners first
-    // const mergeToEditor = monacoEditor.current?.editor.getMergeToEditor();
-    // // mergeToEditor?.dispose();
   };
 
   const finalizeMergeStateHandler = async () => {
@@ -691,7 +716,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
 
     resetUseStates,
     reloadMergeState,
-    changeActiveModel: updateModelData,
+    updateModelData,
+    updateModelDataWithoutActiveModelChange,
     saveChangesToCache,
     reloadModelsDataFromBackend,
     closeWithSuccess,
@@ -702,13 +728,13 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
   };
 }
 
+
+
 async function onCascadeUpdateForCreatedDatastores(
   nodeTreePath: string,
   examinedMergeState: MergeState | null,
   editable: EditableType,
   datastoreCausingTheUpdate: DatastoreInfo | null,
-  convertedCacheForMergeFromContent: CacheContentMap,
-  convertedCacheForMergeToContent: CacheContentMap,
   updateModelDataWithoutActiveModelChange: (treePathToNodeContaingDatastore: string, givenMergeFromDatastoreInfo: DatastoreInfo | null, givenMergeToDatastoreInfo: DatastoreInfo | null) => Promise<void>,
   setCreatedDatastores: Dispatch<SetStateAction<DatastoreInfo[]>>,
   setCreatedFilesystemNodes: Dispatch<SetStateAction<Record<string, EntriesAffectedByCreateType>>>,
@@ -744,15 +770,13 @@ async function onCascadeUpdateForCreatedDatastores(
     if (currentDiffNode.resourceComparisonResult === "exists-in-old") {
       // Using the ! on existingResouce, since the value is relevant only when the old (non-editable) value exists
       const { nonEditable: existingResource } = getEditableAndNonEditableValue(editable, currentDiffNode?.resources.old, currentDiffNode?.resources.new);
-      const metadataInfo = getDatastoreInfoOfGivenDatastoreType(existingResource!, "meta");
+      const metadataInfo = getDatastoreInfoOfGivenDatastoreType(existingResource!, "meta")!;
 
       // TODO RadStr DEBUG: Debug prints
       console.info({ lastTreePathSeparatorIndex: treePathSeparatorIndex, len: currentNodeTreePath.length, currentIri, currentNodeTreePath, nodeTreePath, currentNode: currentDiffNode, difftree: examinedMergeState?.diffTreeData?.diffTree }); // TODO RadStr DEBUG: Debug print
-
-      console.info({ convertedCacheForMergeFromContent, convertedCacheForMergeToContent }); // TODO RadStr DEBUG: Debug print
       console.info({ metadataAsJSON: metadataInfo, PATH_FOR_METADATA: existingResource!.irisTreePath! }); // TODO RadStr DEBUG: Debug print
 
-      const isFilesystemNodeNotYetAdded = createdFilesystemNodesAsArray.find(alreadyCreated => alreadyCreated.treePath === existingResource!.irisTreePath) === undefined;
+      const isFilesystemNodeNotYetAdded = createdFilesystemNodesAsArray.find(alreadyCreated => alreadyCreated.projectIrisTreePath === existingResource!.irisTreePath) === undefined;
       if (isFilesystemNodeNotYetAdded) {
         visitedFirstNodeToCreate = true;
         if (parentNode === null) {
@@ -766,18 +790,22 @@ async function onCascadeUpdateForCreatedDatastores(
         await updateModelDataWithoutActiveModelChange(existingResource!.irisTreePath, mergeFromMetadataInfo, mergeToMetadataInfo);
         setCreatedDatastores(prev => [...prev, metadataInfo]);
 
-        // TODO RadStr PROJECTIRIS: userMetadata should be enough - just for the metadata and the projectIri
-        const newFilesystemNodeToCreate = {
+        const newFilesystemNodeToCreate: CreateDatastoreFilesystemNodesInfo = {
           parentProjectIri: parentNode.metadata.projectIri,
-          treePath: existingResource!.irisTreePath,
+          projectIrisTreePath: existingResource!.projectIrisTreePath,
           userMetadataDatastoreInfo: metadataInfo,
         };
         createdFilesystemNodesInTreePath.push(newFilesystemNodeToCreate);
         createdFilesystemNodesAsArray.push(newFilesystemNodeToCreate);
+        alert(`onCascadeUpdateForCreatedDatastores: ${existingResource!.irisTreePath}`);
         parentNode = existingResource;
       }
     }
     else {
+      if (currentDiffNode.resourceComparisonResult === "exists-in-both") {
+        const { nonEditable: existingResource } = getEditableAndNonEditableValue(editable, currentDiffNode?.resources.old, currentDiffNode?.resources.new);
+        parentNode = existingResource;
+      }
       if (visitedFirstNodeToCreate) { // We are after the node to create
         hasChildrenToCreate = false;
       }

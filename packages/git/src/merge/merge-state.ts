@@ -2,9 +2,9 @@ import { FilesystemNode, DatastoreInfo } from "../export-import-data-api.ts";
 import { AvailableFilesystems } from "../filesystem/abstractions/filesystem-abstraction.ts";
 
 export type ComparisonData = {
-  oldVersion: FilesystemNode | null;
+  old: FilesystemNode | null;
   affectedDataStore: DatastoreInfo;
-  newVersion: FilesystemNode | null;
+  new: FilesystemNode | null;
 };
 
 type MergeFromMergeTo = "MergeFrom" | "MergeTo";
@@ -135,7 +135,7 @@ export type ResourceComparisonResult = "exists-in-both" | "exists-in-new" | "exi
 
 // TODO RadStr: Also new type, which does not exist on backend
 export type ResourceComparison = {
-  resources: { old: FilesystemNode | null, new: FilesystemNode | null };
+  resources: OldNewFilesystemNode;
   resourceComparisonResult: ResourceComparisonResult;
   datastoreComparisons: DatastoreComparison[];
   childrenDiffTree: DiffTree;     // Empty if the type of resource is file
@@ -147,9 +147,12 @@ export type CreatedRemovedModified = "unknown" | "same" | "modified" | "created-
 // TODO RadStr: Changed compared to the backend - there it was named Comparison data and had different field
 export type DatastoreComparison = {
   datastoreComparisonResult: CreatedRemovedModified;
-  oldVersion: FilesystemNode | null;
   affectedDataStore: DatastoreInfo;
-  newVersion: FilesystemNode | null;
+} & OldNewFilesystemNode;
+
+export type OldNewFilesystemNode = {
+  old: FilesystemNode | null;
+  new: FilesystemNode | null;
 }
 
 /**
