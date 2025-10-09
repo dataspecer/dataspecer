@@ -14,7 +14,14 @@ export const Xml: FC<{
       <Typography variant="subtitle2" component="h3">
         XML structure
       </Typography>
-      <SwitchWithDefault label="Extract all types" current={input ?? {}} itemKey="extractAllTypes" onChange={onChange} default={defaultObject} />
+      <Grid container rowGap={1}>
+        <Grid item xs={12}>
+          <SwitchWithDefault label="Extract all types" current={input ?? {}} itemKey="extractAllTypes" onChange={onChange} default={defaultObject} />
+        </Grid>
+        <Grid item xs={12}>
+          <SwitchWithDefault label="Use attributes instead of elements for IRIs of classes" current={input ?? {}} itemKey="elementIriAsAttribute" onChange={onChange} default={defaultObject} />
+        </Grid>
+      </Grid>
 
       <Typography variant="subtitle2" component="h3" sx={{ mt: 3 }}>
         Annotations

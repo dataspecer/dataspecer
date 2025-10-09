@@ -9,6 +9,11 @@ export const DefaultXmlConfiguration = {
     extractAllTypes: false,
 
     /**
+     * Whether the iri of element should be generated as an attribute instead of a child element
+     */
+    elementIriAsAttribute: false,
+
+    /**
      * If set, the common xml schema will be referenced instead of bundled.
      */
     commonXmlSchemaExternalLocation: null as string | null,
@@ -48,6 +53,9 @@ export class XmlConfigurator {
             }
             if (option.extractAllTypes !== undefined) {
                 result.extractAllTypes = option.extractAllTypes;
+            }
+            if (option.elementIriAsAttribute !== undefined) {
+                result.elementIriAsAttribute = option.elementIriAsAttribute;
             }
             if (option.commonXmlSchemaExternalLocation !== undefined) {
                 result.commonXmlSchemaExternalLocation = option.commonXmlSchemaExternalLocation;
