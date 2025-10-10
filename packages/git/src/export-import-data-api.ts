@@ -43,7 +43,9 @@ export type ExportShareableMetadataType = {
 
 
 export type ExportMetadataType = {
-  iri: string;      // TODO RadStr: We actually don't need the iri at all, it is just identifier within DS. So we need it when we work inside DS, but not on the actual import
+  // We actually need the iri! At first I thought it is just identifier within DS. So we need it when we work inside DS, but not on the actual import.
+  // But it is not the case, because some other values may refer to the iri, because of that we need to export it, so we can safely map it to some newly created iri on import.
+  iri: string;
 } & ExportShareableMetadataType;
 
 /**
