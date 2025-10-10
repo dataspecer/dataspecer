@@ -12,7 +12,7 @@ import { UseDialogOpenFunction } from "../../../dialog";
 import { useAsyncMemo } from "../../../hooks/use-async-memo";
 import { useDataPsmAndInterpretedPim } from "../../../hooks/use-data-psm-and-interpreted-pim";
 import { ReplaceDataPsmAssociationEndWithReference } from "../../../operations/replace-data-psm-association-end-with-reference";
-import { ReplaceAssociationWithReferenceDialog } from "./replace-association-with-reference-dialog";
+import { ReplaceWithReferenceDialog } from "./replace-with-reference-dialog";
 
 async function getPimClassInterpretationHierarchy(pimClassIri: string, store: FederatedObservableStore): Promise<string[]> {
     const cls = await store.readResource(pimClassIri) as ExtendedSemanticModelClass;
@@ -31,7 +31,7 @@ async function getPimClassInterpretationHierarchy(pimClassIri: string, store: Fe
     return interpretation;
 }
 
-export const ReplaceAssociationEndWithReference: React.FC<{dataPsmAssociationEnd: string, open: UseDialogOpenFunction<typeof ReplaceAssociationWithReferenceDialog>}> = ({dataPsmAssociationEnd, open}) => {
+export const ReplaceAssociationEndWithReference: React.FC<{dataPsmAssociationEnd: string, open: UseDialogOpenFunction<typeof ReplaceWithReferenceDialog>}> = ({dataPsmAssociationEnd, open}) => {
     const store = useFederatedObservableStore();
     const {t} = useTranslation("psm");
 
@@ -101,7 +101,7 @@ export const ReplaceAssociationEndWithReference: React.FC<{dataPsmAssociationEnd
         {availableReferences && availableReferences.length > 0 &&
             <MenuItem
                 onClick={() => open({roots: availableReferences as string[], onSelect: selected})}
-                title={t("replace with reference")}
+                title={t("replace with reference.title")}
             ><AutorenewIcon /></MenuItem>
         }
     </>

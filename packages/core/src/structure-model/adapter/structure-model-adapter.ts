@@ -74,12 +74,17 @@ class StructureModelAdapter {
     if (DataPsmOr.is(entity)) {
       for (const choiceIri of entity.dataPsmChoices) {
         const choice = await this.reader.readResource(choiceIri);
-        if (!DataPsmClass.is(choice)) {
+        if (DataPsmClass.is(choice)) {
+          root.classes.push(await this.loadClass(choice));
+          root.orTechnicalLabel = entity.dataPsmTechnicalLabel ?? root.technicalLabel;
+          root.isInOr = true;
+        } else if (DataPsmClassReference.is(choice)) {
+          root.classes.push((await this.loadClassReference(choice))[0][0]);
+          root.orTechnicalLabel = entity.dataPsmTechnicalLabel ?? root.technicalLabel;
+          root.isInOr = true;
+        } else {
           throw new Error(`Unsupported PSM entity '${iri}' in DataPsmOr.`);
         }
-        root.classes.push(await this.loadClass(choice));
-        root.orTechnicalLabel = entity.dataPsmTechnicalLabel ?? root.technicalLabel;
-        root.isInOr = true;
       }
     } else if (DataPsmClass.is(entity)) {
       root.classes.push(await this.loadClass(entity));
@@ -200,8 +205,8 @@ class StructureModelAdapter {
     } else if (DataPsmOr.is(part)) { // todo this needs to be fixed
       const references = [];
       for (const p of part.dataPsmChoices) {
-        const orPart = await this.reader.readResource(p) as DataPsmClass;
-        const model = await adapter.loadClass(orPart);
+        const orPart = await this.reader.readResource(p) as DataPsmClass | DataPsmClassReference;
+        const model = DataPsmClass.is(orPart) ? await adapter.loadClass(orPart) : (await adapter.loadClassReference(orPart))[0][0];
         const copiedModel = Object.assign(Object.create(Object.getPrototypeOf(model)), model);
         copiedModel.isReferenced = true;
         references.push(copiedModel);

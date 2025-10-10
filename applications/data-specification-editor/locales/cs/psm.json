@@ -43,11 +43,10 @@
     "help": "Tento dialog umožňuje vyměnit zvolenou třídu za jinou a zachovat všechny existující vazby na asociace a atributy pod ní včetně umístění v rodičovském prvku. Nahrazovat lze pouze za specializaci třídy, nebo její generalizaci. Kliknutím na třídu níže dojde k nahrazení danou třídou.",
     "title": "Nahrazení třídy podél dědičnosti"
   },
-  "replace association with reference": {
-    "help": "Zvolte jedno z následujících schémat pro nahrazení konce asociace za odkaz na třídu, jež je kořenem zvoleného schématu.",
-    "title": "Nahradit konec asociace referencí na třídu"
+  "replace with reference": {
+    "help": "Zvolte jedno z následujících schémat pro nahrazení třídy za odkaz na třídu, jež je kořenem zvoleného schématu.",
+    "title": "Nahradit třídu referencí na třídu"
   },
-  "replace with reference": "nahradit referencí",
   "specialization": {
     "no-descendants": "Žádní potomci",
     "title": "Specializace"

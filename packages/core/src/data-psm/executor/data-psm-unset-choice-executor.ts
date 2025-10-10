@@ -6,6 +6,7 @@ import {
 import { DataPsmUnsetChoice } from "../operation/index.ts";
 import {
   DataPsmClass,
+  DataPsmClassReference,
   DataPsmOr,
 } from "../model/index.ts";
 import { DataPsmExecutorResultFactory } from "./data-psm-executor-utils.ts";
@@ -26,11 +27,11 @@ export async function executeDataPsmUnsetChoice(
   const newChoice = await reader.readResource(operation.dataPsmChoice);
   if (
     newChoice == null ||
-    (!DataPsmClass.is(newChoice))
+    (!DataPsmClass.is(newChoice) && !DataPsmClassReference.is(newChoice))
   ) {
     return DataPsmExecutorResultFactory.invalidType(
       resource,
-      "data-psm class"
+      "data-psm class or reference"
     );
   }
 
