@@ -218,26 +218,39 @@ export class JsonLdAdapter {
         }
       }
 
-      for (const property of cls.properties) {
-        // For each property we need to find the original concepts (not
-        // profile) and assign them to appropriate classes
+      // We need to recursively go through all containers and find all properties
 
-        const semanticPropertyWrapped = this.semanticModel[property.pimIri] as AggregatedEntityInApplicationProfileAggregator<SemanticModelRelationship>;
-        const concepts = splitProfileToSingleConcepts(semanticPropertyWrapped);
+      const collectPropertiesForClass = (cls: StructureModelClass) => {
+        for (const property of cls.properties) {
+          if (property.propertyAsContainer) {
+            const containerClass = (property.dataTypes[0] as StructureModelComplexType).dataType as StructureModelClass;
+            collectPropertiesForClass(containerClass);
+            continue;
+          }
 
-        if (concepts.length > 1) {
-          throw new Error("JSON-LD generator: Multiprofile for relationships is not supported by JSON generators!");
-        }
+          // For each property we need to find the original concepts (not
+          // profile) and assign them to appropriate classes
 
-        const relationshipConceptWrapped = concepts[0] as LocalEntityWrapped<SemanticModelRelationship>;
-        const sourceSemanticId = relationshipConceptWrapped.aggregatedEntity.ends[property.isReverse ? 1 : 0].concept;
+          const semanticPropertyWrapped = this.semanticModel[property.pimIri] as AggregatedEntityInApplicationProfileAggregator<SemanticModelRelationship>;
+          const concepts = splitProfileToSingleConcepts(semanticPropertyWrapped);
 
-        if (idToIri[sourceSemanticId] && mappingToProperties[idToIri[sourceSemanticId]] && !propertiesUseParentContext) {
-          mappingToProperties[idToIri[sourceSemanticId]].add(property);
-        } else {
-          mappingToProperties[GOES_TO_PARENT].add(property);
+          if (concepts.length > 1) {
+            throw new Error("JSON-LD generator: Multiprofile for relationships is not supported by JSON generators!");
+          }
+
+          const relationshipConceptWrapped = concepts[0] as LocalEntityWrapped<SemanticModelRelationship>;
+          const sourceSemanticId = relationshipConceptWrapped.aggregatedEntity.ends[property.isReverse ? 1 : 0].concept;
+
+          if (idToIri[sourceSemanticId] && mappingToProperties[idToIri[sourceSemanticId]] && !propertiesUseParentContext) {
+            mappingToProperties[idToIri[sourceSemanticId]].add(property);
+          } else {
+            mappingToProperties[GOES_TO_PARENT].add(property);
+          }
         }
       }
+
+      collectPropertiesForClass(cls);
+
     }
 
     // Now generate the context

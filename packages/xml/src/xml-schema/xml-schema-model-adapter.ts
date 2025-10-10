@@ -88,7 +88,7 @@ export async function structureModelToXmlSchema(
 
 const XML_IMPORT = {
   namespace: "http://www.w3.org/XML/1998/namespace",
-  schemaLocation: "http://www.w3.org/XML/1998/namespace",
+  schemaLocation: "http://www.w3.org/2001/xml.xsd",
   model: null,
 } satisfies XmlSchemaImportDeclaration;
 
@@ -175,7 +175,7 @@ class XmlSchemaAdapter {
   /**
    * Returns <iri> element for given class or null if the element should be skipped.
    */
-  private getIriElement(forStructureModelClass: StructureModelClass): XmlSchemaComplexContentElement | null {
+  private getIriElementOrAttribute(forStructureModelClass: StructureModelClass): XmlSchemaComplexContentElement | XmlSchemaAttribute | null {
     let skipIri = false;
     skipIri ||= forStructureModelClass.instancesHaveIdentity === "NEVER";
     skipIri ||= (forStructureModelClass.iris === null || forStructureModelClass.iris.length === 0);
@@ -183,6 +183,8 @@ class XmlSchemaAdapter {
     if (skipIri) {
       return null;
     }
+
+    const useElementInsteadOfAttribute = !this.options.elementIriAsAttribute;
 
     // Todo implement configuration for this.
     const useIriFromExternalXsd = false;
@@ -207,19 +209,28 @@ class XmlSchemaAdapter {
       annotation: null,
     } satisfies XmlSchemaType;
 
-    return {
-      cardinalityMin: forStructureModelClass.instancesHaveIdentity === "ALWAYS" ? 1 : 0,
-      effectiveCardinalityMin: forStructureModelClass.instancesHaveIdentity === "ALWAYS" ? 1 : 0,
-      cardinalityMax: 1,
-      effectiveCardinalityMax: 1,
-      semanticRelationToParentElement: null,
-      element: {
-        entityType: "element",
-        name: iriElementName,
-        annotation: null,
-        type: useIriFromExternalXsd ? null : type,
-      } satisfies XmlSchemaElement,
-    } satisfies XmlSchemaComplexContentElement;
+    if (useElementInsteadOfAttribute) {
+      return {
+        cardinalityMin: forStructureModelClass.instancesHaveIdentity === "ALWAYS" ? 1 : 0,
+        effectiveCardinalityMin: forStructureModelClass.instancesHaveIdentity === "ALWAYS" ? 1 : 0,
+        cardinalityMax: 1,
+        effectiveCardinalityMax: 1,
+        semanticRelationToParentElement: null,
+        element: {
+          entityType: "element",
+          name: iriElementName,
+          annotation: null,
+          type: useIriFromExternalXsd ? null : type,
+        } satisfies XmlSchemaElement,
+      } satisfies XmlSchemaComplexContentElement;
+    } else {
+      const attribute = new XmlSchemaAttribute();
+      attribute.name = iriElementName;
+      attribute.type = useIriFromExternalXsd ? null : type;
+      attribute.annotation = null;
+      attribute.isRequired = forStructureModelClass.instancesHaveIdentity === "ALWAYS";
+      return attribute;
+    }
   };
 
   /**
@@ -312,6 +323,7 @@ class XmlSchemaAdapter {
         complexDefinition: {
           xsType: "sequence",
           contents: [complexContent],
+          xsAny: false,
         } as XmlSchemaComplexSequence,
         mixed: false,
         abstract: null,
@@ -425,15 +437,32 @@ class XmlSchemaAdapter {
       } satisfies XmlSchemaType;
     } else {
       let complexDefinition = await this.propertiesToComplexSequence(cls.properties, "sequence");
+      let iriAsAttribute: XmlSchemaAttribute | null = null;
 
       // Inject IRI into the sequence as hardcoded first element
       if (complexDefinition) {
-        const iriElement = this.getIriElement(cls);
-        if (iriElement) {
-          complexDefinition.contents = [iriElement, ...complexDefinition.contents];
+        const iriElement = this.getIriElementOrAttribute(cls);
+        if (iriElement && iriElement instanceof XmlSchemaAttribute) {
+          iriAsAttribute = iriElement;
+        } else if (iriElement) {
+          complexDefinition.contents = [iriElement as XmlSchemaComplexContentElement, ...complexDefinition.contents];
         }
       }
 
+      // Inject xs:any if open content is allowed
+      if (!cls.isClosed) {
+        complexDefinition.xsAny = {
+          cardinalityMin: 0,
+          cardinalityMax: null,
+          processContents: "lax",
+          namespace: "##any",
+        };
+      }
+
+      const attributes = await this.propertiesToAttributes(cls.properties);
+      if (iriAsAttribute) {
+        attributes.unshift(iriAsAttribute);
+      }
       const type = {
         entityType: "type",
         name: [null, cls.technicalLabel],
@@ -441,7 +470,7 @@ class XmlSchemaAdapter {
         mixed: false,
         abstract: null,
         complexDefinition,
-        attributes: await this.propertiesToAttributes(cls.properties),
+        attributes,
       } satisfies XmlSchemaComplexType;
       return type;
     }

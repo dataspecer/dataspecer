@@ -25,6 +25,7 @@ import {
   StructureModelCustomType,
   StructureModelPrimitiveType,
   StructureModelProperty,
+  type StructureModelComplexType,
 } from "@dataspecer/core/structure-model/model";
 import { XSD, OFN, OFN_LABELS } from "@dataspecer/core/well-known";
 import {
@@ -122,7 +123,6 @@ export function structureModelToJsonSchema(
     a.generator === JSON_LD_GENERATOR &&
     (a as DataSpecificationSchema).psm === (artefact as DataSpecificationSchema).psm
   );
-  console.log("JSON-LD artefact", jsonLd);
   // We MUST use public URL as it is for data
   const jsonLdLink = jsonLd ? jsonLd?.publicUrl : null; // pathRelative(artefact.publicUrl, jsonLd?.publicUrl)
 
@@ -161,6 +161,43 @@ export function structureModelToJsonSchema(
   return result;
 }
 
+/**
+ * Choice is a class-like structure element that allows [exactly one] or [at least one] property to be present in the choice's place.
+ * User can use sequence to group several properties together.
+ */
+function structureModelChoiceToJsonSchemaDefinition(
+  context: Context,
+  choice: StructureModelClass
+): JsonSchemaObject {
+  const result = new JsonSchemaObject();
+  for (const property of choice.properties) {
+    if (property.propertyAsContainer === false) {
+      // This is not a container.
+      // To ease the processing, we will wrap it into a sequence and proceed as usual.
+
+      const wrapperClass = {
+        ...choice,
+        containerType: "sequence",
+        properties: [property],
+      } satisfies StructureModelClass;
+
+      const jsonSchemaFromContainer = structureModelClassToJsonSchemaDefinition(context, wrapperClass) as JsonSchemaObject;
+      result.oneOf.push(jsonSchemaFromContainer);
+    } else if (property.propertyAsContainer === "sequence") {
+      const containerClass = (property.dataTypes[0] as StructureModelComplexType).dataType as StructureModelClass;
+      const jsonSchemaFromContainer = structureModelClassToJsonSchemaDefinition(context, containerClass) as JsonSchemaObject;
+      result.oneOf.push(jsonSchemaFromContainer);
+    } else if (property.propertyAsContainer === "choice") {
+      const innerChoice = (property.dataTypes[0] as StructureModelComplexType).dataType as StructureModelClass;
+      const jsonSchemaFromContainer = structureModelChoiceToJsonSchemaDefinition(context, innerChoice);
+      result.oneOf.push(jsonSchemaFromContainer);
+    } else {
+      console.warn("Unknown container type when generating JSON schema choice. Skipping.", property.propertyAsContainer);
+    }
+  }
+  return result;
+}
+
 function structureModelClassToJsonSchemaDefinition(
   context: Context,
   modelClass: StructureModelClass
@@ -180,13 +217,12 @@ function structureModelClassToJsonSchemaDefinition(
     return structureModelClassPrimitive(modelClass);
   }
 
+  /**
+   * Each definition in this list is optional on its own.
+   * Because there is no easy way to express this in JSON schema, we use anyOf with additional { "type": "object" }
+   */
+  const nonRequiredDefinitions: JsonSchemaDefinition[] = [];
 
-  // if (modelClass.isCodelist) {
-  //   return structureModelClassPrimitive(modelClass);
-  // }
-  // if (modelClass.properties.length === 0) {
-  //   return structureModelClassPrimitive(modelClass);
-  // }
   const result = new JsonSchemaObject();
   result.title = context.stringSelector(modelClass.humanLabel);
   result.description = context.stringSelector(modelClass.humanDescription);
@@ -194,6 +230,53 @@ function structureModelClassToJsonSchemaDefinition(
   result.examples = (modelClass.example as string[] | null) ?? [];
   result.objectExamples = (modelClass.objectExample as object[] | null) ?? [];
   for (const property of modelClass.properties) {
+    // Special case: properties to containers
+    if (property.propertyAsContainer) {
+      const containerClass = (property.dataTypes[0] as StructureModelComplexType).dataType as StructureModelClass;
+
+      // Skip empty containers
+      if (containerClass.properties.length === 0) {
+        continue;
+      }
+
+      if (containerClass.containerType === "sequence") {
+        const jsonSchemaFromContainer = structureModelClassToJsonSchemaDefinition(context, containerClass) as JsonSchemaObject;
+        if (property.cardinalityMin === 0 && property.cardinalityMax === 1) {
+          nonRequiredDefinitions.push(jsonSchemaFromContainer);
+          continue;
+        }
+
+        if (property.cardinalityMin !== 1 || property.cardinalityMax !== 1) {
+          console.warn("Sequence container has unsupported cardinality for JSON schema generators. Treating as 1..1.");
+        }
+
+        // This is just a wrapper (basically dumb container)
+        // Copy everything
+        for (const containerPropertyName in jsonSchemaFromContainer.properties) {
+          const containerProperty = jsonSchemaFromContainer.properties[containerPropertyName];
+          result.properties[containerPropertyName] = containerProperty;
+        }
+        continue;
+      } else if (containerClass.containerType === "choice") {
+        const jsonSchemaFromContainer = structureModelChoiceToJsonSchemaDefinition(context, containerClass);
+
+        let isRequired = property.cardinalityMin === 1;
+        if (property.cardinalityMax !== 1) {
+          console.warn("Choice container cannot have cardinality greater than 1 for JSON schema generators. Capping to 1. This will lead to MORE STRICT scheme.");
+        }
+
+        if (isRequired) {
+          result.allOf.push(jsonSchemaFromContainer);
+        } else {
+          nonRequiredDefinitions.push(jsonSchemaFromContainer);
+        }
+      } else {
+        console.warn("Unknown container type when generating JSON schema object. Treating the container as a regular class.", containerClass.containerType);
+      }
+
+      continue;
+    }
+
     const name = property.technicalLabel;
     result.properties[name] = structureModelPropertyToJsonDefinition(
       context,
@@ -203,7 +286,33 @@ function structureModelClassToJsonSchemaDefinition(
       result.required.push(name);
     }
   }
-  return result;
+
+  if (nonRequiredDefinitions.length > 0) {
+    const emptyObject = new JsonSchemaObject();
+    result.anyOf.push(emptyObject, ...nonRequiredDefinitions);
+  }
+
+  return simplifyJsonSchemaObject(result);
+}
+
+/**
+ * The goal of this function is to remove unnecessary nesting of objects caused by containers.
+ */
+function simplifyJsonSchemaObject(object: JsonSchemaObject): JsonSchemaObject {
+  // Object having a single choice so it can be unwrapped
+  if (
+    object.allOf.length === 1 &&
+    object.oneOf.length === 0 &&
+    object.allOf[0] instanceof JsonSchemaObject &&
+    Object.keys(object.allOf[0].properties).length === 0 &&
+    object.allOf[0].allOf.length === 0 &&
+    object.allOf[0].oneOf.length > 0
+  ) {
+    object.oneOf.push(...object.allOf[0].oneOf);
+    object.allOf = [];
+  }
+
+  return object;
 }
 
 function findArtefactForImport(

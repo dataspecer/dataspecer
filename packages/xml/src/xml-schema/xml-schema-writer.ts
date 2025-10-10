@@ -403,6 +403,20 @@ async function writeComplexContainer(
       await writeComplexContent(content.item, content, writer);
     }
   }
+  if (xmlSchemaComplexTypeDefinitionIsSequence(definition)) {
+    const xsAny = definition.xsAny;
+    if (xsAny) {
+      await writer.writeElementFull("xs", "any")(async writer => {
+        await writeAttributesForComplexContent(xsAny, writer);
+        if (xsAny.processContents !== "strict") { // default value
+          await writer.writeLocalAttributeValue("processContents", xsAny.processContents);
+        }
+        if (xsAny.namespace !== "##any") { // default value
+          await writer.writeLocalAttributeValue("namespace", xsAny.namespace);
+        }
+      });
+    }
+  }
 }
 
 async function writeLanguageStringType(

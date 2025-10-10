@@ -31,6 +31,10 @@ export class JsonSchemaObject extends JsonSchemaDefinition {
 
   additionalProperties: JsonSchemaDefinition | false | null = null;
 
+  anyOf: JsonSchemaDefinition[] = [];
+  oneOf: JsonSchemaDefinition[] = [];
+  allOf: JsonSchemaDefinition[] = [];
+
   constructor() {
     super(JsonSchemaObject.TYPE);
   }
