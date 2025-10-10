@@ -22,6 +22,7 @@ export type UpdateModelDataMethod = (
   mergeToDatastoreInfo: DatastoreInfo | null,
   useCache: boolean,
   shouldChangeActiveModel: boolean,
+  shouldCopyIfMissing: boolean,
 ) => Promise<void>;
 
 
@@ -35,7 +36,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
     examinedMergeState,
     conflictsToBeResolvedOnSave, setConflictsToBeResolvedOnSave,
     removedDatastores, setRemovedDatastores,
-    createdDatastores, setCreatedDatastores,
+    createdDatastores, addToCreatedDatastoresAndAddToCache,
     createdFilesystemNodes,
     removedTreePaths, setRemovedTreePaths,
     convertedCacheForMergeFromContent,
@@ -46,11 +47,9 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
     isLoadingTreeStructure, setIsLoadingTreeStructure,
     activeMergeFromContentConverted,
     activeMergeToContentConverted,
-    datastoreInfosForCacheEntries,
     activeFormat,
 
     updateModelData,
-    updateModelDataWithoutActiveModelChange,
     reloadModelsDataFromBackend,
     closeWithSuccess,
     applyAutomaticMergeStateResolver,
@@ -68,30 +67,6 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
       toast.success("Saved currently opened file to backend");
     }
   });
-
-  /**
-   * @param metadataDatastoreInfoToCreate We need the meta file to correctly create the paret filesystem ndoe if it does not exist.
-   */
-  const setCreatedDatastoresAndAddToCache = async (
-    parentProjectIrisTreePath: string,
-    datastoreInfoToCreate: DatastoreInfo,
-    metadataDatastoreInfoToCreate: DatastoreInfo | null,
-  ) => {
-    await updateModelDataWithoutActiveModelChange(parentProjectIrisTreePath, datastoreInfoToCreate, null);
-    if (metadataDatastoreInfoToCreate !== null) {
-      await updateModelDataWithoutActiveModelChange(parentProjectIrisTreePath, metadataDatastoreInfoToCreate, null);
-    }
-    setCreatedDatastores(prev => {
-      const newDatastores = [...prev, datastoreInfoToCreate];
-      if (metadataDatastoreInfoToCreate !== null &&
-        newDatastores.find(datastore => datastore.fullPath === metadataDatastoreInfoToCreate.fullPath) === undefined &&
-        (datastoreInfosForCacheEntries[metadataDatastoreInfoToCreate.fullPath]?.mergeTo ?? null) === null) {
-        // If It is not null and not present in the datastores to be and also it was not yet created.
-        newDatastores.push(metadataDatastoreInfoToCreate);
-      }
-      return newDatastores;
-    });
-  };
 
 
   return (
@@ -124,7 +99,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
                                             setConflictsToBeResolvedOnSave={setConflictsToBeResolvedOnSave}
                                             createdFilesystemNodes={createdFilesystemNodes}
                                             createdDatastores={createdDatastores}
-                                            setCreatedDatastores={setCreatedDatastoresAndAddToCache}
+                                            addToCreatedDatastores={addToCreatedDatastoresAndAddToCache}
                                             removedDatastores={removedDatastores}
                                             setRemovedDatastores={setRemovedDatastores}
                                             removedTreePaths={removedTreePaths}
