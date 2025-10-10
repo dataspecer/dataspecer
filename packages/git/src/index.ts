@@ -15,3 +15,4 @@ export * from "./merge/resolvers/implementations/use-other-resolver.ts";
 export * from "./datastore-type-converter.ts";
 export * from "./constants.ts";
 export * from "./git-history-api.ts";
+export * from "./resource-types.ts";

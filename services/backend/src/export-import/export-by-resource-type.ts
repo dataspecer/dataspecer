@@ -1,8 +1,7 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import path from "path";
 import { PackageExporterBase } from "./export-base.ts";
-import { DirectoryNode, FilesystemNode, isDatastoreForMetadata } from "@dataspecer/git";
-import { resourceTypetoTypeDirectoryMapping, ResourceTypes } from "./export.ts";
+import { DirectoryNode, FilesystemNode, isDatastoreForMetadata, ResourceTypes, resourceTypeToTypeDirectoryMapping } from "@dataspecer/git";
 
 export class PackageExporterByResourceType extends PackageExporterBase {
   getExportVersion(): number {
@@ -60,7 +59,7 @@ export class PackageExporterByResourceType extends PackageExporterBase {
 
   private createPathBasedOnResourceType(pathToResource: string, filesystemNodeName: string, resourceType: string) {
     let resourceDirectory: string;
-    resourceDirectory = resourceTypetoTypeDirectoryMapping[resourceType as ResourceTypes];
+    resourceDirectory = resourceTypeToTypeDirectoryMapping[resourceType as ResourceTypes];
     // If it is not resource type, the value is undefined
     if (resourceDirectory === undefined) {
       throw new Error("Unknown type of resource, you probably forgot to extend switch in export class: " + resourceType);
