@@ -19,4 +19,5 @@ export * from "./datastore-manipulation/default-initializers/implementations/fal
 export * from "./datastore-manipulation/default-initializers/implementations/semantic-model.ts";
 export * from "./datastore-manipulation/default-initializers/implementations/visual-model.ts";
 export * from "./datastore-manipulation/default-initializers/initializer-interface/datastore-default-factory.ts";
+export * from "./datastore-manipulation/iri-replacement.ts";
 export * from "./resource-types.ts";
