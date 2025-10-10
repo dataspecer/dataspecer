@@ -234,7 +234,7 @@ export async function createDefaultProfilesExecutor(
   {
     semanticGeneralizations.forEach(item => {
       const child = mappings[item.child];
-      const parent = mappings[item.child];
+      const parent = mappings[item.parent];
       if (child === undefined || parent === undefined) {
         return;
       }
@@ -247,7 +247,7 @@ export async function createDefaultProfilesExecutor(
     });
     profileGeneralizations.forEach(item => {
       const child = mappings[item.child];
-      const parent = mappings[item.child];
+      const parent = mappings[item.parent];
       if (child === undefined || parent === undefined) {
         return;
       }
