@@ -6,7 +6,7 @@ import { storeModel } from './../main.ts';
 import { LocalStoreModel, ModelStore } from "./local-store-model.ts";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { CoreResource } from "@dataspecer/core/core/core-resource";
-import { CommitReferenceType, defaultEmptyGitUrlForDatabase } from "@dataspecer/git";
+import { CommitReferenceType, createDatastoreWithReplacedIris, defaultEmptyGitUrlForDatabase } from "@dataspecer/git";
 import { ResourceChangeListener, ResourceChangeObserverBase, ResourceChangeType } from "./resource-change-observer.ts";
 
 /**
@@ -500,32 +500,53 @@ export class ResourceModel {
         }
 
         const copyResource = async (sourceIri: string, parentIri: string, newIri: string) => {
+            const existingIriToCreatedIriForResourceMap: Record<string, string> = {};
+            // First create only the resourced and collect the iri mapping from existing to created copy
+            await copyOnlyResourcesInternal(sourceIri, parentIri, newIri, existingIriToCreatedIriForResourceMap);
+            // Now replace every every copied iri (which is not project iri) in the existing metas + create datastores and replace
+            await copyResourcedWithDatastoresAndReplace(existingIriToCreatedIriForResourceMap);
+        }
+
+        const copyOnlyResourcesInternal = async (sourceIri: string, parentIri: string, newIri: string, existingIriToCreatedIriForResourceMap: Record<string, string>) => {
             const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: sourceIri}});
             if (prismaResource === null) {
                 throw new Error("Resource to copy not found.");
             }
             await this.createResource(parentIri, newIri, prismaResource.representationType, JSON.parse(prismaResource.userMetadata), prismaResource.projectIri);
-            const newDataStoreId = {} as Record<string, string>;
-            for (const [key, store] of Object.entries(JSON.parse(prismaResource.dataStoreId))) {
-                const newStore = await this.storeModel.create();
-                newDataStoreId[key] = newStore.uuid;
-
-                const contents = await storeModel.getModelStore(store as string).getString();
-                await this.storeModel.getModelStore(newStore.uuid).setString(contents);
-            }
-            await this.prismaClient.resource.update({
-                where: {iri: newIri},
-                data: {
-                    dataStoreId: JSON.stringify(newDataStoreId)
-                }
-            });
+            existingIriToCreatedIriForResourceMap[sourceIri] = newIri;
 
             // Copy children
             if (prismaResource.representationType === LOCAL_PACKAGE) {
                 const subResources = await this.prismaClient.resource.findMany({where: {parentResourceId: prismaResource.id}});
                 for (const subResource of subResources) {
-                    await copyResource(subResource.iri, newIri, newIri + "/" + uuidv4());
+                    // TODO RadStr: Old code - Why the "/", the iris are new?
+                    await copyOnlyResourcesInternal(subResource.iri, newIri, newIri + "/" + uuidv4(), existingIriToCreatedIriForResourceMap);
                 }
+            }
+        }
+
+        const copyResourcedWithDatastoresAndReplace = async (existingIriToCreatedIriForResourceMap: Record<string, string>) => {
+            for (const [oldIri, newIri] of Object.entries(existingIriToCreatedIriForResourceMap)) {
+                const oldPrismaResource = await this.prismaClient.resource.findFirst({where: {iri: oldIri}});
+                if (oldPrismaResource === null) {
+                    throw new Error("Resource to copy not found.");
+                }
+
+                const newDataStoreId = {} as Record<string, string>;
+                for (const [key, store] of Object.entries(JSON.parse(oldPrismaResource.dataStoreId))) {
+                    const newStore = await this.storeModel.create();
+                    newDataStoreId[key] = newStore.uuid;
+
+                    const datastoreContentAsJson = await storeModel.getModelStore(store as string).getJson();
+                    const { datastoreWithReplacedIris } = createDatastoreWithReplacedIris(datastoreContentAsJson, existingIriToCreatedIriForResourceMap);
+                    await this.storeModel.getModelStore(newStore.uuid).setJson(datastoreWithReplacedIris);
+                }
+                await this.prismaClient.resource.update({
+                    where: {iri: newIri},
+                    data: {
+                        dataStoreId: JSON.stringify(newDataStoreId)
+                    }
+                });
             }
         }
 

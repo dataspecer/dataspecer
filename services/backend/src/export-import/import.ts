@@ -3,6 +3,7 @@ import { ResourceModel } from "../models/resource-model.ts";
 import { isArtificialExportDirectory } from "./export.ts";
 import { v4 as uuidv4 } from "uuid";
 import { PACKAGE_ROOT } from "@dataspecer/git";
+import { replaceIrisRecursively } from "../utils/iri-replace-util.ts";
 
 
 const FILE_EXTENSION_REGEX = /^\.([-0-9a-zA-Z]+)\.json$/;
@@ -155,6 +156,9 @@ export class PackageImporter {
       const iri = await this.importPackage(canonicalRootPackageId, this.rootToWrite);
       createdPackages.push(iri);
     }
+
+
+    await replaceIrisRecursively(this.mapToNewIds);
     return createdPackages;
   }
 
@@ -162,7 +166,7 @@ export class PackageImporter {
     const metaFileName = canonicalDirPath + ".meta.json";
     const metaFileNameOnInput = this.canonicalPathsToInputMapping[metaFileName]
     console.info({metaFileName, metaFileNameOnInput, canonicalDirPath});		// TODO RadStr DEBUG: Debug print
-    const metaFile = await this.zip.file(metaFileNameOnInput)!.async("text");
+    const metaFile = await this.zip.file(metaFileNameOnInput)!.async("text");     // TODO RadStr: ... what if it is not json
     const meta = JSON.parse(metaFile);
 
     const thisPackageIri: string = this.createNewIdForResource(meta.iri);
