@@ -195,7 +195,7 @@ const catalog = prefix(
     "generalization.detail": "Show generalization detail.",
     "generalization.toggle": "Toggle visibility in the diagram.",
     "clear": "Clear",
-    "search-title": "Search by label",
+    "search-title": "Search items by label",
   });
 
 const dataspecer = prefix(
