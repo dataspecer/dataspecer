@@ -9,6 +9,7 @@ import {
   SEMANTIC_MODEL_RELATIONSHIP,
   SemanticModelRelationshipEnd,
   SemanticEntity,
+  SEMANTIC_MODEL_GENERALIZATION,
 } from "./semantic-model.ts";
 import { createInMemorySemanticModel } from "./in-memory/index.ts";
 import {
@@ -114,6 +115,28 @@ class DefaultSemanticModelBuilder implements SemanticModelBuilder {
     return new DefaultSemanticRelationshipBuilder(entity);
   }
 
+  generalization(
+    value: {
+      id?: string;
+      child: string;
+      parent: string;
+    },
+  ): SemanticGeneralizationBuilder {
+    const identifier = value?.id ?? this.nextIdentifier();
+    const entity: SemanticModelGeneralization = {
+      // Entity
+      id: identifier,
+      type: [SEMANTIC_MODEL_GENERALIZATION],
+      // SemanticModelEntity
+      iri: null,
+      // SemanticModelGeneralization
+      child: value.child,
+      parent: value.parent,
+    };
+    this.entities[identifier] = entity;
+    return { identifier };
+  }
+
   build(): SemanticModel {
     return createInMemorySemanticModel({
       identifier: this.identifier,
@@ -156,6 +179,17 @@ class DefaultSemanticClassBuilder implements SemanticClassBuilder {
     })
       .domain(this)
       .range(value.range);
+  }
+
+  specializationOf(value: {
+    id?: string,
+    parent: IdentifiableBuilder,
+  }): SemanticGeneralizationBuilder {
+    return this.model.generalization({
+      id: value.id,
+      parent: value.parent.identifier,
+      child: this.identifier,
+    });
   }
 
   build(): SemanticModelClass {

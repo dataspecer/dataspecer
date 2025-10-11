@@ -20,6 +20,12 @@ export interface SemanticModelBuilder {
     value?: Partial<SemanticModelProperty>,
   ): SemanticRelationshipBuilder;
 
+  generalization(value: {
+    id?: string;
+    child: string;
+    parent: string;
+  }): SemanticGeneralizationBuilder;
+
   build(): SemanticModel;
 
 }
@@ -41,6 +47,14 @@ export interface SemanticClassBuilder extends IdentifiableBuilder {
     description?: LanguageString,
     range: IdentifiableBuilder,
   }): SemanticRelationshipBuilder;
+
+  /**
+   * Add generalization where this class is generalization of the given class.
+   */
+  specializationOf(value: {
+    id?: string,
+    parent: IdentifiableBuilder,
+  }): SemanticGeneralizationBuilder;
 
   build(): SemanticModelClass;
 
@@ -80,11 +94,5 @@ export interface SemanticModelProperty {
 }
 
 export interface SemanticGeneralizationBuilder extends IdentifiableBuilder {
-
-  generalization<Type extends SemanticClassBuilder | SemanticRelationshipBuilder>(
-    parent: Type, child: Type,
-  ): SemanticRelationshipBuilder;
-
-  build(): SemanticModelGeneralization;
 
 }
