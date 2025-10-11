@@ -9,8 +9,8 @@
     "lint": "eslint . --fix",
     "lint:quiet": "eslint . --fix --quiet",
     "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest --passWithNoTests "
   },
   "devDependencies": {
     "@dataspecer/core": "*",
