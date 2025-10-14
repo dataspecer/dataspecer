@@ -28,134 +28,45 @@ export const MonacoDiffEditor: FC<{
 } & React.ComponentProps<typeof RawMonacoEditor>> = (props) => {
   const { resolvedTheme } = useTheme();
   const editorsContent = getEditableAndNonEditableValue(props.editable, props.mergeFromContent, props.mergeToContent);
-  const editorContentChanged = useRef<boolean>(false);
   const changedUnderlyingModelsInEditor = useRef<boolean>(false);
   const currentProjectIrisTreePathToFilesystemNode = useRef<string | null>(null);
   const currentDatastoreType = useRef<string | null>(null);
 
-  console.error({projectIrisTreePathToFilesystemNode: props.projectIrisTreePathToFilesystemNode});
-
-  // useEffect(() => {
-  //   alert("Changed props.editorRef.current");
-  //   const model = props.editorRef.current?.editor.getModel() ?? null;
-  //   if (model !== null) {
-  //     alert("Important");
-  //     model.original.setValue(editorsContent.nonEditable);
-  //     model.modified.setValue(editorsContent.editable);
-
-  //     // Only the modified since in current version we allow only editing of the one editor.
-  //     model.modified.onDidChangeContent(() => {
-  //       setTimeout(() => {
-  //         console.info("Cotnent: " + model.modified.getValue());
-  //         editorContentChanged.current = true;
-  //         updateDiffNodeOnChange(props.projectIrisTreePathToFilesystemNode, props.datastoreType);
-  //       }, 400);
-  //     });
-  //   }
-  // }, [props.editorRef.current])
 
   useEffect(() => {
-    alert("Use effect");
     changedUnderlyingModelsInEditor.current = true;
     currentProjectIrisTreePathToFilesystemNode.current = props.projectIrisTreePathToFilesystemNode;
     currentDatastoreType.current = props.datastoreType;
-    // const capturedProps = props;
-    // console.info({currentDebugIndex: currentDebugIndex.current});
-    // const capturedDebugIndex = currentDebugIndex.current;
-    // const intervalId: NodeJS.Timeout = setInterval(() => {
-    //   console.log("Timeout fired");
-    //   console.info({capturedProps, props});
-    //   console.info(capturedDebugIndex);
-    //   alert("Timeout fired: " + capturedDebugIndex);      // TODO RadStr Debug: Debug alert
-    //   updateDiffNodeOnChange(props.projectIrisTreePathToFilesystemNode, props.datastoreType);
-    // }, 12000);
-    // currentlyRunningIntervals.current.push(intervalId);
-    // alert("useEffect added new one");
-    // currentDebugIndex.current++;
-
-
-    if (props.editorRef.current === undefined) {
-      return;
-    }
-    // const model = props.editorRef.current.editor.getModel();
-    // if (model !== null) {
-    //   alert("Important");
-    //   model.original.setValue(editorsContent.nonEditable);
-    //   model.modified.setValue(editorsContent.editable);
-
-    //   // Only the modified since in current version we allow only editing of the one editor.
-    //   model.modified.onDidChangeContent(() => {
-    //     setTimeout(() => {
-    //       console.info("Cotnent: " + model.modified.getValue());
-    //       editorContentChanged.current = true;
-    //       updateDiffNodeOnChange(props.projectIrisTreePathToFilesystemNode, props.datastoreType);
-    //     }, 400);
-    //   });
-    // }
-
-    return () => {
-      alert("Use effect cleanp");
-      // clearInterval(intervalId);
-      // console.info("Before:");
-      // console.info({currentlyAvailableIntervals: currentlyRunningIntervals.current});
-      // currentlyRunningIntervals.current = currentlyRunningIntervals.current.filter(interval => interval !== intervalId);
-      // console.info("After:");
-      // console.info({currentlyAvailableIntervals: currentlyRunningIntervals.current});
-      // updateDiffNodeOnChange(props.projectIrisTreePathToFilesystemNode, props.datastoreType);
-
-      // const mod = props.editorRef.current?.editor.getModifiedEditor();
-      // const orig = props.editorRef.current?.editor.getOriginalEditor();
-
-      // props.editorRef.current?.editor?.setModel(null);
-      // mod?.dispose();
-      // orig?.dispose();
-    };
   }, [props.mergeFromContent, props.mergeToContent]);
 
 
   const updateDiffNodeOnChange = (projectIrisTreePathToFilesystemNode: string, datastoreType: string | null) => {
-    // TODO RadStr Debug:
-    // console.info({projectIrisTreePathToFilesystemNode, currentProjectIrisTreePathToFilesystemNode, datastoreType, currentDatastoreType});
-    // return;
-
     if (props.editorRef.current === undefined) {
-      alert("updateDiffNodeOnChange - props.editorRef.current === undefined");
       return;
     }
 
     props.setMergeState(prev => {
       const model = props.editorRef.current?.editor.getModel() ?? null;
       const lineChanges = props.editorRef.current?.editor.getLineChanges();
-      console.info("Cotnent inside updateDiffNodeOnChange: " + model?.modified.getValue());
-      alert("updateDiffNodeOnChange - props.editorRef.current !== undefined: " + lineChanges?.length);
-      if (lineChanges === null) {
-        alert("Line changes are null");
-      }
-      console.info({lineChanges});
       if (model === null) {
         return prev;
       }
-      console.info("props.setMergeState")
       if (prev === null) {
         return null;
       }
       if (projectIrisTreePathToFilesystemNode === null) {
-        alert("Should not happen");       // TODO RadStr: Debug
+        // Should not happen but we just do nothing instead of throwing error.
+        console.error("Inside Monaco Diff editor the path to the file node is null, which should not happen, this is probably programmer error.");
         return prev;
       }
 
       // We first check on the old one, so we dont have to create copy of merge state if it is not needed (micro-optimization)
       // we have to go through tree twice now, but I feel like that the cloning will be much more expensive.
-      console.info({diftre: prev.diffTreeData?.diffTree, projectIrisTreePathToFilesystemNode})
       const diffNodeToChangeNonCopy = getDiffNodeFromDiffTree(prev.diffTreeData?.diffTree!, projectIrisTreePathToFilesystemNode);
       const datastoreComparisonToChangeNonCopy = diffNodeToChangeNonCopy?.datastoreComparisons
         .find(datastoreComparison => datastoreComparison.affectedDataStore.type === datastoreType);
-      console.info({lineChanges});
-      alert("LN Changes: " + lineChanges?.length);
       if (lineChanges?.length !== undefined && lineChanges.length > 0) {
         if (datastoreComparisonToChangeNonCopy?.datastoreComparisonResult === "same") {
-          console.info({datastoreComparisonToChangeNonCopy});
-          alert("Changing to modified: " + datastoreComparisonToChangeNonCopy.new?.projectIrisTreePath.split("/").at(-1));
           // We went from no changes to changes
           const mergeStateCopy = {...prev};
           const diffNodeToChange = getDiffNodeFromDiffTree(mergeStateCopy.diffTreeData?.diffTree!, projectIrisTreePathToFilesystemNode);
@@ -170,8 +81,7 @@ export const MonacoDiffEditor: FC<{
       }
       else {
         if (datastoreComparisonToChangeNonCopy?.datastoreComparisonResult === "modified") {
-          console.info({datastoreComparisonToChangeNonCopy});
-          alert("Changing to same: " + datastoreComparisonToChangeNonCopy.new?.projectIrisTreePath.split("/").at(-1));
+          // TODO: Copy-pasted from the above
           // We went from changes to no changes
           const mergeStateCopy = {...prev};
           const diffNodeToChange = getDiffNodeFromDiffTree(mergeStateCopy.diffTreeData?.diffTree!, projectIrisTreePathToFilesystemNode);
@@ -185,34 +95,7 @@ export const MonacoDiffEditor: FC<{
         }
       }
     });
-
-    editorContentChanged.current = false;
   }
-
-  // const memoizedOptions = useMemo(() => {
-  //   return {
-  //       minimap: {
-  //         enabled: false
-  //       },
-  //       // This is if we want to editable editor to be different than the right one
-  //       // originalEditable: props.editable === "mergeFrom",
-  //       // readOnly: props.editable === "mergeFrom",
-  //     };
-  // }, []);
-
-  // const onDidEditorDispose = () => {
-  //   console.error(props.projectIrisTreePathToFilesystemNode, props.datastoreType);
-  //   alert("onDidEditorDispose");
-  //   for (const runningInterval of currentlyRunningIntervals.current) {
-  //     alert("CLEARING!");
-  //     clearInterval(runningInterval);
-  //   }
-  //   alert("Disposing");
-  //   currentlyRunningIntervals.current = [];
-  //   props.editorRef.current = undefined;
-
-  //   updateDiffNodeOnChange(props.projectIrisTreePathToFilesystemNode, props.datastoreType);
-  // }
 
   return <div id="diff-editor-for-conflict-resolving" className="flex flex-col grow overflow-hidden">
     <DiffEditor
@@ -220,26 +103,19 @@ export const MonacoDiffEditor: FC<{
       onMount={editor => {
         props.editorRef.current = {editor};
         changedUnderlyingModelsInEditor.current = false;
-        // editor.getOriginalEditor().onDidDispose(onDidEditorDispose)
-        // editor.getModifiedEditor().onDidDispose(onDidEditorDispose)
-
         const model = props.editorRef.current?.editor.getModel() ?? null;
+
         if (model !== null) {
-          alert("Model not null in mount");
           model.original.setValue(editorsContent.nonEditable);
           model.modified.setValue(editorsContent.editable);
 
           // Only the modified since in current version we allow only editing of the one editor.
           model.modified.onDidChangeContent(() => {
-            console.info("model.modified.onDidChangeContent");
             setTimeout(() => {
               if (changedUnderlyingModelsInEditor.current) {
                 changedUnderlyingModelsInEditor.current = false;
                 return;
               }
-              alert("Change cntn: " + props.projectIrisTreePathToFilesystemNode.split('/').at(-1));
-              console.info("Cotnent: " + model.modified.getValue());
-              editorContentChanged.current = true;
               if (currentProjectIrisTreePathToFilesystemNode.current === null || currentDatastoreType.current === null) {
                 return;
               }
@@ -248,7 +124,6 @@ export const MonacoDiffEditor: FC<{
             }, 400);
           });
         }
-        alert("Mounting")
       }}
       theme={resolvedTheme === "dark" ? "dataspecer-dark" : "vs"}
       language={props.format}
