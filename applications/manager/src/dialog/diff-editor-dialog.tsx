@@ -33,7 +33,7 @@ export const DIFF_EDITOR_EDIT_ICON_TAILWIND_HEIGHT = "h-6";
 export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMergeToResourceIri, editable, isOpen, resolve, }: TextDiffEditorBetterModalProps) => {
   const {
     monacoEditor,
-    examinedMergeState,
+    examinedMergeState, setExaminedMergeState,
     conflictsToBeResolvedOnSave, setConflictsToBeResolvedOnSave,
     removedDatastores, setRemovedDatastores,
     createdDatastores, addToCreatedDatastoresAndAddToCache,
@@ -47,6 +47,8 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
     isLoadingTreeStructure, setIsLoadingTreeStructure,
     activeMergeFromContentConverted,
     activeMergeToContentConverted,
+    activeTreePathToNodeContainingDatastore,
+    activeDatastoreType,
     activeFormat,
 
     updateModelData,
@@ -137,7 +139,16 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
                         </div>
                         {/* The h-screen is needed otherwise the monaco editor is not shown at all */}
                         {/* Also small note - there is loading effect when first starting up the editor, it is not any custom made functionality */}
-                        <MonacoDiffEditor className="flex-1 -ml-16 h-screen" editorRef={monacoEditor} mergeFromContent={activeMergeFromContentConverted} editable={editable} mergeToContent={activeMergeToContentConverted} format={activeFormat} />
+                        <MonacoDiffEditor className="flex-1 -ml-16 h-screen"
+                                          editorRef={monacoEditor}
+                                          mergeFromContent={activeMergeFromContentConverted}
+                                          editable={editable}
+                                          mergeToContent={activeMergeToContentConverted}
+                                          datastoreType={activeDatastoreType}
+                                          format={activeFormat}
+                                          projectIrisTreePathToFilesystemNode={activeTreePathToNodeContainingDatastore}
+                                          setMergeState={setExaminedMergeState}
+                                          />
                       </TabsContent>
                     </Tabs>
                   </div>

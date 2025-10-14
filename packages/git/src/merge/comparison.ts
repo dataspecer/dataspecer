@@ -212,7 +212,7 @@ export function getDiffNodeFromDiffTree(
   diffTree: DiffTree,
   projectIrisTreePath: string
 ): ResourceComparison | null {
-  const parts = projectIrisTreePath.split("/");
+  const parts = projectIrisTreePath.split("/").filter(part => part !== "");
   let currentDiffTree: DiffTree = diffTree;
   let diffNode: ResourceComparison;
 
