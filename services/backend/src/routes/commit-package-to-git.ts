@@ -43,17 +43,11 @@ export type GitCommitToCreateInfoBasic = {
   exportFormat: string | null,
 }
 
-/**
- * If the local branch is null then it expects to be the default branch.
- *  Note that other values do not have optional null in type for them the invalid value is "".
- *  At first I wanted to rewrite it also with null, but since the database values do not have nulls and only strings, it seemed slightly counter-productive.
- */
+
 export type CommitBranchAndHashInfo = {
-  localBranch: string | null,
-  localLastCommitHash: string,
-  mergeFromBranch: string,
-  mergeFromCommitHash: string,
-  mergeFromIri: string,
+  localBranch: string | null;
+  localLastCommitHash: string;
+  mergeFromData: MergeFromDataType | null;
 }
 
 
@@ -61,20 +55,22 @@ export type CommitBranchAndHashInfo = {
  * Same as {@link CommitBranchAndHashInfo}, but with renamed fields to mergeTo
  */
 type CommitBranchAndHashInfoForMerge = {
-  mergeToBranch: string | null,
-  mergeToCommitHash: string,
-  mergeFromBranch: string,
-  mergeFromCommitHash: string,
-  mergeFromIri: string,
+  mergeToBranch: string | null;
+  mergeToCommitHash: string;
+  mergeFromData: MergeFromDataType | null;
+}
+
+type MergeFromDataType = {
+  branch: string;
+  commitHash: string;
+  iri: string;
 }
 
 function convertBranchAndHashToMergeInfo(input: CommitBranchAndHashInfo): CommitBranchAndHashInfoForMerge {
   return {
     mergeToBranch: input.localBranch,
     mergeToCommitHash: input.localLastCommitHash,
-    mergeFromBranch: input.mergeFromBranch,
-    mergeFromCommitHash: input.mergeFromCommitHash,
-    mergeFromIri: input.mergeFromIri,
+    mergeFromData: input.mergeFromData === null ? null : {...input.mergeFromData},
   };
 }
 
@@ -119,9 +115,13 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
   const branchAndLastCommit: CommitBranchAndHashInfo = {
     localBranch: branch,
     localLastCommitHash: resource.lastCommitHash,
-    mergeFromBranch: mergeStatesForResource[0]?.branchMergeFrom ?? "",
-    mergeFromCommitHash: mergeStatesForResource[0]?.lastCommitHashMergeFrom ?? "",
-    mergeFromIri: mergeStatesForResource[0]?.rootIriMergeFrom ?? "",
+    mergeFromData: mergeStatesForResource.length === 0 ?
+      null :
+      {
+        branch: mergeStatesForResource[0].branchMergeFrom,
+        commitHash: mergeStatesForResource[0].lastCommitHashMergeFrom,
+        iri: mergeStatesForResource[0].rootIriMergeFrom,
+      }
   };
 
   const gitCommitInfo: GitCommitToCreateInfoBasic = {
@@ -186,7 +186,7 @@ export const commitPackageToGit = async (
   commitInfo: GitCommitToCreateInfoExplicitWithCredentials,
 ): Promise<boolean> => {
   // Note that the logic for both is similiar create git, clone, check if should create merge state conflict, perform export and "force" push.
-  if (branchAndLastCommit.mergeFromCommitHash === "") {
+  if (branchAndLastCommit.mergeFromData === null) {
     return await commitClassicToGit(
       iri, remoteRepositoryURL, branchAndLastCommit.localBranch, branchAndLastCommit.localLastCommitHash,
       repositoryIdentificationInfo, commitInfo);
@@ -207,7 +207,9 @@ async function commitDSMergeToGit(
   mergeInfo: CommitBranchAndHashInfoForMerge,
 ): Promise<boolean> {
   // Note that the logic follows the commit method logic - create git, clone, check if should create merge state conflict, perform export and "force" merge/push.
-  const { mergeFromBranch, mergeFromCommitHash, mergeToBranch, mergeToCommitHash } = mergeInfo;
+  const { mergeToBranch, mergeToCommitHash } = mergeInfo;
+  // Has to be defined, otherwise we should not call this
+  const { branch: mergeFromBranch, commitHash: mergeFromCommitHash, iri: mergeFromIri } = mergeInfo.mergeFromData!;
   const { givenRepositoryUserName, givenRepositoryName } = repositoryIdentificationInfo;
   const { gitCredentials, gitProvider } = commitInfo;
 
@@ -233,14 +235,14 @@ async function commitDSMergeToGit(
     if (shouldTryCreateMergeState) {
       const mergeFrom: MergeEndpointForComparison = {
         gitProvider: commitInfo.gitProvider,
-        rootIri: mergeInfo.mergeFromIri,
+        rootIri: mergeFromIri,
         filesystemType: AvailableFilesystems.DS_Filesystem,
         fullPathToRootParent: gitInitialDirectoryParent,
       };
 
       const mergeTo: MergeEndpointForComparison = {
         gitProvider: commitInfo.gitProvider,
-        rootIri: mergeInfo.mergeFromIri,
+        rootIri: mergeFromIri,
         filesystemType: AvailableFilesystems.DS_Filesystem,
         fullPathToRootParent: gitInitialDirectoryParent,
       };
@@ -575,7 +577,8 @@ async function checkoutBranchIfExists(git: SimpleGit, branches: BranchSummary, b
 }
 
 /**
- * Note that switches to the {@link mergeToBranch}
+ * Note that method switches the git to the {@link mergeToBranch}.
+ * @param mergeToBranch If null then it is considered to be the current branch (therefore it exists)
  */
 async function cloneBeforeMerge(
   git: SimpleGit,

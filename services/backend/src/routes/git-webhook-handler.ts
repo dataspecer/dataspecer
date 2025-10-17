@@ -19,7 +19,7 @@ import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { GIT_RAD_STR_BOT_USERNAME, GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN } from "../git-never-commit.ts";
 import fs from "fs";
 import path from "path";
-import { createResource, updateBlob, updateResourceMetadata } from "./resource.ts";
+import { updateBlob, updateResourceMetadata } from "./resource.ts";
 import _ from "lodash";
 import { dsPathJoin } from "../utils/git-utils.ts";
 import { mergeStateModel, resourceModel } from "../main.ts";

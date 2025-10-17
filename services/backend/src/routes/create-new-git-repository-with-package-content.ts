@@ -88,9 +88,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
       const commitBranchAndHashInfo: CommitBranchAndHashInfo = {
         localBranch: defaultBranch,
         localLastCommitHash: "",
-        mergeFromBranch: "",
-        mergeFromCommitHash: "",
-        mergeFromIri: "",
+        mergeFromData: null,
       };
 
       // Just provide empty merge from values, since we are newly creating the link we can not perform merge right away anyways
@@ -161,9 +159,7 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
   const commitBranchAndHashInfo: CommitBranchAndHashInfo = {
     localBranch: branchName,
     localLastCommitHash: "",
-    mergeFromBranch: "",
-    mergeFromCommitHash: "",
-    mergeFromIri: "",
+    mergeFromData: null,
   };
 
   // Just provide empty merge from values, since we are newly creating the link we can not perform merge right away anyways
