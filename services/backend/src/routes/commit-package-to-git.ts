@@ -43,6 +43,11 @@ export type GitCommitToCreateInfoBasic = {
   exportFormat: string | null,
 }
 
+/**
+ * If the local branch is null then it expects to be the default branch.
+ *  Note that other values do not have optional null in type for them the invalid value is "".
+ *  At first I wanted to rewrite it also with null, but since the database values do not have nulls and only strings, it seemed slightly counter-productive.
+ */
 export type CommitBranchAndHashInfo = {
   localBranch: string | null,
   localLastCommitHash: string,
@@ -114,9 +119,9 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
   const branchAndLastCommit: CommitBranchAndHashInfo = {
     localBranch: branch,
     localLastCommitHash: resource.lastCommitHash,
-    mergeFromBranch: mergeStatesForResource[0].branchMergeFrom,
-    mergeFromCommitHash: mergeStatesForResource[0].lastCommitHashMergeFrom,
-    mergeFromIri: mergeStatesForResource[0].rootIriMergeFrom,
+    mergeFromBranch: mergeStatesForResource[0]?.branchMergeFrom ?? "",
+    mergeFromCommitHash: mergeStatesForResource[0]?.lastCommitHashMergeFrom ?? "",
+    mergeFromIri: mergeStatesForResource[0]?.rootIriMergeFrom ?? "",
   };
 
   const gitCommitInfo: GitCommitToCreateInfoBasic = {
@@ -213,7 +218,6 @@ async function commitDSMergeToGit(
   for (const accessToken of gitCredentials.accessTokens) {
     const repoURLWithAuthorization = getAuthorizationURL(gitCredentials, accessToken, remoteRepositoryURL, givenRepositoryUserName, givenRepositoryName);
     const isLastAccessToken = accessToken === gitCredentials.accessTokens.at(-1);
-
     const hasSetLastCommit: boolean = mergeToCommitHash !== "";
 
 
@@ -231,14 +235,14 @@ async function commitDSMergeToGit(
         gitProvider: commitInfo.gitProvider,
         rootIri: mergeInfo.mergeFromIri,
         filesystemType: AvailableFilesystems.DS_Filesystem,
-        fullPath: gitInitialDirectoryParent,
+        fullPathToRootParent: gitInitialDirectoryParent,
       };
 
       const mergeTo: MergeEndpointForComparison = {
         gitProvider: commitInfo.gitProvider,
         rootIri: mergeInfo.mergeFromIri,
         filesystemType: AvailableFilesystems.DS_Filesystem,
-        fullPath: gitInitialDirectoryParent,
+        fullPathToRootParent: gitInitialDirectoryParent,
       };
 
       const {
@@ -316,7 +320,6 @@ async function commitClassicToGit(
   const { git, gitDirectoryToRemoveAfterWork, gitInitialDirectory, gitInitialDirectoryParent } = createSimpleGitResult;
 
   for (const accessToken of gitCredentials.accessTokens) {
-
     const repoURLWithAuthorization = getAuthorizationURL(gitCredentials, accessToken, remoteRepositoryURL, givenRepositoryUserName, givenRepositoryName);
     const isLastAccessToken = accessToken === gitCredentials.accessTokens.at(-1);
 

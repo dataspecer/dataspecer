@@ -85,6 +85,15 @@ export class MergeStateModel implements ResourceChangeListener {
     resourceModel.addResourceChangeListener(this);
   }
 
+  static extractGitRootParent(pathToDirectoryRootMeta: string) {
+  const gitRoot = MergeStateModel.extractGitRoot(pathToDirectoryRootMeta)
+  return path.dirname(gitRoot);
+  }
+
+  static extractGitRoot(pathToDirectoryRootMeta: string) {
+    return path.dirname(pathToDirectoryRootMeta);
+  }
+
   async updateBasedOnResourceChange(
     resourceIri: string,
     changedModel: string | null,
@@ -238,19 +247,19 @@ export class MergeStateModel implements ResourceChangeListener {
     let rootIriToUpdate: string;
     // Here we name it static - that is the one, which was not editable
     let filesystemOfTheStatic: AvailableFilesystems;
-    let rootFullPathToMetaMergeToOfTheStatic: string;
+    let pathToGitToRootMetaOfTheStatic: string;
     if (mergeState.editable === "mergeFrom") {
       filesystemToUpdate = mergeState.filesystemTypeMergeFrom;
       rootIriToUpdate = mergeState.rootIriMergeFrom;
       filesystemOfTheStatic = mergeState.filesystemTypeMergeTo;
-      rootFullPathToMetaMergeToOfTheStatic = mergeState.rootFullPathToMetaMergeTo;
+      pathToGitToRootMetaOfTheStatic = mergeState.rootFullPathToMetaMergeTo;
     }
     else {
       // TODO RadStr: Thinking about it, when I am pulling maybe I don't want to have mergeTo
       filesystemToUpdate = mergeState.filesystemTypeMergeTo;
       rootIriToUpdate = mergeState.rootIriMergeTo;
       filesystemOfTheStatic = mergeState.filesystemTypeMergeFrom;
-      rootFullPathToMetaMergeToOfTheStatic = mergeState.rootFullPathToMetaMergeFrom;
+      pathToGitToRootMetaOfTheStatic = mergeState.rootFullPathToMetaMergeFrom;
     }
 
     if (filesystemToUpdate === AvailableFilesystems.DS_Filesystem) {
@@ -261,17 +270,17 @@ export class MergeStateModel implements ResourceChangeListener {
     }
     if (filesystemOfTheStatic === AvailableFilesystems.ClassicFilesystem) {
       // We need path to any directory inside repo (path to file causes error)
-      const directory = path.dirname(rootFullPathToMetaMergeToOfTheStatic);
+      const directory = MergeStateModel.extractGitRoot(pathToGitToRootMetaOfTheStatic);
       const git = simpleGit(directory);
       const gitCommitHash = await getLastCommitHash(git);
-      this.resourceModel.updateLastCommitHash(rootIriToUpdate, gitCommitHash);
+      await this.resourceModel.updateLastCommitHash(rootIriToUpdate, gitCommitHash);
     }
 
     return {
       filesystemToUpdate,
       rootIriToUpdate,
       filesystemOfTheStatic,
-      rootFullPathToMetaMergeToOfTheStatic,
+      pathToGitToRootMetaOfTheStatic,
     };
   }
 
@@ -635,9 +644,11 @@ export class MergeStateModel implements ResourceChangeListener {
     git: SimpleGit | null,
     gitProvider: GitProvider | null,
   }> {
-    const git = filesystemType as AvailableFilesystems === AvailableFilesystems.ClassicFilesystem ?
-      simpleGit(rootFullPathToMeta):
-      null;
+    let git: SimpleGit | null = null;
+    if (filesystemType as AvailableFilesystems === AvailableFilesystems.ClassicFilesystem) {
+      const pathToGitRepository = MergeStateModel.extractGitRoot(rootFullPathToMeta);
+      git = simpleGit(pathToGitRepository);
+    }
     let gitProvider: GitProvider | null = null;
     if (git !== null) {
       const gitRemotes = await git.getRemotes(true);
@@ -668,7 +679,7 @@ export class MergeStateModel implements ResourceChangeListener {
       const mergeFrom: MergeEndpointForStateUpdate = {
         rootIri: prismaMergeState.rootIriMergeFrom,
         filesystemType: prismaMergeState.filesystemTypeMergeFrom as AvailableFilesystems,
-        fullPath: prismaMergeState.rootFullPathToMetaMergeFrom,
+        fullPathToRootParent: MergeStateModel.extractGitRootParent(prismaMergeState.rootFullPathToMetaMergeFrom),
         git: gitForMergeFrom,
         gitProvider: gitProviderForMergeFrom,
         lastCommitHash: prismaMergeState.lastCommitHashMergeFrom,
@@ -681,7 +692,7 @@ export class MergeStateModel implements ResourceChangeListener {
       const mergeTo: MergeEndpointForStateUpdate = {
         rootIri: prismaMergeState.rootIriMergeTo,
         filesystemType: prismaMergeState.filesystemTypeMergeTo as AvailableFilesystems,
-        fullPath: prismaMergeState.rootFullPathToMetaMergeTo,
+        fullPathToRootParent: MergeStateModel.extractGitRootParent(prismaMergeState.rootFullPathToMetaMergeTo),
         git: gitForMergeTo,
         gitProvider: gitProviderForMergeTo,
         lastCommitHash: prismaMergeState.lastCommitHashMergeTo,
@@ -718,11 +729,14 @@ export class MergeStateModel implements ResourceChangeListener {
 
     const result: MergeState = {
       uuid: prismaMergeState.uuid,
+
+      branchMergeTo: prismaMergeState.branchMergeTo,
       lastCommitHashMergeTo: prismaMergeState.lastCommitHashMergeTo,
       rootFullPathToMetaMergeTo: prismaMergeState.rootFullPathToMetaMergeTo,
       rootIriMergeTo: prismaMergeState.rootIriMergeTo,
       filesystemTypeMergeTo: prismaMergeState.filesystemTypeMergeTo as AvailableFilesystems,
 
+      branchMergeFrom: prismaMergeState.branchMergeFrom,
       lastCommitHashMergeFrom: prismaMergeState.lastCommitHashMergeFrom,
       rootFullPathToMetaMergeFrom: prismaMergeState.rootFullPathToMetaMergeFrom,
       rootIriMergeFrom: prismaMergeState.rootIriMergeFrom,

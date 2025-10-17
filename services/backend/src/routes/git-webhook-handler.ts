@@ -1,3 +1,17 @@
+// TODO RadStr: Put on better place
+//  How to handle resources coming from Git:
+// Chosen variant:
+//   We expect the git file to be named as a datastoreType.format
+//   We store it as a datastore under the directory (pacakge) with the given name chosen as datastore type
+
+// !Not! chosen alternative
+//   We expect the resource to not have any meta file.
+//   We expect that the given name contains no "/" and the name is unique and as such can be used as a project iri (If we wanted to be more strict about this we would have to not use the names but the projectIris/iris from the meta file - TODO RadStr: Maybe we will?)
+//   We create meta file with the relevant data - iri, projectIri and type to be "git-resource" (TODO RadStr: Maybe change type)
+//   With next commit we all store it back.
+//  ... However some cons - why it was not chosen - we can not expect the user to porvide projectIri, all we can expect from him is to provide unique iri, but at most on the current directory level.
+
+
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { ComparisonData, getMergeFromMergeToMappingForGitAndDS, GitProvider, GitProviderEnum, isDatastoreForMetadata, MergeStateCause } from "@dataspecer/git";
@@ -14,6 +28,7 @@ import { WEBHOOK_PATH_PREFIX } from "../models/git-store-info.ts";
 import { DatastoreInfo, DirectoryNode, FilesystemNode, FilesystemAbstraction, getMergeFromMergeToForGitAndDS } from "@dataspecer/git";
 import { compareGitAndDSFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
+import { SimpleGit } from "simple-git";
 
 
 export const handleWebhook = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -36,11 +51,15 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
     return;
   }
 
-  const isCloneSuccess = await updateDSRepositoryByPullingGit(iri, gitProvider, branch, cloneURL, WEBHOOK_PATH_PREFIX, resource.lastCommitHash, commits.length);
-  // Actually we don't need to answer based on response, since this comes from git provider, only think we might need is to notify users that there was update
+  const createdMergeState = await updateDSRepositoryByPullingGit(iri, gitProvider, branch, cloneURL, WEBHOOK_PATH_PREFIX, resource.lastCommitHash, commits.length);
+  // Actually we don't need to answer based on response, since this comes from git provider, only think we might need is to notify users that there was update, which we do by setting the isInSyncWithRemote
   return;
 });
 
+export type GitChangesToDSPackageStoreResult = {
+  createdMergeState: boolean;
+  conflictCount: number;
+}
 
 /**
  * This method handles the storing of directory content, which usually comes from git clone, back to the DS store.
@@ -53,9 +72,12 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
  *   b) If it has both .meta and .model create completely new resource - that is there will be new entry inside the package shown in manager
  *   c) Either only .meta or .model - skip it. We could try to somehow solve it, but we would probably end up in invalid state by some sequence of actions, so it is better to just skip it.
  * TODO RadStr: This should however account for collisions
- * @returns True if there were conflicts, false otherwise
+ * @returns Self-explanatory, just note that (at least for now), if there are 0 conflicts we still create merge state.
+ *  We don't create merge state only if we haven't performed any changes inside DS,
+ *  so we can just safely move HEAD to the last git commit and update DS package based on that
  */
 export async function saveChangesInDirectoryToBackendFinalVersion(
+  git: SimpleGit,
   gitInitialDirectoryParent: string,
   iri: string,
   gitProvider: GitProvider,
@@ -64,7 +86,7 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
   commonCommitHash: string,
   branch: string,
   mergeStateCause: Omit<MergeStateCause, "merge">,
-): Promise<boolean> {
+): Promise<GitChangesToDSPackageStoreResult> {
   // Merge from is DS
   const {
     diffTreeComparisonResult,
@@ -75,12 +97,35 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
   const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS(mergeStateCause, dsLastCommitHash, gitLastCommitHash);
   const filesystemFakeRoots = { fakeRootMergeFrom, fakeRootMergeTo };
   const { gitResultNameSuffix } = getMergeFromMergeToMappingForGitAndDS(mergeStateCause);
-
   const gitRootDirectory = filesystemFakeRoots["fakeRoot" + gitResultNameSuffix as keyof typeof filesystemFakeRoots];              // TODO RadStr: Just backwards compatibility with code so I don't have to change much
-  const gitRootDirectoryName = gitRootDirectory.name;
 
-  // TODO RadStr: Rename ... and update based on the conflicts resolution, like we do not want to update when there is conflict
-  await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(gitRootDirectoryName, gitRootDirectory, gitInitialDirectoryParent, gitProvider, filesystemMergeTo);      // TODO RadStr: Maybe await is unnecessary
+
+  try {
+    await git.checkout(dsLastCommitHash);
+    // Basically check against the commit the package is supposed to represent, if we did not change anything, we can always pull without conflict.
+    // Otherwise we changed something and even though we could handle it automatically. We let the user resolve everything manually, it is his responsibility.
+    const comparisonBetweenCurrentDSPackageAndCorrespondingCommit = await compareGitAndDSFilesystems(gitProvider, iri, gitInitialDirectoryParent, mergeStateCause);
+    const canPullWithoutCreatingMergeState = comparisonBetweenCurrentDSPackageAndCorrespondingCommit.diffTreeComparisonResult.conflicts.length === 0;
+
+    if (canPullWithoutCreatingMergeState) {
+      // TODO RadStr: Rename ... and update based on the conflicts resolution, like we do not want to update when there is conflict
+      await git.checkout(gitLastCommitHash);
+      await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(gitRootDirectory, gitInitialDirectoryParent, gitProvider, filesystemMergeTo);
+      await resourceModel.updateLastCommitHash(iri, gitLastCommitHash);
+      await resourceModel.updateIsSynchronizedWithRemote(iri, true);
+
+      return {
+        createdMergeState: false,
+        conflictCount: -1,
+      };
+    }
+  }
+  catch (err) {
+    // EMPTY
+  }
+  finally {
+    await git.checkout(gitLastCommitHash);
+  }
 
   const mergeFromInfo: MergeEndInfoWithRootNode = {
     rootNode: rootMergeFrom,
@@ -99,28 +144,30 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
 
   const createdMergeStateId = mergeStateModel.createMergeStateIfNecessary(
     iri, "pull", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
-  return diffTreeComparisonResult.conflicts.length > 0;
+  return {
+    createdMergeState: true,
+    conflictCount: diffTreeComparisonResult.conflicts.length,
+  };
 }
 
 
 async function saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(
-  currentlyProcessedDirectoryNodeName: string,
   currentlyProcessedDirectoryNode: DirectoryNode,
   treePath: string,
   gitProvider: GitProvider,
   filesystem: FilesystemAbstraction,
 ) {
   console.info("RECURSIVE MAPPING", currentlyProcessedDirectoryNode);
-  await handleResourceUpdateFinalVersion(treePath, currentlyProcessedDirectoryNodeName, currentlyProcessedDirectoryNode, filesystem);
+  await handleResourceUpdateFinalVersion(treePath, currentlyProcessedDirectoryNode, filesystem);
 
   for (const [name, value] of Object.entries(currentlyProcessedDirectoryNode.content)) {
     // TODO RadStr: Name vs IRI
     if(value.type === "directory") {
       const newDirectory = dsPathJoin(treePath, name);
-      await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(name, value, newDirectory, gitProvider, filesystem);
+      await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(value, newDirectory, gitProvider, filesystem);
     }
     else {
-      await handleResourceUpdateFinalVersion(treePath, name, value, filesystem);
+      await handleResourceUpdateFinalVersion(treePath, value, filesystem);
     }
   }
 }
@@ -166,14 +213,13 @@ function isFileAddedFromGit(datastoreIdentifier: string, datastores: DatastoreIn
 
 async function handleResourceUpdateFinalVersion(
   treePath: string,
-  filesystemNodeName: string,
   filesystemNode: FilesystemNode,
   filesystem: FilesystemAbstraction
 ) {
-  if (isFileAddedFromGit(filesystemNodeName, filesystemNode.datastores)) {
+  if (isFileAddedFromGit(filesystemNode.name, filesystemNode.datastores)) {
     const parentIri = filesystem.getParentForNode(filesystemNode)?.metadata.iri;
     if (parentIri !== undefined) {
-      await createNewResourceUploadedFromGit(parentIri, treePath, filesystemNodeName);
+      await createNewResourceUploadedFromGit(parentIri, treePath, filesystemNode.name);
     }
     else {
       console.error("Missing parent IRI, so we can not create");    // TODO RadStr: Not sure, this probably should not happen, I should always have the parentIri available
@@ -192,7 +238,8 @@ async function handleResourceUpdateFinalVersion(
     }
 
     // TODO RadStr:  - since the iri may differ from name for example in the case of imported DCAT-AP
-    const nodeIri = filesystemNode.metadata.iri ?? filesystemNodeName;
+    // TODO RadStr: .... Well could it really?
+    const nodeIri = filesystemNode.metadata.iri ?? filesystemNode.name;
 
     // TODO RadStr: Should check if it already exists, or if not it should be created
     if (isDatastoreForMetadata(datastore.type)) {
@@ -421,6 +468,9 @@ async function updateResourceFully(fullPathToDirectory: string, datastoreIdentif
   }
 }
 
+/**
+ * @param name is the name of the file of the git resource, which is in reality the datastoreType of the resource - TODO RadStr: Only datastoretype? or datastoretype.format
+ */
 async function createNewResourceUploadedFromGit(parentIri: string, path: string, name: string) {
   // TODO RadStr: If I want to create separate file ... however there are issues, which stem from the fact that there becomes incosistency between DS filesystem (there is new .meta and .model file) and git system (only one file)
 

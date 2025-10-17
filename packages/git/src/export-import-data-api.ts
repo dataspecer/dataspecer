@@ -71,7 +71,8 @@ export function pickShareableMetadata(metadata: ExportMetadataType): ShareableMe
  */
 type FilesystemNodeCommonData = {
   /**
-   * Name of the filesystem node.
+   * Name of the filesystem node. That is the name of the datastores without the suffixes. (so for example for 123.meta.json it is 123).
+   *  It is usually the projectIri of the resource/package since that is the name of the file in export.
    */
   name: string,
 

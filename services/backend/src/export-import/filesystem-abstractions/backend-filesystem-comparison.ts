@@ -32,14 +32,14 @@ export async function compareGitAndDSFilesystems(
     gitProvider,
     rootIri,
     filesystemType: mergeFromFilesystemType,
-    fullPath: gitInitialDirectoryParent,
+    fullPathToRootParent: gitInitialDirectoryParent,
   };
 
   const mergeTo: MergeEndpointForComparison = {
     gitProvider,
     rootIri,
     filesystemType: mergeToFilesystemType,
-    fullPath: gitInitialDirectoryParent,
+    fullPathToRootParent: gitInitialDirectoryParent,
   };
 
   const generalResult = await compareBackendFilesystems(mergeFrom, mergeTo);
@@ -55,13 +55,13 @@ export async function compareBackendFilesystems(
 ) {
   const mergeFromRootLocation: FilesystemNodeLocation = {
     iri: mergeFrom.rootIri,
-    fullPath: mergeFrom.fullPath,
+    fullPath: mergeFrom.fullPathToRootParent,
     irisTreePath: "",
     projectIrisTreePath: "",
   };
   const mergeToRootLocation: FilesystemNodeLocation = {
     iri: mergeTo.rootIri,
-    fullPath: mergeTo.fullPath,
+    fullPath: mergeTo.fullPathToRootParent,
     irisTreePath: "",
     projectIrisTreePath: "",
   };
