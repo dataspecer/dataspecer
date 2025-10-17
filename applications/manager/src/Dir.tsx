@@ -34,7 +34,7 @@ import { gitHistoryVisualizationOnClickHandler } from "./components/git-history-
 import { MergeActorsType, useMergeActors } from "./hooks/use-merge";
 import { setProjectIriAndBranchDialog } from "./dialog/set-projectIRI-and-branch";
 import { BranchAction, CreateNewBranchDialog } from "./dialog/create-new-branch";
-import { MergeStatesDialog } from "./dialog/merge-conflict-dialog";
+import { ListMergeStatesDialog } from "./dialog/list-merge-states-dialog";
 import { OpenMergeState } from "./dialog/open-merge-state";
 import { useLogin, UseLoginType } from "./hooks/use-login";
 import SetPrivateSSHKeyDialog from "./dialog/set-private-ssh";
@@ -264,7 +264,7 @@ const Row = ({ iri, projectFilter, setProjectFilter, isSignedIn, mergeActors, pa
             {<DropdownMenuItem onClick={() => openModal(setProjectIriAndBranchDialog, { examinedPackage: resource })}><Pencil className="mr-2 h-4 w-4" />Set project branch and/or project IRI</DropdownMenuItem>}
             {<DropdownMenuItem onClick={() => switchRepresentsBranchHead(resource, openModal)}><ArrowLeftRight className="mr-2 h-4 w-4" /> Convert to {resource.representsBranchHead ? "tag" : "branch"}</DropdownMenuItem>}
             <hr className="border-gray-300" />
-            {<DropdownMenuItem onClick={() => openModal(MergeStatesDialog, { iri })}><EyeIcon className="mr-2 h-4 w-4" /> Show merge states</DropdownMenuItem>}
+            {<DropdownMenuItem onClick={() => openModal(ListMergeStatesDialog, { iri })}><EyeIcon className="mr-2 h-4 w-4" /> Show merge states</DropdownMenuItem>}
             {<DropdownMenuItem onClick={() => setProjectFilter(resource.projectIri)}><Filter className="mr-2 h-4 w-4" />Filter projects</DropdownMenuItem>}
             {mergeActors.mergeFrom !== null && mergeActors.mergeTo !== null && <DropdownMenuItem onClick={() => openModal(OpenMergeState, {mergeFrom: mergeActors.mergeFrom!, mergeTo: mergeActors.mergeTo!, editable: "mergeTo"})}><GitMerge className="mr-2 h-4 w-4" />Perform merge on DS packages</DropdownMenuItem>}
             {mergeActors.mergeFrom !== null && mergeActors.mergeFrom !== iri && <DropdownMenuItem onClick={() => mergeActors.setMergeTo(iri)}><ArrowRight className="mr-2 h-4 w-4"/>Merge to</DropdownMenuItem>}

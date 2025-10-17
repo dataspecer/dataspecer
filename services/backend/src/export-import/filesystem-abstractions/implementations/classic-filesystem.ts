@@ -47,8 +47,8 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     filesystemMapping: FilesystemMappingType,
     parentDirectoryNode: DirectoryNode | null,
   ) {
-    const projectIri = mappedNodeLocation.iri;    // Not a mistake! iri is the same as projectIri in case of git (classic filesystem)
-                                                  // So also the tree path for iris and projectIris will be the same.
+    const projectIri = mappedNodeLocation.iri;      // Not a mistake! iri is the same as projectIri in case of git (classic filesystem)
+                                                    // So also the tree path for iris and projectIris will be the same.
     const fullPath: string = dsPathJoin(mappedNodeLocation.fullPath, projectIri);
     let irisTreePath: string;
     let projectIrisTreePath: string;

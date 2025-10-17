@@ -214,7 +214,7 @@ application.post(apiBasename + "/git/create-merge-state-between-ds-packages", cr
 application.post(apiBasename + "/git/update-merge-state", updateMergeState);
 application.get(apiBasename + "/git/get-merge-states", getMergeStates);
 application.post(apiBasename + "/git/finalize-merge-state", finalizeMergeState);
-application.post(apiBasename + "/git/remove-merge-state", removeMergeState);
+application.delete(apiBasename + "/git/remove-merge-state", removeMergeState);
 
 // TODO RadStr: Just for debugging !
 application.post(apiBasename + "/git/debug-clear-merge-state-table", clearMergeStateTableDebug);

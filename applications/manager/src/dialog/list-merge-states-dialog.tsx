@@ -1,16 +1,18 @@
 import { BetterModalProps, OpenBetterModal, useBetterModal, } from "@/lib/better-modal";
 import { useEffect, useState } from "react";
-import { Loader } from "lucide-react";
+import { InfoIcon, Loader, X } from "lucide-react";
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
 import { MergeState } from "@dataspecer/git";
+import { removeMergeState } from "@/utils/merge-state-fetch-methods";
+import { ShowMergeStateInfoDialog } from "./show-merge-state-info-dialog";
 
 type MergeStateDialogProps = {
   iri: string,
 } & BetterModalProps<null>;
 
-export const MergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialogProps) => {
+export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialogProps) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [mergeStates, setMergeStates] = useState<any[]>([]);
   const openModal = useBetterModal();
@@ -65,8 +67,10 @@ export const MergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialogProp
 }
 
 const renderMergeState = (mergeState: MergeState, openModal: OpenBetterModal, closeMergeStateList: (value: null) => void) => {
-  return <div className={`flex ${mergeState.isUpToDate ? "" : "bg-red-500"} items-baseline space-x-2 hover:bg-gray-300`}>
-      <button onClick={() => openModal(TextDiffEditorDialog, { initialMergeFromResourceIri: mergeState.rootIriMergeFrom, initialMergeToResourceIri: mergeState.rootIriMergeTo, editable: mergeState.editable}).finally(() => closeMergeStateList(null))}>
+  return <div className={`flex items-baseline`}>
+      <button onClick={() => openModal(ShowMergeStateInfoDialog, {mergeState})} className="bg-blue-300 hover:bg-blue-500 relative top-[6px]"><InfoIcon/></button>
+      <button className={`${mergeState.isUpToDate ? "" : "bg-red-400"} hover:bg-gray-300`}
+              onClick={() => openModal(TextDiffEditorDialog, { initialMergeFromResourceIri: mergeState.rootIriMergeFrom, initialMergeToResourceIri: mergeState.rootIriMergeTo, editable: mergeState.editable}).finally(() => closeMergeStateList(null))}>
         <div className="grid grid-cols-2 gap-4">
           <div className="flex">
             <span className="text-base font-medium whitespace-nowrap truncate">{mergeState.rootIriMergeFrom}</span>
@@ -78,5 +82,6 @@ const renderMergeState = (mergeState: MergeState, openModal: OpenBetterModal, cl
           </div>
         </div>
       </button>
+      <button onClick={() => removeMergeState(mergeState.uuid)} className="bg-red-700 hover:bg-red-800 relative top-[6px]"><X/></button>
     </div>;
 }

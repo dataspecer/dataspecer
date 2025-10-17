@@ -61,7 +61,7 @@ export const removeMergeState = async (mergeStateUUID: string | undefined): Prom
   try {
     const fetchResult = await fetch(
       `${import.meta.env.VITE_BACKEND}/git/remove-merge-state?uuid=${mergeStateUUID}`, {
-        method: "POST",
+        method: "DELETE",
       });
     console.info("Removed merge state response", fetchResult);   // TODO RadStr Debug:
 
