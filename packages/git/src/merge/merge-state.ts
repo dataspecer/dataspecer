@@ -165,11 +165,13 @@ export const isEditableType = (value: string): value is EditableType => value ==
 export interface MergeState {
   uuid: string;
 
+  branchMergeTo: string;
   lastCommitHashMergeTo: string;
   rootFullPathToMetaMergeTo: string;
   rootIriMergeTo: string;
   filesystemTypeMergeTo: AvailableFilesystems;
 
+  branchMergeFrom: string;
   lastCommitHashMergeFrom: string;
   rootFullPathToMetaMergeFrom: string;
   rootIriMergeFrom: string;

@@ -173,13 +173,13 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     let fullIriName = irisTreePath + localIriNameCandidate;
 
 
+    /**
+     * fullPath does not matter (but we use iri and not projectIri, since it is the identifier of the resource).
+     */
     let newNodeLocation: FilesystemNodeLocation | null = null;
     let filesystemNode: FilesystemNode;
 
     if (resource.types.includes(LOCAL_PACKAGE)) {
-      fullProjectIriName += "/"; // Create directory
-      fullIriName += "/";
-
       newNodeLocation = {
         iri: localIriNameCandidate,
         fullPath: localIriNameCandidate,
@@ -199,6 +199,13 @@ export class DSFilesystem extends FilesystemAbstractionBase {
       filesystemNode = directoryNode;
 
       const pckg = (await this.resourceModel.getPackage(iri))!;
+      this.setValueInFilesystemMapping(projectIri, newNodeLocation, filesystemMapping, filesystemNode, parentDirectoryNode);
+
+      // For recursion append the / behind it (but for the actual iris, etc. not, that is why we do it here and not before)
+      fullProjectIriName += "/"; // Create directory
+      fullIriName += "/";
+      newNodeLocation.irisTreePath = fullIriName;
+      newNodeLocation.projectIrisTreePath = fullProjectIriName;
 
       for (const subResource of pckg.subResources) {
         const newDirectoryNodeLocation: FilesystemNodeLocation = {
@@ -227,8 +234,8 @@ export class DSFilesystem extends FilesystemAbstractionBase {
         projectIrisTreePath: newNodeLocation.projectIrisTreePath,
       };
       filesystemNode = fileNode;
+      this.setValueInFilesystemMapping(projectIri, newNodeLocation, filesystemMapping, filesystemNode, parentDirectoryNode);
     }
-    this.setValueInFilesystemMapping(projectIri, newNodeLocation, filesystemMapping, filesystemNode, parentDirectoryNode);
 
     // Maybe in future we will have something else than JSONs on backend, but right now always use JSONs for DS filesystem.
     // Check top of file for more info.
@@ -289,11 +296,11 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     // We have to perform 2 actions:
     // 1) remove the datastore, that is remove the blob with datastore and update the resource to no longer contain the datastore
     // 2) If the resource will become empty, we also have to remove the datastore
-    await deleteBlob(filesystemNode.name, datastoreType);
+    await deleteBlob(filesystemNode.metadata.iri, datastoreType);
     removeDatastoreFromNode(filesystemNode, datastoreType);
     if (shouldRemoveFileWhenNoDatastores) {
       if (filesystemNode.datastores.length === 0) {       // TODO RadStr: Not sure about this, we will always have metadata, right? or no?
-        await deleteResource(filesystemNode.name);
+        await deleteResource(filesystemNode.metadata.iri);
         // TODO RadStr: Just put fullPath inside the FilesystemNode and be done with it
         this.removeValueInFilesystemMapping(filesystemNode.name, this.getParentForNode(filesystemNode)?.content ?? this.root.content);
       }

@@ -199,7 +199,6 @@ export async function compareDatastoresContents(
   entry2: FilesystemNode,      // TODO RadStr: Maybe I don't need the entry itself?
   datastore: DatastoreInfo,
 ): Promise<boolean> {
-  // TODO RadStr: For now just assume, that there is always change
   const content1 = await filesystem1.getDatastoreContent(entry1.irisTreePath, datastore.type, true);
   const content2 = await filesystem2.getDatastoreContent(entry2.irisTreePath, datastore.type, true);
 
@@ -207,6 +206,7 @@ export async function compareDatastoresContents(
 
   return _.isEqual(content1, content2);
 }
+
 
 export function getDiffNodeFromDiffTree(
   diffTree: DiffTree,

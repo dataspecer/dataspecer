@@ -70,7 +70,7 @@ export function convertExpressRequestToNormalRequest(url: string, request: expre
  * @returns Given {@link pathParts} joined by "/".
  */
 export function dsPathJoin(...pathParts: string[]) {
-  return pathParts.join("/");
+  return pathParts.filter(pathPart => pathPart !== "").join("/");
 }
 
 // TODO: Maybe put into different utils file
@@ -191,7 +191,7 @@ export function removePathRecursively(path: string) {
 }
 
 /**
- * Throws error if {@link repoName} or {@link userName} are null
+ * @throws Throws error if {@link repoName} or {@link userName} are null
  */
 export function checkErrorBoundaryForCommitAction(
   gitLink: string,
