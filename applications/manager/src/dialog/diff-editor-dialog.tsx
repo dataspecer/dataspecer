@@ -20,6 +20,8 @@ export type UpdateModelDataMethod = (
   treePathToNodeContainingDatastore: string,
   mergeFromDatastoreInfo: DatastoreInfo | null,
   mergeToDatastoreInfo: DatastoreInfo | null,
+  mergeFromRelevantMetaDatastoreInfo: DatastoreInfo | null,
+  mergeToRelevantMetaDatastoreInfo: DatastoreInfo | null,
   useCache: boolean,
   shouldChangeActiveModel: boolean,
   shouldCopyIfMissing: boolean,
@@ -45,8 +47,9 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
     comparisonTabType, setComparisonTabType,
     isLoadingTextData,
     isLoadingTreeStructure, setIsLoadingTreeStructure,
-    activeMergeFromContentConverted,
-    activeMergeToContentConverted,
+    // activeMergeFromContentConverted, activeMergeToContentConverted,      // TODO RadStr: Replaced by stripped version
+    strippedMergeFromContent, strippedMergeToContent,
+    showStrippedVersion, setShowStrippedVersion,
     activeTreePathToNodeContainingDatastore,
     activeDatastoreType,
     activeFormat,
@@ -136,14 +139,23 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
                         <div className="flex items-center space-x-4">
                           <RotateCw className="flex ml-1 h-4 w-4" onClick={reloadModelsDataFromBackend} />
                           <MergeStrategyComponent handleMergeStateResolving={applyAutomaticMergeStateResolver}/>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={showStrippedVersion}
+                              onChange={() => setShowStrippedVersion(prev => !prev)}
+                              className="w-5 h-5 accent-blue-600"
+                            />
+                            <span>{showStrippedVersion ? "Showing stripped version" : "Showing raw version"}</span>
+                          </label>
                         </div>
                         {/* The h-screen is needed otherwise the monaco editor is not shown at all */}
                         {/* Also small note - there is loading effect when first starting up the editor, it is not any custom made functionality */}
                         <MonacoDiffEditor className="flex-1 -ml-16 h-screen"
                                           editorRef={monacoEditor}
-                                          mergeFromContent={activeMergeFromContentConverted}
+                                          mergeFromContent={strippedMergeFromContent}
                                           editable={editable}
-                                          mergeToContent={activeMergeToContentConverted}
+                                          mergeToContent={strippedMergeToContent}
                                           datastoreType={activeDatastoreType}
                                           format={activeFormat}
                                           projectIrisTreePathToFilesystemNode={activeTreePathToNodeContainingDatastore}

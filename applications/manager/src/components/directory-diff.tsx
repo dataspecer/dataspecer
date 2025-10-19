@@ -483,8 +483,14 @@ function StyledNode({
               node.focus();
               node.select();
 
-              const parentTreePath = extractFirstNonEmptyFieldFromComparison(node.parent?.data.resourceComparison?.resources ?? null, "projectIrisTreePath") as string;
-              node.data.updateModelData(parentTreePath, node.data.fullDatastoreInfoInOriginalTree, node.data.fullDatastoreInfoInModifiedTree, true, true, false);
+              const parent = node.parent?.data.resourceComparison?.resources ?? null;
+              const parentTreePath = extractFirstNonEmptyFieldFromComparison(parent, "projectIrisTreePath") as string;
+              node.data.updateModelData(
+                parentTreePath,
+                node.data.fullDatastoreInfoInOriginalTree, node.data.fullDatastoreInfoInModifiedTree,
+                (parent?.old ?? null) === null ? null : getDatastoreInfoOfGivenDatastoreType(parent!.old!, "meta"),
+                (parent?.new ?? null) === null ? null : getDatastoreInfoOfGivenDatastoreType(parent!.new!, "meta"),
+                true, true, false);
             }
           }}
           onMouseOver={(_e) => {

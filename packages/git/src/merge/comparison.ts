@@ -2,6 +2,7 @@ import _ from "lodash";
 import { DatastoreInfo, DirectoryNode, FileNode, FilesystemNode } from "../export-import-data-api.ts";
 import { FilesystemAbstraction, getDatastoreInfoOfGivenDatastoreType } from "../filesystem/abstractions/filesystem-abstraction.ts";
 import { ComparisonData, DatastoreComparison, DiffTree, ResourceComparison, ResourceComparisonResult } from "./merge-state.ts";
+import { ResourceDatastoreStripHandlerBase } from "./comparison/resource-datastore-strip-handler-base.ts";
 
 export type ComparisonFullResult = {
   diffTree: DiffTree,
@@ -194,17 +195,20 @@ async function compareTreesInternal(
  */
 export async function compareDatastoresContents(
   filesystem1: FilesystemAbstraction,
-  entry1: FilesystemNode,      // TODO RadStr: Maybe I don't need the entry itself? ... I probably dont when using path, but when using full name I do
+  entry1: FilesystemNode,
   filesystem2: FilesystemAbstraction,
-  entry2: FilesystemNode,      // TODO RadStr: Maybe I don't need the entry itself?
+  entry2: FilesystemNode,
   datastore: DatastoreInfo,
 ): Promise<boolean> {
+  const stripMethod = new ResourceDatastoreStripHandlerBase(entry1.metadata.types[0] ?? entry2.metadata.types[0]).createHandlerMethodForDatastoreType(datastore.type);
   const content1 = await filesystem1.getDatastoreContent(entry1.irisTreePath, datastore.type, true);
   const content2 = await filesystem2.getDatastoreContent(entry2.irisTreePath, datastore.type, true);
+  const strippedContent1 = stripMethod(content1);
+  const strippedContent2 = stripMethod(content2);
 
-  console.info({content1, content2});    // TODO RadStr DEBUG: DEBUG Print
+  console.info({content1, strippedContent1, content2, strippedContent2});    // TODO RadStr DEBUG: DEBUG Print
 
-  return _.isEqual(content1, content2);
+  return _.isEqual(strippedContent1, strippedContent2);
 }
 
 
@@ -215,7 +219,6 @@ export function getDiffNodeFromDiffTree(
   const parts = projectIrisTreePath.split("/").filter(part => part !== "");
   let currentDiffTree: DiffTree = diffTree;
   let diffNode: ResourceComparison;
-
 
   for (const part of parts) {
     if (currentDiffTree === undefined) {

@@ -93,19 +93,6 @@ export interface FilesystemAbstraction {
   getDatastoreTypes(treePath: string): DatastoreInfo[];
 
   /**
-   * @param directory is the name of the directory
-   * @param gitProvider is git provider to check against for git provider specific files to ignore
-   * @returns Returns true if the given directory should be ignored.
-   */
-  shouldIgnoreDirectory(directory: string, gitProvider: GitProvider): boolean;
-
-  /**
-   * @param file is the name of the file
-   * @returns Returns true if the given file should be ignored.
-   */
-  shouldIgnoreFile(file: string): boolean;
-
-  /**
    * @param root is the location info of the root needed to build the filesystem tree.
    */
   createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType>
@@ -198,13 +185,63 @@ export interface FilesystemAbstraction {
   getParentForNode(node: FilesystemNode): DirectoryNode | null;
 }
 
+
+export interface GitIgnore {
+  /**
+   * @param file is the name of the file. It is just the name of the file. Not the full path.
+   * @returns Returns true if the given file should be ignored when handling creation of filesystem abstraction.
+   */
+  isIgnoredFile(file: string): boolean;
+
+  /**
+   * @param directory is the name of the directory. It is the irisPath in the filesystem tree (that is without the artificial directories, etc.).
+   * @returns Returns true if the given directory should be ignored when handling creation of filesystem abstraction.
+   */
+  isIgnoredDirectory(directory: string): boolean;
+
+  /**
+   * Calls {@link isIgnoredFile} and {@link isIgnoredDirectory}
+   */
+  isIgnoredEntry(entry: string): boolean;
+}
+
+
+export class GitIgnoreBase implements GitIgnore {
+  private gitProvider: GitProvider;
+
+  constructor(gitProvider: GitProvider) {
+    this.gitProvider = gitProvider;
+  }
+
+  public static isGitDirectory(directory: string): boolean {
+    return directory.endsWith(".git");
+  }
+  public static isReadmeFile(file: string): boolean {
+    return file === "README.md";
+  }
+
+  public isGitProviderDirectory(directory: string): boolean {
+    return this.gitProvider.isGitProviderDirectory(directory);
+  }
+  isIgnoredFile(file: string): boolean {
+    // TODO RadStr: Possibly can be better by using configuration or something instead of hardcoded.
+    return GitIgnoreBase.isReadmeFile(file);
+  }
+  isIgnoredDirectory(directory: string): boolean {
+    return this.isGitProviderDirectory(directory) || GitIgnoreBase.isGitDirectory(directory);
+  }
+  isIgnoredEntry(entry: string): boolean {
+    return this.isIgnoredDirectory(entry) || this.isIgnoredFile(entry);
+  }
+}
+
 /**
    * Creates new filesystem abstraction from given {@link roots}. The underlying filesystem of course depends on the implementation.
    * The actual implementations of this interface should be more restrictive, when it comes to the returned {@link FilesystemAbstraction} types -
    *  it should be the actual created type.
    * @returns The created instance of type {@link FilesystemAbstraction}.
    */
-export type FileSystemAbstractionFactoryMethod = (roots: FilesystemNodeLocation[], gitProvider: GitProvider | null) => Promise<FilesystemAbstraction>;
+export type FileSystemAbstractionFactoryMethod = (roots: FilesystemNodeLocation[], gitIgnore: GitIgnore | null) => Promise<FilesystemAbstraction>;
 
 
 /**

@@ -62,11 +62,11 @@ export class DSFilesystem extends FilesystemAbstractionBase {
 
       const metadata = DSFilesystem.constructMetadataFromResource(resource);
       const metadataAsString: string = JSON.stringify(metadata);
-      return convertDatastoreContentBasedOnFormat(metadataAsString, datastoreFormat, shouldConvertToDatastoreFormat);
+      return convertDatastoreContentBasedOnFormat(metadataAsString, datastoreFormat, shouldConvertToDatastoreFormat, null);
     }
     else {
       const data = await givenResourceModel.storeModel.getModelStore(fullPath).getString();
-      return convertDatastoreContentBasedOnFormat(data, datastoreFormat, shouldConvertToDatastoreFormat);
+      return convertDatastoreContentBasedOnFormat(data, datastoreFormat, shouldConvertToDatastoreFormat, null);
     }
   }
 
@@ -81,7 +81,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
       datastoreFormat = "json";
     }
     // Hardcoded JSON. Check top of file for more info.
-    const contentAsObject = convertDatastoreContentBasedOnFormat(newContent, datastoreFormat, true);
+    const contentAsObject = convertDatastoreContentBasedOnFormat(newContent, datastoreFormat, true, null);
     if (isDatastoreForMetadata(type)) {
       // Pass in only the userMetadata
       await givenResourceModel.updateResourceMetadata(fullPath, contentAsObject.userMetadata ?? {});

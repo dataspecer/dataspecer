@@ -238,7 +238,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     const pathToDatastore = datastore.fullPath;
 
     const content = fs.readFileSync(pathToDatastore, "utf-8");
-    return convertDatastoreContentBasedOnFormat(content, datastore.format, shouldConvertToDatastoreFormat);
+    return convertDatastoreContentBasedOnFormat(content, datastore.format, shouldConvertToDatastoreFormat, null);
   }
 
   createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType> {
@@ -304,7 +304,7 @@ function constructMetadata(metadataFilePath: string, format: string | null, oldC
  * @deprecated Probably once again deprecated - use the filesystem one instead
  */
 function readMetadataFile(metadataFilePath: string, format: string | null) {
-  const metadata = convertDatastoreContentBasedOnFormat(fs.readFileSync(metadataFilePath, "utf-8"), format, true);
+  const metadata = convertDatastoreContentBasedOnFormat(fs.readFileSync(metadataFilePath, "utf-8"), format, true, null);
   return metadata;
 }
 

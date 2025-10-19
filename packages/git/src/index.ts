@@ -21,3 +21,4 @@ export * from "./datastore-manipulation/default-initializers/implementations/vis
 export * from "./datastore-manipulation/default-initializers/initializer-interface/datastore-default-factory.ts";
 export * from "./datastore-manipulation/iri-replacement.ts";
 export * from "./resource-types.ts";
+export * from "./merge/comparison/resource-datastore-strip-handler-base.ts"

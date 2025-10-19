@@ -3,7 +3,6 @@
 //  (that would happen if somebody imported the same git repo under package UNDER the same level - the same level since in the filesystems we identify using the tree path and not the iri)
 //  Possible future solutions would be to generate new iri as project iri on import inside resource (or only if there is conflict)
 
-import { GitProvider } from "../../git-provider-api.ts";
 import { FilesystemNode, FilesystemMappingType, DirectoryNode, FilesystemNodeLocation, DatastoreInfo, ExportMetadataType } from "../../export-import-data-api.ts";
 import { AvailableFilesystems, createEmptyFilesystemMapping, createFilesystemMappingRoot, createInitialNodeToParentMap, FilesystemAbstraction, getMetaPrefixType } from "./filesystem-abstraction.ts";
 
@@ -157,8 +156,6 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
 
   abstract getFilesystemType(): AvailableFilesystems;
   abstract getDatastoreContent(irisTreePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any>;
-  abstract shouldIgnoreDirectory(directory: string, gitProvider: GitProvider): boolean;
-  abstract shouldIgnoreFile(file: string): boolean;
   abstract createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType>;
   abstract changeDatastore(otherFilesystem: FilesystemAbstraction, changed: ComparisonData): Promise<boolean>;
   abstract removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<boolean>;

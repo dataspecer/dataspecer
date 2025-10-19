@@ -27,7 +27,7 @@ export async function getDatastoreContent(
       return { accessDenied: true };
     }
     const content = fs.readFileSync(normalizedGitPath, "utf-8");
-    return convertDatastoreContentBasedOnFormat(content, format ?? null, shouldConvertToDatastoreFormat);
+    return convertDatastoreContentBasedOnFormat(content, format ?? null, shouldConvertToDatastoreFormat, null);
   }
   else {
     return await DSFilesystem.getDatastoreContentForPath(resourceModel, pathToDatastore, type, format ?? null, shouldConvertToDatastoreFormat);
@@ -72,7 +72,7 @@ export async function updateDatastoreContent(
     if (!isAccessible) {
       return { success: false, accessDenied: true };
     }
-    const newContentConverted = convertDatastoreContentBasedOnFormat(newContent, format ?? null, true);
+    const newContentConverted = convertDatastoreContentBasedOnFormat(newContent, format ?? null, true, null);
     fs.writeFileSync(normalizedGitPath, newContentConverted, "utf-8");
   }
   else {
@@ -147,7 +147,7 @@ export async function createDatastoreContent(
       await resourceModel.createResource(currentParentIri, currentNewIri, userMetadata.types[0], userMetadata.userMetadata, userMetadata.projectIri);
       currentParentIri = currentNewIri;
     }
-    const newContentAsJSON = convertDatastoreContentBasedOnFormat(content, format ?? null, true);
+    const newContentAsJSON = convertDatastoreContentBasedOnFormat(content, format ?? null, true, null);
     await updateBlob(currentParentIri, type, newContentAsJSON);
   }
   return { success: true, accessDenied: false };
