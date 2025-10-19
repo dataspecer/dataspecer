@@ -527,7 +527,7 @@ async function fillGitDirectoryWithExport(
     //  what files were exported. So we can add them explicitly instead of running git add .
     removeEverythingExcept(gitInitialDirectory, ["README.md", ".git", gitProvider.getWorkflowFilesDirectoryName()]);
     const exporter = new PackageExporterByResourceType();
-    await exporter.doExportFromIRI(iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem, exportFormat ?? "json");
+    await exporter.doExportFromIRI(iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem, exportFormat ?? "json", null);
 
     const { givenRepositoryName, givenRepositoryUserName } = repositoryIdentificationInfo;
 

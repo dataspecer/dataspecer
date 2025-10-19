@@ -115,12 +115,6 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     const datastoreInfo: DatastoreInfo = getDatastoreInfoOfGivenDatastoreType(resourceWithDatastore, type);
     return ClientFilesystem.getDatastoreContentDirectly(datastoreInfo, shouldConvertToDatastoreFormat, this.backendApiPath, this.backendFilesystem);
   }
-  shouldIgnoreDirectory(directory: string, gitProvider: GitProvider): boolean {
-    throw new Error("Method not implemented.");
-  }
-  shouldIgnoreFile(file: string): boolean {
-    throw new Error("Method not implemented.");
-  }
   createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType> {
     throw new Error("Method not implemented.");
   }

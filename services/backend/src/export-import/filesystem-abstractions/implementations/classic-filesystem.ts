@@ -1,4 +1,4 @@
-import { AvailableFilesystems, convertDatastoreContentBasedOnFormat, getDatastoreInfoOfGivenDatastoreType, GitProvider, isDatastoreForMetadata, ExportMetadataType, ComparisonData } from "@dataspecer/git";
+import { AvailableFilesystems, convertDatastoreContentBasedOnFormat, getDatastoreInfoOfGivenDatastoreType, GitProvider, isDatastoreForMetadata, ExportMetadataType, ComparisonData, GitIgnore } from "@dataspecer/git";
 import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, DatastoreInfo, FilesystemAbstractionBase, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode } from "@dataspecer/git";
 
 import fs from "fs";
@@ -11,16 +11,16 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
   // Properties
   /////////////////////////////////////
 
-  private gitProvider: GitProvider;
+  private gitIgnore: GitIgnore;
 
   /////////////////////////////////////
   // Factory method
   /////////////////////////////////////
-  public static createFilesystemAbstraction: FileSystemAbstractionFactoryMethod = async (roots: FilesystemNodeLocation[], gitProvider: GitProvider | null): Promise<ClassicFilesystem> => {
-    if (gitProvider === null) {
+  public static createFilesystemAbstraction: FileSystemAbstractionFactoryMethod = async (roots: FilesystemNodeLocation[], gitIgnore: GitIgnore | null): Promise<ClassicFilesystem> => {
+    if (gitIgnore === null) {
       throw new Error("The filesystem abstractions needs to have git provider.");        // TODO RadStr: Better error handling
     }
-    const createdFilesystem = new ClassicFilesystem(gitProvider);
+    const createdFilesystem = new ClassicFilesystem(gitIgnore);
     await createdFilesystem.initializeFilesystem(roots);
     return createdFilesystem;
   };
@@ -30,9 +30,9 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
   // Constructor
   /////////////////////////////////////
 
-  constructor(gitProvider: GitProvider) {
+  constructor(gitIgnore: GitIgnore) {
     super();
-    this.gitProvider = gitProvider;
+    this.gitIgnore = gitIgnore;
   }
 
   /////////////////////////////////////
@@ -62,14 +62,14 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
       projectIrisTreePath = dsPathJoin(mappedNodeLocation.projectIrisTreePath, projectIri);
     }
 
-    if (this.shouldIgnoreDirectory(irisTreePath, this.gitProvider)) {      // TODO RadStr: treePath or fullPath? ... I would use treePath
+    if (this.gitIgnore.isIgnoredDirectory(irisTreePath)) {
       return {};
     }
 
     const _directoryContent = fs.readdirSync(fullPath, { withFileTypes: true });
     const filesInDirectory = _directoryContent.filter(entry => !entry.isDirectory());
     const subDirectories = _directoryContent.filter(entry => entry.isDirectory());
-    const directoryContentNames = filesInDirectory.map(content => content.name).filter(name => !this.shouldIgnoreFile(name));
+    const directoryContentNames = filesInDirectory.map(content => content.name).filter(name => !this.gitIgnore.isIgnoredFile(name));
     const { datastoreInfoGroupings, invalidNames } = groupByPrefixDSSpecific(fullPath, ...directoryContentNames);
 
 
@@ -239,20 +239,6 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
 
     const content = fs.readFileSync(pathToDatastore, "utf-8");
     return convertDatastoreContentBasedOnFormat(content, datastore.format, shouldConvertToDatastoreFormat);
-  }
-
-  shouldIgnoreDirectory(directory: string, gitProvider: GitProvider): boolean {
-    if (directory.endsWith(".git")) {     // TODO RadStr: Maybe can be better integrated into the ignore file
-      return true;
-    }
-    if (gitProvider.isGitProviderDirectory(directory)) {     // TODO RadStr: Maybe can be better integrated into the ignore file
-      return true;
-    }
-
-    return false;
-  }
-  shouldIgnoreFile(file: string): boolean {
-    return file === "README.md";
   }
 
   createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType> {

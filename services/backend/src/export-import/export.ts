@@ -1,4 +1,4 @@
-import { AvailableFilesystems } from "@dataspecer/git";
+import { AvailableFilesystems, GitIgnore } from "@dataspecer/git";
 import { AvailableExports, AllowedExportResults } from "./export-actions.ts";
 import { resourceTypeToTypeDirectoryMapping } from "../../../../packages/git/lib/resource-types.js";
 
@@ -9,13 +9,17 @@ import { resourceTypeToTypeDirectoryMapping } from "../../../../packages/git/lib
  *  For simplicity and consistency we update the value for each exported meta file.
  */
 export interface PackageExporterInterface {
+  /**
+   * @param gitIgnore can be null for DS-filesystem
+   */
   doExportFromIRI(
     iri: string,
     directory: string,
     pathToExportStartDirectory: string,
     importFilesystem: AvailableFilesystems,
     exportType: AvailableExports,
-    exportFormat: string
+    exportFormat: string,
+    gitIgnore: GitIgnore | null,
   ): Promise<AllowedExportResults>;
 
   getExportVersion(): number;

@@ -1,5 +1,4 @@
-import { DirectoryNode, FilesystemNodeLocation, FilesystemAbstraction, AvailableFilesystems } from "@dataspecer/git";
-import { GitHubProvider } from "../git-providers/git-provider-instances/github.ts";
+import { DirectoryNode, FilesystemNodeLocation, FilesystemAbstraction, AvailableFilesystems, GitIgnore } from "@dataspecer/git";
 import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
 import { AllowedExportResults, AvailableExports, ExportActionForFilesystem, ExportActionForZip, ExportActions } from "./export-actions.ts";
 import { FilesystemFactory } from "./filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
@@ -38,6 +37,7 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
     importFilesystem: AvailableFilesystems,
     exportType: AvailableExports,
     exportFormat: string,
+    gitIgnore: GitIgnore | null,
   ): Promise<AllowedExportResults> {
     const filesystemLocationToIri: FilesystemNodeLocation = {
       iri,
@@ -45,8 +45,7 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
       irisTreePath: "",
       projectIrisTreePath: "",
     };
-    // TODO RadStr: the createFileSystem just needs methods for ignore directory/file, nothing else ... so remove the hardcoded GitHubProvier
-    const filesystem = await FilesystemFactory.createFileSystem([filesystemLocationToIri], importFilesystem, new GitHubProvider());
+    const filesystem = await FilesystemFactory.createFileSystem([filesystemLocationToIri], importFilesystem, gitIgnore);
     const fakeRoot = filesystem.getRoot();
 
     const root = Object.values(fakeRoot.content)[0] as DirectoryNode;

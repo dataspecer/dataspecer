@@ -4,6 +4,7 @@ import {
   convertMergeStateCauseToEditable,
   FilesystemNodeLocation,
   getMetadataDatastoreFile,
+  GitIgnoreBase,
   GitProvider,
   MergeStateCause
 } from "@dataspecer/git";
@@ -66,8 +67,10 @@ export async function compareBackendFilesystems(
     projectIrisTreePath: "",
   };
 
-  const filesystemMergeFrom = await FilesystemFactory.createFileSystem([mergeFromRootLocation], mergeFrom.filesystemType, mergeFrom.gitProvider);
-  const filesystemMergeTo = await FilesystemFactory.createFileSystem([mergeToRootLocation], mergeTo.filesystemType, mergeTo.gitProvider);
+  const mergeFromGitIgnore = mergeFrom.gitProvider === null ? null : new GitIgnoreBase(mergeFrom.gitProvider);
+  const filesystemMergeFrom = await FilesystemFactory.createFileSystem([mergeFromRootLocation], mergeFrom.filesystemType, mergeFromGitIgnore);
+  const mergeToGitIgnore = mergeTo.gitProvider === null ? null : new GitIgnoreBase(mergeTo.gitProvider);
+  const filesystemMergeTo = await FilesystemFactory.createFileSystem([mergeToRootLocation], mergeTo.filesystemType, mergeToGitIgnore);
 
   const fakeRootMergeFrom = filesystemMergeFrom.getRoot();
   const fakeRootMergeTo = filesystemMergeTo.getRoot();

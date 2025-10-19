@@ -1,6 +1,6 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import { v4 as uuidv4 } from 'uuid';
-import { GitProvider, FilesystemAbstractionBase, ComparisonData, DatastoreInfo, DirectoryNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaDatastoreInfo, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode, isDatastoreForMetadata, getDatastoreInfoOfGivenDatastoreType, AvailableFilesystems, convertDatastoreContentBasedOnFormat, ExportMetadataType } from "@dataspecer/git";
+import { FilesystemAbstractionBase, ComparisonData, DatastoreInfo, DirectoryNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaDatastoreInfo, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode, isDatastoreForMetadata, getDatastoreInfoOfGivenDatastoreType, AvailableFilesystems, convertDatastoreContentBasedOnFormat, ExportMetadataType, GitIgnore } from "@dataspecer/git";
 import { ResourceModel } from "../../../models/resource-model.ts";
 import { deleteBlob, deleteResource } from "../../../routes/resource.ts";
 import { BaseResource } from "@dataspecer/core-v2/project";
@@ -22,7 +22,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
   /////////////////////////////////////
   // Factory method
   /////////////////////////////////////
-  public static createFilesystemAbstraction: FileSystemAbstractionFactoryMethod = async (roots: FilesystemNodeLocation[], gitProvider: GitProvider | null): Promise<DSFilesystem> => {
+  public static createFilesystemAbstraction: FileSystemAbstractionFactoryMethod = async (roots: FilesystemNodeLocation[], gitIgnore: GitIgnore | null): Promise<DSFilesystem> => {
     // Note that we ignore the git provider
     const createdFilesystem = new DSFilesystem(mainResourceModel);
     await createdFilesystem.initializeFilesystem(roots);
@@ -52,7 +52,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     fullPath: string,
     type: string,
     datastoreFormat: string | null,
-    shouldConvertToDatastoreFormat: boolean
+    shouldConvertToDatastoreFormat: boolean,
   ): Promise<any> {
     if (isDatastoreForMetadata(type)) {
       const resource = (await givenResourceModel.getResource(fullPath));
@@ -112,20 +112,6 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     }
     const datastoreFormat = relevantDatastore.format;
     return await DSFilesystem.getDatastoreContentForPath(this.resourceModel, relevantDatastore.fullPath, type, datastoreFormat, shouldConvertToDatastoreFormat);
-  }
-
-  shouldIgnoreDirectory(directory: string, gitProvider: GitProvider): boolean {
-    return false;
-    // TODO RadStr: This is how I do it for the classic filesystem
-    // if (directory.endsWith(".git")) {     // TODO RadStr: Maybe can be better integrated into the ignore file
-    //   return {};
-    // }
-    // if (gitProvider.isGitProviderDirectory(directory)) {     // TODO RadStr: Maybe can be better integrated into the ignore file
-    //   return {};
-    // }
-  }
-  shouldIgnoreFile(file: string): boolean {
-    return file === "README.md";
   }
 
   /**

@@ -29,7 +29,7 @@ export const exportPackageResource = asyncHandler(async (request: express.Reques
   // const exporter = new PackageExporterNew();
   // const buffer = await exporter.doExportFromIRI(query.iri, "", `radstr/export/directory`, AvailableFilesystems.DS_Filesystem, AvailableExports.Zip);
   const exporter = new PackageExporterByResourceType();
-  const buffer = await exporter.doExportFromIRI(query.iri, "", `radstr/export/directory`, AvailableFilesystems.DS_Filesystem, AvailableExports.Zip, query.exportFormat ?? "json");
+  const buffer = await exporter.doExportFromIRI(query.iri, "", `radstr/export/directory`, AvailableFilesystems.DS_Filesystem, AvailableExports.Zip, query.exportFormat ?? "json", null);
   // TODO RadStr: Debug exporters ... maybe can use in tests (with non-local paths of course).
   // const buffer = await exporter.doExportFromIRI(query.iri);
   // const buffer = await exporter.doExportFromIRI(query.iri, "", `radstr/export/directory`, AvailableFilesystems.DS_Filesystem, AvailableExports.Zip);
