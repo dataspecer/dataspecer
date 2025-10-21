@@ -44,6 +44,8 @@ type RenderNodeWithAdditionalData = RenderNode & {
   setShouldBeHighlighted: (value: React.SetStateAction<boolean>) => void;
   removedTreePaths: string[];
   setRemovedTreePaths: (value: React.SetStateAction<string[]>) => void;
+  isCurrentlyAllowedChangeOfModels: boolean;
+  setIsCurrentlyAllowedChangeOfModels: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 type RenderStatus = "same" | "modified" | "created" | "removed";
@@ -474,8 +476,13 @@ function StyledNode({
           //     e.stopPropagation();
           //   }
           // }}
-          onClick={(e) => {
+          onClick={async (e) => {
             e.stopPropagation();
+            if (!node.data.isCurrentlyAllowedChangeOfModels) {
+              return;
+            }
+            node.data.setIsCurrentlyAllowedChangeOfModels(false);
+
             if (isExpandable) {
               node.toggle();
             }
@@ -485,13 +492,14 @@ function StyledNode({
 
               const parent = node.parent?.data.resourceComparison?.resources ?? null;
               const parentTreePath = extractFirstNonEmptyFieldFromComparison(parent, "projectIrisTreePath") as string;
-              node.data.updateModelData(
+              await node.data.updateModelData(
                 parentTreePath,
                 node.data.fullDatastoreInfoInOriginalTree, node.data.fullDatastoreInfoInModifiedTree,
                 (parent?.old ?? null) === null ? null : getDatastoreInfoOfGivenDatastoreType(parent!.old!, "meta"),
                 (parent?.new ?? null) === null ? null : getDatastoreInfoOfGivenDatastoreType(parent!.new!, "meta"),
                 true, true, false);
             }
+            node.data.setIsCurrentlyAllowedChangeOfModels(true);
           }}
           onMouseOver={(_e) => {
             handleMouseHoverHighlightingForNode(node, true);
@@ -596,6 +604,7 @@ const createStyledNode = (
   setRemovedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void,
   removedTreePaths: string[],
   setRemovedTreePaths: (value: React.SetStateAction<string[]>) => void,
+  isCurrentlyAllowedChangeOfModelsUseState: [boolean, React.Dispatch<React.SetStateAction<boolean>>]
 ) => {
   const extendedProps: NodeRendererProps<RenderNodeWithAdditionalData> = props as any;
   const currentNodeTreePath = extractTreePathFromNode(extendedProps.node);
@@ -621,6 +630,8 @@ const createStyledNode = (
   const [shouldBeHighlighted, setShouldBeHighlighted] = useState<boolean>(false);
   extendedProps.node.data.shouldBeHighlighted = shouldBeHighlighted;
   extendedProps.node.data.setShouldBeHighlighted = setShouldBeHighlighted;
+  extendedProps.node.data.isCurrentlyAllowedChangeOfModels = isCurrentlyAllowedChangeOfModelsUseState[0];
+  extendedProps.node.data.setIsCurrentlyAllowedChangeOfModels = isCurrentlyAllowedChangeOfModelsUseState[1];
 
   return <StyledNode {...extendedProps} />;
 }
@@ -727,11 +738,11 @@ export const DiffTreeVisualization = (props: {
     removedDatastores, setRemovedDatastores,
     setConflictsToBeResolvedOnSave, createdFilesystemNodes,
     removedTreePaths, setRemovedTreePaths,
-    updateModelData
+    updateModelData, mergeStateFromBackend
   } = props;
   const createdFilesystemNodesAsArray = Object.values(createdFilesystemNodes).map(filesystemNode => filesystemNode.createdFilesystemNodes).flat();
 
-  const mergeStateFromBackend: MergeState | null = props.mergeStateFromBackend;
+  const isCurrentlyAllowedChangeOfModelsUseState = useState<boolean>(true);
 
   const [diffTree, setDiffTree] = useState<DiffTree>();
   const [oldRenderTree, setOldRenderTree] = useState<RenderTree>();
@@ -940,46 +951,46 @@ export const DiffTreeVisualization = (props: {
 
   return (
     <div className="h-full">
-    <div>
-      <label className="flex items-center">
-        <input
-          type="checkbox"
-          checked={shouldOnlyShowConflicts}
-          onChange={handleShowConflictsCheckboxChange}
-          className="w-4 h-4"
-        />
-        {/* TODO RadStr Later: Localization */}
-        <span>{shouldOnlyShowConflicts ? "Showing only conflicts" : "Showing all"}</span>
-      </label>
-    </div>
-    <div className="flex gap-1 h-full">
-      <div className="flex-1 border border-stone-200 h-full" style={{height: treeRowHeight*treeRowHeightMultiplier}}>
-        <h3><DiffEditorCrossedOutEditIcon/></h3>
-        {
-          renderTreeWithLoading(props.isLoadingTreeStructure,
-            <Tree children={(props) => createStyledNode(props, updateModelData, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, addToCreatedDatastores, removedDatastores, setRemovedDatastores, removedTreePaths, setRemovedTreePaths)}
-                  ref={oldTreeRef} data={oldRenderTreeDataToRender} width={"100%"}
-                  onSelect={(nodes) => onNodesSelect(nodes, "old")}
-                  onFocus={(node) => onNodeFocus(node, "old")}
-                  onToggle={(id: string) => onNodeToggle(id, "old")}
-                  rowHeight={treeRowHeight} height={treeRowHeight*treeRowHeightMultiplier} openByDefault>
-            </Tree>)
-        }
+      <div>
+        <label className="flex items-center">
+          <input
+            type="checkbox"
+            checked={shouldOnlyShowConflicts}
+            onChange={handleShowConflictsCheckboxChange}
+            className="w-4 h-4"
+          />
+          {/* TODO RadStr Later: Localization */}
+          <span>{shouldOnlyShowConflicts ? "Showing only conflicts" : "Showing all"}</span>
+        </label>
       </div>
-      <div className="flex-1 border border-stone-200 h-full" style={{height: treeRowHeight*treeRowHeightMultiplier}}>
-        <h3><DiffEditorEditIcon/></h3>
-        {
-          renderTreeWithLoading(props.isLoadingTreeStructure,
-            <Tree children={(props) => createStyledNode(props, updateModelData, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, addToCreatedDatastores, removedDatastores, setRemovedDatastores, removedTreePaths, setRemovedTreePaths)}
-                  ref={newTreeRef} data={newRenderTreeDataToRender} width={"100%"}
-                  onSelect={(nodes) => onNodesSelect(nodes, "new")}
-                  onFocus={(node) => onNodeFocus(node, "new")}
-                  onToggle={(id: string) => onNodeToggle(id, "new")}
-                  rowHeight={treeRowHeight} height={treeRowHeight*treeRowHeightMultiplier} openByDefault>
-            </Tree>)
-        }
+      <div className="flex gap-1 h-full">
+        <div className="flex-1 border border-stone-200 h-full" style={{height: treeRowHeight*treeRowHeightMultiplier}}>
+          <h3><DiffEditorCrossedOutEditIcon/></h3>
+          {
+            renderTreeWithLoading(props.isLoadingTreeStructure,
+              <Tree children={(props) => createStyledNode(props, updateModelData, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, addToCreatedDatastores, removedDatastores, setRemovedDatastores, removedTreePaths, setRemovedTreePaths, isCurrentlyAllowedChangeOfModelsUseState)}
+                ref={oldTreeRef} data={oldRenderTreeDataToRender} width={"100%"}
+                onSelect={(nodes) => onNodesSelect(nodes, "old")}
+                onFocus={(node) => onNodeFocus(node, "old")}
+                onToggle={(id: string) => onNodeToggle(id, "old")}
+                rowHeight={treeRowHeight} height={treeRowHeight*treeRowHeightMultiplier} openByDefault disableDrag>
+              </Tree>)
+          }
+        </div>
+        <div className="flex-1 border border-stone-200 h-full" style={{height: treeRowHeight*treeRowHeightMultiplier}}>
+          <h3><DiffEditorEditIcon/></h3>
+          {
+            renderTreeWithLoading(props.isLoadingTreeStructure,
+              <Tree children={(props) => createStyledNode(props, updateModelData, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, addToCreatedDatastores, removedDatastores, setRemovedDatastores, removedTreePaths, setRemovedTreePaths, isCurrentlyAllowedChangeOfModelsUseState)}
+                ref={newTreeRef} data={newRenderTreeDataToRender} width={"100%"}
+                onSelect={(nodes) => onNodesSelect(nodes, "new")}
+                onFocus={(node) => onNodeFocus(node, "new")}
+                onToggle={(id: string) => onNodeToggle(id, "new")}
+                rowHeight={treeRowHeight} height={treeRowHeight*treeRowHeightMultiplier} openByDefault disableDrag>
+              </Tree>)
+          }
+        </div>
       </div>
-    </div>
     </div>
   );
 }

@@ -2,7 +2,9 @@ import YAML from "yaml";
 import { pickShareableMetadata, ShareableMetadata } from "../export-import-data-api.ts";
 import { DatastoreStripHandlerMethod } from "../merge/comparison/resource-datastore-strip-handler-base.ts";
 
-export function getDefaultValueForFormat(format: string | null) {
+
+// TODO RadStr: Can be format specific, but we just use null for everything
+export function getDefaultValueForMissingDatastoreInDiffEditor() {
   return "null";
 }
 

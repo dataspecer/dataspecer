@@ -15,7 +15,7 @@ import {
   getEditableAndNonEditableValue,
   CreateDatastoreFilesystemNodesInfo,
   ResourceComparison,
-  getDefaultValueForFormat,
+  getDefaultValueForMissingDatastoreInDiffEditor,
   stringifyShareableMetadataInfoFromDatastoreContent,
   getDatastoreInfoOfGivenDatastoreType,
   FilesystemNode,
@@ -72,16 +72,20 @@ function getDatastoreInCache(cache: CacheContentMap, treePathToFilesystemNode: s
   return cache[treePathToFilesystemNode]?.[datastoreType];
 }
 
+/**
+ * @param useCopyAsMetaDefault If true then as default value for meta is returned new object, which contains the shared part of metadata, from the other cache
+ */
 function getDatastoreInCacheAsObject(
   primaryCacheToCheck: CacheContentMap,
   secondaryCacheToCheck: CacheContentMap,
   treePathToFilesystemNode: string,
   datastoreInfo: DatastoreInfo,
   removedDatastores: DatastoreInfo[],
+  useCopyAsMetaDefault: boolean,
 ): any {
-  const contentAsString = findValueInCache(
+  const { value: contentAsString } = findValueInCache(
     datastoreInfo.fullPath, treePathToFilesystemNode, datastoreInfo.type, datastoreInfo.format,
-    removedDatastores, [primaryCacheToCheck, secondaryCacheToCheck]);
+    removedDatastores, [primaryCacheToCheck, secondaryCacheToCheck], useCopyAsMetaDefault);
   return convertDatastoreContentBasedOnFormat(contentAsString, datastoreInfo.format, true, null);
 }
 
@@ -110,6 +114,10 @@ const updateCacheContentEntryAsCombination = (
 ) => {
   cacheSetter(prevState => {
     const previousValueAsString = prevState?.[treePathToNodeContainingDatastore]?.[datastoreType];
+    if (newValueAsJSON === null) {
+      return prevState;
+    }
+
     const previousValueAsJSON = previousValueAsString === undefined ? {} : convertDatastoreContentBasedOnFormat(previousValueAsString, outputFormat, true, null);
     const combinedValue = {
       ...previousValueAsJSON,
@@ -155,6 +163,7 @@ function getEditorsInOriginalOrder(
 /**
  * Checks the {@link cachesToCheck}. If the first one matches returns the relevant value in cache.
  *  If it is other it just returns default value or if it is datastore of "meta" type returns the shareable part
+ * @param useCopyAsMetaDefault If true then as default value for meta is returned new object, which contains the shared part of metadata, from the other cache
  */
 function findValueInCache(
   fullDatastorePath: string | null,
@@ -163,32 +172,53 @@ function findValueInCache(
   activeFormat: string | null,
   removedDatastores: DatastoreInfo[],
   cachesToCheck: CacheContentMap[],
-): string {
+  useCopyAsMetaDefault: boolean,
+): { value: string, isDefault: boolean } {
   const isRemoved = removedDatastores.find(removedDatastore => removedDatastore.fullPath === fullDatastorePath) !== undefined;
   if (isRemoved) {
-    return getDefaultValueForFormat(activeFormat);
+    return {
+      value: getDefaultValueForMissingDatastoreInDiffEditor(),
+      isDefault: true,
+    };
   }
 
   if (datastoreType === null) {
-    return getDefaultValueForFormat(activeFormat);
+    return {
+      value: getDefaultValueForMissingDatastoreInDiffEditor(),
+      isDefault: true,
+    };
   }
   const cacheWithValue = cachesToCheck.find(cacheToCheck => cacheToCheck[nodeTreePath]?.[datastoreType] !== undefined);
   if (cacheWithValue === undefined) {
-    return getDefaultValueForFormat(activeFormat);
+    return {
+      value: getDefaultValueForMissingDatastoreInDiffEditor(),
+      isDefault: true,
+    };
   }
 
   const cacheContent = cacheWithValue[nodeTreePath][datastoreType];
   if (cacheWithValue === cachesToCheck[0]) {
     // If it is the primary or not meta, just return it
-    return cacheWithValue[nodeTreePath][datastoreType];
+    return {
+      value: cacheWithValue[nodeTreePath][datastoreType],
+      isDefault: false,
+    };
   }
   else {
     if (datastoreType === "meta") {
       // If meta and not primary then pick the relevant stuff
-      return stringifyShareableMetadataInfoFromDatastoreContent(cacheContent, activeFormat, null);
+      return {
+        value: useCopyAsMetaDefault ?
+          stringifyShareableMetadataInfoFromDatastoreContent(cacheContent, activeFormat, null) :
+          getDefaultValueForMissingDatastoreInDiffEditor(),
+        isDefault: true,
+      };
     }
     else {
-      return getDefaultValueForFormat(activeFormat);
+      return {
+        value: getDefaultValueForMissingDatastoreInDiffEditor(),
+        isDefault: true,
+      };
     }
   }
 }
@@ -332,7 +362,6 @@ async function onCascadeUpdateForCreatedDatastores(
         };
         createdFilesystemNodesInTreePath.push(newFilesystemNodeToCreate);
         createdFilesystemNodesAsArray.push(newFilesystemNodeToCreate);
-        alert(`onCascadeUpdateForCreatedDatastores: ${existingResource!.irisTreePath}`);
         parentNode = existingResource;
       }
     }
@@ -422,13 +451,13 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
 
   const activeDatastoreType = mergeToDatastoreInfo?.type ?? mergeFromDatastoreInfo?.type ?? null;
   const activeFormat = activeDatastoreType === null ? "" : formatsForCacheEntries[activeTreePathToNodeContainingDatastore]?.[activeDatastoreType] ?? "";
-  const activeMergeFromContentConverted = findValueInCache(
+  // We pass in false, because we want to show "null" or whatever the value will be for missing datastore
+  const { value: activeMergeFromContentConverted } = findValueInCache(
     mergeFromDatastoreInfo?.fullPath ?? null, activeTreePathToNodeContainingDatastore, activeDatastoreType, activeFormat,
-    removedDatastores, [convertedCacheForMergeFromContent, convertedCacheForMergeToContent]);
-  const activeMergeToContentConverted = findValueInCache(
+    removedDatastores, [convertedCacheForMergeFromContent, convertedCacheForMergeToContent], false);
+  const { value: activeMergeToContentConverted } = findValueInCache(
     mergeToDatastoreInfo?.fullPath ?? null, activeTreePathToNodeContainingDatastore, activeDatastoreType, activeFormat,
-    removedDatastores, [convertedCacheForMergeToContent, convertedCacheForMergeFromContent]);
-
+    removedDatastores, [convertedCacheForMergeToContent, convertedCacheForMergeFromContent], false);
 
   const [showStrippedVersion, setShowStrippedVersion] = useState<boolean>(true);
 
@@ -437,22 +466,47 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     let strippedMergeToContent: string;
     const activeMetaFormat = formatsForCacheEntries[activeTreePathToNodeContainingDatastore]?.["meta"] ?? null;
     console.info({activeTreePathToNodeContainingDatastore, activeFormat, activeMetaFormat, formatsForCacheEntries});      // TODO RadStr: Debug print
-    if (showStrippedVersion && activeMetaFormat !== null) {
+    if (showStrippedVersion && activeMetaFormat !== null && activeDatastoreType !== null) {
+      const datastoresForMeta = datastoreInfosForCacheEntries[activeTreePathToNodeContainingDatastore]["meta"];
       const activeMeta = findValueInCache(
-        mergeToDatastoreInfo?.fullPath ?? null,
+        datastoresForMeta.mergeTo?.fullPath ?? datastoresForMeta.mergeFrom?.fullPath ?? null,
         activeTreePathToNodeContainingDatastore,
         "meta",
         activeMetaFormat,
         removedDatastores,
-        [convertedCacheForMergeToContent, convertedCacheForMergeFromContent]
+        [convertedCacheForMergeToContent, convertedCacheForMergeFromContent],
+        true
       );
-      const activeMetaAsObject = convertDatastoreContentBasedOnFormat(activeMeta, activeMetaFormat, true, null);
-      console.info({activeMeta, activeMetaAsObject, typy: activeMetaAsObject?.types, typ: activeMetaAsObject?.types?.[0]});     // TODO RadStr: Debug print
+
+      if (activeMeta.isDefault) {
+        strippedMergeFromContent = activeMergeFromContentConverted;
+        strippedMergeToContent = activeMergeToContentConverted;
+
+        return {
+          strippedMergeFromContent,
+          strippedMergeToContent,
+        };
+      }
+      const activeMetaAsObject = convertDatastoreContentBasedOnFormat(activeMeta.value, activeMetaFormat, true, null);
+
       const activeResourceType = activeMetaAsObject.types[0];
       const resourceStripHandler = new ResourceDatastoreStripHandlerBase(activeResourceType);
-      const resourceStripHandlerMethod = activeDatastoreType === null ? null : resourceStripHandler.createHandlerMethodForDatastoreType(activeDatastoreType);
-      strippedMergeFromContent = convertDatastoreContentForInputFormatToOutputFormat(activeMergeFromContentConverted, activeFormat, activeFormat, true, resourceStripHandlerMethod);
-      strippedMergeToContent = convertDatastoreContentForInputFormatToOutputFormat(activeMergeToContentConverted, activeFormat, activeFormat, true, resourceStripHandlerMethod);
+      const resourceStripHandlerMethod = resourceStripHandler.createHandlerMethodForDatastoreType(activeDatastoreType);
+
+      const activeDatastoreInfo = datastoreInfosForCacheEntries[activeTreePathToNodeContainingDatastore][activeDatastoreType];
+      if (activeDatastoreInfo.mergeFrom !== null && activeMergeFromContentConverted != null) {
+        strippedMergeFromContent = convertDatastoreContentForInputFormatToOutputFormat(activeMergeFromContentConverted, activeFormat, activeFormat, true, resourceStripHandlerMethod);
+      }
+      else {
+        strippedMergeFromContent = activeMergeFromContentConverted;
+      }
+
+      if (activeDatastoreInfo.mergeTo !== null && activeMergeToContentConverted != null) {
+        strippedMergeToContent = convertDatastoreContentForInputFormatToOutputFormat(activeMergeToContentConverted, activeFormat, activeFormat, true, resourceStripHandlerMethod);
+      }
+      else {
+        strippedMergeToContent = activeMergeToContentConverted;
+      }
       console.info({strippedMergeFromContent, strippedMergeToContent, activeMergeFromContentConverted, activeMergeToContentConverted, activeResourceType, activeMetaFormat});
     }
     else {
@@ -460,9 +514,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
       strippedMergeToContent = activeMergeToContentConverted;
     }
 
-    alert("Setting Stripped content");        // TODO RadStr: Debug alert
     return { strippedMergeFromContent, strippedMergeToContent };
-  }, [convertedCacheForMergeFromContent, showStrippedVersion]);
+  }, [mergeFromDatastoreInfo, mergeToDatastoreInfo, showStrippedVersion, activeTreePathToNodeContainingDatastore, activeDatastoreType]);
 
 
   // TODO RadStr: Debug print
@@ -548,9 +601,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
 
           const { nonEditable: datastoreCausingTheUpdate } = getEditableAndNonEditableValue(editable, datastoreInfo.mergeFrom, datastoreInfo.mergeTo);
           console.info({newlyCreatedDatastores, datastoreCausingTheUpdate});
-          alert(`Handling update2`);
 
-          // Skip if iti s not newly created
+          // Skip if it is not newly created
           if (newlyCreatedDatastores.find(createdDatastore => createdDatastore.fullPath === datastoreCausingTheUpdate?.fullPath) === undefined) {
             continue;
           }
@@ -637,6 +689,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     shouldChangeActiveModel: boolean,
     shouldCopyIfMissing: boolean,
   ) => {
+    const activeTreePathBeforeUpdate = activeTreePathToNodeContainingDatastore;
+
     if (newMergeFromDatastoreInfo === null && newMergeToDatastoreInfo === null) {
       if (!shouldChangeActiveModel) {
         return;
@@ -692,18 +746,23 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     if (oldDatastoreType !== null && shouldChangeActiveModel) {
       // Put the values currently present in the editor into cache (that is those editor values, before we switched). Note that we always put them there, even if the datastore does not exist
       //  (meaning it was removed), that is because we want to store the changes. We are doing that only locally and only send them if the user actually adds them explicitly
-      const currentMergeFromContentInEditor = editors.mergeFromEditor?.getValue()!;
-      if (currentMergeFromContentInEditor === "") {
-        // TODO RadStr: Debug IF
-        console.info({monacoEditor: monacoEditor.current?.editor, monacoEditorModel: monacoEditor.current?.editor.getModel(), currentMergeFromContentInEditor: currentMergeFromContentInEditor, currentMergeToContentInEditor: editors.mergeToEditor?.getValue(), oldDatastoreType, shouldChangeActiveModel, useCache, newMergeFromDatastoreInfo, newMergeToDatastoreInfo, treePathToNodeContainingDatastore, shouldCopyIfMissing})
-        alert("EMPTY FOR SOME REASON");
-      }
-      convertDataAndUpdateCacheContentEntryAsCombination(setConvertedCacheForMergeFromContent,
-        activeTreePathToNodeContainingDatastore, oldDatastoreType, currentMergeFromContentInEditor, newFormat);
+      let currentMergeFromContentInEditor = editors.mergeFromEditor?.getValue();
+      if (currentMergeFromContentInEditor !== undefined) {
+        if (currentMergeFromContentInEditor === "") {
+          currentMergeFromContentInEditor = getDefaultValueForMissingDatastoreInDiffEditor();
+        }
+        convertDataAndUpdateCacheContentEntryAsCombination(setConvertedCacheForMergeFromContent,
+          activeTreePathBeforeUpdate, oldDatastoreType, currentMergeFromContentInEditor, newFormat);
+        }
 
-      const currentMergeToContentInEditor = editors.mergeToEditor?.getValue()!;
-      convertDataAndUpdateCacheContentEntryAsCombination(setConvertedCacheForMergeToContent,
-        activeTreePathToNodeContainingDatastore, oldDatastoreType, currentMergeToContentInEditor, newFormat);
+      let currentMergeToContentInEditor = editors.mergeToEditor?.getValue();
+      if (currentMergeToContentInEditor !== undefined) {
+        if (currentMergeToContentInEditor === "") {
+          currentMergeToContentInEditor = getDefaultValueForMissingDatastoreInDiffEditor();
+        }
+        convertDataAndUpdateCacheContentEntryAsCombination(setConvertedCacheForMergeToContent,
+          activeTreePathBeforeUpdate, oldDatastoreType, currentMergeToContentInEditor, newFormat);
+      }
     }
 
     const isMergeFromDataResourceInCache = isDatastorePresentInCache(convertedCacheForMergeFromContent, treePathToNodeContainingDatastore, newDatastoreType);
@@ -714,6 +773,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
       const newMergeToDataAsText = await ClientFilesystem.getDatastoreContentDirectly(newMergeToDatastoreInfo, false, import.meta.env.VITE_BACKEND, examinedMergeState?.filesystemTypeMergeTo ?? null);
 
       console.info({newMergeFromDataResourceNameInfo: newMergeFromDatastoreInfo, newMergeToDataResourceNameInfo: newMergeToDatastoreInfo});
+      console.info({newMergeFromDataAsText, newMergeToDataAsText});
 
       // The order matters since we create copies -
       //  we have to first set the non-empty one. So we can create copy (actually since we allow only editing of one, the order is kind of given)
@@ -743,7 +803,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
           dataAsText = newMergeToDataAsText;
           cacheContentSetter = setConvertedCacheForMergeToContent;
         }
-        otherDatastoreEntry = await updateCacheEntryForModelUpdate(
+        otherDatastoreEntry = await updateCacheEntryBasedOnModelUpdate(
           dataAsText, currentDatastoreInfo, otherDatastoreInfo, otherDatastoreEntry,
           treePathToNodeContainingDatastore, newFormat, newDatastoreType, shouldCopyIfMissing, cacheContentSetter);
       }
@@ -760,7 +820,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     }
   }
 
-  const updateCacheEntryForModelUpdate = async (
+  const updateCacheEntryBasedOnModelUpdate = async (
     dataToInsertAsText: string | null,
     datastoreInfo: DatastoreInfo | null,
     otherDatastoreInfo: DatastoreInfo | null,
@@ -780,7 +840,6 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     }
     else {
       if (datastoreInfo === null && otherDatastoreInfo !== null && shouldCopyIfMissing && createdDatastoresToIrisNeedingReplacementMap.current[otherDatastoreInfo.fullPath] === undefined) {
-        alert("Replacing iris inside cache");     // TODO RadStr: Debug alert
         const { datastoreWithReplacedIris, missingIrisInNew } = createDatastoreWithReplacedIris(otherDatastoreEntry, iriMappingForNonEditableToEditable);
         valueToStoreToCacheAsObject = datastoreWithReplacedIris;
         createdDatastoresToIrisNeedingReplacementMap.current[otherDatastoreInfo.fullPath] = missingIrisInNew;
@@ -919,7 +978,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
         console.info({datastoreInfoMap, datastoreInfosForCacheEntries, diffTreeNode, metaMergeTo, diffTree: fetchedMergeState!.diffTreeData!.diffTree});    // TODO RadStr DEBUG: Debug
         filesystemNodeParentIri = metaMergeTo === null ?
           null :
-          getDatastoreInCacheAsObject(editableCacheContents, nonEditableCacheContents, nodeTreePath, metaMergeTo, removedDatastores).iri;
+          getDatastoreInCacheAsObject(editableCacheContents, nonEditableCacheContents, nodeTreePath, metaMergeTo, removedDatastores, true).iri;
       }
 
       for (const [modelName, datastoreInfo] of Object.entries(datastoreInfoMap)) {
@@ -953,7 +1012,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
         }
 
         const format = formatsForCacheEntries[nodeTreePath][modelName];
-        const newValue = editableCacheContents?.[nodeTreePath]?.[modelName] ?? getDefaultValueForFormat(format);
+        // TODO RadStr: Can it even ever be default?
+        const newValue = editableCacheContents?.[nodeTreePath]?.[modelName] ?? getDefaultValueForMissingDatastoreInDiffEditor();
         let newValueAsJSON = convertDatastoreContentForInputFormatToOutputFormat(newValue, format, "json", true, null);
         if (datastoreInfoForNonEditable !== null && createdDatastoresToIrisNeedingReplacementMap.current[datastoreInfoForNonEditable.fullPath] !== undefined) {
           // Repair the iris ... The relevant meta files to which we will replace iris should be already created.
@@ -1003,7 +1063,9 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
       for (const filesystemNodeToCreate of filesystemNodesBatchToCreate.createdFilesystemNodes) {
         createdMetas.add(filesystemNodeToCreate.projectIrisTreePath);
         console.info({editableCacheContents, "treePath": filesystemNodeToCreate.projectIrisTreePath, "userMetadataDatastoreInfo": filesystemNodeToCreate.userMetadataDatastoreInfo})
-        const filesystemNodeMetadata = getDatastoreInCacheAsObject(editableCacheContents, nonEditableCacheContents, filesystemNodeToCreate.projectIrisTreePath, filesystemNodeToCreate.userMetadataDatastoreInfo, removedDatastores);
+        const filesystemNodeMetadata = getDatastoreInCacheAsObject(
+          editableCacheContents, nonEditableCacheContents, filesystemNodeToCreate.projectIrisTreePath,
+          filesystemNodeToCreate.userMetadataDatastoreInfo, removedDatastores, true);
         filesystemNodesBatchMetadata.push(filesystemNodeMetadata);
       }
 
