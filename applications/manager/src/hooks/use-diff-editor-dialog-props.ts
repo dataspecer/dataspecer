@@ -1014,7 +1014,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
         const format = formatsForCacheEntries[nodeTreePath][modelName];
         // TODO RadStr: Can it even ever be default?
         const newValue = editableCacheContents?.[nodeTreePath]?.[modelName] ?? getDefaultValueForMissingDatastoreInDiffEditor();
-        let newValueAsJSON = convertDatastoreContentForInputFormatToOutputFormat(newValue, format, "json", true, null);
+        let newValueAsJSON: object = convertDatastoreContentBasedOnFormat(newValue, format, true, null);
         if (datastoreInfoForNonEditable !== null && createdDatastoresToIrisNeedingReplacementMap.current[datastoreInfoForNonEditable.fullPath] !== undefined) {
           // Repair the iris ... The relevant meta files to which we will replace iris should be already created.
           const { datastoreWithReplacedIris, missingIrisInNew } = createDatastoreWithReplacedIris(newValueAsJSON, newIriMappingForNonEditableToEditableStorage);
@@ -1024,13 +1024,14 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
 
           newValueAsJSON = datastoreWithReplacedIris;
         }
+        const stringifiedNewValue: string = stringifyDatastoreContentBasedOnFormat(newValueAsJSON, format, true);
         if (datastoreInfoForEditable !== null) {
           // Just update, it does exist
-          await ClientFilesystem.updateDatastoreContentDirectly(datastoreInfoForEditable, newValueAsJSON, editableFilesystem, import.meta.env.VITE_BACKEND);
+          await ClientFilesystem.updateDatastoreContentDirectly(datastoreInfoForEditable, stringifiedNewValue, editableFilesystem, import.meta.env.VITE_BACKEND);
         }
         else {
           // Create new one.
-          await ClientFilesystem.createDatastoreDirectly(filesystemNodeParentIri, newValueAsJSON, editableFilesystem, datastoreInfoForNonEditable, import.meta.env.VITE_BACKEND);
+          await ClientFilesystem.createDatastoreDirectly(filesystemNodeParentIri, stringifiedNewValue, editableFilesystem, datastoreInfoForNonEditable, import.meta.env.VITE_BACKEND);
           continue;
         }
         await reloadModelsDataFromBackend();

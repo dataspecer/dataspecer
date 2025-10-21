@@ -3,14 +3,14 @@
  * @returns The iris, which could not be replaced, because the resources, which have them do not exist (we have to create them first and get the created iris).
  *  and the copy of {@link datastoreToSearchInForIris} with replaced every iri we could.
  */
-export function createDatastoreWithReplacedIris(datastoreToSearchInForIris: any, irisMap: Record<string, string | null>) {
+export function createDatastoreWithReplacedIris(datastoreToSearchInForIris: object, irisMap: Record<string, string | null>) {
   const allIrisToCheckFor: string[] = Object.keys(irisMap);
   const missingIrisInNew: string[] = [];
-  const datastoreWithReplacedIris: any = {};
+  const datastoreWithReplacedIris: object = {};
   const containedIriToReplace = replaceIrisInDatastoreAndCollectMissingOnes(datastoreToSearchInForIris, allIrisToCheckFor, irisMap, missingIrisInNew, datastoreWithReplacedIris);
 
   return {
-    missingIrisInNew:  Array.from(new Set(missingIrisInNew)),
+    missingIrisInNew: Array.from(new Set(missingIrisInNew)),
     datastoreWithReplacedIris,
     containedIriToReplace,
   };
@@ -39,19 +39,24 @@ function replaceIrisInDatastoreAndCollectMissingOnes(
         if (typeof item === "object" && item !== null) {
           const objectToPutIntoArray = {};
           datastoreWithReplacedIris[key].push(objectToPutIntoArray);
-          containedIriToReplace ||= replaceIrisInDatastoreAndCollectMissingOnes(objectToPutIntoArray, allIrisToCheckFor, irisMap, missingIrisInNew, item);
+          // It is actually important to do it separately and not use ||= since if the containedIriToReplace is true, we won't run the recursion.
+          const containedIriToReplaceInRecursion = replaceIrisInDatastoreAndCollectMissingOnes(item, allIrisToCheckFor, irisMap, missingIrisInNew, objectToPutIntoArray);
+          containedIriToReplace ||= containedIriToReplaceInRecursion;
         }
         else {
-          containedIriToReplace ||= handleReplacementForNonComposite(key, item, datastoreWithReplacedIris, allIrisToCheckFor, irisMap, missingIrisInNew);
+          const isIriReplacement = handleReplacementForNonComposite(key, item, datastoreWithReplacedIris, allIrisToCheckFor, irisMap, missingIrisInNew);
+          containedIriToReplace ||= isIriReplacement;
         }
       });
     }
     else if (typeof value === "object" && value !== null) {
       datastoreWithReplacedIris[key] = {};
-      containedIriToReplace ||= replaceIrisInDatastoreAndCollectMissingOnes(datastoreWithReplacedIris[key], allIrisToCheckFor, irisMap, missingIrisInNew, value);
+      const containedIriToReplaceInRecursion = replaceIrisInDatastoreAndCollectMissingOnes(value, allIrisToCheckFor, irisMap, missingIrisInNew, datastoreWithReplacedIris[key]);
+      containedIriToReplace ||= containedIriToReplaceInRecursion;
     }
     else {
-      containedIriToReplace ||= handleReplacementForNonComposite(key, value, datastoreWithReplacedIris, allIrisToCheckFor, irisMap, missingIrisInNew);
+      const isIriReplacement = handleReplacementForNonComposite(key, value, datastoreWithReplacedIris, allIrisToCheckFor, irisMap, missingIrisInNew);
+      containedIriToReplace ||= isIriReplacement;
     }
   }
 

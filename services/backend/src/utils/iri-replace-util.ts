@@ -1,4 +1,4 @@
-import { createDatastoreWithReplacedIris } from "@dataspecer/git";
+import { convertDatastoreContentBasedOnFormat, createDatastoreWithReplacedIris, stringifyDatastoreContentBasedOnFormat } from "@dataspecer/git";
 import { prismaClient, storeModel } from "../main.ts";
 
 /**
@@ -18,12 +18,14 @@ export async function replaceIrisRecursively(resourceReplacementIrisMap: Record<
       await storeModel.getModelStore(store as string).setJson(datastoreWithReplacedIris);
     }
 
-    const { datastoreWithReplacedIris: convertedMetadata, containedIriToReplace } = createDatastoreWithReplacedIris(prismaResource.userMetadata, resourceReplacementIrisMap);
+    const metadataAsJson = convertDatastoreContentBasedOnFormat(prismaResource.userMetadata, "json", true, null);
+    const { datastoreWithReplacedIris: convertedMetadata, containedIriToReplace } = createDatastoreWithReplacedIris(metadataAsJson, resourceReplacementIrisMap);
+    const stringifiedConvertedMetadata = stringifyDatastoreContentBasedOnFormat(convertedMetadata, "json", true);
     if (containedIriToReplace) {
       await prismaClient.resource.update({
         where: {iri: newIri},
         data: {
-          userMetadata: convertedMetadata
+          userMetadata: stringifiedConvertedMetadata,
         }
       });
     }
