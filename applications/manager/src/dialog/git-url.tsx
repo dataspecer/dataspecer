@@ -94,7 +94,7 @@ export const GitActionsDialog = ({ inputPackage, isOpen, resolve, type }: GitAct
         <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git user (or org) name under which should be the repository created. If empty - auth user name is used, if not logged in or user did not provide rights to create repo, bot name is used" setInput={createSetterWithGitValidation(setUser)} input={user} />
         <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="The commit message for git" setInput={setCommitMessage} input={commitMessage} />
         <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git remote repository name" setInput={createSetterWithGitValidation(setRepositoryName)} input={repositoryName} />
-        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git provider URL (Should contain the schema and end with / - for example https://github.com/)" setInput={setGitProvider} input={gitProvider} />
+        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git provider URL (Should contain the schema and end with / - for example https://github.com/)" setInput={setGitProvider} input={gitProvider} disabled/>
         <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
         <label className="flex items-center space-x-2 cursor-pointer">
           <input
