@@ -123,14 +123,6 @@ async function compareTreesInternal(
       }
     }
 
-    // Recursively process "subdirectories"
-    if (nodeValue.type === "directory") {
-      const subtreeSize = await compareTreesInternal(filesystem1, nodeValue,
-                                                      filesystem2, node2Value as (DirectoryNode | undefined),
-                                                      currentlyProcessedDiffFilesystemNode.childrenDiffTree,
-                                                      comparisonDifferences);
-      diffTreeSize += subtreeSize;
-    }
 
     // Add those datastores which are present only in the second tree
     for (const datastore2 of node2Value?.datastores ?? []) {
@@ -146,6 +138,15 @@ async function compareTreesInternal(
         comparisonDifferences.created.push(created);
         diffTreeSize++;
       }
+    }
+
+    // Recursively process "subdirectories"
+    if (nodeValue.type === "directory") {
+      const subtreeSize = await compareTreesInternal(filesystem1, nodeValue,
+                                                      filesystem2, node2Value as (DirectoryNode | undefined),
+                                                      currentlyProcessedDiffFilesystemNode.childrenDiffTree,
+                                                      comparisonDifferences);
+      diffTreeSize += subtreeSize;
     }
   }
 
@@ -165,14 +166,6 @@ async function compareTreesInternal(
     };
     diffTree[nodeName] = currentlyProcessedDiffFilesystemNode;
 
-    if (nodeValue.type === "directory") {
-      const subtreeSize = await compareTreesInternal(filesystem1, undefined,
-                                                      filesystem2, nodeValue,
-                                                      currentlyProcessedDiffFilesystemNode.childrenDiffTree,
-                                                      comparisonDifferences);
-      diffTreeSize += subtreeSize;
-    }
-
     for (const datastore of nodeValue.datastores) {
       // The datastore is not present, since the parent filesystem node does not exist, then it means that all of the datastores are not present neither
       const created: DatastoreComparison = {
@@ -184,6 +177,14 @@ async function compareTreesInternal(
       currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(created);
       comparisonDifferences.created.push(created);
       diffTreeSize++;
+    }
+
+    if (nodeValue.type === "directory") {
+      const subtreeSize = await compareTreesInternal(filesystem1, undefined,
+                                                      filesystem2, nodeValue,
+                                                      currentlyProcessedDiffFilesystemNode.childrenDiffTree,
+                                                      comparisonDifferences);
+      diffTreeSize += subtreeSize;
     }
   }
 

@@ -198,6 +198,13 @@ function extractTreePathFromNode(node: NodeApi<RenderNodeWithAdditionalData>) {
   return extractTreePathFromNodeId(node.data.id);
 }
 
+// Datastores first, then files (resources), then directories (packages)
+const renderTreeChildrenSortMap: Record<DataSourceRenderType, number> = {
+  datastore: 0,
+  file: 1,
+  directory: 2,
+};
+
 function createTreeRepresentationForRendering(
   allConflicts: ComparisonData[],
   unresolvedConflicts: ComparisonData[],
@@ -251,13 +258,20 @@ function createTreeRepresentationForRendering(
       totalConflictCountInExpandableChildren += child.canBeInCoflictCount;
     }
 
+    const renderNodeChildren = datastoresRenderRepresentations
+      .concat(children)
+      .sort((a: RenderNode, b: RenderNode) => {
+        // Datastores first, then files (resources), then directories (packages)
+        return renderTreeChildrenSortMap[a.dataSourceType] - renderTreeChildrenSortMap[b.dataSourceType];
+      });
+
     const renderNode: RenderNode = {
       id: createIdForFilesystemRenderNode(node, treeToExtract),
       name: name,
       status,
       dataSourceType: (node.resources.old?.type ?? node.resources.new?.type)!,
       datastores: datastoresRenderRepresentations,
-      children: datastoresRenderRepresentations.concat(children),     // Order of concat matters - we want to show the related datastores first (right under their filesystem node)
+      children: renderNodeChildren,
       fullDatastoreInfoInModifiedTree: null,
       fullDatastoreInfoInOriginalTree: null,
       nowInConflictCount: datastoresWithConflictCount + nowInConflictCountInExpandableChildren,
