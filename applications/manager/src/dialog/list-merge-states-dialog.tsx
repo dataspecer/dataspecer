@@ -35,7 +35,9 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
     fetchMergeStates();
   }, []);
 
-  console.info({mergeStates});
+  const removeFromMergeStatesInDialog = (uuid: string) => {
+    setMergeStates(prev => prev.filter(mergeState => uuid !== mergeState.uuid));
+  };
 
   return (
     <Modal open={isOpen} onClose={() => resolve(null)}>
@@ -54,7 +56,7 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
               <div className="flex items-center justify-center">Merge to</div>
             </div>
 
-            { mergeStates.map(mergeState => renderMergeState(mergeState, openModal, resolve)) }
+            { mergeStates.map(mergeState => renderMergeState(mergeState, removeFromMergeStatesInDialog, openModal, resolve)) }
           </>
           }
         </ModalHeader>
@@ -66,7 +68,12 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
   );
 }
 
-const renderMergeState = (mergeState: MergeState, openModal: OpenBetterModal, closeMergeStateList: (value: null) => void) => {
+const renderMergeState = (mergeState: MergeState, removeFromMergeStatesInDialog: (uuid: string) => void, openModal: OpenBetterModal, closeMergeStateList: (value: null) => void) => {
+  const removeMergeStateOnClickHandler = () => {
+    removeFromMergeStatesInDialog(mergeState.uuid);
+    removeMergeState(mergeState.uuid);
+  };
+
   return <div className={`flex items-baseline`}>
       <button onClick={() => openModal(ShowMergeStateInfoDialog, {mergeState})} className="bg-blue-300 hover:bg-blue-500 relative top-[6px]"><InfoIcon/></button>
       <button className={`${mergeState.isUpToDate ? "" : "bg-red-400"} hover:bg-gray-300`}
@@ -82,6 +89,6 @@ const renderMergeState = (mergeState: MergeState, openModal: OpenBetterModal, cl
           </div>
         </div>
       </button>
-      <button onClick={() => removeMergeState(mergeState.uuid)} className="bg-red-700 hover:bg-red-800 relative top-[6px]"><X/></button>
+      <button onClick={removeMergeStateOnClickHandler} className="bg-red-700 hover:bg-red-800 relative top-[6px]"><X/></button>
     </div>;
 }
