@@ -98,35 +98,42 @@ export class MergeStateModel implements ResourceChangeListener {
     resourceIri: string,
     changedModel: string | null,
     changeType: ResourceChangeType,
+    mergeStateUUIDsToIgnoreInUpdating: string[],
   ): Promise<void> {
     if (changedModel === null && changeType === ResourceChangeType.Removed) {
-      // Remove all the merge states related to the iri since, we removed it
+      // Remove all the merge states related to the iri since, we removed it. The resoruceIri has to be root for the merge state to be removed. Otherwise it is not reason for removal.
       const mergeStates = await this.getMergeStates(resourceIri, false);
       for (const mergeState of mergeStates) {
+        if (mergeStateUUIDsToIgnoreInUpdating.includes(mergeState.uuid)) {
+          continue;
+        }
         this.removeMergeState(mergeState);
       }
       return;
     }
 
-    const resource = await this.resourceModel.getRootResourceForIri(resourceIri);
-    if (resource === null) {
+    const rootResource = await this.resourceModel.getRootResourceForIri(resourceIri);
+    if (rootResource === null) {
       throw new Error(`Resource for iri ${resourceIri} actually does not exist`);
     }
 
-    const mergeStates = await this.getMergeStates(resource.iri, false);
+    const mergeStates = await this.getMergeStates(rootResource.iri, false);
     for (const mergeState of mergeStates) {
+      if (mergeStateUUIDsToIgnoreInUpdating.includes(mergeState.uuid)) {
+        continue;
+      }
+
       const shouldBeTargetedWithUpToDateChange = (
         mergeState.filesystemTypeMergeFrom === AvailableFilesystems.DS_Filesystem &&
-        mergeState.rootIriMergeFrom === resource.iri
+        mergeState.rootIriMergeFrom === rootResource.iri
       ) ||
       (
         mergeState.filesystemTypeMergeTo === AvailableFilesystems.DS_Filesystem &&
-        mergeState.rootIriMergeTo === resource.iri
+        mergeState.rootIriMergeTo === rootResource.iri
       );
       if (shouldBeTargetedWithUpToDateChange) {
-          await this.setMergeStateIsUpToDate(mergeState.uuid, false);
+        await this.setMergeStateIsUpToDate(mergeState.uuid, false);
       }
-
     }
   }
 

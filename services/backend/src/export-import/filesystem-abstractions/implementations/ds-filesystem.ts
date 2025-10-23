@@ -7,6 +7,7 @@ import { BaseResource } from "@dataspecer/core-v2/project";
 import { currentVersion } from "../../../tools/migrations/index.ts";
 import configuration from "../../../configuration.ts";
 import { resourceModel as mainResourceModel } from "../../../main.ts";
+import { ResourceChangeType } from "../../../models/resource-change-observer.ts";
 
 // Note that DS always works with jsons as formats for datastores, it is too much work to make to make it work for everything.
 // Since we would need to change every component (including cme) to support multiple formats.
@@ -71,11 +72,13 @@ export class DSFilesystem extends FilesystemAbstractionBase {
   }
 
   public static async setDatastoreContentForPath(
+    datastoreParentIri: string,
     givenResourceModel: ResourceModel,
     fullPath: string,
     datastoreFormat: string | null,
     type: string,
-    newContent: string
+    newContent: string,
+    mergeStateUUIDsToIgnoreInUpdating?: string[],
   ): Promise<boolean> {
     if (datastoreFormat === null) {
       datastoreFormat = "json";
@@ -84,10 +87,11 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     const contentAsObject = convertDatastoreContentBasedOnFormat(newContent, datastoreFormat, true, null);
     if (isDatastoreForMetadata(type)) {
       // Pass in only the userMetadata
-      await givenResourceModel.updateResourceMetadata(fullPath, contentAsObject.userMetadata ?? {});
+      await givenResourceModel.updateResourceMetadata(fullPath, contentAsObject.userMetadata ?? {}, mergeStateUUIDsToIgnoreInUpdating);
     }
     else {
-      await givenResourceModel.storeModel.getModelStore(fullPath).setJson(contentAsObject);
+      const onUpdate = () => givenResourceModel.updateModificationTime(datastoreParentIri, type, ResourceChangeType.Modified, mergeStateUUIDsToIgnoreInUpdating);
+      await givenResourceModel.storeModel.getModelStore(fullPath, [onUpdate]).setJson(contentAsObject);
     }
 
     return true;
@@ -97,8 +101,9 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     givenResourceModel: ResourceModel,
     parentFilesystemNodeIri: string,
     type: string,
+    mergeStateUUIDsToIgnoreInUpdating: string[],
   ): Promise<boolean> {
-    await givenResourceModel.deleteModelStore(parentFilesystemNodeIri, type);
+    await givenResourceModel.deleteModelStore(parentFilesystemNodeIri, type, mergeStateUUIDsToIgnoreInUpdating);
     return true;
   }
 
@@ -309,7 +314,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     if (relevantDatastore === null) {
       throw new Error(`Could not update datastore of type ${datastoreType} inside ${filesystemNode.projectIrisTreePath}, since it does not exist on the node`);
     }
-    return DSFilesystem.setDatastoreContentForPath(this.resourceModel, relevantDatastore.fullPath, relevantDatastore.format, datastoreType, newContent)
+    return DSFilesystem.setDatastoreContentForPath(filesystemNode.metadata.iri, this.resourceModel, relevantDatastore.fullPath, relevantDatastore.format, datastoreType, newContent)
   }
 
   createDatastore(parentIriInToBeChangedFilesystem: string, otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean> {

@@ -47,7 +47,9 @@ export const getDatastoreContentDirectly = asyncHandler(async (request: express.
   const query = querySchema.parse(request.query);
 
   const filesystem: AvailableFilesystems = query.filesystem as AvailableFilesystems;
-  const datastoreContent = await getDatastoreContent(decodeURIComponent(query.pathToDatastore), filesystem, query.type, stringToBoolean(query.shouldConvertToDatastoreFormat), query.format);
+  const datastoreContent = await getDatastoreContent(
+    decodeURIComponent(query.pathToDatastore), filesystem, query.type,
+    stringToBoolean(query.shouldConvertToDatastoreFormat), query.format);
   if (datastoreContent?.accessDenied === true && Object.keys(datastoreContent).length === 1) {
     response.status(403);
     response.json(`Trying to access ${query.pathToDatastore}`);
@@ -59,11 +61,13 @@ export const getDatastoreContentDirectly = asyncHandler(async (request: express.
 
 
 export async function updateDatastoreContent(
+  datastoreParentIri: string,
   pathToDatastore: string,
   filesystem: AvailableFilesystems,
   type: string,
   newContent: string,
-  format?: string
+  mergeStateUuid: string,
+  format?: string,
 ): Promise<{ success: boolean, accessDenied: boolean}> {
   // TODO RadStr: Run conversion on client?
   if (filesystem === AvailableFilesystems.ClassicFilesystem) {
@@ -76,7 +80,7 @@ export async function updateDatastoreContent(
     fs.writeFileSync(normalizedGitPath, newContentConverted, "utf-8");
   }
   else {
-    DSFilesystem.setDatastoreContentForPath(resourceModel, pathToDatastore, format ?? null, type, newContent);
+    DSFilesystem.setDatastoreContentForPath(datastoreParentIri, resourceModel, pathToDatastore, format ?? null, type, newContent, [mergeStateUuid]);
   }
   return { success: true, accessDenied: false };
 }
@@ -87,6 +91,7 @@ export async function removeDatastoreContent(
   filesystem: AvailableFilesystems,
   type: string,
   shouldRemoveFileWhenNoDatastores: boolean,
+  mergeStateUuid: string,
 ): Promise<{ success: boolean, accessDenied: boolean}> {
   // TODO RadStr: Run conversion on client?
   if (filesystem === AvailableFilesystems.ClassicFilesystem) {
@@ -107,7 +112,7 @@ export async function removeDatastoreContent(
     }
   }
   else {
-    DSFilesystem.removeDatastoreContentForPath(resourceModel, parentFilesystemNodeIri, type);
+    DSFilesystem.removeDatastoreContentForPath(resourceModel, parentFilesystemNodeIri, type, [mergeStateUuid]);
   }
 
   return { success: true, accessDenied: false };
@@ -122,6 +127,7 @@ export async function createDatastoreContent(
   filesystem: AvailableFilesystems,
   type: string,
   content: string,
+  mergeStateUuid: string,
   format?: string,
 ): Promise<{ success: boolean, accessDenied: boolean}> {
   // TODO RadStr: Run conversion on client?
@@ -144,11 +150,11 @@ export async function createDatastoreContent(
     for (const filesystemNodeInTreePath of filesystemNodesInTreePath) {
       currentNewIri = uuidv4();
       const userMetadata = filesystemNodeInTreePath ?? {};
-      await resourceModel.createResource(currentParentIri, currentNewIri, userMetadata.types[0], userMetadata.userMetadata, userMetadata.projectIri);
+      await resourceModel.createResource(currentParentIri, currentNewIri, userMetadata.types[0], userMetadata.userMetadata, userMetadata.projectIri, [mergeStateUuid]);
       currentParentIri = currentNewIri;
     }
     const newContentAsJSON = convertDatastoreContentBasedOnFormat(content, format ?? null, true, null);
-    await updateBlob(currentParentIri, type, newContentAsJSON);
+    await updateBlob(currentParentIri, type, newContentAsJSON, [mergeStateUuid]);
   }
   return { success: true, accessDenied: false };
 }
@@ -161,6 +167,7 @@ export async function createFilesystemNodes(
   filesystemNodesInTreePath: ExportShareableMetadataType[],
   parentIri: string,
   filesystem: AvailableFilesystems,
+  mergeStateUuid: string,
 ): Promise<{ success: boolean, accessDenied: boolean, createdIris: string[]}> {
   // TODO RadStr: Run conversion on client?
 
@@ -176,7 +183,7 @@ export async function createFilesystemNodes(
       currentNewIri = uuidv4();
       createdIris.push(currentNewIri);
       const userMetadata = filesystemNodeInTreePath ?? {};
-      await resourceModel.createResource(currentParentIri, currentNewIri, userMetadata.types[0], userMetadata.userMetadata, userMetadata.projectIri);
+      await resourceModel.createResource(currentParentIri, currentNewIri, userMetadata.types[0], userMetadata.userMetadata, userMetadata.projectIri, [mergeStateUuid]);
       currentParentIri = currentNewIri;
     }
   }
@@ -187,6 +194,7 @@ export async function createFilesystemNodes(
 const removeFilesystemNode = async (
   filesystemNodeTreePath: string,
   filesystem: AvailableFilesystems,
+  mergeStateUuid: string,
 ): Promise<{accessDenied: boolean}> => {
   if (filesystem === AvailableFilesystems.ClassicFilesystem) {
     // TODO RadStr: Removal implementation only for DS. We do not need the git one anyways. The DS is enough
@@ -195,7 +203,7 @@ const removeFilesystemNode = async (
   else {
     const lastPathPartStartIndex = filesystemNodeTreePath.lastIndexOf("/");
     const iri = lastPathPartStartIndex === -1 ? filesystemNodeTreePath : filesystemNodeTreePath.substring(lastPathPartStartIndex + 1);
-    await resourceModel.deleteResource(iri);
+    await resourceModel.deleteResource(iri, [mergeStateUuid]);
   }
 
   return {accessDenied: false};
@@ -206,12 +214,13 @@ export const removeFilesystemNodeDirectly = asyncHandler(async (request: express
   const querySchema = z.object({
     filesystemNodeTreePath: z.string().min(1),     // This is the actual iri of the first parent (not project iri), under which we will connect the chain of new
     filesystem: z.enum(availableFilesystems as [string, ...string[]]),
+    mergeStateUuid: z.string().min(1),
   });
   const query = querySchema.parse(request.query);
 
   const filesystem: AvailableFilesystems = query.filesystem as AvailableFilesystems;
 
-  const createdFilesystemNodesResult = await removeFilesystemNode(query.filesystemNodeTreePath, filesystem);
+  const createdFilesystemNodesResult = await removeFilesystemNode(query.filesystemNodeTreePath, filesystem, query.mergeStateUuid);
   if (createdFilesystemNodesResult.accessDenied) {
     response.status(403);
     response.json(`Trying to access some filesystem node under the ${query.filesystemNodeTreePath}, but we are not allowed to modify anything there`);
@@ -235,12 +244,13 @@ export const createFilesystemNodesDirectly = asyncHandler(async (request: expres
     ),
     parentIri: z.string().min(1),     // This is the actual iri of the first parent (not project iri), under which we will connect the chain of new
     filesystem: z.enum(availableFilesystems as [string, ...string[]]),
+    mergeStateUuid: z.string().min(1),
   });
   const body = bodySchema.parse(request.body);
 
   const filesystem: AvailableFilesystems = body.filesystem as AvailableFilesystems;
 
-  const createdFilesystemNodesResult = await createFilesystemNodes(body.createdFilesystemNodesInTreePath, body.parentIri, filesystem);
+  const createdFilesystemNodesResult = await createFilesystemNodes(body.createdFilesystemNodesInTreePath, body.parentIri, filesystem, body.mergeStateUuid);
   if (createdFilesystemNodesResult.accessDenied) {
     response.status(403);
     response.json(`Trying to access some filesystem node under the ${body.parentIri}, but we are not allowed to modify anything there`);
@@ -256,16 +266,18 @@ export const updateDatastoreContentDirectly = asyncHandler(async (request: expre
   const availableFilesystems = Object.values(AvailableFilesystems);
 
   const bodySchema = z.object({
+    datastoreParentIri: z.string().min(1),
     pathToDatastore: z.string().min(1),
     format: z.string().min(1).optional(),
     type: z.string(),
     filesystem: z.enum(availableFilesystems as [string, ...string[]]),
     newContent: z.string(),
+    mergeStateUuid: z.string().min(1),
   });
   const body = bodySchema.parse(request.body);
 
   const filesystem: AvailableFilesystems = body.filesystem as AvailableFilesystems;
-  const datastoreContent = await updateDatastoreContent(body.pathToDatastore, filesystem, body.type, body.newContent, body.format);
+  const datastoreContent = await updateDatastoreContent(body.datastoreParentIri, body.pathToDatastore, filesystem, body.type, body.newContent, body.mergeStateUuid, body.format);
   if (datastoreContent.accessDenied) {
     response.status(403);
     response.json(`Trying to access ${body.pathToDatastore}`);
@@ -282,7 +294,6 @@ export const createDatastoreContentDirectly = asyncHandler(async (request: expre
 
   const bodySchema = z.object({
     createdFilesystemNodesInTreePath: z.array(
-
       z.object({
         projectIri: z.string(),
         types: z.array(z.string()),
@@ -294,12 +305,13 @@ export const createDatastoreContentDirectly = asyncHandler(async (request: expre
     type: z.string(),
     content: z.string(),
     format: z.string().optional(),
+    mergeStateUuid: z.string().min(1),
   });
   const body = bodySchema.parse(request.body);
 
   const filesystem: AvailableFilesystems = body.filesystem as AvailableFilesystems;
 
-  const datastoreContent = await createDatastoreContent(body.createdFilesystemNodesInTreePath, body.parentIri, filesystem, body.type, body.content, body.format);
+  const datastoreContent = await createDatastoreContent(body.createdFilesystemNodesInTreePath, body.parentIri, filesystem, body.type, body.content, body.mergeStateUuid, body.format);
   if (datastoreContent.accessDenied) {
     response.status(403);
     response.json(`Trying to access ${body.type}`);
@@ -320,6 +332,7 @@ export const removeDatastoreContentDirectly = asyncHandler(async (request: expre
     type: z.string(),
     filesystem: z.enum(availableFilesystems as [string, ...string[]]),
     shouldRemoveFileWhenNoDatastores: z.string().min(1),
+    mergeStateUuid: z.string().min(1),
   });
   const query = querySchema.parse(request.query);
 
@@ -327,7 +340,7 @@ export const removeDatastoreContentDirectly = asyncHandler(async (request: expre
   const filesystem: AvailableFilesystems = query.filesystem as AvailableFilesystems;
   const shouldRemoveFileWhenNoDatastores = stringToBoolean(query.shouldRemoveFileWhenNoDatastores);
 
-  const datastoreContent = await removeDatastoreContent(query.filesystemNodeIri, decodedPathToDatastore, filesystem, query.type, shouldRemoveFileWhenNoDatastores);
+  const datastoreContent = await removeDatastoreContent(query.filesystemNodeIri, decodedPathToDatastore, filesystem, query.type, shouldRemoveFileWhenNoDatastores, query.mergeStateUuid);
   if (datastoreContent.accessDenied) {
     response.status(403);
     response.json(`Trying to access ${query.pathToDatastore}`);

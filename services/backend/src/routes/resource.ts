@@ -193,8 +193,8 @@ export const updateBlobHandler = asyncHandler(async (request: express.Request, r
     return;
 });
 
-export const updateBlob = async (iri: string, datastoreType: string, newBlobContent: any) => {
-    await (await resourceModel.getOrCreateResourceModelStore(iri, datastoreType)).setJson(newBlobContent);
+export const updateBlob = async (iri: string, datastoreType: string, newBlobContent: any, mergeStateUUIDsToIgnoreInUpdating?: string[]) => {
+    await (await resourceModel.getOrCreateResourceModelStore(iri, datastoreType, mergeStateUUIDsToIgnoreInUpdating)).setJson(newBlobContent);
 };
 
 export const deleteBlobHandler = asyncHandler(async (request: express.Request, response: express.Response) => {

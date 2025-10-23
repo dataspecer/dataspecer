@@ -922,7 +922,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     }
 
     const saveToBackend = async () => {
-      await saveFileChanges();
+      await saveFileChanges(false);
       if (examinedMergeState !== null) {
         await saveMergeState(examinedMergeState, conflictsToBeResolvedOnSave);
       }
@@ -940,7 +940,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
 
   console.info({convertedCacheForMergeFromContent, convertedCacheForMergeToContent});
 
-  const saveFileChanges = async () => {
+  const saveFileChanges = async (shouldReloadFromBackendAfterFinish: boolean) => {
     const { editable: editableCacheContents, nonEditable: nonEditableCacheContents } = getEditableAndNonEditableValue(editable, convertedCacheForMergeFromContent, convertedCacheForMergeToContent);
     const editableFilesystem = getEditableValue(editable, examinedMergeState?.filesystemTypeMergeFrom, examinedMergeState?.filesystemTypeMergeTo) ?? null;
     await saveCreatedFilesystemNodesToBackend(editableCacheContents, nonEditableCacheContents, editableFilesystem);
@@ -963,7 +963,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
 
     for (const [nodeTreePath, datastoreInfoMap] of Object.entries(datastoreInfosForCacheEntries)) {
       if (removedTreePaths.includes(nodeTreePath)) {
-        await ClientFilesystem.removeFilesystemNodeDirectly(nodeTreePath, import.meta.env.VITE_BACKEND, editableFilesystem);
+        await ClientFilesystem.removeFilesystemNodeDirectly(examinedMergeState!.uuid, nodeTreePath, import.meta.env.VITE_BACKEND, editableFilesystem);
         continue;
       }
 
@@ -1007,7 +1007,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
           const relevantResource: FilesystemNode = getEditableValue(editable, diffTreeNode.resources.old, diffTreeNode.resources.new)!;
           const datastoreParentIri = relevantResource.metadata.iri;
           alert("Handling remove2");
-          await ClientFilesystem.removeDatastoreDirectly(datastoreParentIri, removedDatastore, import.meta.env.VITE_BACKEND, editableFilesystem, false);
+          await ClientFilesystem.removeDatastoreDirectly(examinedMergeState!.uuid, datastoreParentIri, removedDatastore, import.meta.env.VITE_BACKEND, editableFilesystem, false);
           continue;
         }
 
@@ -1027,14 +1027,16 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
         const stringifiedNewValue: string = stringifyDatastoreContentBasedOnFormat(newValueAsJSON, format, true);
         if (datastoreInfoForEditable !== null) {
           // Just update, it does exist
-          await ClientFilesystem.updateDatastoreContentDirectly(datastoreInfoForEditable, stringifiedNewValue, editableFilesystem, import.meta.env.VITE_BACKEND);
+          await ClientFilesystem.updateDatastoreContentDirectly(examinedMergeState!.uuid, filesystemNodeParentIri, datastoreInfoForEditable, stringifiedNewValue, editableFilesystem, import.meta.env.VITE_BACKEND);
         }
         else {
           // Create new one.
-          await ClientFilesystem.createDatastoreDirectly(filesystemNodeParentIri, stringifiedNewValue, editableFilesystem, datastoreInfoForNonEditable, import.meta.env.VITE_BACKEND);
+          await ClientFilesystem.createDatastoreDirectly(examinedMergeState!.uuid, filesystemNodeParentIri, stringifiedNewValue, editableFilesystem, datastoreInfoForNonEditable, import.meta.env.VITE_BACKEND);
           continue;
         }
-        await reloadModelsDataFromBackend();
+        if (shouldReloadFromBackendAfterFinish) {
+          await reloadModelsDataFromBackend();
+        }
       }
     }
 
@@ -1078,7 +1080,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
       alert("Before CREATED IRIS");
 
       const createdIris = await ClientFilesystem.createFilesystemNodesDirectly(
-        filesystemNodesBatchMetadata, filesystemNodesBatchToCreate.firstExistingParentIri,
+        examinedMergeState!.uuid, filesystemNodesBatchMetadata, filesystemNodesBatchToCreate.firstExistingParentIri,
         editableFilesystem, import.meta.env.VITE_BACKEND);
 
       alert("CREATED IRIS");

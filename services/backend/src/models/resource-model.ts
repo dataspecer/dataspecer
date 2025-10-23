@@ -234,7 +234,7 @@ export class ResourceModel {
     /**
      * Updates user metadata of the resource.
      */
-    async updateResourceMetadata(iri: string, userMetadata: {}) {
+    async updateResourceMetadata(iri: string, userMetadata: {}, mergeStateUUIDsToIgnoreInUpdating?: string[]) {
         const resource = await this.prismaClient.resource.findFirst({where: {iri}});
         let metadata = resource?.userMetadata ? JSON.parse(resource?.userMetadata!) as object : {};
         metadata = {
@@ -247,7 +247,7 @@ export class ResourceModel {
                 userMetadata: JSON.stringify(metadata),
             }
         });
-        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified);
+        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified, mergeStateUUIDsToIgnoreInUpdating);
     }
 
     /**
@@ -378,7 +378,7 @@ export class ResourceModel {
     /**
      * Deletes the resource and if the resource is a package, all sub-resources.
      */
-    async deleteResource(iri: string) {
+    async deleteResource(iri: string, mergeStateUUIDsToIgnoreInUpdating?: string[]) {
         const recursivelyDeleteResourceByPrismaResource = async (resource: PrismaResource) => {
             if (resource.representationType === LOCAL_PACKAGE) {
                 const subResources = await this.prismaClient.resource.findMany({where: {parentResourceId: resource.id}});
@@ -386,7 +386,7 @@ export class ResourceModel {
                     await recursivelyDeleteResourceByPrismaResource(subResource);
                 }
             }
-            await this.deleteSingleResource(resource.iri);
+            await this.deleteSingleResource(resource.iri, mergeStateUUIDsToIgnoreInUpdating);
         }
 
         const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri}});
@@ -404,14 +404,14 @@ export class ResourceModel {
      * Removes a single resource in database and all stores attached to it.
      * If the resource is a package, all sub-resources must be deleted manuyally first.
      */
-    private async deleteSingleResource(iri: string) {
+    private async deleteSingleResource(iri: string, mergeStateUUIDsToIgnoreInUpdating?: string[]) {
         const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri}});
         if (prismaResource === null) {
             throw new Error("Resource not found.");
         }
 
         // TODO RadStr: ? Again don't know what iri to provide
-        await this.updateModificationTime(iri, "resource", ResourceChangeType.Removed);
+        await this.updateModificationTime(iri, "resource", ResourceChangeType.Removed, mergeStateUUIDsToIgnoreInUpdating);
         await this.prismaClient.resource.delete({where: {id: prismaResource.id}});
 
         for (const storeId of Object.values(JSON.parse(prismaResource.dataStoreId))) {
@@ -569,7 +569,7 @@ export class ResourceModel {
      * Low level function to create a resource.
      * If parent IRI is null, the resource is created as root resource.
      */
-    async createResource(parentIri: string | null, iri: string, type: string, userMetadata: {}, projectIri?: string) {
+    async createResource(parentIri: string | null, iri: string, type: string, userMetadata: {}, projectIri?: string, mergeStateUUIDsToIgnoreInUpdating?: string[]) {
         let parentResourceId: number | null = null;
 
         if (parentIri !== null) {
@@ -599,7 +599,7 @@ export class ResourceModel {
 
         if (parentResourceId !== null) {
             // TODO RadStr: ? Again don't know what iri to provide
-            await this.updateModificationTime(parentIri ?? iri, "resource", ResourceChangeType.Created);
+            await this.updateModificationTime(parentIri ?? iri, "resource", ResourceChangeType.Created, mergeStateUUIDsToIgnoreInUpdating);
             await this.updateModificationTimeById(parentResourceId);
         }
     }
@@ -621,13 +621,13 @@ export class ResourceModel {
         }
     }
 
-    async getOrCreateResourceModelStore(iri: string, storeName: string = "model"): Promise<ModelStore> {
+    async getOrCreateResourceModelStore(iri: string, storeName: string = "model", mergeStateUUIDsToIgnoreInUpdating?: string[]): Promise<ModelStore> {
         const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri}});
         if (prismaResource === null) {
             throw new Error("Resource not found.");
         }
 
-        const onUpdate = () => this.updateModificationTime(iri, storeName, ResourceChangeType.Modified);
+        const onUpdate = () => this.updateModificationTime(iri, storeName, ResourceChangeType.Modified, mergeStateUUIDsToIgnoreInUpdating);
 
         const dataStoreId = JSON.parse(prismaResource.dataStoreId);
 
@@ -647,7 +647,7 @@ export class ResourceModel {
         }
     }
 
-    async deleteModelStore(iri: string, storeName: string = "model") {
+    async deleteModelStore(iri: string, storeName: string = "model", mergeStateUUIDsToIgnoreInUpdating?: string[]) {
         const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri}});
         if (prismaResource === null) {
             throw new Error("Resource not found.");
@@ -670,13 +670,13 @@ export class ResourceModel {
             }
         });
 
-        await this.updateModificationTime(iri, storeName, ResourceChangeType.Removed);
+        await this.updateModificationTime(iri, storeName, ResourceChangeType.Removed, mergeStateUUIDsToIgnoreInUpdating);
     }
 
     /**
      * @internal for importing resources
      */
-    async assignExistingStoreToResource(iri: string, storeId: string, storeName: string = "model") {
+    async assignExistingStoreToResource(iri: string, storeId: string, storeName: string = "model", mergeStateUUIDsToIgnoreInUpdating?: string[]) {
         const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri}});
         if (prismaResource === null) {
             throw new Error("Resource not found.");
@@ -692,21 +692,20 @@ export class ResourceModel {
         });
 
         // TODO RadStr: Or modified? does it even matter?
-        await this.updateModificationTime(iri, storeName, ResourceChangeType.Created);
+        await this.updateModificationTime(iri, storeName, ResourceChangeType.Created, mergeStateUUIDsToIgnoreInUpdating);
     }
 
     /**
      * Updates modification time of the resource and all its parent packages.
-     * @param iri
      */
-    async updateModificationTime(iri: string, updatedModel: string | null, updateReason: ResourceChangeType) {
+    async updateModificationTime(iri: string, updatedModel: string | null, updateReason: ResourceChangeType, mergeStateUUIDsToIgnoreInUpdating?: string[]) {
         const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri}});
         if (prismaResource === null) {
             throw new Error("Cannot update modification time. Resource does not exists.");
         }
 
         let id: number | null = prismaResource.id;
-        await this.resourceChangeObserver.notifyListeners(iri, updatedModel, updateReason);
+        await this.resourceChangeObserver.notifyListeners(iri, updatedModel, updateReason, mergeStateUUIDsToIgnoreInUpdating ?? []);
         await this.updateModificationTimeById(id);
     }
 

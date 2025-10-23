@@ -75,6 +75,11 @@ const renderMergeState = (mergeState: MergeState, removeFromMergeStatesInDialog:
   };
 
   return <div className={`flex items-baseline`}>
+      {
+        mergeState.conflictCount === 0 ?
+        <button>Finalize</button> :
+        <button>can not finalize</button>
+      }
       <button onClick={() => openModal(ShowMergeStateInfoDialog, {mergeState})} className="bg-blue-300 hover:bg-blue-500 relative top-[6px]"><InfoIcon/></button>
       <button className={`${mergeState.isUpToDate ? "" : "bg-red-400"} hover:bg-gray-300`}
               onClick={() => openModal(TextDiffEditorDialog, { initialMergeFromResourceIri: mergeState.rootIriMergeFrom, initialMergeToResourceIri: mergeState.rootIriMergeTo, editable: mergeState.editable}).finally(() => closeMergeStateList(null))}>

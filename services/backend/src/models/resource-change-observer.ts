@@ -8,13 +8,23 @@ export interface ResourceChangeListener {
   /**
    * @param changedModel If null then the resource itself was changed
    */
-  updateBasedOnResourceChange(resourceIri: string, changedModel: string | null, changeType: ResourceChangeType): Promise<void>;
+  updateBasedOnResourceChange(
+    resourceIri: string,
+    changedModel: string | null,
+    changeType: ResourceChangeType,
+    mergeStateUUIDsToIgnoreInUpdating: string[],
+  ): Promise<void>;
 }
 
 export interface ResourceChangeObserver {
   addListener(listener: ResourceChangeListener): void;
   removeListener(listener: ResourceChangeListener): void;
-  notifyListeners(resourceIri: string, changedModel: string, changeType: ResourceChangeType): Promise<void>;
+  notifyListeners(
+    resourceIri: string,
+    changedModel: string,
+    changeType: ResourceChangeType,
+    mergeStateUUIDsToIgnoreInUpdating: string[],
+  ): Promise<void>;
 }
 
 export class ResourceChangeObserverBase implements ResourceChangeObserver {
@@ -27,9 +37,14 @@ export class ResourceChangeObserverBase implements ResourceChangeObserver {
     this.listeners = this.listeners
       .filter(existingListeners => existingListeners !== listener);
   }
-  async notifyListeners(resourceIri: string, changedModel: string | null, changeType: ResourceChangeType): Promise<void> {
+  async notifyListeners(
+    resourceIri: string,
+    changedModel: string | null,
+    changeType: ResourceChangeType,
+    mergeStateUUIDsToIgnoreInUpdating: string[],
+  ): Promise<void> {
     for (const listener of this.listeners) {
-      await listener.updateBasedOnResourceChange(resourceIri, changedModel, changeType);
+      await listener.updateBasedOnResourceChange(resourceIri, changedModel, changeType, mergeStateUUIDsToIgnoreInUpdating);
     }
   }
 }
