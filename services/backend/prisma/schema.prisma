@@ -85,6 +85,13 @@ model Resource {
 
 
 model MergeState {
+  // Technical metadata: creation date.
+  createdAt DateTime @default(now())
+
+  // Technical metadata: modification date.
+  // It should be updated every time the merge state (respectively difftree!) changes.
+  modifiedDiffTreeAt DateTime @default(now()) @updatedAt
+
   // Internal numerical ID for database purposes
   id Int @id @default(autoincrement())
 
