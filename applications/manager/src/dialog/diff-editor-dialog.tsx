@@ -13,8 +13,9 @@ import { MonacoDiffEditor } from "@/components/monaco-diff-editor";
 import { MergeStrategyComponent } from "@/components/merge-strategy-component";
 import ExpandableList from "@/components/expandable-list";
 import { RemoveFromToBeResolvedReactComponent } from "@/components/remove-from-to-be-resolved";
-import { TextDiffEditorBetterModalProps, useDiffEditorDialogProps } from "@/hooks/use-diff-editor-dialog-props";
-import { DatastoreInfo } from "@dataspecer/git";
+import { useDiffEditorDialogProps } from "@/hooks/use-diff-editor-dialog-props";
+import { DatastoreInfo, EditableType } from "@dataspecer/git";
+import { BetterModalProps } from "@/lib/better-modal";
 
 export type UpdateModelDataMethod = (
   treePathToNodeContainingDatastore: string,
@@ -27,7 +28,15 @@ export type UpdateModelDataMethod = (
   shouldCopyIfMissing: boolean,
 ) => Promise<void>;
 
+export type TextDiffEditorBetterModalProps = TextDiffEditorDialogProps & BetterModalProps<{
+  newResourceContent: string | undefined,
+}>;
 
+type TextDiffEditorDialogProps = {
+  initialMergeFromResourceIri: string,
+  initialMergeToResourceIri: string,
+  editable: EditableType,
+}
 
 export const DIFF_EDITOR_EDIT_ICON_TAILWIND_WIDTH = "w-6";
 export const DIFF_EDITOR_EDIT_ICON_TAILWIND_HEIGHT = "h-6";
@@ -143,7 +152,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
                             <input
                               type="checkbox"
                               checked={showStrippedVersion}
-                              onChange={() => setShowStrippedVersion(prev => !prev)}
+                              onChange={(e) => setShowStrippedVersion(e.target.checked)}
                               className="w-5 h-5 accent-blue-600"
                             />
                             <span>{showStrippedVersion ? "Showing stripped version" : "Showing raw version"}</span>

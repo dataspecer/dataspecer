@@ -11,7 +11,7 @@ import { updateMergeStateToBeUpToDate, MergeEndpointForStateUpdate } from "../ro
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
 type Nullable<T> = {
-    [P in keyof T]: T[P] | null;
+  [P in keyof T]: T[P] | null;
 };
 
 type InputForConvertMergeDataToStringMethod = Nullable<CreateDataToConvertToString & { unresolvedConflicts: ComparisonData[] }>;
@@ -45,6 +45,7 @@ type MergeEndInfoInternal = {
   branch: string;
   rootFullPathToMeta: string;
   filesystemType: AvailableFilesystems;
+  gitUrl: string | null;
 }
 
 export type MergeEndInfoWithRootNode = {
@@ -62,6 +63,7 @@ function convertToMergeInfoWithIri(input: MergeEndInfoWithRootNode): MergeEndInf
     rootFullPathToMeta: input.rootFullPathToMeta,
     rootIri: input.rootNode.metadata.iri,
     branch: input.branch,
+    gitUrl: input.gitUrl,
   };
 }
 
@@ -86,12 +88,21 @@ export class MergeStateModel implements ResourceChangeListener {
   }
 
   static extractGitRootParent(pathToDirectoryRootMeta: string) {
-  const gitRoot = MergeStateModel.extractGitRoot(pathToDirectoryRootMeta)
-  return path.dirname(gitRoot);
+    const gitRoot = MergeStateModel.extractGitRoot(pathToDirectoryRootMeta)
+    return path.dirname(gitRoot);
   }
 
   static extractGitRoot(pathToDirectoryRootMeta: string) {
     return path.dirname(pathToDirectoryRootMeta);
+  }
+
+  async updateModificationTime(uuid: string) {
+    await this.prismaClient.mergeState.update({
+      where: {uuid},
+      data: {
+        modifiedDiffTreeAt: new Date(),
+      }
+    });
   }
 
   async updateBasedOnResourceChange(
@@ -470,32 +481,34 @@ export class MergeStateModel implements ResourceChangeListener {
     const convertedMergeStateData = this.convertMergeStateDataToString(inputData);
 
     await this.prismaClient.mergeState.update({
-        where: {
-          uuid
-        },
-        data: {
-          isUpToDate: true,
-          mergeStateCause: inputData.mergeStateCause,
-          editable: inputData.editable,
-          lastCommonCommitHash: inputData.lastCommonCommitHash,
-          rootIriMergeFrom: inputData.mergeFromInfo.rootIri,
-          rootFullPathToMetaMergeFrom: inputData.mergeFromInfo.rootFullPathToMeta,
-          lastCommitHashMergeFrom: inputData.mergeFromInfo.lastCommitHash,
-          branchMergeFrom: inputData.mergeFromInfo.branch,
-          filesystemTypeMergeFrom: inputData.mergeFromInfo.filesystemType,
-          rootIriMergeTo: inputData.mergeToInfo.rootIri,
-          rootFullPathToMetaMergeTo: inputData.mergeToInfo.rootFullPathToMeta,
-          lastCommitHashMergeTo: inputData.mergeToInfo.lastCommitHash,
-          branchMergeTo: inputData.mergeToInfo.branch,
-          filesystemTypeMergeTo: inputData.mergeToInfo.filesystemType,
-          conflictCount: inputData.allConflicts.length,
-          mergeStateData: {
-            update: {
-              ...convertedMergeStateData,
-              diffTreeSize: inputData.diffTreeSize,
-            }
+      where: {
+        uuid
+      },
+      data: {
+        modifiedDiffTreeAt: new Date(),
+
+        isUpToDate: true,
+        mergeStateCause: inputData.mergeStateCause,
+        editable: inputData.editable,
+        lastCommonCommitHash: inputData.lastCommonCommitHash,
+        rootIriMergeFrom: inputData.mergeFromInfo.rootIri,
+        rootFullPathToMetaMergeFrom: inputData.mergeFromInfo.rootFullPathToMeta,
+        lastCommitHashMergeFrom: inputData.mergeFromInfo.lastCommitHash,
+        branchMergeFrom: inputData.mergeFromInfo.branch,
+        filesystemTypeMergeFrom: inputData.mergeFromInfo.filesystemType,
+        rootIriMergeTo: inputData.mergeToInfo.rootIri,
+        rootFullPathToMetaMergeTo: inputData.mergeToInfo.rootFullPathToMeta,
+        lastCommitHashMergeTo: inputData.mergeToInfo.lastCommitHash,
+        branchMergeTo: inputData.mergeToInfo.branch,
+        filesystemTypeMergeTo: inputData.mergeToInfo.filesystemType,
+        conflictCount: inputData.allConflicts.length,
+        mergeStateData: {
+          update: {
+            ...convertedMergeStateData,
+            diffTreeSize: inputData.diffTreeSize,
           }
         }
+      }
     });
   }
 
@@ -510,16 +523,20 @@ export class MergeStateModel implements ResourceChangeListener {
     await this.prismaClient.mergeState.create({
       data: {
         uuid,
+        isUpToDate: true,
         mergeStateCause: inputData.mergeStateCause,
         editable: inputData.editable,
         lastCommonCommitHash: inputData.lastCommonCommitHash,
         rootIriMergeFrom: inputData.mergeFromInfo.rootIri,
         rootFullPathToMetaMergeFrom: inputData.mergeFromInfo.rootFullPathToMeta,
+        gitUrlMergeFrom: inputData.mergeFromInfo.gitUrl ?? "",
         lastCommitHashMergeFrom: inputData.mergeFromInfo.lastCommitHash,
         branchMergeFrom: inputData.mergeFromInfo.branch,
         filesystemTypeMergeFrom: inputData.mergeFromInfo.filesystemType,
+
         rootIriMergeTo: inputData.mergeToInfo.rootIri,
         rootFullPathToMetaMergeTo: inputData.mergeToInfo.rootFullPathToMeta,
+        gitUrlMergeTo: inputData.mergeToInfo.gitUrl ?? "",
         lastCommitHashMergeTo: inputData.mergeToInfo.lastCommitHash,
         branchMergeTo: inputData.mergeToInfo.branch,
         filesystemTypeMergeTo: inputData.mergeToInfo.filesystemType,
@@ -647,6 +664,7 @@ export class MergeStateModel implements ResourceChangeListener {
     rootIri: string,
     filesystemType: string,
     rootFullPathToMeta: string,
+    gitUrl: string,
   ): Promise<{
     git: SimpleGit | null,
     gitProvider: GitProvider | null,
@@ -656,22 +674,7 @@ export class MergeStateModel implements ResourceChangeListener {
       const pathToGitRepository = MergeStateModel.extractGitRoot(rootFullPathToMeta);
       git = simpleGit(pathToGitRepository);
     }
-    let gitProvider: GitProvider | null = null;
-    if (git !== null) {
-      const gitRemotes = await git.getRemotes(true);
-      const originUrl = gitRemotes.find(remote => remote.name === "origin")?.refs.fetch;
-      if (originUrl !== undefined) {
-        gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(originUrl);
-      }
-      // Else null
-    }
-    else {
-      const pckg = await this.resourceModel.getPackage(rootIri);
-      if (isGitUrlSet(pckg?.linkedGitRepositoryURL)) {
-        gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(pckg!.linkedGitRepositoryURL);
-      }
-      // Else null
-    }
+    const gitProvider = gitUrl === "" ? null : GitProviderFactory.createGitProviderFromRepositoryURL(gitUrl);
 
     return {
       git,
@@ -682,7 +685,8 @@ export class MergeStateModel implements ResourceChangeListener {
   async prismaMergeStateToMergeState(prismaMergeState: MergeStateWithData, shouldUpdateIfNotUpToDate: boolean): Promise<MergeState> {
     if (shouldUpdateIfNotUpToDate && !prismaMergeState.isUpToDate) {
       const { git: gitForMergeFrom, gitProvider: gitProviderForMergeFrom } = await this.createMergeEndPointGitData(
-        prismaMergeState.rootIriMergeFrom, prismaMergeState.filesystemTypeMergeFrom, prismaMergeState.rootFullPathToMetaMergeFrom);
+        prismaMergeState.rootIriMergeFrom, prismaMergeState.filesystemTypeMergeFrom,
+        prismaMergeState.rootFullPathToMetaMergeFrom, prismaMergeState.gitUrlMergeFrom);
       const mergeFrom: MergeEndpointForStateUpdate = {
         rootIri: prismaMergeState.rootIriMergeFrom,
         filesystemType: prismaMergeState.filesystemTypeMergeFrom as AvailableFilesystems,
@@ -695,7 +699,8 @@ export class MergeStateModel implements ResourceChangeListener {
 
 
       const { git: gitForMergeTo, gitProvider: gitProviderForMergeTo } = await this.createMergeEndPointGitData(
-        prismaMergeState.rootIriMergeTo, prismaMergeState.filesystemTypeMergeTo, prismaMergeState.rootFullPathToMetaMergeTo);
+        prismaMergeState.rootIriMergeTo, prismaMergeState.filesystemTypeMergeTo,
+        prismaMergeState.rootFullPathToMetaMergeTo, prismaMergeState.gitUrlMergeTo);
       const mergeTo: MergeEndpointForStateUpdate = {
         rootIri: prismaMergeState.rootIriMergeTo,
         filesystemType: prismaMergeState.filesystemTypeMergeTo as AvailableFilesystems,
@@ -737,13 +742,18 @@ export class MergeStateModel implements ResourceChangeListener {
     const result: MergeState = {
       uuid: prismaMergeState.uuid,
 
+      createdAt: prismaMergeState.createdAt,
+      modifiedDiffTreeAt: prismaMergeState.modifiedDiffTreeAt,
+
       branchMergeTo: prismaMergeState.branchMergeTo,
+      gitUrlMergeTo: prismaMergeState.gitUrlMergeTo,
       lastCommitHashMergeTo: prismaMergeState.lastCommitHashMergeTo,
       rootFullPathToMetaMergeTo: prismaMergeState.rootFullPathToMetaMergeTo,
       rootIriMergeTo: prismaMergeState.rootIriMergeTo,
       filesystemTypeMergeTo: prismaMergeState.filesystemTypeMergeTo as AvailableFilesystems,
 
       branchMergeFrom: prismaMergeState.branchMergeFrom,
+      gitUrlMergeFrom: prismaMergeState.gitUrlMergeFrom,
       lastCommitHashMergeFrom: prismaMergeState.lastCommitHashMergeFrom,
       rootFullPathToMetaMergeFrom: prismaMergeState.rootFullPathToMetaMergeFrom,
       rootIriMergeFrom: prismaMergeState.rootIriMergeFrom,

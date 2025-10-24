@@ -6,7 +6,7 @@ import { storeModel } from './../main.ts';
 import { LocalStoreModel, ModelStore } from "./local-store-model.ts";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { CoreResource } from "@dataspecer/core/core/core-resource";
-import { CommitReferenceType, createDatastoreWithReplacedIris, defaultEmptyGitUrlForDatabase } from "@dataspecer/git";
+import { CommitReferenceType, createDatastoreWithReplacedIris, defaultBranchForPackageInDatabase, defaultEmptyGitUrlForDatabase } from "@dataspecer/git";
 import { ResourceChangeListener, ResourceChangeObserverBase, ResourceChangeType } from "./resource-change-observer.ts";
 
 /**
@@ -157,7 +157,9 @@ export class ResourceModel {
                 linkedGitRepositoryURL: gitURL
             },
             data: {
-                linkedGitRepositoryURL: defaultEmptyGitUrlForDatabase
+                linkedGitRepositoryURL: defaultEmptyGitUrlForDatabase,
+                isSynchronizedWithRemote: true,
+                lastCommitHash: "",
             },
         });
 
@@ -171,7 +173,9 @@ export class ResourceModel {
             //  I don't know on one side - yeah we removed the repo so the packages are no longer connected. On other side what if we somehow want to move them to different repository?
             // ... Yeah I will not remove it then because of the moving to different repository !!!
             // They are no longer part of the same project.
-            // await this.updateResourceProjectIriAndBranch(affectedResource, affectedResource, defaultBranchForPackageInDatabase);
+
+            // TODO RadStr: Actually nevermind the above. If we want to migrate, then just use the existing git repository import it all back to ds.
+            await this.updateResourceProjectIriAndBranch(affectedResource, affectedResource, defaultBranchForPackageInDatabase);
             await this.updateModificationTime(affectedResource, "meta", ResourceChangeType.Modified);
         }
 

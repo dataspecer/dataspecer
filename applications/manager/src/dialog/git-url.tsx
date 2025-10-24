@@ -12,16 +12,17 @@ import { createSetterWithGitValidation } from "@dataspecer/git";
 
 
 type GitActionsDialogProps = {
-  inputPackage: Package,
-  type?: "create-new-repository-and-commit" | "commit" | "link-to-existing-repository"
+  inputPackage: Package;
+  type?: "create-new-repository-and-commit" | "commit" | "link-to-existing-repository";
 } & BetterModalProps<{
-  exportFormat: ExportFormatType,
-  repositoryName: string,
-  remoteRepositoryURL: string,
-  user: string,
-  gitProvider: string,
-  commitMessage: string,
-  isUserRepo: boolean,
+  repositoryName: string;
+  remoteRepositoryURL: string;
+  user: string;
+  gitProvider: string;
+  commitMessage: string;
+  isUserRepo: boolean;
+  shouldAlwaysCreateMergeState: boolean;
+  exportFormat: ExportFormatType;
 } | null>;
 
 const gitDialogInputIdPrefix = "git-dialog-prefix";
@@ -43,6 +44,7 @@ export const GitActionsDialog = ({ inputPackage, isOpen, resolve, type }: GitAct
   const [gitProvider, setGitProvider] = useState<string>("https://github.com/");
   const [commitMessage, setCommitMessage] = useState<string>("");
   const [isUserRepo, setIsUserRepo] = useState<boolean>(true);
+  const [shouldAlwaysCreateMergeState, setShouldAlwaysCreateMergeState] = useState<boolean>(false);
   const [exportFormat, setExportFormat] = useState<ExportFormatType>("json");
 
   let suffixNumber = 0;
@@ -55,7 +57,7 @@ export const GitActionsDialog = ({ inputPackage, isOpen, resolve, type }: GitAct
   }, []);
 
   const closeWithSuccess = () => {
-    resolve({ user, repositoryName, remoteRepositoryURL, gitProvider, commitMessage, isUserRepo, exportFormat });
+    resolve({ user, repositoryName, remoteRepositoryURL, gitProvider, commitMessage, isUserRepo, shouldAlwaysCreateMergeState, exportFormat });
   }
 
   const shouldDisableConfirm = useMemo(() => {
@@ -109,8 +111,17 @@ export const GitActionsDialog = ({ inputPackage, isOpen, resolve, type }: GitAct
       break;
     case "commit":
       modalBody = <div>
-        <InputComponent disabled={shouldDisableConfirm} idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="The commit message for git" setInput={setCommitMessage} input={commitMessage} />
-        <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
+          <InputComponent disabled={shouldDisableConfirm} idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="The commit message for git" setInput={setCommitMessage} input={commitMessage} />
+          <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={shouldAlwaysCreateMergeState}
+              onChange={(e) => setShouldAlwaysCreateMergeState(e.target.checked)}
+              className="w-5 h-5 accent-blue-600"
+            />
+            <span>{shouldAlwaysCreateMergeState ? "Always create merge state (current option)" : "Create merge state only on conflict (current option)"}</span>
+          </label>
         </div>;
       break;
     case "link-to-existing-repository":
@@ -179,7 +190,8 @@ export const commitToGitDialogOnClickHandler = async (openModal: OpenBetterModal
   if (result) {
     const url = import.meta.env.VITE_BACKEND + "/git/commit-package-to-git?iri=" + encodeURIComponent(iri) +
                                               "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "") +
-                                              "&exportFormat=" + result.exportFormat;
+                                              "&exportFormat=" + result.exportFormat +
+                                              "&shouldAlwaysCreateMergeState=" + result.shouldAlwaysCreateMergeState;
 
     const response = await fetch(
       url,

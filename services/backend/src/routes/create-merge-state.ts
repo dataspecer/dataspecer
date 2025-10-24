@@ -36,7 +36,7 @@ export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (requ
     const { createdMergeStateId, hasConflicts } = await createMergeStateBetweenDSPackages(
       git,
       mergeFromIri, mergeFromResource.lastCommitHash, mergeFromResource.branch,
-      mergeToIri, mergeToResource.lastCommitHash, mergeToResource.branch);
+      mergeToIri, mergeToResource.lastCommitHash, mergeToResource.branch, mergeFromResource.linkedGitRepositoryURL);
 
     if (!hasConflicts) {
       response.status(200);
@@ -74,6 +74,7 @@ export async function createMergeStateBetweenDSPackages(
   mergeToRootIri: string,
   mergeToLastCommitHash: string,
   mergeToBranch: string,
+  remoteRepositoryUrl: string,
 ): Promise<{ createdMergeStateId: string, hasConflicts: boolean }> {
   const mergeFromForComparison: MergeEndpointForComparison = {
     rootIri: mergeFromRootIri,
@@ -104,6 +105,7 @@ export async function createMergeStateBetweenDSPackages(
       lastCommitHash: lastHashMergeFrom,
       branch: mergeFromBranch,
       rootFullPathToMeta: pathToRootMetaMergeFrom,
+      gitUrl: remoteRepositoryUrl,
     };
 
     const mergeToInfo: MergeEndInfoWithRootNode = {
@@ -112,6 +114,7 @@ export async function createMergeStateBetweenDSPackages(
       lastCommitHash: lastHashMergeTo,
       branch: mergeToBranch,
       rootFullPathToMeta: pathToRootMetaMergeTo,
+      gitUrl: remoteRepositoryUrl,
     };
 
     const createdMergeStateId = await mergeStateModel.createMergeStateIfNecessary(
@@ -174,12 +177,14 @@ export async function updateMergeStateToBeUpToDate(
       }
     }
 
+    // Can put in nulls for gitUrls since we are not using that value for update
     const mergeFromInfo: MergeEndInfoWithRootNode = {
       rootNode: rootMergeFrom,
       filesystemType: mergeFrom.filesystemType,
       lastCommitHash: mergeFrom.lastCommitHash,
       branch: mergeFrom.branch,
       rootFullPathToMeta: pathToRootMetaMergeFrom,
+      gitUrl: null,
     };
 
     const mergeToInfo: MergeEndInfoWithRootNode = {
@@ -188,6 +193,7 @@ export async function updateMergeStateToBeUpToDate(
       lastCommitHash: mergeTo.lastCommitHash,
       branch: mergeTo.branch,
       rootFullPathToMeta: pathToRootMetaMergeTo,
+      gitUrl: null
     };
 
     const rootResourceIri: string = mergeFrom.rootIri;    // TODO RadStr: Not sure now about the iris, but we will see

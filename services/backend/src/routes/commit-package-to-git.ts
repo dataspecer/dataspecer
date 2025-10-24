@@ -4,7 +4,7 @@ import express from "express";
 import { mergeStateModel, resourceModel } from "../main.ts";
 
 import { BranchSummary, CommitResult, MergeResult, SimpleGit } from "simple-git";
-import { checkErrorBoundaryForCommitAction, extractPartOfRepositoryURL, getAuthorizationURL, getLastCommit, getLastCommitHash, removeEverythingExcept, removePathRecursively } from "../utils/git-utils.ts";
+import { checkErrorBoundaryForCommitAction, extractPartOfRepositoryURL, getAuthorizationURL, getLastCommit, getLastCommitHash, removeEverythingExcept, removePathRecursively, stringToBoolean } from "../utils/git-utils.ts";
 import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS, CommitInfo } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
@@ -84,10 +84,12 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
     iri: z.string().min(1),
     commitMessage: z.string(),
     exportFormat: z.string().min(1).optional(),
+    shouldAlwaysCreateMergeState: z.string().min(1),
   });
 
   const query = querySchema.parse(request.query);
 
+  const shouldAlwaysCreateMergeState = stringToBoolean(query.shouldAlwaysCreateMergeState);
   const iri = query.iri;
   const commitMessage = query.commitMessage.length === 0 ? null : query.commitMessage;
   const resource = await resourceModel.getResource(iri);
@@ -111,7 +113,6 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
     throw new Error(`Too many merge states, where the given resource (${resource.iri}) figures as mergeTo actor`);
   }
 
-
   const branchAndLastCommit: CommitBranchAndHashInfo = {
     localBranch: branch,
     localLastCommitHash: resource.lastCommitHash,
@@ -131,7 +132,7 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
   };
 
   const commitResult = await commitPackageToGitUsingAuthSession(
-    request, iri, gitLink, branchAndLastCommit, repositoryIdentificationInfo, response, gitCommitInfo);
+    request, iri, gitLink, branchAndLastCommit, repositoryIdentificationInfo, response, gitCommitInfo, shouldAlwaysCreateMergeState);
 
   if (!commitResult) {
     response.sendStatus(409);
@@ -154,6 +155,7 @@ export const commitPackageToGitUsingAuthSession = async (
   repositoryIdentificationInfo: RepositoryIdentificationInfo,
   response: express.Response,
   gitCommitInfoBasic: GitCommitToCreateInfoBasic,
+  shouldAlwaysCreateMergeState: boolean,
 ) => {
   // If gitProvider not given - extract it from url
   const gitProvider = gitCommitInfoBasic.gitProvider ?? GitProviderFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL);
@@ -164,7 +166,7 @@ export const commitPackageToGitUsingAuthSession = async (
     gitProvider: gitProvider,
     exportFormat: gitCommitInfoBasic.exportFormat,
   };
-  return await commitPackageToGit(iri, remoteRepositoryURL, branchAndLastCommit, repositoryIdentificationInfo, commitInfo);
+  return await commitPackageToGit(iri, remoteRepositoryURL, branchAndLastCommit, repositoryIdentificationInfo, commitInfo, shouldAlwaysCreateMergeState);
 }
 
 
@@ -184,16 +186,17 @@ export const commitPackageToGit = async (
   branchAndLastCommit: CommitBranchAndHashInfo,
   repositoryIdentificationInfo: RepositoryIdentificationInfo,
   commitInfo: GitCommitToCreateInfoExplicitWithCredentials,
+  shouldAlwaysCreateMergeState: boolean,
 ): Promise<boolean> => {
   // Note that the logic for both is similiar create git, clone, check if should create merge state conflict, perform export and "force" push.
   if (branchAndLastCommit.mergeFromData === null) {
     return await commitClassicToGit(
       iri, remoteRepositoryURL, branchAndLastCommit.localBranch, branchAndLastCommit.localLastCommitHash,
-      repositoryIdentificationInfo, commitInfo);
+      repositoryIdentificationInfo, commitInfo, shouldAlwaysCreateMergeState);
   }
   else {
     const mergeInfo = convertBranchAndHashToMergeInfo(branchAndLastCommit);
-    return await commitDSMergeToGit(iri, remoteRepositoryURL, repositoryIdentificationInfo, commitInfo, mergeInfo);
+    return await commitDSMergeToGit(iri, remoteRepositoryURL, repositoryIdentificationInfo, commitInfo, mergeInfo, shouldAlwaysCreateMergeState);
   }
 };
 
@@ -205,6 +208,7 @@ async function commitDSMergeToGit(
   repositoryIdentificationInfo: RepositoryIdentificationInfo,
   commitInfo: GitCommitToCreateInfoExplicitWithCredentials,
   mergeInfo: CommitBranchAndHashInfoForMerge,
+  shouldAlwaysCreateMergeState: boolean,
 ): Promise<boolean> {
   // Note that the logic follows the commit method logic - create git, clone, check if should create merge state conflict, perform export and "force" merge/push.
   const { mergeToBranch, mergeToCommitHash } = mergeInfo;
@@ -230,7 +234,7 @@ async function commitDSMergeToGit(
 
     const mergeFromBranchLog = await git.log([mergeFromBranch]);
     const lastMergeFromBranchCommitInGit = mergeFromBranchLog.latest?.hash;
-    const shouldTryCreateMergeState = lastMergeFromBranchCommitInGit !== mergeFromCommitHash;
+    const shouldTryCreateMergeState = lastMergeFromBranchCommitInGit !== mergeFromCommitHash || shouldAlwaysCreateMergeState;
 
     if (shouldTryCreateMergeState) {
       const mergeFrom: MergeEndpointForComparison = {
@@ -265,6 +269,7 @@ async function commitDSMergeToGit(
         lastCommitHash: mergeFromCommitHash,
         branch: mergeFromBranch,
         rootFullPathToMeta: pathToRootMetaMergeFrom,
+        gitUrl: remoteRepositoryURL,
       };
       const mergeToInfo: MergeEndInfoWithRootNode = {
         rootNode: rootMergeTo,
@@ -272,6 +277,7 @@ async function commitDSMergeToGit(
         lastCommitHash: mergeToCommitHash,
         branch: cloneResult.mergeToBranchExplicitName,
         rootFullPathToMeta: pathToRootMetaMergeTo,
+        gitUrl: remoteRepositoryURL,
       };
 
       const createdMergeStateId = await mergeStateModel.createMergeStateIfNecessary(
@@ -313,6 +319,7 @@ async function commitClassicToGit(
   localLastCommitHash: string,
   repositoryIdentificationInfo: RepositoryIdentificationInfo,
   commitInfo: GitCommitToCreateInfoExplicitWithCredentials,
+  shouldAlwaysCreateMergeState: boolean,
 ) {
   const { gitCredentials, gitProvider } = commitInfo;
   const { givenRepositoryUserName, givenRepositoryName } = repositoryIdentificationInfo;
@@ -337,7 +344,7 @@ async function commitClassicToGit(
     if (hasSetLastCommit) {
       try {
         const remoteRepositoryLastCommitHash = await getLastCommitHash(git);
-        const shouldTryCreateMergeState = localLastCommitHash !== remoteRepositoryLastCommitHash;
+        const shouldTryCreateMergeState = localLastCommitHash !== remoteRepositoryLastCommitHash || shouldAlwaysCreateMergeState;
         if (shouldTryCreateMergeState) {
           const {
             diffTreeComparisonResult,
@@ -358,6 +365,7 @@ async function commitClassicToGit(
             lastCommitHash: lastHashMergeFrom,
             branch: branchExplicit,
             rootFullPathToMeta: pathToRootMetaMergeFrom,
+            gitUrl: remoteRepositoryURL,
           };
           const mergeToInfo: MergeEndInfoWithRootNode = {
             rootNode: rootMergeTo,
@@ -365,12 +373,13 @@ async function commitClassicToGit(
             lastCommitHash: lastHashMergeTo,
             branch: branchExplicit,
             rootFullPathToMeta: pathToRootMetaMergeTo,
+            gitUrl: remoteRepositoryURL,
           };
 
 
           const createdMergeStateId = await mergeStateModel.createMergeStateIfNecessary(
             iri, "push", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
-          if (diffTreeComparisonResult.conflicts.length > 0) {
+          if (diffTreeComparisonResult.conflicts.length > 0 || shouldAlwaysCreateMergeState) {
             return false;
           }
         }

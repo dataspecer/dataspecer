@@ -77,6 +77,7 @@ export type GitChangesToDSPackageStoreResult = {
  *  so we can just safely move HEAD to the last git commit and update DS package based on that
  */
 export async function saveChangesInDirectoryToBackendFinalVersion(
+  remoteRepositoryUrl: string,
   git: SimpleGit,
   gitInitialDirectoryParent: string,
   iri: string,
@@ -133,6 +134,7 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
     lastCommitHash: lastHashMergeFrom,
     branch: branch,
     rootFullPathToMeta: pathToRootMetaMergeFrom,
+    gitUrl: remoteRepositoryUrl,
   };
   const mergeToInfo: MergeEndInfoWithRootNode = {
     rootNode: rootMergeTo,
@@ -140,6 +142,7 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
     lastCommitHash: lastHashMergeTo,
     branch: branch,
     rootFullPathToMeta: pathToRootMetaMergeTo,
+    gitUrl: remoteRepositoryUrl,
   };
 
   const createdMergeStateId = mergeStateModel.createMergeStateIfNecessary(

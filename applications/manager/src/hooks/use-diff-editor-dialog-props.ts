@@ -29,8 +29,7 @@ import {
 } from "@dataspecer/git";
 import { finalizeMergeState, saveMergeState } from "@/utils/merge-state-fetch-methods";
 import { fetchMergeState } from "@/dialog/open-merge-state";
-import { BetterModalProps } from "@/lib/better-modal";
-import { UpdateModelDataMethod } from "@/dialog/diff-editor-dialog";
+import { TextDiffEditorBetterModalProps, UpdateModelDataMethod } from "@/dialog/diff-editor-dialog";
 
 
 type FullTreePath = string;
@@ -227,16 +226,6 @@ function findValueInCache(
 export type EntriesAffectedByCreateType = {
   firstExistingParentIri: string | null;
   createdFilesystemNodes: CreateDatastoreFilesystemNodesInfo[];
-}
-
-export type TextDiffEditorBetterModalProps = TextDiffEditorDialogProps & BetterModalProps<{
-  newResourceContent: string | undefined,
-}>;
-
-type TextDiffEditorDialogProps = {
-  initialMergeFromResourceIri: string,
-  initialMergeToResourceIri: string,
-  editable: EditableType,
 }
 
 type TextDiffEditorHookProps = Omit<TextDiffEditorBetterModalProps, "isOpen">;

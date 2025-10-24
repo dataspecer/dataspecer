@@ -5,7 +5,7 @@ import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalT
 import { Button } from "@/components/ui/button";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
 import { MergeState } from "@dataspecer/git";
-import { removeMergeState } from "@/utils/merge-state-fetch-methods";
+import { finalizeMergeState, removeMergeState } from "@/utils/merge-state-fetch-methods";
 import { ShowMergeStateInfoDialog } from "./show-merge-state-info-dialog";
 
 type MergeStateDialogProps = {
@@ -68,17 +68,29 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
   );
 }
 
-const renderMergeState = (mergeState: MergeState, removeFromMergeStatesInDialog: (uuid: string) => void, openModal: OpenBetterModal, closeMergeStateList: (value: null) => void) => {
+const renderMergeState = (
+  mergeState: MergeState,
+  removeFromMergeStatesInDialog: (uuid: string) => void,
+  openModal: OpenBetterModal,
+  closeMergeStateList: (value: null) => void
+) => {
   const removeMergeStateOnClickHandler = () => {
     removeFromMergeStatesInDialog(mergeState.uuid);
     removeMergeState(mergeState.uuid);
   };
 
+  const finalizeMergeStateOnClick = async () => {
+    const isSuccessfullyFinalized = await finalizeMergeState(mergeState.uuid);
+    if (isSuccessfullyFinalized) {
+      closeMergeStateList(null);
+    }
+  }
+
   return <div className={`flex items-baseline`}>
       {
         mergeState.conflictCount === 0 ?
-        <button>Finalize</button> :
-        <button>can not finalize</button>
+        <button onClick={finalizeMergeStateOnClick}>Finalize</button> :
+        <button>Can not finalize</button>
       }
       <button onClick={() => openModal(ShowMergeStateInfoDialog, {mergeState})} className="bg-blue-300 hover:bg-blue-500 relative top-[6px]"><InfoIcon/></button>
       <button className={`${mergeState.isUpToDate ? "" : "bg-red-400"} hover:bg-gray-300`}

@@ -14,9 +14,11 @@ type ShowMergeStateInfoDialogProps = {
 
 
 export const ShowMergeStateInfoDialog = ({ mergeState, isOpen, resolve }: ShowMergeStateInfoDialogProps) => {
+  const gitUrl = mergeState.gitUrlMergeFrom === "" ? mergeState.gitUrlMergeTo : mergeState.gitUrlMergeFrom;
+
   return (
     <Modal open={isOpen} onClose={() => resolve(null)}>
-        <ModalContent className="max-w-[30%]">
+        <ModalContent className="max-w-[40%]">
           <ModalHeader>
             <ModalTitle>Info about merge state</ModalTitle>
             <ModalDescription>id: {mergeState.uuid}</ModalDescription>
@@ -44,6 +46,7 @@ export const ShowMergeStateInfoDialog = ({ mergeState, isOpen, resolve }: ShowMe
               <br/>
               <strong>Merge To filesystem:</strong> {mergeState.filesystemTypeMergeTo}
               <br/>
+              <strong>Git url:</strong><a href={gitUrl}>{gitUrl}</a>
             </div>
           </div>
           <ModalFooter>

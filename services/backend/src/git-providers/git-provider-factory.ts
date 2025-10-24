@@ -60,7 +60,7 @@ export abstract class GitProviderFactory {
     const gitProvider = getMainGitProviderFromRepositoryURL(repositoryURL);
     if (gitProvider === null) {
       // TODO: Better error handling
-      throw new Error(`Git provider form given URL ${repositoryURL} does not exist.`);
+      throw new Error(`Git provider with given URL ${repositoryURL} does not exist.`);
     }
     const domainURL = extractPartOfRepositoryURL(repositoryURL, "url-domain") ?? undefined;
     return GitProviderFactory.createGitProvider(gitProvider, domainURL);

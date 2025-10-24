@@ -111,6 +111,9 @@ model MergeState {
   // So what to take from this: We always want to modify our local DS branch and the remote to be unchanged
   //  - However local branch can be either mergeFrom or mergeTo. And that means that "mergeTo !== must be editable", which I thought is the case at first
   lastCommitHashMergeTo String @default("")
+  // We currently use it to find the correct git provider, since the used git remote might be using ssh config.
+  // We need the git provider to get the files/directories to ignore, note that technically we could just use union of all git providers for entries to ignore.
+  gitUrlMergeTo String @default("")
   branchMergeTo String
   rootFullPathToMetaMergeTo String @default("")
   rootIriMergeTo String @default("")
@@ -118,6 +121,9 @@ model MergeState {
   filesystemTypeMergeTo String
 
   lastCommitHashMergeFrom String @default("")
+  // We currently use it to find the correct git provider, since the used git remote might be using ssh config.
+  // We need the git provider to get the files/directories to ignore, note that technically we could just use union of all git providers for entries to ignore.
+  gitUrlMergeFrom String @default("")
   // We only need this for the commit message, otherwise it should be equivalent to using git merge with hash
   // Note that if this is empty, then it means that we merged directly from commit.
   // Also note that if the tip of branch moved, then the user should be probably warned, that he is performing merge directly from commit.
