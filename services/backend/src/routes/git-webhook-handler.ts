@@ -146,7 +146,7 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
   };
 
   const createdMergeStateId = mergeStateModel.createMergeStateIfNecessary(
-    iri, "pull", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
+    iri, "", "pull", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
   return {
     createdMergeState: true,
     conflictCount: diffTreeComparisonResult.conflicts.length,

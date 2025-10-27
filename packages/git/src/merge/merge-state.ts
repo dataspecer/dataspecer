@@ -165,6 +165,8 @@ export const isEditableType = (value: string): value is EditableType => value ==
 export interface MergeState {
   uuid: string;
 
+  commitMessage: string;
+
   createdAt: Date;
   modifiedDiffTreeAt: Date;
 

@@ -34,7 +34,7 @@ export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (requ
     await gitCloneBasic(git, gitInitialDirectory, mergeFromResource.linkedGitRepositoryURL, false, true, undefined);
 
     const { createdMergeStateId, hasConflicts } = await createMergeStateBetweenDSPackages(
-      git,
+      git, "",
       mergeFromIri, mergeFromResource.lastCommitHash, mergeFromResource.branch,
       mergeToIri, mergeToResource.lastCommitHash, mergeToResource.branch, mergeFromResource.linkedGitRepositoryURL);
 
@@ -68,6 +68,7 @@ export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (requ
 
 export async function createMergeStateBetweenDSPackages(
   git: SimpleGit,
+  commitMessage: string,
   mergeFromRootIri: string,
   mergeFromLastCommitHash: string,
   mergeFromBranch: string,
@@ -118,7 +119,7 @@ export async function createMergeStateBetweenDSPackages(
     };
 
     const createdMergeStateId = await mergeStateModel.createMergeStateIfNecessary(
-      mergeFromRootIri, "merge", diffTreeComparisonResult,
+      mergeFromRootIri, commitMessage, "merge", diffTreeComparisonResult,
       commonCommitHash, mergeFromInfo, mergeToInfo);
     return {
       createdMergeStateId,
@@ -144,6 +145,7 @@ export type MergeEndpointForStateUpdate = {
 
 export async function updateMergeStateToBeUpToDate(
   uuid: string,
+  commitMessage: string,
   mergeFrom: MergeEndpointForStateUpdate,
   mergeTo: MergeEndpointForStateUpdate,
   mergeStateCause: MergeStateCause,
@@ -198,7 +200,7 @@ export async function updateMergeStateToBeUpToDate(
 
     const rootResourceIri: string = mergeFrom.rootIri;    // TODO RadStr: Not sure now about the iris, but we will see
     const isSuccessfullyUpdated = await mergeStateModel.updateMergeStateToBeUpToDate(
-      uuid, mergeStateCause, diffTreeComparisonResult,
+      uuid, commitMessage, mergeStateCause, diffTreeComparisonResult,
       commonCommitHash, mergeFromInfo, mergeToInfo);
     return isSuccessfullyUpdated;
 }

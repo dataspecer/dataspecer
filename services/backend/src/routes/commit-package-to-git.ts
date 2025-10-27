@@ -281,7 +281,7 @@ async function commitDSMergeToGit(
       };
 
       const createdMergeStateId = await mergeStateModel.createMergeStateIfNecessary(
-        iri, "merge", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
+        iri, commitInfo.commitMessage, "merge", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
       if (diffTreeComparisonResult.conflicts.length > 0) {
         return false;
       }
@@ -378,7 +378,7 @@ async function commitClassicToGit(
 
 
           const createdMergeStateId = await mergeStateModel.createMergeStateIfNecessary(
-            iri, "push", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
+            iri, commitInfo.commitMessage, "push", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
           if (diffTreeComparisonResult.conflicts.length > 0 || shouldAlwaysCreateMergeState) {
             return false;
           }

@@ -25,6 +25,7 @@ type CreateDataToConvertToString = {
 };
 
 type CreateMergeStateInput = {
+  commitMessage: string,
   lastCommonCommitHash: string,
   mergeStateCause: MergeStateCause,
   editable: EditableType,
@@ -155,6 +156,7 @@ export class MergeStateModel implements ResourceChangeListener {
    */
   async updateMergeStateToBeUpToDate(
     uuid: string,
+    commitMessage: string,
     mergeStateCause: MergeStateCause,
     diffTreeComparisonResult: ComparisonFullResult,
     commonCommitHash: string | undefined,
@@ -173,6 +175,7 @@ export class MergeStateModel implements ResourceChangeListener {
     const editable: EditableType = convertMergeStateCauseToEditable(mergeStateCause);
 
     const mergeStateInput: UpdateMergeStateInput = {
+      commitMessage,
       lastCommonCommitHash: commonCommitHash,
       mergeStateCause,
       editable,
@@ -197,6 +200,7 @@ export class MergeStateModel implements ResourceChangeListener {
    */
   async createMergeStateIfNecessary(
     rootResourceIri: string,
+    commitMessage: string,
     mergeStateCause: MergeStateCause,
     diffTreeComparisonResult: ComparisonFullResult,
     commonCommitHash: string,
@@ -217,6 +221,7 @@ export class MergeStateModel implements ResourceChangeListener {
     const editable: EditableType = convertMergeStateCauseToEditable(mergeStateCause);
 
     const mergeStateInput = {
+      commitMessage,
       lastCommonCommitHash: commonCommitHash,
       mergeStateCause,
       editable,
@@ -487,6 +492,8 @@ export class MergeStateModel implements ResourceChangeListener {
       data: {
         modifiedDiffTreeAt: new Date(),
 
+        commitMessage: inputData.commitMessage,
+
         isUpToDate: true,
         mergeStateCause: inputData.mergeStateCause,
         editable: inputData.editable,
@@ -523,6 +530,7 @@ export class MergeStateModel implements ResourceChangeListener {
     await this.prismaClient.mergeState.create({
       data: {
         uuid,
+        commitMessage: inputData.commitMessage,
         isUpToDate: true,
         mergeStateCause: inputData.mergeStateCause,
         editable: inputData.editable,
@@ -711,7 +719,7 @@ export class MergeStateModel implements ResourceChangeListener {
         branch: prismaMergeState.branchMergeTo,
       };
 
-      const updatedMergeStateResult = await updateMergeStateToBeUpToDate(prismaMergeState.uuid, mergeFrom, mergeTo, prismaMergeState.mergeStateCause as MergeStateCause);
+      const updatedMergeStateResult = await updateMergeStateToBeUpToDate(prismaMergeState.uuid, prismaMergeState.commitMessage, mergeFrom, mergeTo, prismaMergeState.mergeStateCause as MergeStateCause);
       if (!updatedMergeStateResult) {
         throw new Error("Could not update merge state to be up to date, when trying to get it from database");
       }
@@ -741,6 +749,8 @@ export class MergeStateModel implements ResourceChangeListener {
 
     const result: MergeState = {
       uuid: prismaMergeState.uuid,
+
+      commitMessage: prismaMergeState.commitMessage,
 
       createdAt: prismaMergeState.createdAt,
       modifiedDiffTreeAt: prismaMergeState.modifiedDiffTreeAt,

@@ -100,6 +100,9 @@ model MergeState {
   // We allow to have only one merge state between two specific merge sources
   @@unique([rootFullPathToMetaMergeFrom, rootFullPathToMetaMergeTo])
 
+  // This is used since we want to store the commit message of the commit which caused this event. Note that for pull event it will be empty
+  commitMessage String @default("")
+
   // Note: After thinking about it for some time, there are 3 possible situations when merge occurs
   //  1) Pulling - Here we have local branch, perform git pull (or rather git clone) and try to merge into our local branch
   //       - In this case we want to modify our local branch in such a way that eliminate all conflicts and can finally put in the remote changes
