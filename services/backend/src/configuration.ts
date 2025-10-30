@@ -1,6 +1,45 @@
 // @ts-ignore
 import configuration from "../main.config.js";
 
+type GitConfiguration = {
+    /**
+     * The user name for the bot, which will be used for commiting if user does not provide credentials or does not have credentials with sufficient rights
+     */
+    dsBotUserName: string;
+    /**
+     * The email address of the bot.
+     */
+    dsBotEmail: string;
+    /**
+     * GitHub token which can be used for cloning/commiting (possibly even removing)
+     */
+    dsBotAbsoluteGitHubControlToken: string;
+    /**
+     * Id to store the ssh config of bot under.
+     */
+    dsBotSSHId?: string;
+    /**
+     * Is the private ssh key of the bot to use.
+     */
+    dsBotSSHPrivateKey?: string;
+}
+
+type AuthConfiguration = {
+    /**
+     * Is any random string, it will be used as a secret for authJS
+     */
+    authSecret: string,
+    /**
+     * is the Id of the OAuth app, you can find it after creating OAuth app in GitHub settings
+     */
+    gitAuthClientId: string,
+    /**
+     * Same as id
+     */
+    gitAuthClientSecret: string,
+}
+
+
 export interface Configuration {
     /**
      * Public URL of server only.
@@ -37,6 +76,9 @@ export interface Configuration {
 
     // Generator configuraion
     configuration: object;
+
+    gitConfiguration?: GitConfiguration;
+    authConfiguration?: AuthConfiguration;
 }
 
 const defaultConfiguration = {

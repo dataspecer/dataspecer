@@ -1,6 +1,7 @@
 import { simpleGit } from "simple-git";
-import { getRepoURLWithAuthorizationUsingDebugPatToken } from "../git-never-commit.ts";
 import fs from "fs";
+import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
+import { checkErrorBoundaryForCommitAction, getAuthorizationURL } from "../utils/git-utils.ts";
 
 /**
  * Example for git worktrees
@@ -22,8 +23,16 @@ export const gitWorktreeExample = async (
     fs.mkdirSync(gitInitialDirectory);
   }
 
-  const repoURLWithAuthorization = getRepoURLWithAuthorizationUsingDebugPatToken(remoteRepositoryURL, repoName);
-  // Up until here same as exportPackageResource except for own implementation of PackageExporter, now just commit and push
+  const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL);
+  const botCredentials = gitProvider.getBotCredentials();
+  if (botCredentials === null) {
+    throw new Error("No bot credentials, can not create gitWorkTreeExample");
+  }
+  const remoteRepositoryRepoName = gitProvider.extractPartOfRepositoryURL(remoteRepositoryURL, "repository-name");
+  const remoteRepositoryUserName = gitProvider.extractPartOfRepositoryURL(remoteRepositoryURL, "user-name");
+  checkErrorBoundaryForCommitAction(remoteRepositoryURL, remoteRepositoryRepoName, remoteRepositoryUserName);
+  const repoURLWithAuthorization = getAuthorizationURL(
+    botCredentials, botCredentials.accessTokens[0], remoteRepositoryURL, remoteRepositoryUserName!, remoteRepositoryRepoName!);
 
   const git = simpleGit(gitInitialDirectory);
   try {

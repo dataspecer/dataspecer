@@ -8,6 +8,50 @@ module.exports = {
 
     // Generator configuraion
     configuration: {
+        auth: {
+            /**
+             * Is any random string, it will be used as a secret for authJS
+             */
+            // authSecret: "Change me to random string",
+
+            /**
+             * is the Id of the OAuth app, you can find it after creating OAuth app in GitHub settings
+             */
+            // gitAuthClientId: "xxxxxxx",
+
+            /**
+             * Same as id
+             */
+            // gitAuthClientSecret: "xxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        },
+
+        git: {
+            /**
+             * The user name for the bot, which will be used for commiting if user does not provide credentials or does not have credentials with sufficient rights
+             */
+            // dsBotUserName: "ds-bot",
+
+            /**
+             * The email address of the bot.
+             */
+            // dsBotEmail: "dsBot@gmail.com",
+
+            /**
+             * GitHub token which can be used for cloning/commiting (possibly even removing)
+             */
+            // dsBotAbsoluteGitHubControlToken: "ghp_xxxxxxxxxxxxxxxxxxxx",
+
+            /**
+             * Id to store the ssh config of bot under.
+             */
+            // dsBotSSHId: "ds-bot-id",
+
+            /**
+             * Is the private ssh key of the bot to use.
+             */
+            // dsBotSSHPrivateKey: "XXXXXXXxxxxxxx"
+        },
+
         json: {
             /**
              * Key of property representing ID of the entity.

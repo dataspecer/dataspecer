@@ -3,7 +3,6 @@
 import express from "express"
 import _ from "lodash";
 import { AccessToken, AccessTokenType, CommitterInfo } from "@dataspecer/git";
-import { getHttpsRepoURLWithAuthorization } from "../git-never-commit.ts";
 import { SimpleGit } from "simple-git";
 import fs from "fs";
 import path from "path";
@@ -11,6 +10,31 @@ import path from "path";
 
 // TODO RadStr: Change to Dataspecer after debugging stage
 export const GITHUB_USER_AGENT = "Dataspecer-test";
+
+
+
+/**
+ *
+ * @param remoteRepoURLDomain is the domain part of URL without www., that is for example gitlab.com or github.com
+ * @param userName is the name of the person pushing/committing or doing anything with the URL
+ * @param givenRepositoryUserName is the user under which the repository is created, that is the ending part of the url, that is for example github.com/{givenRepositoryUserName}/{repoName}
+ * @param repoName is the name of the repository to be used in the URL
+ * @param accessToken is access token - Either from OAuth or PAT
+ * @returns
+ */
+export const createRepoURLWithAuthorizationFromData = (remoteRepoURLDomain: string, userName: string, givenRepositoryUserName: string, repoName: string, accessToken: string) => {
+  return `https://${userName}:${accessToken}@${remoteRepoURLDomain}/${givenRepositoryUserName}/${repoName}`;
+};
+
+/**
+ * @param userName is the name of the person pushing/committing or doing anything with the URL
+ * @param givenRepositoryUserName is the user under which the repository is created, that is the ending part of the url, that is for example github.com/{givenRepositoryUserName}/{repoName}
+ */
+const getHttpsRepoURLWithAuthorization = (remoteRepoURL: string, userName: string, givenRepositoryUserName: string, repoName: string, accessToken: string): string => {
+  const remoteRepoURLDomain = extractPartOfRepositoryURL(remoteRepoURL, "url-domain") ?? "github.com";
+  return createRepoURLWithAuthorizationFromData(remoteRepoURLDomain, userName, givenRepositoryUserName, repoName, accessToken);
+};
+
 
 export function getAuthorizationURL(
   committerInfo: CommitterInfo,
@@ -191,12 +215,13 @@ export function removePathRecursively(path: string) {
 }
 
 /**
+ * @param gitLink is used only to provide the correct error message
  * @throws Throws error if {@link repoName} or {@link userName} are null
  */
 export function checkErrorBoundaryForCommitAction(
   gitLink: string,
   repoName: string | null,
-  userName: string | null
+  userName: string | null,
 ): repoName is NonNullable<string> {
   if (repoName === null) {
     throw new Error(`Repository name could not be extracted from the repository URL: ${gitLink}`);

@@ -1,5 +1,4 @@
 import { ExpressAuthConfig } from "@auth/express";
-import { AUTH_SECRET, GITHUB_AUTH_CLIENT_ID, GITHUB_AUTH_CLIENT_SECRET } from "../git-never-commit.ts";
 
 import GitHub from "@auth/express/providers/github"
 import GitLab from "@auth/express/providers/gitlab"
@@ -8,6 +7,7 @@ import Keycloak from "@auth/express/providers/keycloak"
 import { ConfigType, GitProviderEnum, Scope } from "@dataspecer/git";
 import { GitHubProvider, GitHubScope } from "../git-providers/git-provider-instances/github.ts";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
+import configuration from "../configuration.ts";
 
 
 // Possible inspiration for implementation of custom provider (if needed in future) - https://github.com/nextauthjs/next-auth/discussions/9480
@@ -87,12 +87,11 @@ function createAuthConfig(configType: ConfigType | null, dsBackendURL: string, c
   const githubRedirectUri = `${dsBackendURL}/auth/callback/github${callerURL === undefined ? "" : `?internalCallbackUrl=${encodeURIComponent(callerURL)}`}`;
 
   const createdAuthConfig: ExpressAuthConfig = {
-    secret: AUTH_SECRET,
-    providers:
-    [
+    secret: configuration.authConfiguration?.authSecret,
+    providers: [
       GitHub({
-        clientId: GITHUB_AUTH_CLIENT_ID,
-        clientSecret: GITHUB_AUTH_CLIENT_SECRET,
+        clientId: configuration.authConfiguration?.gitAuthClientId,
+        clientSecret: configuration.authConfiguration?.gitAuthClientSecret,
         authorization: { params: { scope: scope.map(genericScopeValue => GitHubProvider.convertGenericScopeToProviderScopeStatic(genericScopeValue)).flat().join(" "), redirect_uri: githubRedirectUri } },
       }),
       // TODO RadStr Idea: Implementing GitLab authentication, but

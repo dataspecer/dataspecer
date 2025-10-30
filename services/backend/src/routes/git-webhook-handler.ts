@@ -16,7 +16,6 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { ComparisonData, getMergeFromMergeToMappingForGitAndDS, GitProvider, GitProviderEnum, isDatastoreForMetadata, MergeStateCause } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
-import { GIT_RAD_STR_BOT_USERNAME, GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN } from "../git-never-commit.ts";
 import fs from "fs";
 import path from "path";
 import { updateBlob, updateResourceMetadata } from "./resource.ts";
@@ -29,6 +28,7 @@ import { DatastoreInfo, DirectoryNode, FilesystemNode, FilesystemAbstraction, ge
 import { compareGitAndDSFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
 import { SimpleGit } from "simple-git";
+import configuration from "../configuration.ts";
 
 
 export const handleWebhook = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -501,13 +501,13 @@ async function createNewResourceUploadedFromGit(parentIri: string, path: string,
  */
 export const createRandomWebook = asyncHandler(async (request: express.Request, response: express.Response) => {
   const WEBHOOK_HANDLER_URL = "https://789d-2a00-1028-9192-49e6-17b-1f2d-ea59-1f4.ngrok-free.app/git/webhook-test2";
-  const OWNER = GIT_RAD_STR_BOT_USERNAME;
+  const OWNER = configuration.gitConfiguration?.dsBotUserName;
   const REPO = "test-webhooks";
 
   // The token has to have commiting rights
   const webhookResponse = GitProviderFactory
     .createGitProvider(GitProviderEnum.GitHub)
-    .createWebhook(GITHUB_RAD_STR_BOT_ABSOLUTE_CONTROL_TOKEN ?? "", OWNER ?? "undefined-owner", REPO, WEBHOOK_HANDLER_URL, ["push", "pull_request"]);
+    .createWebhook(configuration.gitConfiguration?.dsBotAbsoluteGitHubControlToken ?? "", OWNER ?? "undefined-owner", REPO, WEBHOOK_HANDLER_URL, ["push", "pull_request"]);
 
   const data = (await webhookResponse).json();
   console.log("Fetched webhook response: ", data);

@@ -53,7 +53,6 @@ import { finalizeMergeState } from "./routes/finalize-merge-state.ts";
 import { createMergeStateBetweenDSPackagesHandler } from "./routes/create-merge-state.ts";
 import { clearMergeStateTableDebug } from "./routes/debug-clear-merge-state-table.ts";
 import { storeNewPrivateSSHKeyToBackend, storePrivateSSHKey } from "./routes/store-private-ssh-key.ts";
-import { GIT_RAD_STR_BOT_SSH_ID, GIT_RAD_STR_BOT_SSH_PRIVATE_KEY } from "./git-never-commit.ts";
 import { removeMergeState } from "./routes/remove-merge-state.ts";
 import { finalizePullMergeState } from "./routes/finalize-pull-merge-state.ts";
 import { finalizePushMergeState } from "./routes/finalize-push-merge-state.ts";
@@ -64,9 +63,8 @@ import { finalizePushMergeStateOnFailure } from "./routes/finalize-push-merge-st
 
 
 // Create application models
-
-if (GIT_RAD_STR_BOT_SSH_PRIVATE_KEY !== undefined && GIT_RAD_STR_BOT_SSH_ID !== undefined) {
-  storeNewPrivateSSHKeyToBackend(GIT_RAD_STR_BOT_SSH_PRIVATE_KEY, GIT_RAD_STR_BOT_SSH_ID);
+if (configuration.gitConfiguration?.dsBotSSHPrivateKey !== undefined && configuration.gitConfiguration?.dsBotSSHId !== undefined) {
+  storeNewPrivateSSHKeyToBackend(configuration.gitConfiguration.dsBotSSHPrivateKey, configuration.gitConfiguration.dsBotSSHId);
 }
 
 export const storeModel = new LocalStoreModel("./database/stores");

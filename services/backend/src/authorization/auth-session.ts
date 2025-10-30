@@ -4,9 +4,9 @@ import { createBasicAuthConfig, createAuthConfigBasedOnAccountScope } from "./au
 import { asyncHandler } from "../utils/async-handler.ts";
 import { AccessToken, AccessTokenType, ConfigType, GitProvider, GitCredentials } from "@dataspecer/git";
 import { getToken } from "@auth/core/jwt"
-import { AUTH_SECRET } from "../git-never-commit.ts";
 import { convertExpressRequestToNormalRequest, getBaseUrl } from "../utils/git-utils.ts";
 import { createUserSSHIdentifier } from "../routes/store-private-ssh-key.ts";
+import configuration from "../configuration.ts";
 
 
 export async function currentSession(
@@ -14,6 +14,10 @@ export async function currentSession(
   response: express.Response,
   next: NextFunction,
 ) {
+  if (configuration.authConfiguration === undefined) {
+    return;
+  }
+
   const dsBackendURL = getBaseUrl(request);
   const callerURL = request.get("Referer") ?? "";
 
@@ -34,7 +38,7 @@ export async function currentSession(
   if (session !== undefined) {
     // Add the access token to the locals
     const convertedRequest = convertExpressRequestToNormalRequest(callerURL, request);
-    const jwtToken = await getToken({ req: convertedRequest, secret: AUTH_SECRET });
+    const jwtToken = await getToken({ req: convertedRequest, secret: configuration.authConfiguration.authSecret });
     response.locals.session.user.accessToken = (jwtToken as any)?.accessToken;
   }
 
