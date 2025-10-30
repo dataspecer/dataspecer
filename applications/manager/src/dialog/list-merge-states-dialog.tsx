@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { MergeState } from "@dataspecer/git";
 import { finalizeMergeState, removeMergeState } from "@/utils/merge-state-backend-requests";
 import { ShowMergeStateInfoDialog } from "./show-merge-state-info-dialog";
-import { MergeStateFinalizerDialog } from "./merge-state-finalizer-dialog";
+import { MergeStateFinalizerDialog } from "./merge-state-finalizer-dialogs";
 
 type MergeStateDialogProps = {
   iri: string,
