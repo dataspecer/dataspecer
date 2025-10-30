@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
 import { Loader } from "lucide-react";
 import { EditableType, MergeState } from "@dataspecer/git";
-import { finalizeMergeState, removeMergeState } from "@/utils/merge-state-fetch-methods";
+import { finalizeMergeState, removeMergeState } from "@/utils/merge-state-backend-requests";
 
 export async function fetchMergeState(rootIriMergeFrom: string, rootIriMergeTo: string, shouldPrintMissingStateToConsole: boolean,): Promise<MergeState | null> {
   try {

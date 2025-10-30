@@ -27,7 +27,7 @@ import {
   DiffTree,
   ResourceDatastoreStripHandlerBase,
 } from "@dataspecer/git";
-import { finalizeMergeState, saveMergeState } from "@/utils/merge-state-fetch-methods";
+import { finalizeMergeState, saveMergeState } from "@/utils/merge-state-backend-requests";
 import { fetchMergeState } from "@/dialog/open-merge-state";
 import { TextDiffEditorBetterModalProps, UpdateModelDataMethod } from "@/dialog/diff-editor-dialog";
 

@@ -8,11 +8,14 @@ import { createIdentifierForHTMLElement, InputComponent } from "@/components/sim
 import { Package } from "@dataspecer/core-v2/project";
 import { toast } from "sonner";
 import { ExportFormatRadioButtons, ExportFormatType } from "@/components/export-format-radio-buttons";
-import { createSetterWithGitValidation } from "@dataspecer/git";
+import { CommitRedirectResponseJson, createSetterWithGitValidation } from "@dataspecer/git";
+import { CommitRedirectForMergeStatesDialog } from "./commit-confirm-dialog-caused-by-merge-state";
+import { commitToGitRequest, createNewRemoteRepositoryRequest, linkToExistingGitRepositoryRequest } from "@/utils/git-backend-requests";
 
 
 type GitActionsDialogProps = {
   inputPackage: Package;
+  defaultCommitMessage: string | null;
   type?: "create-new-repository-and-commit" | "commit" | "link-to-existing-repository";
 } & BetterModalProps<{
   repositoryName: string;
@@ -35,14 +38,14 @@ const gitDialogInputIdPrefix = "git-dialog-prefix";
  *
  * The type of shown dialog depends on the "type" property.
  */
-export const GitActionsDialog = ({ inputPackage, isOpen, resolve, type }: GitActionsDialogProps) => {
+export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, resolve, type }: GitActionsDialogProps) => {
   type = type ?? "create-new-repository-and-commit";
 
   const [repositoryName, setRepositoryName] = useState<string>(inputPackage.iri);
   const [remoteRepositoryURL, setRemoteRepositoryURL] = useState<string>("https://github.com/userName/repositoryName")
   const [user, setUser] = useState<string>("");
   const [gitProvider, setGitProvider] = useState<string>("https://github.com/");
-  const [commitMessage, setCommitMessage] = useState<string>("");
+  const [commitMessage, setCommitMessage] = useState<string>(defaultCommitMessage ?? "");
   const [isUserRepo, setIsUserRepo] = useState<boolean>(true);
   const [shouldAlwaysCreateMergeState, setShouldAlwaysCreateMergeState] = useState<boolean>(false);
   const [exportFormat, setExportFormat] = useState<ExportFormatType>("json");
@@ -156,49 +159,29 @@ export const GitActionsDialog = ({ inputPackage, isOpen, resolve, type }: GitAct
 export const createNewRemoteRepositoryHandler = async (openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
   // {@link DropdownMenuItem} has to be used in the tree, when it is part of another component, it is rendered incorrectly,
   // that is why we implement it like this and not like react component
-  const result = await openModal(GitActionsDialog, { inputPackage, type: "create-new-repository-and-commit" });
+  const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage: null, type: "create-new-repository-and-commit" });
   if (result) {
-    const url = import.meta.env.VITE_BACKEND + "/git/create-new-git-repository-with-package-content?iri=" + encodeURIComponent(iri) +
-                                              "&givenRepositoryName=" + encodeURIComponent(result.repositoryName) +
-                                              "&givenUserName=" + encodeURIComponent(result.user ?? "") +
-                                              "&gitProviderURL=" + encodeURIComponent(result.gitProvider ?? "") +
-                                              "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "") +
-                                              "&isUserRepo=" + encodeURIComponent(result.isUserRepo ?? "") +
-                                              "&exportFormat=" + result.exportFormat;
-    // TODO RadStr: To test with docker I put the link-package-to-git code into export.zip, because for some reason docker didn't work with new API points
-    // const url = import.meta.env.VITE_BACKEND + "/resources/export.zip?iri=" + encodeURIComponent(iri) +
-    //                                           "&givenRepositoryName=" + encodeURIComponent(result.inputByUser) +
-    //                                           "&givenUserName=" + encodeURIComponent(result.user ?? "") +
-    //                                           "&gitProviderURL=" + encodeURIComponent(result.gitProvider ?? "") +
-    //                                           "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "");
-
-    const response = await fetch(
-      url,
-      {
-        credentials: "include",         // Important, without this we don't send the authorization cookies.
-        method: "GET",
-      });
-
+    const response = await createNewRemoteRepositoryRequest(iri, result);
     await requestLoadPackage(iri, true);
     gitOperationResultToast(response);
   }
 };
 
 
-export const commitToGitDialogOnClickHandler = async (openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
-  const result = await openModal(GitActionsDialog, { inputPackage, type: "commit" });
+export const commitToGitDialogOnClickHandler = async (
+  openModal: OpenBetterModal,
+  iri: string,
+  inputPackage: Package,
+  defaultCommitMessage: string | null,
+) => {
+  const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage, type: "commit" });
   if (result) {
-    const url = import.meta.env.VITE_BACKEND + "/git/commit-package-to-git?iri=" + encodeURIComponent(iri) +
-                                              "&commitMessage=" + encodeURIComponent(result.commitMessage ?? "") +
-                                              "&exportFormat=" + result.exportFormat +
-                                              "&shouldAlwaysCreateMergeState=" + result.shouldAlwaysCreateMergeState;
-
-    const response = await fetch(
-      url,
-      {
-        credentials: "include",         // Important, without this we don't send the authorization cookies
-        method: "GET",
-      });
+    const response = await commitToGitRequest(iri, result.commitMessage, result.exportFormat, result.shouldAlwaysCreateMergeState, false);
+    if (response.status === 300) {
+      const jsonResponse: CommitRedirectResponseJson = await response.json();
+      openModal(CommitRedirectForMergeStatesDialog, {commitRedirectResponse: jsonResponse});
+      console.info(jsonResponse);     // TODO RadStr: Debug print
+    }
     gitOperationResultToast(response);
     requestLoadPackage(iri, true);
   }
@@ -206,18 +189,9 @@ export const commitToGitDialogOnClickHandler = async (openModal: OpenBetterModal
 
 
 export const linkToExistingGitRepositoryHandler = async (openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
-  const result = await openModal(GitActionsDialog, { inputPackage, type: "link-to-existing-repository" });
+  const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage: null, type: "link-to-existing-repository" });
   if (result) {
-    const url = import.meta.env.VITE_BACKEND + "/git/link-to-existing-git-repository?iri=" + encodeURIComponent(iri) +
-                                              "&repositoryURL=" + encodeURIComponent(result.remoteRepositoryURL);
-
-    const response = await fetch(
-      url,
-      {
-        // Note that we do not set the credentials here.
-        method: "GET",
-      });
-
+    const response = await linkToExistingGitRepositoryRequest(iri, result.remoteRepositoryURL);
     if (response.ok) {
       // TODO RadStr later: Localization
       toast.success("Sucessfully updated link to remote git repository");

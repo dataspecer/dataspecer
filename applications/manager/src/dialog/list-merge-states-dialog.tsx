@@ -3,10 +3,10 @@ import { useEffect, useState } from "react";
 import { InfoIcon, Loader, X } from "lucide-react";
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
-import { TextDiffEditorDialog } from "./diff-editor-dialog";
 import { MergeState } from "@dataspecer/git";
-import { finalizeMergeState, removeMergeState } from "@/utils/merge-state-fetch-methods";
+import { finalizeMergeState, removeMergeState } from "@/utils/merge-state-backend-requests";
 import { ShowMergeStateInfoDialog } from "./show-merge-state-info-dialog";
+import { MergeStateFinalizerDialog } from "./merge-state-finalizer-dialog";
 
 type MergeStateDialogProps = {
   iri: string,
@@ -94,7 +94,8 @@ const renderMergeState = (
       }
       <button onClick={() => openModal(ShowMergeStateInfoDialog, {mergeState})} className="bg-blue-300 hover:bg-blue-500 relative top-[6px]"><InfoIcon/></button>
       <button className={`${mergeState.isUpToDate ? "" : "bg-red-400"} hover:bg-gray-300`}
-              onClick={() => openModal(TextDiffEditorDialog, { initialMergeFromResourceIri: mergeState.rootIriMergeFrom, initialMergeToResourceIri: mergeState.rootIriMergeTo, editable: mergeState.editable}).finally(() => closeMergeStateList(null))}>
+              // onClick={() => openModal(TextDiffEditorDialog, { initialMergeFromResourceIri: mergeState.rootIriMergeFrom, initialMergeToResourceIri: mergeState.rootIriMergeTo, editable: mergeState.editable}).finally(() => closeMergeStateList(null))}>
+              onClick={() => openModal(MergeStateFinalizerDialog, {mergeState, openModal}).finally(() => closeMergeStateList(null))}>
         <div className="grid grid-cols-2 gap-4">
           <div className="flex">
             <span className="text-base font-medium whitespace-nowrap truncate">{mergeState.rootIriMergeFrom}</span>

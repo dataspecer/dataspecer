@@ -1,3 +1,7 @@
+export type FinalizerVariantsForPullOnFailure = "remove-merge-state" | "pull-anyways";
+export type FinalizerVariantsForPushOnFailure = "remove-merge-state";
+export type FinalizerVariantsForMergeOnFailure = "remove-merge-state";
+
 export function isGitUrlSet(gitUrl: string | undefined | null): boolean {
   const length = gitUrl?.length;
   return length !== undefined && length > 0;

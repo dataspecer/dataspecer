@@ -5,7 +5,7 @@ import { mergeStateModel, resourceModel } from "../main.ts";
 
 import { BranchSummary, CommitResult, MergeResult, SimpleGit } from "simple-git";
 import { checkErrorBoundaryForCommitAction, extractPartOfRepositoryURL, getAuthorizationURL, getLastCommit, getLastCommitHash, removeEverythingExcept, removePathRecursively, stringToBoolean } from "../utils/git-utils.ts";
-import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS, CommitInfo } from "@dataspecer/git";
+import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS, CommitInfo, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
 import { createUniqueCommitMessage } from "../utils/git-utils.ts";
@@ -17,7 +17,7 @@ import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic, CreateSimpleG
 import { compareBackendFilesystems, compareGitAndDSFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { MERGE_DS_CONFLICTS_PREFIX, PUSH_PREFIX } from "../models/git-store-info.ts";
 import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
-import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
+import { MergeEndInfoWithRootNode, PrismaMergeStateWithData } from "../models/merge-state-model.ts";
 import { MergeEndpointForComparison } from "./create-merge-state.ts";
 import fs from "fs";
 
@@ -74,22 +74,21 @@ function convertBranchAndHashToMergeInfo(input: CommitBranchAndHashInfo): Commit
   };
 }
 
-
-
 /**
  * Commit to the repository for package identifier by given iri inside the query part of express http request.
  */
-export const commitPackageToGitHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
+export const mergeCommitPackageToGitHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
     iri: z.string().min(1),
     commitMessage: z.string(),
     exportFormat: z.string().min(1).optional(),
-    shouldAlwaysCreateMergeState: z.string().min(1),
+    branchMergeFrom: z.string().min(1),
+    lastCommitHashMergeFrom: z.string().min(1),
+    rootIriMergeFrom: z.string().min(1),
   });
 
   const query = querySchema.parse(request.query);
 
-  const shouldAlwaysCreateMergeState = stringToBoolean(query.shouldAlwaysCreateMergeState);
   const iri = query.iri;
   const commitMessage = query.commitMessage.length === 0 ? null : query.commitMessage;
   const resource = await resourceModel.getResource(iri);
@@ -107,22 +106,105 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
     givenRepositoryName: repoName!,
   };
 
-  // TODO RadStr: Not entirely sure about this ... I guess that I should just call merge commit explictly when finalizing instead of doing this, it will be easier to implement
-  const mergeStatesForResource = await mergeStateModel.getMergeStatesForMergeTo(resource.iri, false);
-  if (mergeStatesForResource.length > 1) {
-    throw new Error(`Too many merge states, where the given resource (${resource.iri}) figures as mergeTo actor`);
+  const branchAndLastCommit: CommitBranchAndHashInfo = {
+    localBranch: branch,
+    localLastCommitHash: resource.lastCommitHash,
+    mergeFromData: {
+      branch: query.branchMergeFrom,
+      commitHash: query.lastCommitHashMergeFrom,
+      iri: query.rootIriMergeFrom,
+    }
+  };
+
+  const gitCommitInfo: GitCommitToCreateInfoBasic = {
+    commitMessage,
+    gitProvider: undefined,
+    exportFormat: query.exportFormat ?? null
+  };
+
+  const commitResult = await commitPackageToGitUsingAuthSession(
+    request, iri, gitLink, branchAndLastCommit, repositoryIdentificationInfo, response, gitCommitInfo, false);
+
+  if (!commitResult) {
+    response.sendStatus(409);
+    return;
+  }
+  response.sendStatus(200);
+  return;
+});
+
+/**
+ * Commit to the repository for package identifier by given iri inside the query part of express http request.
+ */
+export const commitPackageToGitHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
+  const querySchema = z.object({
+    iri: z.string().min(1),
+    commitMessage: z.string(),
+    exportFormat: z.string().min(1).optional(),
+    shouldAlwaysCreateMergeState: z.string().min(1),
+    shouldRedirectWithExistenceOfMergeStates: z.string().min(1),
+  });
+
+  const query = querySchema.parse(request.query);
+
+  const shouldAlwaysCreateMergeState = stringToBoolean(query.shouldAlwaysCreateMergeState);
+  const shouldRedirectWithExistenceOfMergeStates = stringToBoolean(query.shouldRedirectWithExistenceOfMergeStates);
+  const iri = query.iri;
+  const commitMessage = query.commitMessage.length === 0 ? null : query.commitMessage;
+  const resource = await resourceModel.getResource(iri);
+  if (resource === null) {
+    throw new Error(`Can not commit to git since the resource (iri: ${iri}) does not exist`);
+  }
+  const gitLink = resource.linkedGitRepositoryURL;
+  const userName = extractPartOfRepositoryURL(gitLink, "user-name");
+  const repoName = extractPartOfRepositoryURL(gitLink, "repository-name");
+  checkErrorBoundaryForCommitAction(gitLink, repoName, userName);
+
+  const branch = resource.branch === "main." ? null : resource.branch;
+  const repositoryIdentificationInfo: RepositoryIdentificationInfo = {
+    givenRepositoryUserName: userName!,
+    givenRepositoryName: repoName!,
+  };
+
+  if (shouldRedirectWithExistenceOfMergeStates) {
+    // TODO RadStr: Not entirely sure about this ... I guess that I should just call merge commit explictly when finalizing instead of doing this, it will be easier to implement
+    const mergeStatesForResource = await mergeStateModel.getMergeStatesForMergeTo(resource.iri, false);
+    const resolvedMergeStatesCausedByMerge = mergeStatesForResource
+      .filter(mergeState => mergeState.conflictCount === 0 && mergeState.mergeStateCause as MergeStateCause === "merge");
+    if (mergeStatesForResource.length >= 1) {
+      let redirectMessage = "There is at least one open merge state.";
+      let redirectCause: CommitHttpRedirectionCause = CommitHttpRedirectionCause.HasAtLeastOneMergeStateActive;
+      if (mergeStatesForResource.length === 1 && resolvedMergeStatesCausedByMerge.length === 1) {
+        redirectMessage = "There is exactly one merge state caused by merge, which has 0 conflicts.";
+        redirectCause = CommitHttpRedirectionCause.HasExactlyOneMergeStateAndItIsResolvedAndCausedByMerge;
+      }
+      const prismaMergeStateCausedByMerge: PrismaMergeStateWithData | null = redirectCause === CommitHttpRedirectionCause.HasAtLeastOneMergeStateActive ?
+        null :
+        {
+          ...mergeStatesForResource[0],
+          mergeStateData: null
+        };
+      const commitRedirectResponseJson: CommitRedirectResponseJson = {
+        iri,
+        redirectMessage,
+        commitHttpRedirectionCause: redirectCause,
+        openedMergeStatesCount: mergeStatesForResource.length,
+        mergeStateUuids: mergeStatesForResource.map(mergeState => mergeState.uuid),
+        commitMessage: query.commitMessage,
+        exportFormat: query.exportFormat ?? "json",
+        mergeStateCausedByMerge: redirectCause === CommitHttpRedirectionCause.HasAtLeastOneMergeStateActive ?
+          null :
+          await mergeStateModel.prismaMergeStateToMergeState(prismaMergeStateCausedByMerge!, false),    // We use the merge state without diff data, so we do not need the diff data to be up to data
+      };
+      response.status(300).json(commitRedirectResponseJson);
+      return;
+    }
   }
 
   const branchAndLastCommit: CommitBranchAndHashInfo = {
     localBranch: branch,
     localLastCommitHash: resource.lastCommitHash,
-    mergeFromData: mergeStatesForResource.length === 0 ?
-      null :
-      {
-        branch: mergeStatesForResource[0].branchMergeFrom,
-        commitHash: mergeStatesForResource[0].lastCommitHashMergeFrom,
-        iri: mergeStatesForResource[0].rootIriMergeFrom,
-      }
+    mergeFromData: null
   };
 
   const gitCommitInfo: GitCommitToCreateInfoBasic = {
@@ -157,6 +239,16 @@ export const commitPackageToGitUsingAuthSession = async (
   gitCommitInfoBasic: GitCommitToCreateInfoBasic,
   shouldAlwaysCreateMergeState: boolean,
 ) => {
+  const commitInfo: GitCommitToCreateInfoExplicitWithCredentials = prepareCommitDataForCommit(request, response, remoteRepositoryURL, gitCommitInfoBasic);
+  return await commitPackageToGit(iri, remoteRepositoryURL, branchAndLastCommit, repositoryIdentificationInfo, commitInfo, shouldAlwaysCreateMergeState);
+}
+
+export function prepareCommitDataForCommit(
+  request: express.Request,
+  response: express.Response,
+  remoteRepositoryURL: string,
+  gitCommitInfoBasic: GitCommitToCreateInfoBasic,
+): GitCommitToCreateInfoExplicitWithCredentials {
   // If gitProvider not given - extract it from url
   const gitProvider = gitCommitInfoBasic.gitProvider ?? GitProviderFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL);
   const committer = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
@@ -166,7 +258,8 @@ export const commitPackageToGitUsingAuthSession = async (
     gitProvider: gitProvider,
     exportFormat: gitCommitInfoBasic.exportFormat,
   };
-  return await commitPackageToGit(iri, remoteRepositoryURL, branchAndLastCommit, repositoryIdentificationInfo, commitInfo, shouldAlwaysCreateMergeState);
+
+  return commitInfo;
 }
 
 
@@ -234,7 +327,12 @@ async function commitDSMergeToGit(
 
     const mergeFromBranchLog = await git.log([mergeFromBranch]);
     const lastMergeFromBranchCommitInGit = mergeFromBranchLog.latest?.hash;
-    const shouldTryCreateMergeState = lastMergeFromBranchCommitInGit !== mergeFromCommitHash || shouldAlwaysCreateMergeState;
+    const mergeToBranchLog = await git.log([cloneResult.mergeToBranchExplicitName]);
+    const lastMergeToBranchCommitInGit = mergeToBranchLog.latest?.hash;
+    const shouldTryCreateMergeState = (lastMergeFromBranchCommitInGit !== mergeFromCommitHash ||
+                                      lastMergeToBranchCommitInGit !== mergeToCommitHash ||
+                                      shouldAlwaysCreateMergeState) &&
+                                      hasSetLastCommit;
 
     if (shouldTryCreateMergeState) {
       const mergeFrom: MergeEndpointForComparison = {

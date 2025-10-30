@@ -44,7 +44,7 @@ export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (requ
       return;
     }
 
-    const mergeState = await mergeStateModel.getMergeStateFromUUID(createdMergeStateId, false);
+    const mergeState = await mergeStateModel.getMergeStateFromUUID(createdMergeStateId, false, true);
 
     if (mergeState === null) {
       response.status(400).send({error: `Can not create new merge state for merge from iri ${mergeFromIri} and merge to iri ${mergeToIri}.

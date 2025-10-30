@@ -14,7 +14,7 @@ export const removeMergeState = asyncHandler(async (request: express.Request, re
   const query = querySchema.parse(request.query);
   const { uuid }= query;
 
-  const mergeState = await mergeStateModel.getMergeStateFromUUID(uuid, false);
+  const mergeState = await mergeStateModel.getMergeStateFromUUID(uuid, false, false);
   if (mergeState === null) {
     response.status(404).json({error: `Merge state with uuid (${uuid}) does not exist`});
     return;

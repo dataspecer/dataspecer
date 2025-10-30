@@ -37,7 +37,7 @@ import { corsOriginHandler } from "./utils/cors-related.ts";
 import { currentSession } from "./authorization/auth-session.ts";
 import { createRandomWebook, handleWebhook } from "./routes/git-webhook-handler.ts";
 import { createNewGitRepositoryWithPackageContent, createPackageFromExistingGitRepository } from "./routes/create-new-git-repository-with-package-content.ts";
-import { commitPackageToGitHandler } from "./routes/commit-package-to-git.ts";
+import { commitPackageToGitHandler, mergeCommitPackageToGitHandler } from "./routes/commit-package-to-git.ts";
 import { redirectToRemoteGitRepository } from "./routes/redirect-to-remote-git-repository.ts";
 import { removeGitRepository } from "./routes/remove-git-repository.ts";
 import { fetchGitCommitHistory } from "./routes/fetch-git-commit-history.ts";
@@ -55,6 +55,13 @@ import { clearMergeStateTableDebug } from "./routes/debug-clear-merge-state-tabl
 import { storeNewPrivateSSHKeyToBackend, storePrivateSSHKey } from "./routes/store-private-ssh-key.ts";
 import { GIT_RAD_STR_BOT_SSH_ID, GIT_RAD_STR_BOT_SSH_PRIVATE_KEY } from "./git-never-commit.ts";
 import { removeMergeState } from "./routes/remove-merge-state.ts";
+import { finalizePullMergeState } from "./routes/finalize-pull-merge-state.ts";
+import { finalizePushMergeState } from "./routes/finalize-push-merge-state.ts";
+import { finalizeMergeMergeState } from "./routes/finalize-merge-merge-state.ts";
+import { finalizePullMergeStateOnFailure } from "./routes/finalize-pull-merge-state-on-failure.ts";
+import { finalizeMergeMergeStateOnFailure } from "./routes/finalize-merge-merge-state-on-failure.ts";
+import { finalizePushMergeStateOnFailure } from "./routes/finalize-push-merge-state-on-failure.ts";
+
 
 // Create application models
 
@@ -213,7 +220,14 @@ application.get(apiBasename + "/git/get-merge-state", getMergeState);
 application.post(apiBasename + "/git/create-merge-state-between-ds-packages", createMergeStateBetweenDSPackagesHandler);
 application.post(apiBasename + "/git/update-merge-state", updateMergeState);
 application.get(apiBasename + "/git/get-merge-states", getMergeStates);
+
 application.post(apiBasename + "/git/finalize-merge-state", finalizeMergeState);
+application.post(apiBasename + "/git/finalize-pull-merge-state", finalizePullMergeState);
+application.post(apiBasename + "/git/finalize-pull-merge-state-on-failure", finalizePullMergeStateOnFailure);
+application.post(apiBasename + "/git/finalize-push-merge-state", finalizePushMergeState);
+application.post(apiBasename + "/git/finalize-push-merge-state-on-failure", finalizePushMergeStateOnFailure);
+application.post(apiBasename + "/git/finalize-merge-merge-state", finalizeMergeMergeState);
+application.post(apiBasename + "/git/finalize-merge-merge-state-on-failure", finalizeMergeMergeStateOnFailure);
 application.delete(apiBasename + "/git/remove-merge-state", removeMergeState);
 
 // TODO RadStr: Just for debugging !
@@ -226,6 +240,7 @@ application.get(apiBasename + "/git/webhook-test", currentSession, createRandomW
 application.post(apiBasename + "/git/set-private-ssh-key", currentSession, storePrivateSSHKey);
 application.get(apiBasename + "/git/create-new-git-repository-with-package-content", currentSession, createNewGitRepositoryWithPackageContent);
 application.get(apiBasename + "/git/commit-package-to-git", currentSession, commitPackageToGitHandler);
+application.get(apiBasename + "/git/merge-commit-package-to-git", currentSession, mergeCommitPackageToGitHandler);
 application.get(apiBasename + "/git/remove-git-repository", currentSession, removeGitRepository);
 application.get(apiBasename + "/git/create-package-from-existing-git-repository", currentSession, createPackageFromExistingGitRepository);    // TODO RadStr: Not called for naywhere
 application.get(apiBasename + "/git/test-docker", currentSession, exportPackageResource);

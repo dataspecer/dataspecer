@@ -121,10 +121,14 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
                                             />
                   </div>
                 <div className="flex gap-2 mt-4 justify-start mb-2">
-                  <Button title="This does save both the changes to files and updates the merge state" variant={"default"} onClick={() => saveEverything()}>
+                  <Button title="This does save both the changes to files and updates the merge state"
+                          variant={"default"}
+                          onClick={() => saveEverything()}>
                     Save changes and update merge state (Ctrl + S)
                   </Button>
-                  <Button title="This performs the operation, which triggered the merge state. Can be pull/push/merge" variant={"default"} onClick={finalizeMergeStateHandler}>
+                  <Button title="This performs the operation, which triggered the merge state. Can be pull/push/merge"
+                          variant={"default"}
+                          onClick={finalizeMergeStateHandler}>
                     Finalize merge state
                   </Button>
                 </div>

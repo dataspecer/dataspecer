@@ -9,6 +9,7 @@ import { getLastCommitHash, removePathRecursively } from "../utils/git-utils.ts"
 import { ResourceChangeListener, ResourceChangeType } from "./resource-change-observer.ts";
 import { updateMergeStateToBeUpToDate, MergeEndpointForStateUpdate } from "../routes/create-merge-state.ts";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
+import { getCommonCommitInHistory } from "../utils/simple-git-utils.ts";
 
 type Nullable<T> = {
   [P in keyof T]: T[P] | null;
@@ -68,11 +69,11 @@ function convertToMergeInfoWithIri(input: MergeEndInfoWithRootNode): MergeEndInf
   };
 }
 
-type MergeStateWithData = Prisma.MergeStateGetPayload<{
+export type PrismaMergeStateWithData = Prisma.MergeStateGetPayload<{
   include: { mergeStateData: true }
 }>;
 
-type MergeStateWithoutData = Prisma.MergeStateGetPayload<{
+export type PrismaMergeStateWithoutData = Prisma.MergeStateGetPayload<{
   include: { mergeStateData: false }
 }>;
 
@@ -237,8 +238,8 @@ export class MergeStateModel implements ResourceChangeListener {
 
     // TODO RadStr: Just debug
     const mergeStateId = await this.createMergeState(mergeStateInput);
-    console.info("Current merge state with:", await this.getMergeStateFromUUID(mergeStateId, true));
-    console.info("Current merge state without:", await this.getMergeStateFromUUID(mergeStateId, false));
+    console.info("Current merge state with:", await this.getMergeStateFromUUID(mergeStateId, true, false));
+    console.info("Current merge state without:", await this.getMergeStateFromUUID(mergeStateId, false, false));
     if (mergeStateCause !== "merge") {
       // In case of merge we do not know what is the state of synchronization, we perform it on local ds packages
       await this.resourceModel.updateIsSynchronizedWithRemote(rootResourceIri, false);
@@ -251,8 +252,9 @@ export class MergeStateModel implements ResourceChangeListener {
     throw new Error("TODO RadStr: Implement");
   }
 
+
   async mergeStateFinalizer(uuid: string): Promise<MergeState | null> {
-    const mergeState = await this.getMergeStateFromUUID(uuid, true);
+    const mergeState = await this.getMergeStateFromUUID(uuid, true, true);
     if (mergeState === null) {
       throw new Error(`Merge state for uuid (${uuid}) does not exist`);
     }
@@ -264,7 +266,10 @@ export class MergeStateModel implements ResourceChangeListener {
     return null;
   }
 
-  private async handlePullFinalizer(mergeState: MergeState) {
+  /**
+   * @throws Error if the commit on which the DS resource already is within DS is actually after the commit to which we are updating.
+   */
+  async handlePullFinalizer(mergeState: MergeState) {
     // TODO: This can be "generalized" to allow updating git (classic filesystem)
     let filesystemToUpdate: AvailableFilesystems;
     let rootIriToUpdate: string;
@@ -285,18 +290,21 @@ export class MergeStateModel implements ResourceChangeListener {
       pathToGitToRootMetaOfTheStatic = mergeState.rootFullPathToMetaMergeFrom;
     }
 
-    if (filesystemToUpdate === AvailableFilesystems.DS_Filesystem) {
-      const resource = await this.resourceModel.getResource(rootIriToUpdate);
-      if (resource === null) {
-        throw new Error(`Resource no longer exists or it never existed. The merge state: ${mergeState}`);
-      }
+    if (filesystemToUpdate !== AvailableFilesystems.DS_Filesystem) {
+      throw new Error("It is not currently supported to have different filesystem to update than the DS fileystem.");
+    }
+    const resource = await this.resourceModel.getResource(rootIriToUpdate);
+    if (resource === null) {
+      throw new Error(`Resource no longer exists or it never existed. The merge state: ${mergeState}`);
     }
     if (filesystemOfTheStatic === AvailableFilesystems.ClassicFilesystem) {
       // We need path to any directory inside repo (path to file causes error)
       const directory = MergeStateModel.extractGitRoot(pathToGitToRootMetaOfTheStatic);
       const git = simpleGit(directory);
       const gitCommitHash = await getLastCommitHash(git);
-      await this.resourceModel.updateLastCommitHash(rootIriToUpdate, gitCommitHash);
+      // If we throw error then it means that the commit on which the DS resource already is within DS is actually after the commit to which we are updating.
+      const commonCommit = await getCommonCommitInHistory(git, gitCommitHash, resource.lastCommitHash);
+      await this.forceHandlePullFinalizer(rootIriToUpdate, gitCommitHash);
     }
 
     return {
@@ -307,11 +315,19 @@ export class MergeStateModel implements ResourceChangeListener {
     };
   }
 
-  private async handlePushFinalizer(mergeState: MergeState) {
+  async forceHandlePullFinalizer(rootIriToUpdate: string, pulledCommitHash: string) {
+    await this.resourceModel.updateLastCommitHash(rootIriToUpdate, pulledCommitHash);
+  }
+
+  async handlePushFinalizer(mergeState: MergeState) {
     // Same as pull, but we want the user to push, that is to insert the commit message back,
     //  but that is handled in the request handler, not here
     await this.handlePullFinalizer(mergeState);
     // TODO RadStr: Or just for now don't do anything about it ... make the user commit again
+  }
+
+  async handleMergeFinalizer(mergeState: MergeState) {
+    throw new Error("TODO RadStr: Implement - finalizing merge state caused by merge state");
   }
 
 
@@ -397,7 +413,7 @@ export class MergeStateModel implements ResourceChangeListener {
     return await Promise.all(mergeStates.map(mergeState => this.prismaMergeStateToMergeState(mergeState, false)));
   }
 
-  async getMergeStateFromUUID(uuid: string, shouldIncludeMergeStateData: boolean): Promise<MergeState | null> {
+  async getMergeStateFromUUID(uuid: string, shouldIncludeMergeStateData: boolean, shouldUpdateIfNotUpToDate: boolean): Promise<MergeState | null> {
     const mergeState = await this.prismaClient.mergeState.findFirst({
       where: {
         uuid: uuid,
@@ -411,7 +427,7 @@ export class MergeStateModel implements ResourceChangeListener {
       return null;
     }
 
-    return this.prismaMergeStateToMergeState(mergeState, true);
+    return this.prismaMergeStateToMergeState(mergeState, shouldUpdateIfNotUpToDate);
   }
 
   async getMergeState(rootIriMergeFrom: string, rootIriMergeTo: string, shouldIncludeMergeStateData: boolean): Promise<MergeState | null> {
@@ -435,7 +451,7 @@ export class MergeStateModel implements ResourceChangeListener {
   async getMergeStatesForMergeTo(
     rootIriMergeTo: string,
     shouldIncludeMergeStateData: boolean
-  ): Promise<MergeStateWithoutData[] | MergeStateWithData[]> {
+  ): Promise<PrismaMergeStateWithoutData[] | PrismaMergeStateWithData[]> {
     const mergeStates = await this.prismaClient.mergeState.findMany({
       where: {
         rootIriMergeTo: rootIriMergeTo,
@@ -662,7 +678,15 @@ export class MergeStateModel implements ResourceChangeListener {
     });
   }
 
-  async removeMergeState(mergeState: MergeStateWithoutData | MergeState) {
+  async removeMergeStateByUuid(mergeStateUuid: string) {
+    const mergeState = await this.getMergeStateFromUUID(mergeStateUuid, false, false);
+    if (mergeState === null) {
+      throw new Error(`Merge state with given uuid (${mergeStateUuid}) is not present in database`);
+    }
+    await this.removeMergeState(mergeState);
+  }
+
+  async removeMergeState(mergeState: PrismaMergeStateWithoutData | MergeState) {
     await this.prismaClient.mergeState.delete({where: {uuid: mergeState.uuid}});
     this.removeRepository(mergeState.filesystemTypeMergeFrom as AvailableFilesystems, mergeState.rootFullPathToMetaMergeFrom, true);
     this.removeRepository(mergeState.filesystemTypeMergeTo as AvailableFilesystems, mergeState.rootFullPathToMetaMergeTo, true);
@@ -690,7 +714,7 @@ export class MergeStateModel implements ResourceChangeListener {
     };
   }
 
-  async prismaMergeStateToMergeState(prismaMergeState: MergeStateWithData, shouldUpdateIfNotUpToDate: boolean): Promise<MergeState> {
+  async prismaMergeStateToMergeState(prismaMergeState: PrismaMergeStateWithData, shouldUpdateIfNotUpToDate: boolean): Promise<MergeState> {
     if (shouldUpdateIfNotUpToDate && !prismaMergeState.isUpToDate) {
       const { git: gitForMergeFrom, gitProvider: gitProviderForMergeFrom } = await this.createMergeEndPointGitData(
         prismaMergeState.rootIriMergeFrom, prismaMergeState.filesystemTypeMergeFrom,
@@ -723,7 +747,7 @@ export class MergeStateModel implements ResourceChangeListener {
       if (!updatedMergeStateResult) {
         throw new Error("Could not update merge state to be up to date, when trying to get it from database");
       }
-      const createdMergeState = await this.getMergeStateFromUUID(prismaMergeState.uuid, prismaMergeState.mergeStateData !== null);
+      const createdMergeState = await this.getMergeStateFromUUID(prismaMergeState.uuid, prismaMergeState.mergeStateData !== null, true);
       if (createdMergeState === null) {
         // I don't think that this could ever happen
         throw new Error(`The merge state exists, it was no longer up to date, new one was created, however for some unknown reason it is not present in database after update: ${{rootIriMergeFrom: prismaMergeState.rootIriMergeFrom, rootIriMergeTo: prismaMergeState.rootIriMergeTo}}`);

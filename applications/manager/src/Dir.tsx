@@ -39,7 +39,7 @@ import { OpenMergeState } from "./dialog/open-merge-state";
 import { useLogin, UseLoginType } from "./hooks/use-login";
 import SetPrivateSSHKeyDialog from "./dialog/set-private-ssh";
 import { isGitUrlSet, PACKAGE_ROOT } from "@dataspecer/git";
-import { debugClearMergeStateDBTable } from "./utils/merge-state-fetch-methods";
+import { debugClearMergeStateDBTable } from "./utils/merge-state-backend-requests";
 import { manualPull, removeGitLinkFromPackage, switchRepresentsBranchHead } from "./utils/git-fetch-related-actions";
 
 export function lng(text: LanguageString | undefined): string | undefined {
@@ -257,7 +257,7 @@ const Row = ({ iri, projectFilter, setProjectFilter, isSignedIn, mergeActors, pa
             <hr className="border-gray-300" />
             {<DropdownMenuItem onClick={async () => createNewRemoteRepositoryHandler(openModal, iri, resource)}><GitPullRequestIcon className="mr-2 h-4 w-4" />Create remote repository</DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => linkToExistingGitRepositoryHandler(openModal, iri, resource)}><Link className="mr-2 h-4 w-4" />Link to remote repository</DropdownMenuItem>}
-            {<DropdownMenuItem onClick={async () => commitToGitDialogOnClickHandler(openModal, iri, resource)}><GitCommit className="mr-2 h-4 w-4" />Commit </DropdownMenuItem>}
+            {<DropdownMenuItem onClick={async () => commitToGitDialogOnClickHandler(openModal, iri, resource, null)}><GitCommit className="mr-2 h-4 w-4" />Commit </DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => manualPull(iri)}><Import className="mr-2 h-4 w-4" />Pull</DropdownMenuItem>}
             {<DropdownMenuItem onClick={() => openModal(CreateNewBranchDialog, { sourcePackage: resource, actionOnConfirm: BranchAction.CreateNewBranch })}><GitBranchPlus className="mr-2 h-4 w-4" />Create branch</DropdownMenuItem>}
             <hr className="border-gray-300" />
