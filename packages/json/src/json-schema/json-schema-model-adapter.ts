@@ -231,6 +231,7 @@ function structureModelChoiceToJsonSchemaDefinition(
       console.warn("Unknown container type when generating JSON schema choice. Skipping.", property.propertyAsContainer);
     }
   }
+  (result.oneOf as JsonSchemaObject[]).forEach(i => i.representsStructuralElement = null); // Because these represent just wrappers
   return result;
 }
 
