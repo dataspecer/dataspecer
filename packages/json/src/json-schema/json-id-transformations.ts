@@ -2,9 +2,10 @@ import { LocalEntityWrapped } from "@dataspecer/core-v2/hierarchical-semantic-ag
 import { SemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
 import { SemanticModelClassProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { clone } from "@dataspecer/core/core";
-import { StructureModel, StructureModelClass, StructureModelComplexType, StructureModelCustomType, StructureModelProperty } from "@dataspecer/core/structure-model/model";
+import { StructureModel, StructureModelClass, StructureModelComplexType, StructureModelProperty } from "@dataspecer/core/structure-model/model";
 import { JsonConfiguration } from "../configuration.ts";
 import { getClassTypeKey } from "../json-ld/json-ld-adapter.ts";
+import type { JsonTypeStructureModelProperty } from "./json-schema-model-adapter.ts";
 
 /**
  * For each PSM class with CIM interpretation, it adds iri and type property
@@ -36,42 +37,14 @@ export function structureModelAddIdAndTypeProperties(
       if (localClassConfiguration.jsonTypeKeyAlias !== null) {
         const typeKeyValue = getClassTypeKey(semanticModel[structureClass.pimIri] as LocalEntityWrapped<SemanticModelClass | SemanticModelClassProfile>, structureClass, configuration, structure.jsonLdTypeMapping);
 
-        const datatype = new StructureModelCustomType();
-        if (typeKeyValue.length === 1) {
-          const type = typeKeyValue[0];
-          datatype.data = {
-            oneOf: [
-              {
-                const: type
-              },
-              {
-                type: "array",
-                contains: {
-                  const: type
-                },
-                items: {
-                  type: "string"
-                }
-              }
-            ]
-          };
-        } else {
-          datatype.data = {
-            type: "array",
-            allOf: typeKeyValue.map(item => ({contains: {const: item}})),
-            items: {
-              type: "string"
-            }
-          }
-        }
-
         const id = new StructureModelProperty();
         id.technicalLabel = localClassConfiguration.jsonTypeKeyAlias;
         id.cardinalityMax = 1;
         if (localClassConfiguration.jsonTypeRequired) {
           id.cardinalityMin = 1;
         }
-        id.dataTypes = [datatype];
+        id.dataTypes = []; // Because we cannot represent const in structure model yet, we use additional property to store the values.
+        (id as JsonTypeStructureModelProperty).typeKeyValues = typeKeyValue;
 
         structureClass.properties.unshift(id);
       }

@@ -1,3 +1,5 @@
+import type { StructureModelClass } from "@dataspecer/core/structure-model/model/structure-model-class";
+
 export class JsonSchema {
   schema: string | null = "https://json-schema.org/draft/2020-12/schema";
 
@@ -13,8 +15,28 @@ export class JsonSchemaDefinition {
 
   description: string | null = null;
 
+  anyOf: JsonSchemaDefinition[] = [];
+  oneOf: JsonSchemaDefinition[] = [];
+  allOf: JsonSchemaDefinition[] = [];
+
   constructor(type: string) {
     this.type = type;
+  }
+}
+
+/**
+ * Does not have any specific type.
+ */
+export class JsonSchemaAny extends JsonSchemaDefinition {
+  private static TYPE = "json-schema-any" as const;
+  declare readonly type: typeof JsonSchemaAny.TYPE;
+
+  constructor() {
+    super(JsonSchemaAny.TYPE);
+  }
+
+  static is(resource: JsonSchemaDefinition): resource is JsonSchemaAny {
+    return resource.type.includes(JsonSchemaAny.TYPE);
   }
 }
 
@@ -31,10 +53,6 @@ export class JsonSchemaObject extends JsonSchemaDefinition {
 
   additionalProperties: JsonSchemaDefinition | false | null = null;
 
-  anyOf: JsonSchemaDefinition[] = [];
-  oneOf: JsonSchemaDefinition[] = [];
-  allOf: JsonSchemaDefinition[] = [];
-
   constructor() {
     super(JsonSchemaObject.TYPE);
   }
@@ -42,6 +60,11 @@ export class JsonSchemaObject extends JsonSchemaDefinition {
   static is(resource: JsonSchemaDefinition): resource is JsonSchemaObject {
     return resource.type.includes(JsonSchemaObject.TYPE);
   }
+
+  /**
+   * Structural element this object represents (if any).
+   */
+  representsStructuralElement: StructureModelClass | null = null;
 }
 
 export class JsonSchemaArray extends JsonSchemaDefinition {
@@ -52,10 +75,14 @@ export class JsonSchemaArray extends JsonSchemaDefinition {
   minItems: number | null = null;
   maxItems: number | null = null;
 
+  anyOf: (JsonSchemaArray | JsonSchemaConst)[] = [];
+  oneOf: (JsonSchemaArray | JsonSchemaConst)[] = [];
+  allOf: (JsonSchemaArray | JsonSchemaConst)[] = [];
+
   /**
    * Definition of items that must be part of the array.
    */
-  contains: JsonSchemaDefinition[] = [];
+  contains: JsonSchemaDefinition | null = null;
 
   constructor() {
     super(JsonSchemaArray.TYPE);
@@ -67,7 +94,8 @@ export class JsonSchemaArray extends JsonSchemaDefinition {
 }
 
 export class JsonSchemaNull extends JsonSchemaDefinition {
-  private static TYPE = "json-schema-null";
+  private static TYPE = "json-schema-null" as const;
+  declare readonly type: typeof JsonSchemaNull.TYPE;
 
   constructor() {
     super(JsonSchemaNull.TYPE);
@@ -79,7 +107,8 @@ export class JsonSchemaNull extends JsonSchemaDefinition {
 }
 
 export class JsonSchemaBoolean extends JsonSchemaDefinition {
-  private static TYPE = "json-schema-boolean";
+  private static TYPE = "json-schema-boolean" as const;
+  declare readonly type: typeof JsonSchemaBoolean.TYPE;
 
   constructor() {
     super(JsonSchemaBoolean.TYPE);
@@ -91,7 +120,8 @@ export class JsonSchemaBoolean extends JsonSchemaDefinition {
 }
 
 export class JsonSchemaNumber extends JsonSchemaDefinition {
-  private static TYPE = "json-schema-number";
+  private static TYPE = "json-schema-number" as const;
+  declare readonly type: typeof JsonSchemaNumber.TYPE;
 
   public isInteger = false;
 
@@ -120,36 +150,6 @@ export class JsonSchemaString extends JsonSchemaDefinition {
 
   static is(resource: JsonSchemaDefinition): resource is JsonSchemaString {
     return resource.type.includes(JsonSchemaString.TYPE);
-  }
-}
-
-// https://ofn.gov.cz/základní-datové-typy/2020-07-01/schémata/text.json
-export class JsonSchemaAnyOf extends JsonSchemaDefinition {
-  private static TYPE = "json-schema-any-of";
-
-  types: JsonSchemaDefinition[] = [];
-
-  constructor() {
-    super(JsonSchemaAnyOf.TYPE);
-  }
-
-  static is(resource: JsonSchemaDefinition): resource is JsonSchemaAnyOf {
-    return resource.type.includes(JsonSchemaAnyOf.TYPE);
-  }
-}
-
-// https://ofn.gov.cz/umístění/2020-07-01/schémata/umístění.json
-export class JsonSchemaOneOf extends JsonSchemaDefinition {
-  private static TYPE = "json-schema-one-of";
-
-  types: JsonSchemaDefinition[] = [];
-
-  constructor() {
-    super(JsonSchemaOneOf.TYPE);
-  }
-
-  static is(resource: JsonSchemaDefinition): resource is JsonSchemaOneOf {
-    return resource.type.includes(JsonSchemaOneOf.TYPE);
   }
 }
 
@@ -193,21 +193,14 @@ export class JsonSchemaRef extends JsonSchemaDefinition {
   static is(resource: JsonSchemaDefinition): resource is JsonSchemaRef {
     return resource.type.includes(JsonSchemaRef.TYPE);
   }
-}
 
-export class JsonSchemaCustomType extends JsonSchemaDefinition {
-  private static TYPE = "json-schema-custom-type";
+  // Helper to store absolute URL of the referenced schema
+  absoluteUrl: string | null = null;
 
-  data: object;
-
-  constructor(data: object) {
-    super(JsonSchemaCustomType.TYPE);
-    this.data = data;
-  }
-
-  static is(resource: JsonSchemaDefinition): resource is JsonSchemaCustomType {
-    return resource.type.includes(JsonSchemaCustomType.TYPE);
-  }
+  /**
+   * Structural element this object represents (if any).
+   */
+  representsStructuralElement: StructureModelClass | null = null;
 }
 
 // https://json-schema.org/understanding-json-schema/reference/string.html

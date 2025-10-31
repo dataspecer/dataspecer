@@ -5,7 +5,6 @@ import {
     StructureModelComplexType,
     StructureModelProperty,
     StructureModelPrimitiveType,
-    StructureModelCustomType,
     StructureModelSchemaRoot,
   } from "@dataspecer/core/structure-model/model";
   import { ArtefactGeneratorContext } from "@dataspecer/core/generator";
@@ -16,13 +15,13 @@ class ClosedModelCreator implements ModelCreator{
 
    createModel(): StructureModel{
     var model = new StructureModel();
-  
+
       var primitiveType1 : StructureModelPrimitiveType;
       primitiveType1 = new StructureModelPrimitiveType();
       primitiveType1.dataType = "http://www.w3.org/2001/XMLSchema#string";
       primitiveType1.example = null;
       primitiveType1.regex = null;
-  
+
       var property1 : StructureModelProperty;
       property1 = new StructureModelProperty();
       property1.cardinalityMin = 0;
@@ -41,7 +40,7 @@ class ClosedModelCreator implements ModelCreator{
       primitiveType2.dataType = "http://www.w3.org/2001/XMLSchema#decimal";
       primitiveType2.example = null;
       primitiveType2.regex = null;
-  
+
       var property2 : StructureModelProperty;
       property2 = new StructureModelProperty();
       property2.cardinalityMin = 0;
@@ -54,8 +53,8 @@ class ClosedModelCreator implements ModelCreator{
       property2.pimIri = "https://slovník.gov.cz/generický/adresy/pojem/má-kód-adresního-místa";
       property2.psmIri = "https://slovník.gov.cz/generický/adresy/pojem/má-kód-adresního-místa";
       property2.technicalLabel = "text-adresy";
-  
-  
+
+
       var class1 : StructureModelClass;
       class1 = new StructureModelClass();
       class1.cimIri = "https://slovník.gov.cz/legislativní/sbírka/111/2009/pojem/adresa";
@@ -73,13 +72,13 @@ class ClosedModelCreator implements ModelCreator{
       class1.technicalLabel = "Technický popisek class 1";
       class1.isClosed = true;
       class1.instancesSpecifyTypes = "ALWAYS";
-  
+
       var root1 : StructureModelSchemaRoot;
       root1 = new StructureModelSchemaRoot();
       root1.classes = [class1];
-  
+
       model.roots = [root1];
-  
+
     return model;
   }
 }

@@ -5,8 +5,6 @@ export interface StructureModelType {
   isAttribute(): this is StructureModelPrimitiveType;
 
   isAssociation(): this is StructureModelComplexType;
-
-  isCustomType(): this is StructureModelCustomType;
 }
 
 export class StructureModelPrimitiveType implements StructureModelType {
@@ -33,10 +31,6 @@ export class StructureModelPrimitiveType implements StructureModelType {
   isAssociation(): this is StructureModelComplexType {
     return false;
   }
-
-  isCustomType(): this is StructureModelCustomType {
-    return false;
-  }
 }
 
 export class StructureModelComplexType implements StructureModelType {
@@ -56,26 +50,6 @@ export class StructureModelComplexType implements StructureModelType {
   }
 
   isAssociation(): this is StructureModelComplexType {
-    return true;
-  }
-
-  isCustomType(): this is StructureModelCustomType {
-    return false;
-  }
-}
-
-export class StructureModelCustomType implements StructureModelCustomType {
-  data: object;
-
-  isAttribute(): this is StructureModelPrimitiveType {
-    return false;
-  }
-
-  isAssociation(): this is StructureModelComplexType {
-    return false;
-  }
-
-  isCustomType(): this is StructureModelCustomType {
     return true;
   }
 }

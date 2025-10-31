@@ -535,9 +535,6 @@ export class ShaclAdapter {
             }
           }
         }
-      } else if(dt.isCustomType() == true){
-        // CUSTOM TYPE IS NOT USED AT THE MOMENT
-        console.warn("SHACL generator: Custom Type is not supported.");
       } else{
         throw new Error("Datatype must be one of the 3 basic types.");
       }

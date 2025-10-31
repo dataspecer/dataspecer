@@ -104,10 +104,6 @@ export class LdkitSchemaAdapter implements StructureClassToSchemaAdapter {
                 ldkitProperty = this.convertAssociationPropertyToLdkitProperty(dataType, ldkitProperty);
                 return;
             }
-
-            if (dataType.isCustomType()) {
-                throw new Error("Custom type properties not supported yet");
-            }
         });
 
         return Object.keys(ldkitProperty).length === 1

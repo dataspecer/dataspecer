@@ -5,7 +5,6 @@ import {
     StructureModelComplexType,
     StructureModelProperty,
     StructureModelPrimitiveType,
-    StructureModelCustomType,
     StructureModelSchemaRoot,
   } from "@dataspecer/core/structure-model/model";
   import { ArtefactGeneratorContext } from "@dataspecer/core/generator";
@@ -16,7 +15,7 @@ class OptionalModelCreator implements ModelCreator{
 
    createModel(): StructureModel{
     var model = new StructureModel();
-  
+
     var class1 : StructureModelClass;
     class1 = new StructureModelClass();
     class1.cimIri = "https://slovník.gov.cz/generický/umístění/pojem/místo";
@@ -37,7 +36,7 @@ class OptionalModelCreator implements ModelCreator{
     var complexType3 : StructureModelComplexType;
     complexType3 = new StructureModelComplexType();
     complexType3.dataType = class1;
-  
+
       var property1 : StructureModelProperty;
       property1 = new StructureModelProperty();
       property1.cardinalityMin = 1;
@@ -50,7 +49,7 @@ class OptionalModelCreator implements ModelCreator{
       property1.pimIri = "https://slovník.gov.cz/generický/umístění/pojem/má-adresu";
       property1.psmIri = "https://slovník.gov.cz/generický/umístění/pojem/má-adresu";
       property1.technicalLabel = "má_adresu";
-  
+
       var class1 : StructureModelClass;
       class1 = new StructureModelClass();
       class1.cimIri = "https://slovník.gov.cz/legislativní/sbírka/111/2009/pojem/adresa";
@@ -69,13 +68,13 @@ class OptionalModelCreator implements ModelCreator{
       class1.isClosed = false;
       class1.instancesSpecifyTypes = "OPTIONAL";
       class1.instancesHaveIdentity = "OPTIONAL";
-  
+
       var root1 : StructureModelSchemaRoot;
       root1 = new StructureModelSchemaRoot();
       root1.classes = [class1];
-  
+
       model.roots = [root1];
-  
+
     return model;
   }
 }

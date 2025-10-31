@@ -1,3 +1,3 @@
 # @dataspecer/json
 
-See individual subdirectories for more info.
+Dataspecer generator for JSON Schema, JSON-LD Context and their (Handlebars) documentation from structure model.

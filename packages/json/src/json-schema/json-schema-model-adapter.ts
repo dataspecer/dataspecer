@@ -1,9 +1,9 @@
 import {
   JsonSchema,
-  JsonSchemaAnyOf,
+  JsonSchemaAny,
   JsonSchemaArray,
   JsonSchemaBoolean,
-  JsonSchemaCustomType,
+  JsonSchemaConst,
   JsonSchemaDefinition,
   JsonSchemaNull,
   JsonSchemaNumber,
@@ -22,7 +22,6 @@ import {
 import {
   StructureModel,
   StructureModelClass,
-  StructureModelCustomType,
   StructureModelPrimitiveType,
   StructureModelProperty,
   type StructureModelComplexType,
@@ -38,6 +37,41 @@ import { JsonConfiguration } from "../configuration.ts";
 import { pathRelative } from "@dataspecer/core/core/utilities/path-relative";
 import { JsonStructureModelClass } from "../json-structure-model/structure-model-class.ts";
 import { JSON_LD_GENERATOR } from "../json-ld/json-ld-generator.ts";
+
+export interface JsonTypeStructureModelProperty extends StructureModelProperty {
+  typeKeyValues: string[];
+}
+
+function isJsonTypeStructureModelProperty(property: StructureModelProperty): property is JsonTypeStructureModelProperty {
+  return (property as JsonTypeStructureModelProperty).typeKeyValues !== undefined;
+}
+
+function typePropertyWithValues(typeKeyValues: string[]): JsonSchemaDefinition {
+  if (typeKeyValues.length === 1) {
+    const constProp = new JsonSchemaConst();
+    constProp.value = typeKeyValues[0];
+
+    const arr = new JsonSchemaArray();
+    arr.contains = constProp;
+    arr.items = new JsonSchemaString(null);
+
+    const oneOf = new JsonSchemaAny();
+    oneOf.oneOf = [
+      constProp,
+      arr,
+    ];
+    return oneOf;
+  } else {
+    const arr = new JsonSchemaArray();
+    arr.allOf = typeKeyValues.map((type) => {
+      const constProp = new JsonSchemaConst();
+      constProp.value = type;
+      return constProp;
+    });
+    arr.items = new JsonSchemaString(null);
+    return arr;
+  }
+}
 
 interface Context {
   /**
@@ -91,8 +125,8 @@ export function structureModelToJsonSchema(
     result.id = artefact.publicUrl;
   }
   if (model.roots[0].classes.length != 1) {
-    const anyOf = new JsonSchemaAnyOf();
-    anyOf.types = model.roots[0].classes.map((c) =>
+    const anyOf = new JsonSchemaAny();
+    anyOf.anyOf = model.roots[0].classes.map((c) =>
       structureModelClassToJsonSchemaDefinition(contex, c)
     );
     result.root = anyOf;
@@ -114,6 +148,7 @@ export function structureModelToJsonSchema(
     array.items = result.root;
 
     const object = new JsonSchemaObject();
+    object.representsStructuralElement = null; // Because this represents the root wrapper
     object.properties[configuration.jsonRootCardinalityObjectKey] = array;
     object.required.push(configuration.jsonRootCardinalityObjectKey);
     result.root = object;
@@ -128,25 +163,26 @@ export function structureModelToJsonSchema(
 
   // Add @context required property
   if (model.roots[0].enforceJsonLdContext !== "no" && jsonLdLink) {
-    const contextProperty = new JsonSchemaCustomType(model.roots[0].enforceJsonLdContext === "as-is" ? {
-      const: jsonLdLink
-    } : {
-      oneOf: [
-        {
-          "const": jsonLdLink
-        },
-        {
-          "type": "array",
-          "contains": {
-            "const": jsonLdLink
-          },
-          "items": {
-            "type": "string",
-            "format": "iri"
-          }
-        }
-      ]
-    });
+    let contextProperty: JsonSchemaDefinition;
+
+    const constProp = new JsonSchemaConst();
+    constProp.value = jsonLdLink;
+
+    if (model.roots[0].enforceJsonLdContext === "as-is") {
+      contextProperty = constProp;
+    } else {
+      const arr = new JsonSchemaArray();
+      arr.contains = constProp;
+      arr.items = new JsonSchemaString(JsonSchemaStringFormats.iri);
+
+      const oneOf = new JsonSchemaAny();
+      oneOf.oneOf = [
+        constProp,
+        arr
+      ];
+
+      contextProperty = oneOf;
+    }
 
     if (result.root instanceof JsonSchemaObject) {
       // Insert in the correct order
@@ -209,6 +245,8 @@ function structureModelClassToJsonSchemaDefinition(
       const url = pathRelative(context.artefact.publicUrl, artefact.publicUrl);
       const reference = new JsonSchemaRef();
       reference.url = url;
+      reference.absoluteUrl = artefact.publicUrl;
+      reference.representsStructuralElement = modelClass;
       return reference;
     }
   }
@@ -224,6 +262,7 @@ function structureModelClassToJsonSchemaDefinition(
   const nonRequiredDefinitions: JsonSchemaDefinition[] = [];
 
   const result = new JsonSchemaObject();
+  result.representsStructuralElement = modelClass;
   result.title = context.stringSelector(modelClass.humanLabel);
   result.description = context.stringSelector(modelClass.humanDescription);
   result.additionalProperties = modelClass.isClosed === true ? false : null;
@@ -241,6 +280,7 @@ function structureModelClassToJsonSchemaDefinition(
 
       if (containerClass.containerType === "sequence") {
         const jsonSchemaFromContainer = structureModelClassToJsonSchemaDefinition(context, containerClass) as JsonSchemaObject;
+        jsonSchemaFromContainer.representsStructuralElement = null; // Because this represents just a wrapper
         if (property.cardinalityMin === 0 && property.cardinalityMax === 1) {
           nonRequiredDefinitions.push(jsonSchemaFromContainer);
           continue;
@@ -259,6 +299,7 @@ function structureModelClassToJsonSchemaDefinition(
         continue;
       } else if (containerClass.containerType === "choice") {
         const jsonSchemaFromContainer = structureModelChoiceToJsonSchemaDefinition(context, containerClass);
+        jsonSchemaFromContainer.representsStructuralElement = null; // Because this represents just a wrapper
 
         let isRequired = property.cardinalityMin === 1;
         if (property.cardinalityMax !== 1) {
@@ -365,13 +406,12 @@ function structureModelPropertyToJsonDefinition(
       dataTypes.push(
         structureModelPrimitiveToJsonDefinition(context, dataType)
       );
-    } else if (dataType.isCustomType()) {
-      dataTypes.push(
-        structureModelCustomTypeToJsonDefinition(context, dataType)
-      );
     } else {
       assertFailed("Invalid data-type instance.");
     }
+  }
+  if (isJsonTypeStructureModelProperty(property)) {
+    dataTypes.push(typePropertyWithValues(property.typeKeyValues));
   }
   let result;
   if (dataTypes.length === 0) {
@@ -382,8 +422,8 @@ function structureModelPropertyToJsonDefinition(
     result = dataTypes[0];
   } else {
     // Multiple types.
-    result = new JsonSchemaAnyOf();
-    result.types = dataTypes;
+    result = new JsonSchemaAny();
+    result.anyOf = dataTypes;
   }
   //
   const wrapped = wrapWithCardinality(property, result);
@@ -498,13 +538,6 @@ function structureModelPrimitiveToJsonDefinition(
       break;
   }
   return result;
-}
-
-function structureModelCustomTypeToJsonDefinition(
-  context: Context,
-  customType: StructureModelCustomType
-): JsonSchemaDefinition {
-  return new JsonSchemaCustomType(customType.data);
 }
 
 function languageString(requiredLanguages: string[], multipleCardinality: boolean = false): JsonSchemaObject {
