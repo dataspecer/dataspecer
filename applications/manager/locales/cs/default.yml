@@ -37,6 +37,9 @@ form:
   url:
     instruction: URL DSV specifikací, každá URL na separátní řádek
     name: URL
+  git-url:
+    name: GIT URL
+    instruction: Vlož URL git repozitáře (nebo konce URL ukazující přímo na commit/větev)
 format as json: Formátovat jako JSON
 generate application: Vygenerovat aplikaci
 ID: ID
