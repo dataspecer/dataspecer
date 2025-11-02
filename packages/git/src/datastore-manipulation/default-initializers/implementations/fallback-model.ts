@@ -5,7 +5,7 @@ import { DatastoreInitializer } from "../initializer-interface/datastore-default
  */
 export class DatastoreInitializerFallback implements DatastoreInitializer {
   createDatastoreFromAnother(iriInOther: string, iriInNew: string, otherDatastore: string): any {
-    otherDatastore.replaceAll(iriInOther, iriInNew);
-    return otherDatastore;
+    const datastoreWithReplacement = otherDatastore.split(iriInOther).join(iriInNew);      // Behaves as replaceAll (not available here)
+    return datastoreWithReplacement;
   }
 }

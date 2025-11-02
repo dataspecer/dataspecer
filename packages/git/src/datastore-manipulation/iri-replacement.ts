@@ -75,7 +75,7 @@ function handleReplacementForNonComposite(
   let containedIriToReplace: boolean = false;
   if (typeof possibleIri !== "string") {
     datastore[key] = possibleIri;
-    return;
+    return false;
   }
 
   if (allIrisToCheckFor.includes(possibleIri)) {

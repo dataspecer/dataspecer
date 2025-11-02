@@ -114,7 +114,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
   }
   async getDatastoreContent(irisTreePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any> {
     const resourceWithDatastore: FilesystemNode = this.globalFilesystemMappingForIris[irisTreePath];
-    const datastoreInfo: DatastoreInfo = getDatastoreInfoOfGivenDatastoreType(resourceWithDatastore, type);
+    const datastoreInfo: DatastoreInfo | null = getDatastoreInfoOfGivenDatastoreType(resourceWithDatastore, type);
     return ClientFilesystem.getDatastoreContentDirectly(datastoreInfo, shouldConvertToDatastoreFormat, this.backendApiPath, this.backendFilesystem);
   }
   createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType> {
@@ -172,7 +172,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
   }
 
   removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<boolean> {
-    const datastoreInfo: DatastoreInfo = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType);
+    const datastoreInfo: DatastoreInfo | null = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType);
     // The "" will throw error on backend, so for it to work it should be allowed to have missing merge state id in the request,
     // but since we are currently (and probably always will be) using just the static methods, there is no need to implement it
     return ClientFilesystem.removeDatastoreDirectly("",
@@ -227,7 +227,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
 
 
   async updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, content: string): Promise<boolean> {
-    const datastoreInfo: DatastoreInfo = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType);
+    const datastoreInfo: DatastoreInfo | null = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType);
     // The "" will throw error on backend, so for it to work it should be allowed to have missing merge state id in the request,
     // but since we are currently (and probably always will be) using just the static methods, there is no need to implement it
     return ClientFilesystem.updateDatastoreContentDirectly("",filesystemNode.metadata.iri, datastoreInfo, content, this.backendFilesystem, this.backendApiPath);
@@ -353,7 +353,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
   async createDatastore(parentIriInToBeChangedFilesystem: string, otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean> {
     const content = await ClientFilesystem.getDatastoreContentDirectly(changedDatastore, true, this.backendApiPath, this.backendFilesystem);
     const filesystemNodesInTreePath: ExportShareableMetadataType[] = [];
-    let currentNode = filesystemNode;
+    let currentNode: FilesystemNode | null = filesystemNode;
     let parent: DirectoryNode | null = null;
     while (currentNode !== null) {
       parent = otherFilesystem.getParentForNode(currentNode);

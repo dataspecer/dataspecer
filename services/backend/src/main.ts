@@ -117,6 +117,47 @@ application.get(apiBasename + "/auth-handler/personal-callback/*", authJSRedirec
 // We have to handle everything related to authorization under this handler - for some reason handlers for specific subparts (like /auth/callback/*) do not work.
 application.use(apiBasename + "/auth/*", authHandler);
 
+// Fetch package tree data
+application.get(apiBasename + "/git/dataspecer-package-tree", getDataspecerTree);
+application.get(apiBasename + "/git/get-datastore-content", getDatastoreContentDirectly);
+application.post(apiBasename + "/git/update-datastore-content", updateDatastoreContentDirectly);
+application.post(apiBasename + "/git/create-datastore-content", createDatastoreContentDirectly);
+application.delete(apiBasename + "/git/remove-datastore-content", removeDatastoreContentDirectly);
+application.post(apiBasename + "/git/create-filesystem-nodes", createFilesystemNodesDirectly);
+application.delete(apiBasename + "/git/remove-filesystem-node", removeFilesystemNodeDirectly);
+application.get(apiBasename + "/git/get-merge-state", getMergeState);
+application.post(apiBasename + "/git/create-merge-state-between-ds-packages", createMergeStateBetweenDSPackagesHandler);
+application.post(apiBasename + "/git/update-merge-state", updateMergeState);
+application.get(apiBasename + "/git/get-merge-states", getMergeStates);
+
+application.post(apiBasename + "/git/finalize-merge-state", finalizeMergeState);
+application.post(apiBasename + "/git/finalize-pull-merge-state", finalizePullMergeState);
+application.post(apiBasename + "/git/finalize-pull-merge-state-on-failure", finalizePullMergeStateOnFailure);
+application.post(apiBasename + "/git/finalize-push-merge-state", finalizePushMergeState);
+application.post(apiBasename + "/git/finalize-push-merge-state-on-failure", finalizePushMergeStateOnFailure);
+application.post(apiBasename + "/git/finalize-merge-merge-state", finalizeMergeMergeState);
+application.post(apiBasename + "/git/finalize-merge-merge-state-on-failure", finalizeMergeMergeStateOnFailure);
+application.delete(apiBasename + "/git/remove-merge-state", removeMergeState);
+
+// TODO RadStr: Just for debugging !
+application.post(apiBasename + "/git/debug-clear-merge-state-table", clearMergeStateTableDebug);
+
+// TODO RadStr: Once I update the URL don't forget to update the ngrok URL in git providers to the same URL suffix
+application.post(apiBasename + "/git/webhook-test", currentSession, handleWebhook);
+application.post(apiBasename + "/git/webhook-test2", currentSession, handleWebhook);
+application.get(apiBasename + "/git/webhook-test", currentSession, createRandomWebook);
+application.post(apiBasename + "/git/set-private-ssh-key", currentSession, storePrivateSSHKey);
+application.get(apiBasename + "/git/create-new-git-repository-with-package-content", currentSession, createNewGitRepositoryWithPackageContent);
+application.get(apiBasename + "/git/commit-package-to-git", currentSession, commitPackageToGitHandler);
+application.get(apiBasename + "/git/merge-commit-package-to-git", currentSession, mergeCommitPackageToGitHandler);
+application.get(apiBasename + "/git/remove-git-repository", currentSession, removeGitRepository);
+application.get(apiBasename + "/git/create-package-from-existing-git-repository", currentSession, createPackageFromExistingGitRepository);    // TODO RadStr: Not called for naywhere
+application.get(apiBasename + "/git/test-docker", currentSession, exportPackageResource);
+application.get(apiBasename + "/git/redirect-to-remote-git-repository", currentSession, redirectToRemoteGitRepository);
+application.get(apiBasename + "/git/fetch-git-commit-history", currentSession, fetchGitCommitHistory);
+application.get(apiBasename + "/git/pull", currentSession, pullRemoteRepository);
+application.get(apiBasename + "/git/link-to-existing-git-repository", linkToExistingGitRepository);
+
 
 // Api for packages (core-v2)
 
@@ -206,46 +247,6 @@ if (configuration.staticFilesPath) {
   application.get(basename + "**", useStaticSpaHandler(configuration.staticFilesPath + ""));
 }
 
-// Fetch package tree data
-application.get(apiBasename + "/git/dataspecer-package-tree", getDataspecerTree);
-application.get(apiBasename + "/git/get-datastore-content", getDatastoreContentDirectly);
-application.post(apiBasename + "/git/update-datastore-content", updateDatastoreContentDirectly);
-application.post(apiBasename + "/git/create-datastore-content", createDatastoreContentDirectly);
-application.delete(apiBasename + "/git/remove-datastore-content", removeDatastoreContentDirectly);
-application.post(apiBasename + "/git/create-filesystem-nodes", createFilesystemNodesDirectly);
-application.delete(apiBasename + "/git/remove-filesystem-node", removeFilesystemNodeDirectly);
-application.get(apiBasename + "/git/get-merge-state", getMergeState);
-application.post(apiBasename + "/git/create-merge-state-between-ds-packages", createMergeStateBetweenDSPackagesHandler);
-application.post(apiBasename + "/git/update-merge-state", updateMergeState);
-application.get(apiBasename + "/git/get-merge-states", getMergeStates);
-
-application.post(apiBasename + "/git/finalize-merge-state", finalizeMergeState);
-application.post(apiBasename + "/git/finalize-pull-merge-state", finalizePullMergeState);
-application.post(apiBasename + "/git/finalize-pull-merge-state-on-failure", finalizePullMergeStateOnFailure);
-application.post(apiBasename + "/git/finalize-push-merge-state", finalizePushMergeState);
-application.post(apiBasename + "/git/finalize-push-merge-state-on-failure", finalizePushMergeStateOnFailure);
-application.post(apiBasename + "/git/finalize-merge-merge-state", finalizeMergeMergeState);
-application.post(apiBasename + "/git/finalize-merge-merge-state-on-failure", finalizeMergeMergeStateOnFailure);
-application.delete(apiBasename + "/git/remove-merge-state", removeMergeState);
-
-// TODO RadStr: Just for debugging !
-application.post(apiBasename + "/git/debug-clear-merge-state-table", clearMergeStateTableDebug);
-
-// TODO RadStr: Once I update the URL don't forget to update the ngrok URL in git providers to the same URL suffix
-application.post(apiBasename + "/git/webhook-test", currentSession, handleWebhook);
-application.post(apiBasename + "/git/webhook-test2", currentSession, handleWebhook);
-application.get(apiBasename + "/git/webhook-test", currentSession, createRandomWebook);
-application.post(apiBasename + "/git/set-private-ssh-key", currentSession, storePrivateSSHKey);
-application.get(apiBasename + "/git/create-new-git-repository-with-package-content", currentSession, createNewGitRepositoryWithPackageContent);
-application.get(apiBasename + "/git/commit-package-to-git", currentSession, commitPackageToGitHandler);
-application.get(apiBasename + "/git/merge-commit-package-to-git", currentSession, mergeCommitPackageToGitHandler);
-application.get(apiBasename + "/git/remove-git-repository", currentSession, removeGitRepository);
-application.get(apiBasename + "/git/create-package-from-existing-git-repository", currentSession, createPackageFromExistingGitRepository);    // TODO RadStr: Not called for naywhere
-application.get(apiBasename + "/git/test-docker", currentSession, exportPackageResource);
-application.get(apiBasename + "/git/redirect-to-remote-git-repository", currentSession, redirectToRemoteGitRepository);
-application.get(apiBasename + "/git/fetch-git-commit-history", currentSession, fetchGitCommitHistory);
-application.get(apiBasename + "/git/pull", currentSession, pullRemoteRepository);
-application.get(apiBasename + "/git/link-to-existing-git-repository", linkToExistingGitRepository);
 
 // TODO RadStr: Have to await, because of the generate-specification
 await (async () => {

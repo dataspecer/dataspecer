@@ -86,7 +86,7 @@ async function compareTreesInternal(
       diffTreeSize++;
 
       const node2Datastore = node2Value === undefined ? undefined : getDatastoreInfoOfGivenDatastoreType(node2Value, datastore1.type);
-      if (node2Datastore !== undefined) {
+      if (node2Datastore !== undefined && node2Datastore !== null) {
         processedDatastoresInSecondTree.add(node2Datastore);
 
         if (await compareDatastoresContents(filesystem1, nodeValue, filesystem2, node2Value as FileNode, datastore1)) {
@@ -219,7 +219,7 @@ export function getDiffNodeFromDiffTree(
 ): ResourceComparison | null {
   const parts = projectIrisTreePath.split("/").filter(part => part !== "");
   let currentDiffTree: DiffTree = diffTree;
-  let diffNode: ResourceComparison;
+  let diffNode: ResourceComparison | null = null;
 
   for (const part of parts) {
     if (currentDiffTree === undefined) {

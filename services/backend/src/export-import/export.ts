@@ -1,6 +1,5 @@
-import { AvailableFilesystems, GitIgnore } from "@dataspecer/git";
+import { AvailableFilesystems, GitIgnore, resourceTypeToTypeDirectoryMapping } from "@dataspecer/git";
 import { AvailableExports, AllowedExportResults } from "./export-actions.ts";
-import { resourceTypeToTypeDirectoryMapping } from "../../../../packages/git/lib/resource-types.js";
 
 
 /**

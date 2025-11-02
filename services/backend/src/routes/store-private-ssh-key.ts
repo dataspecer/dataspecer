@@ -28,7 +28,7 @@ const relativizeAgainstHomeDir = (givenPath: string): string => {
 };
 
 
-const sshKeysRootDirectory = path.resolve("./ds-users/.ssh");
+const sshKeysRootDirectory = path.resolve("./database/ds-users/.ssh");
 export const sshDSConfigPath = path.resolve(`${sshKeysRootDirectory}/config`);
 fs.rmSync(sshKeysRootDirectory, { recursive: true, force: true });      // TODO RadStr: Not sure if we should remove it. However for debugging it is necessary.
 const sshDSConfigPathRelativeToHomeDir = relativizeAgainstHomeDir(sshDSConfigPath);
@@ -86,13 +86,15 @@ ${identityFileLine}\n\n`;
 
   // Include our config into the config in home directory
   const homeDirectorySSHConfigPath = path.join(os.homedir(), ".ssh", "config");
-  const includesStringForConfig = `Include ${sshDSConfigPathRelativeToHomeDir}`;
+  const theIncludesStringForConfig = `Include ${sshDSConfigPathRelativeToHomeDir}`;
   if (!fs.existsSync(homeDirectorySSHConfigPath)) {
-    fs.writeFileSync(homeDirectorySSHConfigPath, includesStringForConfig);
+    const sshDir = path.dirname(homeDirectorySSHConfigPath);
+    fs.mkdirSync(sshDir, { recursive: true }); // Ensures all needed dirs exist (needed for the docker)
+    fs.writeFileSync(homeDirectorySSHConfigPath, theIncludesStringForConfig);
   }
   else {
-    if (!fs.readFileSync(homeDirectorySSHConfigPath).includes(includesStringForConfig)) {
-      fs.appendFileSync(homeDirectorySSHConfigPath, `\n${includesStringForConfig}`);
+    if (!fs.readFileSync(homeDirectorySSHConfigPath).includes(theIncludesStringForConfig)) {
+      fs.appendFileSync(homeDirectorySSHConfigPath, `\n${theIncludesStringForConfig}`);
     }
   }
 }
