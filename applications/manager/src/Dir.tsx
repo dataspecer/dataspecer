@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { ArrowLeft, ArrowLeftRight, ArrowRight, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, Copy, EllipsisVertical, Eye, EyeIcon, FileText, Filter, FilterX, Folder, FolderDown, GitBranchPlus, GitCommit, GitGraph, GitMerge, GitPullRequestIcon, Import, Link, Menu, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, ShieldQuestion, Sparkles, Trash2, WandSparkles } from "lucide-react";
+import { ArrowLeft, ArrowLeftRight, ArrowRight, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, Copy, EllipsisVertical, Eye, EyeIcon, FileText, Filter, FilterX, Folder, FolderDown, GitBranchPlus, GitCommit, GitGraph, GitMerge, GitPullRequestIcon, Import, Link, Menu, MoveLeftIcon, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, ShieldQuestion, Sparkles, Trash2, WandSparkles } from "lucide-react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getValidTime } from "./components/time";
@@ -98,19 +98,20 @@ const Row = ({ iri, projectFilter, setProjectFilter, isSignedIn, mergeActors, pa
 
   return <li className="first:border-y last:border-none border-b">
     <div className="flex items-center space-x-4 hover:bg-accent">
-      {mergeActors.mergeFrom === iri ? "Merging from" : null}
-      {mergeActors.mergeTo === iri ? "Merging to" : null}
       {resource.types.includes(LOCAL_PACKAGE) ? <div className="flex"><button onClick={stopPropagation(() => isOpen ? setIsOpen(false) : open())}>
       {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
       </button><Folder className="text-gray-400 ml-1" /></div> : <div><ModelIcon type={resource.types} /></div>}
 
       <div className="grow min-w-0">
-        <div className="font-medium">
+        <div className="flex font-medium">
           <Translate
             text={resource.userMetadata?.label}
             match={t => <>{t} <span className="ml-5 text-gray-500 font-normal">{modelTypeToName[resource.types[0]]}</span></>}
             fallback={modelTypeToName[resource.types[0]]}
           />
+          {mergeActors.mergeFrom === iri || mergeActors.mergeTo === iri ? <MoveLeftIcon className="text-red-600" /> : null}
+          <p className="text-red-600">{mergeActors.mergeFrom === iri ? "Merging from" : null}</p>
+          <p className="text-red-600">{mergeActors.mergeTo === iri ? "Merging to" : null}</p>
         </div>
         <div className="text-sm text-gray-500 flex">
           <span className="truncate w-[4cm]">
@@ -363,18 +364,26 @@ function RootPackage({iri, defaultToggle, login}: {iri: string, defaultToggle?: 
         {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
       </button>
       <h2 className="font-heading ml-3 scroll-m-20 pb-2 text-2xl font-semibold tracking-tight first:mt-0 grow"><Translate text={pckg.userMetadata?.label} /></h2>
-      <Button variant="ghost" size="sm" className="shrink=0 ml-4"
-        onClick={() => {
-          mergeActors.setMergeTo(null);
-          mergeActors.setMergeFrom(null);
-        }}>
-          Reset chosen merge actors
-      </Button>
-      <Button variant="ghost" size="sm" className="shrink=0 ml-4"
-        onClick={() => setProjectFilter(null)}>
-          <FilterX className="mr-2 h-4 w-4" />
-          Remove filter
-      </Button>
+      {
+        mergeActors.mergeFrom === null ?
+          null :
+          <Button variant="ghost" size="sm" className="shrink=0 ml-4"
+            onClick={() => {
+              mergeActors.setMergeTo(null);
+              mergeActors.setMergeFrom(null);
+            }}>
+              Reset chosen merge actors
+          </Button>
+      }
+      {
+        projectFilter === null ?
+          null :
+          <Button variant="ghost" size="sm" className="shrink=0 ml-4"
+            onClick={() => setProjectFilter(null)}>
+              <FilterX className="mr-2 h-4 w-4" />
+              Remove filter
+          </Button>
+      }
       <Button variant="ghost" size="sm" className="shrink=0 ml-4"
         onClick={() => openModal(AddImported, {id: iri})}>
         <Import className="mr-2 h-4 w-4" /> {t("import")}
