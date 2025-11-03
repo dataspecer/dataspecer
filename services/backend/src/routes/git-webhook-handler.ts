@@ -161,7 +161,7 @@ async function saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(
   filesystem: FilesystemAbstraction,
 ) {
   console.info("RECURSIVE MAPPING", currentlyProcessedDirectoryNode);
-  await handleResourceUpdateFinalVersion(treePath, currentlyProcessedDirectoryNode, filesystem);
+  await handleResourceUpdateFinalVersion(currentlyProcessedDirectoryNode);
 
   for (const [name, value] of Object.entries(currentlyProcessedDirectoryNode.content)) {
     // TODO RadStr: Name vs IRI
@@ -170,7 +170,7 @@ async function saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(
       await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(value, newDirectory, gitProvider, filesystem);
     }
     else {
-      await handleResourceUpdateFinalVersion(treePath, value, filesystem);
+      await handleResourceUpdateFinalVersion(value);
     }
   }
 }
@@ -204,32 +204,12 @@ async function updateFilesystemBasedOnChanges(changes: ComparisonResult, filesys
   // }
 }
 
-// TODO RadStr: Better name for the datastoreIdentifier maybe filesystemNodeIdentifier?
-/**
- *
- * @returns Returns true if the given file has only the data without any other related files - no metadata, or anything.
- *  This happens when user adds new file from git without explicitly creating the .meta and .model file.
- */
-function isFileAddedFromGit(datastoreIdentifier: string, datastores: DatastoreInfo[]): boolean {
-  return datastores.length === 1 && datastoreIdentifier === datastores[0].fullName;
-}
-
 async function handleResourceUpdateFinalVersion(
-  treePath: string,
   filesystemNode: FilesystemNode,
-  filesystem: FilesystemAbstraction
 ) {
-  if (isFileAddedFromGit(filesystemNode.name, filesystemNode.datastores)) {
-    const parentIri = filesystem.getParentForNode(filesystemNode)?.metadata.iri;
-    if (parentIri !== undefined) {
-      await createNewResourceUploadedFromGit(parentIri, treePath, filesystemNode.name);
-    }
-    else {
-      console.error("Missing parent IRI, so we can not create");    // TODO RadStr: Not sure, this probably should not happen, I should always have the parentIri available
-    }
-    return;
-  }
-
+  // Note that the the files added from git are handled as other ones - it works since update
+  // of blob is create/update. However it stops working if we add some completely new resource and
+  // not just something which we put under existing filesystem node.
   const datastoreTypesToDatastores: Record<string, DatastoreInfo> = {};
 
   for (const datastore of filesystemNode.datastores) {
