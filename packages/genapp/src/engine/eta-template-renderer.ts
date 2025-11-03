@@ -3,6 +3,11 @@ import { Eta } from "eta";
 import { getRelativePath } from "../utils/utils.ts";
 import { ImportRelativePath, TemplateModel } from "./templates/template-interfaces.ts";
 
+// simulate __filename and __dirname
+import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 function isImportRelativePath(obj: any): obj is ImportRelativePath {
     if (!obj) {
