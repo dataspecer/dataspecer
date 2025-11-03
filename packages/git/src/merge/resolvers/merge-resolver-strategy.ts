@@ -10,5 +10,5 @@ export interface MergeResolverStrategy {
    * @param editableInput is the input which is supposed to be modified (edited).
    * @returns How should the editableInput look after performing the implemented merge resolver strategy.
    */
-  resolve(otherInput: string, editableInput: string): string;
+  resolve(otherInput: string, editableInput: string, type: string | null, format: string): string;
 }

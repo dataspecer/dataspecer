@@ -4,7 +4,7 @@ export class OperationMergeResolverStrategy implements MergeResolverStrategy {
   label: string = "Operation merge strategy";
   key = "operation-resolver";
 
-  resolve(otherInput: string, editableInput: string): string {
+  resolve(otherInput: string, editableInput: string, type: string | null, format: string): string {
     return editableInput;
   }
 }

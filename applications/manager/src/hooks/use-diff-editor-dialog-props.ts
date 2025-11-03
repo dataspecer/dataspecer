@@ -504,7 +504,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     }
 
     return { strippedMergeFromContent, strippedMergeToContent };
-  }, [activeMergeFromContentConverted, activeMergeToContentConverted]);
+  }, [activeMergeFromContentConverted, activeMergeToContentConverted, showStrippedVersion]);
 
 
   // TODO RadStr: Debug print
