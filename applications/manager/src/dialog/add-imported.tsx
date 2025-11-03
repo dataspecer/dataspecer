@@ -79,7 +79,20 @@ export const AddImported = ({ id, isOpen, resolve }: AddImportedProps & BetterMo
       if (importResults.every((r) => r.ok)) {
         toast.success(t("add-imported.success"));
       } else {
-        toast.error(t("add-imported.error"));
+        if (importType === URLImportType.Git) {
+          // TODO RadStr: Localization
+          const hasTooManyImportedAtOnceResult = importResults.find(result => result.status === 500) !== undefined;
+          if (hasTooManyImportedAtOnceResult) {
+            toast.error("On some of the imports more than one root was imported");
+          }
+          const hasBranchAlreadyExistsResult = importResults.find(result => result.status === 409) !== undefined;
+          if (hasBranchAlreadyExistsResult) {
+            toast.error("On some of the imports branch was imported, but the branch is already present inside DS");
+          }
+        }
+        else {
+          toast.error(t("add-imported.error"));
+        }
       }
 
       resolve(true);

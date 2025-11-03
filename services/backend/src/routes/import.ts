@@ -432,6 +432,18 @@ export async function importFromGitUrl(repositoryURL: string, commitReferenceTyp
   // const zipPipeline = await pipeline(Readable.fromWeb(downloadZipResponse.body as ReadableStream<any>), donwloadZipFile);
   // const zipBuffer = fs.readFileSync(downloadZipPath);
 
+  const basicRepositoryUrl = gitProvider.extractDefaultRepositoryUrl(repositoryURL);
+  const isCommitReferenceTypeKnown = gitZipDownloadURLData.commitReferenceValueInfo.fallbackToDefaultBranch || gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue === null;
+  if (!isCommitReferenceTypeKnown) {
+    commitReferenceType = await getCommitReferenceTypeUsingGitClone(basicRepositoryUrl, gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue);
+  }
+
+  if (commitReferenceType === "branch") {
+    const existingBranchResource = await resourceModel.getResourceForGitUrlAndBranch(basicRepositoryUrl, gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue);
+    if (existingBranchResource !== null) {
+      return [];
+    }
+  }
 
   // TODO RadStr: Dont really understand why do I have to recast to <any> if I have clearly more specific type
   const webReadableStream = Readable.fromWeb(downloadZipResponse.body as ReadableStream<any>);
@@ -441,12 +453,7 @@ export async function importFromGitUrl(repositoryURL: string, commitReferenceTyp
   const importer = new PackageImporter(resourceModel);
   const imported = await importer.doImport(zipBuffer, true);
 
-  const basicRepositoryUrl = gitProvider.extractDefaultRepositoryUrl(repositoryURL);
 
-  const isCommitReferenceTypeKnown = gitZipDownloadURLData.commitReferenceValueInfo.fallbackToDefaultBranch || gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue === null;
-  if (!isCommitReferenceTypeKnown) {
-    commitReferenceType = await getCommitReferenceTypeUsingGitClone(imported[0], basicRepositoryUrl, gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue);
-  }
   if (imported.length > 0) {
     await updateGitRelatedDataForPackage(imported[0], gitProvider, basicRepositoryUrl, gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue, commitReferenceType);
   }
@@ -454,8 +461,8 @@ export async function importFromGitUrl(repositoryURL: string, commitReferenceTyp
   return imported;
 }
 
-async function getCommitReferenceTypeUsingGitClone(iri: string, repositoryURL: string, commitReferenceValue: string): Promise<CommitReferenceType> {
-  const { git, gitInitialDirectory, gitDirectoryToRemoveAfterWork } = createSimpleGit(iri, INTERNAL_COMPUTATION_FOR_IMPORT, false);
+async function getCommitReferenceTypeUsingGitClone(repositoryURL: string, commitReferenceValue: string): Promise<CommitReferenceType> {
+  const { git, gitInitialDirectory, gitDirectoryToRemoveAfterWork } = createSimpleGit("fake-iri-for-import-" + uuidv4().substring(30), INTERNAL_COMPUTATION_FOR_IMPORT, false);
   let commitReferenceType: CommitReferenceType;
   try {
     await gitCloneBasic(git, gitInitialDirectory, repositoryURL, true, true, commitReferenceValue, 1);
@@ -493,8 +500,17 @@ export const importPackageFromGit = asyncHandler(async (request: express.Request
     return;
   }
 
-  const [result] = await importFromGitUrl(gitURL, commitReferenceType);
-
-  response.send(result);
-  return;
+  const result = await importFromGitUrl(gitURL, commitReferenceType);
+  if (result.length === 0) {
+    response.status(409).json({ message: "The import failed, because it is pointing to branch, which already exists inside DS" });
+    return;
+  }
+  else if (result.length > 1) {
+    response.status(500).json({ message: "Probably server error of unknown origin, we have created more than one root resource on important." });
+    return;
+  }
+  else {
+    response.send(result);
+    return;
+  }
 });
