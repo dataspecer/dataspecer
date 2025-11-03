@@ -11,6 +11,7 @@ import { ExportFormatRadioButtons, ExportFormatType } from "@/components/export-
 import { CommitRedirectResponseJson, createSetterWithGitValidation } from "@dataspecer/git";
 import { CommitRedirectForMergeStatesDialog } from "./commit-confirm-dialog-caused-by-merge-state";
 import { commitToGitRequest, createNewRemoteRepositoryRequest, linkToExistingGitRepositoryRequest } from "@/utils/git-backend-requests";
+import { createCloseDialogObject, LoadingDialog } from "@/components/loading-dialog";
 
 
 type GitActionsDialogProps = {
@@ -161,7 +162,11 @@ export const createNewRemoteRepositoryHandler = async (openModal: OpenBetterModa
   // that is why we implement it like this and not like react component
   const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage: null, type: "create-new-repository-and-commit" });
   if (result) {
+    const closeDialogObject = createCloseDialogObject();
+    // TODO RadStr: Localization
+    openModal(LoadingDialog, {dialogTitle: "Creating repository with first commit", waitingText: "Waiting for response", setCloseDialogAction: closeDialogObject.setCloseDialogAction});
     const response = await createNewRemoteRepositoryRequest(iri, result);
+    closeDialogObject.closeDialogAction();
     await requestLoadPackage(iri, true);
     gitOperationResultToast(response);
   }
@@ -176,14 +181,20 @@ export const commitToGitDialogOnClickHandler = async (
 ) => {
   const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage, type: "commit" });
   if (result) {
-    const response = await commitToGitRequest(iri, result.commitMessage, result.exportFormat, result.shouldAlwaysCreateMergeState, false);
-    if (response.status === 300) {
-      const jsonResponse: CommitRedirectResponseJson = await response.json();
-      openModal(CommitRedirectForMergeStatesDialog, {commitRedirectResponse: jsonResponse});
-      console.info(jsonResponse);     // TODO RadStr: Debug print
-    }
-    gitOperationResultToast(response);
-    requestLoadPackage(iri, true);
+    const closeDialogObject = createCloseDialogObject();
+    // TODO RadStr: Localization
+    openModal(LoadingDialog, {dialogTitle: "Committing", waitingText: "Waiting for response", setCloseDialogAction: closeDialogObject.setCloseDialogAction});
+    commitToGitRequest(iri, result.commitMessage, result.exportFormat, result.shouldAlwaysCreateMergeState, false)
+      .then(async (response) => {
+        closeDialogObject.closeDialogAction();
+        if (response.status === 300) {
+          const jsonResponse: CommitRedirectResponseJson = await response.json();
+          openModal(CommitRedirectForMergeStatesDialog, {commitRedirectResponse: jsonResponse});
+          console.info(jsonResponse);     // TODO RadStr: Debug print
+        }
+        gitOperationResultToast(response);
+        requestLoadPackage(iri, true);
+      });
   }
 };
 
