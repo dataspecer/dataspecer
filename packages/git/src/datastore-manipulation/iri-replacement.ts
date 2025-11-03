@@ -17,6 +17,9 @@ export function createDatastoreWithReplacedIris(datastoreToSearchInForIris: obje
 }
 
 
+export const PLACEHOLDER_REPLACEMENT_IRI = "PLACEHOLDER-IRI-WHICH-WILL-BE-REPLACED-ON-BACKEND-STORE";
+
+
 function replaceIrisInDatastoreAndCollectMissingOnes(
   originalDatastore: Record<string, any>,
   allIrisToCheckFor: string[],
@@ -44,8 +47,9 @@ function replaceIrisInDatastoreAndCollectMissingOnes(
           containedIriToReplace ||= containedIriToReplaceInRecursion;
         }
         else {
-          const isIriReplacement = handleReplacementForNonComposite(key, item, datastoreWithReplacedIris, allIrisToCheckFor, irisMap, missingIrisInNew);
-          containedIriToReplace ||= isIriReplacement;
+          const replacementResult = getReplacementForNonComposite(item, allIrisToCheckFor, irisMap, missingIrisInNew);
+          datastoreWithReplacedIris[key].push(replacementResult.replacementIri);
+          containedIriToReplace ||= replacementResult.containedIriToReplace;
         }
       });
     }
@@ -55,43 +59,57 @@ function replaceIrisInDatastoreAndCollectMissingOnes(
       containedIriToReplace ||= containedIriToReplaceInRecursion;
     }
     else {
-      const isIriReplacement = handleReplacementForNonComposite(key, value, datastoreWithReplacedIris, allIrisToCheckFor, irisMap, missingIrisInNew);
-      containedIriToReplace ||= isIriReplacement;
+      const replacementResult = getReplacementForNonComposite(value, allIrisToCheckFor, irisMap, missingIrisInNew);
+      datastoreWithReplacedIris[key] = replacementResult.replacementIri;
+      containedIriToReplace ||= replacementResult.containedIriToReplace;
     }
   }
 
   return containedIriToReplace;
 }
 
-function handleReplacementForNonComposite(
-  key: string,
-  possibleIri: any,
-  datastore: Record<string, any>,
+type ReplacementForNonCompositeResult = {
+  containedIriToReplace: boolean;
+  /**
+   * If no change then it is equal to the input.
+   */
+  replacementIri: string;
+}
+
+
+/**
+ * @param originalIri it is named iri but it does not necessary have to be iri it is just to value which can be iri and can be possibly replaced
+ */
+function getReplacementForNonComposite(
+  originalIri: any,
   allIrisToCheckFor: string[],
   irisMap: Record<string, string | null>,
   // Outputs to extend
   missingIrisInNew: string[],
-): boolean {
+): ReplacementForNonCompositeResult {
   let containedIriToReplace: boolean = false;
-  if (typeof possibleIri !== "string") {
-    datastore[key] = possibleIri;
-    return false;
+  if (typeof originalIri !== "string") {
+    return {
+      containedIriToReplace: false,
+      replacementIri: originalIri,
+    };
   }
 
-  if (allIrisToCheckFor.includes(possibleIri)) {
+  let replacementIri: string;
+  if (allIrisToCheckFor.includes(originalIri)) {
     containedIriToReplace = true;
-    const replacement = irisMap[possibleIri] ?? null;
-    if (replacement === null) {
-      missingIrisInNew.push(possibleIri);
-      datastore[key] = "PLACEHOLDER-IRI-WHICH-WILL-BE-REPLACED-ON-BACKEND-STORE";
-    }
-    else {
-      datastore[key] = replacement;
+    replacementIri = irisMap[originalIri] ?? null;
+    if (replacementIri === null) {
+      missingIrisInNew.push(originalIri);
+      replacementIri = PLACEHOLDER_REPLACEMENT_IRI;
     }
   }
   else {
-    datastore[key] = possibleIri;
+    replacementIri = originalIri;
   }
 
-  return containedIriToReplace;
+  return {
+    containedIriToReplace: containedIriToReplace,
+    replacementIri: replacementIri
+  };
 }
