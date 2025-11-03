@@ -889,7 +889,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     const setCacheToTextContentForEditable = getEditableValue(editable, setConvertedCacheForMergeFromContent, setConvertedCacheForMergeToContent);
     const activeMergeContents = getEditableAndNonEditableValue(editable, activeMergeFromContentConverted, activeMergeToContentConverted);
 
-    const mergeResolveResult = mergeStrategy.resolve(activeMergeContents.nonEditable, activeMergeContents.editable);
+    const mergeResolveResult = mergeStrategy.resolve(activeMergeContents.nonEditable, activeMergeContents.editable, activeDatastoreType, activeFormat);
     updateCacheContentEntryByGivenString(setCacheToTextContentForEditable, activeTreePathToNodeContainingDatastore, datastoreInfoForEditable.type, mergeResolveResult);
   };
 
