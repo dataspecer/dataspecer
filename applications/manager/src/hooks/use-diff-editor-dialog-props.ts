@@ -27,9 +27,11 @@ import {
   DiffTree,
   ResourceDatastoreStripHandlerBase,
 } from "@dataspecer/git";
-import { finalizeMergeState, saveMergeState } from "@/utils/merge-state-backend-requests";
+import { saveMergeState } from "@/utils/merge-state-backend-requests";
 import { fetchMergeState } from "@/dialog/open-merge-state";
 import { TextDiffEditorBetterModalProps, UpdateModelDataMethod } from "@/dialog/diff-editor-dialog";
+import { MergeStateFinalizerDialog } from "@/dialog/merge-state-finalizer-dialogs";
+import { useBetterModal } from "@/lib/better-modal";
 
 
 type FullTreePath = string;
@@ -384,6 +386,7 @@ async function onCascadeUpdateForCreatedDatastores(
 // Note that the hook is not useful for anything else than the diff editor dialog, but since it is quite large I put it into separate file
 export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri, initialMergeToResourceIri, resolve}: TextDiffEditorHookProps) => {
   const monacoEditor = useRef<{editor: monaco.editor.IStandaloneDiffEditor}>(undefined);
+  const openModal = useBetterModal();
 
 
   // Set once in the useEffect
@@ -1104,10 +1107,10 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
   };
 
   const finalizeMergeStateHandler = async () => {
-    const isSuccessfullyFinalized = await finalizeMergeState(examinedMergeState?.uuid);
-    if (isSuccessfullyFinalized) {
-      closeWithSuccess();
+    if (examinedMergeState === null) {
+      return undefined;
     }
+    openModal(MergeStateFinalizerDialog, { mergeState: examinedMergeState, openModal }).finally(() => closeWithSuccess())
   };
 
   return {

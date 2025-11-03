@@ -1,7 +1,7 @@
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { BetterModalProps, OpenBetterModal } from "@/lib/better-modal";
-import { finalizePullMergeState, finalizePullMergeStateOnFailure, finalizePushMergeState, finalizePushMergeStateOnFailure } from "@/utils/merge-state-backend-requests";
+import { finalizeMergeMergeStateOnFailure, finalizePullMergeState, finalizePullMergeStateOnFailure, finalizePushMergeState, finalizePushMergeStateOnFailure } from "@/utils/merge-state-backend-requests";
 import { FinalizerVariantsForPullOnFailure, getEditableValue, MergeState } from "@dataspecer/git";
 import { Loader } from "lucide-react";
 import { Dispatch, SetStateAction, useContext, useState } from "react";
@@ -31,9 +31,7 @@ export const MergeStateFinalizerDialog = ({ mergeState, openModal, isOpen, resol
 
   let content: React.ReactElement;
   if (mergeState.mergeStateCause === "merge") {
-    throw new Error("TODO RadStr: Not yet implemented");
-    // content = MergeStateFinalizerForMerge({ mergeState, shouldRenderAnswerDialog, resolve });
-    content = MergeStateFinalizerForPull({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, setIsWaitingForAnswer, openModal, resolve });
+    content = MergeStateFinalizerForMerge({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, setIsWaitingForAnswer, openModal, resolve });
   }
   else if (mergeState.mergeStateCause === "push") {
     content = MergeStateFinalizerForPush({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, setIsWaitingForAnswer, openModal, resolve });
@@ -138,6 +136,122 @@ const MergeStateFinalizerForPullAnswerDialog = ({ mergeState, resolve }: MergeSt
         <Button variant="outline" onClick={() => finalizerHandler("remove-merge-state")}>Remove merge state</Button>
       </ModalFooter>
     </>;
+};
+
+const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, setIsWaitingForAnswer, resolve }: MergeStateFinalizerSpecificCauseProps) => {
+  const [httpStatusCode, setHttpStatusCode] = useState<number>(-1);
+
+  const handleMergeAction = async () => {
+    // setIsWaitingForAnswer(true);
+    // const response = await finalizeMergeMergeState(mergeState.uuid);
+    // if (response !== null) {
+    //   if (response === 409) {
+    //     toast.error("There are still unresolved conflicts");
+    //     resolve();
+    //   }
+    //   else if (response < 300) {
+    //     toast.success("Finalizer succcessfully finished");
+    //     resolve();
+    //   }
+    //   else if (response < 400) {
+    //     // TODO RadStr: Probably do nothing - we will just show the another dialog.
+    //   }
+    //   else {
+    //     toast.error("There was error when finalizing, check console for more info");
+    //   }
+    // }
+    // else {
+    //   toast.error("There was error when finalizing, check console for more info");
+    // }
+    // setHttpStatusCode(response ?? -1);
+    // setIsWaitingForAnswer(false);
+    // setShouldRenderAnswerDialog(true);
+  };
+
+  const handleRebaseAction = async () => {
+    setIsWaitingForAnswer(true);
+    const response = await finalizePullMergeState(mergeState.uuid);
+    if (response !== null) {
+      if (response === 409) {
+        toast.error("There are still unresolved conflicts");
+        resolve();
+      }
+      else if (response < 300) {
+        toast.success("Finalizer succcessfully finished");
+        resolve();
+      }
+      else if (response < 400) {
+        // TODO RadStr: Probably do nothing - we will just show the another dialog.
+      }
+      else {
+        toast.error("There was error when finalizing, check console for more info");
+      }
+    }
+    else {
+      toast.error("There was error when finalizing, check console for more info");
+    }
+    setHttpStatusCode(response ?? -1);
+    setIsWaitingForAnswer(false);
+    setShouldRenderAnswerDialog(true);
+  };
+
+
+  return (
+    shouldRenderAnswerDialog ?
+      <MergeStateFinalizerForMergeAnswerDialog mergeState={mergeState} resolve={resolve} httpStatus={httpStatusCode} /> :
+      <>
+        <ModalHeader>
+          <ModalTitle>Finish merge state caused by merging</ModalTitle>
+          <ModalDescription>
+            You can choose to either create classic merge commit. Or rebase commit,
+            that is you just create new commit and put the changes on top.
+            Or you can of course close the dialog and handle it all later.
+          </ModalDescription>
+        </ModalHeader>
+        <ModalFooter>
+          <Button variant="outline" onClick={() => handleMergeAction()}>Create merge commit</Button>
+          <Button variant="outline" onClick={() => handleRebaseAction()}>Create rebase changes</Button>
+        </ModalFooter>
+      </>
+  );
+}
+
+const MergeStateFinalizerForMergeAnswerDialog = ({ mergeState, httpStatus, resolve }: MergeStateFinalizerAnswerDialogProps) => {
+  const finalizerHandler = async () => {
+    const response = await finalizeMergeMergeStateOnFailure(mergeState.uuid, "remove-merge-state");
+    if (response) {
+      toast.success("Finalizing was successful");
+    }
+    else {
+      toast.error("Finalizing ended in failure");
+    }
+    resolve();
+  }
+
+
+  if (httpStatus === null || httpStatus >= 300 || httpStatus < 0) {
+    let text = "Unknown error when finalizing merge state caused by merging. You can check console for possible more info";
+    if (httpStatus === 409) {
+      text = "There are still unresolved conflicts";
+    }
+    else if (httpStatus >= 300 && httpStatus < 400) {
+      text = `It appears that the remote head moved, therefore you are no longer pushing on top of the latest commit.
+          You can either remove the merge state (and run push again, which will create new merge state) or close dialog.`;
+    }
+    return <>
+      <ModalHeader>
+        <ModalTitle>Finish merge state caused by merging</ModalTitle>
+        <ModalDescription>
+          {text}
+        </ModalDescription>
+      </ModalHeader>
+      <ModalFooter>
+        <Button variant="outline" onClick={() => finalizerHandler()}>Remove merge state</Button>
+        <Button variant="outline" onClick={() => resolve()}>Close dialog</Button>
+      </ModalFooter>
+    </>;
+  }
+  return null;
 };
 
 
