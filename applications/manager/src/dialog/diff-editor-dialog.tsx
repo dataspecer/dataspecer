@@ -120,15 +120,17 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
                                             setRemovedTreePaths={setRemovedTreePaths}
                                             />
                   </div>
-                <div className="flex gap-2 mt-4 justify-start mb-2">
+                <div className="gap-2 mt-4 justify-start mb-2">
                   <Button title="This does save both the changes to files and updates the merge state"
                           variant={"default"}
-                          onClick={() => saveEverything()}>
+                          onClick={() => saveEverything()}
+                          className="hover:bg-purple-700">
                     Save changes and update merge state (Ctrl + S)
                   </Button>
                   <Button title="This performs the operation, which triggered the merge state. Can be pull/push/merge"
                           variant={"default"}
-                          onClick={finalizeMergeStateHandler}>
+                          onClick={finalizeMergeStateHandler}
+                          className="hover:bg-purple-700">
                     Finalize merge state
                   </Button>
                 </div>
