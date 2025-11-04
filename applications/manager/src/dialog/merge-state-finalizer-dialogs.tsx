@@ -170,7 +170,7 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
 
   const handleRebaseAction = async () => {
     setIsWaitingForAnswer(true);
-    const response = await finalizePullMergeState(mergeState.uuid);
+    const response = await finalizePushMergeState(mergeState.uuid);
     if (response !== null) {
       if (response === 409) {
         toast.error("There are still unresolved conflicts");
@@ -210,7 +210,7 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
         </ModalHeader>
         <ModalFooter>
           <Button variant="outline" onClick={() => handleMergeAction()}>Create merge commit</Button>
-          <Button variant="outline" onClick={() => handleRebaseAction()}>Create rebase changes</Button>
+          <Button variant="outline" onClick={() => handleRebaseAction()}>Create rebase commit</Button>
         </ModalFooter>
       </>
   );
