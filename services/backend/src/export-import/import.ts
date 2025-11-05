@@ -125,6 +125,7 @@ export class PackageImporter {
     });
 
     let rootPackagesMeta: string[] = [];
+    console.info({files});
     for (let rootDirectoryDepth = 2; rootDirectoryDepth <= maxDepth; rootDirectoryDepth++) {
       rootPackagesMeta = files.filter((file) => file.endsWith("/.meta.json") && file.split("/").length === rootDirectoryDepth); // It is a directory with one level
       if (rootPackagesMeta.length > 0) {
