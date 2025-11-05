@@ -671,10 +671,15 @@ jobs:
       - name: Checkout DS repo
         uses: actions/checkout@v4
         with:
-          repository: RadStr-bot/private-copy-of-dataspecer
+          # TODO RadStr: Old version - remove
+          # repository: RadStr-bot/private-copy-of-dataspecer
+          # path: dataspecer-source-code
+          # token: ${{ secrets.BOT_PAT_TOKEN }}   # TODO RadStr: Not needed once we use the public version of repository
+          # ref: git-integration-proof-of-concept # TODO RadStr: In future use main branch
+          repository: dataspecer/dataspecer
           path: dataspecer-source-code
           token: ${{ secrets.BOT_PAT_TOKEN }}   # TODO RadStr: Not needed once we use the public version of repository
-          ref: git-integration-proof-of-concept # TODO RadStr: In future use main branch
+          ref: git-integration # TODO RadStr: In future use main branch
       - name: Set up node
         uses: actions/setup-node@v2
         with:
