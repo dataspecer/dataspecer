@@ -680,6 +680,9 @@ jobs:
           path: dataspecer-source-code
           token: ${{ secrets.BOT_PAT_TOKEN }}   # TODO RadStr: Not needed once we use the public version of repository
           ref: git-integration # TODO RadStr: In future use main branch
+      - name: Copy config
+        working-directory: dataspecer-source-code/services/backend
+        run: cp main.config.sample.js main.config.js
       - name: Set up node
         uses: actions/setup-node@v2
         with:
