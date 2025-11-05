@@ -29,7 +29,6 @@ import { AddImported } from "./dialog/add-imported";
 import { ReloadPimWrapper } from "./dialog/reload-pim-wrapper";
 import { stopPropagation } from "./utils/events";
 import { commitToGitDialogOnClickHandler, linkToExistingGitRepositoryHandler, createNewRemoteRepositoryHandler } from "./dialog/git-url";
-import LoginCard from "./components/login-card";
 import { gitHistoryVisualizationOnClickHandler } from "./components/git-history-visualization";
 import { MergeActorsType, useMergeActors } from "./hooks/use-merge";
 import { setProjectIriAndBranchDialog } from "./dialog/set-projectIRI-and-branch";
@@ -358,7 +357,6 @@ function RootPackage({iri, defaultToggle, login}: {iri: string, defaultToggle?: 
   }
 
   return <div className="mb-12">
-    <LoginCard login={login}/>
     <div className="flex flex-row">
       <button onClick={() => setIsOpen(!isOpen)}>
         {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}

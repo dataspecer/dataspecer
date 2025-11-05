@@ -88,7 +88,7 @@ export const CommitActionsDialog = ({ examinedPackage, branch, commitHash, branc
         <ModalFooter>
           <Button variant="outline" onClick={handleImportGitCommitToDS} disabled={isPerformingAction}>Import static commit to DS</Button>
           {branch !== null && !branchAlreadyExistsInDS && <Button variant="outline" onClick={handleImportGitBranchToDS} disabled={isPerformingAction}>Import branch ({branch}) to DS</Button>}
-          <Button variant="outline" onClick={handleRedirect} disabled={isPerformingAction}>Redirect to commit</Button>
+          <Button variant="outline" onClick={handleRedirect} disabled={isPerformingAction}>View commit in git remote</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
