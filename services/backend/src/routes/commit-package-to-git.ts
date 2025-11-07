@@ -20,6 +20,7 @@ import { PackageExporterByResourceType } from "../export-import/export-by-resour
 import { MergeEndInfoWithRootNode, PrismaMergeStateWithData } from "../models/merge-state-model.ts";
 import { MergeEndpointForComparison } from "./create-merge-state.ts";
 import fs from "fs";
+import { PackageExporterNew } from "../export-import/export-new.ts";
 
 
 export type RepositoryIdentificationInfo = {
@@ -634,6 +635,7 @@ async function fillGitDirectoryWithExport(
     //  what files were exported. So we can add them explicitly instead of running git add .
     removeEverythingExcept(gitInitialDirectory, ["README.md", ".git", gitProvider.getWorkflowFilesDirectoryName()]);
     const exporter = new PackageExporterByResourceType();
+    // const exporter = new PackageExporterNew();     // TODO RadStr: Debug
     await exporter.doExportFromIRI(iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem, exportFormat ?? "json", null);
 
     const { givenRepositoryName, givenRepositoryUserName } = repositoryIdentificationInfo;

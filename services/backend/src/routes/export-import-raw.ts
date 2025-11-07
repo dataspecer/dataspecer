@@ -7,6 +7,7 @@ import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
 import { AvailableExports } from "../export-import/export-actions.ts";
 import { AvailableFilesystems } from "@dataspecer/git";
+import { PackageExporterNew } from "../export-import/export-new.ts";
 
 function getName(name: LanguageString | undefined, defaultName: string) {
   return name?.["cs"] || name?.["en"] || defaultName;
@@ -26,10 +27,10 @@ export const exportPackageResource = asyncHandler(async (request: express.Reques
   // TODO RadStr After: ... maybe keep the old one?
   // TODO RadStr: Don't use the radstr/export/directory it is just to show that it is newly possible
   // The old exporter:
-  // const exporter = new PackageExporterNew();
-  // const buffer = await exporter.doExportFromIRI(query.iri, "", `radstr/export/directory`, AvailableFilesystems.DS_Filesystem, AvailableExports.Zip);
-  const exporter = new PackageExporterByResourceType();
+  const exporter = new PackageExporterNew();
   const buffer = await exporter.doExportFromIRI(query.iri, "", `radstr/export/directory`, AvailableFilesystems.DS_Filesystem, AvailableExports.Zip, query.exportFormat ?? "json", null);
+  // const exporter = new PackageExporterByResourceType();
+  // const buffer = await exporter.doExportFromIRI(query.iri, "", `radstr/export/directory`, AvailableFilesystems.DS_Filesystem, AvailableExports.Zip, query.exportFormat ?? "json", null);
   // TODO RadStr: Debug exporters ... maybe can use in tests (with non-local paths of course).
   // const buffer = await exporter.doExportFromIRI(query.iri);
   // const buffer = await exporter.doExportFromIRI(query.iri, "", `radstr/export/directory`, AvailableFilesystems.DS_Filesystem, AvailableExports.Zip);

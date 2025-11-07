@@ -23,7 +23,7 @@ export class PackageExporterNew extends PackageExporterBase {
 
   private async exportDatastores(filesystemNode: FilesystemNode, pathToDirectory: string, pathToExportDirectory: string) {
     const fullname: string = pathToDirectory + filesystemNode.name;
-    const exportFullName: string = pathToExportDirectory + filesystemNode.name;
+    const exportFullName: string = pathToExportDirectory + (filesystemNode.type === "directory" ? "" : filesystemNode.name);
     for(const datastore of filesystemNode.datastores) {
       let data;
       if (isDatastoreForMetadata(datastore.type)) {
