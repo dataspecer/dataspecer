@@ -552,7 +552,8 @@ test("Issue #1005", async () => {
   // We go to RDF and back.
   const actualRdf = await dsvToRdf(dsvModel, {});
 
-  const expectedRdf = `@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+  const expectedRdf = `@prefix : <http://dcat/model/>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
 @prefix dct: <http://purl.org/dc/terms/>.
 @prefix dsv: <https://w3id.org/dsv#>.
@@ -563,7 +564,6 @@ test("Issue #1005", async () => {
 @prefix requirement: <https://w3id.org/dsv/requirement-level#>.
 @prefix role: <https://w3id.org/dsv/class-role#>.
 @prefix prof: <http://www.w3.org/ns/dx/prof/>.
-@prefix : <http://dcat/model/>.
 
 
 <http://dcat/model/> a prof:Profile, dsv:ApplicationProfile.
