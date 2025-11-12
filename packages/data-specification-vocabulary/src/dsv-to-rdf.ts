@@ -46,8 +46,8 @@ export async function dsvToRdf(
     ...configuration,
   };
   const prefixes = {
+    ...(model.iri ? {"": model.iri} : {}),
     ...effectiveConfiguration.prefixes,
-    "": model.iri,
   };
   const n3Writer = new N3.Writer({ prefixes });
   (new DsvWriter(n3Writer, model)).writeConceptualModel();
