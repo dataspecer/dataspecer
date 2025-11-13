@@ -1,4 +1,4 @@
-import { LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import {
   isSemanticModelClass,
   isSemanticModelRelationPrimitive,
@@ -6,13 +6,15 @@ import {
   LanguageString,
   SemanticModelEntity,
 } from "@dataspecer/core-v2/semantic-model/concepts";
-import { conceptualModelToEntityListContainer, rdfToConceptualModel } from "@dataspecer/data-specification-vocabulary";
 import { DataTypeURIs, isDataType } from "@dataspecer/core-v2/semantic-model/datatypes";
 import { createRdfsModel } from "@dataspecer/core-v2/semantic-model/simplified";
 import { isSemanticModelRelationshipUsage } from "@dataspecer/core-v2/semantic-model/usage/concepts";
 import { PimStoreWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
+import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
-import { PROF } from "@dataspecer/specification/dsv";
+import { conceptualModelToEntityListContainer, rdfToConceptualModel } from "@dataspecer/data-specification-vocabulary";
+import { dsvMetadataWellKnown, rdfToDSVMetadata } from "@dataspecer/data-specification-vocabulary/specification-description";
+import { turtleStringToStructureModel } from "@dataspecer/data-specification-vocabulary/structure-model";
 import express from "express";
 import * as jsonld from "jsonld";
 import N3, { Quad_Object } from "n3";
@@ -39,11 +41,34 @@ async function importRdfsModel(parentIri: string, url: string, newIri: string, u
   await resourceModel.createResource(parentIri, newIri, "https://dataspecer.com/core/model-descriptor/pim-store-wrapper", userMetadata);
   const store = await resourceModel.getOrCreateResourceModelStore(newIri);
   const wrapper = await createRdfsModel([url], httpFetch);
-  const serialization = await wrapper.serializeModel();
+  const serialization = wrapper.serializeModel();
   serialization.id = newIri;
   serialization.alias = userMetadata?.label?.en ?? userMetadata?.label?.cs;
   await store.setJson(serialization);
   return Object.values(wrapper.getEntities()) as SemanticModelEntity[];
+}
+
+/**
+ * Imports structure model by fetching its RDF representation.
+ * @param newIri IRI of the new structure model resource.
+ */
+export async function importStructureModel(parentIri: string, url: string, newIri: string, userMetadata: any) {
+  const response = await fetch(url);
+  const rdfData = await response.text();
+  const structureModelEntities = await turtleStringToStructureModel(rdfData);
+
+  // todo: We need to carefully handle how IDs and IRIs are managed here.
+  // Replace IRI of the schema
+  structureModelEntities.find(DataPsmSchema.is)!.iri = newIri;
+
+  const modelData = {
+    operations: [],
+    resources: Object.fromEntries(structureModelEntities.map((e) => [e.iri, e])),
+  };
+
+  await resourceModel.createResource(parentIri, newIri, V1.PSM, userMetadata);
+  const store = await resourceModel.getOrCreateResourceModelStore(newIri);
+  await store.setJson(modelData);
 }
 
 /**
@@ -247,69 +272,74 @@ async function legacyDsvImport(store: N3.Store, url: string, baseIri: string, pa
   return [(await resourceModel.getResource(newPackageIri))!, entities];
 }
 
+/**
+ * Performs import from DSV metadata document.
+ */
 async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIri: string): Promise<[BaseResource | null, SemanticModelEntity[]]> {
-  // Find the core model
-  const coreSubjects = store.getSubjects("http://www.w3.org/1999/02/22-rdf-syntax-ns#type", PROF.Profile, null);
+  const dsv = rdfToDSVMetadata(store.getQuads(null, null, null, null), { baseIri });
 
-  const coreId = coreSubjects[0].id;
-
-  const name = jsonLdLiteralToLanguageString(store.getObjects(coreId, "http://purl.org/dc/terms/title", null));
-  const description = jsonLdLiteralToLanguageString(store.getObjects(coreId, "http://www.w3.org/2000/01/rdf-schema#comment", null));
+  // todo: what to do when there are multiple specifications that this document describes?
+  const mainSpecification = dsv[0];
 
   // Create package
-  const newPackageIri = parentIri + "/" + uuidv4();
-  const pkg = await resourceModel.createPackage(parentIri, newPackageIri, {
-    label: name,
-    description,
+
+  const rootPackageId = parentIri + "/" + uuidv4();
+  await resourceModel.createPackage(parentIri, rootPackageId, {
+    label: mainSpecification.title,
+    description: mainSpecification.description,
     importedFromUrl: url,
     documentBaseUrl: url,
   });
 
-  const resources = store.getObjects(coreId, PROF.hasResource, null);
+  // Identify important resources to import
 
+  const structureModelResources: string[] = [];
   let rdfsUrl = null;
   let dsvUrl = null;
-  for (const resource of resources) {
-    if (resource.id.startsWith('"')) {
-      // todo There is this weird bug where one resource contains parenthesis
-      continue;
+  for (const resource of mainSpecification.resources) {
+    if (resource.role === dsvMetadataWellKnown.role.vocabulary) {
+      rdfsUrl = resource.url;
+    } else if (resource.role === dsvMetadataWellKnown.role.constraints) {
+      dsvUrl = resource.url;
     }
 
-    const role = store.getObjects(resource, PROF.hasRole, null)[0].id;
-    const artefactUrl = store.getObjects(resource.id, PROF.hasArtifact, null)[0].id;
-
-    if (role === PROF.ROLE.Vocabulary) {
-      rdfsUrl = artefactUrl;
-    } else if (role === PROF.ROLE.Specification) {
-      dsvUrl = artefactUrl;
+    if (resource.role === dsvMetadataWellKnown.role.schema && resource.conformsTo.includes(dsvMetadataWellKnown.conformsTo.dsvStructure)) {
+      structureModelResources.push(resource.url);
     }
   }
 
-  const entities: SemanticModelEntity[] = [];
-  for (const profile of store.getObjects(coreId, PROF.isProfileOf, null)) {
-    const urlToImport = store.getObjects(profile, PROF.hasArtifact, null)[0].id;
-    const [, e] = await importFromUrl(newPackageIri, urlToImport);
-    entities.push(...e);
+  // Import all profiled semantic data specifications
+
+  const allEntitiesFromProfiled: SemanticModelEntity[] = [];
+  for (const profile of mainSpecification.isProfileOf) {
+    const [, e] = await importFromUrl(rootPackageId, profile.url);
+    allEntitiesFromProfiled.push(...e);
   }
+
+  // Import RDFS and DSV
 
   await importRdfsAndDsv(
-    newPackageIri,
+    rootPackageId,
     rdfsUrl,
     dsvUrl,
     {
-      label: {
-        en: name.en ?? name.cs,
-      },
+      label: mainSpecification.title,
       documentBaseUrl: url,
     },
-    entities,
+    allEntitiesFromProfiled,
   );
 
-  return [(await resourceModel.getResource(newPackageIri))!, entities];
+  // Import structure models
+  for (const url of structureModelResources) {
+    await importStructureModel(rootPackageId, url, rootPackageId + "/" + uuidv4(), {});
+  }
+
+  return [(await resourceModel.getResource(rootPackageId))!, allEntitiesFromProfiled];
 }
 
 /**
- * Imports from URL and creates either a package or PIM model.
+ * Universal function that detects the type of the resource and imports it.
+ * @todo move to packages so it is not backend dependent, make more generic such as custom fetch function
  */
 async function importFromUrl(parentIri: string, url: string): Promise<[BaseResource | null, SemanticModelEntity[]]> {
   url = url.replace(/#.*$/, "");
@@ -329,10 +359,8 @@ async function importFromUrl(parentIri: string, url: string): Promise<[BaseResou
     const jsonLd = await jsonld.expand(JSON.parse(jsonLdText), {
       base: baseIri,
     });
-    const nquads = await jsonld.toRDF(jsonLd, { format: "application/n-quads" });
-    const parser = new N3.Parser({ format: "N-Triples", baseIRI: baseIri });
-    const store = new N3.Store();
-    store.addQuads(parser.parse(nquads as string));
+    const quads = (await jsonld.toRDF(jsonLd)) as N3.Quad[];
+    const store = new N3.Store(quads);
 
     if (store.getObjects(baseIri, "https://w3id.org/dsv#artefact", null).length > 0) {
       // This is a legacy DSV model

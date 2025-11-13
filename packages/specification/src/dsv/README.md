@@ -1,3 +1,0 @@
-# DSV
-
-This folder contains implementation for _metadata_ part of [Data Specification Vocabulary (DSV)](https://mff-uk.github.io/data-specification-vocabulary/). DSV can be split to two areas - metadata and profile area. Metadata deals with the description of profiles, its resources and links to other profiles and files. Profile area describes the concepts - class and property profiles. This implementation deals only with the metadata part - Semantic Data Specification, Resource Descriptor and Data Specification Documents.

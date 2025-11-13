@@ -58,8 +58,13 @@
             },
             "hasResource": {
               "@id": "prof:hasResource",
-              "@type": "@id",
-              "@container": "@set"
+              "@container": "@set",
+              "@context": {
+                "hasArtifact": {
+                  "@id": "prof:hasArtifact",
+                  "@type": "@id"
+                }
+              }
             }
           }
         },

@@ -1,38 +1,36 @@
 import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model/data-specification-artefact";
-import { resourceDescriptor } from "../dsv/model.ts";
-import { DSV_CONFORMS_TO, PROF } from "../dsv/well-known.ts";
 import { pathRelative } from "@dataspecer/core/core/utilities/path-relative";
+import { dsvMetadataWellKnown, type ResourceDescriptor } from "@dataspecer/data-specification-vocabulary/specification-description";
 
 const ARTIFACT_MAPPING = {
   "http://example.com/generator/json-schema": {
-    roles: PROF.ROLE.Schema,
-    conformsTo: DSV_CONFORMS_TO.jsonSchema,
-    format: DSV_CONFORMS_TO.jsonSchema
+    role: dsvMetadataWellKnown.role.schema,
+    conformsTo: [dsvMetadataWellKnown.conformsTo.jsonSchema],
+    formatMime: dsvMetadataWellKnown.formatMime.jsonSchema
   },
   "http://dataspecer.com/generator/json-ld": {
-    roles: PROF.ROLE.Schema,
-    conformsTo: DSV_CONFORMS_TO.jsonLd,
-    format: DSV_CONFORMS_TO.jsonLd
+    role: dsvMetadataWellKnown.role.schema,
+    conformsTo: [dsvMetadataWellKnown.conformsTo.jsonLd],
+    formatMime: dsvMetadataWellKnown.formatMime.jsonLd
   }
-} as Record<string, {
-  roles: string | string[];
-  conformsTo?: string | string[];
-  format: string;
-}>;
+} as Record<string, Pick<ResourceDescriptor, "role" | "conformsTo" | "formatMime">>;
 
 /**
  * For the given v1 artefact returns a DSV representation of the artefact or
  * null if the representation is not supported and should be skipped.
  */
-export function artefactToDsv(artefact: DataSpecificationArtefact, relativeFromPath: string): ReturnType<typeof resourceDescriptor> | null {
+export function artefactToDsv(artefact: DataSpecificationArtefact, relativeFromPath: string): ResourceDescriptor | null {
   const mapping = ARTIFACT_MAPPING[artefact.generator!];
   if (!mapping) {
     return null;
   }
 
-  return resourceDescriptor({
-    id: artefact.iri!,
-    artifactFullUrl: pathRelative(relativeFromPath, artefact.publicUrl!),
+  return {
+    iri: artefact.iri!,
+    url: pathRelative(relativeFromPath, artefact.publicUrl!),
+
+    additionalRdfTypes: [],
+
     ...mapping,
-  });
+  };
 }

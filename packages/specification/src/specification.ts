@@ -1,23 +1,25 @@
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { createSgovModel } from "@dataspecer/core-v2/semantic-model/simplified";
 import { withAbsoluteIri } from "@dataspecer/core-v2/semantic-model/utils";
 import { PimStoreWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
-import { LanguageString } from "@dataspecer/core/core/core-resource";
+import { LanguageString, type CoreResource } from "@dataspecer/core/core/core-resource";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
-import { dsvModelToJsonLdSerialization } from "./dsv/adapter.ts";
-import { resourceDescriptor, semanticDataSpecification } from "./dsv/model.ts";
-import { isModelProfile, isModelVocabulary } from "./dsv/utils.ts";
-import { DSV, DSV_CONFORMS_TO, DSV_KNOWN_FORMATS, OWL, OWL_BASE, PROF, RDFS_BASE } from "./dsv/well-known.ts";
 import { ModelRepository } from "./model-repository/index.ts";
-import { ModelDescription } from "./model.ts";
-import { generateDsv, generateHtmlDocumentation, generateLightweightOwl } from "./utils.ts";
+import { ModelDescription, type StructureModelDescription } from "./model.ts";
+import { generateDsvApplicationProfile, generateHtmlDocumentation, generateLightweightOwl, getIdToIriMapping, isModelProfile, isModelVocabulary } from "./utils.ts";
 import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model/data-specification-artefact";
 import { artefactToDsv } from "./v1/artefact-to-dsv.ts";
+import { DSV_APPLICATION_PROFILE_TYPE, DSV_VOCABULARY_SPECIFICATION_DOCUMENT_TYPE, DSVMetadataToJsonLdString, dsvMetadataWellKnown, type ApplicationProfile, type ExternalSpecification, type ResourceDescriptor, type Specification, type VocabularySpecificationDocument } from "@dataspecer/data-specification-vocabulary/specification-description";
+import { processStructureModelIrisBeforeExport, structureModelToRdf } from "@dataspecer/data-specification-vocabulary/structure-model";
 
 const PIM_STORE_WRAPPER = "https://dataspecer.com/core/model-descriptor/pim-store-wrapper";
 const SGOV = "https://dataspecer.com/core/model-descriptor/sgov";
+
+interface StructureModel {
+  resources: { [iri: string]: CoreResource };
+}
 
 /**
  * Additional context needed for generating the specification.
@@ -96,6 +98,7 @@ export async function generateSpecification(packageId: string, context: Generate
 
   // Find all models recursively and store them with their metadata
   const models = [] as ModelDescription[];
+  const primaryStructureModels = [] as StructureModelDescription[];
   async function fillModels(packageIri: string, isRoot: boolean = false) {
     const model = (await context.modelRepository.getModelById(packageIri))!;
     const pckg = await model.asPackageModel();
@@ -149,6 +152,19 @@ export async function generateSpecification(packageId: string, context: Generate
         baseIri: null,
         title: null,
       });
+    }
+    if (isRoot) {
+      const structureModels = subResources.filter((r) => r.types[0] === V1.PSM);
+      for (const model of structureModels) {
+        const blobModel = await model.asBlobModel();
+        const structureModel = (await blobModel.getJsonBlob()) as StructureModel;
+
+        // We need to process resources to have IDs and IRIs..
+        primaryStructureModels.push({
+          id: model.id,
+          entities: structureModel.resources,
+        });
+      }
     }
     const packages = subResources.filter((r) => r.types[0] === LOCAL_PACKAGE);
     for (const p of packages) {
@@ -216,21 +232,22 @@ export async function generateSpecification(packageId: string, context: Generate
 
   // Get used vocabularies
 
-  const usedVocabularies: {
-    iri: null | string;
-    urls: string[];
-    title: LanguageString;
-  }[] = [];
+  const usedVocabularies: ExternalSpecification[] = [];
 
   for (const model of subResources) {
     if (model.types[0] === PIM_STORE_WRAPPER) {
       const blobModel = await model.asBlobModel();
-      const data = (await blobModel.getJsonBlob()) as any;
-      usedVocabularies.push({
-        iri: null,
-        urls: data.urls ?? [],
-        title: { en: data.alias },
-      });
+      const data = (await blobModel.getJsonBlob()) as {
+        urls?: string[];
+        alias?: string;
+      };
+
+      for (const url of data.urls ?? []) {
+        usedVocabularies.push({
+          url: url,
+          title: data.alias ? { en: data.alias } : undefined,
+        } satisfies ExternalSpecification);
+      }
     }
     if (model.types[0] === LOCAL_PACKAGE) {
       // We need to obtain IRI of the application profile/vocabulary which is the base IRI of the semantic model.
@@ -244,7 +261,7 @@ export async function generateSpecification(packageId: string, context: Generate
         const baseIri = data.baseIri ?? "";
         usedVocabularies.push({
           iri: baseIri,
-          urls: [(model.getUserMetadata() as any)["importedFromUrl"]], // todo
+          url: (model.getUserMetadata() as any)["importedFromUrl"],
           title: {},
         });
       }
@@ -279,10 +296,16 @@ export async function generateSpecification(packageId: string, context: Generate
   };
 
   // Array of all models' resource descriptors' has resource
-  const allModelsHasResource: object[][] = [];
+  const allModelsHasResource: ResourceDescriptor[][] = [];
   // HasResource for the application profile
-  let APHasResource: object[] | null = null;
-  const allModelsDsvEntries: object[] = [];
+  let APHasResource: ResourceDescriptor[] | null = null;
+
+  // List of all specifications (according to DSV metadata definition) that this package contains
+  const specifications: Specification[] = [];
+
+  // Id to iri mapping
+  let idToIriMapping: Record<string, string> = {};
+
   // For each model we need to decide whether it is a standalone vocabulary of application profile
   for (const model of models.filter((m) => m.isPrimary)) {
     // Resource ID of the Model
@@ -302,20 +325,23 @@ export async function generateSpecification(packageId: string, context: Generate
     if (isModelVocabulary(model.entities)) {
       hasVocabulary = true;
 
-      const hasResource: object[] = [];
+      const hasResource: ResourceDescriptor[] = [];
       allModelsHasResource.push(hasResource);
 
       // This describes the model as a resource, not the descriptor of the serialization
-      const dsvEntry = semanticDataSpecification({
-        id: modelIri,
-        types: [OWL.Ontology],
+      const specification = {
+        types: [DSV_VOCABULARY_SPECIFICATION_DOCUMENT_TYPE],
+
+        iri: modelIri,
+
         title: resource.getUserMetadata().label ?? model.title ?? {},
-        description: modelDescription,
-        //token: "xxx",
-        profileOf: [...usedVocabularies],
-        hasResource,
-      });
-      allModelsDsvEntries.push(dsvEntry);
+        description: modelDescription ?? {},
+
+        // token: undefined,
+        resources: hasResource,
+        isProfileOf: [...usedVocabularies],
+      } satisfies VocabularySpecificationDocument;
+      specifications.push(specification);
 
       // Serialize the model in OWL
 
@@ -326,13 +352,14 @@ export async function generateSpecification(packageId: string, context: Generate
 
       // Create the descriptor of the OWL serialization
 
-      const descriptor = resourceDescriptor({
-        id: metaDataBaseIri + "spec", // We use URL as IRI of the descriptor resource as it describes itself
-        artifactFullUrl: modelUrl,
-        roles: PROF.ROLE.Vocabulary,
-        conformsTo: [RDFS_BASE, OWL_BASE],
-        format: DSV_KNOWN_FORMATS.rdf,
-      });
+      const descriptor = {
+        iri: metaDataBaseIri + "spec", // We use URL as IRI of the descriptor resource as it describes itself
+        url: modelUrl,
+        role: dsvMetadataWellKnown.role.vocabulary,
+        formatMime: dsvMetadataWellKnown.formatMime.turtle,
+        conformsTo: [dsvMetadataWellKnown.conformsTo.rdfs, dsvMetadataWellKnown.conformsTo.owl],
+        additionalRdfTypes: [],
+      } satisfies ResourceDescriptor;
       hasResource.push(descriptor);
     }
 
@@ -340,39 +367,85 @@ export async function generateSpecification(packageId: string, context: Generate
     if (isModelProfile(model.entities)) {
       hasApplicationProfile = true;
 
-      const hasResource: object[] = [];
+      const hasResource: ResourceDescriptor[] = [];
       allModelsHasResource.push(hasResource);
       APHasResource = hasResource;
 
       // This describes the model as a resource, not the descriptor of the serialization
-      const dsvEntry = semanticDataSpecification({
-        id: modelIri,
-        types: [DSV.ApplicationProfile],
+      const dsvEntry = {
+        iri: modelIri,
+        types: [DSV_APPLICATION_PROFILE_TYPE],
         title: resource.getUserMetadata().label ?? model.title ?? {},
-        description: modelDescription,
+        description: modelDescription ?? {},
         //token: "xxx",
-        profileOf: [...usedVocabularies],
-        hasResource,
-      });
-      allModelsDsvEntries.push(dsvEntry);
+        isProfileOf: [...usedVocabularies],
+        resources: hasResource,
+      } satisfies ApplicationProfile;
+      specifications.push(dsvEntry);
 
       // Serialize the model in DSV
 
-      const dsv = await generateDsv([model], models, modelIri);
+      const dsv = await generateDsvApplicationProfile([model], models, modelIri);
+      idToIriMapping = {
+        ...idToIriMapping,
+        ...(await getIdToIriMapping([model])),
+      };
       await writeFile(fileName, dsv);
       externalArtifacts["dsv-profile"] = [{ type: fileName, URL: modelUrl }];
 
       // Create the descriptor of the DSV serialization
 
-      const descriptor = resourceDescriptor({
-        id: metaDataBaseIri + "dsv",
-        artifactFullUrl: modelUrl,
-        roles: PROF.ROLE.Specification,
-        conformsTo: [DSV.ApplicationProfileSpecificationDocument, PROF.Profile],
-        format: DSV_KNOWN_FORMATS.rdf,
-      });
+      const descriptor = {
+        iri: metaDataBaseIri + "dsv",
+        url: modelUrl,
+
+        additionalRdfTypes: [],
+
+        role: dsvMetadataWellKnown.role.constraints,
+        conformsTo: [dsvMetadataWellKnown.conformsTo.profProfile, dsvMetadataWellKnown.conformsTo.dsvApplicationProfile],
+        formatMime: dsvMetadataWellKnown.formatMime.turtle,
+      } satisfies ResourceDescriptor;
       hasResource.push(descriptor);
     }
+  }
+
+  // Iterate over all structure models and
+  //  - create DSV entries
+  //  - create their serializations
+
+  // First we need to process structure models to use proper IRIs
+  if (false) { // Disable for now
+
+
+  const processedStructureModels = processStructureModelIrisBeforeExport(
+    primaryStructureModels.map(sm => Object.values(sm.entities as unknown as Record<string, CoreResource>)),
+    idToIriMapping,
+    "https://example.com/structure-models/"
+  );
+
+  for (const structureModel of processedStructureModels) {
+    const fileName = structureModel.fileNamePart + ".ttl";
+    const url = baseUrl + fileName + queryParams;
+    const iri = structureModel.iri;
+
+    const sm = await structureModelToRdf(structureModel.model, {});
+    await writeFile(fileName, sm);
+
+    const resourceDescriptor = {
+      iri,
+      url,
+
+      role: dsvMetadataWellKnown.role.schema,
+      formatMime: dsvMetadataWellKnown.formatMime.turtle,
+      additionalRdfTypes: [],
+
+      conformsTo: [
+        dsvMetadataWellKnown.conformsTo.dsvStructure,
+      ],
+    } satisfies ResourceDescriptor;
+    APHasResource?.push(resourceDescriptor);
+  }
+
   }
 
   // Process all SVGs. Because we do not know which svg belongs to which model,
@@ -398,37 +471,42 @@ export async function generateSpecification(packageId: string, context: Generate
         },
       ];
 
-      const descriptor = resourceDescriptor({
-        id: resourceIri,
-        artifactFullUrl: resourceUrl,
-        roles: PROF.ROLE.Guidance,
-        format: DSV_KNOWN_FORMATS.svg,
-        conformsTo: DSV_CONFORMS_TO.svg,
-      });
+      const descriptor = {
+        iri: resourceIri,
+        url: resourceUrl,
+
+        role: dsvMetadataWellKnown.role.guidance,
+        formatMime: dsvMetadataWellKnown.formatMime.svg,
+        conformsTo: [dsvMetadataWellKnown.conformsTo.svg],
+        additionalRdfTypes: [],
+      } satisfies ResourceDescriptor;
       allModelsHasResource.forEach((hasResource) => hasResource.push(descriptor));
     }
   }
 
-  // Generate HTML
+  // Generate HTML document
 
-  const types: string[] = [];
+  const additionalRdfTypes: string[] = [];
   if (hasVocabulary) {
-    types.push(DSV.VocabularySpecificationDocument);
+    additionalRdfTypes.push(dsvMetadataWellKnown.additionalRdfTypes.VocabularySpecificationDocument);
   }
   if (hasApplicationProfile) {
-    types.push(DSV.ApplicationProfileSpecificationDocument);
+    additionalRdfTypes.push(dsvMetadataWellKnown.additionalRdfTypes.ApplicationProfileSpecificationDocument);
   }
-  const htmlDescriptor = resourceDescriptor({
-    id: metaDataDocumentationIri,
-    artifactFullUrl: mainUrl + queryParams,
-    roles: PROF.ROLE.Guidance,
-    format: DSV_KNOWN_FORMATS.html,
-    types,
-  });
-  allModelsHasResource.forEach((hasResource) => hasResource.push(structuredClone(htmlDescriptor)));
-  const dsvJsonRoot = { ...htmlDescriptor };
-  // @reverse http://www.w3.org/ns/dx/prof/hasResource
-  dsvJsonRoot["inSpecificationOf"] = allModelsDsvEntries;
+
+  const htmlDescriptor = {
+    iri: metaDataDocumentationIri,
+    url: mainUrl + queryParams,
+
+    role: dsvMetadataWellKnown.role.specification,
+    formatMime: dsvMetadataWellKnown.formatMime.html,
+    additionalRdfTypes,
+
+    conformsTo: [],
+  } satisfies ResourceDescriptor;
+
+  // This html is a descriptor for all specifications
+  allModelsHasResource.forEach((hasResource) => hasResource.push(htmlDescriptor));
 
   // Inject other artifacts
   if (APHasResource) {
@@ -440,8 +518,11 @@ export async function generateSpecification(packageId: string, context: Generate
     }
   }
 
-  // Generate the DSV serialization in JSON
-  const dsv = dsvModelToJsonLdSerialization(dsvJsonRoot);
+  // Generate the DSV Metadata serialization in JSON-LD string
+  const dsv = await DSVMetadataToJsonLdString(specifications, {
+    rootHtmlDocumentIri: htmlDescriptor.iri,
+    space: 2,
+  });
 
   for (const lang of langs) {
     const documentation = context.output.writePath(`${subdirectory}${lang}/index.html`);

@@ -1,43 +1,110 @@
-import { SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
-import * as DataSpecificationVocabulary from "@dataspecer/data-specification-vocabulary";
-import { generateLightweightOwl as generateLightweightOwlInternal } from "@dataspecer/lightweight-owl";
-import { GenerateSpecificationContext } from "./specification.ts";
-import { ModelDescription } from "./model.ts";
+import type { Entity } from "@dataspecer/core-v2";
 import { createDefaultConfigurationModelFromJsonObject } from "@dataspecer/core-v2/configuration-model";
+import { isSemanticModelClass, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
+import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import * as DataSpecificationVocabulary from "@dataspecer/data-specification-vocabulary";
 import { getMustacheView } from "@dataspecer/documentation";
 import { createPartialDocumentationConfiguration, DOCUMENTATION_MAIN_TEMPLATE_PARTIAL } from "@dataspecer/documentation/configuration";
 import { generateDocumentation } from "@dataspecer/documentation/documentation-generator";
+import { generateLightweightOwl as generateLightweightOwlInternal } from "@dataspecer/lightweight-owl";
 import { mergeDocumentationConfigurations } from "./documentation/documentation.ts";
 import { BlobModel } from "./model-repository/blob-model.ts";
+import { ModelDescription } from "./model.ts";
+import { GenerateSpecificationContext } from "./specification.ts";
+
+/**
+ * Helper function that check whether the model is a vocabulary. If not, it is probably an application profile.
+ */
+export function isModelVocabulary(model: Record<string, SemanticModelEntity>): boolean {
+  return Object.values(model).some((entity) => isSemanticModelClass(entity) || isSemanticModelRelationship(entity));
+}
+/**
+ * Helper function that check whether the model is an application profile. If not, it is probably a vocabulary.
+ */
+export function isModelProfile(model: Record<string, SemanticModelEntity>): boolean {
+  return Object.values(model).some((entity) => isSemanticModelClassProfile(entity) || isSemanticModelRelationshipProfile(entity));
+}
 
 export async function generateLightweightOwl(entities: Record<string, SemanticModelEntity>, baseIri: string, iri: string): Promise<string> {
   // @ts-ignore
   return await generateLightweightOwlInternal(Object.values(entities), { baseIri, iri });
 }
 
-export async function generateDsv(forExportModels: ModelDescription[], forContextModels: ModelDescription[], iri: string): Promise<string> {
-  // We collect all models as context and all entities for export.
-  const contextModels: DataSpecificationVocabulary.EntityListContainer[] = [];
-  const modelForExport: DataSpecificationVocabulary.EntityListContainer = {
-    baseIri: iri,
-    entities: [],
-  };
-  for (const model of forContextModels.values()) {
-    contextModels.push({
-      baseIri: model.baseIri ?? "",
-      entities: Object.values(model.entities),
-    });
-  }
-  for (const model of forExportModels) {
-    modelForExport.baseIri = model.baseIri ?? "";
-    Object.values(model.entities).forEach((entity) => modelForExport.entities.push(entity));
-  }
-  // Create context.
-  const context = DataSpecificationVocabulary.createContext(contextModels);
-  //
-  const conceptualModel = DataSpecificationVocabulary.entityListContainerToConceptualModel(iri, modelForExport, context);
-  return await DataSpecificationVocabulary.conceptualModelToRdf(conceptualModel, { prettyPrint: true });
+/**
+ * Generates Application Profile DSV representation.
+ */
+export async function generateDsvApplicationProfile(forExportModels: ModelDescription[], forContextModels: ModelDescription[], iri: string) {
+  // Step 1: Prepare models in the required format.
+
+  const modelMapping = (model: ModelDescription) => ({
+    getBaseIri: () => model.baseIri ?? "",
+    getEntities: () => model.entities,
+  });
+
+  const profiles = forExportModels.map(modelMapping);
+
+  const semanticsDependencies = forContextModels.filter((model) => isModelVocabulary(model.entities)).map(modelMapping);
+  const profilesDependencies = forContextModels.filter((model) => isModelProfile(model.entities)).map(modelMapping);
+
+  // Step 2: Generate DSV.
+
+  const applicationProfile = DataSpecificationVocabulary.createDataSpecificationVocabulary(
+    {
+      semantics: semanticsDependencies,
+      profiles: profilesDependencies,
+    },
+    profiles,
+    {
+      iri,
+    },
+  );
+
+  const dsvString = await DataSpecificationVocabulary.conceptualModelToRdf(applicationProfile, {
+    prettyPrint: true,
+    prefixes: undefined, // todo
+  });
+
+  return dsvString;
 }
+
+/**
+ * Returns mapping from entity ID to their public IRI (IRI is ID under which the entity is published).
+ * @todo Move this function to somewhere else.
+ */
+export async function getIdToIriMapping(models: ModelDescription[]): Promise<Record<string, string>> {
+  const entityToIri = (entity: Entity, baseIri: string): string => {
+    // Relations store IRI in the range.
+    let iri: string | null = null;
+    if (isSemanticModelRelationship(entity) || isSemanticModelRelationshipProfile(entity)) {
+      const [_, range] = entity.ends;
+      iri = range?.iri ?? iri;
+    } else {
+      // This can by anything, we just try to graph the IRI.
+      iri = (entity as any).iri;
+    }
+    // We use the identifier as the default fallback.
+    iri = iri ?? entity.id;
+    // Now deal with absolute and relative.
+    if (iri.includes("://")) {
+      // Absolute IRI.
+      return iri;
+    } else {
+      // Relative IRI.
+      return baseIri + iri;
+    }
+  };
+
+  const mapping: Record<string, string> = {};
+  for (const model of models) {
+    for (const [entityId, entity] of Object.entries(model.entities)) {
+      const iri = entityToIri(entity, model.baseIri ?? "");
+      mapping[entityId] = iri;
+    }
+  }
+
+  return mapping;
+}
+
 /**
  * Returns HTML documentation for the given package.
  */
@@ -46,7 +113,8 @@ export async function generateHtmlDocumentation(
   models: ModelDescription[],
   options: {
     externalArtifacts?: Record<
-      string, {
+      string,
+      {
         type: string;
         URL: string;
       }[]
@@ -55,7 +123,8 @@ export async function generateHtmlDocumentation(
     language?: string;
     prefixMap?: Record<string, string>;
   } = {},
-  generatorContext: GenerateSpecificationContext): Promise<string> {
+  generatorContext: GenerateSpecificationContext,
+): Promise<string> {
   const externalArtifacts = options.externalArtifacts ?? {};
 
   const packageData = await thisPackageModel.getJsonBlob();
@@ -67,21 +136,27 @@ export async function generateHtmlDocumentation(
     label: thisPackageModel.getUserMetadata().label ?? {},
     models,
     externalArtifacts,
-    dsv: options.dsv,
+    dsv: options.dsv ? JSON.parse(options.dsv) : {},
     prefixMap: options.prefixMap ?? {},
   };
 
-  return await generateDocumentation(context, {
-    template: fullConfiguration.partials[DOCUMENTATION_MAIN_TEMPLATE_PARTIAL]!,
-    language: options.language ?? "en",
-    partials: fullConfiguration.partials,
-  }, generatorContext.v1Context ? adapter => getMustacheView(
+  return await generateDocumentation(
+    context,
     {
-      context: generatorContext.v1Context,
-      specification: generatorContext.v1Specification,
-      artefact: generatorContext.v1Specification.artefacts.find((a: any) => a.generator === "https://schemas.dataspecer.com/generator/template-artifact"),
+      template: fullConfiguration.partials[DOCUMENTATION_MAIN_TEMPLATE_PARTIAL]!,
+      language: options.language ?? "en",
+      partials: fullConfiguration.partials,
     },
-    adapter
-  ) : undefined);
+    generatorContext.v1Context
+      ? (adapter) =>
+          getMustacheView(
+            {
+              context: generatorContext.v1Context,
+              specification: generatorContext.v1Specification,
+              artefact: generatorContext.v1Specification.artefacts.find((a: any) => a.generator === "https://schemas.dataspecer.com/generator/template-artifact"),
+            },
+            adapter,
+          )
+      : undefined,
+  );
 }
-
