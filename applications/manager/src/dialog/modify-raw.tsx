@@ -91,7 +91,7 @@ export const ModifyRawDialog = ({isOpen, resolve, iri}: ModifyRawDialogProps) =>
   return (
     // Forbid modal auto close
     <Modal open={isOpen} onOpenChange={state => state || resolve()}>
-      <ModalContent className="max-w-none h-[100%]">
+      <ModalContent className="max-w-none! h-full rounded-none! border-none!">
         <ModalHeader>
           <ModalTitle>{t("modify raw data")}</ModalTitle>
         </ModalHeader>
@@ -103,7 +103,7 @@ export const ModifyRawDialog = ({isOpen, resolve, iri}: ModifyRawDialogProps) =>
                 {tabs.map((tab) => (
                   <button
                     key={tab}
-                    className={`mr-2 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors rounded-md ${
+                    className={`cursor-pointer mr-2 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors rounded-md ${
                       selectedModel === tab ? "bg-[rgba(0,0,0,0.1)] dark:bg-[rgba(0,0,0,0.8)] text-dark" : "text-muted-foreground hover:bg-muted/50 border border-muted/50"
                     }`}
                     onClick={() => setSelectedModel(tab)}
@@ -111,7 +111,7 @@ export const ModifyRawDialog = ({isOpen, resolve, iri}: ModifyRawDialogProps) =>
                     {tab}
                     {false && <div className="h-2 w-2 rounded-full bg-yellow-500" />}
                     <button
-                      className="ml-auto text-muted-foreground hover:text-foreground"
+                      className="cursor-pointer ml-auto text-muted-foreground hover:text-foreground"
                       onClick={(e) => {
                         e.stopPropagation();
                         deleteModel(tab);
