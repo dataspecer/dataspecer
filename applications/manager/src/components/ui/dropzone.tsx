@@ -129,7 +129,7 @@ const Dropzone = ({ containerClassName, dropZoneClassName, children, showFilesLi
         <div className={`flex flex-col gap-2 w-full ${filesUploaded.length > 2 ? "h-48" : "h-fit"} mt-2 ${filesUploaded.length > 0 ? "pb-2" : ""}`}>
           <div className="w-full">
             {filesUploaded.map((fileUploaded, index) => (
-              <div key={index} className="flex justify-between items-center flex-row w-full h-16 mt-2 px-4 border-solid border-2 border-gray-200 rounded-lg shadow-sm">
+              <div key={index} className="flex justify-between items-center flex-row w-full h-16 mt-2 px-4 border-solid border-2 border-gray-200 rounded-lg shadow-xs">
                 <div className="flex items-center flex-row gap-4 h-full">
                   <Image className="text-rose-700 w-6 h-6" />
                   <div className="flex flex-col gap-0">
@@ -140,7 +140,7 @@ const Dropzone = ({ containerClassName, dropZoneClassName, children, showFilesLi
                   </div>
                 </div>
                 <div
-                  className="p-2 rounded-full border-solid border-2 border-gray-100 shadow-sm hover:bg-accent transition-all select-none cursor-pointer"
+                  className="p-2 rounded-full border-solid border-2 border-gray-100 shadow-xs hover:bg-accent transition-all select-none cursor-pointer"
                   onClick={() => deleteUploadedFile(index)}
                 >
                   <Trash className="w-4 h-4" />

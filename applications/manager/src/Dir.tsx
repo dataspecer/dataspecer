@@ -80,7 +80,7 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
 
   return <li className="first:border-y last:border-none border-b">
     <div className="flex items-center space-x-4 hover:bg-accent">
-       {resource.types.includes(LOCAL_PACKAGE) ? <div className="flex"><button onClick={stopPropagation(() => isOpen ? setIsOpen(false) : open())}>
+       {resource.types.includes(LOCAL_PACKAGE) ? <div className="flex"><button className="cursor-pointer" onClick={stopPropagation(() => isOpen ? setIsOpen(false) : open())}>
         {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
       </button><Folder className="text-gray-400 ml-1" /></div> : <div><ModelIcon type={resource.types} /></div>}
 
@@ -272,7 +272,7 @@ function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean
 
   return <div className="mb-12">
     <div className="flex flex-row">
-      <button onClick={() => setIsOpen(!isOpen)}>
+      <button onClick={() => setIsOpen(!isOpen)} className="cursor-pointer">
         {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
       </button>
       <h2 className="font-heading ml-3 scroll-m-20 pb-2 text-2xl font-semibold tracking-tight first:mt-0 grow"><Translate text={pckg.userMetadata?.label} /></h2>

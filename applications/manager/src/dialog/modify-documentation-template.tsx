@@ -69,7 +69,7 @@ function PartialButton(props: {
       // disabled={props.state === "REMOVED"}
       role="radio"
       className={
-        "mb-2 text-sm text-left leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 rounded-md border-2 border-muted bg-transparent px-4 py-2 [&:not(:has(button:hover)):hover]:bg-accent group flex items-center" +
+        "cursor-pointer mb-2 text-sm text-left leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 rounded-md border-2 border-muted bg-transparent px-4 py-2 [&:not(:has(button:hover)):hover]:bg-accent group flex items-center" +
         (props.selected ? " border-primary" : "") +
         (props.state === "REMOVED" ? " text-muted-foreground" : "")
       }
@@ -201,7 +201,7 @@ export const ModifyDocumentationTemplate = ({ isOpen, resolve, iri }: { iri: str
   return (
     // Forbid modal auto close
     <Modal open={isOpen}>
-      <ModalContent className="max-w-none h-[100%] py-0 !rounded-none !border-none" disableClose>
+      <ModalContent className="max-w-none! h-full py-0 rounded-none! border-none!" disableClose>
         <ModalBody className="grow flex overflow-hidden">
           <ResizablePanelGroup direction="horizontal" className="overflow-hidden">
             <ResizablePanel defaultSize={20} className="flex flex-col pr-5 pl-1 my-6">
