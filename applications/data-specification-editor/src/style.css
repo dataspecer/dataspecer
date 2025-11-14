@@ -1,0 +1,11 @@
+/**
+ * Since we are using TailwindCSS alongside MUI, we need do not want Tailwind's
+ * CSS reset.
+ *
+ * Normally, we would only use `@import "tailwindcss";` that imports the
+ * following four lines which one of them must be disabled.
+ */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+/* @import "tailwindcss/preflight.css" layer(base); */
+@import "tailwindcss/utilities.css" layer(utilities);
