@@ -15,6 +15,7 @@
   "dependencies": {
     "@dataspecer/core-v2": "*",
     "@dataspecer/entity-model": "*",
+    "@dataspecer/semantic-model": "*",
     "@dataspecer/utilities": "*"
   },
   "devDependencies": {
