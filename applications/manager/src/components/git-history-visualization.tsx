@@ -207,18 +207,17 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
             <br/>
             Similarly the text "DS" on the commit bubble marks the fact that the commit exists in DS.
             <br/>
-            Note that you can click on text (or the bubble) to perform further actions.
+            Note that you can click on the commit bubbles to perform further actions.
           </ModalDescription>
         </ModalHeader>
         <ModalBody className="overflow-y-auto max-h-[60vh]">    {/* Needed for the scrolling */}
           {isLoading ?
             <Loader className="mr-2 h-4 w-4 animate-spin" /> :
             gitGraphElement
-            }
+          }
         </ModalBody>
         <ModalFooter className="flex flex-row">
-          <Button variant="outline" onClick={() => resolve(null)}>Cancel</Button>
-          <Button type="submit" onClick={() => resolve(null)}>Confirm</Button>
+          <Button variant="outline" onClick={() => resolve(null)}>Close</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
@@ -257,9 +256,11 @@ const createGitGraph = (
           commit.onClick = (gitGraphCommit: any) => {                        // Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-dot-click
             commitOnClickHandler(openModal, examinedPackage, gitGraphCommit, dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches[gitGraphCommit.hash]);
           };
-          commit.onMessageClick = (gitGraphCommit: any) => {                 // Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-message-click
-            commitOnClickHandler(openModal, examinedPackage, gitGraphCommit, dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches[gitGraphCommit.hash]);
-          };
+
+          // We have commented it out, we will keep the action just on the dot instead of also on the text
+          // commit.onMessageClick = (gitGraphCommit: any) => {                 // Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-message-click
+            // commitOnClickHandler(openModal, examinedPackage, gitGraphCommit, dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches[gitGraphCommit.hash]);
+          // };
           if (dsPackagesInProjectForAll[commit.hash] !== undefined) {
             commit.dotText = "DS";      // Kind of weird, but this is not documented anywhere I noticed it when I was looking at the implementation in
                                         // https://github.com/nicoespeon/gitgraph.js/blob/ed72d11d1e50ccd208326d9ded551f719cfa2b3a/packages/gitgraph-react/src/Dot.tsx#L42
@@ -270,7 +271,11 @@ const createGitGraph = (
         // Access private property to get information about branches and commits
         const userApi = gitgraph.import(commits);
 
+
         const coreGraph = (userApi as any)._graph;
+        for (const commit of coreGraph.commits) {
+          commit.renderDot = defaultCommitRenderDot;
+        }
         for (const branch of Object.keys(dsPackagesInProjectForBranches)) {
           let branchRender = coreGraph.branches.get(branch);
           if (branchRender !== undefined) {
@@ -286,6 +291,74 @@ const createGitGraph = (
     </Gitgraph>
   </div>;
 }
+
+// Copy-paste of https://github.com/nicoespeon/gitgraph.js/blob/master/packages/gitgraph-react/src/Dot.tsx
+// We want to keep the default style, but change the cursor to pointer and this is the simplest way
+function defaultCommitRenderDot(commit: any) {
+  return (
+  /*
+    In order to handle strokes, we need to do some complex stuff here… 😅
+
+    Problem: strokes are drawn inside & outside the circle.
+    But we want the stroke to be drawn inside only!
+
+    The outside overlaps with other elements, as we expect the dot to have a fixed size. So we want to crop the outside part.
+
+    Solution:
+    1. Create the circle in a <defs>
+    2. Define a clip path that references the circle
+    3. Use the clip path, adding the stroke.
+    4. Double stroke width as half of it will be clipped (the outside part).
+
+    Ref.: https://stackoverflow.com/a/32162431/3911841
+
+    P.S. there is a proposal for a stroke-alignment property,
+    but it's still a W3C Draft ¯\_(ツ)_/¯
+    https://svgwg.org/specs/strokes/#SpecifyingStrokeAlignment
+  */
+  <>
+    <defs>
+      <circle
+        id={commit.hash}
+        cx={commit.style.dot.size}
+        cy={commit.style.dot.size}
+        r={commit.style.dot.size}
+        fill={commit.style.dot.color as string}
+        style={{cursor: "pointer"}}
+      />
+      <clipPath id={`clip-${commit.hash}`}>
+        <use xlinkHref={`#${commit.hash}`} />
+      </clipPath>
+    </defs>
+
+    <g
+      onClick={commit.onClick}
+      onMouseOver={commit.onMouseOver}
+      onMouseOut={commit.onMouseOut}
+    >
+      <use
+        xlinkHref={`#${commit.hash}`}
+        clipPath={`url(#clip-${commit.hash})`}
+        stroke={commit.style.dot.strokeColor}
+        strokeWidth={
+          commit.style.dot.strokeWidth && commit.style.dot.strokeWidth * 2
+        }
+      />
+      {commit.dotText && (
+        <text
+          alignmentBaseline="central"
+          textAnchor="middle"
+          x={commit.style.dot.size}
+          y={commit.style.dot.size}
+          style={{ font: commit.style.dot.font, cursor: "pointer" }}
+        >
+          {commit.dotText}
+        </text>
+      )}
+    </g>
+  </>);
+}
+
 
 function renderLabel(branch: any) {
   // Based on playing with ChatGPT
@@ -334,9 +407,9 @@ const commitOnClickHandler = (
       renderBranchName = renderBranchName.substring(originPrefix.length);
     }
   }
+
   const branchAlreadyExistsInDS = renderBranchName !== null && dsPackagesInProjectForBranches[renderBranchName] !== undefined;
   const commitAlreadyExistsInDS = packagesRelatedToCommit !== undefined && packagesRelatedToCommit.length > 0;
-
   openModal(CommitActionsDialog, { examinedPackage, branch: renderBranchName, commitHash: gitGraphCommit.hash, branchAlreadyExistsInDS, commitAlreadyExistsInDS });
 }
 

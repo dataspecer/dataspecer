@@ -31,7 +31,6 @@ import { stopPropagation } from "./utils/events";
 import { commitToGitDialogOnClickHandler, linkToExistingGitRepositoryHandler, createNewRemoteRepositoryHandler } from "./dialog/git-url";
 import { gitHistoryVisualizationOnClickHandler } from "./components/git-history-visualization";
 import { MergeActorsType, useMergeActors } from "./hooks/use-merge";
-import { setProjectIriAndBranchDialog } from "./dialog/set-projectIRI-and-branch";
 import { BranchAction, CreateNewBranchDialog } from "./dialog/create-new-branch";
 import { ListMergeStatesDialog } from "./dialog/list-merge-states-dialog";
 import { OpenMergeState } from "./dialog/open-merge-state";
