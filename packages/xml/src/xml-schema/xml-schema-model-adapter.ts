@@ -370,7 +370,8 @@ class XmlSchemaAdapter {
       // not the schemas of the individual choices.
       let orClass: StructureModelClass;
       if (property.orStructureSchema) {
-        // Create a temporary class to represent the OR for import purposes
+        // Create a minimal class to represent the OR for import lookup.
+        // Only structureSchema, specification, and technicalLabel are used by getImportedTypeForClass.
         orClass = new StructureModelClass();
         orClass.structureSchema = property.orStructureSchema;
         orClass.specification = (choices[0] as StructureModelClass).specification;
@@ -380,12 +381,8 @@ class XmlSchemaAdapter {
         orClass = choices[0] as StructureModelClass;
       }
       const referencedClass = await this.getImportedTypeForClass(orClass);
-      if (property.orStructureSchema) {
-        // Override the type name with the OR's technical label
-        referencedClass[1] = property.orTechnicalLabel ?? "type";
-      } else {
-        referencedClass[1] = property.orTechnicalLabel ?? "type";
-      }
+      // Override the type name with the OR's technical label
+      referencedClass[1] = property.orTechnicalLabel ?? "type";
       return {
         entityType: "type",
         name: referencedClass,
