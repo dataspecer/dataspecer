@@ -42,10 +42,14 @@ const gitDialogInputIdPrefix = "git-dialog-prefix";
 export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, resolve, type }: GitActionsDialogProps) => {
   type = type ?? "create-new-repository-and-commit";
 
+  const gitProvidersComboboxOptions = useMemo(() => {
+    return createGitProviderComboBoxOptions();
+  }, []);
+
   const [repositoryName, setRepositoryName] = useState<string>(inputPackage.iri);
   const [remoteRepositoryURL, setRemoteRepositoryURL] = useState<string>("https://github.com/userName/repositoryName")
   const [user, setUser] = useState<string>("");
-  const [gitProvider, setGitProvider] = useState<string>("https://github.com/");
+  const [gitProvider, setGitProvider] = useState<string>(gitProvidersComboboxOptions[0].value);
   const [commitMessage, setCommitMessage] = useState<string>(defaultCommitMessage ?? "");
   const [isUserRepo, setIsUserRepo] = useState<boolean>(true);
   const [shouldAlwaysCreateMergeState, setShouldAlwaysCreateMergeState] = useState<boolean>(false);
@@ -97,12 +101,9 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   switch(type) {
     case "create-new-repository-and-commit":
       modalBody = <div>
-        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git user (or org)" tooltip="Name under which should be the repository created. If empty - auth user name is used, if not logged in or user did not provide rights to create repo, bot name is used" setInput={createSetterWithGitValidation(setUser)} input={user} />
-        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Initial commit message" setInput={setCommitMessage} input={commitMessage} />
         <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Repository name" setInput={createSetterWithGitValidation(setRepositoryName)} input={repositoryName} />
-        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git provider URL" tooltip="Should contain the schema and end with / - for example https://github.com/" setInput={setGitProvider} input={gitProvider} disabled/>
-        <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
-        <label className="flex items-center space-x-2 cursor-pointer">
+        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git user (or org)" tooltip="Name under which should be the repository created. If empty - auth user name is used, if not logged in or user did not provide rights to create repo, bot name is used" setInput={createSetterWithGitValidation(setUser)} input={user} />
+        <label className="flex items-center space-x-2 cursor-pointer -mt-4">
           <input
             type="checkbox"
             checked={isUserRepo}
@@ -111,6 +112,10 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
           />
           <span className="text-gray-800">Is user repo (if not checked it is organization repo)</span>
         </label>
+        <div className="my-6"/>
+        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Initial commit message" setInput={setCommitMessage} input={commitMessage} />
+        <ComboBox options={gitProvidersComboboxOptions} onChange={(value: string) => setGitProvider(value)}/>
+        <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
       </div>;
       break;
     case "commit":
