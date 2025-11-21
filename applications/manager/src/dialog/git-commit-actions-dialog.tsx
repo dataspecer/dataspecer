@@ -7,6 +7,7 @@ import { Loader } from "lucide-react";
 import { refreshRootPackage } from "@/package";
 import { PACKAGE_ROOT } from "@dataspecer/git";
 
+
 type CommitActionsDialogProps = {
   examinedPackage: Package,
   commitHash: string,
@@ -74,9 +75,9 @@ export const CommitActionsDialog = ({ examinedPackage, branch, commitHash, branc
             <br/>
             {branchAlreadyExistsInDS ?
               <div>
-                <p>Note that <strong>branch already exists</strong> inside DS, so we can not create new one. Technically we could, but it is disabled for your own good. (Desynchronization issues, working on wrong DS package, etc.)
+                <p>Note that <strong>branch already exists</strong> inside Dataspecer and it is forbidden (for your own good) to have two packages tracking the same remote branch in Dataspecer.
                 <br/>
-                If you want one you can do that by importing commit and then turning the commit into branch with new name. Or just click on create branch in the git menu.</p>
+                You can do import commit and then turn the commit into branch with <strong>new</strong> name. Or just click on create branch in the git menu.</p>
                 <br/>
                 <br/>
               </div> :

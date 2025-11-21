@@ -440,6 +440,14 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     };
   }, [examinedMergeState]);
 
+  const activeConflicts = useMemo(() => {
+    const activeConflictsInternal = examinedMergeState?.conflicts
+      ?.filter(conflict => conflictsToBeResolvedOnSave
+        .find(otherConflict => conflict.affectedDataStore.fullPath === otherConflict.affectedDataStore.fullPath) === undefined
+      );
+    return activeConflictsInternal;
+  }, [examinedMergeState, conflictsToBeResolvedOnSave]);
+
 
   const activeDatastoreType = mergeToDatastoreInfo?.type ?? mergeFromDatastoreInfo?.type ?? null;
   const activeFormat = activeDatastoreType === null ? "" : formatsForCacheEntries[activeTreePathToNodeContainingDatastore]?.[activeDatastoreType] ?? "";
@@ -1139,6 +1147,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     strippedMergeFromContent, strippedMergeToContent,
     activeDatastoreType,
     activeFormat,
+    activeConflicts,
 
     resetUseStates,
     reloadMergeState,

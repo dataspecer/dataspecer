@@ -61,6 +61,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
     activeTreePathToNodeContainingDatastore,
     activeDatastoreType,
     activeFormat,
+    activeConflicts,
 
     updateModelData,
     reloadModelsDataFromBackend,
@@ -89,7 +90,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
           <ModalBody className="grow flex overflow-hidden">
             {/* The pr-2 is there so the cross at the top right corner is seen */}
             <ResizablePanelGroup direction="horizontal" className="overflow-hidden pr-2">
-              <ResizablePanel defaultSize={20} className="flex flex-col pr-16 pl-1 my-6">
+              <ResizablePanel defaultSize={18} className="flex flex-col pr-16 my-6">
                 <ModalHeader className="mb-4">
                   <h1 className="font-bold text-lg">Diff editor to resolve {examinedMergeState?.mergeStateCause} conflict</h1>
                   <Tabs value={comparisonTabType} onValueChange={setComparisonTabType as any}>
@@ -119,24 +120,33 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
                                             setRemovedTreePaths={setRemovedTreePaths}
                                             />
                   </div>
-                <div className="gap-2 mt-4 justify-start mb-2">
-                  <Button title="This does save both the changes to files and updates the merge state"
-                          variant={"default"}
-                          onClick={() => saveEverything()}
-                          className="hover:bg-purple-700">
-                    Save changes and update merge state (Ctrl + S)
-                  </Button>
-                  <Button title="This performs the operation, which triggered the merge state. Can be pull/push/merge"
-                          variant={"default"}
-                          onClick={finalizeMergeStateHandler}
-                          className="hover:bg-purple-700">
-                    Finalize merge state
-                  </Button>
-                </div>
+                  <div className="gap-2 mt-4 justify-start mb-2 -pl-8">
+                    <Button title="Closes the diff editor without saving changes"
+                            variant={"outline"}
+                            onClick={() => closeWithSuccess()}
+                            className="m-1">
+                      Close
+                    </Button>
+                    <Button title="This does save both the changes to files and updates the merge state"
+                            variant={"outline"}
+                            onClick={() => saveEverything()}
+                            className="m-1 bg-blue-600 hover:bg-blue-700">
+                      Save changes (Ctrl + S)
+                    </Button>
+                    {
+                    ((activeConflicts?.length ?? 1) !== 0) ? null :
+                      <Button title="This performs the operation, which triggered the merge state. Can be pull/push/merge"
+                              variant={"outline"}
+                              onClick={finalizeMergeStateHandler}
+                              className="m-1 bg-green-600 hover:bg-green-700">
+                        Finalize merge state
+                      </Button>
+                    }
+                  </div>
               </ResizablePanel>
               {/* The minus "ml" shenanigans in classNames are because of some weird spaces caused by overflow-y-auto in the diff editor */}
               <ResizableHandle className="-ml-16" withHandle autoFocus={false} />
-              <ResizablePanel className="overflow-hidden flex flex-col pt-1 h-screen bg-white z-10">
+              <ResizablePanel className="overflow-hidden flex flex-col pt-1 h-screen bg-white">
                 { isLoadingTextData && Object.keys(convertedCacheForMergeFromContent).length !== 0 &&     // The check for non-empty objects is there se we don't show loading on initial load
                   <Loader className="mr-2 h-4 w-4 animate-spin" />
                 }

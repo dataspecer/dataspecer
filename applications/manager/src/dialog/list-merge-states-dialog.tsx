@@ -108,6 +108,6 @@ const renderMergeState = (
           </div>
         </div>
       </button>
-      <button onClick={removeMergeStateOnClickHandler} className="bg-red-700 hover:bg-red-800 relative top-[6px]"><X/></button>
+      <button onClick={removeMergeStateOnClickHandler} className="bg-red-500 hover:bg-red-600 relative top-[6px]"><X/></button>
     </div>;
 }

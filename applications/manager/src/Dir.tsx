@@ -251,7 +251,7 @@ const Row = ({ iri, projectFilter, setProjectFilter, isSignedIn, mergeActors, pa
             {/* TODO RadStr: Just for debugging ! */}
             {<DropdownMenuItem onClick={() => debugClearMergeStateDBTable()}><ShieldQuestion className="mr-2 h-4 w-4" />DEBUG - Clear merge db state table</DropdownMenuItem>}
             {<DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/git/redirect-to-remote-git-repository?iri=" + encodeURIComponent(iri)}><Eye className="mr-2 h-4 w-4" />Visit the remote repository</a></DropdownMenuItem>}
-            {<DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git branch visualization</DropdownMenuItem>}
+            {<DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>}
             <hr className="border-gray-300" />
             {isSignedIn && <DropdownMenuItem onClick={() => openModal(SetPrivateSSHKeyDialog, {})}><GitGraph className="mr-2 h-4 w-4" />Add private SSH key</DropdownMenuItem>}
             <hr className="border-gray-300" />
@@ -261,11 +261,10 @@ const Row = ({ iri, projectFilter, setProjectFilter, isSignedIn, mergeActors, pa
             {<DropdownMenuItem onClick={async () => manualPull(iri)}><Import className="mr-2 h-4 w-4" />Pull</DropdownMenuItem>}
             {<DropdownMenuItem onClick={() => openModal(CreateNewBranchDialog, { sourcePackage: resource, actionOnConfirm: BranchAction.CreateNewBranch })}><GitBranchPlus className="mr-2 h-4 w-4" />Create branch</DropdownMenuItem>}
             <hr className="border-gray-300" />
-            {<DropdownMenuItem onClick={() => openModal(setProjectIriAndBranchDialog, { examinedPackage: resource })}><Pencil className="mr-2 h-4 w-4" />Set project branch and/or project IRI</DropdownMenuItem>}
             {<DropdownMenuItem onClick={() => switchRepresentsBranchHead(resource, openModal)}><ArrowLeftRight className="mr-2 h-4 w-4" /> Convert to {resource.representsBranchHead ? "tag" : "branch"}</DropdownMenuItem>}
             <hr className="border-gray-300" />
             {<DropdownMenuItem onClick={() => openModal(ListMergeStatesDialog, { iri })}><EyeIcon className="mr-2 h-4 w-4" /> Show merge states</DropdownMenuItem>}
-            {<DropdownMenuItem onClick={() => setProjectFilter(resource.projectIri)}><Filter className="mr-2 h-4 w-4" />Filter projects</DropdownMenuItem>}
+            {<DropdownMenuItem onClick={() => setProjectFilter(resource.projectIri)}><Filter className="mr-2 h-4 w-4" />Show Same Repository Projects</DropdownMenuItem>}
             {mergeActors.mergeFrom !== null && mergeActors.mergeTo !== null && <DropdownMenuItem onClick={() => openModal(OpenMergeState, {mergeFrom: mergeActors.mergeFrom!, mergeTo: mergeActors.mergeTo!, editable: "mergeTo"})}><GitMerge className="mr-2 h-4 w-4" />Perform merge on DS packages</DropdownMenuItem>}
             {mergeActors.mergeFrom !== null && mergeActors.mergeFrom !== iri && <DropdownMenuItem onClick={() => mergeActors.setMergeTo(iri)}><ArrowRight className="mr-2 h-4 w-4"/>Merge to</DropdownMenuItem>}
             {<DropdownMenuItem onClick={() => mergeActors.setMergeFrom(iri)}><ArrowLeft className="mr-2 h-4 w-4"/>Merge from</DropdownMenuItem>}
@@ -379,7 +378,7 @@ function RootPackage({iri, defaultToggle, login}: {iri: string, defaultToggle?: 
           <Button variant="ghost" size="sm" className="shrink=0 ml-4"
             onClick={() => setProjectFilter(null)}>
               <FilterX className="mr-2 h-4 w-4" />
-              Remove filter
+              Remove same repository filter
           </Button>
       }
       <Button variant="ghost" size="sm" className="shrink=0 ml-4"

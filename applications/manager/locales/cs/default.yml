@@ -39,7 +39,7 @@ form:
     name: URL
   git-url:
     name: GIT URL
-    instruction: Vlož URL git repozitáře (nebo konce URL ukazující přímo na commit/větev)
+    instruction: Vložte URL git repozitáře (nebo URL ukazující přímo na commit/větev)
 format as json: Formátovat jako JSON
 generate application: Vygenerovat aplikaci
 ID: ID

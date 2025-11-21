@@ -15,6 +15,9 @@ type SetProjectIriAndBranchDialogProps = {
 
 const idPrefix = "setProjectIriAndBranchDialog";
 
+/**
+ * @deprecated Works, however we no longer use it. Since it gives too much power to user. It was more of a debug dialog
+ */
 export const setProjectIriAndBranchDialog = ({ examinedPackage, isOpen, resolve }: SetProjectIriAndBranchDialogProps) => {
   const [branch, setBranch] = useState<string>(examinedPackage.branch);
   const [projectIri, setProjectIri] = useState<string>(examinedPackage.projectIri);
