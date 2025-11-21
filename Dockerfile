@@ -60,7 +60,7 @@ COPY --from=builder /usr/src/final /usr/src/app
 
 # Do prisma migrations (needs to be done in correct absolute directory)
 RUN mkdir -p /usr/src/app/database
-RUN bunx prisma migrate deploy --schema dist/schema.prisma
+RUN bunx prisma@6 migrate deploy --schema dist/schema.prisma
 
 
 
@@ -81,7 +81,7 @@ ENV DATASPECER_GIT_COMMIT=${GIT_COMMIT} \
 # Makes directory accessible for the user
 # Instals prisma for migrations and cleans install cache
 RUN chmod a+rwx /usr/src/app && \
-  bun install --no-cache prisma && \
+  bun install --no-cache prisma@6 && \
   rm -rf ~/.bun ~/.cache
 
 # Copy final files
