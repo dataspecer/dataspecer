@@ -63,6 +63,9 @@ export function createSemicShaclStylePolicy(baseIri: string): ShaclForProfilePol
     "http://www.w3.org/2004/02/skos/core#": "skos",
     "http://www.w3.org/ns/prov#": "prov",
     "http://www.w3.org/2000/01/rdf-schema#": "rdfs",
+    "http://www.w3.org/2006/vcard/ns": "vcard",
+    "http://data.europa.eu/eli/ontology": "eli",
+    "http://www.w3.org/ns/adms": "adms",
   };
 
   const applyPrefix = (value: string) => {
