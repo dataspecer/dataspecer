@@ -81,10 +81,25 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
     };
   }, [type]);
 
+  const modalTitle = useMemo(() => {
+    switch(type) {
+      case "create-new-repository-and-commit":
+        return "Create new remote Git repository";
+      case "commit":
+        return "Commit to remote Git repository";
+      case "merge-commit":
+        return "Create merge commit to remote Git repository";
+      case "link-to-existing-repository":
+        return "Link package to remote Git repository";
+      default:
+        return "[Programmer oversight - We forgot to extend modal title memo for git dialog]"
+    }
+  }, [type]);
+
   const modalDescription = useMemo(() => {
     switch(type) {
       case "create-new-repository-and-commit":
-        return "insert name of Git remote repository, which will be created and the current package will be linked to it";
+        return "On confirm new remote Git repository will be created and the current package will be linked to it";
       case "commit":
         if (!inputPackage.representsBranchHead) {
           return "You can not commit into package, which represents tag. Turn it into branch first.";
@@ -119,19 +134,26 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
       </div>;
       break;
     case "commit":
-      modalBody = <div>
-          <InputComponent disabled={shouldDisableConfirm} idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Commit message" setInput={setCommitMessage} input={commitMessage} />
-          <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={shouldAlwaysCreateMergeState}
-              onChange={(e) => setShouldAlwaysCreateMergeState(e.target.checked)}
-              className="w-5 h-5 accent-blue-600"
-            />
-            <span>{shouldAlwaysCreateMergeState ? "Always create merge state (current option)" : "Create merge state only on conflict (current option)"}</span>
-          </label>
-        </div>;
+      if (!inputPackage.representsBranchHead) {
+        modalBody = null;
+      }
+      else {
+        modalBody = <div>
+            <InputComponent disabled={shouldDisableConfirm} idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Commit message" setInput={setCommitMessage} input={commitMessage} />
+            <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
+            {!shouldShowAlwaysCreateMergeStateOption ?
+              null :
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={shouldAlwaysCreateMergeState}
+                  onChange={(e) => setShouldAlwaysCreateMergeState(e.target.checked)}
+                  className="w-5 h-5 accent-blue-600"
+                />
+                <span>{shouldAlwaysCreateMergeState ? "Always create merge state (current option)" : "Create merge state only on conflict (current option)"}</span>
+              </label>}
+          </div>;
+      }
       break;
     case "link-to-existing-repository":
       modalBody = <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git remote repository URL" setInput={setRemoteRepositoryURL} input={remoteRepositoryURL} />;
@@ -145,7 +167,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
     <Modal open={isOpen} onClose={() => resolve(null)}>
       <ModalContent className="sm:max-w-[700px]">
         <ModalHeader>
-          <ModalTitle>Input remote Git repository</ModalTitle>
+          <ModalTitle>{modalTitle}</ModalTitle>
           <ModalDescription>
             {modalDescription}
           </ModalDescription>
