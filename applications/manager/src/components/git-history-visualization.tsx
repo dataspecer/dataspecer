@@ -184,7 +184,7 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
             const { dsPackagesInProjectForAll, dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches } = createGitToPackagesForProjectMapping(rootPackages);
 
             const gitGraphElement = createGitGraph(
-              openModal, examinedPackage, gitGraphTemplate, convertedCommits,
+              openModal, resolve, examinedPackage, gitGraphTemplate, convertedCommits,
               dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches, dsPackagesInProjectForAll);
             setGitGraphElement(gitGraphElement);
             setIsLoading(false);
@@ -227,6 +227,7 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
 
 const createGitGraph = (
   openModal: OpenBetterModal,
+  resolve: (value: null) => void,
   examinedPackage: Package,
   gitGraphTemplate: Template,
   commits: CommitInfo[],
@@ -254,7 +255,11 @@ const createGitGraph = (
           // delete commit["author"];
           // delete commit["subject"];
           commit.onClick = (gitGraphCommit: any) => {                        // Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-dot-click
-            commitOnClickHandler(openModal, examinedPackage, gitGraphCommit, dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches[gitGraphCommit.hash]);
+            resolve(null);
+            // Small delay because the closing of the top dialog takes a moment
+            setTimeout(() => {
+              commitOnClickHandler(openModal, examinedPackage, gitGraphCommit, dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches[gitGraphCommit.hash]);
+            }, 50);
           };
 
           // We have commented it out, we will keep the action just on the dot instead of also on the text
