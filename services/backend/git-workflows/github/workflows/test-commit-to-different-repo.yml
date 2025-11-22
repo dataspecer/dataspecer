@@ -582,6 +582,11 @@
 
 
 name: Generate specification and commit it to different main repo
+
+permissions:
+  contents: write
+
+
 env:
   GITHUB_REPO_OWNER_AND_NAME: ${{ github.repository }}
   PUBLICATION_BRANCH: publication-branch
@@ -649,14 +654,15 @@ jobs:
         uses: actions/checkout@v4
         with:
           # TODO RadStr: Old version - remove
-          repository: RadStr-bot/private-copy-of-dataspecer
+          # repository: RadStr-bot/private-copy-of-dataspecer
           # path: dataspecer-source-code
-          token: ${{ secrets.BOT_PAT_TOKEN }}   # TODO RadStr: Not needed once we use the public version of repository
-          ref: git-integration-proof-of-concept # TODO RadStr: In future use main branch
-          # repository: dataspecer/dataspecer
+          # token: ${{ secrets.BOT_PAT_TOKEN }}   # TODO RadStr: Not needed once we use the public version of repository
+          # ref: git-integration-proof-of-concept # TODO RadStr: In future use main branch
+
+          repository: dataspecer/dataspecer
           path: dataspecer-source-code
-          # token: ${{ secrets.GITHUB_TOKEN }}   # Should not be needed sice we get it from the public version of repository
-          # ref: git-integration # TODO RadStr: In future use main branch
+          token: ${{ secrets.GITHUB_TOKEN }}   # Should not be needed sice we get it from the public version of repository
+          ref: git-integration # TODO RadStr: In future use main branch
       - name: Copy config
         working-directory: dataspecer-source-code/services/backend
         run: cp main.config.sample.js main.config.js
@@ -770,16 +776,13 @@ jobs:
           git commit -m "Commit from GitHub action"
 
       - name: Set remote
-        env:
-          # Shell does not like GitHub secret variables so we have to define them separately
-          PAT_TOKEN: ${{ secrets.BOT_PAT_TOKEN }}
         run: |
           pwd
           ls
           cd ${DIRECTORY_WITH_GENERATED_CONTENT}
           pwd
           ls
-          git remote set-url origin https://${PAT_TOKEN}@github.com/${GITHUB_REPO_OWNER_AND_NAME}.git
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
 
       - name: Push
         run: |
