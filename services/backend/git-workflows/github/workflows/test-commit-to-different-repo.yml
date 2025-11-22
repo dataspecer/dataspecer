@@ -584,8 +584,9 @@
 name: Generate specification and commit it to different main repo
 env:
   GITHUB_REPO_OWNER_AND_NAME: ${{ github.repository }}
-  PUBLICATION_REPOSITORY: ${{ github.repository }}-publication-repo   # Can't use env variables inside env
+  PUBLICATION_BRANCH: publication-branch
   DIRECTORY_WITH_GENERATED_CONTENT: generated-content
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 on:
   push:
@@ -607,46 +608,24 @@ jobs:
       - name: Print Variables     # TODO RadStr: DEBUG
         run: |
           echo "GITHUB_REPO_OWNER_AND_NAME - $GITHUB_REPO_OWNER_AND_NAME"
-          echo "PUBLICATION_REPOSITORY - $PUBLICATION_REPOSITORY"
+          echo "PUBLICATION_BRANCH - $PUBLICATION_BRANCH"
           echo "DIRECTORY_WITH_GENERATED_CONTENT - $DIRECTORY_WITH_GENERATED_CONTENT"
       # Checkout the branch
       - name: Checkout current repo
         uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Check if branch exists
-        id: check_branch
-        run: |
-          git remote -v
-          BRANCH_EXISTS=$(git ls-remote --heads https://github.com/${{ github.repository }}-publication-repo main | wc -l)
-          echo "branch_exists=$BRANCH_EXISTS" >> $GITHUB_OUTPUT
-      - name: Checkout publication repo if branch does not exist    # We have to call init first
-        env:
-          PAT_TOKEN: ${{ secrets.BOT_PAT_TOKEN }}
-        if: steps.check_branch.outputs.branch_exists == 0     # If Branch has zero commits - it does not exist
-        run: |
-          echo "repo name - $REPO_NAME"
-          echo "DIRECTORY_WITH_GENERATED_CONTENT - $DIRECTORY_WITH_GENERATED_CONTENT"
-          mkdir -p ${DIRECTORY_WITH_GENERATED_CONTENT}
-          cd "${DIRECTORY_WITH_GENERATED_CONTENT}"
-          git init --initial-branch=main
-          # cd "$DIRECTORY_WITH_GENERATED_CONTENT/RadStr-bot"
-          # git clone https://github.com/${PUBLICATION_REPOSITORY}.git
-          git remote -v
-          git remote add origin https://${PAT_TOKEN}@github.com/${PUBLICATION_REPOSITORY}.git
-          git remote -v
-          cd "$GITHUB_WORKSPACE"    # Go back to the root
-      - name: Checkout publication repo if branch exists
+      - name: Checkout the current repository into DIRECTORY_WITH_GENERATED_CONTENT directory
         uses: actions/checkout@v4
-        if: steps.check_branch.outputs.branch_exists > 0    # If Branch has at least one commit - it does exist
         with:
           persist-credentials: false
           path: generated-content  # The path overrides the repo name directory to which it would be normally given
-          repository: "${{ github.repository }}-publication-repo"   # Unfortunately it seems like it can not interpolate the env variable in this specific case
+          repository: ${{ github.repository }}
+          # For some reason it does not work if we do not specify ref.
+          # However this has advantage that we no longer have to switch to the branch, we are on it by default
+          ref: publication-branch
 
       - name: Create README and html index file
-        env:
-          BRANCH_NAME: ${{ github.ref_name }}
         run: |
           pwd
           ls
@@ -658,9 +637,7 @@ jobs:
 
 
           # do some operation that changes a file in the git repo
-          mkdir -p ${DIRECTORY_WITH_GENERATED_CONTENT}
           cd ${DIRECTORY_WITH_GENERATED_CONTENT}
-          git switch -c $BRANCH_NAME || git switch $BRANCH_NAME
           mkdir -p ./docs-dir
           echo "<html>$(date)</html>" > ./docs-dir/index.html       # TODO RadStr: Not needed, this is just from the debug variant
           echo -e "# This is README header \nThis is readme content" > ./README.md
@@ -672,14 +649,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           # TODO RadStr: Old version - remove
-          # repository: RadStr-bot/private-copy-of-dataspecer
+          repository: RadStr-bot/private-copy-of-dataspecer
           # path: dataspecer-source-code
-          # token: ${{ secrets.BOT_PAT_TOKEN }}   # TODO RadStr: Not needed once we use the public version of repository
-          # ref: git-integration-proof-of-concept # TODO RadStr: In future use main branch
-          repository: dataspecer/dataspecer
-          path: dataspecer-source-code
           token: ${{ secrets.BOT_PAT_TOKEN }}   # TODO RadStr: Not needed once we use the public version of repository
-          ref: git-integration # TODO RadStr: In future use main branch
+          ref: git-integration-proof-of-concept # TODO RadStr: In future use main branch
+          # repository: dataspecer/dataspecer
+          path: dataspecer-source-code
+          # token: ${{ secrets.GITHUB_TOKEN }}   # Should not be needed sice we get it from the public version of repository
+          # ref: git-integration # TODO RadStr: In future use main branch
       - name: Copy config
         working-directory: dataspecer-source-code/services/backend
         run: cp main.config.sample.js main.config.js
@@ -719,8 +696,6 @@ jobs:
 
 
       - name: Generate documentation (specification)
-        env:
-          BRANCH_NAME: ${{ github.ref_name }}
         run: |
           pwd
           ls
@@ -733,11 +708,34 @@ jobs:
 
           mkdir -p ${DIRECTORY_WITH_GENERATED_CONTENT}
           cd ${DIRECTORY_WITH_GENERATED_CONTENT}
-          git switch -c $BRANCH_NAME || git switch $BRANCH_NAME
           mkdir -p ./docs-dir
           echo "<html>$(date)</html>" > ./docs-dir/index.html         # TODO RadStr: Not needed, this is just from the debug variant
           echo -e "# This is README header \nThis is readme content" > ./README.md
           echo "<html>Hello this is index page for this repository's GitHub pages</html>" > ./index.html
+
+
+      # ChatGPT inspired. We just create simple index files which has the html links directories inside /artifacts
+      - name: Generate HTML index
+        run: |
+          OUTPUT="index.html"
+          cd "$GITHUB_WORKSPACE/$DIRECTORY_WITH_GENERATED_CONTENT"
+          TARGET_DIR="artifacts"
+
+          echo "<!DOCTYPE html>" > $OUTPUT
+          echo "<html><body>" >> $OUTPUT
+          echo "<h1>Existing documentation languages</h1>" >> $OUTPUT
+          echo "<ul>" >> $OUTPUT
+
+          # Loop through entries and include only directories
+          for entry in "$TARGET_DIR"/*; do
+            if [ -d "$entry" ]; then
+              dirname=$(basename "$entry")
+              echo "<li><a href=\"$TARGET_DIR/$dirname\">$dirname</a></li>" >> $OUTPUT
+            fi
+          done
+
+          echo "</ul>" >> $OUTPUT
+          echo "</body></html>" >> $OUTPUT
 
 
       - name: Setup git config
@@ -752,9 +750,6 @@ jobs:
 
 
       - name: Commit
-        env:
-          BRANCH_NAME: ${{ github.ref_name }}
-          BRANCH_EXISTS: ${{ steps.check_branch.outputs.branch_exists }}
         run: |
           # Stage the file, commit and push
           pwd
@@ -766,18 +761,15 @@ jobs:
           echo "before branch"
           git branch --show-current
           echo "after branch"
-          if [ "$BRANCH_EXISTS" -gt 0 ]; then
-            git switch $BRANCH_NAME
-          fi
 
           git branch
+          rm -rf ./.github       # The workflow file would cause recursion
           git add .
           git status
           git remote -v
           git commit -m "Commit from GitHub action"
 
-      - name: Set remote if not first commit
-        if: steps.check_branch.outputs.branch_exists > 0    # If Branch has at least one commit - it does exist
+      - name: Set remote
         env:
           # Shell does not like GitHub secret variables so we have to define them separately
           PAT_TOKEN: ${{ secrets.BOT_PAT_TOKEN }}
@@ -787,13 +779,9 @@ jobs:
           cd ${DIRECTORY_WITH_GENERATED_CONTENT}
           pwd
           ls
-          # Using the bot's pat token stored either automatically from DS or by user
-          git remote set-url origin https://${PAT_TOKEN}@github.com/${PUBLICATION_REPOSITORY}.git
+          git remote set-url origin https://${PAT_TOKEN}@github.com/${GITHUB_REPO_OWNER_AND_NAME}.git
 
       - name: Push
-        env:
-          # Shell does not like GitHub secret variables so we have to define them separately
-          BRANCH_NAME: ${{ github.ref_name }}
         run: |
           pwd
           ls
@@ -803,11 +791,13 @@ jobs:
           else
             echo "10 or fewer commits."
           fi
-          git switch $BRANCH_NAME
           pwd
           ls
-          echo "${BRANCH_NAME}"
+          echo "${PUBLICATION_BRANCH}"
           git remote -v
-          git push -u origin ${BRANCH_NAME}
+          git status
+          git branch
+          git log
+          git push -u origin ${PUBLICATION_BRANCH}
 
 # Pushing is based on https://sameeradissanayaka.medium.com/how-to-use-github-actions-to-push-code-commit-to-another-branch-af04d8406f08

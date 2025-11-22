@@ -58,17 +58,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
         }
       }
 
-      const { defaultBranch } = await gitProvider.createRemoteRepository(patAccessToken.value, repositoryUserName, repoName, isUserRepo);
-      const createPublicationRepositoryResult = await gitProvider.createPublicationRepository(repoName + "-publication-repo", isUserRepo, repositoryUserName, patAccessToken.value);
-
-      const botAccessToken = findPatAccessToken(gitProvider.getBotCredentials()?.accessTokens);
-      if (botAccessToken === null) {
-        // TODO RadStr: Somehow give this text to user so he knwos that he has to set the pat token to the repo so we can push to publish repo
-        console.error("The bot has not defined access token");
-      }
-      else {
-        const setRepositorySecretResult = await gitProvider.setRepositorySecret(repositoryUserName, repoName, patAccessToken.value, "BOT_PAT_TOKEN", botAccessToken.value);
-      }
+      const { defaultBranch } = await gitProvider.createRemoteRepository(patAccessToken.value, repositoryUserName, repoName, isUserRepo, true);
 
 
       await gitProvider.createWebhook(patAccessToken.value, repositoryUserName, repoName, WEBHOOK_HANDLER_URL, ["push"]);

@@ -1,6 +1,6 @@
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
-import { CommitReferenceType, createRemoteRepositoryReturnType, CommitterInfo, GitProviderEnum, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials } from "@dataspecer/git";
+import { CommitReferenceType, CreateRemoteRepositoryReturnType, GitProviderEnum, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials } from "@dataspecer/git";
 import { GitProviderBase } from "../git-provider-base.ts";
 import { gitProviderDomains } from "../git-provider-factory.ts";
 
@@ -102,7 +102,7 @@ export class GitLabProvider extends GitProviderBase {
 
     return fetchResponse;
   }
-  async createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean): Promise<createRemoteRepositoryReturnType> {
+  async createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean, shouldEnablePublicationBranch: boolean): Promise<CreateRemoteRepositoryReturnType> {
     // https://docs.gitlab.com/api/projects/#create-a-project
     // Example curl request:
     // curl --request POST --header "PRIVATE-TOKEN: <your-token>" \
@@ -151,6 +151,9 @@ export class GitLabProvider extends GitProviderBase {
     throw new Error("Method not implemented.");
   }
 
+  /**
+   * @deprecated We put the GitHub (respectively here GitLab) pages on the same repository instead of onto separate publication repository
+   */
   async createPublicationRepository(repoName: string, isUserRepo: boolean, repositoryUserName?: string, accessToken?: string): Promise<FetchResponse> {
     throw new Error("Method not implemented.");
   }

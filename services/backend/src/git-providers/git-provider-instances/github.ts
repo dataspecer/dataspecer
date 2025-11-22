@@ -7,7 +7,7 @@ import fs from "fs";
 
 // Using this one since I could not make the ones for nodeJS (one is not using ES modules and the other one seems to be too old and correctly support types)
 import sodium from "libsodium-wrappers-sumo";
-import { CommitReferenceType, createRemoteRepositoryReturnType, CommitterInfo, GitProviderEnum, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, AccessToken, AccessTokenType } from "@dataspecer/git";
+import { CommitReferenceType, CreateRemoteRepositoryReturnType, GitProviderEnum, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, AccessToken, AccessTokenType } from "@dataspecer/git";
 import { GitProviderBase } from "../git-provider-base.ts";
 import { resourceModel } from "../../main.ts";
 import { createLinksForFiles, gitProviderDomains } from "../git-provider-factory.ts";
@@ -134,7 +134,7 @@ export class GitHubProvider extends GitProviderBase {
     return fetchResponse;
   }
 
-  async createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean): Promise<createRemoteRepositoryReturnType> {
+  async createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean, shouldEnablePublicationBranch: boolean): Promise<CreateRemoteRepositoryReturnType> {
     // https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#create-an-organization-repository - org repo
     // vs
     // https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#create-a-repository-for-the-authenticated-user - user repo
@@ -169,10 +169,65 @@ export class GitHubProvider extends GitProviderBase {
 
     const responseAsJSON = (await fetchResponse.json()) as any;
     const defaultBranch: string | null = responseAsJSON?.default_branch ?? null;
+
+    if (shouldEnablePublicationBranch) {
+      // We have to create the branch first, we can not enable GH pages on not existing branch
+      const defaultBranchExplicit = defaultBranch ?? "main";
+      const initialCommitHash = await this.getLatestCommit(repositoryUserName, repoName, defaultBranchExplicit, authToken);
+      await this.createBranch(repositoryUserName, repoName, GitProviderBase.PUBLICATION_BRANCH_NAME, initialCommitHash, authToken);
+
+      const pagesResponse = await this.enableGitHubPages(repoName, repositoryUserName, GitProviderBase.PUBLICATION_BRANCH_NAME, authToken);
+      // TODO RadStr: Debug prints
+      // console.info({pagesResponse});
+      // console.info({json: await pagesResponse.json()});
+    }
+
     return {
       response: fetchResponse,
       defaultBranch,
     };
+  }
+
+  private async getLatestCommit(repositoryUserName: string, repoName: string, branch: string, authToken: string) {
+    const mainRefUrl = `https://api.github.com/repos/${repositoryUserName}/${repoName}/git/ref/heads/${branch}`;
+
+    const fetchResponse = await httpFetch(mainRefUrl, {
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+        Accept: "application/vnd.github+json",
+      },
+    });
+
+    if (fetchResponse.status < 200 || fetchResponse.status >= 300) {
+      throw new Error(`Error when getting the latest commit of GitHub repository: ${fetchResponse.status} ${fetchResponse}`);
+    }
+
+    const responseAsJSON = (await fetchResponse.json()) as any;
+    const latestCommitHash = responseAsJSON.object.sha;
+    return latestCommitHash;
+  }
+
+  private async createBranch(repositoryUserName: string, repoName: string, branch: string, latestCommitHash: string, authToken: string) {
+    const createRefUrl = `https://api.github.com/repos/${repositoryUserName}/${repoName}/git/refs`;
+
+    const fetchResponse = await httpFetch(createRefUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+        Accept: "application/vnd.github+json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ref: `refs/heads/${branch}`,
+        sha: latestCommitHash,
+      }),
+    });
+
+    if (fetchResponse.status < 200 || fetchResponse.status >= 300) {
+      throw new Error(`Error when creating branch of GitHub repository: ${fetchResponse.status} ${fetchResponse}`);
+    }
+
+    return fetchResponse;
   }
 
   getBotCredentials(): GitCredentials | null {
@@ -342,6 +397,9 @@ export class GitHubProvider extends GitProviderBase {
     return fetchResponse;
   }
 
+  /**
+   * @deprecated We put the GitHub pages on the same repository instead of onto separate publication repository
+   */
   async createPublicationRepository(repoName: string, isUserRepo: boolean, repositoryUserName?: string, accessToken?: string): Promise<FetchResponse> {
     const botCredentials = this.getBotCredentials();
     if (botCredentials === null) {
@@ -355,9 +413,9 @@ export class GitHubProvider extends GitProviderBase {
       throw new Error("Can not create publication repository, since there is no access token - neiter from user and from bot");
     }
 
-    await this.createRemoteRepository(accessToken, repositoryUserName, repoName, isUserRepo);
+    await this.createRemoteRepository(accessToken, repositoryUserName, repoName, isUserRepo, false);
     await this.setBotAsCollaborator(repositoryUserName, repoName, accessToken);
-    return this.enableGitHubPages(repoName, repositoryUserName, accessToken)
+    return this.enableGitHubPages(repoName, repositoryUserName, "main", accessToken);
   }
 
   copyWorkflowFiles(copyTo: string): void {
@@ -381,12 +439,12 @@ export class GitHubProvider extends GitProviderBase {
   /**
    * Enables GitHub pages for given repository.
    */
-  async enableGitHubPages(repoName: string, repositoryUserName: string, accessToken: string): Promise<FetchResponse> {
+  async enableGitHubPages(repoName: string, repositoryUserName: string, branch: string, accessToken: string): Promise<FetchResponse> {
     // https://docs.github.com/en/rest/pages/pages?apiVersion=2022-11-28#create-a-github-pages-site
     // TODO RadStr: Maybe better permissions - or also could specify them in given method arguments
     const payload = {
       source: {
-        branch: "main",
+        branch: branch,
         path: "/" // Can be / or /docs - it is where are the pages' source stored
       }
     };

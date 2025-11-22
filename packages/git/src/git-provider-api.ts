@@ -1,6 +1,7 @@
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
 import { Scope } from "./auth.ts";
 
+
 export type ConvertRepoURLToDownloadZipURLReturnType = {
   zipURL: string,
   commitReferenceValueInfo: ExtractedCommitReferenceValueFromRepositoryURLExplicit,
@@ -80,7 +81,7 @@ export type ExtractedCommitReferenceValueFromRepositoryURLExplicit = {
   fallbackToDefaultBranch: boolean;
 }
 
-export type createRemoteRepositoryReturnType = {
+export type CreateRemoteRepositoryReturnType = {
   defaultBranch: string | null,
   response: FetchResponse
 }
@@ -121,11 +122,13 @@ export interface GitProvider {
   // TODO RadStr: Maybe everywhere use repository instead of repositoryUserName
   /**
    * Creates remote git repository with following URL .../{@link repositoryUserName}/{@link repoName}.
+   *
    * @param authToken has to contain right to create (public) repository
    * @param isUserRepo if true then we create repository under user of name {@link repositoryUserName},
    *  if false then we are creating repository under organization of name {@link repositoryUserName}.
+   * @param shouldEnablePublicationBranch If set to true should also enable the GitHub pages (or its equivalent) in the GitProviderBase.PUBLICATION_BRANCH_NAME. (but in future it might change if we start using the publication repos again, possible TODO:)
    */
-  createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean): Promise<createRemoteRepositoryReturnType>;
+  createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean, shouldEnablePublicationBranch: boolean): Promise<CreateRemoteRepositoryReturnType>;
 
   /**
    * Removes remote git repository with following URL .../{@link repositoryUserName}/{@link repoName}.
@@ -181,11 +184,15 @@ export interface GitProvider {
    *     We have to do this, because the access tokens for the users are temporary, while this one is "permanent" (we can from time to time generate new one and set environment variables with it).
    *  3) Enable GitHub pages (or some other equivalent for different git providers)
    *
+   * Note that for it to work, we should first set repository secret with the access token of the bot so it can commit to the remote publication repository within workflow (GitHub) action,
+   *  that is gitProvider.setRepositorySecret(repositoryUserName, repoName, patAccessToken.value, "BOT_PAT_TOKEN", botAccessToken.value)
+   *
    * @param repoName is the name of the repository, which contains publications
    * @param isUserRepo if true then it is repo created under user, if false it is created under organization
    * @param repositoryUserName is the name of the organization if {@link isUserRepo} is false, or name of user if it is true.
    *  If not provided then bot is used as a user and the {@link isUserRepo} is ignored (it is expected to be true).
    * @param accessToken if not given, the bot access token is used.
+   * @deprecated We put the GitHub pages on the same repository instead of onto separate publication repository. We used to put it on repository suffixed by -publication-repo (hardcoded).
    */
   createPublicationRepository(repoName: string, isUserRepo: boolean, repositoryUserName?: string, accessToken?: string): Promise<FetchResponse>;
 
