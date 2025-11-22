@@ -16,6 +16,7 @@ import { createCloseDialogObject, LoadingDialog } from "@/components/loading-dia
 
 type GitActionsDialogProps = {
   inputPackage: Package;
+  shouldShowAlwaysCreateMergeStateOption: boolean | null;
   defaultCommitMessage: string | null;
   type?: "create-new-repository-and-commit" | "commit" | "link-to-existing-repository";
 } & BetterModalProps<{
@@ -39,7 +40,7 @@ const gitDialogInputIdPrefix = "git-dialog-prefix";
  *
  * The type of shown dialog depends on the "type" property.
  */
-export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, resolve, type }: GitActionsDialogProps) => {
+export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, resolve, type, shouldShowAlwaysCreateMergeStateOption }: GitActionsDialogProps) => {
   type = type ?? "create-new-repository-and-commit";
 
   const gitProvidersComboboxOptions = useMemo(() => {
@@ -52,7 +53,8 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   const [gitProvider, setGitProvider] = useState<string>(gitProvidersComboboxOptions[0].value);
   const [commitMessage, setCommitMessage] = useState<string>(defaultCommitMessage ?? "");
   const [isUserRepo, setIsUserRepo] = useState<boolean>(true);
-  const [shouldAlwaysCreateMergeState, setShouldAlwaysCreateMergeState] = useState<boolean>(false);
+  // We want the shouldAlwaysCreateMergeState option on, except when we are not showing it, then it can cause recursion
+  const [shouldAlwaysCreateMergeState, setShouldAlwaysCreateMergeState] = useState<boolean>(shouldShowAlwaysCreateMergeStateOption !== false);
   const [exportFormat, setExportFormat] = useState<ExportFormatType>("json");
 
   let suffixNumber = 0;
@@ -187,7 +189,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
 export const createNewRemoteRepositoryHandler = async (openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
   // {@link DropdownMenuItem} has to be used in the tree, when it is part of another component, it is rendered incorrectly,
   // that is why we implement it like this and not like react component
-  const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage: null, type: "create-new-repository-and-commit" });
+  const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage: null, type: "create-new-repository-and-commit", shouldShowAlwaysCreateMergeStateOption: null });
   if (result) {
     const closeDialogObject = createCloseDialogObject();
     // TODO RadStr: Localization
@@ -227,7 +229,7 @@ export const commitToGitDialogOnClickHandler = async (
 
 
 export const linkToExistingGitRepositoryHandler = async (openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
-  const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage: null, type: "link-to-existing-repository" });
+  const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage: null, type: "link-to-existing-repository", shouldShowAlwaysCreateMergeStateOption: null });
   if (result) {
     const response = await linkToExistingGitRepositoryRequest(iri, result.remoteRepositoryURL);
     if (response.ok) {
