@@ -2,6 +2,7 @@ import {
   createN3RdfBuilder,
   type N3RdfBuilder,
   createN3Writer,
+  deduplicateQuads,
 } from "@dataspecer/rdf-adapter";
 
 import {
@@ -42,7 +43,7 @@ export async function shaclToRdf(
   (new ShaclModelWriter(builder, model)).writeShaclModel();
 
   const writer = createN3Writer(prefixes);
-  writer.addQuads(builder.asQuads());
+  writer.addQuads(deduplicateQuads(builder.asQuads()));
 
   return effectiveConfiguration.prettyPrint ?
     writer.asPrettyString() : writer.asString();

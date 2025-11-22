@@ -8,6 +8,7 @@ import {
   createShaclForProfile,
   filterLanguageStringLiterals,
 } from "./shacl.ts";
+import { shaclToRdf } from "./shacl-to-rdf.ts";
 
 describe("createShaclForProfile", () => {
 
@@ -53,17 +54,17 @@ describe("createShaclForProfile", () => {
     const objectProfile = profile.class({ iri: "object" })
       .reuseName(object);
 
-    const humanProfile = profile.class({ iri: "human" })
+    const personProfile = profile.class({ iri: "human" })
       .reuseName(human);
 
     profile.property({ iri: "name" })
       .reuseName(name)
-      .domain(humanProfile)
+      .domain(personProfile)
       .range(xsdString.absoluteIri());
 
     profile.property({ iri: "has" })
       .reuseName(has)
-      .domain(humanProfile)
+      .domain(personProfile)
       .range(objectProfile);
 
     // Prepare SHACL
@@ -93,7 +94,8 @@ describe("createShaclForProfile", () => {
       .toStrictEqual("http://www.w3.org/2001/XMLSchema#string");
   });
 
-  test("Issue #1298: Language filter", async () => {
+  // Language filter
+  test("https://github.com/dataspecer/dataspecer/issues/1298", async () => {
 
     // Vocabulary
 
@@ -121,12 +123,12 @@ describe("createShaclForProfile", () => {
       baseIri: "http://example.com/profile#",
     });
 
-    const humanProfile = profile.class({iri: "person"})
+    const personProfile = profile.class({iri: "person"})
       .reuseName(person);
 
     profile.property({ iri: "name", usageNote: { cs: "Jméno osoby" } })
       .reuseName(name)
-      .domain(humanProfile)
+      .domain(personProfile)
       .range(xsdString.absoluteIri());
 
     // Prepare default shacl with all languages.
@@ -158,6 +160,65 @@ describe("createShaclForProfile", () => {
       .toStrictEqual({ en: "name" });
     expect(shacl.members[0].propertyShapes[0].description)
       .toStrictEqual({});
+
+  });
+
+  // Deduplication
+  test("https://github.com/dataspecer/dataspecer/issues/1294", async () => {
+
+    // Vocabulary
+
+    const vocabulary = createDefaultSemanticModelBuilder({
+      baseIdentifier: "vocab:",
+      baseIri: "http://example.com/vocabulary#",
+    });
+
+    const person = vocabulary.class({
+      iri: "person",
+      name: { "cs": "Osoba", "en": "Person" },
+    });
+
+    const name = person.property({
+      iri: "name",
+      name: { en: "name", cs: "Jméno" },
+      description: { en: "Description" },
+      range: xsdString,
+    });
+
+    // Profile
+
+    const profile = createDefaultProfileModelBuilder({
+      baseIdentifier: "profile:",
+      baseIri: "http://example.com/profile#",
+    });
+
+    const personProfile = profile.class({iri: "person"})
+      .reuseName(person);
+
+    profile.property({ iri: "name", usageNote: { cs: "Jméno osoby" } })
+      .reuseName(name)
+      .domain(personProfile)
+      .range(xsdString.absoluteIri());
+
+    const otherPersonProfile = profile.class({iri: "otherPerson"})
+      .reuseName(person);
+
+    profile.property({ iri: "name", usageNote: { cs: "Jméno osoby" } })
+      .reuseName(name)
+      .domain(otherPersonProfile)
+      .range(xsdString.absoluteIri());
+
+    // Prepare default shacl with all languages.
+
+    const shacl = createShaclForProfile(
+      [xsd.build(), vocabulary.build()], [], profile.build(),
+      createSemicShaclStylePolicy("http://example/shacl.ttl/"));
+
+    // Convert to RDF
+
+    const rdf = await shaclToRdf(shacl, {});
+    const count = (rdf.match(/Jméno osoby/g) || []).length;
+    expect(count).toBe(1);
 
   });
 

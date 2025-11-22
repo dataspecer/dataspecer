@@ -46,7 +46,12 @@ export interface ShaclForProfilePolicy {
 
 }
 
-// https://github.com/SEMICeu/DCAT-AP/blob/master/releases/3.0.0/shacl/dcat-ap-SHACL.ttl
+/**
+ * Node shape IRI is created as: {base iri}/{prefixed type iri}Shape
+ * Predicate shape IRI is created as: {node shape iri}/{property hash}
+ *
+ * @see https://github.com/SEMICeu/DCAT-AP/blob/master/releases/3.0.0/shacl/dcat-ap-SHACL.ttl
+ */
 export function createSemicShaclStylePolicy(baseIri: string): ShaclForProfilePolicy {
 
   // If there is "#" in the IRI we are in fragment section,
