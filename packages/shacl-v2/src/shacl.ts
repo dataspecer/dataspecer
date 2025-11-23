@@ -33,9 +33,13 @@ export interface ShaclForProfilePolicy {
   /**
    * @param entity IRI of represented profile.
    * @param type IRI of represented RDF type.
+   * @returns IRI for a node shape.
    */
   shaclNodeShape: (profile: string, type: string) => string;
 
+  /**
+   * @returns IRI for a predicate shape.
+   */
   shaclPredicateShape: (profile: string, type: string, predicate: {
     path: string,
     datatype: string | null,
@@ -43,6 +47,10 @@ export interface ShaclForProfilePolicy {
     minCount: number | null,
     maxCount: number | null,
   }) => string;
+
+  nodeTypeFilter: (types: string[]) => string[];
+
+  literalTypeFilter: (types: string[]) => string[];
 
 }
 
@@ -72,6 +80,13 @@ export function createSemicShaclStylePolicy(baseIri: string): ShaclForProfilePol
     "http://data.europa.eu/eli/ontology": "eli",
     "http://www.w3.org/ns/adms": "adms",
   };
+
+  // We do not want to use selected types for shacl:class check.
+  // https://github.com/dataspecer/dataspecer/issues/1295
+  const typesToIgnore: Set<string> = new Set([
+    "http://www.w3.org/2000/01/rdf-schema#Resource",
+    "http://www.w3.org/2000/01/rdf-schema#Literal",
+  ]);
 
   const applyPrefix = (value: string) => {
     for (const [prefix, name] of Object.entries(prefixes)) {
@@ -106,6 +121,8 @@ export function createSemicShaclStylePolicy(baseIri: string): ShaclForProfilePol
       `${baseIri}${applyPrefix(type)}Shape`,
     shaclPredicateShape: (profile, type, property) =>
       `${baseIri}${applyPrefix(type)}Shape/${hashProperty(profile, property)}`,
+    nodeTypeFilter: items => items.filter(item => !typesToIgnore.has(item)),
+    literalTypeFilter: items => items.filter(item => !typesToIgnore.has(item)),
   }
 }
 
@@ -154,7 +171,7 @@ export function createShaclForProfile(
     // as templates. The reason is we do not have a complete information
     // about them yet.
     const propertyShapesTemplates = buildPropertiesShapeTemplates(
-      classMap, entity.properties);
+      classMap, entity.properties, policy);
 
     // We need shape for every type.
     const shapes = entity.rdfTypes.map(type => buildShaclNodeShape(
@@ -199,35 +216,70 @@ type ShaclPropertyShapeTemplate = Omit<ShaclPropertyShape, "iri">;
 function buildPropertiesShapeTemplates(
   classMap: Record<string, StructureClass>,
   properties: StructureProperty[],
+  policy: ShaclForProfilePolicy,
 ): ShaclPropertyShapeTemplate[] {
   const result: ShaclPropertyShapeTemplate[] = [];
   for (const property of properties) {
+    // We split the types.
+    const { primitives, complex } = splitRangeTypes(property);
     // Each property can be expressed using multiple predicates.
     for (const predicate of property.rdfPredicates) {
-      for (const range of property.range) {
-        const isComplex = isComplexType(range);
-        const isPrimitive = isPrimitiveType(range);
-        if (isPrimitive && !isComplex) {
-          result.push(buildPropertyShapeTemplateForPrimitiveType(
-            property, predicate, range));
-        } else if (!isPrimitive && isComplex) {
-          result.push(...buildPropertyShapeForTemplateComplexType(
-            classMap, property, predicate, range));
-        } else {
-          // Can be both or neither, it should not happen.
-          console.warn("Unexpected type.",
-            { isPrimitive, isComplex, property, range });
-        }
-      }
+      result.push(...buildPropertyShapeTemplateForPrimitiveTypes(
+        property, predicate, primitives, policy));
+      result.push(...buildPropertyShapeForTemplateComplexTypes(
+        classMap, property, predicate, complex, policy));
     }
   }
   return result;
 }
 
+function splitRangeTypes(
+  property: StructureProperty,
+): { primitives: string[], complex: string[], } {
+  const primitives: string[] = [];
+  const complex: string[] = [];
+  property.range.forEach(type => {
+    const isPrimitive = isPrimitiveType(type);
+    const isComplex = isComplexType(type);
+    if (isPrimitive && !isComplex) {
+      primitives.push(type);
+    } else if (!isPrimitive && isComplex) {
+      complex.push(type);
+    } else {
+      // Can be both or neither, it should not happen.
+      console.warn("Unexpected type.",
+        { isPrimitive, isComplex, property, range: type });
+    }
+  });
+  return { primitives, complex };
+}
+
+function buildPropertyShapeTemplateForPrimitiveTypes(
+  property: StructureProperty,
+  predicate: string,
+  ranges: string[],
+  policy: ShaclForProfilePolicy,
+): ShaclPropertyShapeTemplate[] {
+  if (ranges.length === 0) {
+    return [];
+  }
+  // We filtered out all types, we just create a shape with no data type.
+  // https://github.com/dataspecer/dataspecer/issues/1295
+  const filteredRanges = policy.literalTypeFilter(ranges);
+  if (filteredRanges.length === 0) {
+    return [
+      buildPropertyShapeTemplateForPrimitiveType(property, predicate, null),
+    ];
+  } else {
+    return filteredRanges.map(type =>
+      buildPropertyShapeTemplateForPrimitiveType(property, predicate, type));
+  }
+}
+
 function buildPropertyShapeTemplateForPrimitiveType(
   property: StructureProperty,
   predicate: string,
-  range: string,
+  range: string | null,
 ): ShaclPropertyShapeTemplate {
   return {
     seeAlso: property.iri,
@@ -242,30 +294,50 @@ function buildPropertyShapeTemplateForPrimitiveType(
   };
 }
 
-function buildPropertyShapeForTemplateComplexType(
+function buildPropertyShapeForTemplateComplexTypes(
   classMap: Record<string, StructureClass>,
   property: StructureProperty,
   predicate: string,
-  range: string,
+  ranges: string[],
+  policy: ShaclForProfilePolicy,
 ): ShaclPropertyShapeTemplate[] {
-  const result: ShaclPropertyShapeTemplate[] = [];
-  // We may not have the information about the class, only the type
-  // but that is fine.
-  const types = classMap[range]?.rdfTypes ?? [range];
-  for (const type of types) {
-    result.push({
-      seeAlso: property.iri,
-      description: property.usageNote,
-      name: property.name,
-      nodeKind: ShaclNodeKind.BlankNodeOrIRI,
-      path: predicate,
-      minCount: property.rangeCardinality.min,
-      maxCount: property.rangeCardinality.max,
-      datatype: null,
-      class: type,
-    });
+  if (ranges.length === 0) {
+    return [];
   }
-  return result;
+  // We need to translate the ranges to types.
+  const types: string[] = [];
+  for (const range of ranges) {
+    types.push(...(classMap[range]?.rdfTypes ?? [range]));
+  }
+  // We filtered out all types, we just create a shape with no data type.
+  // https://github.com/dataspecer/dataspecer/issues/1295
+  const filteredTypes = policy.nodeTypeFilter(types);
+  if (filteredTypes.length === 0) {
+    return [
+      buildPropertyShapeForTemplateComplexType(property, predicate, null),
+    ];
+  } else {
+    return filteredTypes.map(type =>
+      buildPropertyShapeForTemplateComplexType(property, predicate, type));
+  }
+}
+
+function buildPropertyShapeForTemplateComplexType(
+  property: StructureProperty,
+  predicate: string,
+  range: string | null,
+): ShaclPropertyShapeTemplate {
+  return {
+    seeAlso: property.iri,
+    description: property.usageNote,
+    name: property.name,
+    nodeKind: ShaclNodeKind.BlankNodeOrIRI,
+    path: predicate,
+    minCount: property.rangeCardinality.min,
+    maxCount: property.rangeCardinality.max,
+    datatype: null,
+    class: range,
+  };
 }
 
 function buildShaclNodeShape(

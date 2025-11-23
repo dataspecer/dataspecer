@@ -126,7 +126,8 @@ class ShaclModelWriter {
 
     this.builder.addIri(iri, SHACL.path, shape.path);
     this.builder.addLiteral(iri, SHACL.maxCount, shape.maxCount);
-    // There is no need to store minCount if === 0, #1297.
+    // There is no need to store minCount if === 0.
+    // See https://github.com/dataspecer/dataspecer/issues/1297
     if (shape.minCount !== null && shape.minCount > 0) {
       this.builder.addLiteral(iri, SHACL.minCount, shape.minCount);
     }

@@ -19,6 +19,15 @@ describe("createShaclForProfile", () => {
 
   const xsdString = xsd.class({ iri: "string" });
 
+  const rdfs = createDefaultSemanticModelBuilder({
+    baseIdentifier: "rdfs:",
+    baseIri: "http://www.w3.org/2000/01/rdf-schema#",
+  });
+
+  const rdfsLiteral = rdfs.class({ iri: "Literal" });
+
+  const rdfsResource = rdfs.class({ iri: "Resource" });
+
   test("Implementation test I.", async () => {
 
     // Vocabulary
@@ -123,7 +132,7 @@ describe("createShaclForProfile", () => {
       baseIri: "http://example.com/profile#",
     });
 
-    const personProfile = profile.class({iri: "person"})
+    const personProfile = profile.class({ iri: "person" })
       .reuseName(person);
 
     profile.property({ iri: "name", usageNote: { cs: "Jméno osoby" } })
@@ -192,7 +201,7 @@ describe("createShaclForProfile", () => {
       baseIri: "http://example.com/profile#",
     });
 
-    const personProfile = profile.class({iri: "person"})
+    const personProfile = profile.class({ iri: "person" })
       .reuseName(person);
 
     profile.property({ iri: "name", usageNote: { cs: "Jméno osoby" } })
@@ -200,7 +209,7 @@ describe("createShaclForProfile", () => {
       .domain(personProfile)
       .range(xsdString.absoluteIri());
 
-    const otherPersonProfile = profile.class({iri: "otherPerson"})
+    const otherPersonProfile = profile.class({ iri: "otherPerson" })
       .reuseName(person);
 
     profile.property({ iri: "name", usageNote: { cs: "Jméno osoby" } })
@@ -221,5 +230,67 @@ describe("createShaclForProfile", () => {
     expect(count).toBe(1);
 
   });
+
+  // Do not check for rdfs:Literal and rdfs:Resource types.
+  test("https://github.com/dataspecer/dataspecer/issues/1295", async () => {
+
+    // Vocabulary
+
+    const vocabulary = createDefaultSemanticModelBuilder({
+      baseIdentifier: "vocab:",
+      baseIri: "http://example.com/vocabulary#",
+    });
+
+    const person = vocabulary.class({ iri: "person" });
+
+    const hasLiteral = vocabulary.property({ iri: "hasLiteral" })
+      .domain(person)
+      .range(rdfsLiteral);
+
+    const hasResource = vocabulary.property({ iri: "hasResource" })
+      .domain(person)
+      .range(rdfsResource);
+
+    // Profile
+
+    const profile = createDefaultProfileModelBuilder({
+      baseIdentifier: "profile:",
+      baseIri: "http://example.com/profile#",
+    });
+
+    const personProfile = profile.class({iri: "person"});
+    personProfile.profile(person);
+
+    profile.property({ iri: "hasLiteral" })
+      .profile(hasLiteral)
+      .domain(personProfile)
+      .range(rdfsLiteral.absoluteIri());
+
+    profile.property({ iri: "hasResource" })
+      .profile(hasResource)
+      .domain(personProfile)
+      .range(rdfsResource.absoluteIri());
+
+    // Prepare default shacl with all languages.
+
+    const shacl = createShaclForProfile(
+      [xsd.build(), rdfs.build(), vocabulary.build()], [], profile.build(),
+      createSemicShaclStylePolicy("http://example/shacl.ttl/"));
+
+    //
+
+    expect(shacl.members.length).toBe(1);
+    const personShape = shacl.members[0];
+
+    expect(personShape.propertyShapes.length).toBe(2);
+    const types = personShape.propertyShapes
+      .map(item => item.class ?? item.datatype)
+      .filter(item => item !== null);
+
+    // There should be no types as
+    // rdfs:Literal and rdfs:Resource should be filtered out.
+    expect(types.length).toBe(0);
+  });
+
 
 });
