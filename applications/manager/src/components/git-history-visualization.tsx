@@ -12,7 +12,7 @@ import { CommitActionsDialog } from "@/dialog/git-commit-actions-dialog";
 import { Loader } from "lucide-react";
 import { Template } from "@gitgraph/core/lib/template";
 import { ResourceWithIris } from "@/package";
-import { PACKAGE_ROOT, CommitInfo, RawCommit, BranchHistory, FetchedGitRawHistory } from "@dataspecer/git";
+import { PACKAGE_ROOT, CommitInfo, RawCommit, BranchHistory, FetchedGitRawHistory, PUBLICATION_BRANCH_NAME } from "@dataspecer/git";
 
 type DSPackageInProjectVisualizationData = {
   iri: string;
@@ -276,11 +276,17 @@ const createGitGraph = (
         // Access private property to get information about branches and commits
         const userApi = gitgraph.import(commits);
 
-
         const coreGraph = (userApi as any)._graph;
+        const validCommits: any[] = [];
         for (const commit of coreGraph.commits) {
+          if (commit.branches.includes(`origin/${PUBLICATION_BRANCH_NAME}`)) {
+            continue;
+          }
           commit.renderDot = defaultCommitRenderDot;
+          validCommits.push(commit);
         }
+        coreGraph.commits = validCommits;
+
         for (const branch of Object.keys(dsPackagesInProjectForBranches)) {
           let branchRender = coreGraph.branches.get(branch);
           if (branchRender !== undefined) {

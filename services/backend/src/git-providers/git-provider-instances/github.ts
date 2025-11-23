@@ -7,7 +7,7 @@ import fs from "fs";
 
 // Using this one since I could not make the ones for nodeJS (one is not using ES modules and the other one seems to be too old and correctly support types)
 import sodium from "libsodium-wrappers-sumo";
-import { CommitReferenceType, CreateRemoteRepositoryReturnType, GitProviderEnum, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, AccessToken, AccessTokenType } from "@dataspecer/git";
+import { CommitReferenceType, CreateRemoteRepositoryReturnType, GitProviderEnum, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, AccessToken, AccessTokenType, PUBLICATION_BRANCH_NAME } from "@dataspecer/git";
 import { GitProviderBase } from "../git-provider-base.ts";
 import { resourceModel } from "../../main.ts";
 import { createLinksForFiles, gitProviderDomains } from "../git-provider-factory.ts";
@@ -174,9 +174,9 @@ export class GitHubProvider extends GitProviderBase {
       // We have to create the branch first, we can not enable GH pages on not existing branch
       const defaultBranchExplicit = defaultBranch ?? "main";
       const initialCommitHash = await this.getLatestCommit(repositoryUserName, repoName, defaultBranchExplicit, authToken);
-      await this.createBranch(repositoryUserName, repoName, GitProviderBase.PUBLICATION_BRANCH_NAME, initialCommitHash, authToken);
+      await this.createBranch(repositoryUserName, repoName, PUBLICATION_BRANCH_NAME, initialCommitHash, authToken);
 
-      const pagesResponse = await this.enableGitHubPages(repoName, repositoryUserName, GitProviderBase.PUBLICATION_BRANCH_NAME, authToken);
+      const pagesResponse = await this.enableGitHubPages(repoName, repositoryUserName, PUBLICATION_BRANCH_NAME, authToken);
       // TODO RadStr: Debug prints
       // console.info({pagesResponse});
       // console.info({json: await pagesResponse.json()});

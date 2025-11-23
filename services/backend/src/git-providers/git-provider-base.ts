@@ -7,8 +7,6 @@ import { ROOT_DIRECTORY_FOR_PRIVATE_GITS } from "../models/git-store-info.ts";
 import { removePathRecursively } from "../utils/git-utils.ts";
 
 export abstract class GitProviderBase implements GitProvider {
-  static PUBLICATION_BRANCH_NAME: string = "publication-branch";
-
   abstract getGitProviderEnumValue(): GitProviderEnum;
   abstract getDomainURL(shouldPrefixWithHttps: boolean): string;
   abstract setDomainURL(newDomainURL: string): void;
