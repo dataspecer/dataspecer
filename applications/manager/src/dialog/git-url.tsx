@@ -118,6 +118,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   switch(type) {
     case "create-new-repository-and-commit":
       modalBody = <div>
+        <ComboBox options={gitProvidersComboboxOptions} onChange={(value: string) => setGitProvider(value)}/>
         <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Repository name" setInput={createSetterWithGitValidation(setRepositoryName)} input={repositoryName} />
         <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git user (or org)" tooltip="Name under which should be the repository created. If empty - auth user name is used, if not logged in or user did not provide rights to create repo, bot name is used" setInput={createSetterWithGitValidation(setUser)} input={user} />
         <label className="flex items-center space-x-2 cursor-pointer -mt-4">
@@ -131,7 +132,6 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
         </label>
         <div className="my-6"/>
         <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Initial commit message" setInput={setCommitMessage} input={commitMessage} />
-        <ComboBox options={gitProvidersComboboxOptions} onChange={(value: string) => setGitProvider(value)}/>
         <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
       </div>;
       break;
@@ -193,7 +193,12 @@ export const createNewRemoteRepositoryHandler = async (openModal: OpenBetterModa
   if (result) {
     const closeDialogObject = createCloseDialogObject();
     // TODO RadStr: Localization
-    openModal(LoadingDialog, {dialogTitle: "Creating repository with first commit", waitingText: "Waiting for response", setCloseDialogAction: closeDialogObject.setCloseDialogAction});
+    openModal(LoadingDialog, {
+      dialogTitle: "Creating repository with initial commit",
+      waitingText: "Usually takes around 10-20 seconds",
+      setCloseDialogAction: closeDialogObject.setCloseDialogAction,
+      shouldShowTimer: true,
+    });
     const response = await createNewRemoteRepositoryRequest(iri, result);
     closeDialogObject.closeDialogAction();
     await requestLoadPackage(iri, true);
@@ -212,7 +217,12 @@ export const commitToGitDialogOnClickHandler = async (
   if (result) {
     const closeDialogObject = createCloseDialogObject();
     // TODO RadStr: Localization
-    openModal(LoadingDialog, {dialogTitle: "Committing", waitingText: "Waiting for response", setCloseDialogAction: closeDialogObject.setCloseDialogAction});
+    openModal(LoadingDialog, {
+      dialogTitle: "Committing",
+      waitingText: "Usually takes around 5-15 seconds",
+      setCloseDialogAction: closeDialogObject.setCloseDialogAction,
+      shouldShowTimer: true,
+    });
     commitToGitRequest(iri, result.commitMessage, result.exportFormat, result.shouldAlwaysCreateMergeState, false)
       .then(async (response) => {
         closeDialogObject.closeDialogAction();
