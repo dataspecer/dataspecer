@@ -292,5 +292,4 @@ describe("createShaclForProfile", () => {
     expect(types.length).toBe(0);
   });
 
-
 });

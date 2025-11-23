@@ -52,6 +52,8 @@ export interface ShaclForProfilePolicy {
 
   literalTypeFilter: (types: string[]) => string[];
 
+  prefixes: () => { [prefix: string]: string };
+
 }
 
 /**
@@ -76,9 +78,11 @@ export function createSemicShaclStylePolicy(baseIri: string): ShaclForProfilePol
     "http://www.w3.org/2004/02/skos/core#": "skos",
     "http://www.w3.org/ns/prov#": "prov",
     "http://www.w3.org/2000/01/rdf-schema#": "rdfs",
-    "http://www.w3.org/2006/vcard/ns": "vcard",
-    "http://data.europa.eu/eli/ontology": "eli",
-    "http://www.w3.org/ns/adms": "adms",
+    "http://www.w3.org/2006/vcard/ns#": "vcard",
+    "http://data.europa.eu/eli/ontology#": "eli",
+    "http://www.w3.org/ns/adms#": "adms",
+    "http://www.w3.org/ns/shacl#": "sh",
+    "http://www.w3.org/2001/XMLSchema#": "xsd",
   };
 
   // We do not want to use selected types for shacl:class check.
@@ -123,6 +127,9 @@ export function createSemicShaclStylePolicy(baseIri: string): ShaclForProfilePol
       `${baseIri}${applyPrefix(type)}Shape/${hashProperty(profile, property)}`,
     nodeTypeFilter: items => items.filter(item => !typesToIgnore.has(item)),
     literalTypeFilter: items => items.filter(item => !typesToIgnore.has(item)),
+    prefixes: () => Object.fromEntries(
+      Object.entries(prefixes).map(([key, value]) => [value, key])
+    ),
   }
 }
 

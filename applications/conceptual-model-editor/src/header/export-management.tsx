@@ -182,13 +182,15 @@ export const ExportManagement = () => {
 
     console.log({ semanticModels, profileModels, topProfileModel });
 
+    const semicStyle = createSemicShaclStylePolicy(iri);
     const shacl = createShaclForProfile(
       semanticModels.map(model => new SemanticModelWrap(model)),
       profileModels.map(model => new SemanticModelWrap(model)),
       new SemanticModelWrap(topProfileModel),
-      createSemicShaclStylePolicy(iri));
+      semicStyle);
 
     shaclToRdf(shacl, {
+      prefixes: semicStyle.prefixes(),
       prettyPrint: true,
     }).then(shaclAsRdf => {
       console.log("SHACL export:", shaclAsRdf);
