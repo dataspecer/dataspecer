@@ -132,7 +132,7 @@ class ShaclModelWriter {
       this.builder.addLiteral(iri, SHACL.minCount, shape.minCount);
     }
     this.builder.addIri(iri, SHACL.class, shape.class);
-    this.builder.addIri(iri, SHACL.class, shape.datatype);
+    this.builder.addIri(iri, SHACL.datatype, shape.datatype);
     return iri;
   }
 
