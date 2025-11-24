@@ -1,6 +1,7 @@
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
 import { Scope } from "./auth.ts";
 
+export const PUBLICATION_BRANCH_NAME: string = "publication-branch";
 
 export type ConvertRepoURLToDownloadZipURLReturnType = {
   zipURL: string,
@@ -126,7 +127,7 @@ export interface GitProvider {
    * @param authToken has to contain right to create (public) repository
    * @param isUserRepo if true then we create repository under user of name {@link repositoryUserName},
    *  if false then we are creating repository under organization of name {@link repositoryUserName}.
-   * @param shouldEnablePublicationBranch If set to true should also enable the GitHub pages (or its equivalent) in the GitProviderBase.PUBLICATION_BRANCH_NAME. (but in future it might change if we start using the publication repos again, possible TODO:)
+   * @param shouldEnablePublicationBranch If set to true should also enable the GitHub pages (or its equivalent) in the PUBLICATION_BRANCH_NAME. (but in future it might change if we start using the publication repos again, possible TODO:)
    */
   createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean, shouldEnablePublicationBranch: boolean): Promise<CreateRemoteRepositoryReturnType>;
 

@@ -143,6 +143,9 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const openModal = useBetterModal();
 
+  // This is used, so we can hide the dialog when we show another one. We could also close it completely. But getting the git log from backend is not so cheap operation.
+  const [shouldHideDialog, setShouldHideDialog] = useState<boolean>(false);
+
   useLayoutEffect(() => {
       if (isOpen) {
         console.info("useLayoutEffect for git-history-vis");
@@ -184,8 +187,8 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
             const { dsPackagesInProjectForAll, dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches } = createGitToPackagesForProjectMapping(rootPackages);
 
             const gitGraphElement = createGitGraph(
-              openModal, resolve, examinedPackage, gitGraphTemplate, convertedCommits,
-              dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches, dsPackagesInProjectForAll);
+              openModal, examinedPackage, gitGraphTemplate, convertedCommits,
+              dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches, dsPackagesInProjectForAll, setShouldHideDialog);
             setGitGraphElement(gitGraphElement);
             setIsLoading(false);
           })
@@ -199,7 +202,7 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
 
   return (
     <Modal open={isOpen} onClose={() => resolve(null)}>
-      <ModalContent className="max-w-[90%]">
+      <ModalContent className={shouldHideDialog ? "hidden" : "max-w-[90%]"} >
         <ModalHeader>
           <ModalTitle>Project history in Git</ModalTitle>
           <ModalDescription>
@@ -227,13 +230,13 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
 
 const createGitGraph = (
   openModal: OpenBetterModal,
-  resolve: (value: null) => void,
   examinedPackage: Package,
   gitGraphTemplate: Template,
   commits: CommitInfo[],
   dsPackagesInProjectForBranches: Record<string, DSPackageInProjectVisualizationData>,
   dsPackagesInProjectForNonBranches: Record<string, DSPackageInProjectVisualizationData[]>,
   dsPackagesInProjectForAll: Record<string, DSPackageInProjectVisualizationData[]>,
+  setShouldHideDialog: (shouldHide: boolean) => void,
 ) => {
   return <div>
     <Gitgraph options={{template: gitGraphTemplate}}>
@@ -255,10 +258,13 @@ const createGitGraph = (
           // delete commit["author"];
           // delete commit["subject"];
           commit.onClick = (gitGraphCommit: any) => {                        // Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-dot-click
-            resolve(null);
+            setShouldHideDialog(true);
             // Small delay because the closing of the top dialog takes a moment
             setTimeout(() => {
-              commitOnClickHandler(openModal, examinedPackage, gitGraphCommit, dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches[gitGraphCommit.hash]);
+              commitOnClickHandler(openModal, examinedPackage, gitGraphCommit, dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches[gitGraphCommit.hash])
+                .then(() => {
+                  setShouldHideDialog(false);
+                });
             }, 50);
           };
 
@@ -421,7 +427,7 @@ const commitOnClickHandler = (
 
   const branchAlreadyExistsInDS = renderBranchName !== null && dsPackagesInProjectForBranches[renderBranchName] !== undefined;
   const commitAlreadyExistsInDS = packagesRelatedToCommit !== undefined && packagesRelatedToCommit.length > 0;
-  openModal(CommitActionsDialog, { examinedPackage, branch: renderBranchName, commitHash: gitGraphCommit.hash, branchAlreadyExistsInDS, commitAlreadyExistsInDS });
+  return openModal(CommitActionsDialog, { examinedPackage, branch: renderBranchName, commitHash: gitGraphCommit.hash, branchAlreadyExistsInDS, commitAlreadyExistsInDS });
 }
 
 
