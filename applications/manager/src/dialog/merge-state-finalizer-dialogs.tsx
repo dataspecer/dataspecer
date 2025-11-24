@@ -1,12 +1,12 @@
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { BetterModalProps, OpenBetterModal } from "@/lib/better-modal";
-import { finalizeMergeMergeStateOnFailure, finalizePullMergeState, finalizePullMergeStateOnFailure, finalizePushMergeState, finalizePushMergeStateOnFailure } from "@/utils/merge-state-backend-requests";
-import { FinalizerVariantsForPullOnFailure, getEditableValue, MergeState } from "@dataspecer/git";
+import { finalizeMergeMergeState, finalizeMergeMergeStateOnFailure, finalizePullMergeState, finalizePullMergeStateOnFailure, finalizePushMergeState, finalizePushMergeStateOnFailure } from "@/utils/merge-state-backend-requests";
+import { FinalizerVariantsForPullOnFailure, getEditableValue, MergeCommitType, MergeState } from "@dataspecer/git";
 import { Loader } from "lucide-react";
 import { Dispatch, SetStateAction, useContext, useState } from "react";
 import { toast } from "sonner";
-import { commitToGitDialogOnClickHandler } from "./git-url";
+import { commitToGitDialogOnClickHandler, mergeCommitToGitDialogOnClickHandler } from "./git-url";
 import { ResourcesContext } from "@/package";
 
 
@@ -138,39 +138,18 @@ const MergeStateFinalizerForPullAnswerDialog = ({ mergeState, resolve }: MergeSt
     </>;
 };
 
-const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, setIsWaitingForAnswer, resolve }: MergeStateFinalizerSpecificCauseProps) => {
+const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, setIsWaitingForAnswer, resolve, openModal }: MergeStateFinalizerSpecificCauseProps) => {
   const [httpStatusCode, setHttpStatusCode] = useState<number>(-1);
+  const [chosenCommitType, setChosenCommitType] = useState<MergeCommitType | null>(null);
+
+  const iri = getEditableValue(mergeState.editable, mergeState.rootIriMergeFrom, mergeState.rootIriMergeTo);
+  const resources = useContext(ResourcesContext);
+  const sourceDSPackage = resources[iri]!;
 
   const handleMergeAction = async () => {
-    // setIsWaitingForAnswer(true);
-    // const response = await finalizeMergeMergeState(mergeState.uuid);
-    // if (response !== null) {
-    //   if (response === 409) {
-    //     toast.error("There are still unresolved conflicts");
-    //     resolve();
-    //   }
-    //   else if (response < 300) {
-    //     toast.success("Finalizer succcessfully finished");
-    //     resolve();
-    //   }
-    //   else if (response < 400) {
-    //     // TODO RadStr: Probably do nothing - we will just show the another dialog.
-    //   }
-    //   else {
-    //     toast.error("There was error when finalizing, check console for more info");
-    //   }
-    // }
-    // else {
-    //   toast.error("There was error when finalizing, check console for more info");
-    // }
-    // setHttpStatusCode(response ?? -1);
-    // setIsWaitingForAnswer(false);
-    // setShouldRenderAnswerDialog(true);
-  };
-
-  const handleRebaseAction = async () => {
     setIsWaitingForAnswer(true);
-    const response = await finalizePushMergeState(mergeState.uuid);
+    setChosenCommitType("merge-commit");
+    const response = await finalizeMergeMergeState(mergeState.uuid, "merge-commit");
     if (response !== null) {
       if (response === 409) {
         toast.error("There are still unresolved conflicts");
@@ -178,6 +157,7 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
       }
       else if (response < 300) {
         toast.success("Finalizer succcessfully finished");
+        mergeCommitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, mergeState);
         resolve();
       }
       else if (response < 400) {
@@ -195,29 +175,65 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
     setShouldRenderAnswerDialog(true);
   };
 
+  const handleRebaseAction = async () => {
+    // Rebase behaves basically like classic merge state caused by push
+    setIsWaitingForAnswer(true);
+    const response = await finalizeMergeMergeState(mergeState.uuid, "rebase-commit");
+    if (response !== null) {
+      if (response === 409) {
+        toast.error("There are still unresolved conflicts");
+        resolve();
+      }
+      else if (response < 300) {
+        toast.success("Finalizer succcessfully finished");
+        resolve();
+        commitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, "rebase-commit", false, mergeState.commitMessage);
+      }
+      else if (response < 400) {
+        // TODO RadStr: Probably do nothing - we will just show the another dialog.
+      }
+      else {
+        toast.error("There was error when finalizing, check console for more info");
+      }
+    }
+    else {
+      toast.error("There was error when finalizing, check console for more info");
+    }
+    setHttpStatusCode(response ?? -1);
+    setIsWaitingForAnswer(false);
+    setShouldRenderAnswerDialog(true);
+  };
+
+  if (shouldRenderAnswerDialog) {
+    if (chosenCommitType === "rebase-commit") {
+      return <MergeStateFinalizerForPushAnswerDialog mergeState={mergeState} resolve={resolve} httpStatus={httpStatusCode} />;
+    }
+    else {
+      return <MergeStateFinalizerForMergeAnswerDialog mergeState={mergeState} resolve={resolve} httpStatus={httpStatusCode} />;
+    }
+  }
+
 
   return (
-    shouldRenderAnswerDialog ?
-      <MergeStateFinalizerForMergeAnswerDialog mergeState={mergeState} resolve={resolve} httpStatus={httpStatusCode} /> :
-      <>
-        <ModalHeader>
-          <ModalTitle>Finish merge state caused by merging</ModalTitle>
-          <ModalDescription>
-            You can choose to either create classic merge commit. Or rebase commit,
-            that is you just create new commit and put the changes on top.
-            Or you can of course close the dialog and handle it all later.
-          </ModalDescription>
-        </ModalHeader>
-        <ModalFooter>
-          <Button variant="outline" onClick={() => handleMergeAction()}>Create merge commit</Button>
-          <Button variant="outline" onClick={() => handleRebaseAction()}>Create rebase commit</Button>
-        </ModalFooter>
-      </>
+    <>
+      <ModalHeader>
+        <ModalTitle>Finish merge state caused by merging</ModalTitle>
+        <ModalDescription>
+          You can choose to either create classic merge commit. Or rebase commit,
+          that is you just create new commit and put the changes on top (basically same as fast-forward).
+          Or you can of course close the dialog and handle it all later.
+        </ModalDescription>
+      </ModalHeader>
+      <ModalFooter>
+        <Button variant="outline" onClick={() => handleMergeAction()}>Create merge commit</Button>
+        <Button variant="outline" onClick={() => handleRebaseAction()}>Create rebase commit</Button>
+      </ModalFooter>
+    </>
   );
 }
 
 const MergeStateFinalizerForMergeAnswerDialog = ({ mergeState, httpStatus, resolve }: MergeStateFinalizerAnswerDialogProps) => {
-  const finalizerHandler = async () => {
+  const removeMergeStateAction = async () => {
     const response = await finalizeMergeMergeStateOnFailure(mergeState.uuid, "remove-merge-state");
     if (response) {
       toast.success("Finalizing was successful");
@@ -246,7 +262,7 @@ const MergeStateFinalizerForMergeAnswerDialog = ({ mergeState, httpStatus, resol
         </ModalDescription>
       </ModalHeader>
       <ModalFooter>
-        <Button variant="outline" onClick={() => finalizerHandler()}>Remove merge state</Button>
+        <Button variant="outline" onClick={() => removeMergeStateAction()}>Remove merge state</Button>
         <Button variant="outline" onClick={() => resolve()}>Close dialog</Button>
       </ModalFooter>
     </>;
@@ -274,7 +290,7 @@ const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldR
       else if (response < 300) {
         toast.success("Finalizer succcessfully finished");
         resolve();
-        commitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, mergeState.commitMessage);
+        commitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, "classic-commit", false, mergeState.commitMessage);
       }
       else if (response < 400) {
         // TODO RadStr: Probably do nothing - we will just show the another dialog.

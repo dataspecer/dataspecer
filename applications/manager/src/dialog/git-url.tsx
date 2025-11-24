@@ -8,17 +8,19 @@ import { createIdentifierForHTMLElement, InputComponent } from "@/components/sim
 import { Package } from "@dataspecer/core-v2/project";
 import { toast } from "sonner";
 import { ExportFormatRadioButtons, ExportFormatType } from "@/components/export-format-radio-buttons";
-import { CommitRedirectResponseJson, createSetterWithGitValidation } from "@dataspecer/git";
+import { CommitRedirectResponseJson, createSetterWithGitValidation, ExtendedCommitRedirectResponseJson, MergeFromDataType, MergeState, SingleBranchCommitType } from "@dataspecer/git";
 import { CommitRedirectForMergeStatesDialog } from "./commit-confirm-dialog-caused-by-merge-state";
-import { commitToGitRequest, createNewRemoteRepositoryRequest, linkToExistingGitRepositoryRequest } from "@/utils/git-backend-requests";
+import { commitToGitRequest, createNewRemoteRepositoryRequest, linkToExistingGitRepositoryRequest, mergeCommitToGitRequest } from "@/utils/git-backend-requests";
 import { createCloseDialogObject, LoadingDialog } from "@/components/loading-dialog";
+import { ComboBox, createGitProviderComboBoxOptions } from "@/components/combo-box";
+import { removeMergeState } from "@/utils/merge-state-backend-requests";
 
 
 type GitActionsDialogProps = {
   inputPackage: Package;
   shouldShowAlwaysCreateMergeStateOption: boolean | null;
   defaultCommitMessage: string | null;
-  type?: "create-new-repository-and-commit" | "commit" | "link-to-existing-repository";
+  type?: "create-new-repository-and-commit" | "commit" | "merge-commit" | "link-to-existing-repository";
 } & BetterModalProps<{
   repositoryName: string;
   remoteRepositoryURL: string;
@@ -27,6 +29,7 @@ type GitActionsDialogProps = {
   commitMessage: string;
   isUserRepo: boolean;
   shouldAlwaysCreateMergeState: boolean;
+  shouldAppendAfterDefaultMergeCommitMessage: boolean;
   exportFormat: ExportFormatType;
 } | null>;
 
@@ -55,6 +58,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   const [isUserRepo, setIsUserRepo] = useState<boolean>(true);
   // We want the shouldAlwaysCreateMergeState option on, except when we are not showing it, then it can cause recursion
   const [shouldAlwaysCreateMergeState, setShouldAlwaysCreateMergeState] = useState<boolean>(shouldShowAlwaysCreateMergeStateOption !== false);
+  const [shouldAppendAfterDefaultMergeCommitMessage, setShouldAppendAfterDefaultMergeCommitMessage] = useState<boolean>(true);
   const [exportFormat, setExportFormat] = useState<ExportFormatType>("json");
 
   let suffixNumber = 0;
@@ -67,7 +71,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   }, []);
 
   const closeWithSuccess = () => {
-    resolve({ user, repositoryName, remoteRepositoryURL, gitProvider, commitMessage, isUserRepo, shouldAlwaysCreateMergeState, exportFormat });
+    resolve({ user, repositoryName, remoteRepositoryURL, gitProvider, commitMessage, isUserRepo, shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage, exportFormat });
   }
 
   const shouldDisableConfirm = useMemo(() => {
@@ -77,6 +81,8 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
       case "commit":
         return !inputPackage.representsBranchHead;
       case "link-to-existing-repository":
+        return false;
+      case "merge-commit":
         return false;
       default:
         return true;
@@ -107,6 +113,8 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
           return "You can not commit into package, which represents tag. Turn it into branch first.";
         }
         return "Insert the commit message for git";
+      case "merge-commit":
+        return "Insert the commit message for git merge";
       case "link-to-existing-repository":
         return "Insert URL of Git remote repository, which already exists and to which you want to link the current package. Note that you can put in url pointing to commit/branch/tag.";
       default:
@@ -156,6 +164,23 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
               </label>}
           </div>;
       }
+      break;
+    case "merge-commit":
+      modalBody = <div>
+          <InputComponent disabled={shouldDisableConfirm} idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Merge Commit message" setInput={setCommitMessage} input={commitMessage} />
+          <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={shouldAppendAfterDefaultMergeCommitMessage}
+              onChange={(e) => setShouldAppendAfterDefaultMergeCommitMessage(e.target.checked)}
+              className="w-5 h-5 accent-blue-600"
+            />
+            <span>{shouldAppendAfterDefaultMergeCommitMessage ?
+              "The given message will be put after the default merge message created in git (current option)" :
+              "The merge message will look exactly as given (current option)"}</span>
+          </label>
+        </div>;
       break;
     case "link-to-existing-repository":
       modalBody = <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git remote repository URL" setInput={setRemoteRepositoryURL} input={remoteRepositoryURL} />;
@@ -207,13 +232,70 @@ export const createNewRemoteRepositoryHandler = async (openModal: OpenBetterModa
 };
 
 
+export const mergeCommitToGitDialogOnClickHandler = async (
+  openModal: OpenBetterModal,
+  iri: string,
+  inputPackage: Package,
+  mergeState: MergeState,
+) => {
+  const result = await openModal(GitActionsDialog, {
+    inputPackage,
+    defaultCommitMessage: mergeState.commitMessage,
+    type: "merge-commit",
+    shouldShowAlwaysCreateMergeStateOption: false,
+  });
+  if (result) {
+    const closeDialogObject = createCloseDialogObject();
+    // TODO RadStr: Localization
+    openModal(LoadingDialog, {
+      dialogTitle: "Committing merge",
+      waitingText: "Usually takes around 5-15 seconds",
+      setCloseDialogAction: closeDialogObject.setCloseDialogAction,
+      shouldShowTimer: true,
+    });
+    const mergeFromData: MergeFromDataType = {
+      branch: mergeState.branchMergeFrom,
+      commitHash: mergeState.lastCommitHashMergeFrom,
+      iri: mergeState.rootIriMergeFrom,
+    };
+
+
+    // We do not care about existence of merge states, so we pass in false
+    mergeCommitToGitRequest(iri, result.commitMessage, result.shouldAppendAfterDefaultMergeCommitMessage, result.exportFormat, mergeFromData, false)
+      .then(async (response) => {
+        closeDialogObject.closeDialogAction();
+        if (response.status === 500) {
+          const jsonResponse: any = await response.json();
+          // TODO: ..... Not really clean: The check for the equality of strings of error. But can't really think of anything much better now
+          if (jsonResponse.error === "Error: The merge from branch was already merged. We can not merge again.") {
+            // In this case we want to always remove the merge state. User has to move heads by committing and then he can create new merge state.
+            toast.error(jsonResponse.error + " Removing the merge state.");
+            const removalResult = await removeMergeState(mergeState.uuid);
+            if (!removalResult) {
+              setTimeout(() => {
+                toast.error("The removal of merge state failed");
+              }, 1000);
+            }
+          }
+        }
+        else if (response.status === 200) {
+          // Unlike for other merge states, we remove th emerge state here instead when finalizing backend (the merge state is exception).
+          // Since other mergestates just updated the last commit in the finalizer. But that is not the case for merge
+          await removeMergeState(mergeState.uuid);
+        }
+      });
+  }
+};
+
 export const commitToGitDialogOnClickHandler = async (
   openModal: OpenBetterModal,
   iri: string,
   inputPackage: Package,
+  commitType: SingleBranchCommitType,
+  shouldShowAlwaysCreateMergeStateOption: boolean,
   defaultCommitMessage: string | null,
 ) => {
-  const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage, type: "commit" });
+  const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage, type: "commit", shouldShowAlwaysCreateMergeStateOption });
   if (result) {
     const closeDialogObject = createCloseDialogObject();
     // TODO RadStr: Localization
@@ -223,12 +305,19 @@ export const commitToGitDialogOnClickHandler = async (
       setCloseDialogAction: closeDialogObject.setCloseDialogAction,
       shouldShowTimer: true,
     });
+
     commitToGitRequest(iri, result.commitMessage, result.exportFormat, result.shouldAlwaysCreateMergeState, false)
       .then(async (response) => {
         closeDialogObject.closeDialogAction();
         if (response.status === 300) {
+          // TODO: ... I am calling the "commitToGitRequest" with false. This means that it should never return 300
           const jsonResponse: CommitRedirectResponseJson = await response.json();
-          openModal(CommitRedirectForMergeStatesDialog, {commitRedirectResponse: jsonResponse});
+          const extendedResponse: ExtendedCommitRedirectResponseJson = {
+            ...jsonResponse,
+            commitType,
+            shouldAppendAfterDefaultMergeCommitMessage: null,
+          };
+          openModal(CommitRedirectForMergeStatesDialog, {commitRedirectResponse: extendedResponse});
           console.info(jsonResponse);     // TODO RadStr: Debug print
         }
         gitOperationResultToast(response);

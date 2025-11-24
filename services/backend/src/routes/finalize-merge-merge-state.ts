@@ -9,23 +9,23 @@ import express from "express";
  * This handler handles the finalizing of merge state caused by merging.
  */
 export const finalizeMergeMergeState = asyncHandler(async (request: express.Request, response: express.Response) => {
-  throw new Error("TODO RadStr: Not yet properly implemented");
+  const querySchema = z.object({
+    mergeStateUuid: z.string().min(1),
+    mergeCommitType: z.enum(["merge-commit", "rebase-commit"]),
+  });
 
-  // const querySchema = z.object({
-  //   uuid: z.string().min(1),
-  // });
-  // const query = querySchema.parse(request.query);
-  // const { uuid }= query;
+  const query = querySchema.parse(request.query);
+  const { mergeStateUuid, mergeCommitType } = query;
 
-  // const result = await mergeStateModel.mergeStateFinalizer(uuid);
-  // if (result === null) {
-  //   response.status(409);
-  //   response.json({error: "The merge state still has conflicts"});
-  //   return;
-  // }
-  // else {
-  //   response.status(200);
-  //   response.json({ uuid, mergeStateCause: result.mergeStateCause });
-  //   return;
-  // }
+  const result = await mergeStateModel.mergeStateFinalizer(mergeStateUuid, mergeCommitType);
+  if (result === null) {
+    response.status(409);
+    response.json({error: "The merge state still has conflicts"});
+    return;
+  }
+  else {
+    response.status(200);
+    response.json({ mergeStateUuid, mergeStateCause: result.mergeStateCause });
+    return;
+  }
 });

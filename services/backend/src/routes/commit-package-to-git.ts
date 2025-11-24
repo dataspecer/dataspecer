@@ -5,7 +5,7 @@ import { mergeStateModel, resourceModel } from "../main.ts";
 
 import { BranchSummary, CommitResult, MergeResult, SimpleGit } from "simple-git";
 import { checkErrorBoundaryForCommitAction, extractPartOfRepositoryURL, getAuthorizationURL, getLastCommit, getLastCommitHash, removeEverythingExcept, removePathRecursively, stringToBoolean } from "../utils/git-utils.ts";
-import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS, CommitInfo, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson } from "@dataspecer/git";
+import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS, CommitInfo, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
 import { createUniqueCommitMessage } from "../utils/git-utils.ts";
@@ -36,6 +36,7 @@ type GitCommitToCreateInfoExplicitWithCredentials = {
   commitMessage: string,
   gitProvider: GitProvider,
   exportFormat: string | null,
+  shouldAppendAfterDefaultMergeCommitMessage: boolean | null,
 }
 
 export type GitCommitToCreateInfoBasic = {
@@ -61,11 +62,6 @@ type CommitBranchAndHashInfoForMerge = {
   mergeFromData: MergeFromDataType | null;
 }
 
-type MergeFromDataType = {
-  branch: string;
-  commitHash: string;
-  iri: string;
-}
 
 function convertBranchAndHashToMergeInfo(input: CommitBranchAndHashInfo): CommitBranchAndHashInfoForMerge {
   return {
@@ -86,52 +82,26 @@ export const mergeCommitPackageToGitHandler = asyncHandler(async (request: expre
     branchMergeFrom: z.string().min(1),
     lastCommitHashMergeFrom: z.string().min(1),
     rootIriMergeFrom: z.string().min(1),
+    shouldRedirectWithExistenceOfMergeStates: z.string().min(1),
+    shouldAppendAfterDefaultMergeCommitMessage: z.string().min(1),
   });
 
   const query = querySchema.parse(request.query);
-
-  const iri = query.iri;
-  const commitMessage = query.commitMessage.length === 0 ? null : query.commitMessage;
-  const resource = await resourceModel.getResource(iri);
-  if (resource === null) {
-    throw new Error(`Can not commit to git since the resource (iri: ${iri}) does not exist`);
-  }
-  const gitLink = resource.linkedGitRepositoryURL;
-  const userName = extractPartOfRepositoryURL(gitLink, "user-name");
-  const repoName = extractPartOfRepositoryURL(gitLink, "repository-name");
-  checkErrorBoundaryForCommitAction(gitLink, repoName, userName);
-
-  const branch = resource.branch === "main." ? null : resource.branch;
-  const repositoryIdentificationInfo: RepositoryIdentificationInfo = {
-    givenRepositoryUserName: userName!,
-    givenRepositoryName: repoName!,
+  const shouldRedirectWithExistenceOfMergeStates = stringToBoolean(query.shouldRedirectWithExistenceOfMergeStates);
+  const shouldAppendAfterDefaultMergeCommitMessage = stringToBoolean(query.shouldAppendAfterDefaultMergeCommitMessage); // TODO RadStr: Use
+  const {
+    iri, exportFormat, commitMessage,
+    branchMergeFrom, lastCommitHashMergeFrom, rootIriMergeFrom,
+  } = query;
+  const mergeFromData: MergeFromDataType = {
+    branch: branchMergeFrom,
+    commitHash: lastCommitHashMergeFrom,
+    iri: rootIriMergeFrom,
   };
 
-  const branchAndLastCommit: CommitBranchAndHashInfo = {
-    localBranch: branch,
-    localLastCommitHash: resource.lastCommitHash,
-    mergeFromData: {
-      branch: query.branchMergeFrom,
-      commitHash: query.lastCommitHashMergeFrom,
-      iri: query.rootIriMergeFrom,
-    }
-  };
-
-  const gitCommitInfo: GitCommitToCreateInfoBasic = {
-    commitMessage,
-    gitProvider: undefined,
-    exportFormat: query.exportFormat ?? null
-  };
-
-  const commitResult = await commitPackageToGitUsingAuthSession(
-    request, iri, gitLink, branchAndLastCommit, repositoryIdentificationInfo, response, gitCommitInfo, false);
-
-  if (!commitResult) {
-    response.sendStatus(409);
-    return;
-  }
-  response.sendStatus(200);
-  return;
+  const returnedStatus = await commitHandlerInternal(
+    request, response, iri, mergeFromData, commitMessage, exportFormat,
+    shouldRedirectWithExistenceOfMergeStates, false, shouldAppendAfterDefaultMergeCommitMessage);
 });
 
 /**
@@ -147,11 +117,25 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
   });
 
   const query = querySchema.parse(request.query);
-
   const shouldAlwaysCreateMergeState = stringToBoolean(query.shouldAlwaysCreateMergeState);
   const shouldRedirectWithExistenceOfMergeStates = stringToBoolean(query.shouldRedirectWithExistenceOfMergeStates);
-  const iri = query.iri;
-  const commitMessage = query.commitMessage.length === 0 ? null : query.commitMessage;
+  const { iri, exportFormat, commitMessage } = query;
+  await commitHandlerInternal(request, response, iri, null, commitMessage, exportFormat, shouldRedirectWithExistenceOfMergeStates, shouldAlwaysCreateMergeState, null);
+});
+
+const commitHandlerInternal = async (
+  request: express.Request,
+  response: express.Response,
+  iri: string,
+  mergeFromData: MergeFromDataType | null,
+  originalCommitMessage: string,
+  exportFormat: string | undefined,
+  shouldRedirectWithExistenceOfMergeStates: boolean,
+  shouldAlwaysCreateMergeState: boolean,
+  shouldAppendAfterDefaultMergeCommitMessage: boolean | null,
+) => {
+  const transformedCommitMessage: string | null = originalCommitMessage.length === 0 ? null : originalCommitMessage;
+
   const resource = await resourceModel.getResource(iri);
   if (resource === null) {
     throw new Error(`Can not commit to git since the resource (iri: ${iri}) does not exist`);
@@ -191,39 +175,46 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
         commitHttpRedirectionCause: redirectCause,
         openedMergeStatesCount: mergeStatesForResource.length,
         mergeStateUuids: mergeStatesForResource.map(mergeState => mergeState.uuid),
-        commitMessage: query.commitMessage,
-        exportFormat: query.exportFormat ?? "json",
+        commitMessage: originalCommitMessage,
+        exportFormat: exportFormat ?? "json",
+        mergeFromData,
         mergeStateCausedByMerge: redirectCause === CommitHttpRedirectionCause.HasAtLeastOneMergeStateActive ?
           null :
           await mergeStateModel.prismaMergeStateToMergeState(prismaMergeStateCausedByMerge!, false),    // We use the merge state without diff data, so we do not need the diff data to be up to data
       };
-      response.status(300).json(commitRedirectResponseJson);
-      return;
+
+      const status = 300;
+      response.status(status).json(commitRedirectResponseJson);
+      return status;
     }
   }
 
   const branchAndLastCommit: CommitBranchAndHashInfo = {
     localBranch: branch,
     localLastCommitHash: resource.lastCommitHash,
-    mergeFromData: null
+    mergeFromData,
   };
 
   const gitCommitInfo: GitCommitToCreateInfoBasic = {
-    commitMessage,
+    commitMessage: transformedCommitMessage,
     gitProvider: undefined,
-    exportFormat: query.exportFormat ?? null
+    exportFormat: exportFormat ?? null
   };
 
   const commitResult = await commitPackageToGitUsingAuthSession(
-    request, iri, gitLink, branchAndLastCommit, repositoryIdentificationInfo, response, gitCommitInfo, shouldAlwaysCreateMergeState);
+    request, iri, gitLink, branchAndLastCommit, repositoryIdentificationInfo,
+    response, gitCommitInfo, shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage);
 
   if (!commitResult) {
-    response.sendStatus(409);
-    return;
+    const status = 409;
+    response.sendStatus(status);
+    return status;
   }
-  response.sendStatus(200);
-  return;
-});
+
+  const status = 200;
+  response.sendStatus(status);
+  return status;
+}
 
 
 /**
@@ -239,9 +230,12 @@ export const commitPackageToGitUsingAuthSession = async (
   response: express.Response,
   gitCommitInfoBasic: GitCommitToCreateInfoBasic,
   shouldAlwaysCreateMergeState: boolean,
+  shouldAppendAfterDefaultMergeCommitMessage: boolean | null,
 ) => {
-  const commitInfo: GitCommitToCreateInfoExplicitWithCredentials = prepareCommitDataForCommit(request, response, remoteRepositoryURL, gitCommitInfoBasic);
-  return await commitPackageToGit(iri, remoteRepositoryURL, branchAndLastCommit, repositoryIdentificationInfo, commitInfo, shouldAlwaysCreateMergeState);
+  const commitInfo: GitCommitToCreateInfoExplicitWithCredentials = prepareCommitDataForCommit(request, response, remoteRepositoryURL, gitCommitInfoBasic, shouldAppendAfterDefaultMergeCommitMessage);
+  return await commitPackageToGit(
+    iri, remoteRepositoryURL, branchAndLastCommit, repositoryIdentificationInfo,
+    commitInfo, shouldAlwaysCreateMergeState);
 }
 
 export function prepareCommitDataForCommit(
@@ -249,6 +243,7 @@ export function prepareCommitDataForCommit(
   response: express.Response,
   remoteRepositoryURL: string,
   gitCommitInfoBasic: GitCommitToCreateInfoBasic,
+  shouldAppendAfterDefaultMergeCommitMessage: boolean | null,
 ): GitCommitToCreateInfoExplicitWithCredentials {
   // If gitProvider not given - extract it from url
   const gitProvider = gitCommitInfoBasic.gitProvider ?? GitProviderFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL);
@@ -258,6 +253,7 @@ export function prepareCommitDataForCommit(
     commitMessage: gitCommitInfoBasic.commitMessage ?? createUniqueCommitMessage(),
     gitProvider: gitProvider,
     exportFormat: gitCommitInfoBasic.exportFormat,
+    shouldAppendAfterDefaultMergeCommitMessage,
   };
 
   return commitInfo;
@@ -290,7 +286,8 @@ export const commitPackageToGit = async (
   }
   else {
     const mergeInfo = convertBranchAndHashToMergeInfo(branchAndLastCommit);
-    return await commitDSMergeToGit(iri, remoteRepositoryURL, repositoryIdentificationInfo, commitInfo, mergeInfo, shouldAlwaysCreateMergeState);
+    return await commitDSMergeToGit(
+      iri, remoteRepositoryURL, repositoryIdentificationInfo, commitInfo, mergeInfo, shouldAlwaysCreateMergeState);
   }
 };
 
@@ -516,10 +513,11 @@ async function exportAndPushToGit(
   isLastAccessToken: boolean,
 ): Promise<boolean> {
   const { git, gitDirectoryToRemoveAfterWork } = createSimpleGitResult;
-  const { commitMessage, gitCredentials } = commitInfo;
+  const { commitMessage, gitCredentials, shouldAppendAfterDefaultMergeCommitMessage } = commitInfo;
 
   let mergeMessage: string = "";
   if (mergeFromBranch !== null) {
+    // We create the merge commit but actually do not commit, we will do that later.
     try {
       const mergeResult = await git.merge(["--no-commit", "--no-ff", mergeFromBranch]);
       console.info({mergeResult});    // TODO RadStr: Debug print
@@ -527,8 +525,15 @@ async function exportAndPushToGit(
     catch(mergeError) {
       console.info(mergeError);       // TODO RadStr: Debug print
     }
-    const fullMergeMessagge = fs.readFileSync(`${createSimpleGitResult.gitInitialDirectory}/.git/MERGE_MSG`, "utf-8");
-    mergeMessage = fullMergeMessagge.substring(0, fullMergeMessagge.indexOf("\n"));
+
+    // If the file does not exist, then it probably means that actually the merge from and merge to branch the same
+    try {
+      const fullMergeMessage = fs.readFileSync(`${createSimpleGitResult.gitInitialDirectory}/.git/MERGE_MSG`, "utf-8");
+      mergeMessage = fullMergeMessage.substring(0, fullMergeMessage.indexOf("\n"));
+    }
+    catch(error) {
+      throw new Error("The merge from branch was already merged. We can not merge again.");
+    }
   }
 
   await fillGitDirectoryWithExport(iri, createSimpleGitResult, commitInfo.gitProvider, commitInfo.exportFormat, repositoryIdentificationInfo, hasSetLastCommit);
@@ -538,6 +543,7 @@ async function exportAndPushToGit(
     console.info("*****************************************************");
   }
 
+  // TODO RadStr: Debug print to remove
   try {
     // Get list of all branches (local + remote)
     const branches = await git.branch(['-a']);
@@ -562,7 +568,14 @@ async function exportAndPushToGit(
       commitResult = await createClassicGitCommit(git, ["."], commitMessage, gitCredentials.name, gitCredentials.email);
     }
     else {
-      commitResult = await createMergeCommit(git, ["."], mergeMessage, commitMessage, gitCredentials.name, gitCredentials.email, mergeFromBranch);
+      if (shouldAppendAfterDefaultMergeCommitMessage === null) {
+        throw new Error("Programmer error - when creating merge commit the shouldAppendAfterDefaultMergeCommitMessage is set to null instead of being boolean");
+      }
+
+      commitResult = await createMergeCommit(
+        git, ["."], mergeMessage, commitMessage,
+        gitCredentials.name, gitCredentials.email, mergeFromBranch,
+        shouldAppendAfterDefaultMergeCommitMessage);
     }
 
     // TODO RadStr: Debug print to remove
@@ -822,6 +835,7 @@ async function createMergeCommit(
   committerName: string,
   committerEmail: string,
   mergeFromBranchName: string,
+  shouldAppendAfterDefaultMergeCommitMessage: boolean,
 ) {
   // TODO RadStr: Trying the following idea:
   // 1) Create merge state in git using git merge --no-ff
@@ -844,9 +858,14 @@ async function createMergeCommit(
   await setUserConfigForGitInstance(git, committerName, committerEmail);
   await git.commit(mergeDefaultCommitMessage);
   const lastCommitMessage = (await getLastCommit(git))?.message ?? "";
+  const commitMessages: string[] = [];
+  if (shouldAppendAfterDefaultMergeCommitMessage) {
+    commitMessages.push(mergeDefaultCommitMessage);
+  }
+  commitMessages.push(commitMessage);
   // Modify the message ... it keeps the old default text, but adds the new one
   // The --no-edit option is not needed since we provide the commit message explictly (othwerise the option ensures not open editor for the amend)
-  return await git.commit([mergeDefaultCommitMessage, commitMessage], undefined, { "--amend": null, });
+  return await git.commit(commitMessages, undefined, { "--amend": null, });
 }
 
 async function setUserConfigForGitInstance(git: SimpleGit, committerName: string, committerEmail: string) {

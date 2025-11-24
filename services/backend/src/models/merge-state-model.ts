@@ -1,15 +1,15 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { v4 as uuidv4 } from "uuid";
 import path from "path";
-import { ALL_GIT_REPOSITORY_ROOTS } from "./git-store-info.ts";
+import { ALL_GIT_REPOSITORY_ROOTS, MERGE_DS_CONFLICTS_PREFIX } from "./git-store-info.ts";
 import { ResourceModel } from "./resource-model.ts";
 import { SimpleGit, simpleGit } from "simple-git";
-import { AvailableFilesystems, ComparisonData, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, FilesystemNode, GitProvider, isEditableType, isGitUrlSet, MergeState, MergeStateCause } from "@dataspecer/git";
+import { AvailableFilesystems, ComparisonData, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, FilesystemNode, GitProvider, isEditableType, isGitUrlSet, MergeCommitType, MergeState, MergeStateCause } from "@dataspecer/git";
 import { getLastCommitHash, removePathRecursively } from "../utils/git-utils.ts";
 import { ResourceChangeListener, ResourceChangeType } from "./resource-change-observer.ts";
 import { updateMergeStateToBeUpToDate, MergeEndpointForStateUpdate } from "../routes/create-merge-state.ts";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
-import { getCommonCommitInHistory } from "../utils/simple-git-utils.ts";
+import { createSimpleGit, getCommonCommitInHistory } from "../utils/simple-git-utils.ts";
 
 type Nullable<T> = {
   [P in keyof T]: T[P] | null;
@@ -253,12 +253,12 @@ export class MergeStateModel implements ResourceChangeListener {
   }
 
 
-  async mergeStateFinalizer(uuid: string): Promise<MergeState | null> {
+  async mergeStateFinalizer(uuid: string, mergeCommitType?: MergeCommitType): Promise<MergeState | null> {
     const mergeState = await this.getMergeStateFromUUID(uuid, true, true);
     if (mergeState === null) {
       throw new Error(`Merge state for uuid (${uuid}) does not exist`);
     }
-    const isFinalized = await this.mergeStateConflictFinalizerInternal(mergeState);
+    const isFinalized = await this.mergeStateConflictFinalizerInternal(mergeState, mergeCommitType);
     if (isFinalized) {
       return mergeState;
     }
@@ -326,8 +326,89 @@ export class MergeStateModel implements ResourceChangeListener {
     // TODO RadStr: Or just for now don't do anything about it ... make the user commit again
   }
 
-  async handleMergeFinalizer(mergeState: MergeState) {
-    throw new Error("TODO RadStr: Implement - finalizing merge state caused by merge state");
+  async handleMergeFinalizer(mergeState: MergeState, mergeCommitType?: MergeCommitType) {
+    if (mergeCommitType === undefined) {
+      throw new Error("mergeCommitType is undefined, we can not finalize merge state caused by merge. This is most likely programmer error.");
+    }
+    if (mergeCommitType === "rebase-commit") {
+      await this.finalizeMergeStateWithRebaseCommit(mergeState);
+    }
+    else if (mergeCommitType === "merge-commit") {
+      await this.finalizeMergeStateWithMergeCommit(mergeState);
+    }
+    else {
+      throw new Error(`Unknown merge commit type (${mergeCommitType}), can not finalize merge state caused by merge. This is most likely programmer error.`);
+    }
+  }
+
+  private async finalizeMergeStateWithRebaseCommit(mergeState: MergeState) {
+    const createdSimpleGitData = createSimpleGit(mergeState.rootIriMergeTo, MERGE_DS_CONFLICTS_PREFIX, false);
+    try {
+      const git = createdSimpleGitData.git;
+      await git.clone(mergeState.gitUrlMergeTo, ".", ["--filter=tree:0"]);    // And we fetch only commits
+      try {
+        // This fails if the branch exists only inside DS. And if it fails we just checkout the merge from branch.
+        await git.checkout(mergeState.branchMergeTo);
+      }
+      catch (_e) {
+        await git.checkout(mergeState.branchMergeFrom);
+      }
+      const gitCommitHash = await getLastCommitHash(git);
+      // If we throw error then it means that the commit on which the DS resource already is within DS is actually after the commit to which we are updating.
+      const commonCommit = await getCommonCommitInHistory(git, gitCommitHash, mergeState.lastCommitHashMergeTo);
+      await this.forceHandlePullFinalizer(mergeState.rootIriMergeTo, gitCommitHash);
+    }
+    catch (error) {
+      throw error;
+    }
+    finally {
+      removePathRecursively(createdSimpleGitData.gitInitialDirectoryParent);
+    }
+
+    await this.handlePushFinalizer(mergeState);
+  }
+
+  private async finalizeMergeStateWithMergeCommit(mergeState: MergeState) {
+    const mergeFromGitData = createSimpleGit(mergeState.rootIriMergeFrom, MERGE_DS_CONFLICTS_PREFIX, false);
+    try {
+      const git = mergeFromGitData.git;
+      await git.clone(mergeState.gitUrlMergeFrom, ".", ["--filter=tree:0"]);    // And we fetch only commits
+
+      // Unlike in merge with rebase, the branch has to exist on remote. It does not make sense to create merge commit from branch, which does not exist on the remote.
+      await git.checkout(mergeState.branchMergeFrom);
+      const gitCommitHash = await getLastCommitHash(git);
+      // If we throw error then it means that the commit on which the DS resource already is within DS is actually after the commit to which we are updating.
+      const commonCommit = await getCommonCommitInHistory(git, gitCommitHash, mergeState.lastCommitHashMergeFrom);
+      if (gitCommitHash !== mergeState.lastCommitHashMergeFrom) {
+        throw new Error("The remote commit of the merge from does not match the local one");
+      }
+    }
+    catch (error) {
+      throw error;
+    }
+    finally {
+      removePathRecursively(mergeFromGitData.gitInitialDirectoryParent);
+    }
+
+    const mergeToGitData = createSimpleGit(mergeState.rootIriMergeTo, MERGE_DS_CONFLICTS_PREFIX, false);
+    try {
+      const git = mergeToGitData.git;
+      await git.clone(mergeState.gitUrlMergeTo, ".", ["--filter=tree:0"]);    // And we fetch only commits
+      // Unlike in merge with rebase, the branch has to exist on remote. It does not make sense to create merge commit from branch, which does not exist on the remote.
+      await git.checkout(mergeState.branchMergeTo);
+      const gitCommitHash = await getLastCommitHash(git);
+      // If we throw error then it means that the commit on which the DS resource already is within DS is actually after the commit to which we are updating.
+      const commonCommit = await getCommonCommitInHistory(git, gitCommitHash, mergeState.lastCommitHashMergeTo);
+      if (gitCommitHash !== mergeState.lastCommitHashMergeTo) {
+        throw new Error("The remote commit of the merge to does not match the local one");
+      }
+    }
+    catch (error) {
+      throw error;
+    }
+    finally {
+      removePathRecursively(mergeToGitData.gitInitialDirectoryParent);
+    }
   }
 
 
@@ -336,7 +417,7 @@ export class MergeStateModel implements ResourceChangeListener {
    *  For example the last commit hash in case of Dataspecer resource
    * @returns true, when it successfully finalized merge state
    */
-  private async mergeStateConflictFinalizerInternal(mergeState: MergeState): Promise<boolean> {
+  private async mergeStateConflictFinalizerInternal(mergeState: MergeState, mergeCommitType?: MergeCommitType): Promise<boolean> {
     if (mergeState.unresolvedConflicts?.length !== 0) {
       return false;
     }
@@ -350,6 +431,7 @@ export class MergeStateModel implements ResourceChangeListener {
     else if (mergeState.mergeStateCause === "merge") {
       // In case of merge it is removed on successful merge commit by user
       // TODO RadStr: But when to finalize?
+      await this.handleMergeFinalizer(mergeState, mergeCommitType);
       return true;
     }
     await this.removeMergeState(mergeState);

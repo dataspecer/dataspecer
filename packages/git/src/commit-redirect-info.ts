@@ -1,8 +1,15 @@
 import { MergeState } from "./merge/merge-state.ts";
+import { CommitType } from "./utils.ts";
 
 export enum CommitHttpRedirectionCause {
   HasAtLeastOneMergeStateActive,
   HasExactlyOneMergeStateAndItIsResolvedAndCausedByMerge,
+}
+
+export type MergeFromDataType = {
+  branch: string;
+  commitHash: string;
+  iri: string;
 }
 
 export type CommitRedirectResponseJson = {
@@ -14,4 +21,10 @@ export type CommitRedirectResponseJson = {
   commitMessage: string;
   exportFormat: string;
   mergeStateCausedByMerge: MergeState | null;
+  mergeFromData: MergeFromDataType | null;
 }
+
+export type ExtendedCommitRedirectResponseJson = {
+  shouldAppendAfterDefaultMergeCommitMessage: boolean | null;
+  commitType: CommitType;
+} & CommitRedirectResponseJson;

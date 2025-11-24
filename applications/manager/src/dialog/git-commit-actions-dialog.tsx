@@ -26,6 +26,7 @@ export const CommitActionsDialog = ({ examinedPackage, branch, commitHash, branc
     //                                                        // TODO RadStr: (... without the credentials code ... we just need small subset - just the factory and create URL)
     const newTab = window.open(gitURL, "_blank");
     newTab?.focus();
+    setIsPerformingAction(false);
   };
 
   const handleImportGitCommitToDS = async () => {

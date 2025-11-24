@@ -188,6 +188,8 @@ export class GitHubProvider extends GitProviderBase {
     };
   }
 
+
+
   private async getLatestCommit(repositoryUserName: string, repoName: string, branch: string, authToken: string) {
     const mainRefUrl = `https://api.github.com/repos/${repositoryUserName}/${repoName}/git/ref/heads/${branch}`;
 

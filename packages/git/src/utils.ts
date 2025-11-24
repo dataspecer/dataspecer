@@ -2,6 +2,10 @@ export type FinalizerVariantsForPullOnFailure = "remove-merge-state" | "pull-any
 export type FinalizerVariantsForPushOnFailure = "remove-merge-state";
 export type FinalizerVariantsForMergeOnFailure = "remove-merge-state";
 
+export type MergeCommitType = "merge-commit" | "rebase-commit";
+export type CommitType = "classic-commit" | MergeCommitType;
+export type SingleBranchCommitType = "classic-commit" | "rebase-commit";
+
 export function isGitUrlSet(gitUrl: string | undefined | null): boolean {
   const length = gitUrl?.length;
   return length !== undefined && length > 0;

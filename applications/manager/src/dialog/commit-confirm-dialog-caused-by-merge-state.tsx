@@ -1,19 +1,23 @@
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { BetterModalProps, OpenBetterModal, useBetterModal } from "@/lib/better-modal";
-import { CommitHttpRedirectionCause, CommitRedirectResponseJson } from "@dataspecer/git";
+import { CommitHttpRedirectionCause, ExtendedCommitRedirectResponseJson } from "@dataspecer/git";
 import { ListMergeStatesDialog } from "./list-merge-states-dialog";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
-import { commitToGitRequest } from "@/utils/git-backend-requests";
+import { commitToGitRequest, mergeCommitToGitRequest } from "@/utils/git-backend-requests";
 
 
 type CommitRedirectForMergeStatesProps = {
-  commitRedirectResponse: CommitRedirectResponseJson;
+  commitRedirectResponse: ExtendedCommitRedirectResponseJson;
 } & BetterModalProps;
 
 export const CommitRedirectForMergeStatesDialog = ({ commitRedirectResponse, isOpen, resolve }: CommitRedirectForMergeStatesProps) => {
   const openModal = useBetterModal();
   const dialogData = getDataForMergeStateDialog(commitRedirectResponse, openModal, resolve);
+
+  if (dialogData === null) {
+    return null;
+  }
 
   return (
     <Modal open={isOpen} onClose={() => resolve()}>
@@ -34,7 +38,7 @@ export const CommitRedirectForMergeStatesDialog = ({ commitRedirectResponse, isO
 }
 
 const getDataForMergeStateDialog = (
-  commitRedirectResponse: CommitRedirectResponseJson,
+  commitRedirectResponse: ExtendedCommitRedirectResponseJson,
   openModal: OpenBetterModal,
   resolve: (value: void) => void
 ) => {
@@ -63,6 +67,25 @@ const getDataForMergeStateDialog = (
       </div>;
   }
   else if (commitRedirectResponse.commitHttpRedirectionCause === CommitHttpRedirectionCause.HasExactlyOneMergeStateAndItIsResolvedAndCausedByMerge) {
+    throw new Error("TODO RadStr: Implement");
+    if (commitRedirectResponse.commitType === "rebase-commit") {
+      firstActionButtonText = "Commit anyways";
+      commitToGitRequest(commitRedirectResponse.iri, commitRedirectResponse.commitMessage, commitRedirectResponse.exportFormat, false, true);
+      resolve();
+      return null;
+    }
+    else if (commitRedirectResponse.commitType === "merge-commit") {
+      if (commitRedirectResponse.shouldAppendAfterDefaultMergeCommitMessage === null) {
+        console.error("shouldAppendAfterDefaultMergeCommitMessage is null, but it should be defined and of type boolean");
+      }
+      mergeCommitToGitRequest(
+        commitRedirectResponse.iri, commitRedirectResponse.commitMessage, commitRedirectResponse.shouldAppendAfterDefaultMergeCommitMessage ?? true,
+        commitRedirectResponse.exportFormat, commitRedirectResponse.mergeFromData!, false,
+      );
+      resolve();
+      return null;
+    }
+
     firstActionButtonText = "Open diff editor for merge state";
     firstActionButtonOnClick = () => {
       openModal(TextDiffEditorDialog, {

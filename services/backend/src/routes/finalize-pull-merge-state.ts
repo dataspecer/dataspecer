@@ -13,7 +13,7 @@ export const finalizePullMergeState = asyncHandler(async (request: express.Reque
     uuid: z.string().min(1),
   });
   const query = querySchema.parse(request.query);
-  const { uuid }= query;
+  const { uuid } = query;
 
   try {
     const result = await mergeStateModel.mergeStateFinalizer(uuid);

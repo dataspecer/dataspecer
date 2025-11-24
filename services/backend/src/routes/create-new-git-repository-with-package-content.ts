@@ -84,7 +84,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
       // Just provide empty merge from values, since we are newly creating the link we can not perform merge right away anyways
       const commitResult = await commitPackageToGitUsingAuthSession(
         request, query.iri, fullLinkedGitRepositoryURL, commitBranchAndHashInfo,
-        repositoryIdentificationInfo, response, commitInfo, false);
+        repositoryIdentificationInfo, response, commitInfo, false, null);
 
       if (!commitResult) {
         response.sendStatus(409);
@@ -94,7 +94,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
       response.sendStatus(200);
       return;
     }
-    catch {
+    catch(error) {
       // EMPTY, we just want to try another iteration, don't care about errors
     }
   }
@@ -155,7 +155,7 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
   // Just provide empty merge from values, since we are newly creating the link we can not perform merge right away anyways
   await commitPackageToGitUsingAuthSession(
     request, query.iri, query.gitRepositoryURL, commitBranchAndHashInfo,
-    repositoryIdentificationInfo, response, commitInfo, false);
+    repositoryIdentificationInfo, response, commitInfo, false, null);
   });
 
 /**

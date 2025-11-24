@@ -20,6 +20,6 @@ export const finalizeMergeMergeStateOnFailure = asyncHandler(async (request: exp
     throw new Error(`Programmer error using ${finalizerVariant} for push, which does not have handling on backend`);
   }
 
-  response.status(200);
+  response.sendStatus(200);
   return;
 });

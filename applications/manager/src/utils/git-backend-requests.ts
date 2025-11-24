@@ -1,4 +1,5 @@
 import { ExportFormatType } from "@/components/export-format-radio-buttons";
+import { MergeFromDataType } from "@dataspecer/git";
 
 
 export async function commitToGitRequest(
@@ -25,17 +26,19 @@ export async function commitToGitRequest(
 export async function mergeCommitToGitRequest(
   iri: string,
   commitMessage: string | null,
+  shouldAppendAfterDefaultMergeCommitMessage: boolean,
   exportFormat: string,
-  branchMergeFrom: string,
-  lastCommitHashMergeFrom: string,
-  rootIriMergeFrom: string,
+  mergeFrom: MergeFromDataType,
+  shouldRedirectWithExistenceOfMergeStates: boolean
 ) {
   const url = import.meta.env.VITE_BACKEND + "/git/merge-commit-package-to-git?iri=" + encodeURIComponent(iri) +
                                               "&commitMessage=" + encodeURIComponent(commitMessage ?? "") +
+                                              "&shouldAppendAfterDefaultMergeCommitMessage=" + shouldAppendAfterDefaultMergeCommitMessage +
                                               "&exportFormat=" + exportFormat +
-                                              "&branchMergeFrom=" + branchMergeFrom +
-                                              "&lastCommitHashMergeFrom=" + lastCommitHashMergeFrom +
-                                              "&rootIriMergeFrom=" + rootIriMergeFrom;
+                                              "&branchMergeFrom=" + mergeFrom.branch +
+                                              "&lastCommitHashMergeFrom=" + mergeFrom.commitHash +
+                                              "&rootIriMergeFrom=" + mergeFrom.iri +
+                                              "&shouldRedirectWithExistenceOfMergeStates=" + shouldRedirectWithExistenceOfMergeStates;
   const response = await fetch(
     url,
     {

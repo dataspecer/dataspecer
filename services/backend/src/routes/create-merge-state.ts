@@ -2,7 +2,7 @@ import { z } from "zod";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { mergeStateModel, resourceModel } from "../main.ts";
 import express from "express";
-import { AvailableFilesystems, getMergeFromMergeToForGitAndDS, GitProvider, MergeStateCause } from "@dataspecer/git";
+import { AvailableFilesystems, convertMergeStateCauseToEditable, getEditableAndNonEditableValue, getMergeFromMergeToForGitAndDS, GitProvider, MergeStateCause } from "@dataspecer/git";
 import { compareBackendFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "../utils/simple-git-utils.ts";
 import { SimpleGit } from "simple-git";
@@ -95,15 +95,12 @@ export async function createMergeStateBetweenDSPackages(
     rootMergeFrom, pathToRootMetaMergeFrom,
     filesystemMergeTo, fakeRootMergeTo, rootMergeTo, pathToRootMetaMergeTo,
   } = await compareBackendFilesystems(mergeFromForComparison, mergeToForComparison);
-
-    const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS("pull", mergeFromLastCommitHash, mergeToLastCommitHash);
     const commonCommitHash = await getCommonCommitInHistory(git, mergeFromLastCommitHash, mergeToLastCommitHash);
-
 
     const mergeFromInfo: MergeEndInfoWithRootNode = {
       rootNode: rootMergeFrom,
       filesystemType: AvailableFilesystems.DS_Filesystem,
-      lastCommitHash: lastHashMergeFrom,
+      lastCommitHash: mergeFromLastCommitHash,
       branch: mergeFromBranch,
       rootFullPathToMeta: pathToRootMetaMergeFrom,
       gitUrl: remoteRepositoryUrl,
@@ -112,7 +109,7 @@ export async function createMergeStateBetweenDSPackages(
     const mergeToInfo: MergeEndInfoWithRootNode = {
       rootNode: rootMergeTo,
       filesystemType: AvailableFilesystems.DS_Filesystem,
-      lastCommitHash: lastHashMergeTo,
+      lastCommitHash: mergeToLastCommitHash,
       branch: mergeToBranch,
       rootFullPathToMeta: pathToRootMetaMergeTo,
       gitUrl: remoteRepositoryUrl,

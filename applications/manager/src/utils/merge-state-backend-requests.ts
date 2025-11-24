@@ -1,4 +1,4 @@
-import { ComparisonData, FinalizerVariantsForMergeOnFailure, FinalizerVariantsForPullOnFailure, FinalizerVariantsForPushOnFailure, MergeState } from "@dataspecer/git";
+import { ComparisonData, FinalizerVariantsForMergeOnFailure, FinalizerVariantsForPullOnFailure, FinalizerVariantsForPushOnFailure, MergeCommitType, MergeState } from "@dataspecer/git";
 
 export const saveMergeState = async (
   fetchedMergeState: MergeState,
@@ -112,20 +112,20 @@ export const finalizePushMergeStateOnFailure = async (
   }
 }
 
-export const finalizeMergeMergeState = async (mergeStateUuid: string) => {
+export const finalizeMergeMergeState = async (mergeStateUuid: string, mergeCommitType: MergeCommitType) => {
   try {
     const fetchResult = await fetch(
-      `${import.meta.env.VITE_BACKEND}/git/finalize-merge-merge-state?uuid=${mergeStateUuid}`, {
+      `${import.meta.env.VITE_BACKEND}/git/finalize-merge-merge-state?mergeStateUuid=${mergeStateUuid}&mergeCommitType=${mergeCommitType}`, {
         method: "POST",
       }
     );
     console.info("Finalize merge state response", fetchResult);   // TODO RadStr Debug:
 
-    return fetchResult.ok;
+    return fetchResult.status;
   }
   catch(error) {
     console.error(`Error when finalizing merge state (${mergeStateUuid}). The error: ${error}`);
-    return false;
+    return null;
   }
 }
 
@@ -133,7 +133,7 @@ export const finalizeMergeMergeStateOnFailure = async (
   mergeStateUuid: string,
   finalizerVariant: FinalizerVariantsForMergeOnFailure,
 ) => {
-  const queryParams = "uuid=" + mergeStateUuid +
+  const queryParams = "mergeStateUuid=" + mergeStateUuid +
     "&finalizerVariant=" + finalizerVariant;
 
   try {
