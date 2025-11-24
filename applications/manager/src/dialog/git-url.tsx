@@ -8,7 +8,7 @@ import { createIdentifierForHTMLElement, InputComponent } from "@/components/sim
 import { Package } from "@dataspecer/core-v2/project";
 import { toast } from "sonner";
 import { ExportFormatRadioButtons, ExportFormatType } from "@/components/export-format-radio-buttons";
-import { CommitRedirectResponseJson, createSetterWithGitValidation, ExtendedCommitRedirectResponseJson, MergeFromDataType, MergeState, SingleBranchCommitType } from "@dataspecer/git";
+import { CommitRedirectResponseJson, createSetterWithGitValidation, CommitRedirectExtendedResponseJson, MergeFromDataType, MergeState, SingleBranchCommitType } from "@dataspecer/git";
 import { CommitRedirectForMergeStatesDialog } from "./commit-confirm-dialog-caused-by-merge-state";
 import { commitToGitRequest, createNewRemoteRepositoryRequest, linkToExistingGitRepositoryRequest, mergeCommitToGitRequest } from "@/utils/git-backend-requests";
 import { createCloseDialogObject, LoadingDialog } from "@/components/loading-dialog";
@@ -312,7 +312,7 @@ export const commitToGitDialogOnClickHandler = async (
         if (response.status === 300) {
           // TODO: ... I am calling the "commitToGitRequest" with false. This means that it should never return 300
           const jsonResponse: CommitRedirectResponseJson = await response.json();
-          const extendedResponse: ExtendedCommitRedirectResponseJson = {
+          const extendedResponse: CommitRedirectExtendedResponseJson = {
             ...jsonResponse,
             commitType,
             shouldAppendAfterDefaultMergeCommitMessage: null,

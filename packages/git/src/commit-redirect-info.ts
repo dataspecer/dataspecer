@@ -24,7 +24,7 @@ export type CommitRedirectResponseJson = {
   mergeFromData: MergeFromDataType | null;
 }
 
-export type ExtendedCommitRedirectResponseJson = {
+export type CommitRedirectExtendedResponseJson = {
   shouldAppendAfterDefaultMergeCommitMessage: boolean | null;
   commitType: CommitType;
 } & CommitRedirectResponseJson;

@@ -1,14 +1,14 @@
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { BetterModalProps, OpenBetterModal, useBetterModal } from "@/lib/better-modal";
-import { CommitHttpRedirectionCause, ExtendedCommitRedirectResponseJson } from "@dataspecer/git";
+import { CommitHttpRedirectionCause, CommitRedirectExtendedResponseJson } from "@dataspecer/git";
 import { ListMergeStatesDialog } from "./list-merge-states-dialog";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
 import { commitToGitRequest, mergeCommitToGitRequest } from "@/utils/git-backend-requests";
 
 
 type CommitRedirectForMergeStatesProps = {
-  commitRedirectResponse: ExtendedCommitRedirectResponseJson;
+  commitRedirectResponse: CommitRedirectExtendedResponseJson;
 } & BetterModalProps;
 
 export const CommitRedirectForMergeStatesDialog = ({ commitRedirectResponse, isOpen, resolve }: CommitRedirectForMergeStatesProps) => {
@@ -38,7 +38,7 @@ export const CommitRedirectForMergeStatesDialog = ({ commitRedirectResponse, isO
 }
 
 const getDataForMergeStateDialog = (
-  commitRedirectResponse: ExtendedCommitRedirectResponseJson,
+  commitRedirectResponse: CommitRedirectExtendedResponseJson,
   openModal: OpenBetterModal,
   resolve: (value: void) => void
 ) => {
