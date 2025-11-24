@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { ArrowLeft, ArrowLeftRight, ArrowRight, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, Copy, EllipsisVertical, Eye, EyeIcon, FileText, Filter, FilterX, Folder, FolderDown, GitBranchPlus, GitCommit, GitGraph, GitMerge, GitPullRequestIcon, Import, Link, Menu, MoveLeftIcon, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, ShieldQuestion, Sparkles, Trash2, WandSparkles } from "lucide-react";
+import { ArrowLeft, ArrowLeftRight, ArrowRight, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, Copy, EllipsisVertical, Eraser, Eye, EyeIcon, FileText, Filter, FilterX, Folder, FolderDown, GitBranchPlus, GitCommit, GitGraph, GitMerge, GitPullRequestIcon, Import, Link, Menu, MoveLeftIcon, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, ShieldQuestion, Sparkles, Trash2, WandSparkles } from "lucide-react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getValidTime } from "./components/time";
@@ -71,11 +71,11 @@ const useSortIris = (iris: string[]) => {
   }, [iris, resources, selectedOption]);
 };
 
-const Row = ({ iri, projectFilter, setProjectFilter, isSignedIn, mergeActors, parentIri }: { iri: string, projectFilter: string | null, setProjectFilter: (value: string | null) => void, isSignedIn: boolean, mergeActors: MergeActorsType, parentIri?: string }) => {
+const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, mergeActors, parentIri }: { iri: string, packageGitFilter: string | null, setPackageGitFilter: (value: string | null) => void, isSignedIn: boolean, mergeActors: MergeActorsType, parentIri?: string }) => {
   const resources = useContext(ResourcesContext);
   const resource = resources[iri]!;
 
-  if (projectFilter !== null && resource.projectIri !== projectFilter) {
+  if (packageGitFilter !== null && resource.projectIri !== packageGitFilter) {
     return null;
   }
 
@@ -263,10 +263,18 @@ const Row = ({ iri, projectFilter, setProjectFilter, isSignedIn, mergeActors, pa
             {<DropdownMenuItem onClick={() => switchRepresentsBranchHead(resource, openModal)}><ArrowLeftRight className="mr-2 h-4 w-4" /> Convert to {resource.representsBranchHead ? "tag" : "branch"}</DropdownMenuItem>}
             <hr className="border-gray-300" />
             {<DropdownMenuItem onClick={() => openModal(ListMergeStatesDialog, { iri })}><EyeIcon className="mr-2 h-4 w-4" /> Show merge states</DropdownMenuItem>}
-            {<DropdownMenuItem onClick={() => setProjectFilter(resource.projectIri)}><Filter className="mr-2 h-4 w-4" />Show Same Repository Projects</DropdownMenuItem>}
-            {mergeActors.mergeFrom !== null && mergeActors.mergeTo !== null && <DropdownMenuItem onClick={() => openModal(OpenMergeState, {mergeFrom: mergeActors.mergeFrom!, mergeTo: mergeActors.mergeTo!, editable: "mergeTo"})}><GitMerge className="mr-2 h-4 w-4" />Perform merge on DS packages</DropdownMenuItem>}
+            {<DropdownMenuItem onClick={() => setPackageGitFilter(resource.projectIri)}><Filter className="mr-2 h-4 w-4" />Show Same Repository Projects</DropdownMenuItem>}
             {mergeActors.mergeFrom !== null && mergeActors.mergeFrom !== iri && <DropdownMenuItem onClick={() => mergeActors.setMergeTo(iri)}><ArrowRight className="mr-2 h-4 w-4"/>Merge to</DropdownMenuItem>}
-            {<DropdownMenuItem onClick={() => mergeActors.setMergeFrom(iri)}><ArrowLeft className="mr-2 h-4 w-4"/>Merge from</DropdownMenuItem>}
+            {
+              <DropdownMenuItem onClick={() => {
+                  mergeActors.setMergeFrom(iri);
+                  setPackageGitFilter(resource.projectIri);
+                }
+              }>
+                <ArrowLeft className="mr-2 h-4 w-4"/>
+                Merge from
+              </DropdownMenuItem>
+            }
             {<DropdownMenuItem className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={async () => removeGitLinkFromPackage(iri)}><Trash2 className="mr-2 h-4 w-4" />Remove GitHub Repo</DropdownMenuItem>}
           </DropdownMenuContent>
         </DropdownMenu> :
@@ -304,7 +312,7 @@ const Row = ({ iri, projectFilter, setProjectFilter, isSignedIn, mergeActors, pa
       </DropdownMenu>
     </div>
     {subResources.length > 0 && isOpen && <ul className="pl-8">
-      {subResources.map(iri => <Row iri={iri} key={iri} parentIri={resource.iri} isSignedIn={isSignedIn} projectFilter={projectFilter} setProjectFilter={setProjectFilter} mergeActors={mergeActors} />)}
+      {subResources.map(iri => <Row iri={iri} key={iri} parentIri={resource.iri} isSignedIn={isSignedIn} packageGitFilter={packageGitFilter} setPackageGitFilter={setPackageGitFilter} mergeActors={mergeActors} />)}
     </ul>}
     <ResourceDetail isOpen={detailModalToggle.isOpen} close={detailModalToggle.close} iri={iri} />
   </li>
@@ -331,7 +339,7 @@ function RootPackage({iri, defaultToggle, login}: {iri: string, defaultToggle?: 
   // Whether the package is open or not
   const [isOpen, setIsOpen] = useState<boolean>(defaultToggle ?? true);
 
-  const [projectFilter, setProjectFilter] = useState<string | null>(null);
+  const [packageGitFilter, setPackageGitFilter] = useState<string | null>(null);
   const mergeActors = useMergeActors();
 
   useEffect(() => {
@@ -367,18 +375,30 @@ function RootPackage({iri, defaultToggle, login}: {iri: string, defaultToggle?: 
             onClick={() => {
               mergeActors.setMergeTo(null);
               mergeActors.setMergeFrom(null);
+              setPackageGitFilter(null);
             }}>
+              <Eraser className="mr-2 h-4 w-4" />
               Reset chosen merge actors
           </Button>
       }
       {
-        projectFilter === null ?
+        // We don't render the reset filter button if there is no filter. Or if the filter was caused by starting the choosing merge actors (that is mergeFrom was chosen)
+        // Because then we reset the filter by removing the merge actors.
+        packageGitFilter === null || mergeActors.mergeFrom !== null ?
           null :
           <Button variant="ghost" size="sm" className="shrink=0 ml-4"
-            onClick={() => setProjectFilter(null)}>
+            onClick={() => setPackageGitFilter(null)}>
               <FilterX className="mr-2 h-4 w-4" />
               Remove same repository filter
           </Button>
+      }
+      {
+        mergeActors.mergeFrom !== null && mergeActors.mergeTo !== null &&
+        <Button variant="ghost" size="sm" className="shrink=0 ml-4"
+                onClick={() => openModal(OpenMergeState, {mergeFrom: mergeActors.mergeFrom!, mergeTo: mergeActors.mergeTo!, editable: "mergeTo"})}>
+          <GitMerge className="mr-2 h-4 w-4" />
+          Perform merge on DS packages
+        </Button>
       }
       <Button variant="ghost" size="sm" className="shrink=0 ml-4"
         onClick={() => openModal(AddImported, {id: iri})}>
@@ -400,7 +420,7 @@ function RootPackage({iri, defaultToggle, login}: {iri: string, defaultToggle?: 
     {isOpen &&
       <ul>
         {subResources.map(iri => {
-          return <Row iri={iri} parentIri={pckg.iri} key={iri} isSignedIn={login.isSignedIn} projectFilter={projectFilter} setProjectFilter={setProjectFilter} mergeActors={mergeActors} />;
+          return <Row iri={iri} parentIri={pckg.iri} key={iri} isSignedIn={login.isSignedIn} packageGitFilter={packageGitFilter} setPackageGitFilter={setPackageGitFilter} mergeActors={mergeActors} />;
         })}
       </ul>
     }

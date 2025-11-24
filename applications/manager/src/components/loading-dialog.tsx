@@ -50,7 +50,7 @@ export const LoadingDialog = ({ isOpen, resolve, waitingText, dialogTitle, setCl
             {waitingText}
             <div className="flex">
               <Loader className="mr-2 mt-1 h-4 w-4 animate-spin" />
-              {secondsPassed} seconds passed
+              { shouldShowTimer ? `${secondsPassed} seconds passed` : null }
             </div>
           </ModalDescription>
         </ModalHeader>
