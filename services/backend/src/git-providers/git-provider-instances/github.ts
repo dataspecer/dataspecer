@@ -426,7 +426,8 @@ export class GitHubProvider extends GitProviderBase {
       fs.mkdirSync(workflowsDirPath, { recursive: true });
     }
 
-    createLinksForFiles("./git-workflows/github/workflows", workflowsDirPath);
+    const sourceWorkflowDirectory = "./git-workflows/github/workflows";
+    createLinksForFiles(sourceWorkflowDirectory, workflowsDirPath);
   }
 
   getWorkflowFilesDirectoryName(): string {

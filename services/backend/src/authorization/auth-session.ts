@@ -4,7 +4,7 @@ import { createBasicAuthConfig, createAuthConfigBasedOnAccountScope } from "./au
 import { asyncHandler } from "../utils/async-handler.ts";
 import { AccessToken, AccessTokenType, ConfigType, GitProvider, GitCredentials } from "@dataspecer/git";
 import { getToken } from "@auth/core/jwt"
-import { convertExpressRequestToNormalRequest, getBaseUrl } from "../utils/git-utils.ts";
+import { convertExpressRequestToNormalRequest, getBaseBackendUrl } from "../utils/git-utils.ts";
 import { createUserSSHIdentifier } from "../routes/store-private-ssh-key.ts";
 import configuration from "../configuration.ts";
 
@@ -18,7 +18,7 @@ export async function currentSession(
     return;
   }
 
-  const dsBackendURL = getBaseUrl(request);
+  const dsBackendURL = getBaseBackendUrl(request);
   const callerURL = request.get("Referer") ?? "";
 
   const basicAuthConfigInstance = createBasicAuthConfig(dsBackendURL)
@@ -58,7 +58,7 @@ export function getStoredSession(response: express.Response): Session | null {
  * @deprecated I didn't know that session is exposed on the http://localhost:3100/auth/session endpoint
  */
 export const getBasicUserInfo = asyncHandler(async (request: express.Request, response: express.Response) => {
-  const dsBackendURL = getBaseUrl(request);
+  const dsBackendURL = getBaseBackendUrl(request);
 
   // TODO RadStr: Here it should not matter that I am using the basicAuthConfig instead of the correct one
 
@@ -85,7 +85,7 @@ export const getGitCredentialsFromSession = (request: express.Request, response:
   let committerEmail: string | null = null;
   let committerAccessToken: string | null = null;
   let committerSSH: string | null = null;
-  const dsBackendURL = getBaseUrl(request);
+  const dsBackendURL = getBaseBackendUrl(request);
 
   const currentSession = getStoredSession(response);
   if (currentSession !== null) {

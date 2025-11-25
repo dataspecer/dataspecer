@@ -15,7 +15,7 @@ function wrapPrivateKey(keyData: string, type: "RSA" | "OPENSSH" = "OPENSSH"): s
   // Split into 64-character lines (PEM standard)
   const formattedKey = cleanKey.match(/.{1,64}/g)?.join("\n") ?? cleanKey;
 
-  // Not ChatGPT - but I notcited that it has to end with empty line
+  // Not ChatGPT - but I noticed that it has to end with empty line
   return `-----BEGIN ${type} PRIVATE KEY-----\n${formattedKey}\n-----END ${type} PRIVATE KEY-----\n`;
 }
 
@@ -23,15 +23,21 @@ function wrapPrivateKey(keyData: string, type: "RSA" | "OPENSSH" = "OPENSSH"): s
  * We need this because the path inside ssh config file does not seem to correctly work for absolute paths,
  *  it either has to be relative, or C:/ has to be converted to /c/
  */
-const relativizeAgainstHomeDir = (givenPath: string): string => {
-  return path.relative(path.join(os.homedir(), ".ssh"), givenPath).replace(/\\/g, "/");
+const relativizeAgainstSshInHomeDir = (givenPath: string): string => {
+  const relativeAgainstSshInHomeDir = path.relative(path.join(os.homedir(), ".ssh"), givenPath);
+  return convertToPosixPath(relativeAgainstSshInHomeDir);
+};
+
+const convertToPosixPath = (givenPath: string): string => {
+  return givenPath.replace(/\\/g, "/");
 };
 
 
-const sshKeysRootDirectory = path.resolve("./database/ds-users/.ssh");
-export const sshDSConfigPath = path.resolve(`${sshKeysRootDirectory}/config`);
-fs.rmSync(sshKeysRootDirectory, { recursive: true, force: true });      // TODO RadStr: Not sure if we should remove it. However for debugging it is necessary.
-const sshDSConfigPathRelativeToHomeDir = relativizeAgainstHomeDir(sshDSConfigPath);
+const sshDirectoryForDS = path.resolve("./database/ds-users/.ssh");
+const homeDirectorySshConfigPath = path.join(os.homedir(), ".ssh", "config");
+export const sshForDSConfigPath = path.resolve(`${sshDirectoryForDS}/config`);
+fs.rmSync(sshDirectoryForDS, { recursive: true, force: true });      // TODO RadStr: Not sure if we should remove it. However for debugging it is necessary.
+const sshDSConfigPathRelativeToHomeDir = relativizeAgainstSshInHomeDir(sshForDSConfigPath);
 
 
 
@@ -67,10 +73,11 @@ export const createUserSSHIdentifier = (authenticatedUser: any | null | undefine
 export function storeNewPrivateSSHKeyToBackend(privateSSHKey: string, userSSHIdentifer: string | null) {
   const fileContent = wrapPrivateKey(privateSSHKey);
 
-  fs.mkdirSync(sshKeysRootDirectory, { recursive: true });
+  fs.mkdirSync(sshDirectoryForDS, { recursive: true });
 
-  const privateSSHKeyFilePath = path.normalize(`${sshKeysRootDirectory}/private-ssh-key-${userSSHIdentifer}`);
+  const privateSSHKeyFilePath = convertToPosixPath(path.normalize(`${sshDirectoryForDS}/private-ssh-key-${userSSHIdentifer}`));
   fs.writeFileSync(privateSSHKeyFilePath, fileContent);
+  fs.chmodSync(privateSSHKeyFilePath, 0o600);
 
   // Hardcoded for github
   const configIdentifier = `Host ${userSSHIdentifer}`;
@@ -80,21 +87,20 @@ export function storeNewPrivateSSHKeyToBackend(privateSSHKey: string, userSSHIde
     User git
 ${identityFileLine}\n\n`;
 
-  if (!replaceSSHConfigEntry(sshDSConfigPath, configIdentifier, identityFileLine)) {
-    fs.appendFileSync(sshDSConfigPath, newConfigEntry);     // It was not present, just append it
+  if (!replaceSSHConfigEntry(sshForDSConfigPath, configIdentifier, identityFileLine)) {
+    fs.appendFileSync(sshForDSConfigPath, newConfigEntry);     // It was not present, just append it
   }
 
   // Include our config into the config in home directory
-  const homeDirectorySSHConfigPath = path.join(os.homedir(), ".ssh", "config");
   const theIncludesStringForConfig = `Include ${sshDSConfigPathRelativeToHomeDir}`;
-  if (!fs.existsSync(homeDirectorySSHConfigPath)) {
-    const sshDir = path.dirname(homeDirectorySSHConfigPath);
+  if (!fs.existsSync(homeDirectorySshConfigPath)) {
+    const sshDir = path.dirname(homeDirectorySshConfigPath);
     fs.mkdirSync(sshDir, { recursive: true }); // Ensures all needed dirs exist (needed for the docker)
-    fs.writeFileSync(homeDirectorySSHConfigPath, theIncludesStringForConfig);
+    fs.writeFileSync(homeDirectorySshConfigPath, theIncludesStringForConfig);
   }
   else {
-    if (!fs.readFileSync(homeDirectorySSHConfigPath).includes(theIncludesStringForConfig)) {
-      fs.appendFileSync(homeDirectorySSHConfigPath, `\n${theIncludesStringForConfig}`);
+    if (!fs.readFileSync(homeDirectorySshConfigPath).includes(theIncludesStringForConfig)) {
+      fs.appendFileSync(homeDirectorySshConfigPath, `\n${theIncludesStringForConfig}`);
     }
   }
 }
@@ -102,7 +108,8 @@ ${identityFileLine}\n\n`;
 
 /**
  * Generated with ChatGPT's help
- * @returns True if the entry was present, false if it was not
+ * Replaces the entry if it was present.
+ * @returns True if the entry was present, false if it was not.
  */
 function replaceSSHConfigEntry(filePath: string, matchLineToReplace: string, identityFileLine: string): boolean {
   // Read file into array of lines

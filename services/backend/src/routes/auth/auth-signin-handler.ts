@@ -6,7 +6,7 @@ import { createAuthConfigWithCorrectPermissions, createBasicAuthConfig } from ".
 import { getRedirectLink } from "./auth-handler.ts";
 import { z } from "zod";
 import { ConfigType } from "@dataspecer/git";
-import { getBaseUrl } from "../../utils/git-utils.ts";
+import { getBaseBackendUrl, stripApiPrefixFromUrl } from "../../utils/git-utils.ts";
 
 /**
  * Handles the signin request by calling the {@link ExpressAuth} with correct configuration based on request.
@@ -19,11 +19,13 @@ export const handleSignin = asyncHandler(async (request: express.Request, respon
     authPermissions: z.string().optional(),
   });
 
-  if (request.originalUrl === "/auth/signin" || request.originalUrl === "/auth/signin/" || request.originalUrl.startsWith("/auth/signin?")) {
+  const strippedOriginalUrl = stripApiPrefixFromUrl(request.originalUrl);
+
+  if (strippedOriginalUrl === "/auth/signin" || strippedOriginalUrl === "/auth/signin/" || strippedOriginalUrl.startsWith("/auth/signin?")) {
     // This if represents the first part of signin process - after clicking the signin inside manager
     const query = querySchema.parse(request.query);
     const authPermissions = query.authPermissions;
-    const dsBackendURL = getBaseUrl(request);
+    const dsBackendURL = getBaseBackendUrl(request);
 
     if (authPermissions === undefined || authPermissions.length === 0) {
       authConfig = createBasicAuthConfig(dsBackendURL, redirectLink);
@@ -32,7 +34,7 @@ export const handleSignin = asyncHandler(async (request: express.Request, respon
       authConfig = createAuthConfigWithCorrectPermissions(authPermissions, dsBackendURL, redirectLink);
     }
   }
-  else if (request.originalUrl.startsWith("/auth/signin/") && request.originalUrl.length > "/auth/signin/".length) {
+  else if (strippedOriginalUrl.startsWith("/auth/signin/") && strippedOriginalUrl.length > "/auth/signin/".length) {
     // Now we are in the second part of signin - we clicked the provider.
     // We have to check to link inside the body of the request, which has set callbackUrl by the authJS.
     // There is stored our redirect link from the previous call.
@@ -44,7 +46,7 @@ export const handleSignin = asyncHandler(async (request: express.Request, respon
     const redirectLinkAsURL = new URL(redirectLink);
     const authPermissions = redirectLinkAsURL.searchParams.get("authPermissions") ?? ConfigType.LoginInfo.toString();
     // Get Auth config
-    const dsBackendURL = getBaseUrl(request);
+    const dsBackendURL = getBaseBackendUrl(request);
     authConfig = createAuthConfigWithCorrectPermissions(authPermissions, dsBackendURL, callerURL);
   }
   else {

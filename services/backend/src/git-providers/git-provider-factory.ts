@@ -135,7 +135,14 @@ export function createLinksForFiles(sourceDirectory: string, targetDirectory: st
       createLinksForFiles(newSourcefullPath, newTargetFullPath);
     }
     else {
-      fs.link(newSourcefullPath, newTargetFullPath, (err) => { console.info("err", err); });
+      fs.link(newSourcefullPath, newTargetFullPath, (error) => {
+        // TODO: We check for both values, but probably code or just errno should be sufficient
+        if (error?.code === "EXDEV" && error?.errno === -18) {
+          // We try to copy on failure. This for example happens in Docker, sicne they are on different devices (filesystems).
+          // TODO: Maybe put into the database directory instead and then the link should probably work.
+          fs.copyFileSync(newSourcefullPath, newTargetFullPath);
+        }
+      });
     }
   }
 }

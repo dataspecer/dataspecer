@@ -187,7 +187,7 @@ function createAuthConfig(configType: ConfigType | null, dsBackendURL: string, c
         // So we set the callbacks here to store the authentication state.
         // After redirect we can use the authorization through session/database.
         // For example we can store it the res.locals as we do through currentSession
-        return params.baseUrl + "/auth-handler/personal-callback/github?callerURL=" + callerURL;
+        return dsBackendURL + "/auth-handler/personal-callback/github?callerURL=" + callerURL;
       },
     },
   };

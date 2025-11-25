@@ -60,10 +60,12 @@ import { finalizeMergeMergeState } from "./routes/finalize-merge-merge-state.ts"
 import { finalizePullMergeStateOnFailure } from "./routes/finalize-pull-merge-state-on-failure.ts";
 import { finalizeMergeMergeStateOnFailure } from "./routes/finalize-merge-merge-state-on-failure.ts";
 import { finalizePushMergeStateOnFailure } from "./routes/finalize-push-merge-state-on-failure.ts";
+import { populateSshKnownHosts } from "./utils/git-utils.ts";
 
 
 // Create application models
 if (configuration.gitConfiguration?.dsBotSSHPrivateKey !== undefined && configuration.gitConfiguration?.dsBotSSHId !== undefined) {
+  populateSshKnownHosts();
   storeNewPrivateSSHKeyToBackend(configuration.gitConfiguration.dsBotSSHPrivateKey, configuration.gitConfiguration.dsBotSSHId);
 }
 

@@ -3,7 +3,7 @@ import { asyncHandler } from "../../utils/async-handler.ts";
 import { createBasicAuthConfig } from "../../authorization/auth-config.ts";
 import { ExpressAuth, ExpressAuthConfig } from "@auth/express";
 import { getRedirectLink } from "./auth-handler.ts";
-import { getBaseUrl } from "../../utils/git-utils.ts";
+import { getBaseBackendUrl } from "../../utils/git-utils.ts";
 
 /**
  * Handles the signout request. What this method does extra unlike classic auth signout is to set the correct redirect link to go to after the signout is done.
@@ -27,7 +27,7 @@ export const handleSignout = asyncHandler(async (request: express.Request, respo
     }
   }
   catch (e) {
-    const dsBackendURL = getBaseUrl(request);
+    const dsBackendURL = getBaseBackendUrl(request);
     authConfig = createBasicAuthConfig(dsBackendURL, "http://localhost:5175");      // TODO RadStr: Instead of localhost:5175 use the provided (when starting up the server) allowed frontends
   }
 
@@ -45,7 +45,7 @@ function createAuthConfigForSignout(request: express.Request, linkContainingRedi
 
   const linkContainingRedirectAsURL = new URL(linkContainingRedirect);
   const redirectURL = linkContainingRedirectAsURL.searchParams.get("redirectURL");
-  const dsBackendURL = getBaseUrl(request);
+  const dsBackendURL = getBaseBackendUrl(request);
   if (redirectURL !== null) {
     authConfig = createBasicAuthConfig(dsBackendURL, redirectURL);
   }
