@@ -61,6 +61,7 @@ import { finalizePullMergeStateOnFailure } from "./routes/finalize-pull-merge-st
 import { finalizeMergeMergeStateOnFailure } from "./routes/finalize-merge-merge-state-on-failure.ts";
 import { finalizePushMergeStateOnFailure } from "./routes/finalize-push-merge-state-on-failure.ts";
 import { populateSshKnownHosts } from "./utils/git-utils.ts";
+import { markPackageAsHavingNoUncommittedChanges } from "./routes/mark-package-as-having-no-uncommitted-changes.ts";
 
 
 // Create application models
@@ -145,6 +146,7 @@ application.delete(apiBasename + "/git/remove-merge-state", removeMergeState);
 application.post(apiBasename + "/git/debug-clear-merge-state-table", clearMergeStateTableDebug);
 
 // TODO RadStr: Once I update the URL don't forget to update the ngrok URL in git providers to the same URL suffix
+application.get(apiBasename + "/git/mark-package-as-no-uncommitted-changes", currentSession, markPackageAsHavingNoUncommittedChanges);
 application.post(apiBasename + "/git/webhook-test", currentSession, handleWebhook);
 application.post(apiBasename + "/git/webhook-test2", currentSession, handleWebhook);
 application.get(apiBasename + "/git/webhook-test", currentSession, createRandomWebook);

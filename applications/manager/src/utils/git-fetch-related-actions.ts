@@ -53,3 +53,24 @@ export async function switchRepresentsBranchHead(examinedPackage: Package, openM
     openModal(CreateNewBranchDialog, { sourcePackage: examinedPackage, actionOnConfirm: BranchAction.TurnExistingIntoBranch });
   }
 }
+
+export async function markPackageAsHavingNoUncommittedChanges(iri: string) {
+  const url = import.meta.env.VITE_BACKEND + "/git/mark-package-as-no-uncommitted-changes?iri=" + encodeURIComponent(iri);
+  const response = await fetch(
+    url,
+    {
+      credentials: "include",         // Important, without this we don't send the authorization cookies.
+      method: "GET",
+    }
+  );
+
+  if (response.ok) {
+    toast.success("Package marked as having no uncommitted changes.");
+  }
+  else {
+    toast.error("Unknown error when marking package as having no uncommitted changes.");
+  }
+
+  requestLoadPackage(iri, true);
+  return response;
+}

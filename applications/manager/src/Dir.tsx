@@ -250,6 +250,7 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, mergeActo
           <DropdownMenuContent>
             {/* TODO RadStr: Just for debugging ! */}
             {<DropdownMenuItem onClick={() => debugClearMergeStateDBTable()}><ShieldQuestion className="mr-2 h-4 w-4" />DEBUG - Clear merge db state table</DropdownMenuItem>}
+            {<DropdownMenuItem title="The uncommitted changes tag is sometimes wrong, since for performance reasons we can not compare the current content to Git. Therefore the 'has uncommitted changes' tag marks the fact that there was change between last commit and now. Even if you reversed the change, therefore now there is not any." onClick={() => markPackageAsHavingNoUncommittedChanges(resource.iri)}><TimerResetIcon className="mr-2 h-4 w-4" />Mark as up to date with remote</DropdownMenuItem>}
             {<DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/git/redirect-to-remote-git-repository?iri=" + encodeURIComponent(iri)}><Eye className="mr-2 h-4 w-4" />Visit the remote repository</a></DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>}
             <hr className="border-gray-300" />
