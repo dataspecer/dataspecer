@@ -140,6 +140,8 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
       let isMergeStateCreated = true;
       if (fetchedMergeState === null) {
         const createdMergeState = await createMergeStateOnBackend(mergeFrom, mergeTo);
+        await requestLoadPackage(mergeFrom, true);
+        await requestLoadPackage(mergeTo, true);
         fetchedMergeState = createdMergeState.mergeState;
         if (createdMergeState.error !== null) {
           setMergeStateCreatingFailure(true);

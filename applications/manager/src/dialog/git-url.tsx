@@ -276,12 +276,18 @@ export const mergeCommitToGitDialogOnClickHandler = async (
                 toast.error("The removal of merge state failed");
               }, 1000);
             }
+            else {
+              await requestLoadPackage(mergeState.rootIriMergeFrom, true);
+              await requestLoadPackage(mergeState.rootIriMergeTo, true);
+            }
           }
         }
         else if (response.status === 200) {
           // Unlike for other merge states, we remove th emerge state here instead when finalizing backend (the merge state is exception).
           // Since other mergestates just updated the last commit in the finalizer. But that is not the case for merge
           await removeMergeState(mergeState.uuid);
+          await requestLoadPackage(mergeState.rootIriMergeFrom, true);
+          await requestLoadPackage(mergeState.rootIriMergeTo, true);
         }
       });
   }

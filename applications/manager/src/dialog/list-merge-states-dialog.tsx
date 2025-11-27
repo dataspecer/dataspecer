@@ -7,6 +7,7 @@ import { MergeState } from "@dataspecer/git";
 import { finalizeMergeState, removeMergeState } from "@/utils/merge-state-backend-requests";
 import { ShowMergeStateInfoDialog } from "./show-merge-state-info-dialog";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
+import { requestLoadPackage } from "@/package";
 
 type MergeStateDialogProps = {
   iri: string,
@@ -74,9 +75,11 @@ const renderMergeState = (
   openModal: OpenBetterModal,
   closeMergeStateList: (value: null) => void
 ) => {
-  const removeMergeStateOnClickHandler = () => {
+  const removeMergeStateOnClickHandler = async () => {
     removeFromMergeStatesInDialog(mergeState.uuid);
-    removeMergeState(mergeState.uuid);
+    await removeMergeState(mergeState.uuid);
+    await requestLoadPackage(mergeState.rootIriMergeFrom, true);
+    await requestLoadPackage(mergeState.rootIriMergeTo, true);
   };
 
   const finalizeMergeStateOnClick = async () => {
