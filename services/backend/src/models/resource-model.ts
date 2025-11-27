@@ -43,7 +43,8 @@ export interface BaseResource {
     branch: string;
     representsBranchHead: boolean;
     lastCommitHash: string;
-    isSynchronizedWithRemote: boolean;
+    activeMergeStateCount: number;
+    hasUncommittedChanges: boolean;
 
     dataStores: Record<string, string>;
 }
@@ -466,7 +467,8 @@ export class ResourceModel {
             branch: prismaResource.branch,
             representsBranchHead: prismaResource.representsBranchHead,
             lastCommitHash: prismaResource.lastCommitHash,
-            isSynchronizedWithRemote: prismaResource.isSynchronizedWithRemote,
+            activeMergeStateCount: prismaResource.activeMergeStateCount,
+            hasUncommittedChanges: prismaResource.hasUncommittedChanges,
         }
     }
 

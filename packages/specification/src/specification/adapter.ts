@@ -80,7 +80,8 @@ async function serializePackageModel(packageModel: PackageModel): Promise<Packag
     branch: "",                       // TODO RadStr: I don't know about this, probably should be specified
     representsBranchHead: true,       // TODO RadStr: I don't know about this, probably should be specified
     lastCommitHash: "",               // TODO RadStr: I don't know about this, probably should be specified
-    isSynchronizedWithRemote: true,   // TODO RadStr: I don't know about this, probably should be specified
+    activeMergeStateCount: 0,         // TODO RadStr: I don't know about this, probably should be specified
+    hasUncommittedChanges: true,      // TODO RadStr: I don't know about this, probably should be specified
 
 
     subResources,

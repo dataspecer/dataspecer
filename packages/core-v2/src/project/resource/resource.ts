@@ -32,7 +32,8 @@ export interface BaseResource {
     representsBranchHead: boolean;
     branch: string;
     lastCommitHash: string;
-    isSynchronizedWithRemote: boolean;
+    activeMergeStateCount: number;
+    hasUncommittedChanges: boolean;
 }
 
 export interface Package extends BaseResource {

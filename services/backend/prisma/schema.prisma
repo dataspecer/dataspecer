@@ -68,8 +68,11 @@ model Resource {
   // Another thing to note is that it needs to be full hash since abbreviated hash is enough in the time of checking, but not necessary for the future checks,
   // since conflicts for first few characters may occur as time goes on
   lastCommitHash String @default("")
-  // If false then there exists commit in remote git repo, which failed to be pushed to DS through webhook, because of conflicts.
-  isSynchronizedWithRemote Boolean @default(true)
+  // This basically marks the fact that we are not synchronized with remote, but we tried to, if the value is > 0.
+  // Either we tried pushing, or somebody updated git, or we explictly created merge state when merging locally inside Dataspecer.
+  activeMergeStateCount Int @default(0)
+  // If true then we have performed some change to the project, which means that the actual data between the remote and current Dataspecer content differ.
+  hasUncommittedChanges Boolean @default(false)
 
   // Technical metadata: creation date.
   createdAt DateTime @default(now())
