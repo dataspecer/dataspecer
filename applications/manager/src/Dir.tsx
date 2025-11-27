@@ -253,8 +253,6 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, mergeActo
             {<DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/git/redirect-to-remote-git-repository?iri=" + encodeURIComponent(iri)}><Eye className="mr-2 h-4 w-4" />Visit the remote repository</a></DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>}
             <hr className="border-gray-300" />
-            {isSignedIn && <DropdownMenuItem onClick={() => openModal(SetPrivateSSHKeyDialog, {})}><GitGraph className="mr-2 h-4 w-4" />Add private SSH key</DropdownMenuItem>}
-            <hr className="border-gray-300" />
             {<DropdownMenuItem onClick={async () => createNewRemoteRepositoryHandler(openModal, iri, resource)}><GitPullRequestIcon className="mr-2 h-4 w-4" />Create remote repository</DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => linkToExistingGitRepositoryHandler(openModal, iri, resource)}><Link className="mr-2 h-4 w-4" />Link to remote repository</DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => commitToGitDialogOnClickHandler(openModal, iri, resource, "classic-commit", true, null)}><GitCommit className="mr-2 h-4 w-4" />Commit</DropdownMenuItem>}
