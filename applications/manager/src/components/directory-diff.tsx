@@ -4,7 +4,7 @@ import { Check, Loader, Minus, MoveLeft, MoveRight, Plus, X } from "lucide-react
 import React, { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import { NodeApi, NodeRendererProps, Tree, TreeApi, } from "react-arborist";
 import { ComparisonData, CreateDatastoreFilesystemNodesInfo, DatastoreComparison, DatastoreInfo, DiffTree, EditableType, FilesystemNode, getDatastoreInfoOfGivenDatastoreType, MergeState, OldNewFilesystemNode, ResourceComparison } from "@dataspecer/git";
-import { DiffEditorEditIcon } from "./crossed-out-icon";
+import { DiffEditorCrossedOutEditIcon, DiffEditorEditIcon } from "./crossed-out-icon";
 import { EntriesAffectedByCreateType } from "@/hooks/use-diff-editor-dialog-props";
 
 
@@ -46,6 +46,7 @@ type RenderNodeWithAdditionalData = RenderNode & {
   setRemovedTreePaths: (value: React.SetStateAction<string[]>) => void;
   isCurrentlyAllowedChangeOfModels: boolean;
   setIsCurrentlyAllowedChangeOfModels: React.Dispatch<React.SetStateAction<boolean>>;
+  conflictsToBeResolvedOnSaveInThisComponent: ComparisonData[];
 };
 
 type RenderStatus = "same" | "modified" | "created" | "removed";
@@ -86,7 +87,7 @@ function extractFirstNonEmptyFieldFromComparison(comparison: OldNewFilesystemNod
   return (comparison.old?.[comparisonFieldToExtract] ?? comparison.new?.[comparisonFieldToExtract]);
 }
 
-function createIdForDatastoreRenderNode(datastoreComparison: DatastoreComparison, treeToExtract: TreeType) {
+function createIdForDatastoreRenderNode(datastoreComparison: Omit<DatastoreComparison, "datastoreComparisonResult">, treeToExtract: TreeType) {
   // It should be projectIris - so we can swap between the two trees easily by removing the treeToExtract suffix - TODO RadStr: However we might remove the left tree since it is useless
    // Note that at least one is not empty that is why we can type it to string
   return extractFirstNonEmptyFieldFromComparison(datastoreComparison, "projectIrisTreePath") as string + datastoreComparison.affectedDataStore.fullName + "-" + treeToExtract;
@@ -437,6 +438,7 @@ function StyledNode({
   let icon: string = "";
 
   icon = node.data.isInEditableTree && node.data.nowInConflictCount > 0 ? "⚠️" : "";   // Always show the conflict mark
+  icon = (node.data.isInEditableTree && node.data.conflictsToBeResolvedOnSaveInThisComponent.find(resolvedConflict => node.data.id === createIdForDatastoreRenderNode(resolvedConflict, node.data.treeType))) ? "✅" : icon;
   if (node.data.dataSourceType == "datastore") {
     icon += "📄";
   }
@@ -503,7 +505,6 @@ function StyledNode({
             else {
               node.focus();
               node.select();
-
               const parent = node.parent?.data.resourceComparison?.resources ?? null;
               const parentTreePath = extractFirstNonEmptyFieldFromComparison(parent, "projectIrisTreePath") as string;
               await node.data.updateModelData(
@@ -577,7 +578,7 @@ function StyledNode({
                 }
               </>
             </div>
-            }
+          }
         </div>
       </div>
     </>);
@@ -618,7 +619,8 @@ const createStyledNode = (
   setRemovedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void,
   removedTreePaths: string[],
   setRemovedTreePaths: (value: React.SetStateAction<string[]>) => void,
-  isCurrentlyAllowedChangeOfModelsUseState: [boolean, React.Dispatch<React.SetStateAction<boolean>>]
+  isCurrentlyAllowedChangeOfModelsUseState: [boolean, React.Dispatch<React.SetStateAction<boolean>>],
+  conflictsToBeResolvedOnSaveInThisComponent: ComparisonData[],
 ) => {
   const extendedProps: NodeRendererProps<RenderNodeWithAdditionalData> = props as any;
   const currentNodeTreePath = extractTreePathFromNode(extendedProps.node);
@@ -646,6 +648,7 @@ const createStyledNode = (
   extendedProps.node.data.setShouldBeHighlighted = setShouldBeHighlighted;
   extendedProps.node.data.isCurrentlyAllowedChangeOfModels = isCurrentlyAllowedChangeOfModelsUseState[0];
   extendedProps.node.data.setIsCurrentlyAllowedChangeOfModels = isCurrentlyAllowedChangeOfModelsUseState[1];
+  extendedProps.node.data.conflictsToBeResolvedOnSaveInThisComponent = conflictsToBeResolvedOnSaveInThisComponent;
 
   return <StyledNode {...extendedProps} />;
 }
@@ -814,7 +817,7 @@ export const DiffTreeVisualization = (props: {
   //   }
   // }, [props.conflictRemovalsFromParentComponent]);
 
-  const [_oldRenderTreeDataToRender, setOldRenderTreeDataToRender] = useState<RenderTree>();
+  const [oldRenderTreeDataToRender, setOldRenderTreeDataToRender] = useState<RenderTree>();
   useEffect(() => {
     const treeToRender = !shouldOnlyShowConflicts ? oldRenderTree : filterOutNonConflicts(oldRenderTree);
     setOldRenderTreeDataToRender(treeToRender)
@@ -886,7 +889,7 @@ export const DiffTreeVisualization = (props: {
 
 
 
-    console.info("NODE INFO, isFocused and then isSelected: ", node.isFocused, node.isSelectedStart, node.isSelected, node.isSelectedEnd)
+    console.info("NODE INFO, isFocused and then isSelected: ", node.isFocused, node.isSelectedStart, node.isSelected, node.isSelectedEnd);    // TODO RadStr: Debug
     if (node.isSelected) {
       isProgrammaticFocus.current = true;
       node.focus();
@@ -978,24 +981,24 @@ export const DiffTreeVisualization = (props: {
         </label>
       </div>
       <div className="flex gap-1 h-full">
-        {/* <div className="flex-1 border border-stone-200 h-full" style={{height: treeRowHeight*treeRowHeightMultiplier}}>
-          <h3><DiffEditorCrossedOutEditIcon/></h3> */}
+        <div className="flex-1 border border-stone-200 h-full" style={{height: treeRowHeight*treeRowHeightMultiplier}}>
+          <h3><DiffEditorCrossedOutEditIcon/></h3>
           {
-            // renderTreeWithLoading(props.isLoadingTreeStructure,
-            //   <Tree children={(props) => createStyledNode(props, updateModelData, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, addToCreatedDatastores, removedDatastores, setRemovedDatastores, removedTreePaths, setRemovedTreePaths, isCurrentlyAllowedChangeOfModelsUseState)}
-            //     ref={oldTreeRef} data={oldRenderTreeDataToRender} width={"100%"}
-            //     onSelect={(nodes) => onNodesSelect(nodes, "old")}
-            //     onFocus={(node) => onNodeFocus(node, "old")}
-            //     onToggle={(id: string) => onNodeToggle(id, "old")}
-            //     rowHeight={treeRowHeight} height={treeRowHeight*treeRowHeightMultiplier} openByDefault disableDrag>
-            //   </Tree>)
+            renderTreeWithLoading(props.isLoadingTreeStructure,
+              <Tree children={(props) => createStyledNode(props, updateModelData, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, addToCreatedDatastores, removedDatastores, setRemovedDatastores, removedTreePaths, setRemovedTreePaths, isCurrentlyAllowedChangeOfModelsUseState, conflictsToBeResolvedOnSaveInThisComponent)}
+                ref={oldTreeRef} data={oldRenderTreeDataToRender} width={"100%"}
+                onSelect={(nodes) => onNodesSelect(nodes, "old")}
+                onFocus={(node) => onNodeFocus(node, "old")}
+                onToggle={(id: string) => onNodeToggle(id, "old")}
+                rowHeight={treeRowHeight} height={treeRowHeight*treeRowHeightMultiplier} openByDefault disableDrag>
+              </Tree>)
           }
-        {/* </div> */}
+        </div>
         <div className="flex-1 border border-stone-200 h-full" style={{height: treeRowHeight*treeRowHeightMultiplier}}>
           <h3><DiffEditorEditIcon/></h3>
           {
             renderTreeWithLoading(props.isLoadingTreeStructure,
-              <Tree children={(props) => createStyledNode(props, updateModelData, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, addToCreatedDatastores, removedDatastores, setRemovedDatastores, removedTreePaths, setRemovedTreePaths, isCurrentlyAllowedChangeOfModelsUseState)}
+              <Tree children={(props) => createStyledNode(props, updateModelData, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, addToCreatedDatastores, removedDatastores, setRemovedDatastores, removedTreePaths, setRemovedTreePaths, isCurrentlyAllowedChangeOfModelsUseState, conflictsToBeResolvedOnSaveInThisComponent)}
                 ref={newTreeRef} data={newRenderTreeDataToRender} width={"100%"}
                 onSelect={(nodes) => onNodesSelect(nodes, "new")}
                 onFocus={(node) => onNodeFocus(node, "new")}

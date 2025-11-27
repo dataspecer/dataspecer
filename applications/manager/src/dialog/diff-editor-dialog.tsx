@@ -11,8 +11,6 @@ import { TabsContent } from "@radix-ui/react-tabs";
 import SvgVisualDiff from "@/components/images-conflict-resolver";
 import { MonacoDiffEditor } from "@/components/monaco-diff-editor";
 import { MergeStrategyComponent } from "@/components/merge-strategy-component";
-import ExpandableList from "@/components/expandable-list";
-import { RemoveFromToBeResolvedReactComponent } from "@/components/remove-from-to-be-resolved";
 import { useDiffEditorDialogProps } from "@/hooks/use-diff-editor-dialog-props";
 import { DatastoreInfo, EditableType } from "@dataspecer/git";
 import { BetterModalProps } from "@/lib/better-modal";
@@ -68,7 +66,6 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
     closeWithSuccess,
     applyAutomaticMergeStateResolver,
     saveEverything,
-    unresolveToBeResolvedConflict,
     finalizeMergeStateHandler,
   } = useDiffEditorDialogProps({initialMergeFromResourceIri, initialMergeToResourceIri, editable, resolve});
 
@@ -89,10 +86,11 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
         <ModalContent className="max-w-none h-[100%]">
           <ModalBody className="grow flex overflow-hidden">
             {/* The pr-2 is there so the cross at the top right corner is seen */}
-            <ResizablePanelGroup direction="horizontal" className="overflow-hidden pr-2">
-              <ResizablePanel defaultSize={18} className="flex flex-col pr-16 my-6">
+            <ResizablePanelGroup direction="horizontal" className="overflow-hidden">
+              <ResizablePanel defaultSize={18} className="flex flex-col pr-16">
                 <ModalHeader className="mb-4">
-                  <h1 className="font-bold text-lg">Diff editor to resolve {examinedMergeState?.mergeStateCause} conflict</h1>
+                  <h1 className="font-bold bg-gray-200 mb-1 text-lg"><p>Diff editor to resolve {examinedMergeState?.mergeStateCause} conflict</p></h1>
+                  {/* <hr/> */}
                   <Tabs value={comparisonTabType} onValueChange={setComparisonTabType as any}>
                     <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="text-compare">Text comparison</TabsTrigger>
@@ -102,9 +100,6 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
                 </ModalHeader>
                   {/* The overflow-y is needed however it adds a bit horizontal space between the vertical splitter and the Tree structure */}
                   <div className="flex flex-1 flex-col grow overflow-y-auto pr-2 -mr-2 -ml-2 pl-2 h-full w-full">
-                    <div className="mb-2">
-                      <ExpandableList title="Marked as resolved" items={conflictsToBeResolvedOnSave} buttonComponentContent={RemoveFromToBeResolvedReactComponent} onClickAction={unresolveToBeResolvedConflict} />
-                    </div>
                     <DiffTreeVisualization updateModelData={updateModelData}
                                             isLoadingTreeStructure={isLoadingTreeStructure}
                                             setIsLoadingTreeStructure={setIsLoadingTreeStructure}
@@ -131,22 +126,22 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
                             variant={"outline"}
                             onClick={() => saveEverything()}
                             className="m-1 bg-blue-600 hover:bg-blue-700">
-                      Save changes (Ctrl + S)
+                      Save All (Ctrl + S)
                     </Button>
                     {
                     ((activeConflicts?.length ?? 1) !== 0) ? null :
-                      <Button title="This performs the operation, which triggered the merge state. Can be pull/push/merge"
+                      <Button title="First saves all the unsaved changes and then it performs the operation, which triggered the merge state. Can be pull/push/merge"
                               variant={"outline"}
                               onClick={finalizeMergeStateHandler}
                               className="m-1 bg-green-600 hover:bg-green-700">
-                        Finalize merge state
+                        Save and Finalize
                       </Button>
                     }
                   </div>
               </ResizablePanel>
               {/* The minus "ml" shenanigans in classNames are because of some weird spaces caused by overflow-y-auto in the diff editor */}
               <ResizableHandle className="-ml-16" withHandle autoFocus={false} />
-              <ResizablePanel className="overflow-hidden flex flex-col pt-1 h-screen bg-white">
+              <ResizablePanel className="overflow-hidden flex flex-col h-screen bg-white">
                 { isLoadingTextData && Object.keys(convertedCacheForMergeFromContent).length !== 0 &&     // The check for non-empty objects is there se we don't show loading on initial load
                   <Loader className="mr-2 h-4 w-4 animate-spin" />
                 }

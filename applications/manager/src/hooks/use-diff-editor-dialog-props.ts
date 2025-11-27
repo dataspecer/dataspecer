@@ -27,7 +27,7 @@ import {
   DiffTree,
   ResourceDatastoreStripHandlerBase,
 } from "@dataspecer/git";
-import { saveMergeState } from "@/utils/merge-state-backend-requests";
+import { updateMergeState } from "@/utils/merge-state-backend-requests";
 import { fetchMergeState } from "@/dialog/open-merge-state";
 import { TextDiffEditorBetterModalProps, UpdateModelDataMethod } from "@/dialog/diff-editor-dialog";
 import { MergeStateFinalizerDialog } from "@/dialog/merge-state-finalizer-dialogs";
@@ -924,7 +924,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     const saveToBackend = async () => {
       await saveFileChanges(false);
       if (examinedMergeState !== null) {
-        await saveMergeState(examinedMergeState, conflictsToBeResolvedOnSave);
+        await updateMergeState(examinedMergeState, conflictsToBeResolvedOnSave);
       }
       closeWithSuccess();
     };
@@ -1118,6 +1118,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     if (examinedMergeState === null) {
       return undefined;
     }
+    await saveEverything();
     openModal(MergeStateFinalizerDialog, { mergeState: examinedMergeState, openModal }).finally(() => closeWithSuccess())
   };
 

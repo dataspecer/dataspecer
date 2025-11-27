@@ -1,6 +1,6 @@
 import { ComparisonData, FinalizerVariantsForMergeOnFailure, FinalizerVariantsForPullOnFailure, FinalizerVariantsForPushOnFailure, MergeCommitType, MergeState } from "@dataspecer/git";
 
-export const saveMergeState = async (
+export const updateMergeState = async (
   fetchedMergeState: MergeState,
   conflictsToBeResolvedOnSave: ComparisonData[],
 ) => {
