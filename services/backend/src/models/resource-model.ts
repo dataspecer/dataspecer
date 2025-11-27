@@ -6,7 +6,7 @@ import { storeModel } from './../main.ts';
 import { LocalStoreModel, ModelStore } from "./local-store-model.ts";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { CoreResource } from "@dataspecer/core/core/core-resource";
-import { CommitReferenceType, createDatastoreWithReplacedIris, defaultBranchForPackageInDatabase, defaultEmptyGitUrlForDatabase } from "@dataspecer/git";
+import { CommitReferenceType, createDatastoreWithReplacedIris, defaultBranchForPackageInDatabase, defaultEmptyGitUrlForDatabase, MergeStateCause } from "@dataspecer/git";
 import { ResourceChangeListener, ResourceChangeObserverBase, ResourceChangeType } from "./resource-change-observer.ts";
 
 /**
@@ -159,7 +159,8 @@ export class ResourceModel {
             },
             data: {
                 linkedGitRepositoryURL: defaultEmptyGitUrlForDatabase,
-                isSynchronizedWithRemote: true,
+                hasUncommittedChanges: false,
+                activeMergeStateCount: 0,           // TODO RadStr: ... since setting to 0 we should also remove all related merge states
                 lastCommitHash: "",
             },
         });
@@ -177,7 +178,7 @@ export class ResourceModel {
 
             // TODO RadStr: Actually nevermind the above. If we want to migrate, then just use the existing git repository import it all back to ds.
             await this.updateResourceProjectIriAndBranch(affectedResource, affectedResource, defaultBranchForPackageInDatabase);
-            await this.updateModificationTime(affectedResource, "meta", ResourceChangeType.Modified);
+            await this.updateModificationTime(affectedResource, "meta", ResourceChangeType.Modified, false, true);
         }
 
         return affectedResources;
@@ -252,13 +253,13 @@ export class ResourceModel {
                 userMetadata: JSON.stringify(metadata),
             }
         });
-        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified, mergeStateUUIDsToIgnoreInUpdating);
+        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified, true, true, mergeStateUUIDsToIgnoreInUpdating);
     }
 
     /**
      * Updates the last commit hash of package
      */
-    async updateLastCommitHash(iri: string, lastCommitHash: string) {
+    async updateLastCommitHash(iri: string, lastCommitHash: string, updateCause: MergeStateCause) {
         if (!(lastCommitHash.length === 40 || lastCommitHash.length === 0)) {
             throw new Error("Updating lastCommitHash to invalid hash, is not of length 40 or 0");        // TODO RadStr: maybe better error handling
         }
@@ -267,9 +268,10 @@ export class ResourceModel {
             where: {iri},
             data: {
                 lastCommitHash: lastCommitHash,
+                hasUncommittedChanges: updateCause === "pull" ? undefined : false,
             }
         });
-        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified);
+        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified, false, false);
     }
 
     /**
@@ -303,7 +305,7 @@ export class ResourceModel {
                     projectIri: projectIri
                 }
             });
-            await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified);
+            await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified, true, false);
 
             if (sourceForProjectResource !== null) {
                 // This needs explanation.
@@ -340,7 +342,7 @@ export class ResourceModel {
                     projectIri: resourceToUpdate.projectIri ?? resourceToUpdate.iri,
                 }
             });
-            await this.updateModificationTime(resourceToUpdate.iri, "meta", ResourceChangeType.Modified);
+            await this.updateModificationTime(resourceToUpdate.iri, "meta", ResourceChangeType.Modified, true, true);
             await this.copyIriToProjectIriForChildrenRecursively(resourceToUpdate.id);
         }
     }
@@ -357,7 +359,7 @@ export class ResourceModel {
                 projectIri
             }
         });
-        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified);
+        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified, true, projectIri !== undefined);
     }
 
     async updateRepresentsBranchHead(iri: string, commitReferenceType: CommitReferenceType) {
@@ -367,17 +369,38 @@ export class ResourceModel {
                 representsBranchHead: commitReferenceType === "branch",
             }
         });
-        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified);
+        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified, false, false);
     }
 
-    async updateIsSynchronizedWithRemote(iri: string, isSynchronizedWithRemote: boolean) {
+
+    async setHasUncommittedChanges(iri: string, hasUncommittedChanges: boolean) {
         await this.prismaClient.resource.update({
             where: {iri},
             data: {
-                isSynchronizedWithRemote: isSynchronizedWithRemote
+                hasUncommittedChanges: hasUncommittedChanges,
             }
         });
-        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified);
+        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified, false, false);
+    }
+
+    async increaseActiveMergeStateCount(iri: string) {
+        await this.prismaClient.resource.update({
+            where: {iri},
+            data: {
+                activeMergeStateCount: { increment: 1 }
+            }
+        });
+        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified, false, false);
+    }
+
+    async decreaseActiveMergeStateCount(iri: string) {
+        await this.prismaClient.resource.update({
+            where: {iri},
+            data: {
+                activeMergeStateCount: { decrement: 1 }
+            }
+        });
+        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified, false, false);
     }
 
     /**
@@ -401,7 +424,7 @@ export class ResourceModel {
 
         await recursivelyDeleteResourceByPrismaResource(prismaResource);
         if (prismaResource.parentResourceId !== null) {
-            await this.updateModificationTimeById(prismaResource.parentResourceId);
+            await this.updateModificationTimeById(prismaResource.parentResourceId, true);
         }
     }
 
@@ -416,7 +439,7 @@ export class ResourceModel {
         }
 
         // TODO RadStr: ? Again don't know what iri to provide
-        await this.updateModificationTime(iri, "resource", ResourceChangeType.Removed, mergeStateUUIDsToIgnoreInUpdating);
+        await this.updateModificationTime(iri, "resource", ResourceChangeType.Removed, true, true, mergeStateUUIDsToIgnoreInUpdating);
         await this.prismaClient.resource.delete({where: {id: prismaResource.id}});
 
         for (const storeId of Object.values(JSON.parse(prismaResource.dataStoreId))) {
@@ -565,9 +588,9 @@ export class ResourceModel {
         if (sourceGitLink !== undefined) {
             await this.updateResourceGitLink(newRootIri, sourceGitLink, false);
         }
-        await this.updateLastCommitHash(newRootIri, sourcePrismaResource?.lastCommitHash ?? "");
+        await this.updateLastCommitHash(newRootIri, sourcePrismaResource?.lastCommitHash ?? "", "push");
 
-        await this.updateModificationTimeById(prismaParentResource.id);
+        await this.updateModificationTimeById(prismaParentResource.id, true);
         return newRootIri;
     }
 
@@ -605,8 +628,8 @@ export class ResourceModel {
 
         if (parentResourceId !== null) {
             // TODO RadStr: ? Again don't know what iri to provide
-            await this.updateModificationTime(parentIri ?? iri, "resource", ResourceChangeType.Created, mergeStateUUIDsToIgnoreInUpdating);
-            await this.updateModificationTimeById(parentResourceId);
+            await this.updateModificationTime(parentIri ?? iri, "resource", ResourceChangeType.Created, true, true, mergeStateUUIDsToIgnoreInUpdating);
+            await this.updateModificationTimeById(parentResourceId, true);
         }
     }
 
@@ -616,7 +639,7 @@ export class ResourceModel {
             throw new Error("Resource not found.");
         }
 
-        const onUpdate = () => this.updateModificationTime(iri, storeName, ResourceChangeType.Modified);
+        const onUpdate = () => this.updateModificationTime(iri, storeName, ResourceChangeType.Modified, true, true);
 
         const dataStoreId = JSON.parse(prismaResource.dataStoreId);
 
@@ -633,7 +656,7 @@ export class ResourceModel {
             throw new Error("Resource not found.");
         }
 
-        const onUpdate = () => this.updateModificationTime(iri, storeName, ResourceChangeType.Modified, mergeStateUUIDsToIgnoreInUpdating);
+        const onUpdate = () => this.updateModificationTime(iri, storeName, ResourceChangeType.Modified, true, true, mergeStateUUIDsToIgnoreInUpdating);
 
         const dataStoreId = JSON.parse(prismaResource.dataStoreId);
 
@@ -648,7 +671,7 @@ export class ResourceModel {
                     dataStoreId: JSON.stringify(dataStoreId)
                 }
             });
-            await this.updateModificationTime(iri, storeName, ResourceChangeType.Created);
+            await this.updateModificationTime(iri, storeName, ResourceChangeType.Created, true, true);
             return this.storeModel.getModelStore(store.uuid, [onUpdate]);
         }
     }
@@ -676,7 +699,7 @@ export class ResourceModel {
             }
         });
 
-        await this.updateModificationTime(iri, storeName, ResourceChangeType.Removed, mergeStateUUIDsToIgnoreInUpdating);
+        await this.updateModificationTime(iri, storeName, ResourceChangeType.Removed, true, true, mergeStateUUIDsToIgnoreInUpdating);
     }
 
     /**
@@ -698,29 +721,39 @@ export class ResourceModel {
         });
 
         // TODO RadStr: Or modified? does it even matter?
-        await this.updateModificationTime(iri, storeName, ResourceChangeType.Created, mergeStateUUIDsToIgnoreInUpdating);
+        await this.updateModificationTime(iri, storeName, ResourceChangeType.Created, true, true, mergeStateUUIDsToIgnoreInUpdating);
     }
 
     /**
      * Updates modification time of the resource and all its parent packages.
      */
-    async updateModificationTime(iri: string, updatedModel: string | null, updateReason: ResourceChangeType, mergeStateUUIDsToIgnoreInUpdating?: string[]) {
+    async updateModificationTime(
+        iri: string,
+        updatedModel: string | null,
+        updateReason: ResourceChangeType,
+        shouldModifyHasUncommittedChanges: boolean,
+        shouldNotifyListeners: boolean,
+        mergeStateUUIDsToIgnoreInUpdating?: string[],
+    ) {
         const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri}});
         if (prismaResource === null) {
             throw new Error("Cannot update modification time. Resource does not exists.");
         }
 
         let id: number | null = prismaResource.id;
-        await this.resourceChangeObserver.notifyListeners(iri, updatedModel, updateReason, mergeStateUUIDsToIgnoreInUpdating ?? []);
-        await this.updateModificationTimeById(id);
+        if (shouldNotifyListeners) {
+            await this.resourceChangeObserver.notifyListeners(iri, updatedModel, updateReason, mergeStateUUIDsToIgnoreInUpdating ?? []);
+        }
+        await this.updateModificationTimeById(id, shouldModifyHasUncommittedChanges);
     }
 
-    private async updateModificationTimeById(id: number) {
+    private async updateModificationTimeById(id: number, shouldModifyHasUncommittedChanges: boolean) {
         while (id !== null) {
             await this.prismaClient.resource.update({
                 where: {id},
                 data: {
                     modifiedAt: new Date(),
+                    hasUncommittedChanges: shouldModifyHasUncommittedChanges ? true : undefined,            // TODO RadStr: Note that only the root should be updated
                 }
             });
 

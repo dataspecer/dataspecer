@@ -90,7 +90,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
       await givenResourceModel.updateResourceMetadata(fullPath, contentAsObject.userMetadata ?? {}, mergeStateUUIDsToIgnoreInUpdating);
     }
     else {
-      const onUpdate = () => givenResourceModel.updateModificationTime(datastoreParentIri, type, ResourceChangeType.Modified, mergeStateUUIDsToIgnoreInUpdating);
+      const onUpdate = () => givenResourceModel.updateModificationTime(datastoreParentIri, type, ResourceChangeType.Modified, true, true, mergeStateUUIDsToIgnoreInUpdating);
       await givenResourceModel.storeModel.getModelStore(fullPath, [onUpdate]).setJson(contentAsObject);
     }
 

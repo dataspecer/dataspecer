@@ -240,10 +240,6 @@ export class MergeStateModel implements ResourceChangeListener {
     const mergeStateId = await this.createMergeState(mergeStateInput);
     console.info("Current merge state with:", await this.getMergeStateFromUUID(mergeStateId, true, false));
     console.info("Current merge state without:", await this.getMergeStateFromUUID(mergeStateId, false, false));
-    if (mergeStateCause !== "merge") {
-      // In case of merge we do not know what is the state of synchronization, we perform it on local ds packages
-      await this.resourceModel.updateIsSynchronizedWithRemote(rootResourceIri, false);
-    }
 
     return mergeStateId;
   }
@@ -316,7 +312,7 @@ export class MergeStateModel implements ResourceChangeListener {
   }
 
   async forceHandlePullFinalizer(rootIriToUpdate: string, pulledCommitHash: string) {
-    await this.resourceModel.updateLastCommitHash(rootIriToUpdate, pulledCommitHash);
+    await this.resourceModel.updateLastCommitHash(rootIriToUpdate, pulledCommitHash, "pull");
   }
 
   async handlePushFinalizer(mergeState: MergeState) {
@@ -656,6 +652,13 @@ export class MergeStateModel implements ResourceChangeListener {
       }
     });
 
+    if (inputData.mergeStateCause === "merge" || inputData.mergeStateCause === "pull") {
+      await this.resourceModel.increaseActiveMergeStateCount(inputData.mergeToInfo.rootIri);
+    }
+    if (inputData.mergeStateCause === "merge" || inputData.mergeStateCause === "push") {
+      await this.resourceModel.increaseActiveMergeStateCount(inputData.mergeFromInfo.rootIri);
+    }
+
     return uuid;
   }
 
@@ -770,6 +773,12 @@ export class MergeStateModel implements ResourceChangeListener {
 
   async removeMergeState(mergeState: PrismaMergeStateWithoutData | MergeState) {
     await this.prismaClient.mergeState.delete({where: {uuid: mergeState.uuid}});
+    if (mergeState.mergeStateCause === "merge" || mergeState.mergeStateCause === "pull") {
+      await this.resourceModel.decreaseActiveMergeStateCount(mergeState.rootIriMergeTo);
+    }
+    if (mergeState.mergeStateCause === "merge" || mergeState.mergeStateCause === "push") {
+      await this.resourceModel.decreaseActiveMergeStateCount(mergeState.rootIriMergeFrom);
+    }
     this.removeRepository(mergeState.filesystemTypeMergeFrom as AvailableFilesystems, mergeState.rootFullPathToMetaMergeFrom, true);
     this.removeRepository(mergeState.filesystemTypeMergeTo as AvailableFilesystems, mergeState.rootFullPathToMetaMergeTo, true);
   }

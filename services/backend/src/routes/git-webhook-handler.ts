@@ -112,8 +112,7 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
       // TODO RadStr: Rename ... and update based on the conflicts resolution, like we do not want to update when there is conflict
       await git.checkout(gitLastCommitHash);
       await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(gitRootDirectory, gitInitialDirectoryParent, gitProvider, filesystemMergeTo);
-      await resourceModel.updateLastCommitHash(iri, gitLastCommitHash);
-      await resourceModel.updateIsSynchronizedWithRemote(iri, true);
+      await resourceModel.updateLastCommitHash(iri, gitLastCommitHash, "pull");
 
       return {
         createdMergeState: false,
