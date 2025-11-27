@@ -52,7 +52,6 @@ COPY services/backend/main.config.sample.js /usr/src/final/main.config.js
 COPY --chmod=777 ./docker/ws/docker-entrypoint.sh ./docker/ws/docker-healthcheck.sh /usr/src/final/
 
 
-
 FROM base AS prisma-builder
 WORKDIR /usr/src/app
 
@@ -60,7 +59,7 @@ COPY --from=builder /usr/src/final /usr/src/app
 
 # Do prisma migrations (needs to be done in correct absolute directory)
 RUN mkdir -p /usr/src/app/database
-RUN bunx prisma migrate deploy --schema dist/schema.prisma
+RUN bunx prisma@6 migrate deploy --schema dist/schema.prisma
 
 
 
@@ -68,12 +67,16 @@ RUN bunx prisma migrate deploy --schema dist/schema.prisma
 FROM base AS final
 WORKDIR /usr/src/app
 
+COPY services/backend/git-workflows ./git-workflows
+
 RUN apk update && apk add --no-cache git
+RUN apk update && apk add --no-cache openssh
+
 
 # Makes directory accessible for the user
 # Installs prisma for migrations and cleans install cache
 RUN chmod a+rwx /usr/src/app && \
-  bun install --no-cache prisma && \
+  bun install --no-cache prisma@6 && \
   rm -rf ~/.bun ~/.cache
 
 # Copy final files
