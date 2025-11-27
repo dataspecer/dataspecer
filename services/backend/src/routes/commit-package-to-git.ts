@@ -4,7 +4,7 @@ import express from "express";
 import { mergeStateModel, resourceModel } from "../main.ts";
 
 import { BranchSummary, CommitResult, MergeResult, SimpleGit } from "simple-git";
-import { checkErrorBoundaryForCommitAction, extractPartOfRepositoryURL, getAuthorizationURL, getLastCommit, getLastCommitHash, removeEverythingExcept, removePathRecursively, stringToBoolean } from "../utils/git-utils.ts";
+import { checkErrorBoundaryForCommitAction, extractPartOfRepositoryURL, getAuthorizationURL, getLastCommit, getLastCommitHash, isDefaultBranch, removeEverythingExcept, removePathRecursively, stringToBoolean } from "../utils/git-utils.ts";
 import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS, CommitInfo, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
@@ -398,9 +398,11 @@ async function commitDSMergeToGit(
     // }
 
 
+    // We just pass in false for the should shouldContaintWorkflowFiles, since we are merging therefore we expect both branches to be already well established on the remote.
+    // Therefore the "main" (default) should already contain workflow files. So it should be always false.
     const pushResult = await exportAndPushToGit(
       createSimpleGitResult, iri, repoURLWithAuthorization, repositoryIdentificationInfo,
-      commitInfo, hasSetLastCommit, mergeFromBranch, isLastAccessToken);
+      commitInfo, hasSetLastCommit, mergeFromBranch, isLastAccessToken, false, cloneResult.mergeToBranchExists);
     if (pushResult) {
       return pushResult;
     }
@@ -430,13 +432,14 @@ async function commitClassicToGit(
 
     const hasSetLastCommit: boolean = localLastCommitHash !== "";
 
-    const { isCloneSuccessful } = await cloneBeforeCommit(
+    const { isCloneSuccessful, isNewlyCreatedBranchOnlyInDS } = await cloneBeforeCommit(
       git, gitInitialDirectory, repoURLWithAuthorization, branch,
       localLastCommitHash, hasSetLastCommit, isLastAccessToken);
     if (!isCloneSuccessful) {
       continue;
     }
 
+    const branchExplicit = (await git.branch()).current;
     if (hasSetLastCommit) {
       try {
         const remoteRepositoryLastCommitHash = await getLastCommitHash(git);
@@ -452,7 +455,6 @@ async function commitClassicToGit(
             filesystemMergeTo,
           } = await compareGitAndDSFilesystems(gitProvider, iri, gitInitialDirectoryParent, "push");
 
-          const branchExplicit = (await git.branch()).current;
           const commonCommitHash = await getCommonCommitInHistory(git, localLastCommitHash, remoteRepositoryLastCommitHash);
           const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS("push", localLastCommitHash, remoteRepositoryLastCommitHash);
           const mergeFromInfo: MergeEndInfoWithRootNode = {
@@ -487,9 +489,10 @@ async function commitClassicToGit(
       }
     }
 
+    const isCommittingToDefaultBranch = await isDefaultBranch(git, branchExplicit);
     const pushResult = await exportAndPushToGit(
       createSimpleGitResult, iri, repoURLWithAuthorization, repositoryIdentificationInfo,
-      commitInfo, hasSetLastCommit, null, isLastAccessToken);
+      commitInfo, hasSetLastCommit, null, isLastAccessToken, isCommittingToDefaultBranch, !isNewlyCreatedBranchOnlyInDS);
     if (pushResult) {
       return pushResult;
     }
@@ -511,6 +514,8 @@ async function exportAndPushToGit(
   hasSetLastCommit: boolean,
   mergeFromBranch: string | null,
   isLastAccessToken: boolean,
+  shouldContainWorkflowFiles: boolean,
+  isBranchAlreadyTrackedOnRemote: boolean,
 ): Promise<boolean> {
   const { git, gitDirectoryToRemoveAfterWork } = createSimpleGitResult;
   const { commitMessage, gitCredentials, shouldAppendAfterDefaultMergeCommitMessage } = commitInfo;
@@ -536,7 +541,9 @@ async function exportAndPushToGit(
     }
   }
 
-  await fillGitDirectoryWithExport(iri, createSimpleGitResult, commitInfo.gitProvider, commitInfo.exportFormat, repositoryIdentificationInfo, hasSetLastCommit);
+  await fillGitDirectoryWithExport(
+    iri, createSimpleGitResult, commitInfo.gitProvider, commitInfo.exportFormat,
+    repositoryIdentificationInfo, hasSetLastCommit, shouldContainWorkflowFiles, isBranchAlreadyTrackedOnRemote);
 
   // TODO RadStr: Debug print to remove
   for (let i = 0; i < 10; i++) {
@@ -562,6 +569,7 @@ async function exportAndPushToGit(
     console.error('Error fetching history:', err);
   }
 
+  const isClassicCommit = mergeFromBranch === null;
   try {
     let commitResult: CommitResult;
     if (mergeFromBranch === null) {
@@ -605,7 +613,8 @@ async function exportAndPushToGit(
     if (commitResult.commit !== "") {
       // We do not need any --force or --force-with-leash options, this is enough
       await git.push(repoURLWithAuthorization);
-      await resourceModel.updateLastCommitHash(iri, commitResult.commit);
+      const updateCause = isClassicCommit ? "push" : "merge";
+      await resourceModel.updateLastCommitHash(iri, commitResult.commit, updateCause);
     }
     // Else no changes
 
@@ -639,6 +648,8 @@ async function fillGitDirectoryWithExport(
   exportFormat: string | null,
   repositoryIdentificationInfo: RepositoryIdentificationInfo,
   hasSetLastCommit: boolean,
+  shouldContainWorkflowFiles: boolean,
+  isBranchAlreadyTrackedOnRemote: boolean,
 ) {
   const { gitDirectoryToRemoveAfterWork, gitInitialDirectory, gitInitialDirectoryParent } = gitPaths;
 
@@ -646,7 +657,11 @@ async function fillGitDirectoryWithExport(
     // Remove the content of the git directory and then replace it with the export
     // Alternatively we could keep the content and run await git.rm(['-r', '.']) ... however that would to know exactly
     //  what files were exported. So we can add them explicitly instead of running git add .
-    removeEverythingExcept(gitInitialDirectory, ["README.md", ".git", gitProvider.getWorkflowFilesDirectoryName()]);
+    const exceptionsForDirectoryRemoval = [".git", "README.md"];
+    if (isBranchAlreadyTrackedOnRemote) {
+      exceptionsForDirectoryRemoval.push(gitProvider.getWorkflowFilesDirectoryName());
+    }
+    removeEverythingExcept(gitInitialDirectory, exceptionsForDirectoryRemoval);
     const exporter = new PackageExporterByResourceType();
     // const exporter = new PackageExporterNew();     // TODO RadStr: Debug
     await exporter.doExportFromIRI(iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem, exportFormat ?? "json", null);
@@ -659,7 +674,7 @@ async function fillGitDirectoryWithExport(
     };
 
 
-    if (!hasSetLastCommit) {
+    if (shouldContainWorkflowFiles && !hasSetLastCommit) {
       createReadmeFile(gitInitialDirectory, readmeData);
       gitProvider.copyWorkflowFiles(gitInitialDirectory);
     }
@@ -763,8 +778,8 @@ async function cloneBeforeCommit(
   localLastCommitHash: string,
   hasSetLastCommit: boolean,
   isLastAccessToken: boolean
-): Promise<{ isNewlyCreatedBranchInDS: boolean, isCloneSuccessful: boolean }> {
-  let isNewlyCreatedBranchInDS = false;
+): Promise<{ isNewlyCreatedBranchOnlyInDS: boolean, isCloneSuccessful: boolean }> {
+  let isNewlyCreatedBranchOnlyInDS = false;
 
   try {
     await gitCloneBasic(git, gitInitialDirectory, repoURLWithAuthorization, true, false, branch ?? undefined);
@@ -780,7 +795,7 @@ async function cloneBeforeCommit(
           "--revision", localLastCommitHash,
         ];
         await git.clone(repoURLWithAuthorization, ".", options);
-        isNewlyCreatedBranchInDS = true;
+        isNewlyCreatedBranchOnlyInDS = true;
       }
       else {
         // Just try to get whole history and hopefully it will work.
@@ -795,14 +810,14 @@ async function cloneBeforeCommit(
         throw cloneError2;       // Every access token failed
       }
       return {
-        isNewlyCreatedBranchInDS,
+        isNewlyCreatedBranchOnlyInDS,
         isCloneSuccessful: false,
       };
     }
   }
 
   return {
-    isNewlyCreatedBranchInDS,
+    isNewlyCreatedBranchOnlyInDS,
     isCloneSuccessful: true,
   };
 }
