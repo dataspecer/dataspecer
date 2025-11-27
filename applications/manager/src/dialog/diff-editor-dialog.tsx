@@ -90,7 +90,6 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
               <ResizablePanel defaultSize={18} className="flex flex-col pr-16">
                 <ModalHeader className="mb-4">
                   <h1 className="font-bold bg-gray-200 mb-1 text-lg"><p>Diff editor to resolve {examinedMergeState?.mergeStateCause} conflict</p></h1>
-                  {/* <hr/> */}
                   <Tabs value={comparisonTabType} onValueChange={setComparisonTabType as any}>
                     <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="text-compare">Text comparison</TabsTrigger>

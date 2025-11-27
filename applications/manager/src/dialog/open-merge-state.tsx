@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
 import { Loader } from "lucide-react";
 import { EditableType, MergeState } from "@dataspecer/git";
-import { finalizeMergeState, removeMergeState } from "@/utils/merge-state-backend-requests";
+import { requestLoadPackage } from "@/package";
+
 
 export async function fetchMergeState(rootIriMergeFrom: string, rootIriMergeTo: string, shouldPrintMissingStateToConsole: boolean,): Promise<MergeState | null> {
   try {
@@ -98,6 +99,20 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
   const [mergeStateIdInCaseOfNoConflicts, setMergeStateIdInCaseOfNoConflicts] = useState<string | null>(null);
   const openModal = useBetterModal();
 
+  const [secondsPassed, setSecondsPassed] = useState<number>(0);
+
+  useEffect(() => {
+    const interval: NodeJS.Timeout | null = setInterval(() => {
+      setSecondsPassed(prev => prev + 1);
+    }, 1000);
+
+    return () => {
+      if (interval !== null) {
+        clearInterval(interval);
+      }
+    };
+  }, []);
+
   const handleReplaceExisting = async () => {
     const createdMergeState = await createMergeStateOnBackend(mergeFrom, mergeTo);
     setMergeState(createdMergeState.mergeState);
@@ -178,28 +193,20 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
     initialLoad();
   }, []);
 
-  const closeNoConflictsAndNoAction = () => {
-    // Should be always defined
-    removeMergeState(mergeStateIdInCaseOfNoConflicts ?? undefined);
-    resolve(null);
-  }
-
-  const closeNoConflictsAndFinalize = () => {
-    // Should be always defined
-    finalizeMergeState(mergeStateIdInCaseOfNoConflicts ?? undefined);
-    resolve(null);
+  const openDiffEditorPreviewNoConflicts = async () => {
+    openModal(TextDiffEditorDialog, { initialMergeFromResourceIri: mergeFrom, initialMergeToResourceIri: mergeTo, editable: editable}).finally(() => resolve(null))
   }
 
   if (mergeStateIdInCaseOfNoConflicts !== null) {
     return (
-      <Modal open={isOpen} onClose={closeNoConflictsAndNoAction}>
+      <Modal open={isOpen} onClose={() => resolve(null)}>
         <ModalContent>
           <ModalHeader>
-            <ModalTitle>Created merge state for DS packages and there were no conflicts. Do you want to finish merging?</ModalTitle>
+            <ModalTitle>Created merge state for DS packages and there were no conflicts.</ModalTitle>
           </ModalHeader>
           <ModalFooter>
-            <Button variant="outline" onClick={closeNoConflictsAndFinalize}>Yes</Button>
-            <Button title="Removes the merge state on leave" variant="outline" onClick={closeNoConflictsAndNoAction}>No</Button>
+            <Button title="Opens the diff editor with the preview of the merge commit. Finalize the merging inside the editor." variant="outline" onClick={openDiffEditorPreviewNoConflicts}>Open diff editor preview</Button>
+            <Button title="Closes the dialog. Note that the merge state still exists. You can resolve it later" variant="outline" onClick={() => resolve(null)}>Close dialog</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>);
@@ -209,21 +216,28 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
     <Modal open={isOpen} onClose={() => resolve(null)}>
       <ModalContent>
         <ModalHeader>
-          <ModalTitle>Perform merge on DS packages</ModalTitle>
+          <ModalTitle>Create merge state between Dataspecer packages</ModalTitle>
           <ModalDescription>
-            Tries to perform merge from one DS package to another. In case of conflicts creates new merge state, which needs to be resolved
+          {(alreadyExisted || !isLoading) ?
+            null :
+            <div className="flex flex-col">
+              <p>Merge state did not exist. Creating a new one.</p>
+              <p>Usually takes around 5-10 seconds.</p>
+              <div className="flex">
+                <Loader className="mr-2 mt-1 h-4 w-4 animate-spin" />
+                {`${secondsPassed} seconds passed`}
+              </div>
+            </div>
+          }
           </ModalDescription>
         </ModalHeader>
-        { isLoading ? <Loader className="mr-2 h-4 w-4 animate-spin" /> : null }
         { mergeStateCreationFailure ? "There was some failure when fetching/creating merge state, check console for more info." : null }
         { !isLoading && !mergeStateCreationFailure && <div>Root iri merge from: {mergeState?.rootIriMergeFrom}</div> }
         { !isLoading && !mergeStateCreationFailure && alreadyExisted ?
           <div>
-            The merge state already exists, do you wish to replace it with new one?
+            The merge state already exists. Do you wish to replace it with new one?
           </div> :
-          <div>
-            Merge state did not exist, created new one
-          </div>
+          null
         }
         { mergeStateCreationFailure ??
           <ModalFooter>
