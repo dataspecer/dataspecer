@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { ArrowLeft, ArrowLeftRight, ArrowRight, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, Copy, EllipsisVertical, Eraser, Eye, EyeIcon, FileText, Filter, FilterX, Folder, FolderDown, GitBranchPlus, GitCommit, GitGraph, GitMerge, GitPullRequestIcon, Import, Link, Menu, MoveLeftIcon, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, ShieldQuestion, Sparkles, Trash2, WandSparkles } from "lucide-react";
+import { ArrowLeft, ArrowLeftRight, ArrowRight, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, Copy, EllipsisVertical, Eraser, Eye, EyeIcon, FileText, Filter, FilterX, Folder, FolderDown, GitBranchPlus, GitCommit, GitGraph, GitMerge, GitPullRequestIcon, Import, Link, Menu, MoveLeftIcon, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, ShieldQuestion, Sparkles, TimerResetIcon, Trash2, WandSparkles } from "lucide-react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getValidTime } from "./components/time";
@@ -33,12 +33,12 @@ import { gitHistoryVisualizationOnClickHandler } from "./components/git-history-
 import { MergeActorsType, useMergeActors } from "./hooks/use-merge";
 import { BranchAction, CreateNewBranchDialog } from "./dialog/create-new-branch";
 import { ListMergeStatesDialog } from "./dialog/list-merge-states-dialog";
-import { OpenMergeState } from "./dialog/open-merge-state";
 import { useLogin, UseLoginType } from "./hooks/use-login";
-import SetPrivateSSHKeyDialog from "./dialog/set-private-ssh";
 import { isGitUrlSet, PACKAGE_ROOT } from "@dataspecer/git";
 import { debugClearMergeStateDBTable } from "./utils/merge-state-backend-requests";
-import { manualPull, removeGitLinkFromPackage, switchRepresentsBranchHead } from "./utils/git-fetch-related-actions";
+import { manualPull, markPackageAsHavingNoUncommittedChanges, removeGitLinkFromPackage, switchRepresentsBranchHead } from "./utils/git-fetch-related-actions";
+import ResourceTooltip from "./components/git-tooltip";
+import { CreateMergeStateCausedByMergeDialog } from "./dialog/open-merge-state";
 
 export function lng(text: LanguageString | undefined): string | undefined {
   return text?.["cs"] ?? text?.["en"];
@@ -118,28 +118,29 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, mergeActo
           <span className="truncate w-[6cm]">
             {getValidTime(resource.metadata?.modificationDate) && t("changed", {val: new Date(resource.metadata?.modificationDate!)})}
           </span>
-          <span className="truncate max-w-[8cm]">
+          <span className="truncate">
             {resource.iri}
           </span>
-          <span className="truncate px-2 max-w-[4cm]">
-            {resource.projectIri}
-          </span>
-          <span className="truncate px-2 max-w-[4cm]">
-            {resource.branch}
-          </span>
-          <span className="truncate px-2 max-w-[4cm]">
-            {resource.representsBranchHead ? "is Branch" : "is Tag"}
-          </span>
-          <span className="truncate px-1 max-w-[2cm]">
-            {resource.lastCommitHash.substring(0, 6)}
-          </span>
-          <div className="truncate px-8">
-            {
-              isGitUrlSet(resource.linkedGitRepositoryURL) ?
-                <a href={resource.linkedGitRepositoryURL} className={resource.isSynchronizedWithRemote ? "text-green-400" : "text-red-400" } >GIT</a> :
-                null
-            }
-          </div>
+          <ResourceTooltip resource={resource}>
+            <div className="pl-4 pr-2">
+              {
+                isGitUrlSet(resource.linkedGitRepositoryURL) ?
+                  <a href={resource.linkedGitRepositoryURL} className={(resource.activeMergeStateCount !== 0 || resource.hasUncommittedChanges) ? "text-red-400" : "text-green-400" } >GIT</a> :
+                  null
+              }
+            </div>
+          </ResourceTooltip>
+          {!isGitUrlSet(resource.linkedGitRepositoryURL) ?
+            null :
+            <>
+              <span className="truncate px-2 w-[2cm]">
+                {resource.projectIri}
+              </span>
+              <span className="truncate px-2 w-[4cm]">
+                {resource.branch}
+              </span>
+            </>
+          }
         </div>
       </div>
 
@@ -312,7 +313,8 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, mergeActo
       </DropdownMenu>
     </div>
     {subResources.length > 0 && isOpen && <ul className="pl-8">
-      {subResources.map(iri => <Row iri={iri} key={iri} parentIri={resource.iri} isSignedIn={isSignedIn} packageGitFilter={packageGitFilter} setPackageGitFilter={setPackageGitFilter} mergeActors={mergeActors} />)}
+      {/* We pass null for the filter, since we want to render the children and the root packages, which we do not render are already blocked by the filter */}
+      {subResources.map(iri => <Row iri={iri} key={iri} parentIri={resource.iri} isSignedIn={isSignedIn} packageGitFilter={null} setPackageGitFilter={setPackageGitFilter} mergeActors={mergeActors} />)}
     </ul>}
     <ResourceDetail isOpen={detailModalToggle.isOpen} close={detailModalToggle.close} iri={iri} />
   </li>
@@ -395,7 +397,7 @@ function RootPackage({iri, defaultToggle, login}: {iri: string, defaultToggle?: 
       {
         mergeActors.mergeFrom !== null && mergeActors.mergeTo !== null &&
         <Button variant="ghost" size="sm" className="shrink=0 ml-4"
-                onClick={() => openModal(OpenMergeState, {mergeFrom: mergeActors.mergeFrom!, mergeTo: mergeActors.mergeTo!, editable: "mergeTo"})}>
+                onClick={() => openModal(CreateMergeStateCausedByMergeDialog, {mergeFrom: mergeActors.mergeFrom!, mergeTo: mergeActors.mergeTo!, editable: "mergeTo"})}>
           <GitMerge className="mr-2 h-4 w-4" />
           Perform merge on DS packages
         </Button>

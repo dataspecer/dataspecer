@@ -90,7 +90,7 @@ type OpenMergeStateProps = {
  * If the merge state does not exists between them, then it creates one.
  * The diff editor is opened right after.
  */
-export const OpenMergeState = ({ mergeFrom, mergeTo, editable, isOpen, resolve }: OpenMergeStateProps) => {
+export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editable, isOpen, resolve }: OpenMergeStateProps) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [alreadyExisted, setAlreadyExisted] = useState<boolean>(false);
   const [mergeState, setMergeState] = useState<MergeState | null>(null);
