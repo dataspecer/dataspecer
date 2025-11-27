@@ -75,6 +75,11 @@ export const dsvMetadataWellKnown = {
      * Represents our (Dataspecer's own) structural description of single structure.
      */
     dsvStructure: "https://w3id.org/dsv#Structure",
+
+    /**
+     * URL to SHACL specification documentation.
+     */
+    shacl: "https://www.w3.org/TR/shacl/",
   },
 
   /**

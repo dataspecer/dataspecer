@@ -56,13 +56,20 @@ export interface ShaclForProfilePolicy {
 
 }
 
+interface SemicShaclStylePolicyOptions {
+  /**
+   * Default prefixes to use in addition to the built-in ones.
+   */
+  defaultPrefixes?: Record<string, string>;
+}
+
 /**
  * Node shape IRI is created as: {base iri}/{prefixed type iri}Shape
  * Predicate shape IRI is created as: {node shape iri}/{property hash}
  *
  * @see https://github.com/SEMICeu/DCAT-AP/blob/master/releases/3.0.0/shacl/dcat-ap-SHACL.ttl
  */
-export function createSemicShaclStylePolicy(baseIri: string): ShaclForProfilePolicy {
+export function createSemicShaclStylePolicy(baseIri: string, options: SemicShaclStylePolicyOptions = {}): ShaclForProfilePolicy {
 
   // If there is "#" in the IRI we are in fragment section,
   // we do not need to encode : , ale we need to.
@@ -83,6 +90,7 @@ export function createSemicShaclStylePolicy(baseIri: string): ShaclForProfilePol
     "http://www.w3.org/ns/adms#": "adms",
     "http://www.w3.org/ns/shacl#": "sh",
     "http://www.w3.org/2001/XMLSchema#": "xsd",
+    ...options.defaultPrefixes,
   };
 
   // We do not want to use selected types for shacl:class check.

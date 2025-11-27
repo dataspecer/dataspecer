@@ -470,6 +470,12 @@ export const defaultConfiguration: DocumentationConfiguration = {
           <td><a href="{{{externalArtifacts.dsv-profile.[0].URL}}}">{{externalArtifacts.dsv-profile.[0].URL}}</a></td>
         </tr>
       {{/if}}
+      {{#if externalArtifacts.shacl-profile}}
+        <tr>
+          <td>{{#iflng "cs"}}SHACL validační pravidla{{lng}}SHACL validation rules{{/iflng}}</td>
+          <td><a href="{{{externalArtifacts.shacl-profile.[0].URL}}}">{{externalArtifacts.shacl-profile.[0].URL}}</a></td>
+        </tr>
+      {{/if}}
         {{#artifacts}}
         <tr><td>{{translate title}}</td><td><a href="{{{relativePath}}}">{{relativePathAsText}}</a></td></tr>
         {{/artifacts}}

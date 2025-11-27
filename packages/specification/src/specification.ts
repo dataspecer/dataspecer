@@ -8,7 +8,7 @@ import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
 import { ModelRepository } from "./model-repository/index.ts";
 import { ModelDescription, type StructureModelDescription } from "./model.ts";
-import { generateDsvApplicationProfile, generateHtmlDocumentation, generateLightweightOwl, getIdToIriMapping, isModelProfile, isModelVocabulary } from "./utils.ts";
+import { generateDsvApplicationProfile, generateHtmlDocumentation, generateLightweightOwl, generateShaclApplicationProfile, getIdToIriMapping, isModelProfile, isModelVocabulary } from "./utils.ts";
 import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model/data-specification-artefact";
 import { artefactToDsv } from "./v1/artefact-to-dsv.ts";
 import { DSV_APPLICATION_PROFILE_TYPE, DSV_VOCABULARY_SPECIFICATION_DOCUMENT_TYPE, DSVMetadataToJsonLdString, dsvMetadataWellKnown, type ApplicationProfile, type ExternalSpecification, type ResourceDescriptor, type Specification, type VocabularySpecificationDocument } from "@dataspecer/data-specification-vocabulary/specification-description";
@@ -406,6 +406,29 @@ export async function generateSpecification(packageId: string, context: Generate
         formatMime: dsvMetadataWellKnown.formatMime.turtle,
       } satisfies ResourceDescriptor;
       hasResource.push(descriptor);
+
+
+      // Create shacl shape
+      {
+        const shaclIri = metaDataBaseIri + "shacl";
+        const shacl = await generateShaclApplicationProfile(model, models, modelIri);
+        const shaclFileName = "shacl.ttl";
+        const shaclUrl = baseUrl + shaclFileName + queryParams;
+        await writeFile(shaclFileName, shacl);
+        externalArtifacts["shacl-profile"] = [{ type: shaclFileName, URL: shaclUrl }];
+
+        const shaclDescriptor = {
+          iri: shaclIri,
+          url: shaclUrl,
+
+          role: dsvMetadataWellKnown.role.constraints,
+          formatMime: dsvMetadataWellKnown.formatMime.turtle,
+          additionalRdfTypes: [],
+
+          conformsTo: [dsvMetadataWellKnown.conformsTo.shacl],
+        } satisfies ResourceDescriptor;
+        hasResource.push(shaclDescriptor);
+      }
     }
   }
 

@@ -11,6 +11,7 @@ import { mergeDocumentationConfigurations } from "./documentation/documentation.
 import { BlobModel } from "./model-repository/blob-model.ts";
 import { ModelDescription } from "./model.ts";
 import { GenerateSpecificationContext } from "./specification.ts";
+import { createSemicShaclStylePolicy, createShaclForProfile, shaclToRdf } from "@dataspecer/shacl-v2";
 
 /**
  * Helper function that check whether the model is a vocabulary. If not, it is probably an application profile.
@@ -65,6 +66,50 @@ export async function generateDsvApplicationProfile(forExportModels: ModelDescri
   });
 
   return dsvString;
+}
+
+export async function generateShaclApplicationProfile(forExportModel: ModelDescription, forContextModels: ModelDescription[], iri: string) {
+  const mapModel = (model: ModelDescription) => ({
+    getId: () => model.baseIri!,
+    getBaseIri: () => model.baseIri ?? null,
+    getEntities: () => model.entities,
+  });
+
+  /**
+   * IRI to key mapping.
+   *
+   * It is necessary to know prefixes of all vocabularies used in the
+   * application profile in oder to create proper SHACL shape IRIs.
+   */
+  const prefixesForIriConstruction: Record<string, string> = {};
+
+  for (const model of forContextModels) {
+    if (model.isPrimary && isModelProfile(model.entities)) {
+      continue;
+    }
+    const baseIri = model.baseIri ?? null;
+
+    if (baseIri) {
+      let candidate = /([^\/]+)[\/#]$/.exec(baseIri)?.[1] ?? null;
+      candidate ??= "v";
+      prefixesForIriConstruction[baseIri] = candidate;
+    }
+  }
+
+  const policy = createSemicShaclStylePolicy(iri, {
+    defaultPrefixes: prefixesForIriConstruction,
+  });
+
+  const shacl = createShaclForProfile(
+    forContextModels.filter((model) => isModelVocabulary(model.entities)).map(mapModel),
+    forContextModels.filter((model) => !model.isPrimary && isModelProfile(model.entities)).map(mapModel),
+    mapModel(forExportModel),
+    policy,
+  );
+
+  const rdf = await shaclToRdf(shacl, {});
+
+  return rdf;
 }
 
 /**

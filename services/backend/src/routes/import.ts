@@ -299,7 +299,11 @@ async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIr
   for (const resource of mainSpecification.resources) {
     if (resource.role === dsvMetadataWellKnown.role.vocabulary) {
       rdfsUrl = resource.url;
-    } else if (resource.role === dsvMetadataWellKnown.role.constraints) {
+    } else if (
+      resource.role === dsvMetadataWellKnown.role.constraints && // This also matches SHACL shapes
+      resource.conformsTo.includes(dsvMetadataWellKnown.conformsTo.dsvApplicationProfile) &&
+      resource.conformsTo.includes(dsvMetadataWellKnown.conformsTo.profProfile)
+    ) {
       dsvUrl = resource.url;
     }
 
