@@ -398,11 +398,10 @@ async function commitDSMergeToGit(
     // }
 
 
-    // We just pass in false for the should shouldContaintWorkflowFiles, since we are merging therefore we expect both branches to be already well established on the remote.
-    // Therefore the "main" (default) should already contain workflow files. So it should be always false.
+    const isMergingToDefaultBranch = await isDefaultBranch(git, cloneResult.mergeToBranchExplicitName);
     const pushResult = await exportAndPushToGit(
       createSimpleGitResult, iri, repoURLWithAuthorization, repositoryIdentificationInfo,
-      commitInfo, hasSetLastCommit, mergeFromBranch, isLastAccessToken, false, cloneResult.mergeToBranchExists);
+      commitInfo, hasSetLastCommit, mergeFromBranch, isLastAccessToken, isMergingToDefaultBranch, cloneResult.mergeToBranchExists);
     if (pushResult) {
       return pushResult;
     }
@@ -529,6 +528,12 @@ async function exportAndPushToGit(
     }
     catch(mergeError) {
       console.info(mergeError);       // TODO RadStr: Debug print
+    }
+    finally {
+      if (shouldContainWorkflowFiles) {
+        await git.raw(["restore", "--staged", commitInfo.gitProvider.getWorkflowFilesDirectoryName()]);
+        await git.raw(["restore", commitInfo.gitProvider.getWorkflowFilesDirectoryName()]);
+      }
     }
 
     // If the file does not exist, then it probably means that actually the merge from and merge to branch the same
@@ -665,7 +670,6 @@ async function fillGitDirectoryWithExport(
     const exporter = new PackageExporterByResourceType();
     // const exporter = new PackageExporterNew();     // TODO RadStr: Debug
     await exporter.doExportFromIRI(iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem, exportFormat ?? "json", null);
-
     const { givenRepositoryName, givenRepositoryUserName } = repositoryIdentificationInfo;
 
     const readmeData: ReadmeTemplateData = {
