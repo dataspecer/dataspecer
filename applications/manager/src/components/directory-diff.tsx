@@ -4,7 +4,7 @@ import { Check, Loader, Minus, MoveLeft, MoveRight, Plus, X } from "lucide-react
 import React, { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import { NodeApi, NodeRendererProps, Tree, TreeApi, } from "react-arborist";
 import { ComparisonData, CreateDatastoreFilesystemNodesInfo, DatastoreComparison, DatastoreInfo, DiffTree, EditableType, FilesystemNode, getDatastoreInfoOfGivenDatastoreType, MergeState, OldNewFilesystemNode, ResourceComparison } from "@dataspecer/git";
-import { DiffEditorCrossedOutEditIcon, DiffEditorEditIcon } from "./crossed-out-icon";
+import { DiffEditorEditIcon } from "./crossed-out-icon";
 import { EntriesAffectedByCreateType } from "@/hooks/use-diff-editor-dialog-props";
 
 
@@ -817,7 +817,7 @@ export const DiffTreeVisualization = (props: {
   //   }
   // }, [props.conflictRemovalsFromParentComponent]);
 
-  const [oldRenderTreeDataToRender, setOldRenderTreeDataToRender] = useState<RenderTree>();
+  const [_oldRenderTreeDataToRender, setOldRenderTreeDataToRender] = useState<RenderTree>();
   useEffect(() => {
     const treeToRender = !shouldOnlyShowConflicts ? oldRenderTree : filterOutNonConflicts(oldRenderTree);
     setOldRenderTreeDataToRender(treeToRender)
@@ -980,25 +980,26 @@ export const DiffTreeVisualization = (props: {
           <span>{shouldOnlyShowConflicts ? "Showing only conflicts" : "Showing all"}</span>
         </label>
       </div>
-      <div className="flex gap-1 h-full">
-        <div className="flex-1 border border-stone-200 h-full" style={{height: treeRowHeight*treeRowHeightMultiplier}}>
+      <div className="flex gap-1 overflow-x-auto overflow-y-auto h-full">
+        {/* <div className="flex-1 border border-stone-200 h-full" style={{height: treeRowHeight*treeRowHeightMultiplier}}>
           <h3><DiffEditorCrossedOutEditIcon/></h3>
           {
             renderTreeWithLoading(props.isLoadingTreeStructure,
               <Tree children={(props) => createStyledNode(props, updateModelData, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, addToCreatedDatastores, removedDatastores, setRemovedDatastores, removedTreePaths, setRemovedTreePaths, isCurrentlyAllowedChangeOfModelsUseState, conflictsToBeResolvedOnSaveInThisComponent)}
-                ref={oldTreeRef} data={oldRenderTreeDataToRender} width={"100%"}
+                ref={oldTreeRef} data={oldRenderTreeDataToRender}
                 onSelect={(nodes) => onNodesSelect(nodes, "old")}
                 onFocus={(node) => onNodeFocus(node, "old")}
                 onToggle={(id: string) => onNodeToggle(id, "old")}
                 rowHeight={treeRowHeight} height={treeRowHeight*treeRowHeightMultiplier} openByDefault disableDrag>
               </Tree>)
           }
-        </div>
+        </div> */}
         <div className="flex-1 border border-stone-200 h-full" style={{height: treeRowHeight*treeRowHeightMultiplier}}>
           <h3><DiffEditorEditIcon/></h3>
           {
             renderTreeWithLoading(props.isLoadingTreeStructure,
               <Tree children={(props) => createStyledNode(props, updateModelData, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, addToCreatedDatastores, removedDatastores, setRemovedDatastores, removedTreePaths, setRemovedTreePaths, isCurrentlyAllowedChangeOfModelsUseState, conflictsToBeResolvedOnSaveInThisComponent)}
+                className="!overflow-x-hidden relative"
                 ref={newTreeRef} data={newRenderTreeDataToRender} width={"100%"}
                 onSelect={(nodes) => onNodesSelect(nodes, "new")}
                 onFocus={(node) => onNodeFocus(node, "new")}

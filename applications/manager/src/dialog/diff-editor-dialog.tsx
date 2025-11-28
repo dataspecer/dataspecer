@@ -6,7 +6,7 @@ import { useOnBeforeUnload } from "@/hooks/use-on-before-unload";
 import { useOnKeyDown } from "@/hooks/use-on-key-down";
 import { DiffTreeVisualization } from "@/components/directory-diff";
 import { Loader, RotateCw } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs } from "@/components/ui/tabs";
 import { TabsContent } from "@radix-ui/react-tabs";
 import SvgVisualDiff from "@/components/images-conflict-resolver";
 import { MonacoDiffEditor } from "@/components/monaco-diff-editor";
@@ -88,54 +88,56 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
             {/* The pr-2 is there so the cross at the top right corner is seen */}
             <ResizablePanelGroup direction="horizontal" className="overflow-hidden">
               <ResizablePanel defaultSize={18} className="flex flex-col pr-16">
-                <ModalHeader className="mb-4">
-                  <h1 className="font-bold bg-gray-200 mb-1 text-lg"><p>Diff editor to resolve {examinedMergeState?.mergeStateCause} conflict</p></h1>
+                <ModalHeader className="mb-2">
+                  <h1 className="font-bold bg-gray-200 text-lg"><p>Diff editor to resolve {examinedMergeState?.mergeStateCause} conflict</p></h1>
                   <Tabs value={comparisonTabType} onValueChange={setComparisonTabType as any}>
-                    <TabsList className="grid w-full grid-cols-2">
+                    {/* <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="text-compare">Text comparison</TabsTrigger>
                       <TabsTrigger value="image-compare">Image comparison</TabsTrigger>
-                    </TabsList>
+                    </TabsList> */}
                   </Tabs>
                 </ModalHeader>
                   {/* The overflow-y is needed however it adds a bit horizontal space between the vertical splitter and the Tree structure */}
-                  <div className="flex flex-1 flex-col grow overflow-y-auto pr-2 -mr-2 -ml-2 pl-2 h-full w-full">
-                    <DiffTreeVisualization updateModelData={updateModelData}
-                                            isLoadingTreeStructure={isLoadingTreeStructure}
-                                            setIsLoadingTreeStructure={setIsLoadingTreeStructure}
-                                            mergeStateFromBackend={examinedMergeState}
-                                            conflictsToBeResolvedOnSaveFromParent={conflictsToBeResolvedOnSave}
-                                            setConflictsToBeResolvedOnSave={setConflictsToBeResolvedOnSave}
-                                            createdFilesystemNodes={createdFilesystemNodes}
-                                            createdDatastores={createdDatastores}
-                                            addToCreatedDatastores={addToCreatedDatastoresAndAddToCache}
-                                            removedDatastores={removedDatastores}
-                                            setRemovedDatastores={setRemovedDatastores}
-                                            removedTreePaths={removedTreePaths}
-                                            setRemovedTreePaths={setRemovedTreePaths}
-                                            />
-                  </div>
-                  <div className="gap-2 mt-4 justify-start mb-2 -pl-8">
-                    <Button title="Closes the diff editor without saving changes"
-                            variant={"outline"}
-                            onClick={() => closeWithSuccess()}
-                            className="m-1">
-                      Close
-                    </Button>
-                    <Button title="This does save both the changes to files and updates the merge state"
-                            variant={"outline"}
-                            onClick={() => saveEverything()}
-                            className="m-1 bg-blue-600 hover:bg-blue-700">
-                      Save All (Ctrl + S)
-                    </Button>
-                    {
-                    ((activeConflicts?.length ?? 1) !== 0) ? null :
-                      <Button title="First saves all the unsaved changes and then it performs the operation, which triggered the merge state. Can be pull/push/merge"
+                  <div className="h-full">
+                    <div className="flex flex-1 flex-col grow pr-2 -mr-2 -ml-2 pl-2 h-[80%] w-full">
+                      <DiffTreeVisualization updateModelData={updateModelData}
+                                              isLoadingTreeStructure={isLoadingTreeStructure}
+                                              setIsLoadingTreeStructure={setIsLoadingTreeStructure}
+                                              mergeStateFromBackend={examinedMergeState}
+                                              conflictsToBeResolvedOnSaveFromParent={conflictsToBeResolvedOnSave}
+                                              setConflictsToBeResolvedOnSave={setConflictsToBeResolvedOnSave}
+                                              createdFilesystemNodes={createdFilesystemNodes}
+                                              createdDatastores={createdDatastores}
+                                              addToCreatedDatastores={addToCreatedDatastoresAndAddToCache}
+                                              removedDatastores={removedDatastores}
+                                              setRemovedDatastores={setRemovedDatastores}
+                                              removedTreePaths={removedTreePaths}
+                                              setRemovedTreePaths={setRemovedTreePaths}
+                                              />
+                    </div>
+                    <div className="gap-2 mt-7 justify-start -pl-8">
+                      <Button title="Closes the diff editor without saving changes"
                               variant={"outline"}
-                              onClick={finalizeMergeStateHandler}
-                              className="m-1 bg-green-600 hover:bg-green-700">
-                        Save and Finalize
+                              onClick={() => closeWithSuccess()}
+                              className="m-1">
+                        Close
                       </Button>
-                    }
+                      <Button title="This does save both the changes to files and updates the merge state"
+                              variant={"outline"}
+                              onClick={() => saveEverything()}
+                              className="m-1 bg-blue-600 hover:bg-blue-700">
+                        Save All (Ctrl + S)
+                      </Button>
+                      {
+                      ((activeConflicts?.length ?? 1) !== 0) ? null :
+                        <Button title="First saves all the unsaved changes and then it performs the operation, which triggered the merge state. Can be pull/push/merge"
+                                variant={"outline"}
+                                onClick={finalizeMergeStateHandler}
+                                className="m-1 bg-green-600 hover:bg-green-700">
+                          Save and Finalize
+                        </Button>
+                      }
+                    </div>
                   </div>
               </ResizablePanel>
               {/* The minus "ml" shenanigans in classNames are because of some weird spaces caused by overflow-y-auto in the diff editor */}
@@ -154,18 +156,20 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
                         </div>
                       </TabsContent>
                       <TabsContent value="text-compare">
-                        <div className="flex items-center space-x-4">
-                          <RotateCw className="flex ml-1 h-4 w-4" onClick={reloadModelsDataFromBackend} />
-                          <MergeStrategyComponent handleMergeStateResolving={applyAutomaticMergeStateResolver}/>
-                          <label className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={showStrippedVersion}
-                              onChange={(e) => setShowStrippedVersion(e.target.checked)}
-                              className="w-5 h-5 accent-blue-600"
-                            />
-                            <span>{showStrippedVersion ? "Showing stripped version" : "Showing raw version"}</span>
-                          </label>
+                        <div className="grid grid-cols-[5%_95%]">
+                            <RotateCw className="flex mt-3 ml-1 h-4 w-4 cursor-pointer" onClick={reloadModelsDataFromBackend} />
+                          <div className="flex items-center justify-center space-x-4">
+                            <MergeStrategyComponent handleMergeStateResolving={applyAutomaticMergeStateResolver}/>
+                            <label className="flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={showStrippedVersion}
+                                onChange={(e) => setShowStrippedVersion(e.target.checked)}
+                                className="w-5 h-5 accent-blue-600"
+                              />
+                              <span>{showStrippedVersion ? "Showing stripped version" : "Showing raw version"}</span>
+                            </label>
+                          </div>
                         </div>
                         {/* The h-screen is needed otherwise the monaco editor is not shown at all */}
                         {/* Also small note - there is loading effect when first starting up the editor, it is not any custom made functionality */}
