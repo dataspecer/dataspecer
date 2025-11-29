@@ -1,6 +1,11 @@
 import { FilesystemNode, DatastoreInfo } from "../export-import-data-api.ts";
 import { AvailableFilesystems } from "../filesystem/abstractions/filesystem-abstraction.ts";
 
+export type CommitConflictInfo = {
+  conflictMergeFromIri: string,
+  conflictMergeToIri: string
+} | null;
+
 export type ComparisonData = {
   old: FilesystemNode | null;
   affectedDataStore: DatastoreInfo;

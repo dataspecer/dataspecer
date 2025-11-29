@@ -5,7 +5,7 @@ import { mergeStateModel, resourceModel } from "../main.ts";
 
 import { BranchSummary, CommitResult, MergeResult, SimpleGit } from "simple-git";
 import { checkErrorBoundaryForCommitAction, extractPartOfRepositoryURL, getAuthorizationURL, getLastCommit, getLastCommitHash, isDefaultBranch, removeEverythingExcept, removePathRecursively, stringToBoolean } from "../utils/git-utils.ts";
-import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS, CommitInfo, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType } from "@dataspecer/git";
+import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS, CommitInfo, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
 import { createUniqueCommitMessage } from "../utils/git-utils.ts";
@@ -201,13 +201,13 @@ const commitHandlerInternal = async (
     exportFormat: exportFormat ?? null
   };
 
-  const commitResult = await commitPackageToGitUsingAuthSession(
+  const commitConflictInfo = await commitPackageToGitUsingAuthSession(
     request, iri, gitLink, branchAndLastCommit, repositoryIdentificationInfo,
     response, gitCommitInfo, shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage);
 
-  if (!commitResult) {
+  if (commitConflictInfo !== null) {
     const status = 409;
-    response.sendStatus(status);
+    response.status(status).json(commitConflictInfo);
     return status;
   }
 
@@ -220,6 +220,7 @@ const commitHandlerInternal = async (
 /**
  * Gets authorization information from current session (if someting is missing use default bot credentials)
  *  and uses that information for the commit.
+ * @returns null if there were no conflicts, otherwise to root iris of the conflict
  */
 export const commitPackageToGitUsingAuthSession = async (
   request: express.Request,
@@ -231,11 +232,12 @@ export const commitPackageToGitUsingAuthSession = async (
   gitCommitInfoBasic: GitCommitToCreateInfoBasic,
   shouldAlwaysCreateMergeState: boolean,
   shouldAppendAfterDefaultMergeCommitMessage: boolean | null,
-) => {
+): Promise<CommitConflictInfo> => {
   const commitInfo: GitCommitToCreateInfoExplicitWithCredentials = prepareCommitDataForCommit(request, response, remoteRepositoryURL, gitCommitInfoBasic, shouldAppendAfterDefaultMergeCommitMessage);
-  return await commitPackageToGit(
+  const commitConflictInfo = await commitPackageToGit(
     iri, remoteRepositoryURL, branchAndLastCommit, repositoryIdentificationInfo,
     commitInfo, shouldAlwaysCreateMergeState);
+  return commitConflictInfo;
 }
 
 export function prepareCommitDataForCommit(
@@ -277,7 +279,7 @@ export const commitPackageToGit = async (
   repositoryIdentificationInfo: RepositoryIdentificationInfo,
   commitInfo: GitCommitToCreateInfoExplicitWithCredentials,
   shouldAlwaysCreateMergeState: boolean,
-): Promise<boolean> => {
+): Promise<CommitConflictInfo> => {
   // Note that the logic for both is similiar create git, clone, check if should create merge state conflict, perform export and "force" push.
   if (branchAndLastCommit.mergeFromData === null) {
     return await commitClassicToGit(
@@ -300,7 +302,7 @@ async function commitDSMergeToGit(
   commitInfo: GitCommitToCreateInfoExplicitWithCredentials,
   mergeInfo: CommitBranchAndHashInfoForMerge,
   shouldAlwaysCreateMergeState: boolean,
-): Promise<boolean> {
+): Promise<CommitConflictInfo> {
   // Note that the logic follows the commit method logic - create git, clone, check if should create merge state conflict, perform export and "force" merge/push.
   const { mergeToBranch, mergeToCommitHash } = mergeInfo;
   // Has to be defined, otherwise we should not call this
@@ -342,7 +344,7 @@ async function commitDSMergeToGit(
 
       const mergeTo: MergeEndpointForComparison = {
         gitProvider: commitInfo.gitProvider,
-        rootIri: mergeFromIri,
+        rootIri: iri,
         filesystemType: AvailableFilesystems.DS_Filesystem,
         fullPathToRootParent: gitInitialDirectoryParent,
       };
@@ -379,7 +381,10 @@ async function commitDSMergeToGit(
       const createdMergeStateId = await mergeStateModel.createMergeStateIfNecessary(
         iri, commitInfo.commitMessage, "merge", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
       if (diffTreeComparisonResult.conflicts.length > 0) {
-        return false;
+        return {
+          conflictMergeFromIri: mergeFrom.rootIri,
+          conflictMergeToIri: mergeTo.rootIri,
+        };
       }
       // Well now what? For some reason the merge state was not created, but I think that it always should be, since we are not matching the commit hashes.
       // Actually if we commit and then revert then we don't get conflicts
@@ -403,7 +408,7 @@ async function commitDSMergeToGit(
       createSimpleGitResult, iri, repoURLWithAuthorization, repositoryIdentificationInfo,
       commitInfo, hasSetLastCommit, mergeFromBranch, isLastAccessToken, isMergingToDefaultBranch, cloneResult.mergeToBranchExists);
     if (pushResult) {
-      return pushResult;
+      return null;
     }
   }
   throw new Error("Unknown error when merging DS branches. This should be unreachable code. There were probably no access tokens available in DS at all");
@@ -417,7 +422,7 @@ async function commitClassicToGit(
   repositoryIdentificationInfo: RepositoryIdentificationInfo,
   commitInfo: GitCommitToCreateInfoExplicitWithCredentials,
   shouldAlwaysCreateMergeState: boolean,
-) {
+): Promise<CommitConflictInfo> {
   const { gitCredentials, gitProvider } = commitInfo;
   const { givenRepositoryUserName, givenRepositoryName } = repositoryIdentificationInfo;
 
@@ -474,10 +479,14 @@ async function commitClassicToGit(
           };
 
 
+
           const createdMergeStateId = await mergeStateModel.createMergeStateIfNecessary(
             iri, commitInfo.commitMessage, "push", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
           if (diffTreeComparisonResult.conflicts.length > 0 || shouldAlwaysCreateMergeState) {
-            return false;
+            return {
+              conflictMergeFromIri: mergeFromInfo.rootNode.metadata.iri,
+              conflictMergeToIri: mergeToInfo.rootNode.metadata.iri,
+            };
           }
         }
       }
@@ -493,7 +502,7 @@ async function commitClassicToGit(
       createSimpleGitResult, iri, repoURLWithAuthorization, repositoryIdentificationInfo,
       commitInfo, hasSetLastCommit, null, isLastAccessToken, isCommittingToDefaultBranch, !isNewlyCreatedBranchOnlyInDS);
     if (pushResult) {
-      return pushResult;
+      return null;
     }
   }
 

@@ -7,7 +7,7 @@ import { Loader } from "lucide-react";
 import { Dispatch, SetStateAction, useContext, useState } from "react";
 import { toast } from "sonner";
 import { commitToGitDialogOnClickHandler, mergeCommitToGitDialogOnClickHandler } from "./git-url";
-import { ResourcesContext } from "@/package";
+import { requestLoadPackage, ResourcesContext } from "@/package";
 
 
 type MergeStateFinalizerProps = {
@@ -64,6 +64,8 @@ const MergeStateFinalizerForPull = ({ mergeState, shouldRenderAnswerDialog, setS
   const handlePullAction = async () => {
     setIsWaitingForAnswer(true);
     const response = await finalizePullMergeState(mergeState.uuid);
+    const iri = getEditableValue(mergeState.editable, mergeState.rootIriMergeFrom, mergeState.rootIriMergeTo);
+    requestLoadPackage(iri, true);
     if (response !== null) {
       if (response === 409) {
         toast.error("There are still unresolved conflicts");
@@ -156,8 +158,8 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
         resolve();
       }
       else if (response < 300) {
-        toast.success("Finalizer succcessfully finished");
-        mergeCommitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, mergeState);
+        toast.success("Everything seems to be ok. Proceed with merging.");
+        await mergeCommitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, mergeState);
         resolve();
       }
       else if (response < 400) {
@@ -185,7 +187,7 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
         resolve();
       }
       else if (response < 300) {
-        toast.success("Finalizer succcessfully finished");
+        toast.success("Everything seems to be ok. Proceed with rebasing.");
         resolve();
         commitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, "rebase-commit", false, mergeState.commitMessage);
       }
@@ -281,6 +283,7 @@ const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldR
   const finalizePush = async () => {
     setIsWaitingForAnswer(true);
     const response = await finalizePushMergeState(mergeState.uuid);
+    requestLoadPackage(iri, true);
 
     if (response !== null) {
       if (response === 409) {

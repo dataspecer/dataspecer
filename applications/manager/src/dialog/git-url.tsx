@@ -8,12 +8,13 @@ import { createIdentifierForHTMLElement, InputComponent } from "@/components/sim
 import { Package } from "@dataspecer/core-v2/project";
 import { toast } from "sonner";
 import { ExportFormatRadioButtons, ExportFormatType } from "@/components/export-format-radio-buttons";
-import { CommitRedirectResponseJson, createSetterWithGitValidation, CommitRedirectExtendedResponseJson, MergeFromDataType, MergeState, SingleBranchCommitType } from "@dataspecer/git";
+import { CommitRedirectResponseJson, createSetterWithGitValidation, CommitRedirectExtendedResponseJson, MergeFromDataType, MergeState, SingleBranchCommitType, convertMergeStateCauseToEditable, CommitConflictInfo } from "@dataspecer/git";
 import { CommitRedirectForMergeStatesDialog } from "./commit-confirm-dialog-caused-by-merge-state";
 import { commitToGitRequest, createNewRemoteRepositoryRequest, linkToExistingGitRepositoryRequest, mergeCommitToGitRequest } from "@/utils/git-backend-requests";
 import { createCloseDialogObject, LoadingDialog } from "@/components/loading-dialog";
 import { ComboBox, createGitProviderComboBoxOptions } from "@/components/combo-box";
 import { removeMergeState } from "@/utils/merge-state-backend-requests";
+import { TextDiffEditorDialog } from "./diff-editor-dialog";
 
 
 type GitActionsDialogProps = {
@@ -325,6 +326,13 @@ export const commitToGitDialogOnClickHandler = async (
           };
           openModal(CommitRedirectForMergeStatesDialog, {commitRedirectResponse: extendedResponse});
           console.info(jsonResponse);     // TODO RadStr: Debug print
+        }
+        else if (response.status === 409 && shouldShowAlwaysCreateMergeStateOption) {
+          const jsonResponse: NonNullable<CommitConflictInfo> = await response.json();
+          openModal(TextDiffEditorDialog, { initialMergeFromResourceIri: jsonResponse.conflictMergeFromIri, initialMergeToResourceIri: jsonResponse.conflictMergeToIri, editable: convertMergeStateCauseToEditable("push")});
+          toast.success("Created merge state");
+          requestLoadPackage(iri, true);
+          return;
         }
         gitOperationResultToast(response);
         requestLoadPackage(iri, true);
