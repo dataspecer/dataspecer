@@ -378,32 +378,23 @@ export class MergeStateModel implements ResourceChangeListener {
       if (gitCommitHash !== mergeState.lastCommitHashMergeFrom) {
         throw new Error("The remote commit of the merge from does not match the local one");
       }
-    }
-    catch (error) {
-      throw error;
-    }
-    finally {
-      removePathRecursively(mergeFromGitData.gitInitialDirectoryParent);
-    }
 
-    const mergeToGitData = createSimpleGit(mergeState.rootIriMergeTo, MERGE_DS_CONFLICTS_PREFIX, false);
-    try {
-      const git = mergeToGitData.git;
-      await git.clone(mergeState.gitUrlMergeTo, ".", ["--filter=tree:0"]);    // And we fetch only commits
-      // Unlike in merge with rebase, the branch has to exist on remote. It does not make sense to create merge commit from branch, which does not exist on the remote.
-      await git.checkout(mergeState.branchMergeTo);
-      const gitCommitHash = await getLastCommitHash(git);
-      // If we throw error then it means that the commit on which the DS resource already is within DS is actually after the commit to which we are updating.
-      const commonCommit = await getCommonCommitInHistory(git, gitCommitHash, mergeState.lastCommitHashMergeTo);
-      if (gitCommitHash !== mergeState.lastCommitHashMergeTo) {
-        throw new Error("The remote commit of the merge to does not match the local one");
+      {
+        // TODO: Refactor if needed. We do hack with overriding values using new scope.
+        await git.checkout(mergeState.branchMergeTo);
+        const gitCommitHash = await getLastCommitHash(git);
+        // If we throw error then it means that the commit on which the DS resource already is within DS is actually after the commit to which we are updating.
+        const commonCommit = await getCommonCommitInHistory(git, gitCommitHash, mergeState.lastCommitHashMergeTo);
+        if (gitCommitHash !== mergeState.lastCommitHashMergeTo) {
+          throw new Error("The remote commit of the merge to does not match the local one");
+        }
       }
     }
     catch (error) {
       throw error;
     }
     finally {
-      removePathRecursively(mergeToGitData.gitInitialDirectoryParent);
+      removePathRecursively(mergeFromGitData.gitInitialDirectoryParent);
     }
   }
 
