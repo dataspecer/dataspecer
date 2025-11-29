@@ -1,10 +1,10 @@
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { BetterModalProps, OpenBetterModal } from "@/lib/better-modal";
-import { finalizeMergeMergeState, finalizeMergeMergeStateOnFailure, finalizePullMergeState, finalizePullMergeStateOnFailure, finalizePushMergeState, finalizePushMergeStateOnFailure } from "@/utils/merge-state-backend-requests";
+import { finalizeMergeMergeState, finalizeMergeMergeStateOnFailure, finalizePullMergeState, finalizePullMergeStateOnFailure, finalizePushMergeState, finalizePushMergeStateOnFailure, removeMergeState } from "@/utils/merge-state-backend-requests";
 import { FinalizerVariantsForPullOnFailure, getEditableValue, MergeCommitType, MergeState } from "@dataspecer/git";
 import { Loader } from "lucide-react";
-import { Dispatch, SetStateAction, useContext, useState } from "react";
+import { Dispatch, SetStateAction, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { commitToGitDialogOnClickHandler, mergeCommitToGitDialogOnClickHandler } from "./git-url";
 import { requestLoadPackage, ResourcesContext } from "@/package";
@@ -21,6 +21,11 @@ type MergeStateFinalizerSpecificCauseProps = {
   setIsWaitingForAnswer: Dispatch<SetStateAction<boolean>>;
 } & Omit<MergeStateFinalizerProps, "isOpen">;
 
+type MergeStateFinalizerMergeCauseProps = {
+  secondsPassed: number;
+  setSecondsAtStartofMerge: (value: number) => void;
+} & MergeStateFinalizerSpecificCauseProps;
+
 type MergeStateFinalizerAnswerDialogProps = {
   httpStatus: number;
 } & Omit<MergeStateFinalizerProps, "isOpen" | "openModal">;
@@ -28,20 +33,55 @@ type MergeStateFinalizerAnswerDialogProps = {
 export const MergeStateFinalizerDialog = ({ mergeState, openModal, isOpen, resolve }: MergeStateFinalizerProps) => {
   const [isWaitingForAnswer, setIsWaitingForAnswer] = useState<boolean>(false);
   const [shouldRenderAnswerDialog, setShouldRenderAnswerDialog] = useState<boolean>(false);
+  const [secondsPassed, setSecondsPassed] = useState<number>(0);
+  const [secondsAtStartOfMerge, setSecondsAtStartofMerge] = useState<number>(0);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (mergeState.mergeStateCause === "merge") {
+      interval = setInterval(() => {
+        setSecondsPassed(prev => prev + 1);
+      }, 1000);
+    }
+
+    return () => {
+      if (interval !== null) {
+        clearInterval(interval);
+      }
+    };
+  }, []);
+
 
   let content: React.ReactElement;
+  let waitingContent: React.ReactElement;
   if (mergeState.mergeStateCause === "merge") {
-    content = MergeStateFinalizerForMerge({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, setIsWaitingForAnswer, openModal, resolve });
+    content = MergeStateFinalizerForMerge({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, setIsWaitingForAnswer, secondsPassed, setSecondsAtStartofMerge, openModal, resolve });
+    waitingContent = <div >
+      <p>Validating merge state against Git remote.</p>
+      <p>Usually takes around 5-15 seconds.</p>
+      <div className="flex">
+        <Loader className="mr-2 h-4 w-4 mt-1 animate-spin" /> {secondsPassed - secondsAtStartOfMerge} seconds passed
+      </div>
+    </div>;
   }
   else if (mergeState.mergeStateCause === "push") {
     content = MergeStateFinalizerForPush({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, setIsWaitingForAnswer, openModal, resolve });
+    waitingContent = <div className="flex">
+      <Loader className="mr-2 h-4 w-4 animate-spin" />
+      Updating last commit hash metadata and removing merge state.
+    </div>;
   }
   else if (mergeState.mergeStateCause === "pull") {
     content = MergeStateFinalizerForPull({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, setIsWaitingForAnswer, openModal, resolve });
+    waitingContent = <div className="flex">
+      <Loader className="mr-2 h-4 w-4 animate-spin" />
+      Updating last commit hash metadata and removing merge state.
+    </div>;
   }
   else {
     throw new Error("Unknown merge state cause, can't render finalizer dialog");
   }
+
 
 
   return (
@@ -49,7 +89,7 @@ export const MergeStateFinalizerDialog = ({ mergeState, openModal, isOpen, resol
       <ModalContent>
         {
         isWaitingForAnswer ?
-          <Loader className="mr-2 h-4 w-4 animate-spin" /> :
+          waitingContent :
           <>{content}</>
         }
       </ModalContent>
@@ -140,7 +180,7 @@ const MergeStateFinalizerForPullAnswerDialog = ({ mergeState, resolve }: MergeSt
     </>;
 };
 
-const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, setIsWaitingForAnswer, resolve, openModal }: MergeStateFinalizerSpecificCauseProps) => {
+const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, secondsPassed, setSecondsAtStartofMerge, setIsWaitingForAnswer, resolve, openModal }: MergeStateFinalizerMergeCauseProps) => {
   const [httpStatusCode, setHttpStatusCode] = useState<number>(-1);
   const [chosenCommitType, setChosenCommitType] = useState<MergeCommitType | null>(null);
 
@@ -149,6 +189,7 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
   const sourceDSPackage = resources[iri]!;
 
   const handleMergeAction = async () => {
+    setSecondsAtStartofMerge(secondsPassed);
     setIsWaitingForAnswer(true);
     setChosenCommitType("merge-commit");
     const response = await finalizeMergeMergeState(mergeState.uuid, "merge-commit");
@@ -179,6 +220,7 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
 
   const handleRebaseAction = async () => {
     // Rebase behaves basically like classic merge state caused by push
+    setSecondsAtStartofMerge(secondsPassed);
     setIsWaitingForAnswer(true);
     const response = await finalizeMergeMergeState(mergeState.uuid, "rebase-commit");
     if (response !== null) {
@@ -189,7 +231,12 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
       else if (response < 300) {
         toast.success("Everything seems to be ok. Proceed with rebasing.");
         resolve();
-        commitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, "rebase-commit", false, mergeState.commitMessage);
+        const onSuccessCallback = async () => {
+          await removeMergeState(mergeState.uuid);
+          requestLoadPackage(mergeState.rootIriMergeFrom, true);
+          requestLoadPackage(mergeState.rootIriMergeTo, true);
+        };
+        commitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, "rebase-commit", false, mergeState.commitMessage, onSuccessCallback);
       }
       else if (response < 400) {
         // TODO RadStr: Probably do nothing - we will just show the another dialog.
@@ -293,7 +340,7 @@ const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldR
       else if (response < 300) {
         toast.success("Finalizer succcessfully finished");
         resolve();
-        commitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, "classic-commit", false, mergeState.commitMessage);
+        commitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, "classic-commit", false, mergeState.commitMessage, null);
       }
       else if (response < 400) {
         // TODO RadStr: Probably do nothing - we will just show the another dialog.

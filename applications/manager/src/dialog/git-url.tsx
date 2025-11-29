@@ -270,7 +270,8 @@ export const mergeCommitToGitDialogOnClickHandler = async (
           // TODO: ..... Not really clean: The check for the equality of strings of error. But can't really think of anything much better now
           if (jsonResponse.error === "Error: The merge from branch was already merged. We can not merge again.") {
             // In this case we want to always remove the merge state. User has to move heads by committing and then he can create new merge state.
-            toast.error(jsonResponse.error + " Removing the merge state.");
+            toast.error("Failure, check console for more info.");
+            console.error(jsonResponse.error + " Removing the merge state.");
             const removalResult = await removeMergeState(mergeState.uuid);
             if (!removalResult) {
               setTimeout(() => {
@@ -301,6 +302,7 @@ export const commitToGitDialogOnClickHandler = async (
   commitType: SingleBranchCommitType,
   shouldShowAlwaysCreateMergeStateOption: boolean,
   defaultCommitMessage: string | null,
+  onSuccessCallback: (() => void) | null,
 ) => {
   const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage, type: "commit", shouldShowAlwaysCreateMergeStateOption });
   if (result) {
@@ -336,6 +338,9 @@ export const commitToGitDialogOnClickHandler = async (
         }
         gitOperationResultToast(response);
         requestLoadPackage(iri, true);
+        if (response.ok) {
+          onSuccessCallback?.();
+        }
       });
   }
 };

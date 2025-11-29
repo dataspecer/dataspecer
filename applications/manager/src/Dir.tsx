@@ -256,7 +256,7 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, mergeActo
             <hr className="border-gray-300" />
             {<DropdownMenuItem onClick={async () => createNewRemoteRepositoryHandler(openModal, iri, resource)}><GitPullRequestIcon className="mr-2 h-4 w-4" />Create remote repository</DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => linkToExistingGitRepositoryHandler(openModal, iri, resource)}><Link className="mr-2 h-4 w-4" />Link to remote repository</DropdownMenuItem>}
-            {<DropdownMenuItem onClick={async () => commitToGitDialogOnClickHandler(openModal, iri, resource, "classic-commit", true, null)}><GitCommit className="mr-2 h-4 w-4" />Commit</DropdownMenuItem>}
+            {<DropdownMenuItem onClick={async () => commitToGitDialogOnClickHandler(openModal, iri, resource, "classic-commit", true, null, null)}><GitCommit className="mr-2 h-4 w-4" />Commit</DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => manualPull(iri)}><Import className="mr-2 h-4 w-4" />Pull</DropdownMenuItem>}
             {<DropdownMenuItem onClick={() => openModal(CreateNewBranchDialog, { sourcePackage: resource, actionOnConfirm: BranchAction.CreateNewBranch })}><GitBranchPlus className="mr-2 h-4 w-4" />Create branch</DropdownMenuItem>}
             <hr className="border-gray-300" />
