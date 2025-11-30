@@ -1,4 +1,4 @@
-module.exports = {
+export default ({
     // Server's public URL. Must not end with a slash
     host: "http://localhost:3100",
     // Local port to listen on
@@ -94,4 +94,4 @@ module.exports = {
             //enableMultipleTableSchema: false,
         }
     }
-}
+});
