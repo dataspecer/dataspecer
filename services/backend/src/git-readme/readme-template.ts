@@ -19,7 +19,7 @@ export const readmeTemplate = (
   // Be careful with the tabs between the start of lines - if they are there, the README is rendered as code block
   return `# This repository is connected to [Dataspecer online tool](${readmeTemplateData.dataspecerUrl})
 
-It has associated publication repository, which can be found at the following [link](${readmeTemplateData.publicationRepositoryUrl}).
+Every commit to main generates documentation from the committed data specification. The documentation is generated in to the "publication-branch".
 
-The publication repository contains generated artifacts and specifications.`
+Each commit the "publication-branch" is deployed using GitHub pages.`
 };
