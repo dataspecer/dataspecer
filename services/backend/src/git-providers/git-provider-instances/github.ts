@@ -234,30 +234,31 @@ export class GitHubProvider extends GitProviderBase {
 
   getBotCredentials(): GitCredentials | null {
     const accessTokens: AccessToken[] = [];
+    const githubConfiguration = configuration.gitConfigurations?.["github"];
 
-    if (configuration.gitConfiguration?.dsBotSSHId !== undefined) {
+    if (githubConfiguration?.dsBotSSHId !== undefined) {
       accessTokens.push({
         isBotAccessToken: true,
         type: AccessTokenType.SSH,
-        value: configuration.gitConfiguration.dsBotSSHId,
+        value: githubConfiguration.dsBotSSHId,
       });
     }
-    if (configuration.gitConfiguration?.dsBotAbsoluteGitHubControlToken !== undefined) {
+    if (githubConfiguration?.dsBotAbsoluteGitProviderControlToken !== undefined) {
       accessTokens.push({
         isBotAccessToken: true,
         type: AccessTokenType.PAT,
-        value: configuration.gitConfiguration.dsBotAbsoluteGitHubControlToken,
+        value: githubConfiguration.dsBotAbsoluteGitProviderControlToken,
       });
     }
 
-    if (accessTokens.length === 0 || configuration.gitConfiguration?.dsBotUserName === undefined || configuration.gitConfiguration?.dsBotEmail === undefined) {
+    if (accessTokens.length === 0 || githubConfiguration?.dsBotUserName === undefined || githubConfiguration?.dsBotEmail === undefined) {
       return null;
     }
 
     return {
-      name: configuration.gitConfiguration.dsBotUserName,
+      name: githubConfiguration.dsBotUserName,
       isBotName: true,
-      email: configuration.gitConfiguration.dsBotEmail,
+      email: githubConfiguration.dsBotEmail,
       isBotEmail: true,
       accessTokens,
     };

@@ -52,7 +52,7 @@ import { updateMergeState } from "./routes/update-merge-state.ts";
 import { finalizeMergeState } from "./routes/finalize-merge-state.ts";
 import { createMergeStateBetweenDSPackagesHandler } from "./routes/create-merge-state.ts";
 import { clearMergeStateTableDebug } from "./routes/debug-clear-merge-state-table.ts";
-import { storeNewPrivateSSHKeyToBackend, storePrivateSSHKey } from "./routes/store-private-ssh-key.ts";
+import { storeNewPrivateSSHKeyToBackend, storePrivateSSHKeyHandler } from "./routes/store-private-ssh-key.ts";
 import { removeMergeState } from "./routes/remove-merge-state.ts";
 import { finalizePullMergeState } from "./routes/finalize-pull-merge-state.ts";
 import { finalizePushMergeState } from "./routes/finalize-push-merge-state.ts";
@@ -62,13 +62,18 @@ import { finalizeMergeMergeStateOnFailure } from "./routes/finalize-merge-merge-
 import { finalizePushMergeStateOnFailure } from "./routes/finalize-push-merge-state-on-failure.ts";
 import { populateSshKnownHosts } from "./utils/git-utils.ts";
 import { markPackageAsHavingNoUncommittedChanges } from "./routes/mark-package-as-having-no-uncommitted-changes.ts";
+import { GitProviderNamesAsType } from "@dataspecer/git";
+import { checkExistenceOfSshKeyForUserHandler } from "./routes/check-ssh-key-existence.ts";
+import { deletePrivateSshKeyHandler } from "./routes/remove-private-ssh-key.ts";
 
 
-// Create application models
-if (configuration.gitConfiguration?.dsBotSSHPrivateKey !== undefined && configuration.gitConfiguration?.dsBotSSHId !== undefined) {
-  populateSshKnownHosts();
-  storeNewPrivateSSHKeyToBackend(configuration.gitConfiguration.dsBotSSHPrivateKey, configuration.gitConfiguration.dsBotSSHId);
+for (const [gitProviderName, gitConfiguration] of Object.entries(configuration?.gitConfigurations ?? {})) {
+  if (gitConfiguration?.dsBotSSHPrivateKey !== undefined && gitConfiguration?.dsBotSSHId !== undefined) {
+    populateSshKnownHosts();
+    storeNewPrivateSSHKeyToBackend(gitConfiguration.dsBotSSHPrivateKey, gitConfiguration.dsBotSSHId, gitProviderName as GitProviderNamesAsType);
+  }
 }
+// Create application models
 
 export const storeModel = new LocalStoreModel("./database/stores");
 export const prismaClient = new PrismaClient();
@@ -150,7 +155,9 @@ application.get(apiBasename + "/git/mark-package-as-no-uncommitted-changes", cur
 application.post(apiBasename + "/git/webhook-test", currentSession, handleWebhook);
 application.post(apiBasename + "/git/webhook-test2", currentSession, handleWebhook);
 application.get(apiBasename + "/git/webhook-test", currentSession, createRandomWebook);
-application.post(apiBasename + "/git/set-private-ssh-key", currentSession, storePrivateSSHKey);
+application.post(apiBasename + "/git/set-private-ssh-key", currentSession, storePrivateSSHKeyHandler);
+application.get(apiBasename + "/git/check-for-existence-of-private-ssh-key", currentSession, checkExistenceOfSshKeyForUserHandler);
+application.delete(apiBasename + "/git/delete-private-ssh-key", currentSession, deletePrivateSshKeyHandler);
 application.get(apiBasename + "/git/create-new-git-repository-with-package-content", currentSession, createNewGitRepositoryWithPackageContent);
 application.get(apiBasename + "/git/commit-package-to-git", currentSession, commitPackageToGitHandler);
 application.get(apiBasename + "/git/merge-commit-package-to-git", currentSession, mergeCommitPackageToGitHandler);

@@ -1,10 +1,10 @@
-export default ({
-    // Server's public URL. Must not end with a slash
-    host: "http://localhost:3100",
-    // Local port to listen on
-    port: 3100,
-    // Max payload limit for stores PUSH operation
-    payloadSizeLimit: "64mb",
+// module.exports = {
+//     // Server's public URL. Must not end with a slash
+//     host: "http://localhost:3100",
+//     // Local port to listen on
+//     port: 3100,
+//     // Max payload limit for stores PUSH operation
+//     payloadSizeLimit: "64mb",
 
     // Important note: Either provide all the required fields in the authConfigration (and same for gitConfiguration) or do not provide the configuration at all,
     //                 otherwise server crashes on certain requests
@@ -37,7 +37,7 @@ export default ({
     //     // dsBotEmail: "dsBot@gmail.com",
 
     //     /**
-    //      * GitHub token which can be used for cloning/commiting (possibly even removing)
+    //      * Token which can be used for cloning/commiting (possibly even removing)
     //      */
     //     // dsBotAbsoluteGitHubControlToken: "ghp_xxxxxxxxxxxxxxxxxxxx",
 

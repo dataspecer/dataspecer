@@ -479,15 +479,16 @@ async function createNewResourceUploadedFromGit(parentIri: string, path: string,
  * @deprecated TODO RadStr Later: Just debug method
  */
 export const createRandomWebook = asyncHandler(async (request: express.Request, response: express.Response) => {
-  const WEBHOOK_HANDLER_URL = "https://789d-2a00-1028-9192-49e6-17b-1f2d-ea59-1f4.ngrok-free.app/git/webhook-test2";
-  const OWNER = configuration.gitConfiguration?.dsBotUserName;
-  const REPO = "test-webhooks";
+  throw new Error("TODO: Fix errors if needed. But it is just for playing out with webhooks, so you can safely remove this method")
+  // const WEBHOOK_HANDLER_URL = "https://789d-2a00-1028-9192-49e6-17b-1f2d-ea59-1f4.ngrok-free.app/git/webhook-test2";
+  // const OWNER = configuration.gitConfiguration?.dsBotUserName;
+  // const REPO = "test-webhooks";
 
-  // The token has to have commiting rights
-  const webhookResponse = GitProviderFactory
-    .createGitProvider(GitProviderEnum.GitHub)
-    .createWebhook(configuration.gitConfiguration?.dsBotAbsoluteGitHubControlToken ?? "", OWNER ?? "undefined-owner", REPO, WEBHOOK_HANDLER_URL, ["push", "pull_request"]);
+  // // The token has to have commiting rights
+  // const webhookResponse = GitProviderFactory
+  //   .createGitProvider(GitProviderEnum.GitHub)
+  //   .createWebhook(configuration.gitConfiguration?.dsBotAbsoluteGitProviderControlToken ?? "", OWNER ?? "undefined-owner", REPO, WEBHOOK_HANDLER_URL, ["push", "pull_request"]);
 
-  const data = (await webhookResponse).json();
-  console.log("Fetched webhook response: ", data);
+  // const data = (await webhookResponse).json();
+  // console.log("Fetched webhook response: ", data);
 });

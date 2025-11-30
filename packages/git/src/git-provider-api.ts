@@ -48,6 +48,12 @@ export enum GitProviderEnum {
   GitLab
 }
 
+export const gitProviderNames = ["github", "gitlab"] as const;
+export type GitProviderNamesAsType = typeof gitProviderNames[number];
+export function isGitProviderName(value: unknown): value is GitProviderNamesAsType {
+  return typeof value === "string" && gitProviderNames.includes(value as GitProviderNamesAsType);
+}
+
 export type WebhookRequestDataGitProviderIndependent = {
   cloneURL: string;
   commits: object[];

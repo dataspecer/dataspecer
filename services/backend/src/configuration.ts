@@ -1,5 +1,6 @@
 // @ts-ignore
 import configuration from "../main.config.js";
+import { GitProviderNamesAsType } from "@dataspecer/git";
 
 type GitConfiguration = {
     /**
@@ -11,9 +12,9 @@ type GitConfiguration = {
      */
     dsBotEmail: string;
     /**
-     * GitHub token which can be used for cloning/commiting (possibly even removing)
+     * Git provider token which can be used for cloning/committing (possibly even removing)
      */
-    dsBotAbsoluteGitHubControlToken: string;
+    dsBotAbsoluteGitProviderControlToken: string;
     /**
      * Id to store the ssh config of bot under.
      */
@@ -77,7 +78,7 @@ export interface Configuration {
     // Generator configuraion
     configuration: object;
 
-    gitConfiguration?: GitConfiguration;
+    gitConfigurations?: Record<GitProviderNamesAsType, GitConfiguration>;
     authConfiguration?: AuthConfiguration;
 }
 
