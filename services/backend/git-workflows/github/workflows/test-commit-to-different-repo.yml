@@ -630,23 +630,24 @@ jobs:
           # However this has advantage that we no longer have to switch to the branch, we are on it by default
           ref: publication-branch
 
-      - name: Create README and html index file
-        run: |
-          pwd
-          ls
-          cd "$GITHUB_WORKSPACE"
-          pwd
-          ls
-          echo "generated-content/ - content"
-          ls ${DIRECTORY_WITH_GENERATED_CONTENT}
+      # TODO RadStr: was there justt for testing
+      # - name: Create README and html index file
+      #   run: |
+      #     pwd
+      #     ls
+      #     cd "$GITHUB_WORKSPACE"
+      #     pwd
+      #     ls
+      #     echo "generated-content/ - content"
+      #     ls ${DIRECTORY_WITH_GENERATED_CONTENT}
 
 
-          # do some operation that changes a file in the git repo
-          cd ${DIRECTORY_WITH_GENERATED_CONTENT}
-          mkdir -p ./docs-dir
-          echo "<html>$(date)</html>" > ./docs-dir/index.html       # TODO RadStr: Not needed, this is just from the debug variant
-          echo -e "# This is README header \nThis is readme content" > ./README.md
-          echo "<html>Hello this is index page for this repository's GitHub pages</html>" > ./index.html
+      #     # do some operation that changes a file in the git repo
+      #     cd ${DIRECTORY_WITH_GENERATED_CONTENT}
+      #     mkdir -p ./docs-dir
+      #     echo "<html>$(date)</html>" > ./docs-dir/index.html       # TODO RadStr: Not needed, this is just from the debug variant
+      #     echo -e "# This is README header \nThis is readme content" > ./README.md
+      #     echo "<html>Hello this is index page for this repository's GitHub pages</html>" > ./index.html
 
       # TODO RadStr: Maybe can organize better into different jobs - so stuff can run in parallel
       # Build and checkout DS repo
@@ -701,7 +702,7 @@ jobs:
 
 
 
-      # TODO RadStr: was there jsut for testing
+      # TODO RadStr: was there just for testing
       # - name: Generate documentation (specification)
       #   run: |
       #     pwd
