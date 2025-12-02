@@ -701,23 +701,24 @@ jobs:
 
 
 
-      - name: Generate documentation (specification)
-        run: |
-          pwd
-          ls
-          cd "$GITHUB_WORKSPACE"
-          pwd
-          ls
-          echo "generated-content/ - content"
-          ls ${DIRECTORY_WITH_GENERATED_CONTENT}
+      # TODO RadStr: was there jsut for testing
+      # - name: Generate documentation (specification)
+      #   run: |
+      #     pwd
+      #     ls
+      #     cd "$GITHUB_WORKSPACE"
+      #     pwd
+      #     ls
+      #     echo "generated-content/ - content"
+      #     ls ${DIRECTORY_WITH_GENERATED_CONTENT}
 
 
-          mkdir -p ${DIRECTORY_WITH_GENERATED_CONTENT}
-          cd ${DIRECTORY_WITH_GENERATED_CONTENT}
-          mkdir -p ./docs-dir
-          echo "<html>$(date)</html>" > ./docs-dir/index.html         # TODO RadStr: Not needed, this is just from the debug variant
-          echo -e "# This is README header \nThis is readme content" > ./README.md
-          echo "<html>Hello this is index page for this repository's GitHub pages</html>" > ./index.html
+      #     mkdir -p ${DIRECTORY_WITH_GENERATED_CONTENT}
+      #     cd ${DIRECTORY_WITH_GENERATED_CONTENT}
+      #     mkdir -p ./docs-dir
+      #     echo "<html>$(date)</html>" > ./docs-dir/index.html         # TODO RadStr: Not needed, this is just from the debug variant
+      #     echo -e "# This is README header \nThis is readme content" > ./README.md
+      #     echo "<html>Hello this is index page for this repository's GitHub pages</html>" > ./index.html
 
 
       # ChatGPT inspired. We just create simple index files which has the html links directories inside /artifacts
@@ -770,6 +771,7 @@ jobs:
 
           git branch
           rm -rf ./.github       # The workflow file would cause recursion
+          cp "$GITHUB_WORKSPACE/README.md" .
           git add .
           git status
           git remote -v
