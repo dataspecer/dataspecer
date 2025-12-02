@@ -17,12 +17,12 @@ export default ({
     //     /**
     //      * is the Id of the OAuth app, you can find it after creating OAuth app in GitHub settings
     //      */
-    //     // gitAuthClientId: "xxxxxxx",
+    //     // gitHubAuthClientId: "xxxxxxx",
 
     //     /**
     //      * Same as id
     //      */
-    //     // gitAuthClientSecret: "xxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    //     // gitHubAuthClientSecret: "xxxxxxxxxxxxxxxxxxxxxxxxxxx",
     // },
 
     // gitConfiguration: {

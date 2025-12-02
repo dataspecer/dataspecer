@@ -82,11 +82,11 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
       };
 
       // Just provide empty merge from values, since we are newly creating the link we can not perform merge right away anyways
-      const commitResult = await commitPackageToGitUsingAuthSession(
+      const commitConflictInfo = await commitPackageToGitUsingAuthSession(
         request, query.iri, fullLinkedGitRepositoryURL, commitBranchAndHashInfo,
         repositoryIdentificationInfo, response, commitInfo, false, null);
 
-      if (!commitResult) {
+      if (commitConflictInfo !== null) {
         response.sendStatus(409);
         return;
       }

@@ -33,11 +33,11 @@ type AuthConfiguration = {
     /**
      * is the Id of the OAuth app, you can find it after creating OAuth app in GitHub settings
      */
-    gitAuthClientId: string,
+    gitHubAuthClientId: string,
     /**
      * Same as id
      */
-    gitAuthClientSecret: string,
+    gitHubAuthClientSecret: string,
 }
 
 

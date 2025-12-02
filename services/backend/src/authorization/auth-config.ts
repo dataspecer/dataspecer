@@ -90,8 +90,8 @@ function createAuthConfig(configType: ConfigType | null, dsBackendURL: string, c
     secret: configuration.authConfiguration?.authSecret,
     providers: [
       GitHub({
-        clientId: configuration.authConfiguration?.gitAuthClientId,
-        clientSecret: configuration.authConfiguration?.gitAuthClientSecret,
+        clientId: configuration.authConfiguration?.gitHubAuthClientId,
+        clientSecret: configuration.authConfiguration?.gitHubAuthClientSecret,
         authorization: { params: { scope: scope.map(genericScopeValue => GitHubProvider.convertGenericScopeToProviderScopeStatic(genericScopeValue)).flat().join(" "), redirect_uri: githubRedirectUri } },
       }),
       // TODO RadStr Idea: Implementing GitLab authentication, but
