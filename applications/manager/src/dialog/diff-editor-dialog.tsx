@@ -60,6 +60,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
     activeDatastoreType,
     activeFormat,
     activeConflicts,
+    datastoreInfosForCacheEntries,
 
     updateModelData,
     reloadModelsDataFromBackend,
@@ -87,7 +88,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
           <ModalBody className="grow flex overflow-hidden">
             {/* The pr-2 is there so the cross at the top right corner is seen */}
             <ResizablePanelGroup direction="horizontal" className="overflow-hidden">
-              <ResizablePanel defaultSize={18} className="flex flex-col pr-16">
+              <ResizablePanel defaultSize={20} className="flex flex-col pr-16">
                 <ModalHeader className="mb-2">
                   <h1 className="font-bold bg-gray-200 text-lg"><p>Diff editor to resolve {examinedMergeState?.mergeStateCause} conflict</p></h1>
                   <Tabs value={comparisonTabType} onValueChange={setComparisonTabType as any}>
@@ -101,6 +102,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
                   <div className="h-full">
                     <div className="flex flex-1 flex-col grow pr-2 -mr-2 -ml-2 pl-2 h-[80%] w-full">
                       <DiffTreeVisualization updateModelData={updateModelData}
+                                              datastoreInfosForCacheEntries={datastoreInfosForCacheEntries}
                                               isLoadingTreeStructure={isLoadingTreeStructure}
                                               setIsLoadingTreeStructure={setIsLoadingTreeStructure}
                                               mergeStateFromBackend={examinedMergeState}

@@ -39,7 +39,11 @@ type ModelName = string;
 
 type CacheContentMap = Record<FullTreePath, Record<ModelName, string>>;
 
-type DatastoreInfosCache = Record<FullTreePath, Record<ModelName, {mergeFrom: DatastoreInfo | null, mergeTo: DatastoreInfo | null}>>;
+export type DatastoreInfosForModel = {
+  mergeFrom: DatastoreInfo | null,
+  mergeTo: DatastoreInfo | null
+};
+export type DatastoreInfosCache = Record<FullTreePath, Record<ModelName, DatastoreInfosForModel>>;
 type FormatsCache = Record<FullTreePath, Record<ModelName, string>>;
 
 /**
