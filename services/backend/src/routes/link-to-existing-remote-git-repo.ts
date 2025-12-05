@@ -46,10 +46,9 @@ export const updateGitRelatedDataForPackage = async (
 
   // If undefined just assume that it is reference to commit, so if it is not user have to explictly switch it to branch
   await resourceModel.updateRepresentsBranchHead(iri, commitReferenceType ?? "commit");
-  if (commitReferenceType === "branch") {
-    await resourceModel.updateResourceProjectIriAndBranch(
-      iri,
-      undefined,      // Should be already set correctly
-      commitReferenceValue ?? undefined);
-  }
+  await resourceModel.updateResourceProjectIriAndBranch(
+    iri,
+    undefined,      // Should be already set correctly
+    commitReferenceValue ?? undefined);
+  await resourceModel.setHasUncommittedChanges(iri, false);
 };
