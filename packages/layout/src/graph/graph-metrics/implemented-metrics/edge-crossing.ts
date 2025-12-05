@@ -1,5 +1,5 @@
-import { Position } from "@dataspecer/core-v2/visual-model";
-import { DefaultGraph, Graph } from "../../representation/graph.ts";
+import { Position } from "@dataspecer/visual-model";
+import { Graph } from "../../representation/graph.ts";
 import { AllMetricData, ComputedMetricValues, Metric } from "../graph-metric.ts";
 import { findNodeBorder } from "../../../util/utils.ts";
 import { XY } from "../../../index.ts";

@@ -8,7 +8,7 @@ import {
   isVisualProfileRelationship,
   isVisualRelationship,
   isWritableVisualModel
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 
 import { type DialogApiContextType } from "../dialog/dialog-service";
 import { DialogApiContext } from "../dialog/dialog-context";
@@ -95,7 +95,7 @@ import { openEditNodeAttributesDialogAction } from "./open-edit-node-attributes-
 import { openEditAttributeDialogAction } from "./open-edit-attribute-dialog";
 import { openEditAttributeProfileDialogAction } from "./open-edit-attribute-profile-dialog";
 import { findSourceModelOfEntity } from "../service/model-service";
-import { isInMemorySemanticModel } from "../utilities/model";
+import { isInMemorySemanticModel } from "../dataspecer/semantic-model";
 import { isSemanticModelAttribute, isSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import { isSemanticModelAttributeProfile } from "../dataspecer/semantic-model";
 import { createCmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
@@ -114,7 +114,7 @@ import { changeVisualModelAction } from "./change-visual-model";
 import { QueryParamsContextType, useQueryParamsContext } from "@/context/query-params-context";
 import { openCreateVisualModelDialogAction } from "./open-create-visual-model-dialog";
 import { openEditSemanticModelDialogAction } from "./open-edit-semantic-model-dialog";
-import { ModelDsIdentifier } from "@/dataspecer/entity-model";
+import { EntityDsIdentifier, ModelDsIdentifier } from "@/dataspecer/entity-model";
 import { openSearchExternalSemanticModelDialogAction } from "./open-search-external-semantic-model-dialog";
 import { openEditVisualModelDialogAction } from "./open-edit-visual-model-dialog";
 import { LayoutConfigurationContextType, useLayoutConfigurationContext } from "@/context/layout-configuration-context";
@@ -136,6 +136,12 @@ import {
   addVisualDiagramNodeForExistingModelToVisualModelAction,
 } from "./create-visual-diagram-node-for-existing-model";
 import { putVisualDiagramNodeContentToVisualModelAction } from "./put-visual-diagram-node-content-to-visual-model";
+import {
+  AddSemanticClassSurroundingsOperation,
+  createCmeOperationExecutor,
+  ReleaseSemanticClassSurroundingsOperation,
+} from "../operation";
+import { openProfileModelDialogAction } from "./open-profile-model-dialog";
 
 const LOG = createLogger(import.meta.url);
 
@@ -227,6 +233,11 @@ interface DialogActions {
    * Open dialog to layout visual model.
    */
   openPerformLayoutVisualModelDialog: () => void;
+
+  openSearchExternalSemanticModelDialog: (identifier: ModelDsIdentifier) => void;
+
+  openProfileModelDialog: (model: ModelDsIdentifier) => Promise<void>;
+
 }
 
 /**
@@ -439,7 +450,9 @@ export interface ActionsContextType extends DialogActions, VisualModelActions {
   highlightNodeInExplorationModeFromCatalog: (
     classIdentifier: string, modelOfClassWhichStartedHighlighting: string) => void;
 
-  openSearchExternalSemanticModelDialog: (identifier: ModelDsIdentifier) => void;
+  addSemanticClassSurroundings: (model: ModelDsIdentifier, entity: EntityDsIdentifier) => Promise<void>;
+
+  releaseSemanticClassSurroundings: (model: ModelDsIdentifier, entity: EntityDsIdentifier) => Promise<void>;
 
   /**
    * As this context requires two way communication it is created and shared via the actions.
@@ -497,6 +510,9 @@ const noOperationActionsContext: ActionsContextType = {
   filterSelection: () => ({ nodeSelection: [], edgeSelection: [] }),
   highlightNodeInExplorationModeFromCatalog: noOperation,
   openSearchExternalSemanticModelDialog: noOperation,
+  addSemanticClassSurroundings: noOperationAsync,
+  releaseSemanticClassSurroundings: noOperationAsync,
+  openProfileModelDialog: noOperationAsync,
   diagram: null,
 };
 
@@ -938,11 +954,11 @@ function createActionsContext(
     // We start be removing from the visual model.
     withVisualModel(notifications, graph, (visualModel) => {
       const entityToDeleteWithAttributeData = entitiesToDelete.map(entityToDelete =>
-        ({
-          ...entityToDelete,
-          isAttributeOrAttributeProfile: isAttributeOrAttributeProfile(
-            entityToDelete.identifier, graph.models, entityToDelete.sourceModel)
-        })
+      ({
+        ...entityToDelete,
+        isAttributeOrAttributeProfile: isAttributeOrAttributeProfile(
+          entityToDelete.identifier, graph.models, entityToDelete.sourceModel)
+      })
       );
       const attributesToBeDeleted =
         entityToDeleteWithAttributeData.filter(entity => entity.isAttributeOrAttributeProfile);
@@ -1132,6 +1148,40 @@ function createActionsContext(
         nodeIdentifiers, modelOfClassWhichStartedHighlighting);
     });
   }
+
+  const addSemanticClassSurroundings = async (
+    semanticModel: ModelDsIdentifier, entity: EntityDsIdentifier,
+  ) => {
+    const cmeOperationExecutor = createCmeOperationExecutor(
+      [...graph.models.values()], [...graph.visualModels.values()]);
+    await cmeOperationExecutor.execute<AddSemanticClassSurroundingsOperation>({
+      type: "add-class-surroundings-operation",
+      semanticModel,
+      entity,
+    });
+  }
+
+  const releaseSemanticClassSurroundings = async (
+    semanticModel: ModelDsIdentifier, entity: EntityDsIdentifier,
+  ) => {
+    const cmeOperationExecutor = createCmeOperationExecutor(
+      [...graph.models.values()], [...graph.visualModels.values()]);
+    await cmeOperationExecutor.execute<ReleaseSemanticClassSurroundingsOperation>({
+      type: "release-class-surroundings-operation",
+      semanticModel,
+      entity,
+    });
+  }
+
+  const openProfileModelDialog = async (model: ModelDsIdentifier) => {
+    withVisualModel(notifications, graph, (visualModel) => {
+      const cmeOperationExecutor = createCmeOperationExecutor(
+        [...graph.models.values()], [...graph.visualModels.values()]);
+      openProfileModelDialogAction(
+        cmeOperationExecutor, options, dialogs, notifications, graph,
+        visualModel, model);
+    });
+  };
 
   const callbacks: DiagramCallbacks = {
     onShowNodeDetail: (node) => openDetailDialog(node.externalIdentifier),
@@ -1470,6 +1520,9 @@ function createActionsContext(
     extendSelection,
     filterSelection,
     highlightNodeInExplorationModeFromCatalog,
+    addSemanticClassSurroundings,
+    releaseSemanticClassSurroundings,
+    openProfileModelDialog,
     diagram,
   };
 

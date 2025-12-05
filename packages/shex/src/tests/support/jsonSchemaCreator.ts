@@ -8,7 +8,6 @@ import {
     StructureModelComplexType,
     StructureModelProperty,
     StructureModelPrimitiveType,
-    StructureModelCustomType,
     StructureModelSchemaRoot,
   } from "@dataspecer/core/structure-model/model";
   import {
@@ -52,24 +51,24 @@ interface Context {
      * Active specification.
      */
     specification: DataSpecification;
-  
+
     /**
      * All specifications.
      */
     specifications: { [iri: string]: DataSpecification };
-  
+
     /**
      * String selector.
      */
     stringSelector: StringSelector;
-  
+
     /**
      * Current structural model we are generating for.
      */
     model: StructureModel;
-  
+
     artefact: DataSpecificationArtefact;
-  
+
     configuration: JsonConfiguration;
   }
 
@@ -130,7 +129,7 @@ class JsonSchemaCreator{
           defaultStringSelector
         );
 
-        
+
       // PART FROM STEPAN START
       const msd = new MemoryStreamDictionary();
       const jsonSchema = new DataSpecificationSchema();
@@ -156,17 +155,17 @@ class JsonSchemaCreator{
       console.log("specArtefacts " + spec.artefacts.length);
       console.log("jsonArtifact is undefined " + (jsonArtifact == undefined));
       console.log("After segment meant made by Stepan");
-        
-      // PART FROM STEPAN END  
+
+      // PART FROM STEPAN END
 
 //Snaha napsat generovani podle Stepanovy rady
       const memoryStream = new MemoryStreamDictionary();
       //jsonschemagen.generateToStream(context,artefact,specification,memoryStream);
       //await memoryStream.readPath().read();
-      var listFromMS : string[]; 
+      var listFromMS : string[];
       listFromMS = await memoryStream.list();
       //console.log("memoryStream.list() .... ");
-      listFromMS.forEach(item => console.log(item  + " item "));      
+      listFromMS.forEach(item => console.log(item  + " item "));
 
       //console.log("Model .... " + JSON.stringify(model, null, 2));
       //console.log("Actual .... " + JSON.stringify(actual, null, 2));

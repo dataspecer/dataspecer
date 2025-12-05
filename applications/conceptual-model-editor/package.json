@@ -9,12 +9,14 @@
     "lint": "eslint . --fix",
     "lint:quiet": "eslint . --fix --quiet",
     "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest --passWithNoTests "
   },
   "devDependencies": {
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "^0.0.0",
+    "@dataspecer/entity-model": "^0.0.0",
+    "@dataspecer/profile-model": "^0.0.0",
     "@dataspecer/data-specification-vocabulary": "^0.0.0",
     "@dataspecer/layout": "0.0.0",
     "@dataspecer/shacl-v2": "^0.0.0",

@@ -117,4 +117,13 @@ export class StructureModelClass {
     usePrefixes: "ALWAYS",
     includeParentPrefixes: true,
   };
+
+  /**
+   * Currently, xml containers such as choice or sequence are very close to
+   * regular classes. Therefore, in structure model they are in fact classes
+   * with this specific property that can be used to correctly interpret the
+   * given container. If the consumer ignores this property, they still get
+   * something less strict, but still describing the schema.
+   */
+  containerType: null | "choice" | "sequence" = null;
 }

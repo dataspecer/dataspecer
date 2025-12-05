@@ -10,7 +10,7 @@ import {
   VisualDiagramNode,
   VisualRelationship,
   WritableVisualModel
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 
 import { notificationMockup, TestedSemanticConnectionType } from "./test/actions-test-suite";
 import { ActionsTestSuite } from "./test/actions-test-suite";

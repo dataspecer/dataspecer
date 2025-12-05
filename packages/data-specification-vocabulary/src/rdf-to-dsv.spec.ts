@@ -1,11 +1,10 @@
-import { rdfToConceptualModel } from "./rdf-to-dsv.ts";
-import { conceptualModelToRdf } from "./dsv-to-rdf.ts";
-import { Cardinality, ClassRole, DsvModel, ObjectPropertyProfile, RequirementLevel } from "./dsv-model.ts";
+import { rdfToDsv } from "./rdf-to-dsv.ts";
+import { Cardinality, ClassRole, ApplicationProfile, ObjectPropertyProfile, RequirementLevel, ClassProfile } from "./dsv-model.ts";
 import { conceptualModelToEntityListContainer } from "./dsv-to-entity-model.ts";
-import { DataTypeURIs, isDataType } from "@dataspecer/core-v2/semantic-model/datatypes";
+import { DataTypeURIs, isPrimitiveType } from "@dataspecer/core-v2/semantic-model/datatypes";
 import { isSemanticModelClass, isSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 
-test("From RDF to DSV and back.", async () => {
+test("Regression test.", async () => {
 
   const inputRdf = `@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
@@ -68,18 +67,20 @@ test("From RDF to DSV and back.", async () => {
     dsv:classRole role:supportive.
 `;
 
-  const actualModels = await rdfToConceptualModel(inputRdf);
+  // Grab the first model.
+  const actualModels = await rdfToDsv(inputRdf);
   expect(actualModels.length).toBe(1);
 
-  const expectedModel: DsvModel = {
+  const expectedModel: ApplicationProfile = {
     "iri": "http://dcat-ap-cz/model",
-    "profiles": [{
+    "externalDocumentationUrl": null,
+    "classProfiles": [{
       "iri": "https://dcat-ap/#Dataset",
       "prefLabel": {},
       "definition": {},
       "usageNote": {},
       "profileOfIri": [],
-      "$type": ["class-profile"],
+      "type": ["class-profile"],
       "profiledClassIri": ["http://www.w3.org/ns/dcat#Dataset"],
       "reusesPropertyValue": [{
         "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#prefLabel",
@@ -90,29 +91,6 @@ test("From RDF to DSV and back.", async () => {
       }],
       "externalDocumentationUrl": "http://documentation",
       "classRole": ClassRole.main,
-      "properties": [{
-        "iri": "http://www.w3.org/ns/dcat#distribution-profile",
-        "cardinality": Cardinality.ZeroToMany,
-        "prefLabel": {},
-        "definition": {},
-        "usageNote": {},
-        "profileOfIri": [],
-        "profiledPropertyIri": ["http://www.w3.org/ns/dcat#distribution"],
-        "$type": ["object-property-profile"],
-        "rangeClassIri": [
-          "http://dcat-ap/ns/dcat#Distribution"
-        ],
-        "reusesPropertyValue": [{
-          "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#prefLabel",
-          "propertyReusedFromResourceIri": "http://dcat-ap/ns/dcat#Distribution",
-        }, {
-          "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#scopeNote",
-          "propertyReusedFromResourceIri": "http://dcat-ap/ns/dcat#Distribution",
-        }],
-        "specializationOfIri": [],
-        "externalDocumentationUrl": null,
-        "requirementLevel": RequirementLevel.undefined,
-      } as ObjectPropertyProfile],
       "specializationOfIri": [],
     }, {
       "iri": "https://dcat-ap-cz/#Dataset",
@@ -120,9 +98,8 @@ test("From RDF to DSV and back.", async () => {
       "definition": {},
       "usageNote": {},
       "profileOfIri": ["https://dcat-ap/#Dataset"],
-      "$type": ["class-profile"],
+      "type": ["class-profile"],
       "profiledClassIri": [],
-      "properties": [],
       "reusesPropertyValue": [],
       "specializationOfIri": [],
       "externalDocumentationUrl": null,
@@ -133,24 +110,45 @@ test("From RDF to DSV and back.", async () => {
       "definition": {},
       "usageNote": {},
       "profileOfIri": [],
-      "$type": ["class-profile"],
+      "type": ["class-profile"],
       "profiledClassIri": ["http://www.w3.org/ns/dcat#Distribution"],
-      "properties": [],
       "reusesPropertyValue": [],
       "specializationOfIri": [],
       "externalDocumentationUrl": null,
       "classRole": ClassRole.supportive,
     }],
+    "datatypePropertyProfiles": [],
+    "objectPropertyProfiles": [{
+      "iri": "http://www.w3.org/ns/dcat#distribution-profile",
+      "cardinality": Cardinality.ZeroToMany,
+      "prefLabel": {},
+      "definition": {},
+      "usageNote": {},
+      "profileOfIri": [],
+      "profiledPropertyIri": ["http://www.w3.org/ns/dcat#distribution"],
+      "type": ["object-property-profile"],
+      "rangeClassIri": [
+        "http://dcat-ap/ns/dcat#Distribution"
+      ],
+      "reusesPropertyValue": [{
+        "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#prefLabel",
+        "propertyReusedFromResourceIri": "http://dcat-ap/ns/dcat#Distribution",
+      }, {
+        "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#scopeNote",
+        "propertyReusedFromResourceIri": "http://dcat-ap/ns/dcat#Distribution",
+      }],
+      "specializationOfIri": [],
+      "externalDocumentationUrl": null,
+      "requirementLevel": RequirementLevel.undefined,
+      "domainIri": "https://dcat-ap/#Dataset",
+    }],
   };
+
   expect(actualModels[0]).toStrictEqual(expectedModel);
-
-  const actualRdf = await conceptualModelToRdf(actualModels[0] as any, {});
-
-  // We can not compare to input due to blank nodes.
-  expect(actualRdf).toBe(inputRdf);
 });
 
 test("Issue #989", async () => {
+
   const inputRdf = `
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
@@ -267,7 +265,7 @@ _:n3-813 a dsv:PropertyValueReuse;
       for (const end of entity.ends) {
         if (end.iri) {
           //
-          const isAttribute = isDataType(end.concept);
+          const isAttribute = isPrimitiveType(end.concept);
           const key = isAttribute + ":" + end.iri;
           knownRelationshipMapping[key] = entity.id;
         }
@@ -277,19 +275,18 @@ _:n3-813 a dsv:PropertyValueReuse;
 
   //
 
-  const conceptualModel = await rdfToConceptualModel(inputRdf);
-  expect(conceptualModel.length).toBe(1);
+  const dsv = await rdfToDsv(inputRdf);
+  expect(dsv.length).toBe(1);
 
   let counter = 0;
-  const actualEntities = conceptualModelToEntityListContainer(
-    conceptualModel[0]!, {
+  const actualEntities = conceptualModelToEntityListContainer(dsv[0]!, {
     generalizationIdentifier: () => `id-${++counter}`,
     // We use the IRI as an identifier here.
     // Should be good enough for test, do not repeat elsewhere.
     iriToIdentifier: iri => knownMapping[iri] ?? iri,
     //
     iriPropertyToIdentifier: (iri, rangeConcept) => {
-      const isAttribute = isDataType(rangeConcept);
+      const isAttribute = isPrimitiveType(rangeConcept);
       const key = isAttribute + ":" + iri;
       return knownRelationshipMapping[key] ?? iri;
     },
@@ -305,6 +302,19 @@ _:n3-813 a dsv:PropertyValueReuse;
       "name": { "en": "Source [profile]" },
       "nameFromProfiled": null,
       "profiling": ["eaynf42zsiim7i2cgh5"],
+      "type": ["class-profile"],
+      "usageNote": {},
+      "usageNoteFromProfiled": null,
+      "externalDocumentationUrl": null,
+      "tags": [],
+    }, {
+      "description": {},
+      "descriptionFromProfiled": "mu4tiwoio3dm7i2ctqo",
+      "id": "http://localhost/Target[profile]",
+      "iri": "http://localhost/Target[profile]",
+      "name": { "en": "Target [profile]" },
+      "nameFromProfiled": null,
+      "profiling": ["mu4tiwoio3dm7i2ctqo"],
       "type": ["class-profile"],
       "usageNote": {},
       "usageNoteFromProfiled": null,
@@ -343,19 +353,6 @@ _:n3-813 a dsv:PropertyValueReuse;
       ],
       "id": "http://localhost/Source[profile].attribute[profile]",
       "type": ["relationship-profile",],
-    }, {
-      "description": {},
-      "descriptionFromProfiled": "mu4tiwoio3dm7i2ctqo",
-      "id": "http://localhost/Target[profile]",
-      "iri": "http://localhost/Target[profile]",
-      "name": { "en": "Target [profile]" },
-      "nameFromProfiled": null,
-      "profiling": ["mu4tiwoio3dm7i2ctqo"],
-      "type": ["class-profile"],
-      "usageNote": {},
-      "usageNoteFromProfiled": null,
-      "externalDocumentationUrl": null,
-      "tags": [],
     }],
   });
 

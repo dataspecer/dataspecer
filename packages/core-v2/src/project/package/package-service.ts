@@ -1,6 +1,5 @@
 import { EntityModel } from "../../entity-model/index.ts";
-import { WritableSemanticModelAdapter } from "../../semantic-model/writable-semantic-model-adapter.ts";
-import { VisualModel } from "../../visual-model/index.ts";
+import { VisualModel } from "@dataspecer/visual-model";
 import { Package, ResourceEditable } from "../resource/resource.ts";
 
 /**

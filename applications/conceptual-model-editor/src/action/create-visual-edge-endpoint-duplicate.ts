@@ -9,7 +9,7 @@ import {
   VisualProfileRelationship,
   VisualRelationship,
   WritableVisualModel
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { createWaypointsForSelfLoop } from "../dataspecer/visual-model/operation/add-visual-relationships";
 import { UseDiagramType } from "../diagram/diagram-hook";

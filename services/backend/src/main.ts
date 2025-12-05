@@ -294,8 +294,12 @@ await (async () => {
     }
 
     application.listen(Number(configuration.port), () => {
-      console.log(`Server is listening on port ${Number(configuration.port)}.`);
-      console.log(`Try opening ${fullUrl}.`);
+      if (configuration.inDocker) {
+        console.log(`Dataspecer is running! Try opening your browser at http://localhost:port/ where port is the port you mapped to the container's port ${configuration.port}.`);
+      } else {
+        console.log(`Server is listening on port ${Number(configuration.port)}.`);
+        console.log(`Try opening ${fullUrl}.`);
+      }
     });
   }
 })();

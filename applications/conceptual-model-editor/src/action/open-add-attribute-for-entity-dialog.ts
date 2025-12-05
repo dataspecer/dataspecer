@@ -1,4 +1,4 @@
-import { isWritableVisualModel, VisualModel } from "@dataspecer/core-v2/visual-model";
+import { isWritableVisualModel, VisualModel } from "@dataspecer/visual-model";
 
 import { createLogger, Options } from "../application";
 import { ClassesContextType } from "../context/classes-context";

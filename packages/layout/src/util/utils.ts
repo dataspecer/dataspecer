@@ -1,5 +1,5 @@
-import { VisualGroup } from "@dataspecer/core-v2/visual-model";
-import { VisualEntitiesWithOutsiders, XY } from "../index.ts";
+import { VisualGroup } from "@dataspecer/visual-model";
+import { XY } from "../index.ts";
 import { EdgeCrossingMetric } from "../graph/graph-metrics/implemented-metrics/edge-crossing.ts";
 import { EdgeEndPoint } from "../graph/representation/edge.ts";
 import { VisualNodeComplete } from "../graph/representation/node.ts";

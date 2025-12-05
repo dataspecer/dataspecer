@@ -1,0 +1,97 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "prof": "http://www.w3.org/ns/dx/prof/",
+    "role": "prof:role/",
+    "dsv": "https://w3id.org/dsv#",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "adms": "http://www.w3.org/ns/adms#",
+    "filetype": "http://publications.europa.eu/resource/authority/file-type/",
+    "title": {
+      "@id": "http://purl.org/dc/terms/title",
+      "@container": "@language"
+    },
+    "description": {
+      "@id": "http://purl.org/dc/terms/description",
+      "@container": "@language"
+    },
+    "conformsTo": {
+      "@id": "http://purl.org/dc/terms/conformsTo",
+      "@type": "@id",
+      "@container": "@set"
+    },
+    "format": {
+      "@id": "http://purl.org/dc/terms/format",
+      "@type": "@id"
+    },
+    "hasRole": {
+      "@id": "prof:hasRole",
+      "@type": "@id"
+    },
+    "hasArtifact": {
+      "@id": "prof:hasArtifact",
+      "@type": "@id"
+    },
+    "inSpecificationOf": {
+      "@reverse": "prof:hasResource",
+      "@type": "@id",
+      "@context": {
+        "title": {
+          "@id": "http://purl.org/dc/terms/title",
+          "@container": "@language"
+        },
+        "description": {
+          "@id": "http://purl.org/dc/terms/description",
+          "@container": "@language"
+        },
+        "hasToken": {
+          "@id": "prof:hasToken",
+          "@type": "xsd:token"
+        },
+        "isProfileOf": {
+          "@id": "prof:isProfileOf",
+          "@container": "@set",
+          "@context": {
+            "title": {
+              "@id": "http://purl.org/dc/terms/title",
+              "@container": "@language"
+            },
+            "hasResource": {
+              "@id": "prof:hasResource",
+              "@container": "@set",
+              "@context": {
+                "hasArtifact": {
+                  "@id": "prof:hasArtifact",
+                  "@type": "@id"
+                }
+              }
+            }
+          }
+        },
+        "hasResource": {
+          "@id": "prof:hasResource",
+          "@container": "@set",
+          "@context": {
+            "conformsTo": {
+              "@id": "http://purl.org/dc/terms/conformsTo",
+              "@type": "@id",
+              "@container": "@set"
+            },
+            "format": {
+              "@id": "http://purl.org/dc/terms/format",
+              "@type": "@id"
+            },
+            "hasRole": {
+              "@id": "prof:hasRole",
+              "@type": "@id"
+            },
+            "hasArtifact": {
+              "@id": "prof:hasArtifact",
+              "@type": "@id"
+            }
+          }
+        }
+      }
+    }
+  }
+}

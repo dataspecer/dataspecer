@@ -4,7 +4,7 @@ import { ExplicitAnchors } from "../../explicit-anchors.ts";
 import { ExtractedModels } from "../../layout-algorithms/entity-bundles.ts";
 import { PhantomElementsFactory } from "../../util/utils.ts";
 import { DefaultGraph, Graph, MainGraph, DefaultMainGraph } from "./graph.ts";
-import { VisualModel } from "@dataspecer/core-v2/visual-model";
+import { VisualModel } from "@dataspecer/visual-model";
 import { EdgeEndPoint } from "./edge.ts";
 
 /**

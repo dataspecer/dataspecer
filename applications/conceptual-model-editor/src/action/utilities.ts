@@ -17,7 +17,7 @@ import {
   VisualNode,
   isVisualDiagramNode,
   VisualEntity,
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 import { DiagramNodeTypes, Edge, EdgeType } from "../diagram";
 import { findSourceModelOfEntity } from "../service/model-service";
 import { ModelGraphContextType } from "../context/model-context";

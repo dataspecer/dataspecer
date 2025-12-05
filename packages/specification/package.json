@@ -29,6 +29,7 @@
     "@dataspecer/json-example": "*",
     "@dataspecer/openapi": "*",
     "@dataspecer/shacl": "*",
+    "@dataspecer/shacl-v2": "*",
     "@dataspecer/shex": "*",
     "@dataspecer/lightweight-owl": "*",
     "@dataspecer/xml": "*",

@@ -3,16 +3,17 @@ import { Entity } from "@dataspecer/core-v2/entity-model";
 import { EntityListContainer } from "./entity-model.ts";
 
 import {
-  DsvModel,
+  ApplicationProfile,
   Cardinality,
   ClassProfile,
   PropertyProfile,
   isObjectPropertyProfile,
   isDatatypePropertyProfile,
   PropertyValueReuse,
-  Profile,
+  TermProfile,
   RequirementLevel,
   ClassRole,
+  isClassProfile,
 } from "./dsv-model.ts";
 
 import {
@@ -71,7 +72,7 @@ interface ConceptualModelToEntityListContainerContext extends
   OptionalConceptualModelToEntityListContainerContext { };
 
 export function conceptualModelToEntityListContainer(
-  conceptualModel: DsvModel,
+  conceptualModel: ApplicationProfile,
   context: MandatoryConceptualModelToEntityListContainerContext &
     Partial<OptionalConceptualModelToEntityListContainerContext>,
 ): EntityListContainer {
@@ -87,11 +88,11 @@ export function conceptualModelToEntityListContainer(
       `https://dataspecer.com/semantic-models/generalization?fromIri=${childIri}&toIri=${parentIri}`,
     ...context,
   };
-  return (new ConceptualModelToEntityModel(fullContext)
+  return (new ApplicationProfileToEntityModel(fullContext)
     .transform(conceptualModel));
 }
 
-class ConceptualModelToEntityModel {
+class ApplicationProfileToEntityModel {
 
   private entities: Entity[] = [];
 
@@ -101,10 +102,13 @@ class ConceptualModelToEntityModel {
     this.context = context;
   }
 
-  transform(conceptualModel: DsvModel): EntityListContainer {
-    for (const classProfile of conceptualModel.profiles) {
-      this.classProfileToEntities(classProfile);
-    }
+  transform(dsv: ApplicationProfile): EntityListContainer {
+    dsv.classProfiles.forEach(
+      item => this.classProfileToEntities(item));
+    dsv.datatypePropertyProfiles.forEach(
+      item => this.propertyProfileToEntities(item));
+    dsv.objectPropertyProfiles.forEach(
+      item => this.propertyProfileToEntities(item));
     return {
       // We keep all IRIs as they are for now.
       // As a result there is no need for a base.
@@ -150,10 +154,6 @@ class ConceptualModelToEntityModel {
     this.entities.push(classProfile);
     // Convert generalizations.
     this.specializationOfToGeneralization(classProfile.id, profile);
-    // Convert relationships.
-    for (const propertyProfile of profile.properties) {
-      this.propertyProfileToEntities(propertyProfile, classProfile);
-    }
   }
 
   private profilesToIdentifier(items: string[]): string[] {
@@ -174,7 +174,7 @@ class ConceptualModelToEntityModel {
   }
 
   private specializationOfToGeneralization(
-    childIdentifier: string, profile: Profile,
+    childIdentifier: string, profile: TermProfile,
   ): void {
     for (const iri of profile.specializationOfIri) {
       const parentIdentifier = this.context.iriToIdentifier(iri);
@@ -190,7 +190,7 @@ class ConceptualModelToEntityModel {
   }
 
   private propertyProfileToEntities(
-    profile: PropertyProfile, owner: SemanticModelClassProfile,
+    profile: PropertyProfile,
   ): void {
     let rangeConcept: string;
     if (isDatatypePropertyProfile(profile)) {
@@ -219,7 +219,7 @@ class ConceptualModelToEntityModel {
 
     const domain: SemanticModelRelationshipEndProfile = {
       iri: null,
-      concept: owner.id,
+      concept: this.context.iriToIdentifier(profile.domainIri),
       cardinality: null,
       tags: [],
       // NamedThingProfile

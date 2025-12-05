@@ -80,6 +80,7 @@ export const PropertyEdge = (props: EdgeProps<Edge<ApiEdge>>) => {
         {props.data === undefined || props.data.cardinalitySource === null ? null : (
           <div style={{
             position: "absolute",
+            backgroundColor: "#F0FDFA",
             transform: `${sourceShift} translate(${sourceWaypoint.x}px,${sourceWaypoint.y}px)`
           }}
           >
@@ -89,13 +90,13 @@ export const PropertyEdge = (props: EdgeProps<Edge<ApiEdge>>) => {
         {props.selected || props.label === null ? null : (
           <div
             style={{
-              textAlign: "center",
               position: "absolute",
+              backgroundColor: "#F0FDFA",
               transform: `translate(-50%, -50%) translate(${labelPosition.x}px,${labelPosition.y}px)`,
+              textAlign: "center",
               // We need this to make the content click-able.
               pointerEvents: "all",
               color: "black",
-              backgroundColor: "#F0FDFA",
               // Line break from text, we can split into multiple component and center.
               whiteSpace: "pre-line",
               // Round the edges.
@@ -110,6 +111,7 @@ export const PropertyEdge = (props: EdgeProps<Edge<ApiEdge>>) => {
         {props.data === undefined || props.data.cardinalityTarget === null ? null : (
           <div style={{
             position: "absolute",
+            backgroundColor: "#F0FDFA",
             transform: `${targetShift} translate(${targetWaypoint.x}px,${targetWaypoint.y}px)`
           }}
           >
@@ -136,9 +138,10 @@ function prepareEdgeLabel(
     }[] | undefined
   },
 ) {
-  return selectArchetype(options, data.type)
-    + selectEntityLabel(options, data)
-    + selectProfileLabel(options, data.profileOf ?? []);
+  const archetype = selectArchetype(options, data.type);
+  const entity = selectEntityLabel(options, data);
+  const profiles = selectProfileLabel(options, data.profileOf ?? [], entity);
+  return archetype + entity + profiles;
 }
 
 function selectArchetype(options: DiagramOptions, type: EdgeType) {
@@ -181,6 +184,7 @@ function selectProfileLabel(
     label: string;
     iri: string | null;
   }[],
+  entityLabel: string | null,
 ) {
   let labels: (string | null)[] = [];
   switch (options.profileOfVisual) {
@@ -193,10 +197,16 @@ function selectProfileLabel(
   case ProfileOfVisual.None:
     return;
   }
-  if (labels.length === 0) {
+  const filteredLabels = labels.filter(item => item !== null);
+  if (filteredLabels.length === 0) {
     return "";
   }
-  return "\n(" + labels.filter(item => item !== null).join(", ") + ")";
+  // Here we check for a special case when only one profile name is given,
+  // and the name is the same as the one for the entity.
+  if (filteredLabels.length === 1 && filteredLabels[0] === entityLabel) {
+    return "";
+  }
+  return "\n(" + filteredLabels.join(", ") + ")";
 }
 
 function prepareColor(data: ApiEdge) {
@@ -224,21 +234,27 @@ function getLabelTranslate(
     // No translation.
     return "translate(0px,0px)";
   }
-  let shiftX = "0%";
-  if (point.x < (nodePosition.x)) {
-    // Left
-    shiftX = "-110%"
-  } else if (point.x > (nodePosition.x + width)) {
-    // Right
-    shiftX = "10%";
+  let shiftX = "0";
+  if (point.x <= (nodePosition.x)) {
+    // Labels is to the left from the object.
+    shiftX = "-5ch"
+  } else if (point.x >= (nodePosition.x + width)) {
+    // To the right.
+    shiftX = "1ch";
   }
-  let shiftY = "0%";
-  if (point.y < (nodePosition.y)) {
-    // Top
-    shiftY = "-110%"
-  } else if (point.y > (nodePosition.y + height)) {
-    // Bottom
-    shiftY = "10%";
+  let shiftY = "0";
+  if (point.y <= (nodePosition.y)) {
+    // Above.
+    shiftY = "-2em"
+    if (shiftX === "0") {
+      shiftX = "1ch";
+    }
+  } else if (point.y >= (nodePosition.y + height)) {
+    // Bellow.
+    shiftY = "0";
+    if (shiftX === "0") {
+      shiftX = "1ch";
+    }
   }
   return `translate(${shiftX},${shiftY})`;
 }

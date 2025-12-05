@@ -1,10 +1,27 @@
-import { ShaclModel, ShaclNodeKind, ShaclNodeShape, ShaclPropertyShape } from "./shacl-model/shacl-model.ts";
 import { ProfileModel } from "@dataspecer/profile-model";
-import { SemanticModel } from "./semantic-model/semantic-model.ts";
-import { semanticModelToLightweightOwl } from "@dataspecer/lightweight-owl";
-import { createContext, entityListContainerToConceptualModel } from "@dataspecer/data-specification-vocabulary";
-import { createStructureModel, StructureClass, StructureModel, StructureProperty } from "@dataspecer/structure-model";
-import { isComplexType, isPrimitiveType } from "@dataspecer/core-v2/semantic-model/datatypes";
+import { SemanticModel } from "@dataspecer/semantic-model";
+import {
+  semanticModelToLightweightOwl,
+} from "@dataspecer/lightweight-owl";
+import {
+  createDataSpecificationVocabulary,
+} from "@dataspecer/data-specification-vocabulary";
+import {
+  isComplexType,
+  isPrimitiveType,
+} from "@dataspecer/core-v2/semantic-model/datatypes";
+
+import {
+  createStructureModelForProfile,
+  StructureClass,
+  StructureProperty,
+} from "./structure-model/index.ts";
+import {
+  ShaclModel,
+  ShaclNodeKind,
+  ShaclNodeShape,
+  ShaclPropertyShape,
+} from "./shacl-model.ts";
 
 export interface ShaclForProfilePolicy {
 
@@ -16,9 +33,13 @@ export interface ShaclForProfilePolicy {
   /**
    * @param entity IRI of represented profile.
    * @param type IRI of represented RDF type.
+   * @returns IRI for a node shape.
    */
   shaclNodeShape: (profile: string, type: string) => string;
 
+  /**
+   * @returns IRI for a predicate shape.
+   */
   shaclPredicateShape: (profile: string, type: string, predicate: {
     path: string,
     datatype: string | null,
@@ -27,10 +48,28 @@ export interface ShaclForProfilePolicy {
     maxCount: number | null,
   }) => string;
 
+  nodeTypeFilter: (types: string[]) => string[];
+
+  literalTypeFilter: (types: string[]) => string[];
+
+  prefixes: () => { [prefix: string]: string };
+
 }
 
-// https://github.com/SEMICeu/DCAT-AP/blob/master/releases/3.0.0/shacl/dcat-ap-SHACL.ttl
-export function createSemicShaclStylePolicy(baseIri: string): ShaclForProfilePolicy {
+interface SemicShaclStylePolicyOptions {
+  /**
+   * Default prefixes to use in addition to the built-in ones.
+   */
+  defaultPrefixes?: Record<string, string>;
+}
+
+/**
+ * Node shape IRI is created as: {base iri}/{prefixed type iri}Shape
+ * Predicate shape IRI is created as: {node shape iri}/{property hash}
+ *
+ * @see https://github.com/SEMICeu/DCAT-AP/blob/master/releases/3.0.0/shacl/dcat-ap-SHACL.ttl
+ */
+export function createSemicShaclStylePolicy(baseIri: string, options: SemicShaclStylePolicyOptions = {}): ShaclForProfilePolicy {
 
   // If there is "#" in the IRI we are in fragment section,
   // we do not need to encode : , ale we need to.
@@ -44,8 +83,22 @@ export function createSemicShaclStylePolicy(baseIri: string): ShaclForProfilePol
     "http://www.w3.org/ns/locn#": "locn",
     "http://www.w3.org/2006/time#": "time",
     "http://www.w3.org/2004/02/skos/core#": "skos",
-    "http://www.w3.org/ns/prov#": "prov"
+    "http://www.w3.org/ns/prov#": "prov",
+    "http://www.w3.org/2000/01/rdf-schema#": "rdfs",
+    "http://www.w3.org/2006/vcard/ns#": "vcard",
+    "http://data.europa.eu/eli/ontology#": "eli",
+    "http://www.w3.org/ns/adms#": "adms",
+    "http://www.w3.org/ns/shacl#": "sh",
+    "http://www.w3.org/2001/XMLSchema#": "xsd",
+    ...options.defaultPrefixes,
   };
+
+  // We do not want to use selected types for shacl:class check.
+  // https://github.com/dataspecer/dataspecer/issues/1295
+  const typesToIgnore: Set<string> = new Set([
+    "http://www.w3.org/2000/01/rdf-schema#Resource",
+    "http://www.w3.org/2000/01/rdf-schema#Literal",
+  ]);
 
   const applyPrefix = (value: string) => {
     for (const [prefix, name] of Object.entries(prefixes)) {
@@ -80,10 +133,13 @@ export function createSemicShaclStylePolicy(baseIri: string): ShaclForProfilePol
       `${baseIri}${applyPrefix(type)}Shape`,
     shaclPredicateShape: (profile, type, property) =>
       `${baseIri}${applyPrefix(type)}Shape/${hashProperty(profile, property)}`,
+    nodeTypeFilter: items => items.filter(item => !typesToIgnore.has(item)),
+    literalTypeFilter: items => items.filter(item => !typesToIgnore.has(item)),
+    prefixes: () => Object.fromEntries(
+      Object.entries(prefixes).map(([key, value]) => [value, key])
+    ),
   }
 }
-
-
 
 const computeHash = (value: string) => {
   let hash = 0;
@@ -94,7 +150,6 @@ const computeHash = (value: string) => {
   }
   return hash.toString(16);
 }
-
 
 /**
  * {@link topProfileModel} must be part of {@link profileModels}.
@@ -110,51 +165,16 @@ export function createShaclForProfile(
   const owl = semanticModelToLightweightOwl(
     [], semanticModels, { baseIri: "", idDefinedBy: "" });
 
-  // Prepare Data Specification Vocabulary (DSW).
+  // Prepare Data Specification Vocabulary (DSV).
   // We need a DSV for each model, as we need to be able to see
   // the full hierarchy.
 
-  const semanticList = semanticModels.map(model => ({
-    baseIri: (model as any).getBaseIri === undefined ? "" : (model as any).getBaseIri(),
-    entities: Object.values(model.getEntities()),
-  }));
+  const dsv = createDataSpecificationVocabulary({
+    semantics: semanticModels,
+    profiles: profileModels,
+  }, [topProfileModel], { iri: "http://example.com/" });
 
-  const profileList = profileModels.map(model => ({
-    baseIri: (model as any).getBaseIri === undefined ? "" : (model as any).getBaseIri(),
-    entities: Object.values(model.getEntities()),
-  }));
-
-  const context = createContext([
-    ...semanticList,
-    ...profileList,
-  ]);
-
-  const dsv = profileList.map(
-    item => entityListContainerToConceptualModel("", item, context));
-
-  const topDsv = entityListContainerToConceptualModel("", {
-    baseIri: (topProfileModel as any).getBaseIri === undefined ? "" : (topProfileModel as any).getBaseIri(),
-    entities: Object.values(topProfileModel.getEntities()),
-  }, context);
-
-  // Prepare structure model.
-  const inclusionFilter = topDsv.profiles.map(item => item.iri);
-
-  const structure = createStructureModel(
-    owl,
-    { iri: "", profiles: dsv.map(item => item.profiles).flat() },
-    identifier => inclusionFilter.includes(identifier));
-
-  // structure.classes.forEach(item => {
-  //   console.log({
-  //     iri: item.iri,
-  //     properties: item.properties.map(item => ({
-  //       iri: item.iri,
-  //     }))
-  //   })
-  // });
-
-
+  const structure = createStructureModelForProfile(owl, dsv)
   const classMap: Record<string, StructureClass> = {};
   structure.classes.forEach(item => classMap[item.iri] = item);
 
@@ -166,16 +186,14 @@ export function createShaclForProfile(
     // as templates. The reason is we do not have a complete information
     // about them yet.
     const propertyShapesTemplates = buildPropertiesShapeTemplates(
-      classMap, entity.properties);
+      classMap, entity.properties, policy);
 
     // We need shape for every type.
-    const shapes = entity.types.map(type => buildShaclNodeShape(
+    const shapes = entity.rdfTypes.map(type => buildShaclNodeShape(
       entity, type, propertyShapesTemplates, policy));
 
     shapeMap.set(entity, shapes);
   }
-
-  // console.log(JSON.stringify(result.members, null, 2));
 
   // As the next step we need to deal with specializations.
   // For C dsv:specializes P, we need to run all validations from P on C.
@@ -213,35 +231,70 @@ type ShaclPropertyShapeTemplate = Omit<ShaclPropertyShape, "iri">;
 function buildPropertiesShapeTemplates(
   classMap: Record<string, StructureClass>,
   properties: StructureProperty[],
+  policy: ShaclForProfilePolicy,
 ): ShaclPropertyShapeTemplate[] {
   const result: ShaclPropertyShapeTemplate[] = [];
   for (const property of properties) {
+    // We split the types.
+    const { primitives, complex } = splitRangeTypes(property);
     // Each property can be expressed using multiple predicates.
-    for (const predicate of property.predicates) {
-      for (const range of property.range) {
-        const isComplex = isComplexType(range);
-        const isPrimitive = isPrimitiveType(range);
-        if (isPrimitive && !isComplex) {
-          result.push(buildPropertyShapeTemplateForPrimitiveType(
-            property, predicate, range));
-        } else if (!isPrimitive && isComplex) {
-          result.push(...buildPropertyShapeForTemplateComplexType(
-            classMap, property, predicate, range));
-        } else {
-          // Can be both or neither, it should not happen.
-          console.warn("Unexpected type.",
-            { isPrimitive, isComplex, property, range });
-        }
-      }
+    for (const predicate of property.rdfPredicates) {
+      result.push(...buildPropertyShapeTemplateForPrimitiveTypes(
+        property, predicate, primitives, policy));
+      result.push(...buildPropertyShapeForTemplateComplexTypes(
+        classMap, property, predicate, complex, policy));
     }
   }
   return result;
 }
 
+function splitRangeTypes(
+  property: StructureProperty,
+): { primitives: string[], complex: string[], } {
+  const primitives: string[] = [];
+  const complex: string[] = [];
+  property.range.forEach(type => {
+    const isPrimitive = isPrimitiveType(type);
+    const isComplex = isComplexType(type);
+    if (isPrimitive && !isComplex) {
+      primitives.push(type);
+    } else if (!isPrimitive && isComplex) {
+      complex.push(type);
+    } else {
+      // Can be both or neither, it should not happen.
+      console.warn("Unexpected type.",
+        { isPrimitive, isComplex, property, range: type });
+    }
+  });
+  return { primitives, complex };
+}
+
+function buildPropertyShapeTemplateForPrimitiveTypes(
+  property: StructureProperty,
+  predicate: string,
+  ranges: string[],
+  policy: ShaclForProfilePolicy,
+): ShaclPropertyShapeTemplate[] {
+  if (ranges.length === 0) {
+    return [];
+  }
+  // We filtered out all types, we just create a shape with no data type.
+  // https://github.com/dataspecer/dataspecer/issues/1295
+  const filteredRanges = policy.literalTypeFilter(ranges);
+  if (filteredRanges.length === 0) {
+    return [
+      buildPropertyShapeTemplateForPrimitiveType(property, predicate, null),
+    ];
+  } else {
+    return filteredRanges.map(type =>
+      buildPropertyShapeTemplateForPrimitiveType(property, predicate, type));
+  }
+}
+
 function buildPropertyShapeTemplateForPrimitiveType(
   property: StructureProperty,
   predicate: string,
-  range: string,
+  range: string | null,
 ): ShaclPropertyShapeTemplate {
   return {
     seeAlso: property.iri,
@@ -256,30 +309,50 @@ function buildPropertyShapeTemplateForPrimitiveType(
   };
 }
 
-function buildPropertyShapeForTemplateComplexType(
+function buildPropertyShapeForTemplateComplexTypes(
   classMap: Record<string, StructureClass>,
   property: StructureProperty,
   predicate: string,
-  range: string,
+  ranges: string[],
+  policy: ShaclForProfilePolicy,
 ): ShaclPropertyShapeTemplate[] {
-  const result: ShaclPropertyShapeTemplate[] = [];
-  // We may not have the information about the class, only the type
-  // but that is fine.
-  const types = classMap[range]?.types ?? [range];
-  for (const type of types) {
-    result.push({
-      seeAlso: property.iri,
-      description: property.usageNote,
-      name: property.name,
-      nodeKind: ShaclNodeKind.BlankNodeOrIRI,
-      path: predicate,
-      minCount: property.rangeCardinality.min,
-      maxCount: property.rangeCardinality.max,
-      datatype: null,
-      class: type,
-    });
+  if (ranges.length === 0) {
+    return [];
   }
-  return result;
+  // We need to translate the ranges to types.
+  const types: string[] = [];
+  for (const range of ranges) {
+    types.push(...(classMap[range]?.rdfTypes ?? [range]));
+  }
+  // We filtered out all types, we just create a shape with no data type.
+  // https://github.com/dataspecer/dataspecer/issues/1295
+  const filteredTypes = policy.nodeTypeFilter(types);
+  if (filteredTypes.length === 0) {
+    return [
+      buildPropertyShapeForTemplateComplexType(property, predicate, null),
+    ];
+  } else {
+    return filteredTypes.map(type =>
+      buildPropertyShapeForTemplateComplexType(property, predicate, type));
+  }
+}
+
+function buildPropertyShapeForTemplateComplexType(
+  property: StructureProperty,
+  predicate: string,
+  range: string | null,
+): ShaclPropertyShapeTemplate {
+  return {
+    seeAlso: property.iri,
+    description: property.usageNote,
+    name: property.name,
+    nodeKind: ShaclNodeKind.BlankNodeOrIRI,
+    path: predicate,
+    minCount: property.rangeCardinality.min,
+    maxCount: property.rangeCardinality.max,
+    datatype: null,
+    class: range,
+  };
 }
 
 function buildShaclNodeShape(
@@ -308,7 +381,9 @@ function buildShaclNodeShape(
   }
 }
 
-function buildFullParentMap(classMap: Record<string, StructureClass>): Record<string, string[]> {
+function buildFullParentMap(
+  classMap: Record<string, StructureClass>,
+): Record<string, string[]> {
   const result: Record<string, string[]> = {};
   for (const item of Object.values(classMap)) {
     const visited = new Set<string>();
@@ -326,4 +401,25 @@ function buildFullParentMap(classMap: Record<string, StructureClass>): Record<st
     result[item.iri] = [...visited];
   }
   return result;
+}
+
+type LanguageString = { [language: string]: string };
+
+/**
+ * Perform in-place modification of the model updating strings
+ * using given filter.
+ */
+export function filterLanguageStringLiterals(
+  model: ShaclModel,
+  filter: (value: LanguageString) => LanguageString | null,
+): void {
+  const filterWrap = (value: LanguageString | null) => value === null
+    ? null : filter(value);
+
+  model.members.forEach(member => {
+    member.propertyShapes.forEach(property => {
+      property.name = filterWrap(property.name);
+      property.description = filterWrap(property.description);
+    });
+  });
 }

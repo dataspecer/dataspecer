@@ -1,32 +1,41 @@
 import { describe, test, expect } from "vitest";
-import { createDefaultSemanticModelBuilder } from "./semantic-model/semantic-model-builder.ts";
+
+import { createDefaultSemanticModelBuilder } from "@dataspecer/semantic-model";
 import { createDefaultProfileModelBuilder } from "@dataspecer/profile-model";
-import { createSemicShaclStylePolicy, createShaclForProfile } from "./shacl.ts";
+
+import {
+  createSemicShaclStylePolicy,
+  createShaclForProfile,
+  filterLanguageStringLiterals,
+} from "./shacl.ts";
 import { shaclToRdf } from "./shacl-to-rdf.ts";
-import { SemanticModel } from "./semantic-model/semantic-model.ts";
-import { createReadOnlyInMemoryEntityModel } from "@dataspecer/entity-model";
-import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
-import { createReadOnlyInMemorySemanticModel } from "./semantic-model/semantic-model-factory.ts";
 
 describe("createShaclForProfile", () => {
 
-  const xsd = createDefaultSemanticModelBuilder(
-    "http://www.w3.org/2001/XMLSchema#");
+  const xsd = createDefaultSemanticModelBuilder({
+    baseIdentifier: "xsd:",
+    baseIri: "http://www.w3.org/2001/XMLSchema#",
+  });
 
   const xsdString = xsd.class({ iri: "string" });
 
-  const xsdProfile = createDefaultProfileModelBuilder(
-    "http://example.com/xsdProfile#");
+  const rdfs = createDefaultSemanticModelBuilder({
+    baseIdentifier: "rdfs:",
+    baseIri: "http://www.w3.org/2000/01/rdf-schema#",
+  });
 
-  const xsdStringProfile = xsdProfile.class({ iri: "string" })
-    .profile(xsdString);
+  const rdfsLiteral = rdfs.class({ iri: "Literal" });
 
-  test.skip("Implementation test I.", async () => {
+  const rdfsResource = rdfs.class({ iri: "Resource" });
+
+  test("Implementation test I.", async () => {
 
     // Vocabulary
 
-    const vocabulary = createDefaultSemanticModelBuilder(
-      "http://example.com/vocabulary#");
+    const vocabulary = createDefaultSemanticModelBuilder({
+      baseIdentifier: "vocab:",
+      baseIri: "http://example.com/vocabulary#",
+    });
 
     const object = vocabulary.class({ iri: "object" });
 
@@ -46,30 +55,31 @@ describe("createShaclForProfile", () => {
 
     // Profile
 
-    const profile = createDefaultProfileModelBuilder(
-      "http://example.com/profile#");
+    const profile = createDefaultProfileModelBuilder({
+      baseIdentifier: "profile:",
+      baseIri: "http://example.com/profile#",
+    });
 
     const objectProfile = profile.class({ iri: "object" })
       .reuseName(object);
 
-    const humanProfile = profile.class({ iri: "human" })
+    const personProfile = profile.class({ iri: "human" })
       .reuseName(human);
 
     profile.property({ iri: "name" })
       .reuseName(name)
-      .domain(humanProfile)
-      .range(xsdStringProfile);
+      .domain(personProfile)
+      .range(xsdString.absoluteIri());
 
     profile.property({ iri: "has" })
       .reuseName(has)
-      .domain(humanProfile)
+      .domain(personProfile)
       .range(objectProfile);
 
     // Prepare SHACL
 
     const shacl = createShaclForProfile(
-      [xsd.build(), vocabulary.build()],
-      [xsdProfile.build()],
+      [xsd.build(), vocabulary.build()], [],
       profile.build(),
       createSemicShaclStylePolicy("http://example/shacl.ttl"));
 
@@ -84,106 +94,202 @@ describe("createShaclForProfile", () => {
     expect(humanShape.targetClass)
       .toStrictEqual("http://example.com/vocabulary#human");
 
-    expect(humanShape.propertyShapes.length).toBe(1);
+    expect(humanShape.propertyShapes.length).toBe(2);
 
     const hasShape = humanShape.propertyShapes[0]!;
     expect(hasShape.seeAlso)
       .toStrictEqual("http://example.com/profile#name");
     expect(hasShape.datatype)
       .toStrictEqual("http://www.w3.org/2001/XMLSchema#string");
-
-    // console.log(await shaclToRdf(shacl, {}));
   });
 
-  test("Implementation test II.", async () => {
-    const entities = {
-      "qrd5yim41smb6nx2r2": {
-        "iri": "Citizen",
-        "name": { "en": "Citizen" },
-        "description": {},
-        "externalDocumentationUrl": null,
-        "id": "qrd5yim41smb6nx2r2",
-        "type": ["class"],
-      },
-      "jrn5jfw8rt9mb6nxmyd": {
-        "ends": [{
-          "iri": null,
-          "name": {},
-          "description": {},
-          "concept": "qrd5yim41smb6nx2r2",
-          "externalDocumentationUrl": null
-        }, {
-          "name": { "en": "name" },
-          "description": {},
-          "concept": "http://www.w3.org/2000/01/rdf-schema#Literal",
-          "iri": "name",
-          "externalDocumentationUrl": ""
-        }],
-        "id": "jrn5jfw8rt9mb6nxmyd",
-        "type": ["relationship"],
-        "iri": null,
-        "name": {},
-        "description": {}
-      }, "1fhzbd9vmycmb7rmuqz": {
-        "iri": "Citizen",
-        "profiling": ["qrd5yim41smb6nx2r2"],
-        "name": { "en": "Citizen" },
-        "nameFromProfiled": "qrd5yim41smb6nx2r2",
-        "description": {},
-        "descriptionFromProfiled": "qrd5yim41smb6nx2r2",
-        "usageNote": {},
-        "usageNoteFromProfiled": null,
-        "externalDocumentationUrl": null,
-        "tags": [],
-        "id": "1fhzbd9vmycmb7rmuqz",
-        "type": ["class-profile"]
-      }, "vjtwpvl3q9mb7rnje4": {
-        "ends": [{
-          "name": null,
-          "nameFromProfiled": null,
-          "description": null,
-          "descriptionFromProfiled": null,
-          "iri": null,
-          "cardinality": null,
-          "usageNote": null,
-          "usageNoteFromProfiled": null,
-          "profiling": [],
-          "externalDocumentationUrl": null,
-          "tags": [],
-          "concept": "1fhzbd9vmycmb7rmuqz"
-        }, {
-          "name": { "": "Undefined" },
-          "nameFromProfiled": "jrn5jfw8rt9mb6nxmyd",
-          "description": {},
-          "descriptionFromProfiled": "jrn5jfw8rt9mb6nxmyd",
-          "iri": "Citizen.",
-          "cardinality": null,
-          "usageNote": {},
-          "usageNoteFromProfiled": null,
-          "profiling": ["jrn5jfw8rt9mb6nxmyd"],
-          "externalDocumentationUrl": null,
-          "tags": [],
-          "concept": "http://www.w3.org/2000/01/rdf-schema#Literal"
-        }],
-        "id": "vjtwpvl3q9mb7rnje4",
-        "type": ["relationship-profile"]
-      }
-    };
+  // Language filter
+  test("https://github.com/dataspecer/dataspecer/issues/1298", async () => {
 
-    const model = createReadOnlyInMemorySemanticModel(
-      "https://example/",
-      createReadOnlyInMemoryEntityModel("example-model", entities));
+    // Vocabulary
+
+    const vocabulary = createDefaultSemanticModelBuilder({
+      baseIdentifier: "vocab:",
+      baseIri: "http://example.com/vocabulary#",
+    });
+
+    const person = vocabulary.class({
+      iri: "person",
+      name: { "cs": "Osoba", "en": "Person" },
+    });
+
+    const name = person.property({
+      iri: "name",
+      name: { en: "name", cs: "Jméno" },
+      description: { en: "Description" },
+      range: xsdString,
+    });
+
+    // Profile
+
+    const profile = createDefaultProfileModelBuilder({
+      baseIdentifier: "profile:",
+      baseIri: "http://example.com/profile#",
+    });
+
+    const personProfile = profile.class({ iri: "person" })
+      .reuseName(person);
+
+    profile.property({ iri: "name", usageNote: { cs: "Jméno osoby" } })
+      .reuseName(name)
+      .domain(personProfile)
+      .range(xsdString.absoluteIri());
+
+    // Prepare default shacl with all languages.
 
     const shacl = createShaclForProfile(
-      [model], [model], model,
+      [xsd.build(), vocabulary.build()], [], profile.build(),
       createSemicShaclStylePolicy("http://example/shacl.ttl"));
 
+    expect(shacl.members.length).toBe(1);
+    expect(shacl.members[0].propertyShapes.length).toBe(1);
+    expect(shacl.members[0].propertyShapes[0].name)
+      .toStrictEqual({ en: "name", cs: "Jméno" });
+    expect(shacl.members[0].propertyShapes[0].description)
+      .toStrictEqual({ cs: "Jméno osoby" });
+
+    // Keep only English values.
+    filterLanguageStringLiterals(shacl, value => {
+      const en = value["en"];
+      if (en === undefined) {
+        return {};
+      } else {
+        return { en } as Record<string, string>;
+      }
+    });
+
+    expect(shacl.members.length).toBe(1);
+    expect(shacl.members[0].propertyShapes.length).toBe(1);
+    expect(shacl.members[0].propertyShapes[0].name)
+      .toStrictEqual({ en: "name" });
+    expect(shacl.members[0].propertyShapes[0].description)
+      .toStrictEqual({});
+
+  });
+
+  // Deduplication
+  test("https://github.com/dataspecer/dataspecer/issues/1294", async () => {
+
+    // Vocabulary
+
+    const vocabulary = createDefaultSemanticModelBuilder({
+      baseIdentifier: "vocab:",
+      baseIri: "http://example.com/vocabulary#",
+    });
+
+    const person = vocabulary.class({
+      iri: "person",
+      name: { "cs": "Osoba", "en": "Person" },
+    });
+
+    const name = person.property({
+      iri: "name",
+      name: { en: "name", cs: "Jméno" },
+      description: { en: "Description" },
+      range: xsdString,
+    });
+
+    // Profile
+
+    const profile = createDefaultProfileModelBuilder({
+      baseIdentifier: "profile:",
+      baseIri: "http://example.com/profile#",
+    });
+
+    const personProfile = profile.class({ iri: "person" })
+      .reuseName(person);
+
+    profile.property({ iri: "name", usageNote: { cs: "Jméno osoby" } })
+      .reuseName(name)
+      .domain(personProfile)
+      .range(xsdString.absoluteIri());
+
+    const otherPersonProfile = profile.class({ iri: "otherPerson" })
+      .reuseName(person);
+
+    profile.property({ iri: "name", usageNote: { cs: "Jméno osoby" } })
+      .reuseName(name)
+      .domain(otherPersonProfile)
+      .range(xsdString.absoluteIri());
+
+    // Prepare default shacl with all languages.
+
+    const shacl = createShaclForProfile(
+      [xsd.build(), vocabulary.build()], [], profile.build(),
+      createSemicShaclStylePolicy("http://example/shacl.ttl/"));
+
+    // Convert to RDF
+
+    const rdf = await shaclToRdf(shacl, {});
+    const count = (rdf.match(/Jméno osoby/g) || []).length;
+    expect(count).toBe(1);
+
+  });
+
+  // Do not check for rdfs:Literal and rdfs:Resource types.
+  test("https://github.com/dataspecer/dataspecer/issues/1295", async () => {
+
+    // Vocabulary
+
+    const vocabulary = createDefaultSemanticModelBuilder({
+      baseIdentifier: "vocab:",
+      baseIri: "http://example.com/vocabulary#",
+    });
+
+    const person = vocabulary.class({ iri: "person" });
+
+    const hasLiteral = vocabulary.property({ iri: "hasLiteral" })
+      .domain(person)
+      .range(rdfsLiteral);
+
+    const hasResource = vocabulary.property({ iri: "hasResource" })
+      .domain(person)
+      .range(rdfsResource);
+
+    // Profile
+
+    const profile = createDefaultProfileModelBuilder({
+      baseIdentifier: "profile:",
+      baseIri: "http://example.com/profile#",
+    });
+
+    const personProfile = profile.class({iri: "person"});
+    personProfile.profile(person);
+
+    profile.property({ iri: "hasLiteral" })
+      .profile(hasLiteral)
+      .domain(personProfile)
+      .range(rdfsLiteral.absoluteIri());
+
+    profile.property({ iri: "hasResource" })
+      .profile(hasResource)
+      .domain(personProfile)
+      .range(rdfsResource.absoluteIri());
+
+    // Prepare default shacl with all languages.
+
+    const shacl = createShaclForProfile(
+      [xsd.build(), rdfs.build(), vocabulary.build()], [], profile.build(),
+      createSemicShaclStylePolicy("http://example/shacl.ttl/"));
+
+    //
+
+    expect(shacl.members.length).toBe(1);
+    const personShape = shacl.members[0];
+
+    expect(personShape.propertyShapes.length).toBe(2);
+    const types = personShape.propertyShapes
+      .map(item => item.class ?? item.datatype)
+      .filter(item => item !== null);
+
+    // There should be no types as
+    // rdfs:Literal and rdfs:Resource should be filtered out.
+    expect(types.length).toBe(0);
   });
 
 });
-
-// tak idealne zacit nejakym casem bez opakovani trid a bez vicenasobnyho profilovani
-
-// mit tam ty 4 typy kardinalit vlastnosti
-
-// zohlednit recommended, pokud je nastaven, a udelat warning pokud neni hodnota

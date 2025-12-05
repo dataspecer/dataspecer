@@ -4,7 +4,7 @@ import type { SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/con
 import { BackendPackageService } from "@dataspecer/core-v2/project";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import { type Entities, type Entity, type EntityModel } from "@dataspecer/core-v2/entity-model";
-import type { VisualModel, WritableVisualModel } from "@dataspecer/core-v2/visual-model";
+import type { VisualModel, WritableVisualModel } from "@dataspecer/visual-model";
 import {
   type ExportedConfigurationType,
   modelsToWorkspaceString,
@@ -17,11 +17,13 @@ import { entityWithOverriddenIri, getIri, getModelIri } from "../util/iri-utils"
 import { ExportButton } from "../components/management/buttons/export-button";
 import { useQueryParamsContext } from "../context/query-params-context";
 import * as DataSpecificationVocabulary from "@dataspecer/data-specification-vocabulary";
-import { isInMemorySemanticModel } from "../utilities/model";
+import { isInMemorySemanticModel } from "../dataspecer/semantic-model";
 import { createShaclForProfile, shaclToRdf, createSemicShaclStylePolicy } from "@dataspecer/shacl-v2";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
+import { useActions } from "../action/actions-react-binding";
 
 export const ExportManagement = () => {
+  const actions = useActions();
   const { aggregator, aggregatorView, models, visualModels, setAggregatorView, replaceModels } =
     useModelGraphContext();
   const { sourceModelOfEntityMap } = useClassesContext();
@@ -101,6 +103,16 @@ export const ExportManagement = () => {
       .catch((err) => console.log("couldn't generate lw-ontology", err));
   };
 
+  const handleExportSVG = async () => {
+    const svg = await actions.diagram?.actions().renderToSvgString();
+    if (svg === null || svg === undefined) {
+      console.error("Can not export SVG file.")
+      return;
+    }
+    const date = Date.now();
+    download(svg, `dscme-workspace-${date}.svg`, "image/svg+xml");
+  };
+
   const handleLoadWorkspaceFromJson = () => {
     const loadConfiguration = async (configuration: string) => {
       const { modelDescriptors, activeView } = JSON.parse(configuration) as ExportedConfigurationType;
@@ -170,15 +182,18 @@ export const ExportManagement = () => {
 
     console.log({ semanticModels, profileModels, topProfileModel });
 
+    const semicStyle = createSemicShaclStylePolicy(iri);
     const shacl = createShaclForProfile(
       semanticModels.map(model => new SemanticModelWrap(model)),
-      profileModels, topProfileModel,
-      createSemicShaclStylePolicy(iri));
+      profileModels.map(model => new SemanticModelWrap(model)),
+      new SemanticModelWrap(topProfileModel),
+      semicStyle);
 
     shaclToRdf(shacl, {
+      prefixes: semicStyle.prefixes(),
       prettyPrint: true,
     }).then(shaclAsRdf => {
-      console.log(shaclAsRdf);
+      console.log("SHACL export:", shaclAsRdf);
       const date = Date.now();
       download(shaclAsRdf, `shacl-profile-${date}.ttl`, "text/plain");
     });
@@ -186,6 +201,9 @@ export const ExportManagement = () => {
 
   return (
     <div className="my-auto mr-2 flex flex-row">
+      <ExportButton title="Download current view as SVG file." onClick={handleExportSVG}>
+        💾svg
+      </ExportButton>
       <ExportButton title="Open workspace from configuration file" onClick={handleLoadWorkspaceFromJson}>
         📥ws
       </ExportButton>

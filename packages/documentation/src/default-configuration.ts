@@ -3,19 +3,47 @@ import { DocumentationConfiguration } from "./configuration.ts";
 export const defaultConfiguration: DocumentationConfiguration = {
   partials: {
     // [DOCUMENTATION_MAIN_TEMPLATE_PARTIAL]
+    abstract: `<section id="abstract">
+  <p>
+  {{#iflng "cs"}}Tento soubor dokumentuje{{lng}}This file documents{{/iflng}}
+  {{#translate label}}<strong>{{translation}}</strong>{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}.</p>
+</section>`,
+    introduction: `<section>
+  {{#iflng "cs"}}<h2>Úvod</h2>
+  <p>Toto je úvod</p>
+  {{lng}}
+  <h2>Introduction</h2>
+  <p>This is introduction</p>
+  {{/iflng}}
+</section>`,
+    localBiblio: `localBiblio: {
+      "DCAT-AP": {
+          title: "DCAT Application Profile for data portals in Europe",
+          href: "https://semiceu.github.io/DCAT-AP/releases/3.0.1/",
+          date: "2024"
+      },
+      "GeoDCAT-AP": {
+          title: "GeoDCAT Application Profile for data portals in Europe",
+          href: "https://semiceu.github.io/GeoDCAT-AP/releases/3.0.0/",
+          date: "2024"
+      },
+      "DCAT-AP-HVD": {
+          title: "DCAT-AP HVD Application Profile",
+          href: "https://semiceu.github.io/DCAT-AP/releases/3.0.0-hvd/",
+          date: "2024"
+      }
+  },`,
     specification: `{{> definitions}}
 <!DOCTYPE html>
-<html>
+<html {{#iflng "cs"}}lang="cs"{{lng}}lang="en"{{/iflng}}>
   <head>
     {{> html-head}}
   </head>
   <body>
     <p class="copyright"></p>
-    <section id="abstract">
-      <p>
-        {{#iflng "cs"}}Tento soubor dokumentuje{{lng}}This file documents{{/iflng}}
-        {{#translate label}}<strong>{{translation}}</strong>{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}.</p>
-    </section>
+    {{> abstract}}
+
+    {{> introduction}}
 
     <section>
       <h2>{{#iflng "cs"}}Přehled{{lng}}Overview{{/iflng}}</h2>
@@ -220,15 +248,20 @@ export const defaultConfiguration: DocumentationConfiguration = {
       <td>{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}</td>
     </tr>
     {{/translate}}
-    {{#def "profilesClassChain"}}
-      {{#ifEquals ./type.[0] "class"}}{{#iflng "cs"}}třída{{lng}}class{{/iflng}}{{/ifEquals}}
+    {{#def "profilesClassChain" "isGeneralization"}}
+      {{#if isGeneralization}}
+        {{#iflng "cs"}}specializuje{{lng}}specializes{{/iflng}}
+        {{else}}
+        {{#iflng "cs"}}profiluje{{lng}}profiles{{/iflng}}
+      {{/if}}
+      {{#ifEquals ./type.[0] "class"}}{{#iflng "cs"}}třídu{{lng}}class{{/iflng}}{{/ifEquals}}
       {{#ifEquals ./type.[0] "class-profile"}}{{#iflng "cs"}}profil{{lng}}class profile{{/iflng}}{{/ifEquals}}
       {{class}} (<a href="{{{./iri}}}">{{prefixed ./iri}}</a>)
-      {{#if (not ./descriptionFromProfiled)}}
+      {{#if (and (not ./descriptionFromProfiled) (non-empty ./description))}}
         <br />{{#iflng "cs"}}Definice: {{lng}}Definition: {{/iflng}}<i>{{translate ./description}}</i>
       {{/if}}
-      {{#if ./aggregationParents}}
-        <ul style="list-style-type: none;">
+      {{#if (or ./aggregationParents (parentClasses ./id))}}
+        <ul style="list-style-type: disclosure-closed;">
           {{#each ./aggregationParents}}
             <li>
               {{#semanticEntity ./id}}
@@ -236,21 +269,33 @@ export const defaultConfiguration: DocumentationConfiguration = {
               {{/semanticEntity}}
             </li>
           {{/each}}
+          {{#each (parentClasses ./id)}}
+            <li>
+              {{#semanticEntity ./id}}
+                {{profilesClassChain true}}
+              {{/semanticEntity}}
+            </li>
+          {{/each}}
         </ul>
       {{/if}}
     {{/def}}
 
-    {{#if aggregationParents}}
+    {{#if (or ./aggregationParents (parentClasses ./id))}}
       <tr>
-        <td>{{#iflng "cs"}}Profiluje{{lng}}Profiles{{/iflng}}</td>
+        <td>{{#iflng "cs"}}Hierarchie{{lng}}Hierarchy{{/iflng}}</td>
         <td>
-          <ul style="list-style-type: none; padding-left: 0; margin: 0;">
+          <ul style="list-style-type: disclosure-closed; padding-left: 0; margin: 0;">
             {{#each aggregationParents}}
               {{#semanticEntity ./id}}
                 <li>
                   {{profilesClassChain}}
                 </li>
               {{/semanticEntity}}
+            {{/each}}
+            {{#each (parentClasses ./id)}}
+              <li>
+                {{profilesClassChain true}}
+              </li>
             {{/each}}
           </ul>
         </td>
@@ -326,19 +371,31 @@ export const defaultConfiguration: DocumentationConfiguration = {
     </td>
     </tr>
 
-    {{#def "profilesRelationshipChain"}}
+    {{#def "profilesRelationshipChain" "isGeneralization"}}
+      {{#if isGeneralization}}
+        {{#iflng "cs"}}specializuje{{lng}}specializes{{/iflng}}
+        {{else}}
+        {{#iflng "cs"}}profiluje{{lng}}profiles{{/iflng}}
+      {{/if}}
       {{#ifEquals type.[0] "relationship"}}{{#iflng "cs"}}vlastnost{{lng}}property{{/iflng}}{{/ifEquals}}
       {{#ifEquals type.[0] "relationship-profile"}}{{#iflng "cs"}}profil{{lng}}property profile{{/iflng}}{{/ifEquals}}
       {{relation}} (<a href="{{{ends.1.iri}}}">{{prefixed ends.1.iri}}</a>)
-      {{#if (not ./ends.1.descriptionFromProfiled)}}
+      {{#if (and (not ./ends.1.descriptionFromProfiled) (non-empty ./ends.1.description))}}
         <br />{{#iflng "cs"}}Definice: {{lng}}Definition: {{/iflng}}<i>{{translate ./ends.1.description}}</i>
       {{/if}}
-      {{#if ./aggregationParents}}
-        <ul style="list-style-type: none;">
+      {{#if (or ./aggregationParents (parentClasses ./id))}}
+        <ul style="list-style-type: disclosure-closed;">
           {{#each ./aggregationParents}}
             <li>
               {{#semanticEntity ./id}}
                 {{profilesRelationshipChain}}
+              {{/semanticEntity}}
+            </li>
+          {{/each}}
+          {{#each (parentClasses ./id)}}
+            <li>
+              {{#semanticEntity ./id}}
+                {{profilesRelationshipChain true}}
               {{/semanticEntity}}
             </li>
           {{/each}}
@@ -347,17 +404,22 @@ export const defaultConfiguration: DocumentationConfiguration = {
     {{/def}}
 
 
-    {{#if aggregationParents}}
+    {{#if (or ./aggregationParents (parentClasses ./id))}}
       <tr>
-        <td>{{#iflng "cs"}}Profiluje{{lng}}Profiles{{/iflng}}</td>
+        <td>{{#iflng "cs"}}Hierarchie{{lng}}Hierarchy{{/iflng}}</td>
         <td>
-          <ul style="list-style-type: none; padding-left: 0; margin: 0;">
-            {{#each aggregationParents}}
+          <ul style="list-style-type: disclosure-closed; padding-left: 0; margin: 0;">
+            {{#each ./aggregationParents}}
               {{#semanticEntity ./id}}
                 <li>
                   {{profilesRelationshipChain}}
                 </li>
               {{/semanticEntity}}
+            {{/each}}
+            {{#each (parentClasses ./id)}}
+              <li>
+                {{profilesRelationshipChain true}}
+              </li>
             {{/each}}
           </ul>
         </td>
@@ -408,6 +470,12 @@ export const defaultConfiguration: DocumentationConfiguration = {
           <td><a href="{{{externalArtifacts.dsv-profile.[0].URL}}}">{{externalArtifacts.dsv-profile.[0].URL}}</a></td>
         </tr>
       {{/if}}
+      {{#if externalArtifacts.shacl-profile}}
+        <tr>
+          <td>{{#iflng "cs"}}SHACL validační pravidla{{lng}}SHACL validation rules{{/iflng}}</td>
+          <td><a href="{{{externalArtifacts.shacl-profile.[0].URL}}}">{{externalArtifacts.shacl-profile.[0].URL}}</a></td>
+        </tr>
+      {{/if}}
         {{#artifacts}}
         <tr><td>{{translate title}}</td><td><a href="{{{relativePath}}}">{{relativePathAsText}}</a></td></tr>
         {{/artifacts}}
@@ -426,6 +494,28 @@ export const defaultConfiguration: DocumentationConfiguration = {
     </tbody>
   </table>
 </section>`,
+    "respecConfig": `// All config options at https://respec.org/docs/
+var respecConfig = {
+  specStatus: "base",
+  editors: [{ name: "Dataspecer", url: "https://dataspecer.com" }],
+  //github: "some-org/mySpec",
+  shortName: "todo",
+  historyURI: null,
+  //thisVersion: "https://xx.github.io/yy/",
+  //latestVersion: "https://xx.github.io/yy/",
+  //publishDate: "2025-09-29",
+  //github: "https://github.com/org/repo",
+  //xref: "web-platform",
+  //group: "my-working-group",
+  //otherLinks: [{
+  //    key: "Repository",
+  //    data: [{
+  //        value: "GitHub",
+  //        href: "https://github.com/org/repo"
+  //    }],
+  //}],
+  {{> localBiblio}}
+};`,
 
     "html-head": `<meta charset="utf-8" />
 <title>{{translate label}}</title>
@@ -439,15 +529,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
   defer
 ></script>
 <script class="remove">
-  // All config options at https://respec.org/docs/
-  var respecConfig = {
-    specStatus: "base",
-    editors: [{ name: "Dataspecer", url: "https://dataspecer.com" }],
-    //github: "some-org/mySpec",
-    shortName: "todo",
-    //xref: "web-platform",
-    //group: "my-working-group",
-  };
+{{> respecConfig}}
 </script>
 
 <style>

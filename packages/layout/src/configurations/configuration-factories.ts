@@ -1,4 +1,4 @@
-import { VisualProfileRelationship, VisualRelationship } from "@dataspecer/core-v2/visual-model";
+import { VisualProfileRelationship, VisualRelationship } from "@dataspecer/visual-model";
 import { getBestLayoutFromMetricResultAggregation, performLayoutFromGraph, XY } from "../index.ts";
 import { GraphAlgorithms, ToConsiderFilter } from "../graph-algoritms.ts";
 import { MainGraph } from "../graph/representation/graph.ts";

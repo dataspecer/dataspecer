@@ -1,4 +1,4 @@
-import { WritableVisualModel } from "@dataspecer/core-v2/visual-model";
+import { WritableVisualModel } from "@dataspecer/visual-model";
 import { findTopLevelGroup, getGroupMappings } from "./utilities";
 
 export function addGroupToVisualModelAction(

@@ -80,6 +80,9 @@ export interface Configuration {
 
     gitConfigurations?: Record<GitProviderNamesAsType, GitConfiguration>;
     authConfiguration?: AuthConfiguration;
+
+    // Whether the server is running in Docker
+    inDocker: boolean;
 }
 
 const defaultConfiguration = {
@@ -118,5 +121,6 @@ if (process.env.STATIC_FILES_PATH) {
 if (process.env.PORT) {
     envConfiguration.port = Number(process.env.PORT);
 }
+envConfiguration.inDocker = process.env.DOCKER === "1";
 
 export default ({...defaultConfiguration, ...configuration, ...envConfiguration} as Configuration);

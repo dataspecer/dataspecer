@@ -4,7 +4,7 @@
  */
 
 import { expect, test } from "vitest";
-import { isVisualNode } from "@dataspecer/core-v2/visual-model";
+import { isVisualNode } from "@dataspecer/visual-model";
 import { ExplicitAnchors, getDefaultUserGivenAlgorithmConfigurationsFull } from "@dataspecer/layout";
 import { isSemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
 import { ActionsTestSuite, notificationMockup, TestedSemanticConnectionType } from "./test/actions-test-suite";

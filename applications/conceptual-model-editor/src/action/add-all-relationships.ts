@@ -3,7 +3,7 @@ import {
   VisualModel,
   WritableVisualModel,
   VisualRelationship,
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 import { getVisualDiagramNodeMappingsByRepresented, isVisualEdgeEnd } from "./utilities";
 import { ModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";

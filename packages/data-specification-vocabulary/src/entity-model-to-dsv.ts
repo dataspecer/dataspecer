@@ -5,14 +5,19 @@ import {
   isSemanticModelGeneralization,
   isSemanticModelRelationship,
 } from "@dataspecer/core-v2/semantic-model/concepts";
-
 import {
-  EntityListContainer,
-} from "./entity-model.ts";
+  isSemanticModelClassProfile,
+  isSemanticModelRelationshipProfile,
+  SemanticModelClassProfile,
+  SemanticModelRelationshipEndProfile,
+  SemanticModelRelationshipProfile,
+} from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import { isPrimitiveType } from "@dataspecer/core-v2/semantic-model/datatypes";
 
+import { EntityListContainer } from "./entity-model.ts";
 import {
   LanguageString,
-  DsvModel,
+  ApplicationProfile,
   Cardinality,
   ClassProfile,
   ClassProfileType,
@@ -21,21 +26,16 @@ import {
   ObjectPropertyProfileType,
   DatatypePropertyProfile,
   DatatypePropertyProfileType,
-  Profile,
+  TermProfile,
   ClassRole,
   RequirementLevel,
+  isDatatypePropertyProfile,
+  isObjectPropertyProfile,
 } from "./dsv-model.ts";
-import {
-  isSemanticModelClassProfile,
-  isSemanticModelRelationshipProfile,
-  SemanticModelClassProfile,
-  SemanticModelRelationshipEndProfile,
-  SemanticModelRelationshipProfile,
-} from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL, SKOS, VANN } from "./vocabulary.ts";
-import { isPrimitiveType } from "@dataspecer/core-v2/semantic-model/datatypes";
+import { DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL, SKOS } from "./vocabulary.ts";
 
-interface EntityListContainerToConceptualModelContext {
+
+interface EntityListContainerToDsvContext {
 
   /**
    * @return Entity with given identifier or null.
@@ -56,12 +56,13 @@ interface EntityListContainerToConceptualModelContext {
 }
 
 /**
- * Helper function to create {@link EntityListContainerToConceptualModelContext}.
+ * Helper function to create {@link EntityListContainerToDsvContext}.
  * Provides defaults, functionality can be changed using the arguments.
+ * @deprecated Use dsv-api-v2 instead.
  */
 export function createContext(
   containers: EntityListContainer[],
-): EntityListContainerToConceptualModelContext {
+): EntityListContainerToDsvContext {
   // Build an index identifier -> entity and container.
   const entityMap: {
     [identifier: string]: { entity: Entity, container: EntityListContainer }
@@ -76,7 +77,6 @@ export function createContext(
   }
 
   // Default behavior.
-
   const identifierToEntity = (identifier: string): Entity | null => {
     return entityMap[identifier]?.entity ?? null;
   };
@@ -120,51 +120,47 @@ export function createContext(
 /**
  * Create a conceptual model with given IRI based on the given model
  * container to convert. Others models are required
+ * @deprecated Use dsv-api-v2 instead.
  */
 export function entityListContainerToDsvModel(
-  conceptualModelIri: string,
+  dsvIri: string,
   entityListContainer: EntityListContainer,
-  context: EntityListContainerToConceptualModelContext,
-): DsvModel {
-  const result: DsvModel = {
-    iri: conceptualModelIri,
-    profiles: [],
+  context: EntityListContainerToDsvContext,
+): ApplicationProfile {
+  const result: ApplicationProfile = {
+    iri: dsvIri,
+    classProfiles: [],
+    datatypePropertyProfiles: [],
+    objectPropertyProfiles: [],
+    externalDocumentationUrl: null,
   };
-  (new EntityListContainerToConceptualModel(context))
-    .loadToConceptualModel(entityListContainer, result);
+  (new EntityListContainerToDsv(context))
+    .loadToDsv(entityListContainer, result);
   return result;
 }
+class EntityListContainerToDsv {
 
-class EntityListContainerToConceptualModel {
+  readonly context: EntityListContainerToDsvContext;
 
-  readonly context: EntityListContainerToConceptualModelContext;
+  dsvIri: string = "";
 
-  conceptualModelIri: string = "";
-
-  generalizations: Record<string, string[]> = {};
-
-  constructor(context: EntityListContainerToConceptualModelContext) {
+  constructor(context: EntityListContainerToDsvContext) {
     this.context = context;
   }
 
-  loadToConceptualModel(
-    modelContainer: EntityListContainer, conceptualModel: DsvModel,
+  loadToDsv(
+    modelContainer: EntityListContainer, dsv: ApplicationProfile,
   ): void {
-    this.conceptualModelIri = conceptualModel.iri;
-    this.loadToGeneralizations(modelContainer);
-    const identifierToClassProfile = this.loadClassProfiles(modelContainer);
-    this.loadRelationshipsToClassProfiles(modelContainer, identifierToClassProfile);
-    conceptualModel.profiles = Object.values(identifierToClassProfile);
-    // Cleanup.
-    this.generalizations = {};
+    this.dsvIri = dsv.iri;
+    const generalizations = this.loadGeneralizations(modelContainer);
+    this.loadClassProfiles(modelContainer, generalizations, dsv);
+    this.loadRelationshipsProfiles(modelContainer, generalizations, dsv);
   }
 
-  /**
-   * Load generalizations. We load them first and then add them
-   * to other properties as loading.
-   */
-  private loadToGeneralizations(modelContainer: EntityListContainer) {
-    const result: Record<string, string[]> = {};
+  private loadGeneralizations(
+    modelContainer: EntityListContainer,
+  ): { [iri: string]: string[] } {
+    const result: { [iri: string]: string[] } = {};
     modelContainer.entities.filter(isSemanticModelGeneralization)
       .forEach((item) => {
         result[item.child] = [
@@ -172,38 +168,38 @@ class EntityListContainerToConceptualModel {
           this.identifierToIri(item.parent),
         ];
       });
-    this.generalizations = result;
-  }
-
-  private loadClassProfiles(modelContainer: EntityListContainer)
-    : Record<string, ClassProfile> {
-    const result: Record<string, ClassProfile> = {};
-    modelContainer.entities.filter(item => isSemanticModelClassProfile(item))
-      .forEach((item) => {
-        const classProfile = this.semanticClassUsageToClassProfile(item);
-        result[item.id] = classProfile;
-      });
     return result;
   }
 
-  private semanticClassUsageToClassProfile(
-    item: SemanticModelClassProfile,
-  ): ClassProfile {
+  private loadClassProfiles(
+    modelContainer: EntityListContainer,
+    generalizations: { [iri: string]: string[] },
+    dsv: ApplicationProfile,
+  ): void {
+    modelContainer.entities
+      .filter(item => isSemanticModelClassProfile(item))
+      .map(item => this.loadClassProfile(item, generalizations))
+      .forEach(item => dsv.classProfiles.push(item));
+  }
 
+  private loadClassProfile(
+    item: SemanticModelClassProfile,
+    generalizations: { [iri: string]: string[] },
+  ): ClassProfile {
     const classProfile: ClassProfile = {
-      // Profile
+      // Resource
+      externalDocumentationUrl: item.externalDocumentationUrl ?? null,
+      // TermProfile
       iri: this.entityToIri(item),
       prefLabel: {},
       definition: {},
       usageNote: {},
       profileOfIri: [],
-      externalDocumentationUrl: item.externalDocumentationUrl ?? null,
       // ClassProfile
-      $type: [ClassProfileType],
-      properties: [],
+      type: [ClassProfileType],
       reusesPropertyValue: [],
       profiledClassIri: [],
-      specializationOfIri: this.generalizations[item.id] ?? [],
+      specializationOfIri: generalizations[item.id] ?? [],
       classRole: ClassRole.undefined,
     };
 
@@ -221,7 +217,7 @@ class EntityListContainerToConceptualModel {
     const profiling: (Entity | null)[] = [];
     // Type specific.
     item.profiling.forEach(item => profiling.push(this.identifierToEntity(item)));
-    this.setProfileFromProfile(item, classProfile);
+    this.setReusesPropertyValue(item, classProfile);
 
     // We need to know what we profile to add it to the right place.
     for (const profileOf of profiling) {
@@ -280,7 +276,7 @@ class EntityListContainerToConceptualModel {
   /**
    * Adds reusesPropertyValue values for profile.
    */
-  private setProfileFromProfile(
+  private setReusesPropertyValue(
     item: {
       name: LanguageString | null,
       nameFromProfiled: string | null,
@@ -289,7 +285,7 @@ class EntityListContainerToConceptualModel {
       usageNote: LanguageString | null
       usageNoteFromProfiled: string | null,
     },
-    profile: Profile,
+    profile: TermProfile,
   ) {
     if (item.nameFromProfiled === null) {
       profile.prefLabel = this.prepareString(item.name);
@@ -317,69 +313,30 @@ class EntityListContainerToConceptualModel {
     }
   }
 
-  private loadRelationshipsToClassProfiles(
+  private loadRelationshipsProfiles(
     modelContainer: EntityListContainer,
-    identifierToClassProfile: Record<string, ClassProfile>,
+    generalizations: { [iri: string]: string[] },
+    dsv: ApplicationProfile,
   ): void {
-    modelContainer.entities.filter(isSemanticModelRelationshipProfile).forEach(item => {
-      const propertyProfile = this.semanticRelationshipProfileToPropertyProfile(item);
-      if (propertyProfile == null) {
-        return;
-      }
-      const owner = identifierToClassProfile[propertyProfile.ownerIdentifier];
-      if (owner === undefined) {
-        console.warn(`Missing owner for '${item.id}' of type '${item.type}'. Relationship is ignored.`);
-        return;
-      }
-      owner?.properties.push(propertyProfile.profile);
-    });
+    modelContainer.entities
+      .filter(isSemanticModelRelationshipProfile)
+      .map(item => this.loadRelationshipsProfile(item, generalizations))
+      .filter(item => item !== null)
+      .forEach(item => {
+        if (isDatatypePropertyProfile(item)) {
+          dsv.datatypePropertyProfiles.push(item);
+        } else if (isObjectPropertyProfile(item)) {
+          dsv.objectPropertyProfiles.push(item);
+        } else {
+          console.warn("Ignoring unknown ProfileTerm", item);
+        }
+      });
   }
 
-  /**
-   * As decided, spring 2024, property IRI, name, usageNote, etc .. are stored in the range.
-   */
-  private addRangeConceptToPropertyProfile(
+  private loadRelationshipsProfile(
     item: SemanticModelRelationshipProfile,
-    range: SemanticModelRelationshipEndProfile,
-    propertyProfile: PropertyProfile
-  ) {
-    // Now we need to store the range, we store it base on the
-    // relationship type.
-    const rangeConcept = range.concept;
-    if (rangeConcept === null) {
-      console.warn("Range concept is null.", item);
-    } else if (isPrimitiveType(rangeConcept)) {
-      // It is an attribute, we also use the IRI as is.
-      const attribute = extentToDatatypePropertyProfile(propertyProfile);
-      attribute.rangeDataTypeIri.push(rangeConcept);
-    } else {
-      // It is an association.
-      const association = extentToObjectPropertyProfile(propertyProfile);
-      association.rangeClassIri.push(this.identifierToIri(rangeConcept));
-    }
-  }
-
-  /**
-   * Add given entity to {@link PropertyProfile} profiles list.
-   * Based on the entity type we can add to one of two lists.
-   */
-  private addProfileToPropertyProfile(
-    profileOf: Entity,
-    profile: PropertyProfile,
-  ) {
-    if (isSemanticModelRelationship(profileOf)) {
-      profile.profiledPropertyIri.push(this.entityToIri(profileOf));
-    } else if (isSemanticModelRelationshipProfile(profileOf)) {
-      profile.profileOfIri.push(this.entityToIri(profileOf));
-    } else {
-      // It can be part of the core types.
-      console.warn(`Invalid profileOf '${profileOf.id}' with type '${profileOf.type}'.`)
-    }
-  }
-
-  private semanticRelationshipProfileToPropertyProfile(
-    item: SemanticModelRelationshipProfile,
-  ): { ownerIdentifier: string, profile: PropertyProfile } | null {
+    generalizations: { [iri: string]: string[] },
+  ): PropertyProfile | null {
     const [domain, range] = item.ends;
     if (domain === undefined || range === undefined) {
       console.error(`Expected two ends for '${item.id}'.`);
@@ -391,60 +348,108 @@ class EntityListContainerToConceptualModel {
     }
 
     const propertyProfile: PropertyProfile = {
-      // Profile
+      // Resource
+      externalDocumentationUrl: range.externalDocumentationUrl ?? null,
+      // TermProfile
+      type: [],
       iri: this.entityToIri(item),
-      cardinality: cardinalityToCardinalityEnum(range.cardinality),
       prefLabel: {},
       definition: {},
       usageNote: {},
       profileOfIri: [],
-      specializationOfIri: this.generalizations[item.id] ?? [],
-      externalDocumentationUrl: range.externalDocumentationUrl ?? null,
-      // PropertyProfile
-      profiledPropertyIri: [],
+      specializationOfIri: generalizations[item.id] ?? [],
       reusesPropertyValue: [],
+      // PropertyProfile
+      cardinality: cardinalityToCardinalityEnum(range.cardinality),
+      domainIri: this.identifierToIri(domain.concept),
+      profiledPropertyIri: [],
       requirementLevel: RequirementLevel.undefined,
     };
 
-    for (const tag of (range.tags ?? [])) {
-      switch (tag) {
-        case DSV_MANDATORY_LEVEL.mandatory:
-          propertyProfile.requirementLevel = RequirementLevel.mandatory;
-          break;
-        case DSV_MANDATORY_LEVEL.optional:
-          propertyProfile.requirementLevel = RequirementLevel.optional;
-          break;
-        case DSV_MANDATORY_LEVEL.recommended:
-          propertyProfile.requirementLevel = RequirementLevel.recommended;
-          break;
-      }
-    }
+    applyTagsToPropertyProfile(propertyProfile, range.tags);
+    this.resolvePropertyProfiling(item, propertyProfile, range);
+    this.setReusesPropertyValue(range, propertyProfile);
+    return this.addRangeConceptToPropertyProfile(item, range, propertyProfile);
+  }
 
+  private resolvePropertyProfiling(
+    item: SemanticModelRelationshipProfile,
+    profile: PropertyProfile,
+    range: SemanticModelRelationshipEndProfile,
+  ) {
     for (const iri of range.profiling) {
       const profileOf = this.context.identifierToEntity(iri);
       if (profileOf === null) {
         console.error(`Missing profileOf '${iri}' for '${item.id}'.`);
+        continue;
+      }
+      // Based on the type of "profileOf" we add the profile
+      // profiledProperty or profileOf list, for non-profile
+      // or profile respectively.
+      if (isSemanticModelRelationship(profileOf)) {
+        profile.profiledPropertyIri.push(this.entityToIri(profileOf));
+      } else if (isSemanticModelRelationshipProfile(profileOf)) {
+        profile.profileOfIri.push(this.entityToIri(profileOf));
       } else {
-        this.addProfileToPropertyProfile(profileOf, propertyProfile);
+        console.warn(
+          `Invalid profileOf '${profileOf.id}' with type '${profileOf.type}'.`);
       }
     }
-
-    this.setProfileFromProfile(range, propertyProfile);
-    this.addRangeConceptToPropertyProfile(item, range, propertyProfile);
-
-    return {
-      ownerIdentifier: domain.concept,
-      profile: propertyProfile,
-    };
   }
 
+  /**
+   * Add information from {@link range} to {@link propertyProfile}.
+   * Type of {@link rage} determined type of the {@link propertyProfile}.
+   */
+  private addRangeConceptToPropertyProfile(
+    item: SemanticModelRelationshipProfile,
+    range: SemanticModelRelationshipEndProfile,
+    propertyProfile: PropertyProfile
+  ) {
+    // First we obtain the concept, i.e. value of the range.
+    const rangeConcept = range.concept;
+    if (rangeConcept === null) {
+      console.warn("Range concept is null, ignoring relationship.", item);
+      return null;
+    }
+
+    // We decide the type based on the range concept.
+    // If range concept is a primitive value it is datatype property, else
+    // it is object property.
+    // This gets more complicated once we aim for primitive type profile
+    // support.
+    if (isPrimitiveType(rangeConcept)) {
+      const attribute = extentToDatatypePropertyProfile(propertyProfile);
+      attribute.rangeDataTypeIri.push(rangeConcept);
+      return attribute;
+    } else {
+      const association = extentToObjectPropertyProfile(propertyProfile);
+      association.rangeClassIri.push(this.identifierToIri(rangeConcept));
+      return association;
+    }
+  }
+
+}
+
+/**
+ * Takes given {@link PropertyProfile} and turn it into
+ * {@link DatatypePropertyProfile}.
+ */
+function extentToDatatypePropertyProfile(
+  property: PropertyProfile,
+): DatatypePropertyProfile {
+  property.type = [DatatypePropertyProfileType];
+  (property as any).rangeDataTypeIri = [];
+  return property as DatatypePropertyProfile;
 }
 
 /**
  * We have only tree values: 0, 1, and many.
  * We map 0 to 0, 1 to 1, and everything else to many.
  */
-function cardinalityToCardinalityEnum(cardinality: [number, number | null] | null): Cardinality | null {
+function cardinalityToCardinalityEnum(
+  cardinality: [number, number | null] | null,
+): Cardinality | null {
   if (cardinality === null) {
     // Cardinality is not specified.
     return null;
@@ -477,14 +482,33 @@ function cardinalityToCardinalityEnum(cardinality: [number, number | null] | nul
   }
 }
 
-function extentToDatatypePropertyProfile(property: PropertyProfile): DatatypePropertyProfile {
-  (property as any).$type = [DatatypePropertyProfileType];
-  (property as any).rangeDataTypeIri = [];
-  return property as DatatypePropertyProfile;
+function applyTagsToPropertyProfile(
+  profile: PropertyProfile, tags: string[] | undefined,
+): void {
+  if (tags === undefined) {
+    return;
+  }
+  for (const tag of tags) {
+    switch (tag) {
+      case DSV_MANDATORY_LEVEL.mandatory:
+        profile.requirementLevel = RequirementLevel.mandatory;
+        break;
+      case DSV_MANDATORY_LEVEL.optional:
+        profile.requirementLevel = RequirementLevel.optional;
+        break;
+      case DSV_MANDATORY_LEVEL.recommended:
+        profile.requirementLevel = RequirementLevel.recommended;
+        break;
+    }
+  }
 }
 
+/**
+ * Takes given {@link PropertyProfile} and turn it into
+ * {@link ObjectPropertyProfile}.
+ */
 function extentToObjectPropertyProfile(property: PropertyProfile): ObjectPropertyProfile {
-  (property as any).$type = [ObjectPropertyProfileType];
+  property.type = [ObjectPropertyProfileType];
   (property as any).rangeClassIri = [];
   return property as ObjectPropertyProfile;
 }

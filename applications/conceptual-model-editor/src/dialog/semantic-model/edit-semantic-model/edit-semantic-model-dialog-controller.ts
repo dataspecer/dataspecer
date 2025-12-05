@@ -1,4 +1,4 @@
-import { HexColor } from "@dataspecer/core-v2/visual-model";
+import { HexColor } from "@dataspecer/visual-model";
 import { DialogProps } from "../../dialog-api";
 import { EditSemanticModelDialogState } from "./edit-semantic-model-dialog-state";
 

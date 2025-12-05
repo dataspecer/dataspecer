@@ -16,7 +16,7 @@ import {
   NewCmeRelationshipProfile,
 } from "./model";
 import { EntityModel } from "@dataspecer/core-v2";
-import { isInMemorySemanticModel } from "../../utilities/model";
+import { isInMemorySemanticModel } from "../../dataspecer/semantic-model";
 import { createLogger } from "../../application";
 import { createCmeClassProfile } from "./operation/create-cme-class-profile";
 import { createCmeClass } from "./operation/create-cme-class";

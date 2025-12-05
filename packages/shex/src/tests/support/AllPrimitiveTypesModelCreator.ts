@@ -5,7 +5,6 @@ import {
     StructureModelComplexType,
     StructureModelProperty,
     StructureModelPrimitiveType,
-    StructureModelCustomType,
     StructureModelSchemaRoot,
   } from "@dataspecer/core/structure-model/model";
   import { ArtefactGeneratorContext } from "@dataspecer/core/generator";
@@ -16,7 +15,7 @@ class AllPrimitiveTypesModelCreator implements ModelCreator{
 
    createModel(): StructureModel{
     var model = new StructureModel();
-  
+
       var primitiveType1 : StructureModelPrimitiveType;
       primitiveType1 = new StructureModelPrimitiveType();
       primitiveType1.dataType = "http://www.w3.org/2001/XMLSchema#integer";
@@ -64,7 +63,7 @@ class AllPrimitiveTypesModelCreator implements ModelCreator{
       primitiveType8.dataType = "http://www.w3.org/2001/XMLSchema#string";
       primitiveType8.example = null;
       primitiveType8.regex = null;
-  
+
       var property1 : StructureModelProperty;
       property1 = new StructureModelProperty();
       property1.cardinalityMax = 1;
@@ -175,10 +174,10 @@ class AllPrimitiveTypesModelCreator implements ModelCreator{
       property8.pimIri = "https://slovník.gov.cz/generický/adresy/pojem/název-městského-obvodu-městské-části";
       property8.psmIri = "https://slovník.gov.cz/generický/adresy/pojem/název-městského-obvodu-městské-části";
       property8.technicalLabel = "poznamky-popisek";
-     
-      
-  
-  
+
+
+
+
       var class1 : StructureModelClass;
       class1 = new StructureModelClass();
       class1.cimIri = "https://slovník.gov.cz/legislativní/sbírka/111/2009/pojem/adresa";
@@ -195,13 +194,13 @@ class AllPrimitiveTypesModelCreator implements ModelCreator{
       class1.structureSchema = null;
       class1.technicalLabel = "Technický popisek věci 1";
       class1.instancesSpecifyTypes = "ALWAYS";
-  
+
       var root1 : StructureModelSchemaRoot;
       root1 = new StructureModelSchemaRoot();
       root1.classes = [class1];
-  
+
       model.roots = [root1];
-  
+
     return model;
   }
 }

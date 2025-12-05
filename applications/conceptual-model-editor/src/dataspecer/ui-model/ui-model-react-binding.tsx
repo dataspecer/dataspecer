@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 
-import { VisualModel } from "@dataspecer/core-v2/visual-model";
+import { VisualModel } from "@dataspecer/visual-model";
 import { SemanticModelAggregatorView } from "@dataspecer/core-v2/semantic-model/aggregator";
 
 import { UiModelApi } from "./ui-model-api";

@@ -7,6 +7,7 @@ import {DataPsmObjectType, ORContext} from "../data-psm-row";
 import {DataPsmDeleteButton} from "../class/DataPsmDeleteButton";
 import {useFederatedObservableStore} from "@dataspecer/federated-observable-store-react/store";
 import {DeleteChoice} from "../../../operations/delete-choice";
+import { ReplaceClassWithReference } from "../references/replace-class-with-referemce";
 
 /**
  * Renders OR choices as a subtree and adds delete operation for each choice.
@@ -30,9 +31,10 @@ export const DataPsmOrSubtree: React.FC<{iri: string, isOpen: boolean}> = memo((
     <ul>
       {resource &&
       <TransitionGroup exit={false}>
-        {resource.dataPsmChoices.map(iri => <Collapse key={iri}>
-          <DataPsmObjectType iri={iri} {...context} menu={[
-            <DataPsmDeleteButton onClick={() => deleteChoice(iri)} />
+        {resource.dataPsmChoices.map(choiceIri => <Collapse key={choiceIri}>
+          <DataPsmObjectType iri={choiceIri} {...context} menu={[
+            <DataPsmDeleteButton onClick={() => deleteChoice(choiceIri)} />,
+            <ReplaceClassWithReference structuralClassId={choiceIri} owningStructuralEntityId={iri} />
           ]} />
         </Collapse>)}
       </TransitionGroup>

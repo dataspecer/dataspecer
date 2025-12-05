@@ -1,6 +1,6 @@
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { ExternalSemanticModel } from "@dataspecer/core-v2/semantic-model/simplified";
-import { HexColor, VisualModel } from "@dataspecer/core-v2/visual-model";
+import { HexColor, VisualModel } from "@dataspecer/visual-model";
 
 import { SemanticModel } from "../../semantic-model";
 import { CmeSemanticModel, CmeSemanticModelNameLanguage, CmeSemanticModelType } from "../model";

@@ -1,6 +1,18 @@
-import { SemanticModelClass, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
-import { SemanticModelClassProfile, SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { ClassRole, DsvModel, PropertyProfile, RequirementLevel } from "./dsv-model.ts";
+import {
+    SemanticModelClass,
+    SemanticModelRelationship,
+} from "@dataspecer/core-v2/semantic-model/concepts";
+import {
+    SemanticModelClassProfile,
+    SemanticModelRelationshipProfile,
+} from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import {
+    ClassRole,
+    ApplicationProfile,
+    PropertyProfile,
+    RequirementLevel,
+    ClassProfile,
+} from "./dsv-model.ts";
 import { EntityListContainer } from "./entity-model.ts";
 import {
     createContext,
@@ -92,9 +104,10 @@ test("Issue #608", () => {
     const actual = entityListContainerToDsvModel(
         "http://dcat/model/", containers[0], context);
 
-    const expected: DsvModel = {
+    const expected: ApplicationProfile = {
         "iri": "http://dcat/model/",
-        "profiles": [{
+        "externalDocumentationUrl": null,
+        "classProfiles": [{
             "iri": "http://www.w3.org/ns/Dataset-profile",
             "prefLabel": {},
             "definition": {},
@@ -107,29 +120,31 @@ test("Issue #608", () => {
                 "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#definition",
                 "propertyReusedFromResourceIri": "http://www.w3.org/ns/Dataset",
             }],
-            "$type": ["class-profile"],
+            "type": ["class-profile"],
             "profiledClassIri": ["http://www.w3.org/ns/Dataset"],
-            "properties": [{
-                "iri": "http://dcat/model/terms-title-profile",
-                "cardinality": null,
-                "prefLabel": { "en": "Dataset title" },
-                "definition": { "en": "A name given to the dataset." },
-                "usageNote": {},
-                "profileOfIri": [],
-                "profiledPropertyIri": ["http://purl.org/dc/terms/title"],
-                "reusesPropertyValue": [],
-                "$type": ["datatype-property-profile"],
-                "rangeDataTypeIri": [
-                    "http://www.w3.org/2000/01/rdf-schema#Literal"
-                ],
-                "specializationOfIri": [],
-                "externalDocumentationUrl": null,
-                "requirementLevel": RequirementLevel.undefined,
-            } as PropertyProfile],
             "specializationOfIri": [],
             "classRole": ClassRole.undefined,
             "externalDocumentationUrl": null,
         }],
+        "datatypePropertyProfiles": [{
+            "iri": "http://dcat/model/terms-title-profile",
+            "cardinality": null,
+            "prefLabel": { "en": "Dataset title" },
+            "definition": { "en": "A name given to the dataset." },
+            "usageNote": {},
+            "profileOfIri": [],
+            "profiledPropertyIri": ["http://purl.org/dc/terms/title"],
+            "reusesPropertyValue": [],
+            "type": ["datatype-property-profile"],
+            "rangeDataTypeIri": [
+                "http://www.w3.org/2000/01/rdf-schema#Literal"
+            ],
+            "specializationOfIri": [],
+            "externalDocumentationUrl": null,
+            "requirementLevel": RequirementLevel.undefined,
+            "domainIri": "http://www.w3.org/ns/Dataset-profile",
+        }],
+        "objectPropertyProfiles": []
     };
 
     expect(actual).toStrictEqual(expected);
@@ -215,9 +230,10 @@ test("Default test for profiles.", () => {
     const actual = entityListContainerToDsvModel(
         "http://dcat/model/", containers[0]!, context);
 
-    const expected: DsvModel = {
+    const expected: ApplicationProfile = {
         "iri": "http://dcat/model/",
-        "profiles": [{
+        "externalDocumentationUrl": null,
+        "classProfiles": [{
             "iri": "http://www.w3.org/ns/Dataset-profile",
             "prefLabel": {},
             "definition": {},
@@ -230,29 +246,31 @@ test("Default test for profiles.", () => {
                 "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#definition",
                 "propertyReusedFromResourceIri": "http://www.w3.org/ns/Dataset",
             }],
-            "$type": ["class-profile"],
+            "type": ["class-profile"],
             "profiledClassIri": ["http://www.w3.org/ns/Dataset"],
-            "properties": [{
-                "iri": "http://dcat/model/terms-title-profile",
-                "cardinality": null,
-                "prefLabel": { "en": "Dataset title" },
-                "definition": { "en": "A name given to the dataset." },
-                "usageNote": {},
-                "profileOfIri": [],
-                "profiledPropertyIri": ["http://purl.org/dc/terms/title"],
-                "reusesPropertyValue": [],
-                "$type": ["datatype-property-profile"],
-                "rangeDataTypeIri": [
-                    "http://www.w3.org/2000/01/rdf-schema#Literal"
-                ],
-                "specializationOfIri": [],
-                "externalDocumentationUrl": "http://documenation-2",
-                "requirementLevel": RequirementLevel.undefined,
-            } as PropertyProfile],
             "specializationOfIri": [],
             "externalDocumentationUrl": "http://documenation-1",
             "classRole": ClassRole.undefined,
         }],
+        "datatypePropertyProfiles": [{
+            "iri": "http://dcat/model/terms-title-profile",
+            "cardinality": null,
+            "prefLabel": { "en": "Dataset title" },
+            "definition": { "en": "A name given to the dataset." },
+            "usageNote": {},
+            "profileOfIri": [],
+            "profiledPropertyIri": ["http://purl.org/dc/terms/title"],
+            "reusesPropertyValue": [],
+            "type": ["datatype-property-profile"],
+            "rangeDataTypeIri": [
+                "http://www.w3.org/2000/01/rdf-schema#Literal"
+            ],
+            "specializationOfIri": [],
+            "externalDocumentationUrl": "http://documenation-2",
+            "requirementLevel": RequirementLevel.undefined,
+            "domainIri": "http://www.w3.org/ns/Dataset-profile",
+        }],
+        "objectPropertyProfiles": []
     };
 
     expect(actual).toStrictEqual(expected);
@@ -385,16 +403,16 @@ test("Issue #1005", () => {
     const actual = entityListContainerToDsvModel(
         "http://dcat/model/", containers[0], context);
 
-    const expected: DsvModel = {
+    const expected: ApplicationProfile = {
         "iri": "http://dcat/model/",
-        "profiles": [{
+        "externalDocumentationUrl": null,
+        "classProfiles": [{
             "iri": "http://dcat/model/juicyBusiness",
             "prefLabel": {},
             "definition": {},
             "usageNote": {},
             "profileOfIri": [],
-            "$type": ["class-profile"],
-            "properties": [],
+            "type": ["class-profile"],
             "reusesPropertyValue": [{
                 "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#prefLabel",
                 "propertyReusedFromResourceIri": "http://dcat/model/juicyBusiness"
@@ -406,55 +424,13 @@ test("Issue #1005", () => {
             "specializationOfIri": [],
             "externalDocumentationUrl": null,
             "classRole": ClassRole.undefined,
-        }, {
+        } as ClassProfile, {
             "iri": "http://dcat/model/bulkyForce",
             "prefLabel": {},
             "definition": {},
             "usageNote": {},
             "profileOfIri": [],
-            "$type": ["class-profile"],
-            "properties": [{
-                "iri": "http://dcat/model/BulkyForce.juicyWork",
-                "cardinality": null,
-                "prefLabel": {},
-                "definition": {},
-                "usageNote": {},
-                "profileOfIri": [],
-                "profiledPropertyIri": ["http://dcat/model/juicyWork"],
-                "reusesPropertyValue": [{
-                    "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#prefLabel",
-                    "propertyReusedFromResourceIri": "http://dcat/model/juicyWork"
-                }, {
-                    "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#definition",
-                    "propertyReusedFromResourceIri": "http://dcat/model/juicyWork"
-                }
-                ],
-                "specializationOfIri": [],
-                "$type": ["object-property-profile"],
-                "rangeClassIri": ["http://dcat/model/juicyBusiness"],
-                "externalDocumentationUrl": null,
-                "requirementLevel": RequirementLevel.undefined,
-            } as PropertyProfile, {
-                "iri": "http://dcat/model/JuicyBusiness.juicyWorkSpecial",
-                "cardinality": null,
-                "prefLabel": {},
-                "definition": {},
-                "usageNote": {},
-                "profileOfIri": [],
-                "profiledPropertyIri": ["http://dcat/model/juicyWork"],
-                "reusesPropertyValue": [{
-                    "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#prefLabel",
-                    "propertyReusedFromResourceIri": "http://dcat/model/juicyWork"
-                }, {
-                    "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#definition",
-                    "propertyReusedFromResourceIri": "http://dcat/model/juicyWork"
-                }],
-                "specializationOfIri": ["http://dcat/model/BulkyForce.juicyWork"],
-                "$type": ["object-property-profile"],
-                "rangeClassIri": ["http://dcat/model/juicyBusiness"],
-                "externalDocumentationUrl": null,
-                "requirementLevel": RequirementLevel.undefined,
-            } as PropertyProfile],
+            "type": ["class-profile"],
             "reusesPropertyValue": [{
                 "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#prefLabel",
                 "propertyReusedFromResourceIri": "http://dcat/model/bulkyForce"
@@ -466,6 +442,51 @@ test("Issue #1005", () => {
             "specializationOfIri": ["http://dcat/model/juicyBusiness"],
             "externalDocumentationUrl": null,
             "classRole": ClassRole.undefined,
+        } as ClassProfile],
+        "datatypePropertyProfiles": [],
+        "objectPropertyProfiles": [{
+            "iri": "http://dcat/model/BulkyForce.juicyWork",
+            "cardinality": null,
+            "prefLabel": {},
+            "definition": {},
+            "usageNote": {},
+            "profileOfIri": [],
+            "profiledPropertyIri": ["http://dcat/model/juicyWork"],
+            "reusesPropertyValue": [{
+                "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#prefLabel",
+                "propertyReusedFromResourceIri": "http://dcat/model/juicyWork"
+            }, {
+                "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#definition",
+                "propertyReusedFromResourceIri": "http://dcat/model/juicyWork"
+            }
+            ],
+            "specializationOfIri": [],
+            "type": ["object-property-profile"],
+            "rangeClassIri": ["http://dcat/model/juicyBusiness"],
+            "externalDocumentationUrl": null,
+            "requirementLevel": RequirementLevel.undefined,
+            "domainIri": "http://dcat/model/bulkyForce",
+        }, {
+            "iri": "http://dcat/model/JuicyBusiness.juicyWorkSpecial",
+            "cardinality": null,
+            "prefLabel": {},
+            "definition": {},
+            "usageNote": {},
+            "profileOfIri": [],
+            "profiledPropertyIri": ["http://dcat/model/juicyWork"],
+            "reusesPropertyValue": [{
+                "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#prefLabel",
+                "propertyReusedFromResourceIri": "http://dcat/model/juicyWork"
+            }, {
+                "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#definition",
+                "propertyReusedFromResourceIri": "http://dcat/model/juicyWork"
+            }],
+            "specializationOfIri": ["http://dcat/model/BulkyForce.juicyWork"],
+            "type": ["object-property-profile"],
+            "rangeClassIri": ["http://dcat/model/juicyBusiness"],
+            "externalDocumentationUrl": null,
+            "requirementLevel": RequirementLevel.undefined,
+            "domainIri": "http://dcat/model/bulkyForce",
         }]
     };
 

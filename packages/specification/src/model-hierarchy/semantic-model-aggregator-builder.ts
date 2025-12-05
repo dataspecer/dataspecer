@@ -7,7 +7,7 @@ import {
 } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
 import { SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
-import { VisualModelData } from "@dataspecer/core-v2/visual-model";
+import { VisualModelData } from "@dataspecer/visual-model";
 import { ModelCompositionConfiguration, ModelCompositionConfigurationApplicationProfile, ModelCompositionConfigurationMerge } from "./composition-configuration.ts";
 import { getProvidedSourceSemanticModel } from "./adapter.ts";
 import { loadAsSemanticModel, loadAsVisualModel } from "../model-loader.ts";

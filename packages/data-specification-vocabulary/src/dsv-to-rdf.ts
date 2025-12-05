@@ -3,20 +3,20 @@ import { DataFactory } from "n3";
 
 import {
   LanguageString,
-  DsvModel,
-  Profile,
+  ApplicationProfile,
+  TermProfile,
   ClassProfile,
   PropertyProfile,
   ObjectPropertyProfile,
-  isObjectPropertyProfile,
   DatatypePropertyProfile,
-  isDatatypePropertyProfile,
   Cardinality,
   ClassRole,
   RequirementLevel,
 } from "./dsv-model.ts";
 
-import { RDF, DSV, DCT, SKOS, VANN, DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL, PROF } from "./vocabulary.ts";
+import {
+  RDF, DSV, DCT, SKOS, DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL, PROF,
+} from "./vocabulary.ts";
 
 const IRI = DataFactory.namedNode;
 
@@ -24,7 +24,7 @@ const Literal = DataFactory.literal;
 
 const Quad = DataFactory.quad;
 
-interface ConceptualModelToRdfConfiguration {
+interface DsvToRdfConfiguration {
 
   /**
    * Prefixes to use when writing RDF output.
@@ -38,19 +38,19 @@ interface ConceptualModelToRdfConfiguration {
 
 }
 
-export async function conceptualModelToRdf(
-  model: DsvModel, configuration: ConceptualModelToRdfConfiguration,
+export async function dsvToRdf(
+  model: ApplicationProfile, configuration: DsvToRdfConfiguration,
 ): Promise<string> {
   const effectiveConfiguration = {
     ...createDefaultConfiguration(),
     ...configuration,
   };
   const prefixes = {
+    ...(model.iri ? {"": model.iri} : {}),
     ...effectiveConfiguration.prefixes,
-    "": model.iri,
   };
   const n3Writer = new N3.Writer({ prefixes });
-  (new ConceptualModelWriter(n3Writer, model)).writeConceptualModel();
+  (new DsvWriter(n3Writer, model)).writeConceptualModel();
   // Concert to a string.
   return new Promise((resolve, reject) => n3Writer.end((error, result) => {
     if (error) {
@@ -65,7 +65,7 @@ export async function conceptualModelToRdf(
   }));
 }
 
-function createDefaultConfiguration(): ConceptualModelToRdfConfiguration {
+function createDefaultConfiguration(): DsvToRdfConfiguration {
   return {
     "prefixes": {
       "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
@@ -83,14 +83,13 @@ function createDefaultConfiguration(): ConceptualModelToRdfConfiguration {
     "prettyPrint": true,
   };
 }
-
-class ConceptualModelWriter {
+class DsvWriter {
 
   private writer: N3.Writer;
 
-  private model: DsvModel;
+  private model: ApplicationProfile;
 
-  constructor(writer: N3.Writer, model: DsvModel) {
+  constructor(writer: N3.Writer, model: ApplicationProfile) {
     this.writer = writer;
     this.model = model;
   }
@@ -98,9 +97,12 @@ class ConceptualModelWriter {
   writeConceptualModel(): void {
     this.addType(this.model.iri, PROF.Profile);
     this.addType(this.model.iri, DSV.ApplicationProfile);
-    for (const profile of this.model.profiles) {
-      this.writeClassProfile(profile);
-    }
+    this.model.classProfiles
+      .forEach(item => this.writeClassProfile(item));
+    this.model.objectPropertyProfiles
+      .forEach(item => this.writeObjectPropertyProfile(item));
+    this.model.datatypePropertyProfiles
+      .forEach(item => this.writeDatatypePropertyProfile(item));
   }
 
   private addType(subject: string, type: N3.NamedNode) {
@@ -122,20 +124,9 @@ class ConceptualModelWriter {
       case ClassRole.undefined:
         break;
     }
-    // Properties.
-    for (const property of profile.properties) {
-      this.addIri(property.iri, DSV.domain, profile.iri);
-      // It can be both types or none.
-      if (isObjectPropertyProfile(property)) {
-        this.writeObjectPropertyProfile(property);
-      }
-      if (isDatatypePropertyProfile(property)) {
-        this.writeDatatypePropertyProfile(property);
-      }
-    }
   }
 
-  private writeProfileBase(profile: Profile) {
+  private writeProfileBase(profile: TermProfile) {
     this.addIri(profile.iri, DCT.isPartOf, this.model.iri);
     this.addType(profile.iri, DSV.TermProfile);
     //
@@ -208,6 +199,8 @@ class ConceptualModelWriter {
     const cardinality = cardinalityToIri(profile.cardinality);
     this.addIri(profile.iri, DSV.cardinality, cardinality);
     this.addIris(profile.iri, DSV.property, profile.profiledPropertyIri);
+    this.addIri(profile.iri, DSV.domain, profile.domainIri);
+
     // Requirement level
     switch (profile.requirementLevel) {
       case RequirementLevel.mandatory:

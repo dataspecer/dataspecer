@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "@dataspecer/core-v2": "*",
-    "@dataspecer/data-specification-vocabulary": "*",
+    "@dataspecer/semantic-model": "*",
+    "@dataspecer/utilities": "*",
     "n3": "^1.25.1"
   },
   "devDependencies": {

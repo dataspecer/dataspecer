@@ -9,7 +9,7 @@ import { applyLayoutConfiguration, createLayoutConfiguration, performLayoutOfSem
 import { Loader } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { useConfigDialog } from "./layout-dialog";
-import { MODEL_VISUAL_TYPE } from "@dataspecer/core-v2/visual-model";
+import { createVisualModelData } from "@dataspecer/visual-model";
 import { createDefaultConfigurationModelFromJsonObject } from "@dataspecer/core-v2/configuration-model";
 
 
@@ -70,14 +70,12 @@ export const Autolayout = ({ iri, isOpen, resolve, parentIri }: { iri: string, p
         visualEntities[visualEntityIdentifier] = layoutedVisualEntity.visualEntity;
       });
 
-
       const generatedIdentifierForModelColor = (Math.random() + 1).toString(36).substring(7);
-      visualEntities[generatedIdentifierForModelColor] = {
-        type: [MODEL_VISUAL_TYPE],
+      visualEntities[generatedIdentifierForModelColor] = createVisualModelData({
+        identifier: generatedIdentifierForModelColor,
         representedModel: semanticModelId,
         color: "#ff9770",
-        identifier: generatedIdentifierForModelColor
-      }
+      })
       console.info("layouted visual entitites");
       console.info(visualEntities);
     } catch (error) {

@@ -125,7 +125,7 @@ const editSemanticModelDialog = prefix(
     "color": "Color",
     "ok": "✅ Save changes",
     "cancel": "❌ Cancel",
-    "external-model-message": "You are allowed to only change a color for an external model."
+    "external-model-message": "This model is external. As a result you can only change the model's color."
   },
 );
 
@@ -138,11 +138,22 @@ const searchExternalSemanticModelDialog = prefix(
   },
 );
 
+const profileModelDialog = prefix(
+  "profile-model-dialog.", {
+    "label": "Profile entities in a model",
+    "ok": "Profile",
+    "cancel": "Close",
+    "source-model": "Source",
+    "target-model": "Target",
+  },
+);
+
 const catalog = prefix(
   "catalog.", {
     "model.show": "Show all entities in the diagram.",
     "model.hide": "Hide all entities in the diagram.",
     "model.edit": "Edit semantic model.",
+    "model.profile": "Profile semantic model.",
     "model.delete": "Delete the semantic model.",
     "model.add": "Add a new semantic model.",
     "model.toggle": "Toggle diagram visibility.",
@@ -150,7 +161,8 @@ const catalog = prefix(
     "model.create-class": "Create a new class.",
     "model.create-association": "Create a new association.",
     "model.create-attribute": "Create a new attribute.",
-    "class.expand": "Load class's surrounding.",
+    "class.add-surroundings": "Load class's surrounding.",
+    "class.release-surroundings": "Release class's surrounding.",
     "class.focus": "Focus in the diagram.",
     "class.delete": "Delete the class.",
     "class.edit": "Edit the class.",
@@ -183,7 +195,7 @@ const catalog = prefix(
     "generalization.detail": "Show generalization detail.",
     "generalization.toggle": "Toggle visibility in the diagram.",
     "clear": "Clear",
-    "search-title": "Search by label",
+    "search-title": "Search items by label",
   });
 
 const dataspecer = prefix(
@@ -200,7 +212,6 @@ const inputIri = prefix(
     "validate.space": "Invalid IRI syntax.",
   },
 );
-console.log("LOC", inputIri);
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 export const translations: Record<string, string | Function> = {
@@ -217,6 +228,7 @@ export const translations: Record<string, string | Function> = {
   ...dialogVisualNode,
   ...editSemanticModelDialog,
   ...searchExternalSemanticModelDialog,
+  ...profileModelDialog,
   ...catalog,
   ...inputIri,
   //

@@ -7,7 +7,7 @@ import { LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { createSgovModel, createVisualModel } from "@dataspecer/core-v2/semantic-model/simplified";
 import { PimStoreWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
-import { VisualModel } from "@dataspecer/core-v2/visual-model";
+import { VisualModel } from "@dataspecer/visual-model";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { blobModelAsConnector, MemoryStoreFromBlob } from "./memory-store.ts";
 import { BaseModel } from "./model-repository/base-model.ts";

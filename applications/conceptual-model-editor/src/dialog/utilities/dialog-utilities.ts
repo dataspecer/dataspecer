@@ -8,7 +8,6 @@ import { AggregatedEntityWrapper } from "@dataspecer/core-v2/semantic-model/aggr
 import { DataTypeURIs, isDataType } from "@dataspecer/core-v2/semantic-model/datatypes";
 import { configuration, createLogger, t } from "../../application";
 import { getDomainAndRange } from "../../util/relationship-utils";
-import { CmeSemanticModel, OwlCmeSemanticModel, UnknownCmeSemanticModel } from "../../dataspecer/cme-model";
 import { EntityDsIdentifier } from "../../dataspecer/entity-model";
 import { ClassesContextType } from "../../context/classes-context";
 import { ModelGraphContextType } from "../../context/model-context";
@@ -18,9 +17,14 @@ import {
   SemanticModelClassProfile,
   SemanticModelRelationshipProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { VisualModel } from "@dataspecer/core-v2/visual-model";
+import { VisualModel } from "@dataspecer/visual-model";
 import { semanticModelMapToCmeSemanticModel } from "../../dataspecer/cme-model/adapter";
 import { dataTypeUriToName } from "../../dataspecer/semantic-model/data-type";
+import {
+  OwlCmeSemanticModel,
+  UnknownCmeSemanticModel,
+} from "../../dataspecer/cme-model/cme-well-known";
+import { CmeSemanticModel } from "../../dataspecer/cme-model";
 
 const LOG = createLogger(import.meta.url);
 

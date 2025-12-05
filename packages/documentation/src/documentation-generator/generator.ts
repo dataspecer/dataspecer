@@ -1,6 +1,6 @@
 import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship } from '@dataspecer/core-v2/semantic-model/concepts';
 // @ts-ignore
-import { Entities, Entity, InMemoryEntityModel } from "@dataspecer/core-v2/entity-model";
+import { Entity, InMemoryEntityModel } from "@dataspecer/core-v2/entity-model";
 import { SemanticModelAggregator } from "@dataspecer/core-v2/semantic-model/aggregator";
 import { LanguageString, SemanticModelClass, SemanticModelEntity, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile, SemanticModelClassProfile, SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
@@ -397,7 +397,15 @@ export async function generateDocumentation(
             // Find entity in other model
             for (const model of models) {
               if (Object.hasOwn(model.entities, entity.parent)) {
-                entities.push(model.entities[entity.parent]!);
+                /**
+                 * @todo There may be multiple instances of the same model, effectively
+                 * duplicating both classes and generalizations. This should be solved by
+                 * using a proper model merging, but this is not yet implemented. Therefore,
+                 * this also removes duplicates.
+                 */
+                if (!entities.some(e => e.id === entity.parent)) {
+                  entities.push(model.entities[entity.parent]!);
+                }
               }
             }
           }
@@ -413,7 +421,12 @@ export async function generateDocumentation(
       for (const entity of Object.values(model.entities)) {
         if (isSemanticModelGeneralization(entity)) {
           if (entity.parent === id) {
-            model.entities[entity.child] && entities.push(model.entities[entity.child]!);
+            if (model.entities[entity.child]) {
+              /** @todo Same hotfix as in parentClasses **/
+              if (!entities.some(e => e.id === entity.child)) {
+                entities.push(model.entities[entity.child]!);
+              }
+            }
           }
         }
       }

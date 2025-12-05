@@ -96,7 +96,6 @@ export class JsonLdAdapter {
     } satisfies prefixesType;
 
     const result = this.getContext(prefixes);
-    const context = result["@context"];
 
     if (this.model.roots.length > 1) {
       console.warn("JSON-LD generator: Multiple schema roots not supported.");
@@ -105,8 +104,10 @@ export class JsonLdAdapter {
     const customTypeNames = this.model.jsonLdTypeMapping;
 
     const rootClasses = this.model.roots[0].classes;
+    const context = result["@context"];
     // Iterate over all classes in root OR
-    this.generateClassesContext(rootClasses, context, prefixes, customTypeNames);
+    const newContext = this.generateClassesContext(rootClasses, context, prefixes, customTypeNames);
+    result["@context"] = newContext;
 
     // Clean the object of undefined values
     return this.optimize(result);
@@ -155,13 +156,11 @@ export class JsonLdAdapter {
             if (firstDataType.dataType.properties.length === 0) {
               contextData["@type"] = "@id";
             } else {
-              const localContext = {}
+              const localContext = this.generateClassesContext([firstDataType.dataType], {}, prefixes, customTypeNames);
               contextData["@context"] = localContext;
-              this.generateClassesContext([firstDataType.dataType], localContext, prefixes, customTypeNames);
             }
           } else {
-            const localContext = {};
-            this.generateClassesContext(property.dataTypes.map(dt => (dt as StructureModelComplexType).dataType), localContext, prefixes, customTypeNames);
+            const localContext = this.generateClassesContext(property.dataTypes.map(dt => (dt as StructureModelComplexType).dataType), {}, prefixes, customTypeNames);
             contextData["@context"] = localContext;
           }
         }
@@ -181,7 +180,13 @@ export class JsonLdAdapter {
    * Fills the given context with context of given classes.
    * The trick is that if classes share something or are profiles, then we need to separate them.
    */
-  protected generateClassesContext(classes: StructureModelClass[], context: object, prefixes: Record<string, string>, customTypeNames: Record<string, string>) {
+  protected generateClassesContext(classes: StructureModelClass[], inputContext: object, prefixes: Record<string, string>, customTypeNames: Record<string, string>) {
+    // Main context that will be used
+    const context: object = inputContext;
+    // Additional referenced contexts if needed
+    const referencedContexts: string[] = [];
+
+
     const GOES_TO_PARENT = "";
     const mappingToProperties: Record<string, Set<StructureModelProperty>> = {
       // this is parent context
@@ -191,6 +196,14 @@ export class JsonLdAdapter {
     const idToIri: Record<string, string> = {};
 
     for (const cls of classes) {
+      if (cls.isReferenced && !this.configuration.dereferenceContext && this.model.psmIri !== cls.structureSchema) {
+        const artefact = findArtefactForImport(this.context, cls);
+        const referencedContext = pathRelative(this.artefact.publicUrl, artefact.publicUrl);
+        referencedContexts.push(referencedContext);
+        // This class is referenced so we skip everything here
+        continue;
+      }
+
       const contextType = cls.instancesSpecifyTypes === "NEVER" ? "PROPERTY-SCOPED" : (cls.instancesSpecifyTypes === "OPTIONAL" ? "BOTH" : "TYPE-SCOPED");
       console.log("JSON-LD generator: context type", contextType);
       const propertiesUseParentContext = contextType !== "TYPE-SCOPED";
@@ -218,26 +231,39 @@ export class JsonLdAdapter {
         }
       }
 
-      for (const property of cls.properties) {
-        // For each property we need to find the original concepts (not
-        // profile) and assign them to appropriate classes
+      // We need to recursively go through all containers and find all properties
 
-        const semanticPropertyWrapped = this.semanticModel[property.pimIri] as AggregatedEntityInApplicationProfileAggregator<SemanticModelRelationship>;
-        const concepts = splitProfileToSingleConcepts(semanticPropertyWrapped);
+      const collectPropertiesForClass = (cls: StructureModelClass) => {
+        for (const property of cls.properties) {
+          if (property.propertyAsContainer) {
+            const containerClass = (property.dataTypes[0] as StructureModelComplexType).dataType as StructureModelClass;
+            collectPropertiesForClass(containerClass);
+            continue;
+          }
 
-        if (concepts.length > 1) {
-          throw new Error("JSON-LD generator: Multiprofile for relationships is not supported by JSON generators!");
-        }
+          // For each property we need to find the original concepts (not
+          // profile) and assign them to appropriate classes
 
-        const relationshipConceptWrapped = concepts[0] as LocalEntityWrapped<SemanticModelRelationship>;
-        const sourceSemanticId = relationshipConceptWrapped.aggregatedEntity.ends[property.isReverse ? 1 : 0].concept;
+          const semanticPropertyWrapped = this.semanticModel[property.pimIri] as AggregatedEntityInApplicationProfileAggregator<SemanticModelRelationship>;
+          const concepts = splitProfileToSingleConcepts(semanticPropertyWrapped);
 
-        if (idToIri[sourceSemanticId] && mappingToProperties[idToIri[sourceSemanticId]] && !propertiesUseParentContext) {
-          mappingToProperties[idToIri[sourceSemanticId]].add(property);
-        } else {
-          mappingToProperties[GOES_TO_PARENT].add(property);
+          if (concepts.length > 1) {
+            throw new Error("JSON-LD generator: Multiprofile for relationships is not supported by JSON generators!");
+          }
+
+          const relationshipConceptWrapped = concepts[0] as LocalEntityWrapped<SemanticModelRelationship>;
+          const sourceSemanticId = relationshipConceptWrapped.aggregatedEntity.ends[property.isReverse ? 1 : 0].concept;
+
+          if (idToIri[sourceSemanticId] && mappingToProperties[idToIri[sourceSemanticId]] && !propertiesUseParentContext) {
+            mappingToProperties[idToIri[sourceSemanticId]].add(property);
+          } else {
+            mappingToProperties[GOES_TO_PARENT].add(property);
+          }
         }
       }
+
+      collectPropertiesForClass(cls);
+
     }
 
     // Now generate the context
@@ -264,6 +290,12 @@ export class JsonLdAdapter {
       for (const property of mappingToProperties[iri]) {
         this.generatePropertyContext(property, contextForProperties, prefixes, customTypeNames);
       }
+    }
+
+    if (referencedContexts.length > 0) {
+      return [context, ...referencedContexts];
+    } else {
+      return context;
     }
   }
 
@@ -298,7 +330,11 @@ export class JsonLdAdapter {
    * Optimizes resulting context by removing unnecessary constructs such as
    * undefined or object with only @id keyword
    */
-  protected optimize(obj: object): object {
+  protected optimize<T>(obj: T): T {
+    if (obj !== Object(obj)) {
+      return obj;
+    }
+
     const newObj = {};
     Object.keys(obj).forEach((key) => {
       if (Array.isArray(obj[key])) {
@@ -312,7 +348,7 @@ export class JsonLdAdapter {
         newObj[key] = obj[key];
       }
     });
-    return newObj;
+    return newObj as T;
   }
 }
 

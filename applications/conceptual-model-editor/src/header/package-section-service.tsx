@@ -50,15 +50,13 @@ export const usePackageSectionService = (): PackageSectionServiceType => {
     saveLayoutConfiguration(currentPackageIdentifier);
 
     if (activeVisualModel !== null && svg !== undefined && svg !== null) {
-      // Remove header "data:image/svg+xml;charset=utf-8,"
-      const rawSvg = decodeURIComponent(svg.split(",")[1] ?? "");
       const iri = encodeURIComponent(activeVisualModel.getIdentifier());
       await fetch((import.meta.env.VITE_PUBLIC_APP_BACKEND ?? "") + "/resources/blob?iri=" + iri + "&name=svg", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ svg: rawSvg }),
+        body: JSON.stringify({ svg: svg }),
       });
     }
 

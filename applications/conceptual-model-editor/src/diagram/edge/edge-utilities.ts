@@ -52,7 +52,8 @@ function findNodeBorder(node: InternalNode, next: Point): Point {
 function asRectangle(node: InternalNode): Rectangle {
   // We increase the size here to accommodate for the border.
   return {
-    ...node.position,
+    x: node.position.x,
+    y: node.position.y,
     width: (node.measured.width ?? 0) + 4,
     height: (node.measured.height ?? 0) + 4,
   };
@@ -138,11 +139,18 @@ export function createOrthogonalWaypoints(
     return result;
   }
 
+  // Issue #1310 - seems like the nextToSource is undefined!
   const nextToSource = waypoints[0];
+  const prevToTarget = waypoints[waypoints.length - 1];
+  if (nextToSource === undefined || prevToTarget === undefined) {
+    console.error("createOrthogonalWaypoints: waypoint is undefined",
+      {source, waypoints, target});
+    return [source.position, ...waypoints, target.position];
+  }
+
   const sourcePosition = findOrthogonalRectangleBorder(
     asRectangle(source), nextToSource);
 
-  const prevToTarget = waypoints[waypoints.length - 1];
   const targetPosition = findOrthogonalRectangleBorder(
     asRectangle(target), prevToTarget);
 

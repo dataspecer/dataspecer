@@ -1,4 +1,4 @@
-import { VisualEntity, VisualModel, WritableVisualModel } from "@dataspecer/core-v2/visual-model";
+import { VisualEntity, VisualModel, WritableVisualModel } from "@dataspecer/visual-model";
 import { EntityDsIdentifier, ModelDsIdentifier } from "../entity-model";
 import { addVisualNodeProfile } from "./operation/add-visual-node-profile";
 import { addVisualNode } from "./operation/add-visual-node";

@@ -38,7 +38,7 @@ import {
   isVisualNode,
   VisualDiagramNode,
   WritableVisualModel
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 import {
   SemanticModelAggregator,
   SemanticModelAggregatorView
@@ -378,7 +378,7 @@ export class ActionsTestSuite {
     visualModelSize: number,
     connectionToTestType: TestedSemanticConnectionType,
   ) => {
-    const visualModel: WritableVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync();
+    const visualModel: WritableVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync(null);
     const modelAlias = "TEST MODEL";
     const models : Map<string, EntityModel> = new Map();
     const modelsAsArray: EntityModel[] = [];

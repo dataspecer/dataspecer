@@ -3,7 +3,7 @@
  */
 
 import { expect, test } from "vitest";
-import { isVisualNode, isVisualRelationship, VisualNode } from "@dataspecer/core-v2/visual-model";
+import { isVisualNode, isVisualRelationship, VisualNode } from "@dataspecer/visual-model";
 import { isSemanticModelClass, isSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import { addEntitiesFromSemanticModelToVisualModelAction } from "./add-entities-from-semantic-model-to-visual-model";
 import { ActionsTestSuite, notificationMockup, TestedSemanticConnectionType } from "./test/actions-test-suite";

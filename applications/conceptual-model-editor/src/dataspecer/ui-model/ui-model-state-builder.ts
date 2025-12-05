@@ -1,4 +1,4 @@
-import { HexColor } from "@dataspecer/core-v2/visual-model";
+import { HexColor } from "@dataspecer/visual-model";
 import { createEmptyUiModelState, UiModelState } from "./ui-model-state";
 import {
   UI_CLASS_PROFILE_TYPE,

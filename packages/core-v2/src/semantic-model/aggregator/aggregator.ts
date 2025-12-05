@@ -1,7 +1,6 @@
 import { Entity } from "../../entity-model/entity.ts";
 import { EntityModel } from "../../entity-model/entity-model.ts";
-import { VisualEntity } from "../../visual-model/visual-entity.ts";
-import { VisualModel, isVisualModel } from "../../visual-model/visual-model.ts";
+import { VisualEntity, VisualModel, isVisualModel } from "@dataspecer/visual-model";
 import { SEMANTIC_MODEL_CLASS, SEMANTIC_MODEL_GENERALIZATION, SEMANTIC_MODEL_RELATIONSHIP, SemanticModelClass, SemanticModelRelationship, isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship } from "../concepts/index.ts";
 import { SemanticEntityIdMerger, StrongerWinsSemanticEntityIdMerger } from "../merge/merger/index.ts";
 import { createDefaultProfileEntityAggregator, ProfileEntityAggregator } from "../profile/aggregator/aggregator.ts";

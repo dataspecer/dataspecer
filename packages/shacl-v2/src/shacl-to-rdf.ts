@@ -1,5 +1,16 @@
-import { ShaclModel, ShaclNodeKind, ShaclNodeShape, ShaclPropertyShape } from "./shacl-model/shacl-model.ts";
-import { createN3RdfBuilder, type N3RdfBuilder, createN3Writer } from "@dataspecer/rdf-adapter";
+import {
+  createN3RdfBuilder,
+  type N3RdfBuilder,
+  createN3Writer,
+  deduplicateQuads,
+} from "@dataspecer/rdf-adapter";
+
+import {
+  ShaclModel,
+  ShaclNodeKind,
+  ShaclNodeShape,
+  ShaclPropertyShape,
+} from "./shacl-model.ts"
 import { RDFS, SHACL } from "./vocabulary.ts";
 
 interface ShaclModelToRdfConfiguration {
@@ -32,7 +43,7 @@ export async function shaclToRdf(
   (new ShaclModelWriter(builder, model)).writeShaclModel();
 
   const writer = createN3Writer(prefixes);
-  writer.addQuads(builder.asQuads());
+  writer.addQuads(deduplicateQuads(builder.asQuads()));
 
   return effectiveConfiguration.prettyPrint ?
     writer.asPrettyString() : writer.asString();
@@ -115,9 +126,13 @@ class ShaclModelWriter {
 
     this.builder.addIri(iri, SHACL.path, shape.path);
     this.builder.addLiteral(iri, SHACL.maxCount, shape.maxCount);
-    this.builder.addLiteral(iri, SHACL.minCount, shape.minCount);
+    // There is no need to store minCount if === 0.
+    // See https://github.com/dataspecer/dataspecer/issues/1297
+    if (shape.minCount !== null && shape.minCount > 0) {
+      this.builder.addLiteral(iri, SHACL.minCount, shape.minCount);
+    }
     this.builder.addIri(iri, SHACL.class, shape.class);
-    this.builder.addIri(iri, SHACL.class, shape.datatype);
+    this.builder.addIri(iri, SHACL.datatype, shape.datatype);
     return iri;
   }
 

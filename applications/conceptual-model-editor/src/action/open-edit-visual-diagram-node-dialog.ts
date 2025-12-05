@@ -7,7 +7,7 @@ import {
   VisualDiagramNode,
   VisualModel,
   WritableVisualModel,
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 import { VisualModelDiagramNode } from "../diagram";
 import {
   createEditVisualDiagramNodeDialog,

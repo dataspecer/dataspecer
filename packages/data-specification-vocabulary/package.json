@@ -6,17 +6,25 @@
   "scripts": {
     "build": "tsc",
     "prebuild": "rimraf lib",
+    "dev": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "exports": {
-    ".": "./lib/index.js"
+    ".": "./lib/index.js",
+    "./specification-description": "./lib/specification-description/index.js",
+    "./structure-model": "./lib/structure-model/index.js"
   },
   "dependencies": {
+    "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
+    "@dataspecer/profile-model": "*",
+    "@dataspecer/semantic-model": "*",
+    "jsonld": "^8.3.3",
     "n3": "^1.25.1"
   },
   "devDependencies": {
+    "@types/jsonld": "^1.5.15",
     "@types/n3": "~1.24.2",
     "rimraf": "^6.0.1",
     "typescript": "^5.8.3",

@@ -1,4 +1,4 @@
-import { VisualModel, WritableVisualModel } from "@dataspecer/core-v2/visual-model";
+import { VisualModel, WritableVisualModel } from "@dataspecer/visual-model";
 import { EntityModel } from "@dataspecer/core-v2";
 import { AggregatedEntityWrapper } from "@dataspecer/core-v2/semantic-model/aggregator";
 import {

@@ -1,4 +1,4 @@
-import { WritableVisualModel } from "@dataspecer/core-v2/visual-model";
+import { WritableVisualModel } from "@dataspecer/visual-model";
 import { getViewportCenterForClassPlacement, doesAddingVisualModelCauseSelfReference } from "./utilities";
 import { UseDiagramType } from "@/diagram/diagram-hook";
 import { addVisualDiagramNode } from "@/dataspecer/visual-model/operation/add-visual-diagram-node";

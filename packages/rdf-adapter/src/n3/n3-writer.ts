@@ -1,6 +1,16 @@
-import * as N3 from "n3";
+import N3 from "n3";
 
-export class N3Writer {
+export interface N3Writer {
+
+  addQuads(quads: N3.Quad[]): void;
+
+  asString(): Promise<string>;
+
+  asPrettyString(): Promise<string>;
+
+}
+
+class DefaultN3Writer {
 
   writer: N3.Writer;
 
@@ -8,7 +18,7 @@ export class N3Writer {
     this.writer = new N3.Writer({ prefixes });
   }
 
-  addQuads(quads: N3.Quad[]) {
+  addQuads(quads: N3.Quad[]): void {
     this.writer.addQuads(quads);
   }
 
@@ -46,7 +56,8 @@ function prettyPrintTurtle(turtle: string): string {
   return linesNext.join("\n");
 }
 
-
-export function createN3Writer(prefixes: { [prefix: string]: string }) {
-  return new N3Writer(prefixes);
+export function createN3Writer(
+  prefixes: { [prefix: string]: string },
+): N3Writer {
+  return new DefaultN3Writer(prefixes);
 }

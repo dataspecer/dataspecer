@@ -31,10 +31,16 @@ export const ACTION_SEMANTIC_MODEL_CREATE_ATTRIBUTE =
 export const ACTION_SEMANTIC_MODEL_EXPAND =
   "semantic-model-create-expand";
 
+export const ACTION_PROFILE_MODEL =
+  "semantic-model-profile";
+
 // Class
 
-export const ACTION_CLASS_EXPAND =
-  "class-expand";
+export const ACTION_CLASS_ADD_SURROUNDINGS =
+  "class-add-surroundings";
+
+export const ACTION_CLASS_RELEASE_SURROUNDINGS =
+  "class-release-surroundings";
 
 export const ACTION_CLASS_FOCUS =
   "class-focus";

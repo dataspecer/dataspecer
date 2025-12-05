@@ -35,13 +35,13 @@
     "./semantic-model/utils": "./lib/semantic-model/utils/index.js",
     "./simplified-semantic-model": "./lib/simplified-semantic-model/index.js",
     "./utils/language": "./lib/utils/language.js",
-    "./visual-model": "./lib/visual-model/index.js",
     "./semantic-model/v1-adapters": "./lib/semantic-model/v1-adapters/index.js"
   },
   "dependencies": {
     "@dataspecer/core": "*",
     "@dataspecer/rdfs-adapter": "*",
     "@dataspecer/sgov-adapter": "*",
+    "@dataspecer/visual-model": "*",
     "n3": "~1.25.1"
   },
   "devDependencies": {

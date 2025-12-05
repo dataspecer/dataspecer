@@ -15,7 +15,7 @@ import {
   isVisualNode,
   isVisualProfileRelationship,
   isVisualRelationship
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 import { Selections } from "./filter-selection-action";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import {

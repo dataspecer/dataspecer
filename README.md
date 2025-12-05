@@ -11,7 +11,7 @@ You can easily run the whole application in a Docker container.
 If you just want to try it out for a while and don't care where the data is stored, use following command and then go open [http://localhost:3000/](http://localhost:3000/).
 
 ```bash
-docker run -it --rm -eBASE_URL=http://localhost:3000/ -p3000:80 ghcr.io/dataspecer/ws
+docker run -p3000:80 ghcr.io/dataspecer/ws
 ```
 
 ---
@@ -19,7 +19,7 @@ docker run -it --rm -eBASE_URL=http://localhost:3000/ -p3000:80 ghcr.io/dataspec
 - The container exposes port 80.
 - Mount `/usr/src/app/database` directory to your local directory that will be filled with `database.db` file and `stores` directory. If the directory is empty, files would be created. **You need to mkdir the mounted directory with the correct user**.
 - If you want to run the Dataspecer under specific user, use `--user` with desired UID.
-- You MUST specify full base URL using `BASE_URL` env. Some functionalities need to know the domain name and the relative subdirectory is also important. If you are using reverse proxy, it is expected that the base path *is preserved*. (For example, `https://example.com/dataspecer-instance-1/schema` should point to `http://localhost:3001/dataspecer-instance-1/schema`)
+- You can specify base URL using `BASE_URL` env if you are hosting Dataspecer from a sub directory. If you are using reverse proxy, it is expected that the base path *is preserved*. (For example, `https://example.com/dataspecer-instance-1/schema` should point to `http://localhost:3001/dataspecer-instance-1/schema`)
 
 Use the following docker run command:
 ```bash

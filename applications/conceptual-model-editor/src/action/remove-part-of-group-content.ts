@@ -1,4 +1,4 @@
-import { isVisualGroup, WritableVisualModel } from "@dataspecer/core-v2/visual-model";
+import { isVisualGroup, WritableVisualModel } from "@dataspecer/visual-model";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { removeGroupFromVisualModelAction } from "./remove-group-from-visual-model";
 import { findTopLevelGroupInVisualModel } from "./utilities";

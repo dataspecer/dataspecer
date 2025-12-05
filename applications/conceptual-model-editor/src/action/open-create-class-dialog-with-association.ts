@@ -1,4 +1,4 @@
-import { isVisualNode, WritableVisualModel } from "@dataspecer/core-v2/visual-model";
+import { isVisualNode, WritableVisualModel } from "@dataspecer/visual-model";
 import { EntityRepresentative, findRepresentative, findVocabularyForModel } from "../dialog/utilities/dialog-utilities";
 import { openCreateClassDialogWithModelDerivedFromClassAction } from "./open-create-class-dialog-with-derived-model";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";

@@ -12,8 +12,8 @@ import AccountTreeTwoToneIcon from "@mui/icons-material/AccountTreeTwoTone";
 import {AssociationContext, ClassPartContext, DataPsmObjectType} from "../data-psm-row";
 import {getCardinalityFromResource} from "../common/cardinality";
 import {useDialog} from "../../../dialog";
-import {ReplaceAssociationWithReferenceDialog} from "../replace-association-with-reference/replace-association-with-reference-dialog";
-import {ReplaceAssociationEndWithReference} from "../replace-association-with-reference/replace-association-end-with-reference";
+import {ReplaceWithReferenceDialog} from "../references/replace-with-reference-dialog";
+import {ReplaceAssociationEndWithReference} from "../references/replace-association-end-with-reference";
 import { ExtendedSemanticModelClass, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { useResource } from "@dataspecer/federated-observable-store-react/use-resource";
@@ -55,7 +55,7 @@ export const DataPsmAssociationEndItem: React.FC<{iri: string} & RowSlots & Clas
   const associationEndHumanLabel: LanguageString = useMemo(() => ({...correctEnd?.name, ...dataPsmAssociationEnd?.dataPsmHumanLabel}), [correctEnd?.name, dataPsmAssociationEnd?.dataPsmHumanLabel]);
   const hasHumanLabelOnAssociationEnd = Object.keys(associationEndHumanLabel).length > 0;
 
-  const ReplaceDialog = useDialog(ReplaceAssociationWithReferenceDialog);
+  const ReplaceDialog = useDialog(ReplaceWithReferenceDialog);
 
   const thisMenu = <>
     <ReplaceAssociationEndWithReference dataPsmAssociationEnd={props.iri} open={ReplaceDialog.open} />

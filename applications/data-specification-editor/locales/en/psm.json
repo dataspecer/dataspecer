@@ -43,11 +43,10 @@
     "help": "This dialog allows you to replace the class and keep all existing associations and attributes below it as well as the context where the class is located. It can be replaced only for the specialization of the class or its generalization. Clicking on a class below will do the replace.",
     "title": "Replace along inheritance"
   },
-  "replace association with reference": {
-    "help": "Select one of the following schemas to replace the association end with a reference to schema's root class.",
-    "title": "Replace association end with reference to a class"
+  "replace with reference": {
+    "help": "Select one of the following schemas to replace the class with a reference to schema's root class.",
+    "title": "Replace class with reference to a class"
   },
-  "replace with reference": "replace with reference",
   "specialization": {
     "no-descendants": "No descendants",
     "title": "Specialization"

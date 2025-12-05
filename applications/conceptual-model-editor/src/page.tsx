@@ -8,7 +8,7 @@ import {
   type WritableVisualModel,
   isVisualModel,
   isWritableVisualModel,
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 import {
   type AggregatedEntityWrapper,
   SemanticModelAggregator,
@@ -52,6 +52,9 @@ import { preferences, updatePreferences } from "./configuration";
 import { sanitizeVisualModel } from "./dataspecer/visual-model/visual-model-sanitizer";
 import { getDefaultUserGivenAlgorithmConfigurationsFull, UserGivenAlgorithmConfigurations } from "@dataspecer/layout";
 import { LayoutConfigurationContext } from "./context/layout-configuration-context";
+import { CmeSemanticModelProvider } from "./dataspecer/cme-semantic-model";
+import { CmeProfileModelProvider } from "./dataspecer/cme-profile-model";
+import { CmeAggregateModelContextProvider } from "./dataspecer/cme-aggregate-model";
 
 const _semanticModelAggregator = new SemanticModelAggregator();
 type SemanticModelAggregatorType = typeof _semanticModelAggregator;
@@ -64,10 +67,10 @@ const Catalog = (() => {
     updatePreferences({ catalogComponent: catalog });
   }
   switch (preferences().catalogComponent) {
-  case "v1":
-    return CatalogV1;
-  case "v2":
-    return CatalogV2
+    case "v1":
+      return CatalogV1;
+    case "v2":
+      return CatalogV2
   }
 })();
 
@@ -183,29 +186,39 @@ const Page = () => {
               relationshipProfiles,
             }}
           >
-            <LayoutConfigurationContext.Provider value={{ layoutConfiguration, setLayoutConfiguration }}>
-              <DialogContextProvider>
-                <ActionsContextProvider>
-                  <Header />
-                  <main className="w-full flex-grow bg-teal-50 md:h-[calc(100%-48px)]">
-                    <VerticalSplitter
-                      className="h-full"
-                      initialSize={preferences().pageSplitterValue}
-                      onSizeChange={value => updatePreferences({ pageSplitterValue: value })}
-                    >
-                      <Catalog />
-                      <Visualization />
-                    </VerticalSplitter>
-                  </main>
-                  <NotificationList />
-                  <DialogRenderer />
-                </ActionsContextProvider>
-              </DialogContextProvider>
-            </LayoutConfigurationContext.Provider>
+            <CmeSemanticModelProvider semanticModels={models}>
+              <CmeProfileModelProvider profileModels={models}>
+                <CmeAggregateModelContextProvider>
+                  <LayoutConfigurationContext.Provider
+                    value={{
+                      layoutConfiguration,
+                      setLayoutConfiguration,
+                    }}>
+                    <DialogContextProvider>
+                      <ActionsContextProvider>
+                        <Header />
+                        <main className="w-full flex-grow bg-teal-50 md:h-[calc(100%-48px)]">
+                          <VerticalSplitter
+                            className="h-full"
+                            initialSize={preferences().pageSplitterValue}
+                            onSizeChange={value => updatePreferences({ pageSplitterValue: value })}
+                          >
+                            <Catalog />
+                            <Visualization />
+                          </VerticalSplitter>
+                        </main>
+                        <NotificationList />
+                        <DialogRenderer />
+                      </ActionsContextProvider>
+                    </DialogContextProvider>
+                  </LayoutConfigurationContext.Provider>
+                </CmeAggregateModelContextProvider>
+              </CmeProfileModelProvider>
+            </CmeSemanticModelProvider>
           </ClassesContext.Provider>
         </ModelGraphContext.Provider>
-      </OptionsContextProvider>
-    </ExplorationContextProvider>
+      </OptionsContextProvider >
+    </ExplorationContextProvider >
   );
 };
 

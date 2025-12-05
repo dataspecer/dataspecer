@@ -3,7 +3,7 @@
  */
 
 import { expect, test } from "vitest";
-import { createDefaultVisualModelFactory, VisualNode, WritableVisualModel } from "@dataspecer/core-v2/visual-model";
+import { createDefaultVisualModelFactory, VisualNode, WritableVisualModel } from "@dataspecer/visual-model";
 import { EntityModel } from "@dataspecer/core-v2";
 import { semanticModelMapToCmeSemanticModel } from "../dataspecer/cme-model/adapter";
 import { CreatedEntityOperationResult, createRelationship } from "@dataspecer/core-v2/semantic-model/operations";
@@ -126,7 +126,7 @@ const generateIriForName = (name: string) => {
 
 //
 const prepareModelWithFourNodes = () => {
-  const visualModel: WritableVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync();
+  const visualModel: WritableVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync(null);
   const modelIdentifier = "TEST-MODEL";
   const modelAlias = "TEST MODEL";
 

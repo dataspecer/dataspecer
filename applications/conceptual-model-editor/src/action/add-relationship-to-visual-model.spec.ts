@@ -13,7 +13,7 @@ import {
   createDefaultVisualModelFactory,
   VisualRelationship,
   WritableVisualModel
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 
 import { notificationMockup } from "./test/actions-test-suite";
 import {
@@ -384,7 +384,7 @@ const generateIriForName = (name: string) => {
 }
 
 const prepareVisualModelWithFourNodes = () => {
-  const visualModel: WritableVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync();
+  const visualModel: WritableVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync(null);
   const modelIdentifier = "TEST-MODEL";
   const modelAlias = "TEST MODEL";
 

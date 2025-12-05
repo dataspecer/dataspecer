@@ -1,5 +1,5 @@
 import type { EntityModel } from "@dataspecer/core-v2/entity-model";
-import type { VisualModel } from "@dataspecer/core-v2/visual-model";
+import type { VisualModel } from "@dataspecer/visual-model";
 import { BackendPackageService } from "@dataspecer/core-v2/project";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import { useMemo } from "react";
@@ -21,12 +21,12 @@ export const modelsToWorkspaceString = (
   for (const [_, model] of models) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    modelDescriptors.push(model.serializeModel());  
+    modelDescriptors.push(model.serializeModel());
   }
   for (const [_, visualModel] of visualModels) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    modelDescriptors.push(visualModel.serializeModel());  
+    modelDescriptors.push(visualModel.serializeModel());
   }
 
   const ws = {

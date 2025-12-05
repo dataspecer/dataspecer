@@ -2,7 +2,7 @@ import {
   VisualNode,
   WritableVisualModel,
   isVisualNode,
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 
 import type { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { ClassesContextType } from "../context/classes-context";

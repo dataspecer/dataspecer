@@ -8,7 +8,7 @@ import {
   createDefaultVisualModelFactory,
   isVisualDiagramNode,
   VisualDiagramNode,
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 
 import { notificationMockup, TestedSemanticConnectionType } from "./test/actions-test-suite";
 import { ActionsTestSuite } from "./test/actions-test-suite";
@@ -25,7 +25,7 @@ test("Test creating visual diagram node from existing visual model", () => {
   const diagram = ActionsTestSuite.createTestDiagram();
 
   // Prepare data
-  const referencedVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync();
+  const referencedVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync(null);
   ActionsTestSuite.createNewVisualNodeForTesting(referencedVisualModel, firstModel.getId(), "2");
   ActionsTestSuite.createNewVisualNodeForTesting(referencedVisualModel, firstModel.getId(), "3");
   graph.aggregator.addModel(referencedVisualModel);

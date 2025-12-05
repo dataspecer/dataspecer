@@ -1,4 +1,4 @@
-import { isVisualProfileRelationship, WritableVisualModel } from "@dataspecer/core-v2/visual-model";
+import { isVisualProfileRelationship, WritableVisualModel } from "@dataspecer/visual-model";
 import { CmeReference, isCmeReferenceEqual } from "@/dataspecer/cme-model/model";
 
 /**

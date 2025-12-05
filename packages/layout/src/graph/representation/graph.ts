@@ -21,7 +21,7 @@ import {
     VISUAL_NODE_TYPE,
     isVisualGroup,
     isVisualDiagramNode
-} from "@dataspecer/core-v2/visual-model";
+} from "@dataspecer/visual-model";
 import {
     findTopLevelGroup,
     getBotRightPosition,

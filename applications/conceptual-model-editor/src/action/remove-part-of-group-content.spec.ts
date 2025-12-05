@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { createDefaultVisualModelFactory, VisualGroup, WritableVisualModel } from "@dataspecer/core-v2/visual-model";
+import { createDefaultVisualModelFactory, VisualGroup, WritableVisualModel } from "@dataspecer/visual-model";
 import { ActionsTestSuite, notificationMockup, TestedSemanticConnectionType } from "./test/actions-test-suite";
 import { addGroupToVisualModelAction } from "./add-group-to-visual-model";
 import { removeTopLevelGroupFromVisualModelAction } from "./remove-group-from-visual-model";
@@ -181,7 +181,7 @@ test("Test dissolving everything through visiblity", () => {
 });
 
 test("Test removing part of visual group", () => {
-  const visualModel: WritableVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync();
+  const visualModel: WritableVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync(null);
   const model = "TEST MODEL";
 
   const visualIdentifiers = [];

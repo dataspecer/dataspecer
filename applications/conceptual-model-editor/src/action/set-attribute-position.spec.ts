@@ -3,7 +3,7 @@
  */
 
 import { expect, test } from "vitest";
-import { VisualNode } from "@dataspecer/core-v2/visual-model";
+import { VisualNode } from "@dataspecer/visual-model";
 import { addSemanticAttributeToVisualModelAction } from "./add-semantic-attribute-to-visual-model";
 import { ActionsTestSuite, notificationMockup, TestedSemanticConnectionType } from "./test/actions-test-suite";
 import { setAttributePositionAction } from "./set-attribute-position";

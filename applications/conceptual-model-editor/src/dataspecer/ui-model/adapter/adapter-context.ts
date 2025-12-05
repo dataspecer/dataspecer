@@ -1,4 +1,4 @@
-import { HexColor, VisualModel } from "@dataspecer/core-v2/visual-model";
+import { HexColor, VisualModel } from "@dataspecer/visual-model";
 import { EntityDsIdentifier, LanguageString, ModelDsIdentifier } from "../../entity-model";
 import { languageStringToString } from "../../../utilities/string";
 import { SemanticModel } from "../../semantic-model";

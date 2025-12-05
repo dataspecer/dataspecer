@@ -1,4 +1,4 @@
-import { VisualNode, WritableVisualModel } from "@dataspecer/core-v2/visual-model";
+import { VisualNode, WritableVisualModel } from "@dataspecer/visual-model";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 
 /**

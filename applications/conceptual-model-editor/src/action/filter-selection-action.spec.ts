@@ -3,7 +3,7 @@
  */
 
 import { expect, test } from "vitest";
-import { isVisualProfileRelationship, isVisualRelationship } from "@dataspecer/core-v2/visual-model";
+import { isVisualProfileRelationship, isVisualRelationship } from "@dataspecer/visual-model";
 import { isSemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
 import { ActionsTestSuite, notificationMockup, TestedSemanticConnectionType } from "./test/actions-test-suite";
 import { filterSelectionAction, SelectionFilter, SelectionsWithIdInfo } from "./filter-selection-action";

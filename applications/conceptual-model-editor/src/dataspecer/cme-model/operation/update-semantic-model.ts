@@ -1,6 +1,5 @@
 import { CmeSemanticModelChange, CmeSemanticModelNameLanguage } from "../model";
-import { SemanticModel } from "../../semantic-model";
-import { isInMemorySemanticModel } from "@/utilities/model";
+import { isInMemorySemanticModel, SemanticModel } from "../../semantic-model";
 
 /**
  * @throws DataspecerError

@@ -1,4 +1,3 @@
 export * from "./model/index.ts";
-export * from "./aggregated-entity-model.ts";
-export * from "./entity-model-factory.ts";
+export * from "./in-memory/index.ts";
 export * from "./entity-model.ts";

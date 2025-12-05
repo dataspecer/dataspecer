@@ -7,6 +7,7 @@ import {useFederatedObservableStore} from "@dataspecer/federated-observable-stor
 import {DeleteInheritanceOrSpecialization} from "../../../operations/delete-inheritance-or-specialization";
 import {DataPsmDeleteButton} from "../class/DataPsmDeleteButton";
 import {ObjectContext, ORContext} from "../data-psm-row";
+import { ReplaceClassWithReference } from "../references/replace-class-with-referemce";
 
 /**
  * Represents an object type PSM entity in OR under the inheritance view.
@@ -27,6 +28,7 @@ export const DataPsmSpecializationItem: React.FC<{iri: string, inheritanceOrTree
 
   const thisMenu = <>
     <DataPsmDeleteButton onClick={deleteSpecialization} />
+    <ReplaceClassWithReference structuralClassId={props.iri} owningStructuralEntityId={(props as ORContext).parentDataPsmOrIri} />
   </>;
 
   const menu = props.menu ? [thisMenu, ...props.menu] : [thisMenu];
