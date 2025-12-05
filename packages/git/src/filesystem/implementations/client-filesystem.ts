@@ -230,7 +230,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     const datastoreInfo: DatastoreInfo | null = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType);
     // The "" will throw error on backend, so for it to work it should be allowed to have missing merge state id in the request,
     // but since we are currently (and probably always will be) using just the static methods, there is no need to implement it
-    return ClientFilesystem.updateDatastoreContentDirectly("",filesystemNode.metadata.iri, datastoreInfo, content, this.backendFilesystem, this.backendApiPath);
+    return ClientFilesystem.updateDatastoreContentDirectly("", filesystemNode.metadata.iri, datastoreInfo, content, this.backendFilesystem, this.backendApiPath);
   }
 
 

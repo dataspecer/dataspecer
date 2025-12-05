@@ -268,9 +268,10 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
       <ModalHeader>
         <ModalTitle>Finish merge state caused by merging</ModalTitle>
         <ModalDescription>
-          You can choose to either create classic merge commit. Or rebase commit,
-          that is you just create new commit and put the changes on top (basically same as fast-forward).
-          Or you can of course close the dialog and handle it all later.
+          You can choose to either:
+          <p>&nbsp;&nbsp;<strong>-</strong> Create classic merge commit.</p>
+          <p>&nbsp;&nbsp;<strong>-</strong> Rebase commit - that is create new commit and put the changes on top (basically same as fast-forward).</p>
+          <p>&nbsp;&nbsp;<strong>-</strong> Close the dialog and handle it all later.</p>
         </ModalDescription>
       </ModalHeader>
       <ModalFooter>
@@ -365,7 +366,9 @@ const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldR
         <ModalHeader>
           <ModalTitle>Finish merge state caused by pushing to remote repository</ModalTitle>
           <ModalDescription>
-            You can either push the current content of package to git remote or close dialog.
+            You can either push the current content of package to git remote or close the dialog and finish later.
+            <br/>
+            <br/>
             Note that if the remote moved, you will be informed that the push failed.
           </ModalDescription>
         </ModalHeader>

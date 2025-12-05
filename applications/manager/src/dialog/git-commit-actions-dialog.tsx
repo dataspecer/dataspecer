@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Loader } from "lucide-react";
 import { refreshRootPackage } from "@/package";
 import { PACKAGE_ROOT } from "@dataspecer/git";
+import { lng } from "@/Dir";
 
 
 type CommitActionsDialogProps = {
@@ -68,7 +69,7 @@ export const CommitActionsDialog = ({ examinedPackage, branch, commitHash, branc
           <ModalTitle>Perform action on git commit</ModalTitle>
           {isPerformingAction && <Loader className="mr-2 h-4 w-4 animate-spin" /> }
           <ModalDescription>
-            {`You are currently working with the following package (${examinedPackage.iri}) and following commit ${commitHash}.`}
+            {`You are currently working with the following package (${lng(examinedPackage.userMetadata.label) ?? examinedPackage.iri}) and following commit ${commitHash.substring(0, 10)}.`}
             <br/>
             <br/>
             {`You can choose to import the package into DS or visit the corresponding remote git url.`}
@@ -78,8 +79,7 @@ export const CommitActionsDialog = ({ examinedPackage, branch, commitHash, branc
               <div>
                 <p>Note that <strong>branch already exists</strong> inside Dataspecer and it is forbidden (for your own good) to have two packages tracking the same remote branch in Dataspecer.
                 <br/>
-                You can do import commit and then turn the commit into branch with <strong>new</strong> name. Or just click on create branch in the git menu.</p>
-                <br/>
+                You can <strong>import static commit</strong> and then turn the commit into branch with <strong>new</strong> name. Or just click on create branch in the git menu.</p>
                 <br/>
               </div> :
               null

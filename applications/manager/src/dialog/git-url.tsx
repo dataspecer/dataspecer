@@ -129,7 +129,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
       modalBody = <div>
         <ComboBox options={gitProvidersComboboxOptions} onChange={(value: string) => setGitProvider(value)}/>
         <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Repository name" setInput={createSetterWithGitValidation(setRepositoryName)} input={repositoryName} />
-        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git user (or org)" tooltip="Name under which should be the repository created. If empty - auth user name is used, if not logged in or user did not provide rights to create repo, bot name is used" setInput={createSetterWithGitValidation(setUser)} input={user} />
+        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Repository owner" tooltip="Name under which should be the repository created. If empty - auth user name is used, if not logged in or user did not provide rights to create repo, bot name is used" setInput={createSetterWithGitValidation(setUser)} input={user} />
         <label className="flex items-center space-x-2 cursor-pointer -mt-4">
           <input
             type="checkbox"

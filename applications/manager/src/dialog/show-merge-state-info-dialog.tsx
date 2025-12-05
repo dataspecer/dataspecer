@@ -83,7 +83,7 @@ export const ShowMergeStateInfoDialog = ({ mergeState, isOpen, resolve }: ShowMe
                 }
                 {mergeState.filesystemTypeMergeFrom === mergeState.filesystemTypeMergeTo ?
                   (
-                    <div><strong>Location:</strong> {mergeState.filesystemTypeMergeFrom}</div>
+                    <div><strong>Location:</strong> {getHumanReadableFilesystemName(mergeState.filesystemTypeMergeFrom)}</div>
                   ) :
                   (
                     <div>
