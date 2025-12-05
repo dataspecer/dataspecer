@@ -11,18 +11,7 @@ export const ExportFormatRadioButtons = (props: ExportFormatRadioButtonsProps) =
 
   return (
     <div className="mt-4 mb-4 flex items-center space-x-6">
-      <span className="text-sm font-semibold">Choose a format:</span>
-
-      <label className="flex items-center space-x-2 cursor-pointer">
-        <input
-          type="radio"
-          value="yaml"
-          checked={props.exportFormat === "yaml"}
-          onChange={(e) => props.setExportFormat(e.target.value as ExportFormatType)}
-          className="form-radio text-blue-600"
-        />
-        <span>YAML</span>
-      </label>
+      <span className="text-sm font-semibold">Choose an export format:</span>
 
       <label className="flex items-center space-x-2 cursor-pointer">
         <input
@@ -33,6 +22,16 @@ export const ExportFormatRadioButtons = (props: ExportFormatRadioButtonsProps) =
           className="form-radio text-blue-600"
         />
         <span>JSON</span>
+      </label>
+      <label className="flex items-center space-x-2 cursor-pointer">
+        <input
+          type="radio"
+          value="yaml"
+          checked={props.exportFormat === "yaml"}
+          onChange={(e) => props.setExportFormat(e.target.value as ExportFormatType)}
+          className="form-radio text-blue-600"
+        />
+        <span>YAML</span>
       </label>
     </div>
   );
