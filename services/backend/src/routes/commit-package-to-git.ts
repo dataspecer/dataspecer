@@ -5,7 +5,7 @@ import { mergeStateModel, resourceModel } from "../main.ts";
 
 import { BranchSummary, CommitResult, MergeResult, SimpleGit } from "simple-git";
 import { checkErrorBoundaryForCommitAction, extractPartOfRepositoryURL, getAuthorizationURL, getLastCommit, getLastCommitHash, isDefaultBranch, removeEverythingExcept, removePathRecursively, stringToBoolean } from "../utils/git-utils.ts";
-import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS, CommitInfo, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo } from "@dataspecer/git";
+import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS, CommitInfo, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
 import { createUniqueCommitMessage } from "../utils/git-utils.ts";
