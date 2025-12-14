@@ -145,7 +145,7 @@ const commitHandlerInternal = async (
   const repoName = extractPartOfRepositoryURL(gitLink, "repository-name");
   checkErrorBoundaryForCommitAction(gitLink, repoName, userName);
 
-  const branch = resource.branch === "main." ? null : resource.branch;
+  const branch = resource.branch === defaultBranchForPackageInDatabase ? null : resource.branch;
   const repositoryIdentificationInfo: RepositoryIdentificationInfo = {
     givenRepositoryUserName: userName!,
     givenRepositoryName: repoName!,

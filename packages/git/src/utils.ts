@@ -12,7 +12,7 @@ export function isGitUrlSet(gitUrl: string | undefined | null): boolean {
 }
 
 export const defaultEmptyGitUrlForDatabase = "";
-export const defaultBranchForPackageInDatabase = ".main";
+export const defaultBranchForPackageInDatabase = "";
 
 
 /**

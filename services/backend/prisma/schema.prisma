@@ -47,10 +47,9 @@ model Resource {
   // Should not end with "/"
   linkedGitRepositoryURL String @default("")
 
-  // Note that it ends with ".". This is not oversight, "main." is invalid branch name
-  // (the git branches can not end with "." (See https://stackoverflow.com/questions/3651860/which-characters-are-illegal-within-a-branch-name))
-  // If the branch is set to "main." we consider it as the default branch.
-  branch String @default("main.")
+  // Note that "" is an invalid branch name. (You can see for more invalid names https://stackoverflow.com/questions/3651860/which-characters-are-illegal-within-a-branch-name))
+  // If the branch is set to "" we consider it as the default branch.
+  branch String @default("")
 
   // Is iri of the "git" project this package is part of.
   projectIri String @default("")
