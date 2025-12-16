@@ -238,8 +238,8 @@ export class MergeStateModel implements ResourceChangeListener {
 
     // TODO RadStr: Just debug
     const mergeStateId = await this.createMergeState(mergeStateInput);
-    console.info("Current merge state with:", await this.getMergeStateFromUUID(mergeStateId, true, false));
-    console.info("Current merge state without:", await this.getMergeStateFromUUID(mergeStateId, false, false));
+    console.info("Current merge state with:", await this.getMergeStateFromUUID(mergeStateId, true, false, false));
+    console.info("Current merge state without:", await this.getMergeStateFromUUID(mergeStateId, false, false, false));
 
     return mergeStateId;
   }
@@ -250,7 +250,7 @@ export class MergeStateModel implements ResourceChangeListener {
 
 
   async mergeStateFinalizer(uuid: string, mergeCommitType?: MergeCommitType): Promise<MergeState | null> {
-    const mergeState = await this.getMergeStateFromUUID(uuid, true, true);
+    const mergeState = await this.getMergeStateFromUUID(uuid, true, true, false);
     if (mergeState === null) {
       throw new Error(`Merge state for uuid (${uuid}) does not exist`);
     }
@@ -400,7 +400,7 @@ export class MergeStateModel implements ResourceChangeListener {
 
 
   /**
-   * This method checks if the list of unresolved conflicts is empty and if so it removes the entry and updates relevant data.
+   * This method checks if the list of unresolved conflicts is empty and if so performs the finalizing based on cause (for certain causes also removes the merge state).
    *  For example the last commit hash in case of Dataspecer resource
    * @returns true, when it successfully finalized merge state
    */
@@ -479,10 +479,10 @@ export class MergeStateModel implements ResourceChangeListener {
       },
     });
 
-    return await Promise.all(mergeStates.map(mergeState => this.prismaMergeStateToMergeState(mergeState, false)));
+    return await Promise.all(mergeStates.map(mergeState => this.prismaMergeStateToMergeState(mergeState, false, false)));
   }
 
-  async getMergeStateFromUUID(uuid: string, shouldIncludeMergeStateData: boolean, shouldUpdateIfNotUpToDate: boolean): Promise<MergeState | null> {
+  async getMergeStateFromUUID(uuid: string, shouldIncludeMergeStateData: boolean, shouldUpdateIfNotUpToDate: boolean, shouldForceDiffTreeReload: boolean): Promise<MergeState | null> {
     const mergeState = await this.prismaClient.mergeState.findFirst({
       where: {
         uuid: uuid,
@@ -496,10 +496,15 @@ export class MergeStateModel implements ResourceChangeListener {
       return null;
     }
 
-    return this.prismaMergeStateToMergeState(mergeState, shouldUpdateIfNotUpToDate);
+    return this.prismaMergeStateToMergeState(mergeState, shouldUpdateIfNotUpToDate, shouldForceDiffTreeReload);
   }
 
-  async getMergeState(rootIriMergeFrom: string, rootIriMergeTo: string, shouldIncludeMergeStateData: boolean): Promise<MergeState | null> {
+  async getMergeState(
+    rootIriMergeFrom: string,
+    rootIriMergeTo: string,
+    shouldIncludeMergeStateData: boolean,
+    shouldForceDiffTreeReload: boolean,
+  ): Promise<MergeState | null> {
     const mergeState = await this.prismaClient.mergeState.findFirst({
       where: {
         rootIriMergeFrom: rootIriMergeFrom,
@@ -514,7 +519,7 @@ export class MergeStateModel implements ResourceChangeListener {
       return null;
     }
 
-    return this.prismaMergeStateToMergeState(mergeState, true);
+    return this.prismaMergeStateToMergeState(mergeState, true, shouldForceDiffTreeReload);
   }
 
   async getMergeStatesForMergeTo(
@@ -755,7 +760,7 @@ export class MergeStateModel implements ResourceChangeListener {
   }
 
   async removeMergeStateByUuid(mergeStateUuid: string) {
-    const mergeState = await this.getMergeStateFromUUID(mergeStateUuid, false, false);
+    const mergeState = await this.getMergeStateFromUUID(mergeStateUuid, false, false, false);
     if (mergeState === null) {
       throw new Error(`Merge state with given uuid (${mergeStateUuid}) is not present in database`);
     }
@@ -796,8 +801,8 @@ export class MergeStateModel implements ResourceChangeListener {
     };
   }
 
-  async prismaMergeStateToMergeState(prismaMergeState: PrismaMergeStateWithData, shouldUpdateIfNotUpToDate: boolean): Promise<MergeState> {
-    if (shouldUpdateIfNotUpToDate && !prismaMergeState.isUpToDate) {
+  async prismaMergeStateToMergeState(prismaMergeState: PrismaMergeStateWithData, shouldUpdateIfNotUpToDate: boolean, shouldForceDiffTreeReload: boolean): Promise<MergeState> {
+    if (shouldForceDiffTreeReload || (shouldUpdateIfNotUpToDate && !prismaMergeState.isUpToDate)) {
       const { git: gitForMergeFrom, gitProvider: gitProviderForMergeFrom } = await this.createMergeEndPointGitData(
         prismaMergeState.rootIriMergeFrom, prismaMergeState.filesystemTypeMergeFrom,
         prismaMergeState.rootFullPathToMetaMergeFrom, prismaMergeState.gitUrlMergeFrom);
@@ -825,11 +830,12 @@ export class MergeStateModel implements ResourceChangeListener {
         branch: prismaMergeState.branchMergeTo,
       };
 
-      const updatedMergeStateResult = await updateMergeStateToBeUpToDate(prismaMergeState.uuid, prismaMergeState.commitMessage, mergeFrom, mergeTo, prismaMergeState.mergeStateCause as MergeStateCause);
+      const previousMergeState = await this.getMergeStateFromUUID(prismaMergeState.uuid, true, false, false);
+      const updatedMergeStateResult = await updateMergeStateToBeUpToDate(prismaMergeState.uuid, prismaMergeState.commitMessage, mergeFrom, mergeTo, prismaMergeState.mergeStateCause as MergeStateCause, previousMergeState);
       if (!updatedMergeStateResult) {
         throw new Error("Could not update merge state to be up to date, when trying to get it from database");
       }
-      const createdMergeState = await this.getMergeStateFromUUID(prismaMergeState.uuid, prismaMergeState.mergeStateData !== null, true);
+      const createdMergeState = await this.getMergeStateFromUUID(prismaMergeState.uuid, prismaMergeState.mergeStateData !== null, true, false);
       if (createdMergeState === null) {
         // I don't think that this could ever happen
         throw new Error(`The merge state exists, it was no longer up to date, new one was created, however for some unknown reason it is not present in database after update: ${{rootIriMergeFrom: prismaMergeState.rootIriMergeFrom, rootIriMergeTo: prismaMergeState.rootIriMergeTo}}`);

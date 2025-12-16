@@ -549,15 +549,17 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     setCacheExplicitUpdateTracker(0);
   };
 
-  const reloadMergeState = async () => {
-    setIsLoadingTextData(true);
+  const reloadMergeState = async (shouldForceDiffTreeReload: boolean, shouldShowLoading: boolean) => {
+    if (shouldShowLoading) {
+      setIsLoadingTextData(true);
+    }
+    const fetchedMergeState = await fetchMergeState(initialMergeFromResourceIri, initialMergeToResourceIri, true, true, shouldForceDiffTreeReload);
     resetUseStates();
-    const fetchedMergeState = await fetchMergeState(initialMergeFromResourceIri, initialMergeToResourceIri, true);
     setExaminedMergeState(fetchedMergeState);
   };
 
   useEffect(() => {
-    reloadMergeState();
+    reloadMergeState(true, true);
   }, []);
 
 
@@ -949,15 +951,21 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
     const editableFilesystem = getEditableValue(editable, examinedMergeState?.filesystemTypeMergeFrom, examinedMergeState?.filesystemTypeMergeTo) ?? null;
     await saveCreatedFilesystemNodesToBackend(editableCacheContents, nonEditableCacheContents, editableFilesystem);
 
-    const fetchedMergeState = await fetchMergeState(initialMergeFromResourceIri, initialMergeToResourceIri, true);
-    if (!fetchedMergeState?.isUpToDate) {
+    // TODO RadStr: Alternatively we could update directly the diff tree instead of letting the backend recompute it again.
+    //              ... But it is quite non-trival implementation-wise
+    // TODO RadStr: Also we should do only one fetcheMergeState request, otherwise there might be concurrency issues
+    const fetchedMergeStateToCheckForUpToDate = await fetchMergeState(initialMergeFromResourceIri, initialMergeToResourceIri, true, false, false);
+    if (!fetchedMergeStateToCheckForUpToDate?.isUpToDate) {
       // TODO RadStr: ... What to do with this? ... Probably just throw error. However the issue is that we already updated the filesystem nodes. So we can not fully revert the action.
       // .... TODO RadStr: ... Actually just rewrite it - when we work in parallel in cme it is also the last one wins ... we would have to write the DS commits and I really was not feeling up to the task
       // ..... also the commits would be just single commits - basically any time user stores to backend we say that is commit and that's it. Basically it is just forced history. It would help us in some places - like here
       //  but yeah as I said the project already got way more complicated than it should have, so it is better to just ship this. I mean the implementation of DS commits is not that complicated after all, it is just once again ton of thinking and ton of code.
 
+      // TODO: Probably some better dialog
       alert("It was not up to date");
     }
+    const fetchedMergeState = await fetchMergeState(initialMergeFromResourceIri, initialMergeToResourceIri, true, true, true);
+    console.info({fetchedMergeState});      // TODO RadStr: Debug
     setExaminedMergeState(fetchedMergeState);
     const newIriMappingForNonEditableToEditableStorage = {};
     createIriMappings(fetchedMergeState?.diffTreeData?.diffTree!, editable, {}, {}, newIriMappingForNonEditableToEditableStorage, {});
@@ -1011,7 +1019,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
           const relevantResource: FilesystemNode = getEditableValue(editable, diffTreeNode.resources.old, diffTreeNode.resources.new)!;
           const datastoreParentIri = relevantResource.metadata.iri;
           alert("Handling remove2");
-          await ClientFilesystem.removeDatastoreDirectly(examinedMergeState!.uuid, datastoreParentIri, removedDatastore, import.meta.env.VITE_BACKEND, editableFilesystem, false);
+          await ClientFilesystem.removeDatastoreDirectly(fetchedMergeState!.uuid, datastoreParentIri, removedDatastore, import.meta.env.VITE_BACKEND, editableFilesystem, false);
           continue;
         }
 
@@ -1031,11 +1039,11 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
         const stringifiedNewValue: string = stringifyDatastoreContentBasedOnFormat(newValueAsJSON, format, true);
         if (datastoreInfoForEditable !== null) {
           // Just update, it does exist
-          await ClientFilesystem.updateDatastoreContentDirectly(examinedMergeState!.uuid, filesystemNodeParentIri, datastoreInfoForEditable, stringifiedNewValue, editableFilesystem, import.meta.env.VITE_BACKEND);
+          await ClientFilesystem.updateDatastoreContentDirectly(fetchedMergeState!.uuid, filesystemNodeParentIri, datastoreInfoForEditable, stringifiedNewValue, editableFilesystem, import.meta.env.VITE_BACKEND);
         }
         else {
           // Create new one.
-          await ClientFilesystem.createDatastoreDirectly(examinedMergeState!.uuid, filesystemNodeParentIri, stringifiedNewValue, editableFilesystem, datastoreInfoForNonEditable, import.meta.env.VITE_BACKEND);
+          await ClientFilesystem.createDatastoreDirectly(fetchedMergeState!.uuid, filesystemNodeParentIri, stringifiedNewValue, editableFilesystem, datastoreInfoForNonEditable, import.meta.env.VITE_BACKEND);
           continue;
         }
         if (shouldReloadFromBackendAfterFinish) {

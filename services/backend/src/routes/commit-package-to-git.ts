@@ -180,7 +180,8 @@ const commitHandlerInternal = async (
         mergeFromData,
         mergeStateCausedByMerge: redirectCause === CommitHttpRedirectionCause.HasAtLeastOneMergeStateActive ?
           null :
-          await mergeStateModel.prismaMergeStateToMergeState(prismaMergeStateCausedByMerge!, false),    // We use the merge state without diff data, so we do not need the diff data to be up to data
+          // We use the merge state without diff data, so we do not need the diff data to be up to date
+          await mergeStateModel.prismaMergeStateToMergeState(prismaMergeStateCausedByMerge!, false, false),
       };
 
       const status = 300;

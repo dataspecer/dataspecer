@@ -10,12 +10,13 @@ export const getMergeState = asyncHandler(async (request: express.Request, respo
     rootIriMergeFrom: z.string().min(1),
     rootIriMergeTo: z.string().min(1),
     includeDiffData: z.string().min(1),
+    shouldForceDiffTreeReload: z.string().min(1)
   });
   const query = querySchema.parse(request.query);
 
-  const { rootIriMergeFrom, rootIriMergeTo, includeDiffData } = query;
+  const { rootIriMergeFrom, rootIriMergeTo, includeDiffData, shouldForceDiffTreeReload } = query;
 
-  const mergeState = await mergeStateModel.getMergeState(rootIriMergeFrom, rootIriMergeTo, stringToBoolean(includeDiffData));
+  const mergeState = await mergeStateModel.getMergeState(rootIriMergeFrom, rootIriMergeTo, stringToBoolean(includeDiffData), stringToBoolean(shouldForceDiffTreeReload));
 
   if (mergeState === null) {
     response.status(404).send({ error: `Merge state for ${rootIriMergeFrom} and ${rootIriMergeTo} does not exist.` });

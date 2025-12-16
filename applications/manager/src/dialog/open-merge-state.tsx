@@ -8,9 +8,15 @@ import { EditableType, MergeState } from "@dataspecer/git";
 import { requestLoadPackage } from "@/package";
 
 
-export async function fetchMergeState(rootIriMergeFrom: string, rootIriMergeTo: string, shouldPrintMissingStateToConsole: boolean,): Promise<MergeState | null> {
+export async function fetchMergeState(
+  rootIriMergeFrom: string,
+  rootIriMergeTo: string,
+  shouldPrintMissingStateToConsole: boolean,
+  shouldIncludeDiffData: boolean,
+  shouldForceDiffTreeReload: boolean,
+): Promise<MergeState | null> {
   try {
-    const queryParams = `rootIriMergeFrom=${rootIriMergeFrom}&rootIriMergeTo=${rootIriMergeTo}&includeDiffData=true`;
+    const queryParams = `rootIriMergeFrom=${rootIriMergeFrom}&rootIriMergeTo=${rootIriMergeTo}&includeDiffData=${shouldIncludeDiffData}&shouldForceDiffTreeReload=${shouldForceDiffTreeReload}`;
     const fetchResult = await fetch(`${import.meta.env.VITE_BACKEND}/git/get-merge-state?${queryParams}`, {
       method: "GET",
     });
@@ -136,6 +142,7 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
   }
 
   const handleKeepExisting = async () => {
+    resolve(null);
     openModal(
       TextDiffEditorDialog,
       {
@@ -150,7 +157,7 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
   useEffect(() => {
     const initialLoad = async () => {
       setIsLoading(true);
-      let fetchedMergeState = await fetchMergeState(mergeFrom, mergeTo, false);
+      let fetchedMergeState = await fetchMergeState(mergeFrom, mergeTo, false, true, false);
       let alreadyExists: boolean;
       let isMergeStateCreated = true;
       if (fetchedMergeState === null) {

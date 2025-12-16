@@ -226,8 +226,45 @@ export function getDiffNodeFromDiffTree(
       return null;    // Path is too long
     }
     diffNode = currentDiffTree[part];
-    currentDiffTree = diffNode.childrenDiffTree;
+    currentDiffTree = diffNode?.childrenDiffTree;
   }
 
   return diffNode ?? null;
+}
+
+/**
+ * Gets all the conflicts from the previous and adds new conflicts for nodes which were not present in the original
+ */
+export async function createConflictsFromDiffTrees(
+  previousDiffTree: DiffTree | null,
+  previousConflicts: ComparisonData[],
+  newDiffTree: DiffTree,
+  newConflicts: ComparisonData[],
+  outputConflicts: ComparisonData[],
+): Promise<void> {
+  for (const [key, newResource] of Object.entries(newDiffTree)) {
+    const previousResource = previousDiffTree?.[key];
+    for (const datastoreInNew of newResource.datastoreComparisons) {
+      const datastoreInPrevious = previousResource?.datastoreComparisons
+        .find(comparison => comparison.affectedDataStore.fullPath === datastoreInNew.affectedDataStore.fullPath);
+      if (datastoreInPrevious === undefined) {
+        // Newly added
+        outputConflicts.push(datastoreInNew);
+      }
+      else {
+        const hasConflictInPrevious = previousConflicts
+          ?.find(conflict => conflict.affectedDataStore.fullPath === datastoreInNew.affectedDataStore.fullPath);
+        if (hasConflictInPrevious) {
+          // Was in previous conflicts, keep it (but now with the new datastore for consistency).
+          outputConflicts.push(datastoreInNew);
+        }
+      }
+    }
+
+    await createConflictsFromDiffTrees(
+      previousResource?.childrenDiffTree ?? null, previousConflicts,
+      newResource.childrenDiffTree, newConflicts,
+      outputConflicts
+    );
+  }
 }

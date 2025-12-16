@@ -2,7 +2,7 @@ import { z } from "zod";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { mergeStateModel, resourceModel } from "../main.ts";
 import express from "express";
-import { AvailableFilesystems, convertMergeStateCauseToEditable, getEditableAndNonEditableValue, getMergeFromMergeToForGitAndDS, GitProvider, MergeStateCause } from "@dataspecer/git";
+import { AvailableFilesystems, ComparisonData, createConflictsFromDiffTrees, GitProvider, MergeState, MergeStateCause } from "@dataspecer/git";
 import { compareBackendFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "../utils/simple-git-utils.ts";
 import { SimpleGit } from "simple-git";
@@ -44,7 +44,7 @@ export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (requ
       return;
     }
 
-    const mergeState = await mergeStateModel.getMergeStateFromUUID(createdMergeStateId, false, true);
+    const mergeState = await mergeStateModel.getMergeStateFromUUID(createdMergeStateId, false, true, false);
 
     if (mergeState === null) {
       response.status(400).send({error: `Can not create new merge state for merge from iri ${mergeFromIri} and merge to iri ${mergeToIri}.
@@ -146,12 +146,27 @@ export async function updateMergeStateToBeUpToDate(
   mergeFrom: MergeEndpointForStateUpdate,
   mergeTo: MergeEndpointForStateUpdate,
   mergeStateCause: MergeStateCause,
+  previousMergeState: MergeState | null
 ): Promise<boolean> {
   const {
     diffTreeComparisonResult,
     rootMergeFrom, pathToRootMetaMergeFrom,
     filesystemMergeTo, fakeRootMergeTo, rootMergeTo, pathToRootMetaMergeTo,
   } = await compareBackendFilesystems(mergeFrom, mergeTo);
+
+    let newConflicts: ComparisonData[] = [];
+    if (previousMergeState !== null) {
+      await createConflictsFromDiffTrees(
+        previousMergeState.diffTreeData?.diffTree ?? null, previousMergeState.unresolvedConflicts ?? [],
+        diffTreeComparisonResult.diffTree, diffTreeComparisonResult.conflicts,
+        newConflicts
+      );
+    }
+    else {
+      newConflicts = diffTreeComparisonResult.conflicts;
+    }
+    diffTreeComparisonResult.conflicts = newConflicts;
+
 
     let commonCommitHash: string | undefined = undefined;
     const gitsToTry = [];
