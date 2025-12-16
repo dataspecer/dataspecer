@@ -44,7 +44,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
     monacoEditor,
     examinedMergeState, setExaminedMergeState,
     conflictsToBeResolvedOnSave, setConflictsToBeResolvedOnSave,
-    removedDatastores, setRemovedDatastores,
+    removedDatastores, setRemovedDatastores, addToRemovedDatastoresAndAddToCache,
     createdDatastores, addToCreatedDatastoresAndAddToCache,
     createdFilesystemNodes,
     removedTreePaths, setRemovedTreePaths,
@@ -113,6 +113,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
                                               addToCreatedDatastores={addToCreatedDatastoresAndAddToCache}
                                               removedDatastores={removedDatastores}
                                               setRemovedDatastores={setRemovedDatastores}
+                                              setRemovedDatastoresAndLoadIntoCache={addToRemovedDatastoresAndAddToCache}
                                               removedTreePaths={removedTreePaths}
                                               setRemovedTreePaths={setRemovedTreePaths}
                                               />

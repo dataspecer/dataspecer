@@ -5,7 +5,7 @@ import React, { Dispatch, SetStateAction, useCallback, useEffect, useRef, useSta
 import { NodeApi, NodeRendererProps, Tree, TreeApi, } from "react-arborist";
 import { ComparisonData, CreateDatastoreFilesystemNodesInfo, DatastoreComparison, DatastoreInfo, DiffTree, EditableType, FilesystemNode, getDatastoreInfoOfGivenDatastoreType, MergeState, OldNewFilesystemNode, ResourceComparison } from "@dataspecer/git";
 import { DiffEditorEditIcon } from "./crossed-out-icon";
-import { DatastoreInfosCache, DatastoreInfosForModel, EntriesAffectedByCreateType } from "@/hooks/use-diff-editor-dialog-props";
+import { AddToCreatedDatastoresAndAddToCacheMethodType, AddToRemovedDatastoresAndAddToCacheMethodType, DatastoreInfosCache, DatastoreInfosForModel, EntriesAffectedByCreateType } from "@/hooks/use-diff-editor-dialog-props";
 
 
 type DataSourceRenderType = "datastore" | "directory" | "file";
@@ -38,9 +38,10 @@ type RenderNodeWithAdditionalData = RenderNode & {
   allConficts: ComparisonData[];
   setConflictsToBeResolvedOnSave: (value: React.SetStateAction<ComparisonData[]>) => void;
   isNewlyCreated: boolean;
-  addToCreatedDatastores: (parentProjectIrisTreePath: string, datastoreInfoToCreate: DatastoreInfo, metadataDatastoreInfoToCreate: DatastoreInfo | null) => Promise<void>;
+  addToCreatedDatastores: AddToCreatedDatastoresAndAddToCacheMethodType;
   isNewlyRemoved: boolean;
   setRemovedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void;
+  setRemovedDatastoresAndLoadIntoCache: AddToRemovedDatastoresAndAddToCacheMethodType;
   shouldBeHighlighted: boolean;
   setShouldBeHighlighted: (value: React.SetStateAction<boolean>) => void;
   removedTreePaths: string[];
@@ -366,6 +367,7 @@ const getAllChildrenRecursivelyInternal = (node: NodeApi<RenderNodeWithAdditiona
 
 const onClickRemoveDatastore = (
   event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+  filesystemNodeContainingDatastoreToRemove: RenderNodeWithAdditionalData | undefined,
   nodeToResolve: NodeApi<RenderNodeWithAdditionalData>,
 ) => {
   event.stopPropagation();
@@ -382,16 +384,23 @@ const onClickRemoveDatastore = (
     console.info({filesystemNodeTreePathsInSubTree, datastoresInSubTree});
 
     nodeToResolve.data.setRemovedDatastores(prev => [...prev, ...datastoresInSubTree]);
+    const resourceToRemoveDatastoreFrom = filesystemNodeContainingDatastoreToRemove?.resourceComparison?.resources?.new ?? null;
+    nodeToResolve.data.setRemovedDatastoresAndLoadIntoCache(resourceToRemoveDatastoreFrom?.projectIrisTreePath!, nodeToResolve.data.fullDatastoreInfoInModifiedTree!, null, false);
     if (parent !== null) {
-      nodeToResolve.data.setRemovedTreePaths(prev => [
-        ...prev,
-        extractFirstNonEmptyFieldFromComparison(parent.data.resourceComparison?.resources ?? null, "projectIrisTreePath") as string,
-        ...filesystemNodeTreePathsInSubTree],
-      );
+      nodeToResolve.data.setRemovedTreePaths(prev => {
+        const newRemovedTreePaths = [
+          ...prev,
+          extractFirstNonEmptyFieldFromComparison(parent.data.resourceComparison?.resources ?? null, "projectIrisTreePath") as string,
+          ...filesystemNodeTreePathsInSubTree
+        ];
+        return newRemovedTreePaths;
+      });
     }
   }
   else {
-    nodeToResolve.data.setRemovedDatastores(prev => [...prev, nodeToResolve.data.fullDatastoreInfoInModifiedTree!]);
+    const resourceToRemoveDatastoreFrom = filesystemNodeContainingDatastoreToRemove?.resourceComparison?.resources?.new ?? null;
+    const metaFromResourceToRemoveFrom = resourceToRemoveDatastoreFrom === null ? null : getDatastoreInfoOfGivenDatastoreType(resourceToRemoveDatastoreFrom, "meta");
+    nodeToResolve.data.setRemovedDatastoresAndLoadIntoCache(resourceToRemoveDatastoreFrom?.projectIrisTreePath!, nodeToResolve.data.fullDatastoreInfoInModifiedTree!, metaFromResourceToRemoveFrom, true);
   }
   alert(`Remove datastore for ${nodeToResolve.data.name}`);
 }
@@ -403,8 +412,12 @@ const onClickCreateDatastore = (
 ) => {
   event.stopPropagation();
   const oldResource = filesystemNodeContainingDatastoreToCreate?.resourceComparison?.resources?.old ?? null;
-  const metaDatastoreInfo = oldResource === null ? null : getDatastoreInfoOfGivenDatastoreType(oldResource, "meta");
-  datastoreToCreate.addToCreatedDatastores(oldResource?.projectIrisTreePath!, datastoreToCreate.fullDatastoreInfoInOriginalTree!, metaDatastoreInfo);
+  const oldMetaDatastoreInfo = oldResource === null ? null : getDatastoreInfoOfGivenDatastoreType(oldResource, "meta");
+  const newResource = filesystemNodeContainingDatastoreToCreate?.resourceComparison?.resources?.new ?? null;
+  const newMetaDatastoreInfo = newResource === null ? null : getDatastoreInfoOfGivenDatastoreType(newResource, "meta");
+  // If the new one already exists, then do not add it.
+  const metadataDatastoreToAddToCreatedDatastores = newMetaDatastoreInfo !== null ? null : oldMetaDatastoreInfo;
+  datastoreToCreate.addToCreatedDatastores(oldResource?.projectIrisTreePath!, datastoreToCreate.fullDatastoreInfoInOriginalTree!, metadataDatastoreToAddToCreatedDatastores);
   alert(`Create datastore for ${datastoreToCreate.name}`);
 }
 
@@ -537,9 +550,9 @@ function StyledNode({
           {/* TODO RadStr: No the current editing does not matter. We want user to care about the final result and not about the fact the currently edited some stuff in the session */}
           {/* TODO RadStr: Well we kinda does, but it is difficult to show */}
 
+          {<p className={`font-bold pt-1 pr-1 text-xs ${node.data.isNewlyCreated ? "visible": "invisible w-0 h-0"}`} style={{color: "green"}}>Newly C</p>}
+          {<p className={`font-bold pt-1 pr-1 text-xs ${node.data.isNewlyRemoved ? "visible" : "invisible w-0 h-0"}`} style={{color: "red"}}>Newly D</p>}
           {<p className={`font-bold pt-1 pr-1 text-xs ${node.data.datastoreInfoInCache !== null ? "visible": "invisible w-0 h-0"}`}>📥</p>}
-          {<p className={`font-bold pt-1 pr-1 text-xs ${node.data.isNewlyCreated ? "visible": "invisible w-0 h-0"}`}>Newly C</p>}
-          {<p className={`font-bold pt-1 pr-1 text-xs ${node.data.isNewlyRemoved ? "visible" : "invisible w-0 h-0"}`}>Newly D</p>}
           {<p className={`font-bold pt-1 pr-1 text-xs ${color === "green" ? "visible": "invisible w-0 h-0"}`} style={{color}}>C</p>}
           {<p className={`font-bold pt-1 pr-1 text-xs ${color === "blue" ? "visible" : "invisible w-0 h-0"}`} style={{color}}>M</p>}
           {<p className={`font-bold pt-1 pr-1 text-xs ${color === "red" ? "visible" : "invisible w-0 h-0"}`} style={{color}}>D</p>}
@@ -638,9 +651,10 @@ const createStyledNode = (
   setConflictsToBeResolvedOnSave: (value: React.SetStateAction<ComparisonData[]>) => void,
   createdFilesystemNodesAsArray: CreateDatastoreFilesystemNodesInfo[],
   createdDatastores: DatastoreInfo[],
-  addToCreatedDatastores: (parentProjectIrisTreePath: string, datastoreInfoToCreate: DatastoreInfo, metadataDatastoreInfoToCreate: DatastoreInfo | null) => Promise<void>,
+  addToCreatedDatastores: AddToCreatedDatastoresAndAddToCacheMethodType,
   removedDatastores: DatastoreInfo[],
   setRemovedDatastores: (value: React.SetStateAction<DatastoreInfo[]>) => void,
+  setRemovedDatastoresAndLoadIntoCache: AddToRemovedDatastoresAndAddToCacheMethodType,
   removedTreePaths: string[],
   setRemovedTreePaths: (value: React.SetStateAction<string[]>) => void,
   isCurrentlyAllowedChangeOfModelsUseState: [boolean, React.Dispatch<React.SetStateAction<boolean>>],
@@ -660,6 +674,7 @@ const createStyledNode = (
   extendedProps.node.data.addToCreatedDatastores = addToCreatedDatastores;
   extendedProps.node.data.isNewlyRemoved = removedDatastores.find(removedDatastore => removedDatastore.fullPath === extendedProps.node.data.fullDatastoreInfoInModifiedTree?.fullPath) !== undefined;
   extendedProps.node.data.setRemovedDatastores = setRemovedDatastores;
+  extendedProps.node.data.setRemovedDatastoresAndLoadIntoCache = setRemovedDatastoresAndLoadIntoCache;
   extendedProps.node.data.removedTreePaths = removedTreePaths;
   extendedProps.node.data.setRemovedTreePaths = setRemovedTreePaths;
   extendedProps.node.data.isNewlyRemoved ||= removedTreePaths
@@ -779,15 +794,16 @@ export const DiffTreeVisualization = (props: {
   setConflictsToBeResolvedOnSave: Dispatch<SetStateAction<ComparisonData[]>>,
   createdFilesystemNodes: Record<string, EntriesAffectedByCreateType>,
   createdDatastores: DatastoreInfo[],
-  addToCreatedDatastores: (parentProjectIrisTreePath: string, datastoreInfoToCreate: DatastoreInfo, metadataDatastoreInfoToCreate: DatastoreInfo | null) => Promise<void>,
+  addToCreatedDatastores: AddToCreatedDatastoresAndAddToCacheMethodType,
   removedDatastores: DatastoreInfo[],
   setRemovedDatastores: Dispatch<SetStateAction<DatastoreInfo[]>>,
+  setRemovedDatastoresAndLoadIntoCache: AddToRemovedDatastoresAndAddToCacheMethodType,
   removedTreePaths: string[],
   setRemovedTreePaths: Dispatch<SetStateAction<string[]>>,
 }) => {
   const {
     createdDatastores, addToCreatedDatastores,
-    removedDatastores, setRemovedDatastores,
+    removedDatastores, setRemovedDatastores, setRemovedDatastoresAndLoadIntoCache,
     setConflictsToBeResolvedOnSave, createdFilesystemNodes,
     removedTreePaths, setRemovedTreePaths,
     updateModelData, mergeStateFromBackend
@@ -1033,7 +1049,7 @@ export const DiffTreeVisualization = (props: {
           <h3><DiffEditorEditIcon/></h3>
           {
             renderTreeWithLoading(props.isLoadingTreeStructure,
-              <Tree children={(nodeProps) => createStyledNode(nodeProps, updateModelData, props.datastoreInfosForCacheEntries, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, addToCreatedDatastores, removedDatastores, setRemovedDatastores, removedTreePaths, setRemovedTreePaths, isCurrentlyAllowedChangeOfModelsUseState, conflictsToBeResolvedOnSaveInThisComponent)}
+              <Tree children={(nodeProps) => createStyledNode(nodeProps, updateModelData, props.datastoreInfosForCacheEntries, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, addToCreatedDatastores, removedDatastores, setRemovedDatastores, setRemovedDatastoresAndLoadIntoCache, removedTreePaths, setRemovedTreePaths, isCurrentlyAllowedChangeOfModelsUseState, conflictsToBeResolvedOnSaveInThisComponent)}
                 className="!overflow-x-hidden relative"
                 ref={newTreeRef} data={newRenderTreeDataToRender} width={"100%"}
                 onSelect={(nodes) => onNodesSelect(nodes, "new")}
