@@ -16,8 +16,8 @@ export function createDatastoreWithReplacedIris(datastoreToSearchInForIris: obje
   };
 }
 
-
-export const PLACEHOLDER_REPLACEMENT_IRI = "PLACEHOLDER-IRI-WHICH-WILL-BE-REPLACED-ON-BACKEND-STORE";
+// TODO RadStr: the placeholder either has to at least hold the old iri as suffix, otherwise we can not perform the replacing
+// export const PLACEHOLDER_REPLACEMENT_IRI = "PLACEHOLDER-IRI-WHICH-WILL-BE-REPLACED-ON-BACKEND-STORE";
 
 
 function replaceIrisInDatastoreAndCollectMissingOnes(
@@ -101,7 +101,9 @@ function getReplacementForNonComposite(
     replacementIri = irisMap[originalIri] ?? null;
     if (replacementIri === null) {
       missingIrisInNew.push(originalIri);
-      replacementIri = PLACEHOLDER_REPLACEMENT_IRI;
+      // replacementIri = PLACEHOLDER_REPLACEMENT_IRI;    // TODO RadStr: the placeholder either has to at least hold the old iri as suffix, otherwise we can not perform the replacing
+      // TODO RadStr: Using the old iri is fine, we just have to make sure to replace it if it happens
+      replacementIri = originalIri;
     }
   }
   else {
