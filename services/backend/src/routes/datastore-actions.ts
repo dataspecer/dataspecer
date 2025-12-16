@@ -227,7 +227,7 @@ export const removeFilesystemNodeDirectly = asyncHandler(async (request: express
     return;
   }
 
-  response.status(200);
+  response.sendStatus(200);
   return;
 });
 

@@ -974,7 +974,10 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
       if (examinedMergeState !== null) {
         await updateMergeState(examinedMergeState, conflictsToBeResolvedOnSave);
       }
-      closeWithSuccess();
+
+      await reloadMergeState(true, false);
+      requestLoadPackage(initialMergeFromResourceIri, true);
+      requestLoadPackage(initialMergeToResourceIri, true);
     };
     saveToBackend();
   }, [cacheExplicitUpdateTracker]);
