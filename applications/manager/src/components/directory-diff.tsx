@@ -301,9 +301,18 @@ const onClickResolveConflict = (
 ) => {
   event.stopPropagation();
 
+  if (nodeToResolve.data.dataSourceType === "directory" || nodeToResolve.data.dataSourceType === "file") {
+    nodeToResolve.children?.forEach(child => {
+      const isInConflict = child.data.nowInConflictCount > 0;
+      if (isInConflict) {
+        onClickResolveConflict(event, child);
+      }
+    });
+    return;
+  }
+
 
   const conflictToBeResolved = findConflictForNode(nodeToResolve.data);
-
   if (conflictToBeResolved === null) {
     console.error("This is most-likely programmer error or corrupted data, the conflict to be resolved, could not be found.");
     return;
@@ -438,7 +447,8 @@ function StyledNode({
 
   let icon: string = "";
 
-  icon = node.data.nowInConflictCount > 0 ? "⚠️" : "";   // Always show the conflict mark
+  const isCurrentlyInConflict = node.data.nowInConflictCount > 0;
+  icon = isCurrentlyInConflict ? "⚠️" : "";   // Always show the conflict mark
   icon = (node.data.isInEditableTree && node.data.conflictsToBeResolvedOnSaveInThisComponent.find(resolvedConflict => node.data.id === createIdForDatastoreRenderNode(resolvedConflict, node.data.treeType))) ? "✅" : icon;
   if (node.data.dataSourceType == "datastore") {
     icon += "📄";
@@ -535,58 +545,63 @@ function StyledNode({
           {<p className={`font-bold pt-1 pr-1 text-xs ${color === "red" ? "visible" : "invisible w-0 h-0"}`} style={{color}}>D</p>}
           {icon}
           <span className={textClassName}>{node.data.name}</span>
-          {
-            // The buttons on hover
-            isExpandable ?
-            null :
+            {/* The buttons on hover */}
             <div
               style={{ right: "0px", background: backgroundColor }}
               className="absolute text-black top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto"
-            >
-              <>
-                {
-                node.data.nowInConflictCount === 0 ?
+              >
+
+              {
+              isExpandable ?
+                !isCurrentlyInConflict ?
                   null :
                   <button title="Mark as resolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickResolveConflict(e, node)}>
                     <Check className="h-6 w-6"/>
-                  </button>
-                }
-                {
-                node.data.canBeInCoflictCount !== 0 && node.data.nowInConflictCount === 0 ?
-                  <button title="Mark as unresolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickUnresolveConflict(e, node)}>
-                    <X className="h-6 w-6"/>
                   </button> :
-                  null
-                }
-                {
-                node.data.status === "modified" ?
-                  <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => {e.stopPropagation(); alert("delte")}}>
-                    { node.data.treeType === "new" ? <MoveRight className="h-6 w-6"/> : <MoveLeft className="h-6 w-6"/> }
-                  </button> :
-                  null
-                }
-                {
-                (node.data.status === "same") ?
-                  <div className="h-6 w-6"/> :    // Not null because we want to keep the button positioning
-                  null
-                }
-                {
-                node.data.status === "removed" ?
-                  <button title="Create datastore" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickCreateDatastore(e, node.parent?.data, node.data)}>
-                    <Plus className="h-6 w-6"/>
-                  </button> :
-                  null
-                }
-                {
-                node.data.status === "created" ?
-                  <button title="Remove datastore" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickRemoveDatastore(e, node)}>
-                    <Minus className="h-6 w-6"/>
-                  </button> :
-                  null
-                }
-              </>
-            </div>
-          }
+                <>
+                  {
+                  !isCurrentlyInConflict ?
+                    null :
+                    <button title="Mark as resolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickResolveConflict(e, node)}>
+                      <Check className="h-6 w-6"/>
+                    </button>
+                  }
+                  {
+                  node.data.canBeInCoflictCount !== 0 && !isCurrentlyInConflict ?
+                    <button title="Mark as unresolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickUnresolveConflict(e, node)}>
+                      <X className="h-6 w-6"/>
+                    </button> :
+                    null
+                  }
+                  {
+                  node.data.status === "modified" ?
+                    <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => {e.stopPropagation(); alert("move")}}>
+                      { node.data.treeType === "new" ? <MoveRight className="h-6 w-6"/> : <MoveLeft className="h-6 w-6"/> }
+                    </button> :
+                    null
+                  }
+                  {
+                  (node.data.status === "same") ?
+                    <div className="h-6 w-6"/> :    // Not null because we want to keep the button positioning
+                    null
+                  }
+                  {
+                  node.data.status === "removed" ?
+                    <button title="Create datastore" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickCreateDatastore(e, node.parent?.data, node.data)}>
+                      <Plus className="h-6 w-6"/>
+                    </button> :
+                    null
+                  }
+                  {
+                  node.data.status === "created" ?
+                    <button title="Remove datastore" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickRemoveDatastore(e, node.parent?.data, node)}>
+                      <Minus className="h-6 w-6"/>
+                    </button> :
+                    null
+                  }
+                </>
+            }
+          </div>
         </div>
       </div>
     </>);
