@@ -1,3 +1,4 @@
+import { ResourceTypesOrString } from "../../resource-types.ts";
 import { ResourceDatastoreStripHandler } from "./resource-datastore-strip-handler.ts";
 
 /**
@@ -13,9 +14,9 @@ export class ResourceDatastoreStripHandlerBase implements ResourceDatastoreStrip
     return (datastoreContent: any) => {return this.stripDatastoreContent(datastoreContent, datastoreType)};
   }
 
-  protected resourceType: string;
+  protected resourceType: ResourceTypesOrString;
 
-  constructor(resourceType: string) {
+  constructor(resourceType: ResourceTypesOrString) {
     this.resourceType = resourceType;
   }
 
@@ -32,6 +33,15 @@ export class ResourceDatastoreStripHandlerBase implements ResourceDatastoreStrip
         }
       }
       delete datastoreContent["metadata"];
+    }
+    else {
+      if (this.resourceType === "http://dataspecer.com/resources/local/visual-model") {
+        delete datastoreContent["modelId"];
+      }
+      else if(this.resourceType === "http://dataspecer.com/resources/local/semantic-model") {
+        delete datastoreContent["modelId"];
+        delete datastoreContent["baseIri"];
+      }
     }
 
     // For every type (including meta) strip iri

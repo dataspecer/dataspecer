@@ -1,4 +1,6 @@
+import { ResourceTypesOrString } from "../../resource-types.ts";
+
 export interface ResourceDatastoreStripHandler {
-  getResourceType(): string;
+  getResourceType(): ResourceTypesOrString;
   stripDatastoreContent(datastoreContent: any, type: string): void;
 }
