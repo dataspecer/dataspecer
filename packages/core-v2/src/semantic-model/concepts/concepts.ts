@@ -23,6 +23,20 @@ export interface NamedThing {
     name: LanguageString;
     //alias: LanguageString[];
     description: LanguageString;
+
+    /**
+     * IRI of the predicate used to load the name from RDF (e.g., rdfs:label or skos:prefLabel).
+     * This is used to correctly export reusesPropertyValue in DSV.
+     * @optional
+     */
+    nameIri?: string | null;
+
+    /**
+     * IRI of the predicate used to load the description from RDF (e.g., rdfs:comment or skos:definition).
+     * This is used to correctly export reusesPropertyValue in DSV.
+     * @optional
+     */
+    descriptionIri?: string | null;
 }
 
 /**

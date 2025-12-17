@@ -493,3 +493,169 @@ test("Issue #1005", () => {
     expect(actual).toStrictEqual(expected);
 
 });
+
+test("DSV export with rdfs:label and rdfs:comment predicates", () => {
+    // Test that when a vocabulary term uses rdfs:label and rdfs:comment,
+    // the DSV export correctly uses those predicates instead of skos:prefLabel and skos:definition
+    
+    const containers = [{
+        "baseIri": "http://example.org/vocab/",
+        "entities": [{
+            "id": "class-profile-1",
+            "profiling": ["http://example.org/vocab/Person"],
+            "type": ["class-profile"],
+            "iri": "http://example.org/ap/Person-profile",
+            "name": null,
+            "nameFromProfiled": "http://example.org/vocab/Person",
+            "description": null,
+            "descriptionFromProfiled": "http://example.org/vocab/Person",
+            "usageNote": {},
+            "usageNoteFromProfiled": null,
+            "externalDocumentationUrl": null,
+            "tags": [],
+        } as SemanticModelClassProfile, {
+            "id": "http://example.org/vocab/Person",
+            "iri": "http://example.org/vocab/Person",
+            "name": {
+                "en": "Person"
+            },
+            "description": {
+                "en": "A person"
+            },
+            "type": ["class"],
+            // Metadata indicating rdfs:label and rdfs:comment were used
+            "nameIri": "http://www.w3.org/2000/01/rdf-schema#label",
+            "descriptionIri": "http://www.w3.org/2000/01/rdf-schema#comment",
+        } as SemanticModelClass],
+    }] as any;
+
+    const context = createContext(containers);
+    const actual = entityListContainerToDsvModel(
+        "http://example.org/ap/", containers[0], context);
+
+    // Verify that rdfs:label and rdfs:comment are used in reusesPropertyValue
+    expect(actual.classProfiles).toHaveLength(1);
+    expect(actual.classProfiles[0].reusesPropertyValue).toHaveLength(2);
+    
+    const labelReuse = actual.classProfiles[0].reusesPropertyValue.find(
+        r => r.propertyReusedFromResourceIri === "http://example.org/vocab/Person" 
+            && r.reusedPropertyIri === "http://www.w3.org/2000/01/rdf-schema#label"
+    );
+    expect(labelReuse).toBeDefined();
+    
+    const commentReuse = actual.classProfiles[0].reusesPropertyValue.find(
+        r => r.propertyReusedFromResourceIri === "http://example.org/vocab/Person"
+            && r.reusedPropertyIri === "http://www.w3.org/2000/01/rdf-schema#comment"
+    );
+    expect(commentReuse).toBeDefined();
+});
+
+test("DSV export with skos:prefLabel and skos:definition predicates", () => {
+    // Test that when a vocabulary term uses skos:prefLabel and skos:definition,
+    // the DSV export correctly uses those predicates
+    
+    const containers = [{
+        "baseIri": "http://example.org/vocab/",
+        "entities": [{
+            "id": "class-profile-2",
+            "profiling": ["http://example.org/vocab/Organization"],
+            "type": ["class-profile"],
+            "iri": "http://example.org/ap/Organization-profile",
+            "name": null,
+            "nameFromProfiled": "http://example.org/vocab/Organization",
+            "description": null,
+            "descriptionFromProfiled": "http://example.org/vocab/Organization",
+            "usageNote": {},
+            "usageNoteFromProfiled": null,
+            "externalDocumentationUrl": null,
+            "tags": [],
+        } as SemanticModelClassProfile, {
+            "id": "http://example.org/vocab/Organization",
+            "iri": "http://example.org/vocab/Organization",
+            "name": {
+                "en": "Organization"
+            },
+            "description": {
+                "en": "An organization"
+            },
+            "type": ["class"],
+            // Metadata indicating skos:prefLabel and skos:definition were used
+            "nameIri": "http://www.w3.org/2004/02/skos/core#prefLabel",
+            "descriptionIri": "http://www.w3.org/2004/02/skos/core#definition",
+        } as SemanticModelClass],
+    }] as any;
+
+    const context = createContext(containers);
+    const actual = entityListContainerToDsvModel(
+        "http://example.org/ap/", containers[0], context);
+
+    // Verify that skos:prefLabel and skos:definition are used in reusesPropertyValue
+    expect(actual.classProfiles).toHaveLength(1);
+    expect(actual.classProfiles[0].reusesPropertyValue).toHaveLength(2);
+    
+    const prefLabelReuse = actual.classProfiles[0].reusesPropertyValue.find(
+        r => r.propertyReusedFromResourceIri === "http://example.org/vocab/Organization" 
+            && r.reusedPropertyIri === "http://www.w3.org/2004/02/skos/core#prefLabel"
+    );
+    expect(prefLabelReuse).toBeDefined();
+    
+    const definitionReuse = actual.classProfiles[0].reusesPropertyValue.find(
+        r => r.propertyReusedFromResourceIri === "http://example.org/vocab/Organization"
+            && r.reusedPropertyIri === "http://www.w3.org/2004/02/skos/core#definition"
+    );
+    expect(definitionReuse).toBeDefined();
+});
+
+test("Fallback to skos:prefLabel and skos:definition when metadata is missing", () => {
+    // Test that when a vocabulary term doesn't have nameIri/descriptionIri metadata,
+    // the system falls back to skos:prefLabel and skos:definition
+    
+    const containers = [{
+        "baseIri": "http://example.org/vocab/",
+        "entities": [{
+            "id": "class-profile-3",
+            "profiling": ["http://example.org/vocab/Thing"],
+            "type": ["class-profile"],
+            "iri": "http://example.org/ap/Thing-profile",
+            "name": null,
+            "nameFromProfiled": "http://example.org/vocab/Thing",
+            "description": null,
+            "descriptionFromProfiled": "http://example.org/vocab/Thing",
+            "usageNote": {},
+            "usageNoteFromProfiled": null,
+            "externalDocumentationUrl": null,
+            "tags": [],
+        } as SemanticModelClassProfile, {
+            "id": "http://example.org/vocab/Thing",
+            "iri": "http://example.org/vocab/Thing",
+            "name": {
+                "en": "Thing"
+            },
+            "description": {
+                "en": "A thing"
+            },
+            "type": ["class"],
+            // No nameIri or descriptionIri metadata - should fallback to SKOS
+        } as SemanticModelClass],
+    }] as any;
+
+    const context = createContext(containers);
+    const actual = entityListContainerToDsvModel(
+        "http://example.org/ap/", containers[0], context);
+
+    // Verify that skos:prefLabel and skos:definition are used as fallback
+    expect(actual.classProfiles).toHaveLength(1);
+    expect(actual.classProfiles[0].reusesPropertyValue).toHaveLength(2);
+    
+    const prefLabelReuse = actual.classProfiles[0].reusesPropertyValue.find(
+        r => r.propertyReusedFromResourceIri === "http://example.org/vocab/Thing" 
+            && r.reusedPropertyIri === "http://www.w3.org/2004/02/skos/core#prefLabel"
+    );
+    expect(prefLabelReuse).toBeDefined();
+    
+    const definitionReuse = actual.classProfiles[0].reusesPropertyValue.find(
+        r => r.propertyReusedFromResourceIri === "http://example.org/vocab/Thing"
+            && r.reusedPropertyIri === "http://www.w3.org/2004/02/skos/core#definition"
+    );
+    expect(definitionReuse).toBeDefined();
+});
