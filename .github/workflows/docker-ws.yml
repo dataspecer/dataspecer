@@ -5,6 +5,8 @@ on:
     branches:
       - main
       - stable**
+  pull_request:
+    types: [synchronize, labeled]
 
 env:
   REGISTRY: ghcr.io
@@ -12,12 +14,18 @@ env:
 
 jobs:
   build-and-push-image:
+    if: |
+      github.event_name == 'push' ||
+      (github.event.action == 'labeled' && github.event.label.name == 'build-image') ||
+      (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'build-image'))
     name: Build and push
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          # For PRs: checkout the PR branch commit (NOT the merge commit)
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0  # Fetch the full history for git describe
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -33,6 +41,7 @@ jobs:
           tags: |
             type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'stable') }}
             type=ref,event=branch,prefix=branch-
+            type=raw,enable=${{ github.event_name == 'pull_request' }},value=branch-${{ github.head_ref }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
       - name: Get commit metadata
@@ -56,7 +65,7 @@ jobs:
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
           build-args: |
-            GIT_COMMIT=${{ github.sha }}
-            GIT_REF=${{ github.ref }}
+            GIT_COMMIT=${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+            GIT_REF=${{ github.event_name == 'pull_request' && format('refs/heads/{0}', github.event.pull_request.head.ref) || github.ref }}
             GIT_COMMIT_DATE=${{ env.COMMIT_DATE }}
             GIT_COMMIT_NUMBER=${{ env.COMMIT_NUMBER }}
