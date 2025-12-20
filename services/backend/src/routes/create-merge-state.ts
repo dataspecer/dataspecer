@@ -17,8 +17,6 @@ export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (requ
     mergeToIri: z.string().min(1),
   });
 
-  console.info("TODO RadStr: createMergeState");    // TODO RadStr DEBUG: Debug print
-
   const { mergeFromIri, mergeToIri } = querySchema.parse(request.query);
 
   const mergeFromResource = await resourceModel.getResource(mergeFromIri);

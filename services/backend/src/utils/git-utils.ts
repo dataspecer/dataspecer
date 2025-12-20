@@ -131,14 +131,6 @@ export function extractPartOfRepositoryURL(repositoryURL: string, part: "url-dom
     else if (part === "user-name") {
       return pathParts[0];
     }
-    else if (part === "branch") {
-      // TODO RadStr: In this case it is provider specific
-      if (pathParts.length < 4 || pathParts.at(-2) !== "tree") {
-        return null;
-      }
-
-      return pathParts.at(-1)!;
-    }
 
     return null;
   } catch (error) {

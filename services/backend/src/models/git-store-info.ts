@@ -6,15 +6,15 @@ export const ROOT_DIRECTORY_FOR_PRIVATE_GITS: string = path.resolve(ROOT_DIRECTO
 export const MANUAL_CLONE_PATH_PREFIX = "manual-clone";
 
 // Public gits (fetcheable from client)
-export const ROOT_DIRECTORY_FOR_MANUAL_CLONE: string = path.resolve(ROOT_DIRECTORY_FOR_PUBLIC_GITS + "/" + MANUAL_CLONE_PATH_PREFIX);
+const ROOT_DIRECTORY_FOR_MANUAL_CLONE: string = path.resolve(ROOT_DIRECTORY_FOR_PUBLIC_GITS + "/" + MANUAL_CLONE_PATH_PREFIX + "/");
 export const WEBHOOK_PATH_PREFIX = "for-webhooks";
-export const ROOT_DIRECTORY_FOR_ANY_WEBHOOK: string = path.resolve(ROOT_DIRECTORY_FOR_PUBLIC_GITS + "/" + WEBHOOK_PATH_PREFIX);
+const ROOT_DIRECTORY_FOR_ANY_WEBHOOK: string = path.resolve(ROOT_DIRECTORY_FOR_PUBLIC_GITS + "/" + WEBHOOK_PATH_PREFIX + "/");
 export const FETCH_GIT_HISTORY_PREFIX = "fetch-history";
-export const ROOT_DIRECTORY_FOR_FETCH_GIT_HISTORY: string = path.resolve(ROOT_DIRECTORY_FOR_PUBLIC_GITS + "/" + FETCH_GIT_HISTORY_PREFIX);
+const ROOT_DIRECTORY_FOR_FETCH_GIT_HISTORY: string = path.resolve(ROOT_DIRECTORY_FOR_PUBLIC_GITS + "/" + FETCH_GIT_HISTORY_PREFIX + "/");
 export const MERGE_DS_CONFLICTS_PREFIX = "merge-conflicts";
-export const ROOT_DIRECTORY_FOR_MERGE_DS_CONFLICTS: string = path.resolve(ROOT_DIRECTORY_FOR_PUBLIC_GITS + "/" + MERGE_DS_CONFLICTS_PREFIX);
+const ROOT_DIRECTORY_FOR_MERGE_DS_CONFLICTS: string = path.resolve(ROOT_DIRECTORY_FOR_PUBLIC_GITS + "/" + MERGE_DS_CONFLICTS_PREFIX + "/");
 export const PUSH_PREFIX = "push";
-export const ROOT_DIRECTORY_FOR_PUSHING: string = path.resolve(ROOT_DIRECTORY_FOR_PUBLIC_GITS + "/" + PUSH_PREFIX);
+const ROOT_DIRECTORY_FOR_PUSHING: string = path.resolve(ROOT_DIRECTORY_FOR_PUBLIC_GITS + "/" + PUSH_PREFIX + "/");
 // private gits (for internal computations)
 export const INTERNAL_COMPUTATION_FOR_IMPORT = "import";
 export const ROOT_DIRECTORY_FOR_INTERNAL_COMPUTATION_FOR_IMPORT: string = path.resolve(ROOT_DIRECTORY_FOR_PRIVATE_GITS + "/" + INTERNAL_COMPUTATION_FOR_IMPORT);
@@ -48,11 +48,12 @@ export const ALL_GIT_REPOSITORY_ROOTS: string[] = [
  */
 export function isAccessibleGitRepository(gitPath: string): { isAccessible: boolean, normalizedGitPath: string } {
   const normalizedGitPath = path.resolve(gitPath);
+  // The check is based on https://stackoverflow.com/questions/37521893/determine-if-a-path-is-subdirectory-of-another-in-node-js
+  // We added .length > 0 to the boolean condition since otherwise it may result in "", which is fine in JavaScript I guess
+  const relative = path.relative(ROOT_DIRECTORY_FOR_PUBLIC_GITS, normalizedGitPath);
+  const isAccessible = relative.length > 0 && !relative.startsWith('..') && !path.isAbsolute(relative);
   return {
-    // TODO RadStr: it should be enough to just look for the one public root (that is the /public) instead of all of them
-    isAccessible: PUBLICLY_ACCESSIBLE_GIT_REPOSITORY_ROOTS.some(allowedRoot => {
-      return normalizedGitPath.startsWith(allowedRoot);
-    }),
+    isAccessible: isAccessible,
     normalizedGitPath,
   };
 }

@@ -88,7 +88,7 @@ export const mergeCommitPackageToGitHandler = asyncHandler(async (request: expre
 
   const query = querySchema.parse(request.query);
   const shouldRedirectWithExistenceOfMergeStates = stringToBoolean(query.shouldRedirectWithExistenceOfMergeStates);
-  const shouldAppendAfterDefaultMergeCommitMessage = stringToBoolean(query.shouldAppendAfterDefaultMergeCommitMessage); // TODO RadStr: Use
+  const shouldAppendAfterDefaultMergeCommitMessage = stringToBoolean(query.shouldAppendAfterDefaultMergeCommitMessage);
   const {
     iri, exportFormat, commitMessage,
     branchMergeFrom, lastCommitHashMergeFrom, rootIriMergeFrom,

@@ -12,6 +12,13 @@ type SshMenuProps = {
   login: UseLoginType;
 } & BetterModalProps<null>;
 
+
+/**
+ * Experimental menu component for handling setting and removal of private SSH key.
+ * Why experimental? Well now it has hardcoded GitHub as the provider which uses the key.
+ * However, in future it makes sense to just set multiple keys and for each decide to which git provider it belongs (note that one key can be used for multiple providers).
+ * That is the reason why it is hardcoded now, since we can not tell how it should exactly work in future and where to store the SSH keys due to security concerns.
+ */
 export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
   const openModal = useBetterModal();
   const [hasSsh, setHasSsh] = useState<boolean>(false);
@@ -19,7 +26,7 @@ export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
   useEffect(() => {
     const hasSshKeySetter = async () => {
       try {
-        const gitProviderLowercase: GitProviderNamesAsType = "github";  // TODO RadStr: !! Hardcoded
+        const gitProviderLowercase: GitProviderNamesAsType = "github";  // !! Hardcoded
 
         const response = await fetch(import.meta.env.VITE_BACKEND + "/git/check-for-existence-of-private-ssh-key?gitProviderLowercase=" + gitProviderLowercase, {
           method: "GET",
@@ -57,7 +64,7 @@ export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
 
   const handleRemoveSSH = useCallback(async () => {
     try {
-      const gitProviderLowercase: GitProviderNamesAsType = "github";  // TODO RadStr: !! Hardcoded
+      const gitProviderLowercase: GitProviderNamesAsType = "github";  // !! Hardcoded
 
       const response = await fetch(import.meta.env.VITE_BACKEND + "/git/delete-private-ssh-key?gitProviderLowercase=" + gitProviderLowercase, {
         method: "DELETE",
@@ -107,14 +114,14 @@ export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
             >
               <div className="flex">
                 <LockKeyholeIcon className="h-4 w-4 mt-0.5 mr-1" />
-                <p>Add SSH</p>
+                <p>Add private SSH key</p>
               </div>
             </Button>
 
             {!hasSsh ?
               null :
               <Button variant="ghost" className="border hover:bg-red-100" onClick={handleRemoveSSH}>
-                Remove SSH
+                Remove private SSH key
               </Button>
             }
           </div>

@@ -7,7 +7,12 @@ import { toast } from "sonner";
 
 type SetPrivateSSHKeyDialogProps = BetterModalProps<null>;
 
-
+/**
+ * Experimental component for handling setting of private SSH key.
+ * Why experimental? Well now it has hardcoded GitHub as the provider which uses the key.
+ * However, in future it makes sense to just set multiple keys and for each decide to which git provider it belongs (note that one key can be used for multiple providers).
+ * That is the reason why it is hardcoded now, since we can not tell how it should exactly work in future and where to store the SSH keys due to security concerns.
+ */
 export default function SetPrivateSSHKeyDialog({ isOpen, resolve }: SetPrivateSSHKeyDialogProps) {
   const [privateSSHKey, setPrivateSSHKey] = useState<string>("");
 
@@ -15,7 +20,7 @@ export default function SetPrivateSSHKeyDialog({ isOpen, resolve }: SetPrivateSS
     e.preventDefault();
 
     try {
-      const gitProviderLowercase: GitProviderNamesAsType = "github";  // TODO RadStr: !! Hardcoded
+      const gitProviderLowercase: GitProviderNamesAsType = "github";  // !! Hardcoded
 
       const response = await fetch(import.meta.env.VITE_BACKEND + "/git/set-private-ssh-key", {
         method: "POST",
@@ -25,7 +30,7 @@ export default function SetPrivateSSHKeyDialog({ isOpen, resolve }: SetPrivateSS
         },
         body: JSON.stringify({
           privateSSHKey,
-          gitProviderLowercase,  // TODO RadStr: !! Hardcoded
+          gitProviderLowercase,  // !! Hardcoded
         }),
       });
 
@@ -50,7 +55,7 @@ export default function SetPrivateSSHKeyDialog({ isOpen, resolve }: SetPrivateSS
         <ModalHeader>
           <ModalTitle>Store private SSH key for GitHub in Dataspecer</ModalTitle>
           <ModalDescription>
-            After submit stores the given SSH key on server for the given login info (currently GitHub only).
+            After submitting stores the given SSH key on server for the given login info (currently GitHub only).
             <br/>
             The SSH key should follow these rules:
             <ul>

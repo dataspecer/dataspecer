@@ -89,7 +89,7 @@ const renderMergeState = (
       <button onClick={() => openModal(ShowMergeStateInfoDialog, {mergeState})} className="bg-blue-300 hover:bg-blue-500 relative top-[6px]"><InfoIcon/></button>
       <button className={`w-full ${mergeState.isUpToDate ? "" : "bg-red-400"} hover:bg-gray-300`}
               onClick={() => openModal(TextDiffEditorDialog, { initialMergeFromResourceIri: mergeState.rootIriMergeFrom, initialMergeToResourceIri: mergeState.rootIriMergeTo, editable: mergeState.editable}).finally(() => closeMergeStateList(null))}>
-                {/* TODO RadStr: Just debug */}
+                {/* TODO RadStr: Just debug to directly open the merge state dialog */}
               {/* onClick={() => openModal(MergeStateFinalizerDialog, {mergeState, openModal}).finally(() => closeMergeStateList(null))}> */}
         {createMergeStateRowText(mergeState)}
       </button>

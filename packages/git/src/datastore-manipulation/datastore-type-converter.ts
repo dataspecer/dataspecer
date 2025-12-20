@@ -3,7 +3,9 @@ import { pickShareableMetadata, ShareableMetadata } from "../export-import-data-
 import { DatastoreStripHandlerMethod } from "../merge/comparison/resource-datastore-strip-handler-base.ts";
 
 
-// TODO RadStr: Can be format specific, but we just use null for everything
+/**
+ * @todo Can be format specific, but we just use null for everything
+ */
 export function getDefaultValueForMissingDatastoreInDiffEditor() {
   return "null";
 }

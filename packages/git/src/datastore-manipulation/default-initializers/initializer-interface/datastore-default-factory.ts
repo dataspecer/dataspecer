@@ -4,13 +4,18 @@ import { DatastoreInitializerForSemanticModel } from "../implementations/semanti
 import { DatastoreInitializerForVisualModel } from "../implementations/visual-model.ts";
 
 /**
- * @deprecated TODO RadStr: Probably Deprecated (and should be removed) and all the related initializer, but maybe not we will see. The idea was to always extract only relevant fields
- *  to copy for the resource type. However it is just better to replace each iri occurrence. But maybe it still makes sense to create only part of it, that is why I still keep it. Yeah but probably just remove
+ * @deprecated Probably Deprecated (and should be removed) together with all the related initializers. The idea was to always extract only relevant fields
+ *  when copying specific resource type. However, it is just better to copy everything and replace each iri occurrence. Then we just send to the backend the stripped version,
+ *  which will be the actual part where we get only the relevant fields.
+ *  But maybe it still makes sense to create only part of it, that is why we put deprecated tag to it and not straight up remove it.
  */
 export interface DatastoreInitializer {
   createDatastoreFromAnother(iriInOther: string, iriInNew: string, otherDatastore: string): any;
 }
 
+/**
+ * @deprecated See {@link DatastoreInitializer} for more info
+ */
 export class DatastoreDefaultsFactory {
   private constructor() {}    // Behave as non-initializable class
 

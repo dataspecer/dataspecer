@@ -96,7 +96,8 @@ function getDatastoreInCacheAsObject(
 }
 
 /**
- * Combination means that we combines the given {@link newValue} with the previous value and store it into cache
+ * Combination means that we combines the given {@link newValue} with the previous value and store it into cache.
+ * That is the fields not present in the new value will be taken from the old one.
  */
 const convertDataAndUpdateCacheContentEntryAsCombination = (
   convertedCacheSetter: (value: SetStateAction<CacheContentMap>) => void,
@@ -153,7 +154,6 @@ function getEditorsInOriginalOrder(
   diffEditorRef: RefObject<{editor: monaco.editor.IStandaloneDiffEditor} | undefined>,
   editable: EditableType,
 ): { mergeFromEditor: monaco.editor.IStandaloneCodeEditor | null, mergeToEditor: monaco.editor.IStandaloneCodeEditor | null } {
-  // TODO RadStr: Don't know if it can ever be undefined, so for now just ?, but in future change the type to string only and use !. instead of ?.
   const diffEditor = diffEditorRef.current?.editor;
   if (editable === "mergeFrom") {
     return {
@@ -539,7 +539,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
   }, [activeMergeFromContentConverted, activeMergeToContentConverted, showStrippedVersion]);
 
 
-  // TODO RadStr: Debug print
+  // TODO RadStr Debug: Debug print
   console.info({strippedMergeFromContent, strippedMergeToContent, activeMergeFromContentConverted, activeMergeToContentConverted});
 
 
@@ -786,27 +786,33 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
       }
     }
 
-    const editors = getEditorsInOriginalOrder(monacoEditor, editable);
 
     if (oldDatastoreType !== null && shouldChangeActiveModel) {
       // Put the values currently present in the editor into cache (that is those editor values, before we switched). Note that we always put them there, even if the datastore does not exist
       //  (meaning it was removed), that is because we want to store the changes. We are doing that only locally and only send them if the user actually adds them explicitly
+
+      // The editors should be always defined, however if for some unknown reason they are undefined we just skip the setting of the caches
+      const editors = getEditorsInOriginalOrder(monacoEditor, editable);
       let currentMergeFromContentInEditor = editors.mergeFromEditor?.getValue();
       if (currentMergeFromContentInEditor !== undefined) {
         if (currentMergeFromContentInEditor === "") {
           currentMergeFromContentInEditor = getDefaultValueForMissingDatastoreInDiffEditor();
         }
-        convertDataAndUpdateCacheContentEntryAsCombination(setConvertedCacheForMergeFromContent,
-          activeTreePathBeforeUpdate, oldDatastoreType, currentMergeFromContentInEditor, newFormat);
-        }
+        convertDataAndUpdateCacheContentEntryAsCombination(
+          setConvertedCacheForMergeFromContent,
+          activeTreePathBeforeUpdate, oldDatastoreType,
+          currentMergeFromContentInEditor, newFormat);
+      }
 
       let currentMergeToContentInEditor = editors.mergeToEditor?.getValue();
       if (currentMergeToContentInEditor !== undefined) {
         if (currentMergeToContentInEditor === "") {
           currentMergeToContentInEditor = getDefaultValueForMissingDatastoreInDiffEditor();
         }
-        convertDataAndUpdateCacheContentEntryAsCombination(setConvertedCacheForMergeToContent,
-          activeTreePathBeforeUpdate, oldDatastoreType, currentMergeToContentInEditor, newFormat);
+        convertDataAndUpdateCacheContentEntryAsCombination(
+          setConvertedCacheForMergeToContent,
+          activeTreePathBeforeUpdate, oldDatastoreType,
+          currentMergeToContentInEditor, newFormat);
       }
     }
 

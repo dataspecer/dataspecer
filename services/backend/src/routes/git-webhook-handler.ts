@@ -214,7 +214,7 @@ async function handleResourceUpdateFinalVersion(
   for (const datastore of filesystemNode.datastores) {
     datastoreTypesToDatastores[datastore.type] = datastore;
 
-    // TODO RadStr: If just for debug
+    // TODO RadStr: This If exists just for debug
     if(filesystemNode.type === "directory") {
       console.info("Directroy");
     }

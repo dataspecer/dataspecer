@@ -91,7 +91,7 @@ function extractFirstNonEmptyFieldFromComparison(comparison: OldNewFilesystemNod
 
 function createIdForDatastoreRenderNode(datastoreComparison: Omit<DatastoreComparison, "datastoreComparisonResult">, treeToExtract: TreeType) {
   // It should be projectIris - so we can swap between the two trees easily by removing the treeToExtract suffix - TODO RadStr: However we might remove the left tree since it is useless
-   // Note that at least one is not empty that is why we can type it to string
+  // Note that at least one is not empty that is why we can type it to string
   return extractFirstNonEmptyFieldFromComparison(datastoreComparison, "projectIrisTreePath") as string + datastoreComparison.affectedDataStore.fullName + "-" + treeToExtract;
 }
 
@@ -623,22 +623,6 @@ function StyledNode({
 }
 
 
-// @ts-ignore TODO RadStr Checked: idk maybe no longer needed? We fetch the whole diff tree instead. Maybe still useful, we will see after I am done.
-async function fetchTreeData(rootIri: string) {
-  try {
-    const fetchResult = await fetch(`${import.meta.env.VITE_BACKEND}/dataspecer-package-tree?iri=${rootIri}`, {
-      method: "GET",
-    });
-    const fetchResultAsJson = await fetchResult.json();
-    return fetchResultAsJson;
-  }
-  catch(error) {
-    console.error(`Error when fetching data tree data for diff (for iri: ${rootIri}). The error: ${error}`);
-    throw error;
-  }
-}
-
-
 // @ts-ignore TODO RadStr Checked: Not used currently, but it was useful at one point
 const getOtherTreeType = (tree: TreeType) => tree === "old" ? "new" : "old";
 
@@ -690,14 +674,16 @@ const createStyledNode = (
   extendedProps.node.data.conflictsToBeResolvedOnSaveInThisComponent = conflictsToBeResolvedOnSaveInThisComponent;
 
   const datastoreType = extendedProps.node.data.fullDatastoreInfoInModifiedTree?.type ?? extendedProps.node.data.fullDatastoreInfoInOriginalTree?.type ?? null;
-  // TODO RadStr: Debug print
-  console.info({ds: extendedProps.node.data.datastores, comp: extendedProps.node.data.resourceComparison, id: extendedProps.node.data.id})
+  // TODO RadStr Debug: Debug print
+  // console.info({ds: extendedProps.node.data.datastores, comp: extendedProps.node.data.resourceComparison, id: extendedProps.node.data.id})
+
   const pathToResource: string = extractFirstNonEmptyFieldFromComparison(extendedProps.node.parent?.data.resourceComparison?.resources ?? null, "projectIrisTreePath") as string;
   extendedProps.node.data.datastoreInfoInCache = datastoreType === null ?
     null :
     datastoreInfosForCacheEntries?.[pathToResource]?.[datastoreType] ?? null;
-  // TODO RadStr: Debug print
-  console.info({datastoreInfosForCacheEntries, currentNodeTreePath, datastoreType: datastoreType, pathToResource, "CC": extendedProps.node.data.datastoreInfoInCache, parent: extendedProps.node.parent?.data});
+
+  // TODO RadStr Debug: Debug print
+  // console.info({datastoreInfosForCacheEntries, currentNodeTreePath, datastoreType: datastoreType, pathToResource, "CC": extendedProps.node.data.datastoreInfoInCache, parent: extendedProps.node.parent?.data});
 
   return <StyledNode {...extendedProps} />;
 }
@@ -994,7 +980,7 @@ export const DiffTreeVisualization = (props: {
       const fetchedConflicts = mergeStateFromBackend.conflicts ?? [];
       setDiffTree(fetchedDiffTree);
       setDiffTreeNodeCount(fetchedDiffTreeSize);
-      console.info({ fetchedDiffTree });
+      console.info({ fetchedDiffTree });      // TODO RadStr Debug: Debug print
 
       const { oldRenderTree: computedOldRenderTree, newRenderTree: computedNewRenderTree } = createTreeRepresentationsForRendering(fetchedConflicts, fetchedUnresolvedConflicts, fetchedDiffTree, mergeStateFromBackend.editable);
       console.info({ computedOldRenderTree, computedNewRenderTree } );     // TODO RadStr DEBUG: Debug print

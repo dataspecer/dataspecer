@@ -11,7 +11,7 @@ import { getBaseBackendUrl, stripApiPrefixFromUrl } from "../../utils/git-utils.
  * Handles all the authentication requests and calls relevant methods based on the handled url
  */
 export const authHandler = asyncHandler(async (request: express.Request, response: express.Response, next: NextFunction) => {
-  // TODO RadStr: Debug print
+  // TODO RadStr Debug: Debug print
   // console.info({origianlUrl: request.originalUrl, baseUrl: request.baseUrl, hostname: request.hostname, params: request.params, query: request.query, route: request.route, url: request.url, body: {...request.body}});
 
   const strippedOriginalUrl = stripApiPrefixFromUrl(request.originalUrl);

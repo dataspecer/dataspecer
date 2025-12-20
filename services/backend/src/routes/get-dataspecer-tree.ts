@@ -6,7 +6,7 @@ import { FilesystemFactory } from "../export-import/filesystem-abstractions/back
 
 
 /**
- * @deprecated ... not exactly deprecated, but we are no longer using it. But it should work
+ * @deprecated We are currently not needing this. We just fetch the whole diff tree instead of just the filesystem trees (in this case specifically Dataspecer filesystem).
  */
 export const getDataspecerTree = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
@@ -21,7 +21,7 @@ export const getDataspecerTree = asyncHandler(async (request: express.Request, r
     projectIrisTreePath: "",
   };
   const dsFilesystem = await FilesystemFactory.createFileSystem([rootLocation], AvailableFilesystems.DS_Filesystem, null);
-  // TODO RadStr: ... Actually sending the root is enough probably
+  // Either do this or maybe just sending the root is enough probably
   const globalFilesystemMapping = dsFilesystem.getGlobalFilesystemMapForProjectIris();
   response.json(globalFilesystemMapping);
 });

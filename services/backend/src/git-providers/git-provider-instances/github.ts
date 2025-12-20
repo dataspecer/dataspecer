@@ -50,10 +50,6 @@ export class GitHubProvider extends GitProviderBase {
   async extractDataForWebhookProcessing(webhookPayload: any): Promise<WebhookRequestDataGitProviderIndependent | null> {
     // https://docs.github.com/en/webhooks/webhook-events-and-payloads#push
 
-    // TODO RadStr: Taking more data since I might use some of them in future
-
-    const beforeCommit = webhookPayload.before;
-    const afterCommit = webhookPayload.after;
     const refPrefix = "refs/heads/";
     const branch = webhookPayload.ref.substring(refPrefix.length);
     const repoName = webhookPayload.repository.name;
@@ -71,8 +67,10 @@ export class GitHubProvider extends GitProviderBase {
     const cloneURL = webhookPayload.repository.clone_url;
     const commits = webhookPayload.commits;
     // Head commit
-    const lastCommit = webhookPayload.head_commit;
-    const { id: lastId, tree_id: lastTreeId, url: lastUrl, added, removed, modified } = lastCommit;
+    // const beforeCommit = webhookPayload.before;
+    // const afterCommit = webhookPayload.after;
+    // const lastCommit = webhookPayload.head_commit;
+    // const { id: lastId, tree_id: lastTreeId, url: lastUrl, added, removed, modified } = lastCommit;
 
     return {
       cloneURL,
@@ -177,7 +175,7 @@ export class GitHubProvider extends GitProviderBase {
       await this.createBranch(repositoryUserName, repoName, PUBLICATION_BRANCH_NAME, initialCommitHash, authToken);
 
       const pagesResponse = await this.enableGitHubPages(repoName, repositoryUserName, PUBLICATION_BRANCH_NAME, authToken);
-      // TODO RadStr: Debug prints
+      // TODO RadStr Debug: Debug prints
       // console.info({pagesResponse});
       // console.info({json: await pagesResponse.json()});
     }
@@ -379,7 +377,6 @@ export class GitHubProvider extends GitProviderBase {
     // https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#create-or-update-a-repository-secret
     const restEndPoint = `https://api.github.com/repos/${repositoryUserName}/${repoName}/actions/secrets/${secretKey}`;
 
-    // TODO RadStr: Maybe better permissions - or also could specify them in given method arguments
     const payload = {
       encrypted_value: encryptedSecretValue,
       key_id: publicKeyIdentifier
@@ -439,13 +436,13 @@ export class GitHubProvider extends GitProviderBase {
     return fullPath.endsWith(".github");
   }
 
-  // TODO RadStr: This is not part of GitProvider - maybe could be in future - I don't know what other providers exists, etc.
+
   /**
    * Enables GitHub pages for given repository.
+   * @todo This is not part of GitProvider - maybe could be in future - We don't know details of other providers to decide if it should be
    */
   async enableGitHubPages(repoName: string, repositoryUserName: string, branch: string, accessToken: string): Promise<FetchResponse> {
     // https://docs.github.com/en/rest/pages/pages?apiVersion=2022-11-28#create-a-github-pages-site
-    // TODO RadStr: Maybe better permissions - or also could specify them in given method arguments
     const payload = {
       source: {
         branch: branch,

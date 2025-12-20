@@ -327,7 +327,7 @@ export const commitToGitDialogOnClickHandler = async (
             shouldAppendAfterDefaultMergeCommitMessage: null,
           };
           openModal(CommitRedirectForMergeStatesDialog, {commitRedirectResponse: extendedResponse});
-          console.info(jsonResponse);     // TODO RadStr: Debug print
+          console.info({jsonResponse});     // TODO RadStr Debug: Debug print
         }
         else if (response.status === 409 && shouldShowAlwaysCreateMergeStateOption) {
           const jsonResponse: NonNullable<CommitConflictInfo> = await response.json();

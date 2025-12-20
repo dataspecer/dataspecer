@@ -53,7 +53,6 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
     comparisonTabType, setComparisonTabType,
     isLoadingTextData,
     isLoadingTreeStructure, setIsLoadingTreeStructure,
-    // activeMergeFromContentConverted, activeMergeToContentConverted,      // TODO RadStr: Replaced by stripped version
     strippedMergeFromContent, strippedMergeToContent,
     showStrippedVersion, setShowStrippedVersion,
     activeTreePathToNodeContainingDatastore,
