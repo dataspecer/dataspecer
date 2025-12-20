@@ -73,7 +73,7 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
   readDirectory(directory: string): FilesystemNode[] {
     const directoryNode = this.globalFilesystemMappingForIris[directory];
     if (directoryNode.type !== "directory") {
-      throw new Error("the read directory is not a directory");   // TODO RadStr: Better Error handling
+      throw new Error("the read directory is not a directory");
     }
 
     return Object.values(directoryNode.content);

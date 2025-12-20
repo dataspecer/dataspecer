@@ -29,7 +29,6 @@ export abstract class GitProviderFactory {
       };
     }
     else {
-      // TODO RadStr: Maybe better error handling
       throw new Error(`The given request from webhook is not of any known git provider. Request: ${request}`);
     }
   }
@@ -59,7 +58,6 @@ export abstract class GitProviderFactory {
   static createGitProviderFromRepositoryURL(repositoryURL: string): GitProvider {
     const gitProvider = getMainGitProviderFromRepositoryURL(repositoryURL);
     if (gitProvider === null) {
-      // TODO: Better error handling
       throw new Error(`Git provider with given URL ${repositoryURL} does not exist.`);
     }
     const domainURL = extractPartOfRepositoryURL(repositoryURL, "url-domain") ?? undefined;

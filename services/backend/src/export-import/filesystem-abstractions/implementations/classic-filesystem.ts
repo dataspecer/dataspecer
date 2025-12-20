@@ -18,7 +18,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
   /////////////////////////////////////
   public static createFilesystemAbstraction: FileSystemAbstractionFactoryMethod = async (roots: FilesystemNodeLocation[], gitIgnore: GitIgnore | null): Promise<ClassicFilesystem> => {
     if (gitIgnore === null) {
-      throw new Error("The filesystem abstractions needs to have git provider.");        // TODO RadStr: Better error handling
+      throw new Error("The filesystem abstractions needs to have git provider.");
     }
     const createdFilesystem = new ClassicFilesystem(gitIgnore);
     await createdFilesystem.initializeFilesystem(roots);
@@ -227,12 +227,12 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
   async getDatastoreContent(irisTreePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any> {
     const node = this.globalFilesystemMappingForIris[irisTreePath];
     if (node === undefined) {
-      throw new Error(`Given datastore in ${irisTreePath} of type ${type} is not present in abstracted filesystem.`);    // TODO RadStr: Better error handling
+      throw new Error(`Given datastore in ${irisTreePath} of type ${type} is not present in abstracted filesystem.`);
     }
     const datastore = getDatastoreInfoOfGivenDatastoreType(node, type);
 
     if (datastore === null) {
-      throw new Error(`Given datastore in ${irisTreePath} of type ${type} is not present in abstracted filesystem.`);    // TODO RadStr: Better error handling
+      throw new Error(`Given datastore in ${irisTreePath} of type ${type} is not present in abstracted filesystem.`);
     }
 
     const pathToDatastore = datastore.fullPath;

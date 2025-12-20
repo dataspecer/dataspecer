@@ -7,7 +7,7 @@ import fs from "fs";
 
 // Using this one since I could not make the ones for nodeJS (one is not using ES modules and the other one seems to be too old and correctly support types)
 import sodium from "libsodium-wrappers-sumo";
-import { CommitReferenceType, CreateRemoteRepositoryReturnType, GitProviderEnum, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, AccessToken, AccessTokenType, PUBLICATION_BRANCH_NAME } from "@dataspecer/git";
+import { CommitReferenceType, CreateRemoteRepositoryReturnType, GitProviderEnum, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, AccessToken, AccessTokenType, PUBLICATION_BRANCH_NAME, GitRestApiOperationError } from "@dataspecer/git";
 import { GitProviderBase } from "../git-provider-base.ts";
 import { resourceModel } from "../../main.ts";
 import { createLinksForFiles, gitProviderDomains } from "../git-provider-factory.ts";
@@ -162,7 +162,7 @@ export class GitHubProvider extends GitProviderBase {
     });
 
     if (fetchResponse.status < 200 || fetchResponse.status >= 300) {
-      throw new Error(`Error when creating new remote GitHub repository: ${fetchResponse.status} ${fetchResponse}`);
+      throw new GitRestApiOperationError(`Error when creating new remote GitHub repository: ${fetchResponse.status} ${fetchResponse}`);
     }
 
     const responseAsJSON = (await fetchResponse.json()) as any;
@@ -199,7 +199,7 @@ export class GitHubProvider extends GitProviderBase {
     });
 
     if (fetchResponse.status < 200 || fetchResponse.status >= 300) {
-      throw new Error(`Error when getting the latest commit of GitHub repository: ${fetchResponse.status} ${fetchResponse}`);
+      throw new GitRestApiOperationError(`Error when getting the latest commit of GitHub repository: ${fetchResponse.status} ${fetchResponse}`);
     }
 
     const responseAsJSON = (await fetchResponse.json()) as any;
@@ -224,7 +224,7 @@ export class GitHubProvider extends GitProviderBase {
     });
 
     if (fetchResponse.status < 200 || fetchResponse.status >= 300) {
-      throw new Error(`Error when creating branch of GitHub repository: ${fetchResponse.status} ${fetchResponse}`);
+      throw new GitRestApiOperationError(`Error when creating branch of GitHub repository: ${fetchResponse.status} ${fetchResponse}`);
     }
 
     return fetchResponse;

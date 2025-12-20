@@ -113,7 +113,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     //              ... already improved now fix the code
     const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(this.globalFilesystemMappingForIris[irisTreePath], type);
     if (relevantDatastore === null) {
-      throw new Error(`Datastore with given type (${type}), does not exist`);     // TODO RadStr: Better error handling
+      throw new Error(`Datastore with given type (${type}), does not exist`);
     }
     const datastoreFormat = relevantDatastore.format;
     return await DSFilesystem.getDatastoreContentForPath(this.resourceModel, relevantDatastore.fullPath, type, datastoreFormat, shouldConvertToDatastoreFormat);
@@ -274,7 +274,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
 
     const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(changed.old!, changed.affectedDataStore.type);
     if (relevantDatastore === null) {
-      throw new Error(`Datastore with given type (${changed.affectedDataStore.type}), does not exist`);     // TODO RadStr: Better error handling
+      throw new Error(`Datastore with given type (${changed.affectedDataStore.type}), does not exist`);
     }
 
     const newContent = await otherFilesystem.getDatastoreContent(changed.new!.irisTreePath, changed.affectedDataStore.type, false);

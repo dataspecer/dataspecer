@@ -171,8 +171,6 @@ export class MergeStateModel implements ResourceChangeListener {
     } = diffTreeComparisonResult;
 
 
-    // await this.clearTable();     // TODO RadStr: Debug - Remove
-
     const editable: EditableType = convertMergeStateCauseToEditable(mergeStateCause);
 
     const mergeStateInput: UpdateMergeStateInput = {
@@ -217,8 +215,6 @@ export class MergeStateModel implements ResourceChangeListener {
       diffTree, diffTreeSize
     } = diffTreeComparisonResult;
 
-    // await this.clearTable();     // TODO RadStr: Debug - Remove
-
     const editable: EditableType = convertMergeStateCauseToEditable(mergeStateCause);
 
     const mergeStateInput = {
@@ -236,8 +232,8 @@ export class MergeStateModel implements ResourceChangeListener {
       diffTreeSize,
     };
 
-    // TODO RadStr: Just debug
     const mergeStateId = await this.createMergeState(mergeStateInput);
+    // TODO RadStr Debug: Just debug
     console.info("Current merge state with:", await this.getMergeStateFromUUID(mergeStateId, true, false, false));
     console.info("Current merge state without:", await this.getMergeStateFromUUID(mergeStateId, false, false, false));
 

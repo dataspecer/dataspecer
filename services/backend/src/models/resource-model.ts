@@ -261,7 +261,7 @@ export class ResourceModel {
      */
     async updateLastCommitHash(iri: string, lastCommitHash: string, updateCause: MergeStateCause) {
         if (!(lastCommitHash.length === 40 || lastCommitHash.length === 0)) {
-            throw new Error("Updating lastCommitHash to invalid hash, is not of length 40 or 0");        // TODO RadStr: maybe better error handling
+            throw new Error("Updating lastCommitHash to invalid hash, is not of length 40 or 0");
         }
 
         await this.prismaClient.resource.update({

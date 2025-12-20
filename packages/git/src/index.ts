@@ -23,3 +23,4 @@ export * from "./datastore-manipulation/iri-replacement.ts";
 export * from "./resource-types.ts";
 export * from "./merge/comparison/resource-datastore-strip-handler-base.ts"
 export * from "./commit-redirect-info.ts";
+export * from "./error-definitions.ts";

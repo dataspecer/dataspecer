@@ -22,44 +22,30 @@ export const removeGitRepository = asyncHandler(async (request: express.Request,
   const repositoryURL = (await resourceModel.getResource(query.iri))?.linkedGitRepositoryURL;
   // TODO: Should check for URL validness rather than it being undefined
   if (repositoryURL === undefined) {
-    // TODO: Better error handling
-    console.error("Repository URL is undefined");   // TODO: I think that this happens because of the resource missing rather than URL
-    return;
+    throw new Error("Repository URL is undefined");   // This happens because of the resource missing rather than URL
   }
 
   const repositoryUserName = extractPartOfRepositoryURL(repositoryURL, "user-name");
   if (repositoryUserName === null) {
-    // TODO: Better error handling
-    console.error("Can not extract user name from repository URL", repositoryURL);
-    return;
+    throw new Error(`Can not extract user name from repository URL: ${repositoryURL}`);
   }
 
   const repoName = extractPartOfRepositoryURL(repositoryURL, "repository-name");
   if (repoName === null) {
-    // TODO: Better error handling
-    console.error("Can not extract repository name from repository URL", repositoryURL);
-    return;
+    throw new Error(`Can not extract repository name from repository URL: ${repositoryURL}`);
   }
 
   const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(repositoryURL);
   const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.DeleteRepoControl]);
   const patAccessTokens = findPatAccessTokens(accessTokens);
-  let successfullyRemovedRemoteRepository = false;
-  let successfullyRemovedPublicationRepository = false;
   for (const patAccessToken of patAccessTokens) {
     try {
-      if (!successfullyRemovedRemoteRepository) {
-        const fetchResponseForRemove = await gitProvider.removeRemoteRepository(patAccessToken.value, repositoryUserName, repoName);
-        successfullyRemovedRemoteRepository = true;
+      const fetchResponseForRemove = await gitProvider.removeRemoteRepository(patAccessToken.value, repositoryUserName, repoName);
+      if (!(fetchResponseForRemove.status === 404 || (fetchResponseForRemove.status >= 200 && fetchResponseForRemove.status < 300))) {
+        continue;
       }
+      // If either already removed or we removed it now, then we can safely remove the url from the database, since either it no longer exists or we successfully removed it
 
-      if (!successfullyRemovedPublicationRepository) {
-        // TODO RadStr: Well the name of repository might be different in future, but this is anyways just for debugging now
-        const fetchResponseForPublicationRepositoryRemove = await gitProvider.removeRemoteRepository(patAccessToken.value, repositoryUserName, repoName + "-publication-repo");
-        successfullyRemovedPublicationRepository = true;
-      }
-
-      // TODO: Should only remove on success
       console.info("Git link before removal:", (await resourceModel.getResource(query.iri))?.linkedGitRepositoryURL);
       const irisToUpdate = await resourceModel.removeGitLinkFromResourceModel(repositoryURL);
       console.info("Git link after removal:", (await resourceModel.getResource(query.iri))?.linkedGitRepositoryURL);
@@ -73,5 +59,5 @@ export const removeGitRepository = asyncHandler(async (request: express.Request,
     }
   }
 
-  throw new Error(`Removal result: Removed remote repository: ${successfullyRemovedRemoteRepository}, Removed publication repository: ${successfullyRemovedPublicationRepository}`);
+  throw new Error(`Failed to remove remote repository`);
 });

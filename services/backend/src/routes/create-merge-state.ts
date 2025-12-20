@@ -208,7 +208,6 @@ export async function updateMergeStateToBeUpToDate(
       gitUrl: null
     };
 
-    const rootResourceIri: string = mergeFrom.rootIri;    // TODO RadStr: Not sure now about the iris, but we will see
     const isSuccessfullyUpdated = await mergeStateModel.updateMergeStateToBeUpToDate(
       uuid, commitMessage, mergeStateCause, diffTreeComparisonResult,
       commonCommitHash, mergeFromInfo, mergeToInfo);

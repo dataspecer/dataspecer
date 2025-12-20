@@ -534,10 +534,11 @@ async function exportAndPushToGit(
     // We create the merge commit but actually do not commit, we will do that later.
     try {
       const mergeResult = await git.merge(["--no-commit", "--no-ff", mergeFromBranch]);
-      console.info({mergeResult});    // TODO RadStr: Debug print
+      console.info({mergeResult});    // TODO RadStr Debug: Debug print
     }
     catch(mergeError) {
-      console.info(mergeError);       // TODO RadStr: Debug print
+      // Errors for example for conflicts, do not matter, we will override it anyways by just exporting the current content of the data specfication's merge to branch.
+      console.info({mergeError});       // TODO RadStr Debug: Debug print
     }
     finally {
       if (shouldContainWorkflowFiles) {
@@ -560,12 +561,12 @@ async function exportAndPushToGit(
     iri, createSimpleGitResult, commitInfo.gitProvider, commitInfo.exportFormat,
     repositoryIdentificationInfo, hasSetLastCommit, shouldContainWorkflowFiles, isBranchAlreadyTrackedOnRemote);
 
-  // TODO RadStr: Debug print to remove
+  // TODO RadStr Debug: Debug print to remove
   for (let i = 0; i < 10; i++) {
     console.info("*****************************************************");
   }
 
-  // TODO RadStr: Debug print to remove
+  // TODO RadStr Debug: Debug print to remove
   try {
     // Get list of all branches (local + remote)
     const branches = await git.branch(['-a']);
@@ -580,7 +581,8 @@ async function exportAndPushToGit(
         console.log(`${commit.date} | ${commit.hash} | ${commit.message} | ${commit.author_name}`);
       });
     }
-  } catch (err) {
+  }
+  catch (err) {
     console.error('Error fetching history:', err);
   }
 
@@ -601,7 +603,7 @@ async function exportAndPushToGit(
         shouldAppendAfterDefaultMergeCommitMessage);
     }
 
-    // TODO RadStr: Debug print to remove
+    // TODO RadStr Debug: Debug print to remove
     for (let i = 0; i < 10; i++) {
       console.info("-----------------------------------------------");
     }
@@ -720,6 +722,7 @@ async function checkoutBranchIfExists(git: SimpleGit, branches: BranchSummary, b
     await git.checkout(branch);
   }
   else {
+    // TODO RadStr: Yeah I should either take it from the other Git in DS (but merges do not have other Git) or just throw error or force the Git to be up to date with the merge branches
     throw new Error("TODO RadStr: This is wrong. We have to create new branch from the other package content. If we ran just the git.branch([mergeFromBranch]), then we create branch with the same exact content as mergeTo. Which we do not want. We want mergeFrom");
     await git.checkoutLocalBranch(branch);
   }
