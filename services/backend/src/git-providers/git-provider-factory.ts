@@ -1,7 +1,6 @@
-import { GitProvider, GitProviderEnum } from "@dataspecer/git";
+import { extractPartOfRepositoryURL, GitProvider, GitProviderEnum } from "@dataspecer/git";
 import express from "express";
 import fs from "fs";
-import { extractPartOfRepositoryURL } from "../utils/git-utils.ts";
 import { GitHubProvider } from "./git-provider-instances/github.ts";
 import { GitLabProvider } from "./git-provider-instances/gitlab.ts";
 

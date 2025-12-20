@@ -6,7 +6,8 @@ import { createAuthConfigWithCorrectPermissions, createBasicAuthConfig } from ".
 import { getRedirectLink } from "./auth-handler.ts";
 import { z } from "zod";
 import { ConfigType } from "@dataspecer/git";
-import { getBaseBackendUrl, stripApiPrefixFromUrl } from "../../utils/git-utils.ts";
+import { getBaseBackendUrl } from "../../utils/express-url-utils.ts";
+import { stripApiPrefixFromUrl } from "@dataspecer/git-node";
 
 /**
  * Handles the signin request by calling the {@link ExpressAuth} with correct configuration based on request.

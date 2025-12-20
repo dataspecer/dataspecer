@@ -1,10 +1,10 @@
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
 import { CommitReferenceType, ConvertRepoURLToDownloadZipURLReturnType, CreateRemoteRepositoryReturnType, GitProvider, GitProviderEnum, RepositoryURLPart, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, ExtractedCommitReferenceValueFromRepositoryURLExplicit, ExtractedCommitReferenceValueFromRepositoryURL } from "@dataspecer/git";
+import { removePathRecursively } from "@dataspecer/git-node";
 import { simpleGit } from "simple-git";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 import { ROOT_DIRECTORY_FOR_PRIVATE_GITS } from "../models/git-store-info.ts";
-import { removePathRecursively } from "../utils/git-utils.ts";
 
 export abstract class GitProviderBase implements GitProvider {
   abstract getGitProviderEnumValue(): GitProviderEnum;

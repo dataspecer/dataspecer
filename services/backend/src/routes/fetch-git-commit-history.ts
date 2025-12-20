@@ -6,7 +6,7 @@ import express from "express";
 import { createSimpleGit, gitCloneBasic } from "../utils/simple-git-utils.ts";
 import { FETCH_GIT_HISTORY_PREFIX } from "../models/git-store-info.ts";
 import { GitRawHistoryToSendToClient, GitHistory, BranchHistory, RawCommit } from "@dataspecer/git";
-import { removePathRecursively } from "../utils/git-utils.ts";
+import { removePathRecursively } from "@dataspecer/git-node";
 
 
 export const fetchGitCommitHistory = asyncHandler(async (request: express.Request, response: express.Response) => {

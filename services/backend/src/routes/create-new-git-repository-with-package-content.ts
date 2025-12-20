@@ -2,12 +2,11 @@ import { z } from "zod";
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { resourceModel } from "../main.ts";
-import { checkErrorBoundaryForCommitAction, extractPartOfRepositoryURL, stringToBoolean } from "../utils/git-utils.ts";
-import { AccessToken, AccessTokenType, ConfigType, convertToValidGitName, WEBHOOK_HANDLER_URL } from "@dataspecer/git";
+import { AccessToken, AccessTokenType, ConfigType, convertToValidGitName, extractPartOfRepositoryURL, stringToBoolean, transformCommitMessageIfEmpty, WEBHOOK_HANDLER_URL } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { CommitBranchAndHashInfo, commitPackageToGitUsingAuthSession, GitCommitToCreateInfoBasic, RepositoryIdentificationInfo } from "./commit-package-to-git.ts";
-import { transformCommitMessageIfEmpty } from "../utils/git-utils.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-session.ts";
+import { checkErrorBoundaryForCommitAction } from "@dataspecer/git-node";
 
 
 export function findPatAccessToken(accessTokens: AccessToken[] | null | undefined): AccessToken | null {

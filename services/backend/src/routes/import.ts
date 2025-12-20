@@ -33,7 +33,7 @@ import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { updateGitRelatedDataForPackage } from "./link-to-existing-remote-git-repo.ts";
 import { createSimpleGit, gitCloneBasic } from "../utils/simple-git-utils.ts";
 import { INTERNAL_COMPUTATION_FOR_IMPORT } from "../models/git-store-info.ts";
-import { removePathRecursively } from "../utils/git-utils.ts";
+import { removePathRecursively } from "@dataspecer/git-node";
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
   const result: LanguageString = {};

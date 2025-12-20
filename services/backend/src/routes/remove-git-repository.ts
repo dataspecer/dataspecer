@@ -1,12 +1,11 @@
 import { z } from "zod";
 import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-session.ts";
-import { extractPartOfRepositoryURL } from "../utils/git-utils.ts";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { resourceModel } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 
 import express from "express";
-import { ConfigType } from "@dataspecer/git";
+import { ConfigType, extractPartOfRepositoryURL } from "@dataspecer/git";
 import { findPatAccessTokens } from "./create-new-git-repository-with-package-content.ts";
 
 /**

@@ -3,12 +3,11 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { mergeStateModel, resourceModel } from "../main.ts";
 
-import { BranchSummary, CommitResult, MergeResult, SimpleGit } from "simple-git";
-import { checkErrorBoundaryForCommitAction, extractPartOfRepositoryURL, getAuthorizationURL, getLastCommit, getLastCommitHash, isDefaultBranch, removeEverythingExcept, removePathRecursively, stringToBoolean } from "../utils/git-utils.ts";
-import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS, CommitInfo, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase } from "@dataspecer/git";
+import { BranchSummary, CommitResult, SimpleGit } from "simple-git";
+import { extractPartOfRepositoryURL, getAuthorizationURL, stringToBoolean } from "@dataspecer/git";
+import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS, CommitInfo, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase, createUniqueCommitMessage } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
-import { createUniqueCommitMessage } from "../utils/git-utils.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-session.ts";
 import { createReadmeFile } from "../git-readme/readme-generator.ts";
 import { ReadmeTemplateData } from "../git-readme/readme-template.ts";
@@ -20,7 +19,7 @@ import { PackageExporterByResourceType } from "../export-import/export-by-resour
 import { MergeEndInfoWithRootNode, PrismaMergeStateWithData } from "../models/merge-state-model.ts";
 import { MergeEndpointForComparison } from "./create-merge-state.ts";
 import fs from "fs";
-import { PackageExporterNew } from "../export-import/export-new.ts";
+import { checkErrorBoundaryForCommitAction, getLastCommit, getLastCommitHash, isDefaultBranch, removeEverythingExcept, removePathRecursively } from "@dataspecer/git-node";
 
 
 export type RepositoryIdentificationInfo = {

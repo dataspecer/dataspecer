@@ -4,7 +4,7 @@ import { asyncHandler } from "../../utils/async-handler.ts";
 import express, { NextFunction } from "express";
 import { createBasicAuthConfig } from "../../authorization/auth-config.ts";
 import { z } from "zod";
-import { getBaseBackendUrl } from "../../utils/git-utils.ts";
+import { getBaseBackendUrl } from "../../utils/express-url-utils.ts";
 
 /**
  * Handles the callbacks from the Auth Provider - that is the auth/callback/* for example (auth/callback/github), similarly for keycloak it will auth/callback/keycloak

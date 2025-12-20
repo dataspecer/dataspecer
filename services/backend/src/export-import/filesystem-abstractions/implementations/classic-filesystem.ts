@@ -1,9 +1,8 @@
-import { AvailableFilesystems, convertDatastoreContentBasedOnFormat, getDatastoreInfoOfGivenDatastoreType, GitProvider, isDatastoreForMetadata, ExportMetadataType, ComparisonData, GitIgnore } from "@dataspecer/git";
+import { AvailableFilesystems, convertDatastoreContentBasedOnFormat, getDatastoreInfoOfGivenDatastoreType, GitProvider, isDatastoreForMetadata, ExportMetadataType, ComparisonData, GitIgnore, dsPathJoin } from "@dataspecer/git";
 import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, DatastoreInfo, FilesystemAbstractionBase, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode } from "@dataspecer/git";
 
 import fs from "fs";
 import { isArtificialExportDirectory } from "../../export.ts";
-import { dsPathJoin } from "../../../utils/git-utils.ts";
 
 
 export class ClassicFilesystem extends FilesystemAbstractionBase {

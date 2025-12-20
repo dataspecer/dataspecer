@@ -3,7 +3,7 @@ import { asyncHandler } from "../../utils/async-handler.ts";
 import { createBasicAuthConfig } from "../../authorization/auth-config.ts";
 import { ExpressAuth, ExpressAuthConfig } from "@auth/express";
 import { getRedirectLink } from "./auth-handler.ts";
-import { getBaseBackendUrl } from "../../utils/git-utils.ts";
+import { getBaseBackendUrl } from "../../utils/express-url-utils.ts";
 
 /**
  * Handles the signout request. What this method does extra unlike classic auth signout is to set the correct redirect link to go to after the signout is done.

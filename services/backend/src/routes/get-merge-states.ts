@@ -2,7 +2,7 @@ import { z } from "zod";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { mergeStateModel } from "../main.ts";
 import express from "express";
-import { stringToBoolean } from "../utils/git-utils.ts";
+import { stringToBoolean } from "@dataspecer/git";
 
 
 export const getMergeStates = asyncHandler(async (request: express.Request, response: express.Response) => {

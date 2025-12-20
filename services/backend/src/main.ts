@@ -59,11 +59,11 @@ import { finalizeMergeMergeState } from "./routes/finalize-merge-merge-state.ts"
 import { finalizePullMergeStateOnFailure } from "./routes/finalize-pull-merge-state-on-failure.ts";
 import { finalizeMergeMergeStateOnFailure } from "./routes/finalize-merge-merge-state-on-failure.ts";
 import { finalizePushMergeStateOnFailure } from "./routes/finalize-push-merge-state-on-failure.ts";
-import { populateSshKnownHosts } from "./utils/git-utils.ts";
 import { markPackageAsHavingNoUncommittedChanges } from "./routes/mark-package-as-having-no-uncommitted-changes.ts";
-import { GitProviderNamesAsType } from "@dataspecer/git";
 import { checkExistenceOfSshKeyForUserHandler } from "./routes/check-ssh-key-existence.ts";
 import { deletePrivateSshKeyHandler } from "./routes/remove-private-ssh-key.ts";
+import { GitProviderNamesAsType } from "@dataspecer/git";
+import { populateSshKnownHosts } from "@dataspecer/git-node";
 
 
 for (const [gitProviderName, gitConfiguration] of Object.entries(configuration?.gitConfigurations ?? {})) {

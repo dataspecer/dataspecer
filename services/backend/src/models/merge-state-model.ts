@@ -5,11 +5,11 @@ import { ALL_GIT_REPOSITORY_ROOTS, MERGE_DS_CONFLICTS_PREFIX } from "./git-store
 import { ResourceModel } from "./resource-model.ts";
 import { SimpleGit, simpleGit } from "simple-git";
 import { AvailableFilesystems, ComparisonData, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, FilesystemNode, GitProvider, isEditableType, isGitUrlSet, MergeCommitType, MergeState, MergeStateCause } from "@dataspecer/git";
-import { getLastCommitHash, removePathRecursively } from "../utils/git-utils.ts";
 import { ResourceChangeListener, ResourceChangeType } from "./resource-change-observer.ts";
 import { updateMergeStateToBeUpToDate, MergeEndpointForStateUpdate } from "../routes/create-merge-state.ts";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { createSimpleGit, getCommonCommitInHistory } from "../utils/simple-git-utils.ts";
+import { getLastCommitHash, removePathRecursively } from "@dataspecer/git-node";
 
 type Nullable<T> = {
   [P in keyof T]: T[P] | null;

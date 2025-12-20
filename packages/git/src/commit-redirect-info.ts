@@ -1,5 +1,5 @@
+import { CommitType } from "./git-utils.ts";
 import { MergeState } from "./merge/merge-state.ts";
-import { CommitType } from "./utils.ts";
 
 export enum CommitHttpRedirectionCause {
   HasAtLeastOneMergeStateActive,

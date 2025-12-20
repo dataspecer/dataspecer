@@ -1,7 +1,8 @@
 import { simpleGit } from "simple-git";
 import fs from "fs";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
-import { checkErrorBoundaryForCommitAction, getAuthorizationURL } from "../utils/git-utils.ts";
+import { getAuthorizationURL } from "@dataspecer/git";
+import { checkErrorBoundaryForCommitAction } from "@dataspecer/git-node";
 
 /**
  * Example for git worktrees

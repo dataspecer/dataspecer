@@ -5,7 +5,8 @@ import { handleSignout } from "./auth-signout-handler.ts";
 import { createBasicAuthConfig } from "../../authorization/auth-config.ts";
 import { ExpressAuth } from "@auth/express";
 import { handleSignin } from "./auth-signin-handler.ts";
-import { getBaseBackendUrl, stripApiPrefixFromUrl } from "../../utils/git-utils.ts";
+import { stripApiPrefixFromUrl } from "@dataspecer/git-node";
+import { getBaseBackendUrl } from "../../utils/express-url-utils.ts";
 
 /**
  * Handles all the authentication requests and calls relevant methods based on the handled url
