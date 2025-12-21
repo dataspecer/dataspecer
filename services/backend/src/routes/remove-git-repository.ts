@@ -5,6 +5,7 @@ import { resourceModel } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { ConfigType, extractPartOfRepositoryURL, findPatAccessTokens } from "@dataspecer/git";
+import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 
 /**
  * Removes Git repository with iri given in query part of request.
@@ -32,7 +33,7 @@ export const removeGitRepository = asyncHandler(async (request: express.Request,
     throw new Error(`Can not extract repository name from repository URL: ${repositoryURL}`);
   }
 
-  const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(repositoryURL);
+  const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(repositoryURL, httpFetch);
   const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.DeleteRepoControl]);
   const patAccessTokens = findPatAccessTokens(accessTokens);
   for (const patAccessToken of patAccessTokens) {

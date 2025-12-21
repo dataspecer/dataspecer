@@ -1,5 +1,4 @@
-import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
-import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
+import { FetchResponse, type HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { CommitReferenceType, CreateRemoteRepositoryReturnType, GitProviderEnum, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials } from "@dataspecer/git";
 import { GitProviderBase } from "../git-provider-base.ts";
 import { gitProviderDomains } from "../git-provider-factory.ts";
@@ -15,8 +14,8 @@ export class GitLabProvider extends GitProviderBase {
   ////////////////////////////
   // Constructor
   ////////////////////////////
-  constructor(domainURL?: string) {
-    super();
+  constructor(httpFetch: HttpFetch, domainURL?: string) {
+    super(httpFetch);
     this.domainURL = domainURL ?? gitProviderDomains[this.getGitProviderEnumValue()];
   }
 
@@ -62,7 +61,7 @@ export class GitLabProvider extends GitProviderBase {
   async removeRemoteRepository(authToken: string, repositoryUserName: string, repoName: string): Promise<FetchResponse> {
     // https://docs.gitlab.com/api/projects/#delete-a-project
     const urlSuffix = encodeURIComponent(`${repositoryUserName}/${repoName}`);
-    const fetchResponse = httpFetch(`https://${this.domainURL}/api/v4/projects/` + urlSuffix, {
+    const fetchResponse = this.httpFetch(`https://${this.domainURL}/api/v4/projects/` + urlSuffix, {
       method: "DELETE",
       headers: {
         'PRIVATE-TOKEN': authToken,
@@ -91,7 +90,7 @@ export class GitLabProvider extends GitProviderBase {
     };
 
     const variablePartOfURL = encodeURIComponent(`${repositoryOwner}/${repositoryName}`);
-    const fetchResponse = httpFetch(`https://${this.domainURL}/api/v4/projects/${variablePartOfURL}/hooks`, {
+    const fetchResponse = this.httpFetch(`https://${this.domainURL}/api/v4/projects/${variablePartOfURL}/hooks`, {
       method: "POST",
       headers: {
         'PRIVATE-TOKEN': authToken,
@@ -118,7 +117,7 @@ export class GitLabProvider extends GitProviderBase {
       "initialize_with_readme": "true",
     };
 
-    const fetchResponse = await httpFetch(`https://${this.domainURL}/api/v4/projects/`, {
+    const fetchResponse = await this.httpFetch(`https://${this.domainURL}/api/v4/projects/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

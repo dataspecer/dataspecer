@@ -7,6 +7,7 @@ import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { CommitBranchAndHashInfo, commitPackageToGitUsingAuthSession, GitCommitToCreateInfoBasic, RepositoryIdentificationInfo } from "./commit-package-to-git.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-session.ts";
 import { checkErrorBoundaryForCommitAction } from "@dataspecer/git-node";
+import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 
 
 /**
@@ -25,20 +26,19 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
 
   const query = querySchema.parse(request.query);
 
-  const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(query.gitProviderURL);
+  const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(query.gitProviderURL, httpFetch);
   const { name: sessionUserName, accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
+  const repositoryUserName = convertToValidGitName(query.givenUserName.length === 0 ? sessionUserName : query.givenUserName);
+  const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
+  const repoName = convertToValidGitName(query.givenRepositoryName);
+  const fullLinkedGitRepositoryURL = gitProvider.createGitRepositoryURL(repositoryUserName, repoName);
+  const isUserRepo = stringToBoolean(query.isUserRepo);
   const patAccessTokens = findPatAccessTokens(accessTokens);
   // Either the user has create repo access AND it has access to the "user", then we are good
   // Or it has create repo access, but does not have access to the "user". Then we have two possibilities
   //  either we fail, or we will try the bot token to create the repositories. To me the second one makes more sense. So that is the implemented variant.
   for (const patAccessToken of patAccessTokens) {
     try {
-      const repositoryUserName = convertToValidGitName(query.givenUserName.length === 0 ? sessionUserName : query.givenUserName);
-      const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
-      const repoName = convertToValidGitName(query.givenRepositoryName);
-      const fullLinkedGitRepositoryURL = gitProvider.createGitRepositoryURL(repositoryUserName, repoName);
-
-      const isUserRepo = stringToBoolean(query.isUserRepo);
       if (isUserRepo) {
         // If it is user repo then the owner of the pat access token have to be the user of the user part of repository url
         // In other words if it is bot token then the repositoryUserName has to be bot name
@@ -112,7 +112,7 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
   const query = querySchema.parse(request.query);
 
   const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
-  const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(query.gitRepositoryURL);
+  const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(query.gitRepositoryURL, httpFetch);
   const repoName = gitProvider.extractPartOfRepositoryURL(query.gitRepositoryURL, "repository-name");
   const repositoryUserName = gitProvider.extractPartOfRepositoryURL(query.gitRepositoryURL, "user-name");
   const branchName = gitProvider.extractPartOfRepositoryURL(query.gitRepositoryURL, "branch");

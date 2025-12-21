@@ -600,6 +600,7 @@ import { PackageImporter } from "./export-import/import.ts";
 import { generateArtifacts } from "./routes/generate.ts";
 import { ZipStreamDictionary } from "./utils/zip-stream-dictionary.ts";
 import { importFromGitUrl } from "./routes/import.ts";
+import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 
 
 /**
@@ -721,11 +722,11 @@ async function generateSpecificationFromFileSystem() {
  * Generates specification from git URL passed in as argument from command line
  * @param gitZipDownloadURL is the URL of git provider, which returns the zip on access - for example https://github.com/RadStr-bot/4f21bf6d-2116-4ab3-b387-1f8074f7f412/archive/refs/heads/main.zip
  */
-async function generateSpecificationFromGitURL() {
+async function generateSpecificationFromGitURL(httpFetch: HttpFetch) {
   console.info("process.argv", process.argv);
   // Example of download URL - https://github.com/RadStr-bot/4f21bf6d-2116-4ab3-b387-1f8074f7f412/archive/refs/heads/main.zip (or commit SHA instead of refs/heads/main)
   const gitZipDownloadURL = process.argv[2];
-  const imported = await importFromGitUrl(gitZipDownloadURL, "branch");
+  const imported = await importFromGitUrl(gitZipDownloadURL, httpFetch, "branch");
   await generateArtifactsFromImported(imported);
   process.exit(0);
 }

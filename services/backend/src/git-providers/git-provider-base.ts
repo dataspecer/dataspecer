@@ -1,4 +1,4 @@
-import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
+import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { CommitReferenceType, ConvertRepoURLToDownloadZipURLReturnType, CreateRemoteRepositoryReturnType, GitProvider, GitProviderEnum, RepositoryURLPart, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, ExtractedCommitReferenceValueFromRepositoryURLExplicit, ExtractedCommitReferenceValueFromRepositoryURL } from "@dataspecer/git";
 import { removePathRecursively } from "@dataspecer/git-node";
 import { simpleGit } from "simple-git";
@@ -7,6 +7,11 @@ import fs from "fs";
 import { ROOT_DIRECTORY_FOR_PRIVATE_GITS } from "../utils/git-store-info.ts";
 
 export abstract class GitProviderBase implements GitProvider {
+  protected httpFetch: HttpFetch;
+  constructor(httpFetch: HttpFetch) {
+    this.httpFetch = httpFetch;
+  }
+
   abstract getGitProviderEnumValue(): GitProviderEnum;
   abstract getDomainURL(shouldPrefixWithHttps: boolean): string;
   abstract setDomainURL(newDomainURL: string): void;

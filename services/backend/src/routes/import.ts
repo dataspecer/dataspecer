@@ -34,6 +34,7 @@ import { updateGitRelatedDataForPackage } from "./link-to-existing-remote-git-re
 import { gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { removePathRecursively } from "@dataspecer/git-node";
 import { createSimpleGitUsingPredefinedGitRoot, INTERNAL_COMPUTATION_FOR_IMPORT } from "../utils/git-store-info.ts";
+import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
   const result: LanguageString = {};
@@ -429,8 +430,8 @@ export const importResource = asyncHandler(async (request: express.Request, resp
  *  this URL is transformed to the URL which downloads zip - for example https://github.com/RadStr-bot/4f21bf6d-2116-4ab3-b387-1f8074f7f412/archive/refs/heads/main.zip
  * @param commitReferenceType if not provided it just fallbacks to defaults
  */
-export async function importFromGitUrl(repositoryURL: string, commitReferenceType?: CommitReferenceType) {
-  const gitProvider: GitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(repositoryURL);
+export async function importFromGitUrl(repositoryURL: string, httpFetchForGitProvider: HttpFetch, commitReferenceType?: CommitReferenceType) {
+  const gitProvider: GitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(repositoryURL, httpFetchForGitProvider);
   // TODO RadStr: If there will be some issues with the defaults when importing from git, then
   // TODO RadStr: we can clone the repository and do some git actions to find out what type of reference it is
   const commitReferenceTypeForZip = commitReferenceType === undefined ? getDefaultCommitReferenceTypeForZipDownload() : commitReferenceType;
@@ -532,7 +533,7 @@ export const importPackageFromGit = asyncHandler(async (request: express.Request
     return;
   }
 
-  const result = await importFromGitUrl(gitURL, commitReferenceType);
+  const result = await importFromGitUrl(gitURL, httpFetch, commitReferenceType);
   if (result.length === 0) {
     response.status(409).json({ message: "The import failed, because it is pointing to branch, which already exists inside DS" });
     return;

@@ -1,5 +1,4 @@
-import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
-import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
+import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import fs from "fs";
 // Using this one since I could not make the ones for nodeJS (one is not using ES modules and the other one seems to be too old and correctly support types)
 import sodium from "libsodium-wrappers-sumo";
@@ -25,6 +24,9 @@ export class GitHubProvider extends GitProviderBase {
   ////////////////////////////
   // Constructor
   ////////////////////////////
+  constructor(httpFetch: HttpFetch) {
+    super(httpFetch);
+  }
 
   ////////////////////////////
   // Methods
@@ -79,7 +81,7 @@ export class GitHubProvider extends GitProviderBase {
 
   removeRemoteRepository(authToken: string, repositoryUserName: string, repoName: string): Promise<FetchResponse> {
     // https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#delete-a-repository
-    const fetchResponse = httpFetch(`https://api.github.com/repos/${repositoryUserName}/${repoName}`, {
+    const fetchResponse = this.httpFetch(`https://api.github.com/repos/${repositoryUserName}/${repoName}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/vnd.github+json",
@@ -114,7 +116,7 @@ export class GitHubProvider extends GitProviderBase {
       }
     };
 
-    const fetchResponse = await httpFetch(`https://api.github.com/repos/${repositoryOwner}/${repositoryName}/hooks`, {
+    const fetchResponse = await this.httpFetch(`https://api.github.com/repos/${repositoryOwner}/${repositoryName}/hooks`, {
       method: "POST",
       headers: {
         "Content-Type": "application/vnd.github+json",
@@ -145,7 +147,7 @@ export class GitHubProvider extends GitProviderBase {
 
     const restEndpoint = isUserRepo ? "https://api.github.com/user/repos" : `https://api.github.com/orgs/${repositoryUserName}/repos`;
 
-    const fetchResponse = await httpFetch(restEndpoint, {
+    const fetchResponse = await this.httpFetch(restEndpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/vnd.github+json",
@@ -187,7 +189,7 @@ export class GitHubProvider extends GitProviderBase {
   private async getLatestCommit(repositoryUserName: string, repoName: string, branch: string, authToken: string) {
     const mainRefUrl = `https://api.github.com/repos/${repositoryUserName}/${repoName}/git/ref/heads/${branch}`;
 
-    const fetchResponse = await httpFetch(mainRefUrl, {
+    const fetchResponse = await this.httpFetch(mainRefUrl, {
       headers: {
         Authorization: `Bearer ${authToken}`,
         Accept: "application/vnd.github+json",
@@ -206,7 +208,7 @@ export class GitHubProvider extends GitProviderBase {
   private async createBranch(repositoryUserName: string, repoName: string, branch: string, latestCommitHash: string, authToken: string) {
     const createRefUrl = `https://api.github.com/repos/${repositoryUserName}/${repoName}/git/refs`;
 
-    const fetchResponse = await httpFetch(createRefUrl, {
+    const fetchResponse = await this.httpFetch(createRefUrl, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${authToken}`,
@@ -278,7 +280,7 @@ export class GitHubProvider extends GitProviderBase {
       permission: "push",
     };
 
-    const addingCollaboratorFetchResponse = httpFetch(restEndPointToAddCollaborator, {
+    const addingCollaboratorFetchResponse = this.httpFetch(restEndPointToAddCollaborator, {
       method: "PUT",
       headers: {
         "Content-Type": "application/vnd.github+json",
@@ -308,7 +310,7 @@ export class GitHubProvider extends GitProviderBase {
     }
     const acceptInvitationRestEndpoint = `https://api.github.com/user/repository_invitations/${invitationIdentifier}`;
 
-    const acceptInvitationFetchResponse = httpFetch(acceptInvitationRestEndpoint, {
+    const acceptInvitationFetchResponse = this.httpFetch(acceptInvitationRestEndpoint, {
       method: "PATCH",
       headers: {
         "Authorization": `Bearer ${botAccessToken}`,
@@ -325,7 +327,7 @@ export class GitHubProvider extends GitProviderBase {
     // Get public key for encryption - https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#get-a-repository-public-key
     const restEndpointForPublicKey = `https://api.github.com/repos/${repositoryUserName}/${repoName}/actions/secrets/public-key`;
 
-    const publicKeyResponse = httpFetch(restEndpointForPublicKey, {
+    const publicKeyResponse = this.httpFetch(restEndpointForPublicKey, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${accessToken}`,
@@ -378,7 +380,7 @@ export class GitHubProvider extends GitProviderBase {
       key_id: publicKeyIdentifier
     };
 
-    const fetchResponse = httpFetch(restEndPoint, {
+    const fetchResponse = this.httpFetch(restEndPoint, {
       method: "PUT",
       headers: {
         "Content-Type": "application/vnd.github+json",
@@ -447,7 +449,7 @@ export class GitHubProvider extends GitProviderBase {
     };
 
     const restEndPoint = `https://api.github.com/repos/${repositoryUserName}/${repoName}/pages`;
-    const fetchResponse = httpFetch(restEndPoint, {
+    const fetchResponse = this.httpFetch(restEndPoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -468,7 +470,7 @@ export class GitHubProvider extends GitProviderBase {
     const owner = this.extractPartOfRepositoryURL(repositoryURL, "user-name");     // TODO RadStr: Rename user to owner everywhere
     const restEndPointForRepo = `https://api.github.com/repos/${owner}/${repo}`;
 
-    const response = await httpFetch(restEndPointForRepo, {
+    const response = await this.httpFetch(restEndPointForRepo, {
       method: "GET",
       headers: {
         "User-Agent": GITHUB_USER_AGENT,
@@ -584,7 +586,7 @@ export class GitHubProvider extends GitProviderBase {
     // Generated by ChatGPT after being fed this page https://docs.github.com/en/rest/apps/oauth-applications?apiVersion=2022-11-28#delete-an-app-token
     const url = `https://api.github.com/applications/${configuration.authConfiguration.gitHubAuthClientId}/token`;
 
-    const response = await httpFetch(url, {
+    const response = await this.httpFetch(url, {
       method: "DELETE",
       headers: {
         "Accept": "application/vnd.github+json",

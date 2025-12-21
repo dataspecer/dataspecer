@@ -8,6 +8,7 @@ import { ConfigType, GitProviderEnum, Scope } from "@dataspecer/git";
 import { GitHubProvider, GitHubScope } from "../git-providers/git-provider-instances/github.ts";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import configuration from "../configuration.ts";
+import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 
 
 // Possible inspiration for implementation of custom provider (if needed in future) - https://github.com/nextauthjs/next-auth/discussions/9480
@@ -126,7 +127,7 @@ function createAuthConfig(configType: ConfigType | null, dsBackendURL: string, c
 
         if (token?.accessToken !== undefined) {
           if (token?.accountProvider === "github") {
-            const gitProvider = GitProviderFactory.createGitProvider(GitProviderEnum.GitHub);
+            const gitProvider = GitProviderFactory.createGitProvider(GitProviderEnum.GitHub, httpFetch);
             const response = await gitProvider.revokePAT(token.accessToken);
             if (response.status !== 204) {
               console.error("Could not revoke PAT for some reason");

@@ -21,6 +21,7 @@ import {
   removeEverythingExcept, removePathRecursively, createGitReadmeFile, ReadmeTemplateData,
 } from "@dataspecer/git-node";
 import { createSimpleGitUsingPredefinedGitRoot, MERGE_DS_CONFLICTS_PREFIX, PUSH_PREFIX } from "../utils/git-store-info.ts";
+import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 
 
 export type RepositoryIdentificationInfo = {
@@ -249,7 +250,7 @@ export function prepareCommitDataForCommit(
   shouldAppendAfterDefaultMergeCommitMessage: boolean | null,
 ): GitCommitToCreateInfoExplicitWithCredentials {
   // If gitProvider not given - extract it from url
-  const gitProvider = gitCommitInfoBasic.gitProvider ?? GitProviderFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL);
+  const gitProvider = gitCommitInfoBasic.gitProvider ?? GitProviderFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL, httpFetch);
   const committer = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
   const commitInfo: GitCommitToCreateInfoExplicitWithCredentials = {
     gitCredentials: committer,
