@@ -14,12 +14,11 @@ import { ReadmeTemplateData } from "../git-readme/readme-template.ts";
 import { AvailableExports } from "../export-import/export-actions.ts";
 import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic, CreateSimpleGitResult, UniqueDirectory } from "../utils/simple-git-utils.ts";
 import { compareBackendFilesystems, compareGitAndDSFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
-import { MERGE_DS_CONFLICTS_PREFIX, PUSH_PREFIX } from "../models/git-store-info.ts";
 import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
 import { MergeEndInfoWithRootNode, PrismaMergeStateWithData } from "../models/merge-state-model.ts";
 import { MergeEndpointForComparison } from "./create-merge-state.ts";
 import fs from "fs";
-import { checkErrorBoundaryForCommitAction, getLastCommit, getLastCommitHash, isDefaultBranch, removeEverythingExcept, removePathRecursively } from "@dataspecer/git-node";
+import { checkErrorBoundaryForCommitAction, getLastCommit, getLastCommitHash, isDefaultBranch, removeEverythingExcept, removePathRecursively, MERGE_DS_CONFLICTS_PREFIX, PUSH_PREFIX } from "@dataspecer/git-node";
 
 
 export type RepositoryIdentificationInfo = {

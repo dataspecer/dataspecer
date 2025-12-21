@@ -4,7 +4,7 @@ import { DSFilesystem } from "../export-import/filesystem-abstractions/implement
 import { resourceModel } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { z } from "zod";
-import { isAccessibleGitRepository } from "../models/git-store-info.ts";
+import { isAccessibleGitRepository } from "@dataspecer/git-node";
 import { AvailableFilesystems, ExportShareableMetadataType, convertDatastoreContentBasedOnFormat, stringToBoolean } from "@dataspecer/git";
 import path from "path";
 import { updateBlob } from "./resource.ts";

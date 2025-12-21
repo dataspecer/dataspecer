@@ -6,8 +6,7 @@ import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { saveChangesInDirectoryToBackendFinalVersion, GitChangesToDSPackageStoreResult } from "./git-webhook-handler.ts";
 import { resourceModel } from "../main.ts";
 import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "../utils/simple-git-utils.ts";
-import { AllowedPrefixes, MANUAL_CLONE_PATH_PREFIX } from "../models/git-store-info.ts";
-import { getLastCommitHash, removePathRecursively } from "@dataspecer/git-node";
+import { getLastCommitHash, removePathRecursively, AllowedPrefixes, MANUAL_CLONE_PATH_PREFIX } from "@dataspecer/git-node";
 
 
 

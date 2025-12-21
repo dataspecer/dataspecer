@@ -57,4 +57,3 @@ export function isAccessibleGitRepository(gitPath: string): { isAccessible: bool
     normalizedGitPath,
   };
 }
-

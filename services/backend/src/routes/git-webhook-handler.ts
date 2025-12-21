@@ -14,7 +14,7 @@
 
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
-import { ComparisonData, dsPathJoin, getMergeFromMergeToMappingForGitAndDS, GitProvider, GitProviderEnum, isDatastoreForMetadata, MergeStateCause } from "@dataspecer/git";
+import { ComparisonData, dsPathJoin, getMergeFromMergeToMappingForGitAndDS, GitProvider, GitProviderEnum, isDatastoreForMetadata, MergeStateCause, DatastoreInfo, DirectoryNode, FilesystemNode, FilesystemAbstraction, getMergeFromMergeToForGitAndDS } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import fs from "fs";
 import path from "path";
@@ -22,8 +22,7 @@ import { updateBlob, updateResourceMetadata } from "./resource.ts";
 import _ from "lodash";
 import { mergeStateModel, resourceModel } from "../main.ts";
 import { updateDSRepositoryByPullingGit } from "./pull-remote-repository.ts";
-import { WEBHOOK_PATH_PREFIX } from "../models/git-store-info.ts";
-import { DatastoreInfo, DirectoryNode, FilesystemNode, FilesystemAbstraction, getMergeFromMergeToForGitAndDS } from "@dataspecer/git";
+import { WEBHOOK_PATH_PREFIX } from "@dataspecer/git-node";
 import { compareGitAndDSFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
 import { SimpleGit } from "simple-git";

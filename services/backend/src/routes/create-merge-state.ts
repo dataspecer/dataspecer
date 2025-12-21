@@ -7,8 +7,7 @@ import { compareBackendFilesystems } from "../export-import/filesystem-abstracti
 import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "../utils/simple-git-utils.ts";
 import { SimpleGit } from "simple-git";
 import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
-import { MERGE_CONFLICTS_PRIVATE } from "../models/git-store-info.ts";
-import { removePathRecursively } from "@dataspecer/git-node";
+import { removePathRecursively, MERGE_CONFLICTS_PRIVATE } from "@dataspecer/git-node";
 
 
 export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
