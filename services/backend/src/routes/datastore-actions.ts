@@ -4,11 +4,11 @@ import { DSFilesystem } from "../export-import/filesystem-abstractions/implement
 import { resourceModel } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { z } from "zod";
-import { isAccessibleGitRepository } from "@dataspecer/git-node";
 import { AvailableFilesystems, ExportShareableMetadataType, convertDatastoreContentBasedOnFormat, stringToBoolean } from "@dataspecer/git";
 import path from "path";
 import { updateBlob } from "./resource.ts";
 import { v4 as uuidv4 } from "uuid";
+import { isAccessibleGitRepository } from "../utils/git-store-info.ts";
 
 
 export async function getDatastoreContent(

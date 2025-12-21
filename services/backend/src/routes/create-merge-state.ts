@@ -7,7 +7,8 @@ import { compareBackendFilesystems } from "../export-import/filesystem-abstracti
 import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { SimpleGit } from "simple-git";
 import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
-import { removePathRecursively, MERGE_CONFLICTS_PRIVATE } from "@dataspecer/git-node";
+import { removePathRecursively } from "@dataspecer/git-node";
+import { createSimpleGitUsingPredefinedGitRoot, MERGE_CONFLICTS_PRIVATE } from "../utils/git-store-info.ts";
 
 
 export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -26,7 +27,7 @@ export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (requ
     return;
   }
 
-  const { git, gitInitialDirectory, gitDirectoryToRemoveAfterWork } = createSimpleGit(mergeFromIri, MERGE_CONFLICTS_PRIVATE, false);
+  const { git, gitInitialDirectory, gitDirectoryToRemoveAfterWork } = createSimpleGitUsingPredefinedGitRoot(mergeFromIri, MERGE_CONFLICTS_PRIVATE, false);
   try {
     await gitCloneBasic(git, gitInitialDirectory, mergeFromResource.linkedGitRepositoryURL, false, true, undefined);
 

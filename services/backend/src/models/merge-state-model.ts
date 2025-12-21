@@ -7,8 +7,9 @@ import { AvailableFilesystems, ComparisonData, ComparisonFullResult, convertMerg
 import { ResourceChangeListener, ResourceChangeType } from "./resource-change-observer.ts";
 import { updateMergeStateToBeUpToDate, MergeEndpointForStateUpdate } from "../routes/create-merge-state.ts";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
-import { createSimpleGit, getCommonCommitInHistory } from "@dataspecer/git-node/simple-git-methods";
-import { getLastCommitHash, removePathRecursively, ALL_GIT_REPOSITORY_ROOTS, MERGE_DS_CONFLICTS_PREFIX } from "@dataspecer/git-node";
+import { getLastCommitHash, removePathRecursively } from "@dataspecer/git-node";
+import { ALL_GIT_REPOSITORY_ROOTS, createSimpleGitUsingPredefinedGitRoot, MERGE_DS_CONFLICTS_PREFIX } from "../utils/git-store-info.ts";
+import { getCommonCommitInHistory } from "@dataspecer/git-node/simple-git-methods";
 
 type Nullable<T> = {
   [P in keyof T]: T[P] | null;
@@ -333,7 +334,7 @@ export class MergeStateModel implements ResourceChangeListener {
   }
 
   private async finalizeMergeStateWithRebaseCommit(mergeState: MergeState) {
-    const createdSimpleGitData = createSimpleGit(mergeState.rootIriMergeTo, MERGE_DS_CONFLICTS_PREFIX, false);
+    const createdSimpleGitData = createSimpleGitUsingPredefinedGitRoot(mergeState.rootIriMergeTo, MERGE_DS_CONFLICTS_PREFIX, false);
     try {
       const git = createdSimpleGitData.git;
       await git.clone(mergeState.gitUrlMergeTo, ".", ["--filter=tree:0"]);    // And we fetch only commits
@@ -360,7 +361,7 @@ export class MergeStateModel implements ResourceChangeListener {
   }
 
   private async finalizeMergeStateWithMergeCommit(mergeState: MergeState) {
-    const mergeFromGitData = createSimpleGit(mergeState.rootIriMergeFrom, MERGE_DS_CONFLICTS_PREFIX, false);
+    const mergeFromGitData = createSimpleGitUsingPredefinedGitRoot(mergeState.rootIriMergeFrom, MERGE_DS_CONFLICTS_PREFIX, false);
     try {
       const git = mergeFromGitData.git;
       await git.clone(mergeState.gitUrlMergeFrom, ".", ["--filter=tree:0"]);    // And we fetch only commits

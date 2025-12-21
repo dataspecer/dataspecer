@@ -6,7 +6,8 @@ import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { saveChangesInDirectoryToBackendFinalVersion, GitChangesToDSPackageStoreResult } from "./git-webhook-handler.ts";
 import { resourceModel } from "../main.ts";
 import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
-import { getLastCommitHash, removePathRecursively, AllowedPrefixes, MANUAL_CLONE_PATH_PREFIX } from "@dataspecer/git-node";
+import { getLastCommitHash, removePathRecursively } from "@dataspecer/git-node";
+import { AllowedPrefixes, createSimpleGitUsingPredefinedGitRoot, MANUAL_CLONE_PATH_PREFIX } from "../utils/git-store-info.ts";
 
 
 
@@ -53,7 +54,7 @@ export const updateDSRepositoryByPullingGit = async (
   dsLastCommitHash: string,
   depth?: number
 ): Promise<boolean> => {
-  const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGit(iri, cloneDirectoryNamePrefix, true);
+  const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGitUsingPredefinedGitRoot(iri, cloneDirectoryNamePrefix, true);
   let storeResult: GitChangesToDSPackageStoreResult | null = null;
   try {
     // TODO RadStr: Not sure if it is better to pull only commits or everything

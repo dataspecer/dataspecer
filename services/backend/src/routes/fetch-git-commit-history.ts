@@ -3,9 +3,10 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import { resourceModel } from "../main.ts";
 import express from "express";
 
-import { createSimpleGit, gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
+import { gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { GitRawHistoryToSendToClient, GitHistory, BranchHistory, RawCommit } from "@dataspecer/git";
-import { removePathRecursively, FETCH_GIT_HISTORY_PREFIX } from "@dataspecer/git-node";
+import { removePathRecursively } from "@dataspecer/git-node";
+import { createSimpleGitUsingPredefinedGitRoot, FETCH_GIT_HISTORY_PREFIX } from "../utils/git-store-info.ts";
 
 
 export const fetchGitCommitHistory = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -28,7 +29,7 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
     // const gitURL = "https://github.com/nodejs/node-addon-examples";
     // const gitURL = "https://github.com/RadStr-bot/example-merge-repo";
 
-    const { git, gitInitialDirectory, gitDirectoryToRemoveAfterWork } = createSimpleGit(query.iri, FETCH_GIT_HISTORY_PREFIX, false);
+    const { git, gitInitialDirectory, gitDirectoryToRemoveAfterWork } = createSimpleGitUsingPredefinedGitRoot(query.iri, FETCH_GIT_HISTORY_PREFIX, false);
 
     try {
         await gitCloneBasic(git, gitInitialDirectory, gitURL, false, true, undefined, query.historyDepth);

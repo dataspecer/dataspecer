@@ -22,10 +22,10 @@ import { updateBlob, updateResourceMetadata } from "./resource.ts";
 import _ from "lodash";
 import { mergeStateModel, resourceModel } from "../main.ts";
 import { updateDSRepositoryByPullingGit } from "./pull-remote-repository.ts";
-import { WEBHOOK_PATH_PREFIX } from "@dataspecer/git-node";
 import { compareGitAndDSFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
 import { SimpleGit } from "simple-git";
+import { WEBHOOK_PATH_PREFIX } from "../utils/git-store-info.ts";
 
 
 export const handleWebhook = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -41,7 +41,7 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
   }
   const { commits, cloneURL, iri, branch } = dataForWebhookProcessing;
 
-  console.info("dataForWebhookProcessing", dataForWebhookProcessing);
+  console.info("dataForWebhookProcessing", dataForWebhookProcessing);   // TODO RadStr Debug: Debug
 
   const resource = await resourceModel.getPackage(iri);
   if (resource === null) {

@@ -31,8 +31,9 @@ import { buffer } from "stream/consumers";
 import { CommitReferenceType, getDefaultCommitReferenceTypeForZipDownload, GitProvider, isCommitReferenceType } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { updateGitRelatedDataForPackage } from "./link-to-existing-remote-git-repo.ts";
-import { createSimpleGit, gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
-import { removePathRecursively, INTERNAL_COMPUTATION_FOR_IMPORT } from "@dataspecer/git-node";
+import { gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
+import { removePathRecursively } from "@dataspecer/git-node";
+import { createSimpleGitUsingPredefinedGitRoot, INTERNAL_COMPUTATION_FOR_IMPORT } from "../utils/git-store-info.ts";
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
   const result: LanguageString = {};
@@ -493,7 +494,7 @@ export async function importFromGitUrl(repositoryURL: string, commitReferenceTyp
 }
 
 async function getCommitReferenceTypeUsingGitClone(repositoryURL: string, commitReferenceValue: string): Promise<CommitReferenceType> {
-  const { git, gitInitialDirectory, gitDirectoryToRemoveAfterWork } = createSimpleGit("fake-iri-for-import-" + uuidv4().substring(30), INTERNAL_COMPUTATION_FOR_IMPORT, false);
+  const { git, gitInitialDirectory, gitDirectoryToRemoveAfterWork } = createSimpleGitUsingPredefinedGitRoot("fake-iri-for-import-" + uuidv4().substring(30), INTERNAL_COMPUTATION_FOR_IMPORT, false);
   let commitReferenceType: CommitReferenceType;
   try {
     await gitCloneBasic(git, gitInitialDirectory, repositoryURL, true, true, commitReferenceValue, 1);

@@ -1,6 +1,7 @@
+import { createSimpleGit, CreateSimpleGitResult, createUniqueDirectory, UniqueDirectory } from "@dataspecer/git-node/simple-git-methods";
 import path from "path";
 
-export const ROOT_DIRECTORY_FOR_ANY_GIT: string = path.resolve("../../../services/backend/database/git-repos");
+export const ROOT_DIRECTORY_FOR_ANY_GIT: string = path.resolve("./database/git-repos");
 export const ROOT_DIRECTORY_FOR_PUBLIC_GITS: string = path.resolve(ROOT_DIRECTORY_FOR_ANY_GIT + "/public");
 export const ROOT_DIRECTORY_FOR_PRIVATE_GITS: string = path.resolve(ROOT_DIRECTORY_FOR_ANY_GIT + "/private");
 export const MANUAL_CLONE_PATH_PREFIX = "manual-clone";
@@ -56,4 +57,19 @@ export function isAccessibleGitRepository(gitPath: string): { isAccessible: bool
     isAccessible: isAccessible,
     normalizedGitPath,
   };
+}
+
+function pickRootDirectoryForGitBasedOnPublicity(isPublicGit: boolean) {
+  const pickedDirectory = isPublicGit ? ROOT_DIRECTORY_FOR_PUBLIC_GITS : ROOT_DIRECTORY_FOR_PRIVATE_GITS;
+  return pickedDirectory;
+}
+
+export function createUniqueDirectoryUsingPredefinedGitRoot(iri: string, cloneDirectoryNamePrefix: string, isPublic: boolean): UniqueDirectory {
+  const rootDirectory = pickRootDirectoryForGitBasedOnPublicity(isPublic);
+  return createUniqueDirectory(iri, cloneDirectoryNamePrefix, rootDirectory);
+}
+
+export function createSimpleGitUsingPredefinedGitRoot(iri: string, cloneDirectoryNamePrefix: string, isPublic: boolean): CreateSimpleGitResult {
+  const rootDirectory = pickRootDirectoryForGitBasedOnPublicity(isPublic);
+  return createSimpleGit(iri, cloneDirectoryNamePrefix, rootDirectory);
 }

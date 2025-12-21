@@ -18,9 +18,9 @@ import { MergeEndpointForComparison } from "./create-merge-state.ts";
 import fs from "fs";
 import {
   checkErrorBoundaryForCommitAction, getLastCommit, getLastCommitHash, isDefaultBranch,
-  removeEverythingExcept, removePathRecursively, MERGE_DS_CONFLICTS_PREFIX, PUSH_PREFIX,
-  createGitReadmeFile, ReadmeTemplateData,
+  removeEverythingExcept, removePathRecursively, createGitReadmeFile, ReadmeTemplateData,
 } from "@dataspecer/git-node";
+import { createSimpleGitUsingPredefinedGitRoot, MERGE_DS_CONFLICTS_PREFIX, PUSH_PREFIX } from "../utils/git-store-info.ts";
 
 
 export type RepositoryIdentificationInfo = {
@@ -312,7 +312,7 @@ async function commitDSMergeToGit(
   const { gitCredentials, gitProvider } = commitInfo;
 
 
-  const createSimpleGitResult: CreateSimpleGitResult = createSimpleGit(iri, MERGE_DS_CONFLICTS_PREFIX, true);
+  const createSimpleGitResult: CreateSimpleGitResult = createSimpleGitUsingPredefinedGitRoot(iri, MERGE_DS_CONFLICTS_PREFIX, true);
   const { git, gitInitialDirectory, gitInitialDirectoryParent } = createSimpleGitResult;
 
   for (const accessToken of gitCredentials.accessTokens) {
@@ -428,7 +428,7 @@ async function commitClassicToGit(
   const { givenRepositoryUserName, givenRepositoryName } = repositoryIdentificationInfo;
 
 
-  const createSimpleGitResult: CreateSimpleGitResult = createSimpleGit(iri, PUSH_PREFIX, true);
+  const createSimpleGitResult: CreateSimpleGitResult = createSimpleGitUsingPredefinedGitRoot(iri, PUSH_PREFIX, true);
   const { git, gitDirectoryToRemoveAfterWork, gitInitialDirectory, gitInitialDirectoryParent } = createSimpleGitResult;
 
   for (const accessToken of gitCredentials.accessTokens) {
