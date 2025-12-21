@@ -31,7 +31,7 @@ import { buffer } from "stream/consumers";
 import { CommitReferenceType, getDefaultCommitReferenceTypeForZipDownload, GitProvider, isCommitReferenceType } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { updateGitRelatedDataForPackage } from "./link-to-existing-remote-git-repo.ts";
-import { createSimpleGit, gitCloneBasic } from "../utils/simple-git-utils.ts";
+import { createSimpleGit, gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { removePathRecursively, INTERNAL_COMPUTATION_FOR_IMPORT } from "@dataspecer/git-node";
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {

@@ -3,7 +3,7 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import { resourceModel } from "../main.ts";
 import express from "express";
 
-import { createSimpleGit, gitCloneBasic } from "../utils/simple-git-utils.ts";
+import { createSimpleGit, gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { GitRawHistoryToSendToClient, GitHistory, BranchHistory, RawCommit } from "@dataspecer/git";
 import { removePathRecursively, FETCH_GIT_HISTORY_PREFIX } from "@dataspecer/git-node";
 

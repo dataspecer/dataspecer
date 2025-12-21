@@ -12,7 +12,7 @@ import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-
 import { createReadmeFile } from "../git-readme/readme-generator.ts";
 import { ReadmeTemplateData } from "../git-readme/readme-template.ts";
 import { AvailableExports } from "../export-import/export-actions.ts";
-import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic, CreateSimpleGitResult, UniqueDirectory } from "../utils/simple-git-utils.ts";
+import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic, CreateSimpleGitResult, UniqueDirectory } from "@dataspecer/git-node/simple-git-methods";
 import { compareBackendFilesystems, compareGitAndDSFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
 import { MergeEndInfoWithRootNode, PrismaMergeStateWithData } from "../models/merge-state-model.ts";

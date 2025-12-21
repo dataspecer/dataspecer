@@ -4,7 +4,7 @@ import { mergeStateModel, resourceModel } from "../main.ts";
 import express from "express";
 import { AvailableFilesystems, ComparisonData, createConflictsFromDiffTrees, GitProvider, MergeState, MergeStateCause } from "@dataspecer/git";
 import { compareBackendFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
-import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "../utils/simple-git-utils.ts";
+import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { SimpleGit } from "simple-git";
 import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
 import { removePathRecursively, MERGE_CONFLICTS_PRIVATE } from "@dataspecer/git-node";

@@ -1,7 +1,7 @@
 import { simpleGit, SimpleGit } from "simple-git";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
-import { AllowedPublicPrefixes, ROOT_DIRECTORY_FOR_PRIVATE_GITS, ROOT_DIRECTORY_FOR_PUBLIC_GITS } from "@dataspecer/git-node";
+import { ROOT_DIRECTORY_FOR_PRIVATE_GITS, ROOT_DIRECTORY_FOR_PUBLIC_GITS } from "../git-store-info.ts";
 
 /**
  * @throws Error on git failure

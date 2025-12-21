@@ -7,7 +7,7 @@ import { AvailableFilesystems, ComparisonData, ComparisonFullResult, convertMerg
 import { ResourceChangeListener, ResourceChangeType } from "./resource-change-observer.ts";
 import { updateMergeStateToBeUpToDate, MergeEndpointForStateUpdate } from "../routes/create-merge-state.ts";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
-import { createSimpleGit, getCommonCommitInHistory } from "../utils/simple-git-utils.ts";
+import { createSimpleGit, getCommonCommitInHistory } from "@dataspecer/git-node/simple-git-methods";
 import { getLastCommitHash, removePathRecursively, ALL_GIT_REPOSITORY_ROOTS, MERGE_DS_CONFLICTS_PREFIX } from "@dataspecer/git-node";
 
 type Nullable<T> = {
