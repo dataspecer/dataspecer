@@ -1,7 +1,6 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { v4 as uuidv4 } from "uuid";
 import path from "path";
-import { ALL_GIT_REPOSITORY_ROOTS, MERGE_DS_CONFLICTS_PREFIX } from "./git-store-info.ts";
 import { ResourceModel } from "./resource-model.ts";
 import { SimpleGit, simpleGit } from "simple-git";
 import { AvailableFilesystems, ComparisonData, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, FilesystemNode, GitProvider, isEditableType, isGitUrlSet, MergeCommitType, MergeState, MergeStateCause } from "@dataspecer/git";
