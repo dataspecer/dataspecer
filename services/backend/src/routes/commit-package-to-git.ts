@@ -9,8 +9,8 @@ import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMerge
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
 import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-session.ts";
-import { createReadmeFile } from "../git-readme/readme-generator.ts";
-import { ReadmeTemplateData } from "../git-readme/readme-template.ts";
+import { createGitReadmeFile } from "../git-readme/git-readme-generator.ts";
+import { ReadmeTemplateData } from "../git-readme/git-readme-template.ts";
 import { AvailableExports } from "../export-import/export-actions.ts";
 import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic, CreateSimpleGitResult, UniqueDirectory } from "@dataspecer/git-node/simple-git-methods";
 import { compareBackendFilesystems, compareGitAndDSFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
@@ -689,7 +689,7 @@ async function fillGitDirectoryWithExport(
 
 
     if (shouldContainWorkflowFiles && !hasSetLastCommit) {
-      createReadmeFile(gitInitialDirectory, readmeData);
+      createGitReadmeFile(gitInitialDirectory, readmeData);
       gitProvider.copyWorkflowFiles(gitInitialDirectory);
     }
   }
