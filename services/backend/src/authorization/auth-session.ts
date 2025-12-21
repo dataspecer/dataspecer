@@ -31,8 +31,6 @@ export async function currentSession(
     const [authConfig] = createAuthConfigBasedOnAccountScope((session?.user as any).genericScope ?? null, dsBackendURL);
     session = (await getSession(request, authConfig)) ?? undefined;
   }
-
-
   response.locals.session = session;
 
   if (session !== undefined) {
@@ -45,6 +43,7 @@ export async function currentSession(
   next();
 }
 
+
 export function getStoredSession(response: express.Response): Session | null {
   if (response?.locals?.session === undefined) {
     return null;
@@ -52,6 +51,7 @@ export function getStoredSession(response: express.Response): Session | null {
 
   return response.locals.session;
 }
+
 
 /**
  * Returns in response basic user info (in json), which at minimum contains: name, email and image. Any of them can be null.
@@ -70,6 +70,7 @@ export const getBasicUserInfo = asyncHandler(async (request: express.Request, re
   };
   response.json(basicUserInfo);
 });
+
 
 /**
  * Tries to get name, email and access token from current session.
@@ -107,6 +108,7 @@ export const getGitCredentialsFromSession = (request: express.Request, response:
     committerSSH,
   };
 };
+
 
 /**
  * Calls {@link getGitCredentialsFromSession}, but sets defaults for missing values based on set bot for given {@link gitProvider}

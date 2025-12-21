@@ -2,22 +2,12 @@ import { z } from "zod";
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { resourceModel } from "../main.ts";
-import { AccessToken, AccessTokenType, ConfigType, convertToValidGitName, extractPartOfRepositoryURL, stringToBoolean, transformCommitMessageIfEmpty, WEBHOOK_HANDLER_URL } from "@dataspecer/git";
+import { ConfigType, convertToValidGitName, extractPartOfRepositoryURL, findPatAccessToken, findPatAccessTokens, stringToBoolean, transformCommitMessageIfEmpty, WEBHOOK_HANDLER_URL } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { CommitBranchAndHashInfo, commitPackageToGitUsingAuthSession, GitCommitToCreateInfoBasic, RepositoryIdentificationInfo } from "./commit-package-to-git.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-session.ts";
 import { checkErrorBoundaryForCommitAction } from "@dataspecer/git-node";
 
-
-export function findPatAccessToken(accessTokens: AccessToken[] | null | undefined): AccessToken | null {
-  const accessToken = accessTokens?.find(token => token.type === AccessTokenType.PAT);
-  return accessToken ?? null;
-}
-
-export function findPatAccessTokens(accessTokens: AccessToken[] | null | undefined): AccessToken[] {
-  const patAccessToken = accessTokens?.filter(token => token.type === AccessTokenType.PAT);
-  return patAccessToken ?? [];
-}
 
 /**
  * Creates GitHub repo with content equal to the package with given iri inside the query part of express http request.

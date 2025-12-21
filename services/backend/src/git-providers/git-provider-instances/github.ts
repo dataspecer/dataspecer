@@ -1,17 +1,14 @@
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
-
-
 import fs from "fs";
-
 // Using this one since I could not make the ones for nodeJS (one is not using ES modules and the other one seems to be too old and correctly support types)
 import sodium from "libsodium-wrappers-sumo";
-import { CommitReferenceType, CreateRemoteRepositoryReturnType, GitProviderEnum, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, AccessToken, AccessTokenType, PUBLICATION_BRANCH_NAME, GitRestApiOperationError, GITHUB_USER_AGENT } from "@dataspecer/git";
+import { CommitReferenceType, CreateRemoteRepositoryReturnType, GitProviderEnum, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, AccessToken, AccessTokenType, PUBLICATION_BRANCH_NAME, GitRestApiOperationError, GITHUB_USER_AGENT, findPatAccessToken } from "@dataspecer/git";
 import { GitProviderBase } from "../git-provider-base.ts";
 import { resourceModel } from "../../main.ts";
 import { createLinksForFiles, gitProviderDomains } from "../git-provider-factory.ts";
-import { findPatAccessToken } from "../../routes/create-new-git-repository-with-package-content.ts";
 import configuration from "../../configuration.ts";
+
 
 const scopes = ["read:user", "user:email", "public_repo", "workflow", "delete_repo"] as const;
 export type GitHubScope = typeof scopes[number];

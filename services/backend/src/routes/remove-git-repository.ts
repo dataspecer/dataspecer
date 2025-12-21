@@ -3,10 +3,8 @@ import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { resourceModel } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
-
 import express from "express";
-import { ConfigType, extractPartOfRepositoryURL } from "@dataspecer/git";
-import { findPatAccessTokens } from "./create-new-git-repository-with-package-content.ts";
+import { ConfigType, extractPartOfRepositoryURL, findPatAccessTokens } from "@dataspecer/git";
 
 /**
  * Removes Git repository with iri given in query part of request.

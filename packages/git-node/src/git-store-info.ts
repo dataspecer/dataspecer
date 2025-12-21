@@ -1,6 +1,6 @@
 import path from "path";
 
-export const ROOT_DIRECTORY_FOR_ANY_GIT: string = path.resolve("./database/git-repos");
+export const ROOT_DIRECTORY_FOR_ANY_GIT: string = path.resolve("../../../services/backend/database/git-repos");
 export const ROOT_DIRECTORY_FOR_PUBLIC_GITS: string = path.resolve(ROOT_DIRECTORY_FOR_ANY_GIT + "/public");
 export const ROOT_DIRECTORY_FOR_PRIVATE_GITS: string = path.resolve(ROOT_DIRECTORY_FOR_ANY_GIT + "/private");
 export const MANUAL_CLONE_PATH_PREFIX = "manual-clone";
