@@ -36,7 +36,7 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
   response.type("text/plain");      // TODO RadStr: Not sure if there is any good reason why was I doing this.
 
   const { gitProvider, webhookPayload } = GitProviderFactory.createGitProviderFromWebhookRequest(request, httpFetch);
-  const dataForWebhookProcessing = await gitProvider.extractDataForWebhookProcessing(webhookPayload);
+  const dataForWebhookProcessing = await gitProvider.extractDataForWebhookProcessing(webhookPayload, resourceModel.getResourceForGitUrlAndBranch);
   if (dataForWebhookProcessing === null) {
     return;
   }

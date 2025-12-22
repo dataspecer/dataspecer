@@ -1,5 +1,5 @@
 import { FetchResponse, type HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
-import { CommitReferenceType, CreateRemoteRepositoryReturnType, GitProviderEnum, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials } from "@dataspecer/git";
+import { CommitReferenceType, CreateRemoteRepositoryReturnType, GitProviderEnum, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, GetResourceForGitUrlAndBranchType } from "@dataspecer/git";
 import { GitProviderBase } from "../git-provider-base.ts";
 import { gitProviderDomains } from "../git-provider-factory.ts";
 
@@ -35,7 +35,7 @@ export class GitLabProvider extends GitProviderBase {
     this.domainURL = newDomainURL;
   }
 
-  async extractDataForWebhookProcessing(webhookPayload: any): Promise<WebhookRequestDataGitProviderIndependent | null> {
+  async extractDataForWebhookProcessing(webhookPayload: any, getResourceForGitUrlAndBranch: GetResourceForGitUrlAndBranchType): Promise<WebhookRequestDataGitProviderIndependent | null> {
     const repoName = webhookPayload.repository.name;
     // TODO: In future I will find it through the URL inside the prisma database instead
     const iri = String(repoName).split("-").at(-1);

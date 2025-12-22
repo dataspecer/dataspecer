@@ -1,5 +1,5 @@
 import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
-import { CommitReferenceType, ConvertRepoURLToDownloadZipURLReturnType, CreateRemoteRepositoryReturnType, GitProvider, GitProviderEnum, RepositoryURLPart, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, ExtractedCommitReferenceValueFromRepositoryURLExplicit, ExtractedCommitReferenceValueFromRepositoryURL } from "@dataspecer/git";
+import { CommitReferenceType, ConvertRepoURLToDownloadZipURLReturnType, CreateRemoteRepositoryReturnType, GitProvider, GitProviderEnum, RepositoryURLPart, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, ExtractedCommitReferenceValueFromRepositoryURLExplicit, ExtractedCommitReferenceValueFromRepositoryURL, GetResourceForGitUrlAndBranchType } from "@dataspecer/git";
 import { removePathRecursively } from "@dataspecer/git-node";
 import { simpleGit } from "simple-git";
 import { v4 as uuidv4 } from "uuid";
@@ -15,7 +15,7 @@ export abstract class GitProviderBase implements GitProvider {
   abstract getGitProviderEnumValue(): GitProviderEnum;
   abstract getDomainURL(shouldPrefixWithHttps: boolean): string;
   abstract setDomainURL(newDomainURL: string): void;
-  abstract extractDataForWebhookProcessing(webhookPayload: any): Promise<WebhookRequestDataGitProviderIndependent | null>;
+  abstract extractDataForWebhookProcessing(webhookPayload: any, getResourceForGitUrlAndBranch: GetResourceForGitUrlAndBranchType): Promise<WebhookRequestDataGitProviderIndependent | null>;
   abstract createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean, shouldEnablePublicationBranch: boolean): Promise<CreateRemoteRepositoryReturnType>;
   abstract removeRemoteRepository(authToken: string, repositoryUserName: string, repoName: string): Promise<FetchResponse>;
   abstract createWebhook(authToken: string, repositoryOwner: string, repositoryName: string, webhookHandlerURL: string, webhookEvents: string[]): Promise<FetchResponse>;

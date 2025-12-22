@@ -93,7 +93,7 @@ export type CreateRemoteRepositoryReturnType = {
   response: FetchResponse
 }
 
-
+export type GetResourceForGitUrlAndBranchType =  (gitRepositoryUrl: string, branch: string) => Promise<{iri: string} | null>
 
 export interface GitProvider {
   /**
@@ -124,7 +124,7 @@ export interface GitProvider {
    * @param request is the original data from request as it came in webhook converted to JSON.
    * @returns Returns null if new branch was added to git, but the branch does not have equivalent in the DS.
    */
-  extractDataForWebhookProcessing(webhookPayload: any): Promise<WebhookRequestDataGitProviderIndependent | null>;
+  extractDataForWebhookProcessing(webhookPayload: any, getResourceForGitUrlAndBranch: GetResourceForGitUrlAndBranchType): Promise<WebhookRequestDataGitProviderIndependent | null>;
 
   // TODO RadStr: Maybe everywhere use repository instead of repositoryUserName
   /**

@@ -2,9 +2,8 @@ import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import fs from "fs";
 // Using this one since I could not make the ones for nodeJS (one is not using ES modules and the other one seems to be too old and correctly support types)
 import sodium from "libsodium-wrappers-sumo";
-import { CommitReferenceType, CreateRemoteRepositoryReturnType, GitProviderEnum, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, AccessToken, AccessTokenType, PUBLICATION_BRANCH_NAME, GitRestApiOperationError, GITHUB_USER_AGENT, findPatAccessToken } from "@dataspecer/git";
+import { CommitReferenceType, CreateRemoteRepositoryReturnType, GitProviderEnum, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, AccessToken, AccessTokenType, PUBLICATION_BRANCH_NAME, GitRestApiOperationError, GITHUB_USER_AGENT, findPatAccessToken, GetResourceForGitUrlAndBranchType } from "@dataspecer/git";
 import { GitProviderBase } from "../git-provider-base.ts";
-import { resourceModel } from "../../main.ts";
 import { createLinksForFiles, gitProviderDomains } from "../git-provider-factory.ts";
 import configuration from "../../configuration.ts";
 
@@ -45,14 +44,14 @@ export class GitHubProvider extends GitProviderBase {
     // EMPTY - GitHub has only one domain
   }
 
-  async extractDataForWebhookProcessing(webhookPayload: any): Promise<WebhookRequestDataGitProviderIndependent | null> {
+  async extractDataForWebhookProcessing(webhookPayload: any, getResourceForGitUrlAndBranch: GetResourceForGitUrlAndBranchType): Promise<WebhookRequestDataGitProviderIndependent | null> {
     // https://docs.github.com/en/webhooks/webhook-events-and-payloads#push
 
     const refPrefix = "refs/heads/";
     const branch = webhookPayload.ref.substring(refPrefix.length);
     const repoName = webhookPayload.repository.name;
     const repoURL = webhookPayload.repository.html_url;
-    const resourceToUpdateInWebhook = await resourceModel.getResourceForGitUrlAndBranch(repoURL, branch);
+    const resourceToUpdateInWebhook = await getResourceForGitUrlAndBranch(repoURL, branch);
 
     const iri = resourceToUpdateInWebhook?.iri;
     if (iri === undefined) {
