@@ -17,8 +17,10 @@ import fs from "fs";
 import {
   checkErrorBoundaryForCommitAction, getLastCommit, getLastCommitHash, isDefaultBranch,
   removeEverythingExcept, removePathRecursively, createGitReadmeFile, ReadmeTemplateData,
+  createSimpleGitUsingPredefinedGitRoot,
+  PUSH_PREFIX,
+  MERGE_DS_CONFLICTS_PREFIX,
 } from "@dataspecer/git-node";
-import { createSimpleGitUsingPredefinedGitRoot, MERGE_DS_CONFLICTS_PREFIX, PUSH_PREFIX } from "../utils/git-store-info.ts";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../configuration.ts";
 

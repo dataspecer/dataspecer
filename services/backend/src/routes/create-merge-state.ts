@@ -4,11 +4,10 @@ import { mergeStateModel, resourceModel } from "../main.ts";
 import express from "express";
 import { AvailableFilesystems, ComparisonData, createConflictsFromDiffTrees, GitProvider, MergeState, MergeStateCause } from "@dataspecer/git";
 import { compareBackendFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
-import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
+import { getCommonCommitInHistory, gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { SimpleGit } from "simple-git";
 import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
-import { removePathRecursively } from "@dataspecer/git-node";
-import { createSimpleGitUsingPredefinedGitRoot, MERGE_CONFLICTS_PRIVATE } from "../utils/git-store-info.ts";
+import { createSimpleGitUsingPredefinedGitRoot, MERGE_CONFLICTS_PRIVATE, removePathRecursively } from "@dataspecer/git-node";
 
 
 export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (request: express.Request, response: express.Response) => {

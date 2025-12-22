@@ -8,7 +8,7 @@ import { AvailableFilesystems, ExportShareableMetadataType, convertDatastoreCont
 import path from "path";
 import { updateBlob } from "./resource.ts";
 import { v4 as uuidv4 } from "uuid";
-import { isAccessibleGitRepository } from "../utils/git-store-info.ts";
+import { isAccessibleGitRepository } from "@dataspecer/git-node";
 
 
 export async function getDatastoreContent(

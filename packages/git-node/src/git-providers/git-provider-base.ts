@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 import { type GitBotConfiguration, type OAuthConfiguration } from "@dataspecer/git/auth";
 import { removePathRecursively } from "../git-utils-node.ts";
+import { ROOT_DIRECTORY_FOR_PRIVATE_GITS } from "../git-store-info.ts";
 
 export type AuthenticationGitProviderData = {
   gitBotConfiguration?: GitBotConfiguration;
@@ -61,9 +62,7 @@ export abstract class GitProviderBase implements GitProvider {
     let gitTmpDirectory: string;
     while (true) {
       const uuid = uuidv4();
-      // TODO RadStr: In future probably also put under the ROOT_DIRECTORY_FOR_PRIVATE_GITS. The issue is that here we do not have the path since it is defined in backend.
-      //              It is defiend in backend so the path inside docker and inside local build are the same, otherwise we would bring it in the git-node package.
-      gitTmpDirectory = `./tmp-git/${uuid}`;
+      gitTmpDirectory = `${ROOT_DIRECTORY_FOR_PRIVATE_GITS}/tmp/${uuid}`;
       if (!fs.existsSync(gitTmpDirectory)) {
         // We found unique directory to put repo into
         break;

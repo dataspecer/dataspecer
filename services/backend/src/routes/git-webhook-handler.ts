@@ -24,10 +24,10 @@ import { updateDSRepositoryByPullingGit } from "./pull-remote-repository.ts";
 import { compareGitAndDSFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
 import { SimpleGit } from "simple-git";
-import { WEBHOOK_PATH_PREFIX } from "../utils/git-store-info.ts";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../configuration.ts";
 import { GitProviderFactory } from "@dataspecer/git-node/git-providers";
+import { WEBHOOK_PATH_PREFIX } from "@dataspecer/git-node";
 
 
 export const handleWebhook = asyncHandler(async (request: express.Request, response: express.Response) => {

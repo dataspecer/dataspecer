@@ -7,8 +7,7 @@ import { AvailableFilesystems, ComparisonData, ComparisonFullResult, convertMerg
 import { GitProviderFactory } from "@dataspecer/git-node/git-providers";
 import { ResourceChangeListener, ResourceChangeType } from "./resource-change-observer.ts";
 import { updateMergeStateToBeUpToDate, MergeEndpointForStateUpdate } from "../routes/create-merge-state.ts";
-import { getLastCommitHash, removePathRecursively } from "@dataspecer/git-node";
-import { ALL_GIT_REPOSITORY_ROOTS, createSimpleGitUsingPredefinedGitRoot, MERGE_DS_CONFLICTS_PREFIX } from "../utils/git-store-info.ts";
+import { ALL_GIT_REPOSITORY_ROOTS, createSimpleGitUsingPredefinedGitRoot, getLastCommitHash, MERGE_DS_CONFLICTS_PREFIX, removePathRecursively } from "@dataspecer/git-node";
 import { getCommonCommitInHistory } from "@dataspecer/git-node/simple-git-methods";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../configuration.ts";
