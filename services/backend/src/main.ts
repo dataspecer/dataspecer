@@ -66,7 +66,7 @@ import { GitProviderNamesAsType } from "@dataspecer/git";
 import { populateSshKnownHosts } from "@dataspecer/git-node";
 
 
-for (const [gitProviderName, gitConfiguration] of Object.entries(configuration?.gitConfigurations ?? {})) {
+for (const [gitProviderName, gitConfiguration] of Object.entries(configuration?.gitBotConfigurations ?? {})) {
   if (gitConfiguration?.dsBotSSHPrivateKey !== undefined && gitConfiguration?.dsBotSSHId !== undefined) {
     populateSshKnownHosts();
     storeNewPrivateSSHKeyToBackend(gitConfiguration.dsBotSSHPrivateKey, gitConfiguration.dsBotSSHId, gitProviderName as GitProviderNamesAsType);

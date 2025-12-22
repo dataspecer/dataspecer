@@ -127,7 +127,7 @@ function createAuthConfig(configType: ConfigType | null, dsBackendURL: string, c
 
         if (token?.accessToken !== undefined) {
           if (token?.accountProvider === "github") {
-            const gitProvider = GitProviderFactory.createGitProvider(GitProviderEnum.GitHub, httpFetch);
+            const gitProvider = GitProviderFactory.createGitProvider(GitProviderEnum.GitHub, httpFetch, configuration);
             const response = await gitProvider.revokePAT(token.accessToken);
             if (response.status !== 204) {
               console.error("Could not revoke PAT for some reason");

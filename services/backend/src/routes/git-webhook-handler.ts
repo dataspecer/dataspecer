@@ -27,6 +27,7 @@ import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
 import { SimpleGit } from "simple-git";
 import { WEBHOOK_PATH_PREFIX } from "../utils/git-store-info.ts";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
+import configuration from "../configuration.ts";
 
 
 export const handleWebhook = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -35,7 +36,7 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
   // console.info("Webhook - Body payload: ", request.body.payload);
   response.type("text/plain");      // TODO RadStr: Not sure if there is any good reason why was I doing this.
 
-  const { gitProvider, webhookPayload } = GitProviderFactory.createGitProviderFromWebhookRequest(request, httpFetch);
+  const { gitProvider, webhookPayload } = GitProviderFactory.createGitProviderFromWebhookRequest(request, httpFetch, configuration);
   const dataForWebhookProcessing = await gitProvider.extractDataForWebhookProcessing(webhookPayload, resourceModel.getResourceForGitUrlAndBranch);
   if (dataForWebhookProcessing === null) {
     return;

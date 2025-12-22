@@ -8,7 +8,8 @@
     "prebuild": "rimraf lib"
   },
   "exports": {
-    ".": "./lib/index.js"
+    ".": "./lib/index.js",
+    "./auth": "./lib/auth/index.js"
   },
   "devDependencies": {
     "rimraf": "^6.0.1",

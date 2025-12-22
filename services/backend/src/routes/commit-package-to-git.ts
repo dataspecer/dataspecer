@@ -10,7 +10,7 @@ import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 
 import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-session.ts";
 import { AvailableExports } from "../export-import/export-actions.ts";
-import { createSimpleGit, getCommonCommitInHistory, gitCloneBasic, CreateSimpleGitResult, UniqueDirectory } from "@dataspecer/git-node/simple-git-methods";
+import { getCommonCommitInHistory, gitCloneBasic, CreateSimpleGitResult, UniqueDirectory } from "@dataspecer/git-node/simple-git-methods";
 import { compareBackendFilesystems, compareGitAndDSFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
 import { MergeEndInfoWithRootNode, PrismaMergeStateWithData } from "../models/merge-state-model.ts";
@@ -22,6 +22,7 @@ import {
 } from "@dataspecer/git-node";
 import { createSimpleGitUsingPredefinedGitRoot, MERGE_DS_CONFLICTS_PREFIX, PUSH_PREFIX } from "../utils/git-store-info.ts";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
+import configuration from "../configuration.ts";
 
 
 export type RepositoryIdentificationInfo = {
@@ -250,7 +251,7 @@ export function prepareCommitDataForCommit(
   shouldAppendAfterDefaultMergeCommitMessage: boolean | null,
 ): GitCommitToCreateInfoExplicitWithCredentials {
   // If gitProvider not given - extract it from url
-  const gitProvider = gitCommitInfoBasic.gitProvider ?? GitProviderFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL, httpFetch);
+  const gitProvider = gitCommitInfoBasic.gitProvider ?? GitProviderFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL, httpFetch, configuration);
   const committer = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
   const commitInfo: GitCommitToCreateInfoExplicitWithCredentials = {
     gitCredentials: committer,

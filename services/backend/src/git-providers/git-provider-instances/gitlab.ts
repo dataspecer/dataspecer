@@ -1,7 +1,7 @@
 import { FetchResponse, type HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { CommitReferenceType, CreateRemoteRepositoryReturnType, GitProviderEnum, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, GetResourceForGitUrlAndBranchType } from "@dataspecer/git";
-import { GitProviderBase } from "../git-provider-base.ts";
-import { gitProviderDomains } from "../git-provider-factory.ts";
+import { AuthenticationGitProviderData, GitProviderBase } from "../git-provider-base.ts";
+import { AuthenticationGitProvidersData, gitProviderDomains } from "../git-provider-factory.ts";
 
 // Note that students for some reason there have max 10 repositories limit on school mff gitlab (idk if it is for creations a day or something)
 
@@ -14,8 +14,13 @@ export class GitLabProvider extends GitProviderBase {
   ////////////////////////////
   // Constructor
   ////////////////////////////
-  constructor(httpFetch: HttpFetch, domainURL?: string) {
-    super(httpFetch);
+  constructor(httpFetch: HttpFetch, authenticationGitProvidersData: AuthenticationGitProvidersData, domainURL?: string) {
+    const authenticationGitProviderData: AuthenticationGitProviderData = {
+      gitBotConfiguration: authenticationGitProvidersData.gitBotConfigurations?.gitlab,
+      authConfiguration: authenticationGitProvidersData.authConfiguration,
+    };
+    super(httpFetch, authenticationGitProviderData);
+
     this.domainURL = domainURL ?? gitProviderDomains[this.getGitProviderEnumValue()];
   }
 

@@ -8,6 +8,7 @@ import { CommitBranchAndHashInfo, commitPackageToGitUsingAuthSession, GitCommitT
 import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-session.ts";
 import { checkErrorBoundaryForCommitAction } from "@dataspecer/git-node";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
+import configuration from "../configuration.ts";
 
 
 /**
@@ -26,7 +27,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
 
   const query = querySchema.parse(request.query);
 
-  const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(query.gitProviderURL, httpFetch);
+  const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(query.gitProviderURL, httpFetch, configuration);
   const { name: sessionUserName, accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
   const repositoryUserName = convertToValidGitName(query.givenUserName.length === 0 ? sessionUserName : query.givenUserName);
   const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
@@ -112,7 +113,7 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
   const query = querySchema.parse(request.query);
 
   const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
-  const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(query.gitRepositoryURL, httpFetch);
+  const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(query.gitRepositoryURL, httpFetch, configuration);
   const repoName = gitProvider.extractPartOfRepositoryURL(query.gitRepositoryURL, "repository-name");
   const repositoryUserName = gitProvider.extractPartOfRepositoryURL(query.gitRepositoryURL, "user-name");
   const branchName = gitProvider.extractPartOfRepositoryURL(query.gitRepositoryURL, "branch");

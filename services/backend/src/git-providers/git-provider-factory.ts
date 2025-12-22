@@ -1,10 +1,15 @@
-import { extractPartOfRepositoryURL, GitProvider, GitProviderEnum } from "@dataspecer/git";
+import { extractPartOfRepositoryURL, GitProvider, GitProviderEnum, GitProviderNamesAsType } from "@dataspecer/git";
 import express from "express";
 import fs from "fs";
 import { GitHubProvider } from "./git-provider-instances/github.ts";
 import { GitLabProvider } from "./git-provider-instances/gitlab.ts";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
+import { GitBotConfiguration, OAuthConfiguration } from "@dataspecer/git/auth";
 
+export type AuthenticationGitProvidersData = {
+  gitBotConfigurations?: Record<GitProviderNamesAsType, GitBotConfiguration>;
+  authConfiguration?: OAuthConfiguration;
+};
 
 /**
  * TODO RadStr: Maybe there is a better name?
@@ -15,16 +20,20 @@ type WebhookRequestProviderSpecificData = {
 };
 
 export abstract class GitProviderFactory {
-  static createGitProviderFromWebhookRequest(request: express.Request, httpFetch: HttpFetch): WebhookRequestProviderSpecificData {
+  static createGitProviderFromWebhookRequest(
+    request: express.Request,
+    httpFetch: HttpFetch,
+    authenticationGitProvidersData: AuthenticationGitProvidersData
+  ): WebhookRequestProviderSpecificData {
     if (request.body !== undefined && request.body.payload === undefined) {
       return {
-        gitProvider: new GitLabProvider(httpFetch),
+        gitProvider: new GitLabProvider(httpFetch, authenticationGitProvidersData),
         webhookPayload: request.body,
       };
     }
     else if (request?.body?.payload !== undefined) {
       return {
-        gitProvider: new GitHubProvider(httpFetch),
+        gitProvider: new GitHubProvider(httpFetch, authenticationGitProvidersData),
         webhookPayload: JSON.parse(request.body.payload),
       };
     }
@@ -38,12 +47,17 @@ export abstract class GitProviderFactory {
    *  So this domainURL needs to be provided only if we are using some specific provider - like gitlab.mff.cuni.cz
    * @returns
    */
-  static createGitProvider(gitProviderName: GitProviderEnum, httpFetch: HttpFetch, domainURL?: string): GitProvider {
+  static createGitProvider(
+    gitProviderName: GitProviderEnum,
+    httpFetch: HttpFetch,
+    authenticationGitProvidersData: AuthenticationGitProvidersData,
+    domainURL?: string
+  ): GitProvider {
     switch (gitProviderName) {
       case GitProviderEnum.GitHub:
-        return new GitHubProvider(httpFetch);
+        return new GitHubProvider(httpFetch, authenticationGitProvidersData);
       case GitProviderEnum.GitLab:
-        return new GitLabProvider(httpFetch, domainURL);
+        return new GitLabProvider(httpFetch, authenticationGitProvidersData, domainURL);
       default:
         // TODO: Or maybe return default implementation, which does not do anything
         console.error(`${gitProviderName} does not exist. You forgot to extend GitProviderFactory`);
@@ -55,13 +69,17 @@ export abstract class GitProviderFactory {
    *
    * @param repositoryURL It is enough the for the repositoryURL to contain just the hostname part.
    */
-  static createGitProviderFromRepositoryURL(repositoryURL: string, httpFetch: HttpFetch): GitProvider {
+  static createGitProviderFromRepositoryURL(
+    repositoryURL: string,
+    httpFetch: HttpFetch,
+    authenticationGitProvidersData: AuthenticationGitProvidersData
+  ): GitProvider {
     const gitProvider = getMainGitProviderFromRepositoryURL(repositoryURL);
     if (gitProvider === null) {
       throw new Error(`Git provider with given URL ${repositoryURL} does not exist.`);
     }
     const domainURL = extractPartOfRepositoryURL(repositoryURL, "url-domain") ?? undefined;
-    return GitProviderFactory.createGitProvider(gitProvider, httpFetch, domainURL);
+    return GitProviderFactory.createGitProvider(gitProvider, httpFetch, authenticationGitProvidersData, domainURL);
   }
 }
 // TODO: What about https://gitlab.mff.cuni.cz ???

@@ -4,6 +4,7 @@ import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { getAuthorizationURL } from "@dataspecer/git";
 import { checkErrorBoundaryForCommitAction } from "@dataspecer/git-node";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
+import configuration from "../configuration.ts";
 
 /**
  * Example for git worktrees
@@ -25,7 +26,7 @@ export const gitWorktreeExample = async (
     fs.mkdirSync(gitInitialDirectory);
   }
 
-  const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL, httpFetch);
+  const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL, httpFetch, configuration);
   const botCredentials = gitProvider.getBotCredentials();
   if (botCredentials === null) {
     throw new Error("No bot credentials, can not create gitWorkTreeExample");

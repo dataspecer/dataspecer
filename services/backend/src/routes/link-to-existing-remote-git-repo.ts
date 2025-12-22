@@ -5,6 +5,7 @@ import { CommitReferenceType, GitProvider } from "@dataspecer/git";
 import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { resourceModel } from "../main.ts";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
+import configuration from "../configuration.ts";
 
 
 /**
@@ -18,7 +19,7 @@ export const linkToExistingGitRepository = asyncHandler(async (request: express.
     repositoryURL: z.string().min(1),
   });
   const { iri, repositoryURL } = querySchema.parse(request.query);
-  const gitProvider: GitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(repositoryURL, httpFetch);
+  const gitProvider: GitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(repositoryURL, httpFetch, configuration);
   const commitReferenceType: CommitReferenceType = "branch";
   const commitReferenceValue = (await gitProvider.extractCommitReferenceValue(repositoryURL, commitReferenceType)).commitReferenceValue;
   await updateGitRelatedDataForPackage(iri, gitProvider, repositoryURL, commitReferenceValue, commitReferenceType);

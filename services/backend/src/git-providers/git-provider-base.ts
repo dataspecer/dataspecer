@@ -5,11 +5,19 @@ import { simpleGit } from "simple-git";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 import { ROOT_DIRECTORY_FOR_PRIVATE_GITS } from "../utils/git-store-info.ts";
+import { type GitBotConfiguration, type OAuthConfiguration } from "@dataspecer/git/auth";
+
+export type AuthenticationGitProviderData = {
+  gitBotConfiguration?: GitBotConfiguration;
+  authConfiguration?: OAuthConfiguration;
+};
 
 export abstract class GitProviderBase implements GitProvider {
   protected httpFetch: HttpFetch;
-  constructor(httpFetch: HttpFetch) {
+  protected authenticationGitProviderData: AuthenticationGitProviderData;
+  constructor(httpFetch: HttpFetch, authenticationGitProviderData: AuthenticationGitProviderData) {
     this.httpFetch = httpFetch;
+    this.authenticationGitProviderData = authenticationGitProviderData;
   }
 
   abstract getGitProviderEnumValue(): GitProviderEnum;

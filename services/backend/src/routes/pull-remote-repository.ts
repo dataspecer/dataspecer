@@ -9,6 +9,7 @@ import { getCommonCommitInHistory, gitCloneBasic } from "@dataspecer/git-node/si
 import { getLastCommitHash, removePathRecursively } from "@dataspecer/git-node";
 import { AllowedPrefixes, createSimpleGitUsingPredefinedGitRoot, MANUAL_CLONE_PATH_PREFIX } from "../utils/git-store-info.ts";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
+import configuration from "../configuration.ts";
 
 
 
@@ -29,7 +30,7 @@ export const pullRemoteRepository = asyncHandler(async (request: express.Request
     return;
   }
 
-  const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(resource.linkedGitRepositoryURL, httpFetch);
+  const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(resource.linkedGitRepositoryURL, httpFetch, configuration);
   const createdMergeState = await updateDSRepositoryByPullingGit(query.iri, gitProvider, resource.branch, resource.linkedGitRepositoryURL, MANUAL_CLONE_PATH_PREFIX, resource.lastCommitHash);
   if (createdMergeState) {
     response.status(409).json("Created merge state");   // 409 is error code for conflict

@@ -11,6 +11,7 @@ import { getLastCommitHash, removePathRecursively } from "@dataspecer/git-node";
 import { ALL_GIT_REPOSITORY_ROOTS, createSimpleGitUsingPredefinedGitRoot, MERGE_DS_CONFLICTS_PREFIX } from "../utils/git-store-info.ts";
 import { getCommonCommitInHistory } from "@dataspecer/git-node/simple-git-methods";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
+import configuration from "../configuration.ts";
 
 type Nullable<T> = {
   [P in keyof T]: T[P] | null;
@@ -790,7 +791,7 @@ export class MergeStateModel implements ResourceChangeListener {
       const pathToGitRepository = MergeStateModel.extractGitRoot(rootFullPathToMeta);
       git = simpleGit(pathToGitRepository);
     }
-    const gitProvider = gitUrl === "" ? null : GitProviderFactory.createGitProviderFromRepositoryURL(gitUrl, httpFetch);
+    const gitProvider = gitUrl === "" ? null : GitProviderFactory.createGitProviderFromRepositoryURL(gitUrl, httpFetch, configuration);
 
     return {
       git,
