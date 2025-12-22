@@ -2,10 +2,10 @@ import { z } from "zod";
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { CommitReferenceType, GitProvider } from "@dataspecer/git";
-import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { resourceModel } from "../main.ts";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../configuration.ts";
+import { GitProviderFactory } from "@dataspecer/git-node/git-providers";
 
 
 /**

@@ -14,8 +14,7 @@
 
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
-import { ComparisonData, dsPathJoin, getMergeFromMergeToMappingForGitAndDS, GitProvider, GitProviderEnum, isDatastoreForMetadata, MergeStateCause, DatastoreInfo, DirectoryNode, FilesystemNode, FilesystemAbstraction, getMergeFromMergeToForGitAndDS } from "@dataspecer/git";
-import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
+import { ComparisonData, dsPathJoin, getMergeFromMergeToMappingForGitAndDS, GitProvider, isDatastoreForMetadata, MergeStateCause, DatastoreInfo, DirectoryNode, FilesystemNode, FilesystemAbstraction, getMergeFromMergeToForGitAndDS } from "@dataspecer/git";
 import fs from "fs";
 import path from "path";
 import { updateBlob, updateResourceMetadata } from "./resource.ts";
@@ -28,6 +27,7 @@ import { SimpleGit } from "simple-git";
 import { WEBHOOK_PATH_PREFIX } from "../utils/git-store-info.ts";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../configuration.ts";
+import { GitProviderFactory } from "@dataspecer/git-node/git-providers";
 
 
 export const handleWebhook = asyncHandler(async (request: express.Request, response: express.Response) => {

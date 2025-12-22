@@ -5,8 +5,7 @@ import GitLab from "@auth/express/providers/gitlab"
 import Google from "@auth/express/providers/google"
 import Keycloak from "@auth/express/providers/keycloak"
 import { ConfigType, GitProviderEnum, Scope } from "@dataspecer/git";
-import { GitHubProvider, GitHubScope } from "../git-providers/git-provider-instances/github.ts";
-import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
+import { GitHubProvider, GitProviderFactory, GitHubScope } from "@dataspecer/git-node/git-providers";
 import configuration from "../configuration.ts";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 

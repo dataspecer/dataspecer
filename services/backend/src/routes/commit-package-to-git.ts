@@ -2,12 +2,10 @@ import { z } from "zod";
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { mergeStateModel, resourceModel } from "../main.ts";
-
 import { BranchSummary, CommitResult, SimpleGit } from "simple-git";
 import { extractPartOfRepositoryURL, getAuthorizationURL, stringToBoolean } from "@dataspecer/git";
-import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS, CommitInfo, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase, createUniqueCommitMessage } from "@dataspecer/git";
-import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
-
+import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase, createUniqueCommitMessage } from "@dataspecer/git";
+import { GitProviderFactory } from "@dataspecer/git-node/git-providers";
 import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-session.ts";
 import { AvailableExports } from "../export-import/export-actions.ts";
 import { getCommonCommitInHistory, gitCloneBasic, CreateSimpleGitResult, UniqueDirectory } from "@dataspecer/git-node/simple-git-methods";

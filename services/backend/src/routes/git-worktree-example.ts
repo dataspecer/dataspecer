@@ -1,10 +1,10 @@
 import { simpleGit } from "simple-git";
 import fs from "fs";
-import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { getAuthorizationURL } from "@dataspecer/git";
 import { checkErrorBoundaryForCommitAction } from "@dataspecer/git-node";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../configuration.ts";
+import { GitProviderFactory } from "@dataspecer/git-node/git-providers";
 
 /**
  * Example for git worktrees

@@ -29,13 +29,13 @@ import { Readable } from "stream";
 import { ReadableStream } from "stream/web";
 import { buffer } from "stream/consumers";
 import { CommitReferenceType, getDefaultCommitReferenceTypeForZipDownload, GitProvider, isCommitReferenceType } from "@dataspecer/git";
-import { AuthenticationGitProvidersData, GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { updateGitRelatedDataForPackage } from "./link-to-existing-remote-git-repo.ts";
 import { gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { removePathRecursively } from "@dataspecer/git-node";
 import { createSimpleGitUsingPredefinedGitRoot, INTERNAL_COMPUTATION_FOR_IMPORT } from "../utils/git-store-info.ts";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import configuration from "../configuration.ts";
+import { AuthenticationGitProvidersData, GitProviderFactory } from "@dataspecer/git-node/git-providers";
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
   const result: LanguageString = {};

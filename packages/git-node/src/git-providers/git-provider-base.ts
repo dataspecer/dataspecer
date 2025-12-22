@@ -1,11 +1,10 @@
 import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { CommitReferenceType, ConvertRepoURLToDownloadZipURLReturnType, CreateRemoteRepositoryReturnType, GitProvider, GitProviderEnum, RepositoryURLPart, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, ExtractedCommitReferenceValueFromRepositoryURLExplicit, ExtractedCommitReferenceValueFromRepositoryURL, GetResourceForGitUrlAndBranchType } from "@dataspecer/git";
-import { removePathRecursively } from "@dataspecer/git-node";
 import { simpleGit } from "simple-git";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
-import { ROOT_DIRECTORY_FOR_PRIVATE_GITS } from "../utils/git-store-info.ts";
 import { type GitBotConfiguration, type OAuthConfiguration } from "@dataspecer/git/auth";
+import { removePathRecursively } from "../git-utils-node.ts";
 
 export type AuthenticationGitProviderData = {
   gitBotConfiguration?: GitBotConfiguration;
@@ -62,7 +61,9 @@ export abstract class GitProviderBase implements GitProvider {
     let gitTmpDirectory: string;
     while (true) {
       const uuid = uuidv4();
-      gitTmpDirectory = `${ROOT_DIRECTORY_FOR_PRIVATE_GITS}/tmp/${uuid}`;
+      // TODO RadStr: In future probably also put under the ROOT_DIRECTORY_FOR_PRIVATE_GITS. The issue is that here we do not have the path since it is defined in backend.
+      //              It is defiend in backend so the path inside docker and inside local build are the same, otherwise we would bring it in the git-node package.
+      gitTmpDirectory = `./tmp-git/${uuid}`;
       if (!fs.existsSync(gitTmpDirectory)) {
         // We found unique directory to put repo into
         break;

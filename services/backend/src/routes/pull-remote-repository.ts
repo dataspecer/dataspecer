@@ -2,7 +2,6 @@ import { z } from "zod";
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { GitProvider } from "@dataspecer/git";
-import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { saveChangesInDirectoryToBackendFinalVersion, GitChangesToDSPackageStoreResult } from "./git-webhook-handler.ts";
 import { resourceModel } from "../main.ts";
 import { getCommonCommitInHistory, gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
@@ -10,6 +9,7 @@ import { getLastCommitHash, removePathRecursively } from "@dataspecer/git-node";
 import { AllowedPrefixes, createSimpleGitUsingPredefinedGitRoot, MANUAL_CLONE_PATH_PREFIX } from "../utils/git-store-info.ts";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../configuration.ts";
+import { GitProviderFactory } from "@dataspecer/git-node/git-providers";
 
 
 

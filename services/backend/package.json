@@ -43,7 +43,6 @@
 
     "simple-git": "3.27.0",
     "@auth/express": "0.10.1",
-    "libsodium-wrappers-sumo": "0.7.15",
     "@types/libsodium-wrappers-sumo": "0.7.8",
     "psl": "1.15.0",
     "@types/psl": "1.1.3"

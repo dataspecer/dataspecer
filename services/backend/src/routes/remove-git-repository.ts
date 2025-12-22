@@ -1,12 +1,12 @@
 import { z } from "zod";
 import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-session.ts";
-import { GitProviderFactory } from "../git-providers/git-provider-factory.ts";
 import { resourceModel } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { ConfigType, extractPartOfRepositoryURL, findPatAccessTokens } from "@dataspecer/git";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../configuration.ts";
+import { GitProviderFactory } from "@dataspecer/git-node/git-providers";
 
 /**
  * Removes Git repository with iri given in query part of request.
