@@ -58,7 +58,7 @@
     "prisma": "^4.12.0",
     "typescript": "^5.8.3",
 
-    "vitest": "^3.0.9",
+
     "@types/psl": "1.1.3"
   }
 }
