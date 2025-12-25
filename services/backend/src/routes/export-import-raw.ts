@@ -28,8 +28,14 @@ export const exportPackageResource = asyncHandler(async (request: express.Reques
   // TODO RadStr After: ... maybe keep the old one?
   // TODO RadStr: Don't use the radstr/export/directory it is just to show that it is newly possible
   // The old exporter:
-  const exporter = new PackageExporterNew();
-  const buffer = await exporter.doExportFromIRI(query.iri, "", `radstr/export/directory`, AvailableFilesystems.DS_Filesystem, AvailableExports.Zip, query.exportFormat ?? "json", null);
+  // const exporter = new PackageExporterDeprecated(resourceModel);
+  // const buffer = await exporter.doExport(query.iri);
+  // const exporter = new PackageExporterNew();
+  const exporter = new PackageExporterByResourceType();
+  const buffer = await exporter.doExportFromIRI(
+    query.iri, "", `radstr/export/directory`, AvailableFilesystems.DS_Filesystem, AvailableExports.Zip,
+    query.exportFormat ?? "json", resourceModel, null);
+
   // const exporter = new PackageExporterByResourceType();
   // const buffer = await exporter.doExportFromIRI(query.iri, "", `radstr/export/directory`, AvailableFilesystems.DS_Filesystem, AvailableExports.Zip, query.exportFormat ?? "json", null);
   // TODO RadStr: Debug exporters ... maybe can use in tests (with non-local paths of course).
