@@ -28,6 +28,7 @@ import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../configuration.ts";
 import { GitProviderFactory } from "@dataspecer/git-node/git-providers";
 import { WEBHOOK_PATH_PREFIX } from "@dataspecer/git-node";
+import { ResourceModelTODOBetterName } from "../export-import/export.ts";
 
 
 export const handleWebhook = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -50,7 +51,7 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
     return;
   }
 
-  const createdMergeState = await updateDSRepositoryByPullingGit(iri, gitProvider, branch, cloneURL, WEBHOOK_PATH_PREFIX, resource.lastCommitHash, commits.length);
+  const createdMergeState = await updateDSRepositoryByPullingGit(iri, gitProvider, branch, cloneURL, WEBHOOK_PATH_PREFIX, resource.lastCommitHash, resourceModel, commits.length);
   // Actually we don't need to answer based on response, since this comes from git provider, only think we might need is to notify users that there was update, which we do by setting the isInSyncWithRemote
   return;
 });
@@ -60,6 +61,7 @@ export type GitChangesToDSPackageStoreResult = {
   conflictCount: number;
 }
 
+// TODO RadStr: Here also ideally reduce the number of parameters.
 /**
  * This method handles the storing of directory content, which usually comes from git clone, back to the DS store.
  * That means:
@@ -86,13 +88,15 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
   commonCommitHash: string,
   branch: string,
   mergeStateCause: Omit<MergeStateCause, "merge">,
+  resourceModelForDS: ResourceModelTODOBetterName,
 ): Promise<GitChangesToDSPackageStoreResult> {
   // Merge from is DS
   const {
     diffTreeComparisonResult,
     filesystemMergeFrom, fakeRootMergeFrom, rootMergeFrom, pathToRootMetaMergeFrom,
     filesystemMergeTo, fakeRootMergeTo, rootMergeTo, pathToRootMetaMergeTo,
-  } = await compareGitAndDSFilesystems(gitProvider, iri, gitInitialDirectoryParent, mergeStateCause);
+  } = await compareGitAndDSFilesystems(
+    gitProvider, iri, gitInitialDirectoryParent, mergeStateCause, resourceModelForDS);
 
   const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS(mergeStateCause, dsLastCommitHash, gitLastCommitHash);
   const filesystemFakeRoots = { fakeRootMergeFrom, fakeRootMergeTo };
@@ -104,14 +108,15 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
     await git.checkout(dsLastCommitHash);
     // Basically check against the commit the package is supposed to represent, if we did not change anything, we can always pull without conflict.
     // Otherwise we changed something and even though we could handle it automatically. We let the user resolve everything manually, it is his responsibility.
-    const comparisonBetweenCurrentDSPackageAndCorrespondingCommit = await compareGitAndDSFilesystems(gitProvider, iri, gitInitialDirectoryParent, mergeStateCause);
+    const comparisonBetweenCurrentDSPackageAndCorrespondingCommit = await compareGitAndDSFilesystems(
+      gitProvider, iri, gitInitialDirectoryParent, mergeStateCause, resourceModelForDS);
     const canPullWithoutCreatingMergeState = comparisonBetweenCurrentDSPackageAndCorrespondingCommit.diffTreeComparisonResult.conflicts.length === 0;
 
     if (canPullWithoutCreatingMergeState) {
       // TODO RadStr: Rename ... and update based on the conflicts resolution, like we do not want to update when there is conflict
       await git.checkout(gitLastCommitHash);
       await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(gitRootDirectory, gitInitialDirectoryParent, gitProvider, filesystemMergeTo);
-      await resourceModel.updateLastCommitHash(iri, gitLastCommitHash, "pull");
+      await resourceModelForDS.updateLastCommitHash(iri, gitLastCommitHash, "pull");
 
       return {
         createdMergeState: false,

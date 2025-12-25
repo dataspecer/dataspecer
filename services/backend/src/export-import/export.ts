@@ -1,5 +1,9 @@
-import { AvailableFilesystems, GitIgnore, resourceTypeToTypeDirectoryMapping } from "@dataspecer/git";
+import { AvailableFilesystems, GitIgnore, MergeStateCause, resourceTypeToTypeDirectoryMapping } from "@dataspecer/git";
 import { AvailableExports, AllowedExportResults } from "./export-actions.ts";
+import { BaseResource, LoadedPackage } from "../models/resource-model.ts";
+import { LocalStoreModelGetter } from "../models/local-store-model.ts";
+import { ResourceModelForImport } from "./import.ts";
+import { ResourceChangeType } from "../models/resource-change-observer.ts";
 
 
 /**
@@ -18,6 +22,7 @@ export interface PackageExporterInterface {
     importFilesystem: AvailableFilesystems,
     exportType: AvailableExports,
     exportFormat: string,
+    resourceModel: ResourceModelForImportExport | null,
     gitIgnore: GitIgnore | null,
   ): Promise<AllowedExportResults>;
 
@@ -28,4 +33,34 @@ const typeExportArtificialDirectories = Object.values(resourceTypeToTypeDirector
 
 export function isArtificialExportDirectory(directoryName: string): boolean {
   return typeExportArtificialDirectories.includes(directoryName);
+}
+
+
+export interface ResourceModelForExport {
+  readonly storeModel: LocalStoreModelGetter;
+
+  getPackage(iri: string, deep?: boolean): Promise<LoadedPackage | null>;
+  getResource(iri: string): Promise<BaseResource | null>;
+
+  updateResourceMetadata(iri: string, userMetadata: {}, mergeStateUUIDsToIgnoreInUpdating?: string[] | undefined): Promise<void>;
+  updateModificationTime(
+    iri: string, updatedModel: string | null, updateReason: ResourceChangeType,
+    shouldModifyHasUncommittedChanges: boolean, shouldNotifyListeners: boolean,
+    mergeStateUUIDsToIgnoreInUpdating?: string[]
+  ): Promise<void>
+}
+
+export interface ResourceModelForImportExport extends ResourceModelForImport, ResourceModelForExport {
+  // EMPTY
+}
+
+export interface ResourceModelForFilesystemRepresentation extends ResourceModelForImportExport {
+  deleteModelStore(iri: string, storeName?: string, mergeStateUUIDsToIgnoreInUpdating?: string[] | undefined): Promise<void>;
+}
+
+/**
+ * TODO RadStr: Can't think of a better name now.
+ */
+export interface ResourceModelTODOBetterName extends ResourceModelForFilesystemRepresentation {
+  updateLastCommitHash(iri: string, lastCommitHash: string, updateCause: MergeStateCause): Promise<void>
 }

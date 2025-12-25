@@ -1,8 +1,9 @@
 import { AvailableFilesystems, convertDatastoreContentBasedOnFormat, getDatastoreInfoOfGivenDatastoreType, GitProvider, isDatastoreForMetadata, ExportMetadataType, ComparisonData, GitIgnore, dsPathJoin } from "@dataspecer/git";
-import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, DatastoreInfo, FilesystemAbstractionBase, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode } from "@dataspecer/git";
+import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, DatastoreInfo, FilesystemAbstractionBase, FilesystemAbstraction, removeDatastoreFromNode } from "@dataspecer/git";
 
 import fs from "fs";
 import { isArtificialExportDirectory } from "../../export.ts";
+import { FileSystemAbstractionFactoryMethod } from "../backend-filesystem-abstraction-factory.ts";
 
 
 export class ClassicFilesystem extends FilesystemAbstractionBase {
@@ -15,7 +16,10 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
   /////////////////////////////////////
   // Factory method
   /////////////////////////////////////
-  public static createFilesystemAbstraction: FileSystemAbstractionFactoryMethod = async (roots: FilesystemNodeLocation[], gitIgnore: GitIgnore | null): Promise<ClassicFilesystem> => {
+  public static createFilesystemAbstraction: FileSystemAbstractionFactoryMethod = async (
+    roots: FilesystemNodeLocation[],
+    gitIgnore: GitIgnore | null,
+  ): Promise<ClassicFilesystem> => {
     if (gitIgnore === null) {
       throw new Error("The filesystem abstractions needs to have git provider.");
     }

@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { AvailableFilesystems, FilesystemNodeLocation } from "@dataspecer/git";
 import { FilesystemFactory } from "../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
+import { resourceModel } from "../main.ts";
 
 
 /**
@@ -20,7 +21,7 @@ export const getDataspecerTree = asyncHandler(async (request: express.Request, r
     irisTreePath: "",
     projectIrisTreePath: "",
   };
-  const dsFilesystem = await FilesystemFactory.createFileSystem([rootLocation], AvailableFilesystems.DS_Filesystem, null);
+  const dsFilesystem = await FilesystemFactory.createFileSystem([rootLocation], AvailableFilesystems.DS_Filesystem, null, resourceModel);
   // Either do this or maybe just sending the root is enough probably
   const globalFilesystemMapping = dsFilesystem.getGlobalFilesystemMapForProjectIris();
   response.json(globalFilesystemMapping);

@@ -217,7 +217,6 @@ export class MergeStateModel implements ResourceChangeListener {
     } = diffTreeComparisonResult;
 
     const editable: EditableType = convertMergeStateCauseToEditable(mergeStateCause);
-
     const mergeStateInput = {
       commitMessage,
       lastCommonCommitHash: commonCommitHash,
@@ -811,6 +810,7 @@ export class MergeStateModel implements ResourceChangeListener {
         gitProvider: gitProviderForMergeFrom,
         lastCommitHash: prismaMergeState.lastCommitHashMergeFrom,
         branch: prismaMergeState.branchMergeFrom,
+        resourceModel: gitForMergeFrom === null ? this.resourceModel : null,     // If Git === null then it is DS filesystem
       };
 
 
@@ -825,6 +825,7 @@ export class MergeStateModel implements ResourceChangeListener {
         gitProvider: gitProviderForMergeTo,
         lastCommitHash: prismaMergeState.lastCommitHashMergeTo,
         branch: prismaMergeState.branchMergeTo,
+        resourceModel: gitForMergeTo === null ? this.resourceModel : null,      // If Git === null then it is DS filesystem
       };
 
       const previousMergeState = await this.getMergeStateFromUUID(prismaMergeState.uuid, true, false, false);

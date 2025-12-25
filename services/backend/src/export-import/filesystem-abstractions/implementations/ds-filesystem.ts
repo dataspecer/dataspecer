@@ -1,13 +1,18 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import { v4 as uuidv4 } from 'uuid';
-import { FilesystemAbstractionBase, ComparisonData, DatastoreInfo, DirectoryNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaDatastoreInfo, FilesystemAbstraction, FileSystemAbstractionFactoryMethod, removeDatastoreFromNode, isDatastoreForMetadata, getDatastoreInfoOfGivenDatastoreType, AvailableFilesystems, convertDatastoreContentBasedOnFormat, ExportMetadataType, GitIgnore } from "@dataspecer/git";
-import { ResourceModel } from "../../../models/resource-model.ts";
+import {
+  FilesystemAbstractionBase, ComparisonData, DatastoreInfo, DirectoryNode, FilesystemMappingType, FilesystemNode,
+  FilesystemNodeLocation, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaDatastoreInfo, FilesystemAbstraction,
+  removeDatastoreFromNode, isDatastoreForMetadata, getDatastoreInfoOfGivenDatastoreType, AvailableFilesystems, convertDatastoreContentBasedOnFormat,
+  ExportMetadataType, GitIgnore
+} from "@dataspecer/git";
 import { deleteBlob, deleteResource } from "../../../routes/resource.ts";
 import { BaseResource } from "@dataspecer/core-v2/project";
 import { currentVersion } from "../../../tools/migrations/index.ts";
 import configuration from "../../../configuration.ts";
-import { resourceModel as mainResourceModel } from "../../../main.ts";
 import { ResourceChangeType } from "../../../models/resource-change-observer.ts";
+import { ResourceModelForFilesystemRepresentation } from "../../export.ts";
+import { FileSystemAbstractionFactoryMethod } from "../backend-filesystem-abstraction-factory.ts";
 
 // Note that DS always works with jsons as formats for datastores, it is too much work to make to make it work for everything.
 // Since we would need to change every component (including cme) to support multiple formats.
@@ -17,15 +22,24 @@ export class DSFilesystem extends FilesystemAbstractionBase {
   /////////////////////////////////////
   // Properties
   /////////////////////////////////////
-  private resourceModel: ResourceModel;
+  private resourceModel: ResourceModelForFilesystemRepresentation;
 
 
   /////////////////////////////////////
   // Factory method
   /////////////////////////////////////
-  public static createFilesystemAbstraction: FileSystemAbstractionFactoryMethod = async (roots: FilesystemNodeLocation[], gitIgnore: GitIgnore | null): Promise<DSFilesystem> => {
+  public static createFilesystemAbstraction: FileSystemAbstractionFactoryMethod = async (
+    roots: FilesystemNodeLocation[],
+    gitIgnore: GitIgnore | null,
+    resourceModel: ResourceModelForFilesystemRepresentation | null,
+  ): Promise<DSFilesystem> => {
+    if (resourceModel === null) {
+      // Alternatively we could allow the field in the class to be null and crash when performing the operation.
+      throw new Error("Expected the resourceModel to be not null. The DSFilesystem needs it to perform certain operations.");
+    }
+
     // Note that we ignore the git provider
-    const createdFilesystem = new DSFilesystem(mainResourceModel);
+    const createdFilesystem = new DSFilesystem(resourceModel);
     await createdFilesystem.initializeFilesystem(roots);
     return createdFilesystem;
   };
@@ -34,7 +48,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
   /////////////////////////////////////
   // Constructor
   /////////////////////////////////////
-  private constructor(resourceModel: ResourceModel) {
+  private constructor(resourceModel: ResourceModelForFilesystemRepresentation) {
     super();
     this.resourceModel = resourceModel;
   }
@@ -49,7 +63,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
   }
 
   public static async getDatastoreContentForPath(
-    givenResourceModel: ResourceModel,
+    givenResourceModel: ResourceModelForFilesystemRepresentation,
     fullPath: string,
     type: string,
     datastoreFormat: string | null,
@@ -73,7 +87,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
 
   public static async setDatastoreContentForPath(
     datastoreParentIri: string,
-    givenResourceModel: ResourceModel,
+    givenResourceModel: ResourceModelForFilesystemRepresentation,
     fullPath: string,
     datastoreFormat: string | null,
     type: string,
@@ -98,7 +112,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
   }
 
   public static async removeDatastoreContentForPath(
-    givenResourceModel: ResourceModel,
+    givenResourceModel: ResourceModelForFilesystemRepresentation,
     parentFilesystemNodeIri: string,
     type: string,
     mergeStateUUIDsToIgnoreInUpdating: string[],

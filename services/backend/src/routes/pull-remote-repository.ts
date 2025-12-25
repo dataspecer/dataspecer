@@ -9,6 +9,7 @@ import { AllowedPrefixes, createSimpleGitUsingPredefinedGitRoot, getLastCommitHa
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../configuration.ts";
 import { GitProviderFactory } from "@dataspecer/git-node/git-providers";
+import { ResourceModelTODOBetterName } from "../export-import/export.ts";
 
 
 
@@ -30,7 +31,8 @@ export const pullRemoteRepository = asyncHandler(async (request: express.Request
   }
 
   const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(resource.linkedGitRepositoryURL, httpFetch, configuration);
-  const createdMergeState = await updateDSRepositoryByPullingGit(query.iri, gitProvider, resource.branch, resource.linkedGitRepositoryURL, MANUAL_CLONE_PATH_PREFIX, resource.lastCommitHash);
+  const createdMergeState = await updateDSRepositoryByPullingGit(
+    query.iri, gitProvider, resource.branch, resource.linkedGitRepositoryURL, MANUAL_CLONE_PATH_PREFIX, resource.lastCommitHash, resourceModel);
   if (createdMergeState) {
     response.status(409).json("Created merge state");   // 409 is error code for conflict
     return;
@@ -41,6 +43,8 @@ export const pullRemoteRepository = asyncHandler(async (request: express.Request
   }
 });
 
+
+// TODO RadStr: Here also ideally reduce the number of parameters. But it is not that bad, it can stay if time issues or something.
 /**
  * @param depth is the number of commits to clone. In case of webhooks this number is given in the webhook payload. For normal pull we have to clone whole history.
  *
@@ -53,6 +57,7 @@ export const updateDSRepositoryByPullingGit = async (
   cloneURL: string,
   cloneDirectoryNamePrefix: AllowedPrefixes,
   dsLastCommitHash: string,
+  resourceModelForDS: ResourceModelTODOBetterName,
   depth?: number
 ): Promise<boolean> => {
   const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGitUsingPredefinedGitRoot(iri, cloneDirectoryNamePrefix, true);
@@ -65,7 +70,7 @@ export const updateDSRepositoryByPullingGit = async (
     const commonCommit = await getCommonCommitInHistory(git, dsLastCommitHash, gitLastCommitHash);
     storeResult = await saveChangesInDirectoryToBackendFinalVersion(
       cloneURL, git, gitInitialDirectoryParent, iri, gitProvider,
-      dsLastCommitHash, gitLastCommitHash, commonCommit, branch, "pull");    // TODO RadStr: Not sure about setting the metadata cache (+ we need it always in the call, so the true should be actaully set inside the called method, and the argument should not be here at all)
+      dsLastCommitHash, gitLastCommitHash, commonCommit, branch, "pull", resourceModelForDS);    // TODO RadStr: Not sure about setting the metadata cache (+ we need it always in the call, so the true should be actaully set inside the called method, and the argument should not be here at all)
   }
   catch (cloneError) {
     throw cloneError;

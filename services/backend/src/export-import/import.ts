@@ -1,9 +1,9 @@
 import JSZip from "jszip";
-import { ResourceModel } from "../models/resource-model.ts";
 import { isArtificialExportDirectory } from "./export.ts";
 import { v4 as uuidv4 } from "uuid";
 import { PACKAGE_ROOT } from "@dataspecer/git";
 import { replaceIrisRecursively } from "../utils/iri-replace-util.ts";
+import { ModelStore } from "../models/local-store-model.ts";
 
 
 const FILE_EXTENSION_REGEX = /^\.([-0-9a-zA-Z]+)\.json$/;
@@ -16,7 +16,7 @@ type ImportMapping = {
 };
 
 export class PackageImporter {
-  private readonly resourceModel: ResourceModel;
+  private readonly resourceModel: ResourceModelForImport;
   private zip!: JSZip;
   private rootToWrite = PACKAGE_ROOT;
   private inputPathsToCanonicalMapping!: Record<string, string>;
@@ -24,7 +24,7 @@ export class PackageImporter {
   private shouldGenerateNewIris!: boolean;
   private mapToNewIds!: Record<string, string>;
 
-  constructor(resourceModel: ResourceModel) {
+  constructor(resourceModel: ResourceModelForImport) {
     this.resourceModel = resourceModel;
   }
 
@@ -293,4 +293,28 @@ export class PackageImporter {
 
     return thisPackageIri;
   }
+}
+
+export interface ResourceModelForImport {
+  createPackage(
+    parentIri: string | null,
+    iri: string,
+    userMetadata: {},
+    projectIri?: string | undefined
+  ): Promise<void>;
+
+  createResource(
+    parentIri: string | null,
+    iri: string,
+    type: string,
+    userMetadata: {},
+    projectIri?: string | undefined,
+    mergeStateUUIDsToIgnoreInUpdating?: string[] | undefined
+  ): Promise<void>;
+
+  getOrCreateResourceModelStore(
+    iri: string,
+    storeName?: string,
+    mergeStateUUIDsToIgnoreInUpdating?: string[] | undefined
+  ): Promise<ModelStore>;
 }

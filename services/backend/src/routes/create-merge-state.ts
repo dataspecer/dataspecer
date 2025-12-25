@@ -8,6 +8,7 @@ import { getCommonCommitInHistory, gitCloneBasic } from "@dataspecer/git-node/si
 import { SimpleGit } from "simple-git";
 import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
 import { createSimpleGitUsingPredefinedGitRoot, MERGE_CONFLICTS_PRIVATE, removePathRecursively } from "@dataspecer/git-node";
+import { ResourceModelForFilesystemRepresentation } from "../export-import/export.ts";
 
 
 export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -32,8 +33,10 @@ export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (requ
 
     const { createdMergeStateId, hasConflicts } = await createMergeStateBetweenDSPackages(
       git, "",
-      mergeFromIri, mergeFromResource.lastCommitHash, mergeFromResource.branch,
-      mergeToIri, mergeToResource.lastCommitHash, mergeToResource.branch, mergeFromResource.linkedGitRepositoryURL);
+      mergeFromIri, mergeFromResource.lastCommitHash, mergeFromResource.branch, resourceModel,
+      mergeToIri, mergeToResource.lastCommitHash, mergeToResource.branch, resourceModel,
+      mergeFromResource.linkedGitRepositoryURL
+    );
 
     if (!hasConflicts) {
       response.status(200);
@@ -66,12 +69,17 @@ export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (requ
 export async function createMergeStateBetweenDSPackages(
   git: SimpleGit,
   commitMessage: string,
+  // Merge from values, TODO RadStr: possible refactoring in future to pass as a object.
   mergeFromRootIri: string,
   mergeFromLastCommitHash: string,
   mergeFromBranch: string,
+  mergeFromResourceModel: ResourceModelForFilesystemRepresentation,
+  // Merge to values
   mergeToRootIri: string,
   mergeToLastCommitHash: string,
   mergeToBranch: string,
+  mergeToResourceModel: ResourceModelForFilesystemRepresentation,
+
   remoteRepositoryUrl: string,
 ): Promise<{ createdMergeStateId: string, hasConflicts: boolean }> {
   const mergeFromForComparison: MergeEndpointForComparison = {
@@ -79,12 +87,14 @@ export async function createMergeStateBetweenDSPackages(
     filesystemType: AvailableFilesystems.DS_Filesystem,
     fullPathToRootParent: "",
     gitProvider: null,
+    resourceModel: mergeFromResourceModel,
   };
   const mergeToForComparison: MergeEndpointForComparison = {
     rootIri: mergeToRootIri,
     filesystemType: AvailableFilesystems.DS_Filesystem,
     fullPathToRootParent: "",
     gitProvider: null,
+    resourceModel: mergeToResourceModel,
   };
 
   const {
@@ -125,6 +135,7 @@ type MergeEndpointBase = {
   rootIri: string,
   filesystemType: AvailableFilesystems,
   fullPathToRootParent: string,
+  resourceModel: ResourceModelForFilesystemRepresentation | null,
 }
 
 export type MergeEndpointForComparison = {

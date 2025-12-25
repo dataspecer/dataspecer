@@ -10,23 +10,34 @@ import {
 } from "@dataspecer/git";
 import { FilesystemFactory } from "./backend-filesystem-abstraction-factory.ts";
 import { MergeEndpointForComparison } from "../../routes/create-merge-state.ts";
+import { ResourceModelForFilesystemRepresentation } from "../export.ts";
 
 export async function compareGitAndDSFilesystems(
   gitProvider: GitProvider,
   rootIri: string,
   gitInitialDirectoryParent: string,
   mergeStateCause: Omit<MergeStateCause, "merge">,
+  resourceModelForDSFilesystem: ResourceModelForFilesystemRepresentation,
 ) {
   let mergeFromFilesystemType: AvailableFilesystems;
   let mergeToFilesystemType: AvailableFilesystems;
+  let mergeFromResourceModel: ResourceModelForFilesystemRepresentation | null;
+  let mergeToResourceModel: ResourceModelForFilesystemRepresentation | null;
+
   const editable = convertMergeStateCauseToEditable(mergeStateCause as MergeStateCause);
   if (editable == "mergeFrom") {
     mergeFromFilesystemType = AvailableFilesystems.DS_Filesystem;
+    mergeFromResourceModel = resourceModelForDSFilesystem;
+
     mergeToFilesystemType = AvailableFilesystems.ClassicFilesystem;
+    mergeToResourceModel = null;
   }
   else {
     mergeFromFilesystemType = AvailableFilesystems.ClassicFilesystem;
+    mergeFromResourceModel = null;
+
     mergeToFilesystemType = AvailableFilesystems.DS_Filesystem;
+    mergeToResourceModel = resourceModelForDSFilesystem;
   }
 
   const mergeFrom: MergeEndpointForComparison = {
@@ -34,6 +45,7 @@ export async function compareGitAndDSFilesystems(
     rootIri,
     filesystemType: mergeFromFilesystemType,
     fullPathToRootParent: gitInitialDirectoryParent,
+    resourceModel: mergeFromResourceModel,
   };
 
   const mergeTo: MergeEndpointForComparison = {
@@ -41,6 +53,7 @@ export async function compareGitAndDSFilesystems(
     rootIri,
     filesystemType: mergeToFilesystemType,
     fullPathToRootParent: gitInitialDirectoryParent,
+    resourceModel: mergeToResourceModel,
   };
 
   const generalResult = await compareBackendFilesystems(mergeFrom, mergeTo);
@@ -68,9 +81,9 @@ export async function compareBackendFilesystems(
   };
 
   const mergeFromGitIgnore = mergeFrom.gitProvider === null ? null : new GitIgnoreBase(mergeFrom.gitProvider);
-  const filesystemMergeFrom = await FilesystemFactory.createFileSystem([mergeFromRootLocation], mergeFrom.filesystemType, mergeFromGitIgnore);
+  const filesystemMergeFrom = await FilesystemFactory.createFileSystem([mergeFromRootLocation], mergeFrom.filesystemType, mergeFromGitIgnore, mergeFrom.resourceModel);
   const mergeToGitIgnore = mergeTo.gitProvider === null ? null : new GitIgnoreBase(mergeTo.gitProvider);
-  const filesystemMergeTo = await FilesystemFactory.createFileSystem([mergeToRootLocation], mergeTo.filesystemType, mergeToGitIgnore);
+  const filesystemMergeTo = await FilesystemFactory.createFileSystem([mergeToRootLocation], mergeTo.filesystemType, mergeToGitIgnore, mergeTo.resourceModel);
 
   const fakeRootMergeFrom = filesystemMergeFrom.getRoot();
   const fakeRootMergeTo = filesystemMergeTo.getRoot();

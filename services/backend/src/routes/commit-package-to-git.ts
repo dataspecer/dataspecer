@@ -1,3 +1,11 @@
+// TODO RadStr: After long thinking the commit methods (both merge and classic commit) should be inside a class.
+//              That would solve the issue of passing in ton of parameters. Since some of the values are set once and unchanged for the rest of the run.
+//              The good news is that this seems to be the most (and probably only) problematic part of code with lot of parameters, which needs this form of rewrite.
+//              Others are relatively fine.
+// TODO RadStr: Another TODO just to be sure we will not forget is to fix the resource model passes in this file, which were added in this commit (the commit which introduces this new Resource Model Api)
+//              And also fix the TODO name for the resource model interface
+
+
 import { z } from "zod";
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
@@ -23,6 +31,7 @@ import {
 } from "@dataspecer/git-node";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../configuration.ts";
+import { ResourceModelForFilesystemRepresentation } from "../export-import/export.ts";
 
 
 export type RepositoryIdentificationInfo = {
@@ -62,6 +71,8 @@ type CommitBranchAndHashInfoForMerge = {
   mergeToBranch: string | null;
   mergeToCommitHash: string;
   mergeFromData: MergeFromDataType | null;
+  mergeFromResourceModel: ResourceModelForFilesystemRepresentation;
+  mergeToResourceModel: ResourceModelForFilesystemRepresentation;
 }
 
 
@@ -70,6 +81,8 @@ function convertBranchAndHashToMergeInfo(input: CommitBranchAndHashInfo): Commit
     mergeToBranch: input.localBranch,
     mergeToCommitHash: input.localLastCommitHash,
     mergeFromData: input.mergeFromData === null ? null : {...input.mergeFromData},
+    mergeFromResourceModel: null as any,
+    mergeToResourceModel: null as any,
   };
 }
 
@@ -236,7 +249,8 @@ export const commitPackageToGitUsingAuthSession = async (
   shouldAlwaysCreateMergeState: boolean,
   shouldAppendAfterDefaultMergeCommitMessage: boolean | null,
 ): Promise<CommitConflictInfo> => {
-  const commitInfo: GitCommitToCreateInfoExplicitWithCredentials = prepareCommitDataForCommit(request, response, remoteRepositoryURL, gitCommitInfoBasic, shouldAppendAfterDefaultMergeCommitMessage);
+  const commitInfo: GitCommitToCreateInfoExplicitWithCredentials = prepareCommitDataForCommit(
+    request, response, remoteRepositoryURL, gitCommitInfoBasic, shouldAppendAfterDefaultMergeCommitMessage);
   const commitConflictInfo = await commitPackageToGit(
     iri, remoteRepositoryURL, branchAndLastCommit, repositoryIdentificationInfo,
     commitInfo, shouldAlwaysCreateMergeState);
@@ -287,7 +301,7 @@ export const commitPackageToGit = async (
   if (branchAndLastCommit.mergeFromData === null) {
     return await commitClassicToGit(
       iri, remoteRepositoryURL, branchAndLastCommit.localBranch, branchAndLastCommit.localLastCommitHash,
-      repositoryIdentificationInfo, commitInfo, shouldAlwaysCreateMergeState);
+      repositoryIdentificationInfo, commitInfo, resourceModel, shouldAlwaysCreateMergeState);
   }
   else {
     const mergeInfo = convertBranchAndHashToMergeInfo(branchAndLastCommit);
@@ -343,6 +357,7 @@ async function commitDSMergeToGit(
         rootIri: mergeFromIri,
         filesystemType: AvailableFilesystems.DS_Filesystem,
         fullPathToRootParent: gitInitialDirectoryParent,
+        resourceModel
       };
 
       const mergeTo: MergeEndpointForComparison = {
@@ -350,6 +365,7 @@ async function commitDSMergeToGit(
         rootIri: iri,
         filesystemType: AvailableFilesystems.DS_Filesystem,
         fullPathToRootParent: gitInitialDirectoryParent,
+        resourceModel
       };
 
       const {
@@ -424,6 +440,7 @@ async function commitClassicToGit(
   localLastCommitHash: string,
   repositoryIdentificationInfo: RepositoryIdentificationInfo,
   commitInfo: GitCommitToCreateInfoExplicitWithCredentials,
+  resourceModelForDS: ResourceModelForFilesystemRepresentation,
   shouldAlwaysCreateMergeState: boolean,
 ): Promise<CommitConflictInfo> {
   const { gitCredentials, gitProvider } = commitInfo;
@@ -460,7 +477,7 @@ async function commitClassicToGit(
             rootMergeTo,
             pathToRootMetaMergeTo,
             filesystemMergeTo,
-          } = await compareGitAndDSFilesystems(gitProvider, iri, gitInitialDirectoryParent, "push");
+          } = await compareGitAndDSFilesystems(gitProvider, iri, gitInitialDirectoryParent, "push", resourceModelForDS);
 
           const commonCommitHash = await getCommonCommitInHistory(git, localLastCommitHash, remoteRepositoryLastCommitHash);
           const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS("push", localLastCommitHash, remoteRepositoryLastCommitHash);
@@ -683,7 +700,10 @@ async function fillGitDirectoryWithExport(
     removeEverythingExcept(gitInitialDirectory, exceptionsForDirectoryRemoval);
     const exporter = new PackageExporterByResourceType();
     // const exporter = new PackageExporterNew();     // TODO RadStr: Debug
-    await exporter.doExportFromIRI(iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem, exportFormat ?? "json", null);
+    await exporter.doExportFromIRI(
+      iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem,
+      exportFormat ?? "json", resourceModel, null
+    );
     const { givenRepositoryName, givenRepositoryUserName } = repositoryIdentificationInfo;
 
     const readmeData: ReadmeTemplateData = {

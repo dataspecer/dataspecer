@@ -2,7 +2,7 @@ import { DirectoryNode, FilesystemNodeLocation, FilesystemAbstraction, Available
 import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
 import { AllowedExportResults, AvailableExports, ExportActionForFilesystem, ExportActionForZip, ExportActions } from "./export-actions.ts";
 import { FilesystemFactory } from "./filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
-import { PackageExporterInterface } from "./export.ts";
+import { PackageExporterInterface, ResourceModelForFilesystemRepresentation } from "./export.ts";
 
 export abstract class PackageExporterBase implements PackageExporterInterface {
   protected exportActions!: ExportActions<AllowedExportResults>;
@@ -37,6 +37,7 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
     importFilesystem: AvailableFilesystems,
     exportType: AvailableExports,
     exportFormat: string,
+    resourceModel: ResourceModelForFilesystemRepresentation | null,
     gitIgnore: GitIgnore | null,
   ): Promise<AllowedExportResults> {
     const filesystemLocationToIri: FilesystemNodeLocation = {
@@ -45,7 +46,7 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
       irisTreePath: "",
       projectIrisTreePath: "",
     };
-    const filesystem = await FilesystemFactory.createFileSystem([filesystemLocationToIri], importFilesystem, gitIgnore);
+    const filesystem = await FilesystemFactory.createFileSystem([filesystemLocationToIri], importFilesystem, gitIgnore, resourceModel);
     const fakeRoot = filesystem.getRoot();
 
     const root = Object.values(fakeRoot.content)[0] as DirectoryNode;

@@ -8,6 +8,7 @@ import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { CoreResource } from "@dataspecer/core/core/core-resource";
 import { CommitReferenceType, createDatastoreWithReplacedIris, defaultBranchForPackageInDatabase, defaultEmptyGitUrlForDatabase, MergeStateCause } from "@dataspecer/git";
 import { ResourceChangeListener, ResourceChangeObserverBase, ResourceChangeType } from "./resource-change-observer.ts";
+import { ResourceModelTODOBetterName } from "../export-import/export.ts";
 
 /**
  * Base information every resource has or should have.
@@ -57,10 +58,14 @@ export interface Package extends BaseResource {
     subResources?: BaseResource[];
 }
 
+export interface LoadedPackage extends BaseResource {
+    subResources: BaseResource[];
+}
+
 /**
  * Resource model manages resource in local database that is managed by Prisma.
  */
-export class ResourceModel {
+export class ResourceModel implements ResourceModelTODOBetterName {
     readonly storeModel: LocalStoreModel;
     private readonly prismaClient: PrismaClient;
     private resourceChangeObserver: ResourceChangeObserverBase;
@@ -246,7 +251,7 @@ export class ResourceModel {
         metadata = {
             ...metadata,
             ...userMetadata
-        }
+        };
         await this.prismaClient.resource.update({
             where: {iri},
             data: {
@@ -498,7 +503,7 @@ export class ResourceModel {
     /**
      * Returns data about the package and its sub-resources.
      */
-    async getPackage(iri: string, deep: boolean = false) {
+    async getPackage(iri: string, deep: boolean = false): Promise<LoadedPackage | null> {
         const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri, representationType: LOCAL_PACKAGE}});
         if (prismaResource === null) {
             return null;

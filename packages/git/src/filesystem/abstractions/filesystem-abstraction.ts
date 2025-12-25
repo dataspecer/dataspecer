@@ -243,14 +243,6 @@ export class GitIgnoreBase implements GitIgnore {
   }
 }
 
-/**
- * Creates new filesystem abstraction from given {@link roots}. The underlying filesystem of course depends on the implementation.
- * The actual implementations of this interface should be more restrictive, when it comes to the returned {@link FilesystemAbstraction} types -
- *  it should be the actual created type.
- * @returns The created instance of type {@link FilesystemAbstraction}.
- */
-export type FileSystemAbstractionFactoryMethod = (roots: FilesystemNodeLocation[], gitIgnore: GitIgnore | null) => Promise<FilesystemAbstraction>;
-
 
 /**
  * @returns Returns newly created root, which can and should be used as fake root.

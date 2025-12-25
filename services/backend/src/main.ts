@@ -4,7 +4,7 @@ import express from "express";
 import multer from "multer";
 import configuration from "./configuration.ts";
 import { Migrate } from "./migrations/migrate.ts";
-import { LocalStoreModel } from "./models/local-store-model.ts";
+import { LocalStoreModelBase } from "./models/local-store-model.ts";
 import { ResourceModel } from "./models/resource-model.ts";
 import { getDefaultConfiguration } from "./routes/configuration.ts";
 import { getLightweightOwlFromSimplified } from "./routes/experimental.ts";
@@ -74,7 +74,7 @@ for (const [gitProviderName, gitConfiguration] of Object.entries(configuration?.
 }
 // Create application models
 
-export const storeModel = new LocalStoreModel("./database/stores");
+export const storeModel = new LocalStoreModelBase("./database/stores");
 export const prismaClient = new PrismaClient();
 export const resourceModel = new ResourceModel(storeModel, prismaClient);
 export const mergeStateModel = new MergeStateModel(prismaClient, resourceModel);
