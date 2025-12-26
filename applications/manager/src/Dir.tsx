@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { ArrowLeft, ArrowLeftRight, ArrowRight, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, Eraser, Eye, EyeIcon, FileText, Filter, FilterX, Folder, FolderDown, GitBranchPlus, GitCommit, GitGraph, GitMerge, GitPullRequestIcon, Import, Link, Menu, MoveLeftIcon, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, ShieldQuestion, Sparkles, TimerResetIcon, Trash2, WandSparkles } from "lucide-react";
+import { ArrowLeft, ArrowLeftRight, ArrowRight, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, Eraser, Eye, EyeIcon, FileText, Filter, FilterX, Folder, FolderDown, GitBranchPlus, GitCommit, GitGraph, GitMerge, GitPullRequestIcon, Import, Link, Menu, MoveLeftIcon, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, ShieldQuestion, Sparkles, TagIcon, TimerResetIcon, Trash2, WandSparkles } from "lucide-react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getValidTime } from "./components/time";
@@ -125,8 +125,13 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, mergeActo
             !isGitUrlSet(resource.linkedGitRepositoryURL) ?
               null :
               <ResourceTooltip resource={resource}>
-                <div className="pl-4 pr-2">
+                <div className="flex pl-4 pr-2 w-16">
                   <a href={resource.linkedGitRepositoryURL} className={(resource.activeMergeStateCount !== 0 || resource.hasUncommittedChanges) ? "text-red-400" : "text-green-400" } >GIT</a>
+                  {
+                    resource.representsBranchHead ?
+                      null :
+                      <TagIcon className="w-4 h-4" />
+                  }
                 </div>
               </ResourceTooltip>
           }
