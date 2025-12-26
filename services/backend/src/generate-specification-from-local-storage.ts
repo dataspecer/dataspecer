@@ -643,7 +643,7 @@ async function generateArtifactsFromImported(imported: string[]) {
     fs.mkdirSync(dirname);
   }
   const zipData = await zip.save();
-  // fs.writeFileSync(`${dirname}/${filename}`, zipData);
+  fs.writeFileSync(`${dirname}/${filename}`, zipData);
 
   await extractZipBufferToDisk(zipData, dirname);
 
@@ -753,7 +753,7 @@ async function extractZipBufferToDisk(zipBuffer: Buffer, outputDir: string) {
     } else {
       const content = await zipEntry.async('nodebuffer');
       fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-      fs.writeFileSync(outputPath, content);
+      fs.writeFileSync(outputPath, content, "utf-8");
     }
   }
 }
