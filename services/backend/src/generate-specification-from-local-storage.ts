@@ -665,7 +665,7 @@ const namesToIgnoreInHomeDirectory: string[] = [
 /**
  * Fills the {@link zip} with the data starting from {@link fullPath} recursively. But the actual root directory for the writing to the zip is {@link writeToRelativePath}.
  */
-function createImportZipFromFilesystem(fullPath: string, writeToRelativePath: string, isHomePath: boolean, zip: ZipStreamDictionary) {
+async function createImportZipFromFilesystem(fullPath: string, writeToRelativePath: string, isHomePath: boolean, zip: ZipStreamDictionary) {
   if (fs.statSync(fullPath).isDirectory()) {
     const dir = fs.readdirSync(fullPath);
     for (const entry of dir) {
@@ -677,14 +677,14 @@ function createImportZipFromFilesystem(fullPath: string, writeToRelativePath: st
           continue;
         }
       }
-      createImportZipFromFilesystem(newFullpath, newWriteToRelativePath, false, zip);
+      await createImportZipFromFilesystem(newFullpath, newWriteToRelativePath, false, zip);
     }
   }
   else {
     const file = fs.readFileSync(fullPath);
     const stream = zip.writePath(writeToRelativePath);
-    stream.write(file.toString());
-    stream.close();
+    await stream.write(file.toString());
+    await stream.close();
   }
 }
 
@@ -702,7 +702,7 @@ async function generateSpecificationFromFileSystem() {
   const packageIri = "db2ad74f-ec45-4d46-84f8-24d36fbb4200";
   const zipDictionaryForFilesystemData = new ZipStreamDictionary();
   const homeDirectory = "../../..";
-  createImportZipFromFilesystem(homeDirectory, packageIri, true, zipDictionaryForFilesystemData);
+  await createImportZipFromFilesystem(homeDirectory, packageIri, true, zipDictionaryForFilesystemData);
   const zipDataFromFilesystem = await zipDictionaryForFilesystemData.save();
 
   // TODO RadStr: DEBUG - Just save the zip + the zip content
