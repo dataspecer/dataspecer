@@ -643,7 +643,7 @@ async function generateArtifactsFromImported(imported: string[]) {
     fs.mkdirSync(dirname);
   }
   const zipData = await zip.save();
-  fs.writeFileSync(`${dirname}/${filename}`, zipData);
+  // fs.writeFileSync(`${dirname}/${filename}`, zipData);
 
   await extractZipBufferToDisk(zipData, dirname);
 
