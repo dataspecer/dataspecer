@@ -628,13 +628,13 @@ async function generateArtifactsFromImported(imported: string[]) {
 
   const resource = await resourceModel.getPackage(importedIRI);
 
-  if (!resource) {
+  if (resource === null) {
     console.error("The resource is missing");
     throw new Error("The resource is missing");
   }
 
   const zip = new ZipStreamDictionary();
-  await generateArtifacts(importedIRI, zip);
+  await generateArtifacts(importedIRI, zip, "?iri=" + encodeURIComponent(importedIRI));
 
   const dirname = "test-generate-specification";
   // TODO RadStr: I am not sure why am I actually using the .length - 4
