@@ -121,15 +121,15 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, mergeActo
           <span className="truncate">
             {resource.iri}
           </span>
-          <ResourceTooltip resource={resource}>
-            <div className="pl-4 pr-2">
-              {
-                isGitUrlSet(resource.linkedGitRepositoryURL) ?
-                  <a href={resource.linkedGitRepositoryURL} className={(resource.activeMergeStateCount !== 0 || resource.hasUncommittedChanges) ? "text-red-400" : "text-green-400" } >GIT</a> :
-                  null
-              }
-            </div>
-          </ResourceTooltip>
+          {
+            !isGitUrlSet(resource.linkedGitRepositoryURL) ?
+              null :
+              <ResourceTooltip resource={resource}>
+                <div className="pl-4 pr-2">
+                  <a href={resource.linkedGitRepositoryURL} className={(resource.activeMergeStateCount !== 0 || resource.hasUncommittedChanges) ? "text-red-400" : "text-green-400" } >GIT</a>
+                </div>
+              </ResourceTooltip>
+          }
           {!isGitUrlSet(resource.linkedGitRepositoryURL) ?
             null :
             <>
@@ -294,7 +294,7 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, mergeActo
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(ModifyDocumentationTemplate, {iri})}><NotepadTextDashed className="mr-2 h-4 w-4" /> {t("modify-documentation-template")}</DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(AddImported, {id: iri})}><Import className="mr-2 h-4 w-4" /> {t("import specification from url")}</DropdownMenuItem>}
           <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/resources/export.zip?iri=" + encodeURIComponent(iri) + "&exportFormat=json"}><CloudDownload className="mr-2 h-4 w-4" /> {t("export") + " as json"}</a></DropdownMenuItem>
-          <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/resources/export.zip?iri=" + encodeURIComponent(iri) + "&exportFormat=yaml"}><CloudDownload className="mr-2 h-4 w-4" /> {t("export") + " as yaml"}</a></DropdownMenuItem>          
+          <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/resources/export.zip?iri=" + encodeURIComponent(iri) + "&exportFormat=yaml"}><CloudDownload className="mr-2 h-4 w-4" /> {t("export") + " as yaml"}</a></DropdownMenuItem>
           <DropdownMenuItem onClick={async () => {
             const result = await openModal(RenameResourceDialog, {inputLabel: resource.userMetadata?.label, inputDescription: resource.userMetadata?.description});
             if (result) {
