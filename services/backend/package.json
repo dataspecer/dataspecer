@@ -9,7 +9,8 @@
     "start": "node --enable-source-maps dist/main.js",
     "generate-specification": "node --enable-source-maps dist/generate-specification-from-local-storage.js",
     "update-database": "prisma migrate deploy",
-    "load-lov": "./load-lov.sh"
+    "load-lov": "./load-lov.sh",
+    "test": "vitest run"
   },
   "dependencies": {
     "@dataspecer/backend-utils": "*",
@@ -57,7 +58,7 @@
     "prisma": "^4.12.0",
     "typescript": "^5.8.3",
 
-
+    "vitest": "^3.0.9",
     "@types/psl": "1.1.3"
   }
 }

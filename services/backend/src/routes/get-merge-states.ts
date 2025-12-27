@@ -10,12 +10,8 @@ export const getMergeStates = asyncHandler(async (request: express.Request, resp
     iri: z.string().min(1),
     includeDiffData: z.string().min(1),
   });
-  const query = querySchema.parse(request.query);
-
-  const { iri, includeDiffData } = query;
-
+  const { iri, includeDiffData } = querySchema.parse(request.query);
   const mergeStates = await mergeStateModel.getMergeStates(iri, stringToBoolean(includeDiffData));
-
   response.json(mergeStates);
   return;
 });
