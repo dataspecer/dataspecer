@@ -10,6 +10,7 @@ import {
   updateSemanticModels,
 } from "./cme-semantic-model-state";
 import { createLogger } from "../../application";
+import { findByIdentifier } from "../utilities";
 
 const logger = createLogger(import.meta.url);
 
@@ -51,9 +52,8 @@ export function CmeSemanticModelProvider(
     removed: string[],
   ) => {
     setState(prev => {
-      const model = prev.state.models
-        .find(item => item.identifier === semanticModel.getId());
-      if (model === undefined) {
+      const model = findByIdentifier(semanticModel.getId(), prev.state.models);
+      if (model === null) {
         logger.error("Ignoring cme-profile-model update for an unknown model",
           { models: prev.state.models, model: semanticModel.getId() });
         return prev;

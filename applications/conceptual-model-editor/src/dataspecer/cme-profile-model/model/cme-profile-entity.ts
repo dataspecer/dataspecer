@@ -1,5 +1,8 @@
 import { EntityDsIdentifier, ModelDsIdentifier } from "../../entity-model";
 
+/**
+ * Base entity for all semantic profile entities.
+ */
 export interface CmeProfileEntity {
 
   type: string[];
@@ -7,7 +10,5 @@ export interface CmeProfileEntity {
   model: ModelDsIdentifier;
 
   identifier: EntityDsIdentifier;
-
-  readOnly: boolean;
 
 }

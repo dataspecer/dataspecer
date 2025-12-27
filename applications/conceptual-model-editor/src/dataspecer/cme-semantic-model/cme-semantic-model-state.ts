@@ -57,29 +57,25 @@ export function updateEntitiesInSemanticModel(
   model: CmeSemanticModel,
   entities: SemanticEntity[],
 ): CmeSemanticModelState {
-  const readOnly = isCmeSemanticModelReadOnly(model);
   // We start with nulls and only create an array when we need it.
   let classes = null;
   let generalizations = null;
   let relationships = null; ``
   for (const entity of entities) {
     if (isSemanticModelClass(entity)) {
-      const next = toCmeSemanticClass(
-        model.identifier, readOnly, entity);
+      const next = toCmeSemanticClass(model.identifier, entity);
       if (classes === null) {
         classes = [...state.classes];
       }
       updateOrAddEntity(classes, next);
     } else if (isSemanticModelGeneralization(entity)) {
-      const next = toCmeSemanticGeneralization(
-        model.identifier, readOnly, entity);
+      const next = toCmeSemanticGeneralization(model.identifier, entity);
       if (generalizations === null) {
         generalizations = [...state.generalizations];
       }
       updateOrAddEntity(generalizations, next);
     } else if (isSemanticModelRelationship(entity)) {
-      const next = toCmeSemanticRelationship(
-        model.identifier, readOnly, entity);
+      const next = toCmeSemanticRelationship(model.identifier, entity);
       if (relationships === null) {
         relationships = [...state.relationships];
       }

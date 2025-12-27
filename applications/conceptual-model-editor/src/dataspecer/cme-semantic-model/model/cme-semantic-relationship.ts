@@ -3,6 +3,9 @@ import { CmeSemanticEntity } from "./cme-semantic-entity";
 
 export interface CmeSemanticRelationship extends CmeSemanticEntity {
 
+  /**
+   * IRI can be absolute or relative to the model IRI.
+   */
   iri: string | null;
 
   name: LanguageString | null;

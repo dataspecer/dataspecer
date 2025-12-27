@@ -16,7 +16,6 @@ export function toCmeSemanticRelationshipAggregate(
       name: next.name,
       description: next.description,
       externalDocumentationUrl: next.externalDocumentationUrl,
-      readOnly: next.readOnly,
       domain: next.domain,
       domainCardinality: next.domainCardinality,
       range: next.range,
@@ -34,7 +33,6 @@ export function toCmeSemanticRelationshipAggregate(
       description: next.description ?? previous.description,
       externalDocumentationUrl:
         next.externalDocumentationUrl ?? previous.externalDocumentationUrl,
-      readOnly: next.readOnly || previous.readOnly,
       domain: next.domain ?? previous.domain,
       domainCardinality:
         next.domainCardinality ?? previous.domainCardinality,

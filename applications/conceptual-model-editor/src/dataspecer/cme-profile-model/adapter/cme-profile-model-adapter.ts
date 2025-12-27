@@ -12,7 +12,7 @@ export function toCmeProfileModel(
   return {
     identifier: value.getId(),
     name: getModelLabel(value),
-    modelType,
+    modelType: modelType,
     baseIri: getModelBaseIri(value),
   }
 }

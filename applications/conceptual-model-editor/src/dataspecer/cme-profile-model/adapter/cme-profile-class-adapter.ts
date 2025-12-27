@@ -4,7 +4,6 @@ import { CME_PROFILE_CLASS, CmeProfileClass } from "../model";
 
 export function toCmeProfileClass(
   model: ModelDsIdentifier,
-  readOnly: boolean,
   value: SemanticModelClassProfile,
 ): CmeProfileClass {
   return {
@@ -21,6 +20,5 @@ export function toCmeProfileClass(
     usageNoteSource: value.usageNoteFromProfiled,
     externalDocumentationUrl: value.externalDocumentationUrl ?? null,
     tags: value.tags,
-    readOnly,
   };
 }

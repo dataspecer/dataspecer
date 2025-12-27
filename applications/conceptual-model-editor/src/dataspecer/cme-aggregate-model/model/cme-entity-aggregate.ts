@@ -18,10 +18,8 @@ export interface CmeEntityAggregate {
   dependencies: EntityDsIdentifier[];
 
   /**
-   * When true the entity is read only and can not be modified.
+   * Multiple entities can share the same IRI.
    */
-  readOnly: boolean;
-
   iri: string | null;
 
 }

@@ -4,7 +4,6 @@ import { CME_PROFILE_GENERALIZATION, CmeProfileGeneralization } from "../model";
 
 export function toCmeProfileGeneralization(
   model: ModelDsIdentifier,
-  readOnly: boolean,
   value: SemanticModelGeneralizationProfile,
 ): CmeProfileGeneralization {
   return {
@@ -14,6 +13,5 @@ export function toCmeProfileGeneralization(
     iri: value.iri,
     childIdentifier: value.child,
     parentIdentifier: value.parent,
-    readOnly,
   }
 }
