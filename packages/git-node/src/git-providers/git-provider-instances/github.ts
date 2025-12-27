@@ -47,6 +47,12 @@ export class GitHubProvider extends GitProviderBase {
     // EMPTY - GitHub has only one domain
   }
 
+  getGitPagesURL(repositoryUrl: string): string {
+    const owner = this.extractPartOfRepositoryURL(repositoryUrl, "user-name");
+    const repositoryName = this.extractPartOfRepositoryURL(repositoryUrl, "repository-name");
+    return `https://${owner}.github.io/${repositoryName}`;
+  }
+
   async extractDataForWebhookProcessing(webhookPayload: any, getResourceForGitUrlAndBranch: GetResourceForGitUrlAndBranchType): Promise<WebhookRequestDataGitProviderIndependent | null> {
     // https://docs.github.com/en/webhooks/webhook-events-and-payloads#push
 

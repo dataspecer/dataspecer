@@ -115,6 +115,14 @@ export interface GitProvider {
   setDomainURL(newDomainURL: string): void;
 
   /**
+   * We will just call it GitHub pages in the documentation, since that is our current reference point.
+   * @param repositoryUrl takes this argument and returns the Git pages (GitHub pages in case of GitHub) associated with the repository.
+   * @returns In case of GitHub this returns the URL of the linked GitHub pages. Note that for custom URLs, this does not return the custom URL.
+   *  It however returns the url of the GitHub pages inside of the repository. The URL GitHub's then behaves as redirect to the custom one (at least in GitHub's case).
+   */
+  getGitPagesURL(repositoryUrl: string): string;
+
+  /**
    *
    */
   /**

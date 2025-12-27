@@ -23,6 +23,7 @@ export abstract class GitProviderBase implements GitProvider {
   abstract getGitProviderEnumValue(): GitProviderEnum;
   abstract getDomainURL(shouldPrefixWithHttps: boolean): string;
   abstract setDomainURL(newDomainURL: string): void;
+  abstract getGitPagesURL(repositoryUrl: string): string;
   abstract extractDataForWebhookProcessing(webhookPayload: any, getResourceForGitUrlAndBranch: GetResourceForGitUrlAndBranchType): Promise<WebhookRequestDataGitProviderIndependent | null>;
   abstract createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean, shouldEnablePublicationBranch: boolean): Promise<CreateRemoteRepositoryReturnType>;
   abstract removeRemoteRepository(authToken: string, repositoryUserName: string, repoName: string): Promise<FetchResponse>;

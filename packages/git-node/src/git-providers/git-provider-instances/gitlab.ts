@@ -40,6 +40,10 @@ export class GitLabProvider extends GitProviderBase {
     this.domainURL = newDomainURL;
   }
 
+  getGitPagesURL(repositoryUrl: string): string {
+    throw new Error("Method not implemented.");
+  }
+
   async extractDataForWebhookProcessing(webhookPayload: any, getResourceForGitUrlAndBranch: GetResourceForGitUrlAndBranchType): Promise<WebhookRequestDataGitProviderIndependent | null> {
     const repoName = webhookPayload.repository.name;
     // TODO: In future I will find it through the URL inside the prisma database instead
