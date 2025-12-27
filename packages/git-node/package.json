@@ -1,0 +1,31 @@
+{
+  "name": "@dataspecer/git-node",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w",
+    "prebuild": "rimraf lib",
+    "test": "vitest run"
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./simple-git-methods": "./lib/simple-git-methods/index.js",
+    "./git-providers": "./lib/git-providers/index.js"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1",
+    "typescript": "^5.8.3",
+    "vitest": "^3.0.9"
+  },
+  "dependencies": {
+    "@dataspecer/core": "*",
+    "@dataspecer/core-v2": "*",
+    "@dataspecer/git": "*",
+    "simple-git": "3.27.0",
+    "libsodium-wrappers-sumo": "0.7.15"
+  },
+  "peerDependencies": {
+
+  }
+}

@@ -68,6 +68,30 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
         return (await result.json()) as Package;
     }
 
+    async updatePackageRepresentsBranchHead(packageId: string, data: Pick<BaseResource, "representsBranchHead">): Promise<Package> {
+        const result = await this.httpFetch(this.getPackageUrlToUpdateIfRepresentsBranchHead(packageId), {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+        });
+
+        return (await result.json()) as Package;
+    }
+
+    async updatePackageProjectIriAndBranch(packageId: string, data: Partial<ResourceEditable>): Promise<Package> {
+        const result = await this.httpFetch(this.getPackageUrlToUpdateProjectIri(packageId), {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+        });
+
+        return (await result.json()) as Package;
+    }
+
     async deletePackage(packageId: string): Promise<void> {
         await this.httpFetch(this.getPackageUrl(packageId), {
             method: "DELETE",
@@ -222,6 +246,18 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
         });
     }
 
+    private getPackageUrlToUpdateProjectIri(packageId: string, asParent: boolean = false): string {
+        let url = this.backendUrl + "/resources/packages/update-project-iri-and-branch";
+        url += "?" + (asParent ? "parentIri" : "iri") + "=" + encodeURIComponent(packageId);
+        return url;
+    }
+
+    private getPackageUrlToUpdateIfRepresentsBranchHead(packageId: string, asParent: boolean = false): string {
+        let url = this.backendUrl + "/resources/packages/update-represents-branch-head";
+        url += "?" + (asParent ? "parentIri" : "iri") + "=" + encodeURIComponent(packageId);
+        return url;
+    }
+
     private getPackageUrl(packageId: string, asParent: boolean = false): string {
         let url = this.backendUrl + "/resources/packages";
         url += "?" + (asParent ? "parentIri" : "iri") + "=" + encodeURIComponent(packageId);
@@ -339,7 +375,7 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
         return [constructedEntityModels, constructedVisualModels] as const;
     }
 
-    async copyRecursively(resourceToCopy: string, newParentResource: string, userMetadata: BaseResource["userMetadata"] = {}) {
+    async copyRecursively(resourceToCopy: string, newParentResource: string, userMetadata: BaseResource["userMetadata"] = {}): Promise<any> {
         let url = this.backendUrl + "/repository/copy-recursively";
         url += "?" + "iri" + "=" + encodeURIComponent(resourceToCopy);
         url += "&" + "parentIri" + "=" + encodeURIComponent(newParentResource);
@@ -351,7 +387,9 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
             },
             body: JSON.stringify(userMetadata),
         });
-        const data = await result.json();
+
+        const data = result.json();
+        return data;
     }
 
     async getResourceDataStores(iri: string): Promise<Record<string, string> | null> {

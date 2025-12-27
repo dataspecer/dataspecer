@@ -26,6 +26,14 @@ export interface BaseResource {
         modificationDate?: Date;
         creationDate?: Date;
     };
+
+    linkedGitRepositoryURL: string;
+    projectIri: string;
+    representsBranchHead: boolean;
+    branch: string;
+    lastCommitHash: string;
+    activeMergeStateCount: number;
+    hasUncommittedChanges: boolean;
 }
 
 export interface Package extends BaseResource {
@@ -36,4 +44,5 @@ export interface Package extends BaseResource {
     subResources?: BaseResource[];
 }
 
-export type ResourceEditable = Pick<BaseResource, "iri" | "userMetadata">;
+// TODO RadStr: Hardcoded the change of branch and projectIri - in future it won't be probably editable so remove it from here
+export type ResourceEditable = Pick<BaseResource, "iri" | "userMetadata" | "projectIri" | "branch" >;

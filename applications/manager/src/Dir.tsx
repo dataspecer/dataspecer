@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, FileText, Folder, FolderDown, Import, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, Sparkles, Trash2, WandSparkles } from "lucide-react";
+import { ArrowLeft, ArrowLeftRight, ArrowRight, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, Eraser, Eye, EyeIcon, FileText, Filter, FilterX, Folder, FolderDown, GitBranchPlus, GitCommit, GitGraph, GitMerge, GitPullRequestIcon, Import, Link, Menu, MoveLeftIcon, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, ShieldQuestion, Sparkles, TagIcon, TimerResetIcon, Trash2, WandSparkles } from "lucide-react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getValidTime } from "./components/time";
@@ -28,6 +28,17 @@ import { ReloadImported } from "./dialog/reload-imported";
 import { AddImported } from "./dialog/add-imported";
 import { ReloadPimWrapper } from "./dialog/reload-pim-wrapper";
 import { stopPropagation } from "./utils/events";
+import { commitToGitDialogOnClickHandler, linkToExistingGitRepositoryHandler, createNewRemoteRepositoryHandler } from "./dialog/git-url";
+import { gitHistoryVisualizationOnClickHandler } from "./components/git-history-visualization";
+import { MergeActorsType, useMergeActors } from "./hooks/use-merge";
+import { BranchAction, CreateNewBranchDialog } from "./dialog/create-new-branch";
+import { ListMergeStatesDialog } from "./dialog/list-merge-states-dialog";
+import { useLogin, UseLoginType } from "./hooks/use-login";
+import { isGitUrlSet, PACKAGE_ROOT } from "@dataspecer/git";
+import { debugClearMergeStateDBTable } from "./utils/merge-state-backend-requests";
+import { manualPull, markPackageAsHavingNoUncommittedChanges, removeGitLinkFromPackage, switchRepresentsBranchHead } from "./utils/git-fetch-related-actions";
+import ResourceTooltip from "./components/git-tooltip";
+import { CreateMergeStateCausedByMergeDialog } from "./dialog/open-merge-state";
 
 export function lng(text: LanguageString | undefined): string | undefined {
   return text?.["cs"] ?? text?.["en"];
@@ -60,9 +71,14 @@ const useSortIris = (iris: string[]) => {
   }, [iris, resources, selectedOption]);
 };
 
-const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
+const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, mergeActors, parentIri }: { iri: string, packageGitFilter: string | null, setPackageGitFilter: (value: string | null) => void, isSignedIn: boolean, mergeActors: MergeActorsType, parentIri?: string }) => {
   const resources = useContext(ResourcesContext);
   const resource = resources[iri]!;
+
+  if (packageGitFilter !== null && resource.projectIri !== packageGitFilter) {
+    return null;
+  }
+
   const {t, i18n} = useTranslation();
 
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -80,17 +96,20 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
 
   return <li className="first:border-y last:border-none border-b">
     <div className="flex items-center space-x-4 hover:bg-accent">
-       {resource.types.includes(LOCAL_PACKAGE) ? <div className="flex"><button onClick={stopPropagation(() => isOpen ? setIsOpen(false) : open())}>
-        {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+      {resource.types.includes(LOCAL_PACKAGE) ? <div className="flex"><button onClick={stopPropagation(() => isOpen ? setIsOpen(false) : open())}>
+      {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
       </button><Folder className="text-gray-400 ml-1" /></div> : <div><ModelIcon type={resource.types} /></div>}
 
       <div className="grow min-w-0">
-        <div className="font-medium">
+        <div className="flex font-medium">
           <Translate
             text={resource.userMetadata?.label}
             match={t => <>{t} <span className="ml-5 text-gray-500 font-normal">{modelTypeToName[resource.types[0]]}</span></>}
             fallback={modelTypeToName[resource.types[0]]}
           />
+          {mergeActors.mergeFrom === iri || mergeActors.mergeTo === iri ? <MoveLeftIcon className="text-red-600" /> : null}
+          <p className="text-red-600">{mergeActors.mergeFrom === iri ? "Merging from" : null}</p>
+          <p className="text-red-600">{mergeActors.mergeTo === iri ? "Merging to" : null}</p>
         </div>
         <div className="text-sm text-gray-500 flex">
           <span className="truncate w-[4cm]">
@@ -102,6 +121,31 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
           <span className="truncate">
             {resource.iri}
           </span>
+          {
+            !isGitUrlSet(resource.linkedGitRepositoryURL) ?
+              null :
+              <ResourceTooltip resource={resource}>
+                <div className="flex pl-4 pr-2 w-16">
+                  <a href={resource.linkedGitRepositoryURL} className={(resource.activeMergeStateCount !== 0 || resource.hasUncommittedChanges) ? "text-red-400" : "text-green-400" } >GIT</a>
+                  {
+                    resource.representsBranchHead ?
+                      null :
+                      <TagIcon className="w-4 h-4" />
+                  }
+                </div>
+              </ResourceTooltip>
+          }
+          {!isGitUrlSet(resource.linkedGitRepositoryURL) ?
+            null :
+            <>
+              <span className="truncate px-2 w-[2cm]">
+                {resource.projectIri}
+              </span>
+              <span className="truncate px-2 w-[4cm]">
+                {resource.branch}
+              </span>
+            </>
+          }
         </div>
       </div>
 
@@ -199,10 +243,53 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
         </Button>
       }
 
+      {/* Git actions */}
+
+      { (resource.types.includes(LOCAL_PACKAGE) && parentIri === PACKAGE_ROOT) ?
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="shrink-0">
+              <EllipsisVertical className="h-4 w-4" /><p className="text-xs">Git</p>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {/* TODO RadStr: Just for debugging ! */}
+            {<DropdownMenuItem onClick={() => debugClearMergeStateDBTable()}><ShieldQuestion className="mr-2 h-4 w-4" />DEBUG - Clear merge db state table</DropdownMenuItem>}
+            {<DropdownMenuItem title="The uncommitted changes tag is sometimes wrong, since for performance reasons we can not compare the current content to Git. Therefore the 'has uncommitted changes' tag marks the fact that there was change between last commit and now. Even if you reversed the change, therefore now there is not any." onClick={() => markPackageAsHavingNoUncommittedChanges(resource.iri)}><TimerResetIcon className="mr-2 h-4 w-4" />Mark as up to date with remote</DropdownMenuItem>}
+            {<DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/git/redirect-to-remote-git-repository?iri=" + encodeURIComponent(iri)}><Eye className="mr-2 h-4 w-4" />Visit the remote repository</a></DropdownMenuItem>}
+            {<DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>}
+            <hr className="border-gray-300" />
+            {<DropdownMenuItem onClick={async () => createNewRemoteRepositoryHandler(openModal, iri, resource)}><GitPullRequestIcon className="mr-2 h-4 w-4" />Create remote repository</DropdownMenuItem>}
+            {<DropdownMenuItem onClick={async () => linkToExistingGitRepositoryHandler(openModal, iri, resource)}><Link className="mr-2 h-4 w-4" />Link to remote repository</DropdownMenuItem>}
+            {<DropdownMenuItem onClick={async () => commitToGitDialogOnClickHandler(openModal, iri, resource, "classic-commit", true, null, null)}><GitCommit className="mr-2 h-4 w-4" />Commit</DropdownMenuItem>}
+            {<DropdownMenuItem onClick={async () => manualPull(iri)}><Import className="mr-2 h-4 w-4" />Pull</DropdownMenuItem>}
+            {<DropdownMenuItem onClick={() => openModal(CreateNewBranchDialog, { sourcePackage: resource, actionOnConfirm: BranchAction.CreateNewBranch })}><GitBranchPlus className="mr-2 h-4 w-4" />Create branch</DropdownMenuItem>}
+            <hr className="border-gray-300" />
+            {<DropdownMenuItem onClick={() => switchRepresentsBranchHead(resource, openModal)}><ArrowLeftRight className="mr-2 h-4 w-4" /> Convert to {resource.representsBranchHead ? "tag" : "branch"}</DropdownMenuItem>}
+            <hr className="border-gray-300" />
+            {<DropdownMenuItem onClick={() => openModal(ListMergeStatesDialog, { iri })}><EyeIcon className="mr-2 h-4 w-4" /> Show merge states</DropdownMenuItem>}
+            {<DropdownMenuItem onClick={() => setPackageGitFilter(resource.projectIri)}><Filter className="mr-2 h-4 w-4" />Show Same Repository Projects</DropdownMenuItem>}
+            {mergeActors.mergeFrom !== null && mergeActors.mergeFrom !== iri && <DropdownMenuItem onClick={() => mergeActors.setMergeTo(iri)}><ArrowRight className="mr-2 h-4 w-4"/>Merge to</DropdownMenuItem>}
+            {
+              <DropdownMenuItem onClick={() => {
+                  mergeActors.setMergeFrom(iri);
+                  setPackageGitFilter(resource.projectIri);
+                }
+              }>
+                <ArrowLeft className="mr-2 h-4 w-4"/>
+                Merge from
+              </DropdownMenuItem>
+            }
+            {<DropdownMenuItem className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={async () => removeGitLinkFromPackage(iri)}><Trash2 className="mr-2 h-4 w-4" />Remove GitHub Repo</DropdownMenuItem>}
+          </DropdownMenuContent>
+        </DropdownMenu> :
+        null
+      }
+      {/* Actions */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="shrink-0">
-            <EllipsisVertical className="h-4 w-4" />
+            <Menu className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
@@ -211,7 +298,8 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
           {i18n.language !== "en" && resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a target="_blank" href={import.meta.env.VITE_BACKEND + `/preview/en/index.html?iri=` + encodeURIComponent(iri)}><FileText className="mr-2 h-4 w-4" /> {t("show-documentation")} (en)</a></DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(ModifyDocumentationTemplate, {iri})}><NotepadTextDashed className="mr-2 h-4 w-4" /> {t("modify-documentation-template")}</DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(AddImported, {id: iri})}><Import className="mr-2 h-4 w-4" /> {t("import specification from url")}</DropdownMenuItem>}
-          <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/resources/export.zip?iri=" + encodeURIComponent(iri)}><CloudDownload className="mr-2 h-4 w-4" /> {t("export")}</a></DropdownMenuItem>
+          <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/resources/export.zip?iri=" + encodeURIComponent(iri) + "&exportFormat=json"}><CloudDownload className="mr-2 h-4 w-4" /> {t("export") + " as json"}</a></DropdownMenuItem>
+          <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/resources/export.zip?iri=" + encodeURIComponent(iri) + "&exportFormat=yaml"}><CloudDownload className="mr-2 h-4 w-4" /> {t("export") + " as yaml"}</a></DropdownMenuItem>
           <DropdownMenuItem onClick={async () => {
             const result = await openModal(RenameResourceDialog, {inputLabel: resource.userMetadata?.label, inputDescription: resource.userMetadata?.description});
             if (result) {
@@ -225,23 +313,26 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
       </DropdownMenu>
     </div>
     {subResources.length > 0 && isOpen && <ul className="pl-8">
-      {subResources.map(iri => <Row iri={iri} key={iri} parentIri={resource.iri} />)}
+      {/* We pass null for the filter, since we want to render the children and the root packages, which we do not render are already blocked by the filter */}
+      {subResources.map(iri => <Row iri={iri} key={iri} parentIri={resource.iri} isSignedIn={isSignedIn} packageGitFilter={null} setPackageGitFilter={setPackageGitFilter} mergeActors={mergeActors} />)}
     </ul>}
     <ResourceDetail isOpen={detailModalToggle.isOpen} close={detailModalToggle.close} iri={iri} />
   </li>
 };
 
 export default function Component() {
+  const login = useLogin();
+
   return (
     <div>
-      <RootPackage iri={"http://dataspecer.com/packages/local-root"} />
-      <RootPackage iri={"http://dataspecer.com/packages/v1"} />
-      <RootPackage iri={"https://dataspecer.com/resources/import/lod"} defaultToggle={false} />
+      <RootPackage iri={PACKAGE_ROOT} login={login} />
+      <RootPackage iri={"http://dataspecer.com/packages/v1"} login={login} />
+      <RootPackage iri={"https://dataspecer.com/resources/import/lod"} defaultToggle={false} login={login} />
     </div>
   )
 }
 
-function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean}) {
+function RootPackage({iri, defaultToggle, login}: {iri: string, defaultToggle?: boolean, login: UseLoginType}) {
   const openModal = useBetterModal();
   const resources = useContext(ResourcesContext);
   const pckg = resources[iri];
@@ -249,6 +340,9 @@ function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean
 
   // Whether the package is open or not
   const [isOpen, setIsOpen] = useState<boolean>(defaultToggle ?? true);
+
+  const [packageGitFilter, setPackageGitFilter] = useState<string | null>(null);
+  const mergeActors = useMergeActors();
 
   useEffect(() => {
     requestLoadPackage(iri);
@@ -276,6 +370,38 @@ function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean
         {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
       </button>
       <h2 className="font-heading ml-3 scroll-m-20 pb-2 text-2xl font-semibold tracking-tight first:mt-0 grow"><Translate text={pckg.userMetadata?.label} /></h2>
+      {
+        mergeActors.mergeFrom === null ?
+          null :
+          <Button variant="ghost" size="sm" className="shrink=0 ml-4"
+            onClick={() => {
+              mergeActors.setMergeTo(null);
+              mergeActors.setMergeFrom(null);
+              setPackageGitFilter(null);
+            }}>
+              <Eraser className="mr-2 h-4 w-4" />
+              Reset chosen merge actors
+          </Button>
+      }
+      {
+        // We don't render the reset filter button if there is no filter. Or if the filter was caused by starting the choosing merge actors (that is mergeFrom was chosen)
+        // Because then we reset the filter by removing the merge actors.
+        packageGitFilter === null || mergeActors.mergeFrom !== null ?
+          null :
+          <Button variant="ghost" size="sm" className="shrink=0 ml-4"
+            onClick={() => setPackageGitFilter(null)}>
+              <FilterX className="mr-2 h-4 w-4" />
+              Remove same repository filter
+          </Button>
+      }
+      {
+        mergeActors.mergeFrom !== null && mergeActors.mergeTo !== null &&
+        <Button variant="ghost" size="sm" className="shrink=0 ml-4"
+                onClick={() => openModal(CreateMergeStateCausedByMergeDialog, {mergeFrom: mergeActors.mergeFrom!, mergeTo: mergeActors.mergeTo!, editable: "mergeTo"})}>
+          <GitMerge className="mr-2 h-4 w-4" />
+          Perform merge on DS packages
+        </Button>
+      }
       <Button variant="ghost" size="sm" className="shrink=0 ml-4"
         onClick={() => openModal(AddImported, {id: iri})}>
         <Import className="mr-2 h-4 w-4" /> {t("import")}
@@ -295,7 +421,9 @@ function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean
     </div>
     {isOpen &&
       <ul>
-        {subResources.map(iri => <Row iri={iri} parentIri={pckg.iri} key={iri} />)}
+        {subResources.map(iri => {
+          return <Row iri={iri} parentIri={pckg.iri} key={iri} isSignedIn={login.isSignedIn} packageGitFilter={packageGitFilter} setPackageGitFilter={setPackageGitFilter} mergeActors={mergeActors} />;
+        })}
       </ul>
     }
   </div>;

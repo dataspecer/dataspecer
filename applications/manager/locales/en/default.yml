@@ -39,6 +39,9 @@ form:
   url:
     instruction: URL of DSV specifications, each URL on a separate line
     name: URL
+  git-url:
+    name: GIT URL
+    instruction: Insert URL pointing to the specific git repository (or even specific commit/branch)
 format as json: Format as json
 generate application: Generate the application
 ID: ID
