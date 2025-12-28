@@ -9,7 +9,8 @@
   },
   "exports": {
     ".": "./lib/index.js",
-    "./auth": "./lib/auth/index.js"
+    "./auth": "./lib/auth/index.js",
+    "./git-providers": "./lib/git-providers/index.js"
   },
   "devDependencies": {
     "rimraf": "^6.0.1",

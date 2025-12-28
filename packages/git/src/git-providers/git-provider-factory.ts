@@ -1,10 +1,9 @@
-import { extractPartOfRepositoryURL, GitProvider, GitProviderEnum, GitProviderNamesAsType } from "@dataspecer/git";
-import express from "express";
-import fs from "fs";
 import { GitHubProvider } from "./git-provider-instances/github.ts";
 import { GitLabProvider } from "./git-provider-instances/gitlab.ts";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
-import { GitBotConfiguration, OAuthConfiguration } from "@dataspecer/git/auth";
+import { GitProvider, GitProviderEnum, GitProviderNamesAsType } from "../git-provider-api.ts";
+import { extractPartOfRepositoryURL } from "../git-utils.ts";
+import { GitBotConfiguration, OAuthConfiguration } from "../auth/git-auth-configuration-types.ts";
 
 export type AuthenticationGitProvidersData = {
   gitBotConfigurations?: Record<GitProviderNamesAsType, GitBotConfiguration>;
@@ -19,9 +18,15 @@ type WebhookRequestProviderSpecificData = {
   webhookPayload: object;
 };
 
+export type ExpressRequestForGitProviderFactoryType = {
+  body?: {
+    payload?: any
+  };
+};
+
 export abstract class GitProviderFactory {
   static createGitProviderFromWebhookRequest(
-    request: express.Request,
+    request: ExpressRequestForGitProviderFactoryType,
     httpFetch: HttpFetch,
     authenticationGitProvidersData: AuthenticationGitProvidersData
   ): WebhookRequestProviderSpecificData {
@@ -72,7 +77,7 @@ export abstract class GitProviderFactory {
   static createGitProviderFromRepositoryURL(
     repositoryURL: string,
     httpFetch: HttpFetch,
-    authenticationGitProvidersData: AuthenticationGitProvidersData
+    authenticationGitProvidersData: AuthenticationGitProvidersData,
   ): GitProvider {
     const gitProvider = getMainGitProviderFromRepositoryURL(repositoryURL);
     if (gitProvider === null) {
@@ -138,27 +143,3 @@ export const getGitProviderURLPartFromRepositoryURL = (repositoryURL: string): s
   const parsedUrl = new URL(repositoryURL);
   return parsedUrl.hostname;
 };
-/**
- * Recursively creates links using fs.link. From {@link sourceDirectory} to {@link targetDirectory}
- */
-export function createLinksForFiles(sourceDirectory: string, targetDirectory: string): void {
-  const files = fs.readdirSync(sourceDirectory);
-  for (const file of files) {
-    const newSourcefullPath = `${sourceDirectory}/${file}`;
-    const newTargetFullPath = `${targetDirectory}/${file}`;
-    const stats = fs.statSync(newSourcefullPath);
-    if (stats.isDirectory()) {
-      createLinksForFiles(newSourcefullPath, newTargetFullPath);
-    }
-    else {
-      fs.link(newSourcefullPath, newTargetFullPath, (error) => {
-        // TODO: We check for both values, but probably code or just errno should be sufficient
-        if (error?.code === "EXDEV" && error?.errno === -18) {
-          // We try to copy on failure. This for example happens in Docker, sicne they are on different devices (filesystems).
-          // TODO: Maybe put into the database directory instead and then the link should probably work.
-          fs.copyFileSync(newSourcefullPath, newTargetFullPath);
-        }
-      });
-    }
-  }
-}

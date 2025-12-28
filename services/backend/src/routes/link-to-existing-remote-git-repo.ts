@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
-import { CommitReferenceType, GitProvider } from "@dataspecer/git";
+import { CommitReferenceType, GitProviderNode } from "@dataspecer/git";
 import { resourceModel } from "../main.ts";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../configuration.ts";
-import { GitProviderFactory } from "@dataspecer/git-node/git-providers";
+import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 
 
 /**
@@ -19,7 +19,7 @@ export const linkToExistingGitRepository = asyncHandler(async (request: express.
     repositoryURL: z.string().min(1),
   });
   const { iri, repositoryURL } = querySchema.parse(request.query);
-  const gitProvider: GitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(repositoryURL, httpFetch, configuration);
+  const gitProvider: GitProviderNode = GitProviderNodeFactory.createGitProviderFromRepositoryURL(repositoryURL, httpFetch, configuration);
   const commitReferenceType: CommitReferenceType = "branch";
   const commitReferenceValue = (await gitProvider.extractCommitReferenceValue(repositoryURL, commitReferenceType)).commitReferenceValue;
   await updateGitRelatedDataForPackage(iri, gitProvider, repositoryURL, commitReferenceValue, commitReferenceType);
@@ -30,7 +30,7 @@ export const linkToExistingGitRepository = asyncHandler(async (request: express.
 
 export const updateGitRelatedDataForPackage = async (
   iri: string,
-  gitProvider: GitProvider,
+  gitProvider: GitProviderNode,
   repositoryURL: string,
   commitReferenceValue: string | null,
   commitReferenceType?: CommitReferenceType,

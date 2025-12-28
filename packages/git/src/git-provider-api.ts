@@ -93,7 +93,7 @@ export type CreateRemoteRepositoryReturnType = {
   response: FetchResponse
 }
 
-export type GetResourceForGitUrlAndBranchType =  (gitRepositoryUrl: string, branch: string) => Promise<{iri: string} | null>
+export type GetResourceForGitUrlAndBranchType = (gitRepositoryUrl: string, branch: string) => Promise<{iri: string} | null>
 
 export interface GitProvider {
   /**
@@ -122,9 +122,6 @@ export interface GitProvider {
    */
   getGitPagesURL(repositoryUrl: string): string;
 
-  /**
-   *
-   */
   /**
    * Extracts data for further processing from the {@link webhookPayload} of the webhook.
    * We have to separate it, because unfortunately each provider has slightly different format of the payload.
@@ -212,13 +209,6 @@ export interface GitProvider {
   createPublicationRepository(repoName: string, isUserRepo: boolean, repositoryUserName?: string, accessToken?: string): Promise<FetchResponse>;
 
   /**
-   * Copies (or rather create file links, but the end effect is same, we just safe space and actions on hard drive)
-   *  the workflow files (that is for example in case of GitHub the GitHub actions) to the {@link copyTo}.
-   *  Note that each provider should have the workflow files specific for their CI/CD.
-   */
-  copyWorkflowFiles(copyTo: string): void;
-
-  /**
    * @returns The name of he directory under which are stored the workflow files in the corresponding git provider.
    */
   getWorkflowFilesDirectoryName(): string;
@@ -276,23 +266,6 @@ export interface GitProvider {
   extractDefaultRepositoryUrl(repositoryUrl: string): string;
 
   /**
-   * @param commitReference note that is not necessary branch, it can be also commit or tag.
-   * @returns Returns the last commit hash in repository with the following url gitProviderURL/{@link userName}/{@link repoName}.
-   *  If {@link commitReference} is provided then the last commit hash on that branch (or commit/tag ref) is returned, otherwise the last commit hash on default branch is returned.
-   *  If issue occurred, then null is returned.
-   *  If the {@link isCommit} is true, then it just tries to take the value from {@link commitReference}. This is just optimization so we don't clone when not necessary.
-   */
-  getLastCommitHash(userName: string, repoName: string, commitReference?: string, isCommit?: boolean): Promise<string | null>;
-
-  /**
-   * Same as {@link getLastCommitHash}, but gets url instead of explicit parts.
-   * The url can be the commit specific, if it is the branch/commit will be extracted from it and correct last commit will be used.
-   * @param commitReferenceType If null then it defaults to branch.
-   * @param commitReferenceValue if not provided then it is extracted from the {@link repositoryUrl}.
-   */
-  getLastCommitHashFromUrl(repositoryUrl: string, commitReferenceType: CommitReferenceType | null, commitReferenceValue: string | null): Promise<string>;
-
-  /**
    * @returns The scope strings for the specific generic scope. We return array since technically the mapping is not necessarilly 1:1.
    */
   convertGenericScopeToProviderScope(scope: Scope): string[];
@@ -308,4 +281,40 @@ export interface GitProvider {
    * @returns The git provider response from REST API (or possibly other API in future, like GraphQL)
    */
   revokePAT(personalAccessToken: string): Promise<FetchResponse>;
+}
+
+/**
+ * Implementation of this itnerface is internally used inside node Git providers to provide internal methods. It is used using composite technique
+ * (that is we use it as a field and provide the methods through API on the class which has it as a field).
+ * Just check the node implementation for GitHub or GitLab for better understanding.
+ */
+export interface GitProviderInternalCompositeNode {
+  /**
+   * @param commitReference note that is not necessary branch, it can be also commit or tag.
+   * @returns Returns the last commit hash in repository with the following url gitProviderURL/{@link userName}/{@link repoName}.
+   *  If {@link commitReference} is provided then the last commit hash on that branch (or commit/tag ref) is returned, otherwise the last commit hash on default branch is returned.
+   *  If issue occurred, then null is returned.
+   *  If the {@link isCommit} is true, then it just tries to take the value from {@link commitReference}. This is just optimization so we don't clone when not necessary.
+   */
+  getLastCommitHash(userName: string, repoName: string, commitReference?: string, isCommit?: boolean): Promise<string | null>;
+
+  /**
+   * Same as {@link getLastCommitHash}, but gets url instead of explicit parts.
+   * The url can be the commit specific, if it is the branch/commit will be extracted from it and correct last commit will be used.
+   * @param commitReferenceType If null then it defaults to branch.
+   * @param commitReferenceValue if not provided then it is extracted from the {@link repositoryUrl}.
+   */
+  getLastCommitHashFromUrl(repositoryUrl: string, commitReferenceType: CommitReferenceType | null, commitReferenceValue: string | null): Promise<string>;
+}
+
+/**
+ * The GitProvider interface which additionally contains node specific libraries
+ */
+export interface GitProviderNode extends GitProvider, GitProviderInternalCompositeNode {
+  /**
+   * Copies (or rather create file links, but the end effect is same, we just safe space and actions on hard drive)
+   *  the workflow files (that is for example in case of GitHub the GitHub actions) to the {@link copyTo}.
+   *  Note that each provider should have the workflow files specific for their CI/CD.
+   */
+  copyWorkflowFiles(copyTo: string): void;
 }

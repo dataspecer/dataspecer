@@ -28,13 +28,14 @@ import { PackageImporter } from "../export-import/import.ts";
 import { Readable } from "stream";
 import { ReadableStream } from "stream/web";
 import { buffer } from "stream/consumers";
-import { CommitReferenceType, getDefaultCommitReferenceTypeForZipDownload, GitProvider, isCommitReferenceType } from "@dataspecer/git";
+import { CommitReferenceType, getDefaultCommitReferenceTypeForZipDownload, GitProviderNode, isCommitReferenceType } from "@dataspecer/git";
 import { updateGitRelatedDataForPackage } from "./link-to-existing-remote-git-repo.ts";
 import { gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { createSimpleGitUsingPredefinedGitRoot, INTERNAL_COMPUTATION_FOR_IMPORT, removePathRecursively } from "@dataspecer/git-node";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import configuration from "../configuration.ts";
-import { AuthenticationGitProvidersData, GitProviderFactory } from "@dataspecer/git-node/git-providers";
+import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
+import { AuthenticationGitProvidersData } from "@dataspecer/git/git-providers";
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
   const result: LanguageString = {};
@@ -435,7 +436,7 @@ export async function importFromGitUrl(
   httpFetchForGitProvider: HttpFetch,
   authenticationGitProvidersData: AuthenticationGitProvidersData,
   commitReferenceType?: CommitReferenceType) {
-  const gitProvider: GitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(repositoryURL, httpFetchForGitProvider, authenticationGitProvidersData);
+  const gitProvider: GitProviderNode = GitProviderNodeFactory.createGitProviderFromRepositoryURL(repositoryURL, httpFetchForGitProvider, authenticationGitProvidersData);
   // TODO RadStr: If there will be some issues with the defaults when importing from git, then
   // TODO RadStr: we can clone the repository and do some git actions to find out what type of reference it is
   const commitReferenceTypeForZip = commitReferenceType === undefined ? getDefaultCommitReferenceTypeForZipDownload() : commitReferenceType;

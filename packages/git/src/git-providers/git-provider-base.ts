@@ -1,11 +1,7 @@
 import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
-import { CommitReferenceType, ConvertRepoURLToDownloadZipURLReturnType, CreateRemoteRepositoryReturnType, GitProvider, GitProviderEnum, RepositoryURLPart, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, ExtractedCommitReferenceValueFromRepositoryURLExplicit, ExtractedCommitReferenceValueFromRepositoryURL, GetResourceForGitUrlAndBranchType } from "@dataspecer/git";
-import { simpleGit } from "simple-git";
-import { v4 as uuidv4 } from "uuid";
-import fs from "fs";
-import { type GitBotConfiguration, type OAuthConfiguration } from "@dataspecer/git/auth";
-import { removePathRecursively } from "../git-utils-node.ts";
-import { ROOT_DIRECTORY_FOR_PRIVATE_GITS } from "../git-store-info.ts";
+import { type GitBotConfiguration, type OAuthConfiguration } from "../auth/git-auth-configuration-types.ts";
+import { CommitReferenceType, ConvertRepoURLToDownloadZipURLReturnType, CreateRemoteRepositoryReturnType, ExtractedCommitReferenceValueFromRepositoryURL, ExtractedCommitReferenceValueFromRepositoryURLExplicit, GetResourceForGitUrlAndBranchType, GitCredentials, GitProvider, GitProviderEnum, RepositoryURLPart, WebhookRequestDataGitProviderIndependent } from "../git-provider-api.ts";
+import { Scope } from "../auth.ts";
 
 export type AuthenticationGitProviderData = {
   gitBotConfiguration?: GitBotConfiguration;
@@ -18,6 +14,10 @@ export abstract class GitProviderBase implements GitProvider {
   constructor(httpFetch: HttpFetch, authenticationGitProviderData: AuthenticationGitProviderData) {
     this.httpFetch = httpFetch;
     this.authenticationGitProviderData = authenticationGitProviderData;
+  }
+
+  public getAuthenticationGitProviderData(): AuthenticationGitProviderData {
+    return this.authenticationGitProviderData;
   }
 
   abstract getGitProviderEnumValue(): GitProviderEnum;
@@ -35,7 +35,6 @@ export abstract class GitProviderBase implements GitProvider {
    * @deprecated We put the GitHub pages on the same repository instead of onto separate publication repository
    */
   abstract createPublicationRepository(repoName: string, isUserRepo: boolean, repositoryUserName?: string, accessToken?: string): Promise<FetchResponse>;
-  abstract copyWorkflowFiles(copyTo: string): void;
   abstract getWorkflowFilesDirectoryName(): string;
   abstract isGitProviderDirectory(fullPath: string): boolean;
   abstract getDefaultBranch(repositoryURL: string): Promise<string | null>;
@@ -44,73 +43,6 @@ export abstract class GitProviderBase implements GitProvider {
   abstract convertGenericScopeToProviderScope(scope: Scope): string[];
   abstract convertProviderScopeToGenericScope(scope: string): Scope;
   abstract revokePAT(personalAccessToken: string): Promise<FetchResponse>;
-
-  async getLastCommitHash(userName: string, repoName: string, commitReference?: string, isCommit?: boolean): Promise<string> {
-    if (isCommit === true) {
-      if (commitReference === undefined) {
-        throw new Error(`When trying to get last commit for userName: ${userName} and repoName: ${repoName}. It was supposed to be commit, however the value of commmit was not given`);
-      }
-      return commitReference;
-    }
-
-    const options = [
-      "--depth", "1",
-    ];
-    if (commitReference !== undefined) {
-      options.push("--revision", commitReference);
-    }
-
-    let gitTmpDirectory: string;
-    while (true) {
-      const uuid = uuidv4();
-      gitTmpDirectory = `${ROOT_DIRECTORY_FOR_PRIVATE_GITS}/tmp/${uuid}`;
-      if (!fs.existsSync(gitTmpDirectory)) {
-        // We found unique directory to put repo into
-        break;
-      }
-    }
-
-    try {
-      fs.mkdirSync(gitTmpDirectory, { recursive: true });
-      const git = simpleGit(gitTmpDirectory);
-
-      // TODO: Note that this not work for non-public repositories
-      // Not providing in the branch, we just want the base url with userName and repoName
-      const repositoryUrl = this.createGitRepositoryURL(userName, repoName);
-      await git.clone(repositoryUrl, ".", options);
-      const gitLog = await git.log({ n: 1 });
-      const hash = gitLog.latest?.hash;
-
-      if (hash === undefined) {
-        throw new Error(`Could not get the last commit from given userName: ${userName}, repoName: ${repoName}, branch: ${commitReference}`);
-      }
-      return hash;
-    }
-    catch(error) {
-      throw error;    // Just rethrow it.
-    }
-    finally {
-      removePathRecursively(gitTmpDirectory);
-    }
-  }
-
-  async getLastCommitHashFromUrl(repositoryUrl: string, commitReferenceType: CommitReferenceType | null, commitReferenceValue: string | null): Promise<string> {
-    commitReferenceType ??= "branch";
-
-    const userName = this.extractPartOfRepositoryURL(repositoryUrl, "user-name");
-    const repoName = this.extractPartOfRepositoryURL(repositoryUrl, "repository-name");
-    if (userName === null) {
-      throw new Error(`Could not extract userName from given ${repositoryUrl}`);
-    }
-    else if (repoName === null) {
-      throw new Error(`Could not extract repoName from given ${repositoryUrl}`);
-    }
-    if (commitReferenceValue === null) {
-      commitReferenceValue = (await this.extractCommitReferenceValue(repositoryUrl, commitReferenceType)).commitReferenceValue;
-    }
-
-    return this.getLastCommitHash(userName, repoName, commitReferenceValue ?? undefined, commitReferenceType === "commit");
-  }
 
   /**
    * @param repositoryURLSplit is the repository URL split by "/", this is internal method used inside {@link extractPartOfRepositoryURL}.

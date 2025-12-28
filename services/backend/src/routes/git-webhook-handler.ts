@@ -26,9 +26,9 @@ import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
 import { SimpleGit } from "simple-git";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../configuration.ts";
-import { GitProviderFactory } from "@dataspecer/git-node/git-providers";
 import { WEBHOOK_PATH_PREFIX } from "@dataspecer/git-node";
 import { ResourceModelTODOBetterName } from "../export-import/export.ts";
+import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 
 
 export const handleWebhook = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -37,7 +37,7 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
   // console.info("Webhook - Body payload: ", request.body.payload);
   response.type("text/plain");      // TODO RadStr: Not sure if there is any good reason why was I doing this.
 
-  const { gitProvider, webhookPayload } = GitProviderFactory.createGitProviderFromWebhookRequest(request, httpFetch, configuration);
+  const { gitProvider, webhookPayload } = GitProviderNodeFactory.createGitProviderFromWebhookRequest(request, httpFetch, configuration);
   const dataForWebhookProcessing = await gitProvider.extractDataForWebhookProcessing(webhookPayload, resourceModel.getResourceForGitUrlAndBranch);
   if (dataForWebhookProcessing === null) {
     return;
@@ -115,7 +115,7 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
     if (canPullWithoutCreatingMergeState) {
       // TODO RadStr: Rename ... and update based on the conflicts resolution, like we do not want to update when there is conflict
       await git.checkout(gitLastCommitHash);
-      await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(gitRootDirectory, gitInitialDirectoryParent, gitProvider, filesystemMergeTo);
+      await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(gitRootDirectory, gitInitialDirectoryParent, filesystemMergeTo);
       await resourceModelForDS.updateLastCommitHash(iri, gitLastCommitHash, "pull");
 
       return {
@@ -160,7 +160,6 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
 async function saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(
   currentlyProcessedDirectoryNode: DirectoryNode,
   treePath: string,
-  gitProvider: GitProvider,
   filesystem: FilesystemAbstraction,
 ) {
   console.info("RECURSIVE MAPPING", currentlyProcessedDirectoryNode);
@@ -170,7 +169,7 @@ async function saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(
     // TODO RadStr: Name vs IRI
     if(value.type === "directory") {
       const newDirectory = dsPathJoin(treePath, name);
-      await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(value, newDirectory, gitProvider, filesystem);
+      await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(value, newDirectory, filesystem);
     }
     else {
       await handleResourceUpdateFinalVersion(value);

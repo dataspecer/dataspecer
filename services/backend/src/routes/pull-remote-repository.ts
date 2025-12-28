@@ -8,8 +8,8 @@ import { getCommonCommitInHistory, gitCloneBasic } from "@dataspecer/git-node/si
 import { AllowedPrefixes, createSimpleGitUsingPredefinedGitRoot, getLastCommitHash, MANUAL_CLONE_PATH_PREFIX, removePathRecursively } from "@dataspecer/git-node";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../configuration.ts";
-import { GitProviderFactory } from "@dataspecer/git-node/git-providers";
 import { ResourceModelTODOBetterName } from "../export-import/export.ts";
+import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 
 
 
@@ -30,7 +30,7 @@ export const pullRemoteRepository = asyncHandler(async (request: express.Request
     return;
   }
 
-  const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(resource.linkedGitRepositoryURL, httpFetch, configuration);
+  const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(resource.linkedGitRepositoryURL, httpFetch, configuration);
   const createdMergeState = await updateDSRepositoryByPullingGit(
     query.iri, gitProvider, resource.branch, resource.linkedGitRepositoryURL, MANUAL_CLONE_PATH_PREFIX, resource.lastCommitHash, resourceModel);
   if (createdMergeState) {

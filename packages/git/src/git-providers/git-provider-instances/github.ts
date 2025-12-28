@@ -1,10 +1,12 @@
 import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
-import fs from "fs";
 // Using this one since I could not make the ones for nodeJS (one is not using ES modules and the other one seems to be too old and correctly support types)
 import sodium from "libsodium-wrappers-sumo";
-import { CommitReferenceType, CreateRemoteRepositoryReturnType, GitProviderEnum, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, AccessToken, AccessTokenType, PUBLICATION_BRANCH_NAME, GitRestApiOperationError, GITHUB_USER_AGENT, findPatAccessToken, GetResourceForGitUrlAndBranchType } from "@dataspecer/git";
 import { AuthenticationGitProviderData, GitProviderBase } from "../git-provider-base.ts";
-import { AuthenticationGitProvidersData, createLinksForFiles, gitProviderDomains } from "../git-provider-factory.ts";
+import { AuthenticationGitProvidersData, gitProviderDomains } from "../git-provider-factory.ts";
+import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, PUBLICATION_BRANCH_NAME, WebhookRequestDataGitProviderIndependent } from "../../git-provider-api.ts";
+import { Scope } from "../../auth.ts";
+import { GitRestApiOperationError } from "../../error-definitions.ts";
+import { findPatAccessToken, GITHUB_USER_AGENT } from "../../git-utils.ts";
 
 
 const scopes = ["read:user", "user:email", "public_repo", "workflow", "delete_repo"] as const;
@@ -138,7 +140,13 @@ export class GitHubProvider extends GitProviderBase {
     return fetchResponse;
   }
 
-  async createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean, shouldEnablePublicationBranch: boolean): Promise<CreateRemoteRepositoryReturnType> {
+  async createRemoteRepository(
+    authToken: string,
+    repositoryUserName: string,
+    repoName: string,
+    isUserRepo: boolean,
+    shouldEnablePublicationBranch: boolean
+  ): Promise<CreateRemoteRepositoryReturnType> {
     // https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#create-an-organization-repository - org repo
     // vs
     // https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#create-a-repository-for-the-authenticated-user - user repo
@@ -422,16 +430,6 @@ export class GitHubProvider extends GitProviderBase {
     await this.createRemoteRepository(accessToken, repositoryUserName, repoName, isUserRepo, false);
     await this.setBotAsCollaborator(repositoryUserName, repoName, accessToken);
     return this.enableGitHubPages(repoName, repositoryUserName, "main", accessToken);
-  }
-
-  copyWorkflowFiles(copyTo: string): void {
-    const workflowsDirPath = `${copyTo}/.github/workflows`;
-    if(!fs.existsSync(workflowsDirPath)) {
-      fs.mkdirSync(workflowsDirPath, { recursive: true });
-    }
-
-    const sourceWorkflowDirectory = "./git-workflows/github/workflows";
-    createLinksForFiles(sourceWorkflowDirectory, workflowsDirPath);
   }
 
   getWorkflowFilesDirectoryName(): string {

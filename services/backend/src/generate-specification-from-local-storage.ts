@@ -601,7 +601,7 @@ import { generateArtifacts } from "./routes/generate.ts";
 import { ZipStreamDictionary } from "./utils/zip-stream-dictionary.ts";
 import { importFromGitUrl } from "./routes/import.ts";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
-import { AuthenticationGitProvidersData } from "@dataspecer/git-node/git-providers";
+import { AuthenticationGitProvidersData } from "@dataspecer/git/git-providers";
 
 
 /**

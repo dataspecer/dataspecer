@@ -4,13 +4,13 @@ import path from "path";
 import { ResourceModel } from "./resource-model.ts";
 import { SimpleGit, simpleGit } from "simple-git";
 import { AvailableFilesystems, ComparisonData, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, FilesystemNode, GitProvider, isEditableType, MergeCommitType, MergeState, MergeStateCause } from "@dataspecer/git";
-import { GitProviderFactory } from "@dataspecer/git-node/git-providers";
 import { ResourceChangeListener, ResourceChangeType } from "./resource-change-observer.ts";
 import { updateMergeStateToBeUpToDate, MergeEndpointForStateUpdate } from "../routes/create-merge-state.ts";
 import { ALL_GIT_REPOSITORY_ROOTS, createSimpleGitUsingPredefinedGitRoot, getLastCommitHash, MERGE_DS_CONFLICTS_PREFIX, removePathRecursively } from "@dataspecer/git-node";
 import { getCommonCommitInHistory } from "@dataspecer/git-node/simple-git-methods";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../configuration.ts";
+import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 
 type Nullable<T> = {
   [P in keyof T]: T[P] | null;
@@ -789,7 +789,7 @@ export class MergeStateModel implements ResourceChangeListener {
       const pathToGitRepository = MergeStateModel.extractGitRoot(rootFullPathToMeta);
       git = simpleGit(pathToGitRepository);
     }
-    const gitProvider = gitUrl === "" ? null : GitProviderFactory.createGitProviderFromRepositoryURL(gitUrl, httpFetch, configuration);
+    const gitProvider = gitUrl === "" ? null : GitProviderNodeFactory.createGitProviderFromRepositoryURL(gitUrl, httpFetch, configuration);
 
     return {
       git,

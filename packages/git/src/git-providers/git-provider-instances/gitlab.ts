@@ -1,7 +1,8 @@
 import { FetchResponse, type HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
-import { CommitReferenceType, CreateRemoteRepositoryReturnType, GitProviderEnum, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, GetResourceForGitUrlAndBranchType } from "@dataspecer/git";
 import { AuthenticationGitProviderData, GitProviderBase } from "../git-provider-base.ts";
 import { AuthenticationGitProvidersData, gitProviderDomains } from "../git-provider-factory.ts";
+import { CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, WebhookRequestDataGitProviderIndependent } from "../../git-provider-api.ts";
+import { Scope } from "../../auth.ts";
 
 // Note that students for some reason there have max 10 repositories limit on school mff gitlab (idk if it is for creations a day or something)
 
@@ -9,7 +10,7 @@ export class GitLabProvider extends GitProviderBase {
   ////////////////////////////
   // Fields
   ////////////////////////////
-  private domainURL: string;
+  protected domainURL: string;
 
   ////////////////////////////
   // Constructor
@@ -44,7 +45,10 @@ export class GitLabProvider extends GitProviderBase {
     throw new Error("Method not implemented.");
   }
 
-  async extractDataForWebhookProcessing(webhookPayload: any, getResourceForGitUrlAndBranch: GetResourceForGitUrlAndBranchType): Promise<WebhookRequestDataGitProviderIndependent | null> {
+  async extractDataForWebhookProcessing(
+    webhookPayload: any,
+    getResourceForGitUrlAndBranch: GetResourceForGitUrlAndBranchType
+  ): Promise<WebhookRequestDataGitProviderIndependent | null> {
     const repoName = webhookPayload.repository.name;
     // TODO: In future I will find it through the URL inside the prisma database instead
     const iri = String(repoName).split("-").at(-1);
@@ -110,7 +114,13 @@ export class GitLabProvider extends GitProviderBase {
 
     return fetchResponse;
   }
-  async createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean, shouldEnablePublicationBranch: boolean): Promise<CreateRemoteRepositoryReturnType> {
+  async createRemoteRepository(
+    authToken: string,
+    repositoryUserName: string,
+    repoName: string,
+    isUserRepo: boolean,
+    shouldEnablePublicationBranch: boolean
+  ): Promise<CreateRemoteRepositoryReturnType> {
     // https://docs.gitlab.com/api/projects/#create-a-project
     // Example curl request:
     // curl --request POST --header "PRIVATE-TOKEN: <your-token>" \

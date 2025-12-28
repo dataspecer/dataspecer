@@ -11,9 +11,8 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { mergeStateModel, resourceModel } from "../main.ts";
 import { BranchSummary, CommitResult, SimpleGit } from "simple-git";
-import { extractPartOfRepositoryURL, getAuthorizationURL, stringToBoolean } from "@dataspecer/git";
-import { AvailableFilesystems, ConfigType, GitProvider, GitCredentials, getMergeFromMergeToForGitAndDS, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase, createUniqueCommitMessage } from "@dataspecer/git";
-import { GitProviderFactory } from "@dataspecer/git-node/git-providers";
+import { extractPartOfRepositoryURL, getAuthorizationURL, GitProviderNode, stringToBoolean } from "@dataspecer/git";
+import { AvailableFilesystems, ConfigType, GitCredentials, getMergeFromMergeToForGitAndDS, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase, createUniqueCommitMessage } from "@dataspecer/git";
 import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-session.ts";
 import { AvailableExports } from "../export-import/export-actions.ts";
 import { getCommonCommitInHistory, gitCloneBasic, CreateSimpleGitResult, UniqueDirectory } from "@dataspecer/git-node/simple-git-methods";
@@ -32,6 +31,7 @@ import {
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../configuration.ts";
 import { ResourceModelForFilesystemRepresentation } from "../export-import/export.ts";
+import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 
 
 export type RepositoryIdentificationInfo = {
@@ -45,14 +45,14 @@ export type RepositoryIdentificationInfo = {
 type GitCommitToCreateInfoExplicitWithCredentials = {
   gitCredentials: GitCredentials,
   commitMessage: string,
-  gitProvider: GitProvider,
+  gitProvider: GitProviderNode,
   exportFormat: string | null,
   shouldAppendAfterDefaultMergeCommitMessage: boolean | null,
 }
 
 export type GitCommitToCreateInfoBasic = {
   commitMessage: string | null,
-  gitProvider?: GitProvider,
+  gitProvider?: GitProviderNode,
   exportFormat: string | null,
 }
 
@@ -265,7 +265,7 @@ export function prepareCommitDataForCommit(
   shouldAppendAfterDefaultMergeCommitMessage: boolean | null,
 ): GitCommitToCreateInfoExplicitWithCredentials {
   // If gitProvider not given - extract it from url
-  const gitProvider = gitCommitInfoBasic.gitProvider ?? GitProviderFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL, httpFetch, configuration);
+  const gitProvider = gitCommitInfoBasic.gitProvider ?? GitProviderNodeFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL, httpFetch, configuration);
   const committer = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
   const commitInfo: GitCommitToCreateInfoExplicitWithCredentials = {
     gitCredentials: committer,
@@ -680,7 +680,7 @@ async function exportAndPushToGit(
 async function fillGitDirectoryWithExport(
   iri: string,
   gitPaths: UniqueDirectory,
-  gitProvider: GitProvider,
+  gitProvider: GitProviderNode,
   exportFormat: string | null,
   repositoryIdentificationInfo: RepositoryIdentificationInfo,
   hasSetLastCommit: boolean,
