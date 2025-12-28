@@ -162,7 +162,6 @@ application.get(apiBasename + "/git/merge-commit-package-to-git", currentSession
 application.get(apiBasename + "/git/remove-git-repository", currentSession, removeGitRepository);
 application.get(apiBasename + "/git/create-package-from-existing-git-repository", currentSession, createPackageFromExistingGitRepository);    // TODO RadStr: Not called for naywhere
 application.get(apiBasename + "/git/test-docker", currentSession, exportPackageResource);
-application.get(apiBasename + "/git/redirect-to-remote-git-repository", currentSession, redirectToRemoteGitRepository);
 application.get(apiBasename + "/git/fetch-git-commit-history", currentSession, fetchGitCommitHistory);
 application.get(apiBasename + "/git/pull", currentSession, pullRemoteRepository);
 application.get(apiBasename + "/git/link-to-existing-git-repository", linkToExistingGitRepository);
