@@ -201,8 +201,8 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
     }, []);
 
   return (
-    <Modal open={isOpen} onClose={() => resolve(null)}>
-      <ModalContent className={shouldHideDialog ? "hidden" : "max-w-[90%]"} >
+    <Modal open={!shouldHideDialog && isOpen} onClose={() => resolve(null)}>
+      <ModalContent className={shouldHideDialog ? "hidden" : "max-w-[90%]"}>
         <ModalHeader>
           <ModalTitle>Project history in Git</ModalTitle>
           <ModalDescription>
