@@ -169,12 +169,14 @@ export function createShaclForProfile(
   // We need a DSV for each model, as we need to be able to see
   // the full hierarchy.
 
-  const dsv = createDataSpecificationVocabulary({
-    semantics: semanticModels,
-    profiles: profileModels,
-  }, [topProfileModel], { iri: "http://example.com/" });
+  const dsv = createDataSpecificationVocabulary(
+    { semantics: semanticModels, profiles: profileModels, },
+    // Here we need to pass all model as we need the full hierarchy.
+    // Without it we do not have the connection to OWL classes.
+    [...profileModels, topProfileModel],
+    { iri: "http://example.com/" });
 
-  const structure = createStructureModelForProfile(owl, dsv)
+  const structure = createStructureModelForProfile(owl, dsv);
   const classMap: Record<string, StructureClass> = {};
   structure.classes.forEach(item => classMap[item.iri] = item);
 
