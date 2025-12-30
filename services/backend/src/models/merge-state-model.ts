@@ -45,6 +45,7 @@ type UpdateMergeStateInput = {
 
 type MergeEndInfoInternal = {
   lastCommitHash: string;
+  isBranch: boolean;
   branch: string;
   rootFullPathToMeta: string;
   filesystemType: AvailableFilesystems;
@@ -65,6 +66,7 @@ function convertToMergeInfoWithIri(input: MergeEndInfoWithRootNode): MergeEndInf
     lastCommitHash: input.lastCommitHash,
     rootFullPathToMeta: input.rootFullPathToMeta,
     rootIri: input.rootNode.metadata.iri,
+    isBranch: input.isBranch,
     branch: input.branch,
     gitUrl: input.gitUrl,
   };
@@ -584,11 +586,13 @@ export class MergeStateModel implements ResourceChangeListener {
         mergeStateCause: inputData.mergeStateCause,
         editable: inputData.editable,
         lastCommonCommitHash: inputData.lastCommonCommitHash,
+        isMergeFromBranch: inputData.mergeFromInfo.isBranch,
         rootIriMergeFrom: inputData.mergeFromInfo.rootIri,
         rootFullPathToMetaMergeFrom: inputData.mergeFromInfo.rootFullPathToMeta,
         lastCommitHashMergeFrom: inputData.mergeFromInfo.lastCommitHash,
         branchMergeFrom: inputData.mergeFromInfo.branch,
         filesystemTypeMergeFrom: inputData.mergeFromInfo.filesystemType,
+        isMergeToBranch: inputData.mergeToInfo.isBranch,
         rootIriMergeTo: inputData.mergeToInfo.rootIri,
         rootFullPathToMetaMergeTo: inputData.mergeToInfo.rootFullPathToMeta,
         lastCommitHashMergeTo: inputData.mergeToInfo.lastCommitHash,
@@ -621,6 +625,8 @@ export class MergeStateModel implements ResourceChangeListener {
         mergeStateCause: inputData.mergeStateCause,
         editable: inputData.editable,
         lastCommonCommitHash: inputData.lastCommonCommitHash,
+
+        isMergeFromBranch: inputData.mergeFromInfo.isBranch,
         rootIriMergeFrom: inputData.mergeFromInfo.rootIri,
         rootFullPathToMetaMergeFrom: inputData.mergeFromInfo.rootFullPathToMeta,
         gitUrlMergeFrom: inputData.mergeFromInfo.gitUrl ?? "",
@@ -628,6 +634,7 @@ export class MergeStateModel implements ResourceChangeListener {
         branchMergeFrom: inputData.mergeFromInfo.branch,
         filesystemTypeMergeFrom: inputData.mergeFromInfo.filesystemType,
 
+        isMergeToBranch: inputData.mergeToInfo.isBranch,
         rootIriMergeTo: inputData.mergeToInfo.rootIri,
         rootFullPathToMetaMergeTo: inputData.mergeToInfo.rootFullPathToMeta,
         gitUrlMergeTo: inputData.mergeToInfo.gitUrl ?? "",
@@ -809,6 +816,7 @@ export class MergeStateModel implements ResourceChangeListener {
         git: gitForMergeFrom,
         gitProvider: gitProviderForMergeFrom,
         lastCommitHash: prismaMergeState.lastCommitHashMergeFrom,
+        isBranch: prismaMergeState.isMergeFromBranch,
         branch: prismaMergeState.branchMergeFrom,
         resourceModel: gitForMergeFrom === null ? this.resourceModel : null,     // If Git === null then it is DS filesystem
       };
@@ -824,6 +832,7 @@ export class MergeStateModel implements ResourceChangeListener {
         git: gitForMergeTo,
         gitProvider: gitProviderForMergeTo,
         lastCommitHash: prismaMergeState.lastCommitHashMergeTo,
+        isBranch: prismaMergeState.isMergeToBranch,
         branch: prismaMergeState.branchMergeTo,
         resourceModel: gitForMergeTo === null ? this.resourceModel : null,      // If Git === null then it is DS filesystem
       };
@@ -865,6 +874,7 @@ export class MergeStateModel implements ResourceChangeListener {
       createdAt: prismaMergeState.createdAt,
       modifiedDiffTreeAt: prismaMergeState.modifiedDiffTreeAt,
 
+      isMergeToBranch: prismaMergeState.isMergeToBranch,
       branchMergeTo: prismaMergeState.branchMergeTo,
       gitUrlMergeTo: prismaMergeState.gitUrlMergeTo,
       lastCommitHashMergeTo: prismaMergeState.lastCommitHashMergeTo,
@@ -872,6 +882,7 @@ export class MergeStateModel implements ResourceChangeListener {
       rootIriMergeTo: prismaMergeState.rootIriMergeTo,
       filesystemTypeMergeTo: prismaMergeState.filesystemTypeMergeTo as AvailableFilesystems,
 
+      isMergeFromBranch: prismaMergeState.isMergeFromBranch,
       branchMergeFrom: prismaMergeState.branchMergeFrom,
       gitUrlMergeFrom: prismaMergeState.gitUrlMergeFrom,
       lastCommitHashMergeFrom: prismaMergeState.lastCommitHashMergeFrom,

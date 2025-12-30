@@ -52,7 +52,7 @@ const Modal = ({ children, ...props }: RootModalProps) => {
         };
     }
 
-    return <Modal {...props}>{children}</Modal>
+    return <Modal {...props}>{children}</Modal>;
 }
 
 const ModalTrigger = ({ className, children, ...props }: ModalProps) => {

@@ -175,6 +175,7 @@ export interface MergeState {
   createdAt: Date;
   modifiedDiffTreeAt: Date;
 
+  isMergeToBranch: boolean;
   branchMergeTo: string;
   gitUrlMergeTo: string;
   lastCommitHashMergeTo: string;
@@ -182,6 +183,7 @@ export interface MergeState {
   rootIriMergeTo: string;
   filesystemTypeMergeTo: AvailableFilesystems;
 
+  isMergeFromBranch: boolean;
   branchMergeFrom: string;
   gitUrlMergeFrom: string;
   lastCommitHashMergeFrom: string;

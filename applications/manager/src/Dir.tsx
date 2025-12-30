@@ -399,7 +399,7 @@ function RootPackage({iri, defaultToggle, login}: {iri: string, defaultToggle?: 
       {
         mergeActors.mergeFrom !== null && mergeActors.mergeTo !== null &&
         <Button variant="ghost" size="sm" className="shrink=0 ml-4"
-                onClick={() => openModal(CreateMergeStateCausedByMergeDialog, {mergeFrom: mergeActors.mergeFrom!, mergeTo: mergeActors.mergeTo!, editable: "mergeTo"})}>
+                onClick={() => openModal(CreateMergeStateCausedByMergeDialog, {mergeFrom: {iri: mergeActors.mergeFrom!, isBranch: resources[mergeActors.mergeFrom!].representsBranchHead}, mergeTo: {iri: mergeActors.mergeTo!, isBranch: resources[mergeActors.mergeTo!].representsBranchHead}, editable: "mergeTo"})}>
           <GitMerge className="mr-2 h-4 w-4" />
           Perform merge on DS packages
         </Button>

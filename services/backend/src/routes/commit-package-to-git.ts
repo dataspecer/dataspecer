@@ -384,6 +384,7 @@ async function commitDSMergeToGit(
         rootNode: rootMergeFrom,
         filesystemType: filesystemMergeFrom.getFilesystemType(),
         lastCommitHash: mergeFromCommitHash,
+        isBranch: true,     // It has to be true, we do not allow it to not be branch, if it is we failed to perform the checks earlier. (probably on front end)
         branch: mergeFromBranch,
         rootFullPathToMeta: pathToRootMetaMergeFrom,
         gitUrl: remoteRepositoryURL,
@@ -392,6 +393,7 @@ async function commitDSMergeToGit(
         rootNode: rootMergeTo,
         filesystemType: filesystemMergeTo.getFilesystemType(),
         lastCommitHash: mergeToCommitHash,
+        isBranch: true,
         branch: cloneResult.mergeToBranchExplicitName,
         rootFullPathToMeta: pathToRootMetaMergeTo,
         gitUrl: remoteRepositoryURL,
@@ -486,6 +488,7 @@ async function commitClassicToGit(
             filesystemType: filesystemMergeFrom.getFilesystemType(),
             lastCommitHash: lastHashMergeFrom,
             branch: branchExplicit,
+            isBranch: true,     // Same as for merge. It has to be true, otherwise we failed some earlier check (probably on front end)
             rootFullPathToMeta: pathToRootMetaMergeFrom,
             gitUrl: remoteRepositoryURL,
           };
@@ -493,6 +496,7 @@ async function commitClassicToGit(
             rootNode: rootMergeTo,
             filesystemType: filesystemMergeTo.getFilesystemType(),
             lastCommitHash: lastHashMergeTo,
+            isBranch: true,
             branch: branchExplicit,
             rootFullPathToMeta: pathToRootMetaMergeTo,
             gitUrl: remoteRepositoryURL,

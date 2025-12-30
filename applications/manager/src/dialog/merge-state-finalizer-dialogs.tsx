@@ -236,7 +236,7 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
           requestLoadPackage(mergeState.rootIriMergeFrom, true);
           requestLoadPackage(mergeState.rootIriMergeTo, true);
         };
-        commitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, "rebase-commit", false, mergeState.commitMessage, onSuccessCallback);
+        await commitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, "rebase-commit", false, mergeState.commitMessage, onSuccessCallback);
       }
       else if (response < 400) {
         // TODO RadStr: Probably do nothing - we will just show the another dialog.
@@ -262,6 +262,23 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
     }
   }
 
+  if (!mergeState.isMergeToBranch) {
+    removeMergeState(mergeState.uuid);
+    return (
+      <>
+        <ModalHeader>
+          <ModalTitle>Finishing merging to non-branch</ModalTitle>
+          <ModalDescription>
+            There is no action to perform. Merge state was removed.
+          </ModalDescription>
+        </ModalHeader>
+        <ModalFooter>
+          <Button variant="outline" onClick={() => resolve()}>Close</Button>
+        </ModalFooter>
+      </>
+    );
+  }
+
 
   return (
     <>
@@ -269,13 +286,13 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
         <ModalTitle>Finish merge state caused by merging</ModalTitle>
         <ModalDescription>
           You can choose to either:
-          <p>&nbsp;&nbsp;<strong>-</strong> Create classic merge commit.</p>
+          {mergeState.isMergeFromBranch && <p>&nbsp;&nbsp;<strong>-</strong> Create classic merge commit.</p>}
           <p>&nbsp;&nbsp;<strong>-</strong> Rebase commit - that is create new commit and put the changes on top (basically same as fast-forward).</p>
           <p>&nbsp;&nbsp;<strong>-</strong> Close the dialog and handle it all later.</p>
         </ModalDescription>
       </ModalHeader>
       <ModalFooter>
-        <Button variant="outline" onClick={() => handleMergeAction()}>Create merge commit</Button>
+        {mergeState.isMergeFromBranch && <Button variant="outline" onClick={() => handleMergeAction()}>Create merge commit</Button>}
         <Button variant="outline" onClick={() => handleRebaseAction()}>Create rebase commit</Button>
       </ModalFooter>
     </>

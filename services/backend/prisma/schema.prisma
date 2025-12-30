@@ -102,6 +102,13 @@ model MergeState {
   // We allow to have only one merge state between two specific merge sources
   @@unique([rootFullPathToMetaMergeFrom, rootFullPathToMetaMergeTo])
 
+  // If true then the merge from is a branch, otherwise it is a tag/commit. If it is false, we allow only rebase commits as finalizer.
+  isMergeFromBranch Boolean
+  // If true then the merge to is a branch, otherwise it is a tag/commit.
+  // Note that if to is not a branch, we do not allow to perform any operation on Git.
+  // Basically only use case for this is when we want to actually merge changes, but do not commit anything to Git.
+  isMergeToBranch Boolean
+
   // This is used since we want to store the commit message of the commit which caused this event. Note that for pull event it will be empty
   commitMessage String @default("")
 

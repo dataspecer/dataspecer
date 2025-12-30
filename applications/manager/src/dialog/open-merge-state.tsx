@@ -6,6 +6,8 @@ import { TextDiffEditorDialog } from "./diff-editor-dialog";
 import { Loader } from "lucide-react";
 import { EditableType, MergeState } from "@dataspecer/git";
 import { requestLoadPackage } from "@/package";
+import { removeMergeState } from "@/utils/merge-state-backend-requests";
+import { MergeActor } from "@/hooks/use-merge";
 
 
 export async function fetchMergeState(
@@ -84,8 +86,8 @@ export async function createMergeStateOnBackend(
 
 
 type OpenMergeStateProps = {
-  mergeFrom: string,
-  mergeTo: string,
+  mergeFrom: NonNullable<MergeActor>,
+  mergeTo: NonNullable<MergeActor>,
   editable: EditableType,
 } & BetterModalProps<null>;
 
@@ -104,13 +106,19 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
   const [mergeStateCreationFailure, setMergeStateCreatingFailure] = useState<boolean>(false);
   const [mergeStateIdInCaseOfNoConflicts, setMergeStateIdInCaseOfNoConflicts] = useState<string | null>(null);
   const openModal = useBetterModal();
+  const [showingNonBranchWarning, setShowingNonBranchWarning] = useState<boolean>(false);
 
   const [secondsPassed, setSecondsPassed] = useState<number>(0);
+  const [secondsPassedStartTime, setSecondsPassedStartTime] = useState<number>(0);
 
   useEffect(() => {
     const interval: NodeJS.Timeout | null = setInterval(() => {
       setSecondsPassed(prev => prev + 1);
     }, 1000);
+
+    if (!mergeFrom.isBranch || !mergeTo.isBranch) {
+      setShowingNonBranchWarning(true);
+    }
 
     return () => {
       if (interval !== null) {
@@ -120,7 +128,10 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
   }, []);
 
   const handleReplaceExisting = async () => {
-    const createdMergeState = await createMergeStateOnBackend(mergeFrom, mergeTo);
+    setSecondsPassedStartTime(secondsPassed);
+    setIsLoading(true);
+    await removeMergeState(mergeState?.uuid);
+    const createdMergeState = await createMergeStateOnBackend(mergeFrom.iri, mergeTo.iri);
     setMergeState(createdMergeState.mergeState);
     if (createdMergeState.error !== null) {
       setMergeStateCreatingFailure(true);
@@ -139,6 +150,7 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
         }
       );
     }
+    setIsLoading(false);
   }
 
   const handleKeepExisting = async () => {
@@ -153,55 +165,96 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
     );
   }
 
-
-  useEffect(() => {
-    const initialLoad = async () => {
-      setIsLoading(true);
-      let fetchedMergeState = await fetchMergeState(mergeFrom, mergeTo, false, true, false);
-      let alreadyExists: boolean;
-      let isMergeStateCreated = true;
-      if (fetchedMergeState === null) {
-        const createdMergeState = await createMergeStateOnBackend(mergeFrom, mergeTo);
-        await requestLoadPackage(mergeFrom, true);
-        await requestLoadPackage(mergeTo, true);
-        fetchedMergeState = createdMergeState.mergeState;
-        if (createdMergeState.error !== null) {
-          setMergeStateCreatingFailure(true);
-          isMergeStateCreated = false;
-        }
-        else if (createdMergeState.mergeState === null) {
-          setMergeStateIdInCaseOfNoConflicts(createdMergeState.mergeStateId);
-          isMergeStateCreated = false;
-        }
-        alreadyExists = false;
+  const initialLoad = async () => {
+    setIsLoading(true);
+    let fetchedMergeState = await fetchMergeState(mergeFrom.iri, mergeTo.iri, false, true, false);
+    let alreadyExists: boolean;
+    let isMergeStateCreated = true;
+    if (fetchedMergeState === null) {
+      const createdMergeState = await createMergeStateOnBackend(mergeFrom.iri, mergeTo.iri);
+      await requestLoadPackage(mergeFrom.iri, true);
+      await requestLoadPackage(mergeTo.iri, true);
+      fetchedMergeState = createdMergeState.mergeState;
+      if (createdMergeState.error !== null) {
+        setMergeStateCreatingFailure(true);
+        isMergeStateCreated = false;
       }
-      else {
-        alreadyExists = true;
+      else if (createdMergeState.mergeState === null) {
+        setMergeStateIdInCaseOfNoConflicts(createdMergeState.mergeStateId);
+        isMergeStateCreated = false;
       }
-      setMergeState(fetchedMergeState);
-      console.info({fetchedMergeState, editable});    // TODO RadStr Debug:
-      setAlreadyExisted(alreadyExists);
-      setIsLoading(false);
-      if (isMergeStateCreated) {
-        if (!alreadyExists) {
-          resolve(null);
-          openModal(
-            TextDiffEditorDialog,
-            {
-              initialMergeFromResourceIri: fetchedMergeState!.rootIriMergeFrom,
-              initialMergeToResourceIri: fetchedMergeState!.rootIriMergeTo,
-              editable: editable,
-            }
-          );
-        }
+      alreadyExists = false;
+    }
+    else {
+      alreadyExists = true;
+    }
+    setMergeState(fetchedMergeState);
+    console.info({fetchedMergeState, editable});    // TODO RadStr Debug:
+    setAlreadyExisted(alreadyExists);
+    setIsLoading(false);
+    if (isMergeStateCreated) {
+      if (!alreadyExists) {
+        resolve(null);
+        openModal(
+          TextDiffEditorDialog,
+          {
+            initialMergeFromResourceIri: fetchedMergeState!.rootIriMergeFrom,
+            initialMergeToResourceIri: fetchedMergeState!.rootIriMergeTo,
+            editable: editable,
+          }
+        );
       }
     }
+  }
 
-    initialLoad();
+  useEffect(() => {
+    if (mergeFrom.isBranch && mergeTo.isBranch) {
+      initialLoad();
+    }
   }, []);
 
   const openDiffEditorPreviewNoConflicts = async () => {
-    openModal(TextDiffEditorDialog, { initialMergeFromResourceIri: mergeFrom, initialMergeToResourceIri: mergeTo, editable: editable}).finally(() => resolve(null))
+    resolve(null);
+    openModal(TextDiffEditorDialog, { initialMergeFromResourceIri: mergeFrom.iri, initialMergeToResourceIri: mergeTo.iri, editable: editable}).finally(() => resolve(null))
+  }
+
+  if (showingNonBranchWarning) {
+    const createMergeStateHandler = () => {
+      setShowingNonBranchWarning(false);
+      setSecondsPassedStartTime(secondsPassed);
+      initialLoad();
+    }
+
+    if (!mergeTo.isBranch) {
+      return (
+        <Modal open={isOpen} onClose={() => resolve(null)}>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>⚠️Merging into non-branch.</ModalTitle>
+              <ModalDescription>You can not perform any Git action after finishing.<br/>This is only useful if you want to move data from one package to another within Dataspecer.</ModalDescription>
+            </ModalHeader>
+            <ModalFooter>
+              <Button title="Creates the merge state, user can do normal actions, but when finalizing nothing happens and the state is removed" variant="outline" onClick={createMergeStateHandler}>Create merge state</Button>
+              <Button title="Closes the dialog" variant="outline" onClick={() => resolve(null)}>Close dialog</Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>);
+    }
+    else {
+      return (
+        <Modal open={isOpen} onClose={() => resolve(null)}>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>⚠️Merging from non-branch into branch</ModalTitle>
+              <ModalDescription>This kind of merge state can be finalized only through rebase commit.</ModalDescription>
+            </ModalHeader>
+            <ModalFooter>
+              <Button title="Creates the merge state. Finalizing through merge commit is not available, only the rebase commit." variant="outline" onClick={createMergeStateHandler}>Create merge state</Button>
+              <Button title="Closes the dialog." variant="outline" onClick={() => resolve(null)}>Close dialog</Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>);
+    }
   }
 
   if (mergeStateIdInCaseOfNoConflicts !== null) {
@@ -232,9 +285,21 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
               <p>Usually takes around 5-10 seconds.</p>
               <div className="flex">
                 <Loader className="mr-2 mt-1 h-4 w-4 animate-spin" />
-                {`${secondsPassed} seconds passed`}
+                {`${secondsPassed - secondsPassedStartTime} seconds passed`}
               </div>
             </div>
+          }
+          {
+            (!(alreadyExisted && isLoading)) ?
+              null :
+              <div className="flex flex-col">
+                <p>Replacing merge state.</p>
+                <p>Usually takes around 5-10 seconds.</p>
+                <div className="flex">
+                  <Loader className="mr-2 mt-1 h-4 w-4 animate-spin" />
+                  {`${secondsPassed - secondsPassedStartTime} seconds passed`}
+                </div>
+              </div>
           }
           </ModalDescription>
         </ModalHeader>

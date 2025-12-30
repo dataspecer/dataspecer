@@ -14,7 +14,7 @@
 
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
-import { ComparisonData, dsPathJoin, getMergeFromMergeToMappingForGitAndDS, GitProvider, isDatastoreForMetadata, MergeStateCause, DatastoreInfo, DirectoryNode, FilesystemNode, FilesystemAbstraction, getMergeFromMergeToForGitAndDS } from "@dataspecer/git";
+import { ComparisonData, dsPathJoin, getMergeFromMergeToMappingForGitAndDS, GitProvider, isDatastoreForMetadata, MergeStateCause, DatastoreInfo, DirectoryNode, FilesystemNode, FilesystemAbstraction, getMergeFromMergeToForGitAndDS, AvailableFilesystems } from "@dataspecer/git";
 import fs from "fs";
 import path from "path";
 import { updateBlob, updateResourceMetadata } from "./resource.ts";
@@ -135,6 +135,10 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
     rootNode: rootMergeFrom,
     filesystemType: filesystemMergeFrom.getFilesystemType(),
     lastCommitHash: lastHashMergeFrom,
+    // Since the merge state cause can not be merge, the value does not really matter all that much.
+    // But technically the Git is tracking certain commit (even though it was the last commit at the branch at time of cloning)
+    // So we set it based on that. Same for MergeTo
+    isBranch: filesystemMergeFrom.getFilesystemType() === AvailableFilesystems.DS_Filesystem,
     branch: branch,
     rootFullPathToMeta: pathToRootMetaMergeFrom,
     gitUrl: remoteRepositoryUrl,
@@ -143,6 +147,7 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
     rootNode: rootMergeTo,
     filesystemType: filesystemMergeTo.getFilesystemType(),
     lastCommitHash: lastHashMergeTo,
+    isBranch: filesystemMergeTo.getFilesystemType() === AvailableFilesystems.DS_Filesystem,     // Same as mergeFrom.
     branch: branch,
     rootFullPathToMeta: pathToRootMetaMergeTo,
     gitUrl: remoteRepositoryUrl,

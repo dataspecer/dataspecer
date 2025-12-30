@@ -33,8 +33,8 @@ export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (requ
 
     const { createdMergeStateId, hasConflicts } = await createMergeStateBetweenDSPackages(
       git, "",
-      mergeFromIri, mergeFromResource.lastCommitHash, mergeFromResource.branch, resourceModel,
-      mergeToIri, mergeToResource.lastCommitHash, mergeToResource.branch, resourceModel,
+      mergeFromResource.representsBranchHead, mergeFromIri, mergeFromResource.lastCommitHash, mergeFromResource.branch, resourceModel,
+      mergeToResource.representsBranchHead, mergeToIri, mergeToResource.lastCommitHash, mergeToResource.branch, resourceModel,
       mergeFromResource.linkedGitRepositoryURL
     );
 
@@ -70,11 +70,13 @@ export async function createMergeStateBetweenDSPackages(
   git: SimpleGit,
   commitMessage: string,
   // Merge from values, TODO RadStr: possible refactoring in future to pass as a object.
+  isMergeFromBranch: boolean,
   mergeFromRootIri: string,
   mergeFromLastCommitHash: string,
   mergeFromBranch: string,
   mergeFromResourceModel: ResourceModelForFilesystemRepresentation,
   // Merge to values
+  isMergeToBranch: boolean,
   mergeToRootIri: string,
   mergeToLastCommitHash: string,
   mergeToBranch: string,
@@ -108,6 +110,7 @@ export async function createMergeStateBetweenDSPackages(
       rootNode: rootMergeFrom,
       filesystemType: AvailableFilesystems.DS_Filesystem,
       lastCommitHash: mergeFromLastCommitHash,
+      isBranch: isMergeFromBranch,
       branch: mergeFromBranch,
       rootFullPathToMeta: pathToRootMetaMergeFrom,
       gitUrl: remoteRepositoryUrl,
@@ -117,6 +120,7 @@ export async function createMergeStateBetweenDSPackages(
       rootNode: rootMergeTo,
       filesystemType: AvailableFilesystems.DS_Filesystem,
       lastCommitHash: mergeToLastCommitHash,
+      isBranch: isMergeToBranch,
       branch: mergeToBranch,
       rootFullPathToMeta: pathToRootMetaMergeTo,
       gitUrl: remoteRepositoryUrl,
@@ -139,13 +143,15 @@ type MergeEndpointBase = {
 }
 
 export type MergeEndpointForComparison = {
-  gitProvider: GitProvider | null,
+  gitProvider: GitProvider | null;
 } & MergeEndpointBase
 
 export type MergeEndpointForStateUpdate = {
-  git: SimpleGit | null,
-  lastCommitHash: string,
-  branch: string,
+  git: SimpleGit | null;
+  lastCommitHash: string;
+  // TODO RadStr: If we rewrite the update to only update the things which are usually changing on update, then we do not need to pass in the isBranch, since it does not change.
+  isBranch: boolean;
+  branch: string;
 } & MergeEndpointForComparison
 
 export async function updateMergeStateToBeUpToDate(
@@ -204,6 +210,7 @@ export async function updateMergeStateToBeUpToDate(
       rootNode: rootMergeFrom,
       filesystemType: mergeFrom.filesystemType,
       lastCommitHash: mergeFrom.lastCommitHash,
+      isBranch: mergeFrom.isBranch,
       branch: mergeFrom.branch,
       rootFullPathToMeta: pathToRootMetaMergeFrom,
       gitUrl: null,
@@ -213,9 +220,10 @@ export async function updateMergeStateToBeUpToDate(
       rootNode: rootMergeTo,
       filesystemType: mergeTo.filesystemType,
       lastCommitHash: mergeTo.lastCommitHash,
+      isBranch: mergeTo.isBranch,
       branch: mergeTo.branch,
       rootFullPathToMeta: pathToRootMetaMergeTo,
-      gitUrl: null
+      gitUrl: null,
     };
 
     const isSuccessfullyUpdated = await mergeStateModel.updateMergeStateToBeUpToDate(

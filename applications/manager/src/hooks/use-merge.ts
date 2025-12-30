@@ -8,6 +8,11 @@ export type MergeActorsType = {
   isChoosingMergeTo: boolean;
 };
 
+export type MergeActor = {
+  iri: string;
+  isBranch: boolean;
+} | null;
+
 export const useMergeActors: (() => MergeActorsType) = () => {
   const [mergeFrom, setMergeFrom] = useState<string | null>(null);
   const [mergeTo, setMergeTo] = useState<string | null>(null);
