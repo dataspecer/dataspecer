@@ -30,13 +30,23 @@ export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (requ
   const { git, gitInitialDirectory, gitDirectoryToRemoveAfterWork } = createSimpleGitUsingPredefinedGitRoot(mergeFromIri, MERGE_CONFLICTS_PRIVATE, false);
   try {
     await gitCloneBasic(git, gitInitialDirectory, mergeFromResource.linkedGitRepositoryURL, false, true, undefined);
+    const mergeFromData: CreateMergeStateBetweenDSPackagesType = {
+      rootIri: mergeFromIri,
+      isBranch: mergeFromResource.representsBranchHead,
+      branch: mergeFromResource.branch,
+      lastCommitHash: mergeFromResource.lastCommitHash,
+      resourceModel: resourceModel,
+    };
+    const mergeToData: CreateMergeStateBetweenDSPackagesType = {
+      rootIri: mergeToIri,
+      isBranch: mergeToResource.representsBranchHead,
+      branch: mergeToResource.branch,
+      lastCommitHash: mergeToResource.lastCommitHash,
+      resourceModel: resourceModel,
+    };
 
     const { createdMergeStateId, hasConflicts } = await createMergeStateBetweenDSPackages(
-      git, "",
-      mergeFromResource.representsBranchHead, mergeFromIri, mergeFromResource.lastCommitHash, mergeFromResource.branch, resourceModel,
-      mergeToResource.representsBranchHead, mergeToIri, mergeToResource.lastCommitHash, mergeToResource.branch, resourceModel,
-      mergeFromResource.linkedGitRepositoryURL
-    );
+      git, "", mergeFromData, mergeToData, mergeFromResource.linkedGitRepositoryURL);
 
     if (!hasConflicts) {
       response.status(200);
@@ -66,37 +76,34 @@ export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (requ
 });
 
 
+type CreateMergeStateBetweenDSPackagesType = {
+  rootIri: string;
+  isBranch: boolean;
+  branch: string;
+  lastCommitHash: string;
+  resourceModel: ResourceModelForFilesystemRepresentation;
+};
+
 export async function createMergeStateBetweenDSPackages(
   git: SimpleGit,
   commitMessage: string,
-  // Merge from values, TODO RadStr: possible refactoring in future to pass as a object.
-  isMergeFromBranch: boolean,
-  mergeFromRootIri: string,
-  mergeFromLastCommitHash: string,
-  mergeFromBranch: string,
-  mergeFromResourceModel: ResourceModelForFilesystemRepresentation,
-  // Merge to values
-  isMergeToBranch: boolean,
-  mergeToRootIri: string,
-  mergeToLastCommitHash: string,
-  mergeToBranch: string,
-  mergeToResourceModel: ResourceModelForFilesystemRepresentation,
-
+  mergeFrom: CreateMergeStateBetweenDSPackagesType,
+  mergeTo: CreateMergeStateBetweenDSPackagesType,
   remoteRepositoryUrl: string,
 ): Promise<{ createdMergeStateId: string, hasConflicts: boolean }> {
   const mergeFromForComparison: MergeEndpointForComparison = {
-    rootIri: mergeFromRootIri,
+    rootIri: mergeFrom.rootIri,
     filesystemType: AvailableFilesystems.DS_Filesystem,
     fullPathToRootParent: "",
     gitProvider: null,
-    resourceModel: mergeFromResourceModel,
+    resourceModel: mergeFrom.resourceModel,
   };
   const mergeToForComparison: MergeEndpointForComparison = {
-    rootIri: mergeToRootIri,
+    rootIri: mergeTo.rootIri,
     filesystemType: AvailableFilesystems.DS_Filesystem,
     fullPathToRootParent: "",
     gitProvider: null,
-    resourceModel: mergeToResourceModel,
+    resourceModel: mergeTo.resourceModel,
   };
 
   const {
@@ -104,14 +111,14 @@ export async function createMergeStateBetweenDSPackages(
     rootMergeFrom, pathToRootMetaMergeFrom,
     filesystemMergeTo, fakeRootMergeTo, rootMergeTo, pathToRootMetaMergeTo,
   } = await compareBackendFilesystems(mergeFromForComparison, mergeToForComparison);
-    const commonCommitHash = await getCommonCommitInHistory(git, mergeFromLastCommitHash, mergeToLastCommitHash);
+    const commonCommitHash = await getCommonCommitInHistory(git, mergeFrom.lastCommitHash, mergeTo.lastCommitHash);
 
     const mergeFromInfo: MergeEndInfoWithRootNode = {
       rootNode: rootMergeFrom,
       filesystemType: AvailableFilesystems.DS_Filesystem,
-      lastCommitHash: mergeFromLastCommitHash,
-      isBranch: isMergeFromBranch,
-      branch: mergeFromBranch,
+      lastCommitHash: mergeFrom.lastCommitHash,
+      isBranch: mergeFrom.isBranch,
+      branch: mergeFrom.branch,
       rootFullPathToMeta: pathToRootMetaMergeFrom,
       gitUrl: remoteRepositoryUrl,
     };
@@ -119,15 +126,15 @@ export async function createMergeStateBetweenDSPackages(
     const mergeToInfo: MergeEndInfoWithRootNode = {
       rootNode: rootMergeTo,
       filesystemType: AvailableFilesystems.DS_Filesystem,
-      lastCommitHash: mergeToLastCommitHash,
-      isBranch: isMergeToBranch,
-      branch: mergeToBranch,
+      lastCommitHash: mergeTo.lastCommitHash,
+      isBranch: mergeTo.isBranch,
+      branch: mergeTo.branch,
       rootFullPathToMeta: pathToRootMetaMergeTo,
       gitUrl: remoteRepositoryUrl,
     };
 
     const createdMergeStateId = await mergeStateModel.createMergeStateIfNecessary(
-      mergeFromRootIri, commitMessage, "merge", diffTreeComparisonResult,
+      mergeFrom.rootIri, commitMessage, "merge", diffTreeComparisonResult,
       commonCommitHash, mergeFromInfo, mergeToInfo);
     return {
       createdMergeStateId,
