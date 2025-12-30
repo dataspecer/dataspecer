@@ -97,8 +97,8 @@ export const MonacoDiffEditor: FC<{
     });
   }
 
-  return <div id="diff-editor-for-conflict-resolving" className="flex flex-col grow overflow-hidden">
-    <DiffEditor
+  return <div className="flex flex-col grow overflow-hidden h-screen w-[100%]">
+  <DiffEditor
       {...props}
       onMount={editor => {
         props.editorRef.current = {editor};

@@ -83,8 +83,8 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
   return (
     <Tabs defaultValue="text-compare">
       <Modal open={isOpen} onOpenChange={(value: boolean) => value ? null : closeWithSuccess()}>
-        <ModalContent className="max-w-none h-[100%]">
-          <ModalBody className="grow flex overflow-hidden">
+        <ModalContent className="max-w-none h-[100%] py-0 !rounded-none !border-none">
+          <ModalBody className="grow overflow-hidden h-screen">
             {/* The pr-2 is there so the cross at the top right corner is seen */}
             <ResizablePanelGroup direction="horizontal" className="overflow-hidden">
               <ResizablePanel defaultSize={20} className="flex flex-col pr-16">
@@ -144,12 +144,12 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
               </ResizablePanel>
               {/* The minus "ml" shenanigans in classNames are because of some weird spaces caused by overflow-y-auto in the diff editor */}
               <ResizableHandle className="-ml-16" withHandle autoFocus={false} />
-              <ResizablePanel className="overflow-hidden flex flex-col h-screen bg-white ml-4">
+              <ResizablePanel className="overflow-hidden flex flex-col">
                 { isLoadingTextData && Object.keys(convertedCacheForMergeFromContent).length !== 0 &&     // The check for non-empty objects is there se we don't show loading on initial load
                   <Loader className="mr-2 h-4 w-4 animate-spin" />
                 }
                 { !isLoadingTextData &&
-                   <div className="flex flex-col flex-1 h-screen">
+                   <div className="flex flex-col flex-1 h-screen overflow-hidden">
                     <Tabs value={comparisonTabType}>
                       <TabsContent value="image-compare">
                         <RotateCw className="flex ml-1 h-4 w-4" onClick={reloadModelsDataFromBackend} />
@@ -158,24 +158,23 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
                         </div>
                       </TabsContent>
                       <TabsContent value="text-compare">
-                        <div className="grid grid-cols-[5%_95%]">
+                        <div className="grid grid-cols-[5%_95%] border-b">
                             <RotateCw className="flex mt-3 ml-1 h-4 w-4 cursor-pointer" onClick={reloadModelsDataFromBackend} />
-                          <div className="flex items-center justify-center space-x-4">
+                          <div className="flex items-center justify-center space-x-4 ml-16 pl-32">
                             <MergeStrategyComponent handleMergeStateResolving={applyAutomaticMergeStateResolver}/>
                             <label className="flex items-center">
                               <input
                                 type="checkbox"
                                 checked={showStrippedVersion}
                                 onChange={(e) => setShowStrippedVersion(e.target.checked)}
-                                className="w-5 h-5 accent-blue-600"
+                                className="w-5 h-5 accent-blue-600 ml-28"
                               />
                               <span>{showStrippedVersion ? "Showing stripped version" : "Showing raw version"}</span>
                             </label>
                           </div>
                         </div>
-                        {/* The h-screen is needed otherwise the monaco editor is not shown at all */}
                         {/* Also small note - there is loading effect when first starting up the editor, it is not any custom made functionality */}
-                        <MonacoDiffEditor className="flex-1 -ml-16 h-screen"
+                        <MonacoDiffEditor className="-ml-2 h-[95.5%]"       // The h- has to be defined otherwise it takes full window (which goes beyound the start taskbar)
                                           editorRef={monacoEditor}
                                           mergeFromContent={strippedMergeFromContent}
                                           editable={editable}
