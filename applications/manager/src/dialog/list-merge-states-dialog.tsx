@@ -17,6 +17,7 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [mergeStates, setMergeStates] = useState<any[]>([]);
   const openModal = useBetterModal();
+  const [isInfoDialogShown, setIsInfoDialogShown] = useState<boolean>(false);
 
 
   useEffect(() => {
@@ -41,7 +42,7 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
   };
 
   return (
-    <Modal open={isOpen} onClose={() => resolve(null)}>
+    <Modal open={!isInfoDialogShown && isOpen} onClose={() => resolve(null)}>
       <ModalContent className="min-w-[650px]">
         <ModalHeader>
           <ModalTitle>List of currently opened merge states for chosen data specification</ModalTitle>
@@ -59,7 +60,7 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
               <div className="flex items-center justify-center">Merge to</div>
             </div>
 
-            { mergeStates.map(mergeState => renderMergeState(mergeState, removeFromMergeStatesInDialog, openModal, resolve)) }
+            { mergeStates.map(mergeState => renderMergeState(mergeState, removeFromMergeStatesInDialog, setIsInfoDialogShown, openModal, resolve)) }
           </>
           }
         </ModalHeader>
@@ -74,8 +75,9 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
 const renderMergeState = (
   mergeState: MergeState,
   removeFromMergeStatesInDialog: (uuid: string) => void,
+  setIsInfoDialogShown: (isShown: boolean) => void,
   openModal: OpenBetterModal,
-  closeMergeStateList: (value: null) => void
+  closeMergeStateListDialog: (value: null) => void
 ) => {
   const removeMergeStateOnClickHandler = async () => {
     removeFromMergeStatesInDialog(mergeState.uuid);
@@ -84,12 +86,17 @@ const renderMergeState = (
     await requestLoadPackage(mergeState.rootIriMergeTo, true);
   };
 
+  const openDiffEditor = () => {
+    closeMergeStateListDialog(null);
+    openModal(TextDiffEditorDialog, { initialMergeFromResourceIri: mergeState.rootIriMergeFrom, initialMergeToResourceIri: mergeState.rootIriMergeTo, editable: mergeState.editable});
+  }
+
 
   return <div className={`flex items-baseline`}>
-      <button onClick={() => openModal(ShowMergeStateInfoDialog, {mergeState})} className="bg-blue-300 hover:bg-blue-500 relative top-[6px]"><InfoIcon/></button>
+      <button onClick={() => openModal(ShowMergeStateInfoDialog, {mergeState, setIsInfoDialogShown})} className="bg-blue-300 hover:bg-blue-500 relative top-[6px]"><InfoIcon/></button>
       <button className={`w-full ${mergeState.isUpToDate ? "" : "bg-red-400"} hover:bg-gray-300`}
-              onClick={() => openModal(TextDiffEditorDialog, { initialMergeFromResourceIri: mergeState.rootIriMergeFrom, initialMergeToResourceIri: mergeState.rootIriMergeTo, editable: mergeState.editable}).finally(() => closeMergeStateList(null))}>
-                {/* TODO RadStr: Just debug to directly open the merge state dialog */}
+              onClick={openDiffEditor}>
+              {/* TODO RadStr: Just debug to directly open the merge state dialog */}
               {/* onClick={() => openModal(MergeStateFinalizerDialog, {mergeState, openModal}).finally(() => closeMergeStateList(null))}> */}
         {createMergeStateRowText(mergeState)}
       </button>

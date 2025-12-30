@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BetterModalProps } from "@/lib/better-modal";
 import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
@@ -11,18 +11,27 @@ export enum BranchAction {
 }
 
 type ShowMergeStateInfoDialogProps = {
-  mergeState: MergeState
+  mergeState: MergeState,
+  setIsInfoDialogShown: (isShown: boolean) => void,
 } & BetterModalProps<null>;
 
-export const ShowMergeStateInfoDialog = ({ mergeState, isOpen, resolve }: ShowMergeStateInfoDialogProps) => {
+export const ShowMergeStateInfoDialog = ({ mergeState, setIsInfoDialogShown, isOpen, resolve }: ShowMergeStateInfoDialogProps) => {
   const [showMore, setShowMore] = useState(false);
+
+  useEffect(() => {
+    setIsInfoDialogShown(true);
+  }, []);
+  const closeModal = () => {
+    setIsInfoDialogShown(false);
+    resolve(null);
+  };
 
   const gitUrl = mergeState.gitUrlMergeFrom === "" ?
     mergeState.gitUrlMergeTo :
     mergeState.gitUrlMergeFrom;
 
   return (
-    <Modal open={isOpen} onClose={() => resolve(null)}>
+    <Modal open={isOpen} onClose={closeModal}>
       <ModalContent className="max-w-[40%]">
         <ModalHeader>
           <ModalTitle>Info about merge state</ModalTitle>
@@ -101,7 +110,7 @@ export const ShowMergeStateInfoDialog = ({ mergeState, isOpen, resolve }: ShowMe
         </div>
 
         <ModalFooter>
-          <Button variant="outline" onClick={() => resolve(null)}>
+          <Button variant="outline" onClick={closeModal}>
             Close
           </Button>
         </ModalFooter>
