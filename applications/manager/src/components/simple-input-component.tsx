@@ -1,5 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label"
+import { RefObject } from "react";
 
 type SetStringState = (value: string) => void;
 
@@ -7,6 +8,10 @@ export type InputComponentProps = {
   idPrefix: string;
   idSuffix: number;
   setInput: SetStringState;
+  /**
+   * If provided then the input field is expected to be required (non-empty)
+   */
+  requiredRefObject?: RefObject<HTMLInputElement | null>;
   disabled?: boolean;
   input?: string;
   label?: string;
@@ -17,7 +22,7 @@ export function createIdentifierForHTMLElement(idPrefix: string, idSuffix: numbe
   return `${idPrefix}-${idSuffix}-${htmlElementType}`;
 }
 
-export const InputComponent = ({ idPrefix, idSuffix, input, label, tooltip, setInput, disabled }: InputComponentProps) => {
+export const InputComponent = ({ idPrefix, idSuffix, input, label, tooltip, setInput, disabled, requiredRefObject }: InputComponentProps) => {
   const divId = createIdentifierForHTMLElement(idPrefix, idSuffix, "div");
   const inputId = createIdentifierForHTMLElement(idPrefix, idSuffix, "input");
 
@@ -29,7 +34,7 @@ export const InputComponent = ({ idPrefix, idSuffix, input, label, tooltip, setI
         </div>
         <div className="grow"></div>
       </Label>
-      <Input id={inputId} value={input} className="grow my-1" onChange={target => setInput(target.target.value)} disabled={disabled ?? false} />
+      <Input ref={requiredRefObject} id={inputId} value={input} className="grow my-1" onChange={target => setInput(target.target.value)} disabled={disabled ?? false} required={requiredRefObject !== undefined}/>
     </div>
   </div>;
 };

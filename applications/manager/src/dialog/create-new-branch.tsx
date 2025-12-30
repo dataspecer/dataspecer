@@ -1,5 +1,5 @@
 import { BetterModalProps, } from "@/lib/better-modal";
-import { useContext, useLayoutEffect, useState } from "react";
+import { useContext, useLayoutEffect, useRef, useState } from "react";
 import { Package } from "@dataspecer/core-v2/project";
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { modifyPackageProjectData, modifyPackageRepresentsBranchHead, packageSer
 import { createIdentifierForHTMLElement, InputComponent } from "@/components/simple-input-component";
 import { toast } from "sonner";
 import { createSetterWithGitValidation, PACKAGE_ROOT } from "@dataspecer/git";
+import { resolveWithRequiredCheck } from "./git-url";
 
 export enum BranchAction {
   CreateNewBranch,
@@ -24,6 +25,7 @@ const idPrefix = "createNewbranch";
 
 export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, resolve }: CreateBranchDialogProps) => {
   const [branch, setBranch] = useState<string>(sourcePackage.branch);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   useLayoutEffect(() => {
     if (isOpen) {
@@ -39,7 +41,13 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
     const existingBranchesForProject = existingPackagesForProject.map(p => p?.branch);
     const branchAlreadyExists = existingBranchesForProject.includes(branch);
 
+    if (!resolveWithRequiredCheck(() => {}, inputRef)) {
+      // The branch is empty
+      return;
+    }
+
     if (branch === "") {
+      // Should be covered by the resolve check.
       // TODO RadStr Later: Localization
       toast.error("Given branch name is empty");
       resolve(null);
@@ -68,6 +76,7 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
       await modifyPackageProjectData(sourcePackage.iri, sourcePackage.projectIri, branch);
       await requestLoadPackage(sourcePackage.iri, true);
     }
+
     resolve({ newBranch: branch, });
   };
   const handleDialogCloseWithoutSave = () => {
@@ -92,7 +101,7 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
             <ModalDescription>{modalDescription}</ModalDescription>
           </ModalHeader>
 
-          <InputComponent idPrefix={idPrefix} idSuffix={0} label="Set branch name" input={branch} setInput={createSetterWithGitValidation(setBranch)} tooltip={titleTooltip}/>
+          <InputComponent requiredRefObject={inputRef} idPrefix={idPrefix} idSuffix={0} label="Set branch name" input={branch} setInput={createSetterWithGitValidation(setBranch)} tooltip={titleTooltip}/>
 
           <ModalFooter>
             <Button variant="outline" onClick={handleDialogCloseWithoutSave}>Close</Button>

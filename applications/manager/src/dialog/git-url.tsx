@@ -1,7 +1,7 @@
 import { Modal, ModalBody, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { BetterModalProps, OpenBetterModal } from "@/lib/better-modal";
-import { useLayoutEffect, useMemo, useState } from "react";
+import { RefObject, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { gitOperationResultToast } from "@/utils/utilities";
 import { requestLoadPackage } from "@/package";
 import { createIdentifierForHTMLElement, InputComponent } from "@/components/simple-input-component";
@@ -15,6 +15,30 @@ import { createCloseDialogObject, LoadingDialog } from "@/components/loading-dia
 import { ComboBox, createGitProviderComboBoxOptions } from "@/components/combo-box";
 import { removeMergeState } from "@/utils/merge-state-backend-requests";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
+
+/**
+ * Checks if the {@link requiredFieldsRefs} are valid (non-empty). If so, the {@link resolve} method is called.
+ * @returns True if all the refs are valid. That is they are non-empty. (To be exact the reportValidity returns tre)
+ */
+export const resolveWithRequiredCheck = (resolve: () => void, ...requiredFieldsRefs: RefObject<HTMLInputElement | null>[]): boolean => {
+  let areRefsValid : boolean = true;
+  for (const ref of requiredFieldsRefs) {
+    if (ref.current === null) {
+      continue;
+    }
+    const isValid = ref.current?.reportValidity();
+    if (isValid === undefined) {
+      throw new Error("The field has no reportValidity method. Either it is different element or the ref of the input field was not set");
+    }
+    areRefsValid &&= isValid;
+  }
+
+  if (areRefsValid) {
+    resolve();
+  }
+
+  return areRefsValid;
+}
 
 
 type GitActionsDialogProps = {
@@ -61,6 +85,8 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   const [shouldAlwaysCreateMergeState, setShouldAlwaysCreateMergeState] = useState<boolean>(shouldShowAlwaysCreateMergeStateOption !== false);
   const [shouldAppendAfterDefaultMergeCommitMessage, setShouldAppendAfterDefaultMergeCommitMessage] = useState<boolean>(true);
   const [exportFormat, setExportFormat] = useState<ExportFormatType>("json");
+  const repositoryNameInputFieldRef = useRef<HTMLInputElement | null>(null);
+
 
   let suffixNumber = 0;
 
@@ -71,8 +97,12 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
     }
   }, []);
 
-  const closeWithSuccess = () => {
-    resolve({ user, repositoryName, remoteRepositoryURL, gitProvider, commitMessage, isUserRepo, shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage, exportFormat });
+  const tryCloseWithSuccess = () => {
+    const resolveAsNoParamsMethod = () => {
+      resolve({ user, repositoryName, remoteRepositoryURL, gitProvider, commitMessage, isUserRepo, shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage, exportFormat });
+    };
+
+    resolveWithRequiredCheck(resolveAsNoParamsMethod, repositoryNameInputFieldRef);
   }
 
   const shouldDisableConfirm = useMemo(() => {
@@ -128,7 +158,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
     case "create-new-repository-and-commit":
       modalBody = <div>
         <ComboBox options={gitProvidersComboboxOptions} onChange={(value: string) => setGitProvider(value)}/>
-        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Repository name" setInput={createSetterWithGitValidation(setRepositoryName)} input={repositoryName} />
+        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Repository name" setInput={createSetterWithGitValidation(setRepositoryName)} input={repositoryName} requiredRefObject={repositoryNameInputFieldRef}/>
         <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Repository owner" tooltip="Name under which should be the repository created. If empty - auth user name is used, if not logged in or user did not provide rights to create repo, bot name is used" setInput={createSetterWithGitValidation(setUser)} input={user} />
         <label className="flex items-center space-x-2 cursor-pointer -mt-4">
           <input
@@ -205,7 +235,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
         </ModalBody>
         <ModalFooter className="flex flex-row">
           <Button variant="outline" onClick={() => resolve(null)}>Cancel</Button>
-          <Button type="submit" onClick={closeWithSuccess} disabled={shouldDisableConfirm}>Confirm</Button>
+          <Button type="submit" onClick={tryCloseWithSuccess} disabled={shouldDisableConfirm}>Confirm</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
