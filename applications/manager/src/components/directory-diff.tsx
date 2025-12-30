@@ -478,17 +478,17 @@ function StyledNode({
 
   let backgroundColor: string | undefined = undefined;
   if (node.isSelected) {
-    backgroundColor = "#a2a2a5ff";
+    backgroundColor = "#c9c2f3ff";
   }
   else if (node.data.shouldBeHighlighted) {
-    backgroundColor = "#afb3c5ff";
+    backgroundColor = "#d3d9ecff";
   }
 
   const styledNode = (
     <>
       <div
         key={node.data.id}
-        className="relative group px-3 hover:bg-gray-50 focus-within:bg-gray-50 whitespace-nowrap"
+        className="relative group bg-gray-50 whitespace-nowrap"
       >
         <div
           style={{
@@ -499,7 +499,7 @@ function StyledNode({
             // which is problem because if we click in the space,
             // the upper node is selected - which can be non-leaf and we do not want that
             height: `${treeRowHeight}px`,
-            width: 600,   // TODO RadStr: Ugly hack to not have text over multiple lines (can't think of any other EASY fix - non-easy fix would be set the width based on longest element or set rowHeight based on over how many lines it goes over)
+            width: 1900,   // TODO RadStr: Ugly hack to not have text over multiple lines (can't think of any other EASY fix - non-easy fix would be set the width based on longest element or set rowHeight based on over how many lines it goes over)
             color,
             cursor: isExpandable ? "pointer" : "default",
             background: backgroundColor,
@@ -1031,7 +1031,7 @@ export const DiffTreeVisualization = (props: {
               </Tree>)
           }
         </div> */}
-        <div className="flex-1 border border-stone-200 h-full" style={{height: treeRowHeight*treeRowHeightMultiplier}}>
+        <div className="flex-1 border border-stone-200 bg-gray-50 h-full" style={{height: treeRowHeight*treeRowHeightMultiplier}}>
           <h3><DiffEditorEditIcon/></h3>
           {
             renderTreeWithLoading(props.isLoadingTreeStructure,
