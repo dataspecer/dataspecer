@@ -51,7 +51,7 @@ import { updateMergeState } from "./routes/update-merge-state.ts";
 import { finalizeMergeState } from "./routes/finalize-merge-state.ts";
 import { createMergeStateBetweenDSPackagesHandler } from "./routes/create-merge-state.ts";
 import { clearMergeStateTableDebug } from "./routes/debug-clear-merge-state-table.ts";
-import { storeNewPrivateSSHKeyToBackend, storePrivateSSHKeyHandler } from "./routes/store-private-ssh-key.ts";
+import { storePrivateSSHKeyHandler } from "./routes/store-private-ssh-key.ts";
 import { removeMergeState } from "./routes/remove-merge-state.ts";
 import { finalizePullMergeState } from "./routes/finalize-pull-merge-state.ts";
 import { finalizePushMergeState } from "./routes/finalize-push-merge-state.ts";
@@ -63,13 +63,15 @@ import { markPackageAsHavingNoUncommittedChanges } from "./routes/mark-package-a
 import { checkExistenceOfSshKeyForUserHandler } from "./routes/check-ssh-key-existence.ts";
 import { deletePrivateSshKeyHandler } from "./routes/remove-private-ssh-key.ts";
 import { GitProviderNamesAsType } from "@dataspecer/git";
-import { populateSshKnownHosts } from "@dataspecer/git-node";
+import { populateSshKnownHosts, storeNewPrivateSSHKeyToBackend } from "@dataspecer/git-node";
+import { pathToSSHConfigForDS, pathToSSHForDS } from "./utils/create-ssh-path-constants.ts";
 
 
 for (const [gitProviderName, gitConfiguration] of Object.entries(configuration?.gitBotConfigurations ?? {})) {
   if (gitConfiguration?.dsBotSSHPrivateKey !== undefined && gitConfiguration?.dsBotSSHId !== undefined) {
     populateSshKnownHosts();
-    storeNewPrivateSSHKeyToBackend(gitConfiguration.dsBotSSHPrivateKey, gitConfiguration.dsBotSSHId, gitProviderName as GitProviderNamesAsType);
+    storeNewPrivateSSHKeyToBackend(
+      gitConfiguration.dsBotSSHPrivateKey, gitConfiguration.dsBotSSHId, gitProviderName as GitProviderNamesAsType, pathToSSHForDS, pathToSSHConfigForDS);
   }
 }
 // Create application models

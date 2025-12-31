@@ -4,9 +4,9 @@ import { createBasicAuthConfig, createAuthConfigBasedOnAccountScope } from "./au
 import { asyncHandler } from "../utils/async-handler.ts";
 import { AccessToken, AccessTokenType, ConfigType, GitProvider, GitCredentials } from "@dataspecer/git";
 import { getToken } from "@auth/core/jwt"
-import { createUserSSHIdentifier } from "../routes/store-private-ssh-key.ts";
 import configuration from "../configuration.ts";
 import { convertExpressRequestToNormalRequest, getBaseBackendUrl } from "../utils/express-url-utils.ts";
+import { createUserSSHIdentifier } from "@dataspecer/git-node";
 
 
 export async function currentSession(

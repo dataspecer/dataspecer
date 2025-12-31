@@ -1,8 +1,9 @@
 import {asyncHandler} from "../utils/async-handler.ts";
 import express, { query } from "express";
 import { z } from "zod";
-import { createUserSSHIdentifier, splitIntoLinesAndCheckForMatchingLine, sshForDSConfigPath } from "./store-private-ssh-key.ts";
 import { GitProviderNamesAsType, isGitProviderName } from "@dataspecer/git";
+import { createUserSSHIdentifier, splitIntoLinesAndCheckForMatchingLine } from "@dataspecer/git-node";
+import { pathToSSHConfigForDS } from "../utils/create-ssh-path-constants.ts";
 
 export const checkExistenceOfSshKeyForUserHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
@@ -44,5 +45,5 @@ function checkExistenceOfSshKeyForUser(userSSHIdentifer: string, gitProviderLowe
     throw new Error("TODO: Currently only implementation for github");
   }
   const configIdentifier = `Host ${userSSHIdentifer}`;
-  return splitIntoLinesAndCheckForMatchingLine(sshForDSConfigPath, configIdentifier).index >= 0;
+  return splitIntoLinesAndCheckForMatchingLine(pathToSSHConfigForDS, configIdentifier).index >= 0;
 }
