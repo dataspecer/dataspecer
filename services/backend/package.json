@@ -18,6 +18,7 @@
     "@dataspecer/core-v2": "*",
     "@dataspecer/documentation": "*",
     "@dataspecer/genapp": "*",
+    "@dataspecer/auth": "*",
     "@dataspecer/git": "*",
     "@dataspecer/git-node": "*",
     "@dataspecer/json": "*",

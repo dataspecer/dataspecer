@@ -1,5 +1,5 @@
 {
-  "name": "@dataspecer/git",
+  "name": "@dataspecer/auth",
   "version": "0.0.0",
   "type": "module",
   "scripts": {
@@ -8,20 +8,14 @@
     "prebuild": "rimraf lib"
   },
   "exports": {
-    ".": "./lib/index.js",
-    "./git-providers": "./lib/git-providers/index.js"
+    ".": "./lib/index.js"
   },
   "devDependencies": {
     "rimraf": "^6.0.1",
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@dataspecer/core": "*",
-    "@dataspecer/core-v2": "*",
-    "@dataspecer/auth": "*",
-    "yaml": "2.8.0"
   },
   "peerDependencies": {
-
   }
 }

@@ -1,7 +1,7 @@
 import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
-import { type GitBotConfiguration, type OAuthConfiguration } from "../auth/git-auth-configuration-types.ts";
 import { CommitReferenceType, ConvertRepoURLToDownloadZipURLReturnType, CreateRemoteRepositoryReturnType, ExtractedCommitReferenceValueFromRepositoryURL, ExtractedCommitReferenceValueFromRepositoryURLExplicit, GetResourceForGitUrlAndBranchType, GitCredentials, GitProvider, GitProviderEnum, RepositoryURLPart, WebhookRequestDataGitProviderIndependent } from "../git-provider-api.ts";
 import { Scope } from "../auth.ts";
+import { type GitBotConfiguration, type OAuthConfiguration } from "@dataspecer/auth";
 
 export type AuthenticationGitProviderData = {
   gitBotConfiguration?: GitBotConfiguration;

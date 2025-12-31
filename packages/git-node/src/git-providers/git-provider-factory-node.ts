@@ -1,4 +1,4 @@
-import { extractPartOfRepositoryURL, GitProvider, GitProviderEnum, GitProviderNode } from "@dataspecer/git";
+import { extractPartOfRepositoryURL, GitProviderEnum, GitProviderNode } from "@dataspecer/git";
 import fs from "fs";
 import { GitHubNodeProvider } from "./git-provider-instances/github-node.ts";
 import { GitLabNodeProvider } from "./git-provider-instances/gitlab-node.ts";

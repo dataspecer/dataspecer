@@ -3,7 +3,7 @@ import { GitLabProvider } from "./git-provider-instances/gitlab.ts";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { GitProvider, GitProviderEnum, GitProviderNamesAsType } from "../git-provider-api.ts";
 import { extractPartOfRepositoryURL } from "../git-utils.ts";
-import { GitBotConfiguration, OAuthConfiguration } from "../auth/git-auth-configuration-types.ts";
+import { type GitBotConfiguration, type OAuthConfiguration } from "@dataspecer/auth";
 
 export type AuthenticationGitProvidersData = {
   gitBotConfigurations?: Record<GitProviderNamesAsType, GitBotConfiguration>;

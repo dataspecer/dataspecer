@@ -1,7 +1,7 @@
 // @ts-ignore
-import configuration from "../main.config.js";
+import configuration from "../main.config.js";          // Has to be first in imports otherwise it shows error
+import { type GitBotConfiguration, type OAuthConfiguration } from "@dataspecer/auth";
 import { GitProviderNamesAsType } from "@dataspecer/git";
-import { type GitBotConfiguration, type OAuthConfiguration } from "@dataspecer/git/auth";
 
 
 export interface Configuration {
