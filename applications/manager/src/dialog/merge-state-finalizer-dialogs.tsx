@@ -284,21 +284,23 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
     );
   }
 
+  const rebaseCommitTooltip = "Creates new commit with the changes on top. Basically the same thing as fast-forward.";
+  const mergeCommitTooltip = "Creates classic merge commit.";
+
 
   return (
     <>
       <ModalHeader>
         <ModalTitle>Finish merge state caused by merging (Step 1/3)</ModalTitle>
         <ModalDescription>
-          You can choose to either:
-          {mergeState.isMergeFromBranch && <p>&nbsp;&nbsp;<strong>-</strong> Create classic merge commit.</p>}
-          <p>&nbsp;&nbsp;<strong>-</strong> Rebase commit = Create new commit and put the changes on top (basically same as fast-forward).</p>
-          <p>&nbsp;&nbsp;<strong>-</strong> Close the dialog and handle it all later.</p>
+          <p>Note that you can also safely close this dialog and finish the merge later.</p>
+          <br></br>
+          <p>Check tooltips on button{mergeState.isMergeFromBranch ? "s" : ""} for more info.</p>
         </ModalDescription>
       </ModalHeader>
       <ModalFooter>
-        {mergeState.isMergeFromBranch && <Button variant="outline" onClick={() => handleMergeAction()}>Create merge commit</Button>}
-        <Button variant="outline" onClick={() => handleRebaseAction()}>Create rebase commit</Button>
+        {mergeState.isMergeFromBranch && <Button className="hover:bg-purple-700" title={mergeCommitTooltip} onClick={() => handleMergeAction()}>Merge</Button>}
+        <Button className="hover:bg-purple-700" title={rebaseCommitTooltip} onClick={() => handleRebaseAction()}>Rebase</Button>
       </ModalFooter>
     </>
   );
