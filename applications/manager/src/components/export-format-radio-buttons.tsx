@@ -8,7 +8,6 @@ type ExportFormatRadioButtonsProps = {
 }
 
 export const ExportFormatRadioButtons = (props: ExportFormatRadioButtonsProps) => {
-
   return (
     <div className="mt-4 mb-4 flex items-center space-x-6">
       <span className="text-sm font-semibold">Choose an export format:</span>

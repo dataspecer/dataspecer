@@ -160,16 +160,28 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
         <ComboBox options={gitProvidersComboboxOptions} onChange={(value: string) => setGitProvider(value)}/>
         <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Repository name" setInput={createSetterWithGitValidation(setRepositoryName)} input={repositoryName} requiredRefObject={repositoryNameInputFieldRef}/>
         <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Repository owner" tooltip="Name under which should be the repository created. If empty - auth user name is used, if not logged in or user did not provide rights to create repo, bot name is used" setInput={createSetterWithGitValidation(setUser)} input={user} />
-        <label className="flex items-center space-x-2 cursor-pointer -mt-4">
-          <input
-            type="checkbox"
-            checked={isUserRepo}
-            onChange={(e) => setIsUserRepo(e.target.checked)}
-            className="w-5 h-5 border-gray-400 text-blue-600 focus:ring-blue-500"
-          />
-          <span className="text-gray-800">Is user repo (if not checked it is organization repo)</span>
-        </label>
-        <div className="my-6"/>
+        <div className="mt-4 mb-4 flex items-center space-x-6">
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="radio"
+              checked={isUserRepo === true}
+              onChange={() => setIsUserRepo(true)}
+              className="w-5 h-5 border-gray-400 text-blue-600 focus:ring-blue-500 form-radio text-blue-600"
+            />
+            <span >User repository</span>
+          </label>
+
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="radio"
+              checked={isUserRepo === false}
+              onChange={() => setIsUserRepo(false)}
+              className="w-5 h-5 border-gray-400 text-blue-600 focus:ring-blue-500 form-radio text-blue-600"
+            />
+            <span>Organization repository</span>
+          </label>
+        </div>
+        <div className="my-8"/>
         <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Initial commit message" setInput={setCommitMessage} input={commitMessage} />
         <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
       </div>;

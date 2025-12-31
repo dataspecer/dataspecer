@@ -28,7 +28,7 @@ export abstract class GitProviderFactory {
   static createGitProviderFromWebhookRequest(
     request: ExpressRequestForGitProviderFactoryType,
     httpFetch: HttpFetch,
-    authenticationGitProvidersData: AuthenticationGitProvidersData
+    authenticationGitProvidersData: AuthenticationGitProvidersData,
   ): WebhookRequestProviderSpecificData {
     if (request.body !== undefined && request.body.payload === undefined) {
       return {
