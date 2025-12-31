@@ -30,7 +30,7 @@ export const InputComponent = ({ idPrefix, idSuffix, input, label, tooltip, setI
     <div title={tooltip} key={divId}>
       <Label htmlFor={inputId} className="flex grow-3 items-baseline gap-2 mb-2">
         <div>
-          {label}
+          {label } {requiredRefObject === undefined ? null : <span className="text-red-500">*</span>}
         </div>
         <div className="grow"></div>
       </Label>

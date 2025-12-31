@@ -101,7 +101,7 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
             <ModalDescription>{modalDescription}</ModalDescription>
           </ModalHeader>
 
-          <InputComponent requiredRefObject={inputRef} idPrefix={idPrefix} idSuffix={0} label="Set branch name" input={branch} setInput={createSetterWithGitValidation(setBranch)} tooltip={titleTooltip}/>
+          <InputComponent requiredRefObject={inputRef} idPrefix={idPrefix} idSuffix={0} label="Branch name" input={branch} setInput={createSetterWithGitValidation(setBranch)} tooltip={titleTooltip}/>
 
           <ModalFooter>
             <Button variant="outline" onClick={handleDialogCloseWithoutSave}>Close</Button>
