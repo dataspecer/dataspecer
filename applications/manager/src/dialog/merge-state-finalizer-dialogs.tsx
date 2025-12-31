@@ -56,7 +56,7 @@ export const MergeStateFinalizerDialog = ({ mergeState, openModal, isOpen, resol
   let waitingContent: React.ReactElement;
   if (mergeState.mergeStateCause === "merge") {
     content = MergeStateFinalizerForMerge({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, setIsWaitingForAnswer, secondsPassed, setSecondsAtStartofMerge, openModal, resolve });
-    waitingContent = <div >
+    waitingContent = <div>
       <p>Validating merge state against Git remote.</p>
       <p>Usually takes around 5-15 seconds.</p>
       <div className="flex">
@@ -199,9 +199,11 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
         resolve();
       }
       else if (response < 300) {
-        toast.success("Everything seems to be ok. Proceed with merging.");
-        await mergeCommitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, mergeState);
         resolve();
+        toast.success("Everything seems to be ok. Proceed with merging.");
+        setTimeout(() => {
+          mergeCommitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, mergeState);
+        }, 10);     // Small delay to keep the background of same color (that is we wait until the resolve which closes the currently opened dialog is done)
       }
       else if (response < 400) {
         // TODO RadStr: Probably do nothing - we will just show the another dialog.
@@ -229,14 +231,16 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
         resolve();
       }
       else if (response < 300) {
-        toast.success("Everything seems to be ok. Proceed with rebasing.");
         resolve();
+        toast.success("Everything seems to be ok. Proceed with rebasing.");
         const onSuccessCallback = async () => {
           await removeMergeState(mergeState.uuid);
           requestLoadPackage(mergeState.rootIriMergeFrom, true);
           requestLoadPackage(mergeState.rootIriMergeTo, true);
         };
-        await commitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, "rebase-commit", false, mergeState.commitMessage, onSuccessCallback);
+        setTimeout(() => {
+          commitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, "rebase-commit", false, mergeState.commitMessage, onSuccessCallback);
+        }, 10);     // Same as for merge, small delay to keep the background same color.
       }
       else if (response < 400) {
         // TODO RadStr: Probably do nothing - we will just show the another dialog.
@@ -287,7 +291,7 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
         <ModalDescription>
           You can choose to either:
           {mergeState.isMergeFromBranch && <p>&nbsp;&nbsp;<strong>-</strong> Create classic merge commit.</p>}
-          <p>&nbsp;&nbsp;<strong>-</strong> Rebase commit - that is create new commit and put the changes on top (basically same as fast-forward).</p>
+          <p>&nbsp;&nbsp;<strong>-</strong> Rebase commit = Create new commit and put the changes on top (basically same as fast-forward).</p>
           <p>&nbsp;&nbsp;<strong>-</strong> Close the dialog and handle it all later.</p>
         </ModalDescription>
       </ModalHeader>
