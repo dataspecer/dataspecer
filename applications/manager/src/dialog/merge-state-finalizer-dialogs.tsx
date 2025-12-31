@@ -57,6 +57,7 @@ export const MergeStateFinalizerDialog = ({ mergeState, openModal, isOpen, resol
   if (mergeState.mergeStateCause === "merge") {
     content = MergeStateFinalizerForMerge({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, setIsWaitingForAnswer, secondsPassed, setSecondsAtStartofMerge, openModal, resolve });
     waitingContent = <div>
+      <p className="font-bold">Step 2/3</p>
       <p>Validating merge state against Git remote.</p>
       <p>Usually takes around 5-15 seconds.</p>
       <div className="flex">
@@ -287,7 +288,7 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
   return (
     <>
       <ModalHeader>
-        <ModalTitle>Finish merge state caused by merging</ModalTitle>
+        <ModalTitle>Finish merge state caused by merging (Step 1/3)</ModalTitle>
         <ModalDescription>
           You can choose to either:
           {mergeState.isMergeFromBranch && <p>&nbsp;&nbsp;<strong>-</strong> Create classic merge commit.</p>}
