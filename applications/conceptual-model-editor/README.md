@@ -17,6 +17,7 @@ As Vite is using caching of sources, changes in the imported packages from this 
 To address this you need to force Vite to rebuild cache using `npx vite --force`.
 Keep in mind that this command takes a little bit more time.
 
+
 # Known issues
 We put all dependencies in package.json into "dependencies".
 When using "devDependencies" as we should, there is issue with rollup and npm.
