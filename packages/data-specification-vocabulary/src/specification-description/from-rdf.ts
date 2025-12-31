@@ -122,6 +122,20 @@ export function rdfToDSVMetadata(
         // Filter out known types
         types = types.filter((t) => t !== ADMS.AssetDistribution && t !== PROF.ResourceDescriptor);
 
+        let conformsTo = store.getObjects(resourceSubject.id, DCT_CONFORMS_TO, null).map((obj) => obj.value);
+
+        // https://github.com/dataspecer/dataspecer/issues/1366
+        // We need to inject dsv:ApplicationProfile if it looks like dsv ap export
+        if (
+          roles.some(role => role.value ===  "http://www.w3.org/ns/dx/prof/role/Specification") &&
+          formats.some(format => format.value === mimeToIriMap[dsvMetadataWellKnown.formatMime.turtle]) &&
+          conformsTo.includes(DSV.ApplicationProfileSpecificationDocument) &&
+          conformsTo.includes(dsvMetadataWellKnown.conformsTo.profProfile)
+        ) {
+          conformsTo = conformsTo.filter(ct => ct !== DSV.ApplicationProfileSpecificationDocument);
+          conformsTo.push(DSV.ApplicationProfile);
+        }
+
         return {
           iri: resourceSubject.value,
           url: artefactUrl,
@@ -130,7 +144,7 @@ export function rdfToDSVMetadata(
           formatMime: foundMime ?? fallbackFormat,
           role: foundRole,
 
-          conformsTo: store.getObjects(resourceSubject.id, DCT_CONFORMS_TO, null).map((obj) => obj.value),
+          conformsTo,
         } satisfies ResourceDescriptor;
       }),
     } satisfies Specification;
