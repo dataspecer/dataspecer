@@ -82,7 +82,7 @@ export default function SetPrivateSSHKeyDialog({ isOpen, resolve }: SetPrivateSS
         </ModalBody>
         <ModalFooter className="flex flex-row">
           <Button variant="outline" onClick={() => resolve(null)}>Cancel</Button>
-          <Button type="submit" form="send-private-ssh-key-form" disabled={privateSSHKey === ""}>Confirm</Button>
+          <Button type="submit" className="hover:bg-purple-700" form="send-private-ssh-key-form" disabled={privateSSHKey === ""}>Confirm</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>

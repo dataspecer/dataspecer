@@ -235,7 +235,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
         </ModalBody>
         <ModalFooter className="flex flex-row">
           <Button variant="outline" onClick={() => resolve(null)}>Cancel</Button>
-          <Button type="submit" onClick={tryCloseWithSuccess} disabled={shouldDisableConfirm}>Confirm</Button>
+          <Button type="submit" className="hover:bg-purple-700" onClick={tryCloseWithSuccess} disabled={shouldDisableConfirm}>Confirm</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>

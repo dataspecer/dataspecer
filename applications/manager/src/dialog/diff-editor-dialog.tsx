@@ -127,7 +127,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
                       <Button title="This does save both the changes to files and updates the merge state"
                               variant={"outline"}
                               onClick={() => saveEverything()}
-                              className="m-1 bg-blue-600 hover:bg-blue-700">
+                              className="m-1 bg-blue-400 hover:bg-blue-600">
                         Save All (Ctrl + S)
                       </Button>
                       {

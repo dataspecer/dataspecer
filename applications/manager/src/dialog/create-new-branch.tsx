@@ -105,7 +105,7 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
 
           <ModalFooter>
             <Button variant="outline" onClick={handleDialogCloseWithoutSave}>Close</Button>
-            <Button variant="outline" onClick={handleDialogSave}>Confirm</Button>
+            <Button className="hover:bg-purple-700" onClick={handleDialogSave}>Confirm</Button>
           </ModalFooter>
         </ModalContent>
     </Modal>
