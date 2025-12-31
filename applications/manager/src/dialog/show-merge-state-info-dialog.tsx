@@ -102,7 +102,7 @@ export const ShowMergeStateInfoDialog = ({ mergeState, setIsInfoDialogShown, isO
                     </div>
                   )
                 }
-                <strong>Git Url:</strong> <a className="text-blue-600 underline hover:text-blue-800" href={gitUrl}>{gitUrl}</a>
+                <strong>Git URL:</strong> <a className="text-blue-600 underline hover:text-blue-800" href={gitUrl}>{gitUrl}</a>
               </div>
             )}
             {/* ---- END OF COLLAPSIBLE SECTION ---- */}

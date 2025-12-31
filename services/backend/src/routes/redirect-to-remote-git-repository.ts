@@ -5,7 +5,7 @@ import express from "express";
 
 
 /**
- * @deprecated It works, however we have the git url available in frontend, therefore this is extra redirect, which we don't need. So it is unused
+ * @deprecated It works, however we have the Git URL available in frontend, therefore this is extra redirect, which we don't need. So it is unused
  */
 export const redirectToRemoteGitRepository = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({

@@ -284,7 +284,7 @@ export class ResourceModel implements ResourceModelTODOBetterName {
      *  It is important to note that setting {@link shouldSetProjectIris} does not behave as you probably think it does.
      * If it is true, we always set the projectIri either to the projectIri of existing resource or to the iri of the resource we are updating.
      * But for the children? We can not map between resources, we don't have data by which we could link the resources together - we have just iris and project iris.
-     * Well and iris are different between the different packages representing the same git url and projectIris either don't match or they should match.
+     * Well and iris are different between the different packages representing the same Git URL and projectIris either don't match or they should match.
      * So if it is true we just set the projectIri to the iri of the resource itself. But note that this should be already the case after creating the resource.
      * @param shouldSetProjectIris Should be probably always false - TODO RadStr: because it is unnecessary I think - so we could just remove it together with the code in if
      */
@@ -295,7 +295,7 @@ export class ResourceModel implements ResourceModelTODOBetterName {
 
         const resourceToUpdate = await this.prismaClient.resource.findFirst({where: {iri}});
         if (resourceToUpdate === null) {
-            throw new Error(`The resource with iri (${iri}) is missing. Can't set linked git url: ${linkedGit}`);
+            throw new Error(`The resource with iri (${iri}) is missing. Can't set linked Git URL: ${linkedGit}`);
         }
 
         if (shouldSetProjectIris) {

@@ -195,7 +195,7 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
           .catch((error) => {
             setIsLoading(false);
             alert("Fetch error, check console for more info");
-            console.error(`Error when fetching git history for ${examinedPackage.iri}. The error: ${error}`);
+            console.error(`Error when fetching Git history for ${examinedPackage.iri}. The error: ${error}`);
           });
       }
     }, []);

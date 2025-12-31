@@ -426,7 +426,7 @@ export const importResource = asyncHandler(async (request: express.Request, resp
 
 
 /**
- * Generates specification from git URL passed in as argument from command line
+ * Generates specification from Git URL passed in as argument from command line
  * @param repositoryURL is the URL of git repository (method also supports non-main branch URLs),
  *  this URL is transformed to the URL which downloads zip - for example https://github.com/RadStr-bot/4f21bf6d-2116-4ab3-b387-1f8074f7f412/archive/refs/heads/main.zip
  * @param commitReferenceType if not provided it just fallbacks to defaults

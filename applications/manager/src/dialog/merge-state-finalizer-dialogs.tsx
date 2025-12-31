@@ -388,7 +388,7 @@ const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldR
         <ModalHeader>
           <ModalTitle>Finish merge state caused by pushing to remote repository</ModalTitle>
           <ModalDescription>
-            You can either push the current content of package to git remote or close the dialog and finish later.
+            You can either push the current content of package to Git remote or close the dialog and finish later.
             <br/>
             <br/>
             Note that if the remote moved, you will be informed that the push failed.

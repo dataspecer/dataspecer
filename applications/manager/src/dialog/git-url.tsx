@@ -131,7 +131,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
       case "link-to-existing-repository":
         return "Link package to remote Git repository";
       default:
-        return "[Programmer oversight - We forgot to extend modal title memo for git dialog]"
+        return "[Programmer oversight - We forgot to extend modal title memo for Git dialog]"
     }
   }, [type]);
 
@@ -143,13 +143,13 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
         if (!inputPackage.representsBranchHead) {
           return "You can not commit into package, which represents tag. Turn it into branch first.";
         }
-        return "Insert the commit message for git";
+        return "Insert the commit message for Git";
       case "merge-commit":
         return "Insert the commit message for git merge";
       case "link-to-existing-repository":
-        return "Insert URL of Git remote repository, which already exists and to which you want to link the current package. Note that you can put in url pointing to commit/branch/tag.";
+        return "Insert URL of Git remote repository, which already exists and to which you want to link the current package. Note that you can put in URL pointing to commit/branch/tag.";
       default:
-        return "[Programmer oversight - We forgot to extend modal description memo for git dialog]"
+        return "[Programmer oversight - We forgot to extend modal description memo for Git dialog]"
     }
   }, [type]);
 
@@ -208,7 +208,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
               className="w-5 h-5 accent-blue-600"
             />
             <span>{shouldAppendAfterDefaultMergeCommitMessage ?
-              "The given message will be put after the default merge message created in git (current option)" :
+              "The given message will be put after the default merge message created in Git (current option)" :
               "The merge message will look exactly as given (current option)"}</span>
           </label>
         </div>;
@@ -378,11 +378,11 @@ export const linkToExistingGitRepositoryHandler = async (openModal: OpenBetterMo
     const response = await linkToExistingGitRepositoryRequest(iri, result.remoteRepositoryURL);
     if (response.ok) {
       // TODO RadStr later: Localization
-      toast.success("Sucessfully updated link to remote git repository");
+      toast.success("Sucessfully updated link to remote Git repository");
     }
     else {
       // TODO RadStr later: Localization
-      toast.error("Failed updating link to remote git repository");
+      toast.error("Failed updating link to remote Git repository");
     }
     requestLoadPackage(iri, true);
   }

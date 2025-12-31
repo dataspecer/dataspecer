@@ -66,20 +66,20 @@ export const CommitActionsDialog = ({ examinedPackage, branch, commitHash, branc
     <Modal open={isOpen} onClose={() => resolve(null)}>
       <ModalContent className="min-w-[650px]">
         <ModalHeader>
-          <ModalTitle>Perform action on git commit</ModalTitle>
+          <ModalTitle>Perform action on Git commit</ModalTitle>
           {isPerformingAction && <Loader className="mr-2 h-4 w-4 animate-spin" /> }
           <ModalDescription>
             {`You are currently working with the following package (${lng(examinedPackage.userMetadata.label) ?? examinedPackage.iri}) and following commit ${commitHash.substring(0, 10)}.`}
             <br/>
             <br/>
-            {`You can choose to import the package into DS or visit the corresponding remote git url.`}
+            {`You can choose to import the package into DS or visit the corresponding remote Git URL.`}
             <br/>
             <br/>
             {branchAlreadyExistsInDS ?
               <div>
                 <p>Note that <strong>branch already exists</strong> inside Dataspecer and it is forbidden (for your own good) to have two packages tracking the same remote branch in Dataspecer.
                 <br/>
-                You can <strong>import static commit</strong> and then turn the commit into branch with <strong>new</strong> name. Or just click on create branch in the git menu.</p>
+                You can <strong>import static commit</strong> and then turn the commit into branch with <strong>new</strong> name. Or just click on create branch in the Git menu.</p>
                 <br/>
               </div> :
               null
@@ -90,7 +90,7 @@ export const CommitActionsDialog = ({ examinedPackage, branch, commitHash, branc
         <ModalFooter>
           <Button variant="outline" onClick={handleImportGitCommitToDS} disabled={isPerformingAction}>Import static commit to DS</Button>
           {branch !== null && !branchAlreadyExistsInDS && <Button variant="outline" onClick={handleImportGitBranchToDS} disabled={isPerformingAction}>Import branch ({branch}) to DS</Button>}
-          <Button variant="outline" onClick={handleRedirect} disabled={isPerformingAction}>View commit in git remote</Button>
+          <Button variant="outline" onClick={handleRedirect} disabled={isPerformingAction}>View commit in Git remote</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
