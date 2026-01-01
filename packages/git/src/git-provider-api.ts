@@ -150,8 +150,6 @@ export interface GitProvider {
    */
   removeRemoteRepository(authToken: string, repositoryOwner: string, repoName: string): Promise<FetchResponse>;
 
-  // TODO RadStr: Mozna vybrat jen podmnozinu a dat ji do enumu nebo nekam a pak vytvaret mapovani dle GitProvidera, ty requesty vypadaji ze ma kazdy jiny
-  // TODO RadStr: ... asi jo
   /**
    * Creates webhook for repository with the following URL: .../{@link repositoryOwner}/{@link repositoryName}.
    *   The webhook works for given {@link webhookEvents} and is handled on the following {@link webhookHandlerURL}.
@@ -162,6 +160,7 @@ export interface GitProvider {
    * @param webhookEvents Names of the events to have webhooks for: For example - push, pull_request in case of GitHub.
    *  List of all available webhooks in GitHub: https://docs.github.com/en/webhooks/webhook-events-and-payloads
    *  For GitLab: https://docs.gitlab.com/user/project/integrations/webhook_events
+   * @todo Once somebody implements for GitLab, it would be ideal to have it in some sort of enum instead of string.
    * @returns The response from the git provider
    */
   createWebhook(

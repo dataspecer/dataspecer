@@ -117,20 +117,8 @@ export function transformCommitMessageIfEmpty(commitMessage: string): string | n
 }
 
 
-// TODO RadStr: Once again not exactly git util
 /**
- * Note that we also use this on paths on filesystem for {@link ClassicFilesystem}.
- * This is for simplicity and uniformity, even though we should ideally use "\\" on Windows (that is path.sep).
- * But it really complicates stuff since we then have to spend extra mental capacity on thinking whether given can use OS specific separators or it is IRI.
- * @returns Given {@link pathParts} joined by "/".
- */
-export function dsPathJoin(...pathParts: string[]) {
-  return pathParts.filter(pathPart => pathPart !== "").join("/");
-}
-
-
-// TODO: Maybe put into different utils file
-/**
+ * If you want to extract something more then use the same method on Git Provider.
  * @param repositoryURL is the URL of the repository
  * @returns The part of given URL. Where the given URL can either be the main page
  *  (for example https://github.com/mff-uk/dataspecer) or some of the branches (for example https://github.com/mff-uk/dataspecer/tree/stable).
@@ -146,7 +134,6 @@ export function extractPartOfRepositoryURL(repositoryURL: string, part: Reposito
       return parsedUrl.host;
     }
 
-    // TODO: Not checking if the repository URL is correct
     const pathParts = parsedUrl.pathname.split("/").filter(part => part.length > 0);
 
     if (pathParts.length < 2) {

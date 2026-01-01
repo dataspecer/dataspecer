@@ -3,7 +3,7 @@ import _ from "lodash";
 import { Check, Loader, Minus, MoveLeft, MoveRight, Plus, X } from "lucide-react";
 import React, { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import { NodeApi, NodeRendererProps, Tree, TreeApi, } from "react-arborist";
-import { ComparisonData, CreateDatastoreFilesystemNodesInfo, DatastoreComparison, DatastoreInfo, DiffTree, EditableType, FilesystemNode, getDatastoreInfoOfGivenDatastoreType, MergeState, OldNewFilesystemNode, ResourceComparison } from "@dataspecer/git";
+import { ComparisonData, CreateDatastoreFilesystemNodesInfo, DatastoreComparisonWithChangeTypeInfo, DatastoreInfo, DiffTree, EditableType, FilesystemNode, getDatastoreInfoOfGivenDatastoreType, MergeState, OldNewFilesystemNode, ResourceComparison } from "@dataspecer/git";
 import { DiffEditorEditIcon } from "./crossed-out-icon";
 import { AddToCreatedDatastoresAndAddToCacheMethodType, AddToRemovedDatastoresAndAddToCacheMethodType, DatastoreInfosCache, DatastoreInfosForModel, EntriesAffectedByCreateType } from "@/hooks/use-diff-editor-dialog-props";
 
@@ -89,7 +89,7 @@ function extractFirstNonEmptyFieldFromComparison(comparison: OldNewFilesystemNod
   return (comparison.old?.[comparisonFieldToExtract] ?? comparison.new?.[comparisonFieldToExtract]);
 }
 
-function createIdForDatastoreRenderNode(datastoreComparison: Omit<DatastoreComparison, "datastoreComparisonResult">, treeToExtract: TreeType) {
+function createIdForDatastoreRenderNode(datastoreComparison: ComparisonData, treeToExtract: TreeType) {
   // It should be projectIris - so we can swap between the two trees easily by removing the treeToExtract suffix - TODO RadStr: However we might remove the left tree since it is useless
   // Note that at least one is not empty that is why we can type it to string
   return extractFirstNonEmptyFieldFromComparison(datastoreComparison, "projectIrisTreePath") as string + datastoreComparison.affectedDataStore.fullName + "-" + treeToExtract;
@@ -98,7 +98,7 @@ function createIdForDatastoreRenderNode(datastoreComparison: Omit<DatastoreCompa
 function createDatastoresRenderRepresentations(
   allConflicts: ComparisonData[],
   unresolvedConflicts: ComparisonData[],
-  datastoreComparisons: DatastoreComparison[],
+  datastoreComparisons: DatastoreComparisonWithChangeTypeInfo[],
   treeToExtract: TreeType,
   editableTree: EditableType,
 ): DatastoreRenderRepresentationsData {

@@ -7,10 +7,20 @@ export type CommitConflictInfo = {
 } | null;
 
 export type ComparisonData = {
-  old: FilesystemNode | null;
   affectedDataStore: DatastoreInfo;
+} & OldNewFilesystemNode;
+
+export type CreatedRemovedModified = "same" | "modified" | "created-in-new" | "removed-in-new";
+
+// It has additional info about how they differ.
+export type DatastoreComparisonWithChangeTypeInfo = {
+  datastoreComparisonResult: CreatedRemovedModified;
+} & ComparisonData;
+
+export type OldNewFilesystemNode = {
+  old: FilesystemNode | null;
   new: FilesystemNode | null;
-};
+}
 
 type MergeFromMergeTo = "MergeFrom" | "MergeTo";
 
@@ -142,23 +152,10 @@ export type ResourceComparisonResult = "exists-in-both" | "exists-in-new" | "exi
 export type ResourceComparison = {
   resources: OldNewFilesystemNode;
   resourceComparisonResult: ResourceComparisonResult;
-  datastoreComparisons: DatastoreComparison[];
+  datastoreComparisons: DatastoreComparisonWithChangeTypeInfo[];
   childrenDiffTree: DiffTree;     // Empty if the type of resource is file
 }
 
-export type CreatedRemovedModified = "same" | "modified" | "created-in-new" | "removed-in-new";
-
-
-// TODO RadStr: Changed compared to the backend - there it was named Comparison data and had different field
-export type DatastoreComparison = {
-  datastoreComparisonResult: CreatedRemovedModified;
-  affectedDataStore: DatastoreInfo;
-} & OldNewFilesystemNode;
-
-export type OldNewFilesystemNode = {
-  old: FilesystemNode | null;
-  new: FilesystemNode | null;
-}
 
 /**
  * Tells us which part of DiffEditor is editable. "mergeFrom" is the left one, "mergeTo" is the right one.
@@ -166,7 +163,6 @@ export type OldNewFilesystemNode = {
 export type EditableType = "mergeFrom" | "mergeTo";
 export const isEditableType = (value: string): value is EditableType => value === "mergeFrom" || value === "mergeTo";
 
-// TODO RadStr: Put into package, used both in backend and in client in the difftree dialog
 export interface MergeState {
   uuid: string;
 

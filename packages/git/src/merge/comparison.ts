@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { DatastoreInfo, DirectoryNode, FileNode, FilesystemNode } from "../export-import-data-api.ts";
 import { FilesystemAbstraction, getDatastoreInfoOfGivenDatastoreType } from "../filesystem/abstractions/filesystem-abstraction.ts";
-import { ComparisonData, DatastoreComparison, DiffTree, ResourceComparison, ResourceComparisonResult } from "./merge-state.ts";
+import { ComparisonData, DatastoreComparisonWithChangeTypeInfo, DiffTree, ResourceComparison, ResourceComparisonResult } from "./merge-state.ts";
 import { ResourceDatastoreStripHandlerBase } from "./comparison/resource-datastore-strip-handler-base.ts";
 
 export type ComparisonFullResult = {
@@ -90,7 +90,7 @@ async function compareTreesInternal(
         processedDatastoresInSecondTree.add(node2Datastore);
 
         if (await compareDatastoresContents(filesystem1, nodeValue, filesystem2, node2Value as FileNode, datastore1)) {
-          const same: DatastoreComparison = {
+          const same: DatastoreComparisonWithChangeTypeInfo = {
             old: nodeValue,
             new: node2Value ?? null,
             affectedDataStore: datastore1,
@@ -99,7 +99,7 @@ async function compareTreesInternal(
           currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(same);
         }
         else {
-          const changed: DatastoreComparison = {
+          const changed: DatastoreComparisonWithChangeTypeInfo = {
             old: nodeValue,
             new: node2Value ?? null,
             affectedDataStore: datastore1,
@@ -111,7 +111,7 @@ async function compareTreesInternal(
         }
       }
       else {
-        const removed: DatastoreComparison = {
+        const removed: DatastoreComparisonWithChangeTypeInfo = {
           old: nodeValue,
           new: null,
           affectedDataStore: datastore1,
@@ -127,7 +127,7 @@ async function compareTreesInternal(
     // Add those datastores which are present only in the second tree
     for (const datastore2 of node2Value?.datastores ?? []) {
       if (!processedDatastoresInSecondTree.has(datastore2)) {
-        const created: DatastoreComparison = {
+        const created: DatastoreComparisonWithChangeTypeInfo = {
           old: null,
           new: node2Value!,
           affectedDataStore: datastore2,
@@ -168,7 +168,7 @@ async function compareTreesInternal(
 
     for (const datastore of nodeValue.datastores) {
       // The datastore is not present, since the parent filesystem node does not exist, then it means that all of the datastores are not present neither
-      const created: DatastoreComparison = {
+      const created: DatastoreComparisonWithChangeTypeInfo = {
         datastoreComparisonResult: "created-in-new",
         old: null,
         new: nodeValue,
