@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { asyncHandler } from "../utils/async-handler.ts";
+import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
-import { resourceModel } from "../main.ts";
+import { resourceModel } from "../../main.ts";
 
 
 export const markPackageAsHavingNoUncommittedChanges = asyncHandler(async (request: express.Request, response: express.Response) => {

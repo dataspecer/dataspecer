@@ -7,19 +7,19 @@
 
 
 import { z } from "zod";
-import { asyncHandler } from "../utils/async-handler.ts";
+import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
-import { mergeStateModel, resourceModel } from "../main.ts";
+import { mergeStateModel, resourceModel } from "../../main.ts";
 import { BranchSummary, CommitResult, SimpleGit } from "simple-git";
 import { extractPartOfRepositoryURL, getAuthorizationURL, GitProviderNode, stringToBoolean } from "@dataspecer/git";
 import { AvailableFilesystems, ConfigType, GitCredentials, getMergeFromMergeToForGitAndDS, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase, createUniqueCommitMessage } from "@dataspecer/git";
-import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-session.ts";
-import { AvailableExports } from "../export-import/export-actions.ts";
+import { getGitCredentialsFromSessionWithDefaults } from "../../authorization/auth-session.ts";
+import { AvailableExports } from "../../export-import/export-actions.ts";
 import { getCommonCommitInHistory, gitCloneBasic, CreateSimpleGitResult, UniqueDirectory } from "@dataspecer/git-node/simple-git-methods";
-import { compareBackendFilesystems, compareGitAndDSFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
-import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
-import { MergeEndInfoWithRootNode, PrismaMergeStateWithData } from "../models/merge-state-model.ts";
-import { MergeEndpointForComparison } from "./create-merge-state.ts";
+import { compareBackendFilesystems, compareGitAndDSFilesystems } from "../../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
+import { PackageExporterByResourceType } from "../../export-import/export-by-resource-type.ts";
+import { MergeEndInfoWithRootNode, PrismaMergeStateWithData } from "../../models/merge-state-model.ts";
+import { MergeEndpointForComparison } from "./merge-states/create-merge-state.ts";
 import fs from "fs";
 import {
   checkErrorBoundaryForCommitAction, getLastCommit, getLastCommitHash, isDefaultBranch,
@@ -29,8 +29,8 @@ import {
   MERGE_DS_CONFLICTS_PREFIX,
 } from "@dataspecer/git-node";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
-import configuration from "../configuration.ts";
-import { ResourceModelForFilesystemRepresentation } from "../export-import/export.ts";
+import configuration from "../../configuration.ts";
+import { ResourceModelForFilesystemRepresentation } from "../../export-import/export.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 
 

@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { asyncHandler } from "../utils/async-handler.ts";
+import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { AvailableFilesystems, FilesystemNodeLocation } from "@dataspecer/git";
-import { FilesystemFactory } from "../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
-import { resourceModel } from "../main.ts";
+import { FilesystemFactory } from "../../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
+import { resourceModel } from "../../main.ts";
 
 
 /**

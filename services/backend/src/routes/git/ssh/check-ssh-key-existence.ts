@@ -1,9 +1,9 @@
-import {asyncHandler} from "../utils/async-handler.ts";
-import express, { query } from "express";
+import { asyncHandler } from "../../../utils/async-handler.ts";
+import express from "express";
 import { z } from "zod";
 import { GitProviderNamesAsType, isGitProviderName } from "@dataspecer/git";
 import { createUserSSHIdentifier, splitIntoLinesAndCheckForMatchingLine } from "@dataspecer/git-node";
-import { pathToSSHConfigForDS } from "../utils/create-ssh-path-constants.ts";
+import { pathToSSHConfigForDS } from "../../../utils/create-ssh-path-constants.ts";
 
 export const checkExistenceOfSshKeyForUserHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({

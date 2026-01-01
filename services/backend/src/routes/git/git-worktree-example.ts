@@ -3,7 +3,7 @@ import fs from "fs";
 import { getAuthorizationURL } from "@dataspecer/git";
 import { checkErrorBoundaryForCommitAction } from "@dataspecer/git-node";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
-import configuration from "../configuration.ts";
+import configuration from "../../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 
 /**

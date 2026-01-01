@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { asyncHandler } from "../utils/async-handler.ts";
-import { resourceModel } from "../main.ts";
+import { asyncHandler } from "../../utils/async-handler.ts";
+import { resourceModel } from "../../main.ts";
 import express from "express";
 
 

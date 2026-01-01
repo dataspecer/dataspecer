@@ -12,22 +12,22 @@
 //  ... However some cons - why it was not chosen - we can not expect the user to porvide projectIri, all we can expect from him is to provide unique iri, but at most on the current directory level.
 
 
-import { asyncHandler } from "../utils/async-handler.ts";
+import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { ComparisonData, dsPathJoin, getMergeFromMergeToMappingForGitAndDS, GitProvider, isDatastoreForMetadata, MergeStateCause, DatastoreInfo, DirectoryNode, FilesystemNode, FilesystemAbstraction, getMergeFromMergeToForGitAndDS, AvailableFilesystems } from "@dataspecer/git";
 import fs from "fs";
 import path from "path";
-import { updateBlob, updateResourceMetadata } from "./resource.ts";
+import { updateBlob, updateResourceMetadata } from "../resource.ts";
 import _ from "lodash";
-import { mergeStateModel, resourceModel } from "../main.ts";
+import { mergeStateModel, resourceModel } from "../../main.ts";
 import { updateDSRepositoryByPullingGit } from "./pull-remote-repository.ts";
-import { compareGitAndDSFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
-import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
+import { compareGitAndDSFilesystems } from "../../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
+import { MergeEndInfoWithRootNode } from "../../models/merge-state-model.ts";
 import { SimpleGit } from "simple-git";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
-import configuration from "../configuration.ts";
+import configuration from "../../configuration.ts";
 import { WEBHOOK_PATH_PREFIX } from "@dataspecer/git-node";
-import { ResourceModelTODOBetterName } from "../export-import/export.ts";
+import { ResourceModelTODOBetterName } from "../../export-import/export.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 
 

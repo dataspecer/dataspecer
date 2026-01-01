@@ -5,7 +5,7 @@ import { ResourceModel } from "./resource-model.ts";
 import { SimpleGit, simpleGit } from "simple-git";
 import { AvailableFilesystems, ComparisonData, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, FilesystemNode, GitProvider, isEditableType, MergeCommitType, MergeState, MergeStateCause } from "@dataspecer/git";
 import { ResourceChangeListener, ResourceChangeType } from "./resource-change-observer.ts";
-import { updateMergeStateToBeUpToDate, MergeEndpointForStateUpdate } from "../routes/create-merge-state.ts";
+import { updateMergeStateToBeUpToDate, MergeEndpointForStateUpdate } from "../routes/git/merge-states/create-merge-state.ts";
 import { ALL_GIT_REPOSITORY_ROOTS, createSimpleGitUsingPredefinedGitRoot, getLastCommitHash, MERGE_DS_CONFLICTS_PREFIX, removePathRecursively } from "@dataspecer/git-node";
 import { getCommonCommitInHistory } from "@dataspecer/git-node/simple-git-methods";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";

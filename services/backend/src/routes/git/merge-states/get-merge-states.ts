@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { asyncHandler } from "../utils/async-handler.ts";
-import { mergeStateModel } from "../main.ts";
+import { asyncHandler } from "../../../utils/async-handler.ts";
+import { mergeStateModel } from "../../../main.ts";
 import express from "express";
 import { stringToBoolean } from "@dataspecer/git";
 

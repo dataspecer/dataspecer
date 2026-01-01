@@ -1,16 +1,15 @@
 import { z } from "zod";
-import { asyncHandler } from "../utils/async-handler.ts";
+import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { GitProvider } from "@dataspecer/git";
 import { saveChangesInDirectoryToBackendFinalVersion, GitChangesToDSPackageStoreResult } from "./git-webhook-handler.ts";
-import { resourceModel } from "../main.ts";
+import { resourceModel } from "../../main.ts";
 import { getCommonCommitInHistory, gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { AllowedPrefixes, createSimpleGitUsingPredefinedGitRoot, getLastCommitHash, MANUAL_CLONE_PATH_PREFIX, removePathRecursively } from "@dataspecer/git-node";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
-import configuration from "../configuration.ts";
-import { ResourceModelTODOBetterName } from "../export-import/export.ts";
+import configuration from "../../configuration.ts";
+import { ResourceModelTODOBetterName } from "../../export-import/export.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
-
 
 
 export const pullRemoteRepository = asyncHandler(async (request: express.Request, response: express.Response) => {

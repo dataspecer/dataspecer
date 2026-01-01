@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { getGitCredentialsFromSessionWithDefaults } from "../authorization/auth-session.ts";
-import { resourceModel } from "../main.ts";
-import { asyncHandler } from "../utils/async-handler.ts";
+import { getGitCredentialsFromSessionWithDefaults } from "../../authorization/auth-session.ts";
+import { resourceModel } from "../../main.ts";
+import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { ConfigType, extractPartOfRepositoryURL, findPatAccessTokens } from "@dataspecer/git";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
-import configuration from "../configuration.ts";
+import configuration from "../../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 
 /**

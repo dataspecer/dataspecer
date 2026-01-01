@@ -1,14 +1,14 @@
 import { z } from "zod";
-import { asyncHandler } from "../utils/async-handler.ts";
-import { mergeStateModel, resourceModel } from "../main.ts";
+import { asyncHandler } from "../../../utils/async-handler.ts";
+import { mergeStateModel, resourceModel } from "../../../main.ts";
 import express from "express";
 import { AvailableFilesystems, ComparisonData, createConflictsFromDiffTrees, GitProvider, MergeState, MergeStateCause } from "@dataspecer/git";
-import { compareBackendFilesystems } from "../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
+import { compareBackendFilesystems } from "../../../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { getCommonCommitInHistory, gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { SimpleGit } from "simple-git";
-import { MergeEndInfoWithRootNode } from "../models/merge-state-model.ts";
+import { MergeEndInfoWithRootNode } from "../../../models/merge-state-model.ts";
 import { createSimpleGitUsingPredefinedGitRoot, MERGE_CONFLICTS_PRIVATE, removePathRecursively } from "@dataspecer/git-node";
-import { ResourceModelForFilesystemRepresentation } from "../export-import/export.ts";
+import { ResourceModelForFilesystemRepresentation } from "../../../export-import/export.ts";
 
 
 export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (request: express.Request, response: express.Response) => {

@@ -29,7 +29,7 @@ import { Readable } from "stream";
 import { ReadableStream } from "stream/web";
 import { buffer } from "stream/consumers";
 import { CommitReferenceType, getDefaultCommitReferenceTypeForZipDownload, GitProviderNode, isCommitReferenceType } from "@dataspecer/git";
-import { updateGitRelatedDataForPackage } from "./link-to-existing-remote-git-repo.ts";
+import { updateGitRelatedDataForPackage } from "./git/link-to-existing-remote-git-repo.ts";
 import { gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { createSimpleGitUsingPredefinedGitRoot, INTERNAL_COMPUTATION_FOR_IMPORT, removePathRecursively } from "@dataspecer/git-node";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";

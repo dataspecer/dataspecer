@@ -9,7 +9,7 @@ import {
   MergeStateCause
 } from "@dataspecer/git";
 import { FilesystemFactory } from "./backend-filesystem-abstraction-factory.ts";
-import { MergeEndpointForComparison } from "../../routes/create-merge-state.ts";
+import { MergeEndpointForComparison } from "../../routes/git/merge-states/create-merge-state.ts";
 import { ResourceModelForFilesystemRepresentation } from "../export.ts";
 
 export async function compareGitAndDSFilesystems(

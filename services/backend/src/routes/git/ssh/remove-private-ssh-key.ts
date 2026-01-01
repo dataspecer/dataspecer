@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { asyncHandler } from "../utils/async-handler.ts";
+import { asyncHandler } from "../../../utils/async-handler.ts";
 import express from "express";
 import fs from "fs";
 import { isGitProviderName } from "@dataspecer/git";
 import path from "path";
 import { convertToPosixPath, createUserSSHIdentifier, splitIntoLinesAndCheckForMatchingLine } from "@dataspecer/git-node";
-import { pathToSSHConfigForDS, pathToSSHForDS } from "../utils/create-ssh-path-constants.ts";
+import { pathToSSHConfigForDS, pathToSSHForDS } from "../../../utils/create-ssh-path-constants.ts";
 
 export const deletePrivateSshKeyHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({

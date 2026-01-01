@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { asyncHandler } from "../utils/async-handler.ts";
+import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { CommitReferenceType, GitProviderNode } from "@dataspecer/git";
-import { resourceModel } from "../main.ts";
+import { resourceModel } from "../../main.ts";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
-import configuration from "../configuration.ts";
+import configuration from "../../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 
 
@@ -35,6 +35,7 @@ export const updateGitRelatedDataForPackage = async (
   commitReferenceValue: string | null,
   commitReferenceType?: CommitReferenceType,
 ) => {
+  // tohle bych dal do resource modelu asi
   const defaultRepositoryUrl = gitProvider.extractDefaultRepositoryUrl(repositoryURL);
   console.info("defaultRepositoryUrl", defaultRepositoryUrl);     // TODO RadStr Debug: Debug print
   // TODO RadStr: Ideally we should update all at once so we do not call the merge state isUpToDate setter unnecesarily

@@ -1,5 +1,5 @@
-import { asyncHandler } from "../utils/async-handler.ts";
-import { mergeStateModel, resourceModel } from "../main.ts";
+import { asyncHandler } from "../../../utils/async-handler.ts";
+import { mergeStateModel } from "../../../main.ts";
 import express from "express";
 
 

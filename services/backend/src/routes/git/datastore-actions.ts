@@ -1,12 +1,12 @@
 import express from "express";
 import fs from "fs";
-import { DSFilesystem } from "../export-import/filesystem-abstractions/implementations/ds-filesystem.ts";
-import { resourceModel } from "../main.ts";
-import { asyncHandler } from "../utils/async-handler.ts";
+import { DSFilesystem } from "../../export-import/filesystem-abstractions/implementations/ds-filesystem.ts";
+import { resourceModel } from "../../main.ts";
+import { asyncHandler } from "../../utils/async-handler.ts";
 import { z } from "zod";
 import { AvailableFilesystems, ExportShareableMetadataType, convertDatastoreContentBasedOnFormat, stringToBoolean } from "@dataspecer/git";
 import path from "path";
-import { updateBlob } from "./resource.ts";
+import { updateBlob } from "../resource.ts";
 import { v4 as uuidv4 } from "uuid";
 import { isAccessibleGitRepository } from "@dataspecer/git-node";
 
