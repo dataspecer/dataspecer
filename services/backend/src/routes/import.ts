@@ -21,7 +21,7 @@ import N3, { Quad_Object } from "n3";
 import { parse } from "node-html-parser";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
-import { resourceModel } from "../main.ts";
+import { prismaClient, resourceModel, storeModel } from "../main.ts";
 import { BaseResource } from "../models/resource-model.ts";
 import { asyncHandler } from "./../utils/async-handler.ts";
 import { PackageImporter } from "../export-import/import.ts";
@@ -36,6 +36,8 @@ import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import configuration from "../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 import { AuthenticationGitProvidersData } from "@dataspecer/git/git-providers";
+import { LocalStoreModel } from "../models/local-store-model.ts";
+import { StorageApi } from "../utils/iri-replace-util.ts";
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
   const result: LanguageString = {};
@@ -435,6 +437,8 @@ export async function importFromGitUrl(
   repositoryURL: string,
   httpFetchForGitProvider: HttpFetch,
   authenticationGitProvidersData: AuthenticationGitProvidersData,
+  localStoreModel: LocalStoreModel,
+  storageApi: StorageApi,
   commitReferenceType?: CommitReferenceType) {
   const gitProvider: GitProviderNode = GitProviderNodeFactory.createGitProviderFromRepositoryURL(repositoryURL, httpFetchForGitProvider, authenticationGitProvidersData);
   // TODO RadStr: If there will be some issues with the defaults when importing from git, then
@@ -488,7 +492,7 @@ export async function importFromGitUrl(
   // Create buffer from them stream, no need to touch filesystem.
   const zipBuffer: Buffer = await buffer(webReadableStream);
 
-  const importer = new PackageImporter(resourceModel);
+  const importer = new PackageImporter(resourceModel, localStoreModel, storageApi);
   const imported = await importer.doImport(zipBuffer, true);
 
 
@@ -538,7 +542,7 @@ export const importPackageFromGit = asyncHandler(async (request: express.Request
     return;
   }
 
-  const result = await importFromGitUrl(gitURL, httpFetch, configuration, commitReferenceType);
+  const result = await importFromGitUrl(gitURL, httpFetch, configuration, storeModel, prismaClient, commitReferenceType);
   if (result.length === 0) {
     response.status(409).json({ message: "The import failed, because it is pointing to branch, which already exists inside DS" });
     return;

@@ -592,7 +592,7 @@
 import { v4 as uuidv4 } from "uuid";
 
 import fs from "fs";
-import { resourceModel } from "./main.ts";
+import { prismaClient, resourceModel, storeModel } from "./main.ts";
 
 import JSZip from 'jszip';
 import * as path from 'path';
@@ -709,7 +709,7 @@ async function generateSpecificationFromFileSystem() {
   // await extractZipBufferToDisk(zipDataFromFilesystem, "test-debug-zip-file");
   // fs.writeFileSync(`test-debug-zip-file/zip-soubor.zip`, zipDataFromFilesystem);
 
-  const importer = new PackageImporter(resourceModel);
+  const importer = new PackageImporter(resourceModel, storeModel, prismaClient);
   const imported = await importer.doImport(zipDataFromFilesystem, false);
   const rootPackage = await resourceModel.getPackage(imported[0]);
   console.info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
@@ -734,7 +734,7 @@ async function generateSpecificationFromGitURL(httpFetch: HttpFetch, authenticat
   console.info("process.argv", process.argv);
   // Example of download URL - https://github.com/RadStr-bot/4f21bf6d-2116-4ab3-b387-1f8074f7f412/archive/refs/heads/main.zip (or commit SHA instead of refs/heads/main)
   const gitZipDownloadURL = process.argv[2];
-  const imported = await importFromGitUrl(gitZipDownloadURL, httpFetch, authenticationGitProvidersData, "branch");
+  const imported = await importFromGitUrl(gitZipDownloadURL, httpFetch, authenticationGitProvidersData, storeModel, prismaClient, "branch");
   await generateArtifactsFromImported(imported);
   process.exit(0);
 }

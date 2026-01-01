@@ -1,6 +1,6 @@
 import express from "express";
 import { asyncHandler } from "../utils/async-handler.ts";
-import { resourceModel } from "../main.ts";
+import { prismaClient, resourceModel, storeModel } from "../main.ts";
 import z from "zod";
 import { PackageImporter } from "../export-import/import.ts";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
@@ -52,7 +52,7 @@ export const exportPackageResource = asyncHandler(async (request: express.Reques
 export const importPackageResource = asyncHandler(async (request: express.Request, response: express.Response) => {
   const file = request.file!.buffer;
 
-  const importer = new PackageImporter(resourceModel);
+  const importer = new PackageImporter(resourceModel, storeModel, prismaClient);
   const imported = await importer.doImport(file, false);
 
   response.send(await Promise.all(imported.map(iri => resourceModel.getPackage(iri))));
