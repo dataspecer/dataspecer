@@ -38,6 +38,8 @@ export type GitCredentials = CommitterInfo & {
   accessTokens: AccessToken[];
 };
 
+export type GitRef = { type: "branch"; name: string } | { type: "commit"; sha: string };
+
 // !!! Always keep the webhook-test (respectively the part of url after /)
 // export const WEBHOOK_HANDLER_URL = "https://cf133943d91c.ngrok-free.app/git/webhook-test";
 export const WEBHOOK_HANDLER_URL = "https://933958039505.ngrok-free.app/git/webhook-test";
@@ -255,10 +257,12 @@ export interface GitProvider {
   convertRepoURLToDownloadZipURL(repositoryURL: string, commitReferenceType: CommitReferenceType): Promise<ConvertRepoURLToDownloadZipURLReturnType>;
 
   /**
-   * @returns The URL, which looks like {@link gitProviderURL}/{@link userName}/{@link repoName}/tree/{@link branch} for github, for other provides it might look different.
-   *  Where the last part tree/... is only when branch is defined, otherwise it is not in result (which means we are returning main branch).
+   * @param userName - Repository owner or organization
+   * @param repoName - Repository name
+   * @returns The URL, which looks like {@link gitProviderURL}/{@link userName}/{@link repoName}, for other providers it might look different.
+   *  It may be followed also by /tree/gitRef.name or /commit/gitref.sha (in GitHub case) if gitRef is defined.
    */
-  createGitRepositoryURL(userName: string, repoName: string, branch?: string): string;
+  createGitRepositoryURL(userName: string, repoName: string, gitRef?: GitRef): string;
 
   /**
    * @returns Converts the {@link repositoryUrl}, which may possible point to commit or branch to the url, which is the homepage of the repository. For example https://github.com/dataspecer/dataspecer

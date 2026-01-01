@@ -1,5 +1,5 @@
 import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
-import { CommitReferenceType, CreateRemoteRepositoryReturnType, GitProvider, GitProviderEnum, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, GetResourceForGitUrlAndBranchType, GitProviderNode, GitProviderInternalCompositeNode } from "@dataspecer/git";
+import { CommitReferenceType, CreateRemoteRepositoryReturnType, GitProvider, GitProviderEnum, Scope, WebhookRequestDataGitProviderIndependent, GitCredentials, GetResourceForGitUrlAndBranchType, GitProviderNode, GitProviderInternalCompositeNode, GitRef } from "@dataspecer/git";
 import { simpleGit } from "simple-git";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
@@ -38,7 +38,7 @@ export abstract class GitProviderNodeBase extends GitProviderBase implements Git
   abstract getWorkflowFilesDirectoryName(): string;
   abstract isGitProviderDirectory(fullPath: string): boolean;
   abstract getDefaultBranch(repositoryURL: string): Promise<string | null>;
-  abstract createGitRepositoryURL(userName: string, repoName: string, branch?: string): string;
+  abstract createGitRepositoryURL(userName: string, repoName: string, gitRef?: GitRef): string;
   abstract extractDefaultRepositoryUrl(repositoryUrl: string): string;
   abstract convertGenericScopeToProviderScope(scope: Scope): string[];
   abstract convertProviderScopeToGenericScope(scope: string): Scope;

@@ -28,8 +28,10 @@ export abstract class GitProviderFactory {
   static createGitProviderFromWebhookRequest(
     request: ExpressRequestForGitProviderFactoryType,
     httpFetch: HttpFetch,
-    authenticationGitProvidersData: AuthenticationGitProvidersData,
+    authenticationGitProvidersData: AuthenticationGitProvidersData | null,
   ): WebhookRequestProviderSpecificData {
+    authenticationGitProvidersData ??= {};
+
     if (request.body !== undefined && request.body.payload === undefined) {
       return {
         gitProvider: new GitLabProvider(httpFetch, authenticationGitProvidersData),
@@ -55,9 +57,10 @@ export abstract class GitProviderFactory {
   static createGitProvider(
     gitProviderName: GitProviderEnum,
     httpFetch: HttpFetch,
-    authenticationGitProvidersData: AuthenticationGitProvidersData,
+    authenticationGitProvidersData: AuthenticationGitProvidersData | null,
     domainURL?: string
   ): GitProvider {
+    authenticationGitProvidersData ??= {};
     switch (gitProviderName) {
       case GitProviderEnum.GitHub:
         return new GitHubProvider(httpFetch, authenticationGitProvidersData);
@@ -77,8 +80,9 @@ export abstract class GitProviderFactory {
   static createGitProviderFromRepositoryURL(
     repositoryURL: string,
     httpFetch: HttpFetch,
-    authenticationGitProvidersData: AuthenticationGitProvidersData,
+    authenticationGitProvidersData: AuthenticationGitProvidersData | null,
   ): GitProvider {
+    authenticationGitProvidersData ??= {};
     const gitProvider = getMainGitProviderFromRepositoryURL(repositoryURL);
     if (gitProvider === null) {
       throw new Error(`Git provider with given URL ${repositoryURL} does not exist.`);

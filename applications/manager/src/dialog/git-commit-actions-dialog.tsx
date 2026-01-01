@@ -7,6 +7,7 @@ import { Loader } from "lucide-react";
 import { refreshRootPackage } from "@/package";
 import { PACKAGE_ROOT } from "@dataspecer/git";
 import { lng } from "@/Dir";
+import { GitProviderFactory } from "@dataspecer/git/git-providers";
 
 
 type CommitActionsDialogProps = {
@@ -23,8 +24,16 @@ export const CommitActionsDialog = ({ examinedPackage, branch, commitHash, branc
   const handleRedirect = () => {
     setIsPerformingAction(true);
     const defaultGitURL = examinedPackage.linkedGitRepositoryURL;
-    const gitURL = defaultGitURL + `/tree/${commitHash}`;     // TODO RadStr: Hardcoded - we somehoew have to share the Git providers code from backend here on frontend
-    //                                                        // TODO RadStr: (... without the credentials code ... we just need small subset - just the factory and create URL)
+    const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(defaultGitURL, fetch, {});
+    const owner = gitProvider.extractPartOfRepositoryURL(defaultGitURL, "user-name");
+    const repoName = gitProvider.extractPartOfRepositoryURL(defaultGitURL, "repository-name");
+    if (owner === null) {
+      throw new Error("Owner can not be extracted from the URL");
+    }
+    if (repoName === null) {
+      throw new Error("Repository name can not be extracted from the URL");
+    }
+    const gitURL = gitProvider.createGitRepositoryURL(owner, repoName, {type: "commit", sha: commitHash});
     const newTab = window.open(gitURL, "_blank");
     newTab?.focus();
     setIsPerformingAction(false);

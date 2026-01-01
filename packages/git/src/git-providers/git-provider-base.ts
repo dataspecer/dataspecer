@@ -1,5 +1,5 @@
 import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
-import { CommitReferenceType, ConvertRepoURLToDownloadZipURLReturnType, CreateRemoteRepositoryReturnType, ExtractedCommitReferenceValueFromRepositoryURL, ExtractedCommitReferenceValueFromRepositoryURLExplicit, GetResourceForGitUrlAndBranchType, GitCredentials, GitProvider, GitProviderEnum, RepositoryURLPart, WebhookRequestDataGitProviderIndependent } from "../git-provider-api.ts";
+import { CommitReferenceType, ConvertRepoURLToDownloadZipURLReturnType, CreateRemoteRepositoryReturnType, ExtractedCommitReferenceValueFromRepositoryURL, ExtractedCommitReferenceValueFromRepositoryURLExplicit, GetResourceForGitUrlAndBranchType, GitCredentials, GitProvider, GitProviderEnum, GitRef, RepositoryURLPart, WebhookRequestDataGitProviderIndependent } from "../git-provider-api.ts";
 import { Scope } from "../auth.ts";
 import { type GitBotConfiguration, type OAuthConfiguration } from "@dataspecer/auth";
 
@@ -38,7 +38,7 @@ export abstract class GitProviderBase implements GitProvider {
   abstract getWorkflowFilesDirectoryName(): string;
   abstract isGitProviderDirectory(fullPath: string): boolean;
   abstract getDefaultBranch(repositoryURL: string): Promise<string | null>;
-  abstract createGitRepositoryURL(userName: string, repoName: string, branch?: string): string;
+  abstract createGitRepositoryURL(userName: string, repoName: string, gitRef?: GitRef): string;
   abstract extractDefaultRepositoryUrl(repositoryUrl: string): string;
   abstract convertGenericScopeToProviderScope(scope: Scope): string[];
   abstract convertProviderScopeToGenericScope(scope: string): Scope;

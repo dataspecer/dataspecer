@@ -3,7 +3,7 @@ import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import sodium from "libsodium-wrappers-sumo";
 import { AuthenticationGitProviderData, GitProviderBase } from "../git-provider-base.ts";
 import { AuthenticationGitProvidersData, gitProviderDomains } from "../git-provider-factory.ts";
-import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, PUBLICATION_BRANCH_NAME, WebhookRequestDataGitProviderIndependent } from "../../git-provider-api.ts";
+import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, PUBLICATION_BRANCH_NAME, WebhookRequestDataGitProviderIndependent } from "../../git-provider-api.ts";
 import { Scope } from "../../auth.ts";
 import { GitRestApiOperationError } from "../../error-definitions.ts";
 import { findPatAccessToken, GITHUB_USER_AGENT } from "../../git-utils.ts";
@@ -517,8 +517,16 @@ export class GitHubProvider extends GitProviderBase {
     return zipURL;
   }
 
-  createGitRepositoryURL(userName: string, repoName: string, branch?: string): string {
-    const branchSuffix = branch === undefined ? "" : `/tree/${branch}`;
+  createGitRepositoryURL(userName: string, repoName: string, gitRef?: GitRef): string {
+    let branchSuffix: string = "";
+    if (gitRef !== undefined) {
+      if (gitRef.type === "branch") {
+        branchSuffix = `/tree/${gitRef.name}`;
+      }
+      else if (gitRef.type === "commit") {
+        branchSuffix = `/commit/${gitRef.sha}`;
+      }
+    }
     const url = `${this.getDomainURL(true)}/${userName}/${repoName}${branchSuffix}`;
     return url;
   }

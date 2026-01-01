@@ -1,7 +1,7 @@
 import { FetchResponse, type HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { AuthenticationGitProviderData, GitProviderBase } from "../git-provider-base.ts";
 import { AuthenticationGitProvidersData, gitProviderDomains } from "../git-provider-factory.ts";
-import { CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, WebhookRequestDataGitProviderIndependent } from "../../git-provider-api.ts";
+import { CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, WebhookRequestDataGitProviderIndependent } from "../../git-provider-api.ts";
 import { Scope } from "../../auth.ts";
 
 // Note that students for some reason there have max 10 repositories limit on school mff gitlab (idk if it is for creations a day or something)
@@ -204,7 +204,7 @@ export class GitLabProvider extends GitProviderBase {
     throw new Error("Method not implemented.");
   }
 
-  createGitRepositoryURL(userName: string, repoName: string, branch?: string): string {
+  createGitRepositoryURL(userName: string, repoName: string, gitRef?: GitRef): string {
     // Well GitLab seems to be slightly different than GitHub. It has /-/ between the repoName and tree,
     // BUT it seems to work without it, so maybe the same implementation for gitlab can be used.
     throw new Error("Method not implemented.");
