@@ -56,7 +56,7 @@ export function isGitProviderName(value: unknown): value is GitProviderNamesAsTy
   return typeof value === "string" && gitProviderNames.includes(value as GitProviderNamesAsType);
 }
 
-export type WebhookRequestDataGitProviderIndependent = {
+export type GitProviderIndependentWebhookRequestData = {
   cloneURL: string;
   commits: object[];
   repoName: string;
@@ -131,24 +131,23 @@ export interface GitProvider {
    * @param request is the original data from request as it came in webhook converted to JSON.
    * @returns Returns null if new branch was added to git, but the branch does not have equivalent in the DS.
    */
-  extractDataForWebhookProcessing(webhookPayload: any, getResourceForGitUrlAndBranch: GetResourceForGitUrlAndBranchType): Promise<WebhookRequestDataGitProviderIndependent | null>;
+  extractDataForWebhookProcessing(webhookPayload: any, getResourceForGitUrlAndBranch: GetResourceForGitUrlAndBranchType): Promise<GitProviderIndependentWebhookRequestData | null>;
 
-  // TODO RadStr: Maybe everywhere use repository instead of repositoryUserName
   /**
-   * Creates remote git repository with following URL .../{@link repositoryUserName}/{@link repoName}.
+   * Creates remote git repository with following URL .../{@link owner}/{@link repoName}.
    *
    * @param authToken has to contain right to create (public) repository
-   * @param isUserRepo if true then we create repository under user of name {@link repositoryUserName},
-   *  if false then we are creating repository under organization of name {@link repositoryUserName}.
+   * @param isUserRepo if true then we create repository under user of name {@link owner},
+   *  if false then we are creating repository under organization of name {@link owner}.
    * @param shouldEnablePublicationBranch If set to true should also enable the GitHub pages (or its equivalent) in the PUBLICATION_BRANCH_NAME. (but in future it might change if we start using the publication repos again, possible TODO:)
    */
-  createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean, shouldEnablePublicationBranch: boolean): Promise<CreateRemoteRepositoryReturnType>;
+  createRemoteRepository(authToken: string, owner: string, repoName: string, isUserRepo: boolean, shouldEnablePublicationBranch: boolean): Promise<CreateRemoteRepositoryReturnType>;
 
   /**
-   * Removes remote git repository with following URL .../{@link repositoryUserName}/{@link repoName}.
+   * Removes remote git repository with following URL .../{@link owner}/{@link repoName}.
    * @param authToken has to contain right to remove (public) repository
    */
-  removeRemoteRepository(authToken: string, repositoryUserName: string, repoName: string): Promise<FetchResponse>;
+  removeRemoteRepository(authToken: string, owner: string, repoName: string): Promise<FetchResponse>;
 
   // TODO RadStr: Mozna vybrat jen podmnozinu a dat ji do enumu nebo nekam a pak vytvaret mapovani dle GitProvidera, ty requesty vypadaji ze ma kazdy jiny
   // TODO RadStr: ... asi jo
@@ -179,16 +178,16 @@ export interface GitProvider {
 
   /**
    * Sets default bot for this git provider as a collaborator for given {@link}
-   * @param repositoryUserName is the user part of the repository URL - Either name of the organization or of the user.
+   * @param owner is the user part of the repository URL - Either name of the organization or of the user.
    * @param repoName is the name of the repository.
    */
-  setBotAsCollaborator(repositoryUserName: string, repoName: string, accessToken: string): Promise<FetchResponse>;
+  setBotAsCollaborator(owner: string, repoName: string, accessToken: string): Promise<FetchResponse>;
 
   /**
-   * Sets the repository secret for URL defined as urlRepoHost/{@link repositoryUserName}/{@link repoName}. Where urlRepoHost is for example github.com
+   * Sets the repository secret for URL defined as urlRepoHost/{@link owner}/{@link repoName}. Where urlRepoHost is for example github.com
    *  If the secret exists it is changed.
    */
-  setRepositorySecret(repositoryUserName: string, repoName: string, accessToken: string, secretKey: string, secretValue: string): Promise<FetchResponse>;
+  setRepositorySecret(owner: string, repoName: string, accessToken: string, secretKey: string, secretValue: string): Promise<FetchResponse>;
 
   /**
    * Creates the publication repository. That is the repository to contain the generated artifacts and specifications.
@@ -199,16 +198,16 @@ export interface GitProvider {
    *  3) Enable GitHub pages (or some other equivalent for different git providers)
    *
    * Note that for it to work, we should first set repository secret with the access token of the bot so it can commit to the remote publication repository within workflow (GitHub) action,
-   *  that is gitProvider.setRepositorySecret(repositoryUserName, repoName, patAccessToken.value, "BOT_PAT_TOKEN", botAccessToken.value)
+   *  that is gitProvider.setRepositorySecret(owner, repoName, patAccessToken.value, "BOT_PAT_TOKEN", botAccessToken.value)
    *
    * @param repoName is the name of the repository, which contains publications
    * @param isUserRepo if true then it is repo created under user, if false it is created under organization
-   * @param repositoryUserName is the name of the organization if {@link isUserRepo} is false, or name of user if it is true.
+   * @param owner is the name of the organization if {@link isUserRepo} is false, or name of user if it is true.
    *  If not provided then bot is used as a user and the {@link isUserRepo} is ignored (it is expected to be true).
    * @param accessToken if not given, the bot access token is used.
    * @deprecated We put the GitHub pages on the same repository instead of onto separate publication repository. We used to put it on repository suffixed by -publication-repo (hardcoded).
    */
-  createPublicationRepository(repoName: string, isUserRepo: boolean, repositoryUserName?: string, accessToken?: string): Promise<FetchResponse>;
+  createPublicationRepository(repoName: string, isUserRepo: boolean, owner?: string, accessToken?: string): Promise<FetchResponse>;
 
   /**
    * @returns The name of he directory under which are stored the workflow files in the corresponding git provider.

@@ -115,9 +115,6 @@ function createDatastoresRenderRepresentations(
     else if (datastoreComparison.datastoreComparisonResult === "same") {
       status = "same";
     }
-    else if (datastoreComparison.datastoreComparisonResult === "unknown") {
-      throw new Error("TODO RadStr: Not implemented yet");
-    }
     else {
       if (treeToExtract === "old") {
         if (datastoreComparison.datastoreComparisonResult === "created-in-new") {

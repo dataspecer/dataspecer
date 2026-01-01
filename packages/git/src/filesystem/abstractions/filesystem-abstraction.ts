@@ -1,5 +1,3 @@
-// TODO RadStr: Think of better names and the name of the property and of type should be aligned
-
 import { GitProvider } from "../../git-provider-api.ts";
 import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, DatastoreInfo, ExportMetadataType } from "../../export-import-data-api.ts";
 import { ComparisonData } from "../../merge/merge-state.ts";

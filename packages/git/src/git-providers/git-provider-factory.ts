@@ -10,15 +10,12 @@ export type AuthenticationGitProvidersData = {
   authConfiguration?: OAuthConfiguration;
 };
 
-/**
- * TODO RadStr: Maybe there is a better name?
- */
-type WebhookRequestProviderSpecificData = {
+type WebhookDataAndGitProvider = {
   gitProvider: GitProvider;
   webhookPayload: object;
 };
 
-export type ExpressRequestForGitProviderFactoryType = {
+export type ExpressRequestForGitProviderFactory = {
   body?: {
     payload?: any
   };
@@ -26,10 +23,10 @@ export type ExpressRequestForGitProviderFactoryType = {
 
 export abstract class GitProviderFactory {
   static createGitProviderFromWebhookRequest(
-    request: ExpressRequestForGitProviderFactoryType,
+    request: ExpressRequestForGitProviderFactory,
     httpFetch: HttpFetch,
     authenticationGitProvidersData: AuthenticationGitProvidersData | null,
-  ): WebhookRequestProviderSpecificData {
+  ): WebhookDataAndGitProvider {
     authenticationGitProvidersData ??= {};
 
     if (request.body !== undefined && request.body.payload === undefined) {

@@ -1,7 +1,7 @@
 import { FetchResponse, type HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { AuthenticationGitProviderData, GitProviderBase } from "../git-provider-base.ts";
 import { AuthenticationGitProvidersData, gitProviderDomains } from "../git-provider-factory.ts";
-import { CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, WebhookRequestDataGitProviderIndependent } from "../../git-provider-api.ts";
+import { CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, GitProviderIndependentWebhookRequestData } from "../../git-provider-api.ts";
 import { Scope } from "../../auth.ts";
 
 // Note that students for some reason there have max 10 repositories limit on school mff gitlab (idk if it is for creations a day or something)
@@ -48,7 +48,7 @@ export class GitLabProvider extends GitProviderBase {
   async extractDataForWebhookProcessing(
     webhookPayload: any,
     getResourceForGitUrlAndBranch: GetResourceForGitUrlAndBranchType
-  ): Promise<WebhookRequestDataGitProviderIndependent | null> {
+  ): Promise<GitProviderIndependentWebhookRequestData | null> {
     const repoName = webhookPayload.repository.name;
     // TODO: In future I will find it through the URL inside the prisma database instead
     const iri = String(repoName).split("-").at(-1);

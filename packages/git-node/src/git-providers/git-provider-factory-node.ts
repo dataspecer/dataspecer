@@ -3,22 +3,20 @@ import fs from "fs";
 import { GitHubNodeProvider } from "./git-provider-instances/github-node.ts";
 import { GitLabNodeProvider } from "./git-provider-instances/gitlab-node.ts";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
-import { AuthenticationGitProvidersData, ExpressRequestForGitProviderFactoryType, getMainGitProviderFromRepositoryURL } from "@dataspecer/git/git-providers";
+import { AuthenticationGitProvidersData, ExpressRequestForGitProviderFactory, getMainGitProviderFromRepositoryURL } from "@dataspecer/git/git-providers";
 
-/**
- * TODO RadStr: Maybe there is a better name?
- */
-type WebhookRequestNodeProviderSpecificData = {
+
+type WebhookDataAndGitProvider = {
   gitProvider: GitProviderNode;
   webhookPayload: object;
 };
 
 export abstract class GitProviderNodeFactory {
   static createGitProviderFromWebhookRequest(
-    request: ExpressRequestForGitProviderFactoryType,
+    request: ExpressRequestForGitProviderFactory,
     httpFetch: HttpFetch,
     authenticationGitProvidersData: AuthenticationGitProvidersData
-  ): WebhookRequestNodeProviderSpecificData {
+  ): WebhookDataAndGitProvider {
     if (request.body !== undefined && request.body.payload === undefined) {
       return {
         gitProvider: new GitLabNodeProvider(httpFetch, authenticationGitProvidersData),

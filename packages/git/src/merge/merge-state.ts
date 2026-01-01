@@ -146,7 +146,7 @@ export type ResourceComparison = {
   childrenDiffTree: DiffTree;     // Empty if the type of resource is file
 }
 
-export type CreatedRemovedModified = "unknown" | "same" | "modified" | "created-in-new" | "removed-in-new";
+export type CreatedRemovedModified = "same" | "modified" | "created-in-new" | "removed-in-new";
 
 
 // TODO RadStr: Changed compared to the backend - there it was named Comparison data and had different field
