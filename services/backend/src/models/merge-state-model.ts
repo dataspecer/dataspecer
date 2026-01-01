@@ -5,12 +5,33 @@ import { ResourceModel } from "./resource-model.ts";
 import { SimpleGit, simpleGit } from "simple-git";
 import { AvailableFilesystems, ComparisonData, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, FilesystemNode, GitProvider, isEditableType, MergeCommitType, MergeState, MergeStateCause } from "@dataspecer/git";
 import { ResourceChangeListener, ResourceChangeType } from "./resource-change-observer.ts";
-import { updateMergeStateToBeUpToDate, MergeEndpointForStateUpdate } from "../routes/git/merge-states/create-merge-state.ts";
+import { updateMergeStateToBeUpToDate } from "../routes/git/merge-states/create-merge-state.ts";
 import { ALL_GIT_REPOSITORY_ROOTS, createSimpleGitUsingPredefinedGitRoot, getLastCommitHash, MERGE_DS_CONFLICTS_PREFIX, removePathRecursively } from "@dataspecer/git-node";
 import { getCommonCommitInHistory } from "@dataspecer/git-node/simple-git-methods";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
+import { ResourceModelForFilesystemRepresentation } from "../export-import/export.ts";
+
+type MergeEndpointBase = {
+  rootIri: string,
+  filesystemType: AvailableFilesystems,
+  fullPathToRootParent: string,
+  resourceModel: ResourceModelForFilesystemRepresentation | null,
+}
+
+export type MergeEndpointForComparison = {
+  gitProvider: GitProvider | null;
+} & MergeEndpointBase
+
+export type MergeEndpointForStateUpdate = {
+  git: SimpleGit | null;
+  lastCommitHash: string;
+  // TODO RadStr: If we rewrite the update to only update the things which are usually changing on update, then we do not need to pass in the isBranch, since it does not change.
+  isBranch: boolean;
+  branch: string;
+} & MergeEndpointForComparison
+
 
 type Nullable<T> = {
   [P in keyof T]: T[P] | null;

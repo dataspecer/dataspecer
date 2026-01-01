@@ -2,11 +2,11 @@ import { z } from "zod";
 import { asyncHandler } from "../../../utils/async-handler.ts";
 import { mergeStateModel, resourceModel } from "../../../main.ts";
 import express from "express";
-import { AvailableFilesystems, ComparisonData, createConflictsFromDiffTrees, GitProvider, MergeState, MergeStateCause } from "@dataspecer/git";
+import { AvailableFilesystems, ComparisonData, createConflictsFromDiffTrees, MergeState, MergeStateCause } from "@dataspecer/git";
 import { compareBackendFilesystems } from "../../../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { getCommonCommitInHistory, gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { SimpleGit } from "simple-git";
-import { MergeEndInfoWithRootNode } from "../../../models/merge-state-model.ts";
+import { MergeEndInfoWithRootNode, MergeEndpointForComparison, MergeEndpointForStateUpdate } from "../../../models/merge-state-model.ts";
 import { createSimpleGitUsingPredefinedGitRoot, MERGE_CONFLICTS_PRIVATE, removePathRecursively } from "@dataspecer/git-node";
 import { ResourceModelForFilesystemRepresentation } from "../../../export-import/export.ts";
 
@@ -141,25 +141,6 @@ export async function createMergeStateBetweenDSPackages(
       hasConflicts: diffTreeComparisonResult.conflicts.length > 0,
     };
 }
-
-type MergeEndpointBase = {
-  rootIri: string,
-  filesystemType: AvailableFilesystems,
-  fullPathToRootParent: string,
-  resourceModel: ResourceModelForFilesystemRepresentation | null,
-}
-
-export type MergeEndpointForComparison = {
-  gitProvider: GitProvider | null;
-} & MergeEndpointBase
-
-export type MergeEndpointForStateUpdate = {
-  git: SimpleGit | null;
-  lastCommitHash: string;
-  // TODO RadStr: If we rewrite the update to only update the things which are usually changing on update, then we do not need to pass in the isBranch, since it does not change.
-  isBranch: boolean;
-  branch: string;
-} & MergeEndpointForComparison
 
 export async function updateMergeStateToBeUpToDate(
   uuid: string,

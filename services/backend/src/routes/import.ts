@@ -29,7 +29,6 @@ import { Readable } from "stream";
 import { ReadableStream } from "stream/web";
 import { buffer } from "stream/consumers";
 import { CommitReferenceType, getDefaultCommitReferenceTypeForZipDownload, GitProviderNode, isCommitReferenceType } from "@dataspecer/git";
-import { updateGitRelatedDataForPackage } from "./git/link-to-existing-remote-git-repo.ts";
 import { gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { createSimpleGitUsingPredefinedGitRoot, INTERNAL_COMPUTATION_FOR_IMPORT, removePathRecursively } from "@dataspecer/git-node";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
@@ -38,6 +37,7 @@ import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 import { AuthenticationGitProvidersData } from "@dataspecer/git/git-providers";
 import { LocalStoreModel } from "../models/local-store-model.ts";
 import { StorageApi } from "../utils/iri-replace-util.ts";
+import { updateGitRelatedDataForPackage } from "./resource.ts";
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
   const result: LanguageString = {};

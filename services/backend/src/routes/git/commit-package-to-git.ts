@@ -18,8 +18,7 @@ import { AvailableExports } from "../../export-import/export-actions.ts";
 import { getCommonCommitInHistory, gitCloneBasic, CreateSimpleGitResult, UniqueDirectory } from "@dataspecer/git-node/simple-git-methods";
 import { compareBackendFilesystems, compareGitAndDSFilesystems } from "../../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { PackageExporterByResourceType } from "../../export-import/export-by-resource-type.ts";
-import { MergeEndInfoWithRootNode, PrismaMergeStateWithData } from "../../models/merge-state-model.ts";
-import { MergeEndpointForComparison } from "./merge-states/create-merge-state.ts";
+import { MergeEndInfoWithRootNode, MergeEndpointForComparison, PrismaMergeStateWithData } from "../../models/merge-state-model.ts";
 import fs from "fs";
 import {
   checkErrorBoundaryForCommitAction, getLastCommit, getLastCommitHash, isDefaultBranch,
