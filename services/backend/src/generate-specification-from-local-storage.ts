@@ -716,7 +716,10 @@ async function generateSpecificationFromFileSystem() {
   console.info({rootPackage});
   console.info("rootroot:");
   const absoluteRoots = await resourceModel.getRootResources();
-  absoluteRoots.forEach(absoluteRoot => console.info({ar: absoluteRoot}))
+  absoluteRoots.forEach(absoluteRoot => console.info({ar: absoluteRoot}));
+  const absoluteRootAsPckg = await resourceModel.getPackage(absoluteRoots[0].iri);
+  console.info({absoluteRootAsPckg});
+  console.info({absoluteRootAsPckgSubRes: absoluteRootAsPckg?.subResources[0]});
 
 
   await generateArtifactsFromImported(imported);
