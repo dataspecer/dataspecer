@@ -7,7 +7,7 @@ import { FilesystemNode, FilesystemMappingType, DirectoryNode, FilesystemNodeLoc
 import { AvailableFilesystems, createEmptyFilesystemMapping, createFilesystemMappingRoot, createInitialNodeToParentMap, FilesystemAbstraction, getMetaPrefixType } from "./filesystem-abstraction.ts";
 
 import path from "path";
-import { ComparisonData } from "../../merge/merge-state.ts";
+import { DatastoreComparison } from "../../merge/merge-state.ts";
 
 export abstract class FilesystemAbstractionBase implements FilesystemAbstraction {
   /////////////////////////////////////
@@ -157,7 +157,7 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
   abstract getFilesystemType(): AvailableFilesystems;
   abstract getDatastoreContent(irisTreePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any>;
   abstract createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType>;
-  abstract changeDatastore(otherFilesystem: FilesystemAbstraction, changed: ComparisonData): Promise<boolean>;
+  abstract changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<boolean>;
   abstract removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<boolean>;
   abstract removeFile(filesystemNode: FilesystemNode): Promise<boolean>;
   abstract updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, content: string): Promise<boolean>;

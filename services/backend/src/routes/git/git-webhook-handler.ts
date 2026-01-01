@@ -14,7 +14,7 @@
 
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
-import { ComparisonData, dsPathJoin, getMergeFromMergeToMappingForGitAndDS, GitProvider, isDatastoreForMetadata, MergeStateCause, DatastoreInfo, DirectoryNode, FilesystemNode, FilesystemAbstraction, getMergeFromMergeToForGitAndDS, AvailableFilesystems } from "@dataspecer/git";
+import { DatastoreComparison, dsPathJoin, getMergeFromMergeToMappingForGitAndDS, GitProvider, isDatastoreForMetadata, MergeStateCause, DatastoreInfo, DirectoryNode, FilesystemNode, FilesystemAbstraction, getMergeFromMergeToForGitAndDS, AvailableFilesystems } from "@dataspecer/git";
 import fs from "fs";
 import path from "path";
 import { updateBlob, updateResourceMetadata } from "../resource.ts";
@@ -183,9 +183,9 @@ async function saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(
 }
 
 type ComparisonResult = {
-  changed: ComparisonData[],
-  removed: ComparisonData[],
-  created: ComparisonData[],
+  changed: DatastoreComparison[],
+  removed: DatastoreComparison[],
+  created: DatastoreComparison[],
 }
 
 /**

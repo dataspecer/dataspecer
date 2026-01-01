@@ -1,6 +1,6 @@
 import {
   AvailableFilesystems, convertDatastoreContentBasedOnFormat, getDatastoreInfoOfGivenDatastoreType,
-  isDatastoreForMetadata, ExportMetadataType, ComparisonData, GitIgnore, dsPathJoin,
+  isDatastoreForMetadata, ExportMetadataType, DatastoreComparison, GitIgnore, dsPathJoin,
   DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, DatastoreInfo,
   FilesystemAbstractionBase, FilesystemAbstraction, removeDatastoreFromNode,
  } from "@dataspecer/git";
@@ -251,7 +251,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
   createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType> {
     throw new Error("Method not implemented.");
   }
-  async changeDatastore(otherFilesystem: FilesystemAbstraction, changed: ComparisonData): Promise<boolean> {
+  async changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<boolean> {
     const newContent = await otherFilesystem.getDatastoreContent(changed.new!.name, changed.affectedDataStore.type, false);
     return this.updateDatastore(changed.old!, changed.affectedDataStore.type, newContent);
   }

@@ -1,8 +1,8 @@
-import { ComparisonData, FinalizerVariantsForMergeOnFailure, FinalizerVariantsForPullOnFailure, FinalizerVariantsForPushOnFailure, MergeCommitType, MergeState } from "@dataspecer/git";
+import { DatastoreComparison, FinalizerVariantsForMergeOnFailure, FinalizerVariantsForPullOnFailure, FinalizerVariantsForPushOnFailure, MergeCommitType, MergeState } from "@dataspecer/git";
 
 export const updateMergeState = async (
   fetchedMergeState: MergeState,
-  conflictsToBeResolvedOnSave: ComparisonData[],
+  conflictsToBeResolvedOnSave: DatastoreComparison[],
 ) => {
   try {
     const pathsForConflictsToBeResolvedOnSave = conflictsToBeResolvedOnSave.map(conflict => conflict.affectedDataStore.fullPath);

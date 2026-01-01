@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { DatastoreInfo, DirectoryNode, FileNode, FilesystemNode } from "../export-import-data-api.ts";
 import { FilesystemAbstraction, getDatastoreInfoOfGivenDatastoreType } from "../filesystem/abstractions/filesystem-abstraction.ts";
-import { ComparisonData, DatastoreComparisonWithChangeTypeInfo, DiffTree, ResourceComparison, ResourceComparisonResult } from "./merge-state.ts";
+import { DatastoreComparison, DatastoreComparisonWithChangeTypeInfo, DiffTree, ResourceComparison, ResourceComparisonResult } from "./merge-state.ts";
 import { ResourceDatastoreStripHandlerBase } from "./comparison/resource-datastore-strip-handler-base.ts";
 
 export type ComparisonFullResult = {
@@ -10,10 +10,10 @@ export type ComparisonFullResult = {
 } & ComparisonDifferences;
 
 export type ComparisonDifferences = {
-  created: ComparisonData[],
-  removed: ComparisonData[],
-  changed: ComparisonData[],
-  conflicts: ComparisonData[],
+  created: DatastoreComparison[],
+  removed: DatastoreComparison[],
+  changed: DatastoreComparison[],
+  conflicts: DatastoreComparison[],
 };
 
 
@@ -27,10 +27,10 @@ export async function compareFileTrees(
   fakeTreeRoot2: DirectoryNode,
 ): Promise<ComparisonFullResult> {
   const diffTree: DiffTree = {};
-  const changed: ComparisonData[] = [];
-  const removed: ComparisonData[] = [];
-  const created: ComparisonData[] = [];
-  const conflicts: ComparisonData[] = [];
+  const changed: DatastoreComparison[] = [];
+  const removed: DatastoreComparison[] = [];
+  const created: DatastoreComparison[] = [];
+  const conflicts: DatastoreComparison[] = [];
 
 
   const diffTreeSize = await compareTreesInternal(filesystem1, fakeTreeRoot1,
@@ -237,10 +237,10 @@ export function getDiffNodeFromDiffTree(
  */
 export async function createConflictsFromDiffTrees(
   previousDiffTree: DiffTree | null,
-  previousConflicts: ComparisonData[],
+  previousConflicts: DatastoreComparison[],
   newDiffTree: DiffTree,
-  newConflicts: ComparisonData[],
-  outputConflicts: ComparisonData[],
+  newConflicts: DatastoreComparison[],
+  outputConflicts: DatastoreComparison[],
 ): Promise<void> {
   for (const [key, newResource] of Object.entries(newDiffTree)) {
     const previousResource = previousDiffTree?.[key];

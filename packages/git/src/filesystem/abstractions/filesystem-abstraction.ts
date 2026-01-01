@@ -1,6 +1,6 @@
 import { GitProvider } from "../../git-provider-api.ts";
 import { DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, DatastoreInfo, ExportMetadataType } from "../../export-import-data-api.ts";
-import { ComparisonData } from "../../merge/merge-state.ts";
+import { DatastoreComparison } from "../../merge/merge-state.ts";
 
 
 export enum AvailableFilesystems {
@@ -106,12 +106,12 @@ export interface FilesystemAbstraction {
   // TODO RadStr: After I am done with the implementation fix the docs here - for example I newly added datastoreType: string, but I'm not sure if it will stay.
   // TODO RadStr: I don't know - the api could also be oldFileSystemNode, newFileSystemNode (and its abstraction). and it just replaces stuff
   /**
-   * Changes content of the given version of datastore inside {@link ComparisonData} to the new version inside the filesystem.
+   * Changes content of the given version of datastore inside {@link changed} to the new version inside the filesystem.
    *  {@link otherFilesystem} is the other filesystem containing the data of the new version.
    * @deprecated We are not using it in the end
    * @returns True if the file was sucessfully changed, false on failure.
    */
-  changeDatastore(otherFilesystem: FilesystemAbstraction, changed: ComparisonData): Promise<boolean>;
+  changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<boolean>;
 
   /**
    * Removes datastore from the {@link filesystemNode}, if it was the last {@link datastoreType} inside the node, also removes the whole node.

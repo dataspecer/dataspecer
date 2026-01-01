@@ -6,7 +6,7 @@ export type CommitConflictInfo = {
   conflictMergeToIri: string
 } | null;
 
-export type ComparisonData = {
+export type DatastoreComparison = {
   affectedDataStore: DatastoreInfo;
 } & OldNewFilesystemNode;
 
@@ -15,7 +15,7 @@ export type CreatedRemovedModified = "same" | "modified" | "created-in-new" | "r
 // It has additional info about how they differ.
 export type DatastoreComparisonWithChangeTypeInfo = {
   datastoreComparisonResult: CreatedRemovedModified;
-} & ComparisonData;
+} & DatastoreComparison;
 
 export type OldNewFilesystemNode = {
   old: FilesystemNode | null;
@@ -191,11 +191,11 @@ export interface MergeState {
 
   lastCommonCommitHash: string;
 
-  changedInEditable?: ComparisonData[];
-  removedInEditable?: ComparisonData[];
-  createdInEditable?: ComparisonData[];
-  conflicts?: ComparisonData[];
-  unresolvedConflicts?: ComparisonData[];
+  changedInEditable?: DatastoreComparison[];
+  removedInEditable?: DatastoreComparison[];
+  createdInEditable?: DatastoreComparison[];
+  conflicts?: DatastoreComparison[];
+  unresolvedConflicts?: DatastoreComparison[];
   conflictCount: number;
 
   mergeStateCause: MergeStateCause;

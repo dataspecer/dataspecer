@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import path from "path";
 import { ResourceModel } from "./resource-model.ts";
 import { SimpleGit, simpleGit } from "simple-git";
-import { AvailableFilesystems, ComparisonData, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, FilesystemNode, GitProvider, isEditableType, MergeCommitType, MergeState, MergeStateCause } from "@dataspecer/git";
+import { AvailableFilesystems, DatastoreComparison, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, FilesystemNode, GitProvider, isEditableType, MergeCommitType, MergeState, MergeStateCause } from "@dataspecer/git";
 import { ResourceChangeListener, ResourceChangeType } from "./resource-change-observer.ts";
 import { updateMergeStateToBeUpToDate } from "../routes/git/merge-states/create-merge-state.ts";
 import { ALL_GIT_REPOSITORY_ROOTS, createSimpleGitUsingPredefinedGitRoot, getLastCommitHash, MERGE_DS_CONFLICTS_PREFIX, removePathRecursively } from "@dataspecer/git-node";
@@ -37,13 +37,13 @@ type Nullable<T> = {
   [P in keyof T]: T[P] | null;
 };
 
-type InputForConvertMergeDataToStringMethod = Nullable<CreateDataToConvertToString & { unresolvedConflicts: ComparisonData[] }>;
+type InputForConvertMergeDataToStringMethod = Nullable<CreateDataToConvertToString & { unresolvedConflicts: DatastoreComparison[] }>;
 
 type CreateDataToConvertToString = {
-  changedInEditable: ComparisonData[],
-  removedInEditable: ComparisonData[],
-  createdInEditable: ComparisonData[],
-  allConflicts: ComparisonData[],
+  changedInEditable: DatastoreComparison[],
+  removedInEditable: DatastoreComparison[],
+  createdInEditable: DatastoreComparison[],
+  allConflicts: DatastoreComparison[],
   diffTree: DiffTree,
 };
 
@@ -60,7 +60,7 @@ type CreateMergeStateInput = {
 } & CreateDataToConvertToString;
 
 type UpdateMergeStateInput = {
-  unresolvedConflicts: ComparisonData[],
+  unresolvedConflicts: DatastoreComparison[],
   lastCommonCommitHash: string | undefined,
 } & Omit<CreateMergeStateInput, "lastCommonCommitHash">;
 
@@ -700,8 +700,8 @@ export class MergeStateModel implements ResourceChangeListener {
     if (allConflicts === undefined) {
       throw new Error(`For some reasons the unresolved conflicts are undefined in the MergeState with uuid: ${uuid}. It has to be array`);
     }
-    const newUnresolvedConflicts: ComparisonData[] = JSON.parse(allConflicts)
-      .filter((conflict: ComparisonData) => currentlyUnresolvedConflicts.includes(conflict.affectedDataStore.fullPath));
+    const newUnresolvedConflicts: DatastoreComparison[] = JSON.parse(allConflicts)
+      .filter((conflict: DatastoreComparison) => currentlyUnresolvedConflicts.includes(conflict.affectedDataStore.fullPath));
 
     await this.prismaClient.mergeState.update({
         where: { uuid: uuid },
@@ -722,10 +722,10 @@ export class MergeStateModel implements ResourceChangeListener {
   async updateMergeStateWithObjects(
     uuid: string,
     diffTree: DiffTree,
-    changedInEditable: ComparisonData[],
-    removedInEditable: ComparisonData[],
-    createdInEditable: ComparisonData[],
-    unresolvedConflicts: ComparisonData[],
+    changedInEditable: DatastoreComparison[],
+    removedInEditable: DatastoreComparison[],
+    createdInEditable: DatastoreComparison[],
+    unresolvedConflicts: DatastoreComparison[],
   ) {
     const mergeState = await this.prismaClient.mergeState.findFirst({where: {uuid}});
     if (mergeState === null) {

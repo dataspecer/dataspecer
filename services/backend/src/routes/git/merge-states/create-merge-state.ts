@@ -2,7 +2,7 @@ import { z } from "zod";
 import { asyncHandler } from "../../../utils/async-handler.ts";
 import { mergeStateModel, resourceModel } from "../../../main.ts";
 import express from "express";
-import { AvailableFilesystems, ComparisonData, createConflictsFromDiffTrees, MergeState, MergeStateCause } from "@dataspecer/git";
+import { AvailableFilesystems, DatastoreComparison, createConflictsFromDiffTrees, MergeState, MergeStateCause } from "@dataspecer/git";
 import { compareBackendFilesystems } from "../../../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { getCommonCommitInHistory, gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { SimpleGit } from "simple-git";
@@ -156,7 +156,7 @@ export async function updateMergeStateToBeUpToDate(
     filesystemMergeTo, fakeRootMergeTo, rootMergeTo, pathToRootMetaMergeTo,
   } = await compareBackendFilesystems(mergeFrom, mergeTo);
 
-    let newConflicts: ComparisonData[] = [];
+    let newConflicts: DatastoreComparison[] = [];
     if (previousMergeState !== null) {
       await createConflictsFromDiffTrees(
         previousMergeState.diffTreeData?.diffTree ?? null, previousMergeState.unresolvedConflicts ?? [],

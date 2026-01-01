@@ -4,7 +4,7 @@ import * as monaco from 'monaco-editor';
 import {
   AvailableFilesystems,
   ClientFilesystem,
-  ComparisonData,
+  DatastoreComparison,
   convertDatastoreContentBasedOnFormat,
   DatastoreInfo,
   EditableType,
@@ -412,7 +412,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
 
   // Set once in the useEffect
   const [examinedMergeState, setExaminedMergeState] = useState<MergeState | null>(null);
-  const [conflictsToBeResolvedOnSave, setConflictsToBeResolvedOnSave] = useState<ComparisonData[]>([]);
+  const [conflictsToBeResolvedOnSave, setConflictsToBeResolvedOnSave] = useState<DatastoreComparison[]>([]);
   // Maps the full path of the datastore to be created to the iris, which are inside the datastore and need replacing.
   const createdDatastoresToIrisNeedingReplacementMap = useRef<Record<string, string[]>>({});
   const [createdDatastores, setCreatedDatastores] = useState<DatastoreInfo[]>([]);
@@ -989,7 +989,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
   }, [cacheExplicitUpdateTracker]);
 
 
-  const unresolveToBeResolvedConflict = (comparisonData: ComparisonData) => {
+  const unresolveToBeResolvedConflict = (comparisonData: DatastoreComparison) => {
     setConflictsToBeResolvedOnSave(prev => {
       return prev.filter(iteratedComparison => iteratedComparison !== comparisonData);
     });

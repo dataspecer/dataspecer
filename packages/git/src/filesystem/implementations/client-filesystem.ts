@@ -1,6 +1,5 @@
-import { ComparisonData } from "../../merge/merge-state.ts";
+import { DatastoreComparison } from "../../merge/merge-state.ts";
 import { FilesystemNodeLocation, FilesystemMappingType, DirectoryNode, FilesystemNode, DatastoreInfo, ExportShareableMetadataType } from "../../export-import-data-api.ts";
-import { GitProvider } from "../../git-provider-api.ts";
 import { FilesystemAbstractionBase } from "../abstractions/filesystem-abstraction-base.ts";
 import { AvailableFilesystems, FilesystemAbstraction, getDatastoreInfoOfGivenDatastoreType } from "../abstractions/filesystem-abstraction.ts";
 
@@ -120,7 +119,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
   createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType> {
     throw new Error("Method not implemented.");
   }
-  changeDatastore(otherFilesystem: FilesystemAbstraction, changed: ComparisonData): Promise<boolean> {
+  changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<boolean> {
     throw new Error("Method not implemented.");
   }
 

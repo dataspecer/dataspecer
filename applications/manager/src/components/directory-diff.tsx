@@ -3,7 +3,7 @@ import _ from "lodash";
 import { Check, Loader, Minus, MoveLeft, MoveRight, Plus, X } from "lucide-react";
 import React, { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import { NodeApi, NodeRendererProps, Tree, TreeApi, } from "react-arborist";
-import { ComparisonData, CreateDatastoreFilesystemNodesInfo, DatastoreComparisonWithChangeTypeInfo, DatastoreInfo, DiffTree, EditableType, FilesystemNode, getDatastoreInfoOfGivenDatastoreType, MergeState, OldNewFilesystemNode, ResourceComparison } from "@dataspecer/git";
+import { DatastoreComparison, CreateDatastoreFilesystemNodesInfo, DatastoreComparisonWithChangeTypeInfo, DatastoreInfo, DiffTree, EditableType, FilesystemNode, getDatastoreInfoOfGivenDatastoreType, MergeState, OldNewFilesystemNode, ResourceComparison } from "@dataspecer/git";
 import { DiffEditorEditIcon } from "./crossed-out-icon";
 import { AddToCreatedDatastoresAndAddToCacheMethodType, AddToRemovedDatastoresAndAddToCacheMethodType, DatastoreInfosCache, DatastoreInfosForModel, EntriesAffectedByCreateType } from "@/hooks/use-diff-editor-dialog-props";
 
@@ -35,8 +35,8 @@ type RenderNodeWithAdditionalData = RenderNode & {
   datastoreInfoInCache: DatastoreInfosForModel | null,
   updateModelData: UpdateModelDataMethod;
   shouldShowConflicts: boolean;
-  allConficts: ComparisonData[];
-  setConflictsToBeResolvedOnSave: (value: React.SetStateAction<ComparisonData[]>) => void;
+  allConficts: DatastoreComparison[];
+  setConflictsToBeResolvedOnSave: (value: React.SetStateAction<DatastoreComparison[]>) => void;
   isNewlyCreated: boolean;
   addToCreatedDatastores: AddToCreatedDatastoresAndAddToCacheMethodType;
   isNewlyRemoved: boolean;
@@ -48,15 +48,15 @@ type RenderNodeWithAdditionalData = RenderNode & {
   setRemovedTreePaths: (value: React.SetStateAction<string[]>) => void;
   isCurrentlyAllowedChangeOfModels: boolean;
   setIsCurrentlyAllowedChangeOfModels: React.Dispatch<React.SetStateAction<boolean>>;
-  conflictsToBeResolvedOnSaveInThisComponent: ComparisonData[];
+  conflictsToBeResolvedOnSaveInThisComponent: DatastoreComparison[];
 };
 
 type RenderStatus = "same" | "modified" | "created" | "removed";
 type TreeType = "old" | "new";
 
 function createTreeRepresentationsForRendering(
-  allConflicts: ComparisonData[],
-  unreslovedConflicts: ComparisonData[],
+  allConflicts: DatastoreComparison[],
+  unreslovedConflicts: DatastoreComparison[],
   diffTree: DiffTree,
   editableTree: EditableType
 ): { oldRenderTree: RenderTree, newRenderTree: RenderTree } {
@@ -89,15 +89,15 @@ function extractFirstNonEmptyFieldFromComparison(comparison: OldNewFilesystemNod
   return (comparison.old?.[comparisonFieldToExtract] ?? comparison.new?.[comparisonFieldToExtract]);
 }
 
-function createIdForDatastoreRenderNode(datastoreComparison: ComparisonData, treeToExtract: TreeType) {
+function createIdForDatastoreRenderNode(datastoreComparison: DatastoreComparison, treeToExtract: TreeType) {
   // It should be projectIris - so we can swap between the two trees easily by removing the treeToExtract suffix - TODO RadStr: However we might remove the left tree since it is useless
   // Note that at least one is not empty that is why we can type it to string
   return extractFirstNonEmptyFieldFromComparison(datastoreComparison, "projectIrisTreePath") as string + datastoreComparison.affectedDataStore.fullName + "-" + treeToExtract;
 }
 
 function createDatastoresRenderRepresentations(
-  allConflicts: ComparisonData[],
-  unresolvedConflicts: ComparisonData[],
+  allConflicts: DatastoreComparison[],
+  unresolvedConflicts: DatastoreComparison[],
   datastoreComparisons: DatastoreComparisonWithChangeTypeInfo[],
   treeToExtract: TreeType,
   editableTree: EditableType,
@@ -206,8 +206,8 @@ const renderTreeChildrenSortMap: Record<DataSourceRenderType, number> = {
 };
 
 function createTreeRepresentationForRendering(
-  allConflicts: ComparisonData[],
-  unresolvedConflicts: ComparisonData[],
+  allConflicts: DatastoreComparison[],
+  unresolvedConflicts: DatastoreComparison[],
   diffTree: DiffTree,
   treeToExtract: TreeType,
   editableTree: EditableType,
@@ -628,8 +628,8 @@ const createStyledNode = (
   updateModelData: UpdateModelDataMethod,
   datastoreInfosForCacheEntries: DatastoreInfosCache,
   shouldShowConflicts: boolean,
-  allConficts: ComparisonData[],
-  setConflictsToBeResolvedOnSave: (value: React.SetStateAction<ComparisonData[]>) => void,
+  allConficts: DatastoreComparison[],
+  setConflictsToBeResolvedOnSave: (value: React.SetStateAction<DatastoreComparison[]>) => void,
   createdFilesystemNodesAsArray: CreateDatastoreFilesystemNodesInfo[],
   createdDatastores: DatastoreInfo[],
   addToCreatedDatastores: AddToCreatedDatastoresAndAddToCacheMethodType,
@@ -639,7 +639,7 @@ const createStyledNode = (
   removedTreePaths: string[],
   setRemovedTreePaths: (value: React.SetStateAction<string[]>) => void,
   isCurrentlyAllowedChangeOfModelsUseState: [boolean, React.Dispatch<React.SetStateAction<boolean>>],
-  conflictsToBeResolvedOnSaveInThisComponent: ComparisonData[],
+  conflictsToBeResolvedOnSaveInThisComponent: DatastoreComparison[],
 ) => {
   const extendedProps: NodeRendererProps<RenderNodeWithAdditionalData> = props as any;
   const currentNodeTreePath = extractTreePathFromNode(extendedProps.node);
@@ -686,8 +686,8 @@ const createStyledNode = (
 }
 
 const updateConflictsToBeResolvedOnSave = (
-  setConflictsToBeResolvedOnSave: (value: React.SetStateAction<ComparisonData[]>) => void,
-  ...newlyAdded: ComparisonData[]
+  setConflictsToBeResolvedOnSave: (value: React.SetStateAction<DatastoreComparison[]>) => void,
+  ...newlyAdded: DatastoreComparison[]
 ) => {
   setConflictsToBeResolvedOnSave(oldValues => {
     return [
@@ -698,8 +698,8 @@ const updateConflictsToBeResolvedOnSave = (
 };
 
 const updateConflictsToBeResolvedOnSaveByRemoval = (
-  setConflictsToBeResolvedOnSave: (value: React.SetStateAction<ComparisonData[]>) => void,
-  ...newlyRemoved: ComparisonData[]
+  setConflictsToBeResolvedOnSave: (value: React.SetStateAction<DatastoreComparison[]>) => void,
+  ...newlyRemoved: DatastoreComparison[]
 ) => {
   setConflictsToBeResolvedOnSave(oldValues => {
     const filtered = oldValues
@@ -725,7 +725,7 @@ function filterOutNonConflicts(renderTree: RenderTree | undefined) {
 /**
  * Finds the given conflict in tree and all its parents
  */
-function findGivenConflictInTree(conflict: ComparisonData, tree: RenderTree) {
+function findGivenConflictInTree(conflict: DatastoreComparison, tree: RenderTree) {
   const visitedNodes: RenderNode[] = [];
   if (findGivenConflictInTreeInternal(conflict, tree, visitedNodes)) {
     return visitedNodes;
@@ -736,7 +736,7 @@ function findGivenConflictInTree(conflict: ComparisonData, tree: RenderTree) {
 /**
  * @returns true if matched
  */
-function findGivenConflictInTreeInternal(conflict: ComparisonData, tree: RenderTree, visitedNodes: RenderNode[]): boolean {
+function findGivenConflictInTreeInternal(conflict: DatastoreComparison, tree: RenderTree, visitedNodes: RenderNode[]): boolean {
   for (const node of tree) {
     visitedNodes.push(node);
     const relevantDatastore = node.datastores.find(datastore => datastore.name === conflict.affectedDataStore.type);
@@ -773,8 +773,8 @@ export const DiffTreeVisualization = (props: {
   isLoadingTreeStructure: boolean,
   setIsLoadingTreeStructure: (value: SetStateAction<boolean>) => void,
   mergeStateFromBackend: MergeState | null,
-  conflictsToBeResolvedOnSaveFromParent: ComparisonData[],
-  setConflictsToBeResolvedOnSave: Dispatch<SetStateAction<ComparisonData[]>>,
+  conflictsToBeResolvedOnSaveFromParent: DatastoreComparison[],
+  setConflictsToBeResolvedOnSave: Dispatch<SetStateAction<DatastoreComparison[]>>,
   createdFilesystemNodes: Record<string, EntriesAffectedByCreateType>,
   createdDatastores: DatastoreInfo[],
   addToCreatedDatastores: AddToCreatedDatastoresAndAddToCacheMethodType,
@@ -807,9 +807,9 @@ export const DiffTreeVisualization = (props: {
    * Not the best design decision, but we somehow want to allow to modify the conflicts to be resolved from multiple components
    * And we want to correctly update visualization based on that
    */
-  const [conflictsToBeResolvedOnSaveInThisComponent, setConflictsToBeResolvedOnSaveInThisComponent] = useState<ComparisonData[]>([]);
+  const [conflictsToBeResolvedOnSaveInThisComponent, setConflictsToBeResolvedOnSaveInThisComponent] = useState<DatastoreComparison[]>([]);
   // Actually based on ChatGPT response
-  const setConfictsToBeResolvedForBoth = useCallback((): React.Dispatch<React.SetStateAction<ComparisonData[]>> => {
+  const setConfictsToBeResolvedForBoth = useCallback((): React.Dispatch<React.SetStateAction<DatastoreComparison[]>> => {
     return (valueOrUpdater) => {
       // The order matters, however I really expected the order to be the opposite
       setConflictsToBeResolvedOnSave(valueOrUpdater);

@@ -1,7 +1,7 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import { v4 as uuidv4 } from 'uuid';
 import {
-  FilesystemAbstractionBase, ComparisonData, DatastoreInfo, DirectoryNode, FilesystemMappingType, FilesystemNode,
+  FilesystemAbstractionBase, DatastoreComparison, DatastoreInfo, DirectoryNode, FilesystemMappingType, FilesystemNode,
   FilesystemNodeLocation, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaDatastoreInfo, FilesystemAbstraction,
   removeDatastoreFromNode, isDatastoreForMetadata, getDatastoreInfoOfGivenDatastoreType, AvailableFilesystems, convertDatastoreContentBasedOnFormat,
   ExportMetadataType, GitIgnore
@@ -283,7 +283,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     };
   }
 
-  async changeDatastore(otherFilesystem: FilesystemAbstraction, changed: ComparisonData): Promise<boolean> {
+  async changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<boolean> {
     // Here we just update the blob
 
     const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(changed.old!, changed.affectedDataStore.type);
