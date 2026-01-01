@@ -711,9 +711,13 @@ async function generateSpecificationFromFileSystem() {
 
   const importer = new PackageImporter(resourceModel);
   const imported = await importer.doImport(zipDataFromFilesystem, false);
-  // const rootPackage = await resourceModel.getPackage(imported[0]);
-  // console.info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-  // console.info({rootPackage});
+  const rootPackage = await resourceModel.getPackage(imported[0]);
+  console.info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+  console.info({rootPackage});
+  console.info("rootroot:");
+  const absoluteRoots = await resourceModel.getRootResources();
+  absoluteRoots.forEach(absoluteRoot => console.info({ar: absoluteRoot}))
+
 
   await generateArtifactsFromImported(imported);
   process.exit(0);
