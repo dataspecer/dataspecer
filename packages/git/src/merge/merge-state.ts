@@ -144,11 +144,8 @@ export function convertMergeStateCauseToEditable(mergeStateCause: MergeStateCaus
 
 export type DiffTree = Record<string, ResourceComparison>;
 
-// TODO RadStr: Also new type, which does not exist on backend
 export type ResourceComparisonResult = "exists-in-both" | "exists-in-new" | "exists-in-old";
 
-
-// TODO RadStr: Also new type, which does not exist on backend
 export type ResourceComparison = {
   resources: OldNewFilesystemNode;
   resourceComparisonResult: ResourceComparisonResult;

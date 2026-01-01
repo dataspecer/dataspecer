@@ -2,9 +2,7 @@ import { AccessToken, AccessTokenType, CommitterInfo, RepositoryURLPartBase } fr
 import _ from "lodash";
 
 
-// TODO RadStr: Change to Dataspecer after debugging stage
-export const GITHUB_USER_AGENT = "Dataspecer-test";
-
+export const GITHUB_USER_AGENT = "Dataspecer";
 
 export type FinalizerVariantsForPullOnFailure = "remove-merge-state" | "pull-anyways";
 export type FinalizerVariantsForPushOnFailure = "remove-merge-state";

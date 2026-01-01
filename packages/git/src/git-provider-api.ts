@@ -177,7 +177,9 @@ export interface GitProvider {
   getBotCredentials(): GitCredentials | null;
 
   /**
-   * Sets default bot for this git provider as a collaborator for given {@link}
+   * Sets default bot for this git provider as a collaborator for given url identified by {@link repositoryOwner} and {@link repoName}.
+   * @todo Currently the bot will have push rights. In future it might be better to allow caller to specify the rights (ideally by git provider independent values).
+   *  But since the method is currently NOT in use due to removal of publication repository. It is up to future developer.
    * @param repositoryOwner is the user part of the repository URL - Either name of the organization or of the user.
    * @param repoName is the name of the repository.
    */

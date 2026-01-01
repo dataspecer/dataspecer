@@ -448,9 +448,9 @@ export async function importFromGitUrl(
   if (gitZipDownloadURLData.commitReferenceValueInfo.fallbackToDefaultBranch) {
     commitReferenceType = "branch";
   }
-  // Just a note that commitReferenceType still might be undefiend here
+  // Just a note that commitReferenceType still might be undefined here
 
-  console.info("gitDownloadURL", repositoryURL);
+  console.info("gitDownloadURL", repositoryURL);    // TODO RadStr Debug: Debug print
 
   // https://stackoverflow.com/questions/11944932/how-to-download-a-file-with-node-js-without-using-third-party-libraries
   // and https://medium.com/deno-the-complete-reference/download-file-with-fetch-in-node-js-57dd370c973a
@@ -487,7 +487,7 @@ export async function importFromGitUrl(
     }
   }
 
-  // TODO RadStr: Dont really understand why do I have to recast to <any> if I have clearly more specific type
+  // Don't really understand why do I have to recast to <any> if I have clearly more specific type
   const webReadableStream = Readable.fromWeb(downloadZipResponse.body as ReadableStream<any>);
   // Create buffer from them stream, no need to touch filesystem.
   const zipBuffer: Buffer = await buffer(webReadableStream);

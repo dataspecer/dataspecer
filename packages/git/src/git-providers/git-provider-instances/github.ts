@@ -290,8 +290,6 @@ export class GitHubProvider extends GitProviderBase {
     }
 
     const restEndPointToAddCollaborator = `https://api.github.com/repos/${repositoryOwner}/${repoName}/collaborators/${botCredentials.name}`;
-
-    // TODO RadStr: Maybe better permissions - or also could specify them in given method arguments
     const payload = {
       permission: "push",
     };

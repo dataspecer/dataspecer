@@ -90,7 +90,6 @@ function extractFirstNonEmptyFieldFromComparison(comparison: OldNewFilesystemNod
 }
 
 function createIdForDatastoreRenderNode(datastoreComparison: DatastoreComparison, treeToExtract: TreeType) {
-  // It should be projectIris - so we can swap between the two trees easily by removing the treeToExtract suffix - TODO RadStr: However we might remove the left tree since it is useless
   // Note that at least one is not empty that is why we can type it to string
   return extractFirstNonEmptyFieldFromComparison(datastoreComparison, "projectIrisTreePath") as string + datastoreComparison.affectedDataStore.fullName + "-" + treeToExtract;
 }
@@ -124,7 +123,7 @@ function createDatastoresRenderRepresentations(
           status = "created";
         }
         else {
-          throw new Error("TODO RadStr: Not implemented yet");
+          throw new Error(`Unexpected comparison result inside ${datastoreComparison}`);
         }
       }
       else if (treeToExtract === "new") {
@@ -135,7 +134,7 @@ function createDatastoresRenderRepresentations(
           status = "removed";
         }
         else {
-          throw new Error("TODO RadStr: Not implemented yet");
+          throw new Error(`Unexpected comparison result inside ${datastoreComparison}`);
         }
       }
       else {
@@ -496,7 +495,7 @@ function StyledNode({
             // which is problem because if we click in the space,
             // the upper node is selected - which can be non-leaf and we do not want that
             height: `${treeRowHeight}px`,
-            width: 1900,   // TODO RadStr: Ugly hack to not have text over multiple lines (can't think of any other EASY fix - non-easy fix would be set the width based on longest element or set rowHeight based on over how many lines it goes over)
+            width: 1900,   // Hack to not have text over multiple lines (can't think of any other EASY fix - non-easy fix would be set the width based on longest element or set rowHeight based on over how many lines it goes over)
             color,
             cursor: isExpandable ? "pointer" : "default",
             background: backgroundColor,

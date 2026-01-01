@@ -57,9 +57,6 @@ export async function compareGitAndDSFilesystems(
   };
 
   const generalResult = await compareBackendFilesystems(mergeFrom, mergeTo);
-
-
-  // TODO RadStr: Maybe return like ds and git filesystem - but I think that it is better to just return the general result
   return generalResult;
 }
 
