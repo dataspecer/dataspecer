@@ -1,4 +1,4 @@
-import { AccessToken, AccessTokenType, CommitterInfo } from "./git-provider-api.ts";
+import { AccessToken, AccessTokenType, CommitterInfo, RepositoryURLPartBase } from "./git-provider-api.ts";
 import _ from "lodash";
 
 
@@ -57,24 +57,26 @@ export function findPatAccessTokens(accessTokens: AccessToken[] | null | undefin
 /**
  *
  * @param remoteRepoURLDomain is the domain part of URL without www., that is for example gitlab.com or github.com
- * @param userName is the name of the person pushing/committing or doing anything with the URL
- * @param givenRepositoryUserName is the user under which the repository is created, that is the ending part of the url, that is for example github.com/{givenRepositoryUserName}/{repoName}
+ * @param accessTokenUserName is the name of the person pushing/committing or doing anything with the URL. When used in clone it can be any non-empty string.
+ *  For others it is also proably ignored, the {@link accessToken} will be probably the important part for authentication.
+ * @param repositoryOwner is the user under which the repository is created, that is the ending part of the url, that is for example github.com/{repositoryOwner}/{repoName}
  * @param repoName is the name of the repository to be used in the URL
  * @param accessToken is access token - Either from OAuth or PAT
  * @returns
  */
-export const createRepoURLWithAuthorizationFromData = (remoteRepoURLDomain: string, userName: string, givenRepositoryUserName: string, repoName: string, accessToken: string) => {
-  return `https://${userName}:${accessToken}@${remoteRepoURLDomain}/${givenRepositoryUserName}/${repoName}`;
+export const createRepoURLWithAuthorizationFromData = (remoteRepoURLDomain: string, accessTokenUserName: string, repositoryOwner: string, repoName: string, accessToken: string) => {
+  return `https://${accessTokenUserName}:${accessToken}@${remoteRepoURLDomain}/${repositoryOwner}/${repoName}`;
 };
 
 
 /**
- * @param userName is the name of the person pushing/committing or doing anything with the URL
- * @param givenRepositoryUserName is the user under which the repository is created, that is the ending part of the url, that is for example github.com/{givenRepositoryUserName}/{repoName}
+ * Transforms {@link remoteRepoURL} and calls {@link createRepoURLWithAuthorizationFromData}.
+ * @param accessTokenUserName is the name of the person pushing/committing or doing anything with the URL
+ * @param repositoryOwner is the user under which the repository is created, that is the ending part of the url, that is for example github.com/{repositoryOwner}/{repoName}
  */
-const getHttpsRepoURLWithAuthorization = (remoteRepoURL: string, userName: string, givenRepositoryUserName: string, repoName: string, accessToken: string): string => {
+const getHttpsRepoURLWithAuthorization = (remoteRepoURL: string, accessTokenUserName: string, repositoryOwner: string, repoName: string, accessToken: string): string => {
   const remoteRepoURLDomain = extractPartOfRepositoryURL(remoteRepoURL, "url-domain") ?? "github.com";
-  return createRepoURLWithAuthorizationFromData(remoteRepoURLDomain, userName, givenRepositoryUserName, repoName, accessToken);
+  return createRepoURLWithAuthorizationFromData(remoteRepoURLDomain, accessTokenUserName, repositoryOwner, repoName, accessToken);
 };
 
 
@@ -82,15 +84,15 @@ export function getAuthorizationURL(
   committerInfo: CommitterInfo,
   accessToken: AccessToken,
   remoteRepositoryURL: string,
-  repositoryUserName: string,
+  repositoryOwner: string,
   repositoryName: string,
 ): string {
   let repoURLWithAuthorization: string;
   if (accessToken.type === AccessTokenType.SSH) {
-    repoURLWithAuthorization = `git@${accessToken.value}:${repositoryUserName}/${repositoryName}.git`;
+    repoURLWithAuthorization = `git@${accessToken.value}:${repositoryOwner}/${repositoryName}.git`;
   }
   else if (accessToken.type === AccessTokenType.PAT) {
-    repoURLWithAuthorization = getHttpsRepoURLWithAuthorization(remoteRepositoryURL, committerInfo.name, repositoryUserName, repositoryName, accessToken.value);
+    repoURLWithAuthorization = getHttpsRepoURLWithAuthorization(remoteRepositoryURL, committerInfo.name, repositoryOwner, repositoryName, accessToken.value);
   }
   else {
     throw new Error(`Unknown access token type: ${accessToken.type}`);
@@ -133,10 +135,10 @@ export function dsPathJoin(...pathParts: string[]) {
  * @returns The part of given URL. Where the given URL can either be the main page
  *  (for example https://github.com/mff-uk/dataspecer) or some of the branches (for example https://github.com/mff-uk/dataspecer/tree/stable).
  *  Should also work for gitlab or any other git providers following similar URL structure.
- *  In the example mff-uk is "user-name" and dataspecer is "repository-name".
+ *  In the example mff-uk is "repository-owner" and dataspecer is "repository-name".
  *  For "branch" returns null, if it not explicitly provided in the {@link repositoryURL}.
  */
-export function extractPartOfRepositoryURL(repositoryURL: string, part: "url-domain" | "repository-name" | "user-name"): string | null {
+export function extractPartOfRepositoryURL(repositoryURL: string, part: RepositoryURLPartBase): string | null {
   try {
     const parsedUrl = new URL(repositoryURL);
 
@@ -155,7 +157,7 @@ export function extractPartOfRepositoryURL(repositoryURL: string, part: "url-dom
     if (part === "repository-name") {
       return pathParts[1];
     }
-    else if (part === "user-name") {
+    else if (part === "repository-owner") {
       return pathParts[0];
     }
 

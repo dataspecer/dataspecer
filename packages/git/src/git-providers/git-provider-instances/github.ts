@@ -50,7 +50,7 @@ export class GitHubProvider extends GitProviderBase {
   }
 
   getGitPagesURL(repositoryUrl: string): string {
-    const owner = this.extractPartOfRepositoryURL(repositoryUrl, "user-name");
+    const owner = this.extractPartOfRepositoryURL(repositoryUrl, "repository-owner");
     const repositoryName = this.extractPartOfRepositoryURL(repositoryUrl, "repository-name");
     return `https://${owner}.github.io/${repositoryName}`;
   }
@@ -89,9 +89,9 @@ export class GitHubProvider extends GitProviderBase {
     };
   }
 
-  removeRemoteRepository(authToken: string, repositoryUserName: string, repoName: string): Promise<FetchResponse> {
+  removeRemoteRepository(authToken: string, repositoryOwner: string, repoName: string): Promise<FetchResponse> {
     // https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#delete-a-repository
-    const fetchResponse = this.httpFetch(`https://api.github.com/repos/${repositoryUserName}/${repoName}`, {
+    const fetchResponse = this.httpFetch(`https://api.github.com/repos/${repositoryOwner}/${repoName}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/vnd.github+json",
@@ -142,7 +142,7 @@ export class GitHubProvider extends GitProviderBase {
 
   async createRemoteRepository(
     authToken: string,
-    repositoryUserName: string,
+    repositoryOwner: string,
     repoName: string,
     isUserRepo: boolean,
     shouldEnablePublicationBranch: boolean
@@ -161,7 +161,7 @@ export class GitHubProvider extends GitProviderBase {
                             // TODO RadStr: Maybe we need it only for the publication repository though
     };
 
-    const restEndpoint = isUserRepo ? "https://api.github.com/user/repos" : `https://api.github.com/orgs/${repositoryUserName}/repos`;
+    const restEndpoint = isUserRepo ? "https://api.github.com/user/repos" : `https://api.github.com/orgs/${repositoryOwner}/repos`;
 
     const fetchResponse = await this.httpFetch(restEndpoint, {
       method: "POST",
@@ -185,10 +185,10 @@ export class GitHubProvider extends GitProviderBase {
     if (shouldEnablePublicationBranch) {
       // We have to create the branch first, we can not enable GH pages on not existing branch
       const defaultBranchExplicit = defaultBranch ?? "main";
-      const initialCommitHash = await this.getLatestCommit(repositoryUserName, repoName, defaultBranchExplicit, authToken);
-      await this.createBranch(repositoryUserName, repoName, PUBLICATION_BRANCH_NAME, initialCommitHash, authToken);
+      const initialCommitHash = await this.getLatestCommit(repositoryOwner, repoName, defaultBranchExplicit, authToken);
+      await this.createBranch(repositoryOwner, repoName, PUBLICATION_BRANCH_NAME, initialCommitHash, authToken);
 
-      const pagesResponse = await this.enableGitHubPages(repoName, repositoryUserName, PUBLICATION_BRANCH_NAME, authToken);
+      const pagesResponse = await this.enableGitHubPages(repoName, repositoryOwner, PUBLICATION_BRANCH_NAME, authToken);
       // TODO RadStr Debug: Debug prints
       // console.info({pagesResponse});
       // console.info({json: await pagesResponse.json()});
@@ -202,8 +202,8 @@ export class GitHubProvider extends GitProviderBase {
 
 
 
-  private async getLatestCommit(repositoryUserName: string, repoName: string, branch: string, authToken: string) {
-    const mainRefUrl = `https://api.github.com/repos/${repositoryUserName}/${repoName}/git/ref/heads/${branch}`;
+  private async getLatestCommit(repositoryOwner: string, repoName: string, branch: string, authToken: string) {
+    const mainRefUrl = `https://api.github.com/repos/${repositoryOwner}/${repoName}/git/ref/heads/${branch}`;
 
     const fetchResponse = await this.httpFetch(mainRefUrl, {
       headers: {
@@ -221,8 +221,8 @@ export class GitHubProvider extends GitProviderBase {
     return latestCommitHash;
   }
 
-  private async createBranch(repositoryUserName: string, repoName: string, branch: string, latestCommitHash: string, authToken: string) {
-    const createRefUrl = `https://api.github.com/repos/${repositoryUserName}/${repoName}/git/refs`;
+  private async createBranch(repositoryOwner: string, repoName: string, branch: string, latestCommitHash: string, authToken: string) {
+    const createRefUrl = `https://api.github.com/repos/${repositoryOwner}/${repoName}/git/refs`;
 
     const fetchResponse = await this.httpFetch(createRefUrl, {
       method: "POST",
@@ -276,7 +276,7 @@ export class GitHubProvider extends GitProviderBase {
     };
   }
 
-  async setBotAsCollaborator(repositoryUserName: string, repoName: string, accessToken: string): Promise<FetchResponse> {
+  async setBotAsCollaborator(repositoryOwner: string, repoName: string, accessToken: string): Promise<FetchResponse> {
     // We have to actually perform 2 steps:
     //  1) Add the collaborator
     //  2) The collaborator has to accept the invitation
@@ -289,7 +289,7 @@ export class GitHubProvider extends GitProviderBase {
       throw new Error("Name of bot is not defined, we can not add him as a collaborator to repository");
     }
 
-    const restEndPointToAddCollaborator = `https://api.github.com/repos/${repositoryUserName}/${repoName}/collaborators/${botCredentials.name}`;
+    const restEndPointToAddCollaborator = `https://api.github.com/repos/${repositoryOwner}/${repoName}/collaborators/${botCredentials.name}`;
 
     // TODO RadStr: Maybe better permissions - or also could specify them in given method arguments
     const payload = {
@@ -339,9 +339,9 @@ export class GitHubProvider extends GitProviderBase {
     return acceptInvitationFetchResponse;
   }
 
-  async setRepositorySecret(repositoryUserName: string, repoName: string, accessToken: string, secretKey: string, secretValue: string): Promise<FetchResponse> {
+  async setRepositorySecret(repositoryOwner: string, repoName: string, accessToken: string, secretKey: string, secretValue: string): Promise<FetchResponse> {
     // Get public key for encryption - https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#get-a-repository-public-key
-    const restEndpointForPublicKey = `https://api.github.com/repos/${repositoryUserName}/${repoName}/actions/secrets/public-key`;
+    const restEndpointForPublicKey = `https://api.github.com/repos/${repositoryOwner}/${repoName}/actions/secrets/public-key`;
 
     const publicKeyResponse = this.httpFetch(restEndpointForPublicKey, {
       method: "GET",
@@ -389,7 +389,7 @@ export class GitHubProvider extends GitProviderBase {
 
     // Store the encrypted secret
     // https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#create-or-update-a-repository-secret
-    const restEndPoint = `https://api.github.com/repos/${repositoryUserName}/${repoName}/actions/secrets/${secretKey}`;
+    const restEndPoint = `https://api.github.com/repos/${repositoryOwner}/${repoName}/actions/secrets/${secretKey}`;
 
     const payload = {
       encrypted_value: encryptedSecretValue,
@@ -414,22 +414,22 @@ export class GitHubProvider extends GitProviderBase {
   /**
    * @deprecated We put the GitHub pages on the same repository instead of onto separate publication repository
    */
-  async createPublicationRepository(repoName: string, isUserRepo: boolean, repositoryUserName?: string, accessToken?: string): Promise<FetchResponse> {
+  async createPublicationRepository(repoName: string, isUserRepo: boolean, repositoryOwner?: string, accessToken?: string): Promise<FetchResponse> {
     const botCredentials = this.getBotCredentials();
     if (botCredentials === null) {
       throw new Error("Can not create publication repository, since there are no bot credentials");
     }
     const botAccessToken = findPatAccessToken(botCredentials.accessTokens)?.value;
 
-    repositoryUserName = repositoryUserName ?? botCredentials.name;
+    repositoryOwner = repositoryOwner ?? botCredentials.name;
     accessToken = accessToken ?? (botAccessToken ?? undefined);
     if (accessToken === undefined) {
       throw new Error("Can not create publication repository, since there is no access token - neiter from user and from bot");
     }
 
-    await this.createRemoteRepository(accessToken, repositoryUserName, repoName, isUserRepo, false);
-    await this.setBotAsCollaborator(repositoryUserName, repoName, accessToken);
-    return this.enableGitHubPages(repoName, repositoryUserName, "main", accessToken);
+    await this.createRemoteRepository(accessToken, repositoryOwner, repoName, isUserRepo, false);
+    await this.setBotAsCollaborator(repositoryOwner, repoName, accessToken);
+    return this.enableGitHubPages(repoName, repositoryOwner, "main", accessToken);
   }
 
   getWorkflowFilesDirectoryName(): string {
@@ -445,7 +445,7 @@ export class GitHubProvider extends GitProviderBase {
    * Enables GitHub pages for given repository.
    * @todo This is not part of GitProvider - maybe could be in future - We don't know details of other providers to decide if it should be
    */
-  async enableGitHubPages(repoName: string, repositoryUserName: string, branch: string, accessToken: string): Promise<FetchResponse> {
+  async enableGitHubPages(repoName: string, repositoryOwner: string, branch: string, accessToken: string): Promise<FetchResponse> {
     // https://docs.github.com/en/rest/pages/pages?apiVersion=2022-11-28#create-a-github-pages-site
     const payload = {
       source: {
@@ -454,7 +454,7 @@ export class GitHubProvider extends GitProviderBase {
       }
     };
 
-    const restEndPoint = `https://api.github.com/repos/${repositoryUserName}/${repoName}/pages`;
+    const restEndPoint = `https://api.github.com/repos/${repositoryOwner}/${repoName}/pages`;
     const fetchResponse = this.httpFetch(restEndPoint, {
       method: "POST",
       headers: {
@@ -473,7 +473,7 @@ export class GitHubProvider extends GitProviderBase {
 
   async getDefaultBranch(repositoryURL: string): Promise<string | null> {
     const repo = this.extractPartOfRepositoryURL(repositoryURL, "repository-name");
-    const owner = this.extractPartOfRepositoryURL(repositoryURL, "user-name");     // TODO RadStr: Rename user to owner everywhere
+    const owner = this.extractPartOfRepositoryURL(repositoryURL, "repository-owner");
     const restEndPointForRepo = `https://api.github.com/repos/${owner}/${repo}`;
 
     const response = await this.httpFetch(restEndPointForRepo, {
@@ -517,7 +517,7 @@ export class GitHubProvider extends GitProviderBase {
     return zipURL;
   }
 
-  createGitRepositoryURL(userName: string, repoName: string, gitRef?: GitRef): string {
+  createGitRepositoryURL(repositoryOwner: string, repoName: string, gitRef?: GitRef): string {
     let branchSuffix: string = "";
     if (gitRef !== undefined) {
       if (gitRef.type === "branch") {
@@ -527,13 +527,13 @@ export class GitHubProvider extends GitProviderBase {
         branchSuffix = `/commit/${gitRef.sha}`;
       }
     }
-    const url = `${this.getDomainURL(true)}/${userName}/${repoName}${branchSuffix}`;
+    const url = `${this.getDomainURL(true)}/${repositoryOwner}/${repoName}${branchSuffix}`;
     return url;
   }
 
   extractDefaultRepositoryUrl(repositoryUrl: string): string {
     const domain = this.extractPartOfRepositoryURL(repositoryUrl, "url-domain");
-    const owner = this.extractPartOfRepositoryURL(repositoryUrl, "user-name");
+    const owner = this.extractPartOfRepositoryURL(repositoryUrl, "repository-owner");
     const repositoryName = this.extractPartOfRepositoryURL(repositoryUrl, "repository-name");
     if (domain === null) {
       throw new Error("Invalid domain in" + repositoryUrl);

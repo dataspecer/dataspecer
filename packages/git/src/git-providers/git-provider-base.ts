@@ -25,20 +25,20 @@ export abstract class GitProviderBase implements GitProvider {
   abstract setDomainURL(newDomainURL: string): void;
   abstract getGitPagesURL(repositoryUrl: string): string;
   abstract extractDataForWebhookProcessing(webhookPayload: any, getResourceForGitUrlAndBranch: GetResourceForGitUrlAndBranchType): Promise<GitProviderIndependentWebhookRequestData | null>;
-  abstract createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean, shouldEnablePublicationBranch: boolean): Promise<CreateRemoteRepositoryReturnType>;
-  abstract removeRemoteRepository(authToken: string, repositoryUserName: string, repoName: string): Promise<FetchResponse>;
+  abstract createRemoteRepository(authToken: string, repositoryOwner: string, repoName: string, isUserRepo: boolean, shouldEnablePublicationBranch: boolean): Promise<CreateRemoteRepositoryReturnType>;
+  abstract removeRemoteRepository(authToken: string, repositoryOwner: string, repoName: string): Promise<FetchResponse>;
   abstract createWebhook(authToken: string, repositoryOwner: string, repositoryName: string, webhookHandlerURL: string, webhookEvents: string[]): Promise<FetchResponse>;
   abstract getBotCredentials(): GitCredentials | null;
-  abstract setBotAsCollaborator(repositoryUserName: string, repoName: string, accessToken: string): Promise<FetchResponse>;
-  abstract setRepositorySecret(repositoryUserName: string, repoName: string, accessToken: string, secretKey: string, secretValue: string): Promise<FetchResponse>;
+  abstract setBotAsCollaborator(repositoryOwner: string, repoName: string, accessToken: string): Promise<FetchResponse>;
+  abstract setRepositorySecret(repositoryOwner: string, repoName: string, accessToken: string, secretKey: string, secretValue: string): Promise<FetchResponse>;
   /**
    * @deprecated We put the GitHub pages on the same repository instead of onto separate publication repository
    */
-  abstract createPublicationRepository(repoName: string, isUserRepo: boolean, repositoryUserName?: string, accessToken?: string): Promise<FetchResponse>;
+  abstract createPublicationRepository(repoName: string, isUserRepo: boolean, repositoryOwner?: string, accessToken?: string): Promise<FetchResponse>;
   abstract getWorkflowFilesDirectoryName(): string;
   abstract isGitProviderDirectory(fullPath: string): boolean;
   abstract getDefaultBranch(repositoryURL: string): Promise<string | null>;
-  abstract createGitRepositoryURL(userName: string, repoName: string, gitRef?: GitRef): string;
+  abstract createGitRepositoryURL(repositoryOwner: string, repoName: string, gitRef?: GitRef): string;
   abstract extractDefaultRepositoryUrl(repositoryUrl: string): string;
   abstract convertGenericScopeToProviderScope(scope: Scope): string[];
   abstract convertProviderScopeToGenericScope(scope: string): Scope;
@@ -86,7 +86,7 @@ export abstract class GitProviderBase implements GitProvider {
       if (part === "repository-name") {
         return pathParts[1];
       }
-      else if (part === "user-name") {
+      else if (part === "repository-owner") {
         return pathParts[0];
       }
       else if (part === "branch" || part === "tag" || part === "commit") {
@@ -102,7 +102,7 @@ export abstract class GitProviderBase implements GitProvider {
 
   async convertRepoURLToDownloadZipURL(repositoryURL: string, commitReferenceType: CommitReferenceType): Promise<ConvertRepoURLToDownloadZipURLReturnType> {
     const repo = this.extractPartOfRepositoryURL(repositoryURL, "repository-name");
-    const owner = this.extractPartOfRepositoryURL(repositoryURL, "user-name");     // TODO RadStr: Rename user to owner everywhere
+    const owner = this.extractPartOfRepositoryURL(repositoryURL, "repository-owner");
     const commitReferenceValueInfo = await this.extractCommitReferenceValue(repositoryURL, commitReferenceType);
 
     if (owner === null) {

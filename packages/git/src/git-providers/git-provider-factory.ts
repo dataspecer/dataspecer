@@ -102,10 +102,10 @@ export const gitProviderDomains: Readonly<Record<GitProviderEnum, string>> = {
  *  but in case of gitlab, we can have self-hosted instances, for example our faculty uses https://gitlab.mff.cuni.cz,
  *  so there is not single gitlab URL for every organization.
  */
-export const createGitRepositoryURLForKnownProviders = (gitProvider: GitProviderEnum, userName: string, repoName: string, branch?: string): string => {
+export const createGitRepositoryURLForKnownProviders = (gitProvider: GitProviderEnum, repositoryOwner: string, repoName: string, branch?: string): string => {
   const baseURL = gitProviderDomains[gitProvider];
   const branchSuffix = branch === undefined ? "" : `/tree/${branch}`;
-  const url = `https://${baseURL}/${userName}/${repoName}${branchSuffix}`;
+  const url = `https://${baseURL}/${repositoryOwner}/${repoName}${branchSuffix}`;
   return url;
 };
 

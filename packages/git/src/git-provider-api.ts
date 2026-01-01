@@ -66,7 +66,8 @@ export type GitProviderIndependentWebhookRequestData = {
 
 export type CommitReferenceType = "commit" | "branch" | "tag";
 
-export type RepositoryURLPart = CommitReferenceType | ("url-domain" | "repository-name" | "user-name");
+export type RepositoryURLPartBase = "url-domain" | "repository-name" | "repository-owner";
+export type RepositoryURLPart = CommitReferenceType | RepositoryURLPartBase;
 
 export function isCommitReferenceType(value: string): value is CommitReferenceType {
   return value === "commit" || value === "branch" || value === "tag";
@@ -134,20 +135,20 @@ export interface GitProvider {
   extractDataForWebhookProcessing(webhookPayload: any, getResourceForGitUrlAndBranch: GetResourceForGitUrlAndBranchType): Promise<GitProviderIndependentWebhookRequestData | null>;
 
   /**
-   * Creates remote git repository with following URL .../{@link owner}/{@link repoName}.
+   * Creates remote git repository with following URL .../{@link repositoryOwner}/{@link repoName}.
    *
    * @param authToken has to contain right to create (public) repository
-   * @param isUserRepo if true then we create repository under user of name {@link owner},
-   *  if false then we are creating repository under organization of name {@link owner}.
+   * @param isUserRepo if true then we create repository under user of name {@link repositoryOwner},
+   *  if false then we are creating repository under organization of name {@link repositoryOwner}.
    * @param shouldEnablePublicationBranch If set to true should also enable the GitHub pages (or its equivalent) in the PUBLICATION_BRANCH_NAME. (but in future it might change if we start using the publication repos again, possible TODO:)
    */
-  createRemoteRepository(authToken: string, owner: string, repoName: string, isUserRepo: boolean, shouldEnablePublicationBranch: boolean): Promise<CreateRemoteRepositoryReturnType>;
+  createRemoteRepository(authToken: string, repositoryOwner: string, repoName: string, isUserRepo: boolean, shouldEnablePublicationBranch: boolean): Promise<CreateRemoteRepositoryReturnType>;
 
   /**
-   * Removes remote git repository with following URL .../{@link owner}/{@link repoName}.
+   * Removes remote git repository with following URL .../{@link repositoryOwner}/{@link repoName}.
    * @param authToken has to contain right to remove (public) repository
    */
-  removeRemoteRepository(authToken: string, owner: string, repoName: string): Promise<FetchResponse>;
+  removeRemoteRepository(authToken: string, repositoryOwner: string, repoName: string): Promise<FetchResponse>;
 
   // TODO RadStr: Mozna vybrat jen podmnozinu a dat ji do enumu nebo nekam a pak vytvaret mapovani dle GitProvidera, ty requesty vypadaji ze ma kazdy jiny
   // TODO RadStr: ... asi jo
@@ -178,16 +179,16 @@ export interface GitProvider {
 
   /**
    * Sets default bot for this git provider as a collaborator for given {@link}
-   * @param owner is the user part of the repository URL - Either name of the organization or of the user.
+   * @param repositoryOwner is the user part of the repository URL - Either name of the organization or of the user.
    * @param repoName is the name of the repository.
    */
-  setBotAsCollaborator(owner: string, repoName: string, accessToken: string): Promise<FetchResponse>;
+  setBotAsCollaborator(repositoryOwner: string, repoName: string, accessToken: string): Promise<FetchResponse>;
 
   /**
-   * Sets the repository secret for URL defined as urlRepoHost/{@link owner}/{@link repoName}. Where urlRepoHost is for example github.com
+   * Sets the repository secret for URL defined as urlRepoHost/{@link repositoryOwner}/{@link repoName}. Where urlRepoHost is for example github.com
    *  If the secret exists it is changed.
    */
-  setRepositorySecret(owner: string, repoName: string, accessToken: string, secretKey: string, secretValue: string): Promise<FetchResponse>;
+  setRepositorySecret(repositoryOwner: string, repoName: string, accessToken: string, secretKey: string, secretValue: string): Promise<FetchResponse>;
 
   /**
    * Creates the publication repository. That is the repository to contain the generated artifacts and specifications.
@@ -198,16 +199,16 @@ export interface GitProvider {
    *  3) Enable GitHub pages (or some other equivalent for different git providers)
    *
    * Note that for it to work, we should first set repository secret with the access token of the bot so it can commit to the remote publication repository within workflow (GitHub) action,
-   *  that is gitProvider.setRepositorySecret(owner, repoName, patAccessToken.value, "BOT_PAT_TOKEN", botAccessToken.value)
+   *  that is gitProvider.setRepositorySecret(repositoryOwner, repoName, patAccessToken.value, "BOT_PAT_TOKEN", botAccessToken.value)
    *
    * @param repoName is the name of the repository, which contains publications
    * @param isUserRepo if true then it is repo created under user, if false it is created under organization
-   * @param owner is the name of the organization if {@link isUserRepo} is false, or name of user if it is true.
+   * @param repositoryOwner is the name of the organization if {@link isUserRepo} is false, or name of user if it is true.
    *  If not provided then bot is used as a user and the {@link isUserRepo} is ignored (it is expected to be true).
    * @param accessToken if not given, the bot access token is used.
    * @deprecated We put the GitHub pages on the same repository instead of onto separate publication repository. We used to put it on repository suffixed by -publication-repo (hardcoded).
    */
-  createPublicationRepository(repoName: string, isUserRepo: boolean, owner?: string, accessToken?: string): Promise<FetchResponse>;
+  createPublicationRepository(repoName: string, isUserRepo: boolean, repositoryOwner?: string, accessToken?: string): Promise<FetchResponse>;
 
   /**
    * @returns The name of he directory under which are stored the workflow files in the corresponding git provider.
@@ -241,7 +242,7 @@ export interface GitProvider {
    * @returns The part of given URL. Where the given URL can either be the main page
    *  (for example https://github.com/mff-uk/dataspecer) or some of the branches (for example https://github.com/mff-uk/dataspecer/tree/stable).
    *  Should also work for gitlab or any other git providers following similar URL structure.
-   *  In the example mff-uk is "user-name" and dataspecer is "repository-name".
+   *  In the example mff-uk is "repository-owner" and dataspecer is "repository-name".
    *  For "branch" returns null, if it not explicitly provided in the {@link repositoryURL}.
    */
   extractPartOfRepositoryURL(repositoryURL: string, part: RepositoryURLPart): string | null;
@@ -256,12 +257,12 @@ export interface GitProvider {
   convertRepoURLToDownloadZipURL(repositoryURL: string, commitReferenceType: CommitReferenceType): Promise<ConvertRepoURLToDownloadZipURLReturnType>;
 
   /**
-   * @param userName - Repository owner or organization
+   * @param repositoryOwner - Either user under which is the repository or the organization
    * @param repoName - Repository name
-   * @returns The URL, which looks like {@link gitProviderURL}/{@link userName}/{@link repoName}, for other providers it might look different.
+   * @returns The URL, which looks like {@link gitProviderURL}/{@link repositoryOwner}/{@link repoName}, for other providers it might look different.
    *  It may be followed also by /tree/gitRef.name or /commit/gitref.sha (in GitHub case) if gitRef is defined.
    */
-  createGitRepositoryURL(userName: string, repoName: string, gitRef?: GitRef): string;
+  createGitRepositoryURL(repositoryOwner: string, repoName: string, gitRef?: GitRef): string;
 
   /**
    * @returns Converts the {@link repositoryUrl}, which may possible point to commit or branch to the url, which is the homepage of the repository. For example https://github.com/dataspecer/dataspecer
@@ -294,12 +295,12 @@ export interface GitProvider {
 export interface GitProviderInternalCompositeNode {
   /**
    * @param commitReference note that is not necessary branch, it can be also commit or tag.
-   * @returns Returns the last commit hash in repository with the following url gitProviderURL/{@link userName}/{@link repoName}.
+   * @returns Returns the last commit hash in repository with the following url gitProviderURL/{@link repositoryOwner}/{@link repoName}.
    *  If {@link commitReference} is provided then the last commit hash on that branch (or commit/tag ref) is returned, otherwise the last commit hash on default branch is returned.
    *  If issue occurred, then null is returned.
    *  If the {@link isCommit} is true, then it just tries to take the value from {@link commitReference}. This is just optimization so we don't clone when not necessary.
    */
-  getLastCommitHash(userName: string, repoName: string, commitReference?: string, isCommit?: boolean): Promise<string | null>;
+  getLastCommitHash(repositoryOwner: string, repoName: string, commitReference?: string, isCommit?: boolean): Promise<string | null>;
 
   /**
    * Same as {@link getLastCommitHash}, but gets url instead of explicit parts.

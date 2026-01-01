@@ -32,10 +32,10 @@ export const gitWorktreeExample = async (
     throw new Error("No bot credentials, can not create gitWorkTreeExample");
   }
   const remoteRepositoryRepoName = gitProvider.extractPartOfRepositoryURL(remoteRepositoryURL, "repository-name");
-  const remoteRepositoryUserName = gitProvider.extractPartOfRepositoryURL(remoteRepositoryURL, "user-name");
-  checkErrorBoundaryForCommitAction(remoteRepositoryURL, remoteRepositoryRepoName, remoteRepositoryUserName);
+  const remoteRepositoryOwner = gitProvider.extractPartOfRepositoryURL(remoteRepositoryURL, "repository-owner");
+  checkErrorBoundaryForCommitAction(remoteRepositoryURL, remoteRepositoryRepoName, remoteRepositoryOwner);
   const repoURLWithAuthorization = getAuthorizationURL(
-    botCredentials, botCredentials.accessTokens[0], remoteRepositoryURL, remoteRepositoryUserName!, remoteRepositoryRepoName!);
+    botCredentials, botCredentials.accessTokens[0], remoteRepositoryURL, remoteRepositoryOwner!, remoteRepositoryRepoName!);
 
   const git = simpleGit(gitInitialDirectory);
   try {

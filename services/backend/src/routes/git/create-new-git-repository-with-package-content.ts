@@ -3,7 +3,7 @@ import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { resourceModel } from "../../main.ts";
 import { ConfigType, convertToValidGitName, extractPartOfRepositoryURL, findPatAccessToken, findPatAccessTokens, stringToBoolean, transformCommitMessageIfEmpty, WEBHOOK_HANDLER_URL } from "@dataspecer/git";
-import { CommitBranchAndHashInfo, commitPackageToGitUsingAuthSession, GitCommitToCreateInfoBasic, RepositoryIdentificationInfo } from "./commit-package-to-git.ts";
+import { CommitBranchAndHashInfo, commitPackageToGitUsingAuthSession, GitCommitToCreateInfoBasic, RepositoryIdentification } from "./commit-package-to-git.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authorization/auth-session.ts";
 import { checkErrorBoundaryForCommitAction } from "@dataspecer/git-node";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
@@ -17,7 +17,7 @@ import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 export const createNewGitRepositoryWithPackageContent = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
     iri: z.string().min(1),
-    givenUserName: z.string(),
+    givenRepositoryOwner: z.string(),
     givenRepositoryName: z.string().min(1),
     gitProviderURL: z.string().min(1),
     commitMessage: z.string(),
@@ -29,10 +29,10 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
 
   const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(query.gitProviderURL, httpFetch, configuration);
   const { name: sessionUserName, accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
-  const repositoryUserName = convertToValidGitName(query.givenUserName.length === 0 ? sessionUserName : query.givenUserName);
+  const repositoryOwner = convertToValidGitName(query.givenRepositoryOwner.length === 0 ? sessionUserName : query.givenRepositoryOwner);
   const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
-  const repoName = convertToValidGitName(query.givenRepositoryName);
-  const fullLinkedGitRepositoryURL = gitProvider.createGitRepositoryURL(repositoryUserName, repoName);
+  const repositoryName = convertToValidGitName(query.givenRepositoryName);
+  const fullLinkedGitRepositoryURL = gitProvider.createGitRepositoryURL(repositoryOwner, repositoryName);
   const isUserRepo = stringToBoolean(query.isUserRepo);
   const patAccessTokens = findPatAccessTokens(accessTokens);
   // Either the user has create repo access AND it has access to the "user", then we are good
@@ -42,23 +42,23 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
     try {
       if (isUserRepo) {
         // If it is user repo then the owner of the pat access token have to be the user of the user part of repository url
-        // In other words if it is bot token then the repositoryUserName has to be bot name
-        if (patAccessToken.isBotAccessToken && repositoryUserName !== gitProvider.getBotCredentials()?.name) {
+        // In other words if it is bot token then the repositoryOwner has to be bot name
+        if (patAccessToken.isBotAccessToken && repositoryOwner !== gitProvider.getBotCredentials()?.name) {
           continue;
         }
       }
 
-      const { defaultBranch } = await gitProvider.createRemoteRepository(patAccessToken.value, repositoryUserName, repoName, isUserRepo, true);
+      const { defaultBranch } = await gitProvider.createRemoteRepository(patAccessToken.value, repositoryOwner, repositoryName, isUserRepo, true);
 
 
-      await gitProvider.createWebhook(patAccessToken.value, repositoryUserName, repoName, WEBHOOK_HANDLER_URL, ["push"]);
+      await gitProvider.createWebhook(patAccessToken.value, repositoryOwner, repositoryName, WEBHOOK_HANDLER_URL, ["push"]);
       // The projectIri is undefiend since it should be already set from the time we created the resource
       await resourceModel.updateResourceProjectIriAndBranch(query.iri, undefined, defaultBranch ?? undefined);
       await resourceModel.updateResourceGitLink(query.iri, fullLinkedGitRepositoryURL, true);
 
-      const repositoryIdentificationInfo: RepositoryIdentificationInfo = {
-        givenRepositoryUserName: repositoryUserName,
-        givenRepositoryName: repoName,
+      const repositoryIdentificationInfo: RepositoryIdentification = {
+        repositoryOwner,
+        repositoryName,
       };
       const commitInfo: GitCommitToCreateInfoBasic = {
         commitMessage,
@@ -114,22 +114,22 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
 
   const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
   const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(query.gitRepositoryURL, httpFetch, configuration);
-  const repoName = gitProvider.extractPartOfRepositoryURL(query.gitRepositoryURL, "repository-name");
-  const repositoryUserName = gitProvider.extractPartOfRepositoryURL(query.gitRepositoryURL, "user-name");
+  const repositoryName = gitProvider.extractPartOfRepositoryURL(query.gitRepositoryURL, "repository-name");
+  const repositoryOwner = gitProvider.extractPartOfRepositoryURL(query.gitRepositoryURL, "repository-owner");
   const branchName = gitProvider.extractPartOfRepositoryURL(query.gitRepositoryURL, "branch");
 
-  checkErrorBoundaryForCommitAction(query.gitRepositoryURL, repoName, repositoryUserName);
+  checkErrorBoundaryForCommitAction(query.gitRepositoryURL, repositoryName, repositoryOwner);
 
   const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
   const accessToken = findPatAccessToken(accessTokens);
   if (accessToken === null) {
     throw new Error("There is neither user or bot pat token to perform operations needed to create the link. For example creating remote repo");
   }
-  await gitProvider.createWebhook(accessToken.value, repositoryUserName!, repoName!, WEBHOOK_HANDLER_URL, ["push"]);
+  await gitProvider.createWebhook(accessToken.value, repositoryOwner!, repositoryName!, WEBHOOK_HANDLER_URL, ["push"]);
 
-  const repositoryIdentificationInfo: RepositoryIdentificationInfo = {
-    givenRepositoryUserName: repositoryUserName!,
-    givenRepositoryName: repoName!,
+  const repositoryIdentificationInfo: RepositoryIdentification = {
+    repositoryOwner: repositoryOwner!,
+    repositoryName: repositoryName!,
   };
   const commitInfo: GitCommitToCreateInfoBasic = {
     commitMessage,

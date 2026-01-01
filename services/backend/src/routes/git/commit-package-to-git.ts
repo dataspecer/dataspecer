@@ -33,9 +33,9 @@ import { ResourceModelForFilesystemRepresentation } from "../../export-import/ex
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 
 
-export type RepositoryIdentificationInfo = {
-  givenRepositoryUserName: string,
-  givenRepositoryName: string,
+export type RepositoryIdentification = {
+  repositoryOwner: string,
+  repositoryName: string,
 }
 
 /**
@@ -155,14 +155,14 @@ const commitHandlerInternal = async (
     throw new Error(`Can not commit to git since the resource (iri: ${iri}) does not exist`);
   }
   const gitLink = resource.linkedGitRepositoryURL;
-  const userName = extractPartOfRepositoryURL(gitLink, "user-name");
+  const repositoryOwner = extractPartOfRepositoryURL(gitLink, "repository-owner");
   const repoName = extractPartOfRepositoryURL(gitLink, "repository-name");
-  checkErrorBoundaryForCommitAction(gitLink, repoName, userName);
+  checkErrorBoundaryForCommitAction(gitLink, repoName, repositoryOwner);
 
   const branch = resource.branch === defaultBranchForPackageInDatabase ? null : resource.branch;
-  const repositoryIdentificationInfo: RepositoryIdentificationInfo = {
-    givenRepositoryUserName: userName!,
-    givenRepositoryName: repoName!,
+  const repositoryIdentificationInfo: RepositoryIdentification = {
+    repositoryOwner: repositoryOwner!,
+    repositoryName: repoName!,
   };
 
   if (shouldRedirectWithExistenceOfMergeStates) {
@@ -242,7 +242,7 @@ export const commitPackageToGitUsingAuthSession = async (
   iri: string,
   remoteRepositoryURL: string,
   branchAndLastCommit: CommitBranchAndHashInfo,
-  repositoryIdentificationInfo: RepositoryIdentificationInfo,
+  repositoryIdentificationInfo: RepositoryIdentification,
   response: express.Response,
   gitCommitInfoBasic: GitCommitToCreateInfoBasic,
   shouldAlwaysCreateMergeState: boolean,
@@ -292,7 +292,7 @@ export const commitPackageToGit = async (
   iri: string,
   remoteRepositoryURL: string,
   branchAndLastCommit: CommitBranchAndHashInfo,
-  repositoryIdentificationInfo: RepositoryIdentificationInfo,
+  repositoryIdentificationInfo: RepositoryIdentification,
   commitInfo: GitCommitToCreateInfoExplicitWithCredentials,
   shouldAlwaysCreateMergeState: boolean,
 ): Promise<CommitConflictInfo> => {
@@ -314,7 +314,7 @@ export const commitPackageToGit = async (
 async function commitDSMergeToGit(
   iri: string,
   remoteRepositoryURL: string,
-  repositoryIdentificationInfo: RepositoryIdentificationInfo,
+  repositoryIdentificationInfo: RepositoryIdentification,
   commitInfo: GitCommitToCreateInfoExplicitWithCredentials,
   mergeInfo: CommitBranchAndHashInfoForMerge,
   shouldAlwaysCreateMergeState: boolean,
@@ -323,7 +323,7 @@ async function commitDSMergeToGit(
   const { mergeToBranch, mergeToCommitHash } = mergeInfo;
   // Has to be defined, otherwise we should not call this
   const { branch: mergeFromBranch, commitHash: mergeFromCommitHash, iri: mergeFromIri } = mergeInfo.mergeFromData!;
-  const { givenRepositoryUserName, givenRepositoryName } = repositoryIdentificationInfo;
+  const { repositoryOwner, repositoryName } = repositoryIdentificationInfo;
   const { gitCredentials, gitProvider } = commitInfo;
 
 
@@ -331,7 +331,7 @@ async function commitDSMergeToGit(
   const { git, gitInitialDirectory, gitInitialDirectoryParent } = createSimpleGitResult;
 
   for (const accessToken of gitCredentials.accessTokens) {
-    const repoURLWithAuthorization = getAuthorizationURL(gitCredentials, accessToken, remoteRepositoryURL, givenRepositoryUserName, givenRepositoryName);
+    const repoURLWithAuthorization = getAuthorizationURL(gitCredentials, accessToken, remoteRepositoryURL, repositoryOwner, repositoryName);
     const isLastAccessToken = accessToken === gitCredentials.accessTokens.at(-1);
     const hasSetLastCommit: boolean = mergeToCommitHash !== "";
 
@@ -439,20 +439,20 @@ async function commitClassicToGit(
   remoteRepositoryURL: string,
   branch: string | null,
   localLastCommitHash: string,
-  repositoryIdentificationInfo: RepositoryIdentificationInfo,
+  repositoryIdentificationInfo: RepositoryIdentification,
   commitInfo: GitCommitToCreateInfoExplicitWithCredentials,
   resourceModelForDS: ResourceModelForFilesystemRepresentation,
   shouldAlwaysCreateMergeState: boolean,
 ): Promise<CommitConflictInfo> {
   const { gitCredentials, gitProvider } = commitInfo;
-  const { givenRepositoryUserName, givenRepositoryName } = repositoryIdentificationInfo;
+  const { repositoryOwner, repositoryName } = repositoryIdentificationInfo;
 
 
   const createSimpleGitResult: CreateSimpleGitResult = createSimpleGitUsingPredefinedGitRoot(iri, PUSH_PREFIX, true);
   const { git, gitDirectoryToRemoveAfterWork, gitInitialDirectory, gitInitialDirectoryParent } = createSimpleGitResult;
 
   for (const accessToken of gitCredentials.accessTokens) {
-    const repoURLWithAuthorization = getAuthorizationURL(gitCredentials, accessToken, remoteRepositoryURL, givenRepositoryUserName, givenRepositoryName);
+    const repoURLWithAuthorization = getAuthorizationURL(gitCredentials, accessToken, remoteRepositoryURL, repositoryOwner, repositoryName);
     const isLastAccessToken = accessToken === gitCredentials.accessTokens.at(-1);
 
     const hasSetLastCommit: boolean = localLastCommitHash !== "";
@@ -540,7 +540,7 @@ async function exportAndPushToGit(
   createSimpleGitResult: CreateSimpleGitResult,
   iri: string,
   repoURLWithAuthorization: string,
-  repositoryIdentificationInfo: RepositoryIdentificationInfo,
+  repositoryIdentificationInfo: RepositoryIdentification,
   commitInfo: GitCommitToCreateInfoExplicitWithCredentials,
   hasSetLastCommit: boolean,
   mergeFromBranch: string | null,
@@ -685,7 +685,7 @@ async function fillGitDirectoryWithExport(
   gitPaths: UniqueDirectory,
   gitProvider: GitProviderNode,
   exportFormat: string | null,
-  repositoryIdentificationInfo: RepositoryIdentificationInfo,
+  repositoryIdentificationInfo: RepositoryIdentification,
   hasSetLastCommit: boolean,
   shouldContainWorkflowFiles: boolean,
   isBranchAlreadyTrackedOnRemote: boolean,
@@ -707,11 +707,11 @@ async function fillGitDirectoryWithExport(
       iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem,
       exportFormat ?? "json", resourceModel, null
     );
-    const { givenRepositoryName, givenRepositoryUserName } = repositoryIdentificationInfo;
+    const { repositoryName, repositoryOwner } = repositoryIdentificationInfo;
 
     const readmeData: ReadmeTemplateData = {
       dataspecerUrl: "http://localhost:5174",
-      publicationRepositoryUrl: `${gitProvider.getDomainURL(true)}/${givenRepositoryUserName}/${givenRepositoryName}-publication-repo`,  // TODO RadStr: Have to fix once we will use better mechanism to name the publication repos
+      publicationRepositoryUrl: `${gitProvider.getDomainURL(true)}/${repositoryOwner}/${repositoryName}-publication-repo`,  // TODO RadStr: Have to fix once we will use better mechanism to name the publication repos
     };
 
 

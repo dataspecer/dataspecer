@@ -25,7 +25,7 @@ export const CommitActionsDialog = ({ examinedPackage, branch, commitHash, branc
     setIsPerformingAction(true);
     const defaultGitURL = examinedPackage.linkedGitRepositoryURL;
     const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(defaultGitURL, fetch, {});
-    const owner = gitProvider.extractPartOfRepositoryURL(defaultGitURL, "user-name");
+    const owner = gitProvider.extractPartOfRepositoryURL(defaultGitURL, "repository-owner");
     const repoName = gitProvider.extractPartOfRepositoryURL(defaultGitURL, "repository-name");
     if (owner === null) {
       throw new Error("Owner can not be extracted from the URL");

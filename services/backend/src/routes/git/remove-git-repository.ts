@@ -24,8 +24,8 @@ export const removeGitRepository = asyncHandler(async (request: express.Request,
     throw new Error("Repository URL is undefined");   // This happens because of the resource missing rather than URL
   }
 
-  const repositoryUserName = extractPartOfRepositoryURL(repositoryURL, "user-name");
-  if (repositoryUserName === null) {
+  const repositoryOwner = extractPartOfRepositoryURL(repositoryURL, "repository-owner");
+  if (repositoryOwner === null) {
     throw new Error(`Can not extract user name from repository URL: ${repositoryURL}`);
   }
 
@@ -39,7 +39,7 @@ export const removeGitRepository = asyncHandler(async (request: express.Request,
   const patAccessTokens = findPatAccessTokens(accessTokens);
   for (const patAccessToken of patAccessTokens) {
     try {
-      const fetchResponseForRemove = await gitProvider.removeRemoteRepository(patAccessToken.value, repositoryUserName, repoName);
+      const fetchResponseForRemove = await gitProvider.removeRemoteRepository(patAccessToken.value, repositoryOwner, repoName);
       if (!(fetchResponseForRemove.status === 404 || (fetchResponseForRemove.status >= 200 && fetchResponseForRemove.status < 300))) {
         continue;
       }

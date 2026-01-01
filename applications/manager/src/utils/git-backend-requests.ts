@@ -63,7 +63,7 @@ export async function createNewRemoteRepositoryRequest(
 ) {
   const url = import.meta.env.VITE_BACKEND + "/git/create-new-git-repository-with-package-content?iri=" + encodeURIComponent(iri) +
                                             "&givenRepositoryName=" + encodeURIComponent(commitBackendRequestData.repositoryName) +
-                                            "&givenUserName=" + encodeURIComponent(commitBackendRequestData.user ?? "") +
+                                            "&givenRepositoryOwner=" + encodeURIComponent(commitBackendRequestData.user ?? "") +
                                             "&gitProviderURL=" + encodeURIComponent(commitBackendRequestData.gitProvider ?? "") +
                                             "&commitMessage=" + encodeURIComponent(commitBackendRequestData.commitMessage ?? "") +
                                             "&isUserRepo=" + encodeURIComponent(commitBackendRequestData.isUserRepo ?? true) +
@@ -71,7 +71,7 @@ export async function createNewRemoteRepositoryRequest(
   // TODO RadStr: To test with docker I put the link-package-to-git code into export.zip, because for some reason docker didn't work with new API points
   // const url = import.meta.env.VITE_BACKEND + "/resources/export.zip?iri=" + encodeURIComponent(iri) +
   //                                           "&givenRepositoryName=" + encodeURIComponent(commitBackendRequestData.inputByUser) +
-  //                                           "&givenUserName=" + encodeURIComponent(commitBackendRequestData.user ?? "") +
+  //                                           "&givenRepositoryOwner=" + encodeURIComponent(commitBackendRequestData.user ?? "") +
   //                                           "&gitProviderURL=" + encodeURIComponent(commitBackendRequestData.gitProvider ?? "") +
   //                                           "&commitMessage=" + encodeURIComponent(commitBackendRequestData.commitMessage ?? "");
   const response = await fetch(

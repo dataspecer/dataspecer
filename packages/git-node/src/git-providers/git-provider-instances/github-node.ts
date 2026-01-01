@@ -34,8 +34,8 @@ export class GitHubNodeProvider extends GitHubProvider implements GitProviderNod
     createLinksForFiles(sourceWorkflowDirectory, workflowsDirPath);
   }
 
-  async getLastCommitHash(userName: string, repoName: string, commitReference?: string, isCommit?: boolean): Promise<string> {
-    return this.gitProviderInternalComposite.getLastCommitHash(userName, repoName, commitReference, isCommit);
+  async getLastCommitHash(repositoryOwner: string, repoName: string, commitReference?: string, isCommit?: boolean): Promise<string> {
+    return this.gitProviderInternalComposite.getLastCommitHash(repositoryOwner, repoName, commitReference, isCommit);
   }
 
   async getLastCommitHashFromUrl(repositoryUrl: string, commitReferenceType: CommitReferenceType | null, commitReferenceValue: string | null): Promise<string> {

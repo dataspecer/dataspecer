@@ -24,26 +24,26 @@ export abstract class GitProviderNodeBase extends GitProviderBase implements Git
   abstract setDomainURL(newDomainURL: string): void;
   abstract getGitPagesURL(repositoryUrl: string): string;
   abstract extractDataForWebhookProcessing(webhookPayload: any, getResourceForGitUrlAndBranch: GetResourceForGitUrlAndBranchType): Promise<GitProviderIndependentWebhookRequestData | null>;
-  abstract createRemoteRepository(authToken: string, repositoryUserName: string, repoName: string, isUserRepo: boolean, shouldEnablePublicationBranch: boolean): Promise<CreateRemoteRepositoryReturnType>;
-  abstract removeRemoteRepository(authToken: string, repositoryUserName: string, repoName: string): Promise<FetchResponse>;
+  abstract createRemoteRepository(authToken: string, repositoryOwner: string, repoName: string, isUserRepo: boolean, shouldEnablePublicationBranch: boolean): Promise<CreateRemoteRepositoryReturnType>;
+  abstract removeRemoteRepository(authToken: string, repositoryOwner: string, repoName: string): Promise<FetchResponse>;
   abstract createWebhook(authToken: string, repositoryOwner: string, repositoryName: string, webhookHandlerURL: string, webhookEvents: string[]): Promise<FetchResponse>;
   abstract getBotCredentials(): GitCredentials | null;
-  abstract setBotAsCollaborator(repositoryUserName: string, repoName: string, accessToken: string): Promise<FetchResponse>;
-  abstract setRepositorySecret(repositoryUserName: string, repoName: string, accessToken: string, secretKey: string, secretValue: string): Promise<FetchResponse>;
+  abstract repositoryOwner(repositoryOwner: string, repoName: string, accessToken: string): Promise<FetchResponse>;
+  abstract repositoryOwner(repositoryOwner: string, repoName: string, accessToken: string, secretKey: string, secretValue: string): Promise<FetchResponse>;
   /**
    * @deprecated We put the GitHub pages on the same repository instead of onto separate publication repository
    */
-  abstract createPublicationRepository(repoName: string, isUserRepo: boolean, repositoryUserName?: string, accessToken?: string): Promise<FetchResponse>;
+  abstract repositoryOwner(repoName: string, isUserRepo: boolean, repositoryOwner?: string, accessToken?: string): Promise<FetchResponse>;
   abstract copyWorkflowFiles(copyTo: string): void;
   abstract getWorkflowFilesDirectoryName(): string;
   abstract isGitProviderDirectory(fullPath: string): boolean;
   abstract getDefaultBranch(repositoryURL: string): Promise<string | null>;
-  abstract createGitRepositoryURL(userName: string, repoName: string, gitRef?: GitRef): string;
+  abstract createGitRepositoryURL(repositoryOwner: string, repoName: string, gitRef?: GitRef): string;
   abstract extractDefaultRepositoryUrl(repositoryUrl: string): string;
   abstract convertGenericScopeToProviderScope(scope: Scope): string[];
   abstract convertProviderScopeToGenericScope(scope: string): Scope;
   abstract revokePAT(personalAccessToken: string): Promise<FetchResponse>;
-  abstract getLastCommitHash(userName: string, repoName: string, commitReference?: string, isCommit?: boolean): Promise<string>;
+  abstract getLastCommitHash(repositoryOwner: string, repoName: string, commitReference?: string, isCommit?: boolean): Promise<string>;
   abstract getLastCommitHashFromUrl(repositoryUrl: string, commitReferenceType: CommitReferenceType | null, commitReferenceValue: string | null): Promise<string>;
 
   /**
@@ -62,10 +62,10 @@ export class GitProviderInternalCompositeNodeBase implements GitProviderInternal
     this.gitProvider = gitProvider;
   }
 
-  async getLastCommitHash(userName: string, repoName: string, commitReference?: string, isCommit?: boolean): Promise<string | null> {
+  async getLastCommitHash(repositoryOwner: string, repoName: string, commitReference?: string, isCommit?: boolean): Promise<string | null> {
     if (isCommit === true) {
       if (commitReference === undefined) {
-        throw new Error(`When trying to get last commit for userName: ${userName} and repoName: ${repoName}. It was supposed to be commit, however the value of commmit was not given`);
+        throw new Error(`When trying to get last commit for repositoryOwner: ${repositoryOwner} and repoName: ${repoName}. It was supposed to be commit, however the value of commmit was not given`);
       }
       return commitReference;
     }
@@ -92,14 +92,14 @@ export class GitProviderInternalCompositeNodeBase implements GitProviderInternal
       const git = simpleGit(gitTmpDirectory);
 
       // TODO: Note that this not work for non-public repositories
-      // Not providing in the branch, we just want the base url with userName and repoName
-      const repositoryUrl = this.gitProvider.createGitRepositoryURL(userName, repoName);
+      // Not providing in the branch, we just want the base url with repositoryOwner and repoName
+      const repositoryUrl = this.gitProvider.createGitRepositoryURL(repositoryOwner, repoName);
       await git.clone(repositoryUrl, ".", options);
       const gitLog = await git.log({ n: 1 });
       const hash = gitLog.latest?.hash;
 
       if (hash === undefined) {
-        throw new Error(`Could not get the last commit from given userName: ${userName}, repoName: ${repoName}, branch: ${commitReference}`);
+        throw new Error(`Could not get the last commit from given repositoryOwner: ${repositoryOwner}, repoName: ${repoName}, branch: ${commitReference}`);
       }
       return hash;
     }
@@ -115,10 +115,10 @@ export class GitProviderInternalCompositeNodeBase implements GitProviderInternal
   async getLastCommitHashFromUrl(repositoryUrl: string, commitReferenceType: CommitReferenceType | null, commitReferenceValue: string | null): Promise<string> {
     commitReferenceType ??= "branch";
 
-    const userName = this.gitProvider.extractPartOfRepositoryURL(repositoryUrl, "user-name");
+    const repositoryOwner = this.gitProvider.extractPartOfRepositoryURL(repositoryUrl, "repository-owner");
     const repoName = this.gitProvider.extractPartOfRepositoryURL(repositoryUrl, "repository-name");
-    if (userName === null) {
-      throw new Error(`Could not extract userName from given ${repositoryUrl}`);
+    if (repositoryOwner === null) {
+      throw new Error(`Could not extract repositoryOwner from given ${repositoryUrl}`);
     }
     else if (repoName === null) {
       throw new Error(`Could not extract repoName from given ${repositoryUrl}`);
@@ -127,7 +127,7 @@ export class GitProviderInternalCompositeNodeBase implements GitProviderInternal
       commitReferenceValue = (await this.gitProvider.extractCommitReferenceValue(repositoryUrl, commitReferenceType)).commitReferenceValue;
     }
 
-    return this.getLastCommitHash(userName, repoName, commitReferenceValue ?? undefined, commitReferenceType === "commit");
+    return this.getLastCommitHash(repositoryOwner, repoName, commitReferenceValue ?? undefined, commitReferenceType === "commit");
   }
 
 }

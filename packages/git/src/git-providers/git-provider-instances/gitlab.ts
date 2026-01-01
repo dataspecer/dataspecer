@@ -71,9 +71,9 @@ export class GitLabProvider extends GitProviderBase {
     // };
   }
 
-  async removeRemoteRepository(authToken: string, repositoryUserName: string, repoName: string): Promise<FetchResponse> {
+  async removeRemoteRepository(authToken: string, repositoryOwner: string, repoName: string): Promise<FetchResponse> {
     // https://docs.gitlab.com/api/projects/#delete-a-project
-    const urlSuffix = encodeURIComponent(`${repositoryUserName}/${repoName}`);
+    const urlSuffix = encodeURIComponent(`${repositoryOwner}/${repoName}`);
     const fetchResponse = this.httpFetch(`https://${this.domainURL}/api/v4/projects/` + urlSuffix, {
       method: "DELETE",
       headers: {
@@ -116,7 +116,7 @@ export class GitLabProvider extends GitProviderBase {
   }
   async createRemoteRepository(
     authToken: string,
-    repositoryUserName: string,
+    repositoryOwner: string,
     repoName: string,
     isUserRepo: boolean,
     shouldEnablePublicationBranch: boolean
@@ -161,18 +161,18 @@ export class GitLabProvider extends GitProviderBase {
     throw new Error("Method not implemented. We currently don't have any GitLab bot.");
   }
 
-  async setBotAsCollaborator(repositoryUserName: string, repoName: string, accessToken: string): Promise<FetchResponse> {
+  async setBotAsCollaborator(repositoryOwner: string, repoName: string, accessToken: string): Promise<FetchResponse> {
     throw new Error("Method not implemented.");
   }
 
-  async setRepositorySecret(repositoryUserName: string, repoName: string, accessToken: string, secretKey: string, secretValue: string): Promise<FetchResponse> {
+  async setRepositorySecret(repositoryOwner: string, repoName: string, accessToken: string, secretKey: string, secretValue: string): Promise<FetchResponse> {
     throw new Error("Method not implemented.");
   }
 
   /**
    * @deprecated We put the GitHub (respectively here GitLab) pages on the same repository instead of onto separate publication repository
    */
-  async createPublicationRepository(repoName: string, isUserRepo: boolean, repositoryUserName?: string, accessToken?: string): Promise<FetchResponse> {
+  async createPublicationRepository(repoName: string, isUserRepo: boolean, repositoryOwner?: string, accessToken?: string): Promise<FetchResponse> {
     throw new Error("Method not implemented.");
   }
 
@@ -204,7 +204,7 @@ export class GitLabProvider extends GitProviderBase {
     throw new Error("Method not implemented.");
   }
 
-  createGitRepositoryURL(userName: string, repoName: string, gitRef?: GitRef): string {
+  createGitRepositoryURL(repositoryOwner: string, repoName: string, gitRef?: GitRef): string {
     // Well GitLab seems to be slightly different than GitHub. It has /-/ between the repoName and tree,
     // BUT it seems to work without it, so maybe the same implementation for gitlab can be used.
     throw new Error("Method not implemented.");

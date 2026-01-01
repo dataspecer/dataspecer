@@ -40,18 +40,18 @@ export function removePathRecursively(path: string) {
 
 /**
  * @param gitLink is used only to provide the correct error message
- * @throws Throws error if {@link repoName} or {@link userName} are null
+ * @throws Throws error if {@link repoName} or {@link repositoryOwner} are null
  */
 export function checkErrorBoundaryForCommitAction(
   gitLink: string,
   repoName: string | null,
-  userName: string | null,
+  repositoryOwner: string | null,
 ): repoName is NonNullable<string> {
   if (repoName === null) {
     throw new Error(`Repository name could not be extracted from the repository URL: ${gitLink}`);
   }
-  if (userName === null) {
-    throw new Error(`User name could not be extracted from the repository URL: ${gitLink}`);
+  if (repositoryOwner === null) {
+    throw new Error(`Repository owner could not be extracted from the repository URL: ${gitLink}`);
   }
 
   return true;
