@@ -634,7 +634,7 @@ async function generateArtifactsFromImported(imported: string[]) {
   }
 
   const zip = new ZipStreamDictionary();
-  await generateArtifacts(importedIRI, zip, "?iri=" + encodeURIComponent(importedIRI));
+  await generateArtifacts(importedIRI, zip);
 
   const dirname = "test-generate-specification";
   // TODO RadStr: I am not sure why am I actually using the .length - 4
@@ -711,16 +711,16 @@ async function generateSpecificationFromFileSystem() {
 
   const importer = new PackageImporter(resourceModel);
   const imported = await importer.doImport(zipDataFromFilesystem, false);
-  const rootPackage = await resourceModel.getPackage(imported[0]);
-  console.info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-  console.info({rootPackage});
+  // const rootPackage = await resourceModel.getPackage(imported[0]);
+  // console.info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+  // console.info({rootPackage});
 
   await generateArtifactsFromImported(imported);
   process.exit(0);
 }
 
 /**
- * Generates specification from git URL passed in as argument from command line
+ * Generates specification from Git URL passed in as argument from command line
  * @param gitZipDownloadURL is the URL of git provider, which returns the zip on access - for example https://github.com/RadStr-bot/4f21bf6d-2116-4ab3-b387-1f8074f7f412/archive/refs/heads/main.zip
  */
 async function generateSpecificationFromGitURL(httpFetch: HttpFetch, authenticationGitProvidersData: AuthenticationGitProvidersData) {
