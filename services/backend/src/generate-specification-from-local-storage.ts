@@ -711,9 +711,9 @@ async function generateSpecificationFromFileSystem() {
 
   const importer = new PackageImporter(resourceModel);
   const imported = await importer.doImport(zipDataFromFilesystem, false);
-
-  console.info("imported[0]");
-  console.info(imported[0]);
+  const rootPackage = await resourceModel.getPackage(imported[0]);
+  console.info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+  console.info({rootPackage});
 
   await generateArtifactsFromImported(imported);
   process.exit(0);
