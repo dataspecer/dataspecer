@@ -39,6 +39,7 @@ export abstract class GitProviderBase implements GitProvider {
   abstract isGitProviderDirectory(fullPath: string): boolean;
   abstract getDefaultBranch(repositoryURL: string): Promise<string | null>;
   abstract createGitRepositoryURL(repositoryOwner: string, repoName: string, gitRef?: GitRef): string;
+  abstract extendGitRepositoryURLByGitRefSuffix(gitUrl: string, gitRef?: GitRef): string;
   abstract extractDefaultRepositoryUrl(repositoryUrl: string): string;
   abstract convertGenericScopeToProviderScope(scope: Scope): string[];
   abstract convertProviderScopeToGenericScope(scope: string): Scope;

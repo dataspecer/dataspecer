@@ -44,5 +44,4 @@ export interface Package extends BaseResource {
     subResources?: BaseResource[];
 }
 
-// TODO RadStr: Hardcoded the change of branch and projectIri - in future it won't be probably editable so remove it from here
 export type ResourceEditable = Pick<BaseResource, "iri" | "userMetadata" | "projectIri" | "branch" >;

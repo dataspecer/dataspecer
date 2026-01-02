@@ -97,8 +97,8 @@ export const gitProviderDomains: Readonly<Record<GitProviderEnum, string>> = {
   [GitProviderEnum.GitLab]: "gitlab.com",
 };
 /**
- * This expects known git provider, but I noticed that there are possibly more providers per one provider
- * @deprecated This works, but I noticed that there are more git providers within some spaces. For example there is only one GitHub
+ * @deprecated This expects KNOWN git provider, but I noticed that there are possibly more providers per one provider.
+ *  For example there is only one GitHub
  *  but in case of gitlab, we can have self-hosted instances, for example our faculty uses https://gitlab.mff.cuni.cz,
  *  so there is not single gitlab URL for every organization.
  */

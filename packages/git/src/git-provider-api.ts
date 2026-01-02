@@ -266,6 +266,12 @@ export interface GitProvider {
   createGitRepositoryURL(repositoryOwner: string, repoName: string, gitRef?: GitRef): string;
 
   /**
+   * Similiar to {@link createGitRepositoryURL}, but this takes base {@link gitUrl} and extends it by {@link gitRef}.
+   * @param gitRef If not defined then it returns the {@link gitUrl} unchanged.
+   */
+  extendGitRepositoryURLByGitRefSuffix(gitUrl: string, gitRef?: GitRef): string;
+
+  /**
    * @returns Converts the {@link repositoryUrl}, which may possible point to commit or branch to the url, which is the homepage of the repository. For example https://github.com/dataspecer/dataspecer
    */
   extractDefaultRepositoryUrl(repositoryUrl: string): string;

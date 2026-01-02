@@ -210,6 +210,10 @@ export class GitLabProvider extends GitProviderBase {
     throw new Error("Method not implemented.");
   }
 
+  extendGitRepositoryURLByGitRefSuffix(gitUrl: string, gitRef?: GitRef): string {
+    throw new Error("Method not implemented.");
+  }
+
   extractDefaultRepositoryUrl(repositoryUrl: string): string {
     // Once again it is possible that it has the same implementation as GitHub.
     throw new Error("Method not implemented.");

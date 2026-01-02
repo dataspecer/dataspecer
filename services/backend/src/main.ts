@@ -119,13 +119,14 @@ application.use(express.json({ limit: configuration.payloadSizeLimit }));
 application.use(express.urlencoded({ extended: false, limit: configuration.payloadSizeLimit }));
 application.use(express.urlencoded({ extended: true, limit: configuration.payloadSizeLimit }));
 
+// Note: I don't exactly remember the issue, but it is important that any new endpoints are put before the resource api points.
+// Otherwise the new routes are not available when running the backend from Docker.
 // Api for authorization
 
 application.get(apiBasename + "/auth-handler/personal-callback/*", authJSRedirectCallback);
 // We have to handle everything related to authorization under this handler - for some reason handlers for specific subparts (like /auth/callback/*) do not work.
 application.use(apiBasename + "/auth/*", authHandler);
 
-// Fetch package tree data
 application.get(apiBasename + "/git/get-datastore-content", getDatastoreContentDirectly);
 application.post(apiBasename + "/git/update-datastore-content", updateDatastoreContentDirectly);
 application.post(apiBasename + "/git/create-datastore-content", createDatastoreContentDirectly);

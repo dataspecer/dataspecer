@@ -516,6 +516,11 @@ export class GitHubProvider extends GitProviderBase {
   }
 
   createGitRepositoryURL(repositoryOwner: string, repoName: string, gitRef?: GitRef): string {
+    const url = `${this.getDomainURL(true)}/${repositoryOwner}/${repoName}`;
+    return this.extendGitRepositoryURLByGitRefSuffix(url, gitRef);
+  }
+
+  extendGitRepositoryURLByGitRefSuffix(gitUrl: string, gitRef?: GitRef): string {
     let branchSuffix: string = "";
     if (gitRef !== undefined) {
       if (gitRef.type === "branch") {
@@ -525,7 +530,11 @@ export class GitHubProvider extends GitProviderBase {
         branchSuffix = `/commit/${gitRef.sha}`;
       }
     }
-    const url = `${this.getDomainURL(true)}/${repositoryOwner}/${repoName}${branchSuffix}`;
+
+    if (gitUrl.endsWith("/")) {
+      gitUrl = gitUrl.substring(0, gitUrl.length - 1);
+    }
+    const url = `${gitUrl}${branchSuffix}`;
     return url;
   }
 

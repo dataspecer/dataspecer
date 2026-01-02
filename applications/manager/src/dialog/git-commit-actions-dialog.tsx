@@ -5,7 +5,7 @@ import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalT
 import { Button } from "@/components/ui/button";
 import { Loader } from "lucide-react";
 import { refreshRootPackage } from "@/package";
-import { PACKAGE_ROOT } from "@dataspecer/git";
+import { GitRef, PACKAGE_ROOT } from "@dataspecer/git";
 import { lng } from "@/Dir";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
 
@@ -23,18 +23,9 @@ export const CommitActionsDialog = ({ examinedPackage, branch, commitHash, branc
 
   const handleRedirect = () => {
     setIsPerformingAction(true);
-    const defaultGitURL = examinedPackage.linkedGitRepositoryURL;
-    const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(defaultGitURL, fetch, {});
-    const owner = gitProvider.extractPartOfRepositoryURL(defaultGitURL, "repository-owner");
-    const repoName = gitProvider.extractPartOfRepositoryURL(defaultGitURL, "repository-name");
-    if (owner === null) {
-      throw new Error("Owner can not be extracted from the URL");
-    }
-    if (repoName === null) {
-      throw new Error("Repository name can not be extracted from the URL");
-    }
-    const gitURL = gitProvider.createGitRepositoryURL(owner, repoName, {type: "commit", sha: commitHash});
-    const newTab = window.open(gitURL, "_blank");
+    const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(examinedPackage.linkedGitRepositoryURL, fetch, {});
+    const gitUrl = gitProvider.extendGitRepositoryURLByGitRefSuffix(examinedPackage.linkedGitRepositoryURL, {type: "commit", sha: commitHash});
+    const newTab = window.open(gitUrl, "_blank");
     newTab?.focus();
     setIsPerformingAction(false);
   };
@@ -55,13 +46,32 @@ export const CommitActionsDialog = ({ examinedPackage, branch, commitHash, branc
   const handleImport = async (importType: "commit" | "branch") => {
     setIsPerformingAction(true);
 
-    const commitPointer = importType === "commit" ? commitHash : branch;
-
-    const defaultGitURL = examinedPackage.linkedGitRepositoryURL;
-    const gitURL = defaultGitURL + `/tree/${commitPointer}`;     // TODO RadStr: Same as the redirect ... again need the git providers code from backend
+    let gitRef: GitRef;
+    if (importType === "branch") {
+      if (branch === null) {
+        throw new Error("The provided branch is null");
+      }
+      else {
+        gitRef = {
+          type: "branch",
+          name: branch,
+        };
+      }
+    }
+    else if (importType === "commit") {
+      gitRef = {
+        type: "commit",
+        sha: commitHash,
+      };
+    }
+    else {
+      throw new Error(`Unknown import type: ${importType}`);
+    }
+    const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(examinedPackage.linkedGitRepositoryURL, fetch, {});
+    const gitUrl = gitProvider.extendGitRepositoryURLByGitRefSuffix(examinedPackage.linkedGitRepositoryURL, gitRef);
     await fetch(import.meta.env.VITE_BACKEND +
       "/resources/import-from-git?parentIri=" + encodeURIComponent(PACKAGE_ROOT) +
-      "&gitURL=" + encodeURIComponent(gitURL) +
+      "&gitURL=" + encodeURIComponent(gitUrl) +
       `&commitReferenceType=${importType}`, {
       method: "POST",
     });
