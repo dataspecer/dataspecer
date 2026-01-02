@@ -7,6 +7,7 @@ import { GithubIcon } from "lucide-react";
 interface Option<T = any> {
   key: ReactNode;
   value: T;
+  tooltip?: string;
 }
 
 interface ComboBoxProps<T = any> {
@@ -40,15 +41,16 @@ export const ComboBox = <T extends any>({
 
   return (
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger className="flex inline-flex justify-between items-center w-auto px-3 py-2 border border-gray-300 rounded-md bg-white cursor-pointer focus:outline-none">
+      <DropdownMenu.Trigger className="flex inline-flex justify-between items-center w-auto px-3 py-2 border border-gray-300 hover:bg-gray-200 rounded-md bg-white cursor-pointer focus:outline-none">
         <span>{selectedOption?.key}</span>
         {/* <span className="ml-2"><ChevronDown/></span> */}
       </DropdownMenu.Trigger>
 
-      <DropdownMenu.Content className="mt-1 w-full border border-gray-300 rounded-md bg-white max-h-60 overflow-auto focus:outline-none">
+      <DropdownMenu.Content className="min-w-[var(--radix-dropdown-menu-trigger-width)] mt-1 w-full border border-gray-300 rounded-md bg-white max-h-60 overflow-auto focus:outline-none">
         {options.map((option, idx) => (
           <DropdownMenu.Item
             key={idx}
+            title={option.tooltip}
             onSelect={() => handleSelect(option)}
             className="px-3 py-2 cursor-pointer hover:bg-gray-100 focus:outline-none"
           >

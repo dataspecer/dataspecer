@@ -13,6 +13,9 @@ export type MergeActor = {
   isBranch: boolean;
 } | null;
 
+/**
+ * @deprecated It works, however we use simple dialog where we choose the merge from package, instead of setting it all within the manager's main page.
+ */
 export const useMergeActors: (() => MergeActorsType) = () => {
   const [mergeFrom, setMergeFrom] = useState<string | null>(null);
   const [mergeTo, setMergeTo] = useState<string | null>(null);
