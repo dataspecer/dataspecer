@@ -30,7 +30,7 @@ export const pullRemoteRepository = asyncHandler(async (request: express.Request
   }
 
   const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(resource.linkedGitRepositoryURL, httpFetch, configuration);
-  const createdMergeState = await updateDSRepositoryByPullingGit(
+  const createdMergeState = await updateDSRepositoryByGitPull(
     query.iri, gitProvider, resource.branch, resource.linkedGitRepositoryURL, MANUAL_CLONE_PATH_PREFIX, resource.lastCommitHash, resourceModel);
   if (createdMergeState) {
     response.status(409).json("Created merge state");   // 409 is error code for conflict
@@ -49,7 +49,7 @@ export const pullRemoteRepository = asyncHandler(async (request: express.Request
  *
  * @returns Return true if merge state was created
  */
-export const updateDSRepositoryByPullingGit = async (
+export const updateDSRepositoryByGitPull = async (
   iri: string,
   gitProvider: GitProvider,
   branch: string,
@@ -62,14 +62,13 @@ export const updateDSRepositoryByPullingGit = async (
   const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGitUsingPredefinedGitRoot(iri, cloneDirectoryNamePrefix, true);
   let storeResult: GitChangesToDSPackageStoreResult | null = null;
   try {
-    // TODO RadStr: Not sure if it is better to pull only commits or everything
+    // TODO RadStr: Not sure if it is better to pull only commits or everything -- I think that only commits is better
     await gitCloneBasic(git, gitInitialDirectory, cloneURL, true, true, branch, depth);
-    // await saveChangesInDirectoryToBackendFinalVersion(gitInitialDirectory, iri, gitProvider, true);    // TODO RadStr: Not sure about setting the metadata cache (+ we need it always in the call, so the true should be actaully set inside the called method, and the argument should not be here at all)
     const gitLastCommitHash = await getLastCommitHash(git);
     const commonCommit = await getCommonCommitInHistory(git, dsLastCommitHash, gitLastCommitHash);
     storeResult = await saveChangesInDirectoryToBackendFinalVersion(
       cloneURL, git, gitInitialDirectoryParent, iri, gitProvider,
-      dsLastCommitHash, gitLastCommitHash, commonCommit, branch, "pull", resourceModelForDS);    // TODO RadStr: Not sure about setting the metadata cache (+ we need it always in the call, so the true should be actaully set inside the called method, and the argument should not be here at all)
+      dsLastCommitHash, gitLastCommitHash, commonCommit, branch, "pull", resourceModelForDS);
   }
   catch (cloneError) {
     throw cloneError;

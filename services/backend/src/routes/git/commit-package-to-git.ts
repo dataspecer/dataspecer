@@ -22,7 +22,7 @@ import { MergeEndInfoWithRootNode, MergeEndpointForComparison, PrismaMergeStateW
 import fs from "fs";
 import {
   checkErrorBoundaryForCommitAction, getLastCommit, getLastCommitHash, isDefaultBranch,
-  removeEverythingExcept, removePathRecursively, createGitReadmeFile, ReadmeTemplateData,
+  removeEverythingExcept, removePathRecursively, createGitReadMeFile,
   createSimpleGitUsingPredefinedGitRoot,
   PUSH_PREFIX,
   MERGE_DS_CONFLICTS_PREFIX,
@@ -425,8 +425,8 @@ async function commitDSMergeToGit(
 
     const isMergingToDefaultBranch = await isDefaultBranch(git, cloneResult.mergeToBranchExplicitName);
     const pushResult = await exportAndPushToGit(
-      createSimpleGitResult, iri, repoURLWithAuthorization, repositoryIdentificationInfo,
-      commitInfo, hasSetLastCommit, mergeFromBranch, isLastAccessToken, isMergingToDefaultBranch, cloneResult.mergeToBranchExists);
+      createSimpleGitResult, iri, repoURLWithAuthorization, commitInfo, hasSetLastCommit,
+      mergeFromBranch, isLastAccessToken, isMergingToDefaultBranch, cloneResult.mergeToBranchExists);
     if (pushResult) {
       return null;
     }
@@ -522,8 +522,8 @@ async function commitClassicToGit(
 
     const isCommittingToDefaultBranch = await isDefaultBranch(git, branchExplicit);
     const pushResult = await exportAndPushToGit(
-      createSimpleGitResult, iri, repoURLWithAuthorization, repositoryIdentificationInfo,
-      commitInfo, hasSetLastCommit, null, isLastAccessToken, isCommittingToDefaultBranch, !isNewlyCreatedBranchOnlyInDS);
+      createSimpleGitResult, iri, repoURLWithAuthorization, commitInfo, hasSetLastCommit,
+      null, isLastAccessToken, isCommittingToDefaultBranch, !isNewlyCreatedBranchOnlyInDS);
     if (pushResult) {
       return null;
     }
@@ -540,7 +540,6 @@ async function exportAndPushToGit(
   createSimpleGitResult: CreateSimpleGitResult,
   iri: string,
   repoURLWithAuthorization: string,
-  repositoryIdentificationInfo: RepositoryIdentification,
   commitInfo: GitCommitToCreateInfoExplicitWithCredentials,
   hasSetLastCommit: boolean,
   mergeFromBranch: string | null,
@@ -581,7 +580,7 @@ async function exportAndPushToGit(
 
   await fillGitDirectoryWithExport(
     iri, createSimpleGitResult, commitInfo.gitProvider, commitInfo.exportFormat,
-    repositoryIdentificationInfo, hasSetLastCommit, shouldContainWorkflowFiles, isBranchAlreadyTrackedOnRemote);
+    hasSetLastCommit, shouldContainWorkflowFiles, isBranchAlreadyTrackedOnRemote);
 
   // TODO RadStr Debug: Debug print to remove
   for (let i = 0; i < 10; i++) {
@@ -685,7 +684,6 @@ async function fillGitDirectoryWithExport(
   gitPaths: UniqueDirectory,
   gitProvider: GitProviderNode,
   exportFormat: string | null,
-  repositoryIdentificationInfo: RepositoryIdentification,
   hasSetLastCommit: boolean,
   shouldContainWorkflowFiles: boolean,
   isBranchAlreadyTrackedOnRemote: boolean,
@@ -702,21 +700,14 @@ async function fillGitDirectoryWithExport(
     }
     removeEverythingExcept(gitInitialDirectory, exceptionsForDirectoryRemoval);
     const exporter = new PackageExporterByResourceType();
-    // const exporter = new PackageExporterNew();     // TODO RadStr: Debug
+    // const exporter = new PackageExporterNew();     // TODO RadStr Debug: Debug
     await exporter.doExportFromIRI(
       iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem,
       exportFormat ?? "json", resourceModel, null
     );
-    const { repositoryName, repositoryOwner } = repositoryIdentificationInfo;
-
-    const readmeData: ReadmeTemplateData = {
-      dataspecerUrl: "http://localhost:5174",
-      publicationRepositoryUrl: `${gitProvider.getDomainURL(true)}/${repositoryOwner}/${repositoryName}-publication-repo`,  // TODO RadStr: Have to fix once we will use better mechanism to name the publication repos
-    };
-
 
     if (shouldContainWorkflowFiles && !hasSetLastCommit) {
-      createGitReadmeFile(gitInitialDirectory, readmeData);
+      createGitReadMeFile(gitInitialDirectory);
       gitProvider.copyWorkflowFiles(gitInitialDirectory);
     }
   }

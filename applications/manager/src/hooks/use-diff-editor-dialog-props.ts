@@ -1016,7 +1016,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
       alert("It was not up to date");
     }
     const fetchedMergeState = await fetchMergeState(initialMergeFromResourceIri, initialMergeToResourceIri, true, true, true);
-    console.info({fetchedMergeState});      // TODO RadStr: Debug
+    console.info({fetchedMergeState});      // TODO RadStr Debug: Debug
     setExaminedMergeState(fetchedMergeState);
     const newIriMappingFromNonEditableToEditableStorage = {};
     const newProjectIriToDiffNodeMap = {};
@@ -1074,7 +1074,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromResourceIri,
         }
 
         const format = formatsForCacheEntries[nodeTreePath][modelName];
-        // TODO RadStr: Can it even ever be default?
+        // TODO RadStr: Can it even ever be default? Better question is what if it is default - should we throw error or shouldnt we just stop??
         const newValue = editableCacheContents?.[nodeTreePath]?.[modelName] ?? getDefaultValueForMissingDatastoreInDiffEditor();
         let newValueAsJSON: object = convertDatastoreContentBasedOnFormat(newValue, format, true, null);
         if (datastoreInfoForNonEditable !== null && createdDatastoresToIrisNeedingReplacementMap.current[datastoreInfoForNonEditable.fullPath] !== undefined) {

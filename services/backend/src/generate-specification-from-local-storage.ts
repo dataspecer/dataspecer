@@ -605,7 +605,7 @@ import { AuthenticationGitProvidersData } from "@dataspecer/git/git-providers";
 
 
 /**
- * @deprecated TODO RadStr: move somewhere else or remove - just for debugging
+ * @deprecated Just for debugging
  */
 function debugPrintDirectoryContent(path: string) {
   const stats = fs.statSync(path);
@@ -637,8 +637,7 @@ async function generateArtifactsFromImported(imported: string[]) {
   await generateArtifacts(importedIRI, zip);
 
   const dirname = "test-generate-specification";
-  // TODO RadStr: I am not sure why am I actually using the .length - 4
-  const filename = `test${importedIRI.substring(importedIRI.length - 4)}.zip`;
+  const filename = "artifacts-in-zip.zip";
   if(!fs.existsSync(dirname)) {
     fs.mkdirSync(dirname);
   }
@@ -647,7 +646,7 @@ async function generateArtifactsFromImported(imported: string[]) {
 
   await extractZipBufferToDisk(zipData, dirname);
 
-  console.info("TODO RadStr: Finished generating specification from command line");
+  console.info("Finished generating specification from command line");
   console.log("Extraction from buffer complete.");
   console.log("Exiting process with success");
 }
@@ -705,9 +704,8 @@ async function generateSpecificationFromFileSystem() {
   await createImportZipFromFilesystem(homeDirectory, packageIri, true, zipDictionaryForFilesystemData);
   const zipDataFromFilesystem = await zipDictionaryForFilesystemData.save();
 
-  // TODO RadStr: DEBUG - Just save the zip + the zip content
-  // await extractZipBufferToDisk(zipDataFromFilesystem, "test-debug-zip-file");
-  // fs.writeFileSync(`test-debug-zip-file/zip-soubor.zip`, zipDataFromFilesystem);
+  await extractZipBufferToDisk(zipDataFromFilesystem, "test-debug-zip-file");
+  fs.writeFileSync(`filesystem-in-zip.zip`, zipDataFromFilesystem);
 
   const importer = new PackageImporter(resourceModel, storeModel, prismaClient);
   const imported = await importer.doImport(zipDataFromFilesystem, false);

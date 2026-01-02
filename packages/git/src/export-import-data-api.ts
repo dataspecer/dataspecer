@@ -76,12 +76,11 @@ type FilesystemNodeCommonData = {
    */
   name: string,
 
-  // TODO RadStr: Retype and rename - it is not cache
   /**
-   * The metadata for the filesystem node. Basically what we find under the .meta. There is a very impossible note which I noticed With hindsight.
+   * The metadata for the filesystem node. Basically what we find under the .meta. There is a very important note which I noticed With hindsight.
    *  Filesystem node = DS resource. That means the meta and the resource are one entity, even though in the git it lives as a separate entity.
    *  (That is the reason why at one point it was not metadata but metadata cache. Note that it still could be implemented -
-   *   basically fetch the metadata on demand, but it is too mcuh of a headache to make it work for basically 0 gain)
+   *   basically fetch the metadata on demand, but it is too much of a headache to make it work for basically 0 gain)
    */
   metadata: ExportMetadataType,
   /**
@@ -130,7 +129,6 @@ export type FilesystemNodeLocation = {
    *     That is in this case the uniqueness is given by projectIri and system path (where is the git repository located).
    */
   iri: string;
-
 
   // TODO RadStr: I don't like this, maybe just rename it in the methods and pass as parametr or idk. This usage on context is weird.
   /**

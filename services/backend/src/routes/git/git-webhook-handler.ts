@@ -20,7 +20,7 @@ import path from "path";
 import { updateBlob, updateResourceMetadata } from "../resource.ts";
 import _ from "lodash";
 import { mergeStateModel, resourceModel } from "../../main.ts";
-import { updateDSRepositoryByPullingGit } from "./pull-remote-repository.ts";
+import { updateDSRepositoryByGitPull } from "./pull-remote-repository.ts";
 import { compareGitAndDSFilesystems } from "../../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { MergeEndInfoWithRootNode } from "../../models/merge-state-model.ts";
 import { SimpleGit } from "simple-git";
@@ -51,7 +51,7 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
     return;
   }
 
-  const createdMergeState = await updateDSRepositoryByPullingGit(iri, gitProvider, branch, cloneURL, WEBHOOK_PATH_PREFIX, resource.lastCommitHash, resourceModel, commits.length);
+  const createdMergeState = await updateDSRepositoryByGitPull(iri, gitProvider, branch, cloneURL, WEBHOOK_PATH_PREFIX, resource.lastCommitHash, resourceModel, commits.length);
   // Actually we don't need to answer based on response, since this comes from git provider, only think we might need is to notify users that there was update, which we do by setting the isInSyncWithRemote
   return;
 });

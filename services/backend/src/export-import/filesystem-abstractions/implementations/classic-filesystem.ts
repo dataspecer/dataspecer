@@ -446,23 +446,6 @@ function groupDatastoreInfosByName(pathToDirectory: string, prefixSeparator: str
 }
 
 /**
- * TODO RadStr: Maybe should be in some utils.ts file instead
- * @returns The index of the {@link n}-th last {@link separator} in given {@link value}. -1 there is not enough separators.
- * @example name = "a.b.c.d", separator = ".", n = 3 returns 1
- */
-function findNthlastSeparator(value: string, separator: string, n: number): number {
-  let index = value.length + 1;
-  for (let i = 0; i < n; i++) {
-    index = value.lastIndexOf(separator, index - 1);
-    if (index === -1) {
-      return -1;
-    }
-  }
-
-  return index;
-}
-
-/**
  * @param pathToDirectory is the path to directory which contain given {@link names}
  * Just calls {@link groupDatastoreInfosByName} with prefixSeparator === "." and postfixCount === 2
  */
