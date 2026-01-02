@@ -251,11 +251,11 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
   createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType> {
     throw new Error("Method not implemented.");
   }
-  async changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<boolean> {
+  async changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<void> {
     const newContent = await otherFilesystem.getDatastoreContent(changed.new!.name, changed.affectedDataStore.type, false);
-    return this.updateDatastore(changed.old!, changed.affectedDataStore.type, newContent);
+    this.updateDatastore(changed.old!, changed.affectedDataStore.type, newContent);
   }
-  async removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<boolean> {
+  async removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<void> {
     const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType)!;
     // TODO RadStr: ... Looking at it, I think that this method can be implemented only once in base case, if we use the instance methods for removal of datastores/resources
     fs.rmSync(relevantDatastore.fullPath);
@@ -267,20 +267,17 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
         this.removeValueInFilesystemMapping(filesystemNode.name, this.getParentForNode(filesystemNode)!.content);
       }
     }
-    return true;          // TODO RadStr: Again returning true only
   }
-  async removeFile(filesystemNode: FilesystemNode): Promise<boolean> {
+  async removeFile(filesystemNode: FilesystemNode): Promise<void> {
     for (const datastore of filesystemNode.datastores) {
       await this.removeDatastore(filesystemNode, datastore.type, true);
     }
-    return true;          // TODO RadStr: Again returning true only
   }
-  async updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, content: string): Promise<boolean> {
+  async updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, content: string): Promise<void> {
     const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType)!;
     fs.writeFileSync(relevantDatastore.fullPath, content);
-    return true;          // TODO RadStr: Again returning true only
   }
-  async createDatastore(parentIriInToBeChangedFilesystem: string, otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean> {
+  async createDatastore(parentIriInToBeChangedFilesystem: string, otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<void> {
     throw new Error("Method not implemented.");
   }
 }

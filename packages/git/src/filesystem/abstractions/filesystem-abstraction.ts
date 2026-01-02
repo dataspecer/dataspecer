@@ -109,31 +109,27 @@ export interface FilesystemAbstraction {
    * Changes content of the given version of datastore inside {@link changed} to the new version inside the filesystem.
    *  {@link otherFilesystem} is the other filesystem containing the data of the new version.
    * @deprecated We are not using it in the end
-   * @returns True if the file was sucessfully changed, false on failure.
    */
-  changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<boolean>;
+  changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<void>;
 
   /**
    * Removes datastore from the {@link filesystemNode}, if it was the last {@link datastoreType} inside the node, also removes the whole node.
    *  Removes all the datastores and the resource itself.
    * TODO RadStr: Maybe write example what exactly it means for each filesystem
    * @param shouldRemoveFileWhenNoDatastores if true, then if after removal no datastore is present, then also the file holding the datastores is deleted.
-   * @returns True if the file was sucessfully removed, false on failure.
    */
-  removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<boolean>;
+  removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<void>;
 
   /**
    * Removes given {@link filesystemNode} from both the abstraction of filesystem and the filesystem itself.
    *  Removes all the datastores and the resource itself.
-   * @returns True if the file was sucessfully removed, false on failure.
    */
-  removeFile(filesystemNode: FilesystemNode): Promise<boolean>;
+  removeFile(filesystemNode: FilesystemNode): Promise<void>;
 
   /**
    * Updates datastore (if it does not exist, creates one) of {@link datastoreType} inside {@link fileNode} in the underlying filesystem with given {@link content}.
-   * @returns True if the datastore was sucessfully created, false on failure.
    */
-  updateDatastore(fileNode: FileNode, datastoreType: string, content: string): Promise<boolean>;
+  updateDatastore(fileNode: FileNode, datastoreType: string, content: string): Promise<void>;
 
 
   // TODO RadStr: createFile and createDirectory replaced by createDatastore
@@ -155,9 +151,8 @@ export interface FilesystemAbstraction {
    * Creates new {@link changedDatastore} inside the abstraction and in the underlying filesystem.
    *  It does it so it follows the filesystem structure of the provided {@link filesystemNode}, which is the node in another {@link otherFilesystem}, which we want to put into ours.
    *  Note that if some parent directories are missing, then hey are created also. Also if the node with the datastore does not exist, it is created as well.
-   * @returns True if the datastore (and its content) was sucessfully created, false on failure.
    */
-  createDatastore(parentIriInToBeChangedFilesystem: string, otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean>;
+  createDatastore(parentIriInToBeChangedFilesystem: string, otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<void>;
 
   /**
    * @returns The root of the filesystem. Note that each implmentation should have exactly one root. And it should be "fake" root,

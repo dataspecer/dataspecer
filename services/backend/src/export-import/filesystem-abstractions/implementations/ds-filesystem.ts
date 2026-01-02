@@ -283,7 +283,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     };
   }
 
-  async changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<boolean> {
+  async changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<void> {
     // Here we just update the blob
 
     const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(changed.old!, changed.affectedDataStore.type);
@@ -293,11 +293,9 @@ export class DSFilesystem extends FilesystemAbstractionBase {
 
     const newContent = await otherFilesystem.getDatastoreContent(changed.new!.irisTreePath, changed.affectedDataStore.type, false);
     await this.updateDatastore(changed.old!, changed.affectedDataStore.type, newContent);
-
-    return true;      // TODO RadStr: ... Always returns true
   }
 
-  async removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<boolean> {
+  async removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<void> {
     // We have to perform 2 actions:
     // 1) remove the datastore, that is remove the blob with datastore and update the resource to no longer contain the datastore
     // 2) If the resource will become empty, we also have to remove the datastore
@@ -310,28 +308,24 @@ export class DSFilesystem extends FilesystemAbstractionBase {
         this.removeValueInFilesystemMapping(filesystemNode.name, this.getParentForNode(filesystemNode)?.content ?? this.root.content);
       }
     }
-
-    return true;    // TODO RadStr: ... Always returns true
   }
 
-  async removeFile(filesystemNode: FilesystemNode): Promise<boolean> {
+  async removeFile(filesystemNode: FilesystemNode): Promise<void> {
     for (const datastore of filesystemNode.datastores) {
       const datastoreType = datastore.fullName;
       this.removeDatastore(filesystemNode, datastoreType, true);
     }
-
-    return true;    // TODO RadStr: ... Always returns true
   }
 
-  async updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, newContent: string): Promise<boolean> {
+  async updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, newContent: string): Promise<void> {
     const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType);
     if (relevantDatastore === null) {
       throw new Error(`Could not update datastore of type ${datastoreType} inside ${filesystemNode.projectIrisTreePath}, since it does not exist on the node`);
     }
-    return DSFilesystem.setDatastoreContentForPath(filesystemNode.metadata.iri, this.resourceModel, relevantDatastore.fullPath, relevantDatastore.format, datastoreType, newContent)
+    DSFilesystem.setDatastoreContentForPath(filesystemNode.metadata.iri, this.resourceModel, relevantDatastore.fullPath, relevantDatastore.format, datastoreType, newContent)
   }
 
-  createDatastore(parentIriInToBeChangedFilesystem: string, otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean> {
+  createDatastore(parentIriInToBeChangedFilesystem: string, otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<void> {
     // this.resourceModel.createPackage(parentIri, directoryNode.name, userMetadata)
     // createPackageResource()
     // const metadata = ;

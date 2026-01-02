@@ -157,9 +157,9 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
   abstract getFilesystemType(): AvailableFilesystems;
   abstract getDatastoreContent(irisTreePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any>;
   abstract createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType>;
-  abstract changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<boolean>;
-  abstract removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<boolean>;
-  abstract removeFile(filesystemNode: FilesystemNode): Promise<boolean>;
-  abstract updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, content: string): Promise<boolean>;
-  abstract createDatastore(parentIriInToBeChangedFilesystem: string, otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean>;
+  abstract changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<void>;
+  abstract removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<void>;
+  abstract removeFile(filesystemNode: FilesystemNode): Promise<void>;
+  abstract updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, content: string): Promise<void>;
+  abstract createDatastore(parentIriInToBeChangedFilesystem: string, otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<void>;
 }

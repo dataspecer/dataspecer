@@ -119,7 +119,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
   createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType> {
     throw new Error("Method not implemented.");
   }
-  changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<boolean> {
+  changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<void> {
     throw new Error("Method not implemented.");
   }
 
@@ -170,15 +170,15 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     return response.ok;
   }
 
-  removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<boolean> {
+  async removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<void> {
     const datastoreInfo: DatastoreInfo | null = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType);
     // The "" will throw error on backend, so for it to work it should be allowed to have missing merge state id in the request,
     // but since we are currently (and probably always will be) using just the static methods, there is no need to implement it
-    return ClientFilesystem.removeDatastoreDirectly("",
+    ClientFilesystem.removeDatastoreDirectly("",
       filesystemNode.metadata.iri, datastoreInfo, this.backendApiPath,
       this.backendFilesystem, shouldRemoveFileWhenNoDatastores);
   }
-  removeFile(filesystemNode: FilesystemNode): Promise<boolean> {
+  removeFile(filesystemNode: FilesystemNode): Promise<void> {
     throw new Error("Method not implemented.");
   }
 
@@ -190,7 +190,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     newContent: string,
     backendFilesystem: AvailableFilesystems | null,
     backendApiPath: string,
-  ) {
+  ): Promise<boolean> {
     if (datastoreParentIri === null) {
       console.error("The datastore to update has no parent filesystem node.");
       return false;
@@ -225,11 +225,11 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
   }
 
 
-  async updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, content: string): Promise<boolean> {
+  async updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, content: string): Promise<void> {
     const datastoreInfo: DatastoreInfo | null = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType);
     // The "" will throw error on backend, so for it to work it should be allowed to have missing merge state id in the request,
     // but since we are currently (and probably always will be) using just the static methods, there is no need to implement it
-    return ClientFilesystem.updateDatastoreContentDirectly("", filesystemNode.metadata.iri, datastoreInfo, content, this.backendFilesystem, this.backendApiPath);
+    ClientFilesystem.updateDatastoreContentDirectly("", filesystemNode.metadata.iri, datastoreInfo, content, this.backendFilesystem, this.backendApiPath);
   }
 
 
@@ -349,7 +349,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
   }
 
 
-  async createDatastore(parentIriInToBeChangedFilesystem: string, otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<boolean> {
+  async createDatastore(parentIriInToBeChangedFilesystem: string, otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<void> {
     const content = await ClientFilesystem.getDatastoreContentDirectly(changedDatastore, true, this.backendApiPath, this.backendFilesystem);
     const filesystemNodesInTreePath: ExportShareableMetadataType[] = [];
     let currentNode: FilesystemNode | null = filesystemNode;
@@ -361,7 +361,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     }
     // The "" will throw error on backend, so for it to work it should be allowed to have missing merge state id in the request,
     // but since we are currently (and probably always will be) using just the static methods, there is no need to implement it
-    return ClientFilesystem.createDatastoreDirectlyWithParents("",
+    ClientFilesystem.createDatastoreDirectlyWithParents("",
       filesystemNodesInTreePath.reverse(),
       parentIriInToBeChangedFilesystem, content,
       this.backendFilesystem, changedDatastore, this.backendApiPath);
