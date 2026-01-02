@@ -36,10 +36,11 @@ import { useLogin, UseLoginType } from "./hooks/use-login";
 import { isGitUrlSet, PACKAGE_ROOT } from "@dataspecer/git";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
 import { debugClearMergeStateDBTable } from "./utils/merge-state-backend-requests";
-import { manualPull, markPackageAsHavingNoUncommittedChanges, removeGitLinkFromPackage, switchRepresentsBranchHead } from "./utils/git-fetch-related-actions";
+import { manualPull, markPackageAsHavingNoUncommittedChanges, switchRepresentsBranchHead } from "./utils/git-fetch-related-actions";
 import ResourceTooltip from "./components/git-tooltip";
 import { CreateMergeStateCausedByMergeDialog } from "./dialog/open-merge-state";
 import { PackageListDialog } from "./dialog/package-list-dialog";
+import { DeleteGitRepoDialog } from "./dialog/remove-git-repo-dialog";
 
 export function lng(text: LanguageString | undefined): string | undefined {
   return text?.["cs"] ?? text?.["en"];
@@ -288,7 +289,7 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri
             {hasSetRemoteRepository && <DropdownMenuItem onClick={() => openModal(ListMergeStatesDialog, { iri })}><EyeIcon className="mr-2 h-4 w-4" /> Show merge states</DropdownMenuItem>}
             {hasSetRemoteRepository && <DropdownMenuItem onClick={() => setPackageGitFilter(resource.projectIri)}><Filter className="mr-2 h-4 w-4" />Show Same Repository Projects</DropdownMenuItem>}
             {hasSetRemoteRepository && <DropdownMenuItem onClick={createMergeStateAction}><GitMerge className="mr-2 h-4 w-4"/>Merge - Choose merge from</DropdownMenuItem>}
-            {hasSetRemoteRepository && <DropdownMenuItem className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={async () => removeGitLinkFromPackage(iri)}><Trash2 className="mr-2 h-4 w-4" />Remove Git repository</DropdownMenuItem>}
+            {hasSetRemoteRepository && <DropdownMenuItem className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={() => openModal(DeleteGitRepoDialog, {iri, gitUrl: resource.linkedGitRepositoryURL})}><Trash2 className="mr-2 h-4 w-4" />Delete Git repository</DropdownMenuItem>}
           </DropdownMenuContent>
         </DropdownMenu> :
         null
