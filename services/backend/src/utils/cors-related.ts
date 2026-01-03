@@ -10,7 +10,7 @@ function getRegisteredDomain(urlString: string): string | null {
   try {
     const url = new URL(urlString);
     if (url.hostname === "localhost") {
-      return url.hostname;      // TODO RadStr: Allow any port, if we wanted to allow only the exact port, we would return hostname.
+      return url.hostname;      // Allow any port.
     }
     const parsed = psl.parse(url.hostname);
     if (parsed.error !== undefined)  {
@@ -19,7 +19,7 @@ function getRegisteredDomain(urlString: string): string | null {
     return parsed.domain;
   }
   catch (err) {
-    // TODO RadStr: Log error?
+    // We will just return null, no logging on server.
     return null;
   }
 }

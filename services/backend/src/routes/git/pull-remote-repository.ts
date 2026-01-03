@@ -30,8 +30,16 @@ export const pullRemoteRepository = asyncHandler(async (request: express.Request
   }
 
   const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(resource.linkedGitRepositoryURL, httpFetch, configuration);
-  const createdMergeState = await updateDSRepositoryByGitPull(
-    query.iri, gitProvider, resource.branch, resource.linkedGitRepositoryURL, MANUAL_CLONE_PATH_PREFIX, resource.lastCommitHash, resourceModel);
+  const pullUpdateParams: UpdateDSRepositoryByGitPullParams = {
+    iri: query.iri,
+    gitProvider,
+    branch: resource.branch,
+    cloneURL: resource.linkedGitRepositoryURL,
+    cloneDirectoryNamePrefix: MANUAL_CLONE_PATH_PREFIX,
+    dsLastCommitHash: resource.lastCommitHash,
+    resourceModelForDS: resourceModel,
+  };
+  const createdMergeState = await updateDSRepositoryByGitPull(pullUpdateParams);
   if (createdMergeState) {
     response.status(409).json("Created merge state");   // 409 is error code for conflict
     return;
@@ -43,13 +51,7 @@ export const pullRemoteRepository = asyncHandler(async (request: express.Request
 });
 
 
-// TODO RadStr: Here also ideally reduce the number of parameters. But it is not that bad, it can stay if time issues or something.
-/**
- * @param depth is the number of commits to clone. In case of webhooks this number is given in the webhook payload. For normal pull we have to clone whole history.
- *
- * @returns Return true if merge state was created
- */
-export const updateDSRepositoryByGitPull = async (
+export type UpdateDSRepositoryByGitPullParams = {
   iri: string,
   gitProvider: GitProvider,
   branch: string,
@@ -57,12 +59,22 @@ export const updateDSRepositoryByGitPull = async (
   cloneDirectoryNamePrefix: AllowedPrefixes,
   dsLastCommitHash: string,
   resourceModelForDS: ResourceModelTODOBetterName,
-  depth?: number
+  depth?: number,
+}
+
+/**
+ * @param depth is the number of commits to clone. In case of webhooks this number is given in the webhook payload. For normal pull we have to clone whole history.
+ *
+ * @returns Return true if merge state was created
+ */
+export const updateDSRepositoryByGitPull = async (
+  parameters: UpdateDSRepositoryByGitPullParams,
 ): Promise<boolean> => {
+  const { iri, gitProvider, branch, cloneURL, cloneDirectoryNamePrefix, dsLastCommitHash, resourceModelForDS, depth } = parameters;
   const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGitUsingPredefinedGitRoot(iri, cloneDirectoryNamePrefix, true);
   let storeResult: GitChangesToDSPackageStoreResult | null = null;
   try {
-    // TODO RadStr: Not sure if it is better to pull only commits or everything -- I think that only commits is better
+    // TODO RadStr turn into TODO later: Not sure if it is better to pull only commits or everything -- I think that only commits is better
     await gitCloneBasic(git, gitInitialDirectory, cloneURL, true, true, branch, depth);
     const gitLastCommitHash = await getLastCommitHash(git);
     const commonCommit = await getCommonCommitInHistory(git, dsLastCommitHash, gitLastCommitHash);

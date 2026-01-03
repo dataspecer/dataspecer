@@ -118,7 +118,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
 
 
     if (invalidNames.length > 0) {
-      // TODO RadStr: ... we need to process them anyways, since they might be valid files from git, so the error + TODO node is no longer valid
+      // We need to process them anyways, since they might be valid files from Git
       for (const invalidName of invalidNames) {
         const newFileSystemNodeLocation: FilesystemNodeLocation = {
           iri: invalidName,
@@ -149,21 +149,10 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
 
         this.setValueInFilesystemMapping(invalidName, newFileSystemNodeLocation, directoryContentContainer, newSingleNode, parentDirectoryNodeForRecursion);
       }
-
-      // TODO RadStr: Remove commented - no longer valid
-      // We just log the error and move on - TODO RadStr: Probably should log a bit better.
-      // console.error("Some of the files don't have enough separators. That is they don't follow the format [name].[dataStoreId].[format]", { invalidNames });
     }
 
     // Shared name here is the name without the postfix (that is the format and type)
     for (const [sharedProjectIri, datastoresForSharedName] of Object.entries(datastoreInfoGroupings)) {
-      // TODO RadStr: Previously I tried using map - maybe will get back to it later
-
-      // const datastores: Record<string, string> = {};
-      // valuesForPrefix.forEach(datastore => {
-      //   datastores[datastore.type] = path.join(directory, datastore.fullName);
-      // });
-
       if (sharedProjectIri === "") {    // Directory data
         const relevantDirectoryNode = this.globalFilesystemMappingForIris[irisTreePath];
         if (relevantDirectoryNode !== undefined) {
@@ -207,7 +196,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
         this.setValueInFilesystemMapping(sharedProjectIri, fileNodeLocation, directoryContentContainer, fileNode, parentDirectoryNodeForRecursion);
       }
       else {
-        // TODO RadStr: There should be no duplicate - however I don't think that there is a need for check
+        // TODO RadStr: There should be no duplicate - I don't think that there is a need for check
         fileNode.datastores = fileNode.datastores.concat(datastoresForSharedName);
       }
 
@@ -257,7 +246,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
   }
   async removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<void> {
     const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType)!;
-    // TODO RadStr: ... Looking at it, I think that this method can be implemented only once in base case, if we use the instance methods for removal of datastores/resources
+    // TODO: Possible refactoring - this method seems similiar to the DS counterpart. If we extracted the actions into interface we might implement it only once in the base class.
     fs.rmSync(relevantDatastore.fullPath);
     removeDatastoreFromNode(filesystemNode, datastoreType);
 

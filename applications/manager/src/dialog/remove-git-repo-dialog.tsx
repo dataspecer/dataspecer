@@ -10,6 +10,11 @@ type DeleteGitRepositoryProps = {
 } & BetterModalProps<null>;
 
 export const DeleteGitRepoDialog = ({ iri, gitUrl, isOpen, resolve }: DeleteGitRepositoryProps) => {
+  const removeAndClose = () => {
+    removeGitLinkFromPackage(iri);
+    resolve(null);
+  };
+
   return (
     <Modal open={isOpen} onClose={() => resolve(null)}>
         <ModalContent>
@@ -23,7 +28,7 @@ export const DeleteGitRepoDialog = ({ iri, gitUrl, isOpen, resolve }: DeleteGitR
           </ModalHeader>
           <ModalFooter>
             <Button variant="outline" onClick={() => resolve(null)}>Close</Button>
-            <Button variant="destructive" onClick={() => removeGitLinkFromPackage(iri)}>Delete</Button>
+            <Button variant="destructive" onClick={() => removeAndClose()}>Delete</Button>
           </ModalFooter>
         </ModalContent>
     </Modal>

@@ -20,7 +20,7 @@ import path from "path";
 import { updateBlob, updateResourceMetadata } from "../resource.ts";
 import _ from "lodash";
 import { mergeStateModel, resourceModel } from "../../main.ts";
-import { updateDSRepositoryByGitPull } from "./pull-remote-repository.ts";
+import { updateDSRepositoryByGitPull, UpdateDSRepositoryByGitPullParams } from "./pull-remote-repository.ts";
 import { compareGitAndDSFilesystems } from "../../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { MergeEndInfoWithRootNode } from "../../models/merge-state-model.ts";
 import { SimpleGit } from "simple-git";
@@ -32,10 +32,10 @@ import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 
 
 export const handleWebhook = asyncHandler(async (request: express.Request, response: express.Response) => {
+  // TODO RadStr Debug: DEBUG prints
   // console.info("Requested URL: ", request.originalUrl);
   // console.info("Webhook - Body: ", request.body);
   // console.info("Webhook - Body payload: ", request.body.payload);
-  response.type("text/plain");      // TODO RadStr: Not sure if there is any good reason why was I doing this.
 
   const { gitProvider, webhookPayload } = GitProviderNodeFactory.createGitProviderFromWebhookRequest(request, httpFetch, configuration);
   const dataForWebhookProcessing = await gitProvider.extractDataForWebhookProcessing(webhookPayload, resourceModel.getResourceForGitUrlAndBranch);
@@ -51,8 +51,20 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
     return;
   }
 
-  const createdMergeState = await updateDSRepositoryByGitPull(iri, gitProvider, branch, cloneURL, WEBHOOK_PATH_PREFIX, resource.lastCommitHash, resourceModel, commits.length);
+  const pullUpdateParams: UpdateDSRepositoryByGitPullParams = {
+    iri,
+    gitProvider,
+    branch,
+    cloneURL,
+    cloneDirectoryNamePrefix: WEBHOOK_PATH_PREFIX,
+    dsLastCommitHash: resource.lastCommitHash,
+    resourceModelForDS: resourceModel,
+    depth: commits.length,
+  };
+  const createdMergeState = await updateDSRepositoryByGitPull(pullUpdateParams);
+
   // Actually we don't need to answer based on response, since this comes from git provider, only think we might need is to notify users that there was update, which we do by setting the isInSyncWithRemote
+  response.sendStatus(200);
   return;
 });
 
