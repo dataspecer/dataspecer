@@ -1,5 +1,8 @@
 // @ts-ignore
-import configuration from "../main.config.js";
+import configuration from "../main.config.js";          // Has to be first in imports otherwise it shows error
+import { type GitBotConfiguration, type OAuthConfiguration } from "@dataspecer/auth";
+import { GitProviderNamesAsType } from "@dataspecer/git";
+
 
 export interface Configuration {
     /**
@@ -37,6 +40,9 @@ export interface Configuration {
 
     // Generator configuraion
     configuration: object;
+
+    gitBotConfigurations?: Record<GitProviderNamesAsType, GitBotConfiguration>;
+    authConfiguration?: OAuthConfiguration;
 
     // Whether the server is running in Docker
     inDocker: boolean;

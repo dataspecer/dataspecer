@@ -1,0 +1,22 @@
+# TODO RadStr: Remove after commit
+#              Just testing what is available in the workflow
+
+# # Based on https://docs.github.com/en/actions/use-cases-and-examples/creating-an-example-workflow
+# name: learn-github-actions
+# run-name: ${{ github.actor }} is learning GitHub Actions
+# on: [push]
+# jobs:
+#   check-bats-version:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
+#       - uses: actions/setup-node@v4
+#         with:
+#           node-version: '20'
+#       - run: npm install -g bats
+#       - run: bats -v
+#       - run: echo "github.ref - ${{ github.ref }}"
+#       - run: echo "github.ref_name - ${{ github.ref_name }}"
+#       - run: echo "github.head_ref - ${{ github.head_ref }}"
+#       - run: echo "github.base_ref - ${{ github.base_ref }}"
+#       - run: echo "github.event_name - ${{ github.event_name }}"

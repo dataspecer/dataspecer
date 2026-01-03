@@ -80,7 +80,7 @@ export default async function () {
           // @ts-ignore
           const title = Object.values(pimData.resources).find((r: any) => r?.types?.includes("https://ofn.gov.cz/slovník/pim/Schema"))?.pimHumanLabel as LanguageString ?? {};
           if (!finalPackage?.userMetadata.label || Object.keys(finalPackage?.userMetadata.label).length === 0) {
-            resourceModel.updateResource(finalPackage!.iri, { label: title });
+            resourceModel.updateResourceMetadata(finalPackage!.iri, { label: title });
           }
 
           // Process PSMs reverse associations
@@ -104,7 +104,7 @@ export default async function () {
             // @ts-ignore
             const title = Object.values(psmData.resources).find((r: any) => r?.types?.includes("https://ofn.gov.cz/slovník/psm/Schema"))?.dataPsmHumanLabel as LanguageString ?? {};
             if (!psm.userMetadata.label || Object.keys(psm.userMetadata.label).length === 0) {
-              resourceModel.updateResource(psm.iri, { label: title });
+              resourceModel.updateResourceMetadata(psm.iri, { label: title });
             }
           }
 
