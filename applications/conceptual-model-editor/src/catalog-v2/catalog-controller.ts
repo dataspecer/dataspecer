@@ -1,7 +1,7 @@
 import { SemanticModelAggregatorView } from "@dataspecer/core-v2/semantic-model/aggregator";
 import { EntityModel } from "@dataspecer/core-v2";
 import { ActionsContextType } from "../action/actions-react-binding";
-import { CatalogState, SemanticModelNode, TreeNode } from "./catalog-state";
+import { CatalogState, SEMANTIC_MODEL_NODE_TYPE, SemanticModelNode, TreeNode } from "./catalog-state";
 import * as Actions from "./catalog-action";
 import { configuration, createLogger } from "../application";
 import { Language } from "../configuration";
@@ -389,7 +389,7 @@ function collapseExpandAll(
   const updateNodes = (items: TreeNode[]): TreeNode[] => {
     return items.map(item => {
       const result = { ...item };
-      if ('collapsed' in item && typeof (item as SemanticModelNode).collapsed === 'boolean') {
+      if (item.type === SEMANTIC_MODEL_NODE_TYPE) {
         (result as SemanticModelNode).collapsed = collapsed;
       }
       if (item.items.length > 0) {
