@@ -389,8 +389,8 @@ function collapseExpandAll(
   const updateNodes = (items: TreeNode[]): TreeNode[] => {
     return items.map(item => {
       const result = { ...item };
-      if ((item as any).collapsed !== undefined) {
-        (result as any).collapsed = collapsed;
+      if ('collapsed' in item && typeof (item as SemanticModelNode).collapsed === 'boolean') {
+        (result as SemanticModelNode).collapsed = collapsed;
       }
       if (item.items.length > 0) {
         result.items = updateNodes(item.items);

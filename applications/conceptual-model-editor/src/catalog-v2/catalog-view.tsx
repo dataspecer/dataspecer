@@ -118,6 +118,7 @@ function CatalogSearchBar({ state, controller }: {
         data-action={ACTION_SEMANTIC_MODEL_COLLAPSE_ALL}
         onClick={() => controller.onHandleClick(ACTION_SEMANTIC_MODEL_COLLAPSE_ALL, [], undefined, undefined, undefined)}
         title={t("catalog.collapse-all")}
+        aria-label={t("catalog.collapse-all")}
       >
         🔼
       </button>
@@ -126,6 +127,7 @@ function CatalogSearchBar({ state, controller }: {
         data-action={ACTION_SEMANTIC_MODEL_EXPAND_ALL}
         onClick={() => controller.onHandleClick(ACTION_SEMANTIC_MODEL_EXPAND_ALL, [], undefined, undefined, undefined)}
         title={t("catalog.expand-all")}
+        aria-label={t("catalog.expand-all")}
       >
         🔽
       </button>
