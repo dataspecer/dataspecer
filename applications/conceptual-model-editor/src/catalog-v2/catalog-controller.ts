@@ -131,6 +131,12 @@ function clickHandled(
   case Actions.ACTION_SEMANTIC_MODEL_CREATE:
     actions.openCreateModelDialog();
     return;
+  case Actions.ACTION_SEMANTIC_MODEL_COLLAPSE_ALL:
+    setState(state => collapseExpandAll(state, true));
+    return;
+  case Actions.ACTION_SEMANTIC_MODEL_EXPAND_ALL:
+    setState(state => collapseExpandAll(state, false));
+    return;
   }
   // We start with the model actions, the reason is that model actions
   // do not require "identifier" to be set.
@@ -374,4 +380,27 @@ function updateFilter(
     }
     return result;
   });
+}
+
+function collapseExpandAll(
+  state: CatalogState,
+  collapsed: boolean,
+): CatalogState {
+  const updateNodes = (items: TreeNode[]): TreeNode[] => {
+    return items.map(item => {
+      const result = { ...item };
+      if ((item as any).collapsed !== undefined) {
+        (result as any).collapsed = collapsed;
+      }
+      if (item.items.length > 0) {
+        result.items = updateNodes(item.items);
+      }
+      return result;
+    });
+  };
+
+  return {
+    ...state,
+    items: updateNodes(state.items),
+  };
 }
