@@ -19,6 +19,12 @@ export const ACTION_SEMANTIC_MODEL_TOGGLE_COLLAPSE =
 export const ACTION_SEMANTIC_MODEL_CREATE =
 "semantic-model-create";
 
+export const ACTION_SEMANTIC_MODEL_COLLAPSE_ALL =
+  "semantic-model-collapse-all";
+
+export const ACTION_SEMANTIC_MODEL_EXPAND_ALL =
+  "semantic-model-expand-all";
+
 export const ACTION_SEMANTIC_MODEL_CREATE_CLASS =
   "semantic-model-create-class";
 

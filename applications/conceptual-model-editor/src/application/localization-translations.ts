@@ -195,6 +195,8 @@ const catalog = prefix(
     "generalization.detail": "Show generalization detail.",
     "generalization.toggle": "Toggle visibility in the diagram.",
     "clear": "Clear",
+    "collapse-all": "Collapse all vocabularies",
+    "expand-all": "Expand all vocabularies",
     "search-title": "Search items by label",
   });
 

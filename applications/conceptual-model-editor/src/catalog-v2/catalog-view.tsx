@@ -17,7 +17,11 @@ import {
   CatalogState,
 } from "./catalog-state";
 import { t } from "../application";
-import { ACTION_SEMANTIC_MODEL_CREATE } from "./catalog-action";
+import { 
+  ACTION_SEMANTIC_MODEL_CREATE,
+  ACTION_SEMANTIC_MODEL_COLLAPSE_ALL,
+  ACTION_SEMANTIC_MODEL_EXPAND_ALL
+} from "./catalog-action";
 import { CatalogLayout } from "./catalog-layout";
 
 type Component<T> = (props: { node: T }) => React.ReactNode;
@@ -108,6 +112,24 @@ function CatalogSearchBar({ state, controller }: {
         onClick={onClear}
       >
         {t("catalog.clear")}
+      </button>
+      <button
+        className="border px-2"
+        data-action={ACTION_SEMANTIC_MODEL_COLLAPSE_ALL}
+        onClick={() => controller.onHandleClick(ACTION_SEMANTIC_MODEL_COLLAPSE_ALL, [], undefined, undefined, undefined)}
+        title={t("catalog.collapse-all")}
+        aria-label={t("catalog.collapse-all")}
+      >
+        🔼
+      </button>
+      <button
+        className="border px-2"
+        data-action={ACTION_SEMANTIC_MODEL_EXPAND_ALL}
+        onClick={() => controller.onHandleClick(ACTION_SEMANTIC_MODEL_EXPAND_ALL, [], undefined, undefined, undefined)}
+        title={t("catalog.expand-all")}
+        aria-label={t("catalog.expand-all")}
+      >
+        🔽
       </button>
     </div>
   )
