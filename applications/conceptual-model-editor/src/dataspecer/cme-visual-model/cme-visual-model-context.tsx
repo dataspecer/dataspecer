@@ -15,7 +15,7 @@ import { removeFromArray } from "@/utilities/functional";
 export interface CmeVisualModelContext {
 
   /**
-   * Models as set for given models.
+   * Colors for selected models.
    */
   colors: { [identifier: ModelDsIdentifier]: HexColor | null };
 
@@ -41,7 +41,7 @@ export const useCmeVisualModelContext = (): CmeVisualModelContext => {
 
 export function CmeVisualModelContextProvider(
   props: {
-    active: VisualModel | null,
+    visualModel: VisualModel | null,
     children: React.ReactNode,
   },
 ) {
@@ -52,7 +52,7 @@ export function CmeVisualModelContextProvider(
     placements: {},
   });
 
-  const visualModel = props.active;
+  const visualModel = props.visualModel;
   useEffect(() => {
     if (visualModel === null) {
       setState(prev => ({ ...prev, colors: {}, placements: {} }));
@@ -108,7 +108,7 @@ function updatePlacements(
         return;
       }
       // Add a new placement.
-      placements[represented] = [...placements[represented], next.identifier];
+      placements[represented] = [...(placements[represented] ?? []), next.identifier];
     } else if (previous !== null && next === null) {
       // Existing entity has been removed.
       let represented: string | null = null;
@@ -178,4 +178,3 @@ function fullReload(
 
   return { ...prev, colors, placements };
 }
-
