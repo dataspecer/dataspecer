@@ -21,35 +21,50 @@ export const ReloadImported = ({ id, parentId, isOpen, resolve }: ReloadImported
   const resources = useContext(ResourcesContext);
   const resource = usePreviousValue(resources[id]!);
 
-  // @ts-ignore
-  const originalImportedUrl = resource.userMetadata.importedFromUrl as string;
+  // Get the imported URL from userMetadata with type safety
+  const originalImportedUrl = (resource.userMetadata?.importedFromUrl as string) || "";
 
   const [url, setUrl] = useState(originalImportedUrl);
   const [isLoading, setIsLoading] = useState(false);
   const doReload = async () => {
+    if (!url || url.trim().length === 0) {
+      toast.error("Please enter a valid URL.");
+      return;
+    }
+
     setIsLoading(true);
 
-    // Update the URL in userMetadata if it has changed
-    if (url !== originalImportedUrl) {
-      await packageService.updatePackage(id, {
-        userMetadata: {
-          ...resource.userMetadata,
-          importedFromUrl: url,
-        },
+    try {
+      // Update the URL in userMetadata if it has changed
+      if (url !== originalImportedUrl) {
+        await packageService.updatePackage(id, {
+          userMetadata: {
+            ...resource.userMetadata,
+            importedFromUrl: url,
+          },
+        });
+      }
+
+      const result = await fetch(import.meta.env.VITE_BACKEND + "/resources/import?parentIri=" + encodeURIComponent(parentId) + "&url=" + encodeURIComponent(url), {
+        method: "POST",
       });
+
+      if (result.ok) {
+        await deleteResource(id);
+        await requestLoadPackage(parentId, true);
+        toast.success(t("reload-imported.success"));
+        resolve(true);
+      } else {
+        toast.error("Failed to reload specification. Please check the URL and try again.");
+        resolve(false);
+      }
+    } catch (error) {
+      console.error("Error reloading specification:", error);
+      toast.error("An error occurred while reloading the specification.");
+      resolve(false);
+    } finally {
+      setIsLoading(false);
     }
-
-    const result = await fetch(import.meta.env.VITE_BACKEND + "/resources/import?parentIri=" + encodeURIComponent(parentId) + "&url=" + encodeURIComponent(url), {
-      method: "POST",
-    });
-
-    if (result.ok) {
-      await deleteResource(id);
-      await requestLoadPackage(parentId, true);
-      toast.success(t("reload-imported.success"));
-    }
-
-    resolve(true);
   }
 
   const name = lng(resource.userMetadata?.label);
