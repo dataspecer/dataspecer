@@ -40,6 +40,8 @@ import {
   xmlSchemaTypeIsSimple,
 } from "./xml-schema-model.ts";
 import { XML_SCHEMA } from "./xml-schema-vocabulary.ts";
+import type { MissingRefError } from "ajv";
+import { getExtensionSchemaPath } from "./xml-schema-generator.ts";
 
 function multiplyMinCardinality(a: number, b: number): number {
   return a * b;
@@ -60,7 +62,10 @@ export async function structureModelToXmlSchema(
   specification: DataSpecification,
   artifact: DataSpecificationSchema,
   model: StructureModel
-): Promise<XmlSchema> {
+): Promise<{
+    mainSchema: XmlSchema,
+    profilingExtensionsSchema: XmlSchema | null,
+  }> {
   const options = XmlConfigurator.merge(DefaultXmlConfiguration, XmlConfigurator.getFromObject(artifact.configuration)) as XmlConfiguration;
 
   // Adds default values regarding the instancesHaveIdentity
@@ -82,7 +87,13 @@ export async function structureModelToXmlSchema(
   // );
   const commonXmlSchemaLocation = null;
 
-  const adapter = new XmlSchemaAdapter(context, specification, artifact, model, options, commonXmlSchemaLocation);
+  /**
+   * Whether this is a regular XML schema or the profiling one
+   */
+  const isProfiling = model.profiling.length > 0;
+  const profiledModel = isProfiling ? structureModelAddDefaultValues(context.structureModels[model.profiling[0]], globalConfiguration) as StructureModel : null;
+
+  const adapter = new XmlSchemaAdapter(context, specification, artifact, model, options, commonXmlSchemaLocation, profiledModel);
   return await adapter.fromStructureModel();
 }
 
@@ -111,6 +122,11 @@ class XmlSchemaAdapter {
    */
   private namespaces: Record<string, string>;
   private types: Record<string, XmlSchemaType>;
+  private elements: XmlSchemaElement[] = [];
+
+  private profiledModel: StructureModel | null = null;
+
+  private adapterForExtensionSchema: XmlSchemaAdapter | null = null;
 
   /**
    * Creates a new instance of the adapter, for a particular structure model.
@@ -119,6 +135,7 @@ class XmlSchemaAdapter {
    * @param artifact The artifact describing the output of the generator.
    * @param model The structure model.
    * @param options Additional options to the generator.
+   * @param profiledModel
    */
   constructor(
     context: ArtefactGeneratorContext,
@@ -126,7 +143,8 @@ class XmlSchemaAdapter {
     artifact: DataSpecificationSchema,
     model: StructureModel,
     options: XmlConfiguration,
-    commonXmlSchemaLocation: string
+    commonXmlSchemaLocation: string,
+    profiledModel: StructureModel | null = null,
   ) {
     this.context = context;
     this.specifications = context.specifications;
@@ -134,6 +152,26 @@ class XmlSchemaAdapter {
     this.model = model;
     this.options = options;
     this.commonXmlSchemaLocation = commonXmlSchemaLocation;
+    this.profiledModel = profiledModel;
+
+    this.imports = {};
+    this.namespaces = {
+      // Required namespace
+      "http://www.w3.org/2001/XMLSchema": "xs",
+      // Required namespace
+      "http://www.w3.org/2007/XMLSchema-versioning": "vc"
+    };
+    this.types = {};
+
+    if (this.profiledModel && this.profiledModel.namespace && this.profiledModel.namespacePrefix) {
+      this.namespaces[this.profiledModel.namespace] = this.profiledModel.namespacePrefix;
+    } else if (this.model.namespace && this.model.namespacePrefix) {
+      this.namespaces[this.model.namespace] = this.model.namespacePrefix;
+    }
+
+    if (this.options.generateSawsdl) {
+      this.namespaces["http://www.w3.org/ns/sawsdl"] = "sawsdl";
+    }
   }
 
   /**
@@ -236,36 +274,60 @@ class XmlSchemaAdapter {
   /**
    * Generates full XML Schema from the structure model, provided configuration and other models.
    */
-  public async fromStructureModel(): Promise<XmlSchema> {
-    this.imports = {};
-    this.namespaces = {
-      // Required namespace
-      "http://www.w3.org/2001/XMLSchema": "xs",
-      // Required namespace
-      "http://www.w3.org/2007/XMLSchema-versioning": "vc"
-    };
-    this.types = {};
-    const elements: XmlSchemaElement[] = [];
+  public async fromStructureModel(): Promise<{
+    mainSchema: XmlSchema,
+    profilingExtensionsSchema: XmlSchema | null,
+  }> {
+    /**
+     * If we are in the profiling mode (meaning we generate the main schema), we also create model adapter for the extension schema.
+     */
+    if (this.profiledModel) {
+      this.adapterForExtensionSchema = new XmlSchemaAdapter(
+        this.context,
+        null as DataSpecification, // not used
+        this.artifact,
+        this.model,
+        this.options,
+        this.commonXmlSchemaLocation,
+        null, // Here we are in non-profiling mode
+      );
+
+      const extensionImport: XmlSchemaImportDeclaration = {
+        namespace: this.model.namespace,
+        schemaLocation: pathRelative(this.artifact.publicUrl, getExtensionSchemaPath(this.artifact.publicUrl), true),
+        model: null,
+      };
+      this.imports[extensionImport.namespace] = extensionImport;
+
+      if (this.model.namespace && this.model.namespacePrefix) {
+        const extensionNamespace: XmlSchemaNamespaceDefinition = {
+          namespace: this.model.namespace,
+          prefix: this.model.namespacePrefix,
+        }
+        this.namespaces[extensionNamespace.namespace] = extensionNamespace.prefix;
+      }
+    }
+
+    // Generate for each root element
 
     for (const root of this.model.roots) {
       let rootElement = await this.rootToElement(root);
       if (!this.model.skipRootElement) {
-        elements.push(rootElement);
+        this.elements.push(rootElement);
       }
     }
 
-    if (this.model.namespace && this.model.namespacePrefix) {
-      this.namespaces[this.model.namespace] = this.model.namespacePrefix;
-    }
-
-    if (this.options.generateSawsdl) {
-      this.namespaces["http://www.w3.org/ns/sawsdl"] = "sawsdl";
-    }
-
     return {
-      targetNamespace: this.model.namespace,
-      targetNamespacePrefix: this.model.namespacePrefix,
-      elements: elements,
+      mainSchema: this.getSchema(),
+      profilingExtensionsSchema: this.adapterForExtensionSchema ? this.adapterForExtensionSchema.getSchema() : null,
+    };
+  }
+
+  private getSchema(): XmlSchema {
+    return {
+      targetNamespace: (this.profiledModel || this.model).namespace,
+      targetNamespacePrefix: (this.profiledModel || this.model).namespacePrefix,
+      elements: this.elements,
       defineLangString: this.usesLangString,
       imports: Object.values(this.imports),
       namespaces: Object.entries(this.namespaces).map(([namespace, prefix]) => ({
@@ -584,18 +646,19 @@ class XmlSchemaAdapter {
         item: item,
       } satisfies XmlSchemaComplexContentItem;
     } else {
-      // This is normal property
-      const element = {
-        entityType: "element",
-        name: [null, property.technicalLabel],
-        type: await this.objectTypeToSchemaType(property),
-        annotation: this.getAnnotation(property),
-      } satisfies XmlSchemaElement;
+      let element: XmlSchemaElement;
 
-      if (this.options.extractAllTypes) {
-        this.extractType(element);
-      } else if (xmlSchemaTypeIsComplex(element.type)) {
-        element.type.name = null;
+      if (property.profiling.length === 0 && this.profiledModel) {
+        const extensionSchemaElement = await this.adapterForExtensionSchema!.getElementForNormalProperty(property);
+        this.adapterForExtensionSchema!.elements.push(extensionSchemaElement);
+
+        // Make it as ref
+        element = {...extensionSchemaElement};
+        element.type = null;
+        element.name = [this.model.namespacePrefix, element.name[1]];
+        element.annotation = null;
+      } else {
+        element = await this.getElementForNormalProperty(property);
       }
 
       return {
@@ -607,6 +670,23 @@ class XmlSchemaAdapter {
         element: element,
       } satisfies XmlSchemaComplexContentElement;
     }
+  }
+
+  private async getElementForNormalProperty(property: StructureModelProperty): Promise<XmlSchemaElement> {
+    const element = {
+      entityType: "element",
+      name: [null, property.technicalLabel],
+      type: await this.objectTypeToSchemaType(property),
+      annotation: this.getAnnotation(property),
+    } as XmlSchemaElement;
+
+    if (this.options.extractAllTypes) {
+      this.extractType(element);
+    } else if (xmlSchemaTypeIsComplex(element.type)) {
+      element.type.name = null;
+    }
+
+    return element;
   }
 
   private extractType(element: XmlSchemaElement) {

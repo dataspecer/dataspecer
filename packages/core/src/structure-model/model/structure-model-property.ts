@@ -143,4 +143,9 @@ export class StructureModelProperty {
    * Whether this property should be treated as attribute in XML.
    */
   xmlIsAttribute: boolean = false;
+
+  /**
+   * List of identifiers of entities this structure entity profiles.
+   */
+  profiling: string[] = [];
 }

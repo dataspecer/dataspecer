@@ -27,6 +27,7 @@ import { executeDataPsmSetEmptyAsComplex } from "./data-psm-set-empty-as-complex
 import { executeDataPsmSetExternalRootTypes } from "./data-psm-set-external-root-types-executor.ts";
 import { executeDataPsmSetHumanDescription } from "./data-psm-set-human-description-executor.ts";
 import { executeDataPsmSetHumanLabel } from "./data-psm-set-human-label-executor.ts";
+import { executeDataPsmSetProfiling } from "./data-psm-set-profiling-executor.ts";
 import { executeDataPsmSetIdType } from "./data-psm-set-idtype-executor.ts";
 import { executeDataPsmSetInstancesHaveIdentity } from "./data-psm-set-instances-have-identity.ts";
 import { executeDataPsmSetInstancesSpecifyTypes } from "./data-psm-set-instances-specify-type.ts";
@@ -155,6 +156,11 @@ export const baseDataPsmExecutors: CoreOperationExecutor<CoreOperation>[] = [
     Operations.DataPsmSetHumanLabel.is,
     executeDataPsmSetHumanLabel,
     Operations.DataPsmSetHumanLabel.TYPE
+  ),
+  CoreOperationExecutor.create(
+    Operations.DataPsmSetProfiling.is,
+    executeDataPsmSetProfiling,
+    Operations.DataPsmSetProfiling.TYPE
   ),
   CoreOperationExecutor.create(
     Operations.DataPsmSetIdType.is,
