@@ -62,21 +62,21 @@ export function updateEntitiesInProfileModel(
   for (const entity of entities) {
     if (isSemanticModelClassProfile(entity)) {
       const next = toCmeProfileClass(
-        model.identifier, readOnly, entity);
+        model.identifier, entity);
       if (classes === null) {
         classes = [...state.classes];
       }
       updateOrAddEntity(classes, next);
     } else if (isSemanticModelGeneralizationProfile(entity)) {
       const next = toCmeProfileGeneralization(
-        model.identifier, readOnly, entity);
+        model.identifier, entity);
       if (generalizations === null) {
         generalizations = [...state.generalizations];
       }
       updateOrAddEntity(generalizations, next);
     } else if (isSemanticModelRelationshipProfile(entity)) {
       const next = toCmeProfileRelationship(
-        model.identifier, readOnly, entity);
+        model.identifier, entity);
       if (relationships === null) {
         relationships = [...state.relationships];
       }

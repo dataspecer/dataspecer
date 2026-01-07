@@ -1,7 +1,7 @@
 import { SemanticModelAggregatorView } from "@dataspecer/core-v2/semantic-model/aggregator";
 import { EntityModel } from "@dataspecer/core-v2";
 import { ActionsContextType } from "../action/actions-react-binding";
-import { CatalogState, SemanticModelNode, TreeNode } from "./catalog-state";
+import { CatalogState, SEMANTIC_MODEL_NODE_TYPE, SemanticModelNode, TreeNode } from "./catalog-state";
 import * as Actions from "./catalog-action";
 import { configuration, createLogger } from "../application";
 import { Language } from "../configuration";
@@ -130,6 +130,12 @@ function clickHandled(
   switch (action) {
   case Actions.ACTION_SEMANTIC_MODEL_CREATE:
     actions.openCreateModelDialog();
+    return;
+  case Actions.ACTION_SEMANTIC_MODEL_COLLAPSE_ALL:
+    setState(state => collapseExpandAll(state, true));
+    return;
+  case Actions.ACTION_SEMANTIC_MODEL_EXPAND_ALL:
+    setState(state => collapseExpandAll(state, false));
     return;
   }
   // We start with the model actions, the reason is that model actions
@@ -374,4 +380,27 @@ function updateFilter(
     }
     return result;
   });
+}
+
+function collapseExpandAll(
+  state: CatalogState,
+  collapsed: boolean,
+): CatalogState {
+  const updateNodes = (items: TreeNode[]): TreeNode[] => {
+    return items.map(item => {
+      const result = { ...item };
+      if (item.type === SEMANTIC_MODEL_NODE_TYPE) {
+        (result as SemanticModelNode).collapsed = collapsed;
+      }
+      if (item.items.length > 0) {
+        result.items = updateNodes(item.items);
+      }
+      return result;
+    });
+  };
+
+  return {
+    ...state,
+    items: updateNodes(state.items),
+  };
 }

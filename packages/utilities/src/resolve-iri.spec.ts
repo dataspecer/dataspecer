@@ -1,17 +1,35 @@
 import { describe, test, expect } from "vitest";
 
-import { createIriResolver, isAbsoluteIri } from "./resolve-iri.ts";
+import {
+  createNullAwareIriResolver,
+  createIriResolver,
+  isAbsoluteIri,
+} from "./resolve-iri.ts";
+
+describe("createNullAwareIriResolver", () => {
+
+  test("Resolve absolute with base null.", () => {
+    const resolver = createNullAwareIriResolver(null);
+    expect(resolver("http://localhost")).toBe("http://localhost");
+  });
+
+  test("Resolve null.", () => {
+    const resolver = createNullAwareIriResolver("http://base/");
+    expect(resolver(null)).toBe(null);
+  });
+
+});
 
 describe("createIriResolver", () => {
 
   test("Resolve absolute.", () => {
-    expect(createIriResolver("http://base/")("http://localhost"))
-      .toBe("http://localhost");
+    const resolver = createIriResolver("http://base/");
+    expect(resolver("http://localhost")).toBe("http://localhost");
   });
 
   test("Resolve relative.", () => {
-    expect(createIriResolver("http://base/")("relative"))
-      .toBe("http://base/relative");
+    const resolver = createIriResolver("http://base/");
+    expect(resolver("relative")).toBe("http://base/relative");
   });
 
 });

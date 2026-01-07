@@ -16,7 +16,6 @@ export function toCmeSemanticClassAggregate(
       name: next.name,
       description: next.description,
       externalDocumentationUrl: next.externalDocumentationUrl,
-      readOnly: next.readOnly,
     };
   } else {
     return {
@@ -30,7 +29,6 @@ export function toCmeSemanticClassAggregate(
       description: next.description ?? previous.description,
       externalDocumentationUrl:
         next.externalDocumentationUrl ?? previous.externalDocumentationUrl,
-      readOnly: next.readOnly || previous.readOnly,
     };
   }
 }

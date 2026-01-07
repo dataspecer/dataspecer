@@ -4,7 +4,6 @@ import { ModelDsIdentifier } from "@/dataspecer/entity-model";
 
 export function toCmeSemanticClass(
   model: ModelDsIdentifier,
-  readOnly: boolean,
   value: SemanticModelClass,
 ): CmeSemanticClass {
   return {
@@ -15,6 +14,5 @@ export function toCmeSemanticClass(
     name: value.name,
     description: value.description,
     externalDocumentationUrl: value.externalDocumentationUrl ?? null,
-    readOnly,
   }
 }

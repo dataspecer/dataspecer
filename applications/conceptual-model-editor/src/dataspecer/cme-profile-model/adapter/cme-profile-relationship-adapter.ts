@@ -5,7 +5,6 @@ import { selectDomainAndRange } from "../../cme-model/adapter/adapter-utilities"
 
 export function toCmeProfileRelationship(
   model: ModelDsIdentifier,
-  readOnly: boolean,
   value: SemanticModelRelationshipProfile,
 ): CmeProfileRelationship {
   const [domain, range] = selectDomainAndRange(value.ends);
@@ -27,6 +26,5 @@ export function toCmeProfileRelationship(
     domainCardinality: domain.cardinality ?? null,
     range: range.concept,
     rangeCardinality: range.cardinality ?? null,
-    readOnly,
   }
 }

@@ -25,7 +25,6 @@ export function toCmeProfileClassAggregate(
       profiling: next.profiling,
       tags: next.tags,
       externalDocumentationUrl: next.externalDocumentationUrl,
-      readOnly: next.readOnly,
     };
   } else {
     return {
@@ -48,7 +47,6 @@ export function toCmeProfileClassAggregate(
       tags: [...next.tags, ...previous.tags],
       externalDocumentationUrl:
         next.externalDocumentationUrl ?? previous.externalDocumentationUrl,
-      readOnly: next.readOnly || previous.readOnly,
     };
   }
 }

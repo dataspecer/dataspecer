@@ -5,7 +5,6 @@ import { selectDomainAndRange } from "../../semantic-model/semantic-model-utilit
 
 export function toCmeSemanticRelationship(
   model: ModelDsIdentifier,
-  readOnly: boolean,
   value: SemanticModelRelationship,
 ): CmeSemanticRelationship {
   const [domain, range] = selectDomainAndRange(value.ends);
@@ -21,6 +20,5 @@ export function toCmeSemanticRelationship(
     domainCardinality: domain.cardinality ?? null,
     range: range.concept,
     rangeCardinality: range.cardinality ?? null,
-    readOnly,
   }
 }

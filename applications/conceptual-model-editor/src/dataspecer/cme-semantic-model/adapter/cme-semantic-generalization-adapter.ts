@@ -4,7 +4,6 @@ import { ModelDsIdentifier } from "@/dataspecer/entity-model";
 
 export function toCmeSemanticGeneralization(
   model: ModelDsIdentifier,
-  readOnly: boolean,
   value: SemanticModelGeneralization,
 ): CmeSemanticGeneralization {
   return {
@@ -14,6 +13,5 @@ export function toCmeSemanticGeneralization(
     iri: value.iri,
     childIdentifier: value.child,
     parentIdentifier: value.parent,
-    readOnly,
   }
 }

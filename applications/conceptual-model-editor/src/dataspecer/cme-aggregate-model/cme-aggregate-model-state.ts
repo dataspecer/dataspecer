@@ -19,7 +19,7 @@ import {
   toCmeSemanticClassAggregate,
   toCmeSemanticRelationshipAggregate,
 } from "./adapter";
-import { resolveSources } from "./utilities-internal";
+import { resolveSources } from "./utilities";
 import { CmeSemanticModelState } from "../cme-semantic-model";
 import { CmeProfileModelState } from "../cme-profile-model";
 
@@ -152,7 +152,6 @@ export function createCmeAggregateModelState(
     model: item.model,
     models: [item.model],
     dependencies: [item.identifier],
-    readOnly: item.readOnly,
     iri: item.iri,
     childIdentifier: item.childIdentifier,
     parentIdentifier: item.parentIdentifier,

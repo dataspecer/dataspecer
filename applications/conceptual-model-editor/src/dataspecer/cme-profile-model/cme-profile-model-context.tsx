@@ -10,6 +10,7 @@ import {
   updateProfileModels,
 } from "./cme-profile-model-state";
 import { createLogger } from "../../application";
+import { findByIdentifier } from "../utilities";
 
 const logger = createLogger(import.meta.url);
 
@@ -50,9 +51,8 @@ export function CmeProfileModelProvider(
     removed: string[],
   ) => {
     setState(prev => {
-      const model = prev.state.models
-        .find(item => item.identifier === profileModel.getId());
-      if (model === undefined) {
+      const model = findByIdentifier(profileModel.getId(), prev.state.models);
+      if (model === null) {
         logger.error("Ignoring cme-profile-model update for an unknown model",
           { models: prev.state.models, model: profileModel.getId() });
         return prev;

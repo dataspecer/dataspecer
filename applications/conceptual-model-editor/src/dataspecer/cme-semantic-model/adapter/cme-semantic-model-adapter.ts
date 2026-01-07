@@ -8,11 +8,11 @@ import { SemanticModel } from "../../semantic-model";
 export function toCmeSemanticModel(
   value: SemanticModel,
 ): CmeSemanticModel {
-  const modelType = getModelType(value);
+  const type = getModelType(value);
   return {
+    modelType: type,
     identifier: value.getId(),
     name: getModelLabel(value),
-    modelType,
     baseIri: getModelBaseIri(value),
   }
 }

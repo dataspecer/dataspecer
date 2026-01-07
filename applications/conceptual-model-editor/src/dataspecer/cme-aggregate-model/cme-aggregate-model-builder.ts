@@ -25,7 +25,7 @@ import {
   CmeSemanticClassAggregate,
   CmeSemanticRelationshipAggregate,
 } from "./model";
-import { resolveSources } from "./utilities-internal";
+import { resolveSources } from "./utilities";
 
 interface CmeAggregateModel {
 
@@ -56,42 +56,41 @@ class DefaultCmeAggregateModelBuilder implements CmeAggregateModel {
   fromClassesContext(context: ClassesContextType): void {
     context.classes.forEach(item => {
       const model = context.sourceModelOfEntityMap.get(item.id) ?? "";
-      const semantic = toCmeSemanticClass(model, false, item);
+      const semantic = toCmeSemanticClass(model, item);
       const aggregate = toCmeSemanticClassAggregate(
         semantic, this.semanticClasses[item.id])
       this.semanticClasses[item.id] = aggregate;
     });
     context.relationships.forEach(item => {
       const model = context.sourceModelOfEntityMap.get(item.id) ?? "";
-      const semantic = toCmeSemanticRelationship(model, false, item);
+      const semantic = toCmeSemanticRelationship(model, item);
       const aggregate = toCmeSemanticRelationshipAggregate(
         semantic, this.semanticRelationships[item.id])
       this.semanticRelationships[item.id] = aggregate;
     });
     context.classProfiles.forEach(item => {
       const model = context.sourceModelOfEntityMap.get(item.id) ?? "";
-      const profile = toCmeProfileClass(model, false, item);
+      const profile = toCmeProfileClass(model, item);
       const aggregate = toCmeProfileClassAggregate(
         profile, this.profileClasses[item.id]);
       this.profileClasses[item.id] = aggregate;
     });
     context.relationshipProfiles.forEach(item => {
       const model = context.sourceModelOfEntityMap.get(item.id) ?? "";
-      const profile = toCmeProfileRelationship(model, false, item);
+      const profile = toCmeProfileRelationship(model, item);
       const aggregate = toCmeProfileRelationshipAggregate(
         profile, this.profileRelationships[item.id])
       this.profileRelationships[item.id] = aggregate;
     });
     context.generalizations.forEach(item => {
       const model = context.sourceModelOfEntityMap.get(item.id) ?? "";
-      const semantic = toCmeSemanticGeneralization(model, false, item);
+      const semantic = toCmeSemanticGeneralization(model, item);
       this.generalizations[semantic.identifier] = {
         type: "cme-generalization-aggregate",
         identifier: semantic.identifier,
         model: semantic.model,
         models: [semantic.model],
         dependencies: [semantic.identifier],
-        readOnly: false,
         iri: item.iri,
         childIdentifier: semantic.childIdentifier,
         parentIdentifier: semantic.parentIdentifier,
