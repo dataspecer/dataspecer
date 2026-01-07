@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePreviousValue } from "@/hooks/use-previous-value";
 import { BetterModalProps } from "@/lib/better-modal";
-import { ResourcesContext, deleteResource, requestLoadPackage } from "@/package";
+import { ResourcesContext, deleteResource, requestLoadPackage, packageService } from "@/package";
 import { Loader } from "lucide-react";
 import { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -21,24 +21,57 @@ export const ReloadImported = ({ id, parentId, isOpen, resolve }: ReloadImported
   const resources = useContext(ResourcesContext);
   const resource = usePreviousValue(resources[id]!);
 
-  // @ts-ignore
-  const importedUrl = resource.userMetadata.importedFromUrl as string;
+  // Get the imported URL from userMetadata with type safety
+  const originalImportedUrl = (resource.userMetadata?.importedFromUrl as string) || "";
 
+  const [url, setUrl] = useState(originalImportedUrl);
   const [isLoading, setIsLoading] = useState(false);
   const doReload = async () => {
-    setIsLoading(true);
-
-    const result = await fetch(import.meta.env.VITE_BACKEND + "/resources/import?parentIri=" + encodeURIComponent(parentId) + "&url=" + encodeURIComponent(importedUrl), {
-      method: "POST",
-    });
-
-    if (result.ok) {
-      await deleteResource(id);
-      await requestLoadPackage(parentId, true);
-      toast.success(t("reload-imported.success"));
+    if (!url || url.trim().length === 0) {
+      toast.error(t("reload-imported.invalid-url"));
+      return;
     }
 
-    resolve(true);
+    setIsLoading(true);
+
+    try {
+      // Update the URL in userMetadata if it has changed
+      if (url !== originalImportedUrl) {
+        try {
+          await packageService.updatePackage(id, {
+            userMetadata: {
+              ...resource.userMetadata,
+              importedFromUrl: url,
+            },
+          });
+        } catch (metadataError) {
+          console.error("Error updating package metadata:", metadataError);
+          toast.error(t("reload-imported.generic-error"));
+          resolve(false);
+          return;
+        }
+      }
+
+      const result = await fetch(import.meta.env.VITE_BACKEND + "/resources/import?parentIri=" + encodeURIComponent(parentId) + "&url=" + encodeURIComponent(url), {
+        method: "POST",
+      });
+
+      if (result.ok) {
+        await deleteResource(id);
+        await requestLoadPackage(parentId, true);
+        toast.success(t("reload-imported.success"));
+        resolve(true);
+      } else {
+        toast.error(t("reload-imported.error"));
+        resolve(false);
+      }
+    } catch (error) {
+      console.error("Error reloading specification:", error);
+      toast.error(t("reload-imported.generic-error"));
+      resolve(false);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   const name = lng(resource.userMetadata?.label);
@@ -55,7 +88,12 @@ export const ReloadImported = ({ id, parentId, isOpen, resolve }: ReloadImported
         <ModalBody>
           <div className="grid gap-2">
             <Label htmlFor="url">{t("reload-imported.url")}</Label>
-            <Input id="url" value={importedUrl} disabled />
+            <Input 
+              id="url" 
+              value={url} 
+              onChange={(e) => setUrl(e.target.value)}
+              disabled={isLoading}
+            />
           </div>
         </ModalBody>
         <ModalFooter>

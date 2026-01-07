@@ -66,6 +66,9 @@ reload-imported:
   warning-no-name: >-
     You are about to reload the specification from the following URL. If the
     reload is successful, the specification will be completely overwritten.
+  invalid-url: Please enter a valid URL.
+  error: Failed to reload specification. Please check the URL and try again.
+  generic-error: An error occurred while reloading the specification.
 remove: Remove
 save: Save
 show-documentation: Show documentation
