@@ -80,8 +80,7 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri
   if (packageGitFilter !== null && resource.projectIri !== packageGitFilter) {
     return null;
   }
-  const hasSetRemoteRepository: boolean = resource.linkedGitRepositoryURL !== undefined && resource.linkedGitRepositoryURL !== "";
-  console.info({resource});
+  const hasSetRemoteRepository: boolean = resource.linkedGitRepositoryURL !== "";
 
   const {t, i18n} = useTranslation();
 
