@@ -134,7 +134,7 @@
   "XML prefix": "prefix",
   "XML skip root element": "Negenerovat elementy",
   "XML root container name": "Název kořenového elementu sloužícího jako kontejner",
-  "XML root container name help": "V příadě kardinality kořenového elementu jiné než 1..1 je potřeba obalit elementy do pomocného elementu. Toto nastavení specifikuje název takového elementu.",
+  "XML root container name help": "V případě kardinality kořenového elementu jiné než 1..1 je potřeba obalit elementy do pomocného elementu. Toto nastavení specifikuje název takového elementu.",
   "XML root container alert": "Kontejner <0>&lt;{{container}}&gt;</0> bude použit vždy, protože je kardinalita jiná než 1..1.",
   "XML root container always use": "použít vždy"
 }
