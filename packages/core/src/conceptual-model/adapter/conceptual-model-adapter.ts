@@ -103,6 +103,7 @@ class ConceptualModelAdapter {
     property.cimIri = property.iris[0] ?? null;
     property.humanLabel = end.name ?? association.name;
     property.humanDescription = end.description ?? association.description;
+    // Extract usage note from profile if available (profiles extend entities with usageNote)
     property.humanUsageNote = (end as any).usageNote ?? (association as any).usageNote ?? null;
     property.cardinalityMin = end.cardinality?.[0] ?? null;
     property.cardinalityMax = end.cardinality?.[1] ?? null;
@@ -144,6 +145,7 @@ class ConceptualModelAdapter {
     model.cimIri = model.iris[0] ?? null;
     model.humanLabel = end.name;
     model.humanDescription = end.description;
+    // Extract usage note from profile if available (profiles extend entities with usageNote)
     model.humanUsageNote = (end as any).usageNote ?? null;
     model.cardinalityMin = end.cardinality?.[0];
     model.cardinalityMax = end.cardinality?.[1];
@@ -168,6 +170,7 @@ class ConceptualModelAdapter {
     model.cimIri = model.iris[0] ?? null;
     model.humanLabel = classData.name;
     model.humanDescription = classData.description;
+    // Extract usage note from profile if available (profiles extend entities with usageNote)
     model.humanUsageNote = (classData as any).usageNote ?? null;
     model.isCodelist = classData.isCodelist;
     model.codelistUrl = classData.codelistUrl;

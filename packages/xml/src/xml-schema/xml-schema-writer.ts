@@ -231,10 +231,11 @@ async function writeAnnotation(
               }
               text += usageNote;
             }
+            // Only add trailing newline if there's actual content
             if (text) {
               text += "\n";
+              await writer.writeText(text);
             }
-            await writer.writeText(text);
           });
         }
       });
