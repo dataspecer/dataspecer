@@ -37,12 +37,19 @@ export const ReloadImported = ({ id, parentId, isOpen, resolve }: ReloadImported
     try {
       // Update the URL in userMetadata if it has changed
       if (url !== originalImportedUrl) {
-        await packageService.updatePackage(id, {
-          userMetadata: {
-            ...resource.userMetadata,
-            importedFromUrl: url,
-          },
-        });
+        try {
+          await packageService.updatePackage(id, {
+            userMetadata: {
+              ...resource.userMetadata,
+              importedFromUrl: url,
+            },
+          });
+        } catch (metadataError) {
+          console.error("Error updating package metadata:", metadataError);
+          toast.error(t("reload-imported.generic-error"));
+          resolve(false);
+          return;
+        }
       }
 
       const result = await fetch(import.meta.env.VITE_BACKEND + "/resources/import?parentIri=" + encodeURIComponent(parentId) + "&url=" + encodeURIComponent(url), {
