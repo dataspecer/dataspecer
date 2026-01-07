@@ -4,8 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import cliProgress from 'cli-progress';
 import { readFileSync } from 'fs';
 import { Parser, Store } from 'n3';
-import path from 'path';
-import { LocalStoreModel } from '../../models/local-store-model.ts';
+import { LocalStoreModelBase } from '../../models/local-store-model.ts';
 import { ResourceModel } from '../../models/resource-model.ts';
 import { objectsToLanguageString } from './better-n3-store.ts';
 
@@ -18,10 +17,10 @@ const PROPERTY = "http://www.w3.org/2002/07/owl#ObjectProperty";
 const filename = "./lov.nq";
 
 
-(async () => {   
+(async () => {
     console.log(`Reading file ${filename}.`);
     const file = readFileSync(filename, 'utf8');
-    
+
     const parser = new Parser({ format: 'N-Quads', baseIRI: "http://this-document.com" });
 
     // @ts-ignore
@@ -54,7 +53,7 @@ const filename = "./lov.nq";
     const LOD_ROOT = "https://dataspecer.com/resources/import/lod";
 
     const prisma = new PrismaClient();
-    const storeModel = new LocalStoreModel("./database/stores");
+    const storeModel = new LocalStoreModelBase("./database/stores");
     const resourceModel = new ResourceModel(storeModel, prisma);
 
     // Override the package
@@ -86,7 +85,7 @@ const filename = "./lov.nq";
         const adapter = new RdfsAdapter();
         adapter.load(entityStore);
         const entities = adapter.getEntities();
-        
+
         const vocabulary =  {
             id: subject.value,
             namespaceUri,
