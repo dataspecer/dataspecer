@@ -1,6 +1,6 @@
 import { LanguageString } from "../../core/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
-import { ExtendableCoreResource } from "./extendable-core-resource.ts";
+import { DataPsmBaseResource } from "./data-psm-resource.ts";
 
 /**
  * Originally the schema point only to root classes. The rest of the diagram
@@ -17,7 +17,7 @@ import { ExtendableCoreResource } from "./extendable-core-resource.ts";
  * all resources in the schema. A class can then be optionally added
  * to the list of root classes.
  */
-export class DataPsmSchema extends ExtendableCoreResource {
+export class DataPsmSchema extends DataPsmBaseResource {
   private static readonly TYPE = PSM.SCHEMA;
 
   /**

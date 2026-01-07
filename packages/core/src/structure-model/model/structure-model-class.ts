@@ -126,4 +126,9 @@ export class StructureModelClass {
    * something less strict, but still describing the schema.
    */
   containerType: null | "choice" | "sequence" = null;
+
+  /**
+   * List of identifiers of entities this structure entity profiles.
+   */
+  profiling: string[] = [];
 }

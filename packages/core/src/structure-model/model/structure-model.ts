@@ -82,4 +82,9 @@ export class StructureModel {
 
     return [...list];
   }
+
+  /**
+   * List of identifiers of structure models this structure model profiles.
+   */
+  profiling: string[] = [];
 }

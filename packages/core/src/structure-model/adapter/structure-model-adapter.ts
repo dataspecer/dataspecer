@@ -48,6 +48,7 @@ class StructureModelAdapter {
     model.jsonLdDefinedPrefixes = psmSchema.jsonLdDefinedPrefixes ?? {};
     model.jsonLdTypeMapping = psmSchema.jsonLdDefinedTypeMapping ?? {};
     model.roots = roots;
+    model.profiling = psmSchema.profiling ?? [];
 
     return model;
   }
@@ -166,6 +167,7 @@ class StructureModelAdapter {
     model.humanDescription = classData.dataPsmHumanDescription;
     model.technicalLabel = classData.dataPsmTechnicalLabel;
     model.structureSchema = this.psmSchemaIri;
+    model.profiling = classData.profiling ?? [];
     if (DataPsmClass.is(classData)) {
       model.emptyAsComplex = classData.dataPsmEmptyAsComplex === true;
       model.isClosed = classData.dataPsmIsClosed;
@@ -260,6 +262,7 @@ class StructureModelAdapter {
     model.technicalLabel = associationEndData.dataPsmTechnicalLabel;
     model.dematerialize = associationEndData.dataPsmIsDematerialize === true;
     model.isReverse = associationEndData.dataPsmIsReverse === true;
+    model.profiling = associationEndData.profiling ?? [];
 
     // XML specific
     const data = DataPsmXmlPropertyExtension.getExtensionData(associationEndData);
@@ -325,6 +328,7 @@ class StructureModelAdapter {
     model.humanLabel = attributeData.dataPsmHumanLabel;
     model.humanDescription = attributeData.dataPsmHumanDescription;
     model.technicalLabel = attributeData.dataPsmTechnicalLabel;
+    model.profiling = attributeData.profiling ?? [];
 
     // XML specific
     const data = DataPsmXmlPropertyExtension.getExtensionData(attributeData);
@@ -367,6 +371,7 @@ class StructureModelAdapter {
   ): Promise<StructureModelProperty> {
     const property = new StructureModelProperty();
     property.psmIri = containerData.iri;
+    property.profiling = containerData.profiling ?? [];
     // This says that the property is actually a container
     property.propertyAsContainer = containerData.dataPsmContainerType;
 
@@ -393,6 +398,7 @@ class StructureModelAdapter {
     model.pimIri = root.dataPsmTypes[0]; // todo ignore or for now
     model.technicalLabel = root.dataPsmTechnicalLabel;
     model.structureSchema = this.psmSchemaIri;
+    model.profiling = root.profiling ?? [];
 
     return model;
   }
