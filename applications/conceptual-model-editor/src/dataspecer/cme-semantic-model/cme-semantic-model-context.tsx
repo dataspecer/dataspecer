@@ -36,7 +36,7 @@ export function CmeSemanticModelProvider(
     /**
      * The value must change if there is a new model.
      */
-    semanticModels: Map<String, SemanticModel>,
+    semanticModels: Map<string, SemanticModel>,
     children: React.ReactNode,
   },
 ) {

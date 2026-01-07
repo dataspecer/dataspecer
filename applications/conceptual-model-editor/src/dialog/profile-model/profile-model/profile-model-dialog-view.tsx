@@ -4,9 +4,8 @@ import { ProfileModelState } from "./profile-model-dialog-state";
 import { SelectModel } from "../../../dialog/components/select-model";
 import {
   useProfileModelDialogController,
- } from "./profile-model-dialog-controller";
+} from "./profile-model-dialog-controller";
 import { t } from "../../../application";
-
 
 export function ProfileModelDialog(props: DialogProps<ProfileModelState>) {
   const controller = useProfileModelDialogController(props);

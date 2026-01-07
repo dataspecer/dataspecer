@@ -14,7 +14,6 @@ import {
 } from "../../operation-registry";
 import { findModel } from "../operation-utilities";
 
-
 const ShowSemanticClassType =
   "show-semantic-class-operation";
 

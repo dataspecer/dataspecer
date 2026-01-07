@@ -36,11 +36,11 @@ export enum CmeSemanticModelType {
 
 export function isCmeSemanticModelReadOnly(model: CmeSemanticModel) {
   switch (model.modelType) {
-    case CmeSemanticModelType.DefaultSemanticModel:
-      return true;
-    case CmeSemanticModelType.ExternalSemanticModel:
-      return true;
-    case CmeSemanticModelType.InMemorySemanticModel:
-      return false;
+  case CmeSemanticModelType.DefaultSemanticModel:
+    return true;
+  case CmeSemanticModelType.ExternalSemanticModel:
+    return true;
+  case CmeSemanticModelType.InMemorySemanticModel:
+    return false;
   }
 }

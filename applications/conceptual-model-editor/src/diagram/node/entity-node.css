@@ -36,3 +36,10 @@
 .drag-handle {
   pointer-events: all;
 }
+
+/* Remove bullet points from profile target lists */
+.entity-node ul {
+  list-style-type: none;
+  padding-left: 0;
+  margin: 0;
+}
