@@ -119,6 +119,7 @@
   "title attribute": "Atribut",
   "title cardinality": "Kardinalita",
   "title cardinality semantic": "Kardinalita na úrovni aplikačního profilu",
+  "title cardinality help": "Určuje kolikrát se v datech může vyskytovat kořenový element. Toto nastavení je specifické pro různé formáty a může způsobit obalení schématu do pomocné struktury pro dosažení požadované kardniality.",
   "title checkbox xml attribute": "Použít jako XML atribut",
   "title class": "Třída",
   "title data type": "Datový typ",
@@ -131,5 +132,9 @@
   "XML attributes": "XML specifické atributy",
   "XML namespace": "namespace",
   "XML prefix": "prefix",
-  "XML skip root element": "Negenerovat elementy"
+  "XML skip root element": "Negenerovat elementy",
+  "XML root container name": "Název kořenového elementu sloužícího jako kontejner",
+  "XML root container name help": "V příadě kardinality kořenového elementu jiné než 1..1 je potřeba obalit elementy do pomocného elementu. Toto nastavení specifikuje název takového elementu.",
+  "XML root container alert": "Kontejner <0>&lt;{{container}}&gt;</0> bude použit vždy, protože je kardinalita jiná než 1..1.",
+  "XML root container always use": "použít vždy"
 }
