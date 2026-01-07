@@ -2,12 +2,13 @@ export const MAIN_XML_PARTIAL = "xml-documentation";
 
 export const defaultXmlPartials: Record<string, string> = {
   [MAIN_XML_PARTIAL]: `{{#def "xml-meaning" "annotation"}}
-  {{#if (or (get-semantic-class annotation) (non-empty annotation.metaTitle) (non-empty annotation.metaDescription))}}
+  {{#if (or (get-semantic-class annotation) (non-empty annotation.metaTitle) (non-empty annotation.metaDescription) (non-empty annotation.metaUsageNote))}}
     <dt>{{#iflng "cs"}}Význam{{lng}}Meaning{{/iflng}}</dt>
-    {{#if (or (non-empty annotation.metaTitle) (non-empty annotation.metaDescription))}}
+    {{#if (or (non-empty annotation.metaTitle) (non-empty annotation.metaDescription) (non-empty annotation.metaUsageNote))}}
       <dd>
         <a href="{{#get-semantic-class annotation}}{{href pimIri}}{{/get-semantic-class}}">{{translate annotation.metaTitle}}</a>
         {{#if (non-empty annotation.metaDescription)}}({{translate annotation.metaDescription}}){{/if}}
+        {{#if (non-empty annotation.metaUsageNote)}}<br/>{{#iflng "cs"}}Poznámka k použití{{lng}}Usage note{{/iflng}}: {{translate annotation.metaUsageNote}}{{/if}}
       </dd>
     {{/if}}
   {{/if}}
