@@ -1,4 +1,5 @@
 import {OutputStream} from "@dataspecer/core/io/stream/output-stream";
+import { LanguageString } from "@dataspecer/core/core/core-resource";
 
 import {
   XmlSchema,
@@ -28,6 +29,14 @@ import { langStringName } from "../conventions.ts";
 
 const xsNamespace = "http://www.w3.org/2001/XMLSchema";
 const xsVerNamespace = "http://www.w3.org/2007/XMLSchema-versioning";
+
+/**
+ * Checks if a LanguageString has any non-empty values.
+ */
+function hasLanguageStringContent(ls: LanguageString | null): boolean {
+  if (!ls) return false;
+  return Object.values(ls).some(value => value && value.trim().length > 0);
+}
 
 /**
  * Writes the full XML Schema to output.
@@ -206,7 +215,11 @@ async function writeAnnotation(
         "sawsdl", "modelReference", annotation.modelReference.join(" ")
       );
     }
-    if (annotation.metaTitle || annotation.metaDescription || annotation.metaUsageNote) {
+    const hasTitle = hasLanguageStringContent(annotation.metaTitle);
+    const hasDescription = hasLanguageStringContent(annotation.metaDescription);
+    const hasUsageNote = hasLanguageStringContent(annotation.metaUsageNote);
+    
+    if (hasTitle || hasDescription || hasUsageNote) {
       await writer.writeElementFull("xs", "annotation")(async writer => {
         const languages = [...new Set([
           ...Object.keys(annotation.metaTitle ?? {}), 
