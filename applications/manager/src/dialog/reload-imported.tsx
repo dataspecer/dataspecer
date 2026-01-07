@@ -28,7 +28,7 @@ export const ReloadImported = ({ id, parentId, isOpen, resolve }: ReloadImported
   const [isLoading, setIsLoading] = useState(false);
   const doReload = async () => {
     if (!url || url.trim().length === 0) {
-      toast.error("Please enter a valid URL.");
+      toast.error(t("reload-imported.invalid-url"));
       return;
     }
 
@@ -55,12 +55,12 @@ export const ReloadImported = ({ id, parentId, isOpen, resolve }: ReloadImported
         toast.success(t("reload-imported.success"));
         resolve(true);
       } else {
-        toast.error("Failed to reload specification. Please check the URL and try again.");
+        toast.error(t("reload-imported.error"));
         resolve(false);
       }
     } catch (error) {
       console.error("Error reloading specification:", error);
-      toast.error("An error occurred while reloading the specification.");
+      toast.error(t("reload-imported.generic-error"));
       resolve(false);
     } finally {
       setIsLoading(false);

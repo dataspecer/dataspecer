@@ -63,6 +63,9 @@ reload-imported:
   warning-no-name: >-
     Chystáte se aktualizovat specifikaci z následující URL. Pokud načtení
     proběhne úspěšně, specifikace bude kompletně přepsána.
+  invalid-url: Prosím zadejte platnou URL.
+  error: Aktualizace specifikace selhala. Zkontrolujte URL a zkuste to znovu.
+  generic-error: Při aktualizaci specifikace došlo k chybě.
 remove: Odstranit
 save: Uložit
 show-documentation: Zobrazit dokumentaci
