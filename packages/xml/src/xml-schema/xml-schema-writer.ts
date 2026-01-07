@@ -206,17 +206,35 @@ async function writeAnnotation(
         "sawsdl", "modelReference", annotation.modelReference.join(" ")
       );
     }
-    if (annotation.metaTitle || annotation.metaDescription) {
+    if (annotation.metaTitle || annotation.metaDescription || annotation.metaUsageNote) {
       await writer.writeElementFull("xs", "annotation")(async writer => {
-        const languages = [...new Set([...Object.keys(annotation.metaTitle ?? {}), ...Object.keys(annotation.metaDescription ?? {})])].sort();
+        const languages = [...new Set([
+          ...Object.keys(annotation.metaTitle ?? {}), 
+          ...Object.keys(annotation.metaDescription ?? {}),
+          ...Object.keys(annotation.metaUsageNote ?? {})
+        ])].sort();
         for (const language of languages) {
           await writer.writeElementFull("xs", "documentation")(async writer => {
             await writer.writeLocalAttributeValue("xml:lang", language);
             const title = annotation.metaTitle?.[language];
             const description = annotation.metaDescription?.[language];
-            await writer.writeText(
-              `${title ?? ""}${title && description ? " - " : ""}${description ?? ""}\n`
-            );
+            const usageNote = annotation.metaUsageNote?.[language];
+            
+            // Build the documentation text
+            let text = "";
+            if (title || description) {
+              text += `${title ?? ""}${title && description ? " - " : ""}${description ?? ""}`;
+            }
+            if (usageNote) {
+              if (text) {
+                text += "\n";
+              }
+              text += usageNote;
+            }
+            if (text) {
+              text += "\n";
+            }
+            await writer.writeText(text);
           });
         }
       });
