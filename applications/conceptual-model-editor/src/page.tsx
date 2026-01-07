@@ -67,10 +67,10 @@ const Catalog = (() => {
     updatePreferences({ catalogComponent: catalog });
   }
   switch (preferences().catalogComponent) {
-    case "v1":
-      return CatalogV1;
-    case "v2":
-      return CatalogV2
+  case "v1":
+    return CatalogV1;
+  case "v2":
+    return CatalogV2
   }
 })();
 

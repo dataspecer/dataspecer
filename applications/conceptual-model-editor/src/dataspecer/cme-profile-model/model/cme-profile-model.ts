@@ -36,11 +36,11 @@ export enum CmeProfileModelType {
 
 export function isCmeProfileModelReadOnly(model: CmeProfileModel) {
   switch (model.modelType) {
-    case CmeProfileModelType.DefaultProfileModel:
-      return true;
-    case CmeProfileModelType.ExternalProfileModel:
-      return true;
-    case CmeProfileModelType.InMemoryProfileModel:
-      return false;
+  case CmeProfileModelType.DefaultProfileModel:
+    return true;
+  case CmeProfileModelType.ExternalProfileModel:
+    return true;
+  case CmeProfileModelType.InMemoryProfileModel:
+    return false;
   }
 }

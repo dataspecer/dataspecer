@@ -36,7 +36,7 @@ export function CmeProfileModelProvider(
     /**
      * The value must change if there is a new model.
      */
-    profileModels: Map<String, ProfileModel>,
+    profileModels: Map<string, ProfileModel>,
     children: React.ReactNode,
   },
 ) {

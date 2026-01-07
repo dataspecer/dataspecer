@@ -954,11 +954,11 @@ function createActionsContext(
     // We start be removing from the visual model.
     withVisualModel(notifications, graph, (visualModel) => {
       const entityToDeleteWithAttributeData = entitiesToDelete.map(entityToDelete =>
-      ({
-        ...entityToDelete,
-        isAttributeOrAttributeProfile: isAttributeOrAttributeProfile(
-          entityToDelete.identifier, graph.models, entityToDelete.sourceModel)
-      })
+        ({
+          ...entityToDelete,
+          isAttributeOrAttributeProfile: isAttributeOrAttributeProfile(
+            entityToDelete.identifier, graph.models, entityToDelete.sourceModel)
+        })
       );
       const attributesToBeDeleted =
         entityToDeleteWithAttributeData.filter(entity => entity.isAttributeOrAttributeProfile);

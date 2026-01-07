@@ -34,7 +34,7 @@ function getBounds(nodes: NodeType[], edges: EdgeType[]): Rect {
     if (edge.data === undefined) {
       continue;
     }
-    for (const {x, y} of edge.data.waypoints) {
+    for (const { x, y } of edge.data.waypoints) {
       minX = Math.min(minX, x);
       maxX = Math.max(maxX, x);
       minY = Math.min(minY, y);
@@ -433,7 +433,6 @@ function nodeToDataURL(node: Node, width: number, height: number): string {
   const prettyXml = formatXml(xml);
   return prettyXml;
 }
-
 
 /**
  * Given XML string return a pretty printed version.

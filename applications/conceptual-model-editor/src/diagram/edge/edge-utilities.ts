@@ -144,7 +144,7 @@ export function createOrthogonalWaypoints(
   const prevToTarget = waypoints[waypoints.length - 1];
   if (nextToSource === undefined || prevToTarget === undefined) {
     console.error("createOrthogonalWaypoints: waypoint is undefined",
-      {source, waypoints, target});
+      { source, waypoints, target });
     return [source.position, ...waypoints, target.position];
   }
 
