@@ -226,30 +226,28 @@ async function writeAnnotation(
           ...Object.keys(annotation.metaDescription ?? {}),
           ...Object.keys(annotation.metaUsageNote ?? {})
         ])].sort();
+        
         for (const language of languages) {
-          await writer.writeElementFull("xs", "documentation")(async writer => {
-            await writer.writeLocalAttributeValue("xml:lang", language);
-            const title = annotation.metaTitle?.[language];
-            const description = annotation.metaDescription?.[language];
-            const usageNote = annotation.metaUsageNote?.[language];
-            
-            // Build the documentation text
-            let text = "";
-            if (title || description) {
-              text += `${title ?? ""}${title && description ? " - " : ""}${description ?? ""}`;
-            }
-            if (usageNote) {
-              if (text) {
-                text += "\n";
-              }
-              text += usageNote;
-            }
-            // Only add trailing newline if there's actual content
-            if (text) {
-              text += "\n";
+          // Write title and description in first xs:documentation element
+          const title = annotation.metaTitle?.[language];
+          const description = annotation.metaDescription?.[language];
+          
+          if (title || description) {
+            await writer.writeElementFull("xs", "documentation")(async writer => {
+              await writer.writeLocalAttributeValue("xml:lang", language);
+              const text = `${title ?? ""}${title && description ? " - " : ""}${description ?? ""}\n`;
               await writer.writeText(text);
-            }
-          });
+            });
+          }
+          
+          // Write usage note in separate xs:documentation element
+          const usageNote = annotation.metaUsageNote?.[language];
+          if (usageNote) {
+            await writer.writeElementFull("xs", "documentation")(async writer => {
+              await writer.writeLocalAttributeValue("xml:lang", language);
+              await writer.writeText(usageNote + "\n");
+            });
+          }
         }
       });
     }
