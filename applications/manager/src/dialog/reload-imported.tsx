@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePreviousValue } from "@/hooks/use-previous-value";
 import { BetterModalProps } from "@/lib/better-modal";
-import { ResourcesContext, deleteResource, requestLoadPackage } from "@/package";
+import { ResourcesContext, deleteResource, requestLoadPackage, packageService } from "@/package";
 import { Loader } from "lucide-react";
 import { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -22,13 +22,24 @@ export const ReloadImported = ({ id, parentId, isOpen, resolve }: ReloadImported
   const resource = usePreviousValue(resources[id]!);
 
   // @ts-ignore
-  const importedUrl = resource.userMetadata.importedFromUrl as string;
+  const originalImportedUrl = resource.userMetadata.importedFromUrl as string;
 
+  const [url, setUrl] = useState(originalImportedUrl);
   const [isLoading, setIsLoading] = useState(false);
   const doReload = async () => {
     setIsLoading(true);
 
-    const result = await fetch(import.meta.env.VITE_BACKEND + "/resources/import?parentIri=" + encodeURIComponent(parentId) + "&url=" + encodeURIComponent(importedUrl), {
+    // Update the URL in userMetadata if it has changed
+    if (url !== originalImportedUrl) {
+      await packageService.updatePackage(id, {
+        userMetadata: {
+          ...resource.userMetadata,
+          importedFromUrl: url,
+        },
+      });
+    }
+
+    const result = await fetch(import.meta.env.VITE_BACKEND + "/resources/import?parentIri=" + encodeURIComponent(parentId) + "&url=" + encodeURIComponent(url), {
       method: "POST",
     });
 
@@ -55,7 +66,12 @@ export const ReloadImported = ({ id, parentId, isOpen, resolve }: ReloadImported
         <ModalBody>
           <div className="grid gap-2">
             <Label htmlFor="url">{t("reload-imported.url")}</Label>
-            <Input id="url" value={importedUrl} disabled />
+            <Input 
+              id="url" 
+              value={url} 
+              onChange={(e) => setUrl(e.target.value)}
+              disabled={isLoading}
+            />
           </div>
         </ModalBody>
         <ModalFooter>
