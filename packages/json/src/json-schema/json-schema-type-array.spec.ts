@@ -41,10 +41,6 @@ test("Generate type array with multiple values (with contains)", async () => {
   expect(json.allOf[1].contains).toBeDefined();
   expect(json.allOf[1].contains.const).toBe("Pojem");
   expect(json.items.type).toBe("string");
-  
-  // Log the output for manual inspection
-  console.log("Generated JSON Schema for multiple type values:");
-  console.log(JSON.stringify(json, null, 2));
 });
 
 test("Generate type array with single value (oneOf with contains)", async () => {
