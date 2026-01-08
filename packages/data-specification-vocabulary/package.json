@@ -27,7 +27,7 @@
     "@types/jsonld": "^1.5.15",
     "@types/n3": "~1.24.2",
     "rimraf": "^6.0.1",
-    "typescript": "^5.8.3",
+    "typescript": "^5.9.3",
     "vitest": "^3.1.1"
   }
 }
