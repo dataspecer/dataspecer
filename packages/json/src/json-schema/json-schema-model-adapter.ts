@@ -66,7 +66,12 @@ function typePropertyWithValues(typeKeyValues: string[]): JsonSchemaDefinition {
     arr.allOf = typeKeyValues.map((type) => {
       const constProp = new JsonSchemaConst();
       constProp.value = type;
-      return constProp;
+      
+      const containsArray = new JsonSchemaArray();
+      containsArray.contains = constProp;
+      containsArray.items = new JsonSchemaString(null);
+      
+      return containsArray;
     });
     arr.items = new JsonSchemaString(null);
     return arr;
