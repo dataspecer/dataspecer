@@ -498,9 +498,7 @@ function structureModelPrimitiveToJsonDefinition(
     case XSD.decimal:
     case OFN.decimal:
       // Check configuration to determine if decimal should be string or number
-      const decimalRepresentation = context.configuration.jsonLdDecimalRepresentation ?? "default";
-      // Default and as-string both use string representation
-      const useStringForDecimal = decimalRepresentation !== "as-number";
+      const useStringForDecimal = context.configuration.jsonLdDecimalAsString ?? true;
       
       if (useStringForDecimal) {
         // Represent decimal as string with regex pattern to avoid double conversion issues in JSON-LD

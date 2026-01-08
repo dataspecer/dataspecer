@@ -123,23 +123,15 @@ export const Json: FC<{
 
 
       <Typography variant="h6" sx={{mt: 3}}>Decimal representation</Typography>
-      <Grid container spacing={2}>
-        <Grid item xs={12}>
-          <SelectWithDefault
-              current={input ?? {}}
-              itemKey="jsonLdDecimalRepresentation"
-              onChange={onChange}
-              default={defaultObject}
-              options={{
-                "default": "Default (as string)",
-                "as-string": "As string with pattern",
-                "as-number": "As number",
-              }}
-          />
-        </Grid>
-      </Grid>
+      <SwitchWithDefault
+        current={input ?? {}}
+        itemKey="jsonLdDecimalAsString"
+        onChange={onChange}
+        default={defaultObject}
+        label={"Represent xsd:decimal as string with pattern"}
+      />
       <Typography variant="body2" sx={{mt: 1}}>
-        Controls how xsd:decimal types are represented in JSON Schema. Using string representation (recommended) prevents precision loss when JSON parsers convert numbers to doubles before JSON-LD processing. The JSON-LD context will always map to xsd:decimal.
+        When enabled (default), xsd:decimal is represented as a string with regex pattern in JSON Schema. This prevents precision loss when JSON parsers convert numbers to doubles before JSON-LD processing. The JSON-LD context will always map to xsd:decimal.
       </Typography>
 
 
