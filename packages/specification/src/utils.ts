@@ -14,6 +14,24 @@ import { GenerateSpecificationContext } from "./specification.ts";
 import { createSemicShaclStylePolicy, createShaclForProfile, shaclToRdf } from "@dataspecer/shacl-v2";
 
 /**
+ * Default RDF prefixes used in DSV serialization.
+ * These are merged with any custom prefixes provided by the model.
+ */
+const DEFAULT_RDF_PREFIXES = {
+  "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+  "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+  "dct": "http://purl.org/dc/terms/",
+  "dsv": "https://w3id.org/dsv#",
+  "owl": "http://www.w3.org/2002/07/owl#",
+  "skos": "http://www.w3.org/2004/02/skos/core#",
+  "vann": "http://purl.org/vocab/vann/",
+  "cardinality": "https://w3id.org/dsv/cardinality#",
+  "requirement": "https://w3id.org/dsv/requirement-level#",
+  "role": "https://w3id.org/dsv/class-role#",
+  "prof": "http://www.w3.org/ns/dx/prof/",
+} as const;
+
+/**
  * Helper function that check whether the model is a vocabulary. If not, it is probably an application profile.
  */
 export function isModelVocabulary(model: Record<string, SemanticModelEntity>): boolean {
@@ -63,7 +81,7 @@ export async function generateDsvApplicationProfile(forExportModels: ModelDescri
   // Prepare configuration with custom prefixes merged with defaults
   // If prefixMap is provided and not empty, merge it with the default prefixes
   // Otherwise, don't pass the prefixes property to use defaults
-  const config: any = {
+  const config: { prettyPrint: boolean; prefixes?: Record<string, string> } = {
     prettyPrint: true,
   };
   if (prefixMap && Object.keys(prefixMap).length > 0) {
@@ -73,17 +91,7 @@ export async function generateDsvApplicationProfile(forExportModels: ModelDescri
     );
     // Merge custom prefixes with defaults
     config.prefixes = {
-      "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-      "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
-      "dct": "http://purl.org/dc/terms/",
-      "dsv": "https://w3id.org/dsv#",
-      "owl": "http://www.w3.org/2002/07/owl#",
-      "skos": "http://www.w3.org/2004/02/skos/core#",
-      "vann": "http://purl.org/vocab/vann/",
-      "cardinality": "https://w3id.org/dsv/cardinality#",
-      "requirement": "https://w3id.org/dsv/requirement-level#",
-      "role": "https://w3id.org/dsv/class-role#",
-      "prof": "http://www.w3.org/ns/dx/prof/",
+      ...DEFAULT_RDF_PREFIXES,
       ...invertedPrefixMap,
     };
   }
