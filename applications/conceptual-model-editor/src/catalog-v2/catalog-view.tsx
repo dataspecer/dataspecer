@@ -103,6 +103,7 @@ function CatalogSearchBar({ state, controller }: {
   }, [value, controller])
 
   const onClear = () => {
+    isUserInputRef.current = true;
     setValue("");
     controller.onChangeSearch("");
   };
