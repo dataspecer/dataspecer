@@ -60,10 +60,35 @@ export async function generateDsvApplicationProfile(forExportModels: ModelDescri
     },
   );
 
-  const dsvString = await DataSpecificationVocabulary.conceptualModelToRdf(applicationProfile, {
+  // Prepare configuration with custom prefixes merged with defaults
+  // If prefixMap is provided and not empty, merge it with the default prefixes
+  // Otherwise, don't pass the prefixes property to use defaults
+  const config: any = {
     prettyPrint: true,
-    prefixes: prefixMap,
-  });
+  };
+  if (prefixMap && Object.keys(prefixMap).length > 0) {
+    // Convert prefixMap from { baseIri: prefixName } to { prefixName: baseIri } format
+    const invertedPrefixMap = Object.fromEntries(
+      Object.entries(prefixMap).map(([baseIri, prefixName]) => [prefixName, baseIri])
+    );
+    // Merge custom prefixes with defaults
+    config.prefixes = {
+      "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+      "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+      "dct": "http://purl.org/dc/terms/",
+      "dsv": "https://w3id.org/dsv#",
+      "owl": "http://www.w3.org/2002/07/owl#",
+      "skos": "http://www.w3.org/2004/02/skos/core#",
+      "vann": "http://purl.org/vocab/vann/",
+      "cardinality": "https://w3id.org/dsv/cardinality#",
+      "requirement": "https://w3id.org/dsv/requirement-level#",
+      "role": "https://w3id.org/dsv/class-role#",
+      "prof": "http://www.w3.org/ns/dx/prof/",
+      ...invertedPrefixMap,
+    };
+  }
+
+  const dsvString = await DataSpecificationVocabulary.conceptualModelToRdf(applicationProfile, config);
 
   return dsvString;
 }
