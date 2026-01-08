@@ -385,7 +385,7 @@ export async function generateSpecification(packageId: string, context: Generate
 
       // Serialize the model in DSV
 
-      const dsv = await generateDsvApplicationProfile([model], models, modelIri);
+      const dsv = await generateDsvApplicationProfile([model], models, modelIri, prefixMap);
       idToIriMapping = {
         ...idToIriMapping,
         ...(await getIdToIriMapping([model])),

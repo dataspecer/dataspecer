@@ -34,7 +34,7 @@ export async function generateLightweightOwl(entities: Record<string, SemanticMo
 /**
  * Generates Application Profile DSV representation.
  */
-export async function generateDsvApplicationProfile(forExportModels: ModelDescription[], forContextModels: ModelDescription[], iri: string) {
+export async function generateDsvApplicationProfile(forExportModels: ModelDescription[], forContextModels: ModelDescription[], iri: string, prefixMap?: Record<string, string>) {
   // Step 1: Prepare models in the required format.
 
   const modelMapping = (model: ModelDescription) => ({
@@ -62,7 +62,7 @@ export async function generateDsvApplicationProfile(forExportModels: ModelDescri
 
   const dsvString = await DataSpecificationVocabulary.conceptualModelToRdf(applicationProfile, {
     prettyPrint: true,
-    prefixes: undefined, // todo
+    prefixes: prefixMap,
   });
 
   return dsvString;
