@@ -5,7 +5,7 @@ import { useResource } from "@dataspecer/federated-observable-store-react/use-re
 import { Alert, Box, Collapse, FormControl, FormControlLabel, FormLabel, Grid, Radio, RadioGroup, Switch, TextField, Typography } from "@mui/material";
 import { isEqual } from "lodash";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 import { InfoHelp } from "../../../../components/info-help";
 import { SetCardinalityPsm } from "../../../operations/set-cardinality";
 import { SetRootCollection } from "../../../operations/set-root-collection";
@@ -226,7 +226,7 @@ export const DataPsmSchemaCard: React.FC<{ iri: string; onClose: () => void }> =
           <Box sx={{ mb: 3 }}>
             <Typography variant="subtitle1" component="h2">
               {t("title cardinality")}{" "}
-              <InfoHelp text="Určuje kolikrát se v datech může vyskytovat kořenový element. Toto nastavení je specifické pro různé formáty a může způsobit obalení schématu do pomocné struktury pro dosažení požadované kardniality." />
+              <InfoHelp text={t("title cardinality help")} />
             </Typography>
 
             {cardinality && <CardinalitySelector value={cardinality} onChange={setCardinality} />}
@@ -332,13 +332,15 @@ export const DataPsmSchemaCard: React.FC<{ iri: string; onClose: () => void }> =
 
             <Collapse in={!skipRootElement}>
               <Typography variant="subtitle1" component="h2">
-                Název kořenového elementu sloužícího jako kontejner
-                <InfoHelp text="V příadě kardinality kořenového elementu jiné než 1..1 je potřeba obalit elementy do pomocného elementu. Toto nastavení specifikuje název takového elementu." />
+                {t("XML root container name")}
+                <InfoHelp text={t("XML root container name help")} />
               </Typography>
 
               <Collapse in={!isEqual(cardinality, cardinalityFromPsm()) && !rootCollection.enforce}>
                 <Alert severity="info">
-                  Kontejner <code>&lt;{currentXmlContainer}&gt;</code> bude použit vždy, protože je kardinalita jiná než 1..1.
+                  <Trans i18nKey="XML root container alert" t={t} values={{ container: currentXmlContainer }}>
+                    <code />
+                  </Trans>
                 </Alert>
               </Collapse>
 
@@ -346,7 +348,7 @@ export const DataPsmSchemaCard: React.FC<{ iri: string; onClose: () => void }> =
                 <FormControlLabel
                   sx={{ mt: 2, flexShrink: 0 }}
                   control={<Switch checked={rootCollection.enforce} onChange={(e) => setRootCollection(c => ({...c, enforce: e.target.checked}))} />}
-                  label="použít vždy"
+                  label={t("XML root container always use")}
                 />
                 <TextField
                   autoFocus
