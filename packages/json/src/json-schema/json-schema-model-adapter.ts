@@ -487,8 +487,21 @@ function structureModelPrimitiveToJsonDefinition(
       break;
     case XSD.decimal:
     case OFN.decimal:
-      result = new JsonSchemaNumber();
-      result.title = context.stringSelector(OFN_LABELS[OFN.decimal]);
+      // Check configuration to determine if decimal should be string or number
+      const decimalRepresentation = context.configuration.jsonLdDecimalRepresentation ?? "default";
+      const useStringForDecimal = decimalRepresentation === "as-string" || decimalRepresentation === "default";
+      
+      if (useStringForDecimal) {
+        // Represent decimal as string with regex pattern to avoid double conversion issues in JSON-LD
+        result = new JsonSchemaString(null);
+        result.title = context.stringSelector(OFN_LABELS[OFN.decimal]);
+        // Regex pattern for decimal numbers (optional sign, digits, optional decimal point and digits)
+        result.pattern = "^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$";
+      } else {
+        // Traditional number representation
+        result = new JsonSchemaNumber();
+        result.title = context.stringSelector(OFN_LABELS[OFN.decimal]);
+      }
       break;
     case XSD.integer:
     case OFN.integer:

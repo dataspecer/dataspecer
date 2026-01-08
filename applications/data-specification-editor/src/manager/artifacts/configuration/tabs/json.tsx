@@ -122,6 +122,27 @@ export const Json: FC<{
       </Typography>
 
 
+      <Typography variant="h6" sx={{mt: 3}}>Decimal representation</Typography>
+      <Grid container spacing={2}>
+        <Grid item xs={12}>
+          <SelectWithDefault
+              current={input ?? {}}
+              itemKey="jsonLdDecimalRepresentation"
+              onChange={onChange}
+              default={defaultObject}
+              options={{
+                "default": "Default (as string)",
+                "as-string": "As string with pattern",
+                "as-number": "As number",
+              }}
+          />
+        </Grid>
+      </Grid>
+      <Typography variant="body2" sx={{mt: 1}}>
+        Controls how xsd:decimal types are represented in JSON Schema. Using string representation (recommended) prevents precision loss when JSON parsers convert numbers to doubles before JSON-LD processing. The JSON-LD context will always map to xsd:decimal.
+      </Typography>
+
+
       <Typography variant="h6" sx={{mt: 3}}>References</Typography>
       <Grid container rowGap={1}>
         <Grid item xs={12}>

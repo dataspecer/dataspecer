@@ -67,6 +67,17 @@ export const DefaultJsonConfiguration =  {
     dereferenceContext: false as boolean,
 
     includeContextInExample: true as boolean,
+
+    /**
+     * How to represent xsd:decimal in JSON Schema and JSON-LD.
+     * - "as-number" - decimal is represented as JSON number type
+     * - "as-string" - decimal is represented as JSON string with regex pattern (recommended for JSON-LD)
+     * - "default" - uses the default behavior (as-string for compatibility)
+     * 
+     * When set to "as-string", prevents issues with JSON parsers converting decimals to doubles
+     * before JSON-LD processing, which can result in invalid RDF literals like "1e2"^^xsd:decimal.
+     */
+    jsonLdDecimalRepresentation: "default" as "as-number" | "as-string" | "default",
 }
 
 export type JsonConfiguration = typeof DefaultJsonConfiguration;
