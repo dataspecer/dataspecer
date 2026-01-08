@@ -38,6 +38,16 @@ import { pathRelative } from "@dataspecer/core/core/utilities/path-relative";
 import { JsonStructureModelClass } from "../json-structure-model/structure-model-class.ts";
 import { JSON_LD_GENERATOR } from "../json-ld/json-ld-generator.ts";
 
+/**
+ * Regex pattern for xsd:decimal validation in JSON Schema.
+ * Matches decimal numbers with:
+ * - Optional sign (+ or -)
+ * - Integer part followed by optional decimal part, OR
+ * - Decimal part only (e.g., ".5")
+ * Examples: "123", "-45.67", "+0.5", ".123"
+ */
+const XSD_DECIMAL_PATTERN = "^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$";
+
 export interface JsonTypeStructureModelProperty extends StructureModelProperty {
   typeKeyValues: string[];
 }
@@ -487,8 +497,19 @@ function structureModelPrimitiveToJsonDefinition(
       break;
     case XSD.decimal:
     case OFN.decimal:
-      result = new JsonSchemaNumber();
-      result.title = context.stringSelector(OFN_LABELS[OFN.decimal]);
+      // Check configuration to determine if decimal should be string or number
+      const useStringForDecimal = context.configuration.jsonLdDecimalAsString ?? true;
+      
+      if (useStringForDecimal) {
+        // Represent decimal as string with regex pattern to avoid double conversion issues in JSON-LD
+        result = new JsonSchemaString(null);
+        result.title = context.stringSelector(OFN_LABELS[OFN.decimal]);
+        result.pattern = XSD_DECIMAL_PATTERN;
+      } else {
+        // Traditional number representation
+        result = new JsonSchemaNumber();
+        result.title = context.stringSelector(OFN_LABELS[OFN.decimal]);
+      }
       break;
     case XSD.integer:
     case OFN.integer:
