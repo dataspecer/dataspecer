@@ -128,10 +128,10 @@ export const Json: FC<{
         itemKey="jsonLdDecimalAsString"
         onChange={onChange}
         default={defaultObject}
-        label={"Represent xsd:decimal as string with pattern"}
+        label={"Represent xsd:decimal as a string with pattern"}
       />
       <Typography variant="body2" sx={{mt: 1}}>
-        When enabled (default), xsd:decimal is represented as a string with regex pattern in JSON Schema. This prevents precision loss when JSON parsers convert numbers to doubles before JSON-LD processing. The JSON-LD context will always map to xsd:decimal.
+        When enabled, xsd:decimal is represented as a string with regex pattern in JSON Schema. This prevents cases when JSON valid numbers are not valid against xsd:decimal. The JSON-LD context will always map to xsd:decimal.
       </Typography>
 
 
