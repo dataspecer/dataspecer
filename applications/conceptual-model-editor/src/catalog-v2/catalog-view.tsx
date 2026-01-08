@@ -84,9 +84,17 @@ function CatalogSearchBar({ state, controller }: {
 }) {
   // We use local state for a debounce.
   const [value, setValue] = useState(state.search);
+  // Track if the value change originated from user input
+  const isUserInputRef = React.useRef(false);
 
-  // Update from props.
-  useEffect(() => setValue(state.search), [state.search]);
+  // Update from props only if the change didn't come from user input.
+  // This prevents overwriting the input field while the user is typing.
+  useEffect(() => {
+    if (!isUserInputRef.current) {
+      setValue(state.search);
+    }
+    isUserInputRef.current = false;
+  }, [state.search]);
 
   // Debounce.
   React.useEffect(() => {
@@ -104,7 +112,10 @@ function CatalogSearchBar({ state, controller }: {
       <input
         className="grow" type="text"
         value={value}
-        onChange={event => setValue(event.target.value)}
+        onChange={event => {
+          isUserInputRef.current = true;
+          setValue(event.target.value);
+        }}
         title={t("catalog.search-title")}
       />
       <button
