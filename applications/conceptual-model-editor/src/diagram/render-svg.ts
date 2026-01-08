@@ -97,7 +97,7 @@ function defaultContext(): Context {
 function cloneNode<Type extends Element>(context: Context, source: Type): Type {
   const target = source.cloneNode() as Type;
 
-  // OnBeforeCloneChildren
+  // onBeforeCloneChildren
   const nextContext = { ...context };
   if (target instanceof HTMLElement) {
     const className = target.className;
@@ -112,13 +112,13 @@ function cloneNode<Type extends Element>(context: Context, source: Type): Type {
       nextContext.edgeMarker = true;
     }
   }
-  // OnBeforeCloneChildren : end
+  // onBeforeCloneChildren : end
 
   const children = Array.from(source.childNodes);
   for (const child of children) {
     if (child instanceof Element) {
 
-      // ShouldCloneChild
+      // shouldCloneChild
       if (child instanceof HTMLElement) {
         const className = child.className;
         if (className.includes("react-flow__handle")) {
@@ -132,7 +132,7 @@ function cloneNode<Type extends Element>(context: Context, source: Type): Type {
           continue;
         }
       }
-      // ShouldCloneChild : end
+      // shouldCloneChild : end
       const childClone = cloneNode(nextContext, child);
       target.appendChild(childClone);
 
@@ -143,7 +143,7 @@ function cloneNode<Type extends Element>(context: Context, source: Type): Type {
     }
   }
 
-  // OnAfterCloneChildren
+  // onAfterCloneChildren
   if (target instanceof Element) {
     Array.from(target.attributes).forEach(({ name }) => {
       if (name.startsWith("data-")) {
@@ -178,7 +178,7 @@ function cloneNode<Type extends Element>(context: Context, source: Type): Type {
       }
     }
   }
-  // OnAfterCloneChildren : end
+  // onAfterCloneChildren : end
 
   return target;
 }
