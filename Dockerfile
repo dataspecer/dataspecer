@@ -1,16 +1,20 @@
-FROM oven/bun:1.2.19-alpine AS base
+FROM oven/bun:1.3.5-alpine AS base
 
 # Builds in /usr/src/app and copies to /usr/src/final to avoid copying build dependencies
 FROM base AS builder
 WORKDIR /usr/src/app
 RUN mkdir -p /usr/src/final/ /usr/src/final/dist/
 
+# We need to install openssl for prisma to link paths correctly
+# Then we need to install it again later to have it in the final image
+RUN apk add --no-cache openssl
+
 COPY applications/ applications/
 COPY services/ services/
 COPY packages/ packages/
 COPY .npmrc package-lock.json package.json turbo.json ./docker/ws/docker-configure.sh ./docker/ws/docker-copy.sh ./
 
-RUN sed -i "/packageManager/ c \"packageManager\": \"bun@1.2.19\"," package.json
+RUN sed -i "/packageManager/ c \"packageManager\": \"bun@1.3.5\"," package.json
 RUN bun install
 
 ARG GIT_COMMIT
@@ -79,7 +83,10 @@ ENV DATASPECER_GIT_COMMIT=${GIT_COMMIT} \
 
 # Makes directory accessible for the user
 # Instals prisma for migrations and cleans install cache
-RUN chmod a+rwx /usr/src/app && \
+RUN apk add --no-cache openssl && \
+	rm -rf /var/lib/apt/lists/* && \
+	rm -rf /var/cache/apk/* && \
+  chmod a+rwx /usr/src/app && \
   bun install --no-cache prisma@6 && \
   rm -rf ~/.bun ~/.cache
 
