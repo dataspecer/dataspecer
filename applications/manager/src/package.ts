@@ -60,12 +60,17 @@ export async function modifyUserMetadata(iri: string, metadata: {label?: Languag
 }
 
 export async function refreshResourceMetadata(iri: string) {
-    const resource = await packageService.getResource(iri);
-    const copiedResourcesMemory = {...resourcesMemory.current};
-    if (copiedResourcesMemory[iri] && resource) {
-        copiedResourcesMemory[iri] = {...copiedResourcesMemory[iri], metadata: resource.metadata};
+    try {
+        const resource = await packageService.getResource(iri);
+        const copiedResourcesMemory = {...resourcesMemory.current};
+        if (copiedResourcesMemory[iri] && resource) {
+            copiedResourcesMemory[iri] = {...copiedResourcesMemory[iri], metadata: resource.metadata};
+        }
+        setResourcesReact(copiedResourcesMemory);
+        resourcesMemory.current = copiedResourcesMemory;
+    } catch (error) {
+        console.error("Failed to refresh resource metadata:", error);
     }
-    setResourcesReact(copiedResourcesMemory);
 }
 
 export async function deleteResource(iri: string) {
