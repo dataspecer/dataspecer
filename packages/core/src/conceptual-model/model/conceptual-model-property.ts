@@ -15,6 +15,8 @@ export class ConceptualModelProperty {
 
   humanDescription: LanguageString | null = null;
 
+  humanUsageNote: LanguageString | null = null;
+
   cardinalityMin: number | null = null;
 
   cardinalityMax: number | null = null;
