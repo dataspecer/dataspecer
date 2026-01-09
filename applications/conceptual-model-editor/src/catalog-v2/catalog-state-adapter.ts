@@ -308,10 +308,10 @@ export const preserveCollapsedState = (
       }
 
       // Recursively apply to nested items
-      if (item.items.length > 0) {
+      if (nextItem.items.length > 0) {
         nextItem = {
           ...nextItem,
-          items: applyCollapsedState(item.items),
+          items: applyCollapsedState(nextItem.items),
         };
       }
 
