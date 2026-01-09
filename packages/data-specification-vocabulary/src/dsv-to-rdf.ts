@@ -41,9 +41,15 @@ interface DsvToRdfConfiguration {
 export async function dsvToRdf(
   model: ApplicationProfile, configuration: DsvToRdfConfiguration,
 ): Promise<string> {
+  const defaultConfig = createDefaultConfiguration();
   const effectiveConfiguration = {
-    ...createDefaultConfiguration(),
+    ...defaultConfig,
     ...configuration,
+    // Properly merge prefixes: defaults + custom prefixes
+    prefixes: {
+      ...defaultConfig.prefixes,
+      ...(configuration.prefixes || {}),
+    },
   };
   const prefixes = {
     ...(model.iri ? {"": model.iri} : {}),

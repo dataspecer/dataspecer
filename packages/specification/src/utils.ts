@@ -14,24 +14,6 @@ import { GenerateSpecificationContext } from "./specification.ts";
 import { createSemicShaclStylePolicy, createShaclForProfile, shaclToRdf } from "@dataspecer/shacl-v2";
 
 /**
- * Default RDF prefixes used in DSV serialization.
- * These are merged with any custom prefixes provided by the model.
- */
-const DEFAULT_RDF_PREFIXES = {
-  "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-  "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
-  "dct": "http://purl.org/dc/terms/",
-  "dsv": "https://w3id.org/dsv#",
-  "owl": "http://www.w3.org/2002/07/owl#",
-  "skos": "http://www.w3.org/2004/02/skos/core#",
-  "vann": "http://purl.org/vocab/vann/",
-  "cardinality": "https://w3id.org/dsv/cardinality#",
-  "requirement": "https://w3id.org/dsv/requirement-level#",
-  "role": "https://w3id.org/dsv/class-role#",
-  "prof": "http://www.w3.org/ns/dx/prof/",
-} as const;
-
-/**
  * Helper function that check whether the model is a vocabulary. If not, it is probably an application profile.
  */
 export function isModelVocabulary(model: Record<string, SemanticModelEntity>): boolean {
@@ -78,22 +60,18 @@ export async function generateDsvApplicationProfile(forExportModels: ModelDescri
     },
   );
 
-  // Prepare configuration with custom prefixes merged with defaults
-  // If prefixMap is provided and not empty, merge it with the default prefixes
-  // Otherwise, don't pass the prefixes property to use defaults
+  // Build configuration for RDF generation.
+  // Only pass custom prefixes if they exist; dsvToRdf will merge them with its defaults.
+  // Do NOT pass prefixes: undefined as that overrides the defaults.
   const config: { prettyPrint: boolean; prefixes?: Record<string, string> } = {
     prettyPrint: true,
   };
+  
   if (prefixMap && Object.keys(prefixMap).length > 0) {
     // Convert prefixMap from { baseIri: prefixName } to { prefixName: baseIri } format
-    const invertedPrefixMap = Object.fromEntries(
+    config.prefixes = Object.fromEntries(
       Object.entries(prefixMap).map(([baseIri, prefixName]) => [prefixName, baseIri])
     );
-    // Merge custom prefixes with defaults
-    config.prefixes = {
-      ...DEFAULT_RDF_PREFIXES,
-      ...invertedPrefixMap,
-    };
   }
 
   const dsvString = await DataSpecificationVocabulary.conceptualModelToRdf(applicationProfile, config);
