@@ -6,7 +6,7 @@ import * as Actions from "./catalog-action";
 import { configuration, createLogger } from "../application";
 import { Language } from "../configuration";
 import { createUiModelState } from "../dataspecer/ui-model";
-import { updateItemsOrder, updatePath, updateVisualEntities } from "./catalog-state-adapter";
+import { updateItemsOrder, updatePath, updateVisualEntities, preserveCollapsedState } from "./catalog-state-adapter";
 
 const LOG = createLogger(import.meta.url);
 
@@ -60,10 +60,12 @@ export const useController = (
       configuration().defaultModelColor);
 
     const availableLayoutItems = state.availableLayouts
-      .map(layout => updatePath(
-        updateVisualEntities(visualModel,
-          updateItemsOrder(
-            layout.layoutFactory(uiModelState)))));
+      .map((layout, index) => preserveCollapsedState(
+        updatePath(
+          updateVisualEntities(visualModel,
+            updateItemsOrder(
+              layout.layoutFactory(uiModelState)))),
+        state.availableLayoutItems[index] ?? []));
 
     return {
       ...state,
