@@ -59,6 +59,15 @@ export async function modifyUserMetadata(iri: string, metadata: {label?: Languag
     setResourcesReact(copiedResourcesMemory);
 }
 
+export async function refreshResourceMetadata(iri: string) {
+    const resource = await packageService.getResource(iri);
+    const copiedResourcesMemory = {...resourcesMemory.current};
+    if (copiedResourcesMemory[iri] && resource) {
+        copiedResourcesMemory[iri] = {...copiedResourcesMemory[iri], metadata: resource.metadata};
+    }
+    setResourcesReact(copiedResourcesMemory);
+}
+
 export async function deleteResource(iri: string) {
     await packageService.deletePackage(iri);
     const copiedResourcesMemory = {...resourcesMemory.current};
