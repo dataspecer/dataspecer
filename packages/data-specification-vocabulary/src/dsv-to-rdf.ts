@@ -57,7 +57,7 @@ export async function dsvToRdf(
   };
   const n3Writer = new N3.Writer({ prefixes });
   (new DsvWriter(n3Writer, model)).writeConceptualModel();
-  // Concert to a string.
+  // Convert to a string.
   return new Promise((resolve, reject) => n3Writer.end((error, result) => {
     if (error) {
       reject(error);
