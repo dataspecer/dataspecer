@@ -35,6 +35,12 @@ export class StructureModelSchemaRoot {
   orTechnicalLabel: string | null = null;
 
   /**
+   * When the root references an OR, this stores the structure schema IRI where the OR is defined.
+   * This is used to determine which schema to import when generating XSD.
+   */
+  orStructureSchema: string | null = null;
+
+  /**
    * Current PSMv1 does not have concept of "root". Therefore the technical
    * label of the schema is used as a technical label of root. The root in this
    * case is an "association". Many formats wont use it. For example JSON

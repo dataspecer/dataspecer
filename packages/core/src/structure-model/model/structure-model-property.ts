@@ -104,6 +104,12 @@ export class StructureModelProperty {
   orTechnicalLabel: string | null = null;
 
   /**
+   * When the property references an OR, this stores the structure schema IRI where the OR is defined.
+   * This is used to determine which schema to import when generating XSD.
+   */
+  orStructureSchema: string | null = null;
+
+  /**
    * If true the output is not materialized.
    */
   dematerialize: boolean | null = null;
