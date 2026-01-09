@@ -67,9 +67,19 @@ export const useController = (
               layout.layoutFactory(uiModelState)))),
         state.availableLayoutItems[index] ?? []));
 
+    // Reapply search filter if there is one
+    let items = availableLayoutItems[layoutIndex];
+    if (state.search) {
+      const sanitizedValue = state.search.toLocaleLowerCase();
+      const filter = (item: TreeNode): boolean => {
+        return item.filterText.includes(sanitizedValue);
+      };
+      items = updateFilter(items, filter);
+    }
+
     return {
       ...state,
-      items: availableLayoutItems[layoutIndex],
+      items,
       availableLayoutItems
     };
   });
