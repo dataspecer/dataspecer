@@ -176,7 +176,7 @@ function CatalogItems({ layout, items, controller }: {
   // Restore scroll position after items change
   React.useEffect(() => {
     const container = scrollContainerRef.current;
-    if (container && scrollPositionRef.current > 0) {
+    if (container) {
       container.scrollTop = scrollPositionRef.current;
     }
   }, [items]);
