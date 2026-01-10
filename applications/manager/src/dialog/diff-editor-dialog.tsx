@@ -48,7 +48,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
     createdDatastores, addToCreatedDatastoresAndAddToCache,
     createdFilesystemNodes,
     removedTreePaths, setRemovedTreePaths,
-    convertedCacheForMergeFromContent,
+    convertedCacheContentForMergeFrom,
     mergeFromSvg, mergeToSvg,
     comparisonTabType, setComparisonTabType,
     isLoadingTextData,
@@ -145,7 +145,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromResourceIri, initialMerge
               {/* The minus "ml" shenanigans in classNames are because of some weird spaces caused by overflow-y-auto in the diff editor */}
               <ResizableHandle className="-ml-16" withHandle autoFocus={false} />
               <ResizablePanel className="overflow-hidden flex flex-col">
-                { isLoadingTextData && Object.keys(convertedCacheForMergeFromContent).length !== 0 &&     // The check for non-empty objects is there se we don't show loading on initial load
+                { isLoadingTextData && Object.keys(convertedCacheContentForMergeFrom).length !== 0 &&     // The check for non-empty objects is there se we don't show loading on initial load
                   <Loader className="mr-2 h-4 w-4 animate-spin" />
                 }
                 { !isLoadingTextData &&
