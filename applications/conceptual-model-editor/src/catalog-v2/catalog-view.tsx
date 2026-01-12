@@ -170,6 +170,29 @@ function CatalogItems({ layout, items, controller }: {
   items: TreeNode[],
   controller: CatalogController,
 }) {
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const scrollPositionRef = React.useRef<number>(0);
+
+  // Save scroll position before items change
+  React.useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      const handleScroll = () => {
+        scrollPositionRef.current = container.scrollTop;
+      };
+      container.addEventListener("scroll", handleScroll);
+      return () => container.removeEventListener("scroll", handleScroll);
+    }
+  }, []);
+
+  // Restore scroll position after items change
+  React.useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.scrollTop = scrollPositionRef.current;
+    }
+  }, [items]);
+
   const onClick = useCallback((event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     const parent = (event.target as any).parentElement;
     controller.onHandleClick(
@@ -183,6 +206,7 @@ function CatalogItems({ layout, items, controller }: {
 
   return (
     <div
+      ref={scrollContainerRef}
       className="flex flex-col overflow-y-scroll h-full"
       onClick={onClick}
     >
