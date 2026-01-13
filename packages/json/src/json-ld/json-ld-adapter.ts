@@ -9,6 +9,7 @@ import { JSON_LD_GENERATOR } from "./json-ld-generator.ts";
 import { AggregatedEntityInApplicationProfileAggregator, LocalEntityWrapped, splitProfileToSingleConcepts } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
 import { SemanticModelClass, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import { SemanticModelClassProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import type { AggregatedProfiledSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/profile/aggregator";
 
 // JSON-LD version
 const VERSION = 1.1;
@@ -241,14 +242,13 @@ export class JsonLdAdapter {
             continue;
           }
 
-          // For each property we need to find the original concepts (not
-          // profile) and assign them to appropriate classes
-
-          const semanticPropertyWrapped = this.semanticModel[property.pimIri] as AggregatedEntityInApplicationProfileAggregator<SemanticModelRelationship>;
+          const semanticPropertyWrapped = this.semanticModel[property.pimIri] as AggregatedEntityInApplicationProfileAggregator<SemanticModelRelationship & AggregatedProfiledSemanticModelRelationship>;
           const concepts = splitProfileToSingleConcepts(semanticPropertyWrapped);
 
-          if (concepts.length > 1) {
-            throw new Error("JSON-LD generator: Multiprofile for relationships is not supported by JSON generators!");
+          const conceptIris = [... new Set(semanticPropertyWrapped.aggregatedEntity.ends[property.isReverse ? 0 : 1].conceptIris)];
+
+          if (conceptIris.length > 1) {
+            throw new Error("JSON-LD generator: Multiprofile for relationships is not supported by JSON generators! Given relationship has following IRIs: " + conceptIris.join(", "));
           }
 
           const relationshipConceptWrapped = concepts[0] as LocalEntityWrapped<SemanticModelRelationship>;
