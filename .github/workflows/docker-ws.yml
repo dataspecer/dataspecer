@@ -62,8 +62,8 @@ jobs:
           # No tags, just outputs section to publish digest
           outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
           # We need to add scope to properly cache per platform
-          cache-from: type=gha,scope=${{ matrix.platform }}
-          cache-to: type=gha,mode=min,scope=${{ matrix.platform }}
+          cache-from: type=gha,scope=${{ matrix.platform }}TODO_REMOVE_THIS
+          cache-to: type=gha,mode=min,scope=${{ matrix.platform }}TODO_REMOVE_THIS
           build-args: |
             GIT_COMMIT=${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
             GIT_REF=${{ github.event_name == 'pull_request' && format('refs/heads/{0}', github.event.pull_request.head.ref) || github.ref }}
