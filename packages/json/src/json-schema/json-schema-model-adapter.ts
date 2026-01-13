@@ -57,9 +57,12 @@ function isJsonTypeStructureModelProperty(property: StructureModelProperty): pro
 }
 
 function typePropertyWithValues(typeKeyValues: string[]): JsonSchemaDefinition {
-  if (typeKeyValues.length === 1) {
+  // Deduplicate the type values
+  const uniqueTypeKeyValues = Array.from(new Set(typeKeyValues));
+  
+  if (uniqueTypeKeyValues.length === 1) {
     const constProp = new JsonSchemaConst();
-    constProp.value = typeKeyValues[0];
+    constProp.value = uniqueTypeKeyValues[0];
 
     const arr = new JsonSchemaArray();
     arr.contains = constProp;
@@ -73,7 +76,7 @@ function typePropertyWithValues(typeKeyValues: string[]): JsonSchemaDefinition {
     return oneOf;
   } else {
     const arr = new JsonSchemaArray();
-    arr.allOf = typeKeyValues.map((type) => {
+    arr.allOf = uniqueTypeKeyValues.map((type) => {
       const constProp = new JsonSchemaConst();
       constProp.value = type;
       

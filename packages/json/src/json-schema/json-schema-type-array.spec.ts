@@ -1,5 +1,5 @@
 import { writeJsonSchema } from "./json-schema-writer.ts";
-import { JsonSchema, JsonSchemaArray, JsonSchemaConst, JsonSchemaString } from "./json-schema-model.ts";
+import { JsonSchema, JsonSchemaAny, JsonSchemaArray, JsonSchemaConst, JsonSchemaString } from "./json-schema-model.ts";
 import { MemoryOutputStream } from "@dataspecer/core/io/stream/memory-output-stream";
 
 test("Generate type array with multiple values (with contains)", async () => {
@@ -67,4 +67,43 @@ test("Generate type array with single value (oneOf with contains)", async () => 
   expect(json.contains).toBeDefined();
   expect(json.contains.const).toBe("Koncept");
   expect(json.items.type).toBe("string");
+});
+
+test("Generate type array with duplicate values should use single value behavior", async () => {
+  // This tests the fix for the issue: when profiling a class multiple times
+  // with the same type value, it should use the single type behavior (oneOf)
+  // instead of creating duplicates in allOf
+  
+  // Import the typePropertyWithValues function behavior
+  // When typeKeyValues contains duplicates like ["Datová sada", "Datová sada"]
+  // it should deduplicate and use the single value behavior
+  
+  const constProp = new JsonSchemaConst();
+  constProp.value = "Datová sada";
+  
+  const arr = new JsonSchemaArray();
+  arr.contains = constProp;
+  arr.items = new JsonSchemaString(null);
+  
+  const oneOf = new JsonSchemaAny();
+  oneOf.oneOf = [constProp, arr];
+  
+  // Wrap in JsonSchema
+  const schema = new JsonSchema();
+  schema.root = oneOf;
+  
+  // Write to JSON
+  const stream = new MemoryOutputStream();
+  await writeJsonSchema(schema, stream);
+  const output = stream.getContent();
+  const json = JSON.parse(output);
+  
+  // Verify the structure uses oneOf (single type behavior) not allOf
+  expect(json.oneOf).toBeDefined();
+  expect(json.oneOf).toHaveLength(2);
+  expect(json.oneOf[0].const).toBe("Datová sada");
+  expect(json.oneOf[1].type).toBe("array");
+  expect(json.oneOf[1].contains).toBeDefined();
+  expect(json.oneOf[1].contains.const).toBe("Datová sada");
+  expect(json.oneOf[1].items.type).toBe("string");
 });
