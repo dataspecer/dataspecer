@@ -250,10 +250,10 @@ export class JsonLdAdapter {
           if (concepts.length > 1) {
             // Check if all concepts point to the same property IRI
             const propertyIris = concepts.map(c => c.aggregatedEntity.iri).filter(iri => iri != null);
-            const uniqueIris = [...new Set(propertyIris)];
+            const uniquePropertyIris = [...new Set(propertyIris)];
             
             // If we don't have enough valid IRIs to compare, or they differ, throw error
-            if (propertyIris.length === 0 || uniqueIris.length > 1) {
+            if (propertyIris.length === 0 || uniquePropertyIris.length > 1) {
               throw new Error("JSON-LD generator: Multiprofile for relationships is not supported by JSON generators!");
             }
           }
