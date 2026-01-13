@@ -248,7 +248,16 @@ export class JsonLdAdapter {
           const concepts = splitProfileToSingleConcepts(semanticPropertyWrapped);
 
           if (concepts.length > 1) {
-            throw new Error("JSON-LD generator: Multiprofile for relationships is not supported by JSON generators!");
+            // Check if all concepts point to the same property IRI
+            const propertyIris = concepts.map(c => c.aggregatedEntity.iri).filter(iri => iri !== null);
+            const uniqueIris = [...new Set(propertyIris)];
+            
+            if (uniqueIris.length > 1) {
+              throw new Error("JSON-LD generator: Multiprofile for relationships is not supported by JSON generators!");
+            }
+            
+            // If all profiles are for the same property, we can continue with normal operation
+            console.log("JSON-LD generator: Multiprofile detected but all profiles point to the same property IRI. Continuing with normal operation.");
           }
 
           const relationshipConceptWrapped = concepts[0] as LocalEntityWrapped<SemanticModelRelationship>;
