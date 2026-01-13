@@ -178,8 +178,15 @@ export class JsonLdAdapter {
   }
 
   /**
-   * Fills the given context with context of given classes.
-   * The trick is that if classes share something or are profiles, then we need to separate them.
+   * Fills the given context with context of given classes. The trick is that if
+   * classes share something or are profiles, then we need to separate them.
+   *
+   * This approach tries to go through all profiles up in the hierarchy until it
+   * finds a profile with a single IRI (profile that profiles single class). It
+   * uses those profile names for types in json-ld. However, we can have diamond
+   * profiles as well, meaning two profiles profiling same class. Then the
+   * approach becomes more complex as sometimes it is not clear which profile
+   * should be used for the type name.
    */
   protected generateClassesContext(classes: StructureModelClass[], inputContext: object, prefixes: Record<string, string>, customTypeNames: Record<string, string>) {
     // Main context that will be used
@@ -206,7 +213,6 @@ export class JsonLdAdapter {
       }
 
       const contextType = cls.instancesSpecifyTypes === "NEVER" ? "PROPERTY-SCOPED" : (cls.instancesSpecifyTypes === "OPTIONAL" ? "BOTH" : "TYPE-SCOPED");
-      console.log("JSON-LD generator: context type", contextType);
       const propertiesUseParentContext = contextType !== "TYPE-SCOPED";
 
       const semanticClassWrapped = this.semanticModel[cls.pimIri] as LocalEntityWrapped<SemanticModelClassProfile>;
