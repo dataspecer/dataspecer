@@ -465,7 +465,7 @@ function prepareItems(
       continue;
     }
     if (lastLevel !== nextLevel) {
-      result.push(createTitleNode(nextLevel));
+      result.push(createTitleNode(nextLevel, options.language));
     }
     lastLevel = nextLevel;
     result.push(nextItem);
@@ -610,25 +610,53 @@ function prepareProfileOf(
 
 function createTitleNode(
   level: CmeRelationshipProfileMandatoryLevel | null,
+  language: string,
 ): NodeTitleItem {
   return {
     type: NODE_TITLE_ITEM_TYPE,
-    title: selectMandatoryLevel(level) ?? "<<undefined>>",
+    title: selectMandatoryLevel(level, language) ?? "<<undefined>>",
   }
 }
 
 function selectMandatoryLevel(
   level: CmeRelationshipProfileMandatoryLevel | null,
+  language: string,
 ): string | null {
   switch (level) {
   case CmeRelationshipProfileMandatoryLevel.Mandatory:
-    return "<<mandatory>>";
+    return getMandatoryLevelLabel("mandatory", language);
   case CmeRelationshipProfileMandatoryLevel.Optional:
-    return "<<optional>>";
+    return getMandatoryLevelLabel("optional", language);
   case CmeRelationshipProfileMandatoryLevel.Recommended:
-    return "<<recommended>>";
+    return getMandatoryLevelLabel("recommended", language);
   }
   return null;
+}
+
+/**
+ * Returns translated label for mandatory level sections.
+ * Supports English and Czech, falls back to English for other languages.
+ */
+function getMandatoryLevelLabel(
+  level: "mandatory" | "optional" | "recommended",
+  language: string,
+): string {
+  const translations: Record<string, Record<string, string>> = {
+    "en": {
+      "mandatory": "<<mandatory>>",
+      "optional": "<<optional>>",
+      "recommended": "<<recommended>>",
+    },
+    "cs": {
+      "mandatory": "<<povinné>>",
+      "optional": "<<volitelné>>",
+      "recommended": "<<doporučené>>",
+    },
+  };
+  
+  // Use Czech for "cs", otherwise fallback to English
+  const selectedLanguage = language === "cs" ? "cs" : "en";
+  return translations[selectedLanguage][level];
 }
 
 function getEntityDescription(language: string, entity: Entity) {
