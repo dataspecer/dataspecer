@@ -25,6 +25,10 @@ export function propagateLabel(
       ...conceptualClass.humanDescription,
       ...classData.humanDescription,
     };
+    classData.usageNote = {
+      ...conceptualClass.usageNote,
+      ...classData.usageNote,
+    };
     classData.properties.forEach((property) => {
       const conceptualProperty = propertyMap[property.pimIri]?.[property.isReverse ? 1 : 0];
       if (conceptualProperty) {
@@ -35,6 +39,10 @@ export function propagateLabel(
         property.humanDescription = {
           ...conceptualProperty?.humanDescription,
           ...property.humanDescription,
+        };
+        property.usageNote = {
+          ...conceptualProperty?.usageNote,
+          ...property.usageNote,
         };
       }
     });

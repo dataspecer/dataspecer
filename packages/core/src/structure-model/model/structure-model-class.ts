@@ -38,6 +38,11 @@ export class StructureModelClass {
   humanDescription: LanguageString | null = null;
 
   /**
+   * Usage note visible to a human reader.
+   */
+  usageNote: LanguageString | null = null;
+
+  /**
    * Class can extend other classes, the properties of other classes
    * are not included in this class.
    */

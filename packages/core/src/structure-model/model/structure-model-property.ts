@@ -75,6 +75,11 @@ export class StructureModelProperty {
   humanDescription: LanguageString | null = null;
 
   /**
+   * Usage note visible to a human reader.
+   */
+  usageNote: LanguageString | null = null;
+
+  /**
    * Indicates that the association is oriented and reversed. The title and
    * the description may be incorrect because they may describe the forward
    * direction if there is no title and description for the reverse direction.

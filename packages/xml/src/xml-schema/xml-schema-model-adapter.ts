@@ -678,6 +678,7 @@ class XmlSchemaAdapter {
           modelReference: this.options.generateSawsdl ? data.iris : null,
           metaTitle: generateAnnotation ? data.humanLabel : null,
           metaDescription: generateAnnotation ? data.humanDescription : null,
+          metaUsageNote: generateAnnotation ? data.usageNote : null,
           structureModelEntity: data,
         };
   }
