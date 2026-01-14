@@ -11,7 +11,7 @@ export const t: TranslationFunction = (text, ...args) => {
     LOG.missingTranslation(text);
     return text;
   }
-  return translate(entry, text, args);
+  return translate(entry, args);
 };
 
 function translate(translation: string | Function, ...args: unknown[]) {
@@ -35,5 +35,5 @@ export const tData = (
     LOG.missingTranslation(language + ":" + text);
     return text;
   }
-  return translate(entry, text, args);
+  return translate(entry, args);
 }
