@@ -443,7 +443,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
   {{/if}}
 {{/def}}`,
 
-    attachments: `<section>
+    attachments: `<section id="{{#iflng "cs"}}přílohy{{lng}}attachments{{/iflng}}">
   <h2>{{#iflng "cs"}}Přílohy{{lng}}Attachments{{/iflng}}</h2>
   {{#iflng "cs"}}
     <p>Součástí této specifikace jsou následující přílohy.</p>
