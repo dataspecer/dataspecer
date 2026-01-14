@@ -634,6 +634,23 @@ function selectMandatoryLevel(
 }
 
 /**
+ * Translations for mandatory level labels.
+ * Supports English and Czech, with fallback to English for other languages.
+ */
+const MANDATORY_LEVEL_TRANSLATIONS: Record<string, Record<string, string>> = {
+  "en": {
+    "mandatory": "<<mandatory>>",
+    "optional": "<<optional>>",
+    "recommended": "<<recommended>>",
+  },
+  "cs": {
+    "mandatory": "<<povinné>>",
+    "optional": "<<volitelné>>",
+    "recommended": "<<doporučené>>",
+  },
+};
+
+/**
  * Returns translated label for mandatory level sections.
  * Supports English and Czech, falls back to English for other languages.
  */
@@ -641,22 +658,9 @@ function getMandatoryLevelLabel(
   level: "mandatory" | "optional" | "recommended",
   language: string,
 ): string {
-  const translations: Record<string, Record<string, string>> = {
-    "en": {
-      "mandatory": "<<mandatory>>",
-      "optional": "<<optional>>",
-      "recommended": "<<recommended>>",
-    },
-    "cs": {
-      "mandatory": "<<povinné>>",
-      "optional": "<<volitelné>>",
-      "recommended": "<<doporučené>>",
-    },
-  };
-  
   // Use Czech for "cs", otherwise fallback to English
   const selectedLanguage = language === "cs" ? "cs" : "en";
-  return translations[selectedLanguage][level];
+  return MANDATORY_LEVEL_TRANSLATIONS[selectedLanguage][level];
 }
 
 function getEntityDescription(language: string, entity: Entity) {
