@@ -83,7 +83,6 @@ export const EntityNode = (props: NodeProps<Node<ApiNode>>) => {
             <ProfileOf
               options={data.options}
               profileOf={data.profileOf}
-              profileOfLabel={data.profileOfLabel}
             />
           </div>
           {hideIri ? null : <div className="overflow-x-clip text-gray-500 px-1">
@@ -165,13 +164,12 @@ function prepareColor(data: ApiNode) {
   }
 }
 
-function ProfileOf({ options, profileOf, profileOfLabel }: {
+function ProfileOf({ options, profileOf }: {
   options: DiagramOptions,
   profileOf: {
     label: string | null,
     iri: string | null,
   }[],
-  profileOfLabel: string,
 }) {
   if (profileOf.length === 0) {
     return null;
@@ -189,7 +187,7 @@ function ProfileOf({ options, profileOf, profileOfLabel }: {
   }
   return (
     <div className="text-gray-600">
-      {profileOfLabel}&nbsp;
+      {options.profileOfLabel}&nbsp;
       <ul className="inline-grid">
         {labels.filter(item => item !== null)
           .map(item => <li key={item}>{item}</li>)}

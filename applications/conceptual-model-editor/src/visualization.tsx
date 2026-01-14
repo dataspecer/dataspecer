@@ -94,14 +94,15 @@ export const Visualization = () => {
   const aggregatorView = graph.aggregatorView;
   const activeVisualModel = useMemo(() => aggregatorView.getActiveVisualModel(), [aggregatorView]);
 
-  const extendedOptions: ExtendedOptions = {
+  const extendedOptions: ExtendedOptions = useMemo(() => ({
     language: options.language,
     entityMainColor: EntityColor.Entity,
     labelVisual: LabelVisual.Entity,
     profileOfVisual: ProfileOfVisual.Entity,
     displayRangeDetail: true,
     displayRelationshipProfileArchetype: false,
-  };
+    profileOfLabel: tData("diagram.profile-of", options.language),
+  }), []);
 
   useEffect(() => {
     const previousEntities = aggregatorView.getEntities();
@@ -256,8 +257,7 @@ function onChangeVisualModel(
         const node = createDiagramNode(
           options, visualModel, models, entities,
           visualEntity, entity, model,
-          nodeToGroupMapping[visualEntity.identifier] ?? null,
-          options.language);
+          nodeToGroupMapping[visualEntity.identifier] ?? null);
         nextNodes.push(node);
       }
     } else if (isVisualRelationship(visualEntity)) {
@@ -367,7 +367,6 @@ function createDiagramNode(
   entity: SemanticModelClass | SemanticModelClassProfile,
   _semanticModel: EntityModel,
   group: string | null,
-  language: string,
 ): Node {
 
   const isProfile = isSemanticModelClassProfile(entity);
@@ -387,7 +386,6 @@ function createDiagramNode(
     },
     profileOf: prepareProfileOf(
       options, semanticModels, entities, entity),
-    profileOfLabel: tData("diagram.profile-of", language),
     items: prepareItems(
       options, visualModel, semanticModels, entities, visualNode),
     vocabulary: prepareVocabulary(
