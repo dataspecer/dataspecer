@@ -326,6 +326,24 @@ class ViewAdapter {
   private jsonSchemaArrayToViewModel(definition: JsonSchemaArray): JsonSchemaArrayViewModel {
     const minItems = 0;
     const maxItems = null;
+    
+    // Extract required type values from allOf contains constraints
+    // This is used for type arrays like ["Type1", "Type2"] that must contain specific values
+    let requiredTypeValues: string[] | null = null;
+    if (definition.allOf && definition.allOf.length > 0) {
+      const extractedValues: string[] = [];
+      for (const constraint of definition.allOf) {
+        if (JsonSchemaArray.is(constraint) && constraint.contains) {
+          if (JsonSchemaConst.is(constraint.contains)) {
+            extractedValues.push(String(constraint.contains.value));
+          }
+        }
+      }
+      if (extractedValues.length > 0) {
+        requiredTypeValues = extractedValues;
+      }
+    }
+    
     return {
       ...this.processCommonProperties(definition),
       jsonSchemaDefinition: definition,
@@ -341,6 +359,8 @@ class ViewAdapter {
 
       cardinalityText: `{${minItems}..${maxItems === null ? "*" : maxItems}}`,
 
+      requiredTypeValues,
+      
       examples: null,
     };
   }

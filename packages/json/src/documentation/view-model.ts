@@ -160,6 +160,12 @@ export interface JsonSchemaArrayViewModel extends JsonSchemaDefinitionViewModel 
   maxItems: number | null;
 
   cardinalityText: string;
+
+  /**
+   * Array of required constant values extracted from allOf contains constraints.
+   * Used for documenting type arrays that must contain specific values.
+   */
+  requiredTypeValues: string[] | null;
 }
 
 export interface JsonSchemaObjectPropertyViewModel {
