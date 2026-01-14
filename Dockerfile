@@ -1,6 +1,5 @@
 FROM oven/bun:1.3.5-alpine AS base
 
-# Builds in /usr/src/app and copies to /usr/src/final to avoid copying build dependencies
 FROM base AS builder
 WORKDIR /usr/src/app
 RUN mkdir -p /usr/src/final/ /usr/src/final/dist/
@@ -54,22 +53,24 @@ COPY services/backend/main.config.sample.js /usr/src/final/main.config.js
 
 COPY --chmod=777 ./docker/ws/docker-entrypoint.sh ./docker/ws/docker-healthcheck.sh /usr/src/final/
 
+# Swap final and app directories
+RUN mv /usr/src/app /usr/src/build && mv /usr/src/final /usr/src/app
 
-
-FROM base AS prisma-builder
-WORKDIR /usr/src/app
-
-COPY --from=builder /usr/src/final /usr/src/app
-
-# Do prisma migrations (needs to be done in correct absolute directory)
 RUN mkdir -p /usr/src/app/database
-RUN bunx prisma@6 migrate deploy --schema dist/schema.prisma
-
-
+RUN bunx prisma@6 migrate deploy --schema /usr/src/app/dist/schema.prisma
 
 # Final image for production
 FROM base AS final
 WORKDIR /usr/src/app
+
+# Makes directory accessible for the user
+# Instals prisma for migrations and cleans install cache
+RUN apk add --no-cache openssl && \
+  rm -rf /var/lib/apt/lists/* && \
+  rm -rf /var/cache/apk/* && \
+  chmod a+rwx /usr/src/app && \
+  bun install --no-cache prisma@6 && \
+  rm -rf ~/.bun ~/.cache
 
 # Redeclare build args and expose them as runtime env so entrypoint can print metadata (prefixed to avoid collisions)
 ARG GIT_COMMIT
@@ -81,17 +82,8 @@ ENV DATASPECER_GIT_COMMIT=${GIT_COMMIT} \
   DATASPECER_GIT_COMMIT_DATE=${GIT_COMMIT_DATE} \
   DATASPECER_GIT_COMMIT_NUMBER=${GIT_COMMIT_NUMBER}
 
-# Makes directory accessible for the user
-# Instals prisma for migrations and cleans install cache
-RUN apk add --no-cache openssl && \
-	rm -rf /var/lib/apt/lists/* && \
-	rm -rf /var/cache/apk/* && \
-  chmod a+rwx /usr/src/app && \
-  bun install --no-cache prisma@6 && \
-  rm -rf ~/.bun ~/.cache
-
 # Copy final files
-COPY --from=prisma-builder --chmod=777 /usr/src/app /usr/src/app
+COPY --from=builder --chmod=777 /usr/src/app /usr/src/app
 
 USER 1000:1000
 VOLUME /usr/src/app/database
