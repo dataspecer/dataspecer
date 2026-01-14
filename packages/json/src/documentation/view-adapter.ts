@@ -326,7 +326,7 @@ class ViewAdapter {
   private jsonSchemaArrayToViewModel(definition: JsonSchemaArray): JsonSchemaArrayViewModel {
     const minItems = 0;
     const maxItems = null;
-    return {
+    const result: JsonSchemaArrayViewModel = {
       ...this.processCommonProperties(definition),
       jsonSchemaDefinition: definition,
       type: "array",
@@ -341,8 +341,55 @@ class ViewAdapter {
 
       cardinalityText: `{${minItems}..${maxItems === null ? "*" : maxItems}}`,
 
+      requiresStringConstantsOnly: null,
+
       examples: null,
     };
+
+    return this.arrayViewModelTryMatchOnlyStrings(result);
+  }
+
+  /**
+   * Tries to match the array definition against a pattern "string array with a set of required string constants".
+   * If matched, the view model is updated to include the list of required string constants.
+   */
+  private arrayViewModelTryMatchOnlyStrings(definition: JsonSchemaArrayViewModel): JsonSchemaArrayViewModel {
+    if (definition.anyOf || definition.oneOf || definition.items.type !== "string") {
+      return definition;
+    }
+
+    const collectedStringConstants: string[] = [];
+
+    if (definition.contains) {
+      if (definition.contains.type === "const") {
+        collectedStringConstants.push((definition.contains as JsonSchemaConstViewModel).const);
+      } else {
+        return definition;
+      }
+    }
+
+    if (definition.allOf) {
+      for (const subDef of definition.allOf) {
+        // todo some more checks
+
+        if (subDef.type === "array") {
+          const subArrayDef = subDef as JsonSchemaArrayViewModel;
+          if (subArrayDef.contains) {
+            if (subArrayDef.contains.type === "const") {
+              collectedStringConstants.push((subArrayDef.contains as JsonSchemaConstViewModel).const);
+            } else {
+              return definition;
+            }
+          }
+        }
+      }
+    }
+
+    if (collectedStringConstants.length > 0) {
+      definition.requiresStringConstantsOnly = collectedStringConstants;
+    }
+
+    return definition;
   }
 }
 
