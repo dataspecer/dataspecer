@@ -66,6 +66,11 @@ export type Node = {
   }[];
 
   /**
+   * Label to show for a profile of list.
+   */
+  profileOfLabel: string;
+
+  /**
    * Profiled vocabulary entities.
    */
   vocabulary: {
