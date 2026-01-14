@@ -109,3 +109,51 @@ test("No required type values when allOf is empty", () => {
   const arrayViewModel = viewModel.root as any;
   expect(arrayViewModel.requiredTypeValues).toBeNull();
 });
+
+test("Single type value uses contains, not requiredTypeValues", () => {
+  // This simulates the array part of a oneOf structure for single type values
+  const constProp = new JsonSchemaConst();
+  constProp.value = "Tezaurus";
+  
+  const arr = new JsonSchemaArray();
+  arr.contains = constProp;
+  arr.items = new JsonSchemaString(null);
+  
+  const schema = new JsonSchema();
+  schema.root = arr;
+  
+  const structureModel = new StructureModel();
+  structureModel.psmIri = "test-structure";
+  structureModel.humanLabel = { en: "Test Structure" };
+  structureModel.technicalLabel = "test-structure";
+  
+  const conceptualModel = new ConceptualModel();
+  conceptualModel.pimIri = "test-conceptual";
+  
+  const context = {
+    specifications: {},
+    structureModels: {},
+    conceptualModels: {},
+  } as unknown as ArtefactGeneratorContext;
+  
+  const artefact = {
+    iri: "test-artefact",
+    publicUrl: "http://example.com/test",
+  } as DataSpecificationArtefact;
+  
+  const viewModel = createJsonSchemaViewModel({
+    structureModel,
+    conceptualModel,
+    jsonSchema: schema,
+    configuration: DefaultJsonConfiguration,
+    context,
+    artefact,
+    languages: ["en"],
+  });
+  
+  const arrayViewModel = viewModel.root as any;
+  // For single values, contains is used directly, not requiredTypeValues
+  expect(arrayViewModel.requiredTypeValues).toBeNull();
+  expect(arrayViewModel.contains).toBeDefined();
+  expect(arrayViewModel.contains.type).toBe("const");
+});
