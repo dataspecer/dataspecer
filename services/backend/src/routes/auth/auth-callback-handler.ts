@@ -2,7 +2,7 @@ import { ExpressAuth } from "@auth/express";
 import { asyncHandler } from "../../utils/async-handler.ts";
 
 import express, { NextFunction } from "express";
-import { createBasicAuthConfig } from "../../authorization/auth-config.ts";
+import { createBasicAuthConfig } from "../../authentication/auth-config.ts";
 import { z } from "zod";
 import { getBaseBackendUrl } from "../../utils/express-url-utils.ts";
 

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getGitCredentialsFromSessionWithDefaults } from "../../authorization/auth-session.ts";
+import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import { resourceModel } from "../../main.ts";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";

@@ -2,7 +2,7 @@ import express, { NextFunction } from "express";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import { authCallbackHandler } from "./auth-callback-handler.ts";
 import { handleSignout } from "./auth-signout-handler.ts";
-import { createBasicAuthConfig } from "../../authorization/auth-config.ts";
+import { createBasicAuthConfig } from "../../authentication/auth-config.ts";
 import { ExpressAuth } from "@auth/express";
 import { handleSignin } from "./auth-signin-handler.ts";
 import { stripApiPrefixFromUrl } from "@dataspecer/git-node";

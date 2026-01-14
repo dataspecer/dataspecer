@@ -1,6 +1,6 @@
 import express, { NextFunction } from "express";
 import { asyncHandler } from "../../utils/async-handler.ts";
-import { createBasicAuthConfig } from "../../authorization/auth-config.ts";
+import { createBasicAuthConfig } from "../../authentication/auth-config.ts";
 import { ExpressAuth, ExpressAuthConfig } from "@auth/express";
 import { getRedirectLink } from "./auth-handler.ts";
 import { getBaseBackendUrl } from "../../utils/express-url-utils.ts";

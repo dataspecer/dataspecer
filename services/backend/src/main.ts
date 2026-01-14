@@ -34,7 +34,7 @@ import { migratePR419 } from "./tools/migrate-pr419.ts";
 import { authJSRedirectCallback } from "./routes/auth/auth-redirect-to-frontend-handler.ts";
 import { authHandler } from "./routes/auth/auth-handler.ts";
 import { corsOriginHandler } from "./utils/cors-related.ts";
-import { currentSession } from "./authorization/auth-session.ts";
+import { currentSession } from "./authentication/auth-session.ts";
 import { createRandomWebook, handleWebhook } from "./routes/git/git-webhook-handler.ts";
 import { createNewGitRepositoryWithPackageContent, createPackageFromExistingGitRepository } from "./routes/git/create-new-git-repository-with-package-content.ts";
 import { commitPackageToGitHandler, mergeCommitPackageToGitHandler } from "./routes/git/commit-package-to-git.ts";
@@ -127,6 +127,7 @@ application.get(apiBasename + "/auth-handler/personal-callback/*", authJSRedirec
 // We have to handle everything related to authorization under this handler - for some reason handlers for specific subparts (like /auth/callback/*) do not work.
 application.use(apiBasename + "/auth/*", authHandler);
 
+// TODO: Should be one endpoint named datastore-content and just use the http verbs accordingly (the update should be PATCH).
 application.get(apiBasename + "/git/get-datastore-content", getDatastoreContentDirectly);
 application.post(apiBasename + "/git/update-datastore-content", updateDatastoreContentDirectly);
 application.post(apiBasename + "/git/create-datastore-content", createDatastoreContentDirectly);
