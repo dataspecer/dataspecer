@@ -518,36 +518,8 @@ export const translations: Record<string, string | Function> = {
   "layout-dialog-algorithm-random": "Random",
   "layout-dialog-algorithm-elk-radial": "Elk radial algorithm",
   "layout-clusters-edge-layout": "Should remove layout of edges in cluster",
+  // Mandatory level labels for diagrams - language-aware functions
+  "diagram.mandatory-level.mandatory": (language: string) => language === "cs" ? "<<povinné>>" : "<<mandatory>>",
+  "diagram.mandatory-level.optional": (language: string) => language === "cs" ? "<<volitelné>>" : "<<optional>>",
+  "diagram.mandatory-level.recommended": (language: string) => language === "cs" ? "<<doporučené>>" : "<<recommended>>",
 };
-
-/**
- * Translations for mandatory level labels in diagrams.
- * Supports English and Czech, with fallback to English for other languages.
- */
-export const MANDATORY_LEVEL_TRANSLATIONS = {
-  "en": {
-    "mandatory": "<<mandatory>>",
-    "optional": "<<optional>>",
-    "recommended": "<<recommended>>",
-  },
-  "cs": {
-    "mandatory": "<<povinné>>",
-    "optional": "<<volitelné>>",
-    "recommended": "<<doporučené>>",
-  },
-} as const;
-
-/**
- * Returns translated label for mandatory level sections in diagrams.
- * @param level - The mandatory level type
- * @param language - The language code (e.g., "en", "cs")
- * @returns The translated label with << >> markers
- */
-export function getMandatoryLevelLabel(
-  level: "mandatory" | "optional" | "recommended",
-  language: string,
-): string {
-  // Use Czech for "cs", otherwise fallback to English
-  const selectedLanguage = language === "cs" ? "cs" : "en";
-  return MANDATORY_LEVEL_TRANSLATIONS[selectedLanguage]?.[level] ?? MANDATORY_LEVEL_TRANSLATIONS.en[level];
-}

@@ -51,7 +51,7 @@ import {
 } from "./diagram/";
 import { type UseDiagramType } from "./diagram/diagram-hook";
 import { configuration, createLogger } from "./application";
-import { getMandatoryLevelLabel } from "./application/localization-translations";
+import { t } from "./application/localization";
 import { getDescriptionLanguageString } from "./util/name-utils";
 import { getLocalizedStringFromLanguageString } from "./util/language-utils";
 import { isIriAbsolute } from "./util/iri-utils";
@@ -625,11 +625,11 @@ function selectMandatoryLevel(
 ): string | null {
   switch (level) {
   case CmeRelationshipProfileMandatoryLevel.Mandatory:
-    return getMandatoryLevelLabel("mandatory", language);
+    return t("diagram.mandatory-level.mandatory", language);
   case CmeRelationshipProfileMandatoryLevel.Optional:
-    return getMandatoryLevelLabel("optional", language);
+    return t("diagram.mandatory-level.optional", language);
   case CmeRelationshipProfileMandatoryLevel.Recommended:
-    return getMandatoryLevelLabel("recommended", language);
+    return t("diagram.mandatory-level.recommended", language);
   }
   return null;
 }
