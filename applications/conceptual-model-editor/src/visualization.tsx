@@ -51,6 +51,7 @@ import {
 } from "./diagram/";
 import { type UseDiagramType } from "./diagram/diagram-hook";
 import { configuration, createLogger } from "./application";
+import { t, tData } from "./application/localization";
 import { getDescriptionLanguageString } from "./util/name-utils";
 import { getLocalizedStringFromLanguageString } from "./util/language-utils";
 import { isIriAbsolute } from "./util/iri-utils";
@@ -255,7 +256,8 @@ function onChangeVisualModel(
         const node = createDiagramNode(
           options, visualModel, models, entities,
           visualEntity, entity, model,
-          nodeToGroupMapping[visualEntity.identifier] ?? null);
+          nodeToGroupMapping[visualEntity.identifier] ?? null,
+          options.language);
         nextNodes.push(node);
       }
     } else if (isVisualRelationship(visualEntity)) {
@@ -306,7 +308,7 @@ function onChangeVisualModel(
             continue;
           }
           const edge = createDiagramEdgeForClassUsageOrProfile(
-            options, visualModel, visualEntity, entity);
+            options, visualModel, visualEntity, entity, options.language);
           if (edge !== null) {
             nextEdges.push(edge);
           }
@@ -365,6 +367,7 @@ function createDiagramNode(
   entity: SemanticModelClass | SemanticModelClassProfile,
   _semanticModel: EntityModel,
   group: string | null,
+  language: string,
 ): Node {
 
   const isProfile = isSemanticModelClassProfile(entity);
@@ -384,6 +387,7 @@ function createDiagramNode(
     },
     profileOf: prepareProfileOf(
       options, semanticModels, entities, entity),
+    profileOfLabel: tData("diagram.profile-of", language),
     items: prepareItems(
       options, visualModel, semanticModels, entities, visualNode),
     vocabulary: prepareVocabulary(
@@ -465,7 +469,7 @@ function prepareItems(
       continue;
     }
     if (lastLevel !== nextLevel) {
-      result.push(createTitleNode(nextLevel));
+      result.push(createTitleNode(nextLevel, options.language));
     }
     lastLevel = nextLevel;
     result.push(nextItem);
@@ -610,23 +614,25 @@ function prepareProfileOf(
 
 function createTitleNode(
   level: CmeRelationshipProfileMandatoryLevel | null,
+  language: string,
 ): NodeTitleItem {
   return {
     type: NODE_TITLE_ITEM_TYPE,
-    title: selectMandatoryLevel(level) ?? "<<undefined>>",
+    title: selectMandatoryLevel(level, language) ?? "<<undefined>>",
   }
 }
 
 function selectMandatoryLevel(
   level: CmeRelationshipProfileMandatoryLevel | null,
+  language: string,
 ): string | null {
   switch (level) {
-  case CmeRelationshipProfileMandatoryLevel.Mandatory:
-    return "<<mandatory>>";
-  case CmeRelationshipProfileMandatoryLevel.Optional:
-    return "<<optional>>";
-  case CmeRelationshipProfileMandatoryLevel.Recommended:
-    return "<<recommended>>";
+    case CmeRelationshipProfileMandatoryLevel.Mandatory:
+      return tData("diagram.mandatory-level.mandatory", language);
+    case CmeRelationshipProfileMandatoryLevel.Optional:
+      return tData("diagram.mandatory-level.optional", language);
+    case CmeRelationshipProfileMandatoryLevel.Recommended:
+      return tData("diagram.mandatory-level.recommended", language);
   }
   return null;
 }
@@ -764,12 +770,13 @@ function createDiagramEdgeForClassUsageOrProfile(
   visualModel: VisualModel,
   visualProfileRelationship: VisualProfileRelationship,
   entity: SemanticModelClassProfile,
+  language: string,
 ): Edge | null {
   return {
     type: EdgeType.ClassProfile,
     identifier: visualProfileRelationship.identifier,
     externalIdentifier: entity.id,
-    label: "<<profile>>",
+    label: tData("diagram.profile-edge", language),
     source: visualProfileRelationship.visualSource,
     cardinalitySource: null,
     target: visualProfileRelationship.visualTarget,
@@ -960,7 +967,7 @@ function onChangeVisualEntities(
             }
             //
             const edge = createDiagramEdgeForClassUsageOrProfile(
-              options, visualModel, next, entity);
+              options, visualModel, next, entity, options.language);
             if (edge === null) {
               console.error("Ignored null edge.", { visualEntity: next, entity });
               break;
