@@ -7,7 +7,7 @@ import { modifyPackageProjectData, modifyPackageRepresentsBranchHead, packageSer
 import { createIdentifierForHTMLElement, InputComponent } from "@/components/simple-input-component";
 import { toast } from "sonner";
 import { createSetterWithGitValidation, PACKAGE_ROOT } from "@dataspecer/git";
-import { resolveWithRequiredCheck } from "./git-url";
+import { resolveWithRequiredCheck } from "./git-actions-dialogs";
 
 export enum BranchAction {
   CreateNewBranch,

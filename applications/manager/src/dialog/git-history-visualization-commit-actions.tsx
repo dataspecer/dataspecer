@@ -10,7 +10,7 @@ import { lng } from "@/Dir";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
 
 
-type CommitActionsDialogProps = {
+type GitHistoryCommitActionsDialogProps = {
   examinedPackage: Package,
   commitHash: string,
   branch: string | null,
@@ -18,7 +18,7 @@ type CommitActionsDialogProps = {
   commitAlreadyExistsInDS: boolean,
 } & BetterModalProps<null>;
 
-export const CommitActionsDialog = ({ examinedPackage, branch, commitHash, branchAlreadyExistsInDS, commitAlreadyExistsInDS, isOpen, resolve }: CommitActionsDialogProps) => {
+export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitHash, branchAlreadyExistsInDS, commitAlreadyExistsInDS, isOpen, resolve }: GitHistoryCommitActionsDialogProps) => {
   const [isPerformingAction, setIsPerformingAction] = useState<boolean>(false);
 
   const handleRedirect = () => {

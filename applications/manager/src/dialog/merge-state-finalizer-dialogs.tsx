@@ -6,7 +6,7 @@ import { FinalizerVariantsForPullOnFailure, getEditableValue, MergeCommitType, M
 import { Loader } from "lucide-react";
 import { Dispatch, SetStateAction, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { commitToGitDialogOnClickHandler, mergeCommitToGitDialogOnClickHandler } from "./git-url";
+import { commitToGitDialogOnClickHandler, mergeCommitToGitDialogOnClickHandler } from "./git-actions-dialogs";
 import { requestLoadPackage, ResourcesContext } from "@/package";
 
 

@@ -8,7 +8,7 @@ import { Modal, ModalBody, ModalContent, ModalDescription, ModalFooter, ModalHea
 import { Button } from "./ui/button";
 import React, { useLayoutEffect, useState } from "react";
 import { BaseResource, Package } from "@dataspecer/core-v2/project";
-import { CommitActionsDialog } from "@/dialog/git-commit-actions-dialog";
+import { GitHistoryCommitActionsDialog } from "@/dialog/git-history-visualization-commit-actions";
 import { Loader } from "lucide-react";
 import { Template } from "@gitgraph/core/lib/template";
 import { ResourceWithIris } from "@/package";
@@ -427,7 +427,7 @@ const commitOnClickHandler = (
 
   const branchAlreadyExistsInDS = renderBranchName !== null && dsPackagesInProjectForBranches[renderBranchName] !== undefined;
   const commitAlreadyExistsInDS = packagesRelatedToCommit !== undefined && packagesRelatedToCommit.length > 0;
-  return openModal(CommitActionsDialog, { examinedPackage, branch: renderBranchName, commitHash: gitGraphCommit.hash, branchAlreadyExistsInDS, commitAlreadyExistsInDS });
+  return openModal(GitHistoryCommitActionsDialog, { examinedPackage, branch: renderBranchName, commitHash: gitGraphCommit.hash, branchAlreadyExistsInDS, commitAlreadyExistsInDS });
 }
 
 
