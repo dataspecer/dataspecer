@@ -51,6 +51,7 @@ import {
 } from "./diagram/";
 import { type UseDiagramType } from "./diagram/diagram-hook";
 import { configuration, createLogger } from "./application";
+import { getMandatoryLevelLabel } from "./application/localization-translations";
 import { getDescriptionLanguageString } from "./util/name-utils";
 import { getLocalizedStringFromLanguageString } from "./util/language-utils";
 import { isIriAbsolute } from "./util/iri-utils";
@@ -631,36 +632,6 @@ function selectMandatoryLevel(
     return getMandatoryLevelLabel("recommended", language);
   }
   return null;
-}
-
-/**
- * Translations for mandatory level labels.
- * Supports English and Czech, with fallback to English for other languages.
- */
-const MANDATORY_LEVEL_TRANSLATIONS = {
-  "en": {
-    "mandatory": "<<mandatory>>",
-    "optional": "<<optional>>",
-    "recommended": "<<recommended>>",
-  },
-  "cs": {
-    "mandatory": "<<povinné>>",
-    "optional": "<<volitelné>>",
-    "recommended": "<<doporučené>>",
-  },
-} as const;
-
-/**
- * Returns translated label for mandatory level sections.
- * Supports English and Czech, falls back to English for other languages.
- */
-function getMandatoryLevelLabel(
-  level: "mandatory" | "optional" | "recommended",
-  language: string,
-): string {
-  // Use Czech for "cs", otherwise fallback to English
-  const selectedLanguage = language === "cs" ? "cs" : "en";
-  return MANDATORY_LEVEL_TRANSLATIONS[selectedLanguage]?.[level] ?? MANDATORY_LEVEL_TRANSLATIONS.en[level];
 }
 
 function getEntityDescription(language: string, entity: Entity) {
