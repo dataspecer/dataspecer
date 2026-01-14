@@ -329,20 +329,7 @@ class ViewAdapter {
     
     // Extract required type values from allOf contains constraints
     // This is used for type arrays like ["Type1", "Type2"] that must contain specific values
-    let requiredTypeValues: string[] | null = null;
-    if (definition.allOf && definition.allOf.length > 0) {
-      const extractedValues: string[] = [];
-      for (const constraint of definition.allOf) {
-        if (JsonSchemaArray.is(constraint) && constraint.contains) {
-          if (JsonSchemaConst.is(constraint.contains)) {
-            extractedValues.push(String(constraint.contains.value));
-          }
-        }
-      }
-      if (extractedValues.length > 0) {
-        requiredTypeValues = extractedValues;
-      }
-    }
+    const requiredTypeValues = this.extractRequiredTypeValues(definition);
     
     return {
       ...this.processCommonProperties(definition),
@@ -363,6 +350,24 @@ class ViewAdapter {
       
       examples: null,
     };
+  }
+
+  private extractRequiredTypeValues(definition: JsonSchemaArray): string[] | null {
+    if (!definition.allOf || definition.allOf.length === 0) {
+      return null;
+    }
+
+    const extractedValues: string[] = [];
+    for (const constraint of definition.allOf) {
+      if (!JsonSchemaArray.is(constraint) || !constraint.contains) {
+        continue;
+      }
+      if (JsonSchemaConst.is(constraint.contains)) {
+        extractedValues.push(String(constraint.contains.value));
+      }
+    }
+    
+    return extractedValues.length > 0 ? extractedValues : null;
   }
 }
 

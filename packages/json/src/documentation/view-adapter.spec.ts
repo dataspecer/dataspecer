@@ -36,11 +36,8 @@ test("Extract required type values from allOf contains constraints", () => {
   structureModel.humanLabel = { en: "Test Structure" };
   structureModel.technicalLabel = "test-structure";
   
-  const conceptualModel: ConceptualModel = {
-    psmIri: "test-conceptual",
-    classes: {},
-    inheritanceMap: {},
-  };
+  const conceptualModel = new ConceptualModel();
+  conceptualModel.pimIri = "test-conceptual";
   
   const context = {
     specifications: {},
@@ -85,11 +82,8 @@ test("No required type values when allOf is empty", () => {
   structureModel.humanLabel = { en: "Test Structure" };
   structureModel.technicalLabel = "test-structure";
   
-  const conceptualModel: ConceptualModel = {
-    psmIri: "test-conceptual",
-    classes: {},
-    inheritanceMap: {},
-  };
+  const conceptualModel = new ConceptualModel();
+  conceptualModel.pimIri = "test-conceptual";
   
   const context = {
     specifications: {},
