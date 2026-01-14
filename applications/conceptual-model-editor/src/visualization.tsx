@@ -102,7 +102,7 @@ export const Visualization = () => {
     displayRangeDetail: true,
     displayRelationshipProfileArchetype: false,
     profileOfLabel: tData("diagram.profile-of", options.language),
-  }), []);
+  }), [options.language]);
 
   useEffect(() => {
     const previousEntities = aggregatorView.getEntities();
