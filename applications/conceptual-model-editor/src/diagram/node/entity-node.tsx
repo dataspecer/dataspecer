@@ -190,7 +190,7 @@ function ProfileOf({ options, profileOf }: {
       {options.profileOfLabel}&nbsp;
       <ul className="inline-grid">
         {labels.filter(item => item !== null)
-          .map(item => <li key={item}>{item}</li>)}
+          .map((item, index) => <li key={index}>{item}</li>)}
       </ul>
     </div>
   )
