@@ -625,12 +625,12 @@ function selectMandatoryLevel(
   language: string,
 ): string | null {
   switch (level) {
-    case CmeRelationshipProfileMandatoryLevel.Mandatory:
-      return tData("diagram.mandatory-level.mandatory", language);
-    case CmeRelationshipProfileMandatoryLevel.Optional:
-      return tData("diagram.mandatory-level.optional", language);
-    case CmeRelationshipProfileMandatoryLevel.Recommended:
-      return tData("diagram.mandatory-level.recommended", language);
+  case CmeRelationshipProfileMandatoryLevel.Mandatory:
+    return tData("diagram.mandatory-level.mandatory", language);
+  case CmeRelationshipProfileMandatoryLevel.Optional:
+    return tData("diagram.mandatory-level.optional", language);
+  case CmeRelationshipProfileMandatoryLevel.Recommended:
+    return tData("diagram.mandatory-level.recommended", language);
   }
   return null;
 }
