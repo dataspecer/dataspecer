@@ -77,7 +77,7 @@ export function transformCoreResources(resources: Record<string, CoreResource>, 
                 description: resource.pimHumanDescription ?? {},
                 ends: [
                     {
-                        cardinality: ((left.pimCardinalityMin ?? 0) === 0 && left.pimCardinalityMax === null) ? null : [left.pimCardinalityMin ?? 0, left.pimCardinalityMax],
+                        cardinality: ((left.pimCardinalityMin ?? 0) === 0 && left.pimCardinalityMax === null) ? undefined : [left.pimCardinalityMin ?? 0, left.pimCardinalityMax],
                         name: left.pimHumanLabel ?? {},
                         description: left.pimHumanDescription ?? {},
                         concept: left.pimPart,
@@ -91,7 +91,7 @@ export function transformCoreResources(resources: Record<string, CoreResource>, 
                         iri: resource.pimInterpretation ?? null,
                     },
                 ],
-            } as SemanticModelRelationship;
+            } satisfies SemanticModelRelationship;
 
             result[association.id] = association;
 
@@ -114,6 +114,7 @@ export function transformCoreResources(resources: Record<string, CoreResource>, 
                         name: {},
                         description: {},
                         concept: resource.pimOwnerClass as string,
+                        iri: null,
                     },
                     {
                         cardinality: [resource.pimCardinalityMin ?? 0, resource.pimCardinalityMax],
@@ -123,7 +124,7 @@ export function transformCoreResources(resources: Record<string, CoreResource>, 
                         iri: resource.pimInterpretation ?? null,
                     },
                 ],
-            } as SemanticModelRelationship;
+            } satisfies SemanticModelRelationship;
 
             result[attribute.id] = attribute;
 
