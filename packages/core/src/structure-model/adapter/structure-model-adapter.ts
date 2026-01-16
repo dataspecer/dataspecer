@@ -180,7 +180,7 @@ class StructureModelAdapter {
 
   private async loadClassReference(
     classReferenceData: DataPsmClassReference
-  ): Promise<[StructureModelClass[], string | null | undefined]> {
+  ): Promise<[StructureModelClass[], string | null | undefined, string | null | undefined]> {
     const part = await this.reader.readResource(
       classReferenceData.dataPsmClass
     );
@@ -196,12 +196,12 @@ class StructureModelAdapter {
       const model = await adapter.loadClass(part);
       const copiedModel = Object.assign(Object.create(Object.getPrototypeOf(model)), model);
       copiedModel.isReferenced = true;
-      return [[copiedModel], undefined];
+      return [[copiedModel], undefined, undefined];
     } else if (DataPsmExternalRoot.is(part)) {
       const model = await adapter.loadExternalRoot(part);
       const copiedModel = Object.assign(Object.create(Object.getPrototypeOf(model)), model);
       copiedModel.isReferenced = true;
-      return [[copiedModel], undefined];
+      return [[copiedModel], undefined, undefined];
     } else if (DataPsmOr.is(part)) { // todo this needs to be fixed
       const references = [];
       for (const p of part.dataPsmChoices) {
@@ -211,7 +211,7 @@ class StructureModelAdapter {
         copiedModel.isReferenced = true;
         references.push(copiedModel);
       }
-      return [references, part.dataPsmTechnicalLabel ?? specification.roots[0].orTechnicalLabel];
+      return [references, part.dataPsmTechnicalLabel ?? specification.roots[0].orTechnicalLabel, specification.psmIri];
     } else {
       throw new Error(
         `Invalid class reference '${classReferenceData.iri}' target.`
@@ -226,20 +226,21 @@ class StructureModelAdapter {
    */
   private async loadComplexType(
     complexTypeData: DataPsmClass | DataPsmClassReference | DataPsmContainer
-  ): Promise<[StructureModelComplexType[], string | null | undefined]> {
+  ): Promise<[StructureModelComplexType[], string | null | undefined, string | null | undefined]> {
     let loadedClass: StructureModelClass[] = [];
     let label: string = undefined;
+    let schemaIri: string = undefined;
     if (DataPsmClass.is(complexTypeData) || DataPsmContainer.is(complexTypeData)) {
       loadedClass = [await this.loadClass(complexTypeData)];
     } else if (DataPsmClassReference.is(complexTypeData)) {
-      [loadedClass, label] = await this.loadClassReference(complexTypeData);
+      [loadedClass, label, schemaIri] = await this.loadClassReference(complexTypeData);
     }
 
     return [loadedClass.map(cls => {
       const type = new StructureModelComplexType();
       type.dataType = cls;
       return type;
-    }), label];
+    }), label, schemaIri];
   }
 
   /**
@@ -305,10 +306,13 @@ class StructureModelAdapter {
       if (DataPsmClassReference.is(part)) {
         model.isReferencing = true;
       }
-      const [types, label] = await this.loadComplexType(part); // It might be a class or it might be a reference (to or for example)
+      const [types, label, schemaIri] = await this.loadComplexType(part); // It might be a class or it might be a reference (to or for example)
       model.dataTypes.push(...types);
       model.orTechnicalLabel = label ?? (DataPsmClassReference.is(part) ? null : associationEndData.dataPsmTechnicalLabel);
       model.isInOr = label !== undefined;
+      if (model.isInOr && schemaIri) {
+        model.orStructureSchema = schemaIri;
+      }
     } else {
       throw new Error(`Unsupported association end '${associationEndData.iri}'.`);
     }

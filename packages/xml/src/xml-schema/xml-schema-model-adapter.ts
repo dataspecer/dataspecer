@@ -366,7 +366,22 @@ class XmlSchemaAdapter {
     }
 
     if (property.isReferencing && isInOr) {
-      const referencedClass = await this.getImportedTypeForClass(choices[0] as StructureModelClass);
+      // When a property references an OR, we need to import the schema where the OR is defined,
+      // not the schemas of the individual choices.
+      let orClass: StructureModelClass;
+      if (property.orStructureSchema) {
+        // Create a minimal class to represent the OR for import lookup.
+        // Only structureSchema, specification, and technicalLabel are used by getImportedTypeForClass.
+        orClass = new StructureModelClass();
+        orClass.structureSchema = property.orStructureSchema;
+        orClass.specification = (choices[0] as StructureModelClass).specification;
+        orClass.technicalLabel = property.orTechnicalLabel ?? "type";
+      } else {
+        // Fallback to using the first choice if OR schema is not available
+        orClass = choices[0] as StructureModelClass;
+      }
+      const referencedClass = await this.getImportedTypeForClass(orClass);
+      // Override the type name with the OR's technical label
       referencedClass[1] = property.orTechnicalLabel ?? "type";
       return {
         entityType: "type",
