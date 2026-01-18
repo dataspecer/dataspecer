@@ -38,12 +38,7 @@ import { type UseModelGraphContextType, useModelGraphContext } from "./context/m
 import { type UseClassesContextType, useClassesContext } from "./context/classes-context";
 import { cardinalityToHumanLabel, getDomainAndRange } from "./util/relationship-utils";
 import { useActions } from "./action/actions-react-binding";
-import {
-  DiagramOptions,
-  EntityColor,
-  LabelVisual,
-  ProfileOfVisual,
-} from "./diagram/model";
+import { DiagramOptions } from "./diagram/model";
 import {
   Diagram, type Edge, EdgeType, Group, type NodeItem, type Node, NodeType,
   NODE_ITEM_TYPE, NodeRelationshipItem, NodeTitleItem, NODE_TITLE_ITEM_TYPE,
@@ -96,13 +91,9 @@ export const Visualization = () => {
 
   const extendedOptions: ExtendedOptions = useMemo(() => ({
     language: options.language,
-    entityMainColor: EntityColor.Entity,
-    labelVisual: LabelVisual.Entity,
-    profileOfVisual: ProfileOfVisual.Entity,
-    displayRangeDetail: true,
-    displayRelationshipProfileArchetype: false,
+    ...options.visualOptions,
     profileOfLabel: tData("diagram.profile-of", options.language),
-  }), [options.language]);
+  }), [options.language, options.visualOptions]);
 
   useEffect(() => {
     const previousEntities = aggregatorView.getEntities();

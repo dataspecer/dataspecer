@@ -246,6 +246,7 @@ export const english: Record<string, string | Function> = {
   "header.package.save-and-leave.title": "Save package and go back to manager",
   //
   "header.logo-title": "Leave to manager without saving",
+  "header.options": "Options",
   //
   "create-class-dialog.name": "Name",
   "create-class-dialog.iri": "IRI",
@@ -474,6 +475,14 @@ export const english: Record<string, string | Function> = {
   "visual-diagram-node-info-dialog.represented-visual-model-name": "Represented visual model",
   //
   "create-visual-model-dialog.label": "Visual model name",
+  "create-visual-model-dialog.label-visual-label.iri": "Use entity's IRI.",
+  "create-visual-model-dialog.label-visual-label.entity": "Use entity label.",
+  "create-visual-model-dialog.label-visual-label.entity-vocabulary": "Use labels from profiled vocabularies or entity.",
+  "create-visual-model-dialog.entity-color.entity": "Use entity model color.",
+  "create-visual-model-dialog.entity-color.entity-vocabulary": "Use profiled vocabulary model color, or entity's model color.",
+  "create-visual-model-dialog.profile.none": "Do not display profile of information.",
+  "create-visual-model-dialog.profile.entity": "Use profile label.",
+  "create-visual-model-dialog.profile.iri": "Use profile IRI.",
   //
   "align-left.title": "Align selected nodes with the most left one and in such a way that the lefts of nodes are aligned",
   "align-horizontal-mid.title": "Align selected nodes to the middle horizontally, that is |",
