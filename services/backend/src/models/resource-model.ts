@@ -8,7 +8,7 @@ import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { CoreResource } from "@dataspecer/core/core/core-resource";
 import { CommitReferenceType, createDatastoreWithReplacedIris, defaultBranchForPackageInDatabase, defaultEmptyGitUrlForDatabase, MergeStateCause } from "@dataspecer/git";
 import { ResourceChangeListener, ResourceChangeObserverBase, ResourceChangeType } from "./resource-change-observer.ts";
-import { ResourceModelTODOBetterName } from "../export-import/export.ts";
+import { ResourceModelForPull } from "../export-import/export.ts";
 
 /**
  * Base information every resource has or should have.
@@ -65,7 +65,7 @@ export interface LoadedPackage extends BaseResource {
 /**
  * Resource model manages resource in local database that is managed by Prisma.
  */
-export class ResourceModel implements ResourceModelTODOBetterName {
+export class ResourceModel implements ResourceModelForPull {
     readonly storeModel: LocalStoreModel;
     private readonly prismaClient: PrismaClient;
     private resourceChangeObserver: ResourceChangeObserverBase;

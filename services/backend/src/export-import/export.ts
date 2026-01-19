@@ -59,8 +59,8 @@ export interface ResourceModelForFilesystemRepresentation extends ResourceModelF
 }
 
 /**
- * TODO RadStr: Can't think of a better name now.
+ * @todo Maybe better name
  */
-export interface ResourceModelTODOBetterName extends ResourceModelForFilesystemRepresentation {
+export interface ResourceModelForPull extends ResourceModelForFilesystemRepresentation {
   updateLastCommitHash(iri: string, lastCommitHash: string, updateCause: MergeStateCause): Promise<void>
 }

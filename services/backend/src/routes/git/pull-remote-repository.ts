@@ -8,7 +8,7 @@ import { getCommonCommitInHistory, gitCloneBasic } from "@dataspecer/git-node/si
 import { AllowedPrefixes, createSimpleGitUsingPredefinedGitRoot, getLastCommitHash, MANUAL_CLONE_PATH_PREFIX, removePathRecursively } from "@dataspecer/git-node";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
-import { ResourceModelTODOBetterName } from "../../export-import/export.ts";
+import { ResourceModelForPull } from "../../export-import/export.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 
 
@@ -58,7 +58,7 @@ export type UpdateDSRepositoryByGitPullParams = {
   cloneURL: string,
   cloneDirectoryNamePrefix: AllowedPrefixes,
   dsLastCommitHash: string,
-  resourceModelForDS: ResourceModelTODOBetterName,
+  resourceModelForDS: ResourceModelForPull,
   depth?: number,
 }
 

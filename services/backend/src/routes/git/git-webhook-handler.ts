@@ -27,7 +27,7 @@ import { SimpleGit } from "simple-git";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
 import { WEBHOOK_PATH_PREFIX } from "@dataspecer/git-node";
-import { ResourceModelTODOBetterName } from "../../export-import/export.ts";
+import { ResourceModelForPull } from "../../export-import/export.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 
 
@@ -100,7 +100,7 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
   commonCommitHash: string,
   branch: string,
   mergeStateCause: Omit<MergeStateCause, "merge">,
-  resourceModelForDS: ResourceModelTODOBetterName,
+  resourceModelForDS: ResourceModelForPull,
 ): Promise<GitChangesToDSPackageStoreResult> {
   // Merge from is DS
   const {
