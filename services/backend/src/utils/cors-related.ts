@@ -1,6 +1,7 @@
 import { CorsOptions } from "cors";
 import express from "express";
 import psl from "psl";
+import configuration from "../configuration.ts";
 
 
 /**
@@ -26,6 +27,11 @@ function getRegisteredDomain(urlString: string): string | null {
 
 
 
+const allowedUrls = [...new Set(["https://dataspecer.com", "http://localhost:5174"].concat(configuration.baseName ?? []))];
+const allowedDomains = allowedUrls
+  .map(allowedURL => getRegisteredDomain(allowedURL))
+  .filter(allowedDomain => allowedDomain !== null);
+
 export function isFrontendAllowedForAuthentication(origin: string | undefined): boolean {
   if (origin === undefined || origin.length === 0) {
     return false;
@@ -35,11 +41,6 @@ export function isFrontendAllowedForAuthentication(origin: string | undefined): 
   if (originAsDomain === null) {
     return false;
   }
-
-  const allowedUrls = ["https://dataspecer.com", "http://localhost:5174"];      // TODO RadStr: Somehow put into configuration
-  const allowedDomains = allowedUrls                                    // TODO RadStr: Compute this only once
-    .map(allowedURL => getRegisteredDomain(allowedURL))
-    .filter(allowedDomain => allowedDomain !== null);
 
   return allowedDomains.includes(originAsDomain);
 }
@@ -52,9 +53,6 @@ export function corsOriginHandler(request: express.Request, callback: (err: Erro
   // Based on https://expressjs.com/en/resources/middleware/cors.html - concretely the "Customizing CORS Settings Dynamically per Request"
   let corsOptions: CorsOptions;
   const requestOrigin = request.get("Origin");
-  // TODO RadStr: We can do even more strict credential checking - that is if it is not redirected from the allowed frontend, don't allow access to the auth part.
-  //              Right now user can set authentication from not allowed frontends (if he somehow accesses the not shown buttons for authentication),
-  //              but he can not get any data from it to show on frontend ever. This happens because the auth part can be on different url than the frontend
   if (isFrontendAllowedForAuthentication(requestOrigin)) {
     corsOptions = {
       origin: requestOrigin,  // Allow only a specific origin
@@ -62,6 +60,7 @@ export function corsOriginHandler(request: express.Request, callback: (err: Erro
     };
   }
   else {
+    // We could be possibly even more strict and do not allow anyone if not from the allowed frontend.
     corsOptions = { origin: "*" };   // Allow all origins for other routes but without credentials
   }
 
