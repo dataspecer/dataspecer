@@ -43,6 +43,11 @@ export interface Configuration {
 
     gitBotConfigurations?: Record<GitProviderNamesAsType, GitBotConfiguration>;
     authConfiguration?: OAuthConfiguration;
+    /**
+     * Must not end with slash
+     * TODO RadStr: For local development. It will probably not be needed once we are in production. In production we will just use the basename/api
+     */
+    gitWebhookBaseUrl?: string;
 
     // Whether the server is running in Docker
     inDocker: boolean;

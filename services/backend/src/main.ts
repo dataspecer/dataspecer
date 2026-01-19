@@ -75,6 +75,7 @@ for (const [gitProviderName, gitConfiguration] of Object.entries(configuration?.
 }
 // Create application models
 
+export const webhookUrl = `${configuration.gitWebhookBaseUrl ?? (configuration.baseName + "/api")}/git/webhook-test`;
 export const storeModel = new LocalStoreModelBase("./database/stores");
 export const prismaClient = new PrismaClient();
 export const resourceModel = new ResourceModel(storeModel, prismaClient);

@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
-import { resourceModel } from "../../main.ts";
-import { ConfigType, convertToValidGitName, extractPartOfRepositoryURL, findPatAccessToken, findPatAccessTokens, stringToBoolean, transformCommitMessageIfEmpty, WEBHOOK_HANDLER_URL } from "@dataspecer/git";
+import { resourceModel, webhookUrl } from "../../main.ts";
+import { ConfigType, convertToValidGitName, extractPartOfRepositoryURL, findPatAccessToken, findPatAccessTokens, stringToBoolean, transformCommitMessageIfEmpty } from "@dataspecer/git";
 import { CommitBranchAndHashInfo, commitPackageToGitUsingAuthSession, GitCommitToCreateInfoBasic, RepositoryIdentification } from "./commit-package-to-git.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import { checkErrorBoundaryForCommitAction } from "@dataspecer/git-node";
@@ -51,7 +51,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
       const { defaultBranch } = await gitProvider.createRemoteRepository(patAccessToken.value, repositoryOwner, repositoryName, isUserRepo, true);
 
 
-      await gitProvider.createWebhook(patAccessToken.value, repositoryOwner, repositoryName, WEBHOOK_HANDLER_URL, ["push"]);
+      await gitProvider.createWebhook(patAccessToken.value, repositoryOwner, repositoryName, webhookUrl, ["push"]);
       // The projectIri is undefiend since it should be already set from the time we created the resource
       await resourceModel.updateResourceProjectIriAndBranch(query.iri, undefined, defaultBranch ?? undefined);
       await resourceModel.updateResourceGitLink(query.iri, fullLinkedGitRepositoryURL, true);
@@ -125,7 +125,7 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
   if (accessToken === null) {
     throw new Error("There is neither user or bot pat token to perform operations needed to create the link. For example creating remote repo");
   }
-  await gitProvider.createWebhook(accessToken.value, repositoryOwner!, repositoryName!, WEBHOOK_HANDLER_URL, ["push"]);
+  await gitProvider.createWebhook(accessToken.value, repositoryOwner!, repositoryName!, webhookUrl, ["push"]);
 
   const repositoryIdentificationInfo: RepositoryIdentification = {
     repositoryOwner: repositoryOwner!,
