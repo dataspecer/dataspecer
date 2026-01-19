@@ -4,6 +4,7 @@ import { createBasicAuthConfig } from "../../authentication/auth-config.ts";
 import { ExpressAuth, ExpressAuthConfig } from "@auth/express";
 import { getRedirectLink } from "./auth-handler.ts";
 import { getBaseBackendUrl } from "../../utils/express-url-utils.ts";
+import configuration from "../../configuration.ts";
 
 /**
  * Handles the signout request. What this method does extra unlike classic auth signout is to set the correct redirect link to go to after the signout is done.
@@ -28,7 +29,8 @@ export const handleSignout = asyncHandler(async (request: express.Request, respo
   }
   catch (e) {
     const dsBackendURL = getBaseBackendUrl(request);
-    authConfig = createBasicAuthConfig(dsBackendURL, "http://localhost:5175");      // TODO RadStr: Instead of localhost:5175 use the provided (when starting up the server) allowed frontends
+    const fallbackRedirectUrl = configuration.baseName ?? "https://example.com/the-signout-does-not-have-set-redirect-url";
+    authConfig = createBasicAuthConfig(dsBackendURL, fallbackRedirectUrl);
   }
 
   const expressAuth = ExpressAuth(authConfig);
@@ -50,7 +52,8 @@ function createAuthConfigForSignout(request: express.Request, linkContainingRedi
     authConfig = createBasicAuthConfig(dsBackendURL, redirectURL);
   }
   else {
-    authConfig = createBasicAuthConfig(dsBackendURL, "http://localhost:5175");      // TODO RadStr: Instead of localhost:5175 use the provided (when starting up the server) allowed frontends
+    const fallbackRedirectUrl = configuration.baseName ?? "https://example.com/the-signout-does-not-have-set-redirect-url";
+    authConfig = createBasicAuthConfig(dsBackendURL, fallbackRedirectUrl);
   }
 
   return authConfig;

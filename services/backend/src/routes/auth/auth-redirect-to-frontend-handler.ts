@@ -2,6 +2,7 @@ import { z } from "zod";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { isFrontendAllowedForAuthentication } from "../../utils/cors-related.ts";
+import configuration from "../../configuration.ts";
 
 
 /**
@@ -18,5 +19,8 @@ export const authJSRedirectCallback = asyncHandler(async (request: express.Reque
     return response.redirect(query.callerURL);
   }
   // If we didn't come from classic flow (there is no callerURL or it was invalid), we just redirect to default
-  return response.redirect("http://localhost:5175");    // TODO RadStr: Instead of localhost:5175 use the provided (when starting up the server) allowed frontends
+  // For example if the user does signout he is put on this URL (in local build): http://localhost:3100/auth/signout?redirectURL=http://localhost:5174/
+  //   By removing the query part - that is everything after ?, we get to this fallback
+  const fallbackRedirectUrl = configuration.baseName ?? "https://example.com/does-not-have-set-redirect-url";
+  return response.redirect(fallbackRedirectUrl);
 });
