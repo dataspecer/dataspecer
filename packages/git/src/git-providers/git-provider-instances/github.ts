@@ -306,7 +306,6 @@ export class GitHubProvider extends GitProviderBase {
       body: JSON.stringify(payload),
     });
 
-    // TODO RadStr: Already doing this somewhere else + maybe there is mechanism how are these things solved in Dataspecer
     const addingCollaboratorFetchResponseAwaited = await addingCollaboratorFetchResponse;
     if (addingCollaboratorFetchResponseAwaited.status < 200 || addingCollaboratorFetchResponseAwaited.status > 299) {
       console.error("Could not add bot as a collaborator", addingCollaboratorFetchResponseAwaited);

@@ -52,8 +52,6 @@ export function getStoredSession(response: express.Response): Session | null {
 export const getBasicUserInfo = asyncHandler(async (request: express.Request, response: express.Response) => {
   const dsBackendURL = getBaseBackendUrl(request);
 
-  // TODO RadStr: Here it should not matter that I am using the basicAuthConfig instead of the correct one
-
   const session = (await getSession(request, createBasicAuthConfig(dsBackendURL))) ?? undefined;
   const basicUserInfo = {
     name: session?.user?.name ?? null,
