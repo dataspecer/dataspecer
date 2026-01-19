@@ -171,7 +171,6 @@ function createAuthConfig(configType: ConfigType | null, dsBackendURL: string, c
         // TODO RadStr Idea: Isn't there a better way with the typing?
         const user: any = session.user;
         user.id = token.id;
-        user.authPermissions = configType;
         // Get the scope from the JWT
         user.scope = token.scope;
         user.genericScope = token.genericScope;
