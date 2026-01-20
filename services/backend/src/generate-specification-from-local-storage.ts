@@ -602,6 +602,8 @@ import { ZipStreamDictionary } from "./utils/zip-stream-dictionary.ts";
 import { importFromGitUrl } from "./routes/import.ts";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { AuthenticationGitProvidersData } from "@dataspecer/git/git-providers";
+import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
+import { GitProviderNode } from "@dataspecer/git";
 
 
 /**
@@ -732,7 +734,8 @@ async function generateSpecificationFromGitURL(httpFetch: HttpFetch, authenticat
   console.info("process.argv", process.argv);
   // Example of download URL - https://github.com/RadStr-bot/4f21bf6d-2116-4ab3-b387-1f8074f7f412/archive/refs/heads/main.zip (or commit SHA instead of refs/heads/main)
   const gitZipDownloadURL = process.argv[2];
-  const imported = await importFromGitUrl(gitZipDownloadURL, httpFetch, authenticationGitProvidersData, storeModel, prismaClient, "branch");
+  const gitProvider: GitProviderNode = GitProviderNodeFactory.createGitProviderFromRepositoryURL(gitZipDownloadURL, httpFetch, authenticationGitProvidersData);
+  const imported = await importFromGitUrl(gitProvider, [], gitZipDownloadURL, storeModel, prismaClient, "branch");
   await generateArtifactsFromImported(imported);
   process.exit(0);
 }

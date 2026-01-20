@@ -126,18 +126,40 @@ export class GitHubProvider extends GitProviderBase {
       }
     };
 
-    const fetchResponse = await this.httpFetch(`https://api.github.com/repos/${repositoryOwner}/${repositoryName}/hooks`, {
+    const requestHeaders = {
+      "Content-Type": "application/vnd.github+json",
+      "Authorization": `Bearer ${authToken}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+      "User-Agent": GITHUB_USER_AGENT,
+    };
+
+
+    const fetchWebhooksResponse = await this.httpFetch(`https://api.github.com/repos/${repositoryOwner}/${repositoryName}/hooks`, {
+      method: "GET",
+      headers: requestHeaders,
+    });
+
+    if (!(fetchWebhooksResponse.status >= 200 && fetchWebhooksResponse.status < 300)) {
+      return fetchWebhooksResponse;
+    }
+
+    const existingWebhooks = await fetchWebhooksResponse.json();
+    const existingHook = (existingWebhooks as any[]).find(hook => hook.config?.url === webhookPayload.config.url);
+    if (existingHook !== undefined) {
+      // Already existed just return the fetched webhooks
+      // TODO: The return type of this method can be improved. Sometimes we return the response of the GET request and sometimes of the POST.
+      //       But we usually just need the information if there was a success or not.
+      return fetchWebhooksResponse;
+    }
+
+
+    const createWebhookResponse = await this.httpFetch(`https://api.github.com/repos/${repositoryOwner}/${repositoryName}/hooks`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/vnd.github+json",
-        "Authorization": `Bearer ${authToken}`,
-        "X-GitHub-Api-Version": "2022-11-28",
-        "User-Agent": GITHUB_USER_AGENT,
-      },
+      headers: requestHeaders,
       body: JSON.stringify(webhookPayload),
     });
 
-    return fetchResponse;
+    return createWebhookResponse;
   }
 
   async createRemoteRepository(

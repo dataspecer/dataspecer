@@ -21,23 +21,22 @@ import N3, { Quad_Object } from "n3";
 import { parse } from "node-html-parser";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
-import { prismaClient, resourceModel, storeModel } from "../main.ts";
+import { prismaClient, resourceModel, storeModel, webhookUrl } from "../main.ts";
 import { BaseResource } from "../models/resource-model.ts";
 import { asyncHandler } from "./../utils/async-handler.ts";
 import { PackageImporter } from "../export-import/import.ts";
 import { Readable } from "stream";
 import { ReadableStream } from "stream/web";
 import { buffer } from "stream/consumers";
-import { CommitReferenceType, getDefaultCommitReferenceTypeForZipDownload, GitProviderNode, isCommitReferenceType } from "@dataspecer/git";
+import { AccessToken, AccessTokenType, CommitReferenceType, ConfigType, getDefaultCommitReferenceTypeForZipDownload, GitProviderNode, isCommitReferenceType } from "@dataspecer/git";
 import { gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { createSimpleGitUsingPredefinedGitRoot, INTERNAL_COMPUTATION_FOR_IMPORT, removePathRecursively } from "@dataspecer/git-node";
-import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import configuration from "../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
-import { AuthenticationGitProvidersData } from "@dataspecer/git/git-providers";
 import { LocalStoreModel } from "../models/local-store-model.ts";
 import { StorageApi } from "../utils/iri-replace-util.ts";
 import { updateGitRelatedDataForPackage } from "./resource.ts";
+import { getGitCredentialsFromSessionWithDefaults } from "../authentication/auth-session.ts";
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
   const result: LanguageString = {};
@@ -432,15 +431,17 @@ export const importResource = asyncHandler(async (request: express.Request, resp
  * @param repositoryURL is the URL of git repository (method also supports non-main branch URLs),
  *  this URL is transformed to the URL which downloads zip - for example https://github.com/RadStr-bot/4f21bf6d-2116-4ab3-b387-1f8074f7f412/archive/refs/heads/main.zip
  * @param commitReferenceType if not provided it just fallbacks to defaults
+ * @param accessTokens The access tokens are used to create webhook if it does not exist.
+ *  If the array is empty we do not create webhook, since we do not have any access token to use for the REST API request.
  */
 export async function importFromGitUrl(
+  gitProvider: GitProviderNode,
+  accessTokens: AccessToken[],
   repositoryURL: string,
-  httpFetchForGitProvider: HttpFetch,
-  authenticationGitProvidersData: AuthenticationGitProvidersData,
   localStoreModel: LocalStoreModel,
   storageApi: StorageApi,
-  commitReferenceType?: CommitReferenceType) {
-  const gitProvider: GitProviderNode = GitProviderNodeFactory.createGitProviderFromRepositoryURL(repositoryURL, httpFetchForGitProvider, authenticationGitProvidersData);
+  commitReferenceType?: CommitReferenceType,
+) {
   // TODO RadStr: If there will be some issues with the defaults when importing from git, then
   // TODO RadStr: we can clone the repository and do some git actions to find out what type of reference it is
   const commitReferenceTypeForZip = commitReferenceType === undefined ? getDefaultCommitReferenceTypeForZipDownload() : commitReferenceType;
@@ -480,6 +481,26 @@ export async function importFromGitUrl(
     commitReferenceType = await getCommitReferenceTypeUsingGitClone(basicRepositoryUrl, gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue);
   }
 
+  // Create webhook
+  // Technically, we could create it only for branch. However, the issue would be then that any time we switch between tag and branch in DS we would need to
+  //  remove, respectively create a webhook. Similarly once we remove a data specification in Dataspecer, we would have to remove the webhook.
+  //  The issue is that we can work concurrently. For example:
+  //   We do import. Check the existence of entry on remote, we see that it is there. Then somebody else removes the other data specification.
+  //   This removes the webhook entry on the remote. However, we have already performed the check in the first request, so now there will be no webhook.
+  //   Even though there should have been one on the remote. Other example would be webhook duplications when importing two branches at the same time and so on.
+  //  The user has to remove the webhook manually from the repository if they need to.
+  const repositoryOwner = gitProvider.extractPartOfRepositoryURL(repositoryURL, "repository-owner");
+  const repositoryName = gitProvider.extractPartOfRepositoryURL(repositoryURL, "repository-name");
+  for (const accessToken of accessTokens) {
+    if (accessToken.type === AccessTokenType.SSH) {
+      continue;
+    }
+    const webhookResponse = await gitProvider.createWebhook(accessToken.value, repositoryOwner!, repositoryName!, webhookUrl, ["push"]);
+    if (webhookResponse.status >= 200 && webhookResponse.status < 300) {
+      break;
+    }
+  }
+
   if (commitReferenceType === "branch") {
     const existingBranchResource = await resourceModel.getResourceForGitUrlAndBranch(basicRepositoryUrl, gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue);
     if (existingBranchResource !== null) {
@@ -494,7 +515,6 @@ export async function importFromGitUrl(
 
   const importer = new PackageImporter(resourceModel, localStoreModel, storageApi);
   const imported = await importer.doImport(zipBuffer, true);
-
 
   if (imported.length > 0) {
     await updateGitRelatedDataForPackage(imported[0], gitProvider, basicRepositoryUrl, gitZipDownloadURLData.commitReferenceValueInfo.commitReferenceValue, commitReferenceType);
@@ -542,7 +562,10 @@ export const importPackageFromGit = asyncHandler(async (request: express.Request
     return;
   }
 
-  const result = await importFromGitUrl(gitURL, httpFetch, configuration, storeModel, prismaClient, commitReferenceType);
+  const gitProvider: GitProviderNode = GitProviderNodeFactory.createGitProviderFromRepositoryURL(gitURL, httpFetch, configuration);
+  // TODO: Can have better scope
+  const gitCredentials = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl]);
+  const result = await importFromGitUrl(gitProvider, gitCredentials.accessTokens, gitURL, storeModel, prismaClient, commitReferenceType);
   if (result.length === 0) {
     response.status(409).json({ message: "The import failed, because it is pointing to branch, which already exists inside DS" });
     return;

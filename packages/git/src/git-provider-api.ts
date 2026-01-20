@@ -40,10 +40,6 @@ export type GitCredentials = CommitterInfo & {
 
 export type GitRef = { type: "branch"; name: string } | { type: "commit"; sha: string };
 
-// !!! Always keep the webhook-test (respectively the part of url after /)
-// export const WEBHOOK_HANDLER_URL = "https://cf133943d91c.ngrok-free.app/git/webhook-test";
-export const WEBHOOK_HANDLER_URL = "https://933958039505.ngrok-free.app/git/webhook-test";
-
 
 export enum GitProviderEnum {
   GitHub,
