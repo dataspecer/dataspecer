@@ -27,7 +27,7 @@ function getRegisteredDomain(urlString: string): string | null {
 
 
 
-const allowedUrls = [...new Set(["https://dataspecer.com", "http://localhost:5174"].concat(configuration.baseName ?? []))];
+const allowedUrls = [...new Set(["http://localhost:5174"].concat([]))];
 const allowedDomains = allowedUrls
   .map(allowedURL => getRegisteredDomain(allowedURL))
   .filter(allowedDomain => allowedDomain !== null);
