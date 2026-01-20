@@ -36,31 +36,43 @@ function replaceIrisInDatastoreAndCollectMissingOnes(
       continue;
     }
 
+
+    // We have to also replace the keys
+    let newKey = key;
+    if (allIrisToCheckFor.includes(key)) {
+      const keyReplacementResult = getReplacementForNonComposite(key, allIrisToCheckFor, irisMap, missingIrisInNew);
+      if (keyReplacementResult.containedIriToReplace) {
+        newKey = keyReplacementResult.replacementIri;
+      }
+    }
+
+
+    // Try replace value or perform recurive calls, based on the type of value
     if (Array.isArray(value)) {
-      datastoreWithReplacedIris[key] = [];
+      datastoreWithReplacedIris[newKey] = [];
       value.forEach((item, index) => {
         if (typeof item === "object" && item !== null) {
           const objectToPutIntoArray = {};
-          datastoreWithReplacedIris[key].push(objectToPutIntoArray);
+          datastoreWithReplacedIris[newKey].push(objectToPutIntoArray);
           // It is actually important to do it separately and not use ||= since if the containedIriToReplace is true, we won't run the recursion.
           const containedIriToReplaceInRecursion = replaceIrisInDatastoreAndCollectMissingOnes(item, allIrisToCheckFor, irisMap, missingIrisInNew, objectToPutIntoArray);
           containedIriToReplace ||= containedIriToReplaceInRecursion;
         }
         else {
           const replacementResult = getReplacementForNonComposite(item, allIrisToCheckFor, irisMap, missingIrisInNew);
-          datastoreWithReplacedIris[key].push(replacementResult.replacementIri);
+          datastoreWithReplacedIris[newKey].push(replacementResult.replacementIri);
           containedIriToReplace ||= replacementResult.containedIriToReplace;
         }
       });
     }
     else if (typeof value === "object" && value !== null) {
-      datastoreWithReplacedIris[key] = {};
-      const containedIriToReplaceInRecursion = replaceIrisInDatastoreAndCollectMissingOnes(value, allIrisToCheckFor, irisMap, missingIrisInNew, datastoreWithReplacedIris[key]);
+      datastoreWithReplacedIris[newKey] = {};
+      const containedIriToReplaceInRecursion = replaceIrisInDatastoreAndCollectMissingOnes(value, allIrisToCheckFor, irisMap, missingIrisInNew, datastoreWithReplacedIris[newKey]);
       containedIriToReplace ||= containedIriToReplaceInRecursion;
     }
     else {
       const replacementResult = getReplacementForNonComposite(value, allIrisToCheckFor, irisMap, missingIrisInNew);
-      datastoreWithReplacedIris[key] = replacementResult.replacementIri;
+      datastoreWithReplacedIris[newKey] = replacementResult.replacementIri;
       containedIriToReplace ||= replacementResult.containedIriToReplace;
     }
   }
@@ -84,8 +96,7 @@ function getReplacementForNonComposite(
   originalIri: any,
   allIrisToCheckFor: string[],
   irisMap: Record<string, string | null>,
-  // Outputs to extend
-  missingIrisInNew: string[],
+  missingIrisInNew: string[],     // Output to extend
 ): ReplacementForNonCompositeResult {
   let containedIriToReplace: boolean = false;
   if (typeof originalIri !== "string") {
