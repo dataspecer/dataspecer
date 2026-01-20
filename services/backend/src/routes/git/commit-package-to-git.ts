@@ -11,7 +11,7 @@ import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { mergeStateModel, resourceModel } from "../../main.ts";
 import { BranchSummary, CommitResult, SimpleGit } from "simple-git";
-import { extractPartOfRepositoryURL, getAuthorizationURL, GitProviderNode, stringToBoolean } from "@dataspecer/git";
+import { extractPartOfRepositoryURL, getAuthorizationURL, GitIgnoreBase, GitProviderNode, stringToBoolean } from "@dataspecer/git";
 import { AvailableFilesystems, ConfigType, GitCredentials, getMergeFromMergeToForGitAndDS, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase, createUniqueCommitMessage } from "@dataspecer/git";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import { AvailableExports } from "../../export-import/export-actions.ts";
@@ -319,40 +319,56 @@ async function commitDSMergeToGit(
   mergeInfo: CommitBranchAndHashInfoForMerge,
   shouldAlwaysCreateMergeState: boolean,
 ): Promise<CommitConflictInfo> {
-  // Note that the logic follows the commit method logic - create git, clone, check if should create merge state conflict, perform export and "force" merge/push.
+  // Note that the logic follows the classic commit method logic!!!
+  // the explanation for isAfterFirstSucessfulClone is not here, but in the other method
+  // The logic is create git, clone, check if should create merge state conflict, perform export and "force" merge/push.
+  // Possible TODO: It would be good idea to refactor it, but the methods do slightly differ with the flow, so it is not as trivial as it seems.
+
+
   const { mergeToBranch, mergeToCommitHash } = mergeInfo;
   // Has to be defined, otherwise we should not call this
   const { branch: mergeFromBranch, commitHash: mergeFromCommitHash, iri: mergeFromIri } = mergeInfo.mergeFromData!;
   const { repositoryOwner, repositoryName } = repositoryIdentificationInfo;
-  const { gitCredentials, gitProvider } = commitInfo;
+  const { gitCredentials } = commitInfo;
 
 
   const createSimpleGitResult: CreateSimpleGitResult = createSimpleGitUsingPredefinedGitRoot(iri, MERGE_DS_CONFLICTS_PREFIX, true);
   const { git, gitInitialDirectory, gitInitialDirectoryParent } = createSimpleGitResult;
+  let cloneResult: CloneBeforeMergeResult;
+  let hashOfPerformedCommit: string | null = null;
 
   for (const accessToken of gitCredentials.accessTokens) {
+    // Check comment in the method of the classic commit for explanation of this logic
+    const isAfterFirstSucessfulClone = hashOfPerformedCommit !== null;
+
     const repoURLWithAuthorization = getAuthorizationURL(gitCredentials, accessToken, remoteRepositoryURL, repositoryOwner, repositoryName);
     const isLastAccessToken = accessToken === gitCredentials.accessTokens.at(-1);
     const hasSetLastCommit: boolean = mergeToCommitHash !== "";
 
 
-    const cloneResult = await cloneBeforeMerge(git, gitInitialDirectory, repoURLWithAuthorization, mergeFromBranch, mergeToBranch, isLastAccessToken);
-    if (!cloneResult.isClonedSuccessfully) {
-      continue;
+    if (!isAfterFirstSucessfulClone) {
+      cloneResult = await cloneBeforeMerge(git, gitInitialDirectory, repoURLWithAuthorization, mergeFromBranch, mergeToBranch, isLastAccessToken);
+      if (!cloneResult.isClonedSuccessfully) {
+        continue;
+      }
     }
+    // Once we get here the cloneResult is always set - either from current iteration (then we set it in the if)
+    // or it comes from the previous iteration(s), in which we created commit,
+    // since once we clone, there is no other way to fail then at push.
 
     const mergeFromBranchLog = await git.log([mergeFromBranch]);
     const lastMergeFromBranchCommitInGit = mergeFromBranchLog.latest?.hash;
-    const mergeToBranchLog = await git.log([cloneResult.mergeToBranchExplicitName]);
+    const mergeToBranchLog = await git.log([cloneResult!.mergeToBranchExplicitName]);
     const lastMergeToBranchCommitInGit = mergeToBranchLog.latest?.hash;
     const shouldTryCreateMergeState = (lastMergeFromBranchCommitInGit !== mergeFromCommitHash ||
                                       lastMergeToBranchCommitInGit !== mergeToCommitHash ||
                                       shouldAlwaysCreateMergeState) &&
-                                      hasSetLastCommit;
+                                      hasSetLastCommit &&
+                                      !isAfterFirstSucessfulClone;
 
     if (shouldTryCreateMergeState) {
       const mergeFrom: MergeEndpointForComparison = {
-        gitProvider: commitInfo.gitProvider,
+        gitIgnore: new GitIgnoreBase(commitInfo.gitProvider),
         rootIri: mergeFromIri,
         filesystemType: AvailableFilesystems.DS_Filesystem,
         fullPathToRootParent: gitInitialDirectoryParent,
@@ -360,7 +376,7 @@ async function commitDSMergeToGit(
       };
 
       const mergeTo: MergeEndpointForComparison = {
-        gitProvider: commitInfo.gitProvider,
+        gitIgnore: new GitIgnoreBase(commitInfo.gitProvider),
         rootIri: iri,
         filesystemType: AvailableFilesystems.DS_Filesystem,
         fullPathToRootParent: gitInitialDirectoryParent,
@@ -393,7 +409,7 @@ async function commitDSMergeToGit(
         filesystemType: filesystemMergeTo.getFilesystemType(),
         lastCommitHash: mergeToCommitHash,
         isBranch: true,
-        branch: cloneResult.mergeToBranchExplicitName,
+        branch: cloneResult!.mergeToBranchExplicitName,
         rootFullPathToMeta: pathToRootMetaMergeTo,
         gitUrl: remoteRepositoryURL,
       };
@@ -423,10 +439,10 @@ async function commitDSMergeToGit(
     // }
 
 
-    const isMergingToDefaultBranch = await isDefaultBranch(git, cloneResult.mergeToBranchExplicitName);
+    const isMergingToDefaultBranch = await isDefaultBranch(git, cloneResult!.mergeToBranchExplicitName);
     const pushResult = await exportAndPushToGit(
       createSimpleGitResult, iri, repoURLWithAuthorization, commitInfo, hasSetLastCommit,
-      mergeFromBranch, isLastAccessToken, isMergingToDefaultBranch, cloneResult.mergeToBranchExists);
+      mergeFromBranch, isLastAccessToken, hashOfPerformedCommit, isMergingToDefaultBranch, cloneResult!.mergeToBranchExists);
     if (pushResult) {
       return null;
     }
@@ -451,21 +467,34 @@ async function commitClassicToGit(
   const createSimpleGitResult: CreateSimpleGitResult = createSimpleGitUsingPredefinedGitRoot(iri, PUSH_PREFIX, true);
   const { git, gitDirectoryToRemoveAfterWork, gitInitialDirectory, gitInitialDirectoryParent } = createSimpleGitResult;
 
+  let isNewlyCreatedBranchPresentOnlyInDS: boolean = false;
+  let hashOfPerformedCommit: string | null = null;
   for (const accessToken of gitCredentials.accessTokens) {
+    // Note that once hashOfPerformedCommit is not null. That mean we did successfully clone in previous iteration(s).
+    // We have already filled directory with the export and perform commit in the previous iteration.
+    // The push must have failed in previous iteration,
+    // since the export and commit should not fail unless there is a mistake in code.
+    // Therefore, it is safe to assume, that either merge state was created (then we do not get here and exit early)
+    // or if the hashOfPerformedCommit is not null, we just have to try pushing with the different tokens and skip all the other programming flow.
+    const isAfterFirstSucessfulClone = hashOfPerformedCommit !== null;
+
     const repoURLWithAuthorization = getAuthorizationURL(gitCredentials, accessToken, remoteRepositoryURL, repositoryOwner, repositoryName);
     const isLastAccessToken = accessToken === gitCredentials.accessTokens.at(-1);
-
     const hasSetLastCommit: boolean = localLastCommitHash !== "";
 
-    const { isCloneSuccessful, isNewlyCreatedBranchOnlyInDS } = await cloneBeforeCommit(
-      git, gitInitialDirectory, repoURLWithAuthorization, branch,
-      localLastCommitHash, hasSetLastCommit, isLastAccessToken);
-    if (!isCloneSuccessful) {
-      continue;
+    if (!isAfterFirstSucessfulClone) {
+      const { isCloneSuccessful, isNewlyCreatedBranchOnlyInDS } = await cloneBeforeCommit(
+        git, gitInitialDirectory, repoURLWithAuthorization, branch,
+        localLastCommitHash, hasSetLastCommit, isLastAccessToken);
+      if (!isCloneSuccessful) {
+        continue;
+      }
+
+      isNewlyCreatedBranchPresentOnlyInDS = isNewlyCreatedBranchOnlyInDS;
     }
 
     const branchExplicit = (await git.branch()).current;
-    if (hasSetLastCommit) {
+    if (hasSetLastCommit && !isAfterFirstSucessfulClone) {
       try {
         const remoteRepositoryLastCommitHash = await getLastCommitHash(git);
         const shouldTryCreateMergeState = localLastCommitHash !== remoteRepositoryLastCommitHash || shouldAlwaysCreateMergeState;
@@ -478,7 +507,7 @@ async function commitClassicToGit(
             rootMergeTo,
             pathToRootMetaMergeTo,
             filesystemMergeTo,
-          } = await compareGitAndDSFilesystems(gitProvider, iri, gitInitialDirectoryParent, "push", resourceModelForDS);
+          } = await compareGitAndDSFilesystems(new GitIgnoreBase(gitProvider), iri, gitInitialDirectoryParent, "push", resourceModelForDS);
 
           const commonCommitHash = await getCommonCommitInHistory(git, localLastCommitHash, remoteRepositoryLastCommitHash);
           const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS("push", localLastCommitHash, remoteRepositoryLastCommitHash);
@@ -523,8 +552,10 @@ async function commitClassicToGit(
     const isCommittingToDefaultBranch = await isDefaultBranch(git, branchExplicit);
     const pushResult = await exportAndPushToGit(
       createSimpleGitResult, iri, repoURLWithAuthorization, commitInfo, hasSetLastCommit,
-      null, isLastAccessToken, isCommittingToDefaultBranch, !isNewlyCreatedBranchOnlyInDS);
-    if (pushResult) {
+      null, isLastAccessToken, hashOfPerformedCommit, isCommittingToDefaultBranch, !isNewlyCreatedBranchPresentOnlyInDS);
+
+    hashOfPerformedCommit = pushResult.hashOfPeformedCommit;
+    if (pushResult.isPushSuccessful) {
       return null;
     }
   }
@@ -532,8 +563,19 @@ async function commitClassicToGit(
   throw new Error("Unknown error when commiting. This should be unreachable code. There were probably no access tokens available in DS at all");
 }
 
+
+type PushToGitResult = {
+  isPushSuccessful: boolean;
+  hashOfPeformedCommit: string | null;
+}
+
 /**
+ * Note that if it is either the push failure on the last access token or the push was sucessful.
+ *  Then the git project from the {@link createSimpleGitResult} is removed (meaning its directory).
+ * @todo The removal of Git's directory is ok, but maybe it would be better to do it in the calling method.
  * @param mergeFromBranch if null, then it is classic commit, if not then merge commit
+ * @param hashOfCommitToUse if null, then we do export, commit and push.
+ *  If string then it is the commit hash to use. We will skip the export and commit steps and just perform the push
  * @returns True if successful. False if not and throws error if the failure was for the last access token
  */
 async function exportAndPushToGit(
@@ -544,74 +586,90 @@ async function exportAndPushToGit(
   hasSetLastCommit: boolean,
   mergeFromBranch: string | null,
   isLastAccessToken: boolean,
+  hashOfCommitToUse: string | null,
   shouldContainWorkflowFiles: boolean,
   isBranchAlreadyTrackedOnRemote: boolean,
-): Promise<boolean> {
+): Promise<PushToGitResult> {
+  // Will be used in the result
+  const shouldSkipCommitting = hashOfCommitToUse !== null;
+  let hashOfPeformedCommit: string | null = hashOfCommitToUse;
+
+  const isClassicCommit = mergeFromBranch === null;
   const { git, gitDirectoryToRemoveAfterWork } = createSimpleGitResult;
   const { commitMessage, gitCredentials, shouldAppendAfterDefaultMergeCommitMessage } = commitInfo;
 
-  let mergeMessage: string = "";
-  if (mergeFromBranch !== null) {
-    // We create the merge commit but actually do not commit, we will do that later.
-    try {
-      const mergeResult = await git.merge(["--no-commit", "--no-ff", mergeFromBranch]);
-      console.info({mergeResult});    // TODO RadStr Debug: Debug print
+  try {
+    if (shouldSkipCommitting) {
+      const isPushSuccessful = await pushToRemoteAndUpdateResourceGitMetadata(git, iri, repoURLWithAuthorization, hashOfCommitToUse, isClassicCommit);
+      if (isPushSuccessful || isLastAccessToken) {
+        removePathRecursively(gitDirectoryToRemoveAfterWork);
+      }
+      return {
+        isPushSuccessful,
+        hashOfPeformedCommit: hashOfCommitToUse,
+      };    // We are done
     }
-    catch(mergeError) {
-      // Errors for example for conflicts, do not matter, we will override it anyways by just exporting the current content of the data specfication's merge to branch.
-      console.info({mergeError});       // TODO RadStr Debug: Debug print
-    }
-    finally {
-      if (shouldContainWorkflowFiles) {
-        await git.raw(["restore", "--staged", commitInfo.gitProvider.getWorkflowFilesDirectoryName()]);
-        await git.raw(["restore", commitInfo.gitProvider.getWorkflowFilesDirectoryName()]);
+
+    let mergeMessage: string = "";
+    if (mergeFromBranch !== null) {
+      // We create the merge commit but actually do not commit, we will do that later.
+      try {
+        const mergeResult = await git.merge(["--no-commit", "--no-ff", mergeFromBranch]);
+        console.info({mergeResult});    // TODO RadStr Debug: Debug print
+      }
+      catch(mergeError) {
+        // Errors for example for conflicts, do not matter, we will override it anyways by just exporting the current content of the data specfication's merge to branch.
+        console.info({mergeError});       // TODO RadStr Debug: Debug print
+      }
+      finally {
+        if (shouldContainWorkflowFiles) {
+          await git.raw(["restore", "--staged", commitInfo.gitProvider.getWorkflowFilesDirectoryName()]);
+          await git.raw(["restore", commitInfo.gitProvider.getWorkflowFilesDirectoryName()]);
+        }
+      }
+
+      // If the file does not exist, then it probably means that actually the merge from and merge to branch the same
+      try {
+        const fullMergeMessage = fs.readFileSync(`${createSimpleGitResult.gitInitialDirectory}/.git/MERGE_MSG`, "utf-8");
+        mergeMessage = fullMergeMessage.substring(0, fullMergeMessage.indexOf("\n"));
+      }
+      catch(error) {
+        throw new Error("The merge from branch was already merged. We can not merge again.");
       }
     }
+    await fillGitDirectoryWithExport(
+      iri, createSimpleGitResult, commitInfo.gitProvider, commitInfo.exportFormat,
+      hasSetLastCommit, shouldContainWorkflowFiles, isBranchAlreadyTrackedOnRemote);
 
-    // If the file does not exist, then it probably means that actually the merge from and merge to branch the same
+    // TODO RadStr Debug: Debug print to remove
+    for (let i = 0; i < 10; i++) {
+      console.info("*****************************************************");
+    }
+
+    // TODO RadStr Debug: Debug print to remove
     try {
-      const fullMergeMessage = fs.readFileSync(`${createSimpleGitResult.gitInitialDirectory}/.git/MERGE_MSG`, "utf-8");
-      mergeMessage = fullMergeMessage.substring(0, fullMergeMessage.indexOf("\n"));
+      // Get list of all branches (local + remote)
+      const branches = await git.branch(['-a']);
+
+      for (const branchName of Object.keys(branches.branches)) {
+        console.log(`\n=== History for branch: ${branchName} ===`);
+
+        // Get commit history of each branch
+        const log = await git.log([branchName]);
+
+        log.all.forEach(commit => {
+          console.log(`${commit.date} | ${commit.hash} | ${commit.message} | ${commit.author_name}`);
+        });
+      }
     }
-    catch(error) {
-      throw new Error("The merge from branch was already merged. We can not merge again.");
+    catch (err) {
+      console.error('Error fetching history:', err);
     }
-  }
 
-  await fillGitDirectoryWithExport(
-    iri, createSimpleGitResult, commitInfo.gitProvider, commitInfo.exportFormat,
-    hasSetLastCommit, shouldContainWorkflowFiles, isBranchAlreadyTrackedOnRemote);
-
-  // TODO RadStr Debug: Debug print to remove
-  for (let i = 0; i < 10; i++) {
-    console.info("*****************************************************");
-  }
-
-  // TODO RadStr Debug: Debug print to remove
-  try {
-    // Get list of all branches (local + remote)
-    const branches = await git.branch(['-a']);
-
-    for (const branchName of Object.keys(branches.branches)) {
-      console.log(`\n=== History for branch: ${branchName} ===`);
-
-      // Get commit history of each branch
-      const log = await git.log([branchName]);
-
-      log.all.forEach(commit => {
-        console.log(`${commit.date} | ${commit.hash} | ${commit.message} | ${commit.author_name}`);
-      });
-    }
-  }
-  catch (err) {
-    console.error('Error fetching history:', err);
-  }
-
-  const isClassicCommit = mergeFromBranch === null;
-  try {
     let commitResult: CommitResult;
     if (mergeFromBranch === null) {
       commitResult = await createClassicGitCommit(git, ["."], commitMessage, gitCredentials.name, gitCredentials.email);
+      hashOfPeformedCommit = commitResult.commit;
     }
     else {
       if (shouldAppendAfterDefaultMergeCommitMessage === null) {
@@ -622,6 +680,7 @@ async function exportAndPushToGit(
         git, ["."], mergeMessage, commitMessage,
         gitCredentials.name, gitCredentials.email, mergeFromBranch,
         shouldAppendAfterDefaultMergeCommitMessage);
+      hashOfPeformedCommit = commitResult.commit;
     }
 
     // TODO RadStr Debug: Debug print to remove
@@ -648,34 +707,51 @@ async function exportAndPushToGit(
     }
 
 
-    if (commitResult.commit !== "") {
-      // We do not need any --force or --force-with-leash options, this is enough
-      await git.push(repoURLWithAuthorization);
-      const updateCause = isClassicCommit ? "push" : "merge";
-      await resourceModel.updateLastCommitHash(iri, commitResult.commit, updateCause);
+    const isPushSuccessful = await pushToRemoteAndUpdateResourceGitMetadata(git, iri, repoURLWithAuthorization, hashOfPeformedCommit, isClassicCommit);
+    if (isPushSuccessful || isLastAccessToken) {
+      removePathRecursively(gitDirectoryToRemoveAfterWork);
     }
-    // Else no changes
-
-    return true;    // We are done
+    return {
+      isPushSuccessful,
+      hashOfPeformedCommit,
+    };    // We are done
   }
   catch(error) {
-    throw error;      // TODO RadStr: Throw now for debug purposes
     // Error can be caused by Not sufficient rights for the pushing - then we have to try all and fail on last
     if (isLastAccessToken) {
+      // It is important to not only remove the actual files, but also the .git directory,
+      // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
+      removePathRecursively(gitDirectoryToRemoveAfterWork);
       // If it is last then rethrow. Otherwise try again.
       throw error;
     }
     else {
-      // TODO RadStr: Print it for now, however it really should be only issue with rights
+      // TODO RadStr: Print the error for now, however it really should be only issue with rights
       console.error({error});
-      return false;
+      return {
+        isPushSuccessful: false,
+        hashOfPeformedCommit,
+      };
     }
   }
-  finally {
-    // It is important to not only remove the actual files, but also the .git directory,
-    // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
-    removePathRecursively(gitDirectoryToRemoveAfterWork);
+}
+
+
+async function pushToRemoteAndUpdateResourceGitMetadata(
+  git: SimpleGit,
+  iri: string,
+  repoURLWithAuthorization: string,
+  commitHash: string,
+  isClassicCommit: boolean,
+): Promise<boolean> {
+  if (commitHash !== "") {
+    // We do not need any --force or --force-with-leash options, this is enough
+    await git.push(repoURLWithAuthorization);
+    const updateCause = isClassicCommit ? "push" : "merge";
+    await resourceModel.updateLastCommitHash(iri, commitHash, updateCause);
+    return true;
   }
+  return false;
 }
 
 
