@@ -2,8 +2,10 @@ import { asyncHandler } from "../../../utils/async-handler.ts";
 import express from "express";
 import { z } from "zod";
 import { GitProviderNamesAsType, isGitProviderName } from "@dataspecer/git";
-import { createUserSSHIdentifier, splitIntoLinesAndCheckForMatchingLine } from "@dataspecer/git-node";
-import { pathToSSHConfigForDS } from "../../../utils/create-ssh-path-constants.ts";
+import { convertToPosixPath, createUserSSHIdentifier, splitIntoLinesAndCheckForMatchingLine } from "@dataspecer/git-node";
+import { pathToSSHConfigForDS, pathToSSHForDS } from "../../../utils/create-ssh-path-constants.ts";
+import path from "path";
+import fs from "fs";
 
 export const checkExistenceOfSshKeyForUserHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
@@ -28,7 +30,7 @@ export const checkExistenceOfSshKeyForUserHandler = asyncHandler(async (request:
     return;
   }
 
-  const hasSetSsh = checkExistenceOfSshKeyForUser(userSSHIdentifer, gitProviderLowercase);
+  const hasSetSsh = checkExistenceOfSshKeyForUserInConfigFile(userSSHIdentifer, gitProviderLowercase);
 
   if (hasSetSsh) {
     response.sendStatus(200);
@@ -40,10 +42,15 @@ export const checkExistenceOfSshKeyForUserHandler = asyncHandler(async (request:
 });
 
 
-function checkExistenceOfSshKeyForUser(userSSHIdentifer: string, gitProviderLowercase: GitProviderNamesAsType): boolean {
+function checkExistenceOfSshKeyForUserInConfigFile(userSSHIdentifer: string, gitProviderLowercase: GitProviderNamesAsType): boolean {
   if (gitProviderLowercase !== "github") {
     throw new Error("TODO: Currently only implementation for github");
   }
   const configIdentifier = `Host ${userSSHIdentifer}`;
   return splitIntoLinesAndCheckForMatchingLine(pathToSSHConfigForDS, configIdentifier).index >= 0;
+}
+
+export function checkExistenceOfSshKeyFileForUser(userSSHIdentifer: string): boolean {
+  const privateSSHKeyFilePath = convertToPosixPath(path.normalize(`${pathToSSHForDS}/private-ssh-key-${userSSHIdentifer}`));
+  return fs.existsSync(privateSSHKeyFilePath);
 }
