@@ -4,16 +4,16 @@ import {
   convertMergeStateCauseToEditable,
   FilesystemNodeLocation,
   getMetadataDatastoreFile,
+  GitIgnore,
   GitIgnoreBase,
-  GitProvider,
   MergeStateCause
 } from "@dataspecer/git";
 import { FilesystemFactory } from "./backend-filesystem-abstraction-factory.ts";
 import { ResourceModelForFilesystemRepresentation } from "../export.ts";
-import { MergeEndpointForComparison } from "../../models/merge-state-model.ts";
+import { MergeEndpointForComparison, MergeEndpointForStateUpdate } from "../../models/merge-state-model.ts";
 
 export async function compareGitAndDSFilesystems(
-  gitProvider: GitProvider,
+  gitIgnore: GitIgnore,
   rootIri: string,
   gitInitialDirectoryParent: string,
   mergeStateCause: Omit<MergeStateCause, "merge">,
@@ -41,7 +41,7 @@ export async function compareGitAndDSFilesystems(
   }
 
   const mergeFrom: MergeEndpointForComparison = {
-    gitProvider,
+    gitIgnore,
     rootIri,
     filesystemType: mergeFromFilesystemType,
     fullPathToRootParent: gitInitialDirectoryParent,
@@ -49,7 +49,7 @@ export async function compareGitAndDSFilesystems(
   };
 
   const mergeTo: MergeEndpointForComparison = {
-    gitProvider,
+    gitIgnore,
     rootIri,
     filesystemType: mergeToFilesystemType,
     fullPathToRootParent: gitInitialDirectoryParent,
@@ -61,8 +61,8 @@ export async function compareGitAndDSFilesystems(
 }
 
 export async function compareBackendFilesystems(
-  mergeFrom: MergeEndpointForComparison,
-  mergeTo: MergeEndpointForComparison,
+  mergeFrom: MergeEndpointForComparison | MergeEndpointForStateUpdate,
+  mergeTo: MergeEndpointForComparison | MergeEndpointForStateUpdate,
 ) {
   const mergeFromRootLocation: FilesystemNodeLocation = {
     iri: mergeFrom.rootIri,
@@ -77,9 +77,9 @@ export async function compareBackendFilesystems(
     projectIrisTreePath: "",
   };
 
-  const mergeFromGitIgnore = mergeFrom.gitProvider === null ? null : new GitIgnoreBase(mergeFrom.gitProvider);
+  let mergeFromGitIgnore: GitIgnore | null = getGitIgnoreFromMergeEndpoint(mergeFrom);
+  let mergeToGitIgnore: GitIgnore | null = getGitIgnoreFromMergeEndpoint(mergeTo);
   const filesystemMergeFrom = await FilesystemFactory.createFileSystem([mergeFromRootLocation], mergeFrom.filesystemType, mergeFromGitIgnore, mergeFrom.resourceModel);
-  const mergeToGitIgnore = mergeTo.gitProvider === null ? null : new GitIgnoreBase(mergeTo.gitProvider);
   const filesystemMergeTo = await FilesystemFactory.createFileSystem([mergeToRootLocation], mergeTo.filesystemType, mergeToGitIgnore, mergeTo.resourceModel);
 
   const fakeRootMergeFrom = filesystemMergeFrom.getRoot();
@@ -110,4 +110,18 @@ export async function compareBackendFilesystems(
     rootMergeTo,
     pathToRootMetaMergeTo,
   };
+}
+
+function getGitIgnoreFromMergeEndpoint(mergeEndpoint: MergeEndpointForComparison | MergeEndpointForStateUpdate): GitIgnore | null {
+  const isComparisonType = (mergeEndpoint as MergeEndpointForComparison)?.gitIgnore !== undefined;
+  let gitIgnore: GitIgnore | null;
+  if (isComparisonType) {
+    gitIgnore = (mergeEndpoint as MergeEndpointForComparison).gitIgnore;
+  }
+  else {
+    const convertedMergeFrom = mergeEndpoint as MergeEndpointForStateUpdate;
+    gitIgnore = convertedMergeFrom.gitProvider === null ? null : new GitIgnoreBase(convertedMergeFrom.gitProvider);
+  }
+
+  return gitIgnore;
 }

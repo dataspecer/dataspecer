@@ -14,7 +14,7 @@
 
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
-import { DatastoreComparison, dsPathJoin, getMergeFromMergeToMappingForGitAndDS, GitProvider, isDatastoreForMetadata, MergeStateCause, DatastoreInfo, DirectoryNode, FilesystemNode, FilesystemAbstraction, getMergeFromMergeToForGitAndDS, AvailableFilesystems } from "@dataspecer/git";
+import { DatastoreComparison, dsPathJoin, getMergeFromMergeToMappingForGitAndDS, isDatastoreForMetadata, MergeStateCause, DatastoreInfo, DirectoryNode, FilesystemNode, FilesystemAbstraction, getMergeFromMergeToForGitAndDS, AvailableFilesystems, GitIgnore } from "@dataspecer/git";
 import fs from "fs";
 import path from "path";
 import { updateBlob, updateResourceMetadata } from "../resource.ts";
@@ -94,7 +94,7 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
   git: SimpleGit,
   gitInitialDirectoryParent: string,
   iri: string,
-  gitProvider: GitProvider,
+  gitIgnore: GitIgnore,
   dsLastCommitHash: string,
   gitLastCommitHash: string,
   commonCommitHash: string,
@@ -108,7 +108,7 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
     filesystemMergeFrom, fakeRootMergeFrom, rootMergeFrom, pathToRootMetaMergeFrom,
     filesystemMergeTo, fakeRootMergeTo, rootMergeTo, pathToRootMetaMergeTo,
   } = await compareGitAndDSFilesystems(
-    gitProvider, iri, gitInitialDirectoryParent, mergeStateCause, resourceModelForDS);
+    gitIgnore, iri, gitInitialDirectoryParent, mergeStateCause, resourceModelForDS);
 
   const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS(mergeStateCause, dsLastCommitHash, gitLastCommitHash);
   const filesystemFakeRoots = { fakeRootMergeFrom, fakeRootMergeTo };
@@ -121,7 +121,7 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
     // Basically check against the commit the package is supposed to represent, if we did not change anything, we can always pull without conflict.
     // Otherwise we changed something and even though we could handle it automatically. We let the user resolve everything manually, it is his responsibility.
     const comparisonBetweenCurrentDSPackageAndCorrespondingCommit = await compareGitAndDSFilesystems(
-      gitProvider, iri, gitInitialDirectoryParent, mergeStateCause, resourceModelForDS);
+      gitIgnore, iri, gitInitialDirectoryParent, mergeStateCause, resourceModelForDS);
     const canPullWithoutCreatingMergeState = comparisonBetweenCurrentDSPackageAndCorrespondingCommit.diffTreeComparisonResult.conflicts.length === 0;
 
     if (canPullWithoutCreatingMergeState) {

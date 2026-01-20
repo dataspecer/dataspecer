@@ -95,14 +95,14 @@ export async function createMergeStateBetweenDSPackages(
     rootIri: mergeFrom.rootIri,
     filesystemType: AvailableFilesystems.DS_Filesystem,
     fullPathToRootParent: "",
-    gitProvider: null,
+    gitIgnore: null,
     resourceModel: mergeFrom.resourceModel,
   };
   const mergeToForComparison: MergeEndpointForComparison = {
     rootIri: mergeTo.rootIri,
     filesystemType: AvailableFilesystems.DS_Filesystem,
     fullPathToRootParent: "",
-    gitProvider: null,
+    gitIgnore: null,
     resourceModel: mergeTo.resourceModel,
   };
 

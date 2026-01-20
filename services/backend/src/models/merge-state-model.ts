@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import path from "path";
 import { ResourceModel } from "./resource-model.ts";
 import { SimpleGit, simpleGit } from "simple-git";
-import { AvailableFilesystems, DatastoreComparison, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, FilesystemNode, GitProvider, isEditableType, MergeCommitType, MergeState, MergeStateCause } from "@dataspecer/git";
+import { AvailableFilesystems, DatastoreComparison, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, FilesystemNode, GitProvider, isEditableType, MergeCommitType, MergeState, MergeStateCause, GitIgnore } from "@dataspecer/git";
 import { ResourceChangeListener, ResourceChangeType } from "./resource-change-observer.ts";
 import { updateMergeStateToBeUpToDate } from "../routes/git/merge-states/create-merge-state.ts";
 import { ALL_GIT_REPOSITORY_ROOTS, createSimpleGitUsingPredefinedGitRoot, getLastCommitHash, MERGE_DS_CONFLICTS_PREFIX, removePathRecursively } from "@dataspecer/git-node";
@@ -21,16 +21,17 @@ type MergeEndpointBase = {
 }
 
 export type MergeEndpointForComparison = {
-  gitProvider: GitProvider | null;
+  gitIgnore: GitIgnore | null;
 } & MergeEndpointBase
 
 export type MergeEndpointForStateUpdate = {
+  gitProvider: GitProvider | null;
   git: SimpleGit | null;
   lastCommitHash: string;
   // TODO RadStr: If we rewrite the update to only update the things which are usually changing on update, then we do not need to pass in the isBranch, since it does not change.
   isBranch: boolean;
   branch: string;
-} & MergeEndpointForComparison
+} & MergeEndpointBase
 
 
 type Nullable<T> = {

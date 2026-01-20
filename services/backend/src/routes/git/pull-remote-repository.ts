@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
-import { GitProvider } from "@dataspecer/git";
+import { GitIgnore, GitIgnoreBase, GitProvider } from "@dataspecer/git";
 import { saveChangesInDirectoryToBackendFinalVersion, GitChangesToDSPackageStoreResult } from "./git-webhook-handler.ts";
 import { resourceModel } from "../../main.ts";
 import { getCommonCommitInHistory, gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
@@ -78,8 +78,9 @@ export const updateDSRepositoryByGitPull = async (
     await gitCloneBasic(git, gitInitialDirectory, cloneURL, true, true, branch, depth);
     const gitLastCommitHash = await getLastCommitHash(git);
     const commonCommit = await getCommonCommitInHistory(git, dsLastCommitHash, gitLastCommitHash);
+    const gitIgnore: GitIgnore = new GitIgnoreBase(gitProvider);
     storeResult = await saveChangesInDirectoryToBackendFinalVersion(
-      cloneURL, git, gitInitialDirectoryParent, iri, gitProvider,
+      cloneURL, git, gitInitialDirectoryParent, iri, gitIgnore,
       dsLastCommitHash, gitLastCommitHash, commonCommit, branch, "pull", resourceModelForDS);
   }
   catch (cloneError) {
