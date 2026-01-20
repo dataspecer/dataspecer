@@ -47,6 +47,7 @@ export class DefaultArtifactConfigurator {
   /**
    * Sets {@link DataSpecification.artefacts} field for the given specification.
    * @param dataSpecificationIri Iri of the specification to set the artifacts for.
+   * @param singleSpecificationOnly This affects only the technical paths of the artifacts, not their public URLs.
    */
   public async generateFor(
     dataSpecificationIri: string,
@@ -67,8 +68,10 @@ export class DefaultArtifactConfigurator {
     const dataSpecificationName = await this.getSpecificationDirectoryName(dataSpecificationIri);
 
     const dataSpecificationConfiguration = DataSpecificationConfigurator.getFromObject(configuration);
-    const baseFromConfig = dataSpecificationConfiguration.publicBaseUrl ? dataSpecificationConfiguration.publicBaseUrl : null;
-    this.baseURL = baseFromConfig ?? `/${singleSpecificationOnly ? "" : dataSpecificationName}`;
+    let baseFromConfig = dataSpecificationConfiguration.publicBaseUrl ? dataSpecificationConfiguration.publicBaseUrl : null;
+
+    // Base URL must end without slash
+    this.baseURL = baseFromConfig ?? `/${singleSpecificationOnly ? "" : dataSpecificationName}`; // This is only the fallback for base URLs in ZIP without real URLs
     if (this.baseURL.endsWith("/")) {
       this.baseURL = this.baseURL.slice(0, -1);
     }
@@ -78,25 +81,29 @@ export class DefaultArtifactConfigurator {
     const currentSchemaArtefacts: DataSpecificationArtefact[] = [];
     for (const dataStructure of dataSpecification.dataStructures) {
       const psmSchemaIri = dataStructure.id;
-      let subdirectory = (singleSpecificationOnly ? "" : "/") + await this.getSchemaDirectoryName(dataSpecificationIri, psmSchemaIri);
+      /**
+       * This is a subdirectory inside specification, so it will be used for both URL and path in ZIP.
+       * Must not start and end with slash.
+       */
+      let subdirectory = await this.getSchemaDirectoryName(dataSpecificationIri, psmSchemaIri);
 
       if (dataSpecificationConfiguration.skipStructureNameIfOnlyOne && dataSpecification.dataStructures.length === 1) {
         subdirectory = "";
       }
 
-      let basePath = `${singleSpecificationOnly ? "" : dataSpecificationName}${subdirectory}` + "/";
-      if (basePath.startsWith("/")) {
-        basePath = basePath.slice(1);
-      }
+      // Path in ZIP
+      let basePath = mergePaths(singleSpecificationOnly ? null : dataSpecificationName, subdirectory);
 
       currentSchemaArtefacts.push(...getSchemaArtifacts(
           psmSchemaIri,
-          `${this.baseURL}${subdirectory ? "/" + subdirectory : ""}`,
-          basePath,
+          mergePaths(this.baseURL, subdirectory, "/"),
+          ensureNonLeadingSlash(mergePaths(basePath, "/")),
           configuration,
           this.queryParams,
       ));
     }
+
+    console.log(currentSchemaArtefacts.map(a => a.publicUrl));
 
     return currentSchemaArtefacts;
   }
@@ -157,4 +164,42 @@ export class DefaultArtifactConfigurator {
 
     return this.nameFromIri(dataSpecificationIri);
   }
+}
+
+/**
+ * Merges several paths into one by handling slashes properly.
+ * By default, it keeps slashes at the beginning and end of the resulting path as is.
+ * If you want to force them, add "/" as first or last argument.
+ */
+function mergePaths(...paths: (string | null | undefined)[]) {
+  let result = "";
+  for (const path of paths) {
+    if (path === null || path === undefined || path.length === 0) {
+      continue;
+    }
+
+    if (result.length === 0) {
+      result = path;
+      continue;
+    }
+
+    const resultEnds = result.endsWith("/");
+    const pathStarts = path.startsWith("/");
+
+    if (resultEnds && pathStarts) {
+      result += path.slice(1);
+    } else if (!resultEnds && !pathStarts) {
+      result += "/" + path;
+    } else {
+      result += path;
+    }
+  }
+  return result;
+}
+
+function ensureNonLeadingSlash(path: string) {
+  if (path.startsWith("/")) {
+    return path.slice(1);
+  }
+  return path;
 }
