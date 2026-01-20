@@ -5,7 +5,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w",
-    "prebuild": "rimraf lib"
+    "prebuild": "rimraf lib",
+    "test": "vitest run"
   },
   "exports": {
     ".": "./lib/index.js",
