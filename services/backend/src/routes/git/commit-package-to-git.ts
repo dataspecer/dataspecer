@@ -443,7 +443,9 @@ async function commitDSMergeToGit(
     const pushResult = await exportAndPushToGit(
       createSimpleGitResult, iri, repoURLWithAuthorization, commitInfo, hasSetLastCommit,
       mergeFromBranch, isLastAccessToken, hashOfPerformedCommit, isMergingToDefaultBranch, cloneResult!.mergeToBranchExists);
-    if (pushResult) {
+
+    hashOfPerformedCommit = pushResult.hashOfPeformedCommit;
+    if (pushResult.isPushSuccessful) {
       return null;
     }
   }
