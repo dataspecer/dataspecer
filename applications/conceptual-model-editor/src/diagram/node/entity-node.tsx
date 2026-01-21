@@ -195,8 +195,12 @@ function ProfileOf({ options, profileOf }: {
           .map((item, index) => (
             <li 
               key={index} 
-              style={{ backgroundColor: item.color }}
-              className="px-1"
+              style={{ 
+                backgroundColor: item.color,
+                border: `2px solid ${item.color}`,
+                filter: 'brightness(1.2)',
+              }}
+              className="px-1 text-black font-medium"
             >
               {labelGetter(item)}
             </li>

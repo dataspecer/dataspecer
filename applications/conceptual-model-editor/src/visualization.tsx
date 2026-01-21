@@ -597,7 +597,9 @@ function prepareProfileOf(
     }
     // Get the model color for the profiled entity
     const sourceModel = findSourceModelOfEntity(identifier, semanticModels);
-    const color = visualModel.getModelColor(sourceModel?.getId() ?? "") ?? DEFAULT_MODEL_COLOR;
+    // Use empty string as fallback when model is not found, which will use DEFAULT_MODEL_COLOR
+    const modelId = sourceModel?.getId() ?? "";
+    const color = visualModel.getModelColor(modelId) ?? DEFAULT_MODEL_COLOR;
     
     result.push({
       label: getEntityLabelToShowInDiagram(options.language, entity),
