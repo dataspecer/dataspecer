@@ -5,6 +5,7 @@ import { ViewManagement } from "./view-management";
 import { ExportManagement } from "./export-management";
 import { LanguageManagement } from "./language-management";
 import { getManagerLink } from "./header.service";
+import { UiLanguageToggle } from "../user-interface/shadcn/ui-language-toggle";
 
 import { t } from "../application";
 
@@ -29,7 +30,10 @@ const Header = () => {
           </div>
         </div>
         <div className="my-2 flex flex-row px-2 md:my-0 md:justify-end md:px-0">
-          <ExportManagement />
+          <div className="flex flex-row gap-2">
+            <UiLanguageToggle />
+            <ExportManagement />
+          </div>
         </div>
       </header>
     </>

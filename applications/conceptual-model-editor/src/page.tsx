@@ -37,6 +37,7 @@ import { DialogRenderer } from "./dialog/dialog-renderer";
 import { NotificationList } from "./notification";
 import { ActionsContextProvider } from "./action/actions-react-binding";
 import { OptionsContextProvider } from "./configuration/options";
+import { UiLanguageSynchronizer } from "./application/ui-language-synchronizer";
 
 import { migrateVisualModelFromV0 } from "./dataspecer/visual-model/visual-model-v0-to-v1";
 import { ExplorationContextProvider } from "./context/highlighting-exploration-mode";
@@ -162,17 +163,18 @@ const Page = () => {
   return (
     <ExplorationContextProvider>
       <OptionsContextProvider>
-        <ModelGraphContext.Provider
-          value={{
-            aggregator,
-            aggregatorView,
-            setAggregatorView,
-            models,
-            setModels,
-            visualModels,
-            setVisualModels,
-          }}
-        >
+        <UiLanguageSynchronizer>
+          <ModelGraphContext.Provider
+            value={{
+              aggregator,
+              aggregatorView,
+              setAggregatorView,
+              models,
+              setModels,
+              visualModels,
+              setVisualModels,
+            }}
+          >
           <ClassesContext.Provider
             value={{
               classes,
@@ -217,6 +219,7 @@ const Page = () => {
             </CmeSemanticModelProvider>
           </ClassesContext.Provider>
         </ModelGraphContext.Provider>
+      </UiLanguageSynchronizer>
       </OptionsContextProvider >
     </ExplorationContextProvider >
   );
