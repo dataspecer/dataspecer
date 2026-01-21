@@ -97,15 +97,15 @@ const MuiThemeWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) 
           mode,
           primary: {
             light: "#7986cb",
-            main: "#3f51b5",
+            main: mode === "dark" ? "#90caf9" : "#3f51b5",
             dark: "#303f9f",
-            contrastText: "#fff",
+            contrastText: mode === "dark" ? "#000" : "#fff",
           },
           secondary: {
             light: "#ff4081",
-            main: "#f50057",
+            main: mode === "dark" ? "#f48fb1" : "#f50057",
             dark: "#c51162",
-            contrastText: "#fff",
+            contrastText: mode === "dark" ? "#000" : "#fff",
           },
           error: {
             light: "#e57373",
@@ -121,9 +121,9 @@ const MuiThemeWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) 
           },
           info: {
             light: "#64b5f6",
-            main: "#2196f3",
+            main: mode === "dark" ? "#64b5f6" : "#2196f3",
             dark: "#1976d2",
-            contrastText: "#fff",
+            contrastText: mode === "dark" ? "#000" : "#fff",
           },
           success: {
             light: "#81c784",
@@ -134,6 +134,11 @@ const MuiThemeWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) 
           background: {
             default: mode === "dark" ? "#121212" : "#fafafa",
             paper: mode === "dark" ? "#1e1e1e" : "#fff",
+          },
+          text: {
+            primary: mode === "dark" ? "#ffffff" : "rgba(0, 0, 0, 0.87)",
+            secondary: mode === "dark" ? "#b0b0b0" : "rgba(0, 0, 0, 0.6)",
+            disabled: mode === "dark" ? "#6b6b6b" : "rgba(0, 0, 0, 0.38)",
           },
         },
       }),
