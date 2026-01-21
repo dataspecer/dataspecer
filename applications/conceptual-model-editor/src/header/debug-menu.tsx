@@ -114,7 +114,7 @@ export const DebugMenu = () => {
   const handleExportSVG = async () => {
     const svg = await actions.diagram?.actions().renderToSvgString();
     if (svg === null || svg === undefined) {
-      console.error("Can not export SVG file.")
+      console.error("Cannot export SVG file.")
       return;
     }
     const date = Date.now();
