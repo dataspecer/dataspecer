@@ -32,7 +32,7 @@ import { useViewportPersistence } from "../util/use-viewport-persistence";
 
 export interface DiagramProps {
   diagram: UseDiagramType;
-  visualModelId?: string | null;
+  visualModelId?: string;
 }
 
 export function Diagram(props: DiagramProps) {

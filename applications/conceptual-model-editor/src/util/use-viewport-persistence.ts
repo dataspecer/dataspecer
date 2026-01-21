@@ -15,6 +15,21 @@ const DEFAULT_VIEWPORT: ViewportState = {
 };
 
 /**
+ * Validates that a viewport state has valid numeric values
+ */
+function isValidViewport(viewport: ViewportState): boolean {
+  return (
+    typeof viewport.x === "number" &&
+    typeof viewport.y === "number" &&
+    typeof viewport.zoom === "number" &&
+    isFinite(viewport.x) &&
+    isFinite(viewport.y) &&
+    isFinite(viewport.zoom) &&
+    viewport.zoom > 0
+  );
+}
+
+/**
  * Hook for persisting and restoring viewport position and zoom for a visual model.
  * The viewport state is stored in browser localStorage per visual model.
  * 
@@ -31,8 +46,8 @@ export function useViewportPersistence(visualModelId: string | null, enabled = t
 
   // Track if viewport has been restored
   const restoredRef = useRef(false);
-  // Track timeout for throttling saves
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Track timeout for throttling saves - using number for browser compatibility
+  const timeoutRef = useRef<number | null>(null);
 
   // Restore viewport on mount or when visual model changes
   useEffect(() => {
@@ -40,8 +55,8 @@ export function useViewportPersistence(visualModelId: string | null, enabled = t
       return;
     }
 
-    // Restore the saved viewport
-    if (savedViewport && reactFlow) {
+    // Restore the saved viewport with validation
+    if (savedViewport && reactFlow && isValidViewport(savedViewport)) {
       try {
         reactFlow.setViewport(savedViewport);
         restoredRef.current = true;
@@ -64,12 +79,12 @@ export function useViewportPersistence(visualModelId: string | null, enabled = t
       }
 
       // Clear existing timeout
-      if (timeoutRef.current) {
+      if (timeoutRef.current !== null) {
         clearTimeout(timeoutRef.current);
       }
 
       // Set new timeout to save viewport after 500ms of inactivity
-      timeoutRef.current = setTimeout(() => {
+      timeoutRef.current = window.setTimeout(() => {
         const viewportState: ViewportState = {
           x: viewport.x,
           y: viewport.y,
@@ -83,7 +98,7 @@ export function useViewportPersistence(visualModelId: string | null, enabled = t
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) {
+      if (timeoutRef.current !== null) {
         clearTimeout(timeoutRef.current);
       }
     };

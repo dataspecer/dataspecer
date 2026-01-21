@@ -147,7 +147,7 @@ export const Visualization = () => {
         {actions.diagram === null ? null : (
           <Diagram 
             diagram={actions.diagram} 
-            visualModelId={activeVisualModel?.getIdentifier() ?? null} 
+            visualModelId={activeVisualModel?.getIdentifier()} 
           />
         )}
       </div>
