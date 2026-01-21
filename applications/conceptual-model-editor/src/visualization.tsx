@@ -141,6 +141,25 @@ export const Visualization = () => {
       classesContext, graph);
   }, [options, activeVisualModel, actions, aggregatorView, classesContext, graph]);
 
+  // Restore viewport position from visual view when the visual model changes
+  useEffect(() => {
+    if (activeVisualModel === null || actions.diagram === null || !actions.diagram.areActionsReady) {
+      return;
+    }
+    
+    const visualView = activeVisualModel.getVisualView();
+    if (visualView?.initialPositions) {
+      console.log("[VISUALIZATION] Restoring viewport position from visual view", visualView.initialPositions);
+      // Use a small delay to ensure the diagram is fully rendered before setting position
+      setTimeout(() => {
+        actions.diagram!.actions().setViewportToPosition(
+          visualView.initialPositions!.x,
+          visualView.initialPositions!.y
+        );
+      }, 100);
+    }
+  }, [activeVisualModel, actions.diagram]);
+
   return (
     <>
       <div className="h-[80vh] w-full md:h-full">

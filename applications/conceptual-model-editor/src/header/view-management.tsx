@@ -69,9 +69,34 @@ export const ViewManagement = () => {
       <button className="ml-2 white" onClick={handleCreateNewView} title="Create a new view">
         <AddIcon />
       </button>
+      <button 
+        className="ml-2 white" 
+        onClick={() => actions.saveViewportPosition()} 
+        title="Save current viewport position as default for this view"
+      >
+        <SaveViewportIcon />
+      </button>
     </div>
   );
 };
+
+const SaveViewportIcon = () => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 5v14M5 12l7 7 7-7" />
+      <circle cx="12" cy="12" r="2" fill="currentColor" />
+    </svg>
+  )
+}
 
 const AddIcon = () => {
   return (

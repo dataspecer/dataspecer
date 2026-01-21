@@ -4,7 +4,7 @@ import { LegacyModel } from "./entity-model/legacy-model.ts";
 import { UnsubscribeCallback } from "./entity-model/observable-entity-model.ts";
 import { TypedObject, isTypedObject } from "./entity-model/typed-object.ts";
 import {
-    HexColor, VisualModelData, RepresentedEntityIdentifier, VisualEntity,
+    HexColor, VisualModelData, RepresentedEntityIdentifier, VisualEntity, VisualView,
 } from "./concepts/index.ts";
 import { LabeledModel } from "./entity-model/labeled-model.ts";
 
@@ -77,6 +77,11 @@ export interface VisualModel extends TypedObject, LegacyModel, LabeledModel {
      * @returns Version of data content of this model was created from or latest version.
      */
     getInitialModelVersion(): VisualModelDataVersion;
+
+    /**
+     * @returns Visual view entity with initial viewport positions or null if not set.
+     */
+    getVisualView(): VisualView | null;
 
 }
 
