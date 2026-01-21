@@ -2,9 +2,9 @@ import { DataPsmSchema } from "@dataspecer/core/data-psm/model";
 import { DataPsmSchemaXmlExtension } from "@dataspecer/core/data-psm/xml-extension/model";
 import { useFederatedObservableStore } from "@dataspecer/federated-observable-store-react/store";
 import { useResource } from "@dataspecer/federated-observable-store-react/use-resource";
-import { Alert, Box, Collapse, FormControl, FormControlLabel, FormLabel, Grid, Radio, RadioGroup, Switch, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, Collapse, FormControl, FormControlLabel, FormLabel, Grid, Radio, RadioGroup, Switch, TextField, Typography } from "@mui/material";
 import { isEqual } from "lodash";
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+import React, { memo, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation, Trans } from "react-i18next";
 import { InfoHelp } from "../../../../components/info-help";
 import { SetCardinalityPsm } from "../../../operations/set-cardinality";
@@ -20,6 +20,8 @@ import { SetKeyValue } from "./set-key-value";
 import { SetJsonPrefixes } from "../../../operations/set-json-prefixes";
 import { SetJsonTypeMapping } from "../../../operations/set-json-type-mapping";
 import { SetJsonEnforceContext } from "../../../operations/set-json-enforce-context";
+import { BulkUpdateTechnicalLabelsDialog } from "./bulk-update-technical-labels-dialog";
+import { DefaultConfigurationContext } from "../../../../application";
 
 function cardinalityFromPsm(entity?: DataPsmSchema): Cardinality {
   return {
@@ -33,6 +35,8 @@ const defaultXmlContainer = "root";
 export const DataPsmSchemaCard: React.FC<{ iri: string; onClose: () => void }> = memo(({ iri }) => {
   const { t } = useTranslation("detail");
   const store = useFederatedObservableStore();
+  const defaultConfiguration = useContext(DefaultConfigurationContext);
+  const [bulkUpdateDialogOpen, setBulkUpdateDialogOpen] = useState(false);
 
   const { resource } = useResource<DataPsmSchema>(iri);
   const label = resource?.dataPsmHumanLabel ?? {};
@@ -221,6 +225,14 @@ export const DataPsmSchemaCard: React.FC<{ iri: string; onClose: () => void }> =
               value={technicalLabel}
               onChange={(event) => setTechnicalLabel(event.target.value)}
             />
+            <Button 
+              variant="text" 
+              size="small"
+              onClick={() => setBulkUpdateDialogOpen(true)}
+              sx={{ mt: 1 }}
+            >
+              Bulk update all technical labels...
+            </Button>
           </Box>
 
           <Box sx={{ mb: 3 }}>
@@ -364,6 +376,13 @@ export const DataPsmSchemaCard: React.FC<{ iri: string; onClose: () => void }> =
           </Box>
         </Grid>
       </Grid>
+
+      <BulkUpdateTechnicalLabelsDialog 
+        open={bulkUpdateDialogOpen}
+        onClose={() => setBulkUpdateDialogOpen(false)}
+        schemaIri={iri}
+        defaultConfiguration={defaultConfiguration}
+      />
     </>
   );
 });
