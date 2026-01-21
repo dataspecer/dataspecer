@@ -1080,7 +1080,7 @@ function createActionsContext(
       return;
     }
     saveViewportPositionAction(activeVisualModel, diagram);
-    notifications.success("Viewport position saved successfully.");
+    notifications.success("Viewport position saved. Click 'Save' button to persist changes.");
   };
 
   const openExtendSelectionDialog = (selections: Selections) => {

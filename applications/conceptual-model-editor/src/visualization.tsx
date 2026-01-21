@@ -148,6 +148,12 @@ export const Visualization = () => {
     }
     
     const visualView = activeVisualModel.getVisualView();
+    LOG.trace("[VISUALIZATION] Checking for saved viewport position", {
+      hasVisualView: visualView !== null,
+      hasInitialPositions: visualView?.initialPositions !== null,
+      initialPositions: visualView?.initialPositions
+    });
+    
     if (visualView?.initialPositions) {
       LOG.trace("[VISUALIZATION] Restoring viewport position from visual view", visualView.initialPositions);
       // Use a small delay to ensure the diagram is fully rendered before setting position
