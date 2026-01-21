@@ -142,10 +142,10 @@ const MuiThemeWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) 
           },
           action: {
             active: mode === "dark" ? "#ffffff" : "rgba(0, 0, 0, 0.54)",
-            hover: mode === "dark" ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.04)",
-            selected: mode === "dark" ? "rgba(255, 255, 255, 0.20)" : "rgba(0, 0, 0, 0.08)",
+            hover: mode === "dark" ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.04)",
+            selected: mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)",
             disabled: mode === "dark" ? "rgba(255, 255, 255, 0.3)" : "rgba(0, 0, 0, 0.26)",
-            disabledBackground: mode === "dark" ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.12)",
+            disabledBackground: mode === "dark" ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.12)",
           },
           divider: mode === "dark" ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.12)",
         },
