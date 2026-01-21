@@ -529,7 +529,12 @@ export const RightPanel: React.FC<{ iri: string, close: () => void }> = memo(({i
                         {t('title cardinality')}
                     </Typography>
 
-                    <CardinalitySelector value={psmCardinality} onChange={setPsmCardinality} inherit={usesSemanticCardinality} />
+                    <CardinalitySelector 
+                        value={psmCardinality} 
+                        onChange={setPsmCardinality} 
+                        inherit={usesSemanticCardinality}
+                        profileConstraint={usesSemanticCardinality ? semanticCardinality : undefined}
+                    />
 
                     {usesSemanticCardinality && <Card sx={{background: "#00000020"}}><CardContent>
                         <Typography variant="subtitle1" component="h2">

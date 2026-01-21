@@ -1,4 +1,4 @@
-import {Box, Button, DialogActions, DialogContent, FormControlLabel, Grid, Radio, RadioGroup, Switch, TextField} from "@mui/material";
+import {Box, Button, DialogActions, DialogContent, FormControlLabel, Grid, Radio, RadioGroup, Switch, TextField, Tooltip} from "@mui/material";
 import React, {useEffect} from "react";
 import {useTranslation} from "react-i18next";
 import {dialog, DialogParameters, useDialog} from "../../dialog";
@@ -23,6 +23,11 @@ enum PredefinedCardinality {
 type CardinalitySelectorProps = {
     disabled?: boolean;
     color?: React.ComponentProps<typeof Radio>["color"];
+    /**
+     * Profile constraint that restricts what cardinalities can be selected.
+     * If provided, cardinalities that don't meet these constraints will be disabled.
+     */
+    profileConstraint?: Cardinality;
 } & ({
     value: Cardinality,
     onChange: (value: Cardinality) => void;
@@ -185,7 +190,34 @@ function cardinalityToKnown(cardinality: Cardinality | null): PredefinedCardinal
     return null
 }
 
-export const CardinalitySelector: React.FC<CardinalitySelectorProps> = ({value, onChange, disabled, inherit, color}) => {
+/**
+ * Check if a cardinality meets the profile constraint.
+ * A cardinality meets the constraint if:
+ * - min >= constraint.min
+ * - max <= constraint.max (considering null as infinity)
+ */
+function cardinalityMeetsConstraint(cardinality: Cardinality, constraint: Cardinality): boolean {
+    // Check minimum
+    if (cardinality.cardinalityMin < constraint.cardinalityMin) {
+        return false;
+    }
+    
+    // Check maximum
+    // null means infinity
+    if (constraint.cardinalityMax !== null) {
+        if (cardinality.cardinalityMax === null) {
+            // cardinality is infinity but constraint has a limit
+            return false;
+        }
+        if (cardinality.cardinalityMax > constraint.cardinalityMax) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+export const CardinalitySelector: React.FC<CardinalitySelectorProps> = ({value, onChange, disabled, inherit, color, profileConstraint}) => {
     const {t} = useTranslation("detail");
 
     const selectedRadio = cardinalityToKnown(value) ?? "custom";
@@ -204,6 +236,39 @@ export const CardinalitySelector: React.FC<CardinalitySelectorProps> = ({value, 
 
     const CustomDialog = useDialog(CustomCardinalityDialog, ["defaultValue", "onConfirm"]);
 
+    // Helper to check if a predefined cardinality should be disabled
+    const isCardinalityDisabled = (cardinality: Cardinality | null): boolean => {
+        if (!profileConstraint || cardinality === null) {
+            return false;
+        }
+        return !cardinalityMeetsConstraint(cardinality, profileConstraint);
+    };
+
+    // Helper to get tooltip text for disabled cardinalities
+    const getDisabledTooltip = (): string => {
+        if (!profileConstraint) {
+            return "";
+        }
+        const maxStr = profileConstraint.cardinalityMax === null ? "" : profileConstraint.cardinalityMax.toString();
+        if (profileConstraint.cardinalityMax === null) {
+            return t("cardinality constraint no max", { min: profileConstraint.cardinalityMin });
+        }
+        return t("cardinality constraint", { min: profileConstraint.cardinalityMin, max: maxStr });
+    };
+
+    // Helper to wrap a control with tooltip if it's disabled due to constraint
+    const maybeWrapWithTooltip = (control: React.ReactElement, cardinalityValue: Cardinality | null): React.ReactElement => {
+        const isDisabledByConstraint = profileConstraint && cardinalityValue !== null && isCardinalityDisabled(cardinalityValue);
+        if (isDisabledByConstraint) {
+            return (
+                <Tooltip title={getDisabledTooltip()} arrow>
+                    <span>{control}</span>
+                </Tooltip>
+            );
+        }
+        return control;
+    };
+
     return <Box sx={{display: "flex", flexDirection: "row"}}>
         <RadioGroup
             aria-label="gender"
@@ -212,12 +277,60 @@ export const CardinalitySelector: React.FC<CardinalitySelectorProps> = ({value, 
             onChange={handleChange}
             sx={{display: "flex", flexDirection: "row"}}
         >
-            {inherit && <FormControlLabel disabled={disabled} value={PredefinedCardinality.unset} control={<Radio color={color} />} label={t("cardinality unset") as string} />}
-            <FormControlLabel disabled={disabled} value={PredefinedCardinality.c_0_infinity} control={<Radio color={color} />} label="0..*" />
-            <FormControlLabel disabled={disabled} value={PredefinedCardinality.c_1_infinity} control={<Radio color={color} />} label="1..*" />
-            <FormControlLabel disabled={disabled} value={PredefinedCardinality.c_0_1} control={<Radio color={color} />} label="0..1" />
-            <FormControlLabel disabled={disabled} value={PredefinedCardinality.c_1} control={<Radio color={color} />} label="1" />
-            {customIsUnique && <FormControlLabel disabled={disabled} value={"custom"} control={<Radio color={color} />} label={custom.cardinalityMin + ".." + (custom.cardinalityMax ?? "*")} />}
+            {inherit && maybeWrapWithTooltip(
+                <FormControlLabel 
+                    disabled={disabled} 
+                    value={PredefinedCardinality.unset} 
+                    control={<Radio color={color} />} 
+                    label={t("cardinality unset") as string} 
+                />,
+                null
+            )}
+            {maybeWrapWithTooltip(
+                <FormControlLabel 
+                    disabled={disabled || isCardinalityDisabled(predefinedCardinalityToValue[PredefinedCardinality.c_0_infinity])} 
+                    value={PredefinedCardinality.c_0_infinity} 
+                    control={<Radio color={color} />} 
+                    label="0..*" 
+                />,
+                predefinedCardinalityToValue[PredefinedCardinality.c_0_infinity]
+            )}
+            {maybeWrapWithTooltip(
+                <FormControlLabel 
+                    disabled={disabled || isCardinalityDisabled(predefinedCardinalityToValue[PredefinedCardinality.c_1_infinity])} 
+                    value={PredefinedCardinality.c_1_infinity} 
+                    control={<Radio color={color} />} 
+                    label="1..*" 
+                />,
+                predefinedCardinalityToValue[PredefinedCardinality.c_1_infinity]
+            )}
+            {maybeWrapWithTooltip(
+                <FormControlLabel 
+                    disabled={disabled || isCardinalityDisabled(predefinedCardinalityToValue[PredefinedCardinality.c_0_1])} 
+                    value={PredefinedCardinality.c_0_1} 
+                    control={<Radio color={color} />} 
+                    label="0..1" 
+                />,
+                predefinedCardinalityToValue[PredefinedCardinality.c_0_1]
+            )}
+            {maybeWrapWithTooltip(
+                <FormControlLabel 
+                    disabled={disabled || isCardinalityDisabled(predefinedCardinalityToValue[PredefinedCardinality.c_1])} 
+                    value={PredefinedCardinality.c_1} 
+                    control={<Radio color={color} />} 
+                    label="1" 
+                />,
+                predefinedCardinalityToValue[PredefinedCardinality.c_1]
+            )}
+            {customIsUnique && maybeWrapWithTooltip(
+                <FormControlLabel 
+                    disabled={disabled || isCardinalityDisabled(custom)} 
+                    value={"custom"} 
+                    control={<Radio color={color} />} 
+                    label={custom.cardinalityMin + ".." + (custom.cardinalityMax ?? "*")} 
+                />,
+                custom
+            )}
         </RadioGroup>
         <FormControlLabel disabled={disabled} value={"sdf"} control={<Radio onClick={() => CustomDialog.open({})} checked={false} />} label={t("cardinality custom") as string} />
 
