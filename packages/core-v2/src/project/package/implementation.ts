@@ -10,6 +10,13 @@ import { BaseResource, Package, ResourceEditable } from "../resource/resource.ts
 import { PackageService, SemanticModelPackageService } from "./package-service.ts";
 
 /**
+ * Check if HTTP status code indicates success.
+ */
+function isHttpSuccess(status: number): boolean {
+    return status >= 200 && status < 300;
+}
+
+/**
  * Implementation of PackageService that communicates with backend and provides semantic models.
  */
 export class BackendPackageService implements PackageService, SemanticModelPackageService {
@@ -158,7 +165,7 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
                     }),
                 });
                 responseStatuses.add(createdResponse.status);
-                resourceExistsOrCreated = createdResponse.status >= 200 && createdResponse.status < 300;
+                resourceExistsOrCreated = isHttpSuccess(createdResponse.status);
             } else {
                 const updatedResponse = await this.httpFetch(this.getResourceUrl(iri), {
                     method: "PUT",
@@ -170,7 +177,7 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
                     }),
                 });
                 responseStatuses.add(updatedResponse.status);
-                resourceExistsOrCreated = updatedResponse.status >= 200 && updatedResponse.status < 300;
+                resourceExistsOrCreated = isHttpSuccess(updatedResponse.status);
             }
 
             // Only save blob data if the resource exists or was successfully created
