@@ -10,209 +10,209 @@ function prefix<T>(prefix: string, items: Record<string, T>): Record<string, T> 
 
 const dialogAssociation = prefix(
   "dialog.association.", {
-  "cancel": "❌ Cancel",
-  // Edit
-  "label-edit": "Edit a relationship",
-  "ok-edit": "✅ Save changes",
-  // Create
-  "label-create": "Create a new relationship",
-  "ok-create": "✅ Create",
-});
+    "cancel": "❌ Cancel",
+    // Edit
+    "label-edit": "Edit a relationship",
+    "ok-edit": "✅ Save changes",
+    // Create
+    "label-create": "Create a new relationship",
+    "ok-create": "✅ Create",
+  });
 
 const dialogAssociationProfile = prefix(
   "dialog.association-profile.", {
-  "cancel": "❌ Cancel",
-  // Edit
-  "label-edit": "Edit a relationship profile",
-  "ok-edit": "✅ Save changes",
-  // Create
-  "label-create": "Create a new relationship profile",
-  "ok-create": "✅ Create",
-});
+    "cancel": "❌ Cancel",
+    // Edit
+    "label-edit": "Edit a relationship profile",
+    "ok-edit": "✅ Save changes",
+    // Create
+    "label-create": "Create a new relationship profile",
+    "ok-create": "✅ Create",
+  });
 
 const dialogAttribute = prefix(
   "dialog.attribute.", {
-  "cancel": "❌ Cancel",
-  // Edit
-  "label-edit": "Edit an attribute",
-  "ok-edit": "✅ Save changes",
-  // Create
-  "label-create": "Create a new attribute",
-  "ok-create": "✅ Create",
-});
+    "cancel": "❌ Cancel",
+    // Edit
+    "label-edit": "Edit an attribute",
+    "ok-edit": "✅ Save changes",
+    // Create
+    "label-create": "Create a new attribute",
+    "ok-create": "✅ Create",
+  });
 
 const dialogAttributeProfile = prefix(
   "dialog.attribute-profile.", {
-  "cancel": "❌ Cancel",
-  // Edit
-  "label-edit": "Edit an attribute profile",
-  "ok-edit": "✅ Save changes",
-  // Create
-  "label-create": "Create a new attribute profile",
-  "ok-create": "✅ Create",
-});
+    "cancel": "❌ Cancel",
+    // Edit
+    "label-edit": "Edit an attribute profile",
+    "ok-edit": "✅ Save changes",
+    // Create
+    "label-create": "Create a new attribute profile",
+    "ok-create": "✅ Create",
+  });
 
 const dialogClass = prefix(
   "dialog.class.", {
-  "cancel": "❌ Cancel",
-  // Edit
-  "label-edit": "Edit a class",
-  "ok-edit": "✅ Save changes",
-  // Create
-  "label-create": "Create a new class",
-  "ok-create": "✅ Create",
-});
+    "cancel": "❌ Cancel",
+    // Edit
+    "label-edit": "Edit a class",
+    "ok-edit": "✅ Save changes",
+    // Create
+    "label-create": "Create a new class",
+    "ok-create": "✅ Create",
+  });
 
 const dialogClassProfile = prefix(
   "dialog.class-profile.", {
-  "cancel": "❌ Cancel",
-  // Edit
-  "label-edit": "Edit a class profile",
-  "ok-edit": "✅ Save changes",
-  // Create
-  "label-create": "Create a class profile",
-  "ok-create": "✅ Create",
-});
+    "cancel": "❌ Cancel",
+    // Edit
+    "label-edit": "Edit a class profile",
+    "ok-edit": "✅ Save changes",
+    // Create
+    "label-create": "Create a class profile",
+    "ok-create": "✅ Create",
+  });
 
 const dialogLayoutVisualModel = prefix(
   "dialog.layout-visual-model.", {
-  "cancel": "❌ Cancel",
-  // Perform layout
-  "label-perform": "Autolayout algorithm configuration",
-  "ok-perform": "✅ Perform layout",
-});
+    "cancel": "❌ Cancel",
+    // Perform layout
+    "label-perform": "Autolayout algorithm configuration",
+    "ok-perform": "✅ Perform layout",
+  });
 
 const dialogVisualDiagramNode = prefix(
   "dialog.visual-diagram-node.", {
-  "cancel": "❌ Cancel",
-  // Edit
-  "label-edit": "Edit a visual diagram node",
-  "label-info": "Show info about visual diagram node",
-  "ok-edit": "✅ Save changes",
-  // Create
-  "label-create": "Create a new visual diagram node",
-  "ok-create": "✅ Create",
-});
+    "cancel": "❌ Cancel",
+    // Edit
+    "label-edit": "Edit a visual diagram node",
+    "label-info": "Show info about visual diagram node",
+    "ok-edit": "✅ Save changes",
+    // Create
+    "label-create": "Create a new visual diagram node",
+    "ok-create": "✅ Create",
+  });
 
 const dialogVisualModel = prefix(
   "dialog.visual-model.", {
-  "cancel": "❌ Cancel",
-  // Edit
-  "label-edit": "Edit visual model",
-  "ok-edit": "✅ Save changes",
-  // Create
-  "label-create": "Create new visual model",
-  "ok-create": "✅ Create",
-});
+    "cancel": "❌ Cancel",
+    // Edit
+    "label-edit": "Edit visual model",
+    "ok-edit": "✅ Save changes",
+    // Create
+    "label-create": "Create new visual model",
+    "ok-create": "✅ Create",
+  });
 
 const dialogVisualNode = prefix(
   "edit-visual-node-dialog.", {
-  "label": (nodeLabel: string) => `Edit visual node ${nodeLabel}`,
-  "btn-ok": "✅ Accept",
-  "btn-cancel": "❌ Cancel",
-  "content-visible": "Visible content:",
-  "content-available": "Available content:",
-  "level-mandatory": "mandatory",
-  "level-optional": "optional",
-  "level-recommended": "recommended",
-});
+    "label": (nodeLabel: string) => `Edit visual node ${nodeLabel}`,
+    "btn-ok": "✅ Accept",
+    "btn-cancel": "❌ Cancel",
+    "content-visible": "Visible content:",
+    "content-available": "Available content:",
+    "level-mandatory": "mandatory",
+    "level-optional": "optional",
+    "level-recommended": "recommended",
+  });
 
 const editSemanticModelDialog = prefix(
   "edit-semantic-model-dialog.", {
-  "title": "Edit semantic model",
-  "base-iri": "Base IRI",
-  "label": "Label",
-  "color": "Color",
-  "ok": "✅ Save changes",
-  "cancel": "❌ Cancel",
-  "external-model-message": "This model is external. As a result you can only change the model's color."
-},
+    "title": "Edit semantic model",
+    "base-iri": "Base IRI",
+    "label": "Label",
+    "color": "Color",
+    "ok": "✅ Save changes",
+    "cancel": "❌ Cancel",
+    "external-model-message": "This model is external. As a result you can only change the model's color."
+  },
 );
 
 const searchExternalSemanticModelDialog = prefix(
   "search-external-semantic-model-dialog.", {
-  "title": "Add entities from an external semantic model",
-  "search": "Search",
-  "ok": "✅ Add entities changes",
-  "cancel": "❌ Cancel",
-},
+    "title": "Add entities from an external semantic model",
+    "search": "Search",
+    "ok": "✅ Add entities changes",
+    "cancel": "❌ Cancel",
+  },
 );
 
 const profileModelDialog = prefix(
   "profile-model-dialog.", {
-  "label": "Profile entities in a model",
-  "ok": "Profile",
-  "cancel": "Close",
-  "source-model": "Source",
-  "target-model": "Target",
-},
+    "label": "Profile entities in a model",
+    "ok": "Profile",
+    "cancel": "Close",
+    "source-model": "Source",
+    "target-model": "Target",
+  },
 );
 
 const catalog = prefix(
   "catalog.", {
-  "model.show": "Show all entities in the diagram.",
-  "model.hide": "Hide all entities in the diagram.",
-  "model.edit": "Edit semantic model.",
-  "model.profile": "Profile semantic model.",
-  "model.delete": "Delete the semantic model.",
-  "model.add": "Add a new semantic model.",
-  "model.toggle": "Toggle diagram visibility.",
-  "model.extend-external": "Search and add entities from semantic model.",
-  "model.create-class": "Create a new class.",
-  "model.create-association": "Create a new association.",
-  "model.create-attribute": "Create a new attribute.",
-  "class.add-surroundings": "Load class's surrounding.",
-  "class.release-surroundings": "Release class's surrounding.",
-  "class.focus": "Focus in the diagram.",
-  "class.delete": "Delete the class.",
-  "class.edit": "Edit the class.",
-  "class.detail": "Show class detail.",
-  "class.toggle": "Toggle visibility in the diagram.",
-  "class.profile": "Create a new profile.",
-  "class.neighborhood": "Add related entities to the diagram.",
-  "class-profile.focus": "Focus in the diagram.",
-  "class-profile.delete": "Delete the class profile.",
-  "class-profile.edit": "Edit the class profile.",
-  "class-profile.detail": "Show profile class detail.",
-  "class-profile.toggle": "Toggle visibility in the diagram.",
-  "class-profile.profile": "Create a new profile.",
-  "class-profile.neighborhood": "Add related entities to the diagram.",
-  "relationship.focus": "Focus in the diagram.",
-  "relationship.delete": "Delete the relationship.",
-  "relationship.edit": "Edit the relationship.",
-  "relationship.detail": "Show relationship detail.",
-  "relationship.toggle": "Toggle visibility in the diagram.",
-  "relationship.profile": "Create a new profile.",
-  "relationship.neighborhood": "Add domain and range to the diagram.",
-  "relationship-profile.focus": "Focus in the diagram.",
-  "relationship-profile.delete": "Delete the relationship profile.",
-  "relationship-profile.edit": "Edit the relationship profile.",
-  "relationship-profile.detail": "Show relationship profile detail.",
-  "relationship-profile.toggle": "Toggle visibility in the diagram.",
-  "relationship-profile.profile": "Create a new profile.",
-  "relationship-profile.neighborhood": "Add domain and range to the diagram.",
-  "generalization.delete": "Delete the generalization.",
-  "generalization.detail": "Show generalization detail.",
-  "generalization.toggle": "Toggle visibility in the diagram.",
-  "clear": "Clear",
-  "collapse-all": "Collapse all vocabularies",
-  "expand-all": "Expand all vocabularies",
-  "search-title": "Search items by label",
-});
+    "model.show": "Show all entities in the diagram.",
+    "model.hide": "Hide all entities in the diagram.",
+    "model.edit": "Edit semantic model.",
+    "model.profile": "Profile semantic model.",
+    "model.delete": "Delete the semantic model.",
+    "model.add": "Add a new semantic model.",
+    "model.toggle": "Toggle diagram visibility.",
+    "model.extend-external": "Search and add entities from semantic model.",
+    "model.create-class": "Create a new class.",
+    "model.create-association": "Create a new association.",
+    "model.create-attribute": "Create a new attribute.",
+    "class.add-surroundings": "Load class's surrounding.",
+    "class.release-surroundings": "Release class's surrounding.",
+    "class.focus": "Focus in the diagram.",
+    "class.delete": "Delete the class.",
+    "class.edit": "Edit the class.",
+    "class.detail": "Show class detail.",
+    "class.toggle": "Toggle visibility in the diagram.",
+    "class.profile": "Create a new profile.",
+    "class.neighborhood": "Add related entities to the diagram.",
+    "class-profile.focus": "Focus in the diagram.",
+    "class-profile.delete": "Delete the class profile.",
+    "class-profile.edit": "Edit the class profile.",
+    "class-profile.detail": "Show profile class detail.",
+    "class-profile.toggle": "Toggle visibility in the diagram.",
+    "class-profile.profile": "Create a new profile.",
+    "class-profile.neighborhood": "Add related entities to the diagram.",
+    "relationship.focus": "Focus in the diagram.",
+    "relationship.delete": "Delete the relationship.",
+    "relationship.edit": "Edit the relationship.",
+    "relationship.detail": "Show relationship detail.",
+    "relationship.toggle": "Toggle visibility in the diagram.",
+    "relationship.profile": "Create a new profile.",
+    "relationship.neighborhood": "Add domain and range to the diagram.",
+    "relationship-profile.focus": "Focus in the diagram.",
+    "relationship-profile.delete": "Delete the relationship profile.",
+    "relationship-profile.edit": "Edit the relationship profile.",
+    "relationship-profile.detail": "Show relationship profile detail.",
+    "relationship-profile.toggle": "Toggle visibility in the diagram.",
+    "relationship-profile.profile": "Create a new profile.",
+    "relationship-profile.neighborhood": "Add domain and range to the diagram.",
+    "generalization.delete": "Delete the generalization.",
+    "generalization.detail": "Show generalization detail.",
+    "generalization.toggle": "Toggle visibility in the diagram.",
+    "clear": "Clear",
+    "collapse-all": "Collapse all vocabularies",
+    "expand-all": "Expand all vocabularies",
+    "search-title": "Search items by label",
+  });
 
 const dataspecer = prefix(
   "dataspecer", {
-  "package.state-is-null": "There is no dataspecer state information, please reload the application",
-  "package.missing-model": "Missing model.",
-  "package.can-not-save-in-detached-mode": "Can not save in detached mode.",
-  "ui-model.state-is-null": "There is no ui-model state information, please reload the application.",
-},
+    "package.state-is-null": "There is no dataspecer state information, please reload the application",
+    "package.missing-model": "Missing model.",
+    "package.can-not-save-in-detached-mode": "Can not save in detached mode.",
+    "ui-model.state-is-null": "There is no ui-model state information, please reload the application.",
+  },
 );
 
 const inputIri = prefix(
   "input-iri.", {
-  "validate.space": "Invalid IRI syntax.",
-},
+    "validate.space": "Invalid IRI syntax.",
+  },
 );
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type

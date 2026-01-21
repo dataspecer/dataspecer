@@ -3,7 +3,7 @@ import { shallow } from "zustand/shallow";
 import { type ReactFlowState, useInternalNode, useStore } from "@xyflow/react";
 
 import { DiagramContext, NodeMenuType } from "../diagram-controller";
-import { computeScreenPosition, onAddWaypoint } from "./edge-utilities";
+import { computeScreenPosition, onAddWaypoint, calculateEdgeToolbarLines } from "./edge-utilities";
 import { EdgeToolbarProps, viewportStoreSelector } from "./edge-toolbar";
 import { Edge } from "../diagram-model";
 import { ToolbarPortal } from "../canvas/toolbar-portal";
@@ -38,21 +38,8 @@ export function PropertyEdgeToolbar({ value }: { value: EdgeToolbarProps | null 
   const addWaypoint = () => onAddWaypoint(
     context, sourceNode, targetNode, data, value);
 
-  // Calculate line endpoints for each button (in pixels, assuming 1em = ~16px)
-  const emToPixels = 16 * 1.35; // 1.35em font size on buttons
-  const btnSize = 2 * emToPixels; // em, matches CSS var(--btn-size)
-  const extraSpace = 1 * emToPixels; // em, matches CSS var(--extra-space)
-  const radius = btnSize + extraSpace; // 3em total in pixels
-  const angles = [0, 72, 144, 216, 288]; // degrees for 5 buttons
-  const svgSize = radius * 2.5;
-  const center = svgSize / 2;
-  
-  const lines = angles.map((angle) => {
-    const radians = (angle * Math.PI) / 180;
-    const x2 = center + Math.cos(radians) * radius;
-    const y2 = center - Math.sin(radians) * radius; // negative because SVG y-axis is inverted
-    return { x1: center, y1: center, x2, y2 };
-  });
+  // Calculate SVG lines for connecting buttons to center
+  const { svgSize, lines } = calculateEdgeToolbarLines();
 
   return (
     <>

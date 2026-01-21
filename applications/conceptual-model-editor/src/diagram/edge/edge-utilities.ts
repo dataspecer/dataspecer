@@ -156,3 +156,38 @@ export function createOrthogonalWaypoints(
 
   return [sourcePosition, ...waypoints, targetPosition];
 }
+
+/**
+ * Constants for edge toolbar button positioning
+ */
+const EM_TO_PIXELS = 16 * 1.35; // 1.35em font size on buttons
+const BTN_SIZE_EM = 2; // matches CSS var(--btn-size)
+const EXTRA_SPACE_EM = 1; // matches CSS var(--extra-space)
+
+/**
+ * Calculate SVG lines connecting edge toolbar buttons to the center point.
+ * Buttons are positioned in a circular pattern at 72° intervals.
+ * 
+ * @returns Object containing SVG properties and line coordinates
+ */
+export function calculateEdgeToolbarLines() {
+  const btnSize = BTN_SIZE_EM * EM_TO_PIXELS;
+  const extraSpace = EXTRA_SPACE_EM * EM_TO_PIXELS;
+  const radius = btnSize + extraSpace; // 3em total in pixels
+  const angles = [0, 72, 144, 216, 288]; // degrees for 5 buttons
+  const svgSize = radius * 2.5;
+  const center = svgSize / 2;
+  
+  const lines = angles.map((angle) => {
+    const radians = (angle * Math.PI) / 180;
+    const x2 = center + Math.cos(radians) * radius;
+    const y2 = center - Math.sin(radians) * radius; // negative because SVG y-axis is inverted
+    return { x1: center, y1: center, x2, y2 };
+  });
+
+  return {
+    svgSize,
+    center,
+    lines,
+  };
+}
