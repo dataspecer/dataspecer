@@ -11,6 +11,7 @@ import {
   DiagramOptions,
   EntityColor,
   LabelVisual,
+  ProfileOfColor,
   ProfileOfVisual,
 } from "../model";
 import {
@@ -186,6 +187,9 @@ function ProfileOf({ options, profileOf }: {
   case ProfileOfVisual.None:
     return;
   }
+  
+  const shouldColorItems = options.profileOfColor === ProfileOfColor.SourceModel;
+  
   return (
     <div className="text-gray-600">
       {options.profileOfLabel}&nbsp;
@@ -194,13 +198,13 @@ function ProfileOf({ options, profileOf }: {
           .filter(item => labelGetter(item) !== null)
           .map((item, index) => (
             <li 
-              key={index} 
-              style={{ 
+              key={index}
+              style={shouldColorItems ? { 
                 backgroundColor: item.color,
                 border: `2px solid ${item.color}`,
                 filter: 'brightness(1.2)',
-              }}
-              className="px-1 text-black font-medium"
+              } : undefined}
+              className={shouldColorItems ? "px-1 text-black font-medium" : undefined}
             >
               {labelGetter(item)}
             </li>

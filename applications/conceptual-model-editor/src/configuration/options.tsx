@@ -1,4 +1,4 @@
-import { DiagramOptions, EntityColor, LabelVisual, ProfileOfVisual } from "../diagram/model";
+import { DiagramOptions, EntityColor, LabelVisual, ProfileOfColor, ProfileOfVisual } from "../diagram/model";
 import React, { useContext, useMemo, useState } from "react";
 
 export enum Language {
@@ -48,6 +48,8 @@ export interface VisualModelOptions {
 
   profileOfVisual: ProfileOfVisual;
 
+  profileOfColor: ProfileOfColor;
+
   /**
    * Show range label using {@link labelVisual} and cardinality.
    */
@@ -68,6 +70,7 @@ export const OptionsContextProvider = (props: { children: React.ReactNode }) => 
     entityMainColor: EntityColor.Entity,
     labelVisual: LabelVisual.Entity,
     profileOfVisual: ProfileOfVisual.Entity,
+    profileOfColor: ProfileOfColor.None,
     displayRangeDetail: true,
     displayRelationshipProfileArchetype: false,
   });

@@ -1,7 +1,7 @@
 import { VisualModelOptions } from "@/configuration/options";
 import { LanguageString } from "../../../dataspecer/entity-model";
 import {
-  EntityColor, LabelVisual, ProfileOfVisual,
+  EntityColor, LabelVisual, ProfileOfColor, ProfileOfVisual,
 } from "../../../diagram/model";
 
 export interface EditVisualModelDialogState {
@@ -15,6 +15,8 @@ export interface EditVisualModelDialogState {
   entityMainColor: string;
 
   profileOfVisual: string;
+
+  profileOfColor: string;
 
   displayRangeDetail: boolean;
 
@@ -33,6 +35,7 @@ export function createEditVisualModelDialogState(
     labelVisual: String(options.labelVisual),
     entityMainColor: String(options.entityMainColor),
     profileOfVisual: String(options.profileOfVisual),
+    profileOfColor: String(options.profileOfColor),
     displayRangeDetail: options.displayRangeDetail,
     displayRelationshipProfileArchetype:
       options.displayRelationshipProfileArchetype,

@@ -22,6 +22,7 @@ export function openEditVisualModelDialogAction(
       labelVisual: Number(nextState.labelVisual),
       entityMainColor: Number(nextState.entityMainColor),
       profileOfVisual: Number(nextState.profileOfVisual),
+      profileOfColor: Number(nextState.profileOfColor),
       displayRangeDetail: nextState.displayRangeDetail,
       displayRelationshipProfileArchetype:
         nextState.displayRelationshipProfileArchetype,
