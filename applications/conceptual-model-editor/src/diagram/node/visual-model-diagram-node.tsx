@@ -98,7 +98,7 @@ function PrimaryVisualModelNodeMenu(props: NodeProps<Node<VisualModelDiagramNode
 
   return (
     <>
-      <NodeToolbar isVisible={shouldShowToolbar} position={Position.Top} className="flex gap-2 entity-node-menu" >
+      <NodeToolbar isVisible={shouldShowToolbar} position={Position.Top} className="flex gap-2 entity-node-menu nopan" >
         <button
           onClick={onMoveToSourceVisualModel}
           onPointerDown={preventDrag}
@@ -116,11 +116,11 @@ function PrimaryVisualModelNodeMenu(props: NodeProps<Node<VisualModelDiagramNode
       </NodeToolbar>
       {
         !isPartOfGroup ? null :
-          <NodeToolbar isVisible={shouldShowToolbar} position={Position.Left} className="flex gap-2 entity-node-menu" >
+          <NodeToolbar isVisible={shouldShowToolbar} position={Position.Left} className="flex gap-2 entity-node-menu nopan" >
             <button onClick={onDissolveGroup} onPointerDown={preventDrag} title={t("dissolve-group-button")}>⛓️‍💥</button>
           </NodeToolbar>
       }
-      <NodeToolbar isVisible={shouldShowToolbar} position={Position.Bottom} className="flex gap-2 entity-node-menu" >
+      <NodeToolbar isVisible={shouldShowToolbar} position={Position.Bottom} className="flex gap-2 entity-node-menu nopan" >
         <button onClick={onAddAllRelationships} onPointerDown={preventDrag} title={t("visual-diagram-node-add-relationships-button")}>🌳</button>
         &nbsp;
         <button onClick={onHideVisualModelNode} onPointerDown={preventDrag} title={t("visual-diagram-node-hide-button")}>🕶</button>

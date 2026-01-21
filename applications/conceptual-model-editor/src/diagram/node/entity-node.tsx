@@ -248,7 +248,7 @@ function PrimaryNodeMenu(props: NodeProps<Node<ApiNode>>) {
 
   return (
     <>
-      <NodeToolbar isVisible={shouldShowToolbar} position={Position.Top} className="flex gap-2 entity-node-menu" >
+      <NodeToolbar isVisible={shouldShowToolbar} position={Position.Top} className="flex gap-2 entity-node-menu nopan" >
         <button onClick={onShowDetail} onPointerDown={preventDrag} title={t("class-detail-button")}>ℹ</button>
         &nbsp;
         <button onClick={onEdit} onPointerDown={preventDrag} title={t("class-edit-button")}>✏️</button>
@@ -260,16 +260,16 @@ function PrimaryNodeMenu(props: NodeProps<Node<ApiNode>>) {
         <button onClick={onDuplicateNode} onPointerDown={preventDrag} title={t("duplicate-node-button")}>⿻</button>
         &nbsp;
       </NodeToolbar>
-      <NodeToolbar isVisible={shouldShowToolbar} position={Position.Right} className="flex gap-2 entity-node-menu" >
+      <NodeToolbar isVisible={shouldShowToolbar} position={Position.Right} className="flex gap-2 entity-node-menu nopan" >
         <Handle type="source" position={Position.Right} title={t("node-connection-handle")}>🔗</Handle>
       </NodeToolbar>
       {
         !isPartOfGroup ? null :
-          <NodeToolbar isVisible={shouldShowToolbar} position={Position.Left} className="flex gap-2 entity-node-menu" >
+          <NodeToolbar isVisible={shouldShowToolbar} position={Position.Left} className="flex gap-2 entity-node-menu nopan" >
             <button onClick={onDissolveGroup} onPointerDown={preventDrag} title={t("dissolve-group-button")}>⛓️‍💥</button>
           </NodeToolbar>
       }
-      <NodeToolbar isVisible={shouldShowToolbar} position={Position.Bottom} className="flex gap-2 entity-node-menu" >
+      <NodeToolbar isVisible={shouldShowToolbar} position={Position.Bottom} className="flex gap-2 entity-node-menu nopan" >
         <button onClick={onHide} onPointerDown={preventDrag} title={t("class-hide-button")}>🕶</button>
         &nbsp;
         <button onClick={onDelete} onPointerDown={preventDrag} title={t("class-remove-button")}>🗑</button>

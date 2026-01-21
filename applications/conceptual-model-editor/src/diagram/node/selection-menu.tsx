@@ -37,7 +37,7 @@ export function SelectionMenu(props: NodeProps<Node<DiagramNodeTypes>>) {
   };
 
   return (<>
-    <NodeToolbar isVisible={shouldShowMenu} position={Position.Top} className="flex gap-2 entity-node-menu" >
+    <NodeToolbar isVisible={shouldShowMenu} position={Position.Top} className="flex gap-2 entity-node-menu nopan" >
       <button onClick={onShowSelectionActions} onPointerDown={preventDrag} title={t("selection-action-button")}>🎬</button>
       &nbsp;
       <button onClick={onLayoutSelection} onPointerDown={preventDrag} title={t("selection-layout-button")}>🔀</button>
@@ -51,7 +51,7 @@ export function SelectionMenu(props: NodeProps<Node<DiagramNodeTypes>>) {
         </svg>
       </button>
     </NodeToolbar>
-    <NodeToolbar isVisible={shouldShowMenu} position={Position.Left} className="flex gap-2 entity-node-menu" >
+    <NodeToolbar isVisible={shouldShowMenu} position={Position.Left} className="flex gap-2 entity-node-menu nopan" >
       <button
         onClick={onCreateVisualDiagramNode}
         onPointerDown={preventDrag}
@@ -60,10 +60,10 @@ export function SelectionMenu(props: NodeProps<Node<DiagramNodeTypes>>) {
         📦
       </button>
     </NodeToolbar>
-    <NodeToolbar isVisible={shouldShowMenu} position={Position.Right} className="flex gap-2 entity-node-menu" >
+    <NodeToolbar isVisible={shouldShowMenu} position={Position.Right} className="flex gap-2 entity-node-menu nopan" >
       <button onClick={onCreateGroup} onPointerDown={preventDrag} title={t("selection-group-button")}>⛓️</button>
     </NodeToolbar>
-    <NodeToolbar isVisible={shouldShowMenu} position={Position.Bottom} className="flex gap-2 entity-node-menu" >
+    <NodeToolbar isVisible={shouldShowMenu} position={Position.Bottom} className="flex gap-2 entity-node-menu nopan" >
       <button onClick={onShowExpandSelection} onPointerDown={preventDrag} title={t("selection-extend-button")} >📈</button>
       &nbsp;
       <button onClick={onShowFilterSelection} onPointerDown={preventDrag} title={t("selection-filter-button")} >📉</button>
