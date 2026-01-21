@@ -152,7 +152,7 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
             const response = await this.httpFetch(this.getResourceUrl(iri));
             const userMetadata = name ? { label: { en: name } } : {};
             let resourceExistsOrCreated = false;
-            if (response.status !== 200) {
+            if (!isHttpSuccess(response.status)) {
                 const createdResponse = await this.httpFetch(this.getResourceUrl(packageId, true), {
                     method: "POST",
                     headers: {
