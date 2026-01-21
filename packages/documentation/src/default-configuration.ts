@@ -51,8 +51,8 @@ export const defaultConfiguration: DocumentationConfiguration = {
       {{#each externalArtifacts.svg}}
         <a href="{{{URL}}}">
           <figure>
-            <img src="{{{URL}}}" alt="{{#translate ./label}}{{translation}}{{else}}{{#iflng "cs"}}Vizuální model {{@index}}{{lng}}Visual model {{@index}}{{/iflng}}{{/translate}}" />
-            <figcaption>{{#translate ./label}}{{translation}}{{else}}{{#iflng "cs"}}Vizuální model {{@index}}{{lng}}Visual model {{@index}}{{/iflng}}{{/translate}}</figcaption>
+            <img src="{{{URL}}}" alt="{{translate ./label}}" />
+            <figcaption>{{translate ./label}}</figcaption>
           </figure>
         </a>
       {{/each}}
