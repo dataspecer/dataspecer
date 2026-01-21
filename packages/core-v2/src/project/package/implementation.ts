@@ -144,6 +144,7 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
 
             const response = await this.httpFetch(this.getResourceUrl(iri));
             const userMetadata = name ? { label: { en: name } } : {};
+            let resourceExistsOrCreated = false;
             if (response.status !== 200) {
                 const createdResponse = await this.httpFetch(this.getResourceUrl(packageId, true), {
                     method: "POST",
@@ -157,6 +158,7 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
                     }),
                 });
                 responseStatuses.add(createdResponse.status);
+                resourceExistsOrCreated = createdResponse.status >= 200 && createdResponse.status < 300;
             } else {
                 const updatedResponse = await this.httpFetch(this.getResourceUrl(iri), {
                     method: "PUT",
@@ -168,16 +170,20 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
                     }),
                 });
                 responseStatuses.add(updatedResponse.status);
+                resourceExistsOrCreated = updatedResponse.status >= 200 && updatedResponse.status < 300;
             }
 
-            const updatedResponse = await this.httpFetch(this.getBlobUrl(iri), {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(modelSerialization),
-            });
-            responseStatuses.add(updatedResponse.status);
+            // Only save blob data if the resource exists or was successfully created
+            if (resourceExistsOrCreated) {
+                const updatedResponse = await this.httpFetch(this.getBlobUrl(iri), {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(modelSerialization),
+                });
+                responseStatuses.add(updatedResponse.status);
+            }
         }
 
         // Remove other models
