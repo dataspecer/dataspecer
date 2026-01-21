@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Bug } from "lucide-react";
 import { generateLightweightOwl } from "@dataspecer/lightweight-owl";
 import type { SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { BackendPackageService } from "@dataspecer/core-v2/project";
@@ -14,15 +15,22 @@ import { useModelGraphContext } from "../context/model-context";
 import { useDownload } from "../features/export/download";
 import { useClassesContext } from "../context/classes-context";
 import { entityWithOverriddenIri, getIri, getModelIri } from "../util/iri-utils";
-import { ExportButton } from "../components/management/buttons/export-button";
 import { useQueryParamsContext } from "../context/query-params-context";
 import * as DataSpecificationVocabulary from "@dataspecer/data-specification-vocabulary";
 import { isInMemorySemanticModel } from "../dataspecer/semantic-model";
 import { createShaclForProfile, shaclToRdf, createSemicShaclStylePolicy } from "@dataspecer/shacl-v2";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { useActions } from "../action/actions-react-binding";
+import { Button } from "@/user-interface/shadcn/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/user-interface/shadcn/dropdown-menu";
 
-export const ExportManagement = () => {
+export const DebugMenu = () => {
   const actions = useActions();
   const { aggregator, aggregatorView, models, visualModels, setAggregatorView, replaceModels } =
     useModelGraphContext();
@@ -106,7 +114,7 @@ export const ExportManagement = () => {
   const handleExportSVG = async () => {
     const svg = await actions.diagram?.actions().renderToSvgString();
     if (svg === null || svg === undefined) {
-      console.error("Can not export SVG file.")
+      console.error("Cannot export SVG file.")
       return;
     }
     const date = Date.now();
@@ -200,26 +208,41 @@ export const ExportManagement = () => {
   };
 
   return (
-    <div className="my-auto mr-2 flex flex-row">
-      <ExportButton title="Download current view as SVG file." onClick={handleExportSVG}>
-        💾svg
-      </ExportButton>
-      <ExportButton title="Open workspace from configuration file" onClick={handleLoadWorkspaceFromJson}>
-        📥ws
-      </ExportButton>
-      <ExportButton title="Generate workspace configuration file" onClick={handleExportWorkspaceToJson}>
-        💾ws
-      </ExportButton>
-      <ExportButton title="Generate RDFS/OWL (vocabulary)" onClick={handleGenerateLightweightOwl}>
-        💾rdfs/owl
-      </ExportButton>
-      <ExportButton title="Generate DSV (application profile)" onClick={handleGenerateDataSpecificationVocabulary}>
-        💾dsv
-      </ExportButton>
-      <ExportButton title="Generate SHACL for profile" onClick={handleGenerateProfileShacl}>
-        💾shacl
-      </ExportButton>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button 
+          variant="ghost" 
+          size="icon"
+          className="h-8 w-8 text-white hover:bg-white/20"
+          title="Debug menu"
+        >
+          <Bug className="h-5 w-5" />
+          <span className="sr-only">Debug menu</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuItem onClick={handleExportSVG}>
+          💾 Export SVG
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleLoadWorkspaceFromJson}>
+          📥 Load workspace
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleExportWorkspaceToJson}>
+          💾 Save workspace
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleGenerateLightweightOwl}>
+          💾 Export RDFS/OWL
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleGenerateDataSpecificationVocabulary}>
+          💾 Export DSV
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleGenerateProfileShacl}>
+          💾 Export SHACL
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 

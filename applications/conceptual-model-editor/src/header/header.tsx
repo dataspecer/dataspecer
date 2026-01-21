@@ -2,7 +2,7 @@ import React from "react";
 
 import { PackageSection } from "./package-section";
 import { ViewManagement } from "./view-management";
-import { ExportManagement } from "./export-management";
+import { DebugMenu } from "./debug-menu";
 import { LanguageManagement } from "./language-management";
 import { getManagerLink } from "./header.service";
 
@@ -29,7 +29,9 @@ const Header = () => {
           </div>
         </div>
         <div className="my-2 flex flex-row px-2 md:my-0 md:justify-end md:px-0">
-          <ExportManagement />
+          <div className="my-auto mr-4">
+            <DebugMenu />
+          </div>
         </div>
       </header>
     </>
