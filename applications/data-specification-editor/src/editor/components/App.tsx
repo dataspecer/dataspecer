@@ -1,5 +1,5 @@
 import React, {useContext, useEffect, useMemo, useState} from "react";
-import {AppBar, Box, Button, Container, Divider, Toolbar, Typography} from "@mui/material";
+import {AppBar, Box, Button, Container, Divider, Toolbar, Typography, useTheme} from "@mui/material";
 import CssBaseline from "@mui/material/CssBaseline";
 import ButtonSetRoot from "./cim-search/button-set-root";
 import {DataPsmSchemaItem} from "./data-psm/schema";
@@ -19,6 +19,7 @@ import {DataPsmSchema} from "@dataspecer/core/data-psm/model";
 import {SettingsMenu} from "./settings/settings-menu";
 import {SettingsContext, useApplicationSettings} from "./settings/settings";
 import {Help} from "../../components/help";
+import {ThemeSelector} from "../../components/theme-selector";
 
 // @ts-ignore default value
 export const ConfigurationContext = React.createContext<Configuration>(null);
@@ -108,17 +109,22 @@ const App: React.FC = () => {
 
 function AppWithConfiguration({configuration, dataSpecificationIri}: {configuration: Configuration, dataSpecificationIri: string | null}) {
     const { t } = useTranslation('ui');
+    const theme = useTheme();
 
     useEffect(() => {(window as any).store = configuration.store}, [configuration.store]);
 
     const applicationSettings = useApplicationSettings();
+
+    const appBarBackground = theme.palette.mode === "dark"
+      ? "linear-gradient(5deg, #2c1a45, #2a3f8f)"
+      : "linear-gradient(5deg, #5d2f86, #3f51b5)";
 
     return <>
         <SnackbarProvider maxSnack={5}>
             <SettingsContext.Provider value={applicationSettings}>
                 <DialogAppProvider>
                     <CssBaseline />
-                    <AppBar position="static" sx={{background: "#3f51b5 linear-gradient(5deg, #5d2f86, #3f51b5);"}}>
+                    <AppBar position="static" sx={{background: appBarBackground}}>
                         <Toolbar>
                             <Typography variant="h6" sx={{fontWeight: "normal"}}>
                                 <strong>Dataspecer</strong> {t("title")}
@@ -137,6 +143,7 @@ function AppWithConfiguration({configuration, dataSpecificationIri}: {configurat
                             <Box display="flex" sx={{flexGrow: 1, gap: 4}} justifyContent="flex-end">
                                 <Help />
                                 <SettingsMenu />
+                                <ThemeSelector />
                                 <LanguageSelector />
                             </Box>
                         </Toolbar>

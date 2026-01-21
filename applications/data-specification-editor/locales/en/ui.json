@@ -45,6 +45,11 @@
     "use structured class": "Use structured class (non-interpreted)"
   },
   "set root element button": "Set root element",
+  "theme": {
+    "dark": "Dark",
+    "light": "Light",
+    "system": "System"
+  },
   "title": "schema editor",
   "version": "Version"
 }
