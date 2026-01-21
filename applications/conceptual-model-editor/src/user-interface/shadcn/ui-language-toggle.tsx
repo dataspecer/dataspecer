@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/user-interface/shadcn/dropdown-menu";
-import { useUiLanguage } from "../application/ui-language-provider";
+import { useUiLanguage } from "@/application/ui-language-provider";
 
 export function UiLanguageToggle() {
   const { setUiLanguage } = useUiLanguage();

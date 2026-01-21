@@ -7,7 +7,7 @@ import { LanguageManagement } from "./language-management";
 import { getManagerLink } from "./header.service";
 import { UiLanguageToggle } from "../user-interface/shadcn/ui-language-toggle";
 
-import { t } from "../application";
+import { useTranslation } from "../application/localization";
 
 const Header = () => {
   return (
@@ -41,6 +41,7 @@ const Header = () => {
 };
 
 const HeaderLogo = () => {
+  const t = useTranslation();
   const link = getManagerLink();
   if (link === null) {
     return <DscmeLogo />;

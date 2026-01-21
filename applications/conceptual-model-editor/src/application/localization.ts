@@ -1,9 +1,35 @@
 import { createLogger } from "./logging";
 import { english, czech, translations } from "./localization-translations";
+import { useUiLanguage } from "./ui-language-provider";
 
 const LOG = createLogger(import.meta.url);
 
 export type TranslationFunction = (text: string, ...args: unknown[]) => string;
+
+/**
+ * Hook to use translations that automatically re-renders when language changes.
+ * Use this in React components.
+ */
+export const useTranslation = (): TranslationFunction => {
+  const { uiLanguage } = useUiLanguage();
+  
+  return (text: string, ...args: unknown[]) => {
+    const languageTranslations = uiLanguage === "cs" ? czech : english;
+    const entry = languageTranslations[text];
+    if (entry === undefined) {
+      // Fallback to English if translation is missing in Czech
+      if (uiLanguage === "cs") {
+        const englishEntry = english[text];
+        if (englishEntry !== undefined) {
+          return translate(englishEntry, args);
+        }
+      }
+      LOG.missingTranslation(text);
+      return text;
+    }
+    return translate(entry, args);
+  };
+};
 
 let currentUiLanguage: "en" | "cs" = "en";
 
@@ -15,6 +41,10 @@ export const getUiLanguage = (): "en" | "cs" => {
   return currentUiLanguage;
 };
 
+/**
+ * Legacy translation function. Prefer useTranslation() hook in React components.
+ * This is kept for compatibility with non-React code.
+ */
 export const t: TranslationFunction = (text, ...args) => {
   const languageTranslations = currentUiLanguage === "cs" ? czech : english;
   const entry = languageTranslations[text];
