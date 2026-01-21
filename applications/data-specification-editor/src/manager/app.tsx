@@ -4,12 +4,11 @@ import { Help } from "../components/help";
 import { ReturnBackButton } from "../components/return-back/return-back-button";
 import { LanguageSelector } from "../editor/components/language-selector";
 import { ThemeSelector } from "../components/theme-selector";
+import { getAppBarGradient } from "../utils/theme-helpers";
 
 function App(props: { children: React.ReactNode }) {
   const theme = useTheme();
-  const appBarBackground = theme.palette.mode === "dark"
-    ? "linear-gradient(5deg, #2c1a45, #2a3f8f)"
-    : "linear-gradient(5deg, #5d2f86, #3f51b5)";
+  const appBarBackground = getAppBarGradient(theme.palette.mode);
 
   return (
     <>

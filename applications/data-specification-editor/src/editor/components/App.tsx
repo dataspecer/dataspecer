@@ -20,6 +20,7 @@ import {SettingsMenu} from "./settings/settings-menu";
 import {SettingsContext, useApplicationSettings} from "./settings/settings";
 import {Help} from "../../components/help";
 import {ThemeSelector} from "../../components/theme-selector";
+import {getAppBarGradient} from "../../utils/theme-helpers";
 
 // @ts-ignore default value
 export const ConfigurationContext = React.createContext<Configuration>(null);
@@ -115,9 +116,7 @@ function AppWithConfiguration({configuration, dataSpecificationIri}: {configurat
 
     const applicationSettings = useApplicationSettings();
 
-    const appBarBackground = theme.palette.mode === "dark"
-      ? "linear-gradient(5deg, #2c1a45, #2a3f8f)"
-      : "linear-gradient(5deg, #5d2f86, #3f51b5)";
+    const appBarBackground = getAppBarGradient(theme.palette.mode);
 
     return <>
         <SnackbarProvider maxSnack={5}>
