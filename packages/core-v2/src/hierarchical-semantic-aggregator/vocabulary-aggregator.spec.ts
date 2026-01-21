@@ -1,12 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import { VocabularyAggregator } from './vocabulary-aggregator';
-import { InMemorySemanticModel } from '../semantic-model/in-memory';
+import { VocabularyAggregator } from './vocabulary-aggregator.ts';
+import { InMemorySemanticModel } from '../semantic-model/in-memory/index.ts';
 
 describe('VocabularyAggregator color generation', () => {
   it('should include color in thisVocabularyChain', () => {
     const model = new InMemorySemanticModel();
-    model.entityModel.id = 'test-model-123';
-    model.entityModel.alias = 'Test Model';
+    model.deserializeModel({
+      modelId: 'test-model-123',
+      modelAlias: 'Test Model',
+      entities: {},
+    });
     
     const aggregator = new VocabularyAggregator(model);
     
@@ -26,12 +29,18 @@ describe('VocabularyAggregator color generation', () => {
   
   it('should generate different colors for different model IDs', () => {
     const model1 = new InMemorySemanticModel();
-    model1.entityModel.id = 'model-1';
-    model1.entityModel.alias = 'Model 1';
+    model1.deserializeModel({
+      modelId: 'model-1',
+      modelAlias: 'Model 1',
+      entities: {},
+    });
     
     const model2 = new InMemorySemanticModel();
-    model2.entityModel.id = 'model-2';
-    model2.entityModel.alias = 'Model 2';
+    model2.deserializeModel({
+      modelId: 'model-2',
+      modelAlias: 'Model 2',
+      entities: {},
+    });
     
     const aggregator1 = new VocabularyAggregator(model1);
     const aggregator2 = new VocabularyAggregator(model2);
