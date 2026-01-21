@@ -1,8 +1,9 @@
 import { ManagementButton } from "../components/management/buttons/management-button";
 import { usePackageSectionService } from "./package-section-service";
-import { t } from "../application";
+import { useTranslation } from "../application/localization";
 
 export const PackageSection = () => {
+  const t = useTranslation();
   const { packageHasIdentifier, packageLabel, save, saveAndClose } = usePackageSectionService();
   return (
     <div className="flex flex-row text-nowrap gap-x-2">
@@ -22,6 +23,7 @@ export const PackageSection = () => {
 };
 
 const SavePackageButton = (props: { disabled?: boolean; title?: string; onClick?: () => void }) => {
+  const t = useTranslation();
   return (
     <ManagementButton color="bg-green-600" {...props} withDisabledHelpCursor={true}>
       {t("header.package.save")}
@@ -30,6 +32,7 @@ const SavePackageButton = (props: { disabled?: boolean; title?: string; onClick?
 };
 
 const SavePackageAndLeaveButton = (props: { disabled?: boolean; title?: string; onClick?: () => void }) => {
+  const t = useTranslation();
   return (
     <ManagementButton color="bg-green-600" {...props} withDisabledHelpCursor={true}>
       {t("header.package.save-and-leave")}
