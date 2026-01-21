@@ -149,14 +149,16 @@ export const Visualization = () => {
     
     const visualView = activeVisualModel.getVisualView();
     if (visualView?.initialPositions) {
-      console.log("[VISUALIZATION] Restoring viewport position from visual view", visualView.initialPositions);
+      LOG.trace("[VISUALIZATION] Restoring viewport position from visual view", visualView.initialPositions);
       // Use a small delay to ensure the diagram is fully rendered before setting position
+      // This timeout could be made configurable if needed
+      const VIEWPORT_RESTORE_DELAY_MS = 200;
       setTimeout(() => {
         actions.diagram!.actions().setViewportToPosition(
           visualView.initialPositions!.x,
           visualView.initialPositions!.y
         );
-      }, 100);
+      }, VIEWPORT_RESTORE_DELAY_MS);
     }
   }, [activeVisualModel, actions.diagram]);
 
