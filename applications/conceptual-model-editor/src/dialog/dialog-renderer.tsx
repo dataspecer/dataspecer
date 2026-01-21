@@ -30,15 +30,6 @@ function Dialog({ reference, context }: {
   useEffect(() => {
     // We need to call this when dialog is open for the first time.
     reference.current?.showModal();
-    
-    // After the dialog opens, focus the first element with autofocus
-    // This is needed because dialog's showModal() focuses the first focusable element
-    requestAnimationFrame(() => {
-      const autoFocusElement = reference.current?.querySelector('[autofocus]') as HTMLElement;
-      if (autoFocusElement) {
-        autoFocusElement.focus();
-      }
-    });
   }, [reference]);
 
   const defaultClassNames = "m-auto base-dialog z-30 flex flex-col " +
