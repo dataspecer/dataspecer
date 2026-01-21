@@ -43,8 +43,8 @@ export function addRelatedEntitiesAction(
   entity: SemanticModelEntity,
 ) {
   const identifier = entity.id;
-  const entityModel = classes.sourceModelOfEntityMap.get(identifier);
-  if (entityModel === null) {
+  const entityModel = models.get(classes.sourceModelOfEntityMap.get(identifier) ?? "");
+  if (entityModel === undefined) {
     return;
   }
 
@@ -56,7 +56,7 @@ export function addRelatedEntitiesAction(
     if (candidate === null) {
       continue;
     }
-    const candidateModel = models.get(classes.sourceModelOfEntityMap.get(identifier) ?? "");
+    const candidateModel = models.get(classes.sourceModelOfEntityMap.get(candidate.id) ?? "");
     if (candidateModel === undefined) {
       continue;
     }
