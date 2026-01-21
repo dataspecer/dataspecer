@@ -33,8 +33,10 @@ import {
   XmlSchemaLangStringType,
   XmlSchemaNamespaceDefinition,
   XmlSchemaSimpleItem,
+  XmlSchemaSimpleItemList,
   XmlSchemaSimpleItemRestriction,
   xmlSchemaSimpleTypeDefinitionIsRestriction,
+  xmlSchemaSimpleTypeDefinitionIsList,
   XmlSchemaSimpleType,
   XmlSchemaType,
   xmlSchemaTypeIsComplex,
@@ -515,16 +517,18 @@ class XmlSchemaAdapter {
    * Used for multi-valued attributes.
    */
   private createListType(itemType: QName): XmlSchemaSimpleType {
+    const listDefinition: XmlSchemaSimpleItemList = {
+      xsType: "list",
+      itemType: itemType,
+      contents: [],
+    };
+    
     return {
       entityType: "type",
       name: null,
       annotation: null,
-      simpleDefinition: {
-        xsType: "list",
-        itemType: itemType,
-        contents: [],
-      },
-    } as XmlSchemaSimpleType;
+      simpleDefinition: listDefinition,
+    };
   }
 
   /**
