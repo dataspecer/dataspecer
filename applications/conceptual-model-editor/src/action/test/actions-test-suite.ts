@@ -399,15 +399,15 @@ export class ActionsTestSuite {
     const graph: ModelGraphContextType = {
       aggregator,
       aggregatorView,
-      setAggregatorView: function (_value: SetStateAction<SemanticModelAggregatorView>): void {
+      setAggregatorView: function (): void {
         // Do nothing
       },
       models: models,
-      setModels: function (_value: SetStateAction<Map<string, EntityModel>>): void {
+      setModels: function (): void {
         throw new Error("Function not implemented.");
       },
       visualModels,
-      setVisualModels: function (_value: SetStateAction<Map<string, WritableVisualModel>>): void {
+      setVisualModels: function (): void {
         throw new Error("Function not implemented.");
       }
     };
@@ -432,9 +432,6 @@ export class ActionsTestSuite {
       },
       models,
       visualModels,
-      setVisualModels: function (_value: SetStateAction<Map<string, WritableVisualModel>>): void {
-        throw new Error("Function not implemented.");
-      },
       addModel: function (..._models: EntityModel[]): void {
         throw new Error("Function not implemented.");
       },

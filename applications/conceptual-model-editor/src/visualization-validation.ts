@@ -11,9 +11,6 @@ import {
   VisualProfileRelationship,
   WritableVisualModel
 } from "@dataspecer/visual-model";
-import {
-  SemanticModelAggregatorView,
-} from "@dataspecer/core-v2/semantic-model/aggregator";
 import { EntityModel } from "@dataspecer/core-v2";
 import {
   SemanticModelClassProfile,
@@ -53,7 +50,7 @@ const LOG = createLogger(import.meta.url);
 export function validateVisualModel(
   actions: ActionsContextType,
   visualModel: VisualModel | null,
-  aggregatorView: SemanticModelAggregatorView,
+  visualModels: VisualModel[],
   classesContext: UseClassesContextType,
   models: Map<string, EntityModel>
 ) {
@@ -63,8 +60,8 @@ export function validateVisualModel(
 
   const allClasses = [
     ...classesContext.classes,
-    ...classesContext.classProfiles
-  ].map(cclass => cclass.id);
+    ...classesContext.classProfiles,
+  ].map(item => item.id);
 
   const relationships = [
     ...classesContext.relationships,
@@ -72,8 +69,10 @@ export function validateVisualModel(
     ...classesContext.relationshipProfiles,
   ];
 
-  validateVisualModelAgainstDiagramNodes(actions, visualModel, aggregatorView, allClasses, relationships);
-  validateClassProfilesInsideVisualModel(actions, visualModel, classesContext, models);
+  validateVisualModelAgainstDiagramNodes(
+    actions, visualModel, visualModels, allClasses, relationships);
+  validateClassProfilesInsideVisualModel(
+    actions, visualModel, classesContext, models);
 }
 
 /**
@@ -178,7 +177,7 @@ function validateClassProfilesInsideVisualModel(
 function validateVisualModelAgainstDiagramNodes(
   actions: ActionsContextType,
   visualModel: VisualModel,
-  aggregatorView: SemanticModelAggregatorView,
+  visualModels: VisualModel[],
   allClasses: string[],
   relationships: (SemanticModelRelationship | SemanticModelGeneralization | SemanticModelRelationshipProfile)[],
 ) {
@@ -199,7 +198,7 @@ function validateVisualModelAgainstDiagramNodes(
   // and if we are not equal, we remove the excessive edges.
 
   const getByRepresentedWrapper = createGetVisualEntitiesForRepresentedGlobalWrapper(
-    aggregatorView.getAvailableVisualModels(), visualModel);
+    visualModels, visualModel);
   const visualModelsGetByRepresentedGlobal: Record<string, VisualsForRepresentedWrapper> = {
     [visualModel.getIdentifier()]: getByRepresentedWrapper,
   };
@@ -231,14 +230,14 @@ function validateVisualModelAgainstDiagramNodes(
       }
 
       const isDomainValid = checkEdgeEndValidityAndExtend(
-        visualModelsGetByRepresentedGlobal, aggregatorView,
+        visualModelsGetByRepresentedGlobal, visualModels,
         visualEdgeSource, source, visualEntity.identifier, invalidEntities);
       if (!isDomainValid) {
         continue;
       }
 
       const isRangeValid = checkEdgeEndValidityAndExtend(
-        visualModelsGetByRepresentedGlobal, aggregatorView,
+        visualModelsGetByRepresentedGlobal, visualModels,
         visualEdgeTarget, target, visualEntity.identifier, invalidEntities);
       if (!isRangeValid) {
         continue;
@@ -291,7 +290,7 @@ function validateVisualProfileRelationshipEnd(
  */
 function checkEdgeEndValidityAndExtend(
   visualModelToContentMappings: Record<string, VisualsForRepresentedWrapper>,
-  aggregatorView: SemanticModelAggregatorView,
+  visualModels: VisualModel[],
   visualEdgeEnd: VisualEntity,
   supposedSemanticEdgeEnd: string,
   examinedEdge: string,
@@ -301,7 +300,7 @@ function checkEdgeEndValidityAndExtend(
 
   if (isVisualDiagramNode(visualEdgeEnd)) {
     const isDiagramNodeValid = extendMappingsByDiagramNodeModelIfNotSet(
-      visualModelToContentMappings, visualEdgeEnd, aggregatorView);
+      visualModelToContentMappings, visualEdgeEnd, visualModels);
     if (!isDiagramNodeValid) {
       isValid = null;
     }
@@ -336,17 +335,16 @@ function checkEdgeEndValidityAndExtend(
 function extendMappingsByDiagramNodeModelIfNotSet(
   visualModelToContentMappings: Record<string, VisualsForRepresentedWrapper>,
   visualEdgeEndPoint: VisualDiagramNode,
-  aggregatorView: SemanticModelAggregatorView,
+  visualModels: VisualModel[],
 ): boolean {
-  const availableVisualModels = aggregatorView.getAvailableVisualModels();
-  const representedVisualModel = availableVisualModels
+  const representedVisualModel = visualModels
     .find(visualModel => visualModel.getIdentifier() === visualEdgeEndPoint.representedVisualModel);
   if (representedVisualModel === undefined) {
     return false;
   }
   if (visualModelToContentMappings[visualEdgeEndPoint.representedVisualModel] === undefined) {
     const getByRepresentedWrapper = createGetVisualEntitiesForRepresentedGlobalWrapper(
-      availableVisualModels, representedVisualModel);
+      visualModels, representedVisualModel);
     visualModelToContentMappings[visualEdgeEndPoint.representedVisualModel] = getByRepresentedWrapper;
   }
 

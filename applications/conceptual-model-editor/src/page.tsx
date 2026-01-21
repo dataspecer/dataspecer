@@ -1,4 +1,4 @@
-import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useMemo, useState } from "react";
 
 import type { Entity, EntityModel } from "@dataspecer/core-v2/entity-model";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
@@ -50,7 +50,10 @@ import { createDefaultWritableVisualModel } from "./dataspecer/visual-model/visu
 import { VerticalSplitter } from "./components/vertical-splitter";
 import { preferences, updatePreferences } from "./configuration";
 import { sanitizeVisualModel } from "./dataspecer/visual-model/visual-model-sanitizer";
-import { getDefaultUserGivenAlgorithmConfigurationsFull, UserGivenAlgorithmConfigurations } from "@dataspecer/layout";
+import {
+  getDefaultUserGivenAlgorithmConfigurationsFull,
+  UserGivenAlgorithmConfigurations,
+} from "@dataspecer/layout";
 import { LayoutConfigurationContext } from "./context/layout-configuration-context";
 
 const _semanticModelAggregator = new SemanticModelAggregator();
@@ -73,26 +76,82 @@ const Catalog = (() => {
 
 const Page = () => {
   // URL query
-  const { packageId, viewId, updatePackageId } = useQueryParamsContext();
+  const { packageId, viewId } = useQueryParamsContext();
   // Dataspecer API
   const [aggregator, setAggregator] = useState(new SemanticModelAggregator());
   const [aggregatorView, setAggregatorView] = useState(aggregator.getView());
   const { getModelsFromBackend, getLayoutConfigurationModelFromBackend } = useBackendConnection();
-  // Local state
-  const [models, setModels] = useState(new Map<string, EntityModel>());
+  // Local state - models
+  const [models, setModels] = useState<EntityModel[]>([]);
+  const [visualModels, setVisualModels] = useState<WritableVisualModel[]>([]);
+  // Local state - entities
+  const [rawEntities, setRawEntities] = useState<(Entity | null)[]>([]);
   const [classes, setClasses] = useState<SemanticModelClass[]>([]);
+
   const [allowedClasses, setAllowedClasses] = useState<string[]>([]);
   const [relationships, setRelationships] = useState<SemanticModelRelationship[]>([]);
   const [generalizations, setGeneralizations] = useState<SemanticModelGeneralization[]>([]);
-  const [rawEntities, setRawEntities] = useState<(Entity | null)[]>([]);
-  const [visualModels, setVisualModels] = useState(new Map<string, WritableVisualModel>());
   const [sourceModelOfEntityMap, setSourceModelOfEntityMap] = useState(new Map<string, string>());
   const [classProfiles, setClassProfiles] = useState<SemanticModelClassProfile[]>([]);
   const [relationshipProfiles, setRelationshipProfiles] = useState<SemanticModelRelationshipProfile[]>([]);
-  const [
-    layoutConfiguration,
-    setLayoutConfiguration
-  ] = useState<UserGivenAlgorithmConfigurations>(getDefaultUserGivenAlgorithmConfigurationsFull());
+  const [layoutConfiguration, setLayoutConfiguration] =
+    useState(getDefaultUserGivenAlgorithmConfigurationsFull());
+
+  // Derived state - this is for backwards compatibility.
+
+  const modelMap = useMemo(() => new Map(models.map(
+    (model) => [model.getId(), model])), [models]);
+
+  const visualModelMap = useMemo(() => new Map(visualModels.map(
+    (model) => [model.getIdentifier(), model])),
+    [visualModels]);
+
+  const modelGraphContext = useMemo(() => {
+    return {
+      aggregator,
+      aggregatorView,
+      setAggregatorView,
+      models: modelMap,
+      setModels,
+      visualModels: visualModelMap,
+      setVisualModels,
+    };
+  }, [
+    aggregator, aggregatorView, setAggregatorView,
+    modelMap, setModels, visualModelMap, setVisualModels,
+  ]);
+
+  const classesContext = useMemo(() => {
+    console.log("update ClassesContext", { classes, classProfiles });
+    return {
+      classes,
+      allowedClasses,
+      setAllowedClasses,
+      relationships,
+      generalizations,
+      sourceModelOfEntityMap,
+      rawEntities,
+      classProfiles,
+      relationshipProfiles,
+    };
+  }, [
+    classes,
+    allowedClasses,
+    setAllowedClasses,
+    relationships,
+    generalizations,
+    sourceModelOfEntityMap,
+    rawEntities,
+    classProfiles,
+    relationshipProfiles,
+  ]);
+
+  const layoutConfigurationContext = useMemo(() => {
+    return {
+      layoutConfiguration,
+      setLayoutConfiguration,
+    };
+  }, [layoutConfiguration, setLayoutConfiguration]);
 
   // Runs on initial load.
   // If the app was launched without package-id query parameter
@@ -106,23 +165,19 @@ const Page = () => {
   // - if there was no local model within the package, it creates and registers one as well
   useEffect(() => {
     if (packageId === null) {
-      console.log("[INITIALIZATION] No package identifier provided, creating default model.");
+      console.log("[INITIALIZATION] Without a package.");
       // This is synchronous operation we do not need to cancel.
       initializeWithoutPackage(
-        setVisualModels,
-        setModels,
-        setAggregator,
-        setAggregatorView);
+        setVisualModels, setModels, aggregator, setAggregatorView);
     } else {
       console.log("[INITIALIZATION] Loading models for package.", { packageId });
       return initializeWithPackage(
-        packageId, viewId, aggregator,
+        setVisualModels, setModels, aggregator, setAggregatorView,
+        packageId, viewId,
         getModelsFromBackend,
         getLayoutConfigurationModelFromBackend,
         setLayoutConfiguration,
-        setVisualModels,
-        setModels,
-        setAggregatorView);
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -135,7 +190,6 @@ const Page = () => {
     if (aggregatorView === null) {
       return;
     }
-
     const callback = (updated: AggregatedEntityWrapper[], removed: string[]) => {
       propagateAggregatorChangesToLocalState(
         updated, removed,
@@ -152,35 +206,9 @@ const Page = () => {
   return (
     <ExplorationContextProvider>
       <OptionsContextProvider>
-        <ModelGraphContext.Provider
-          value={{
-            aggregator,
-            aggregatorView,
-            setAggregatorView,
-            models,
-            setModels,
-            visualModels,
-            setVisualModels,
-          }}
-        >
-          <ClassesContext.Provider
-            value={{
-              classes,
-              allowedClasses,
-              setAllowedClasses,
-              relationships,
-              generalizations,
-              sourceModelOfEntityMap,
-              rawEntities,
-              classProfiles,
-              relationshipProfiles,
-            }}
-          >
-            <LayoutConfigurationContext.Provider
-              value={{
-                layoutConfiguration,
-                setLayoutConfiguration,
-              }}>
+        <ModelGraphContext.Provider value={modelGraphContext}>
+          <ClassesContext.Provider value={classesContext}>
+            <LayoutConfigurationContext.Provider value={layoutConfigurationContext}>
               <DialogContextProvider>
                 <ActionsContextProvider>
                   <Header />
@@ -221,53 +249,58 @@ const PageWrapper = () => {
 export default PageWrapper;
 
 function initializeWithoutPackage(
-  setVisualModels: Dispatch<SetStateAction<Map<string, WritableVisualModel>>>,
-  setModels: Dispatch<SetStateAction<Map<string, EntityModel>>>,
-  setAggregator: Dispatch<SetStateAction<SemanticModelAggregatorType>>,
-  setAggregatorView: Dispatch<SetStateAction<SemanticModelAggregatorView>>,
+  setVisualModels: (models: WritableVisualModel[]) => void,
+  setModels: (models: EntityModel[]) => void,
+  aggregator: SemanticModelAggregatorType,
+  setAggregatorView: (value: SemanticModelAggregatorView) => void,
 ): void {
-  const tempAggregator = new SemanticModelAggregator();
-
   // Create semantic model.
   const model = new InMemorySemanticModel();
   model.setAlias("Default local model");
-  setModels(new Map([[model.getId(), model]]));
-  tempAggregator.addModel(model);
+  setModels([model]);
 
   // Create visual model.
   const visualModel = createDefaultWritableVisualModel([model]);
-  setVisualModels(new Map([[visualModel.getId(), visualModel]]));
-  tempAggregator.addModel(visualModel);
-  const tempAggregatorView = tempAggregator.getView();
-  tempAggregatorView.changeActiveVisualModel(visualModel.getId());
+  setVisualModels([visualModel]);
 
-  setAggregator(tempAggregator);
-  setAggregatorView(tempAggregatorView);
+  // Create aggregator.
+  aggregator.addModel(model);
+  aggregator.addModel(visualModel);
+
+  const aggregatorView = aggregator.getView();
+  aggregatorView.changeActiveVisualModel(visualModel.getId());
+
+  setAggregatorView(aggregatorView);
 }
 
 function initializeWithPackage(
+  setVisualModels: (models: WritableVisualModel[]) => void,
+  setModels: (models: EntityModel[]) => void,
+  aggregator: SemanticModelAggregatorType,
+  setAggregatorView: (value: SemanticModelAggregatorView) => void,
+  //
   packageId: string,
   viewId: string | null,
-  aggregator: SemanticModelAggregatorType,
+  //
   getModelsFromBackend: (packageId: string) => Promise<readonly [EntityModel[], VisualModel[]]>,
   getLayoutConfigurationModelFromBackend: (packageIdentifier: string) => Promise<UserGivenAlgorithmConfigurations>,
-  setLayoutConfiguration: Dispatch<SetStateAction<UserGivenAlgorithmConfigurations>>,
-  setVisualModels: Dispatch<SetStateAction<Map<string, WritableVisualModel>>>,
-  setModels: Dispatch<SetStateAction<Map<string, EntityModel>>>,
-  setAggregatorView: Dispatch<SetStateAction<SemanticModelAggregatorView>>,
+  setLayoutConfiguration: (value: UserGivenAlgorithmConfigurations) => void,
 ): () => void {
   let cancelled = false;
 
-  const getLayoutConfiguration = () => getLayoutConfigurationModelFromBackend(packageId);
-  getLayoutConfiguration().then((layoutConfiguration) => {
+
+  // Layout configuration
+
+  getLayoutConfigurationModelFromBackend(packageId).then((configuration) => {
     if (cancelled) {
       return;
     }
-    setLayoutConfiguration(layoutConfiguration);
+    setLayoutConfiguration(configuration);
   }).catch((error) => {
-    console.error("Can not load configuration for layouting. Using the default", error);
-    setLayoutConfiguration(getDefaultUserGivenAlgorithmConfigurationsFull());
+    console.error("Can not load configuration for layouting.", error);
   });
+
+  // Package models.
 
   getModelsFromBackend(packageId).then((models) => {
     if (cancelled) {
@@ -275,21 +308,20 @@ function initializeWithPackage(
     }
     const [entityModels, visualModels] = models;
     if (entityModels.length === 0) {
-      console.warn("Creating default semantic model.");
+      console.info("Creating default semantic model.");
       const model = new InMemorySemanticModel();
       model.setAlias("Default local model");
       entityModels.push(model);
     }
 
     if (visualModels.length === 0) {
-      console.warn("Creating default visual model.");
+      console.info("Creating default visual model.");
       const visualModel = createDefaultWritableVisualModel(entityModels);
       visualModels.push(visualModel);
     }
 
-    if (!entityModels.find((m) => m instanceof InMemorySemanticModel)) {
-      console.warn("No semantic model found in the package, creating a default model.");
-
+    if (!entityModels.find((model) => model instanceof InMemorySemanticModel)) {
+      console.info("No semantic model found in the package, creating a default semantic model.");
       const model = new InMemorySemanticModel();
       model.setAlias("Default local model");
       entityModels.push(model);
@@ -305,10 +337,6 @@ function initializeWithPackage(
     }
 
     const aggregatorView = aggregator.getView();
-    const visualModelsMap = new Map(visualModels.map(
-      (model) => [model.getIdentifier(), model as WritableVisualModel]));
-    const entityModelsMap = new Map(entityModels.map(
-      (model) => [model.getId(), model]));
 
     // Perform high-level migration.
     for (const model of visualModels) {
@@ -317,14 +345,16 @@ function initializeWithPackage(
         continue;
       }
       if (model.getInitialModelVersion() === VisualModelDataVersion.VERSION_0) {
-        migrateVisualModelFromV0(entityModelsMap, aggregatorView.getEntities(), model);
+        migrateVisualModelFromV0(entityModels, aggregatorView.getEntities(), model);
       }
       sanitizeVisualModel(entityModels, aggregatorView.getEntities(), model);
     }
 
     // Set models to state.
-    setVisualModels(visualModelsMap);
-    setModels(entityModelsMap);
+    setModels(entityModels);
+    // The cast here is not good but fixing it would cause
+    // huge ripple effect.
+    setVisualModels(visualModels as WritableVisualModel[]);
 
     const availableVisualModelIds = visualModels.map((model) => model.getIdentifier());
 
@@ -333,9 +363,9 @@ function initializeWithPackage(
       aggregatorView.changeActiveVisualModel(viewId);
     } else {
       // Choose the first available model.
-      const modelId = visualModels.at(0)?.getIdentifier();
-      if (modelId) {
-        aggregatorView.changeActiveVisualModel(modelId);
+      const identifier = visualModels.at(0)?.getIdentifier();
+      if (identifier !== undefined) {
+        aggregatorView.changeActiveVisualModel(identifier);
       }
     }
 

@@ -87,7 +87,9 @@ export const Visualization = () => {
   const classesContext = useClassesContext();
 
   const aggregatorView = graph.aggregatorView;
-  const activeVisualModel = useMemo(() => aggregatorView.getActiveVisualModel(), [aggregatorView]);
+  const activeVisualModel = useMemo(
+    () => aggregatorView.getActiveVisualModel(),
+    [aggregatorView]);
 
   const extendedOptions: ExtendedOptions = useMemo(() => ({
     language: options.language,
@@ -135,11 +137,13 @@ export const Visualization = () => {
   // Update canvas content on view change.
   useEffect(() => {
     console.log("[VISUALIZATION] Something has changed, recreating diagram visual.", activeVisualModel);
-    validateVisualModel(actions, activeVisualModel, aggregatorView, classesContext, graph.models);
+    validateVisualModel(
+      actions, activeVisualModel, aggregatorView.getAvailableVisualModels(),
+      classesContext, graph.models);
     onChangeVisualModel(
       extendedOptions, activeVisualModel, actions.diagram, aggregatorView,
       classesContext, graph);
-  }, [options, activeVisualModel, actions, aggregatorView, classesContext, graph]);
+  }, [extendedOptions, activeVisualModel, actions, aggregatorView, classesContext, graph]);
 
   return (
     <>
