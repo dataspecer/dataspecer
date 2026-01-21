@@ -23,7 +23,8 @@ import {
   SemanticModelClassProfile,
   SemanticModelRelationshipProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { createVisualModelOperationExecutor } from "@/dataspecer/visual-model/visual-model-operation-executor";
+import { createVisualModelOperationExecutor } from "../dataspecer/visual-model/visual-model-operation-executor";
+import { ClassesContextType } from "../context/classes-context";
 
 /**
  * For given entity make sure, that all related entities
@@ -35,13 +36,14 @@ import { createVisualModelOperationExecutor } from "@/dataspecer/visual-model/vi
 export function addRelatedEntitiesAction(
   notifications: UseNotificationServiceWriterType,
   graph: ModelGraphContextType,
+  classes: ClassesContextType,
   visualModel: WritableVisualModel,
   entities: AggregatedEntityWrapper[],
   models: Map<string, EntityModel>,
   entity: SemanticModelEntity,
 ) {
   const identifier = entity.id;
-  const entityModel = findSourceModelOfEntity(identifier, models);
+  const entityModel = classes.sourceModelOfEntityMap.get(identifier);
   if (entityModel === null) {
     return;
   }
@@ -54,8 +56,8 @@ export function addRelatedEntitiesAction(
     if (candidate === null) {
       continue;
     }
-    const candidateModel = findSourceModelOfEntity(candidate.id, models);
-    if (candidateModel === null) {
+    const candidateModel = models.get(classes.sourceModelOfEntityMap.get(identifier) ?? "");
+    if (candidateModel === undefined) {
       continue;
     }
     //

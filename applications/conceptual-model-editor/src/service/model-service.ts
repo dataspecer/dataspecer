@@ -17,6 +17,9 @@ export function getModelLabel(model: EntityModel | undefined | null): string {
   return t("model-service.model-label-from-id", model.getId());
 }
 
+/**
+ * @deprecated This is very slow and should not be used!
+ */
 export const findSourceModelOfEntity = (
   entityIdentifier: string,
   models: Map<string, EntityModel>,
