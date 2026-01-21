@@ -73,4 +73,12 @@ export const LANGUAGE_PROPERTY_LABELS = {
     cs: "Hodnota v jiném jazyce",
     en: "Value in another language",
   },
+  textInGivenLanguage: {
+    cs: "Text v daném jazyce",
+    en: "Text in given language",
+  },
+  textLanguage: {
+    cs: "Jazyk textu",
+    en: "Language of text",
+  },
 };

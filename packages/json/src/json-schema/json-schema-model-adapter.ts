@@ -555,7 +555,7 @@ function structureModelPrimitiveToJsonDefinition(
         result = languageString(context, [], true);
         result.title = context.stringSelector(OFN_LABELS[OFN.text]);
       } else {
-        result = rdfLanguageString();
+        result = rdfLanguageString(context);
         result.title = context.stringSelector(OFN_LABELS[OFN.rdfLangString]);
       }
       break;
@@ -596,18 +596,18 @@ function languageString(context: Context, requiredLanguages: string[], multipleC
   return result;
 }
 
-function rdfLanguageString(): JsonSchemaObject {
+function rdfLanguageString(context: Context): JsonSchemaObject {
   const result = new JsonSchemaObject();
 
   result.required = ["@value", "@language"];
 
   const value = new JsonSchemaString(null);
   result.properties["@value"] = value;
-  value.title = "Text v daném jazyce";
+  value.title = context.stringSelector(LANGUAGE_PROPERTY_LABELS.textInGivenLanguage);
 
   const language = new JsonSchemaString(null);
   result.properties["@language"] = language;
-  language.title = "Jazyk textu";
+  language.title = context.stringSelector(LANGUAGE_PROPERTY_LABELS.textLanguage);
 
   return result;
 }
