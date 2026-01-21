@@ -26,6 +26,14 @@ function generateColor(identifier: string, brightness: number): string {
   return color;
 }
 
+/**
+ * Transforms a number into a decimal value between 0 and 1 using sinus function.
+ * The Math.sin() result is converted to a string and the last 7 characters are used
+ * to create a pseudo-random but deterministic decimal value.
+ * 
+ * @example
+ * sinusTransformation(123) => 0.1234567 (example value)
+ */
 const sinusTransformation = (value: number): number => {
   return Number("0." + Math.sin(value + 1).toString().slice(-7));
 }

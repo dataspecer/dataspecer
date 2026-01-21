@@ -37,8 +37,16 @@ function generateColor(identifier: string, brightness: number): string {
   const g = Math.floor(sinusTransformation(sum + 2) * range) + offset;
   const b = Math.floor(sinusTransformation(sum + 3) * range) + offset;
 
-  // Return hex color string (e.g., "#C5BB5C")
-  return `#${r.toString(16)}${g.toString(16)}${b.toString(16)}`.toUpperCase();
+  // Generate hex value
+  let color = "#";
+  color += ("00" + r.toString(16)).slice(-2).toUpperCase();
+  color += ("00" + g.toString(16)).slice(-2).toUpperCase();
+  color += ("00" + b.toString(16)).slice(-2).toUpperCase();
+  return color;
+}
+
+const sinusTransformation = (value: number): number => {
+  return Number("0." + Math.sin(value + 1).toString().slice(-7));
 }
 ```
 
