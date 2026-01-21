@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
 
@@ -20,8 +20,18 @@ export const InputLanguageString = (props: {
   // Current language.
   const [activeLanguage, setActiveLanguage] = useState(props.defaultLanguage);
 
+  // Ref for the input element to programmatically focus it
+  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
+
   // Select current value from the language string.
   const value = props.value[activeLanguage] ?? "";
+
+  // Focus the input when autoFocus is true and component mounts
+  useEffect(() => {
+    if (props.autoFocus && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [props.autoFocus]);
 
   // In this hook we make sure that selected language is one of the available ones.
   // For example when user deleted language it will change it to next one.
@@ -83,20 +93,20 @@ export const InputLanguageString = (props: {
       </ul>
       {props.inputType === "text" ? (
         <input
+          ref={inputRef as React.RefObject<HTMLInputElement>}
           disabled={props.disabled}
           type="text"
           className="w-full"
           value={value}
           onChange={onChange}
-          autoFocus={props.autoFocus}
         />
       ) : (
         <textarea
+          ref={inputRef as React.RefObject<HTMLTextAreaElement>}
           disabled={props.disabled}
           value={value}
           className="w-full"
           onChange={onChange}
-          autoFocus={props.autoFocus}
         />
       )}
     </div>
