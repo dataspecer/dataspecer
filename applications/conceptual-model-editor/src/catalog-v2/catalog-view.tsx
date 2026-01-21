@@ -17,7 +17,7 @@ import {
   CatalogState,
 } from "./catalog-state";
 import { t } from "../application";
-import { 
+import {
   ACTION_SEMANTIC_MODEL_CREATE,
   ACTION_SEMANTIC_MODEL_COLLAPSE_ALL,
   ACTION_SEMANTIC_MODEL_EXPAND_ALL
@@ -109,9 +109,9 @@ function CatalogSearchBar({ state, controller }: {
   };
 
   return (
-    <div className="flex p-2 gap-2">
+    <div className="flex flex-wrap p-2 gap-2">
       <input
-        className="grow" type="text"
+        className="grow min-w-10" type="text"
         value={value}
         onChange={event => {
           isUserInputRef.current = true;
