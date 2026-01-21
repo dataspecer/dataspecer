@@ -20,6 +20,7 @@ import {
   XmlSchemaType,
   xmlSchemaComplexTypeDefinitionIsExtension,
   xmlSchemaSimpleTypeDefinitionIsRestriction,
+  xmlSchemaSimpleTypeDefinitionIsList,
   XmlSchemaAttribute,
   xmlSchemaTypeIsLangString,
 } from "./xml-schema-model.ts";
@@ -310,10 +311,14 @@ async function writeAttribute(
     await writer.writeLocalAttributeValue("name", attribute.name[1]);
     const type = attribute.type;
     if (!xmlSchemaTypeIsComplex(type) && !xmlSchemaTypeIsSimple(type)) {
+      // Simple type reference by name
       await writer.writeLocalAttributeValue(
         "type",
         writer.getQName(...type.name)
       );
+    } else if (xmlSchemaTypeIsSimple(type)) {
+      // Inline simple type definition
+      await writeSimpleType(type, writer);
     } else {
       await writeUnrecognizedObject(type, writer);
     }
@@ -491,6 +496,11 @@ async function writeSimpleType(
           if (definition.pattern != null) {
             await writer.writeElementFull("xs", "pattern")(async writer => await writer.writeLocalAttributeValue("value", definition.pattern));
           }
+        } else if (xmlSchemaSimpleTypeDefinitionIsList(definition)) {
+          // Handle xs:list
+          await writer.writeLocalAttributeValue(
+            "itemType", writer.getQName(...definition.itemType)
+          );
         } else {
           // In case of xs:union and similar.
           await writer.writeLocalAttributeValue(

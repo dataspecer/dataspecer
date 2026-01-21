@@ -533,9 +533,30 @@ class XmlSchemaAdapter {
     const attributes: XmlSchemaAttribute[] = [];
     for (const property of properties) {
       if (property.xmlIsAttribute) {
+        let type = await this.objectTypeToSchemaType(property) as XmlSchemaSimpleType;
+        
+        // Check if this attribute has multi-cardinality (max > 1 or unbounded)
+        // In XML Schema, multi-valued attributes must use xs:list
+        const cardinalityMax = property.cardinalityMax;
+        const isMultiValued = cardinalityMax === null || cardinalityMax > 1;
+        
+        if (isMultiValued && type.name != null) {
+          // Wrap the type in an xs:list
+          type = {
+            entityType: "type",
+            name: null,
+            annotation: null,
+            simpleDefinition: {
+              xsType: "list",
+              itemType: type.name,
+              contents: [],
+            },
+          } as XmlSchemaSimpleType;
+        }
+
         const attribute = {
           name: [null, property.technicalLabel],
-          type: await this.objectTypeToSchemaType(property) as XmlSchemaSimpleType,
+          type: type,
           annotation: this.getAnnotation(property),
           isRequired: property.cardinalityMin > 0,
         } satisfies XmlSchemaAttribute;

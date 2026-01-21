@@ -313,10 +313,22 @@ export class XmlSchemaSimpleItemRestriction extends XmlSchemaSimpleItem {
   pattern: string | null;
 }
 
+export class XmlSchemaSimpleItemList extends XmlSchemaSimpleItem {
+  declare xsType: "list";
+
+  itemType: QName;
+}
+
 export function xmlSchemaSimpleTypeDefinitionIsRestriction(
   typeDefinition: XmlSchemaSimpleItem
 ): typeDefinition is XmlSchemaSimpleItemRestriction {
   return typeDefinition.xsType === "restriction";
+}
+
+export function xmlSchemaSimpleTypeDefinitionIsList(
+  typeDefinition: XmlSchemaSimpleItem
+): typeDefinition is XmlSchemaSimpleItemList {
+  return typeDefinition.xsType === "list";
 }
 
 /**
