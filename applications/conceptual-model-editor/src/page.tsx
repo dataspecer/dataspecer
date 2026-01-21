@@ -67,10 +67,10 @@ const Catalog = (() => {
     updatePreferences({ catalogComponent: catalog });
   }
   switch (preferences().catalogComponent) {
-  case "v1":
-    return CatalogV1;
-  case "v2":
-    return CatalogV2
+    case "v1":
+      return CatalogV1;
+    case "v2":
+      return CatalogV2
   }
 })();
 
@@ -90,7 +90,6 @@ const Page = () => {
   const [rawEntities, setRawEntities] = useState<(Entity | null)[]>([]);
   const [visualModels, setVisualModels] = useState(new Map<string, WritableVisualModel>());
   const [sourceModelOfEntityMap, setSourceModelOfEntityMap] = useState(new Map<string, string>());
-  const [defaultModelAlreadyCreated, setDefaultModelAlreadyCreated] = useState(false);
   const [classProfiles, setClassProfiles] = useState<SemanticModelClassProfile[]>([]);
   const [relationshipProfiles, setRelationshipProfiles] = useState<SemanticModelRelationshipProfile[]>([]);
   const [
@@ -110,18 +109,13 @@ const Page = () => {
   // - if there was no local model within the package, it creates and registers one as well
   useEffect(() => {
     if (packageId === null) {
-      if (defaultModelAlreadyCreated) {
-        // We have already created a default package.
-        return;
-      } else {
-        console.log("[INITIALIZATION] No package identifier provided, creating default model.");
-        return initializeWithoutPackage(
-          setVisualModels,
-          setModels,
-          setDefaultModelAlreadyCreated,
-          setAggregator,
-          setAggregatorView);
-      }
+      console.log("[INITIALIZATION] No package identifier provided, creating default model.");
+      // This is synchronous operation we do not need to cancel.
+      initializeWithoutPackage(
+        setVisualModels,
+        setModels,
+        setAggregator,
+        setAggregatorView);
     } else {
       console.log("[INITIALIZATION] Loading models for package.", { packageId });
       return initializeWithPackage(
@@ -131,8 +125,7 @@ const Page = () => {
         setLayoutConfiguration,
         setVisualModels,
         setModels,
-        setAggregatorView,
-        updatePackageId);
+        setAggregatorView);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -239,10 +232,9 @@ export default PageWrapper;
 function initializeWithoutPackage(
   setVisualModels: Dispatch<SetStateAction<Map<string, WritableVisualModel>>>,
   setModels: Dispatch<SetStateAction<Map<string, EntityModel>>>,
-  setDefaultModelAlreadyCreated: Dispatch<SetStateAction<boolean>>,
   setAggregator: Dispatch<SetStateAction<SemanticModelAggregatorType>>,
   setAggregatorView: Dispatch<SetStateAction<SemanticModelAggregatorView>>,
-) {
+): void {
   const tempAggregator = new SemanticModelAggregator();
 
   // Create semantic model.
@@ -258,15 +250,8 @@ function initializeWithoutPackage(
   const tempAggregatorView = tempAggregator.getView();
   tempAggregatorView.changeActiveVisualModel(visualModel.getId());
 
-  setDefaultModelAlreadyCreated(true);
   setAggregator(tempAggregator);
   setAggregatorView(tempAggregatorView);
-
-  return () => {
-    setDefaultModelAlreadyCreated(false);
-    setModels(() => new Map<string, EntityModel>());
-    setVisualModels(() => new Map<string, WritableVisualModel>());
-  };
 }
 
 function initializeWithPackage(
@@ -279,20 +264,24 @@ function initializeWithPackage(
   setVisualModels: Dispatch<SetStateAction<Map<string, WritableVisualModel>>>,
   setModels: Dispatch<SetStateAction<Map<string, EntityModel>>>,
   setAggregatorView: Dispatch<SetStateAction<SemanticModelAggregatorView>>,
-  updatePackageId: (packageId: string | null) => void,
-) {
+): () => void {
+  let cancelled = false;
+
   const getLayoutConfiguration = () => getLayoutConfigurationModelFromBackend(packageId);
-  // I think that no clean up is needed (as in case of models), since we are always setting with concrete value
   getLayoutConfiguration().then((layoutConfiguration) => {
+    if (cancelled) {
+      return;
+    }
     setLayoutConfiguration(layoutConfiguration);
   }).catch((error) => {
     console.error("Can not load configuration for layouting. Using the default", error);
     setLayoutConfiguration(getDefaultUserGivenAlgorithmConfigurationsFull());
   });
 
-  const getModels = () => getModelsFromBackend(packageId);
-
-  const cleanup = getModels().then((models) => {
+  getModelsFromBackend(packageId).then((models) => {
+    if (cancelled) {
+      return;
+    }
     const [entityModels, visualModels] = models;
     if (entityModels.length === 0) {
       console.warn("Creating default semantic model.");
@@ -325,8 +314,10 @@ function initializeWithPackage(
     }
 
     const aggregatorView = aggregator.getView();
-    const visualModelsMap = new Map(visualModels.map((model) => [model.getIdentifier(), model as WritableVisualModel]));
-    const entityModelsMap = new Map(entityModels.map((model) => [model.getId(), model]));
+    const visualModelsMap = new Map(visualModels.map(
+      (model) => [model.getIdentifier(), model as WritableVisualModel]));
+    const entityModelsMap = new Map(entityModels.map(
+      (model) => [model.getId(), model]));
 
     // Perform high-level migration.
     for (const model of visualModels) {
@@ -358,26 +349,12 @@ function initializeWithPackage(
     }
 
     setAggregatorView(aggregatorView);
-
-    return () => {
-      console.log("Cleanup for the package loading method.");
-      for (const model of [...entityModels, ...visualModels]) {
-        try {
-          aggregator.deleteModel(model);
-        } catch (err) {
-          console.log("Can't delete model from aggregator.", err);
-        }
-      }
-      setModels(new Map());
-      setVisualModels(new Map());
-    };
   }).catch((error) => {
     console.error("Can not prepare package.", error);
-    updatePackageId(null);
   });
 
-  return async () => {
-    (await cleanup)?.();
+  return () => {
+    cancelled = true;
   };
 }
 
