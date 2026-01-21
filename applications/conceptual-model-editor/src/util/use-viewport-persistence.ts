@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useReactFlow, type Viewport } from "@xyflow/react";
+import { useReactFlow, type Viewport, useOnViewportChange } from "@xyflow/react";
 import { useLocalStorage } from "./use-local-storage";
 
 interface ViewportState {
@@ -31,6 +31,8 @@ export function useViewportPersistence(visualModelId: string | null, enabled = t
 
   // Track if viewport has been restored
   const restoredRef = useRef(false);
+  // Track timeout for throttling saves
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Restore viewport on mount or when visual model changes
   useEffect(() => {
@@ -55,20 +57,19 @@ export function useViewportPersistence(visualModelId: string | null, enabled = t
   }, [visualModelId]);
 
   // Save viewport whenever it changes (with throttling)
-  useEffect(() => {
-    if (!enabled || !storageKey) {
-      return;
-    }
-
-    // Throttle the save operation to avoid excessive localStorage writes
-    let timeoutId: NodeJS.Timeout | null = null;
-    
-    const handleViewportChange = (viewport: Viewport) => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
+  useOnViewportChange({
+    onChange: (viewport: Viewport) => {
+      if (!enabled || !storageKey) {
+        return;
       }
 
-      timeoutId = setTimeout(() => {
+      // Clear existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      // Set new timeout to save viewport after 500ms of inactivity
+      timeoutRef.current = setTimeout(() => {
         const viewportState: ViewportState = {
           x: viewport.x,
           y: viewport.y,
@@ -76,18 +77,17 @@ export function useViewportPersistence(visualModelId: string | null, enabled = t
         };
         setSavedViewport(viewportState);
       }, 500); // Save 500ms after the last viewport change
-    };
+    },
+  });
 
-    // Subscribe to viewport changes
-    const unsubscribe = reactFlow.onViewportChange(handleViewportChange);
-
+  // Cleanup timeout on unmount
+  useEffect(() => {
     return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
-      unsubscribe();
     };
-  }, [enabled, storageKey, reactFlow, setSavedViewport]);
+  }, []);
 
   return {
     savedViewport,
