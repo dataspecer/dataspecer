@@ -9,8 +9,7 @@ export function changeVisualModelAction (
   queryParamsContext: QueryParamsContextType,
   viewIdentifier: string | null
 ) {
-  const activeViewId = graph.aggregatorView.getActiveViewId();
   graph.aggregatorView.changeActiveVisualModel(viewIdentifier);
   graph.setAggregatorView(graph.aggregator.getView());
-  queryParamsContext.updateViewId(activeViewId ?? null);
+  queryParamsContext.updateViewId(viewIdentifier ?? null);
 };

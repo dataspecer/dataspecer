@@ -159,6 +159,27 @@ const Page = () => {
 
   }, [aggregatorView]);
 
+  // Sync URL viewId changes (from browser back/forward) to aggregator view
+  useEffect(() => {
+    if (!aggregatorView) {
+      return;
+    }
+
+    const currentActiveViewId = aggregatorView.getActiveViewId();
+    
+    // Only change if viewId from URL is different from current active view
+    if (viewId !== currentActiveViewId) {
+      const availableVisualModels = aggregatorView.getAvailableVisualModels();
+      const isValidViewId = viewId && availableVisualModels.some(vm => vm.getIdentifier() === viewId);
+      
+      if (isValidViewId) {
+        console.log("[VIEW NAVIGATION] Syncing URL viewId to aggregator:", viewId);
+        aggregatorView.changeActiveVisualModel(viewId);
+        setAggregatorView(aggregator.getView());
+      }
+    }
+  }, [viewId, aggregatorView, aggregator]);
+
   return (
     <ExplorationContextProvider>
       <OptionsContextProvider>
