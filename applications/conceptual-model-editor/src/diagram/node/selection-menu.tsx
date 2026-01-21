@@ -31,13 +31,18 @@ export function SelectionMenu(props: NodeProps<Node<DiagramNodeTypes>>) {
     context?.callbacks().onOpenAlignmentMenu(props.data, absoluteFlowPosition);
   }
 
+  // Prevent canvas dragging when clicking/dragging on buttons
+  const preventDrag = (e: React.PointerEvent) => {
+    e.stopPropagation();
+  };
+
   return (<>
     <NodeToolbar isVisible={shouldShowMenu} position={Position.Top} className="flex gap-2 entity-node-menu" >
-      <button onClick={onShowSelectionActions} title={t("selection-action-button")}>🎬</button>
+      <button onClick={onShowSelectionActions} onPointerDown={preventDrag} title={t("selection-action-button")}>🎬</button>
       &nbsp;
-      <button onClick={onLayoutSelection} title={t("selection-layout-button")}>🔀</button>
+      <button onClick={onLayoutSelection} onPointerDown={preventDrag} title={t("selection-layout-button")}>🔀</button>
       &nbsp;
-      <button onClick={(event) => onOpenAlignmentMenu(event)}>
+      <button onClick={(event) => onOpenAlignmentMenu(event)} onPointerDown={preventDrag}>
         { /* https://www.svgrepo.com/svg/535125/align-left */}
         <svg width="24px" height="24px" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M1 1H3V15H1V1Z" fill="#000000" />
@@ -49,18 +54,19 @@ export function SelectionMenu(props: NodeProps<Node<DiagramNodeTypes>>) {
     <NodeToolbar isVisible={shouldShowMenu} position={Position.Left} className="flex gap-2 entity-node-menu" >
       <button
         onClick={onCreateVisualDiagramNode}
+        onPointerDown={preventDrag}
         title={t("visual-diagram-node-create-from-selection-button")}
       >
         📦
       </button>
     </NodeToolbar>
     <NodeToolbar isVisible={shouldShowMenu} position={Position.Right} className="flex gap-2 entity-node-menu" >
-      <button onClick={onCreateGroup} title={t("selection-group-button")}>⛓️</button>
+      <button onClick={onCreateGroup} onPointerDown={preventDrag} title={t("selection-group-button")}>⛓️</button>
     </NodeToolbar>
     <NodeToolbar isVisible={shouldShowMenu} position={Position.Bottom} className="flex gap-2 entity-node-menu" >
-      <button onClick={onShowExpandSelection} title={t("selection-extend-button")} >📈</button>
+      <button onClick={onShowExpandSelection} onPointerDown={preventDrag} title={t("selection-extend-button")} >📈</button>
       &nbsp;
-      <button onClick={onShowFilterSelection} title={t("selection-filter-button")} >📉</button>
+      <button onClick={onShowFilterSelection} onPointerDown={preventDrag} title={t("selection-filter-button")} >📉</button>
       &nbsp;
     </NodeToolbar>
   </>
