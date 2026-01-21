@@ -249,16 +249,15 @@ export const CardinalitySelector: React.FC<CardinalitySelectorProps> = ({value, 
         if (!profileConstraint) {
             return "";
         }
-        const maxStr = profileConstraint.cardinalityMax === null ? "" : profileConstraint.cardinalityMax.toString();
         if (profileConstraint.cardinalityMax === null) {
             return t("cardinality constraint no max", { min: profileConstraint.cardinalityMin });
         }
-        return t("cardinality constraint", { min: profileConstraint.cardinalityMin, max: maxStr });
+        return t("cardinality constraint", { min: profileConstraint.cardinalityMin, max: profileConstraint.cardinalityMax.toString() });
     };
 
     // Helper to wrap a control with tooltip if it's disabled due to constraint
-    const maybeWrapWithTooltip = (control: React.ReactElement, cardinalityValue: Cardinality | null): React.ReactElement => {
-        const isDisabledByConstraint = profileConstraint && cardinalityValue !== null && isCardinalityDisabled(cardinalityValue);
+    const maybeWrapWithTooltip = (control: React.ReactElement, cardinalityValue: Cardinality | null, isDisabled: boolean): React.ReactElement => {
+        const isDisabledByConstraint = profileConstraint && cardinalityValue !== null && isDisabled;
         if (isDisabledByConstraint) {
             return (
                 <Tooltip title={getDisabledTooltip()} arrow>
@@ -284,53 +283,74 @@ export const CardinalitySelector: React.FC<CardinalitySelectorProps> = ({value, 
                     control={<Radio color={color} />} 
                     label={t("cardinality unset") as string} 
                 />,
-                null
+                null,
+                false
             )}
-            {maybeWrapWithTooltip(
-                <FormControlLabel 
-                    disabled={disabled || isCardinalityDisabled(predefinedCardinalityToValue[PredefinedCardinality.c_0_infinity])} 
-                    value={PredefinedCardinality.c_0_infinity} 
-                    control={<Radio color={color} />} 
-                    label="0..*" 
-                />,
-                predefinedCardinalityToValue[PredefinedCardinality.c_0_infinity]
-            )}
-            {maybeWrapWithTooltip(
-                <FormControlLabel 
-                    disabled={disabled || isCardinalityDisabled(predefinedCardinalityToValue[PredefinedCardinality.c_1_infinity])} 
-                    value={PredefinedCardinality.c_1_infinity} 
-                    control={<Radio color={color} />} 
-                    label="1..*" 
-                />,
-                predefinedCardinalityToValue[PredefinedCardinality.c_1_infinity]
-            )}
-            {maybeWrapWithTooltip(
-                <FormControlLabel 
-                    disabled={disabled || isCardinalityDisabled(predefinedCardinalityToValue[PredefinedCardinality.c_0_1])} 
-                    value={PredefinedCardinality.c_0_1} 
-                    control={<Radio color={color} />} 
-                    label="0..1" 
-                />,
-                predefinedCardinalityToValue[PredefinedCardinality.c_0_1]
-            )}
-            {maybeWrapWithTooltip(
-                <FormControlLabel 
-                    disabled={disabled || isCardinalityDisabled(predefinedCardinalityToValue[PredefinedCardinality.c_1])} 
-                    value={PredefinedCardinality.c_1} 
-                    control={<Radio color={color} />} 
-                    label="1" 
-                />,
-                predefinedCardinalityToValue[PredefinedCardinality.c_1]
-            )}
-            {customIsUnique && maybeWrapWithTooltip(
-                <FormControlLabel 
-                    disabled={disabled || isCardinalityDisabled(custom)} 
-                    value={"custom"} 
-                    control={<Radio color={color} />} 
-                    label={custom.cardinalityMin + ".." + (custom.cardinalityMax ?? "*")} 
-                />,
-                custom
-            )}
+            {(() => {
+                const isDisabled = isCardinalityDisabled(predefinedCardinalityToValue[PredefinedCardinality.c_0_infinity]);
+                return maybeWrapWithTooltip(
+                    <FormControlLabel 
+                        disabled={disabled || isDisabled} 
+                        value={PredefinedCardinality.c_0_infinity} 
+                        control={<Radio color={color} />} 
+                        label="0..*" 
+                    />,
+                    predefinedCardinalityToValue[PredefinedCardinality.c_0_infinity],
+                    isDisabled
+                );
+            })()}
+            {(() => {
+                const isDisabled = isCardinalityDisabled(predefinedCardinalityToValue[PredefinedCardinality.c_1_infinity]);
+                return maybeWrapWithTooltip(
+                    <FormControlLabel 
+                        disabled={disabled || isDisabled} 
+                        value={PredefinedCardinality.c_1_infinity} 
+                        control={<Radio color={color} />} 
+                        label="1..*" 
+                    />,
+                    predefinedCardinalityToValue[PredefinedCardinality.c_1_infinity],
+                    isDisabled
+                );
+            })()}
+            {(() => {
+                const isDisabled = isCardinalityDisabled(predefinedCardinalityToValue[PredefinedCardinality.c_0_1]);
+                return maybeWrapWithTooltip(
+                    <FormControlLabel 
+                        disabled={disabled || isDisabled} 
+                        value={PredefinedCardinality.c_0_1} 
+                        control={<Radio color={color} />} 
+                        label="0..1" 
+                    />,
+                    predefinedCardinalityToValue[PredefinedCardinality.c_0_1],
+                    isDisabled
+                );
+            })()}
+            {(() => {
+                const isDisabled = isCardinalityDisabled(predefinedCardinalityToValue[PredefinedCardinality.c_1]);
+                return maybeWrapWithTooltip(
+                    <FormControlLabel 
+                        disabled={disabled || isDisabled} 
+                        value={PredefinedCardinality.c_1} 
+                        control={<Radio color={color} />} 
+                        label="1" 
+                    />,
+                    predefinedCardinalityToValue[PredefinedCardinality.c_1],
+                    isDisabled
+                );
+            })()}
+            {customIsUnique && (() => {
+                const isDisabled = isCardinalityDisabled(custom);
+                return maybeWrapWithTooltip(
+                    <FormControlLabel 
+                        disabled={disabled || isDisabled} 
+                        value={"custom"} 
+                        control={<Radio color={color} />} 
+                        label={custom.cardinalityMin + ".." + (custom.cardinalityMax ?? "*")} 
+                    />,
+                    custom,
+                    isDisabled
+                );
+            })()}
         </RadioGroup>
         <FormControlLabel disabled={disabled} value={"sdf"} control={<Radio onClick={() => CustomDialog.open({})} checked={false} />} label={t("cardinality custom") as string} />
 
