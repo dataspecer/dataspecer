@@ -89,7 +89,7 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
 
     async getResourceJsonData(id: string, blobId?: string): Promise<object | null> {
         const result = await this.httpFetch(this.getBlobUrl(id, blobId));
-        return (result.status >= 200 && result.status < 300) ? (await result.json() as object) : null;
+        return isHttpSuccess(result.status) ? (await result.json() as object) : null;
     }
 
     async setResourceJsonData(id: string, data: any, blobId?: string) {
