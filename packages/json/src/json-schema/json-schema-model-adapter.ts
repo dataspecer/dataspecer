@@ -581,17 +581,17 @@ function languageString(requiredLanguages: string[], multipleCardinality: boolea
   }
 
   result.additionalProperties = getPropertyType(multipleCardinality);
-  result.additionalProperties.title = "Hodnota v jiném jazyce";
+  result.additionalProperties.title = "Value in another language";
 
   result.required = requiredLanguages;
 
   const cs = getPropertyType(multipleCardinality);
   result.properties["cs"] = cs;
-  cs.title = "Hodnota v českém jazyce";
+  cs.title = "Value in Czech language";
 
   const en = getPropertyType(multipleCardinality);
   result.properties["en"] = en;
-  en.title = "Hodnota v anglickém jazyce";
+  en.title = "Value in English language";
 
   return result;
 }
