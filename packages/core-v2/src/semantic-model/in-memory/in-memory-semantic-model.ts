@@ -18,6 +18,26 @@ export class InMemorySemanticModel extends WritableSemanticModelAdapter {
         this.baseIri = iri;
     }
 
+    /**
+     * Sets the generator configuration for this semantic model.
+     * This configuration will be used as defaults for all data specifications using this model.
+     * @param config Configuration object to store
+     */
+    setGeneratorConfiguration(config: object): void {
+        this.modelMetadata = {
+            ...this.modelMetadata,
+            generatorConfiguration: config
+        };
+    }
+
+    /**
+     * Retrieves the generator configuration from this semantic model.
+     * @returns The generator configuration object or null if not set
+     */
+    getGeneratorConfiguration(): object | null {
+        return (this.modelMetadata as any).generatorConfiguration ?? null;
+    }
+
     serializeModel() {
         return {
             type: LOCAL_SEMANTIC_MODEL,

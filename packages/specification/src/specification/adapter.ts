@@ -144,14 +144,32 @@ export async function getDataSpecificationWithModels(dataSpecificationIri: strin
     // @ts-ignore Each specification should have its own semantic model, not merged with other specifications
     specification.semanticModel = semanticModel;
 
-    // Load configuration
+    // Load semantic model generator configuration (as defaults)
+    let semanticModelConfiguration: Record<string, object> = {};
+    if (usedSemanticModels.length > 0) {
+      // Get configuration from the first semantic model (primary model)
+      const primarySemanticModel = usedSemanticModels[0];
+      const generatorConfig = primarySemanticModel.getGeneratorConfiguration();
+      if (generatorConfig) {
+        semanticModelConfiguration = generatorConfig as Record<string, object>;
+      }
+    }
+
+    // Load data specification configuration
     const configurationStore = specifications?.[dataSpecificationIri]?.artifactConfigurations?.[0]?.id ?? null;
     const configurationModel = configurationStore ? await (await modelRepository.getModelById(configurationStore))?.asBlobModel() : undefined;
-    const configuration = configurationModel ? ((await configurationModel.getJsonBlob()) as Record<string, object>) : {};
+    const dataSpecConfiguration = configurationModel ? ((await configurationModel.getJsonBlob()) as Record<string, object>) : {};
+
+    // Merge semantic model configuration with data spec configuration
+    // Data spec configuration takes precedence over semantic model configuration
+    const mergedConfiguration = {
+      ...semanticModelConfiguration,
+      ...dataSpecConfiguration
+    };
 
     if (specifications?.[dataSpecificationIri]) {
       // @ts-ignore
-      specifications[dataSpecificationIri].artefactConfiguration = configuration;
+      specifications[dataSpecificationIri].artefactConfiguration = mergedConfiguration;
     }
   }
 
