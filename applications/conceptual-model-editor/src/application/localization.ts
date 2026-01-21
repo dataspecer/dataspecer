@@ -21,13 +21,13 @@ export const useTranslation = (): TranslationFunction => {
       if (uiLanguage === "cs") {
         const englishEntry = english[text];
         if (englishEntry !== undefined) {
-          return translate(englishEntry, args);
+          return translate(englishEntry, ...args);
         }
       }
       LOG.missingTranslation(text);
       return text;
     }
-    return translate(entry, args);
+    return translate(entry, ...args);
   };
 };
 
@@ -53,13 +53,13 @@ export const t: TranslationFunction = (text, ...args) => {
     if (currentUiLanguage === "cs") {
       const englishEntry = english[text];
       if (englishEntry !== undefined) {
-        return translate(englishEntry, args);
+        return translate(englishEntry, ...args);
       }
     }
     LOG.missingTranslation(text);
     return text;
   }
-  return translate(entry, args);
+  return translate(entry, ...args);
 };
 
 function translate(translation: string | Function, ...args: unknown[]) {
@@ -83,5 +83,5 @@ export const tData = (
     LOG.missingTranslation(language + ":" + text);
     return text;
   }
-  return translate(entry, args);
+  return translate(entry, ...args);
 }
