@@ -31,7 +31,8 @@ export const BulkUpdateTechnicalLabelsDialog: FC<{
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const store = useFederatedObservableStore();
-  const [specification] = useContext(SpecificationContext);
+  const specificationContext = useContext(SpecificationContext);
+  const specification = specificationContext?.[0];
 
   const handleUpdate = async () => {
     setIsProcessing(true);
