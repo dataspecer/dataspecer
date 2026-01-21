@@ -288,7 +288,7 @@ function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean
           </>}
         />
       </h2>
-      <Button variant="ghost" size="sm" className="shrink=0 ml-4"
+      <Button variant="ghost" size="sm" className="shrink-0 ml-4"
         onClick={() => openModal(AddImported, {id: iri})}>
         <Import className="mr-2 h-4 w-4" /> {t("import")}
       </Button>
