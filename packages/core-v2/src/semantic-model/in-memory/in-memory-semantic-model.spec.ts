@@ -42,13 +42,13 @@ describe("InMemorySemanticModel generator configuration", () => {
     model.setGeneratorConfiguration(config);
     
     const serialized = model.serializeModel();
-    expect(serialized.generatorConfiguration).toEqual(config);
+    expect((serialized as any).generatorConfiguration).toEqual(config);
   });
 
   test("Should deserialize generator configuration from model metadata", () => {
     const model = new InMemorySemanticModel();
     
-    const data = {
+    const data: any = {
       type: "http://dataspecer.com/resources/local/semantic-model",
       modelId: "test-model-id",
       modelAlias: "test-alias",
