@@ -88,7 +88,11 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
         <div className="font-medium">
           <Translate
             text={resource.userMetadata?.label}
-            match={t => <>{t} <span className="ml-5 text-gray-500 font-normal">{modelTypeToName[resource.types[0]]}</span></>}
+            match={(t, isMatch, language) => <>
+              <span className={isMatch ? "" : "text-gray-500"}>{t}</span>
+              {!isMatch && <Badge variant="outline" className="ml-2 text-xs">{language}</Badge>}
+              <span className="ml-5 text-gray-500 font-normal">{modelTypeToName[resource.types[0]]}</span>
+            </>}
             fallback={modelTypeToName[resource.types[0]]}
           />
         </div>
@@ -275,7 +279,15 @@ function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean
       <button onClick={() => setIsOpen(!isOpen)}>
         {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
       </button>
-      <h2 className="font-heading ml-3 scroll-m-20 pb-2 text-2xl font-semibold tracking-tight first:mt-0 grow"><Translate text={pckg.userMetadata?.label} /></h2>
+      <h2 className="font-heading ml-3 scroll-m-20 pb-2 text-2xl font-semibold tracking-tight first:mt-0 grow">
+        <Translate
+          text={pckg.userMetadata?.label}
+          match={(t, isMatch, language) => <>
+            <span className={isMatch ? "" : "text-gray-500"}>{t}</span>
+            {!isMatch && <Badge variant="outline" className="ml-2 text-xs">{language}</Badge>}
+          </>}
+        />
+      </h2>
       <Button variant="ghost" size="sm" className="shrink=0 ml-4"
         onClick={() => openModal(AddImported, {id: iri})}>
         <Import className="mr-2 h-4 w-4" /> {t("import")}
