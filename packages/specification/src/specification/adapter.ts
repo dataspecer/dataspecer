@@ -82,6 +82,29 @@ async function serializePackageModel(packageModel: PackageModel): Promise<Packag
 }
 
 /**
+ * Deep merges two configuration objects. Data spec configuration takes precedence.
+ * This properly handles nested objects like useGenerators and renameArtifacts.
+ */
+function deepMergeConfigurations(semanticConfig: object, dataSpecConfig: object): object {
+  const result: Record<string, any> = {...semanticConfig};
+  
+  for (const [key, value] of Object.entries(dataSpecConfig)) {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      // Recursively merge nested objects
+      result[key] = deepMergeConfigurations(
+        (result[key] || {}) as object,
+        value as object
+      );
+    } else {
+      // Primitive values or arrays: data spec takes precedence
+      result[key] = value;
+    }
+  }
+  
+  return result;
+}
+
+/**
  * Returns the full data specification with all dependent specifications and models.
  */
 export async function getDataSpecificationWithModels(dataSpecificationIri: string, dataPsmSchemaIri: string, modelRepository: ModelRepository) {
@@ -145,27 +168,26 @@ export async function getDataSpecificationWithModels(dataSpecificationIri: strin
     specification.semanticModel = semanticModel;
 
     // Load semantic model generator configuration (as defaults)
-    let semanticModelConfiguration: Record<string, object> = {};
+    let semanticModelConfiguration: object = {};
     if (usedSemanticModels.length > 0) {
       // Get configuration from the first semantic model (primary model)
       const primarySemanticModel = usedSemanticModels[0];
-      const generatorConfig = primarySemanticModel.getGeneratorConfiguration();
-      if (generatorConfig) {
-        semanticModelConfiguration = generatorConfig as Record<string, object>;
+      if (primarySemanticModel) {
+        const generatorConfig = primarySemanticModel.getGeneratorConfiguration();
+        if (generatorConfig) {
+          semanticModelConfiguration = generatorConfig;
+        }
       }
     }
 
     // Load data specification configuration
     const configurationStore = specifications?.[dataSpecificationIri]?.artifactConfigurations?.[0]?.id ?? null;
     const configurationModel = configurationStore ? await (await modelRepository.getModelById(configurationStore))?.asBlobModel() : undefined;
-    const dataSpecConfiguration = configurationModel ? ((await configurationModel.getJsonBlob()) as Record<string, object>) : {};
+    const dataSpecConfiguration: object = configurationModel ? ((await configurationModel.getJsonBlob()) as object) : {};
 
     // Merge semantic model configuration with data spec configuration
-    // Data spec configuration takes precedence over semantic model configuration
-    const mergedConfiguration = {
-      ...semanticModelConfiguration,
-      ...dataSpecConfiguration
-    };
+    // Data spec configuration takes precedence over semantic model configuration (deep merge)
+    const mergedConfiguration = deepMergeConfigurations(semanticModelConfiguration, dataSpecConfiguration);
 
     if (specifications?.[dataSpecificationIri]) {
       // @ts-ignore
