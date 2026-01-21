@@ -1,9 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { 
   XmlSchemaAttribute, 
-  XmlSchemaSimpleType
-} from "../xml-schema-model";
-import { XmlStreamWriter } from "../../xml/xml-writer";
+  XmlSchemaSimpleType,
+  XmlSchemaSimpleItemList,
+  xmlSchemaSimpleTypeDefinitionIsList
+} from "../xml-schema-model.ts";
+import { XmlStreamWriter } from "../../xml/xml-writer.ts";
 
 function getWriter(): [string[], XmlStreamWriter] {
   const buffer = [];
@@ -24,6 +26,12 @@ describe("XSD List Attribute Writer", () => {
     writer.registerNamespace("xs", "http://www.w3.org/2001/XMLSchema");
     
     // Create an attribute with inline list type
+    const listDefinition: XmlSchemaSimpleItemList = {
+      xsType: "list",
+      itemType: ["xs", "string"],
+      contents: [],
+    };
+    
     const attribute: XmlSchemaAttribute = {
       name: [null, "title"],
       isRequired: true,
@@ -32,11 +40,7 @@ describe("XSD List Attribute Writer", () => {
         entityType: "type",
         name: null,
         annotation: null,
-        simpleDefinition: {
-          xsType: "list",
-          itemType: ["xs", "string"],
-          contents: [],
-        },
+        simpleDefinition: listDefinition,
       } as XmlSchemaSimpleType,
     };
 
@@ -51,12 +55,14 @@ describe("XSD List Attribute Writer", () => {
       // Inline simple type
       await writer.writeElementFull("xs", "simpleType")(async (writer) => {
         const definition = type.simpleDefinition;
-        await writer.writeElementFull("xs", definition.xsType)(async (writer) => {
-          await writer.writeLocalAttributeValue(
-            "itemType", 
-            writer.getQName(...(definition as any).itemType)
-          );
-        });
+        if (xmlSchemaSimpleTypeDefinitionIsList(definition)) {
+          await writer.writeElementFull("xs", definition.xsType)(async (writer) => {
+            await writer.writeLocalAttributeValue(
+              "itemType", 
+              writer.getQName(definition.itemType[0], definition.itemType[1])
+            );
+          });
+        }
       });
     });
 
@@ -102,7 +108,7 @@ describe("XSD List Attribute Writer", () => {
       await writer.writeLocalAttributeValue("name", attribute.name[1]);
       await writer.writeLocalAttributeValue(
         "type",
-        writer.getQName(...attribute.type.name)
+        writer.getQName(attribute.type.name[0], attribute.type.name[1])
       );
     });
 

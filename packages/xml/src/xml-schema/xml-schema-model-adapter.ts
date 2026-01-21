@@ -34,6 +34,7 @@ import {
   XmlSchemaNamespaceDefinition,
   XmlSchemaSimpleItem,
   XmlSchemaSimpleItemRestriction,
+  xmlSchemaSimpleTypeDefinitionIsRestriction,
   XmlSchemaSimpleType,
   XmlSchemaType,
   xmlSchemaTypeIsComplex,
@@ -510,6 +511,23 @@ class XmlSchemaAdapter {
   }
 
   /**
+   * Creates an xs:list simple type wrapping a given item type.
+   * Used for multi-valued attributes.
+   */
+  private createListType(itemType: QName): XmlSchemaSimpleType {
+    return {
+      entityType: "type",
+      name: null,
+      annotation: null,
+      simpleDefinition: {
+        xsType: "list",
+        itemType: itemType,
+        contents: [],
+      },
+    } as XmlSchemaSimpleType;
+  }
+
+  /**
    * Helper function that converts a property list to a complex sequence. You need to specify the type of the sequence.
    * For example "sequence" or "choice".
    */
@@ -540,18 +558,30 @@ class XmlSchemaAdapter {
         const cardinalityMax = property.cardinalityMax;
         const isMultiValued = cardinalityMax === null || cardinalityMax > 1;
         
-        if (isMultiValued && type.name != null) {
-          // Wrap the type in an xs:list
-          type = {
-            entityType: "type",
-            name: null,
-            annotation: null,
-            simpleDefinition: {
-              xsType: "list",
-              itemType: type.name,
-              contents: [],
-            },
-          } as XmlSchemaSimpleType;
+        if (isMultiValued) {
+          // Get the item type - either from the type's name or from an inline definition
+          let itemType: QName;
+          
+          if (type.name != null) {
+            // Named type reference
+            itemType = type.name;
+          } else if (xmlSchemaTypeIsSimple(type)) {
+            // Inline simple type - for now, we extract the base type if it's a restriction
+            // or use xs:string as a fallback
+            const simpleDefinition = type.simpleDefinition;
+            if (xmlSchemaSimpleTypeDefinitionIsRestriction(simpleDefinition)) {
+              itemType = simpleDefinition.base;
+            } else {
+              // For other cases (union, etc.), default to xs:string
+              itemType = [this.getAndImportHelperNamespace("xsd", true), "string"];
+            }
+          } else {
+            // Fallback to xs:string for unrecognized types
+            itemType = [this.getAndImportHelperNamespace("xsd", true), "string"];
+          }
+          
+          // Wrap in xs:list
+          type = this.createListType(itemType);
         }
 
         const attribute = {
