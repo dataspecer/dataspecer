@@ -28,8 +28,14 @@ import { GeneralizationEdge, GeneralizationEdgeName } from "./edge/generalizatio
 import { CanvasGeneralMenu } from "./canvas/canvas-menu-general";
 import { useDiagramMinimapHandler } from "./diagram-minimap-handler";
 import { VisualModelNode, VisualModelNodeName } from "./node/visual-model-diagram-node";
+import { useViewportPersistence } from "../util/use-viewport-persistence";
 
-export function Diagram(props: { diagram: UseDiagramType }) {
+export interface DiagramProps {
+  diagram: UseDiagramType;
+  visualModelId?: string | null;
+}
+
+export function Diagram(props: DiagramProps) {
   // We use ReactFlowProvider as otherwise use of ReactFlow hooks,
   // would create multiple instance causing issues.
   return (
@@ -50,10 +56,13 @@ const edgeTypes = {
   [GeneralizationEdgeName]: GeneralizationEdge,
 };
 
-function ReactFlowDiagram(props: { diagram: UseDiagramType }) {
+function ReactFlowDiagram(props: DiagramProps) {
   const controller = useDiagramController(props.diagram);
   const { xSnapGrid, ySnapGrid } = configuration();
   const minimapHandler = useDiagramMinimapHandler();
+  
+  // Enable viewport persistence based on visual model ID
+  useViewportPersistence(props.visualModelId ?? null);
 
   return (
     <>

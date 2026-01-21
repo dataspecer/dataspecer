@@ -144,7 +144,12 @@ export const Visualization = () => {
   return (
     <>
       <div className="h-[80vh] w-full md:h-full">
-        {actions.diagram === null ? null : <Diagram diagram={actions.diagram} />}
+        {actions.diagram === null ? null : (
+          <Diagram 
+            diagram={actions.diagram} 
+            visualModelId={activeVisualModel?.getIdentifier() ?? null} 
+          />
+        )}
       </div>
     </>
   );
