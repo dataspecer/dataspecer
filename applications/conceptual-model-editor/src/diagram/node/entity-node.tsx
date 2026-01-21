@@ -169,6 +169,7 @@ function ProfileOf({ options, profileOf }: {
   profileOf: {
     label: string | null,
     iri: string | null,
+    color: string,
   }[],
 }) {
   if (profileOf.length === 0) {
@@ -189,8 +190,19 @@ function ProfileOf({ options, profileOf }: {
     <div className="text-gray-600">
       {options.profileOfLabel}&nbsp;
       <ul className="inline-grid">
-        {labels.filter(item => item !== null)
-          .map((item, index) => <li key={index}>{item}</li>)}
+        {labels.filter((item, index) => item !== null)
+          .map((item, index) => {
+            const color = profileOf[labels.indexOf(item)]?.color;
+            return (
+              <li 
+                key={index} 
+                style={{ backgroundColor: color }}
+                className="px-1"
+              >
+                {item}
+              </li>
+            );
+          })}
       </ul>
     </div>
   )
