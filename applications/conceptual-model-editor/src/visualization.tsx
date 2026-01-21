@@ -717,7 +717,7 @@ function createDiagramEdgeForRelationshipProfile(
       options, semanticModels, entities, entity),
     vocabulary: prepareVocabulary(
       options, visualModel, semanticModels, entities, entity.id),
-    mandatoryLevelLabel: asMandatoryLevel(range?.tags ?? []),
+    mandatoryLevelLabel: selectMandatoryLevel(asMandatoryLevel(range?.tags ?? []), options.language),
   };
 }
 
