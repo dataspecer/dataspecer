@@ -33,12 +33,12 @@ function Dialog({ reference, context }: {
     
     // After the dialog opens, focus the first element with autofocus
     // This is needed because dialog's showModal() focuses the first focusable element
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       const autoFocusElement = reference.current?.querySelector('[autofocus]') as HTMLElement;
       if (autoFocusElement) {
         autoFocusElement.focus();
       }
-    }, 0);
+    });
   }, [reference]);
 
   const defaultClassNames = "m-auto base-dialog z-30 flex flex-col " +
