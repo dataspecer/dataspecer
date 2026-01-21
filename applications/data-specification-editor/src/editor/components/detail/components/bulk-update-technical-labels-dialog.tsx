@@ -13,6 +13,7 @@ import {
   Alert
 } from "@mui/material";
 import { FC, useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useFederatedObservableStore } from "@dataspecer/federated-observable-store-react/store";
 import { BulkUpdateTechnicalLabels, BulkUpdateMode } from "../../../operations/bulk-update-technical-labels";
 import { OperationContext } from "../../../operations/context/operation-context";
@@ -25,6 +26,7 @@ export const BulkUpdateTechnicalLabelsDialog: FC<{
   schemaIri: string;
   defaultConfiguration: any;
 }> = ({ open, onClose, schemaIri, defaultConfiguration }) => {
+  const { t } = useTranslation("detail");
   const [mode, setMode] = useState<BulkUpdateMode>("apply-style");
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,23 +82,25 @@ export const BulkUpdateTechnicalLabelsDialog: FC<{
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Bulk Update Technical Labels</DialogTitle>
+      <DialogTitle>{t("bulk update technical labels.dialog title")}</DialogTitle>
       <DialogContent>
         <Typography variant="body2" sx={{ mb: 3 }}>
-          This will update all technical labels in the current data structure according to the configured casing convention.
+          {t("bulk update technical labels.description")}
         </Typography>
         
         <FormControl component="fieldset">
-          <FormLabel component="legend">Update mode</FormLabel>
+          <FormLabel component="legend">{t("bulk update technical labels.mode label")}</FormLabel>
           <RadioGroup value={mode} onChange={(e) => setMode(e.target.value as BulkUpdateMode)}>
             <FormControlLabel
               value="apply-style"
               control={<Radio />}
               label={
                 <div>
-                  <Typography variant="body1"><strong>Apply style</strong> (recommended)</Typography>
+                  <Typography variant="body1">
+                    <strong>{t("bulk update technical labels.apply style title")}</strong> {t("bulk update technical labels.apply style subtitle")}
+                  </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Keeps manual changes but applies the new casing. For example, "jid" becomes "Jid" when changing to PascalCase.
+                    {t("bulk update technical labels.apply style description")}
                   </Typography>
                 </div>
               }
@@ -106,9 +110,9 @@ export const BulkUpdateTechnicalLabelsDialog: FC<{
               control={<Radio />}
               label={
                 <div>
-                  <Typography variant="body1"><strong>Reset</strong></Typography>
+                  <Typography variant="body1"><strong>{t("bulk update technical labels.reset title")}</strong></Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Regenerates all labels from semantic model, losing any manual changes.
+                    {t("bulk update technical labels.reset description")}
                   </Typography>
                 </div>
               }
@@ -123,9 +127,9 @@ export const BulkUpdateTechnicalLabelsDialog: FC<{
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={isProcessing}>Cancel</Button>
+        <Button onClick={onClose} disabled={isProcessing}>{t("bulk update technical labels.cancel")}</Button>
         <Button onClick={handleUpdate} variant="contained" disabled={isProcessing}>
-          {isProcessing ? "Updating..." : "Update"}
+          {isProcessing ? t("bulk update technical labels.updating") : t("bulk update technical labels.update")}
         </Button>
       </DialogActions>
     </Dialog>

@@ -63,12 +63,12 @@ function parseWordsFromLabel(label: string): string[] {
     
     for (let i = 0; i < label.length; i++) {
         const char = label[i];
-        const isUpperCase = char === char.toUpperCase() && char !== char.toLowerCase();
+        const isUpperCase = /[A-Z]/.test(char);
         
         if (isUpperCase && currentWord.length > 0) {
             // Check if this is an acronym (multiple consecutive uppercase)
             const nextChar = label[i + 1];
-            const isNextUpperCase = nextChar && nextChar === nextChar.toUpperCase() && nextChar !== nextChar.toLowerCase();
+            const isNextUpperCase = nextChar && /[A-Z]/.test(nextChar);
             
             if (isNextUpperCase) {
                 // Part of an acronym, keep adding to current word

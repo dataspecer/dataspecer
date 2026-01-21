@@ -231,7 +231,7 @@ export const DataPsmSchemaCard: React.FC<{ iri: string; onClose: () => void }> =
               onClick={() => setBulkUpdateDialogOpen(true)}
               sx={{ mt: 1 }}
             >
-              Bulk update all technical labels...
+              {t("bulk update technical labels.button text")}
             </Button>
           </Box>
 
