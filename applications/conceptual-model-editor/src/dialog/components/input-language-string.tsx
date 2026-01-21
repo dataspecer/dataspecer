@@ -10,6 +10,7 @@ export const InputLanguageString = (props: {
   inputType: "text" | "textarea",
   disabled?: boolean,
   className?: string,
+  autoFocus?: boolean,
   onChange: (setter: (previous: LanguageString) => LanguageString) => void,
 }) => {
 
@@ -87,6 +88,7 @@ export const InputLanguageString = (props: {
           className="w-full"
           value={value}
           onChange={onChange}
+          autoFocus={props.autoFocus}
         />
       ) : (
         <textarea
@@ -94,6 +96,7 @@ export const InputLanguageString = (props: {
           value={value}
           className="w-full"
           onChange={onChange}
+          autoFocus={props.autoFocus}
         />
       )}
     </div>
