@@ -1,5 +1,6 @@
 import { expect, test } from "vitest";
 import { createDatastoreWithReplacedIris } from "./iri-replacement.ts";
+import { psmResourceFromDcatInputForTesting, psmResourceFromDcatOutputForTesting } from "./iri-replacement-test-data.ts";
 
 test("Basic test for iri replacement", () => {
   const inputForIriReplacement: object = {
@@ -20,7 +21,6 @@ test("Basic test for iri replacement", () => {
 
 
   const replacedInput = createDatastoreWithReplacedIris(inputForIriReplacement, irisToReplaceMap);
-  console.info({replacedInput});
 
   expect(replacedInput.missingIrisInNew).toEqual(["replace4-without-known-replacement"]);
   expect(replacedInput.containedIriToReplace).toBe(true);
@@ -35,4 +35,16 @@ test("Basic test for iri replacement", () => {
   };
 
   expect(replacedInput.datastoreWithReplacedIris).toEqual(expectedReplaceOutput);
+});
+
+
+test("Basic test for iri replacement", () => {
+  const irisToReplaceMap = {
+    "48192f17-b300-4eb3-8c46-b3ed63bab12f": "replacement-iri",
+  };
+  const replacedInput = createDatastoreWithReplacedIris(psmResourceFromDcatInputForTesting, irisToReplaceMap);
+
+  expect(replacedInput.missingIrisInNew).toEqual([]);
+  expect(replacedInput.containedIriToReplace).toBe(true);
+  expect(replacedInput.datastoreWithReplacedIris).toEqual(psmResourceFromDcatOutputForTesting);
 });
