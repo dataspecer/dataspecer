@@ -322,8 +322,9 @@ async function writeAttribute(
       await writeAnnotation(attribute, writer);
       await writeSimpleType(type, writer);
     } else {
-      await writeUnrecognizedObject(type, writer);
+      // Unrecognized type - annotation before child elements
       await writeAnnotation(attribute, writer);
+      await writeUnrecognizedObject(type, writer);
     }
   });
 }
