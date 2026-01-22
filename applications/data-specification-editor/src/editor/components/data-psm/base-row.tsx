@@ -19,7 +19,7 @@ const LightTooltip = styled<typeof Tooltip>(({ className, ...props }) => (
 ))(({ theme }) => ({
   [`& .${tooltipClasses.tooltip}`]: {
     backgroundColor: theme.palette.background.paper,
-    color: 'rgba(0, 0, 0, 0.87)',
+    color: theme.palette.text.primary,
     fontSize: "1rem",
     padding: 0,
     marginLeft: 0,
