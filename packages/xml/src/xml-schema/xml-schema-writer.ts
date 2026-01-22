@@ -316,13 +316,15 @@ async function writeAttribute(
         "type",
         writer.getQName(...type.name)
       );
+      await writeAnnotation(attribute, writer);
     } else if (xmlSchemaTypeIsSimple(type)) {
-      // Inline simple type definition
+      // Inline simple type definition - annotation must come before the simpleType
+      await writeAnnotation(attribute, writer);
       await writeSimpleType(type, writer);
     } else {
       await writeUnrecognizedObject(type, writer);
+      await writeAnnotation(attribute, writer);
     }
-    await writeAnnotation(attribute, writer);
   });
 }
 
