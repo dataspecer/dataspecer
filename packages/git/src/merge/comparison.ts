@@ -18,6 +18,8 @@ export type ComparisonDifferences = {
 
 
 /**
+ * Note that the arguments are really fake tree roots. It could be reimplemented to be any root (directory node).
+ *  What this means that the given root is not in the comparison (respectively its dataatores), it just starts comparison from its child nodes.
  * @returns The difftree and the total number of nodes in the difftree
 */
 export async function compareFileTrees(
@@ -79,7 +81,7 @@ async function compareTreesInternal(
       resources: { old: nodeValue, new: node2Value ?? null },
       resourceComparisonResult,
     };
-    diffTree[nodeName] = currentlyProcessedDiffFilesystemNode;
+    diffTree[nodeName] = currentlyProcessedDiffFilesystemNode;      // TODO RadStr: ... nodeName is IRI (probably unless I rewrite it now), we want projectIri
 
     const processedDatastoresInSecondTree: Set<DatastoreInfo> = new Set();
     for (const datastore1 of nodeValue.datastores) {
@@ -134,7 +136,7 @@ async function compareTreesInternal(
           datastoreComparisonResult: "created-in-new"
         };
         currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(created);
-        comparisonDifferences.conflicts.push(created);
+        // comparisonDifferences.conflicts.push(created);     // Commented so it is consistent with the filesystem node ... there we also show only the conflicts if it was removed
         comparisonDifferences.created.push(created);
         diffTreeSize++;
       }
