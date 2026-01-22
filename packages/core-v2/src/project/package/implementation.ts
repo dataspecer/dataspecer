@@ -142,8 +142,12 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
             const iri = visualModel.getId();
             const name = modelSerialization.modelAlias ?? modelSerialization.alias;
 
+            // Check if the model has a getLabel method (VisualModel and some EntityModels)
+            // @ts-ignore
+            const label = typeof visualModel.getLabel === 'function' ? visualModel.getLabel() : null;
+            const userMetadata = label ? { label } : (name ? { label: { en: name } } : {});
+
             const response = await this.httpFetch(this.getResourceUrl(iri));
-            const userMetadata = name ? { label: { en: name } } : {};
             if (response.status !== 200) {
                 const createdResponse = await this.httpFetch(this.getResourceUrl(packageId, true), {
                     method: "POST",
