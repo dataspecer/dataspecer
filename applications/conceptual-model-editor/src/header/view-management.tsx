@@ -17,7 +17,7 @@ export const ViewManagement = () => {
 
   const actions = useActions();
 
-  const { updateViewId: setViewIdSearchParam } = useQueryParamsContext();
+  const { updateViewId: setViewIdSearchParam, viewId: currentViewIdInUrl } = useQueryParamsContext();
 
   const activeViewId = aggregatorView.getActiveViewId();
   const availableVisualModelIds = aggregatorView.getAvailableVisualModels()
@@ -32,7 +32,12 @@ export const ViewManagement = () => {
       console.log("Ignore change in activeViewId as it is null.");
       return;
     }
-    setViewIdSearchParam(activeViewId ?? null);
+    // Only update URL if it's different from current URL to avoid duplicate history entries
+    // Check the actual URL, not the state, to avoid race conditions
+    const currentUrlViewId = new URLSearchParams(window.location.search).get("view-id");
+    if (activeViewId !== currentUrlViewId) {
+      setViewIdSearchParam(activeViewId ?? null);
+    }
   }, [activeViewId, setViewIdSearchParam]);
 
   const handleViewSelected = (viewId: string) => {
