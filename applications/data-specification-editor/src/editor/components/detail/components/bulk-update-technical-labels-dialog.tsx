@@ -62,15 +62,14 @@ export const BulkUpdateTechnicalLabelsDialog: FC<{
         };
       }
       
-      // Execute the bulk update operation
+      // Execute the bulk update operation through the store
       const operation = new BulkUpdateTechnicalLabels(
         schemaIri,
         mode,
         casingConvention,
         context
       );
-      operation.setStore(store);
-      await operation.execute();
+      await store.executeComplexOperation(operation);
       
       onClose();
     } catch (err) {
