@@ -1,5 +1,4 @@
 import {
-  type SemanticModelClass,
   type SemanticModelEntity,
   isSemanticModelClass,
   isSemanticModelGeneralization,

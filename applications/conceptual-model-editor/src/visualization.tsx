@@ -46,7 +46,7 @@ import {
 } from "./diagram/";
 import { type UseDiagramType } from "./diagram/diagram-hook";
 import { configuration, createLogger } from "./application";
-import { t, tData } from "./application/localization";
+import { tData } from "./application/localization";
 import { getDescriptionLanguageString } from "./util/name-utils";
 import { getLocalizedStringFromLanguageString } from "./util/language-utils";
 import { isIriAbsolute } from "./util/iri-utils";
@@ -130,7 +130,7 @@ export const Visualization = () => {
       unsubscribeCanvasCallback?.();
     };
 
-  }, [options, activeVisualModel, actions, aggregatorView, graph]);
+  }, [options, activeVisualModel, actions, aggregatorView, graph, extendedOptions]);
 
   // Update canvas content on view change.
   useEffect(() => {
@@ -139,7 +139,7 @@ export const Visualization = () => {
     onChangeVisualModel(
       extendedOptions, activeVisualModel, actions.diagram, aggregatorView,
       classesContext, graph);
-  }, [options, activeVisualModel, actions, aggregatorView, classesContext, graph]);
+  }, [options, activeVisualModel, actions, aggregatorView, classesContext, graph, extendedOptions]);
 
   return (
     <>
@@ -627,12 +627,12 @@ function selectMandatoryLevel(
   language: string,
 ): string | null {
   switch (level) {
-    case CmeRelationshipProfileMandatoryLevel.Mandatory:
-      return tData("diagram.mandatory-level.mandatory", language);
-    case CmeRelationshipProfileMandatoryLevel.Optional:
-      return tData("diagram.mandatory-level.optional", language);
-    case CmeRelationshipProfileMandatoryLevel.Recommended:
-      return tData("diagram.mandatory-level.recommended", language);
+  case CmeRelationshipProfileMandatoryLevel.Mandatory:
+    return tData("diagram.mandatory-level.mandatory", language);
+  case CmeRelationshipProfileMandatoryLevel.Optional:
+    return tData("diagram.mandatory-level.optional", language);
+  case CmeRelationshipProfileMandatoryLevel.Recommended:
+    return tData("diagram.mandatory-level.recommended", language);
   }
   return null;
 }

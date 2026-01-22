@@ -202,7 +202,7 @@ function ProfileOf({ options, profileOf }: {
               style={shouldColorItems ? { 
                 backgroundColor: item.color,
                 border: `2px solid ${item.color}`,
-                filter: 'brightness(1.2)',
+                filter: "brightness(1.2)",
               } : undefined}
               className={shouldColorItems ? "px-1 text-black font-medium" : undefined}
             >
