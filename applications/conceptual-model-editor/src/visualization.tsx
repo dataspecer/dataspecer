@@ -181,11 +181,13 @@ function propagateVisualModelColorChangesToVisualization(
   for (const [_, entity] of visualModel.getVisualEntities()) {
     if (isVisualNode(entity)) {
       if (entity.model === changedModelIdentifier) {
-        changes.push({ previous: entity, next: entity });
+        // Create a shallow copy to ensure React detects the change
+        changes.push({ previous: entity, next: { ...entity } });
       }
     } else if (isVisualRelationship(entity)) {
       if (entity.model === changedModelIdentifier) {
-        changes.push({ previous: entity, next: entity });
+        // Create a shallow copy to ensure React detects the change
+        changes.push({ previous: entity, next: { ...entity } });
       }
     }
   }
