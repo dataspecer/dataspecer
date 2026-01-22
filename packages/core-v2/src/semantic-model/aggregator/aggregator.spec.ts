@@ -2,8 +2,13 @@ import { InMemorySemanticModel } from "../in-memory/index.ts";
 import { SemanticModelAggregator } from "./aggregator.ts";
 import { createDefaultSemanticModelProfileOperationFactory } from "../profile/operations/index.ts";
 import { SEMANTIC_MODEL_RELATIONSHIP_PROFILE } from "../profile/concepts/index.ts";
+import { CreatedEntityOperationResult } from "../operations/index.ts";
 
 const factory = createDefaultSemanticModelProfileOperationFactory();
+
+function isCreatedEntityResult(result: any): result is CreatedEntityOperationResult {
+  return result.success && "id" in result;
+}
 
 test("Aggregator handles circular profile references without infinite loop", () => {
   // Create an in-memory semantic model
@@ -46,11 +51,10 @@ test("Aggregator handles circular profile references without infinite loop", () 
   );
 
   expect(createResult.success).toBe(true);
-  if (!createResult.success) {
+  if (!isCreatedEntityResult(createResult)) {
     throw new Error("Create operation failed");
   }
-  // Profile operations return { success, id } via WritableSemanticModelAdapter
-  const profileId = (createResult as any).id as string;
+  const profileId = createResult.id;
 
   // Create an aggregator and add the model
   const aggregator = new SemanticModelAggregator();
@@ -151,11 +155,10 @@ test("Aggregator handles indirect circular profile references", () => {
   );
 
   expect(createResultA.success).toBe(true);
-  if (!createResultA.success) {
+  if (!isCreatedEntityResult(createResultA)) {
     throw new Error("Create operation A failed");
   }
-  // Profile operations return { success, id } via WritableSemanticModelAdapter
-  const profileAId = (createResultA as any).id as string;
+  const profileAId = createResultA.id;
 
   // Create profile B that references A
   const createResultB = model.executeOperation(
@@ -194,11 +197,10 @@ test("Aggregator handles indirect circular profile references", () => {
   );
 
   expect(createResultB.success).toBe(true);
-  if (!createResultB.success) {
+  if (!isCreatedEntityResult(createResultB)) {
     throw new Error("Create operation B failed");
   }
-  // Profile operations return { success, id } via WritableSemanticModelAdapter
-  const profileBId = (createResultB as any).id as string;
+  const profileBId = createResultB.id;
 
   // Create an aggregator and add the model
   const aggregator = new SemanticModelAggregator();
