@@ -121,12 +121,9 @@ export const PropertyEdge = (props: EdgeProps<Edge<ApiEdge>>) => {
         {props.data === undefined || props.data.mandatoryLevelLabel === null ? null : (
           <div style={{
             position: "absolute",
-            backgroundColor: "#FEF3C7",
+            color: "#6B7280",
             transform: `${targetShift} translate(${targetWaypoint.x}px,${targetWaypoint.y + 20}px)`,
-            padding: "2px 4px",
-            borderRadius: "3px",
-            fontSize: "0.85em",
-            fontStyle: "italic"
+            fontSize: "0.85em"
           }}
           >
             {props.data.mandatoryLevelLabel}
