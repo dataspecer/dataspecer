@@ -286,7 +286,7 @@ export class ResourceModel implements ResourceModelForPull {
      * But for the children? We can not map between resources, we don't have data by which we could link the resources together - we have just iris and project iris.
      * Well and iris are different between the different packages representing the same Git URL and projectIris either don't match or they should match.
      * So if it is true we just set the projectIri to the iri of the resource itself. But note that this should be already the case after creating the resource.
-     * @param shouldSetProjectIris Should be probably always false - TODO RadStr: because it is unnecessary I think - so we could just remove it together with the code in if
+     * @param shouldSetProjectIris Should be true only if you want to make sure that the projectIri is set in the resource and its children (recursively)
      */
     async updateResourceGitLink(iri: string, linkedGit: string, shouldSetProjectIris: boolean) {
         if (linkedGit.endsWith("/")) {

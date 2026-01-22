@@ -170,14 +170,14 @@ export class PackageImporter {
 
   async importPackage(canonicalDirPath: string, parentPackageIri: string): Promise<string> {
     const metaFileName = canonicalDirPath + ".meta.json";
-    const metaFileNameOnInput = this.canonicalPathsToInputMapping[metaFileName]
+    const metaFileNameOnInput = this.canonicalPathsToInputMapping[metaFileName];
     console.info({metaFileName, metaFileNameOnInput, canonicalDirPath});		// TODO RadStr DEBUG: Debug print
     const metaFile = await this.zip.file(metaFileNameOnInput)!.async("text");     // TODO RadStr: ... what if it is not json
     const meta = JSON.parse(metaFile);
 
     const thisPackageIri: string = this.createNewIdForResource(meta.iri);
 
-    const projectIri = this.getProjectIriFromMeta(meta, canonicalDirPath);
+    const projectIri = this.getProjectIriFromMeta(meta, thisPackageIri, canonicalDirPath);
     await this.resourceModel.createPackage(parentPackageIri, thisPackageIri, meta.userMetadata, projectIri);
     await this.setBlobsForResource(canonicalDirPath, thisPackageIri);
 
@@ -213,16 +213,19 @@ export class PackageImporter {
     const meta = JSON.parse(metaFile);
 
     const thisResourceIri = this.createNewIdForResource(meta.iri);
-    const projectIri = this.getProjectIriFromMeta(meta, canonicalDirPath);
+    const projectIri = this.getProjectIriFromMeta(meta, thisResourceIri, canonicalDirPath);
     await this.resourceModel.createResource(parentPackageIri, thisResourceIri, meta.types[0], meta.userMetadata, projectIri);
     await this.setBlobsForResource(canonicalDirPath, thisResourceIri);
   }
 
-  private getProjectIriFromMeta(meta: any, canonicalDirPath: string): string {
+  private getProjectIriFromMeta(meta: any, newlyCreatedNormalIri: string, canonicalDirPath: string): string {
     // This code is basically the reflection of the original export code.
     let projectIri: string;
     if (meta.projectIri !== undefined) {
       projectIri = meta.projectIri;
+    }
+    else if (meta.iri !== newlyCreatedNormalIri) {
+      projectIri = newlyCreatedNormalIri;
     }
     else {
       // We check if the iri starts with the path (this probably happens when we perform duplicate).
@@ -240,7 +243,7 @@ export class PackageImporter {
         projectIri = uuidv4();
       }
       else {
-        // Just us the candidate - it is either the meta.iri or the sliced
+        // Just use the candidate - it is either the meta.iri or the sliced
         projectIri = candidateForProjectIri;
       }
     }
@@ -305,7 +308,7 @@ export interface ResourceModelForImport {
     parentIri: string | null,
     iri: string,
     userMetadata: {},
-    projectIri?: string | undefined
+    projectIri?: string,
   ): Promise<void>;
 
   createResource(
@@ -313,13 +316,13 @@ export interface ResourceModelForImport {
     iri: string,
     type: string,
     userMetadata: {},
-    projectIri?: string | undefined,
-    mergeStateUUIDsToIgnoreInUpdating?: string[] | undefined
+    projectIri?: string,
+    mergeStateUUIDsToIgnoreInUpdating?: string[],
   ): Promise<void>;
 
   getOrCreateResourceModelStore(
     iri: string,
     storeName?: string,
-    mergeStateUUIDsToIgnoreInUpdating?: string[] | undefined
+    mergeStateUUIDsToIgnoreInUpdating?: string[]
   ): Promise<ModelStore>;
 }

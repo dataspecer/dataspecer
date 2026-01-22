@@ -269,7 +269,7 @@ export const updateGitRelatedDataForPackage = async (
 
   // The true here is important - it sets the projectIri to the existing resources if they exist. That being said in case of import those should be already set from the meta file
   //  (so possible TODO: Remove the linkToExistingGitRepository and then we can call this with false)
-  await resourceModel.updateResourceGitLink(iri, defaultRepositoryUrl, true);
+  await resourceModel.updateResourceGitLink(iri, defaultRepositoryUrl, false);
   // If commitReferenceType still not set, just use null, the method will use its default
   const lastCommitHash = await gitProvider.getLastCommitHashFromUrl(defaultRepositoryUrl, commitReferenceType ?? null, commitReferenceValue);
   await resourceModel.updateLastCommitHash(iri, lastCommitHash, "pull");
