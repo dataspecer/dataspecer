@@ -76,7 +76,7 @@ const Catalog = (() => {
 
 const Page = () => {
   // URL query
-  const { packageId, viewId, updatePackageId } = useQueryParamsContext();
+  const { packageId, viewId, updatePackageId, updateViewId } = useQueryParamsContext();
   // Dataspecer API
   const [aggregator, setAggregator] = useState(new SemanticModelAggregator());
   const [aggregatorView, setAggregatorView] = useState(aggregator.getView());
@@ -179,6 +179,20 @@ const Page = () => {
       }
     }
   }, [viewId, aggregatorView, aggregator]);
+
+  // Set initial view-id in URL if not present
+  useEffect(() => {
+    if (!aggregatorView || viewId) {
+      // Either no view yet or URL already has view-id
+      return;
+    }
+
+    const currentActiveViewId = aggregatorView.getActiveViewId();
+    if (currentActiveViewId) {
+      console.log("[VIEW NAVIGATION] Setting initial view-id in URL:", currentActiveViewId);
+      updateViewId(currentActiveViewId);
+    }
+  }, [aggregatorView, viewId, updateViewId]);
 
   return (
     <ExplorationContextProvider>

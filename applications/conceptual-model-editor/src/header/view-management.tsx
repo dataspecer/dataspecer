@@ -17,7 +17,7 @@ export const ViewManagement = () => {
 
   const actions = useActions();
 
-  const { updateViewId: setViewIdSearchParam } = useQueryParamsContext();
+  const { viewId } = useQueryParamsContext();
 
   const activeViewId = aggregatorView.getActiveViewId();
   const availableVisualModelIds = aggregatorView.getAvailableVisualModels()
@@ -26,14 +26,6 @@ export const ViewManagement = () => {
       item.getLabel() === null ? null : languageStringToString(
         configuration().languagePreferences, language, item.getLabel()!),
     ] as [string, string]);
-
-  useEffect(() => {
-    if (activeViewId === undefined) {
-      console.log("Ignore change in activeViewId as it is null.");
-      return;
-    }
-    setViewIdSearchParam(activeViewId ?? null);
-  }, [activeViewId, setViewIdSearchParam]);
 
   const handleViewSelected = (viewId: string) => {
     actions.changeVisualModel(viewId);

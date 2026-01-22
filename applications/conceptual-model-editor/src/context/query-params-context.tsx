@@ -66,7 +66,32 @@ export const QueryParamsProvider = (props: { children: ReactNode }) => {
       const search = urlSearchParams.toString();
       const query = search ? `?${search}` : "";
       console.log("setQueryParams", params, "=>", { query });
-      window.history.pushState({}, "", query);
+      
+      // Check if URL already matches what we're about to set
+      const currentSearch = window.location.search;
+      if (currentSearch === query) {
+        // URL already matches, no need to update history
+        console.log("  -> URL already matches, skipping");
+        return;
+      }
+      
+      // Determine if we should use pushState or replaceState
+      // Use pushState if we're changing from one view-id to a different view-id (user navigation)
+      // Use replaceState for initial set or re-setting the same value
+      const currentParams = new URLSearchParams(currentSearch);
+      const shouldPush = params[VIEW_ID] !== undefined && 
+                         currentParams.has(VIEW_ID) && 
+                         currentParams.get(VIEW_ID) !== params[VIEW_ID];
+      
+      if (shouldPush) {
+        // We're changing view-id from one value to another - this is user navigation
+        console.log("  -> pushState (user navigation)");
+        window.history.pushState({}, "", query);
+      } else {
+        // We're either setting view-id for the first time or syncing state
+        console.log("  -> replaceState (initial/sync)");
+        window.history.replaceState({}, "", query);
+      }
     },
     [packageId, viewId]
   );
