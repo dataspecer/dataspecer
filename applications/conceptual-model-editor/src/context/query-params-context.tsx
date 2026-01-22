@@ -21,6 +21,8 @@ export const QueryParamsProvider = (props: { children: ReactNode }) => {
 
   const [packageId, setPackageId] = useState<string | null>(searchParams.get(PACKAGE_ID));
   const [viewId, setViewId] = useState<string | null>(searchParams.get(VIEW_ID));
+  // Track if we're currently handling a popstate event to avoid pushing duplicate history
+  const isHandlingPopStateRef = React.useRef(false);
 
   useEffect(() => {
     const initialPackageId = searchParams.get(PACKAGE_ID);
@@ -36,8 +38,14 @@ export const QueryParamsProvider = (props: { children: ReactNode }) => {
       const newPackageId = urlSearchParams.get(PACKAGE_ID);
       const newViewId = urlSearchParams.get(VIEW_ID);
       console.log("popstate event", { newPackageId, newViewId });
+      // Set flag to prevent pushing new history during state sync
+      isHandlingPopStateRef.current = true;
       setPackageId(newPackageId ?? null);
       setViewId(newViewId ?? null);
+      // Reset flag after a short delay to allow state updates to propagate
+      setTimeout(() => {
+        isHandlingPopStateRef.current = false;
+      }, 100);
     };
 
     window.addEventListener("popstate", handlePopState);
@@ -66,8 +74,12 @@ export const QueryParamsProvider = (props: { children: ReactNode }) => {
       // Change URL.
       const search = urlSearchParams.toString();
       const query = search ? `?${search}` : "";
-      console.log("setQueryParams", params, "=>", { query });
-      window.history.pushState({}, "", query);
+      console.log("setQueryParams", params, "=>", { query }, "isHandlingPopState:", isHandlingPopStateRef.current);
+      // Don't push new history if we're handling a popstate event
+      // This prevents destroying the forward history
+      if (!isHandlingPopStateRef.current) {
+        window.history.pushState({}, "", query);
+      }
     },
     [packageId, viewId]
   );
