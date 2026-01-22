@@ -31,13 +31,14 @@ export const InputLanguageString = (props: {
   useEffect(() => {
     if (props.autoFocus) {
       // Use a small delay to ensure the dialog is fully rendered and visible
+      // This is needed because the HTML dialog element's showModal() needs time to complete
       const timeoutId = setTimeout(() => {
         if (props.inputType === "text") {
           inputRef.current?.focus();
         } else {
           textareaRef.current?.focus();
         }
-      }, 100);
+      }, 100); // 100ms is sufficient for the dialog to become interactive
       
       return () => clearTimeout(timeoutId);
     }
