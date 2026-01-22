@@ -20,8 +20,6 @@ import { SetKeyValue } from "./set-key-value";
 import { SetJsonPrefixes } from "../../../operations/set-json-prefixes";
 import { SetJsonTypeMapping } from "../../../operations/set-json-type-mapping";
 import { SetJsonEnforceContext } from "../../../operations/set-json-enforce-context";
-import { BulkUpdateTechnicalLabelsDialog } from "./bulk-update-technical-labels-dialog";
-import { DefaultConfigurationContext } from "../../../../application";
 
 function cardinalityFromPsm(entity?: DataPsmSchema): Cardinality {
   return {
@@ -35,8 +33,6 @@ const defaultXmlContainer = "root";
 export const DataPsmSchemaCard: React.FC<{ iri: string; onClose: () => void }> = memo(({ iri }) => {
   const { t } = useTranslation("detail");
   const store = useFederatedObservableStore();
-  const defaultConfiguration = useContext(DefaultConfigurationContext);
-  const [bulkUpdateDialogOpen, setBulkUpdateDialogOpen] = useState(false);
 
   const { resource } = useResource<DataPsmSchema>(iri);
   const label = resource?.dataPsmHumanLabel ?? {};
@@ -225,14 +221,6 @@ export const DataPsmSchemaCard: React.FC<{ iri: string; onClose: () => void }> =
               value={technicalLabel}
               onChange={(event) => setTechnicalLabel(event.target.value)}
             />
-            <Button 
-              variant="text" 
-              size="small"
-              onClick={() => setBulkUpdateDialogOpen(true)}
-              sx={{ mt: 1 }}
-            >
-              {t("bulk update technical labels.button text")}
-            </Button>
           </Box>
 
           <Box sx={{ mb: 3 }}>
@@ -376,13 +364,6 @@ export const DataPsmSchemaCard: React.FC<{ iri: string; onClose: () => void }> =
           </Box>
         </Grid>
       </Grid>
-
-      <BulkUpdateTechnicalLabelsDialog 
-        open={bulkUpdateDialogOpen}
-        onClose={() => setBulkUpdateDialogOpen(false)}
-        schemaIri={iri}
-        defaultConfiguration={defaultConfiguration}
-      />
     </>
   );
 });

@@ -10,43 +10,67 @@ import {
   FormControlLabel, 
   Radio,
   Typography,
-  Alert
+  Alert,
+  Checkbox,
+  List,
+  ListItem,
+  Box
 } from "@mui/material";
-import { FC, useContext, useState } from "react";
+import { FC, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useFederatedObservableStore } from "@dataspecer/federated-observable-store-react/store";
-import { BulkUpdateTechnicalLabels, BulkUpdateMode } from "../../../operations/bulk-update-technical-labels";
-import { OperationContext } from "../../../operations/context/operation-context";
-import { ClientConfigurator } from "../../../../configuration";
-import { SpecificationContext } from "../../../../manager/routes/specification/specification";
+import { BulkUpdateTechnicalLabels, BulkUpdateMode } from "../../../../editor/operations/bulk-update-technical-labels";
+import { OperationContext } from "../../../../editor/operations/context/operation-context";
+import { DeepPartial } from "@dataspecer/core/core/utilities/deep-partial";
+import { ClientConfiguration, ClientConfigurator } from "../../../../configuration";
 
-export const BulkUpdateTechnicalLabelsDialog: FC<{
+interface DataStructure {
+  id: string;
+  label?: Record<string, string>;
+  psmSchemaIri?: string;
+}
+
+export const BulkUpdateDialog: FC<{
   open: boolean;
   onClose: () => void;
-  schemaIri: string;
-  defaultConfiguration: any;
-}> = ({ open, onClose, schemaIri, defaultConfiguration }) => {
+  dataStructures: DataStructure[];
+  currentConfiguration: DeepPartial<ClientConfiguration>;
+  defaultConfiguration?: ClientConfiguration;
+}> = ({ open, onClose, dataStructures, currentConfiguration, defaultConfiguration }) => {
   const { t } = useTranslation("detail");
   const [mode, setMode] = useState<BulkUpdateMode>("apply-style");
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedStructures, setSelectedStructures] = useState<Set<string>>(new Set(dataStructures.map(ds => ds.id)));
   const store = useFederatedObservableStore();
-  const specificationContext = useContext(SpecificationContext);
-  const specification = specificationContext?.[0];
+
+  const toggleStructure = (id: string) => {
+    const newSelected = new Set(selectedStructures);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedStructures(newSelected);
+  };
+
+  const toggleAll = () => {
+    if (selectedStructures.size === dataStructures.length) {
+      setSelectedStructures(new Set());
+    } else {
+      setSelectedStructures(new Set(dataStructures.map(ds => ds.id)));
+    }
+  };
 
   const handleUpdate = async () => {
     setIsProcessing(true);
     setError(null);
     
     try {
-      // Get the current configuration from specification
-      const userPreferences = specification?.userPreferences ?? {};
-      const clientConfig = ClientConfigurator.getFromObject(userPreferences);
-      
-      // Merge with default configuration
+      // Merge configurations
       const mergedConfig = ClientConfigurator.merge(
         defaultConfiguration || {},
-        clientConfig
+        currentConfiguration
       );
       
       const casingConvention = mergedConfig.technicalLabelCasingConvention || "snake_case";
@@ -62,14 +86,18 @@ export const BulkUpdateTechnicalLabelsDialog: FC<{
         };
       }
       
-      // Execute the bulk update operation through the store
-      const operation = new BulkUpdateTechnicalLabels(
-        schemaIri,
-        mode,
-        casingConvention,
-        context
-      );
-      await store.executeComplexOperation(operation);
+      // Execute bulk update for each selected data structure
+      for (const ds of dataStructures) {
+        if (selectedStructures.has(ds.id) && ds.psmSchemaIri) {
+          const operation = new BulkUpdateTechnicalLabels(
+            ds.psmSchemaIri,
+            mode,
+            casingConvention,
+            context
+          );
+          await store.executeComplexOperation(operation);
+        }
+      }
       
       onClose();
     } catch (err) {
@@ -80,6 +108,14 @@ export const BulkUpdateTechnicalLabelsDialog: FC<{
     }
   };
 
+  const getStructureLabel = (ds: DataStructure): string => {
+    if (ds.label) {
+      // Try to get label in order of preference
+      return ds.label["en"] || ds.label["cs"] || Object.values(ds.label)[0] || ds.id;
+    }
+    return ds.id;
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>{t("bulk update technical labels.dialog title")}</DialogTitle>
@@ -88,7 +124,7 @@ export const BulkUpdateTechnicalLabelsDialog: FC<{
           {t("bulk update technical labels.description")}
         </Typography>
         
-        <FormControl component="fieldset">
+        <FormControl component="fieldset" sx={{ mb: 3 }}>
           <FormLabel component="legend">{t("bulk update technical labels.mode label")}</FormLabel>
           <RadioGroup value={mode} onChange={(e) => setMode(e.target.value as BulkUpdateMode)}>
             <FormControlLabel
@@ -119,6 +155,37 @@ export const BulkUpdateTechnicalLabelsDialog: FC<{
             />
           </RadioGroup>
         </FormControl>
+
+        <Box sx={{ mb: 2 }}>
+          <FormControl component="fieldset" fullWidth>
+            <FormLabel component="legend">Select data structures to update</FormLabel>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={selectedStructures.size === dataStructures.length}
+                  indeterminate={selectedStructures.size > 0 && selectedStructures.size < dataStructures.length}
+                  onChange={toggleAll}
+                />
+              }
+              label={<strong>All data structures</strong>}
+            />
+            <List dense>
+              {dataStructures.map((ds) => (
+                <ListItem key={ds.id} sx={{ pl: 4 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={selectedStructures.has(ds.id)}
+                        onChange={() => toggleStructure(ds.id)}
+                      />
+                    }
+                    label={getStructureLabel(ds)}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          </FormControl>
+        </Box>
         
         {error && (
           <Alert severity="error" sx={{ mt: 2 }}>
@@ -128,7 +195,11 @@ export const BulkUpdateTechnicalLabelsDialog: FC<{
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={isProcessing}>{t("bulk update technical labels.cancel")}</Button>
-        <Button onClick={handleUpdate} variant="contained" disabled={isProcessing}>
+        <Button 
+          onClick={handleUpdate} 
+          variant="contained" 
+          disabled={isProcessing || selectedStructures.size === 0}
+        >
           {isProcessing ? t("bulk update technical labels.updating") : t("bulk update technical labels.update")}
         </Button>
       </DialogActions>
