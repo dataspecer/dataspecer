@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
 
@@ -20,15 +20,26 @@ export const InputLanguageString = (props: {
   // Current language.
   const [activeLanguage, setActiveLanguage] = useState(props.defaultLanguage);
 
+  // Refs for the input elements
+  const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   // Select current value from the language string.
   const value = props.value[activeLanguage] ?? "";
 
-  // Callback ref for focusing the input when autoFocus is true
-  const handleRef = useCallback((element: HTMLInputElement | HTMLTextAreaElement | null) => {
-    if (props.autoFocus && element) {
-      element.focus();
+  // Focus the input when autoFocus is true
+  useEffect(() => {
+    if (props.autoFocus) {
+      // Use setTimeout to ensure the dialog is fully rendered
+      setTimeout(() => {
+        if (props.inputType === "text") {
+          inputRef.current?.focus();
+        } else {
+          textareaRef.current?.focus();
+        }
+      }, 0);
     }
-  }, [props.autoFocus]);
+  }, [props.autoFocus, props.inputType]);
 
   // In this hook we make sure that selected language is one of the available ones.
   // For example when user deleted language it will change it to next one.
@@ -90,7 +101,7 @@ export const InputLanguageString = (props: {
       </ul>
       {props.inputType === "text" ? (
         <input
-          ref={handleRef}
+          ref={inputRef}
           disabled={props.disabled}
           type="text"
           className="w-full"
@@ -99,7 +110,7 @@ export const InputLanguageString = (props: {
         />
       ) : (
         <textarea
-          ref={handleRef}
+          ref={textareaRef}
           disabled={props.disabled}
           value={value}
           className="w-full"
