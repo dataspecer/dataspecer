@@ -1,11 +1,11 @@
 import React from "react";
-import {Alert, Box, Container, Fab, Paper, Skeleton, Stack, Typography} from "@mui/material";
+import {Alert, Box, Container, Fab, Paper, Skeleton, Stack, Typography, useTheme} from "@mui/material";
 import {useTranslation} from "react-i18next";
 import CloseIcon from '@mui/icons-material/Close';
 import {useSingleGeneratedFileArtifact} from "./use-single-generated-file-artifact";
 import {Light as SyntaxHighlighter, PrismLight as PrismSyntaxHighlighter} from "react-syntax-highlighter";
-import {githubGist} from "react-syntax-highlighter/dist/esm/styles/hljs";
-import {coy} from "react-syntax-highlighter/dist/esm/styles/prism";
+import {githubGist, vs2015} from "react-syntax-highlighter/dist/esm/styles/hljs";
+import {coy, vscDarkPlus} from "react-syntax-highlighter/dist/esm/styles/prism";
 import json from 'react-syntax-highlighter/dist/esm/languages/hljs/json';
 import xml from 'react-syntax-highlighter/dist/esm/languages/hljs/xml';
 import yaml from 'react-syntax-highlighter/dist/esm/languages/hljs/yaml';
@@ -33,6 +33,8 @@ export const SingleArtifactPreview: React.FC<{
     generatorIdentifier: string,
 }> = ({generatorIdentifier}) => {
     const {t} = useTranslation("artifacts");
+    const theme = useTheme();
+    const isDarkMode = theme.palette.mode === 'dark';
 
     const [memoryStreamDictionary, isLoading] = useSingleGeneratedFileArtifact(generatorIdentifier);
 
@@ -72,9 +74,9 @@ export const SingleArtifactPreview: React.FC<{
         {files?.map(file => <Box sx={{whiteSpace: "pre"}}>
             <Typography variant="h5" sx={{mb: 2}}>{file.filename}</Typography>
             {["sparql", "ttl"].includes(file.extension) ?
-            <PrismSyntaxHighlighter language={EXTENSION_TO_LANGUAGE[file.extension] ?? file.extension} style={coy}>{file.content}</PrismSyntaxHighlighter>
+            <PrismSyntaxHighlighter language={EXTENSION_TO_LANGUAGE[file.extension] ?? file.extension} style={isDarkMode ? vscDarkPlus : coy}>{file.content}</PrismSyntaxHighlighter>
             :
-            <SyntaxHighlighter language={file.extension} style={githubGist}>{file.content}</SyntaxHighlighter>
+            <SyntaxHighlighter language={file.extension} style={isDarkMode ? vs2015 : githubGist}>{file.content}</SyntaxHighlighter>
             }
         </Box>)}
     </>;
