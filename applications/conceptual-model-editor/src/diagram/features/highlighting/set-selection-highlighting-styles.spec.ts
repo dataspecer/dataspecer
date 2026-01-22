@@ -7,6 +7,7 @@ import { EdgeType, NodeType, selectMarkerEnd } from "../../diagram-controller";
 import {
   EntityColor,
   LabelVisual,
+  ProfileOfColor,
   ProfileOfVisual,
 } from "../../model";
 import {
@@ -233,6 +234,7 @@ const createTestNodeType = (): NodeType => {
       labelVisual: LabelVisual.Iri,
       entityMainColor: EntityColor.Entity,
       profileOfVisual: ProfileOfVisual.None,
+      profileOfColor: ProfileOfColor.None,
       displayRangeDetail: false,
       displayRelationshipProfileArchetype: false,
       profileOfLabel: "profile of",
@@ -261,6 +263,7 @@ const createTestEdgeType = (source: string, target: string): EdgeType => {
       labelVisual: LabelVisual.Iri,
       entityMainColor: EntityColor.Entity,
       profileOfVisual: ProfileOfVisual.None,
+      profileOfColor: ProfileOfColor.None,
       displayRangeDetail: false,
       displayRelationshipProfileArchetype: false,
       profileOfLabel: "profile of",

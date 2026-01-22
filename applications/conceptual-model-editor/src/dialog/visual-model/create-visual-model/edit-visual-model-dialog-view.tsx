@@ -72,6 +72,19 @@ export const CreateVisualModelDialogView = (
             onChange={controller.setProfileOfVisual}
           />
         </DialogDetailRow>
+        <DialogDetailRow detailKey="How to color profile of items" className="text-xl">
+          <SelectBuildIn
+            value={state.profileOfColor.toString()}
+            items={[{
+              value: "0",
+              label: "create-visual-model-dialog.profile-color.none",
+            }, {
+              value: "1",
+              label: "create-visual-model-dialog.profile-color.source-model",
+            }]}
+            onChange={controller.setProfileOfColor}
+          />
+        </DialogDetailRow>
         <DialogDetailRow detailKey="Display range detail" className="text-xl">
           <Checkbox
             checked={state.displayRangeDetail as any}

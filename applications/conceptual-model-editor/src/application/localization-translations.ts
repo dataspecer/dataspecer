@@ -483,6 +483,8 @@ export const english: Record<string, string | Function> = {
   "create-visual-model-dialog.profile.none": "Do not display profile of information.",
   "create-visual-model-dialog.profile.entity": "Use profile label.",
   "create-visual-model-dialog.profile.iri": "Use profile IRI.",
+  "create-visual-model-dialog.profile-color.none": "Do not color profile of items.",
+  "create-visual-model-dialog.profile-color.source-model": "Color profile of items by source model color.",
   //
   "align-left.title": "Align selected nodes with the most left one and in such a way that the lefts of nodes are aligned",
   "align-horizontal-mid.title": "Align selected nodes to the middle horizontally, that is |",

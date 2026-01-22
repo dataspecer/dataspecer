@@ -11,6 +11,7 @@ import {
   DiagramOptions,
   EntityColor,
   LabelVisual,
+  ProfileOfColor,
   ProfileOfVisual,
 } from "../model";
 import {
@@ -169,28 +170,45 @@ function ProfileOf({ options, profileOf }: {
   profileOf: {
     label: string | null,
     iri: string | null,
+    color: string,
   }[],
 }) {
   if (profileOf.length === 0) {
     return null;
   }
-  let labels: (string | null)[] = [];
+  let labelGetter: (item: typeof profileOf[0]) => string | null;
   switch (options.profileOfVisual) {
   case ProfileOfVisual.Entity:
-    labels = profileOf.map(item => item.label);
+    labelGetter = (item) => item.label;
     break;
   case ProfileOfVisual.Iri:
-    labels = profileOf.map(item => item.iri);
+    labelGetter = (item) => item.iri;
     break;
   case ProfileOfVisual.None:
     return;
   }
+  
+  const shouldColorItems = options.profileOfColor === ProfileOfColor.SourceModel;
+  
   return (
     <div className="text-gray-600">
       {options.profileOfLabel}&nbsp;
       <ul className="inline-grid">
-        {labels.filter(item => item !== null)
-          .map((item, index) => <li key={index}>{item}</li>)}
+        {profileOf
+          .filter(item => labelGetter(item) !== null)
+          .map((item, index) => (
+            <li 
+              key={index}
+              style={shouldColorItems ? { 
+                backgroundColor: item.color,
+                border: `2px solid ${item.color}`,
+                filter: 'brightness(1.2)',
+              } : undefined}
+              className={shouldColorItems ? "px-1 text-black font-medium" : undefined}
+            >
+              {labelGetter(item)}
+            </li>
+          ))}
       </ul>
     </div>
   )

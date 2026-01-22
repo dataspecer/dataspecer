@@ -185,11 +185,13 @@ function propagateVisualModelColorChangesToVisualization(
   for (const [_, entity] of visualModel.getVisualEntities()) {
     if (isVisualNode(entity)) {
       if (entity.model === changedModelIdentifier) {
-        changes.push({ previous: entity, next: entity });
+        // Create a shallow copy to ensure React detects the change
+        changes.push({ previous: entity, next: { ...entity } });
       }
     } else if (isVisualRelationship(entity)) {
       if (entity.model === changedModelIdentifier) {
-        changes.push({ previous: entity, next: entity });
+        // Create a shallow copy to ensure React detects the change
+        changes.push({ previous: entity, next: { ...entity } });
       }
     }
   }
@@ -380,7 +382,7 @@ function createDiagramNode(
       ...visualNode.position
     },
     profileOf: prepareProfileOf(
-      options, semanticModels, entities, entity),
+      options, visualModel, semanticModels, entities, entity),
     items: prepareItems(
       options, visualModel, semanticModels, entities, visualNode),
     vocabulary: prepareVocabulary(
@@ -444,7 +446,7 @@ function prepareItems(
         label: getEntityLabelToShowInDiagram(options.language, entity),
         iri: prepareIri(semanticModels, null, entity),
         profileOf: prepareProfileOf(
-          options, semanticModels, entities, entity),
+          options, visualModel, semanticModels, entities, entity),
         vocabulary: prepareVocabulary(
           options, visualModel, semanticModels, entities, entity.id),
         cardinalitySource: cardinalityToHumanLabel(domain.cardinality),
@@ -571,12 +573,14 @@ function applyIriPrefix(iri: string): string {
  */
 function prepareProfileOf(
   options: ExtendedOptions,
+  visualModel: VisualModel,
   semanticModels: SemanticModelMap,
   entities: SemanticEntityRecord,
   entity: Entity | null,
 ): {
   label: string,
   iri: string | null,
+  color: string,
 }[] {
   let profiling: string[] = [];
   if (isSemanticModelClassProfile(entity)) {
@@ -591,15 +595,22 @@ function prepareProfileOf(
     return [];
   }
   //
-  const result: { label: string, iri: string | null }[] = [];
+  const result: { label: string, iri: string | null, color: string }[] = [];
   for (const identifier of profiling) {
     const entity = entities[identifier]?.aggregatedEntity;
     if (entity === undefined) {
       continue;
     }
+    // Get the model color for the profiled entity
+    const sourceModel = findSourceModelOfEntity(identifier, semanticModels);
+    // Use empty string as fallback when model is not found, which will use DEFAULT_MODEL_COLOR
+    const modelId = sourceModel?.getId() ?? "";
+    const color = visualModel.getModelColor(modelId) ?? DEFAULT_MODEL_COLOR;
+    
     result.push({
       label: getEntityLabelToShowInDiagram(options.language, entity),
       iri: prepareIri(semanticModels, null, entity),
+      color,
     })
   }
   return result;
@@ -718,7 +729,7 @@ function createDiagramEdgeForRelationshipProfile(
     color,
     waypoints: visualRelationship.waypoints,
     profileOf: prepareProfileOf(
-      options, semanticModels, entities, entity),
+      options, visualModel, semanticModels, entities, entity),
     vocabulary: prepareVocabulary(
       options, visualModel, semanticModels, entities, entity.id),
     mandatoryLevelLabel: asMandatoryLevel(range?.tags ?? []),

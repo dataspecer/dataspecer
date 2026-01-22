@@ -6,6 +6,8 @@ export type DiagramOptions = {
 
   profileOfVisual: ProfileOfVisual;
 
+  profileOfColor: ProfileOfColor;
+
   /**
    * Show range label using {@link labelVisual} and cardinality.
    */
@@ -28,6 +30,7 @@ export function defaultDiagramOptions(profileOfLabel: string): DiagramOptions {
     labelVisual: LabelVisual.Entity,
     entityMainColor: EntityColor.Entity,
     profileOfVisual: ProfileOfVisual.Entity,
+    profileOfColor: ProfileOfColor.None,
     displayRangeDetail: true,
     displayRelationshipProfileArchetype: true,
     profileOfLabel,
@@ -73,4 +76,15 @@ export enum ProfileOfVisual {
    * Use profile IRI.
    */
   Iri,
+}
+
+export enum ProfileOfColor {
+  /**
+   * Do not color profile of items.
+   */
+  None,
+  /**
+   * Color profile of items by source model color.
+   */
+  SourceModel,
 }

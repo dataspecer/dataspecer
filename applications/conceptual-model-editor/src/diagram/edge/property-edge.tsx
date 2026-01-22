@@ -135,6 +135,7 @@ function prepareEdgeLabel(
     profileOf: {
       label: string;
       iri: string | null;
+      color: string;
     }[] | undefined
   },
 ) {
@@ -183,6 +184,7 @@ function selectProfileLabel(
   profileOf: {
     label: string;
     iri: string | null;
+    color: string;
   }[],
   entityLabel: string | null,
 ) {

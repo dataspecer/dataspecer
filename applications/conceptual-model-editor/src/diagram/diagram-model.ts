@@ -63,6 +63,11 @@ export type Node = {
      */
     iri: string | null;
 
+    /**
+     * Color of the model where the profiled entity is defined.
+     */
+    color: string;
+
   }[];
 
   /**
@@ -193,6 +198,11 @@ export interface NodeRelationshipItem extends NodeItem {
      * Absolute, prefixed or relative IRI of the represented entity.
      */
     iri: string | null;
+
+    /**
+     * Color of the model where the profiled entity is defined.
+     */
+    color: string;
 
   }[];
 
@@ -366,6 +376,11 @@ export type Edge = {
      * Absolute, prefixed or relative IRI of the represented entity.
      */
     iri: string | null;
+
+    /**
+     * Color of the model where the profiled entity is defined.
+     */
+    color: string;
 
   }[];
 

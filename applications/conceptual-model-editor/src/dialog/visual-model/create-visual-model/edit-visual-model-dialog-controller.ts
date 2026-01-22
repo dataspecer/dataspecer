@@ -14,6 +14,8 @@ export interface EditVisualModelDialogController {
 
   setProfileOfVisual: (value: string) => void;
 
+  setProfileOfColor: (value: string) => void;
+
   setDisplayRangeDetail: (value: boolean) => void;
 
   setDisplayRelationshipProfileArchetype: (value: boolean) => void;
@@ -40,6 +42,10 @@ export function useEditVisualModelDialogController(
     changeState(state => ({ ...state, profileOfVisual: value }));
   };
 
+  const setProfileOfColor = (value: string): void => {
+    changeState(state => ({ ...state, profileOfColor: value }));
+  };
+
   const setDisplayRangeDetail = (value: boolean): void => {
     changeState(state => ({ ...state, displayRangeDetail: value }));
   };
@@ -56,6 +62,7 @@ export function useEditVisualModelDialogController(
     setLabelVisual,
     setEntityMainColor,
     setProfileOfVisual,
+    setProfileOfColor,
     setDisplayRangeDetail,
     setDisplayRelationshipProfileArchetype,
   };
