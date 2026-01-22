@@ -29,6 +29,23 @@ export const QueryParamsProvider = (props: { children: ReactNode }) => {
     setViewId(initialViewId ?? null);
   }, [searchParams]);
 
+  // Listen to browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const urlSearchParams = new URLSearchParams(window.location.search);
+      const newPackageId = urlSearchParams.get(PACKAGE_ID);
+      const newViewId = urlSearchParams.get(VIEW_ID);
+      console.log("popstate event", { newPackageId, newViewId });
+      setPackageId(newPackageId ?? null);
+      setViewId(newViewId ?? null);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
+
   const setQueryParams = useCallback(
     (params: Partial<{ [PACKAGE_ID]: string | null; [VIEW_ID]: string | null }>) => {
       const stateAsParams: Record<string, string> = {};
