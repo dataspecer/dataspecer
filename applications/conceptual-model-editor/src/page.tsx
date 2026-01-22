@@ -86,14 +86,16 @@ const Page = () => {
   const [visualModels, setVisualModels] = useState<WritableVisualModel[]>([]);
   // Local state - entities
   const [rawEntities, setRawEntities] = useState<(Entity | null)[]>([]);
-  const [classes, setClasses] = useState<SemanticModelClass[]>([]);
 
+  const [classes, setClasses] = useState<SemanticModelClass[]>([]);
   const [allowedClasses, setAllowedClasses] = useState<string[]>([]);
   const [relationships, setRelationships] = useState<SemanticModelRelationship[]>([]);
   const [generalizations, setGeneralizations] = useState<SemanticModelGeneralization[]>([]);
-  const [sourceModelOfEntityMap, setSourceModelOfEntityMap] = useState(new Map<string, string>());
   const [classProfiles, setClassProfiles] = useState<SemanticModelClassProfile[]>([]);
   const [relationshipProfiles, setRelationshipProfiles] = useState<SemanticModelRelationshipProfile[]>([]);
+
+  const [sourceModelOfEntityMap, setSourceModelOfEntityMap] = useState(new Map<string, string>());
+
   const [layoutConfiguration, setLayoutConfiguration] =
     useState(getDefaultUserGivenAlgorithmConfigurationsFull());
 
