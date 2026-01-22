@@ -33,12 +33,12 @@ export const ViewManagement = () => {
       return;
     }
     // Only update URL if it's different from current URL to avoid duplicate history entries
-    // Check the actual URL, not the state, to avoid race conditions
-    const currentUrlViewId = new URLSearchParams(window.location.search).get("view-id");
-    if (activeViewId !== currentUrlViewId) {
+    // We check window.location.search directly to avoid race conditions with state updates
+    const urlViewId = new URLSearchParams(window.location.search).get("view-id");
+    if (activeViewId !== urlViewId) {
       setViewIdSearchParam(activeViewId ?? null);
     }
-  }, [activeViewId, setViewIdSearchParam]);
+  }, [activeViewId, setViewIdSearchParam, currentViewIdInUrl]);
 
   const handleViewSelected = (viewId: string) => {
     actions.changeVisualModel(viewId);
