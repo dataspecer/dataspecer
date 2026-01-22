@@ -30,14 +30,16 @@ export const InputLanguageString = (props: {
   // Focus the input when autoFocus is true
   useEffect(() => {
     if (props.autoFocus) {
-      // Use setTimeout to ensure the dialog is fully rendered
-      setTimeout(() => {
+      // Use a small delay to ensure the dialog is fully rendered and visible
+      const timeoutId = setTimeout(() => {
         if (props.inputType === "text") {
           inputRef.current?.focus();
         } else {
           textareaRef.current?.focus();
         }
-      }, 0);
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [props.autoFocus, props.inputType]);
 
