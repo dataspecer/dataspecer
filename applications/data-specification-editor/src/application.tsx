@@ -132,8 +132,8 @@ const MuiThemeWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) 
             contrastText: "rgba(0, 0, 0, 0.87)",
           },
           background: {
-            default: mode === "dark" ? "#0d0d0d" : "#fafafa",
-            paper: mode === "dark" ? "#2a2a2a" : "#fff",
+            default: mode === "dark" ? "#121212" : "#fafafa",
+            paper: mode === "dark" ? "#1e1e1e" : "#fff",
           },
           text: {
             primary: mode === "dark" ? "#ffffff" : "rgba(0, 0, 0, 0.87)",
@@ -142,12 +142,12 @@ const MuiThemeWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) 
           },
           action: {
             active: mode === "dark" ? "#ffffff" : "rgba(0, 0, 0, 0.54)",
-            hover: mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)",
-            selected: mode === "dark" ? "rgba(255, 255, 255, 0.16)" : "rgba(0, 0, 0, 0.08)",
+            hover: mode === "dark" ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.04)",
+            selected: mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)",
             disabled: mode === "dark" ? "rgba(255, 255, 255, 0.3)" : "rgba(0, 0, 0, 0.26)",
             disabledBackground: mode === "dark" ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.12)",
           },
-          divider: mode === "dark" ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.12)",
+          divider: mode === "dark" ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.12)",
         },
       }),
     [mode]
