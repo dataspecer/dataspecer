@@ -12,15 +12,13 @@ const Header = () => {
   return (
     <>
       <header
-        className="grid w-full grid-cols-1 grid-rows-[fit_auto_fit]
-          justify-between bg-[#5438dc] text-white md:h-12
-          md:grid-cols-[1fr_auto_1fr] md:grid-rows-1"
+        className="flex w-full flex-wrap justify-between bg-[#5438dc] text-white"
       >
-        <div className="my-auto ml-4 flex flex-row">
+        <div className="ml-4 my-1 flex flex-row">
           <HeaderLogo />
         </div>
         <div className="my-2 flex flex-row px-2 md:my-0 md:justify-center md:px-0">
-          <div className="my-auto mr-2 flex flex-col md:flex-row [&>*]:my-1">
+          <div className="my-auto mr-2 flex flex-wrap [&>*]:my-1">
             <PackageSection />
             <Divider />
             <ViewManagement />

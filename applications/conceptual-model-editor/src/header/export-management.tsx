@@ -24,8 +24,10 @@ import { useActions } from "../action/actions-react-binding";
 
 export const ExportManagement = () => {
   const actions = useActions();
-  const { aggregator, aggregatorView, models, visualModels, setAggregatorView, replaceModels } =
-    useModelGraphContext();
+  const {
+    aggregator, aggregatorView, setAggregatorView,
+    models, visualModels, replaceModels,
+  } = useModelGraphContext();
   const { sourceModelOfEntityMap } = useClassesContext();
   const { saveWorkspaceState } = useLocalStorage();
 
