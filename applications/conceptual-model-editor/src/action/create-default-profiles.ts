@@ -137,7 +137,11 @@ async function createDefaultClassProfile(
       [classOrClassProfileToBeProfiled.id],
     );
   } catch (error) {
-    notifications.error("You have to create a writable vocabulary first!");
+    if (error instanceof Error && error.message === "Invalid application state.") {
+      notifications.error("You have to create a writable vocabulary first!");
+    } else {
+      notifications.error("Failed to create class profile");
+    }
     return null;
   }
   const createdClassProfile = createClassProfile(profileClassState, cmeExecutor);
@@ -262,7 +266,11 @@ async function createDefaultRelationshipProfile(
     relationshipProfileState = createNewAssociationProfileDialogState(
       classesContext, graph, visualModel, language, [relationshipToProfile.id]);
   } catch (error) {
-    notifications.error("You have to create a writable vocabulary first!");
+    if (error instanceof Error && error.message === "Invalid application state.") {
+      notifications.error("You have to create a writable vocabulary first!");
+    } else {
+      notifications.error("Failed to create relationship profile");
+    }
     return;
   }
 

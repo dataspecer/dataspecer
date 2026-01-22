@@ -70,7 +70,11 @@ export function openCreateProfileDialogAction(
       initialState = createNewProfileClassDialogState(
         classes, graph, visualModel, options.language, [entity.id]);
     } catch (error) {
-      notifications.error("You have to create a writable vocabulary first!");
+      if (error instanceof Error && error.message === "Invalid application state.") {
+        notifications.error("You have to create a writable vocabulary first!");
+      } else {
+        notifications.error("Failed to create class profile");
+      }
       return;
     }
     const onConfirm = (state: ClassProfileDialogState) => {
@@ -98,7 +102,11 @@ export function openCreateProfileDialogAction(
       initialState = createNewAttributeProfileDialogState(
         classes, graph, visualModel, options.language, [entity.id]);
     } catch (error) {
-      notifications.error("You have to create a writable vocabulary first!");
+      if (error instanceof Error && error.message === "Invalid application state.") {
+        notifications.error("You have to create a writable vocabulary first!");
+      } else {
+        notifications.error("Failed to create attribute profile");
+      }
       return;
     }
     const onConfirm = (state: AttributeProfileDialogState) => {
@@ -125,7 +133,11 @@ export function openCreateProfileDialogAction(
       initialState = createNewAssociationProfileDialogState(
         classes, graph, visualModel, options.language, [entity.id]);
     } catch (error) {
-      notifications.error("You have to create a writable vocabulary first!");
+      if (error instanceof Error && error.message === "Invalid application state.") {
+        notifications.error("You have to create a writable vocabulary first!");
+      } else {
+        notifications.error("Failed to create association profile");
+      }
       return;
     }
     const onConfirm = (state: AssociationProfileDialogState) => {

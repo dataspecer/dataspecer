@@ -101,7 +101,8 @@ export function createCreateConnectionState(
     model = owner;
   }
 
-  // If no model is available, throw InvalidState which will be caught by error boundary
+  // If no model is available, throw InvalidState which will be caught by withErrorBoundary
+  // in the caller (openCreateConnectionDialogAction)
   if (model === undefined) {
     throw new InvalidState();
   }
