@@ -130,10 +130,16 @@ async function createDefaultClassProfile(
     return null;
   }
 
-  const profileClassState = createNewProfileClassDialogState(
-    classesContext, graph, visualModel, language,
-    [classOrClassProfileToBeProfiled.id],
-  );
+  let profileClassState;
+  try {
+    profileClassState = createNewProfileClassDialogState(
+      classesContext, graph, visualModel, language,
+      [classOrClassProfileToBeProfiled.id],
+    );
+  } catch (error) {
+    notifications.error("You have to create a writable vocabulary first!");
+    return null;
+  }
   const createdClassProfile = createClassProfile(profileClassState, cmeExecutor);
   if (shouldBeAddedToVisualModel) {
     if (isWritableVisualModel(visualModel)) {
@@ -251,8 +257,14 @@ async function createDefaultRelationshipProfile(
     ends.push(newEnd);
   }
 
-  const relationshipProfileState = createNewAssociationProfileDialogState(
-    classesContext, graph, visualModel, language, [relationshipToProfile.id]);
+  let relationshipProfileState;
+  try {
+    relationshipProfileState = createNewAssociationProfileDialogState(
+      classesContext, graph, visualModel, language, [relationshipToProfile.id]);
+  } catch (error) {
+    notifications.error("You have to create a writable vocabulary first!");
+    return;
+  }
 
   const result = cmeExecutor.createRelationshipProfile(
     associationProfileDialogStateToNewCmeRelationshipProfileWithOverriddenEnds(

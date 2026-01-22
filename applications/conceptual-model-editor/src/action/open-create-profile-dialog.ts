@@ -65,8 +65,14 @@ export function openCreateProfileDialogAction(
   }
   //
   if (isSemanticModelClass(entity) || isSemanticModelClassProfile(entity)) {
-    const initialState = createNewProfileClassDialogState(
-      classes, graph, visualModel, options.language, [entity.id]);
+    let initialState;
+    try {
+      initialState = createNewProfileClassDialogState(
+        classes, graph, visualModel, options.language, [entity.id]);
+    } catch (error) {
+      notifications.error("You have to create a writable vocabulary first!");
+      return;
+    }
     const onConfirm = (state: ClassProfileDialogState) => {
 
       const result = cmeExecutor.createClassProfile(
@@ -87,8 +93,14 @@ export function openCreateProfileDialogAction(
   }
 
   if (isSemanticModelAttribute(entity) || isSemanticModelAttributeProfile(entity)) {
-    const initialState = createNewAttributeProfileDialogState(
-      classes, graph, visualModel, options.language, [entity.id]);
+    let initialState;
+    try {
+      initialState = createNewAttributeProfileDialogState(
+        classes, graph, visualModel, options.language, [entity.id]);
+    } catch (error) {
+      notifications.error("You have to create a writable vocabulary first!");
+      return;
+    }
     const onConfirm = (state: AttributeProfileDialogState) => {
 
       const result = cmeExecutor.createRelationshipProfile(
@@ -108,8 +120,14 @@ export function openCreateProfileDialogAction(
   }
 
   if (isSemanticModelRelationship(entity) || isSemanticModelRelationshipProfile(entity)) {
-    const initialState = createNewAssociationProfileDialogState(
-      classes, graph, visualModel, options.language, [entity.id]);
+    let initialState;
+    try {
+      initialState = createNewAssociationProfileDialogState(
+        classes, graph, visualModel, options.language, [entity.id]);
+    } catch (error) {
+      notifications.error("You have to create a writable vocabulary first!");
+      return;
+    }
     const onConfirm = (state: AssociationProfileDialogState) => {
 
       const result = cmeExecutor.createRelationshipProfile(
