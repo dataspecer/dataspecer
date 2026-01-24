@@ -415,9 +415,8 @@ async function commitDSMergeToGit(
         iri, commitInfo.commitMessage, "merge", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
       if (diffTreeComparisonResult.conflicts.length > 0) {
         return {
-          // TODO RadStr: Wrong
-          conflictMergeFromRootPath: mergeFrom.fullPathToRootParent,
-          conflictMergeToRootPath: mergeTo.fullPathToRootParent,
+          conflictMergeFromRootPath: mergeFromInfo.rootFullPathToMeta,
+          conflictMergeToRootPath: mergeToInfo.rootFullPathToMeta,
         };
       }
       // Well now what? For some reason the merge state was not created, but I think that it always should be, since we are not matching the commit hashes.
@@ -503,7 +502,7 @@ async function commitClassicToGit(
             diffTreeComparisonResult,
             mergeFromFilesystemInformation,
             mergeToFilesystemInformation
-          } = await compareGitAndDSFilesystems(new GitIgnoreBase(gitProvider), iri, gitInitialDirectoryParent,  "push", resourceModelForDS);
+          } = await compareGitAndDSFilesystems(new GitIgnoreBase(gitProvider), iri, gitInitialDirectoryParent, "push", resourceModelForDS);
 
           const commonCommitHash = await getCommonCommitInHistory(git, localLastCommitHash, remoteRepositoryLastCommitHash);
           const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS("push", localLastCommitHash, remoteRepositoryLastCommitHash);
@@ -532,7 +531,6 @@ async function commitClassicToGit(
             iri, commitInfo.commitMessage, "push", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
           if (diffTreeComparisonResult.conflicts.length > 0 || shouldAlwaysCreateMergeState) {
             return {
-              // TODO RadStr: Wrong
               conflictMergeFromRootPath: mergeFromInfo.rootFullPathToMeta,
               conflictMergeToRootPath: mergeToInfo.rootFullPathToMeta,
             };

@@ -145,8 +145,8 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
       openModal(
         TextDiffEditorDialog,
         {
-          initialMergeFromRootPath: createdMergeState.mergeState.rootFullPathToMetaMergeFrom,
-          initialMergeToRootPath: createdMergeState.mergeState.rootFullPathToMetaMergeTo,
+          initialMergeFromRootMetaPath: createdMergeState.mergeState.rootFullPathToMetaMergeFrom,
+          initialMergeToRootMetaPath: createdMergeState.mergeState.rootFullPathToMetaMergeTo,
           editable: editable,
         }
       );
@@ -159,8 +159,8 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
     openModal(
       TextDiffEditorDialog,
       {
-        initialMergeFromRootPath: mergeState!.rootFullPathToMetaMergeFrom,
-        initialMergeToRootPath: mergeState!.rootFullPathToMetaMergeTo,
+        initialMergeFromRootMetaPath: mergeState!.rootFullPathToMetaMergeFrom,
+        initialMergeToRootMetaPath: mergeState!.rootFullPathToMetaMergeTo,
         editable: editable,
       }
     );
@@ -203,8 +203,8 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
         openModal(
           TextDiffEditorDialog,
           {
-            initialMergeFromRootPath: fetchedMergeState!.rootFullPathToMetaMergeFrom,
-            initialMergeToRootPath: fetchedMergeState!.rootFullPathToMetaMergeTo,
+            initialMergeFromRootMetaPath: fetchedMergeState!.rootFullPathToMetaMergeFrom,
+            initialMergeToRootMetaPath: fetchedMergeState!.rootFullPathToMetaMergeTo,
             editable: editable,
           }
         );
@@ -220,7 +220,7 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
 
   const openDiffEditorPreviewNoConflicts = async () => {
     resolve(null);
-    openModal(TextDiffEditorDialog, { initialMergeFromRootPath: mergeFrom.iri, initialMergeToRootPath: mergeTo.iri, editable: editable}).finally(() => resolve(null))
+    openModal(TextDiffEditorDialog, { initialMergeFromRootMetaPath: mergeFrom.iri, initialMergeToRootMetaPath: mergeTo.iri, editable: editable}).finally(() => resolve(null))
   }
 
   if (showingNonBranchWarning) {

@@ -31,15 +31,15 @@ export type TextDiffEditorBetterModalProps = TextDiffEditorDialogProps & BetterM
 }>;
 
 type TextDiffEditorDialogProps = {
-  initialMergeFromRootPath: string,
-  initialMergeToRootPath: string,
+  initialMergeFromRootMetaPath: string,
+  initialMergeToRootMetaPath: string,
   editable: EditableType,
 }
 
 export const DIFF_EDITOR_EDIT_ICON_TAILWIND_WIDTH = "w-6";
 export const DIFF_EDITOR_EDIT_ICON_TAILWIND_HEIGHT = "h-6";
 
-export const TextDiffEditorDialog = ({ initialMergeFromRootPath, initialMergeToRootPath, editable, isOpen, resolve, }: TextDiffEditorBetterModalProps) => {
+export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMergeToRootMetaPath, editable, isOpen, resolve, }: TextDiffEditorBetterModalProps) => {
   const {
     monacoEditor,
     examinedMergeState, setExaminedMergeState,
@@ -67,7 +67,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootPath, initialMergeToR
     applyAutomaticMergeStateResolver,
     saveEverything,
     finalizeMergeStateHandler,
-  } = useDiffEditorDialogProps({initialMergeFromRootPath, initialMergeToRootPath, editable, resolve});
+  } = useDiffEditorDialogProps({initialMergeFromRootMetaPath, initialMergeToRootMetaPath, editable, resolve});
 
 
   useOnBeforeUnload(true);

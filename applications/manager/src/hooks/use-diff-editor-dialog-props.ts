@@ -409,7 +409,7 @@ export type AddToCreatedDatastoresAndAddToCacheMethodType = (
 
 
 // Note that the hook is not useful for anything else than the diff editor dialog, but since it is quite large I put it into separate file
-export const useDiffEditorDialogProps = ({editable, initialMergeFromRootPath, initialMergeToRootPath, resolve}: TextDiffEditorHookProps) => {
+export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath, initialMergeToRootMetaPath, resolve}: TextDiffEditorHookProps) => {
   const monacoEditor = useRef<{editor: monaco.editor.IStandaloneDiffEditor}>(undefined);
   const openModal = useBetterModal();
 
@@ -581,7 +581,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootPath, in
       setIsLoadingTextData(true);
     }
 
-    const fetchedMergeState = await fetchMergeState(initialMergeFromRootPath, initialMergeToRootPath, true, true, shouldForceDiffTreeReload);
+    const fetchedMergeState = await fetchMergeState(initialMergeFromRootMetaPath, initialMergeToRootMetaPath, true, true, shouldForceDiffTreeReload);
     resetUseStates();
     setExaminedMergeState(fetchedMergeState);
   };
@@ -1029,7 +1029,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootPath, in
     // TODO RadStr: Alternatively we could update directly the diff tree instead of letting the backend recompute it again.
     //              ... But it is quite non-trival implementation-wise
     // TODO RadStr: Also we should do only one fetcheMergeState request, otherwise there might be concurrency issues
-    const fetchedMergeStateToCheckForUpToDate = await fetchMergeState(initialMergeFromRootPath, initialMergeToRootPath, true, false, false);
+    const fetchedMergeStateToCheckForUpToDate = await fetchMergeState(initialMergeFromRootMetaPath, initialMergeToRootMetaPath, true, false, false);
 
     // TODO RadStr: pridat kontrolu pres modifiedDiffSubtreeAt - time se vyresi I situace kdyz mi to nekdo modifikuje z diff editor, momentalne to resi akorat kdyz to nekdo modifikuje odnekud jinud - tj. zmeni tu isUpToDate promennou.
     if (!fetchedMergeStateToCheckForUpToDate?.isUpToDate) {
@@ -1041,7 +1041,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootPath, in
       // TODO: Probably some better dialog
       alert("It was not up to date");
     }
-    const fetchedMergeState = await fetchMergeState(initialMergeFromRootPath, initialMergeToRootPath, true, true, true);
+    const fetchedMergeState = await fetchMergeState(initialMergeFromRootMetaPath, initialMergeToRootMetaPath, true, true, true);
     console.info({fetchedMergeState});      // TODO RadStr Debug: Debug
     setExaminedMergeState(fetchedMergeState);
     const newIriMappingFromNonEditableToEditableStorage = {};
