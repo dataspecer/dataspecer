@@ -604,6 +604,7 @@ import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { AuthenticationGitProvidersData } from "@dataspecer/git/git-providers";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 import { GitProviderNode } from "@dataspecer/git";
+import { PrismaClientStorageApiForIriReplacement, StorageApiForIriReplacement } from "./utils/iri-replace-util.ts";
 
 
 /**
@@ -706,10 +707,8 @@ async function generateSpecificationFromFileSystem() {
   await createImportZipFromFilesystem(homeDirectory, packageIri, true, zipDictionaryForFilesystemData);
   const zipDataFromFilesystem = await zipDictionaryForFilesystemData.save();
 
-  await extractZipBufferToDisk(zipDataFromFilesystem, "test-debug-zip-file");
-  fs.writeFileSync(`filesystem-in-zip.zip`, zipDataFromFilesystem);
-
-  const importer = new PackageImporter(resourceModel, storeModel, prismaClient);
+  const prismaClientApi: StorageApiForIriReplacement = new PrismaClientStorageApiForIriReplacement(prismaClient);
+  const importer = new PackageImporter(resourceModel, storeModel, prismaClientApi);
   const imported = await importer.doImport(zipDataFromFilesystem, false);
   const rootPackage = await resourceModel.getPackage(imported[0]);
   console.info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
@@ -735,7 +734,8 @@ async function generateSpecificationFromGitURL(httpFetch: HttpFetch, authenticat
   // Example of download URL - https://github.com/RadStr-bot/4f21bf6d-2116-4ab3-b387-1f8074f7f412/archive/refs/heads/main.zip (or commit SHA instead of refs/heads/main)
   const gitZipDownloadURL = process.argv[2];
   const gitProvider: GitProviderNode = GitProviderNodeFactory.createGitProviderFromRepositoryURL(gitZipDownloadURL, httpFetch, authenticationGitProvidersData);
-  const imported = await importFromGitUrl(gitProvider, [], gitZipDownloadURL, storeModel, prismaClient, "branch");
+  const prismaClientApi: StorageApiForIriReplacement = new PrismaClientStorageApiForIriReplacement(prismaClient);
+  const imported = await importFromGitUrl(gitProvider, [], gitZipDownloadURL, storeModel, prismaClientApi, "branch");
   await generateArtifactsFromImported(imported);
   process.exit(0);
 }

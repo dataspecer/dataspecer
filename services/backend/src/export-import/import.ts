@@ -2,8 +2,8 @@ import JSZip from "jszip";
 import { isArtificialExportDirectory } from "./export.ts";
 import { v4 as uuidv4 } from "uuid";
 import { PACKAGE_ROOT } from "@dataspecer/git";
-import { replaceIrisRecursively, StorageApi } from "../utils/iri-replace-util.ts";
-import { LocalStoreModel, ModelStore } from "../models/local-store-model.ts";
+import { replaceIrisRecursively, StorageApiForIriReplacement } from "../utils/iri-replace-util.ts";
+import { LocalStoreModelGetter, ModelStore } from "../models/local-store-model.ts";
 
 
 const FILE_EXTENSION_REGEX = /^\.([-0-9a-zA-Z]+)\.json$/;
@@ -17,8 +17,8 @@ type ImportMapping = {
 
 export class PackageImporter {
   private readonly resourceModel: ResourceModelForImport;
-  private readonly storeModel: LocalStoreModel;
-  private readonly storageApi: StorageApi;
+  private readonly storeModel: LocalStoreModelGetter;
+  private readonly storageApi: StorageApiForIriReplacement;
 
   private zip!: JSZip;
   private rootToWrite = PACKAGE_ROOT;
@@ -27,7 +27,7 @@ export class PackageImporter {
   private shouldGenerateNewIris!: boolean;
   private mapToNewIds!: Record<string, string>;
 
-  constructor(resourceModel: ResourceModelForImport, storeModel: LocalStoreModel, storageApi: StorageApi) {
+  constructor(resourceModel: ResourceModelForImport, storeModel: LocalStoreModelGetter, storageApi: StorageApiForIriReplacement) {
     this.resourceModel = resourceModel;
     this.storeModel = storeModel;
     this.storageApi = storageApi;

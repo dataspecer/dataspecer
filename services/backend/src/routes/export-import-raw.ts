@@ -9,6 +9,9 @@ import { AvailableExports } from "../export-import/export-actions.ts";
 import { AvailableFilesystems } from "@dataspecer/git";
 import { PackageExporterNew } from "../export-import/export-new.ts";
 import { bunHotfixHttpFileName } from "./generate.ts";
+import { PackageExporterDeprecated } from "../export-import/deprecated-import-export-for-regression-testing/deprecated-export-for-regression-testing.ts";
+import JSZip from "jszip";
+import { PrismaClientStorageApiForIriReplacement, StorageApiForIriReplacement } from "../utils/iri-replace-util.ts";
 
 function getName(name: LanguageString | undefined, defaultName: string) {
   return name?.["cs"] || name?.["en"] || defaultName;
@@ -51,7 +54,8 @@ export const exportPackageResource = asyncHandler(async (request: express.Reques
 export const importPackageResource = asyncHandler(async (request: express.Request, response: express.Response) => {
   const file = request.file!.buffer;
 
-  const importer = new PackageImporter(resourceModel, storeModel, prismaClient);
+  const prismaClientApi: StorageApiForIriReplacement = new PrismaClientStorageApiForIriReplacement(prismaClient);
+  const importer = new PackageImporter(resourceModel, storeModel, prismaClientApi);
   const imported = await importer.doImport(file, false);
 
   response.send(await Promise.all(imported.map(iri => resourceModel.getPackage(iri))));

@@ -34,9 +34,9 @@ import { createSimpleGitUsingPredefinedGitRoot, INTERNAL_COMPUTATION_FOR_IMPORT,
 import configuration from "../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 import { LocalStoreModel } from "../models/local-store-model.ts";
-import { StorageApi } from "../utils/iri-replace-util.ts";
 import { updateGitRelatedDataForPackage } from "./resource.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../authentication/auth-session.ts";
+import { PrismaClientStorageApiForIriReplacement, StorageApiForIriReplacement } from "../utils/iri-replace-util.ts";
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
   const result: LanguageString = {};
@@ -439,7 +439,7 @@ export async function importFromGitUrl(
   accessTokens: AccessToken[],
   repositoryURL: string,
   localStoreModel: LocalStoreModel,
-  storageApi: StorageApi,
+  storageApi: StorageApiForIriReplacement,
   commitReferenceType?: CommitReferenceType,
 ) {
   // TODO RadStr: If there will be some issues with the defaults when importing from git, then
@@ -565,7 +565,8 @@ export const importPackageFromGit = asyncHandler(async (request: express.Request
   const gitProvider: GitProviderNode = GitProviderNodeFactory.createGitProviderFromRepositoryURL(gitURL, httpFetch, configuration);
   // TODO: Can have better scope
   const gitCredentials = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl]);
-  const result = await importFromGitUrl(gitProvider, gitCredentials.accessTokens, gitURL, storeModel, prismaClient, commitReferenceType);
+  const prismaClientApi: StorageApiForIriReplacement = new PrismaClientStorageApiForIriReplacement(prismaClient);
+  const result = await importFromGitUrl(gitProvider, gitCredentials.accessTokens, gitURL, storeModel, prismaClientApi, commitReferenceType);
   if (result.length === 0) {
     response.status(409).json({ message: "The import failed, because it is pointing to branch, which already exists inside DS" });
     return;
