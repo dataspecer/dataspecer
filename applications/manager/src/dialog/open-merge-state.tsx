@@ -11,14 +11,14 @@ import { MergeActor } from "@/hooks/use-merge";
 
 
 export async function fetchMergeState(
-  rootIriMergeFrom: string,
-  rootIriMergeTo: string,
+  rootPathMergeFrom: string,
+  rootPathMergeTo: string,
   shouldPrintMissingStateToConsole: boolean,
   shouldIncludeDiffData: boolean,
   shouldForceDiffTreeReload: boolean,
 ): Promise<MergeState | null> {
   try {
-    const queryParams = `rootIriMergeFrom=${rootIriMergeFrom}&rootIriMergeTo=${rootIriMergeTo}&includeDiffData=${shouldIncludeDiffData}&shouldForceDiffTreeReload=${shouldForceDiffTreeReload}`;
+    const queryParams = `rootPathMergeFrom=${rootPathMergeFrom}&rootPathMergeTo=${rootPathMergeTo}&includeDiffData=${shouldIncludeDiffData}&shouldForceDiffTreeReload=${shouldForceDiffTreeReload}`;
     const fetchResult = await fetch(`${import.meta.env.VITE_BACKEND}/git/get-merge-state?${queryParams}`, {
       method: "GET",
     });
@@ -35,7 +35,7 @@ export async function fetchMergeState(
     return fetchResultAsJson;
   }
   catch(error) {
-    console.error(`Error when fetching merge state (for iris: ${rootIriMergeFrom} and ${rootIriMergeTo}). The error: ${error}`);
+    console.error(`Error when fetching merge state (for iris: ${rootPathMergeFrom} and ${rootPathMergeTo}). The error: ${error}`);
     throw error;
   }
 }
@@ -131,6 +131,7 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
     setSecondsPassedStartTime(secondsPassed);
     setIsLoading(true);
     await removeMergeState(mergeState?.uuid);
+    // Note that here we can use the iris, since both the packages exist in DS, therefore their path === their IRI.
     const createdMergeState = await createMergeStateOnBackend(mergeFrom.iri, mergeTo.iri);
     setMergeState(createdMergeState.mergeState);
     if (createdMergeState.error !== null) {
@@ -144,8 +145,8 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
       openModal(
         TextDiffEditorDialog,
         {
-          initialMergeFromResourceIri: createdMergeState.mergeState.rootIriMergeFrom,
-          initialMergeToResourceIri: createdMergeState.mergeState.rootIriMergeTo,
+          initialMergeFromRootPath: createdMergeState.mergeState.rootFullPathToMetaMergeFrom,
+          initialMergeToRootPath: createdMergeState.mergeState.rootFullPathToMetaMergeTo,
           editable: editable,
         }
       );
@@ -158,8 +159,8 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
     openModal(
       TextDiffEditorDialog,
       {
-        initialMergeFromResourceIri: mergeState!.rootIriMergeFrom,
-        initialMergeToResourceIri: mergeState!.rootIriMergeTo,
+        initialMergeFromRootPath: mergeState!.rootFullPathToMetaMergeFrom,
+        initialMergeToRootPath: mergeState!.rootFullPathToMetaMergeTo,
         editable: editable,
       }
     );
@@ -188,6 +189,10 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
     else {
       alreadyExists = true;
     }
+    if (fetchedMergeState?.rootFullPathToMetaMergeFrom !== mergeFrom.iri || fetchedMergeState.rootFullPathToMetaMergeTo !== mergeTo.iri) {        // TODO RadStr Debug: Debug if to check that my assert about development is true
+      alert("Not equal iri to path when merging");
+      throw new Error("Not equal iri to path when merging");
+    }
     setMergeState(fetchedMergeState);
     console.info({fetchedMergeState, editable});    // TODO RadStr Debug:
     setAlreadyExisted(alreadyExists);
@@ -198,8 +203,8 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
         openModal(
           TextDiffEditorDialog,
           {
-            initialMergeFromResourceIri: fetchedMergeState!.rootIriMergeFrom,
-            initialMergeToResourceIri: fetchedMergeState!.rootIriMergeTo,
+            initialMergeFromRootPath: fetchedMergeState!.rootFullPathToMetaMergeFrom,
+            initialMergeToRootPath: fetchedMergeState!.rootFullPathToMetaMergeTo,
             editable: editable,
           }
         );
@@ -215,7 +220,7 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
 
   const openDiffEditorPreviewNoConflicts = async () => {
     resolve(null);
-    openModal(TextDiffEditorDialog, { initialMergeFromResourceIri: mergeFrom.iri, initialMergeToResourceIri: mergeTo.iri, editable: editable}).finally(() => resolve(null))
+    openModal(TextDiffEditorDialog, { initialMergeFromRootPath: mergeFrom.iri, initialMergeToRootPath: mergeTo.iri, editable: editable}).finally(() => resolve(null))
   }
 
   if (showingNonBranchWarning) {

@@ -2,8 +2,8 @@ import { FilesystemNode, DatastoreInfo } from "../export-import-data-api.ts";
 import { AvailableFilesystems } from "../filesystem/abstractions/filesystem-abstraction.ts";
 
 export type CommitConflictInfo = {
-  conflictMergeFromIri: string,
-  conflictMergeToIri: string
+  conflictMergeFromRootPath: string,
+  conflictMergeToRootPath: string
 } | null;
 
 export type DatastoreComparison = {
@@ -99,6 +99,30 @@ export function getEditableAndNonEditableValue<T>(
       };
     default:
       throw new Error(`Unknown editable: ${editable}`);
+  };
+}
+
+/**
+ * The reverse function to {@link getEditableAndNonEditableValue}
+ */
+export function getMergeFromAndMergeTo<T>(
+  editableType: EditableType,
+  nonEditable: T,
+  editable: T,
+): {mergeFrom: T, mergeTo: T} {
+  switch(editableType) {
+    case "mergeFrom":
+      return {
+        mergeFrom: editable,
+        mergeTo: nonEditable
+      };
+    case "mergeTo":
+      return {
+        mergeFrom: nonEditable,
+        mergeTo: editable,
+      };
+    default:
+      throw new Error(`Unknown editable type: ${editableType}`);
   };
 }
 

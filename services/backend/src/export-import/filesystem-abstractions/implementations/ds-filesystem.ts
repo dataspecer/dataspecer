@@ -72,7 +72,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     if (isDatastoreForMetadata(type)) {
       const resource = (await givenResourceModel.getResource(fullPath));
       if (resource === null) {
-        throw new Error("The resource is not present in database, therefore we can not extract the metadata file");
+        throw new Error("The resource is not present in database. Therefore, we can not extract the metadata file");
       }
 
       const metadata = DSFilesystem.constructMetadataFromResource(resource);

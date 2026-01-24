@@ -258,7 +258,9 @@ export class MergeStateModel implements ResourceChangeListener {
 
     const mergeStateId = await this.createMergeState(mergeStateInput);
     // TODO RadStr Debug: Just debug
-    console.info("Current merge state with:", await this.getMergeStateFromUUID(mergeStateId, true, false, false));
+    const mergeStateDebug = await this.getMergeStateFromUUID(mergeStateId, true, false, false);   // TODO RadStr Debug: debug
+    console.info({mergeStateDebug})
+    console.info("Current merge state with data:", await this.getMergeStateFromUUID(mergeStateId, true, false, false));
     console.info("Current merge state without:", await this.getMergeStateFromUUID(mergeStateId, false, false, false));
 
     return mergeStateId;
@@ -520,15 +522,15 @@ export class MergeStateModel implements ResourceChangeListener {
   }
 
   async getMergeState(
-    rootIriMergeFrom: string,
-    rootIriMergeTo: string,
+    rootPathMergeFrom: string,
+    rootPathMergeTo: string,
     shouldIncludeMergeStateData: boolean,
     shouldForceDiffTreeReload: boolean,
   ): Promise<MergeState | null> {
     const mergeState = await this.prismaClient.mergeState.findFirst({
       where: {
-        rootIriMergeFrom: rootIriMergeFrom,
-        rootIriMergeTo: rootIriMergeTo,
+        rootFullPathToMetaMergeFrom: rootPathMergeFrom,
+        rootFullPathToMetaMergeTo: rootPathMergeTo,
       },
       include: {
         mergeStateData: shouldIncludeMergeStateData,

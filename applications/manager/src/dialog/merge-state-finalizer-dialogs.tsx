@@ -2,7 +2,7 @@ import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalT
 import { Button } from "@/components/ui/button";
 import { BetterModalProps, OpenBetterModal } from "@/lib/better-modal";
 import { finalizeMergeMergeState, finalizeMergeMergeStateOnFailure, finalizePullMergeState, finalizePullMergeStateOnFailure, finalizePushMergeState, finalizePushMergeStateOnFailure, removeMergeState } from "@/utils/merge-state-backend-requests";
-import { FinalizerVariantsForPullOnFailure, getEditableValue, MergeCommitType, MergeState } from "@dataspecer/git";
+import { AvailableFilesystems, FinalizerVariantsForPullOnFailure, getEditableValue, MergeCommitType, MergeState } from "@dataspecer/git";
 import { Loader } from "lucide-react";
 import { Dispatch, SetStateAction, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -107,6 +107,7 @@ const MergeStateFinalizerForPull = ({ mergeState, shouldRenderAnswerDialog, setS
     const response = await finalizePullMergeState(mergeState.uuid);
     const iri = getEditableValue(mergeState.editable, mergeState.rootIriMergeFrom, mergeState.rootIriMergeTo);
     requestLoadPackage(iri, true);
+    setHttpStatusCode(response ?? -1);
     if (response !== null) {
       if (response === 409) {
         toast.error("There are still unresolved conflicts");
@@ -118,17 +119,20 @@ const MergeStateFinalizerForPull = ({ mergeState, shouldRenderAnswerDialog, setS
       }
       else if (response < 400) {
         // TODO RadStr: Probably do nothing - we will just show the another dialog.
+        setIsWaitingForAnswer(false);
+        setShouldRenderAnswerDialog(true);
       }
       else {
         toast.error("There was error when finalizing, check console for more info");
+        setIsWaitingForAnswer(false);
+        setShouldRenderAnswerDialog(true);
       }
     }
     else {
       toast.error("There was error when finalizing, check console for more info");
+      setIsWaitingForAnswer(false);
+      setShouldRenderAnswerDialog(true);
     }
-    setHttpStatusCode(response ?? -1);
-    setIsWaitingForAnswer(false);
-    setShouldRenderAnswerDialog(true);
   };
 
 
@@ -140,6 +144,7 @@ const MergeStateFinalizerForPull = ({ mergeState, shouldRenderAnswerDialog, setS
           <ModalTitle>Finish merge state caused by pulling</ModalTitle>
           <ModalDescription>
             Clicking on finish pull will close the merge state and update last commit hash to reflect the pulled remote.
+            <br/><br/>
             Note that after pulling second dialog may appear if the package in DS is already ahead of the commit.
           </ModalDescription>
         </ModalHeader>
@@ -413,6 +418,12 @@ const MergeStateFinalizerForPushAnswerDialog = ({ mergeState, httpStatus, resolv
     }
     else {
       toast.error("Finalizing ended in failure");
+    }
+    if (mergeState.filesystemTypeMergeFrom === AvailableFilesystems.DS_Filesystem) {
+      await requestLoadPackage(mergeState.rootIriMergeFrom, true);
+    }
+    if (mergeState.filesystemTypeMergeTo === AvailableFilesystems.DS_Filesystem) {
+      await requestLoadPackage(mergeState.rootIriMergeTo, true);
     }
     resolve();
   }

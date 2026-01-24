@@ -216,7 +216,7 @@ const commitHandlerInternal = async (
     exportFormat: exportFormat ?? null
   };
 
-  const commitConflictInfo = await commitPackageToGitUsingAuthSession(
+  const commitConflictInfo: CommitConflictInfo = await commitPackageToGitUsingAuthSession(
     request, iri, gitLink, branchAndLastCommit, repositoryIdentificationInfo,
     response, gitCommitInfo, shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage);
 
@@ -383,34 +383,31 @@ async function commitDSMergeToGit(
         resourceModel
       };
 
+
       const {
         diffTreeComparisonResult,
-        rootMergeFrom,
-        pathToRootMetaMergeFrom,
-        filesystemMergeFrom,
-        rootMergeTo,
-        pathToRootMetaMergeTo,
-        filesystemMergeTo,
-      } = await compareBackendFilesystems(mergeFrom, mergeTo);
+        mergeFromFilesystemInformation,
+        mergeToFilesystemInformation,
+      } = await compareBackendFilesystems(mergeFrom, mergeTo, "merge");
 
       const commonCommitHash = await getCommonCommitInHistory(git, mergeFromCommitHash, mergeToCommitHash);
 
       const mergeFromInfo: MergeEndInfoWithRootNode = {
-        rootNode: rootMergeFrom,
-        filesystemType: filesystemMergeFrom.getFilesystemType(),
+        rootNode: mergeFromFilesystemInformation.root,
+        filesystemType: mergeFromFilesystemInformation.filesystem.getFilesystemType(),
         lastCommitHash: mergeFromCommitHash,
         isBranch: true,     // It has to be true, we do not allow it to not be branch, if it is we failed to perform the checks earlier. (probably on front end)
         branch: mergeFromBranch,
-        rootFullPathToMeta: pathToRootMetaMergeFrom,
+        rootFullPathToMeta: mergeFromFilesystemInformation.pathToRootMeta,
         gitUrl: remoteRepositoryURL,
       };
       const mergeToInfo: MergeEndInfoWithRootNode = {
-        rootNode: rootMergeTo,
-        filesystemType: filesystemMergeTo.getFilesystemType(),
+        rootNode: mergeToFilesystemInformation.root,
+        filesystemType: mergeToFilesystemInformation.filesystem.getFilesystemType(),
         lastCommitHash: mergeToCommitHash,
         isBranch: true,
         branch: cloneResult!.mergeToBranchExplicitName,
-        rootFullPathToMeta: pathToRootMetaMergeTo,
+        rootFullPathToMeta: mergeToFilesystemInformation.pathToRootMeta,
         gitUrl: remoteRepositoryURL,
       };
 
@@ -418,8 +415,9 @@ async function commitDSMergeToGit(
         iri, commitInfo.commitMessage, "merge", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
       if (diffTreeComparisonResult.conflicts.length > 0) {
         return {
-          conflictMergeFromIri: mergeFrom.rootIri,
-          conflictMergeToIri: mergeTo.rootIri,
+          // TODO RadStr: Wrong
+          conflictMergeFromRootPath: mergeFrom.fullPathToRootParent,
+          conflictMergeToRootPath: mergeTo.fullPathToRootParent,
         };
       }
       // Well now what? For some reason the merge state was not created, but I think that it always should be, since we are not matching the commit hashes.
@@ -503,32 +501,28 @@ async function commitClassicToGit(
         if (shouldTryCreateMergeState) {
           const {
             diffTreeComparisonResult,
-            rootMergeFrom,
-            pathToRootMetaMergeFrom,
-            filesystemMergeFrom,
-            rootMergeTo,
-            pathToRootMetaMergeTo,
-            filesystemMergeTo,
-          } = await compareGitAndDSFilesystems(new GitIgnoreBase(gitProvider), iri, gitInitialDirectoryParent, "push", resourceModelForDS);
+            mergeFromFilesystemInformation,
+            mergeToFilesystemInformation
+          } = await compareGitAndDSFilesystems(new GitIgnoreBase(gitProvider), iri, gitInitialDirectoryParent,  "push", resourceModelForDS);
 
           const commonCommitHash = await getCommonCommitInHistory(git, localLastCommitHash, remoteRepositoryLastCommitHash);
           const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS("push", localLastCommitHash, remoteRepositoryLastCommitHash);
           const mergeFromInfo: MergeEndInfoWithRootNode = {
-            rootNode: rootMergeFrom,
-            filesystemType: filesystemMergeFrom.getFilesystemType(),
+            rootNode: mergeFromFilesystemInformation.root,
+            filesystemType: mergeFromFilesystemInformation.filesystem.getFilesystemType(),
             lastCommitHash: lastHashMergeFrom,
             branch: branchExplicit,
             isBranch: true,     // Same as for merge. It has to be true, otherwise we failed some earlier check (probably on front end)
-            rootFullPathToMeta: pathToRootMetaMergeFrom,
+            rootFullPathToMeta: mergeFromFilesystemInformation.pathToRootMeta,
             gitUrl: remoteRepositoryURL,
           };
           const mergeToInfo: MergeEndInfoWithRootNode = {
-            rootNode: rootMergeTo,
-            filesystemType: filesystemMergeTo.getFilesystemType(),
+            rootNode: mergeToFilesystemInformation.root,
+            filesystemType: mergeToFilesystemInformation.filesystem.getFilesystemType(),
             lastCommitHash: lastHashMergeTo,
             isBranch: true,
             branch: branchExplicit,
-            rootFullPathToMeta: pathToRootMetaMergeTo,
+            rootFullPathToMeta: mergeToFilesystemInformation.pathToRootMeta,
             gitUrl: remoteRepositoryURL,
           };
 
@@ -538,8 +532,9 @@ async function commitClassicToGit(
             iri, commitInfo.commitMessage, "push", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
           if (diffTreeComparisonResult.conflicts.length > 0 || shouldAlwaysCreateMergeState) {
             return {
-              conflictMergeFromIri: mergeFromInfo.rootNode.metadata.iri,
-              conflictMergeToIri: mergeToInfo.rootNode.metadata.iri,
+              // TODO RadStr: Wrong
+              conflictMergeFromRootPath: mergeFromInfo.rootFullPathToMeta,
+              conflictMergeToRootPath: mergeToInfo.rootFullPathToMeta,
             };
           }
         }

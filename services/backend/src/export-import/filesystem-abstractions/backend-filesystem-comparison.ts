@@ -3,6 +3,7 @@ import {
   compareFileTrees,
   convertMergeStateCauseToEditable,
   FilesystemNodeLocation,
+  getEditableAndNonEditableValue,
   getMetadataDatastoreFile,
   GitIgnore,
   GitIgnoreBase,
@@ -56,13 +57,14 @@ export async function compareGitAndDSFilesystems(
     resourceModel: mergeToResourceModel,
   };
 
-  const generalResult = await compareBackendFilesystems(mergeFrom, mergeTo);
+  const generalResult = await compareBackendFilesystems(mergeFrom, mergeTo, mergeStateCause as MergeStateCause);
   return generalResult;
 }
 
 export async function compareBackendFilesystems(
   mergeFrom: MergeEndpointForComparison | MergeEndpointForStateUpdate,
   mergeTo: MergeEndpointForComparison | MergeEndpointForStateUpdate,
+  mergeStateCause: MergeStateCause,
 ) {
   const mergeFromRootLocation: FilesystemNodeLocation = {
     iri: mergeFrom.rootIri,
@@ -95,20 +97,29 @@ export async function compareBackendFilesystems(
     throw new Error("The meta file for merge to root is not present");
   }
 
+  const resultForMergeFrom = {
+    fakeRoot: fakeRootMergeFrom,
+    root: rootMergeFrom,
+    pathToRootMeta: pathToRootMetaMergeFrom,
+    filesystem: filesystemMergeFrom,
+  };
+  const resultForMergeTo = {
+    fakeRoot: fakeRootMergeTo,
+    root: rootMergeTo,
+    pathToRootMeta: pathToRootMetaMergeTo,
+    filesystem: filesystemMergeTo,
+  };
+
+  const editableType = convertMergeStateCauseToEditable(mergeStateCause);
+  const { editable: editableFilesystem, nonEditable: nonEditableFilesystem } = getEditableAndNonEditableValue(editableType, resultForMergeFrom, resultForMergeTo);
   const diffTreeComparisonResult = await compareFileTrees(
-    filesystemMergeFrom, fakeRootMergeFrom,
-    filesystemMergeTo, fakeRootMergeTo);
+    nonEditableFilesystem.filesystem, nonEditableFilesystem.fakeRoot, editableFilesystem.filesystem, editableFilesystem.fakeRoot);
+
 
   return {
     diffTreeComparisonResult,
-    filesystemMergeFrom,
-    fakeRootMergeFrom,
-    rootMergeFrom,
-    pathToRootMetaMergeFrom,
-    filesystemMergeTo,
-    fakeRootMergeTo,
-    rootMergeTo,
-    pathToRootMetaMergeTo,
+    mergeFromFilesystemInformation: resultForMergeFrom,
+    mergeToFilesystemInformation: resultForMergeTo,
   };
 }
 

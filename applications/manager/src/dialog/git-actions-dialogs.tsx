@@ -369,7 +369,7 @@ export const commitToGitDialogOnClickHandler = async (
         }
         else if (response.status === 409 && shouldShowAlwaysCreateMergeStateOption) {
           const jsonResponse: NonNullable<CommitConflictInfo> = await response.json();
-          openModal(TextDiffEditorDialog, { initialMergeFromResourceIri: jsonResponse.conflictMergeFromIri, initialMergeToResourceIri: jsonResponse.conflictMergeToIri, editable: convertMergeStateCauseToEditable("push")});
+          openModal(TextDiffEditorDialog, { initialMergeFromRootPath: jsonResponse.conflictMergeFromRootPath, initialMergeToRootPath: jsonResponse.conflictMergeToRootPath, editable: convertMergeStateCauseToEditable("push")});
           toast.success("Created merge state");
           requestLoadPackage(iri, true);
           return;

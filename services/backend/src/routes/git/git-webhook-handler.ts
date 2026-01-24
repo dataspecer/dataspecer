@@ -105,10 +105,11 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
   // Merge from is DS
   const {
     diffTreeComparisonResult,
-    filesystemMergeFrom, fakeRootMergeFrom, rootMergeFrom, pathToRootMetaMergeFrom,
-    filesystemMergeTo, fakeRootMergeTo, rootMergeTo, pathToRootMetaMergeTo,
-  } = await compareGitAndDSFilesystems(
-    gitIgnore, iri, gitInitialDirectoryParent, mergeStateCause, resourceModelForDS);
+    mergeFromFilesystemInformation,
+    mergeToFilesystemInformation,
+  } = await compareGitAndDSFilesystems(gitIgnore, iri, gitInitialDirectoryParent, mergeStateCause, resourceModelForDS);
+  const { fakeRoot: fakeRootMergeFrom, root: rootMergeFrom, filesystem: filesystemMergeFrom, pathToRootMeta: pathToRootMetaMergeFrom } = mergeFromFilesystemInformation;
+  const { fakeRoot: fakeRootMergeTo, root: rootMergeTo, filesystem: filesystemMergeTo, pathToRootMeta: pathToRootMetaMergeTo } = mergeToFilesystemInformation;
 
   const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS(mergeStateCause, dsLastCommitHash, gitLastCommitHash);
   const filesystemFakeRoots = { fakeRootMergeFrom, fakeRootMergeTo };

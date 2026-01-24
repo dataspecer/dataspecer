@@ -48,7 +48,7 @@ export function convertDatastoreContentBasedOnFormat(
 /**
  * @returns The given {@link datastoreContent}, which is in {@link inputFormat} converted to string of format {@link outputFormat}
  */
-export function convertDatastoreContentForInputFormatToOutputFormat(
+export function convertDatastoreContentToOutputFormat(
   datastoreContent: string,
   inputFormat: string,
   outputFormat: string,

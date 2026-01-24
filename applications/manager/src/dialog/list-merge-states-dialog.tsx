@@ -88,7 +88,11 @@ const renderMergeState = (
 
   const openDiffEditor = () => {
     closeMergeStateListDialog(null);
-    openModal(TextDiffEditorDialog, { initialMergeFromResourceIri: mergeState.rootIriMergeFrom, initialMergeToResourceIri: mergeState.rootIriMergeTo, editable: mergeState.editable});
+    openModal(TextDiffEditorDialog, {
+      initialMergeFromRootPath: mergeState.rootFullPathToMetaMergeFrom,
+      initialMergeToRootPath: mergeState.rootFullPathToMetaMergeTo,
+      editable: mergeState.editable
+    });
   }
 
 

@@ -16,17 +16,19 @@ export type ComparisonDifferences = {
   conflicts: DatastoreComparison[],
 };
 
-
 /**
  * Note that the arguments are really fake tree roots. It could be reimplemented to be any root (directory node).
- *  What this means that the given root is not in the comparison (respectively its dataatores), it just starts comparison from its child nodes.
+ *  What this means that the given root is not in the comparison (respectively its datastores), it just starts comparison from its child nodes.
+ * Usually the {@link newFilesystem} is the editable filesystem and the old {@link oldFilesystem} is the not editable one
+ * @param oldFilesystem is the old filesystem. This behaves as the value we are comparing changes to.
+ *  Therefore, if new something exists in the {@link newFilesystem}, we call it created-in-new and not missing-in-old.
  * @returns The difftree and the total number of nodes in the difftree
 */
 export async function compareFileTrees(
-  filesystem1: FilesystemAbstraction,
-  fakeTreeRoot1: DirectoryNode,
-  filesystem2: FilesystemAbstraction,
-  fakeTreeRoot2: DirectoryNode,
+  oldFilesystem: FilesystemAbstraction,
+  oldFakeTreeRoot: DirectoryNode,
+  newFilesystem: FilesystemAbstraction,
+  newFakeTreeRoot: DirectoryNode,
 ): Promise<ComparisonFullResult> {
   const diffTree: DiffTree = {};
   const changed: DatastoreComparison[] = [];
@@ -35,8 +37,8 @@ export async function compareFileTrees(
   const conflicts: DatastoreComparison[] = [];
 
 
-  const diffTreeSize = await compareTreesInternal(filesystem1, fakeTreeRoot1,
-                                                  filesystem2, fakeTreeRoot2,
+  const diffTreeSize = await compareTreesInternal(oldFilesystem, oldFakeTreeRoot,
+                                                  newFilesystem, newFakeTreeRoot,
                                                   diffTree, {changed, removed, created, conflicts});
   return {
     changed,
@@ -49,62 +51,62 @@ export async function compareFileTrees(
 }
 
 /**
- * Compares the {@link directory1} to {@link directory2}. That is the {@link diffTree} will contain
- *  the removed entries from {@link directory1} compared to {@link directory2} and same for changed.
- *  The created ones will be those present in {@link directory2}, but not in {@link directory1}.
+ * Compares the {@link oldDirectory} to {@link newDirectory}. That is the {@link diffTree} will contain
+ *  the removed entries from {@link oldDirectory} compared to {@link newDirectory} and same for changed.
+ *  The created ones (created-in-new) will be those present in {@link newDirectory}, but not in {@link oldDirectory}.
  *
  * @returns The number of nodes stored inside the {@link diffTree} (that is the difftree) computed in the method call.
  */
 async function compareTreesInternal(
-  filesystem1: FilesystemAbstraction,
-  directory1: DirectoryNode | undefined,
-  filesystem2: FilesystemAbstraction,
-  directory2: DirectoryNode | undefined,
+  oldFilesystem: FilesystemAbstraction,
+  oldDirectory: DirectoryNode | undefined,
+  newFilesystem: FilesystemAbstraction,
+  newDirectory: DirectoryNode | undefined,
   diffTree: DiffTree,
   comparisonDifferences: ComparisonDifferences,
 ): Promise<number> {
   let diffTreeSize: number = 0;
 
-  for (const [nodeName, nodeValue] of Object.entries(directory1?.content ?? {})) {
+  for (const [nodeName, nodeInOld] of Object.entries(oldDirectory?.content ?? {})) {
     diffTreeSize++;
 
-    const node2Value = directory2?.content[nodeName];
-    if (node2Value !== undefined && nodeValue.type !== node2Value.type) { // They are not of same type and both exists
+    const nodeInNew = newDirectory?.content[nodeName];
+    if (nodeInNew !== undefined && nodeInOld.type !== nodeInNew.type) { // They are not of same type and both exists
       console.error("Tree comparison error - Compared entries have the same name however they are of different type. One is file, while the other is directory");
       throw new Error("Tree comparison error - Compared entries have the same name however they are of different type. One is file, while the other is directory");
     }
 
-    const resourceComparisonResult: ResourceComparisonResult = node2Value === undefined ? "exists-in-old" : "exists-in-both";
+    const resourceComparisonResult: ResourceComparisonResult = nodeInNew === undefined ? "exists-in-old" : "exists-in-both";
     const currentlyProcessedDiffFilesystemNode: ResourceComparison = {
       childrenDiffTree: {},
       datastoreComparisons: [],
-      resources: { old: nodeValue, new: node2Value ?? null },
+      resources: { old: nodeInOld, new: nodeInNew ?? null },
       resourceComparisonResult,
     };
     diffTree[nodeName] = currentlyProcessedDiffFilesystemNode;      // TODO RadStr: ... nodeName is IRI (probably unless I rewrite it now), we want projectIri
 
-    const processedDatastoresInSecondTree: Set<DatastoreInfo> = new Set();
-    for (const datastore1 of nodeValue.datastores) {
+    const processedDatastoresInNew: Set<DatastoreInfo> = new Set();
+    for (const datastoreInOld of nodeInOld.datastores) {
       diffTreeSize++;
 
-      const node2Datastore = node2Value === undefined ? undefined : getDatastoreInfoOfGivenDatastoreType(node2Value, datastore1.type);
-      if (node2Datastore !== undefined && node2Datastore !== null) {
-        processedDatastoresInSecondTree.add(node2Datastore);
+      const datastoreInNew = nodeInNew === undefined ? undefined : getDatastoreInfoOfGivenDatastoreType(nodeInNew, datastoreInOld.type);
+      if (datastoreInNew !== undefined && datastoreInNew !== null) {
+        processedDatastoresInNew.add(datastoreInNew);
 
-        if (await compareDatastoresContents(filesystem1, nodeValue, filesystem2, node2Value as FileNode, datastore1)) {
+        if (await compareDatastoresContents(oldFilesystem, nodeInOld, newFilesystem, nodeInNew as FileNode, datastoreInOld)) {
           const same: DatastoreComparisonWithChangeTypeInfo = {
-            old: nodeValue,
-            new: node2Value ?? null,
-            affectedDataStore: datastore1,
+            old: nodeInOld,
+            new: nodeInNew ?? null,
+            affectedDataStore: datastoreInOld,
             datastoreComparisonResult: "same",
           };
           currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(same);
         }
         else {
           const changed: DatastoreComparisonWithChangeTypeInfo = {
-            old: nodeValue,
-            new: node2Value ?? null,
-            affectedDataStore: datastore1,
+            old: nodeInOld,
+            new: nodeInNew ?? null,
+            affectedDataStore: datastoreInOld,
             datastoreComparisonResult: "modified",
           };
           currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(changed);
@@ -114,9 +116,9 @@ async function compareTreesInternal(
       }
       else {
         const removed: DatastoreComparisonWithChangeTypeInfo = {
-          old: nodeValue,
+          old: nodeInOld,
           new: null,
-          affectedDataStore: datastore1,
+          affectedDataStore: datastoreInOld,
           datastoreComparisonResult: "removed-in-new"
         };
         currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(removed);
@@ -127,12 +129,12 @@ async function compareTreesInternal(
 
 
     // Add those datastores which are present only in the second tree
-    for (const datastore2 of node2Value?.datastores ?? []) {
-      if (!processedDatastoresInSecondTree.has(datastore2)) {
+    for (const datastoreInNew of nodeInNew?.datastores ?? []) {
+      if (!processedDatastoresInNew.has(datastoreInNew)) {
         const created: DatastoreComparisonWithChangeTypeInfo = {
           old: null,
-          new: node2Value!,
-          affectedDataStore: datastore2,
+          new: nodeInNew!,
+          affectedDataStore: datastoreInNew,
           datastoreComparisonResult: "created-in-new"
         };
         currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(created);
@@ -143,9 +145,9 @@ async function compareTreesInternal(
     }
 
     // Recursively process "subdirectories"
-    if (nodeValue.type === "directory") {
-      const subtreeSize = await compareTreesInternal(filesystem1, nodeValue,
-                                                      filesystem2, node2Value as (DirectoryNode | undefined),
+    if (nodeInOld.type === "directory") {
+      const subtreeSize = await compareTreesInternal(oldFilesystem, nodeInOld,
+                                                      newFilesystem, nodeInNew as (DirectoryNode | undefined),
                                                       currentlyProcessedDiffFilesystemNode.childrenDiffTree,
                                                       comparisonDifferences);
       diffTreeSize += subtreeSize;
@@ -153,7 +155,7 @@ async function compareTreesInternal(
   }
 
   // Find the filesystem nodes which are present only in the 2nd tree
-  for (const [nodeName, nodeValue] of Object.entries(directory2?.content ?? {})) {
+  for (const [nodeName, nodeInNew] of Object.entries(newDirectory?.content ?? {})) {
     if (diffTree[nodeName] !== undefined) {
       continue;
     }
@@ -163,27 +165,27 @@ async function compareTreesInternal(
     const currentlyProcessedDiffFilesystemNode: ResourceComparison = {
       childrenDiffTree: {},
       datastoreComparisons: [],
-      resources: { old: null, new: nodeValue },
+      resources: { old: null, new: nodeInNew },
       resourceComparisonResult,
     };
     diffTree[nodeName] = currentlyProcessedDiffFilesystemNode;
 
-    for (const datastore of nodeValue.datastores) {
+    for (const datastoreInNew of nodeInNew.datastores) {
       // The datastore is not present, since the parent filesystem node does not exist, then it means that all of the datastores are not present neither
       const created: DatastoreComparisonWithChangeTypeInfo = {
         datastoreComparisonResult: "created-in-new",
         old: null,
-        new: nodeValue,
-        affectedDataStore: datastore,
+        new: nodeInNew,
+        affectedDataStore: datastoreInNew,
       };
       currentlyProcessedDiffFilesystemNode.datastoreComparisons.push(created);
       comparisonDifferences.created.push(created);
       diffTreeSize++;
     }
 
-    if (nodeValue.type === "directory") {
-      const subtreeSize = await compareTreesInternal(filesystem1, undefined,
-                                                      filesystem2, nodeValue,
+    if (nodeInNew.type === "directory") {
+      const subtreeSize = await compareTreesInternal(oldFilesystem, undefined,
+                                                      newFilesystem, nodeInNew,
                                                       currentlyProcessedDiffFilesystemNode.childrenDiffTree,
                                                       comparisonDifferences);
       diffTreeSize += subtreeSize;

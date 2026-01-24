@@ -2,7 +2,7 @@ import { z } from "zod";
 import { asyncHandler } from "../../../utils/async-handler.ts";
 import { mergeStateModel, resourceModel } from "../../../main.ts";
 import express from "express";
-import { AvailableFilesystems, DatastoreComparison, createConflictsFromDiffTrees, MergeState, MergeStateCause } from "@dataspecer/git";
+import { AvailableFilesystems, DatastoreComparison, createConflictsFromDiffTrees, MergeState, MergeStateCause, getEditableAndNonEditableValue, convertMergeStateCauseToEditable } from "@dataspecer/git";
 import { compareBackendFilesystems } from "../../../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { getCommonCommitInHistory, gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { SimpleGit } from "simple-git";
@@ -108,28 +108,28 @@ export async function createMergeStateBetweenDSPackages(
 
   const {
     diffTreeComparisonResult,
-    rootMergeFrom, pathToRootMetaMergeFrom,
-    filesystemMergeTo, fakeRootMergeTo, rootMergeTo, pathToRootMetaMergeTo,
-  } = await compareBackendFilesystems(mergeFromForComparison, mergeToForComparison);
+    mergeFromFilesystemInformation,
+    mergeToFilesystemInformation,
+  } = await compareBackendFilesystems(mergeFromForComparison, mergeToForComparison, "merge");
     const commonCommitHash = await getCommonCommitInHistory(git, mergeFrom.lastCommitHash, mergeTo.lastCommitHash);
 
     const mergeFromInfo: MergeEndInfoWithRootNode = {
-      rootNode: rootMergeFrom,
+      rootNode: mergeFromFilesystemInformation.root,
       filesystemType: AvailableFilesystems.DS_Filesystem,
       lastCommitHash: mergeFrom.lastCommitHash,
       isBranch: mergeFrom.isBranch,
       branch: mergeFrom.branch,
-      rootFullPathToMeta: pathToRootMetaMergeFrom,
+      rootFullPathToMeta: mergeFromFilesystemInformation.pathToRootMeta,
       gitUrl: remoteRepositoryUrl,
     };
 
     const mergeToInfo: MergeEndInfoWithRootNode = {
-      rootNode: rootMergeTo,
+      rootNode: mergeToFilesystemInformation.root,
       filesystemType: AvailableFilesystems.DS_Filesystem,
       lastCommitHash: mergeTo.lastCommitHash,
       isBranch: mergeTo.isBranch,
       branch: mergeTo.branch,
-      rootFullPathToMeta: pathToRootMetaMergeTo,
+      rootFullPathToMeta: mergeToFilesystemInformation.pathToRootMeta,
       gitUrl: remoteRepositoryUrl,
     };
 
@@ -152,9 +152,9 @@ export async function updateMergeStateToBeUpToDate(
 ): Promise<boolean> {
   const {
     diffTreeComparisonResult,
-    rootMergeFrom, pathToRootMetaMergeFrom,
-    filesystemMergeTo, fakeRootMergeTo, rootMergeTo, pathToRootMetaMergeTo,
-  } = await compareBackendFilesystems(mergeFrom, mergeTo);
+    mergeFromFilesystemInformation,
+    mergeToFilesystemInformation,
+  } = await compareBackendFilesystems(mergeFrom, mergeTo, mergeStateCause);
 
     let newConflicts: DatastoreComparison[] = [];
     if (previousMergeState !== null) {
@@ -195,22 +195,22 @@ export async function updateMergeStateToBeUpToDate(
 
     // Can put in nulls for gitUrls since we are not using that value for update
     const mergeFromInfo: MergeEndInfoWithRootNode = {
-      rootNode: rootMergeFrom,
+      rootNode: mergeFromFilesystemInformation.root,
       filesystemType: mergeFrom.filesystemType,
       lastCommitHash: mergeFrom.lastCommitHash,
       isBranch: mergeFrom.isBranch,
       branch: mergeFrom.branch,
-      rootFullPathToMeta: pathToRootMetaMergeFrom,
+      rootFullPathToMeta: mergeFromFilesystemInformation.pathToRootMeta,
       gitUrl: null,
     };
 
     const mergeToInfo: MergeEndInfoWithRootNode = {
-      rootNode: rootMergeTo,
+      rootNode: mergeToFilesystemInformation.root,
       filesystemType: mergeTo.filesystemType,
       lastCommitHash: mergeTo.lastCommitHash,
       isBranch: mergeTo.isBranch,
       branch: mergeTo.branch,
-      rootFullPathToMeta: pathToRootMetaMergeTo,
+      rootFullPathToMeta: mergeToFilesystemInformation.pathToRootMeta,
       gitUrl: null,
     };
 

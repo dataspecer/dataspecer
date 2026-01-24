@@ -18,6 +18,10 @@ type PackageListDialogProps = {
   chosenPackage: ResourceWithIris;
 } | null>;
 
+
+/**
+ * General component, the rendering depends on the arguments. It is currently used to create the dialog for merge, where user chooses the merge from packages.
+ */
 export const PackageListDialog = ({ modalTitle, modalDescription, resources, comboboxEntryTextGetter, noEntriesDialogText, resourcesFilter, isOpen, resolve }: PackageListDialogProps) => {
   const [chosenPackage, setChosenPackage] = useState<ResourceWithIris | null>(null);
 

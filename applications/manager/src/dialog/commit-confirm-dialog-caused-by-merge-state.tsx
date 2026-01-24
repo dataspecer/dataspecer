@@ -89,8 +89,8 @@ const getDataForMergeStateDialog = (
     firstActionButtonText = "Open diff editor for merge state";
     firstActionButtonOnClick = () => {
       openModal(TextDiffEditorDialog, {
-        initialMergeFromResourceIri: commitRedirectResponse.mergeStateCausedByMerge!.rootIriMergeFrom,
-        initialMergeToResourceIri: commitRedirectResponse.mergeStateCausedByMerge!.rootIriMergeTo,
+        initialMergeFromRootPath: commitRedirectResponse.mergeStateCausedByMerge!.rootFullPathToMetaMergeFrom,
+        initialMergeToRootPath: commitRedirectResponse.mergeStateCausedByMerge!.rootFullPathToMetaMergeTo,
         editable: commitRedirectResponse.mergeStateCausedByMerge!.editable
       }).finally(() => resolve())
     };
@@ -117,7 +117,6 @@ const getDataForMergeStateDialog = (
     actionButton: {
       onClickAction: firstActionButtonOnClick,
       buttonText: firstActionButtonText,
-
     },
     secondaryActionButton: {
       onClickAction: secondaryActionButtonOnClick,

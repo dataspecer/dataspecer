@@ -93,7 +93,7 @@ export const finalizePushMergeStateOnFailure = async (
   mergeStateUuid: string,
   finalizerVariant: FinalizerVariantsForPushOnFailure,
 ) => {
-  const queryParams = "uuid=" + mergeStateUuid +
+  const queryParams = "mergeStateUuid=" + mergeStateUuid +
                       "&finalizerVariant=" + finalizerVariant;
 
   try {
