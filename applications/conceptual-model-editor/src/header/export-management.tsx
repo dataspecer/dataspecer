@@ -3,8 +3,12 @@ import { generateLightweightOwl } from "@dataspecer/lightweight-owl";
 import type { SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { BackendPackageService } from "@dataspecer/core-v2/project";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
+import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { type Entities, type Entity, type EntityModel } from "@dataspecer/core-v2/entity-model";
 import type { VisualModel, WritableVisualModel } from "@dataspecer/visual-model";
+import * as DataSpecificationVocabulary from "@dataspecer/data-specification-vocabulary";
+import { shaclToRdf, semanticModelsToShacl } from "@dataspecer/shacl-v2";
+
 import {
   type ExportedConfigurationType,
   modelsToWorkspaceString,
@@ -16,10 +20,8 @@ import { useClassesContext } from "../context/classes-context";
 import { entityWithOverriddenIri, getIri, getModelIri } from "../util/iri-utils";
 import { ExportButton } from "../components/management/buttons/export-button";
 import { useQueryParamsContext } from "../context/query-params-context";
-import * as DataSpecificationVocabulary from "@dataspecer/data-specification-vocabulary";
 import { isInMemorySemanticModel } from "../dataspecer/semantic-model";
-import { createShaclForProfile, shaclToRdf, createSemicShaclStylePolicy } from "@dataspecer/shacl-v2";
-import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
+
 import { useActions } from "../action/actions-react-binding";
 
 export const ExportManagement = () => {
@@ -184,15 +186,18 @@ export const ExportManagement = () => {
 
     console.log({ semanticModels, profileModels, topProfileModel });
 
-    const semicStyle = createSemicShaclStylePolicy(iri);
-    const shacl = createShaclForProfile(
+    const shacl = semanticModelsToShacl(
       semanticModels.map(model => new SemanticModelWrap(model)),
       profileModels.map(model => new SemanticModelWrap(model)),
       new SemanticModelWrap(topProfileModel),
-      semicStyle);
+      {
+      policy: "semic-v1",
+      languages: [],
+      noClassConstraints: false,
+      splitPropertyShapesByConstraints: false,
+    }, { baseIri: iri, defaultPrefixes: {} },);
 
     shaclToRdf(shacl, {
-      prefixes: semicStyle.prefixes(),
       prettyPrint: true,
     }).then(shaclAsRdf => {
       console.log("SHACL export:", shaclAsRdf);
