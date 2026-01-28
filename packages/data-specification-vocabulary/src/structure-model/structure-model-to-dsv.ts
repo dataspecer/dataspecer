@@ -32,9 +32,9 @@ export async function structureModelToRdf(entities: CoreResource[], configuratio
   const baseIri = schema.iri!;
 
   const prefixes: Record<string, NamedNode | string> = {
-    fixme: STRUCTURE_MODEL_DSV["base"],
-    dump: STRUCTURE_MODEL_DSV["dump"],
     "": baseIri,
+    "dsvs": STRUCTURE_MODEL_DSV.base,
+    "kv": STRUCTURE_MODEL_DSV.dump,
     ...(configuration.prefixes || {}),
   };
 

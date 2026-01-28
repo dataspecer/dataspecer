@@ -8,6 +8,7 @@ import {getCardinalityFromResource} from "../common/cardinality";
 import {DataPsmBaseRow, RowSlots} from "../base-row";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
+import { ProfileInformation } from "../profiling/profile-information";
 
 export const DataPsmAttributeItem: React.FC<{iri: string} & RowSlots> = memo((props) => {
   const {resource: dataPsmAttribute} = useResource<DataPsmAttribute>(props.iri);
@@ -30,6 +31,8 @@ export const DataPsmAttributeItem: React.FC<{iri: string} & RowSlots> = memo((pr
     </>}
 
     {pimAttribute && (" " + getCardinalityFromResource(dataPsmAttribute, pimAttribute))}
+
+    <ProfileInformation id={props.iri} />
   </>;
 
   const startRow = props.startRow ? [...props.startRow, thisStartRow] : [thisStartRow];

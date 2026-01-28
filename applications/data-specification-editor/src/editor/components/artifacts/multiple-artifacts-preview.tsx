@@ -74,7 +74,7 @@ export const SingleArtifactPreview: React.FC<{
             {["sparql", "ttl"].includes(file.extension) ?
             <PrismSyntaxHighlighter language={EXTENSION_TO_LANGUAGE[file.extension] ?? file.extension} style={coy}>{file.content}</PrismSyntaxHighlighter>
             :
-            <SyntaxHighlighter language={file.extension} style={githubGist}>{file.content}</SyntaxHighlighter>
+            <SyntaxHighlighter wrapLongLines language={file.extension} style={githubGist}>{file.content}</SyntaxHighlighter>
             }
         </Box>)}
     </>;

@@ -12,6 +12,7 @@ import { SetOrder } from "../../operations/set-order";
 import { EntityChainDetailDialog } from "../detail/entity-chain-detail-dialog";
 import { LanguageStringFallback } from "../helper/LanguageStringComponents";
 import { DataPsmSchemaRootItem } from "./entities/schema-root";
+import { ProfileInformation } from "./profiling/profile-information";
 
 export const DataPsmSchemaItem: React.FC<{dataPsmSchemaIri: string}> = ({dataPsmSchemaIri}) => {
   const {resource: dataPsmSchema} = useResource<DataPsmSchema>(dataPsmSchemaIri);
@@ -55,6 +56,7 @@ export const DataPsmSchemaItem: React.FC<{dataPsmSchemaIri: string}> = ({dataPsm
         <DetailDialog.Component iris={[dataPsmSchemaIri]} />
         <Typography variant="h5">
           <LanguageStringFallback from={dataPsmSchema.dataPsmHumanLabel} fallback={<i>{t("no label")}</i>}/>
+          <ProfileInformation id={dataPsmSchema.iri} />
           {readOnly ||
               <IconButton sx={{ml: .5}} onClick={openDetail}>
                 <Icons.Tree.Edit/>

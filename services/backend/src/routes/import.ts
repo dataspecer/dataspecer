@@ -24,6 +24,9 @@ import z from "zod";
 import { resourceModel } from "../main.ts";
 import { BaseResource } from "../models/resource-model.ts";
 import { asyncHandler } from "./../utils/async-handler.ts";
+import type { CoreResource } from "@dataspecer/core/core/core-resource";
+import { canonicalizeIds } from "@dataspecer/structure-model";
+import { DataSpecificationConfigurator, type DataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
   const result: LanguageString = {};
@@ -49,26 +52,56 @@ async function importRdfsModel(parentIri: string, url: string, newIri: string, u
 }
 
 /**
- * Imports structure model by fetching its RDF representation.
- * @param newIri IRI of the new structure model resource.
+ * Performs deterministic import of multiple structure models.
+ *
+ * The model ID must match the DataPsmSchema IRI. In general, this is not an
+ * issue, but it complicates "update by re-import" scenario, as now we need to
+ * ensure that IDs are deterministic, but unique, because there might be two
+ * models with same structures imported.
+ *
+ * @param urls
+ * @param iriPrefix Prefix that will be assigned to all models, must end with slash or be empty.
+ * @param rootPackageId
  */
-export async function importStructureModel(parentIri: string, url: string, newIri: string, userMetadata: any) {
-  const response = await fetch(url);
-  const rdfData = await response.text();
-  const structureModelEntities = await turtleStringToStructureModel(rdfData);
+async function importAllStructureModels(urls: string[], iriPrefix: string, rootPackageId: string) {
+  // Load all models so we can derive deterministic IDs
 
-  // todo: We need to carefully handle how IDs and IRIs are managed here.
-  // Replace IRI of the schema
-  structureModelEntities.find(DataPsmSchema.is)!.iri = newIri;
+  const rawModels: CoreResource[][] = [];
+  const iriMapping: Record<string, string> = {};
 
-  const modelData = {
-    operations: [],
-    resources: Object.fromEntries(structureModelEntities.map((e) => [e.iri, e])),
-  };
+  for (const url of urls) {
+    const response = await fetch(url);
+    const rdfData = await response.text();
+    const structureModelEntities = await turtleStringToStructureModel(rdfData);
 
-  await resourceModel.createResource(parentIri, newIri, V1.PSM, userMetadata);
-  const store = await resourceModel.getOrCreateResourceModelStore(newIri);
-  await store.setJson(modelData);
+    rawModels.push(structureModelEntities);
+
+    const schema = structureModelEntities.find(DataPsmSchema.is)!; // Schema must exist
+    const originalIri = schema.iri as string;
+
+    // Get the last chunk
+    const chunk = originalIri.match(/([^\/#]*)[#\/]?$/)?.[1] ?? originalIri.replace(/[\/]/g, "_");
+    const newIri = iriPrefix + chunk;
+
+    if (!iriMapping[originalIri]) {
+      iriMapping[originalIri] = newIri;
+    }
+  }
+
+  // Now we can process all models with their new IRIs and save them
+
+  const models = canonicalizeIds(rawModels, iriMapping);
+  for (const model of models) {
+    await resourceModel.createResource(rootPackageId, model.iri, V1.PSM, {});
+    const store = await resourceModel.getOrCreateResourceModelStore(model.iri);
+
+    const modelData = {
+      operations: [],
+      resources: Object.fromEntries(model.model.map((e) => [e.iri, e])),
+    };
+
+    await store.setJson(modelData);
+  }
 }
 
 /**
@@ -291,6 +324,23 @@ async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIr
     documentBaseUrl: url,
   });
 
+  // We create a generator configuration so that re-generation works correctly
+  {
+    let rootHref = new URL(".", url).href;
+
+    // todo, older specifications had urls ending with /cs/ or /en/ but the root was without it
+    if (rootHref.endsWith("/cs/") || rootHref.endsWith("/en/")) {
+      rootHref = rootHref.substring(0, rootHref.length - 3);
+    }
+
+    await resourceModel.createResource(rootPackageId, rootPackageId + "/generator-configuration", V1.GENERATOR_CONFIGURATION, {});
+    const generatorConfigurationStore = await resourceModel.getOrCreateResourceModelStore(rootPackageId + "/generator-configuration");
+    const configuration = DataSpecificationConfigurator.setToObject({}, {
+      publicBaseUrl: rootHref,
+    });
+    generatorConfigurationStore.setJson(configuration);
+  }
+
   // Identify important resources to import
 
   const structureModelResources: string[] = [];
@@ -333,10 +383,7 @@ async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIr
     allEntitiesFromProfiled,
   );
 
-  // Import structure models
-  for (const url of structureModelResources) {
-    await importStructureModel(rootPackageId, url, rootPackageId + "/" + uuidv4(), {});
-  }
+  await importAllStructureModels(structureModelResources, rootPackageId + "/", rootPackageId);
 
   return [(await resourceModel.getResource(rootPackageId))!, allEntitiesFromProfiled];
 }
@@ -345,7 +392,7 @@ async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIr
  * Universal function that detects the type of the resource and imports it.
  * @todo move to packages so it is not backend dependent, make more generic such as custom fetch function
  */
-async function importFromUrl(parentIri: string, url: string): Promise<[BaseResource | null, SemanticModelEntity[]]> {
+export async function importFromUrl(parentIri: string, url: string): Promise<[BaseResource | null, SemanticModelEntity[]]> {
   url = url.replace(/#.*$/, "");
 
   // const baseIri = url;

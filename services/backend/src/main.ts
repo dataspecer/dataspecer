@@ -29,6 +29,7 @@ import { getSimplifiedSemanticModel, setSimplifiedSemanticModel } from "./routes
 import { getSystemData } from "./routes/system.ts";
 import { useStaticSpaHandler } from "./static.ts";
 import { migratePR419 } from "./tools/migrate-pr419.ts";
+import { newApplicationProfile } from "./routes/new.ts";
 
 // Create application models
 
@@ -95,6 +96,8 @@ application.delete(apiBasename + "/resources/packages", deleteResource); // same
 application.get(apiBasename + "/resources/root-resources", getRootPackages); // ---
 
 application.post(apiBasename + "/repository/copy-recursively", copyRecursively);
+
+application.post(apiBasename + "/new/application-profile", newApplicationProfile);
 
 /**
  * Import: Import endpoint is a wizard that allows you to import specific package/model from a remote source.

@@ -35,7 +35,7 @@ export const ProjectWizard = ({ isOpen, resolve, iri }: { iri: string } & Better
 
   return (
     <Modal open={isOpen} onOpenChange={(value: boolean) => value ? null : resolve()}>
-      <ModalContent className="max-w-5xl">
+      <ModalContent className="max-w-5xl!">
         <ModalHeader>
           <ModalTitle>{t("start-new-project")}</ModalTitle>
         </ModalHeader>
@@ -43,7 +43,7 @@ export const ProjectWizard = ({ isOpen, resolve, iri }: { iri: string } & Better
 
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4 my-6">
           <button className="group cursor-pointer rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800" onClick={createVocabulary}>
-            <div className="hidden md:block relative aspect-[4/3] bg-gray-100 dark:bg-stone-900/20 group-hover:opacity-80 transition-opacity p-10 -z-10">
+            <div className="hidden md:block relative aspect-4/3 bg-gray-100 dark:bg-stone-900/20 group-hover:opacity-80 transition-opacity p-10 -z-10">
               <img src={imgVocDark} alt="Template 1" className="object-cover hidden dark:block" />
               <img src={imgVoc} alt="Template 1" className="object-cover dark:hidden" />
             </div>
@@ -55,7 +55,7 @@ export const ProjectWizard = ({ isOpen, resolve, iri }: { iri: string } & Better
             </div>
           </button>
           <button className="group cursor-pointer rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800" onClick={createProfile}>
-            <div className="hidden md:block relative aspect-[4/3] bg-gray-100 dark:bg-stone-900/20 group-hover:opacity-80 transition-opacity p-10 -z-10">
+            <div className="hidden md:block relative aspect-4/3 bg-gray-100 dark:bg-stone-900/20 group-hover:opacity-80 transition-opacity p-10 -z-10">
               <img src={imgApDark} alt="Template 2" className="object-cover hidden dark:block" />
               <img src={imgAp} alt="Template 2" className="object-cover dark:hidden" />
             </div>
@@ -67,7 +67,7 @@ export const ProjectWizard = ({ isOpen, resolve, iri }: { iri: string } & Better
             </div>
           </button>
           <button className="group cursor-pointer rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800" onClick={createSchema}>
-            <div className="hidden md:block relative aspect-[4/3] bg-gray-100 dark:bg-stone-900/20 group-hover:opacity-80 transition-opacity p-10 -z-10">
+            <div className="hidden md:block relative aspect-4/3 bg-gray-100 dark:bg-stone-900/20 group-hover:opacity-80 transition-opacity p-10 -z-10">
               <img src={imgDsDark} alt="Template 3" className="object-cover hidden dark:block" />
               <img src={imgDs} alt="Template 3" className="object-cover dark:hidden" />
             </div>
