@@ -5,7 +5,7 @@ import { DefaultArtifactBuilder, GenerateReport } from "@dataspecer/specificatio
 import AddIcon from "@mui/icons-material/Add";
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import LoadingButton from "@mui/lab/LoadingButton";
-import { Box, Button, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
+import { Box, Button, Fab, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
 import { saveAs } from "file-saver";
 import React, { memo, useCallback, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -28,6 +28,7 @@ import { ProfileStructureDialog } from "./profile-structure";
 import { RedirectDialog } from "./redirect-dialog";
 import { ReuseDataSpecifications } from "./reuse-data-specifications";
 import { AllSpecificationsContext, SpecificationContext } from "./specification";
+import { Magnet } from "lucide-react";
 
 export const DocumentationSpecification = memo(() => {
   const { t } = useTranslation("ui");
@@ -107,7 +108,14 @@ export const DocumentationSpecification = memo(() => {
       </Box>
       <SpecificationTags specification={specification} />
 
-      <Box display="flex" flexDirection="row" justifyContent="space-between" sx={{ mt: 10 }}>
+      <Box display="flex" flexDirection="row" sx={{ mt: 5 }}>
+        <div className="grow" />
+        <Fab variant="extended" size="medium" color={"primary"} onClick={profileStructureDialog.open}>
+          <Magnet className="mr-1" />
+          {t("profile")}
+        </Fab>
+      </Box>
+      <Box display="flex" flexDirection="row" justifyContent="space-between" sx={{ mt: 2 }}>
         <Grid container spacing={3}>
           {specification?.dataStructures.map((psm) => (
             <Grid item xs={4} key={psm.id}>
@@ -125,19 +133,6 @@ export const DocumentationSpecification = memo(() => {
             >
               <AddIcon fontSize={"large"} color={"inherit"} />
               <Typography>{t("create data structure")}</Typography>
-            </Button>
-          </Grid>
-
-          <Grid item xs={4}>
-            <Button
-              variant="outlined"
-              color={"inherit"}
-              sx={{ height: "4.75cm", display: "flex", alignItems: "center", justifyContent: "center" }}
-              onClick={profileStructureDialog.open}
-              fullWidth
-            >
-              <AutoAwesomeIcon fontSize={"large"} color={"inherit"} />
-              <Typography>{t("autoprofile")}</Typography>
             </Button>
           </Grid>
         </Grid>

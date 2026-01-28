@@ -13,9 +13,9 @@ import type { LanguageString } from "@dataspecer/core/core/core-resource";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { createStructureProfile } from "@dataspecer/structure-model/profile";
 import { Alert, Button, CircularProgress, DialogActions, DialogContent, DialogTitle } from "@mui/material";
-import { t } from "i18next";
 import { ChevronDown, ChevronRight, MinusIcon } from "lucide-react";
 import { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { SpecificationContext } from "./specification";
 
 interface ProfileStructureDialogProps {
@@ -27,6 +27,8 @@ interface ProfileStructureDialogProps {
  * @todo It reloads all data from the backend instead of using local data.
  */
 export const ProfileStructureDialog = dialog<ProfileStructureDialogProps>({ maxWidth: "md", fullWidth: true }, ({ isOpen, close, dataSpecificationId }) => {
+  const { t } = useTranslation("ui");
+
   const [configuration, isLoading] = useAsyncMemo(() => (isOpen ? getConfiguration(dataSpecificationId, "") : null), [dataSpecificationId, isOpen], null);
   const data = configuration ? getStructuresToProfile(configuration) : [];
 
@@ -48,7 +50,7 @@ export const ProfileStructureDialog = dialog<ProfileStructureDialogProps>({ maxW
   return (
     <>
       <DialogTitle>
-        {t("profileStructure.title")}
+        {t("profile")}
         <CloseDialogButton onClick={close} />
       </DialogTitle>
       <DialogContent>

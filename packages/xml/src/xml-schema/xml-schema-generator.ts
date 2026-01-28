@@ -122,6 +122,12 @@ export class XmlSchemaGenerator implements ArtefactGenerator {
     callerContext: unknown
   ): Promise<unknown | null> {
     if (documentationIdentifier === NEW_DOC_GENERATOR) {
+      const schemaArtefact = artefact as DataSpecificationSchema;
+      if (context.structureModels[schemaArtefact.psm].profiling.length > 0) {
+        // todo Profiling is not yet supported in documentation
+        return null;
+      }
+
       const {artifact: documentationArtefact, partial, adapter} = callerContext as {
         artifact: DataSpecificationArtefact,
         partial: (template: string) => string,
