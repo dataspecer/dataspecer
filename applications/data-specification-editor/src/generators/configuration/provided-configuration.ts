@@ -18,16 +18,14 @@ export async function getConfiguration(dataSpecificationIri: string | null, data
     throw new Error("Data specification IRI is required.");
   }
 
-  const { store, dataSpecifications, semanticModelAggregator } = await getDataSpecificationWithModels(dataSpecificationIri, dataPsmSchemaIri, modelRepository);
-  const operationContext = await getOperationContext(dataSpecifications[dataSpecificationIri]);
+  const dataSpecification = await getDataSpecificationWithModels(dataSpecificationIri, dataPsmSchemaIri, modelRepository);
+  const operationContext = await getOperationContext(dataSpecification.dataSpecifications[dataSpecificationIri]);
 
   return {
-    store,
-    dataSpecifications,
+    ...dataSpecification,
     dataSpecificationIri,
     dataPsmSchemaIri,
     operationContext,
-    semanticModelAggregator,
   };
 }
 

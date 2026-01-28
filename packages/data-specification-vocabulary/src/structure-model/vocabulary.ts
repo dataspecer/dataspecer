@@ -1,7 +1,7 @@
 import { DataFactory } from "n3";
 
-export const STRUCTURE_BASE_IRI = "https://example.com/structure/";
-export const DUMP_BASE_IRI = STRUCTURE_BASE_IRI + "/dump/";
+export const STRUCTURE_BASE_IRI = "https://dataspecer.com/work-in-progress/";
+export const DUMP_BASE_IRI = STRUCTURE_BASE_IRI + "key-value/";
 
 const IRI = DataFactory.namedNode;
 

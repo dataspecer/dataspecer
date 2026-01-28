@@ -1,5 +1,9 @@
+import { CoreResourceReader } from "@dataspecer/core/core/core-reader";
 import { DataSpecificationConfiguration, DataSpecificationConfigurator } from "@dataspecer/core/data-specification/configuration";
+import { loadDataSpecifications } from "@dataspecer/specification/specification";
+import { DefaultArtifactBuilder, GenerateReport } from "@dataspecer/specification/v1";
 import AddIcon from "@mui/icons-material/Add";
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import LoadingButton from "@mui/lab/LoadingButton";
 import { Box, Button, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
 import { saveAs } from "file-saver";
@@ -8,12 +12,11 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { BackendConnectorContext, DefaultConfigurationContext } from "../../../application";
 import { LanguageStringText } from "../../../editor/components/helper/LanguageStringComponents";
-import { modelRepository, getConfiguration } from "../../../generators/configuration/provided-configuration";
 import { useDialog } from "../../../editor/dialog";
+import { getConfiguration, modelRepository } from "../../../generators/configuration/provided-configuration";
+import { ZipStreamDictionary } from "../../../generators/zip-stream-dictionary";
 import { ConfigureArtifacts } from "../../artifacts/configuration/configure-artifacts";
 import { ConfigureButton } from "../../artifacts/configuration/configure-button";
-import { DefaultArtifactBuilder } from "@dataspecer/specification/v1";
-import { GenerateReport } from "@dataspecer/specification/v1";
 import { DeleteDataSchemaForm } from "../../components/delete-data-schema-form";
 import { SpecificationTags } from "../../components/specification-tags";
 import { getEditorLink } from "../../shared/get-schema-generator-link";
@@ -21,12 +24,10 @@ import { ConceptualModelTargets } from "./conceptual-model-targets";
 import { CopyIri } from "./copy-iri";
 import { DataStructureBox } from "./data-structure-row";
 import { GeneratingDialog } from "./generating-dialog";
+import { ProfileStructureDialog } from "./profile-structure";
 import { RedirectDialog } from "./redirect-dialog";
 import { ReuseDataSpecifications } from "./reuse-data-specifications";
 import { AllSpecificationsContext, SpecificationContext } from "./specification";
-import { loadDataSpecifications } from "@dataspecer/specification/specification";
-import { CoreResourceReader } from "@dataspecer/core/core/core-reader";
-import { ZipStreamDictionary } from "../../../generators/zip-stream-dictionary";
 
 export const DocumentationSpecification = memo(() => {
   const { t } = useTranslation("ui");
@@ -49,6 +50,8 @@ export const DocumentationSpecification = memo(() => {
       setRedirecting(false);
     }
   }, [navigate, backendConnector, dataSpecificationIri]);
+
+  const profileStructureDialog = useDialog(ProfileStructureDialog, ["dataSpecificationId"]);
 
   const [zipLoading, setZipLoading] = React.useState<false | "stores-loading" | "generating">(false);
   const [generateDialogOpen, setGenerateDialogOpen] = React.useState<boolean>(false);
@@ -124,6 +127,19 @@ export const DocumentationSpecification = memo(() => {
               <Typography>{t("create data structure")}</Typography>
             </Button>
           </Grid>
+
+          <Grid item xs={4}>
+            <Button
+              variant="outlined"
+              color={"inherit"}
+              sx={{ height: "4.75cm", display: "flex", alignItems: "center", justifyContent: "center" }}
+              onClick={profileStructureDialog.open}
+              fullWidth
+            >
+              <AutoAwesomeIcon fontSize={"large"} color={"inherit"} />
+              <Typography>{t("autoprofile")}</Typography>
+            </Button>
+          </Grid>
         </Grid>
       </Box>
 
@@ -195,6 +211,7 @@ export const DocumentationSpecification = memo(() => {
 
       <RedirectDialog isOpen={redirecting} />
       <DeleteForm.Component />
+      <profileStructureDialog.Component dataSpecificationId={dataSpecificationIri} />
     </>
   );
 });

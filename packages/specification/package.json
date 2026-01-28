@@ -31,6 +31,7 @@
     "@dataspecer/shacl": "*",
     "@dataspecer/shacl-v2": "*",
     "@dataspecer/shex": "*",
+    "@dataspecer/structure-model": "*",
     "@dataspecer/lightweight-owl": "*",
     "@dataspecer/xml": "*",
     "pako": "^2.1.0"

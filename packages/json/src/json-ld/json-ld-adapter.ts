@@ -31,7 +31,7 @@ function tryPrefix(iri: string, prefixes: Record<string, string>): string {
 function pickTypeLabel(text: LanguageString, configuration: JsonConfiguration): string | null {
   let label = text[configuration.jsonDefaultTypeKeyMappingHumanLabelLang];
   if (!label) {
-    console.warn(`JSON-LD Generator: There is no ${configuration.jsonDefaultTypeKeyMappingHumanLabelLang} label for given entity.`);
+    //console.warn(`JSON-LD Generator: There is no ${configuration.jsonDefaultTypeKeyMappingHumanLabelLang} label for given entity.`);
     label = text[Object.keys(text)[0]];
   }
   if (label) {

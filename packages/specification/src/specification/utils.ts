@@ -1,9 +1,16 @@
+import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import { ModelRepository } from "../model-repository/model-repository.ts";
 import { getDataSpecification } from "./adapter.ts";
 import { DataSpecification } from "./model.ts";
 
 /**
- * Loads recursively all specifications necessary (it depends on them) for the given specification by its ID.
+ * Loads a data specification for structure modeling. This means loading all
+ * semantic models and structure models, including configuration and all
+ * imported data specifications.
+ *
+ * @todo Currently there are two ways how to "reference" specifications. One is
+ * via explicit `importsDataSpecificationIds`, the other is via sub-packages.
+ * This is due to historical reasons. The correct way is to use sub-packages.
  */
 export async function loadDataSpecifications(dataSpecificationIri: string, modelRepository: ModelRepository): Promise<Record<string, DataSpecification>> {
   const dataSpecificationIrisToLoad = [dataSpecificationIri];
@@ -23,6 +30,22 @@ export async function loadDataSpecifications(dataSpecificationIri: string, model
           dataSpecificationIrisToLoad.push(importIri);
         }
       });
+    }
+
+    /**
+     * @todo Individual packages should not be used to find imports. This should
+     * be the correct way that one "package" is hidden under the other. Of
+     * course, we can then employ something like symbolic links to point to
+     * other specifications, but this would be considered as explicit hack.
+     */
+    if (packageModel) {
+      const subResources = await packageModel.getSubResources();
+      for (const subResource of subResources) {
+        if (subResource.types.includes(LOCAL_PACKAGE)) {
+          // This is a sub-specification
+          dataSpecificationIrisToLoad.push(subResource.id);
+        }
+      }
     }
   }
 

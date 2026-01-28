@@ -37,7 +37,7 @@ export class ArtifactConfigurator extends DefaultArtifactConfigurator {
     plantUml.generator = PlantUmlGenerator.IDENTIFIER;
     const plantUmlFileName = dataSpecificationConfiguration.renameArtifacts?.[plantUml.generator] ?? "conceptual-model.plantuml";
     plantUml.outputPath = `${baseOutputPath}${plantUmlFileName}`;
-    plantUml.publicUrl = `${this.baseURL}/${plantUmlFileName}${this.queryParams}`;
+    plantUml.publicUrl = `${this.baseURL}${plantUmlFileName}${this.queryParams}`;
     plantUml.configuration = configuration;
     if ((dataSpecificationConfiguration.useGenerators?.["plantUML"] ?? generatorsEnabledByDefault) !== false) {
       artifacts.push(plantUml);
@@ -49,7 +49,7 @@ export class ArtifactConfigurator extends DefaultArtifactConfigurator {
     plantUmlImage.generator = PlantUmlImageGenerator.IDENTIFIER;
     const plantUmlImageFileName = dataSpecificationConfiguration.renameArtifacts?.[plantUmlImage.generator] ?? "conceptual-model.svg";
     plantUmlImage.outputPath = `${baseOutputPath}${plantUmlImageFileName}`;
-    plantUmlImage.publicUrl = `${this.baseURL}/${plantUmlImageFileName}${this.queryParams}`;
+    plantUmlImage.publicUrl = `${this.baseURL}${plantUmlImageFileName}${this.queryParams}`;
     plantUmlImage.configuration = configuration;
     if ((dataSpecificationConfiguration.useGenerators?.["plantUML"] ?? generatorsEnabledByDefault) !== false) {
       artifacts.push(plantUmlImage);
@@ -62,7 +62,7 @@ export class ArtifactConfigurator extends DefaultArtifactConfigurator {
       respec.generator = "https://schemas.dataspecer.com/generator/template-artifact";
       const respecFileName = dataSpecificationConfiguration.renameArtifacts?.[respec.generator] ?? "en/index.html";
       respec.outputPath = `${baseOutputPath}${respecFileName}`;
-      respec.publicUrl = `${this.baseURL}/${respecFileName}${this.queryParams}`;
+      respec.publicUrl = `${this.baseURL}${respecFileName}${this.queryParams}`;
       respec.artefacts = artifacts.map(a => a.iri!);
       // @ts-ignore
       respec.templateType = null;

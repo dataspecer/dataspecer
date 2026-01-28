@@ -709,4 +709,19 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
       vocabularyChain: [this.thisVocabularyChain],
     } satisfies LocalEntityWrapped;
   }
+
+  /**
+   * Returns entities that profile entity by its id.
+   * Can be used to find a profile of given entity.
+   */
+  getByProfiling(id: string): LocalEntityWrapped[] {
+    return Object.values(this.entities).filter(localEntity => {
+      if (isSemanticModelClassProfile(localEntity.aggregatedEntity)) {
+        return localEntity.aggregatedEntity.profiling.includes(id);
+      }
+      if (isSemanticModelRelationshipProfile(localEntity.aggregatedEntity)) {
+        return localEntity.aggregatedEntity.ends.some(end => end.profiling.includes(id));
+      }
+    });
+  }
 }

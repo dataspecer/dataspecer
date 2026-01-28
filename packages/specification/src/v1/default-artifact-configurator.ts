@@ -72,9 +72,6 @@ export class DefaultArtifactConfigurator {
 
     // Base URL must end without slash
     this.baseURL = baseFromConfig ?? `/${singleSpecificationOnly ? "" : dataSpecificationName}`; // This is only the fallback for base URLs in ZIP without real URLs
-    if (this.baseURL.endsWith("/")) {
-      this.baseURL = this.baseURL.slice(0, -1);
-    }
 
     // Generate schemas
 
@@ -102,8 +99,6 @@ export class DefaultArtifactConfigurator {
           this.queryParams,
       ));
     }
-
-    console.log(currentSchemaArtefacts.map(a => a.publicUrl));
 
     return currentSchemaArtefacts;
   }
