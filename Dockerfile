@@ -14,7 +14,7 @@ COPY services/ services/
 COPY packages/ packages/
 COPY .npmrc package-lock.json package.json turbo.json ./docker/ws/docker-configure.sh ./docker/ws/docker-copy.sh ./
 
-RUN sed -i "/packageManager/ c \"packageManager\": \"bun@1.3.5\"," package.json
+RUN sed -i "/packageManager/ c \"packageManager\": \"bun@`bun --version`\"," package.json
 RUN bun install
 
 ARG GIT_COMMIT
