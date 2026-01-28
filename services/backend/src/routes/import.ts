@@ -26,6 +26,7 @@ import { BaseResource } from "../models/resource-model.ts";
 import { asyncHandler } from "./../utils/async-handler.ts";
 import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { canonicalizeIds } from "@dataspecer/structure-model";
+import { DataSpecificationConfigurator, type DataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
   const result: LanguageString = {};
@@ -322,6 +323,23 @@ async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIr
     importedFromUrl: url,
     documentBaseUrl: url,
   });
+
+  // We create a generator configuration so that re-generation works correctly
+  {
+    let rootHref = new URL(".", url).href;
+
+    // todo, older specifications had urls ending with /cs/ or /en/ but the root was without it
+    if (rootHref.endsWith("/cs/") || rootHref.endsWith("/en/")) {
+      rootHref = rootHref.substring(0, rootHref.length - 3);
+    }
+
+    await resourceModel.createResource(rootPackageId, rootPackageId + "/generator-configuration", V1.GENERATOR_CONFIGURATION, {});
+    const generatorConfigurationStore = await resourceModel.getOrCreateResourceModelStore(rootPackageId + "/generator-configuration");
+    const configuration = DataSpecificationConfigurator.setToObject({}, {
+      publicBaseUrl: rootHref,
+    });
+    generatorConfigurationStore.setJson(configuration);
+  }
 
   // Identify important resources to import
 
