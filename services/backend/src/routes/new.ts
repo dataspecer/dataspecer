@@ -2,7 +2,7 @@ import type { Entity } from "@dataspecer/core-v2";
 import { LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
-import { createWritableInMemoryProfileModel, isSemanticModelClassProfile, isSemanticModelRelationshipProfile, profileEntities } from "@dataspecer/profile-model";
+import { createWritableInMemoryProfileModel, isSemanticModelClassProfile, isSemanticModelRelationshipProfile, SemanticProfileModelOperations } from "@dataspecer/profile-model";
 import { ModelCompositionConfigurationApplicationProfile, type ModelCompositionConfigurationMerge } from "@dataspecer/specification/model-hierarchy";
 import { createStructureProfile } from "@dataspecer/structure-model/profile";
 import { type Request, type Response } from "express";
@@ -127,7 +127,7 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
         baseIri: body.baseIri,
       });
 
-      await profileEntities(
+      await SemanticProfileModelOperations.profileEntities(
         {
           targetModel: profileModel,
         },
