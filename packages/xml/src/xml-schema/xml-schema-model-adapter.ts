@@ -427,17 +427,20 @@ class XmlSchemaAdapter {
       return this.datatypePropertyToType(property as StructureModelProperty, choices as StructureModelPrimitiveType[]);
     }
 
-    if (property.isReferencing && isInOr) {
-      const referencedClass = await this.getImportedTypeForClass(choices[0] as StructureModelClass);
-      referencedClass[1] = property.orTechnicalLabel ?? "type";
-      return {
-        entityType: "type",
-        name: referencedClass,
-        annotation: this.getAnnotation(choices[0] as StructureModelClass),
-      } satisfies XmlSchemaType;
-    }
-
     if (isInOr) {
+      if (property.isReferencing) {
+        // We are in property, not root
+
+        const referencedClass = await this.getImportedTypeForEntity(property as StructureModelProperty);
+        referencedClass[1] = property.orTechnicalLabel ?? "type";
+
+        return {
+          entityType: "type",
+          name: referencedClass,
+          annotation: null,
+        } satisfies XmlSchemaType;
+      }
+
       const contents = [] as XmlSchemaComplexContent[];
       for (const cls of choices) {
         if (cls instanceof StructureModelPrimitiveType) {
@@ -494,7 +497,7 @@ class XmlSchemaAdapter {
     if (cls.isReferenced) {
       return {
         entityType: "type",
-        name: await this.getImportedTypeForClass(cls),
+        name: await this.getImportedTypeForEntity(cls),
         annotation: this.getAnnotation(cls),
       } satisfies XmlSchemaType;
     } else {
@@ -547,34 +550,35 @@ class XmlSchemaAdapter {
   /**
    * Helper function that returns {@link QName} for a class that is referenced.
    */
-  private async getImportedTypeForClass(cls: StructureModelClass): Promise<QName> {
-    const structureSchema = cls.structureSchema;
+  private async getImportedTypeForEntity(entity: StructureModelClass | StructureModelProperty): Promise<QName> {
+    const structureSchema = (entity as StructureModelClass).structureSchema || (entity as StructureModelProperty).referencingStructureSchema;
+    const specification = (entity as StructureModelClass).specification || (entity as StructureModelProperty).referencingSpecification;
     const importDeclaration = this.imports[structureSchema];
 
     // Already imported
     if (importDeclaration) {
-      return [this.namespaces[importDeclaration.namespace], cls.technicalLabel];
+      return [this.namespaces[importDeclaration.namespace], entity.technicalLabel];
     }
 
     // Find the artefact and import
-    const artefact = this.findArtefactForImport(cls);
+    const artefact = this.findArtefactForImport(structureSchema, specification);
     if (artefact) {
       const model = await this.getImportedModel(structureSchema);
       const prefix = model?.namespacePrefix ?? null;
       const namespace = model?.namespace ?? null;
       this.imports[structureSchema] = {
         namespace: namespace,
-        schemaLocation: pathRelative(this.currentPath(), artefact.publicUrl, cls.specification !== this.model.specification),
+        schemaLocation: pathRelative(this.currentPath(), artefact.publicUrl, specification !== this.model.specification),
         model,
       };
       if (namespace && prefix) {
         this.namespaces[namespace] = prefix;
       }
-      return [prefix, cls.technicalLabel];
+      return [prefix, entity.technicalLabel];
     }
 
     // Fallback with error
-    return [null, cls.technicalLabel];
+    return [null, entity.technicalLabel];
   }
 
   /**
@@ -712,17 +716,17 @@ class XmlSchemaAdapter {
     };
   }
 
-  private findArtefactForImport(classData: StructureModelClass): DataSpecificationArtefact | null {
-    const targetSpecification = this.specifications[classData.specification];
+  private findArtefactForImport(structureSchema: string, specification: string): DataSpecificationArtefact | null {
+    const targetSpecification = this.specifications[specification];
     if (targetSpecification == null) {
-      throw new Error(`Missing specification ${classData.specification}`);
+      throw new Error(`Missing specification ${specification}`);
     }
     for (const candidate of targetSpecification.artefacts) {
       if (candidate.generator !== XML_SCHEMA.Generator) {
         continue;
       }
       const candidateSchema = candidate as DataSpecificationSchema;
-      if (classData.structureSchema !== candidateSchema.psm) {
+      if (structureSchema !== candidateSchema.psm) {
         continue;
       }
       // TODO We should check that the class is root here.

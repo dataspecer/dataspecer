@@ -104,6 +104,16 @@ export class StructureModelProperty {
   isReferencing: boolean = false;
 
   /**
+   * Structure schema (PSM model) that is being referenced by this property, if any.
+   */
+  referencingStructureSchema: string | null = null;
+
+  /**
+   * Specification (project) that is being referenced by this property, if any.
+   */
+  referencingSpecification: string | null = null;
+
+  /**
    * Technical label of the wrapping OR. If the OR is not wrapped, then it is empty.
    */
   orTechnicalLabel: string | null = null;

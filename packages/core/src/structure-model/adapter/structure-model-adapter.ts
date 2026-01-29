@@ -307,6 +307,7 @@ class StructureModelAdapter {
     } else if (DataPsmClass.is(part) || DataPsmClassReference.is(part)) {
       if (DataPsmClassReference.is(part)) {
         model.isReferencing = true;
+        model.referencingStructureSchema = part.dataPsmSpecification;
       }
       const [types, label] = await this.loadComplexType(part); // It might be a class or it might be a reference (to or for example)
       model.dataTypes.push(...types);
