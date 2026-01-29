@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useMemo, useState} from "react";
+import React, {useCallback, useContext, useEffect, useMemo, useState} from "react";
 import {AppBar, Box, Button, Container, Divider, Toolbar, Typography, useTheme} from "@mui/material";
 import CssBaseline from "@mui/material/CssBaseline";
 import ButtonSetRoot from "./cim-search/button-set-root";
@@ -21,6 +21,7 @@ import {SettingsContext, useApplicationSettings} from "./settings/settings";
 import {Help} from "../../components/help";
 import {ThemeSelector} from "../../components/theme-selector";
 import {getAppBarGradient} from "../../utils/theme-helpers";
+import { useSearchParams } from "react-router-dom";
 
 // @ts-ignore default value
 export const ConfigurationContext = React.createContext<Configuration>(null);
@@ -34,9 +35,28 @@ const ButtonMenuTheme = createTheme({
     },
 });
 
+function useArtifactPreviewState() {
+    const [get, set] = useSearchParams();
+
+    const setArtifacts = useCallback((artifacts: string[]) => {
+        set(params => {
+            if (artifacts.length === 0) {
+                params.delete("artifacts");
+            } else {
+                params.set("artifacts", artifacts.join(","));
+            }
+            return params;
+        });
+    }, [set]);
+
+    const current = useMemo(() => (get.get("artifacts") ?? "").split(",").filter(t => t.length), [get]);
+
+    return [current, setArtifacts] as const;
+}
+
 const AppContent: React.FC = () => {
     // List of generators that their artifacts will be shown as a live preview next to the modelled schema
-    const [artifactPreview, setArtifactPreview] = useState<string[]>([]);
+    const [artifactPreview, setArtifactPreview] = useArtifactPreviewState();
 
     const configuration = useContext(ConfigurationContext);
     const {t} = useTranslation('ui');
