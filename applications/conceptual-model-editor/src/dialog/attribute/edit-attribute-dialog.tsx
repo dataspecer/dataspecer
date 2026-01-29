@@ -40,6 +40,7 @@ export const AttributeDialog = (props: DialogProps<AttributeDialogState>) => {
             onChange={controller.setName}
             defaultLanguage={state.language}
             inputType="text"
+            autoFocus
           />
         </DialogDetailRow>
         <DialogDetailRow detailKey={t("create-class-dialog.iri")}>
