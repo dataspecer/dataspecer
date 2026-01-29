@@ -517,7 +517,13 @@ class XmlSchemaAdapter {
           cardinalityMin: 0,
           cardinalityMax: null,
           processContents: "lax",
-          namespace: "##any",
+          /**
+           * Other means any namespace except the target namespace. When doing
+           * extension schema during profiling, the ideal would be to exclude
+           * both original and profiled namespaces. This is however not
+           * supported by XML Schema. Therefore we keep other as well.
+           */
+          namespace: "##other",
         };
       }
 
