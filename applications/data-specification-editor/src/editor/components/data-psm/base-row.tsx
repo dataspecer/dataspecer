@@ -1,7 +1,7 @@
 import {useToggle} from "../../hooks/use-toggle";
 import React from "react";
 import {DraggableProvidedDragHandleProps} from "@hello-pangea/dnd";
-import {Box, Fade, IconButton, MenuItem, Typography} from "@mui/material";
+import {Box, Fade, IconButton, MenuItem, Typography, useTheme} from "@mui/material";
 import {ActionsOther} from "./common/actions-other";
 import {styled} from "@mui/material/styles";
 import Tooltip, {tooltipClasses} from "@mui/material/Tooltip";
@@ -10,7 +10,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import {useDialog} from "../../dialog";
 import {EntityChainDetailDialog} from "../detail/entity-chain-detail-dialog";
-import {Icons} from "../../icons";
+import {Icons, IconsTwoTone} from "../../icons";
 import {useTranslation} from "react-i18next";
 
 const LightTooltip = styled<typeof Tooltip>(({ className, ...props }) => (
@@ -19,7 +19,7 @@ const LightTooltip = styled<typeof Tooltip>(({ className, ...props }) => (
 ))(({ theme }) => ({
   [`& .${tooltipClasses.tooltip}`]: {
     backgroundColor: theme.palette.background.paper,
-    color: 'rgba(0, 0, 0, 0.87)',
+    color: theme.palette.text.primary,
     fontSize: "1rem",
     padding: 0,
     marginLeft: 0,
@@ -109,7 +109,10 @@ export interface RowSlots {
  */
 export const DataPsmBaseRow: React.FC<RowSlots> = (props) => {
   const {t} = useTranslation("psm");
-
+  const theme = useTheme();
+  
+  // Use TwoTone icons in light mode, regular icons in dark mode
+  const iconSet = theme.palette.mode === 'dark' ? Icons : IconsTwoTone;
 
   const DetailDialog = useDialog(EntityChainDetailDialog, ["iris"]);
 
@@ -117,7 +120,7 @@ export const DataPsmBaseRow: React.FC<RowSlots> = (props) => {
     <ItemRow collapsible={props.collapseToggle} icon={props.icon} actions={<>
       {props.menu}
 
-      <MenuItem onClick={() => DetailDialog.open({})} title={t("button info")}><Icons.Tree.Edit/></MenuItem>
+      <MenuItem onClick={() => DetailDialog.open({})} title={t("button info")}><iconSet.Tree.Edit/></MenuItem>
 
       {!!props.hiddenMenu?.length &&
           <ActionsOther>

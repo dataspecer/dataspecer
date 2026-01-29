@@ -46,6 +46,11 @@
     "use structured class": "Použít strukturovanou třídu (neinterpretovanou)"
   },
   "set root element button": "Zvolit kořen",
+  "theme": {
+    "dark": "Tmavý",
+    "light": "Světlý",
+    "system": "Systémový"
+  },
   "title": "editor schémat",
   "version": "Verze"
 }

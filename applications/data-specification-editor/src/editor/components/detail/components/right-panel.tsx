@@ -19,7 +19,8 @@ import {
     TableHead,
     TableRow,
     TextField,
-    Typography
+    Typography,
+    useTheme
 } from "@mui/material";
 import { isEqual } from "lodash";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
@@ -27,7 +28,7 @@ import { useTranslation } from "react-i18next";
 import { TransitionGroup } from "react-transition-group";
 import { InfoHelp } from "../../../../components/info-help";
 import { useDataPsmAndInterpretedPim } from "../../../hooks/use-data-psm-and-interpreted-pim";
-import { Icons } from "../../../icons";
+import { Icons, IconsTwoTone } from "../../../icons";
 import { CardContent } from "../../../mui-overrides";
 import { SetCardinality, SetCardinalityPsm } from "../../../operations/set-cardinality";
 import { SetClassCodelist } from "../../../operations/set-class-codelist";
@@ -53,6 +54,10 @@ import { SetEmptyAsComplex } from "../../../operations/set-is-primitive";
 
 export const RightPanel: React.FC<{ iri: string, close: () => void }> = memo(({iri}) => {
     const store = useFederatedObservableStore();
+    const theme = useTheme();
+    
+    // Use TwoTone icons in light mode, regular icons in dark mode
+    const iconSet = theme.palette.mode === 'dark' ? Icons : IconsTwoTone;
 
     const {dataPsmResource: resource, pimResource} = useDataPsmAndInterpretedPim<DataPsmAttribute | DataPsmAssociationEnd | DataPsmClass, ExtendedSemanticModelRelationship | ExtendedSemanticModelClass | null>(iri);
     // pim resource may not exist if the entity has no interpretation
@@ -407,7 +412,7 @@ export const RightPanel: React.FC<{ iri: string, close: () => void }> = memo(({i
                                                     <TableCell align="right">
                                                         {pimReadOnly ||
                                                             <IconButton size="small" onClick={() => setCodelistUrl(codelistUrl.filter(u => u !== url))}>
-                                                                <Icons.Tree.Delete/>
+                                                                <iconSet.Tree.Delete/>
                                                             </IconButton>
                                                         }
                                                     </TableCell>
