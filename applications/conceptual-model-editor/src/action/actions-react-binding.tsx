@@ -117,6 +117,7 @@ import { openEditSemanticModelDialogAction } from "./open-edit-semantic-model-di
 import { EntityDsIdentifier, ModelDsIdentifier } from "@/dataspecer/entity-model";
 import { openSearchExternalSemanticModelDialogAction } from "./open-search-external-semantic-model-dialog";
 import { openEditVisualModelDialogAction } from "./open-edit-visual-model-dialog";
+import { saveViewportPositionAction } from "./save-viewport-position";
 import { LayoutConfigurationContextType, useLayoutConfigurationContext } from "@/context/layout-configuration-context";
 import { openCreateClassDialogAndCreateGeneralizationAction } from "./open-create-class-dialog-with-generalization";
 import { openCreateClassDialogAndCreateAssociationAction } from "./open-create-class-dialog-with-association";
@@ -383,6 +384,12 @@ interface VisualModelActions {
   openEditVisualModelDialog: (identifier: string) => void;
 
   /**
+   * Saves the current viewport position to the active visual model.
+   * This position will be restored when the model is loaded again.
+   */
+  saveViewportPosition: () => void;
+
+  /**
    * Add entities from given semantic model identified by
    * {@link semanticModel} to currently active visual model.
    */
@@ -497,6 +504,7 @@ const noOperationActionsContext: ActionsContextType = {
   changeVisualModel: noOperation,
   openCreateVisualModelDialog: noOperation,
   openEditVisualModelDialog: noOperation,
+  saveViewportPosition: noOperation,
   //
   addEntitiesFromSemanticModelToVisualModel: async () => { },
   removeEntitiesInSemanticModelFromVisualModel: noOperation,
@@ -1065,6 +1073,16 @@ function createActionsContext(
     openEditVisualModelDialogAction(options, dialogs, visualModel);
   };
 
+  const saveViewportPosition = () => {
+    const activeVisualModel = graph.aggregatorView.getActiveVisualModel();
+    if (!isWritableVisualModel(activeVisualModel)) {
+      notifications.error("Cannot save viewport position: visual model is not writable.");
+      return;
+    }
+    saveViewportPositionAction(activeVisualModel, diagram);
+    notifications.success("Viewport position saved. Click 'Save' button to persist changes.");
+  };
+
   const openExtendSelectionDialog = (selections: Selections) => {
     const onConfirm = (state: ExtendSelectionState) => {
       setSelectionsInDiagram(state.selections, diagram);
@@ -1508,6 +1526,7 @@ function createActionsContext(
     changeVisualModel,
     openCreateVisualModelDialog: openCreateNewVisualModelDialog,
     openEditVisualModelDialog,
+    saveViewportPosition,
     addEntitiesFromSemanticModelToVisualModel,
     removeEntitiesInSemanticModelFromVisualModel,
     addEntityNeighborhoodToVisualModel,
