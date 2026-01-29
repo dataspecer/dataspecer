@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { BetterModalProps } from "@/lib/better-modal";
-import { packageService } from "@/package";
+import { packageService, refreshResourceMetadata } from "@/package";
 import { preventDefault, stopPropagation } from "@/utils/events";
 import { Trash, Undo2 } from "lucide-react";
 import * as monaco from "monaco-editor";
@@ -135,6 +135,7 @@ export const ModifyDocumentationTemplate = ({ isOpen, resolve, iri }: { iri: str
     applyPartialDocumentationConfiguration(configuration, documentationConfiguration);
     const result = configuration.serializeModelToApiJsonObject(data);
     await packageService.setResourceJsonData(iri, result);
+    await refreshResourceMetadata(iri);
   };
 
   const defaultPartials = defaultDocumentationConfiguration.partials;

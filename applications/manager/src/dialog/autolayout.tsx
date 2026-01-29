@@ -3,7 +3,7 @@ import { Modal, ModalBody, ModalContent, ModalDescription, ModalFooter, ModalHea
 import { Button } from "@/components/ui/button";
 import { modelTypeToName } from "@/known-models";
 import { BetterModalProps } from "@/lib/better-modal";
-import { ResourcesContext, packageService, requestLoadPackage } from "@/package";
+import { ResourcesContext, packageService, refreshResourceMetadata, requestLoadPackage } from "@/package";
 import { LOCAL_VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { applyLayoutConfiguration, createLayoutConfiguration, performLayoutOfSemanticModel, type VisualEntitiesWithModelVisualInformation } from "@dataspecer/layout";
 import { Loader } from "lucide-react";
@@ -57,6 +57,7 @@ export const Autolayout = ({ iri, isOpen, resolve, parentIri }: { iri: string, p
     applyLayoutConfiguration(configuration, getConfig());
     const result = configuration.serializeModelToApiJsonObject(configurationData);
     await packageService.setResourceJsonData(parentIri, result);
+    await refreshResourceMetadata(parentIri);
 
     console.log(entities);
     console.log(semanticModelId);
