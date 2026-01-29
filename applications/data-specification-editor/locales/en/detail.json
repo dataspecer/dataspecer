@@ -134,5 +134,19 @@
   "XML root container name": "Name of root element serving as container",
   "XML root container name help": "In case of a root element cardinality other than 1..1, it is necessary to wrap elements in a helper element. This setting specifies the name of such element.",
   "XML root container alert": "Container <0>&lt;{{container}}&gt;</0> will always be used because the cardinality is different from 1..1.",
-  "XML root container always use": "always use"
+  "XML root container always use": "always use",
+  "bulk update technical labels": {
+    "button text": "Bulk update all technical labels...",
+    "dialog title": "Bulk Update Technical Labels",
+    "description": "This will update all technical labels in the current data structure according to the configured casing convention.",
+    "mode label": "Update mode",
+    "apply style title": "Apply style",
+    "apply style subtitle": "(recommended)",
+    "apply style description": "Keeps manual changes but applies the new casing. For example, \"jid\" becomes \"Jid\" when changing to PascalCase.",
+    "reset title": "Reset",
+    "reset description": "Regenerates all labels from semantic model, losing any manual changes.",
+    "cancel": "Cancel",
+    "update": "Update",
+    "updating": "Updating..."
+  }
 }
