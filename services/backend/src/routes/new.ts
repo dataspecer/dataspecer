@@ -163,7 +163,7 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
     });
 
     // Update package metadata with the final label
-    await resourceModel.updateResource(packageIri, {
+    await resourceModel.updateResourceMetadata(packageIri, {
       label: { en: profileLabel || "Profile" },
       description: body.description ? { en: body.description } : {},
     });
