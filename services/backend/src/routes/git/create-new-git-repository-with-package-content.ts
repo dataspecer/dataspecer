@@ -28,12 +28,12 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
   const query = querySchema.parse(request.query);
   const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(query.gitProviderURL, httpFetch, configuration);
   const { name: sessionUserName, accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
+  response.json({gitProvider, sessionUserName, accessTokens, query});
+  response.sendStatus(202);
+  return;
   const repositoryOwner = convertToValidGitName(query.givenRepositoryOwner.length === 0 ? sessionUserName : query.givenRepositoryOwner);
   const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
   const repositoryName = convertToValidGitName(query.givenRepositoryName);
-  response.json({gitProvider, repositoryName, commitMessage, repositoryOwner, query});
-  response.sendStatus(202);
-  return;
   const fullLinkedGitRepositoryURL = gitProvider.createGitRepositoryURL(repositoryOwner, repositoryName);
   const isUserRepo = stringToBoolean(query.isUserRepo);
   const patAccessTokens = findPatAccessTokens(accessTokens);
