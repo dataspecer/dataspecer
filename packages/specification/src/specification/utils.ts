@@ -17,14 +17,19 @@ export async function loadDataSpecifications(dataSpecificationIri: string, model
   const dataSpecifications: { [iri: string]: DataSpecification } = {};
 
   for (let i = 0; i < dataSpecificationIrisToLoad.length; i++) {
-    const dataSpecificationIri = dataSpecificationIrisToLoad[i]!;
+    const dsIriToProcess = dataSpecificationIrisToLoad[i]!;
 
-    const model = await modelRepository.getModelById(dataSpecificationIri);
+    const model = await modelRepository.getModelById(dsIriToProcess);
     const packageModel = await model?.asPackageModel();
     const dataSpecification = packageModel ? await getDataSpecification(packageModel) : undefined;
 
+    if (dataSpecification?.dataStructures.length === 0 && dsIriToProcess !== dataSpecificationIri) {
+      // This specification is empty, so we can safely skip it
+      continue;
+    }
+
     if (dataSpecification) {
-      dataSpecifications[dataSpecificationIri] = dataSpecification;
+      dataSpecifications[dsIriToProcess] = dataSpecification;
       dataSpecification.importsDataSpecificationIds.forEach((importIri) => {
         if (!dataSpecificationIrisToLoad.includes(importIri)) {
           dataSpecificationIrisToLoad.push(importIri);

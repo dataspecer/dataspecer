@@ -28,10 +28,6 @@ export function useSaveHandler(hasUnsavedChanges: boolean, save: () => unknown |
         return () => dialogSaveStatusContext.removeSaveListener(saveWrapper);
     }, [saveWrapper, dialogSaveStatusContext]);
 
-    if (hasUnsavedChanges) {
-        console.trace("Unsaved changes detected");
-    }
-
     return {
         saveChanges
     }

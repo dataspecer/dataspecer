@@ -26,6 +26,7 @@
     "success": "IRI zkopírováno do schránky",
     "text": "zkopírovat"
   },
+  "loading specification": "Načítání specifikace...",
   "more": "více",
   "name": "Jméno",
   "new schema description format": "Datová struktura pro {label}. {description}",

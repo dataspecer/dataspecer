@@ -2,6 +2,7 @@ import { StructureEditorBackendService } from "@dataspecer/backend-utils/connect
 import { getDefaultConfiguration, mergeConfigurations } from "@dataspecer/core/configuration/utils";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import { createTheme, CssBaseline, ThemeProvider } from "@mui/material";
+import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from "next-themes";
 import { SnackbarProvider } from "notistack";
 import React, { createContext, StrictMode, useCallback, useEffect, useMemo, useState } from "react";
 import { BrowserRouter, useRoutes } from "react-router-dom";
@@ -9,7 +10,6 @@ import { getDefaultConfigurators } from "./configurators";
 import EditorPage from "./editor/components/App";
 import ManagerPage from "./manager/app";
 import { Specification } from "./manager/routes/specification/specification";
-import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from "next-themes";
 
 export const BackendConnectorContext = React.createContext(null as unknown as StructureEditorBackendService);
 
@@ -47,7 +47,9 @@ export const Application = () => {
               <BackendConnectorContext.Provider value={backendConnector}>
                 <DefaultConfigurationContext.Provider value={defaultConfiguration}>
                   <CssBaseline />
-                  <MainRouter />
+                  <BrowserRouter basename={(import.meta.env.VITE_BASE_PATH ?? "") + "/"}>
+                    <MainRouter />
+                  </BrowserRouter>
                 </DefaultConfigurationContext.Provider>
               </BackendConnectorContext.Provider>
             </RefreshContext.Provider>
@@ -63,24 +65,17 @@ export const Application = () => {
  * @constructor
  */
 const MainRouter = () => {
-  const Page = () =>
-    useRoutes([
-      {
-        path: "specification",
-        element: (
-          <ManagerPage>
-            <Specification />
-          </ManagerPage>
-        ),
-      },
-      { path: "editor", element: <EditorPage /> },
-    ]);
-
-  return (
-    <BrowserRouter basename={(import.meta.env.VITE_BASE_PATH ?? "") + "/"}>
-      <Page />
-    </BrowserRouter>
-  );
+  return useRoutes([
+    {
+      path: "specification",
+      element: (
+        <ManagerPage>
+          <Specification />
+        </ManagerPage>
+      ),
+    },
+    { path: "editor", element: <EditorPage /> },
+  ]);
 };
 
 /**
@@ -150,7 +145,7 @@ const MuiThemeWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) 
           divider: mode === "dark" ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.12)",
         },
       }),
-    [mode]
+    [mode],
   );
 
   useEffect(() => {
