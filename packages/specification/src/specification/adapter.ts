@@ -5,16 +5,16 @@ import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-mem
 import { CoreResourceReader } from "@dataspecer/core/core/index";
 import { DataSpecification as LegacyDataSpecification } from "@dataspecer/core/data-specification/model";
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
-import { PackageModel } from "../model-repository/package-model.ts";
-import { DataSpecification } from "./model.ts";
+import { MemoryStoreFromBlob } from "../memory-store.ts";
 import { ModelCompositionConfiguration, ModelCompositionConfigurationMerge } from "../model-hierarchy/composition-configuration.ts";
 import { SemanticModelAggregatorBuilder } from "../model-hierarchy/semantic-model-aggregator-builder.ts";
-import { MemoryStoreFromBlob } from "../memory-store.ts";
 import { loadAsStructureModel } from "../model-loader.ts";
-import { ModelRepository } from "../model-repository/model-repository.ts";
-import { loadDataSpecifications } from "./utils.ts";
 import { WritableBlobModel } from "../model-repository/blob-model.ts";
-
+import { CachedModelRepository } from "../model-repository/cached-model-repository.ts";
+import { ModelRepository } from "../model-repository/model-repository.ts";
+import { PackageModel } from "../model-repository/package-model.ts";
+import { DataSpecification } from "./model.ts";
+import { loadDataSpecifications } from "./utils.ts";
 
 export async function getDataSpecification(packageAsSpecification: PackageModel): Promise<DataSpecification> {
   const subResources = await packageAsSpecification.getSubResources();
@@ -33,10 +33,10 @@ export async function getDataSpecification(packageAsSpecification: PackageModel)
       label: ds.getUserMetadata()?.label || {},
     }));
 
-  const model = (await packageAsSpecification.getJsonBlob() as any) ?? {};
+  const model = ((await packageAsSpecification.getJsonBlob()) as any) ?? {};
 
   return {
-    ...await serializePackageModel(packageAsSpecification),
+    ...(await serializePackageModel(packageAsSpecification)),
     id: packageAsSpecification.id,
     type: LegacyDataSpecification.TYPE_DOCUMENTATION,
 
@@ -86,13 +86,13 @@ async function serializePackageModel(packageModel: PackageModel): Promise<Packag
 
     subResources,
   };
-
 }
 
 /**
  * Returns the full data specification with all dependent specifications and models.
  */
 export async function getDataSpecificationWithModels(dataSpecificationIri: string, dataPsmSchemaIri: string, modelRepository: ModelRepository) {
+  const cachedModelRepository = new CachedModelRepository(modelRepository);
   const store = new FederatedObservableStore();
 
   let specifications: Record<string, DataSpecification>;
@@ -102,72 +102,81 @@ export async function getDataSpecificationWithModels(dataSpecificationIri: strin
   const structureModels: Record<string, MemoryStoreFromBlob> = {};
 
   // Loads information about all projects/packages because they can reference each other
-  specifications = await loadDataSpecifications(dataSpecificationIri, modelRepository);
+  specifications = await loadDataSpecifications(dataSpecificationIri, cachedModelRepository);
+  await Promise.all(
+    Object.values(specifications).map(async (specification) => {
+      const model = (await cachedModelRepository.getModelById(specification.id))!;
+      const pckg = await model.asPackageModel();
 
-  for (const specification of Object.values(specifications)) {
-    const model = (await modelRepository.getModelById(specification.id))!;
-    const pckg = await model.asPackageModel();
+      const psmStores: MemoryStoreFromBlob[] = [];
+      const subResources = await pckg.getSubResources();
 
-    const psmStores: MemoryStoreFromBlob[] = [];
-    const subResources = await pckg.getSubResources();
-
-    for (const subResource of subResources) {
-      const model = await loadAsStructureModel(subResource);
-      if (model) {
-        psmStores.push(model);
-        structureModels[subResource.id] = model;
-      }
-    }
-
-    // Handle autosave
-    for (const model of psmStores) {
-      store.addStore(model);
-      store.addEventListener("afterOperationExecuted", () => model.save());
-    }
-
-    let semanticModel: SemanticModelAggregator;
-    let usedSemanticModels: InMemorySemanticModel[] = [];
-    let compositionConfiguration = specification.modelCompositionConfiguration as ModelCompositionConfiguration | null;
-    const builder = new SemanticModelAggregatorBuilder(pckg, fetch);
-    if (compositionConfiguration) {
-      semanticModel = await builder.build(compositionConfiguration);
-    } else {
-      semanticModel = await builder.build({
-        modelType: "merge",
-        models: null,
-      } as ModelCompositionConfigurationMerge);
-    }
-    usedSemanticModels = builder.getUsedEntityModels();
-    if (specification.id === dataSpecificationIri) {
-      semanticModelAggregator = semanticModel;
-    }
-
-    const storeForFBS = new AggregatorAsEntityModel(semanticModel, specification.id) as unknown as CoreResourceReader;
-    store.addStore(storeForFBS); // todo typings
-
-    // This loop updates every semantic model
-    // ! semantic model is updated twice!!
-    for (const model of usedSemanticModels) {
-      const id = model.getId();
-      store.addEventListener("afterOperationExecuted", async () => {
-        const remoteModel = await modelRepository.getModelById(id);
-        const blobModel = await remoteModel?.asBlobModel() as WritableBlobModel | undefined;
-        if (blobModel) {
-          await blobModel.setJsonBlob(model.serializeModel());
+      for (const subResource of subResources) {
+        const model = await loadAsStructureModel(subResource);
+        if (model) {
+          psmStores.push(model);
+          structureModels[subResource.id] = model;
         }
-      });
-    }
+      }
 
-    // @ts-ignore Each specification should have its own semantic model, not merged with other specifications
-    specification.semanticModel = semanticModel;
+      // Handle autosave
+      for (const model of psmStores) {
+        store.addStore(model);
+        store.addEventListener("afterOperationExecuted", () => model.saveIfNewChanges());
+      }
 
-    // Each specification may have multiple configurations, but in reality we use only the first one.
-    const configurationStore = specification.artifactConfigurations?.[0]?.id ?? null;
-    const configurationModel = configurationStore ? await (await modelRepository.getModelById(configurationStore))?.asBlobModel() : undefined;
-    const configuration = configurationModel ? ((await configurationModel.getJsonBlob()) as Record<string, object>) : {};
-    // @ts-ignore This inserts the configuration into the specification
-    specification.artefactConfiguration = configuration;
-  }
+      let semanticModel: SemanticModelAggregator;
+      let usedSemanticModels: InMemorySemanticModel[] = [];
+      let compositionConfiguration = specification.modelCompositionConfiguration as ModelCompositionConfiguration | null;
+      const builder = new SemanticModelAggregatorBuilder(pckg, fetch);
+      if (compositionConfiguration) {
+        semanticModel = await builder.build(compositionConfiguration);
+      } else {
+        semanticModel = await builder.build({
+          modelType: "merge",
+          models: null,
+        } as ModelCompositionConfigurationMerge);
+      }
+      usedSemanticModels = builder.getUsedEntityModels();
+      if (specification.id === dataSpecificationIri) {
+        semanticModelAggregator = semanticModel;
+      }
+
+      const storeForFBS = new AggregatorAsEntityModel(semanticModel, specification.id) as unknown as CoreResourceReader;
+      store.addStore(storeForFBS); // todo typings
+
+      // This loop updates every semantic model
+      // ! semantic model is updated twice!!
+      for (const model of usedSemanticModels) {
+        const id = model.getId();
+        let hasUnsavedChanges = false;
+        model.subscribeToChanges(() => {
+          hasUnsavedChanges = true;
+        });
+        store.addEventListener("afterOperationExecuted", async () => {
+          if (hasUnsavedChanges) {
+            hasUnsavedChanges = false;
+
+            const remoteModel = await cachedModelRepository.getModelById(id);
+            const blobModel = (await remoteModel?.asBlobModel()) as WritableBlobModel | undefined;
+            if (blobModel) {
+              await blobModel.setJsonBlob(model.serializeModel());
+            }
+          }
+        });
+      }
+
+      // @ts-ignore Each specification should have its own semantic model, not merged with other specifications
+      specification.semanticModel = semanticModel;
+
+      // Each specification may have multiple configurations, but in reality we use only the first one.
+      const configurationStore = specification.artifactConfigurations?.[0]?.id ?? null;
+      const configurationModel = configurationStore ? await (await cachedModelRepository.getModelById(configurationStore))?.asBlobModel() : undefined;
+      const configuration = configurationModel ? ((await configurationModel.getJsonBlob()) as Record<string, object>) : {};
+      // @ts-ignore This inserts the configuration into the specification
+      specification.artefactConfiguration = configuration;
+    }),
+  );
 
   return {
     dataSpecifications: specifications,

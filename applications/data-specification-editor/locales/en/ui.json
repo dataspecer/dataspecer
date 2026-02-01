@@ -26,6 +26,7 @@
     "success": "Copied IRI to the clipboard",
     "text": "copy"
   },
+  "loading specification": "Loading specification...",
   "more": "more",
   "name": "Name",
   "new schema description format": "Data structure for {label}. {description}",

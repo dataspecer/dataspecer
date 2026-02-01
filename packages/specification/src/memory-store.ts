@@ -1,4 +1,4 @@
-import { CoreOperation, CoreResource, createExecutorMap, CreateNewIdentifier, ExecutorMap, MemoryStore } from "@dataspecer/core/core";
+import { CoreOperation, CoreResource, createExecutorMap, CreateNewIdentifier, ExecutorMap, MemoryStore, type CoreOperationResult } from "@dataspecer/core/core";
 import { dataPsmExecutors } from "@dataspecer/core/data-psm/data-psm-executors";
 import { pimExecutors } from "@dataspecer/core/pim/executor";
 import { WritableBlobModel } from "./model-repository/blob-model.ts";
@@ -30,6 +30,21 @@ export class MemoryStoreFromBlob extends MemoryStore {
     const resources = this.resources;
 
     await this.connector.save({operations, resources});
+  }
+
+  protected hasUnsavedChanges: boolean = false;
+
+  async applyOperation(operation: CoreOperation): Promise<CoreOperationResult> {
+    const result = await super.applyOperation(operation);
+    this.hasUnsavedChanges = true;
+    return result;
+  }
+
+  async saveIfNewChanges() {
+    if (this.hasUnsavedChanges) {
+      this.hasUnsavedChanges = false;
+      await this.save();
+    }
   }
 
   async load() {
