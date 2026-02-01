@@ -26,6 +26,8 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
   });
 
   const query = querySchema.parse(request.query);
+  response.status(203).json({ query });
+  return;
   try {
     const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(query.gitProviderURL, httpFetch, configuration);
   }
