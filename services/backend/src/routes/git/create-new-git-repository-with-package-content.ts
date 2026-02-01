@@ -24,6 +24,8 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
     isUserRepo: z.string().min(1),
     exportFormat: z.string().min(1).optional(),
   });
+  response.sendStatus(200);
+  return;
 
   const query = querySchema.parse(request.query);
 
@@ -36,6 +38,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
   const isUserRepo = stringToBoolean(query.isUserRepo);
   const patAccessTokens = findPatAccessTokens(accessTokens);
   response.sendStatus(200);
+  return;
   // Either the user has create repo access AND it has access to the "user", then we are good
   // Or it has create repo access, but does not have access to the "user". Then we have two possibilities
   //  either we fail, or we will try the bot token to create the repositories. To me the second one makes more sense. So that is the implemented variant.
