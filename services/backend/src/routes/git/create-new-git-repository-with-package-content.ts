@@ -34,7 +34,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
     return;
   }
   const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(query.gitProviderURL, httpFetch, configuration);
-  response.status(201).json({ query, gitProvider });
+  response.status(201).json({ query });
   return;
   const { name: sessionUserName, accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
   const repositoryOwner = convertToValidGitName(query.givenRepositoryOwner.length === 0 ? sessionUserName : query.givenRepositoryOwner);
