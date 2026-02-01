@@ -113,7 +113,7 @@ export async function getDataSpecificationWithModels(dataSpecificationIri: strin
 
       // Handle autosave
       for (const model of psmStores) {
-        store.addStore(model);
+        await store.addStore(model, {hasImmediateInterface: true});
         store.addEventListener("afterOperationExecuted", () => model.saveIfNewChanges());
       }
 
@@ -135,7 +135,7 @@ export async function getDataSpecificationWithModels(dataSpecificationIri: strin
       }
 
       const storeForFBS = new AggregatorAsEntityModel(semanticModel, specification.id) as unknown as CoreResourceReader;
-      store.addStore(storeForFBS); // todo typings
+      await store.addStore(storeForFBS); // todo typings
 
       // This loop updates every semantic model
       // ! semantic model is updated twice!!
