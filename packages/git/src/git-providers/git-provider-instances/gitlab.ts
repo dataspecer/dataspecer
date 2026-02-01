@@ -17,8 +17,8 @@ export class GitLabProvider extends GitProviderBase {
   ////////////////////////////
   constructor(httpFetch: HttpFetch, authenticationGitProvidersData: AuthenticationGitProvidersData, domainURL?: string) {
     const authenticationGitProviderData: AuthenticationGitProviderData = {
-      gitBotConfiguration: authenticationGitProvidersData.gitBotConfigurations?.gitlab,
-      authConfiguration: authenticationGitProvidersData.authConfiguration,
+      gitBotConfiguration: authenticationGitProvidersData?.gitBotConfigurations?.gitlab,
+      authConfiguration: authenticationGitProvidersData?.authConfiguration,
     };
     super(httpFetch, authenticationGitProviderData);
 

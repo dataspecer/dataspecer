@@ -26,8 +26,8 @@ export class GitHubProvider extends GitProviderBase {
   ////////////////////////////
   constructor(httpFetch: HttpFetch, authenticationGitProvidersData: AuthenticationGitProvidersData) {
     const authenticationGitProviderData: AuthenticationGitProviderData = {
-      gitBotConfiguration: authenticationGitProvidersData.gitBotConfigurations?.github,
-      authConfiguration: authenticationGitProvidersData.authConfiguration,
+      gitBotConfiguration: authenticationGitProvidersData?.gitBotConfigurations?.github,
+      authConfiguration: authenticationGitProvidersData?.authConfiguration,
     };
     super(httpFetch, authenticationGitProviderData);
   }
