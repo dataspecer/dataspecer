@@ -24,13 +24,20 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
     isUserRepo: z.string().min(1),
     exportFormat: z.string().min(1).optional(),
   });
-  response.sendStatus(200);
-  return;
 
   const query = querySchema.parse(request.query);
 
+  try {
+    const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(query.gitProviderURL, httpFetch, configuration);
+  }
+  catch {
+    response.sendStatus(200);
+    return;
+  }
   const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(query.gitProviderURL, httpFetch, configuration);
   const { name: sessionUserName, accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
+  response.sendStatus(201);
+  return;
   const repositoryOwner = convertToValidGitName(query.givenRepositoryOwner.length === 0 ? sessionUserName : query.givenRepositoryOwner);
   const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
   const repositoryName = convertToValidGitName(query.givenRepositoryName);
