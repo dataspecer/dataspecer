@@ -97,6 +97,11 @@ export class XmlSchemaAnnotation {
    */
   metaDescription: LanguageString | null;
 
+  /**
+   * The usage note of the annotation for non-technical use.
+   */
+  metaUsageNote: LanguageString | null;
+
   structureModelEntity?: any;
 }
 

@@ -98,6 +98,10 @@ export async function getDataSpecificationWithModels(dataSpecificationIri: strin
   let specifications: Record<string, DataSpecification>;
   let semanticModelAggregator!: SemanticModelAggregator;
 
+  // All structure models are in FederatedObservableStore, but you can also access them directly
+  const structureModels: Record<string, MemoryStoreFromBlob> = {};
+
+  // Loads information about all projects/packages because they can reference each other
   specifications = await loadDataSpecifications(dataSpecificationIri, modelRepository);
 
   for (const specification of Object.values(specifications)) {
@@ -106,12 +110,16 @@ export async function getDataSpecificationWithModels(dataSpecificationIri: strin
 
     const psmStores: MemoryStoreFromBlob[] = [];
     const subResources = await pckg.getSubResources();
+
     for (const subResource of subResources) {
       const model = await loadAsStructureModel(subResource);
       if (model) {
         psmStores.push(model);
+        structureModels[subResource.id] = model;
       }
     }
+
+    // Handle autosave
     for (const model of psmStores) {
       store.addStore(model);
       store.addEventListener("afterOperationExecuted", () => model.save());
@@ -137,7 +145,8 @@ export async function getDataSpecificationWithModels(dataSpecificationIri: strin
     const storeForFBS = new AggregatorAsEntityModel(semanticModel, specification.id) as unknown as CoreResourceReader;
     store.addStore(storeForFBS); // todo typings
 
-    // This loop updates every model
+    // This loop updates every semantic model
+    // ! semantic model is updated twice!!
     for (const model of usedSemanticModels) {
       const id = model.getId();
       store.addEventListener("afterOperationExecuted", async () => {
@@ -152,20 +161,19 @@ export async function getDataSpecificationWithModels(dataSpecificationIri: strin
     // @ts-ignore Each specification should have its own semantic model, not merged with other specifications
     specification.semanticModel = semanticModel;
 
-    // Load configuration
-    const configurationStore = specifications?.[dataSpecificationIri]?.artifactConfigurations?.[0]?.id ?? null;
+    // Each specification may have multiple configurations, but in reality we use only the first one.
+    const configurationStore = specification.artifactConfigurations?.[0]?.id ?? null;
     const configurationModel = configurationStore ? await (await modelRepository.getModelById(configurationStore))?.asBlobModel() : undefined;
     const configuration = configurationModel ? ((await configurationModel.getJsonBlob()) as Record<string, object>) : {};
-
-    if (specifications?.[dataSpecificationIri]) {
-      // @ts-ignore
-      specifications[dataSpecificationIri].artefactConfiguration = configuration;
-    }
+    // @ts-ignore This inserts the configuration into the specification
+    specification.artefactConfiguration = configuration;
   }
 
   return {
     dataSpecifications: specifications,
     semanticModelAggregator,
     store: store as FederatedObservableStore,
+
+    structureModels,
   };
 }

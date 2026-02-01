@@ -1,1 +1,6 @@
-export { createDefaultProfileEntityAggregator, type ProfileAggregator } from "./aggregator.ts";
+export {
+  createDefaultProfileEntityAggregator,
+  type ProfileAggregator,
+  type AggregatedProfiledSemanticModelClass,
+  type AggregatedProfiledSemanticModelRelationship,
+} from "./aggregator.ts";

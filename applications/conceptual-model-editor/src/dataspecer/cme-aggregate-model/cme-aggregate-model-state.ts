@@ -29,7 +29,7 @@ export interface CmeAggregateModelState {
 
   /**
    * Just a copy of profile models.
-   * Model as same as in  {@link CmeAggregateModelState.semanticModels};
+   * Model as same as in  {@link CmeAggregateModelState.semanticModels}.
    */
   profileModels: EntitiesRecord<CmeProfileModel>;
 
@@ -39,7 +39,7 @@ export interface CmeAggregateModelState {
 
   /**
    * Just a copy of semantic models.
-   * Model as same as in  {@link CmeAggregateModelState.profileModels};
+   * Model as same as in  {@link CmeAggregateModelState.profileModels}.
    */
   semanticModels: Record<ModelDsIdentifier, CmeSemanticModel>;
 

@@ -4,15 +4,34 @@ import { createSgovModel } from "@dataspecer/core-v2/semantic-model/simplified";
 import { withAbsoluteIri } from "@dataspecer/core-v2/semantic-model/utils";
 import { PimStoreWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import { LanguageString, type CoreResource } from "@dataspecer/core/core/core-resource";
+import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model/data-specification-artefact";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
+import {
+  DSV_APPLICATION_PROFILE_TYPE,
+  DSV_VOCABULARY_SPECIFICATION_DOCUMENT_TYPE,
+  DSVMetadataToJsonLdString,
+  dsvMetadataWellKnown,
+  type ApplicationProfile,
+  type ExternalSpecification,
+  type ResourceDescriptor,
+  type Specification,
+  type VocabularySpecificationDocument,
+} from "@dataspecer/data-specification-vocabulary/specification-description";
+import { structureModelToRdf } from "@dataspecer/data-specification-vocabulary/structure-model";
+import { canonicalizeIds, garbageCollect } from "@dataspecer/structure-model";
 import { ModelRepository } from "./model-repository/index.ts";
 import { ModelDescription, type StructureModelDescription } from "./model.ts";
-import { generateDsvApplicationProfile, generateHtmlDocumentation, generateLightweightOwl, generateShaclApplicationProfile, getIdToIriMapping, isModelProfile, isModelVocabulary } from "./utils.ts";
-import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model/data-specification-artefact";
+import {
+  generateDsvApplicationProfile,
+  generateHtmlDocumentation,
+  generateLightweightOwl,
+  generateShaclApplicationProfile,
+  getIdToIriMapping,
+  isModelProfile,
+  isModelVocabulary,
+} from "./utils.ts";
 import { artefactToDsv } from "./v1/artefact-to-dsv.ts";
-import { DSV_APPLICATION_PROFILE_TYPE, DSV_VOCABULARY_SPECIFICATION_DOCUMENT_TYPE, DSVMetadataToJsonLdString, dsvMetadataWellKnown, type ApplicationProfile, type ExternalSpecification, type ResourceDescriptor, type Specification, type VocabularySpecificationDocument } from "@dataspecer/data-specification-vocabulary/specification-description";
-import { processStructureModelIrisBeforeExport, structureModelToRdf } from "@dataspecer/data-specification-vocabulary/structure-model";
 
 const PIM_STORE_WRAPPER = "https://dataspecer.com/core/model-descriptor/pim-store-wrapper";
 const SGOV = "https://dataspecer.com/core/model-descriptor/sgov";
@@ -219,14 +238,34 @@ export async function generateSpecification(packageId: string, context: Generate
   const metaDataDocumentationIri = metaDataBaseIri.endsWith("#") ? metaDataBaseIri.substring(0, metaDataBaseIri.length - 1) : metaDataBaseIri;
 
   /**
-   * Main URL for the physical distribution of the specification. It points to
-   * the main page of the specification.
+   * Global generator configuration for this specification.
    */
-  const mainUrl = "."; //metaDataDocumentationIri;
+  let generatorConfiguration: Record<string, any> = {};
+
+  const generatorConfigurationModel = subResources.find((r) => r.types.includes(V1.GENERATOR_CONFIGURATION)) ?? null;
+  if (generatorConfigurationModel) {
+    const blobModel = await generatorConfigurationModel.asBlobModel();
+    generatorConfiguration = (await blobModel.getJsonBlob()) as Record<string, unknown>;
+  }
 
   /**
-   * Base URL for the physical distribution of the specification. It ends with a
-   * slash.
+   * Main URL for the physical distribution of the specification.
+   *
+   * @todo Since vocabularies and APs did not need this at all, we used "/".
+   * Now, when data structures are generated, we actually need to have proper base URL.
+   * For now, we will use the one provided by the configuration model, if any.
+   */
+  let mainUrl = generatorConfiguration["data-specification"]?.["publicBaseUrl"] ?? "/";
+
+  /**
+   * Base URL for all generated files for this specification. This is the root.
+   *
+   * Ends with a slash.
+   *
+   * @todo So far we are generating the html documentation into subdirectories
+   * "en" and "cs". This is not ideal.
+   *
+   * @todo We need to normalize the path so that domains only do not end with slash.
    */
   const baseUrl = mainUrl.endsWith("/") ? mainUrl : mainUrl + "/";
 
@@ -286,13 +325,19 @@ export async function generateSpecification(packageId: string, context: Generate
     }[]
   > = {};
 
+  const PATH_LANGUAGE_PLACEHOLDER = "{language}";
   const langs = ["cs", "en"];
-  const writeFile = async (path: string, data: string) => {
+  const writeFileAllLanguages = async (pathExceptLanguage: string, data: string) => {
     for (const lang of langs) {
-      const file = context.output.writePath(`${subdirectory}${lang}/${path}`);
+      const file = context.output.writePath(`${subdirectory}${lang}/${pathExceptLanguage}`);
       await file.write(data);
       await file.close();
     }
+  };
+  const writeFile = async (path: string, data: string) => {
+    const file = context.output.writePath(`${subdirectory}${path}`);
+    await file.write(data);
+    await file.close();
   };
 
   // Array of all models' resource descriptors' has resource
@@ -312,7 +357,7 @@ export async function generateSpecification(packageId: string, context: Generate
     const modelIri = model.baseIri ?? "";
     const fileName = isModelVocabulary(model.entities) ? "model.owl.ttl" : "dsv.ttl";
     // This is the physical location of the model
-    const modelUrl = baseUrl + fileName + queryParams;
+    const modelUrl = baseUrl + PATH_LANGUAGE_PLACEHOLDER + "/" + fileName + queryParams;
 
     // @ts-ignore
     let modelDescription = resource.getUserMetadata().description as LanguageString | undefined;
@@ -346,7 +391,7 @@ export async function generateSpecification(packageId: string, context: Generate
       // Serialize the model in OWL
 
       const owl = await generateLightweightOwl(model.entities, model.baseIri ?? "", modelIri);
-      await writeFile(fileName, owl);
+      await writeFileAllLanguages(fileName, owl);
       // Add entry for the documentation
       externalArtifacts["owl-vocabulary"] = [{ type: fileName, URL: modelUrl }];
 
@@ -390,7 +435,7 @@ export async function generateSpecification(packageId: string, context: Generate
         ...idToIriMapping,
         ...(await getIdToIriMapping([model])),
       };
-      await writeFile(fileName, dsv);
+      await writeFileAllLanguages(fileName, dsv);
       externalArtifacts["dsv-profile"] = [{ type: fileName, URL: modelUrl }];
 
       // Create the descriptor of the DSV serialization
@@ -407,14 +452,13 @@ export async function generateSpecification(packageId: string, context: Generate
       } satisfies ResourceDescriptor;
       hasResource.push(descriptor);
 
-
       // Create shacl shape
       {
         const shaclIri = metaDataBaseIri + "shacl";
         const shacl = await generateShaclApplicationProfile(model, models, modelIri);
         const shaclFileName = "shacl.ttl";
-        const shaclUrl = baseUrl + shaclFileName + queryParams;
-        await writeFile(shaclFileName, shacl);
+        const shaclUrl = baseUrl + PATH_LANGUAGE_PLACEHOLDER + "/" + shaclFileName + queryParams;
+        await writeFileAllLanguages(shaclFileName, shacl);
         externalArtifacts["shacl-profile"] = [{ type: shaclFileName, URL: shaclUrl }];
 
         const shaclDescriptor = {
@@ -432,27 +476,25 @@ export async function generateSpecification(packageId: string, context: Generate
     }
   }
 
-  // Iterate over all structure models and
-  //  - create DSV entries
-  //  - create their serializations
+  /**
+   * This part iterates over all structure models, garbage collects them, fixes
+   * their IDs and exports them as individual Turtle files.
+   */
 
-  // First we need to process structure models to use proper IRIs
-  if (false) { // Disable for now
+  let structureModels = primaryStructureModels.map((sm) => Object.values(sm.entities as unknown as Record<string, CoreResource>));
+  structureModels = structureModels.map((sm) => garbageCollect(sm));
+  const processedStructureModels = canonicalizeIds(structureModels, idToIriMapping, metaDataBaseIri + "structure-model/");
 
-
-  const processedStructureModels = processStructureModelIrisBeforeExport(
-    primaryStructureModels.map(sm => Object.values(sm.entities as unknown as Record<string, CoreResource>)),
-    idToIriMapping,
-    "https://example.com/structure-models/"
-  );
-
+  if (processedStructureModels.length > 0) {
+    externalArtifacts["structure-model"] = [];
+  }
   for (const structureModel of processedStructureModels) {
-    const fileName = structureModel.fileNamePart + ".ttl";
-    const url = baseUrl + fileName + queryParams;
+    const path = structureModel.fileNamePart + "/structure.ttl";
+    const url = baseUrl + path + queryParams;
     const iri = structureModel.iri;
 
     const sm = await structureModelToRdf(structureModel.model, {});
-    await writeFile(fileName, sm);
+    await writeFile(path, sm);
 
     const resourceDescriptor = {
       iri,
@@ -462,13 +504,14 @@ export async function generateSpecification(packageId: string, context: Generate
       formatMime: dsvMetadataWellKnown.formatMime.turtle,
       additionalRdfTypes: [],
 
-      conformsTo: [
-        dsvMetadataWellKnown.conformsTo.dsvStructure,
-      ],
+      conformsTo: [dsvMetadataWellKnown.conformsTo.dsvStructure],
     } satisfies ResourceDescriptor;
     APHasResource?.push(resourceDescriptor);
-  }
 
+    externalArtifacts["structure-model"]?.push({
+      type: "structure-model",
+      URL: url,
+    });
   }
 
   // Process all SVGs. Because we do not know which svg belongs to which model,
@@ -482,14 +525,14 @@ export async function generateSpecification(packageId: string, context: Generate
     if (svg) {
       const resourceIri = metaDataBaseIri + visualModel.id; // We do not support custom IRIs right now
       const resourceFileName = visualModel.id + ".svg";
-      const resourceUrl = baseUrl + resourceFileName + queryParams;
+      const resourceUrl = baseUrl + PATH_LANGUAGE_PLACEHOLDER + "/" + resourceFileName + queryParams;
 
-      await writeFile(resourceFileName, svg);
+      await writeFileAllLanguages(resourceFileName, svg);
       externalArtifacts["svg"] = [
         ...(externalArtifacts["svg"] ?? []),
         {
           type: "svg",
-          URL: "./" + resourceFileName + queryParams,
+          URL: resourceUrl,
           label: visualModel.getUserMetadata()?.label,
         },
       ];
@@ -519,7 +562,7 @@ export async function generateSpecification(packageId: string, context: Generate
 
   const htmlDescriptor = {
     iri: metaDataDocumentationIri,
-    url: mainUrl + queryParams,
+    url: baseUrl + PATH_LANGUAGE_PLACEHOLDER + "/" + queryParams,
 
     role: dsvMetadataWellKnown.role.specification,
     formatMime: dsvMetadataWellKnown.formatMime.html,
@@ -545,11 +588,44 @@ export async function generateSpecification(packageId: string, context: Generate
   const dsv = await DSVMetadataToJsonLdString(specifications, {
     rootHtmlDocumentIri: htmlDescriptor.iri,
     space: 2,
+    // todo we use placeholders for language, this cannot be absolute until we fix it
+    useAbsoluteUrls: false,
   });
 
   for (const lang of langs) {
+    const languageReplacedExternalArtifacts = Object.fromEntries(
+      Object.entries(externalArtifacts).map(([key, artifacts]) => [
+        key,
+        artifacts.map((artifact) => ({
+          ...artifact,
+          URL: artifact.URL.replace(PATH_LANGUAGE_PLACEHOLDER, lang),
+        })),
+      ]),
+    );
+
+    const oldArtefacts: DataSpecificationArtefact[] = [];
+    for (const artefact of context.v1Specification.artefacts as DataSpecificationArtefact[]) {
+      if (artefact.generator === "https://schemas.dataspecer.com/generator/template-artifact") {
+        oldArtefacts.push({
+          ...artefact,
+          publicUrl: artefact.publicUrl!.replace("/en/", `/${lang}/`),
+        });
+      } else {
+        oldArtefacts.push(artefact);
+      }
+    }
+    const specificContext = {
+      ...context,
+      v1Specification: {
+        ...context.v1Specification,
+        artefacts: oldArtefacts,
+      },
+    };
+
     const documentation = context.output.writePath(`${subdirectory}${lang}/index.html`);
-    await documentation.write(await generateHtmlDocumentation(resource, models, { externalArtifacts, dsv, language: lang, prefixMap }, context));
+    await documentation.write(
+      await generateHtmlDocumentation(resource, models, { externalArtifacts: languageReplacedExternalArtifacts, dsv, language: lang, prefixMap }, specificContext),
+    );
     await documentation.close();
   }
 }

@@ -24,6 +24,7 @@ export * from "./data-psm-set-dematerialized.ts";
 export * from "./data-psm-set-external-root-types.ts";
 export * from "./data-psm-set-human-description.ts";
 export * from "./data-psm-set-human-label.ts";
+export * from "./data-psm-set-profiling.ts";
 export * from "./data-psm-set-idtype.ts";
 export * from "./data-psm-set-instances-have-identity.ts";
 export * from "./data-psm-set-instances-specify-types.ts";

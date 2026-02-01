@@ -144,7 +144,7 @@ export function createOrthogonalWaypoints(
   const prevToTarget = waypoints[waypoints.length - 1];
   if (nextToSource === undefined || prevToTarget === undefined) {
     console.error("createOrthogonalWaypoints: waypoint is undefined",
-      {source, waypoints, target});
+      { source, waypoints, target });
     return [source.position, ...waypoints, target.position];
   }
 
@@ -155,4 +155,41 @@ export function createOrthogonalWaypoints(
     asRectangle(target), prevToTarget);
 
   return [sourcePosition, ...waypoints, targetPosition];
+}
+
+/**
+ * Calculate SVG lines connecting edge toolbar buttons to the center point.
+ * Buttons are positioned in a circular pattern at 72° intervals.
+ *
+ * @returns Object containing SVG properties and line coordinates
+ */
+export function calculateEdgeToolbarLines() {
+
+  // 1.35em font size on buttons ~ 16 * 1.35.
+  const EM_TO_PIXELS = 21.6;
+
+  // matches CSS var(--btn-size)
+  const BTN_SIZE_EM = 2;
+
+  // matches CSS var(--extra-space)
+  const EXTRA_SPACE_EM = 1;
+
+  const btnSize = BTN_SIZE_EM * EM_TO_PIXELS;
+  const extraSpace = EXTRA_SPACE_EM * EM_TO_PIXELS;
+  // 3em total in pixels
+  const radius = btnSize + extraSpace;
+  // degrees for 5 buttons
+  const angles = [0, 72, 144, 216, 288];
+  const svgSize = radius * 2.5;
+  const center = svgSize / 2;
+
+  const lines = angles.map((angle) => {
+    const radians = (angle * Math.PI) / 180;
+    const x2 = center + Math.cos(radians) * radius;
+    // negative because SVG y-axis is inverted
+    const y2 = center - Math.sin(radians) * radius;
+    return { x1: center, y1: center, x2, y2 };
+  });
+
+  return { svgSize, lines };
 }

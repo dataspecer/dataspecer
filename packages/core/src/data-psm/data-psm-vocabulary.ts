@@ -113,6 +113,8 @@ export const SET_HUMAN_DESCRIPTION = PSM + "SetHumanDescription";
 
 export const SET_HUMAN_LABEL = PSM + "SetHumanLabel";
 
+export const SET_PROFILING = PSM + "SetProfiling";
+
 export const SET_ID_TYPE = PSM + "SetIdType";
 
 export const SET_INSTANCES_HAVE_IDENTITY = PSM + "SetInstancesHaveIdentity";

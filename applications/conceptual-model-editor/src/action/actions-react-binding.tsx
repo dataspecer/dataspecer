@@ -599,7 +599,7 @@ function createActionsContext(
   if (prevOptions !== options) changed.push("options");
   if (prevDialogs !== dialogs) changed.push("dialogs");
   if (prevClasses !== classes) changed.push("classes");
-  if (prevUseClasses !== useClasses) changed.push("prevUseClasses");
+  if (prevUseClasses !== useClasses) changed.push("useClasses");
   if (prevNotifications !== notifications) changed.push("notifications");
   if (prevGraph !== graph) changed.push("graph");
   if (prevUseGraph !== useGraph) changed.push("useGraph");
@@ -954,11 +954,11 @@ function createActionsContext(
     // We start be removing from the visual model.
     withVisualModel(notifications, graph, (visualModel) => {
       const entityToDeleteWithAttributeData = entitiesToDelete.map(entityToDelete =>
-      ({
-        ...entityToDelete,
-        isAttributeOrAttributeProfile: isAttributeOrAttributeProfile(
-          entityToDelete.identifier, graph.models, entityToDelete.sourceModel)
-      })
+        ({
+          ...entityToDelete,
+          isAttributeOrAttributeProfile: isAttributeOrAttributeProfile(
+            entityToDelete.identifier, graph.models, entityToDelete.sourceModel)
+        })
       );
       const attributesToBeDeleted =
         entityToDeleteWithAttributeData.filter(entity => entity.isAttributeOrAttributeProfile);

@@ -117,6 +117,7 @@
   "title attribute": "Attribute",
   "title cardinality": "Cardinality",
   "title cardinality semantic": "Cardinality at the application profile level",
+  "title cardinality help": "Specifies how many times the root element can occur in the data. This setting is specific to different formats and may cause the schema to be wrapped in a helper structure to achieve the required cardinality.",
   "title checkbox xml attribute": "Use as XML attribute",
   "title class": "Class",
   "title data type": "Data type",
@@ -129,5 +130,9 @@
   "XML attributes": "XML specific attributes",
   "XML namespace": "namespace",
   "XML prefix": "prefix",
-  "XML skip root element": "Skip generating elements"
+  "XML skip root element": "Skip generating elements",
+  "XML root container name": "Name of root element serving as container",
+  "XML root container name help": "In case of a root element cardinality other than 1..1, it is necessary to wrap elements in a helper element. This setting specifies the name of such element.",
+  "XML root container alert": "Container <0>&lt;{{container}}&gt;</0> will always be used because the cardinality is different from 1..1.",
+  "XML root container always use": "always use"
 }

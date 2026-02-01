@@ -53,7 +53,8 @@ export const createEntityDetailDialog = (
   return {
     label: selectLabel(aggregatedEntity),
     component: EntityDetailDialog,
-    state: createEntityDetailDialogState(entity, language),
+    state: createEntityDetailDialogState(
+      aggregatedEntity.aggregatedEntity as SupportedTypes, language),
     confirmLabel: null,
     cancelLabel: "detail-dialog.btn-close",
     validate: null,

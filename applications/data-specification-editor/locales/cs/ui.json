@@ -33,6 +33,7 @@
   "no schema text": "Začněte kliknutím na tlačítko <1>zvolit kořen</1> pro vyhledání třídy, která bude kořenem schématu.",
   "no title": "bez názvu",
   "open data structure": "Otevřít",
+  "profile": "Profilovat",
   "report a bug": "nahlásit chybu",
   "request a feature": "navrhnout úpravu",
   "return back button": "Jít zpět na {{toolName}}",
@@ -45,6 +46,11 @@
     "use structured class": "Použít strukturovanou třídu (neinterpretovanou)"
   },
   "set root element button": "Zvolit kořen",
+  "theme": {
+    "dark": "Tmavý",
+    "light": "Světlý",
+    "system": "Systémový"
+  },
   "title": "editor schémat",
   "version": "Verze"
 }

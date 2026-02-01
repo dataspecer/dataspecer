@@ -1,3 +1,4 @@
+import { pathRelative } from "@dataspecer/core/core/utilities/path-relative";
 import context from "./dsv-context.json" with { type: "json" };
 import { isApplicationProfile, isVocabularySpecificationDocument, type ExternalSpecification, type ResourceDescriptor, type Specification } from "./model.ts";
 import { DSV_METADATA_SCHEMA_ID, DSV_METADATA_SCHEMA_TYPE, type DSVMetadataExternalSpecification, type DSVMetadataResourceDescriptor, type DSVMetadataSchemaRoot, type DSVMetadataSpecification } from "./schema.ts";
@@ -8,6 +9,9 @@ import { ADMS, DSV, knownPrefixes, OWL, PROF } from "./vocabulary.ts";
  * Converts DSV Metadata model to a string (JSON serializable) that can be
  * directly embedded into an HTML file. The reason why output is string is
  * because of the need to control spacing/formatting.
+ *
+ * The links are relative to the URL of the HTML document identified by
+ * `rootHtmlDocumentIri`.
  */
 export async function DSVMetadataToJsonLdString(
   specifications: Specification[],
@@ -21,6 +25,14 @@ export async function DSVMetadataToJsonLdString(
      * Spacing parameter for JSON.stringify.
      */
     space?: string | number | undefined;
+
+    /**
+     * Normally, all URLs are made relative to the root HTML document URL. If
+     * true, and URLs are HTTP(S), they will be kept absolute.
+     *
+     * @default false
+     */
+    useAbsoluteUrls?: boolean;
   },
 ): Promise<string> {
   let rootResource!: ResourceDescriptor;
@@ -36,9 +48,14 @@ export async function DSVMetadataToJsonLdString(
     rootResource = root;
   }
 
-  let model = resourceDescriptorToJson(rootResource) as DSVMetadataSchemaRoot;
+  const parameters: Parameters = {
+    rootUrl: rootResource.url,
+    useAbsoluteUrls: params.useAbsoluteUrls ?? false,
+  };
 
-  model.inSpecificationOf = specifications.map((specification) => specificationToJson(specification));
+  let model = resourceDescriptorToJson(rootResource, parameters) as DSVMetadataSchemaRoot;
+
+  model.inSpecificationOf = specifications.map((specification) => specificationToJson(specification, parameters));
 
   model = prefixIris(model, knownPrefixes);
 
@@ -48,6 +65,11 @@ export async function DSVMetadataToJsonLdString(
 }
 
 const SUFFIX_REGEX = /^[^\/#]{1,}$/;
+
+interface Parameters {
+  rootUrl: string;
+  useAbsoluteUrls: boolean;
+}
 
 function prefixIris<T>(data: T, prefixesMap: { [prefix: string]: string }): T {
   if (typeof data === "string") {
@@ -78,7 +100,7 @@ function prefixIris<T>(data: T, prefixesMap: { [prefix: string]: string }): T {
  * Creates a representation for Semantic Data Specification - Application
  * Profile or Vocabulary.
  */
-function specificationToJson(specification: Specification): DSVMetadataSpecification {
+function specificationToJson(specification: Specification, parameters: Parameters): DSVMetadataSpecification {
   const types = [];
   if (isApplicationProfile(specification)) {
     types.push(DSV.ApplicationProfile);
@@ -99,7 +121,7 @@ function specificationToJson(specification: Specification): DSVMetadataSpecifica
     isProfileOf: specification.isProfileOf.map((externalSpecification) => externalSpecificationToJson(externalSpecification)),
 
     // http://www.w3.org/ns/dx/prof/hasResource
-    hasResource: specification.resources.map((res) => resourceDescriptorToJson(res)),
+    hasResource: specification.resources.map((res) => resourceDescriptorToJson(res, parameters)),
   };
 
   if (specification.token) {
@@ -115,13 +137,13 @@ function specificationToJson(specification: Specification): DSVMetadataSpecifica
  * Application Profile Specification Document or Vocabulary Specification
  * Document.
  */
-function resourceDescriptorToJson(model: ResourceDescriptor): DSVMetadataResourceDescriptor {
+function resourceDescriptorToJson(model: ResourceDescriptor, parameters: Parameters): DSVMetadataResourceDescriptor {
   const result = {
     [DSV_METADATA_SCHEMA_ID]: model.iri,
     [DSV_METADATA_SCHEMA_TYPE]: [...(model.additionalRdfTypes ?? []), ADMS.AssetDistribution, PROF.ResourceDescriptor], // todo adms may be not needed
 
     // http://www.w3.org/ns/dx/prof/hasArtifact
-    hasArtifact: model.url,
+    hasArtifact: pathRelative(parameters.rootUrl, model.url, parameters.useAbsoluteUrls),
     // http://www.w3.org/ns/dx/prof/hasRole
     hasRole: model.role,
     // http://purl.org/dc/terms/format
@@ -150,7 +172,7 @@ function externalSpecificationToJson(specification: ExternalSpecification): DSVM
     description: specification.description ?? undefined,
 
     hasResource: {
-      hasArtifact: specification.url,
+      hasArtifact: specification.url, // Use absolute URL here
     }
   };
 

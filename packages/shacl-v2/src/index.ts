@@ -1,7 +1,5 @@
 export {
-  createShaclForProfile,
-  createSemicShaclStylePolicy,
-  type ShaclForProfilePolicy,
-} from "./shacl.ts";
+  type SemanticModelsToShaclConfiguration,
+  semanticModelsToShacl,
+} from "./semantic-adapter/index.ts";
 export { shaclToRdf } from "./shacl-to-rdf.ts";
-export type * from "./shacl-model.ts";

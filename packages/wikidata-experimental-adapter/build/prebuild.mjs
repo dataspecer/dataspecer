@@ -1,5 +1,5 @@
-import { sync as rmSync } from "rimraf";
+import { rmSync } from "fs";
 import { compileDir } from "./sparql-compiler.mjs";
 
-rmSync("lib");
+rmSync("lib", { recursive: true, force: true });
 compileDir("./src", "lib");

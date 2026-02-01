@@ -5,6 +5,10 @@ import { LocalEntityWrapped } from "./interfaces.ts";
 
 type UnProfile<T extends SemanticModelClass | SemanticModelClassProfile | SemanticModelRelationship | SemanticModelRelationshipProfile> = (T extends SemanticModelClassProfile ? (SemanticModelClass) : (T extends SemanticModelRelationshipProfile ? SemanticModelRelationship : never)) | T;
 
+function asSet<T>(arr?: T[]): T[] {
+  return [...new Set(arr ?? [])];
+}
+
 /**
  * Takes aggregated profile and returns aggregated profiles that are closest to the profile but represent single concept.
  */
@@ -25,13 +29,13 @@ export function splitProfileToSingleConcepts<T extends SemanticModelClass | Sema
   // If profile, return only if single iri
   if (isSemanticModelClassProfile(profile.aggregatedEntity)) {
     // @ts-ignore todo
-    if (profile.aggregatedEntity["conceptIris"]?.length === 1) {
+    if (asSet(profile.aggregatedEntity["conceptIris"]).length === 1) {
       return [profile as LocalEntityWrapped<T>];
     }
   }
   if (isSemanticModelRelationshipProfile(profile.aggregatedEntity)) {
     // @ts-ignore todo
-    if (profile.aggregatedEntity.ends.every(end => end["conceptIris"]?.length <= 1) ) {
+    if (profile.aggregatedEntity.ends.every(end => asSet(end["conceptIris"]).length <= 1) ) {
       return [profile as LocalEntityWrapped<T>];
     }
   }

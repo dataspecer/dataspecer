@@ -11,7 +11,7 @@ import { mergeDocumentationConfigurations } from "./documentation/documentation.
 import { BlobModel } from "./model-repository/blob-model.ts";
 import { ModelDescription } from "./model.ts";
 import { GenerateSpecificationContext } from "./specification.ts";
-import { createSemicShaclStylePolicy, createShaclForProfile, shaclToRdf } from "@dataspecer/shacl-v2";
+import { semanticModelsToShacl, shaclToRdf } from "@dataspecer/shacl-v2";
 
 /**
  * Helper function that check whether the model is a vocabulary. If not, it is probably an application profile.
@@ -96,15 +96,16 @@ export async function generateShaclApplicationProfile(forExportModel: ModelDescr
     }
   }
 
-  const policy = createSemicShaclStylePolicy(iri, {
-    defaultPrefixes: prefixesForIriConstruction,
-  });
-
-  const shacl = createShaclForProfile(
+  const shacl = semanticModelsToShacl(
     forContextModels.filter((model) => isModelVocabulary(model.entities)).map(mapModel),
     forContextModels.filter((model) => !model.isPrimary && isModelProfile(model.entities)).map(mapModel),
     mapModel(forExportModel),
-    policy,
+    {
+      policy: "semic-v1",
+      languages: [],
+      noClassConstraints: false,
+      splitPropertyShapesByConstraints: false,
+    }, { baseIri: iri, defaultPrefixes: prefixesForIriConstruction },
   );
 
   const rdf = await shaclToRdf(shacl, {});
@@ -194,14 +195,14 @@ export async function generateHtmlDocumentation(
     },
     generatorContext.v1Context
       ? (adapter) =>
-          getMustacheView(
-            {
-              context: generatorContext.v1Context,
-              specification: generatorContext.v1Specification,
-              artefact: generatorContext.v1Specification.artefacts.find((a: any) => a.generator === "https://schemas.dataspecer.com/generator/template-artifact"),
-            },
-            adapter,
-          )
+        getMustacheView(
+          {
+            context: generatorContext.v1Context,
+            specification: generatorContext.v1Specification,
+            artefact: generatorContext.v1Specification.artefacts.find((a: any) => a.generator === "https://schemas.dataspecer.com/generator/template-artifact"),
+          },
+          adapter,
+        )
       : undefined,
   );
 }

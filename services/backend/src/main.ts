@@ -64,6 +64,7 @@ import { deletePrivateSshKeyHandler } from "./routes/git/ssh/remove-private-ssh-
 import { GitProviderNamesAsType } from "@dataspecer/git";
 import { populateSshKnownHosts, storeNewPrivateSSHKeyToBackend } from "@dataspecer/git-node";
 import { pathToSSHConfigForDS, pathToSSHForDS } from "./utils/create-ssh-path-constants.ts";
+import { newApplicationProfile } from "./routes/new.ts";
 
 
 for (const [gitProviderName, gitConfiguration] of Object.entries(configuration?.gitBotConfigurations ?? {})) {
@@ -201,6 +202,8 @@ application.patch(apiBasename + "/resources/packages/update-represents-branch-he
 application.get(apiBasename + "/resources/root-resources", getRootPackages); // ---
 
 application.post(apiBasename + "/repository/copy-recursively", copyRecursively);
+
+application.post(apiBasename + "/new/application-profile", newApplicationProfile);
 
 /**
  * Import: Import endpoint is a wizard that allows you to import specific package/model from a remote source.

@@ -3,14 +3,10 @@ import { describe, test, expect } from "vitest";
 import { createDefaultSemanticModelBuilder } from "@dataspecer/semantic-model";
 import { createDefaultProfileModelBuilder } from "@dataspecer/profile-model";
 
-import {
-  createSemicShaclStylePolicy,
-  createShaclForProfile,
-  filterLanguageStringLiterals,
-} from "./shacl.ts";
-import { shaclToRdf } from "./shacl-to-rdf.ts";
+import { semanticModelsToShacl } from "./shacl-semantic-adapter.ts";
+import { shaclToRdf } from "../shacl-to-rdf.ts";
 
-describe("createShaclForProfile", () => {
+describe("semanticModelsToShacl", () => {
 
   const xsd = createDefaultSemanticModelBuilder({
     baseIdentifier: "xsd:",
@@ -78,10 +74,16 @@ describe("createShaclForProfile", () => {
 
     // Prepare SHACL
 
-    const shacl = createShaclForProfile(
+    const shacl = semanticModelsToShacl(
       [xsd.build(), vocabulary.build()], [],
       profile.build(),
-      createSemicShaclStylePolicy("http://example/shacl.ttl"));
+      {
+        policy: "semic-v1",
+        languages: [],
+        noClassConstraints: false,
+        splitPropertyShapesByConstraints: false,
+      },
+      { baseIri: "http://example/shacl.ttl" });
 
     //
 
@@ -142,33 +144,22 @@ describe("createShaclForProfile", () => {
 
     // Prepare default shacl with all languages.
 
-    const shacl = createShaclForProfile(
-      [xsd.build(), vocabulary.build()], [], profile.build(),
-      createSemicShaclStylePolicy("http://example/shacl.ttl"));
-
-    expect(shacl.members.length).toBe(1);
-    expect(shacl.members[0].propertyShapes.length).toBe(1);
-    expect(shacl.members[0].propertyShapes[0].name)
-      .toStrictEqual({ en: "name", cs: "Jméno" });
-    expect(shacl.members[0].propertyShapes[0].description)
-      .toStrictEqual({ cs: "Jméno osoby" });
-
-    // Keep only English values.
-    filterLanguageStringLiterals(shacl, value => {
-      const en = value["en"];
-      if (en === undefined) {
-        return {};
-      } else {
-        return { en } as Record<string, string>;
-      }
-    });
+    const shacl = semanticModelsToShacl(
+      [xsd.build(), vocabulary.build()], [],
+      profile.build(),
+      {
+        policy: "semic-v1",
+        languages: ["en"],
+        noClassConstraints: false,
+        splitPropertyShapesByConstraints: false,
+      },
+      { baseIri: "http://example/shacl.ttl" });
 
     expect(shacl.members.length).toBe(1);
     expect(shacl.members[0].propertyShapes.length).toBe(1);
     expect(shacl.members[0].propertyShapes[0].name)
       .toStrictEqual({ en: "name" });
-    expect(shacl.members[0].propertyShapes[0].description)
-      .toStrictEqual({});
+    expect(shacl.members[0].propertyShapes[0].description).toBeNull();
 
   });
 
@@ -219,9 +210,17 @@ describe("createShaclForProfile", () => {
 
     // Prepare default shacl with all languages.
 
-    const shacl = createShaclForProfile(
-      [xsd.build(), vocabulary.build()], [], profile.build(),
-      createSemicShaclStylePolicy("http://example/shacl.ttl/"));
+    const shacl = semanticModelsToShacl(
+      [xsd.build(), vocabulary.build()], [],
+      profile.build(),
+      {
+        policy: "semic-v1",
+        languages: [],
+        noClassConstraints: false,
+        splitPropertyShapesByConstraints: false,
+      },
+      { baseIri: "http://example/shacl.ttl" });
+
 
     // Convert to RDF
 
@@ -258,7 +257,7 @@ describe("createShaclForProfile", () => {
       baseIri: "http://example.com/profile#",
     });
 
-    const personProfile = profile.class({iri: "person"});
+    const personProfile = profile.class({ iri: "person" });
     personProfile.profile(person);
 
     profile.property({ iri: "hasLiteral" })
@@ -273,9 +272,17 @@ describe("createShaclForProfile", () => {
 
     // Prepare default shacl with all languages.
 
-    const shacl = createShaclForProfile(
-      [xsd.build(), rdfs.build(), vocabulary.build()], [], profile.build(),
-      createSemicShaclStylePolicy("http://example/shacl.ttl/"));
+    const shacl = semanticModelsToShacl(
+      [xsd.build(), rdfs.build(), vocabulary.build()], [],
+      profile.build(),
+      {
+        policy: "semic-v1",
+        languages: [],
+        noClassConstraints: false,
+        splitPropertyShapesByConstraints: false,
+      },
+      { baseIri: "http://example/shacl.ttl" });
+
 
     //
 
@@ -290,6 +297,110 @@ describe("createShaclForProfile", () => {
     // There should be no types as
     // rdfs:Literal and rdfs:Resource should be filtered out.
     expect(types.length).toBe(0);
+  });
+
+  // Profile of a Profile of a Class..
+  test("https://github.com/dataspecer/dataspecer/issues/1377", async () => {
+
+    const vocabulary = createDefaultSemanticModelBuilder({
+      baseIdentifier: "vocab:",
+      baseIri: "http://example.com/vocabulary#",
+    });
+
+    const object = vocabulary.class({ iri: "object" });
+
+    // Profile
+
+    const profile = createDefaultProfileModelBuilder({
+      baseIdentifier: "profile:",
+      baseIri: "http://example.com/profile#",
+    });
+
+    const objectProfile = profile.class({
+      iri: "object",
+      description: { "en": "Profile" },
+    }).reuseName(object);
+
+    // Profile of Profile
+
+    const profileOfProfile = createDefaultProfileModelBuilder({
+      baseIdentifier: "profileOfProfile:",
+      baseIri: "http://example.com/profileOfProfile#",
+    });
+
+    profileOfProfile.class({
+      iri: "object",
+      description: { "en": "Profile of profile" },
+    }).reuseName(objectProfile);
+
+    // Prepare SHACL
+
+    const shacl = semanticModelsToShacl(
+      [xsd.build(), vocabulary.build()], [],
+      profile.build(),
+      {
+        policy: "semic-v1",
+        languages: [],
+        noClassConstraints: false,
+        splitPropertyShapesByConstraints: false,
+      },
+      { baseIri: "http://example/shacl.ttl" });
+
+    // This should produce only one SHACL shape.
+
+    console.log("https://github.com/dataspecer/dataspecer/issues/1377\n", shacl);
+
+  });
+
+  // sgov:text should map to rdf:langString.
+  test("https://github.com/dataspecer/dataspecer/issues/1375", () => {
+    //
+
+    const vocabulary = createDefaultSemanticModelBuilder({
+      baseIdentifier: "vocab:",
+      baseIri: "http://example.com/vocabulary#",
+    });
+
+    const person = vocabulary.class({ iri: "Person" });
+
+    const name = vocabulary.property({ iri: "name" })
+      .domain(person);
+
+    // Profile
+
+    const profile = createDefaultProfileModelBuilder({
+      baseIdentifier: "profile:",
+      baseIri: "http://example.com/profile#",
+    });
+
+    const personProfile = profile.class({}).profile(person);
+
+    profile.property({})
+      .profile(name)
+      .domain(personProfile)
+      .range("https://ofn.gov.cz/zdroj/základní-datové-typy/2020-07-01/text");
+
+    //
+
+    const shacl = semanticModelsToShacl(
+      [xsd.build(), vocabulary.build()], [],
+      profile.build(),
+      {
+        policy: "semic-v1",
+        languages: [],
+        noClassConstraints: false,
+        splitPropertyShapesByConstraints: false,
+      },
+      { baseIri: "http://example/shacl.ttl" });
+
+
+    //
+
+    const actualType = shacl.members[0].propertyShapes[0].datatype;
+
+    expect(actualType)
+      .toBe("http://www.w3.org/1999/02/22-rdf-syntax-ns#langString");
+
   });
 
 });

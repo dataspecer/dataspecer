@@ -22,7 +22,6 @@ type CmeAggregateModelApiContext = CmeAggregateModelApi;
 const CmeAggregateModelApiContextReact =
   React.createContext<CmeAggregateModelApiContext>(null as any);
 
-
 export const useCmeAggregateModelState = (): CmeAggregateModelState => {
   return useContext(CmeAggregateModelStateContextReact);
 }

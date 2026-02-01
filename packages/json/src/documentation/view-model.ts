@@ -160,6 +160,13 @@ export interface JsonSchemaArrayViewModel extends JsonSchemaDefinitionViewModel 
   maxItems: number | null;
 
   cardinalityText: string;
+
+  /**
+   * This is a shortcut for cases when array is string array but requires only
+   * some string constants to be present. If the structure is more complex, this
+   * value is null as it cannot match the exactly the expected semantics.
+   */
+  requiresStringConstantsOnly: string[] | null;
 }
 
 export interface JsonSchemaObjectPropertyViewModel {

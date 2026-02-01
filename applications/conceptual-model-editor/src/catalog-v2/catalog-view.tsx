@@ -17,7 +17,7 @@ import {
   CatalogState,
 } from "./catalog-state";
 import { t } from "../application";
-import { 
+import {
   ACTION_SEMANTIC_MODEL_CREATE,
   ACTION_SEMANTIC_MODEL_COLLAPSE_ALL,
   ACTION_SEMANTIC_MODEL_EXPAND_ALL
@@ -84,9 +84,17 @@ function CatalogSearchBar({ state, controller }: {
 }) {
   // We use local state for a debounce.
   const [value, setValue] = useState(state.search);
+  // Track if the value change originated from user input
+  const isUserInputRef = React.useRef(false);
 
-  // Update from props.
-  useEffect(() => setValue(state.search), [state.search]);
+  // Update from props only if the change didn't come from user input.
+  // This prevents overwriting the input field while the user is typing.
+  useEffect(() => {
+    if (!isUserInputRef.current) {
+      setValue(state.search);
+    }
+    isUserInputRef.current = false;
+  }, [state.search]);
 
   // Debounce.
   React.useEffect(() => {
@@ -95,16 +103,20 @@ function CatalogSearchBar({ state, controller }: {
   }, [value, controller])
 
   const onClear = () => {
+    isUserInputRef.current = true;
     setValue("");
     controller.onChangeSearch("");
   };
 
   return (
-    <div className="flex p-2 gap-2">
+    <div className="flex flex-wrap p-2 gap-2">
       <input
-        className="grow" type="text"
+        className="grow min-w-10" type="text"
         value={value}
-        onChange={event => setValue(event.target.value)}
+        onChange={event => {
+          isUserInputRef.current = true;
+          setValue(event.target.value);
+        }}
         title={t("catalog.search-title")}
       />
       <button
@@ -158,6 +170,29 @@ function CatalogItems({ layout, items, controller }: {
   items: TreeNode[],
   controller: CatalogController,
 }) {
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const scrollPositionRef = React.useRef<number>(0);
+
+  // Save scroll position before items change
+  React.useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      const handleScroll = () => {
+        scrollPositionRef.current = container.scrollTop;
+      };
+      container.addEventListener("scroll", handleScroll);
+      return () => container.removeEventListener("scroll", handleScroll);
+    }
+  }, []);
+
+  // Restore scroll position after items change
+  React.useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.scrollTop = scrollPositionRef.current;
+    }
+  }, [items]);
+
   const onClick = useCallback((event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     const parent = (event.target as any).parentElement;
     controller.onHandleClick(
@@ -171,6 +206,7 @@ function CatalogItems({ layout, items, controller }: {
 
   return (
     <div
+      ref={scrollContainerRef}
       className="flex flex-col overflow-y-scroll h-full"
       onClick={onClick}
     >

@@ -38,12 +38,7 @@ import { type UseModelGraphContextType, useModelGraphContext } from "./context/m
 import { type UseClassesContextType, useClassesContext } from "./context/classes-context";
 import { cardinalityToHumanLabel, getDomainAndRange } from "./util/relationship-utils";
 import { useActions } from "./action/actions-react-binding";
-import {
-  DiagramOptions,
-  EntityColor,
-  LabelVisual,
-  ProfileOfVisual,
-} from "./diagram/model";
+import { DiagramOptions } from "./diagram/model";
 import {
   Diagram, type Edge, EdgeType, Group, type NodeItem, type Node, NodeType,
   NODE_ITEM_TYPE, NodeRelationshipItem, NodeTitleItem, NODE_TITLE_ITEM_TYPE,
@@ -51,6 +46,7 @@ import {
 } from "./diagram/";
 import { type UseDiagramType } from "./diagram/diagram-hook";
 import { configuration, createLogger } from "./application";
+import { t, tData } from "./application/localization";
 import { getDescriptionLanguageString } from "./util/name-utils";
 import { getLocalizedStringFromLanguageString } from "./util/language-utils";
 import { isIriAbsolute } from "./util/iri-utils";
@@ -91,16 +87,15 @@ export const Visualization = () => {
   const classesContext = useClassesContext();
 
   const aggregatorView = graph.aggregatorView;
-  const activeVisualModel = useMemo(() => aggregatorView.getActiveVisualModel(), [aggregatorView]);
+  const activeVisualModel = useMemo(
+    () => aggregatorView.getActiveVisualModel(),
+    [aggregatorView]);
 
-  const extendedOptions: ExtendedOptions = {
+  const extendedOptions: ExtendedOptions = useMemo(() => ({
     language: options.language,
-    entityMainColor: EntityColor.Entity,
-    labelVisual: LabelVisual.Entity,
-    profileOfVisual: ProfileOfVisual.Entity,
-    displayRangeDetail: true,
-    displayRelationshipProfileArchetype: false,
-  };
+    ...options.visualOptions,
+    profileOfLabel: tData("diagram.profile-of", options.language),
+  }), [options.language, options.visualOptions]);
 
   useEffect(() => {
     const previousEntities = aggregatorView.getEntities();
@@ -142,11 +137,13 @@ export const Visualization = () => {
   // Update canvas content on view change.
   useEffect(() => {
     console.log("[VISUALIZATION] Something has changed, recreating diagram visual.", activeVisualModel);
-    validateVisualModel(actions, activeVisualModel, aggregatorView, classesContext, graph.models);
+    validateVisualModel(
+      actions, activeVisualModel, aggregatorView.getAvailableVisualModels(),
+      classesContext, graph.models);
     onChangeVisualModel(
       extendedOptions, activeVisualModel, actions.diagram, aggregatorView,
       classesContext, graph);
-  }, [options, activeVisualModel, actions, aggregatorView, classesContext, graph]);
+  }, [extendedOptions, activeVisualModel, actions, aggregatorView, classesContext, graph]);
 
   return (
     <>
@@ -306,7 +303,7 @@ function onChangeVisualModel(
             continue;
           }
           const edge = createDiagramEdgeForClassUsageOrProfile(
-            options, visualModel, visualEntity, entity);
+            options, visualModel, visualEntity, entity, options.language);
           if (edge !== null) {
             nextEdges.push(edge);
           }
@@ -465,7 +462,7 @@ function prepareItems(
       continue;
     }
     if (lastLevel !== nextLevel) {
-      result.push(createTitleNode(nextLevel));
+      result.push(createTitleNode(nextLevel, options.language));
     }
     lastLevel = nextLevel;
     result.push(nextItem);
@@ -610,23 +607,25 @@ function prepareProfileOf(
 
 function createTitleNode(
   level: CmeRelationshipProfileMandatoryLevel | null,
+  language: string,
 ): NodeTitleItem {
   return {
     type: NODE_TITLE_ITEM_TYPE,
-    title: selectMandatoryLevel(level) ?? "<<undefined>>",
+    title: selectMandatoryLevel(level, language) ?? "<<undefined>>",
   }
 }
 
 function selectMandatoryLevel(
   level: CmeRelationshipProfileMandatoryLevel | null,
+  language: string,
 ): string | null {
   switch (level) {
-  case CmeRelationshipProfileMandatoryLevel.Mandatory:
-    return "<<mandatory>>";
-  case CmeRelationshipProfileMandatoryLevel.Optional:
-    return "<<optional>>";
-  case CmeRelationshipProfileMandatoryLevel.Recommended:
-    return "<<recommended>>";
+    case CmeRelationshipProfileMandatoryLevel.Mandatory:
+      return tData("diagram.mandatory-level.mandatory", language);
+    case CmeRelationshipProfileMandatoryLevel.Optional:
+      return tData("diagram.mandatory-level.optional", language);
+    case CmeRelationshipProfileMandatoryLevel.Recommended:
+      return tData("diagram.mandatory-level.recommended", language);
   }
   return null;
 }
@@ -764,12 +763,13 @@ function createDiagramEdgeForClassUsageOrProfile(
   visualModel: VisualModel,
   visualProfileRelationship: VisualProfileRelationship,
   entity: SemanticModelClassProfile,
+  language: string,
 ): Edge | null {
   return {
     type: EdgeType.ClassProfile,
     identifier: visualProfileRelationship.identifier,
     externalIdentifier: entity.id,
-    label: "<<profile>>",
+    label: tData("diagram.profile-edge", language),
     source: visualProfileRelationship.visualSource,
     cardinalitySource: null,
     target: visualProfileRelationship.visualTarget,
@@ -960,7 +960,7 @@ function onChangeVisualEntities(
             }
             //
             const edge = createDiagramEdgeForClassUsageOrProfile(
-              options, visualModel, next, entity);
+              options, visualModel, next, entity, options.language);
             if (edge === null) {
               console.error("Ignored null edge.", { visualEntity: next, entity });
               break;

@@ -32,6 +32,13 @@ export type DataSpecification = Package & {
 
   dataStructures: DataSpecificationStructure[];
 
+  /**
+   * List of external data specifications (projects) that are imported. This way
+   * of doing imports is deprecated because individual projects should be
+   * completely independent. However, this way is still used for classical reuse.
+   *
+   * @deprecated Soon to be deprecated. Use sub-packages instead.
+   */
   importsDataSpecificationIds: string[];
 
   /**

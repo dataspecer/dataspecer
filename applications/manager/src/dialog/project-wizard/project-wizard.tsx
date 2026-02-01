@@ -30,7 +30,7 @@ export const ProjectWizard = ({ isOpen, resolve, iri }: { iri: string } & Better
 
   return (
     <Modal open={isOpen} onOpenChange={(value: boolean) => value ? null : resolve()}>
-      <ModalContent className="max-w-5xl">
+      <ModalContent className="max-w-5xl!">
         <ModalHeader>
           <ModalTitle>{t("start-new-project")}</ModalTitle>
         </ModalHeader>
@@ -38,7 +38,7 @@ export const ProjectWizard = ({ isOpen, resolve, iri }: { iri: string } & Better
 
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4 my-6">
           <button className="group cursor-pointer rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800" onClick={createVocabulary}>
-            <div className="hidden md:block relative aspect-[4/3] bg-gray-100 dark:bg-stone-900/20 group-hover:opacity-80 transition-opacity p-10 -z-10">
+            <div className="hidden md:block relative aspect-4/3 bg-gray-100 dark:bg-stone-900/20 group-hover:opacity-80 transition-opacity p-10 -z-10">
               <img src="../../graphics/undraw_project_team_lc5a_dark.svg" alt="Template 1" className="object-cover hidden dark:block" />
               <img src="../../graphics/undraw_project_team_lc5a.svg" alt="Template 1" className="object-cover dark:hidden" />
             </div>
@@ -50,7 +50,7 @@ export const ProjectWizard = ({ isOpen, resolve, iri }: { iri: string } & Better
             </div>
           </button>
           <button className="group cursor-pointer rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800" onClick={createProfile}>
-            <div className="hidden md:block relative aspect-[4/3] bg-gray-100 dark:bg-stone-900/20 group-hover:opacity-80 transition-opacity p-10 -z-10">
+            <div className="hidden md:block relative aspect-4/3 bg-gray-100 dark:bg-stone-900/20 group-hover:opacity-80 transition-opacity p-10 -z-10">
               <img src="../../graphics/undraw_solution_mindset_re_57bf_dark.svg" alt="Template 2" className="object-cover hidden dark:block" />
               <img src="../../graphics/undraw_solution_mindset_re_57bf.svg" alt="Template 2" className="object-cover dark:hidden" />
             </div>
@@ -62,7 +62,7 @@ export const ProjectWizard = ({ isOpen, resolve, iri }: { iri: string } & Better
             </div>
           </button>
           <button className="group cursor-pointer rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800" onClick={createSchema}>
-            <div className="hidden md:block relative aspect-[4/3] bg-gray-100 dark:bg-stone-900/20 group-hover:opacity-80 transition-opacity p-10 -z-10">
+            <div className="hidden md:block relative aspect-4/3 bg-gray-100 dark:bg-stone-900/20 group-hover:opacity-80 transition-opacity p-10 -z-10">
               <img src="../../graphics/undraw_code_review_re_woeb_dark.svg" alt="Template 3" className="object-cover hidden dark:block" />
               <img src="../../graphics/undraw_code_review_re_woeb.svg" alt="Template 3" className="object-cover dark:hidden" />
             </div>

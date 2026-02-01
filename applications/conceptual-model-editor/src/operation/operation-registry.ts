@@ -4,7 +4,6 @@ import { VisualModel } from "@dataspecer/visual-model";
 
 import { CmeOperationArguments, CmeOperationResult } from "./operation";
 
-
 export interface CmeExecutionContext {
 
   semanticModels: SemanticModel[];

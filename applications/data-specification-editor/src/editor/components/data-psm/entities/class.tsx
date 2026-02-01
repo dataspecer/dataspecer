@@ -29,6 +29,7 @@ import Inventory2TwoToneIcon from '@mui/icons-material/Inventory2TwoTone';
 import { CreateNonInterpretedAttribute } from "../../../operations/create-non-interpreted-attribute";
 import { MakeConcrete } from "../../../operations/make-concrete";
 import { MakeAbstract } from "../../../operations/make-abstract";
+import { ProfileInformation } from "../profiling/profile-information";
 
 /**
  * Because classes and containers are so similar, they share this component to make implementation simpler.
@@ -98,6 +99,8 @@ export const DataPsmClassItem: React.FC<{
           {typeof dataPsmClass?.dataPsmTechnicalLabel === "string" && dataPsmClass?.dataPsmTechnicalLabel.length > 0 &&
               <> (<Span sx={sxStyles.technicalLabel}>{dataPsmClass?.dataPsmTechnicalLabel}</Span>)</>
           }
+
+          <ProfileInformation id={props.iri} />
         </Span>
     }
     {type === "container" && <>

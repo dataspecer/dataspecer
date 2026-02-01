@@ -12,7 +12,6 @@ import {
   isSemanticModelGeneralization,
   isSemanticModelRelationship,
 } from "@dataspecer/core-v2/semantic-model/concepts";
-import { findSourceModelOfEntity } from "../../service/model-service";
 import { getDomainAndRangeConcepts } from "../../util/relationship-utils";
 import { isSemanticModelClassProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 
@@ -20,7 +19,7 @@ import { isSemanticModelClassProfile } from "@dataspecer/core-v2/semantic-model/
  * Given visual model in version 0 performs migration to version 1, changing content of the model.
  */
 export function migrateVisualModelFromV0(
-  models: Map<string, EntityModel>,
+  models: EntityModel[],
   entities: Record<string, AggregatedEntityWrapper>,
   visualModel: WritableVisualModel,
 ) {
@@ -37,7 +36,7 @@ export function migrateVisualModelFromV0(
 
 function migrateVisualNode(
   entities: Record<string, AggregatedEntityWrapper>,
-  models: Map<string, EntityModel>,
+  models: EntityModel[],
   visualModel: WritableVisualModel,
   entity: VisualNode,
 ) {
@@ -90,7 +89,7 @@ function migrateVisualNode(
 
 function migrateVisualRelationship(
   entities: Record<string, AggregatedEntityWrapper>,
-  models: Map<string, EntityModel>,
+  models: EntityModel[],
   visualModel: WritableVisualModel,
   entity: VisualRelationship,
 ) {
@@ -161,6 +160,20 @@ function migrateVisualRelationship(
   }
 }
 
+const findSourceModelOfEntity = (
+  entityIdentifier: string,
+  models: EntityModel[]
+): EntityModel | null => {
+  for (const model of models) {
+    const entities = model.getEntities();
+    if (entities[entityIdentifier] === undefined) {
+      continue;
+    }
+    return model;
+  }
+  return null;
+};
+
 /**
  * Model v0 saved does not removed data about semantic
  * models once they have been removed.
@@ -169,11 +182,11 @@ function migrateVisualRelationship(
  * about all missing models.
  */
 function removeUnusedModelData(
-  models: Map<string, EntityModel>,
+  models: EntityModel[],
   visualModel: WritableVisualModel,
 ) {
   for (const [identifier, _] of visualModel.getModelsData()) {
-    if (models.has(identifier)) {
+    if (models.find(model => model.getId() === identifier) !== undefined) {
       continue;
     }
     // The model is missing, we delete the information.

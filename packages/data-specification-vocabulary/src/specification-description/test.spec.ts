@@ -49,7 +49,7 @@ test("Roundtrip DSV Metadata to JSON-LD and back", async () => {
   const outputString = await DSVMetadataToJsonLdString(specifications, {
     rootHtmlDocumentIri: documentRoot,
   });
-  const generatedSpecifications = await JsonLdStringToDSVMetadata(outputString, { baseIri: "http://example.org/" });
+  const generatedSpecifications = await JsonLdStringToDSVMetadata(outputString, { baseIri: "http://example.org/resource/2/download" });
 
   expect(generatedSpecifications).toEqual(specifications);
 });

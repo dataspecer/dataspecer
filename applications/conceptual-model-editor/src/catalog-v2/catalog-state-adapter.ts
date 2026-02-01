@@ -270,3 +270,54 @@ export const updateItemsOrder = (
       items: updateItemsOrder(item.items),
     }));
 }
+
+/**
+ * Preserve collapsed state from old tree structure when building a new tree.
+ * Matches nodes by identifier to preserve their collapsed state.
+ */
+export const preserveCollapsedState = (
+  newItems: TreeNode[],
+  oldItems: TreeNode[],
+): TreeNode[] => {
+  if (oldItems.length === 0) {
+    return newItems;
+  }
+
+  // Create a map of old items by identifier for quick lookup
+  const oldItemsMap = new Map<string, TreeNode>();
+  const buildMap = (items: TreeNode[]) => {
+    for (const item of items) {
+      oldItemsMap.set(item.identifier, item);
+      buildMap(item.items);
+    }
+  };
+  buildMap(oldItems);
+
+  // Apply collapsed state from old items to new items
+  const applyCollapsedState = (items: TreeNode[]): TreeNode[] => {
+    return items.map(item => {
+      const oldItem = oldItemsMap.get(item.identifier);
+      let nextItem = item;
+
+      // Preserve collapsed state for SemanticModelNode
+      if (oldItem && oldItem.type === "semantic-model" && item.type === "semantic-model") {
+        nextItem = {
+          ...item,
+          collapsed: (oldItem as SemanticModelNode).collapsed,
+        } as SemanticModelNode;
+      }
+
+      // Recursively apply to nested items
+      if (nextItem.items.length > 0) {
+        nextItem = {
+          ...nextItem,
+          items: applyCollapsedState(nextItem.items),
+        };
+      }
+
+      return nextItem;
+    });
+  };
+
+  return applyCollapsedState(newItems);
+}

@@ -122,6 +122,19 @@ export const Json: FC<{
       </Typography>
 
 
+      <Typography variant="h6" sx={{mt: 3}}>Decimal representation</Typography>
+      <SwitchWithDefault
+        current={input ?? {}}
+        itemKey="jsonLdDecimalAsString"
+        onChange={onChange}
+        default={defaultObject}
+        label={"Represent xsd:decimal as a string with pattern"}
+      />
+      <Typography variant="body2" sx={{mt: 1}}>
+        When enabled, xsd:decimal is represented as a string with regex pattern in JSON Schema. This prevents cases when JSON valid numbers are not valid against xsd:decimal. The JSON-LD context will always map to xsd:decimal.
+      </Typography>
+
+
       <Typography variant="h6" sx={{mt: 3}}>References</Typography>
       <Grid container rowGap={1}>
         <Grid item xs={12}>

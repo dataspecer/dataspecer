@@ -49,9 +49,9 @@ export const defaultConfiguration: DocumentationConfiguration = {
       <h2>{{#iflng "cs"}}Přehled{{lng}}Overview{{/iflng}}</h2>
 
       {{#each externalArtifacts.svg}}
-        <a href="{{{URL}}}">
+        <a href="{{relativePath URL}}">
           <figure>
-            <img src="{{{URL}}}" alt="{{translate ./label}}" />
+            <img src="{{relativePath URL}}" alt="{{translate ./label}}" />
             <figcaption>{{translate ./label}}</figcaption>
           </figure>
         </a>
@@ -443,7 +443,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
   {{/if}}
 {{/def}}`,
 
-    attachments: `<section>
+    attachments: `<section id="{{#iflng "cs"}}přílohy{{lng}}attachments{{/iflng}}">
   <h2>{{#iflng "cs"}}Přílohy{{lng}}Attachments{{/iflng}}</h2>
   {{#iflng "cs"}}
     <p>Součástí této specifikace jsou následující přílohy.</p>
@@ -461,21 +461,27 @@ export const defaultConfiguration: DocumentationConfiguration = {
       {{#if externalArtifacts.owl-vocabulary}}
         <tr>
           <td>{{#iflng "cs"}}Slovník{{lng}}Vocabulary{{/iflng}}</td>
-          <td><a href="{{{externalArtifacts.owl-vocabulary.[0].URL}}}">{{externalArtifacts.owl-vocabulary.[0].URL}}</a></td>
+          <td><a href="{{{relativePath externalArtifacts.owl-vocabulary.[0].URL}}}">{{relativePath externalArtifacts.owl-vocabulary.[0].URL}}</a></td>
         </tr>
       {{/if}}
       {{#if externalArtifacts.dsv-profile}}
         <tr>
           <td>{{#iflng "cs"}}Aplikační profil{{lng}}Application profile{{/iflng}}</td>
-          <td><a href="{{{externalArtifacts.dsv-profile.[0].URL}}}">{{externalArtifacts.dsv-profile.[0].URL}}</a></td>
+          <td><a href="{{{relativePath externalArtifacts.dsv-profile.[0].URL}}}">{{relativePath externalArtifacts.dsv-profile.[0].URL}}</a></td>
         </tr>
       {{/if}}
       {{#if externalArtifacts.shacl-profile}}
         <tr>
           <td>{{#iflng "cs"}}SHACL validační pravidla{{lng}}SHACL validation rules{{/iflng}}</td>
-          <td><a href="{{{externalArtifacts.shacl-profile.[0].URL}}}">{{externalArtifacts.shacl-profile.[0].URL}}</a></td>
+          <td><a href="{{{relativePath externalArtifacts.shacl-profile.[0].URL}}}">{{relativePath externalArtifacts.shacl-profile.[0].URL}}</a></td>
         </tr>
       {{/if}}
+      {{#each externalArtifacts.structure-model}}
+        <tr>
+          <td>{{#iflng "cs"}}Popis strukturálního modelu{{lng}}Description of structure model{{/iflng}}</td>
+          <td><a href="{{{relativePath URL}}}">{{relativePath URL}}</a></td>
+        </tr>
+      {{/each}}
         {{#artifacts}}
         <tr><td>{{translate title}}</td><td><a href="{{{relativePath}}}">{{relativePathAsText}}</a></td></tr>
         {{/artifacts}}

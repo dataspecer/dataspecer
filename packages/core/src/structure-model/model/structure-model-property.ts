@@ -75,6 +75,11 @@ export class StructureModelProperty {
   humanDescription: LanguageString | null = null;
 
   /**
+   * Usage note visible to a human reader.
+   */
+  usageNote: LanguageString | null = null;
+
+  /**
    * Indicates that the association is oriented and reversed. The title and
    * the description may be incorrect because they may describe the forward
    * direction if there is no title and description for the reverse direction.
@@ -97,6 +102,16 @@ export class StructureModelProperty {
    * as API workaround when there is OR as a referenced root.
    */
   isReferencing: boolean = false;
+
+  /**
+   * Structure schema (PSM model) that is being referenced by this property, if any.
+   */
+  referencingStructureSchema: string | null = null;
+
+  /**
+   * Specification (project) that is being referenced by this property, if any.
+   */
+  referencingSpecification: string | null = null;
 
   /**
    * Technical label of the wrapping OR. If the OR is not wrapped, then it is empty.
@@ -138,4 +153,9 @@ export class StructureModelProperty {
    * Whether this property should be treated as attribute in XML.
    */
   xmlIsAttribute: boolean = false;
+
+  /**
+   * List of identifiers of entities this structure entity profiles.
+   */
+  profiling: string[] = [];
 }

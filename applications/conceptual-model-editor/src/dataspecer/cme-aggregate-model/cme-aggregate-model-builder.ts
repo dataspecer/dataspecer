@@ -101,8 +101,10 @@ class DefaultCmeAggregateModelBuilder implements CmeAggregateModel {
   buildApi(): CmeAggregateModelApi {
     this.resolveSources();
     return {
+      profileModel: id => this.profileModels[id] ?? null,
       profileClass: id => this.profileClasses[id] ?? null,
       profileRelationship: id => this.profileRelationships[id] ?? null,
+      semanticModel: id => this.semanticModels[id] ?? null,
       semanticClass: id => this.semanticClasses[id] ?? null,
       semanticRelationship: id => this.semanticRelationships[id] ?? null,
       generalization: id => this.generalizations[id] ?? null,
