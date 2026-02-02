@@ -36,7 +36,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
   debugResponse["isUserRepo"] = query.isUserRepo;
   debugResponse["exportFormat"] = query.exportFormat;
   const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(query.gitProviderURL, httpFetch, configuration);
-  const { name: sessionUserName, accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
+  const { name: sessionUserName, accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl], debugResponse);
   debugResponse["accessTokens"] = accessTokens;
   debugResponse["sessionUserName"] = sessionUserName;
   const repositoryOwner = convertToValidGitName(query.givenRepositoryOwner.length === 0 ? sessionUserName : query.givenRepositoryOwner);

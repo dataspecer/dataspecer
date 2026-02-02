@@ -72,7 +72,7 @@ export const getBasicUserInfo = asyncHandler(async (request: express.Request, re
  *  ... Can't think of anything though - maybe just provide the string value describing permission (but that does not work for different Git providers)
  *  ... so possible future TODO RadStr Idea:
  */
-export const getGitCredentialsFromSession = (request: express.Request, response: express.Response, wantedAccessTokenLevels: ConfigType[]) => {
+export const getGitCredentialsFromSession = (request: express.Request, response: express.Response, wantedAccessTokenLevels: ConfigType[], debugObject?: Record<string, any>) => {
   let committerName: string | null = null;
   let committerEmail: string | null = null;
   let committerAccessToken: string | null = null;
@@ -80,6 +80,10 @@ export const getGitCredentialsFromSession = (request: express.Request, response:
   const dsBackendURL = getBaseBackendUrl(request);
 
   const currentSession = getStoredSession(response);
+  if (debugObject !== undefined) {
+    debugObject["currentSession"] = currentSession;
+    debugObject["dsBackendURL"] = dsBackendURL;
+  }
   if (currentSession !== null) {
     committerName = currentSession.user?.name ?? null;
     committerEmail = currentSession.user?.email ?? null;
@@ -117,7 +121,8 @@ export const getGitCredentialsFromSessionWithDefaults = (
   gitProvider: GitProvider,
   request: express.Request,
   response: express.Response,
-  wantedAccessTokenLevels: ConfigType[]
+  wantedAccessTokenLevels: ConfigType[],
+  debugObject?: Record<string, any>,
 ): GitCredentials => {
   const {
     committerName,
@@ -151,6 +156,15 @@ export const getGitCredentialsFromSessionWithDefaults = (
 
   if (botCredentials !== null) {
     accessTokens.push(...botCredentials.accessTokens);
+  }
+
+  if (debugObject !== undefined) {
+    debugObject["committerName"] = committerName;
+    debugObject["committerEmail"] = committerEmail;
+    debugObject["committerAccessToken"] = committerAccessToken;
+    debugObject["committerSSH"] = committerSSH;
+    debugObject["isBotName"] = isBotName;
+    debugObject["isBotEmail"] = isBotEmail;
   }
 
   return {
