@@ -125,9 +125,10 @@ application.use(express.urlencoded({ extended: true, limit: configuration.payloa
 // Otherwise the new routes are not available when running the backend from Docker.
 // Api for authorization
 
-application.get(apiBasename + "/auth-handler/personal-callback/*", authJSRedirectCallback);
 // We have to handle everything related to authorization under this handler - for some reason handlers for specific subparts (like /auth/callback/*) do not work.
 application.use(apiBasename + "/auth/*", authHandler);
+
+application.get(apiBasename + "/auth-handler/personal-callback/*", authJSRedirectCallback);
 
 // TODO: Should be one endpoint named datastore-content and just use the http verbs accordingly (the update should be PATCH).
 application.get(apiBasename + "/git/get-datastore-content", getDatastoreContentDirectly);
