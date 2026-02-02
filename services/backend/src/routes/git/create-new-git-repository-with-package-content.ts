@@ -25,15 +25,31 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
     exportFormat: z.string().min(1).optional(),
   });
 
+  const debugResponse: Record<string, any> = {};
+
   const query = querySchema.parse(request.query);
+  debugResponse["iri"] = query.iri;
+  debugResponse["givenRepositoryOwner"] = query.givenRepositoryOwner;
+  debugResponse["givenRepositoryName"] = query.givenRepositoryName;
+  debugResponse["gitProviderURL"] = query.gitProviderURL;
+  debugResponse["commitMessage"] = query.commitMessage;
+  debugResponse["isUserRepo"] = query.isUserRepo;
+  debugResponse["exportFormat"] = query.exportFormat;
   const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(query.gitProviderURL, httpFetch, configuration);
   const { name: sessionUserName, accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
+  debugResponse["accessTokens"] = accessTokens;
+  debugResponse["sessionUserName"] = sessionUserName;
   const repositoryOwner = convertToValidGitName(query.givenRepositoryOwner.length === 0 ? sessionUserName : query.givenRepositoryOwner);
+  debugResponse["repositoryOwner"] = repositoryOwner;
   const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
+  debugResponse["commitMessageChanged"] = commitMessage;
   const repositoryName = convertToValidGitName(query.givenRepositoryName);
+  debugResponse["repositoryName"] = repositoryName;
   const fullLinkedGitRepositoryURL = gitProvider.createGitRepositoryURL(repositoryOwner, repositoryName);
+  debugResponse["fullLinkedGitRepositoryURL"] = fullLinkedGitRepositoryURL;
   const isUserRepo = stringToBoolean(query.isUserRepo);
   const patAccessTokens = findPatAccessTokens(accessTokens);
+  debugResponse["patAccessTokens"] = patAccessTokens;
   // Either the user has create repo access AND it has access to the "user", then we are good
   // Or it has create repo access, but does not have access to the "user". Then we have two possibilities
   //  either we fail, or we will try the bot token to create the repositories. To me the second one makes more sense. So that is the implemented variant.
@@ -88,6 +104,8 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
     }
   }
 
+  response.json(debugResponse).status(204);
+  return;
   throw new Error("There is neither user or bot pat token to perform operations needed to create the link. For example creating remote repo");
 });
 
