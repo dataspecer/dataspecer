@@ -111,17 +111,17 @@ export async function getDataSpecificationWithModels(dataSpecificationIri: strin
       const psmStores: MemoryStoreFromBlob[] = [];
       const subResources = await pckg.getSubResources();
 
-      for (const subResource of subResources) {
+      await Promise.all(subResources.map(async subResource => {
         const model = await loadAsStructureModel(subResource);
         if (model) {
           psmStores.push(model);
           structureModels[subResource.id] = model;
         }
-      }
+      }));
 
       // Handle autosave
       for (const model of psmStores) {
-        store.addStore(model);
+        await store.addStore(model, {hasImmediateInterface: true});
         store.addEventListener("afterOperationExecuted", () => model.saveIfNewChanges());
       }
 
@@ -143,7 +143,7 @@ export async function getDataSpecificationWithModels(dataSpecificationIri: strin
       }
 
       const storeForFBS = new AggregatorAsEntityModel(semanticModel, specification.id) as unknown as CoreResourceReader;
-      store.addStore(storeForFBS); // todo typings
+      await store.addStore(storeForFBS); // todo typings
 
       // This loop updates every semantic model
       // ! semantic model is updated twice!!

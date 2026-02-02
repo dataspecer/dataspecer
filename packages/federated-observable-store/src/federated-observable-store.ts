@@ -9,7 +9,7 @@ import * as PIM from "@dataspecer/core/pim/pim-vocabulary";
 import _ from "lodash";
 import { ComplexOperation } from "./complex-operation.ts";
 import { FederatedCoreResourceWriter } from "./federated-core-resource-writer.ts";
-import { ImmediateCoreResourceReader } from "./immediate-core-resource-reader.ts";
+import type { ImmediateCoreResourceReader } from "@dataspecer/core/core/store"
 import { Resource } from "./resource.ts";
 import { InMemorySemanticModel } from '@dataspecer/core-v2/semantic-model/in-memory';
 
@@ -111,10 +111,13 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
      * depend on it.
      * @param store
      * @param options
+     * @returns Promise that completes when the store is added and all its
+     * schemas are loaded. It is not required to wait for this promise to use
+     * the store.
      */
     addStore<HasImmediateInterface extends boolean>(
         store: HasImmediateInterface extends true ? (ImmediateCoreResourceReader) : CoreResourceReader,
-        options: { hasImmediateInterface?: HasImmediateInterface } = {}) {
+        options: { hasImmediateInterface?: HasImmediateInterface } = {}): Promise<void> {
         if (this.models.some(wrapper => wrapper.store === store)) {
             throw new Error("Store already presented in FederatedObservableStore.");
         }
@@ -125,7 +128,7 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
         } as ModelWrapper;
         this.models.push(wrappedStore);
 
-        this.getSchemas(wrappedStore).then();
+        return this.getSchemas(wrappedStore);
     }
 
     /**
@@ -538,7 +541,7 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
             for (const schemaIri of dataPsmSchemas) {
                 let schema = this.modelSchemas.get(schemaIri);
                 if (!schema) {
-                    this.createSchema(schemaIri, wrappedStore, PIM.SCHEMA);
+                    this.createSchema(schemaIri, wrappedStore, DataPSM.SCHEMA);
                 }
             }
 
