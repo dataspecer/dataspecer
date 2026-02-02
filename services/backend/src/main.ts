@@ -137,7 +137,7 @@ application.post(apiBasename + "/generate-app", getGeneratedApplication);
 
 application.get(apiBasename + "/system/data", getSystemData); // Downloads database directory as ZIP file
 
-application.get("/health", (_, res) => res.status(200).send("OK"));
+application.get("/health", (_, res) => res.status(200).send("ok"));
 
 // Static files server by this backend
 
