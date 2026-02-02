@@ -103,13 +103,13 @@ export async function getDataSpecificationWithModels(dataSpecificationIri: strin
       const psmStores: MemoryStoreFromBlob[] = [];
       const subResources = await pckg.getSubResources();
 
-      for (const subResource of subResources) {
+      await Promise.all(subResources.map(async subResource => {
         const model = await loadAsStructureModel(subResource);
         if (model) {
           psmStores.push(model);
           structureModels[subResource.id] = model;
         }
-      }
+      }));
 
       // Handle autosave
       for (const model of psmStores) {

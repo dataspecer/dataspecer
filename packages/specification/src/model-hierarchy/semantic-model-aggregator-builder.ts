@@ -63,7 +63,7 @@ export class SemanticModelAggregatorBuilder {
    */
   private async recursivelyLoadAllModels(packageModel: PackageModel): Promise<void> {
     const subResources = await packageModel.getSubResources();
-    for (const resource of subResources) {
+    await Promise.all(subResources.map(async (resource) => {
       const trySemanticModel = await loadAsSemanticModel(resource, this.httpFetch);
       if (trySemanticModel) {
         this.knownModels[trySemanticModel.getId()] = trySemanticModel as InMemorySemanticModel;
@@ -78,7 +78,7 @@ export class SemanticModelAggregatorBuilder {
         const pckg = await resource.asPackageModel();
         await this.recursivelyLoadAllModels(pckg);
       }
-    }
+    }));
   }
 
   async build(configuration: ModelCompositionConfiguration): Promise<SemanticModelAggregator> {
