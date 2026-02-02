@@ -88,6 +88,9 @@ export const getGitCredentialsFromSession = (request: express.Request, response:
     committerName = currentSession.user?.name ?? null;
     committerEmail = currentSession.user?.email ?? null;
     const [, configType] = createAuthConfigBasedOnAccountScope((currentSession.user as any)?.genericScope ?? null, dsBackendURL);      // The express request won't be used so just set it to null
+    if (debugObject !== undefined) {
+      debugObject["configType"] = configType;
+    }
     // TODO RadStr Idea: In future if there will be better granulization in permissions then the check should be more complex + should check if we have access to the repo
     if (configType !== null && wantedAccessTokenLevels.includes(configType)) {
       committerAccessToken = (currentSession.user as any)?.accessToken ?? null;
