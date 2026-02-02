@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - stable**
+      - git-integration
   pull_request:
     types: [synchronize, labeled]
 
