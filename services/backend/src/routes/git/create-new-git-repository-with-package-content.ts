@@ -26,16 +26,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
   });
 
   const query = querySchema.parse(request.query);
-  try {
-    const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(query.gitProviderURL, httpFetch, configuration);
-  }
-  catch {
-    response.status(200).json({ query });
-    return;
-  }
   const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(query.gitProviderURL, httpFetch, configuration);
-  response.status(201).json({ query });
-  return;
   const { name: sessionUserName, accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
   const repositoryOwner = convertToValidGitName(query.givenRepositoryOwner.length === 0 ? sessionUserName : query.givenRepositoryOwner);
   const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
@@ -43,8 +34,6 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
   const fullLinkedGitRepositoryURL = gitProvider.createGitRepositoryURL(repositoryOwner, repositoryName);
   const isUserRepo = stringToBoolean(query.isUserRepo);
   const patAccessTokens = findPatAccessTokens(accessTokens);
-  response.sendStatus(200);
-  return;
   // Either the user has create repo access AND it has access to the "user", then we are good
   // Or it has create repo access, but does not have access to the "user". Then we have two possibilities
   //  either we fail, or we will try the bot token to create the repositories. To me the second one makes more sense. So that is the implemented variant.
