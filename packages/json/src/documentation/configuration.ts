@@ -25,9 +25,9 @@ export const defaultJsonPartials: Record<string, string> = {
 
 {{#def "json-tree-ref"}}
   {{#if fromExternalSpecification}}
-    {{#iflng "cs"}}jež je definován v referencovaném schématu <a href="{{link}}">{{link}}</a>.{{lng}}which is defined in the referenced schema <a href="{{link}}">{{link}}</a>.{{/iflng}}
+    {{#iflng "cs"}}jež je definován v referencovaném schématu <a href="{{{link}}}">{{link}}</a>.{{lng}}which is defined in the referenced schema <a href="{{{link}}}">{{link}}</a>.{{/iflng}}
   {{else}}
-    {{#iflng "cs"}}dle <a href="{{link}}"></a>{{lng}}according to <a href="{{link}}"></a>{{/iflng}}
+    {{#iflng "cs"}}dle <a href="{{{link}}}"></a>{{lng}}according to <a href="{{{link}}}"></a>{{/iflng}}
   {{/if}}
 {{/def}}
 
@@ -144,7 +144,7 @@ export const defaultJsonPartials: Record<string, string> = {
       <dt>IRI</dt>
       <dd><code>{{id}}</code></dd>
       <dt>{{#iflng "cs"}}Definováno v{{lng}}Defined in{{/iflng}}</dt>
-      <dd><code><a href="{{artifact.json-schema.relativePath}}">{{artifact.json-schema.relativePath}}</a></code></dd>
+      <dd><code><a href="{{{artifact.json-schema.relativePath}}}">{{artifact.json-schema.relativePath}}</a></code></dd>
       {{#with dialect}}
         <dt>{{#iflng "cs"}}Verze použitého jazyka{{lng}}Language version used{{/iflng}}</dt>
         <dd><a href="{{specificationUrl}}" target="_blank">{{number}}</a> (metaschema IRI: <code>{{metaschemaIri}}</code>)</dd>
