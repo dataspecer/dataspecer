@@ -37,7 +37,7 @@ export async function currentSession(
   if (session !== undefined) {
     // Add the access token to the locals
     const convertedRequest = convertExpressRequestToNormalRequest(callerURL, request);
-    const jwtToken = await getToken({ req: convertedRequest, secret: configuration.authConfiguration?.authSecret });
+    const jwtToken = await getToken({ req: convertedRequest, secret: configuration.authConfiguration?.authSecret, cookieName: "__Secure-authjs.session-token" });
     response.locals.session.user.accessToken = (jwtToken as any)?.accessToken;
     response.locals.session.user.jwtToken = (jwtToken as any);
   }
