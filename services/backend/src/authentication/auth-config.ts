@@ -87,6 +87,7 @@ function createAuthConfig(configType: ConfigType | null, dsBackendURL: string, c
 
   const createdAuthConfig: ExpressAuthConfig = {
     secret: configuration.authConfiguration?.authSecret,
+    trustHost: true,      // In local build it is not needed, when deployed through Cloudflare it seems to be needed
     providers: [
       GitHub({
         clientId: configuration.authConfiguration?.gitHubAuthClientId,
