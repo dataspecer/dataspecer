@@ -592,6 +592,30 @@ export async function generateSpecification(packageId: string, context: Generate
     useAbsoluteUrls: false,
   });
 
+  /**
+   * Because we generate documentation in multiple languages, we replace public
+   * URLs with the current language in order to have correct links.
+   */
+  function createLangReplacer(artefacts: DataSpecificationArtefact[]) {
+    const replacers: ((lang: string) => void)[] = [];
+
+    for (const artefact of artefacts) {
+      if (artefact.generator === "https://schemas.dataspecer.com/generator/template-artifact") {
+        const originalUrl = artefact.publicUrl!;
+        replacers.push((lang: string) => {
+          artefact.publicUrl = originalUrl.replace("/en/", "/" + lang + "/");
+        });
+      }
+    }
+
+    return (lang: string) => {
+      for (const replacer of replacers) {
+        replacer(lang);
+      }
+    }
+  }
+
+  const langReplacer = createLangReplacer(context.v1Specification.artefacts);
   for (const lang of langs) {
     const languageReplacedExternalArtifacts = Object.fromEntries(
       Object.entries(externalArtifacts).map(([key, artifacts]) => [
@@ -603,28 +627,11 @@ export async function generateSpecification(packageId: string, context: Generate
       ]),
     );
 
-    const oldArtefacts: DataSpecificationArtefact[] = [];
-    for (const artefact of context.v1Specification.artefacts as DataSpecificationArtefact[]) {
-      if (artefact.generator === "https://schemas.dataspecer.com/generator/template-artifact") {
-        oldArtefacts.push({
-          ...artefact,
-          publicUrl: artefact.publicUrl!.replace("/en/", `/${lang}/`),
-        });
-      } else {
-        oldArtefacts.push(artefact);
-      }
-    }
-    const specificContext = {
-      ...context,
-      v1Specification: {
-        ...context.v1Specification,
-        artefacts: oldArtefacts,
-      },
-    };
+    langReplacer(lang);
 
     const documentation = context.output.writePath(`${subdirectory}${lang}/index.html`);
     await documentation.write(
-      await generateHtmlDocumentation(resource, models, { externalArtifacts: languageReplacedExternalArtifacts, dsv, language: lang, prefixMap }, specificContext),
+      await generateHtmlDocumentation(resource, models, { externalArtifacts: languageReplacedExternalArtifacts, dsv, language: lang, prefixMap }, context),
     );
     await documentation.close();
   }
