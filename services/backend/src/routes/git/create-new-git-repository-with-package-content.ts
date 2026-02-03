@@ -53,6 +53,9 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
   // Either the user has create repo access AND it has access to the "user", then we are good
   // Or it has create repo access, but does not have access to the "user". Then we have two possibilities
   //  either we fail, or we will try the bot token to create the repositories. To me the second one makes more sense. So that is the implemented variant.
+
+  response.json(debugResponse).status(204);
+  return;
   for (const patAccessToken of patAccessTokens) {
     try {
       if (isUserRepo) {
