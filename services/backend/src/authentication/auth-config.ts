@@ -164,9 +164,6 @@ function createAuthConfig(configType: ConfigType | null, dsBackendURL: string, c
           token.accountProvider = account.provider;
         }
 
-        if (token === null) {
-          return {"ABC": "Nothing"};
-        }
         return token;
       },
       // !!!! SESSION IS EXPOSED THROUGH AUTHJS API - DON'T EVER EXPOSE ANYTHING IMPORTANT (LIKE OAUTH tokens with full repository access)
