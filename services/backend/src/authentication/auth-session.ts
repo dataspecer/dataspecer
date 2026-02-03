@@ -26,6 +26,14 @@ export async function currentSession(
   let session = (await getSession(request, basicAuthConfigInstance)) ?? undefined;
   response.locals.session = session;
 
+  // TODO RadStr: .... Do I even need the following if??? Only the scope is different and it seems that isn't the important part when it comes to the getSession method !
+  // TODO RadStr: Not ideal - I am basically repairing to use it with correct config based on the scope I have stored in session
+  // TODO RadStr: I should probably have it stored in cookie (or in database?)
+  if (session !== undefined) {
+    const [authConfig] = createAuthConfigBasedOnAccountScope((session?.user as any).genericScope ?? null, dsBackendURL);
+    session = (await getSession(request, authConfig)) ?? undefined;
+  }
+
   if (session !== undefined) {
     // Add the access token to the locals
     const convertedRequest = convertExpressRequestToNormalRequest(callerURL, request);
