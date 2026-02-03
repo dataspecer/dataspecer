@@ -8,13 +8,14 @@ import {
   StructureModelPrimitiveType,
   StructureModelProperty,
   StructureModelSchemaRoot,
+  type StructureModel,
 } from "@dataspecer/core/structure-model/model";
 import { structureModelAddDefaultValues } from "@dataspecer/core/structure-model/transformation/add-default-values";
 import { OFN, XSD, XSD_PREFIX } from "@dataspecer/core/well-known";
 import { DefaultXmlConfiguration, XmlConfiguration, XmlConfigurator } from "../configuration.ts";
 import { commonXmlNamespace, commonXmlPrefix, iriElementName, langStringName, QName, simpleTypeMapQName } from "../conventions.ts";
 import { structureModelAddXmlProperties } from "../xml-structure-model/add-xml-properties.ts";
-import { XmlStructureModel as StructureModel, XmlStructureModel } from "../xml-structure-model/model/xml-structure-model.ts";
+import { XmlStructureModel } from "../xml-structure-model/model/xml-structure-model.ts";
 import {
   XmlSchema,
   XmlSchemaAnnotation,
@@ -55,13 +56,13 @@ function multiplyMaxCardinality(a: number | null, b: number | null): number | nu
 }
 
 /**
- * Converts a {@link StructureModel} to an {@link XmlSchema}.
+ * Converts a {@link XmlStructureModel} to an {@link XmlSchema}.
  */
 export async function structureModelToXmlSchema(
   context: ArtefactGeneratorContext,
   specification: DataSpecification,
   artifact: DataSpecificationSchema,
-  model: StructureModel
+  model: XmlStructureModel
 ): Promise<{
     mainSchema: XmlSchema,
     profilingExtensionsSchema: XmlSchema | null,
@@ -73,7 +74,7 @@ export async function structureModelToXmlSchema(
     DefaultDataSpecificationConfiguration,
     DataSpecificationConfigurator.getFromObject(artifact.configuration)
   ) as DataSpecificationConfiguration;
-  model = structureModelAddDefaultValues(model, globalConfiguration) as StructureModel;
+  model = structureModelAddDefaultValues(model, globalConfiguration) as XmlStructureModel;
 
   // // Find common XML artifact
   // const commonXmlArtefact = specification.artefacts.find((a) => a.generator === XML_COMMON_SCHEMA_GENERATOR);
@@ -91,10 +92,24 @@ export async function structureModelToXmlSchema(
    * Whether this is a regular XML schema or the profiling one
    */
   const isProfiling = model.profiling.length > 0;
-  const profiledModel = isProfiling ? structureModelAddDefaultValues(context.structureModels[model.profiling[0]], globalConfiguration) as StructureModel : null;
+  const profiledModel = isProfiling ? await prepareStructureModel(context.structureModels[model.profiling[0]], context, globalConfiguration) as XmlStructureModel : null;
 
   const adapter = new XmlSchemaAdapter(context, specification, artifact, model, options, commonXmlSchemaLocation, profiledModel);
   return await adapter.fromStructureModel();
+}
+
+/**
+ * Performs necessary transformations and prepares all the data.
+ *
+ * todo: We need to do full transformation here including from the conceptual model.
+ */
+async function prepareStructureModel(rawModel: StructureModel, context: ArtefactGeneratorContext, configuration: DataSpecificationConfiguration): Promise<XmlStructureModel> {
+  rawModel = structureModelAddDefaultValues(rawModel, configuration);
+  const xmlModel = await structureModelAddXmlProperties(
+    rawModel, context.reader
+  );
+
+  return xmlModel;
 }
 
 const XML_IMPORT = {
@@ -104,7 +119,7 @@ const XML_IMPORT = {
 } satisfies XmlSchemaImportDeclaration;
 
 /**
- * This class contains functions to process all parts of a {@link StructureModel}
+ * This class contains functions to process all parts of a {@link XmlStructureModel}
  * and create an instance of {@link XmlSchema}.
  */
 class XmlSchemaAdapter {
@@ -124,7 +139,7 @@ class XmlSchemaAdapter {
   private types: Record<string, XmlSchemaType>;
   private elements: XmlSchemaElement[] = [];
 
-  private profiledModel: StructureModel | null = null;
+  private profiledModel: XmlStructureModel | null = null;
 
   private adapterForExtensionSchema: XmlSchemaAdapter | null = null;
 
@@ -141,10 +156,10 @@ class XmlSchemaAdapter {
     context: ArtefactGeneratorContext,
     specification: DataSpecification,
     artifact: DataSpecificationSchema,
-    model: StructureModel,
+    model: XmlStructureModel,
     options: XmlConfiguration,
     commonXmlSchemaLocation: string,
-    profiledModel: StructureModel | null = null,
+    profiledModel: XmlStructureModel | null = null,
   ) {
     this.context = context;
     this.specifications = context.specifications;
@@ -745,7 +760,7 @@ class XmlSchemaAdapter {
   /**
    * Returns the structure model from an imported schema.
    */
-  private async getImportedModel(iri: string): Promise<StructureModel> {
+  private async getImportedModel(iri: string): Promise<XmlStructureModel> {
     const model = this.context.structureModels[iri];
     if (model != null) {
       return await structureModelAddXmlProperties(model, this.context.reader);

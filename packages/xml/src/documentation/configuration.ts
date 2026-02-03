@@ -127,8 +127,8 @@ export const defaultXmlPartials: Record<string, string> = {
           {{else}}
             <td colspan="2" style="text-align: center;"><i>{{#iflng "cs"}}Stejný namespace jako hlavní dokument{{lng}}Same namespace as the main document{{/iflng}}</i></td>
           {{/if}}
-          <td><a href="{{schemaLocation}}">{{schemaLocation}}</a></td>
-          <td>{{#documentation}}<a href="{{link}}">{{translate semanticModel.humanLabel}}</a>{{/documentation}}</td>
+          <td><a href="{{{schemaLocation}}}">{{schemaLocation}}</a></td>
+          <td>{{#documentation}}<a href="{{{link}}}">{{translate semanticModel.humanLabel}}</a>{{/documentation}}</td>
         </tr>
       {{/each}}
     </tbody>

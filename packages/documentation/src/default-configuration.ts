@@ -49,9 +49,9 @@ export const defaultConfiguration: DocumentationConfiguration = {
       <h2>{{#iflng "cs"}}Přehled{{lng}}Overview{{/iflng}}</h2>
 
       {{#each externalArtifacts.svg}}
-        <a href="{{relativePath URL}}">
+        <a href="{{{relativePath URL}}}">
           <figure>
-            <img src="{{relativePath URL}}" alt="{{translate ./label}}" />
+            <img src="{{{relativePath URL}}}" alt="{{translate ./label}}" />
             <figcaption>{{translate ./label}}</figcaption>
           </figure>
         </a>
