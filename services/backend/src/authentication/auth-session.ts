@@ -31,6 +31,7 @@ export async function currentSession(
     const convertedRequest = convertExpressRequestToNormalRequest(callerURL, request);
     const jwtToken = await getToken({ req: convertedRequest, secret: configuration.authConfiguration?.authSecret });
     response.locals.session.user.accessToken = (jwtToken as any)?.accessToken;
+    response.locals.session.user.jwtToken = (jwtToken as any);
   }
 
   next();
