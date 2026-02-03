@@ -104,7 +104,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
     }
   }
 
-  response.json(debugResponse).status(204);
+  response.json(debugResponse).status(203);
   return;
   throw new Error("There is neither user or bot pat token to perform operations needed to create the link. For example creating remote repo");
 });
