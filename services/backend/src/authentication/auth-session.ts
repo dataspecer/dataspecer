@@ -132,7 +132,7 @@ export const getGitCredentialsFromSessionWithDefaults = (
     committerEmail,
     committerAccessToken,
     committerSSH
-  } = getGitCredentialsFromSession(request, response, wantedAccessTokenLevels);
+  } = getGitCredentialsFromSession(request, response, wantedAccessTokenLevels, debugObject);
   const botCredentials = gitProvider.getBotCredentials();
 
   const isBotName = committerName === null;
