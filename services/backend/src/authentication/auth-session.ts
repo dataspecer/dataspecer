@@ -26,18 +26,26 @@ export async function currentSession(
   let session = (await getSession(request, basicAuthConfigInstance)) ?? undefined;
   response.locals.session = session;
 
-  // TODO RadStr: .... Do I even need the following if??? Only the scope is different and it seems that isn't the important part when it comes to the getSession method !
-  // TODO RadStr: Not ideal - I am basically repairing to use it with correct config based on the scope I have stored in session
-  // TODO RadStr: I should probably have it stored in cookie (or in database?)
-  if (session !== undefined) {
-    const [authConfig] = createAuthConfigBasedOnAccountScope((session?.user as any).genericScope ?? null, dsBackendURL);
-    session = (await getSession(request, authConfig)) ?? undefined;
-  }
+  // // TODO RadStr: .... Do I even need the following if??? Only the scope is different and it seems that isn't the important part when it comes to the getSession method !
+  // // TODO RadStr: Not ideal - I am basically repairing to use it with correct config based on the scope I have stored in session
+  // // TODO RadStr: I should probably have it stored in cookie (or in database?)
+  // if (session !== undefined) {
+  //   const [authConfig] = createAuthConfigBasedOnAccountScope((session?.user as any).genericScope ?? null, dsBackendURL);
+  //   session = (await getSession(request, authConfig)) ?? undefined;
+  // }
 
   if (session !== undefined) {
     // Add the access token to the locals
     const convertedRequest = convertExpressRequestToNormalRequest(callerURL, request);
-    const jwtToken = await getToken({ req: convertedRequest, secret: configuration.authConfiguration?.authSecret, cookieName: "__Secure-authjs.session-token" });
+    // Based on - https://chatgpt.com/share/69821e0d-60f0-8011-921e-19e3893b4179 - you can remove this comment later this is just for thesis purposes
+    const cookieHeader = convertedRequest.headers.get("cookie") ?? "";
+    // When ran locally it is the second option, all the authjs cookies are without the __Secure prefix. However, when deploying on web using cloudflare it is prefixed with __Secure-
+    const secureSessionToken = "__Secure-authjs.session-token";
+    const cookieName = cookieHeader.includes(secureSessionToken)
+      ? secureSessionToken
+      : "authjs.session-token";
+
+    const jwtToken = await getToken({ req: convertedRequest, secret: configuration.authConfiguration?.authSecret, cookieName });
     response.locals.session.user.accessToken = (jwtToken as any)?.accessToken;
     response.locals.session.user.jwtToken = (jwtToken as any);
   }
