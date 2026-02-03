@@ -25,6 +25,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
     exportFormat: z.string().min(1).optional(),
   });
 
+  // TODO RadStr: Remove debugResponse after we are done
   const debugResponse: Record<string, any> = {};
 
   const query = querySchema.parse(request.query);
@@ -54,8 +55,8 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
   // Or it has create repo access, but does not have access to the "user". Then we have two possibilities
   //  either we fail, or we will try the bot token to create the repositories. To me the second one makes more sense. So that is the implemented variant.
 
-  response.status(404).json(debugResponse);
-  return;
+  // response.status(404).json(debugResponse);    // TODO RadStr: Remove debugResponse
+  // return;
   for (const patAccessToken of patAccessTokens) {
     try {
       if (isUserRepo) {
@@ -107,8 +108,6 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
     }
   }
 
-  response.json(debugResponse).status(203);
-  return;
   throw new Error("There is neither user or bot pat token to perform operations needed to create the link. For example creating remote repo");
 });
 
