@@ -46,7 +46,7 @@ export const ComboBox = <T extends any>({
         {/* <span className="ml-2"><ChevronDown/></span> */}
       </DropdownMenu.Trigger>
 
-      <DropdownMenu.Content className="min-w-[var(--radix-dropdown-menu-trigger-width)] mt-1 w-full border border-gray-300 rounded-md bg-white max-h-60 overflow-auto focus:outline-none">
+      <DropdownMenu.Content className="min-w-(--radix-dropdown-menu-trigger-width) mt-1 w-full border border-gray-300 rounded-md bg-white max-h-60 overflow-auto focus:outline-none">
         {options.map((option, idx) => (
           <DropdownMenu.Item
             key={idx}

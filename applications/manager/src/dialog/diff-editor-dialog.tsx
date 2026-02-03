@@ -83,11 +83,11 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
   return (
     <Tabs defaultValue="text-compare">
       <Modal open={isOpen} onOpenChange={(value: boolean) => value ? null : closeWithSuccess()}>
-        <ModalContent className="max-w-none h-[100%] py-0 !rounded-none !border-none">
-          <ModalBody className="grow overflow-hidden h-screen">
+        <ModalContent className="max-w-none! h-full! py-0 rounded-none! border-none!">
+          <ModalBody className="grow overflow-hidden h-screen!">
             {/* The pr-2 is there so the cross at the top right corner is seen */}
             <ResizablePanelGroup direction="horizontal" className="overflow-hidden">
-              <ResizablePanel defaultSize={20} className="flex flex-col pr-16">
+              <ResizablePanel defaultSize={20} className="flex! flex-col pr-16">
                 <ModalHeader className="mb-2">
                   <h1 className="font-bold bg-gray-200 text-lg"><p>Diff editor to resolve {examinedMergeState?.mergeStateCause} conflict</p></h1>
                   <Tabs value={comparisonTabType} onValueChange={setComparisonTabType as any}>
@@ -99,7 +99,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
                 </ModalHeader>
                   {/* The overflow-y is needed however it adds a bit horizontal space between the vertical splitter and the Tree structure */}
                   <div className="h-full">
-                    <div className="flex flex-1 flex-col grow pr-2 -mr-2 -ml-2 pl-2 h-[80%] w-full">
+                    <div className="flex! flex-1 flex-col grow pr-2 -mr-2 -ml-2 pl-2 h-[80%]! w-full!">
                       <DiffTreeVisualization updateModelData={updateModelData}
                                               datastoreInfosForCacheEntries={datastoreInfosForCacheEntries}
                                               isLoadingTreeStructure={isLoadingTreeStructure}
@@ -144,25 +144,25 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
               </ResizablePanel>
               {/* The minus "ml" shenanigans in classNames are because of some weird spaces caused by overflow-y-auto in the diff editor */}
               <ResizableHandle className="-ml-16" withHandle autoFocus={false} />
-              <ResizablePanel className="overflow-hidden flex flex-col">
+              <ResizablePanel className="overflow-hidden flex! flex-col">
                 { isLoadingTextData && Object.keys(convertedCacheContentForMergeFrom).length !== 0 &&     // The check for non-empty objects is there se we don't show loading on initial load
                   <Loader className="mr-2 h-4 w-4 animate-spin" />
                 }
                 { !isLoadingTextData &&
-                   <div className="flex flex-col flex-1 h-screen overflow-hidden">
+                   <div className="flex! flex-col flex-1 h-screen overflow-hidden">
                     <Tabs value={comparisonTabType}>
                       <TabsContent value="image-compare">
-                        <RotateCw className="flex ml-1 h-4 w-4" onClick={reloadModelsDataFromBackend} />
+                        <RotateCw className="flex! ml-1 h-4 w-4" onClick={reloadModelsDataFromBackend} />
                         <div>
                           <SvgVisualDiff mergeFromSvg={mergeFromSvg} mergeToSvg={mergeToSvg} />
                         </div>
                       </TabsContent>
                       <TabsContent value="text-compare">
-                        <div className="grid grid-cols-[5%_95%] border-b">
-                            <RotateCw className="flex mt-3 ml-1 h-4 w-4 cursor-pointer" onClick={reloadModelsDataFromBackend} />
-                          <div className="flex items-center justify-center space-x-4 ml-16 pl-32">
+                        <div className="grid grid-cols-[5%_95%]! border-b">
+                            <RotateCw className="flex! mt-3 ml-1 h-4 w-4 cursor-pointer" onClick={reloadModelsDataFromBackend} />
+                          <div className="flex! items-center justify-center space-x-4 ml-16 pl-32">
                             <MergeStrategyComponent handleMergeStateResolving={applyAutomaticMergeStateResolver}/>
-                            <label className="flex items-center">
+                            <label className="flex! items-center">
                               <input
                                 type="checkbox"
                                 checked={showStrippedVersion}
@@ -174,7 +174,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
                           </div>
                         </div>
                         {/* Also small note - there is loading effect when first starting up the editor, it is not any custom made functionality */}
-                        <MonacoDiffEditor className="-ml-2 h-[95.5%]"       // The h- has to be defined otherwise it takes full window (which goes beyound the start taskbar)
+                        <MonacoDiffEditor className="-ml-2 h-[95.5%]!"       // The h- has to be defined otherwise it takes full window (which goes beyound the start taskbar)
                                           editorRef={monacoEditor}
                                           mergeFromContent={strippedMergeFromContent}
                                           editable={editable}

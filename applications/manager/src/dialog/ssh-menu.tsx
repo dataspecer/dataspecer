@@ -98,7 +98,7 @@ export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
   }
   return (
     <Modal open={isOpen} onClose={() => resolve(null)}>
-      <ModalContent className="sm:max-w-[700px]">
+      <ModalContent className="sm:max-w-[700px]!">
         <ModalHeader>
           <ModalTitle>Menu for working with SSH keys</ModalTitle>
           <ModalDescription>

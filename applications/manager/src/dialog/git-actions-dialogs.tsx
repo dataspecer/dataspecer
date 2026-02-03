@@ -235,7 +235,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
 
   return (
     <Modal open={isOpen} onClose={() => resolve(null)}>
-      <ModalContent className="sm:max-w-[700px]">
+      <ModalContent className="sm:max-w-[700px]!">
         <ModalHeader>
           <ModalTitle>{modalTitle}</ModalTitle>
           <ModalDescription>

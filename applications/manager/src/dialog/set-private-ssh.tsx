@@ -51,7 +51,7 @@ export default function SetPrivateSSHKeyDialog({ isOpen, resolve }: SetPrivateSS
 
   return (
     <Modal open={isOpen} onClose={() => resolve(null)}>
-      <ModalContent className="sm:max-w-[700px]">
+      <ModalContent className="sm:max-w-[700px]!">
         <ModalHeader>
           <ModalTitle>Store private SSH key for GitHub in Dataspecer</ModalTitle>
           <ModalDescription>

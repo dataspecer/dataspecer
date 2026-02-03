@@ -97,7 +97,7 @@ export const MonacoDiffEditor: FC<{
     });
   }
 
-  return <div className="flex flex-col grow overflow-hidden h-screen w-[100%]">
+  return <div className="flex flex-col grow overflow-hidden h-screen! w-full!">
   <DiffEditor
       {...props}
       onMount={editor => {

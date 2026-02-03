@@ -14,7 +14,7 @@ type ComponentProps = {
 export const CrossedOutComponent = ({children, tailwindWidth, isFullCrossOut} : ComponentProps) => {
   return <div className="relative">
       {children}
-      <div className={`absolute top-1/2 left-0 ${tailwindWidth} h-[4px] bg-red-500 rotate-[50deg]`} />
+      <div className={`absolute top-1/2 left-0 ${tailwindWidth} h-[4px] bg-red-500 rotate-50`} />
       {isFullCrossOut && <div className={`absolute top-1/2 left-0 ${tailwindWidth} h-[4px] bg-red-500 rotate-[-50deg]`} />}
     </div>;
 };

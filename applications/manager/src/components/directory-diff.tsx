@@ -1038,7 +1038,7 @@ export const DiffTreeVisualization = (props: {
           {
             renderTreeWithLoading(props.isLoadingTreeStructure,
               <Tree children={(nodeProps) => createStyledNode(nodeProps, updateModelData, props.datastoreInfosForCacheEntries, shouldOnlyShowConflicts, mergeStateFromBackend?.conflicts ?? [], setConfictsToBeResolvedForBoth(), createdFilesystemNodesAsArray, createdDatastores, addToCreatedDatastores, removedDatastores, setRemovedDatastores, setRemovedDatastoresAndLoadIntoCache, removedTreePaths, setRemovedTreePaths, isCurrentlyAllowedChangeOfModelsUseState, conflictsToBeResolvedOnSaveInThisComponent, mergeStateFromBackend?.mergeStateCause)}
-                className="!overflow-x-hidden relative"
+                className="overflow-x-hidden! relative"
                 ref={newTreeRef} data={newRenderTreeDataToRender} width={"100%"}
                 onSelect={(nodes) => onNodesSelect(nodes, "new")}
                 onFocus={(node) => onNodeFocus(node, "new")}

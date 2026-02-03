@@ -32,7 +32,7 @@ export const ShowMergeStateInfoDialog = ({ mergeState, setIsInfoDialogShown, isO
 
   return (
     <Modal open={isOpen} onClose={closeModal}>
-      <ModalContent className="max-w-[40%]">
+      <ModalContent className="max-w-[40%]!">
         <ModalHeader>
           <ModalTitle>Info about merge state</ModalTitle>
         </ModalHeader>
