@@ -34,7 +34,10 @@ import {
   XmlSchemaLangStringType,
   XmlSchemaNamespaceDefinition,
   XmlSchemaSimpleItem,
+  XmlSchemaSimpleItemList,
   XmlSchemaSimpleItemRestriction,
+  xmlSchemaSimpleTypeDefinitionIsRestriction,
+  xmlSchemaSimpleTypeDefinitionIsList,
   XmlSchemaSimpleType,
   XmlSchemaType,
   xmlSchemaTypeIsComplex,
@@ -786,6 +789,25 @@ class XmlSchemaAdapter {
   }
 
   /**
+   * Creates an xs:list simple type wrapping a given item type.
+   * Used for multi-valued attributes.
+   */
+  private createListType(itemType: QName): XmlSchemaSimpleType {
+    const listDefinition: XmlSchemaSimpleItemList = {
+      xsType: "list",
+      itemType: itemType,
+      contents: [],
+    };
+    
+    return {
+      entityType: "type",
+      name: null,
+      annotation: null,
+      simpleDefinition: listDefinition,
+    };
+  }
+
+  /**
    * Helper function that converts a property list to a complex sequence. You need to specify the type of the sequence.
    * For example "sequence" or "choice".
    */
@@ -809,9 +831,42 @@ class XmlSchemaAdapter {
     const attributes: XmlSchemaAttribute[] = [];
     for (const property of properties) {
       if (property.xmlIsAttribute) {
+        let type = await this.objectTypeToSchemaType(property) as XmlSchemaSimpleType;
+        
+        // Check if this attribute has multi-cardinality (max > 1 or unbounded)
+        // In XML Schema, multi-valued attributes must use xs:list
+        const cardinalityMax = property.cardinalityMax;
+        const isMultiValued = cardinalityMax === null || cardinalityMax > 1;
+        
+        if (isMultiValued) {
+          // Get the item type - either from the type's name or from an inline definition
+          let itemType: QName;
+          
+          if (type.name != null) {
+            // Named type reference
+            itemType = type.name;
+          } else if (xmlSchemaTypeIsSimple(type)) {
+            // Inline simple type - for now, we extract the base type if it's a restriction
+            // or use xs:string as a fallback
+            const simpleDefinition = type.simpleDefinition;
+            if (xmlSchemaSimpleTypeDefinitionIsRestriction(simpleDefinition)) {
+              itemType = simpleDefinition.base;
+            } else {
+              // For other cases (union, etc.), default to xs:string
+              itemType = [this.getAndImportHelperNamespace("xsd", true), "string"];
+            }
+          } else {
+            // Fallback to xs:string for unrecognized types
+            itemType = [this.getAndImportHelperNamespace("xsd", true), "string"];
+          }
+          
+          // Wrap in xs:list
+          type = this.createListType(itemType);
+        }
+
         const attribute = {
           name: [null, property.technicalLabel],
-          type: await this.objectTypeToSchemaType(property) as XmlSchemaSimpleType,
+          type: type,
           annotation: this.getAnnotation(property),
           isRequired: property.cardinalityMin > 0,
         } satisfies XmlSchemaAttribute;
