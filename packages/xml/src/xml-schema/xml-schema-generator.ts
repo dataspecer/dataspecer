@@ -17,15 +17,18 @@ import { XmlSchemaDocumentationGenerator } from "../documentation/xml-schema-doc
 export const NEW_DOC_GENERATOR = "https://schemas.dataspecer.com/generator/template-artifact";
 
 /**
- * Since we need to generate two files (in case of structure model profiling)
- * from single "file name" provided, this function generates the other name from
- * it.
+ * Generates extension schema path based on namespace. This is temporary
+ * solution as "artifact" dictates us that we should generate one file, usually
+ * schema.xsd. With this method, we can generate additional schemas. The logic
+ * is following. The main schema has namespace of the topmost structure.
+ * Extension schemas are then for profiled structures with different namespace.
  */
-export function getExtensionSchemaPath(originalPath: string): string {
+export function getExtensionSchemaPath(originalPath: string, namespacePrefix: string): string {
+  const suffix = `.${namespacePrefix}-extension.xsd`;
   if (originalPath.endsWith(".xsd")) {
-    return originalPath.replace(/\.xsd$/, ".extension.xsd");
+    return originalPath.replace(/\.xsd$/, suffix);
   } else {
-    return originalPath + ".extension.xsd";
+    return originalPath + suffix;
   }
 }
 
@@ -40,31 +43,19 @@ export class XmlSchemaGenerator implements ArtefactGenerator {
     specification: DataSpecification,
     output: StreamDictionary
   ) {
-    const {xmlSchema: model, profilingAdditions} = await this.generateToObject(context, artefact, specification);
+    const {xmlSchemas} = await this.generateToObject(context, artefact, specification);
 
-    if (!profilingAdditions) {
-      // Regular XML Schema
+    // Write the main schema (base schema or top of the profiling chain)
+    const mainStream = output.writePath(artefact.outputPath);
+    await writeXmlSchema(xmlSchemas[0], mainStream);
+    await mainStream.close();
 
-      const stream = output.writePath(artefact.outputPath);
-      await writeXmlSchema(model, stream);
+    // Write extension schemas for profiling chains
+    for (let i = 1; i < xmlSchemas.length; i++) {
+      const extensionPath = getExtensionSchemaPath(artefact.outputPath, xmlSchemas[i].targetNamespacePrefix);
+      const stream = output.writePath(extensionPath);
+      await writeXmlSchema(xmlSchemas[i], stream);
       await stream.close();
-    } else {
-      // Profiling XML Schema - need to generate two files
-
-      const overridesPath = artefact.outputPath;
-      const extraPath = getExtensionSchemaPath(artefact.outputPath);
-
-      {
-        const stream = output.writePath(overridesPath);
-        await writeXmlSchema(model, stream);
-        await stream.close();
-      }
-
-      {
-        const stream = output.writePath(extraPath);
-        await writeXmlSchema(profilingAdditions, stream);
-        await stream.close();
-      }
     }
   }
 
@@ -103,15 +94,16 @@ export class XmlSchemaGenerator implements ArtefactGenerator {
       model, context.reader
     );
 
-    const {mainSchema, profilingExtensionsSchema} = await structureModelToXmlSchema(
+    const xmlSchemas = await structureModelToXmlSchema(
       context, specification, schemaArtefact, xmlModel
     );
 
     return {
-      xmlSchema: mainSchema,
-      profilingAdditions: profilingExtensionsSchema,
+      xmlSchemas,
+      // Keep backward compatibility: first schema is main, last is extension if profiling
+      xmlSchema: xmlSchemas[0],
       conceptualModel,
-  };
+    };
   }
 
   async generateForDocumentation(
