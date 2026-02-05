@@ -257,8 +257,16 @@ class SemanticModelAggregatorInternal implements SemanticModelAggregator {
         // List of updated entities
         const updatedEntities: Record<string, AggregatedEntityWrapper> = {};
 
+        // Track visited entities to prevent infinite loops when there are circular dependencies
+        const visited = new Set<string>();
+
         let updatedEntity: string | undefined;
         while (updatedEntity = needsUpdate.pop()) {
+            // Skip if we've already processed this entity in this update cycle
+            if (visited.has(updatedEntity)) {
+                continue;
+            }
+            visited.add(updatedEntity);
             if (removed.includes(updatedEntity)) {
                 delete this.baseModelEntities[updatedEntity];
             } else {
