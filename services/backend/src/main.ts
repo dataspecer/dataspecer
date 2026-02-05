@@ -67,9 +67,9 @@ import { pathToSSHConfigForDS, pathToSSHForDS } from "./utils/create-ssh-path-co
 import { newApplicationProfile } from "./routes/new.ts";
 
 
+populateSshKnownHosts();
 for (const [gitProviderName, gitConfiguration] of Object.entries(configuration?.gitBotConfigurations ?? {})) {
   if (gitConfiguration?.dsBotSSHPrivateKey !== undefined && gitConfiguration?.dsBotSSHId !== undefined) {
-    populateSshKnownHosts();
     storeNewPrivateSSHKeyToBackend(
       gitConfiguration.dsBotSSHPrivateKey, gitConfiguration.dsBotSSHId, gitProviderName as GitProviderNamesAsType, pathToSSHForDS, pathToSSHConfigForDS);
   }
@@ -113,7 +113,7 @@ const application = express();
 // If app is served through a proxy, trust the proxy to allow HTTPS protocol to be detected.
 // I am not exactly if or why is this needed, but every example has it including the official one.
 // https://authjs.dev/getting-started/deployment#docker it is mentioned for example here for docker
-application.set('trust proxy', true);;
+application.set('trust proxy', true);
 
 application.use(cors(corsOriginHandler));
 

@@ -68,6 +68,13 @@ COPY services/backend/git-workflows ./git-workflows
 RUN apk update && apk add --no-cache git
 RUN apk update && apk add --no-cache openssh
 
+# Create the .ssh directory and make it accessible to user (Dataspecer process).
+# Otherwise we get access permissions error, when we try to create it from the Dataspecer.
+# To simulate the permissions run the docker run command with --user option, for example:
+# docker run -p 3100:80 --user nobody ds-dckr
+RUN mkdir -p /.ssh && \
+    chmod a+rwx /.ssh
+
 # Makes directory accessible for the user
 # Instals prisma for migrations and cleans install cache
 RUN apk add --no-cache openssl && \
