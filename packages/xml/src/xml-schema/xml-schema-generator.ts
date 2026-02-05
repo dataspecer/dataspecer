@@ -24,9 +24,9 @@ export const NEW_DOC_GENERATOR = "https://schemas.dataspecer.com/generator/templ
  * Extension schemas are then for profiled structures with different namespace.
  */
 export function getExtensionSchemaPath(originalPath: string, namespacePrefix: string): string {
-  const suffix = `.${namespacePrefix}-extension.xsd`;
-  if (originalPath.endsWith(".xsd")) {
-    return originalPath.replace(/\.xsd$/, suffix);
+  const suffix = `.${namespacePrefix ? namespacePrefix + "-" : ""}extension.xsd`;
+  if (/\.(xsd|xml)/.test(originalPath)) {
+    return originalPath.replace(/\.(xsd|xml)/, suffix);
   } else {
     return originalPath + suffix;
   }
@@ -62,7 +62,8 @@ export class XmlSchemaGenerator implements ArtefactGenerator {
   async generateToObject(
     context: ArtefactGeneratorContext,
     artefact: DataSpecificationArtefact,
-    specification: DataSpecification
+    specification: DataSpecification,
+    generateForDocumentation = false,
   ) {
     if (!DataSpecificationSchema.is(artefact)) {
       assertFailed("Invalid artefact type.");
@@ -95,7 +96,7 @@ export class XmlSchemaGenerator implements ArtefactGenerator {
     );
 
     const xmlSchemas = await structureModelToXmlSchema(
-      context, specification, schemaArtefact, xmlModel
+      context, specification, schemaArtefact, xmlModel, generateForDocumentation
     );
 
     return {
@@ -114,23 +115,19 @@ export class XmlSchemaGenerator implements ArtefactGenerator {
     callerContext: unknown
   ): Promise<unknown | null> {
     if (documentationIdentifier === NEW_DOC_GENERATOR) {
-      const schemaArtefact = artefact as DataSpecificationSchema;
-      if (context.structureModels[schemaArtefact.psm].profiling.length > 0) {
-        // todo Profiling is not yet supported in documentation
-        return null;
-      }
-
       const {artifact: documentationArtefact, partial, adapter} = callerContext as {
         artifact: DataSpecificationArtefact,
         partial: (template: string) => string,
         adapter: HandlebarsAdapter,
       };
-      const {xmlSchema, conceptualModel} = await this.generateToObject(context, artefact, specification);
+      const {xmlSchemas, conceptualModel} = await this.generateToObject(context, artefact, specification, true);
+      const documentationSchemaView = xmlSchemas[0]; // We squash them into one
 
       const generator = new XmlSchemaDocumentationGenerator(
-        documentationArtefact, xmlSchema, conceptualModel, context, artefact, specification, partial, adapter
+        documentationArtefact, conceptualModel, context, artefact, specification, partial, adapter
       );
-      return generator.generateToObject();
+
+      return generator.generateToObject(documentationSchemaView);
     }
     return null;
   }

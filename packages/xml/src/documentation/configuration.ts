@@ -25,7 +25,7 @@ export const defaultXmlPartials: Record<string, string> = {
     {{#contents}}
       <li>
         {{#if element}}
-          element <a href="{{xml-href element}}"><code>&lt;{{element.name.[1]}}&gt;</code></a> [{{cardinalityMin}}..{{#if cardinalityMax}}{{cardinalityMax}}{{else}}*{{/if}}]
+          element <a href="{{xml-href element}}"><code>&lt;{{xml-qname element.name}}&gt;</code></a> [{{cardinalityMin}}..{{#if cardinalityMax}}{{cardinalityMax}}{{else}}*{{/if}}]
         {{/if}}
         {{#item}}
           {{#if (or (equals xsType "sequence") (equals xsType "choice") )}}
@@ -95,12 +95,51 @@ export const defaultXmlPartials: Record<string, string> = {
 <p>
   {{#iflng "cs"}}Tato sekce popisuje XSD zachycující strukturu pro{{lng}}This section describes the XSD capturing the structure for{{/iflng}} <i>{{translate structureModel.humanLabel}}</i>, {{#iflng "cs"}}jež je definováno v souboru{{lng}}which is defined in the file{{/iflng}} <a href="{{{structureModel.artifact.xml-schema.relativePath}}}"><code>{{structureModel.artifact.xml-schema.relativePath}}</code></a>.
 </p>
+{{#if xmlSchema.documentationProfileView}}
+<div class="alert alert-info">
+  <p>
+    {{#iflng "cs"}}Toto je dokumentační pohled na profilované schéma. Kvůli technickým omezením XML schémat je každý jmenný prostor definován v samostatném souboru:{{lng}}This is a documentation view of a profiled schema. Due to technical limitations of XML schemas, each namespace is defined in a separate file:{{/iflng}}
+  </p>
+  <table class="def">
+    <thead>
+      <tr>
+        <th>{{#iflng "cs"}}Prefix{{lng}}Prefix{{/iflng}}</th>
+        <th>{{#iflng "cs"}}Namespace{{lng}}Namespace{{/iflng}}</th>
+        <th>{{#iflng "cs"}}Soubor schématu{{lng}}Schema File{{/iflng}}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each xmlSchema.documentationProfileView.namespaces}}
+        <tr>
+          <td><code>{{prefix}}</code></td>
+          <td><a href="{{{namespace}}}">{{namespace}}</a></td>
+          <td><a href="{{{relativePath fileUrl}}}"><code>{{relativePath fileUrl}}</code></a></td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+  <p>
+    {{#iflng "cs"}}V tomto pohledu jsou všechny elementy zobrazeny společně s prefixy odpovídajícími jejich původnímu jmennému prostoru.{{lng}}In this view, all elements are shown together with prefixes corresponding to their original namespace.{{/iflng}}
+  </p>
+</div>
+{{else}}
+  {{#if isProfiled}}
+  <p>
+    {{#iflng "cs"}}Toto schéma je odvozeno z jiného schématu a definuje následující jmenné prostory (namespaces):{{lng}}This schema is derived from another schema and defines the following namespaces:{{/iflng}}
+  </p>
+  <ul>
+    {{#each ownNamespaces}}
+      <li><code>{{prefix}}</code>: <a href="{{namespace}}">{{namespace}}</a></li>
+    {{/each}}
+  </ul>
+  {{/if}}
 
-{{#if xmlSchema.targetNamespace}}
-  <dl>
-    <dt>{{#iflng "cs"}}Definováno v namespace{{lng}}Defined in namespace{{/iflng}}</dt>
-    <dd><code>{{xmlSchema.targetNamespace}}</code> ({{#iflng "cs"}}preferovaný prefix{{lng}}preferred prefix{{/iflng}}: <code>{{xmlSchema.targetNamespacePrefix}}</code>)</dd>
-  </dl>
+  {{#if xmlSchema.targetNamespace}}
+    <dl>
+      <dt>{{#iflng "cs"}}Definováno v namespace{{lng}}Defined in namespace{{/iflng}}</dt>
+      <dd><code>{{xmlSchema.targetNamespace}}</code> ({{#iflng "cs"}}preferovaný prefix{{lng}}preferred prefix{{/iflng}}: <code>{{xmlSchema.targetNamespacePrefix}}</code>)</dd>
+    </dl>
+  {{/if}}
 {{/if}}
 
 <section>
@@ -153,7 +192,7 @@ export const defaultXmlPartials: Record<string, string> = {
 
 {{#def "xml-non-root-element" "element"}}
 <section id="{{xml-id-anchor .}}">
-  <h4>{{#iflng "cs"}}Element{{lng}}Element{{/iflng}} {{^name.[0]}}{{#path}}{{#if (equals entityType "element")}}<code>&lt;{{name.[1]}}&gt;</code> / {{/if}}{{/path}}{{/name.[0]}}<code>&lt;{{name.[1]}}&gt;</code></h4>
+  <h4>{{#iflng "cs"}}Element{{lng}}Element{{/iflng}} {{^name.[0]}}{{#path}}{{#if (equals entityType "element")}}<code>&lt;{{xml-qname name}}&gt;</code> / {{/if}}{{/path}}{{/name.[0]}}<code>&lt;{{xml-qname name}}&gt;</code></h4>
 
   <dl>
     <dt>{{#iflng "cs"}}Význam{{lng}}Meaning{{/iflng}}</dt>
@@ -205,7 +244,7 @@ export const defaultXmlPartials: Record<string, string> = {
 
 {{#rootElements}}
 <section id="{{xml-id-anchor .}}">
-  <h4>{{#iflng "cs"}}Kořenový element{{lng}}Root element{{/iflng}} <code>&lt;{{name.[1]}}&gt;</code></h4>
+  <h4>{{#iflng "cs"}}Kořenový element{{lng}}Root element{{/iflng}} <code>&lt;{{xml-qname name}}&gt;</code></h4>
   <dl>
     {{xml-meaning annotation}}
 

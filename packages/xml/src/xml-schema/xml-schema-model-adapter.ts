@@ -16,6 +16,9 @@ import { DefaultXmlConfiguration, XmlConfiguration, XmlConfigurator } from "../c
 import { commonXmlNamespace, commonXmlPrefix, iriElementName, langStringName, QName, simpleTypeMapQName } from "../conventions.ts";
 import { structureModelAddXmlProperties } from "../xml-structure-model/add-xml-properties.ts";
 import { XmlStructureModel } from "../xml-structure-model/model/xml-structure-model.ts";
+import { multiplyMaxCardinality, multiplyMinCardinality } from "./utils/cardinality.ts";
+import { buildEntityOriginMap, type EntityOriginMap } from "./utils/entity-origin-map.ts";
+import { getExtensionSchemaPath } from "./xml-schema-generator.ts";
 import {
   XmlSchema,
   XmlSchemaAnnotation,
@@ -41,8 +44,6 @@ import {
   xmlSchemaTypeIsSimple,
 } from "./xml-schema-model.ts";
 import { XML_SCHEMA } from "./xml-schema-vocabulary.ts";
-import { buildEntityOriginMap, type EntityOriginMap } from "./utils/entity-origin-map.ts";
-import { multiplyMaxCardinality, multiplyMinCardinality } from "./utils/cardinality.ts";
 
 /**
  * Information about a level in the profiling chain, linking
@@ -69,9 +70,7 @@ interface ProfilingLevelInfo {
  */
 async function prepareStructureModel(rawModel: StructureModel, context: ArtefactGeneratorContext, configuration: DataSpecificationConfiguration): Promise<XmlStructureModel> {
   rawModel = structureModelAddDefaultValues(rawModel, configuration);
-  const xmlModel = await structureModelAddXmlProperties(
-    rawModel, context.reader
-  );
+  const xmlModel = await structureModelAddXmlProperties(rawModel, context.reader);
 
   return xmlModel;
 }
@@ -82,7 +81,6 @@ const XML_IMPORT = {
   model: null,
 } satisfies XmlSchemaImportDeclaration;
 
-
 /**
  * Collects the full profiling chain of models, starting from the given model
  * and following the profiling references up to the base (non-profiling) model.
@@ -90,11 +88,7 @@ const XML_IMPORT = {
  *
  * Example: If C profiles B which profiles A, returns [A, B, C]
  */
-async function collectProfilingChain(
-  model: StructureModel,
-  context: ArtefactGeneratorContext,
-  mainArtifact: DataSpecificationArtefact,
-): Promise<XmlStructureModel[]> {
+async function collectProfilingChain(model: StructureModel, context: ArtefactGeneratorContext, mainArtifact: DataSpecificationArtefact): Promise<XmlStructureModel[]> {
   const chain: XmlStructureModel[] = [];
 
   let currentModelId: string | null = model.psmIri;
@@ -103,10 +97,10 @@ async function collectProfilingChain(
 
     const configuration = DataSpecificationConfigurator.merge(
       DefaultDataSpecificationConfiguration,
-      DataSpecificationConfigurator.getFromObject(mainArtifact.configuration) // todo
+      DataSpecificationConfigurator.getFromObject(mainArtifact.configuration), // todo
     ) as DataSpecificationConfiguration;
 
-    const profiledModel = await prepareStructureModel(structureModel, context, configuration) as XmlStructureModel;
+    const profiledModel = (await prepareStructureModel(structureModel, context, configuration)) as XmlStructureModel;
     chain.push(profiledModel);
 
     // Go to the next profiled model (the one this model profiles)
@@ -116,7 +110,6 @@ async function collectProfilingChain(
   // Reverse so that base model is first, current model is last
   return chain.reverse();
 }
-
 
 /**
  * Converts a {@link StructureModel} to an array of {@link XmlSchema}s. For
@@ -133,7 +126,8 @@ export async function structureModelToXmlSchema(
   context: ArtefactGeneratorContext,
   specification: DataSpecification,
   artifact: DataSpecificationSchema,
-  model: StructureModel
+  model: StructureModel,
+  generateForDocumentation: boolean = false,
 ): Promise<XmlSchema[]> {
   // Step one: prepare all structure models in the profiling chain
   // profilingChain[0] = base model, profilingChain[last] = current model (source of truth)
@@ -141,12 +135,29 @@ export async function structureModelToXmlSchema(
 
   // The source of truth is the LAST model (the current one we're generating for)
   const sourceOfTruthModel = profilingChain[profilingChain.length - 1];
+  const originalModel = profilingChain[0];
+
+  // If there is a single namespace, we can turn off this mode which is necessary only for profiling documentation
+  const isDocumentationMode = generateForDocumentation && new Set(profilingChain.map((m) => m.namespace ?? "")).size > 1;
+
+  // Store original namespaces for documentation mode
+  const originalNamespaces = new Map<XmlStructureModel, { namespace: string | null; prefix: string | null }>();
+  if (isDocumentationMode) {
+    for (const m of profilingChain) {
+      originalNamespaces.set(m, {
+        namespace: m.namespace,
+        prefix: m.namespacePrefix,
+      });
+    }
+    // Apply namespace consolidation hack for documentation mode
+    for (const m of profilingChain) {
+      m.namespace = originalModel.namespace;
+      m.namespacePrefix = originalModel.namespacePrefix;
+    }
+  }
 
   // TODO: options should be per model, but for now we use the same options for all
-  const options = XmlConfigurator.merge(
-    DefaultXmlConfiguration,
-    XmlConfigurator.getFromObject(artifact.configuration)
-  ) as XmlConfiguration;
+  const options = XmlConfigurator.merge(DefaultXmlConfiguration, XmlConfigurator.getFromObject(artifact.configuration)) as XmlConfiguration;
 
   const commonXmlSchemaLocation = null;
 
@@ -175,6 +186,8 @@ export async function structureModelToXmlSchema(
       namespaceModel, // todo not sure whether we need whole namespace model here
       options,
       commonXmlSchemaLocation,
+      isDocumentationMode,
+      originalNamespaces,
     );
     namespaceToAdapter.set(ns, adapter);
   }
@@ -191,7 +204,7 @@ export async function structureModelToXmlSchema(
     profilingLevelInfos.push({
       model: profiledModel,
       adapter: adapter,
-      index: i
+      index: i,
     });
   }
 
@@ -208,10 +221,7 @@ export async function structureModelToXmlSchema(
     }
     processedAdapters.add(adapter);
 
-    adapter.setProfilingContext(
-      profilingLevelInfos,
-      entityOriginMap,
-    );
+    adapter.setProfilingContext(profilingLevelInfos, entityOriginMap);
   }
 
   // Generate schema starting from the base adapter
@@ -229,7 +239,7 @@ export async function structureModelToXmlSchema(
   }
 
   // Get all schemas
-  const allSchemas = uniqueAdapters.map(adapter => adapter.getSchema());
+  const allSchemas = uniqueAdapters.map((adapter) => adapter.getSchema());
 
   // Filter out empty non-main schemas that are not referenced by other schemas
   // The main schema is always the first one (base namespace)
@@ -311,6 +321,8 @@ class XmlSchemaAdapter {
    * @param namespaceModel The model that determines the namespace for this adapter.
    * @param options Additional options to the generator.
    * @param commonXmlSchemaLocation Location of common XML schema.
+   * @param isDocumentationMode Whether to generate for documentation (single schema with namespace prefixes).
+   * @param originalNamespaces Map of original namespaces before consolidation (for documentation mode).
    */
   constructor(
     context: ArtefactGeneratorContext,
@@ -319,6 +331,8 @@ class XmlSchemaAdapter {
     namespaceModel: XmlStructureModel,
     options: XmlConfiguration,
     commonXmlSchemaLocation: string,
+    private isDocumentationMode: boolean = false,
+    private originalNamespaces: Map<XmlStructureModel, { namespace: string | null; prefix: string | null }> = new Map(),
   ) {
     this.context = context;
     this.specifications = context.specifications;
@@ -333,7 +347,7 @@ class XmlSchemaAdapter {
       // Required namespace
       "http://www.w3.org/2001/XMLSchema": "xs",
       // Required namespace
-      "http://www.w3.org/2007/XMLSchema-versioning": "vc"
+      "http://www.w3.org/2007/XMLSchema-versioning": "vc",
     };
     this.types = {};
 
@@ -352,10 +366,7 @@ class XmlSchemaAdapter {
    * @param levelInfos All profiling level information.
    * @param entityOriginMap Mapping from entity PSM IRI to origin level index.
    */
-  setProfilingContext(
-    levelInfos: ProfilingLevelInfo[],
-    entityOriginMap: EntityOriginMap,
-  ) {
+  setProfilingContext(levelInfos: ProfilingLevelInfo[], entityOriginMap: EntityOriginMap) {
     this.profilingLevelInfos = levelInfos;
     this.entityOriginMap = entityOriginMap;
   }
@@ -386,6 +397,22 @@ class XmlSchemaAdapter {
   private getAdapterForEntity(entity: StructureModelClass | StructureModelProperty): XmlSchemaAdapter {
     const originLevel = this.getEntityOriginLevel(entity);
     return this.profilingLevelInfos[originLevel]?.adapter ?? this;
+  }
+
+  /**
+   * Gets the namespace prefix for an entity based on its origin level.
+   * Used in documentation mode to add correct prefixes to elements.
+   */
+  private getNamespacePrefixForEntity(entity: StructureModelClass | StructureModelProperty): string | null {
+    if (!this.isDocumentationMode) {
+      return null;
+    }
+    const originLevel = this.getEntityOriginLevel(entity);
+    const originModel = this.profilingLevelInfos[originLevel]?.model;
+    if (originModel && this.originalNamespaces.has(originModel)) {
+      return this.originalNamespaces.get(originModel)?.prefix ?? null;
+    }
+    return null;
   }
 
   /**
@@ -430,7 +457,7 @@ class XmlSchemaAdapter {
   private getIriElementOrAttribute(forStructureModelClass: StructureModelClass): XmlSchemaComplexContentElement | XmlSchemaAttribute | null {
     let skipIri = false;
     skipIri ||= forStructureModelClass.instancesHaveIdentity === "NEVER";
-    skipIri ||= (forStructureModelClass.iris === null || forStructureModelClass.iris.length === 0);
+    skipIri ||= forStructureModelClass.iris === null || forStructureModelClass.iris.length === 0;
 
     if (skipIri) {
       return null;
@@ -445,21 +472,23 @@ class XmlSchemaAdapter {
       this.getAndImportHelperNamespace("common", true);
     }
 
-    const type = forStructureModelClass.regex ? {
-      entityType: "type",
-      name: null,
-      annotation: null,
-      simpleDefinition: {
-        xsType: "restriction",
-        base: [this.getAndImportHelperNamespace("xsd", true), "anyURI"],
-        pattern: forStructureModelClass.regex,
-        contents: [],
-      } as XmlSchemaSimpleItemRestriction,
-      } satisfies XmlSchemaSimpleType : {
-      entityType: "type",
-      name: [this.getAndImportHelperNamespace("xsd", true), "anyURI"],
-      annotation: null,
-    } satisfies XmlSchemaType;
+    const type = forStructureModelClass.regex
+      ? ({
+          entityType: "type",
+          name: null,
+          annotation: null,
+          simpleDefinition: {
+            xsType: "restriction",
+            base: [this.getAndImportHelperNamespace("xsd", true), "anyURI"],
+            pattern: forStructureModelClass.regex,
+            contents: [],
+          } as XmlSchemaSimpleItemRestriction,
+        } satisfies XmlSchemaSimpleType)
+      : ({
+          entityType: "type",
+          name: [this.getAndImportHelperNamespace("xsd", true), "anyURI"],
+          annotation: null,
+        } satisfies XmlSchemaType);
 
     if (useElementInsteadOfAttribute) {
       return {
@@ -483,7 +512,7 @@ class XmlSchemaAdapter {
       attribute.isRequired = forStructureModelClass.instancesHaveIdentity === "ALWAYS";
       return attribute;
     }
-  };
+  }
 
   /**
    * Generates full XML Schema from the structure model, provided configuration
@@ -499,6 +528,45 @@ class XmlSchemaAdapter {
         this.elements.push(rootElement);
       }
     }
+  }
+
+  /**
+   * Builds the documentation profile view information containing all namespaces
+   * in the profiling chain with their file URLs.
+   */
+  private buildDocumentationProfileView(): XmlSchema["documentationProfileView"] {
+    const namespaces: { prefix: string | null; namespace: string | null; fileUrl: string }[] = [];
+    const seenNamespaces = new Set<string>();
+
+    for (let i = 0; i < this.profilingLevelInfos.length; i++) {
+      const levelInfo = this.profilingLevelInfos[i];
+      const model = levelInfo.model;
+      const originalNs = this.originalNamespaces.get(model);
+
+      if (originalNs) {
+        const nsKey = originalNs.namespace ?? "";
+
+        // Avoid duplicates - only add each namespace once
+        if (!seenNamespaces.has(nsKey)) {
+          seenNamespaces.add(nsKey);
+
+          // Generate the file URL for this namespace
+          // For the first (base) namespace, use the original artifact path
+          // For subsequent namespaces, use extension schema location
+          const fileUrl = i === 0 ? this.artifact.publicUrl : this.getExtensionSchemaLocation(model);
+
+          namespaces.push({
+            prefix: originalNs.prefix,
+            namespace: originalNs.namespace,
+            fileUrl: fileUrl,
+          });
+        }
+      }
+    }
+
+    return {
+      namespaces,
+    };
   }
 
   /**
@@ -519,6 +587,7 @@ class XmlSchemaAdapter {
       types: Object.values(this.types),
       commonXmlSchemaLocation: this.commonXmlSchemaLocation,
       options: this.options,
+      documentationProfileView: this.isDocumentationMode ? this.buildDocumentationProfileView() : null,
     };
   }
 
@@ -542,9 +611,11 @@ class XmlSchemaAdapter {
     const referencedElementTechnicalLabel = isInOr ? root.orTechnicalLabel : root.classes[0].technicalLabel;
     const technicalLabel = root.technicalLabel ?? referencedElementTechnicalLabel ?? "element";
 
+    const namespacePrefix = this.isDocumentationMode && root.classes.length > 0 ? this.getNamespacePrefixForEntity(root.classes[0]) : null;
+
     let rootElement = {
       entityType: "element",
-      name: [null, technicalLabel],
+      name: [namespacePrefix, technicalLabel],
       type: await this.objectTypeToSchemaType(root),
       annotation: null,
     } satisfies XmlSchemaElement;
@@ -632,13 +703,14 @@ class XmlSchemaAdapter {
         }
 
         let element: XmlSchemaElement;
+        const namespacePrefix = this.getNamespacePrefixForEntity(cls);
 
         if (cls.isReferenced) {
           // For referenced classes, create an element with the imported type
           const importedTypeName = await this.getImportedTypeForEntity(cls);
           element = {
             entityType: "element",
-            name: [null, cls.technicalLabel],
+            name: [namespacePrefix, cls.technicalLabel],
             type: {
               entityType: "type",
               name: importedTypeName,
@@ -650,7 +722,7 @@ class XmlSchemaAdapter {
           // For inline classes, create a normal element with type definition
           element = {
             entityType: "element",
-            name: [null, cls.technicalLabel],
+            name: [namespacePrefix, cls.technicalLabel],
             type: await this.singleClassToType(cls),
             annotation: this.getAnnotation(cls),
           } satisfies XmlSchemaElement;
@@ -811,7 +883,7 @@ class XmlSchemaAdapter {
       if (property.xmlIsAttribute) {
         const attribute = {
           name: [null, property.technicalLabel],
-          type: await this.objectTypeToSchemaType(property) as XmlSchemaSimpleType,
+          type: (await this.objectTypeToSchemaType(property)) as XmlSchemaSimpleType,
           annotation: this.getAnnotation(property),
           isRequired: property.cardinalityMin > 0,
         } satisfies XmlSchemaAttribute;
@@ -939,13 +1011,8 @@ class XmlSchemaAdapter {
    */
   private getExtensionSchemaLocation(model: XmlStructureModel): string {
     // Generate extension schema path based on namespace prefix
-    const basePath = this.artifact.outputPath;
-    const suffix = `.${model.namespacePrefix}-extension.xsd`;
-    if (basePath.endsWith(".xsd")) {
-      return basePath.replace(/\.xsd$/, suffix);
-    } else {
-      return basePath + suffix;
-    }
+    const basePath = this.artifact.publicUrl;
+    return getExtensionSchemaPath(basePath, model.namespacePrefix);
   }
 
   /**
@@ -954,9 +1021,11 @@ class XmlSchemaAdapter {
    * to delegate element creation.
    */
   public async getElementForNormalProperty(property: StructureModelProperty): Promise<XmlSchemaElement> {
+    const namespacePrefix = this.getNamespacePrefixForEntity(property);
+
     const element = {
       entityType: "element",
-      name: [null, property.technicalLabel],
+      name: [namespacePrefix, property.technicalLabel],
       type: await this.objectTypeToSchemaType(property),
       annotation: this.getAnnotation(property),
     } as XmlSchemaElement;
@@ -1036,12 +1105,12 @@ class XmlSchemaAdapter {
     const isType = data instanceof StructureModelProperty;
     const generateAnnotation = (isElement && this.options.generateElementAnnotations) || (isType && this.options.generateTypeAnnotations);
     return {
-          modelReference: this.options.generateSawsdl ? data.iris : null,
-          metaTitle: generateAnnotation ? data.humanLabel : null,
-          metaDescription: generateAnnotation ? data.humanDescription : null,
-          metaUsageNote: generateAnnotation ? data.usageNote : null,
-          structureModelEntity: data,
-        };
+      modelReference: this.options.generateSawsdl ? data.iris : null,
+      metaTitle: generateAnnotation ? data.humanLabel : null,
+      metaDescription: generateAnnotation ? data.humanDescription : null,
+      metaUsageNote: generateAnnotation ? data.usageNote : null,
+      structureModelEntity: data,
+    };
   }
 
   /**
@@ -1107,7 +1176,7 @@ class XmlSchemaAdapter {
       ? // Type inside XSD is used.
         [this.getAndImportHelperNamespace("xsd", true), primitiveData.dataType.substring(XSD_PREFIX.length)]
       : // An internally mapped type (from OFN) is used, if defined.
-        simpleTypeMapQName[primitiveData.dataType] ?? [this.getAndImportHelperNamespace("xsd", true), "anySimpleType"];
+        (simpleTypeMapQName[primitiveData.dataType] ?? [this.getAndImportHelperNamespace("xsd", true), "anySimpleType"]);
     if (type === langStringName) {
       // todo: For now this wont happen as language string shall be caught by the parent function
       // Defined langString if it is used.

@@ -21,7 +21,6 @@ import { getMustacheView } from "@dataspecer/documentation";
 import { HandlebarsAdapter } from "../../../handlebars-adapter/lib/interface.js";
 import { MAIN_XML_PARTIAL } from "./index.ts";
 import { StructureModelClass } from "@dataspecer/core/structure-model/model/structure-model-class";
-import { internalMergeDocumentationConfigurations } from "@dataspecer/documentation/configuration";
 
 /**
  * Recursively traverses the complex content container and returns all elements.
@@ -125,7 +124,6 @@ export class XmlSchemaDocumentationGenerator {
 
   constructor(
     documentationArtifact: DataSpecificationArtefact,
-    xmlSchema: XmlSchema,
     conceptualModel: ConceptualModel,
     context: ArtefactGeneratorContext,
     artefact: DataSpecificationArtefact,
@@ -134,7 +132,6 @@ export class XmlSchemaDocumentationGenerator {
     adapter: HandlebarsAdapter,
   ) {
     this.documentationArtifact = documentationArtifact;
-    this.xmlSchema = xmlSchema;
     this.conceptualModel = conceptualModel;
     this.context = context;
     this.artefact = artefact;
@@ -175,7 +172,9 @@ export class XmlSchemaDocumentationGenerator {
     return id;
   }
 
-  async generateToObject(): Promise<object> {
+  async generateToObject(documentationSchemaView: XmlSchema): Promise<object> {
+    this.xmlSchema = documentationSchemaView;
+
     const result: Record<string, unknown> = await this.prepareData();
 
     const prefixToNamespace = {} as Record<string, string>;
@@ -216,7 +215,10 @@ export class XmlSchemaDocumentationGenerator {
       const possibleOutsideReferenceName = element.name;
 
 
-      if (possibleOutsideReferenceName[0] !== null && this.xmlSchema.targetNamespacePrefix !== possibleOutsideReferenceName[0]) {
+      if (possibleOutsideReferenceName[0] !== null && (
+        this.xmlSchema.targetNamespacePrefix !== possibleOutsideReferenceName[0] &&
+        !this.xmlSchema.documentationProfileView?.namespaces.find(ns => ns.prefix === possibleOutsideReferenceName[0])
+      )) {
         // This is link to an external element
         return prefixToNamespace[possibleOutsideReferenceName[0]] + possibleOutsideReferenceName[1];
       }
