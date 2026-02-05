@@ -32,6 +32,14 @@ export function transformPimClass(cls: PimClass) {
         type: ["class"],
     } as SemanticModelClass & Partial<ExtendedSemanticModelClass>;
 
+    // Transfer predicate metadata if available
+    if ((cls as any).pimLabelIri) {
+        semanticClass.nameIri = (cls as any).pimLabelIri;
+    }
+    if ((cls as any).pimDescriptionIri) {
+        semanticClass.descriptionIri = (cls as any).pimDescriptionIri;
+    }
+
     result[cls.iri as string] = semanticClass;
 
     if (cls.pimIsCodelist) {
@@ -89,6 +97,8 @@ export function transformCoreResources(resources: Record<string, CoreResource>, 
                         description: right.pimHumanDescription ?? resource.pimHumanDescription ?? {},
                         concept: right.pimPart,
                         iri: resource.pimInterpretation ?? null,
+                        nameIri: (resource as any).pimLabelIri,
+                        descriptionIri: (resource as any).pimDescriptionIri,
                     },
                 ],
             } satisfies SemanticModelRelationship;
@@ -122,6 +132,8 @@ export function transformCoreResources(resources: Record<string, CoreResource>, 
                         description: resource.pimHumanDescription ?? {},
                         concept: resource.pimDatatype ?? "http://www.w3.org/2000/01/rdf-schema#Literal",
                         iri: resource.pimInterpretation ?? null,
+                        nameIri: (resource as any).pimLabelIri,
+                        descriptionIri: (resource as any).pimDescriptionIri,
                     },
                 ],
             } satisfies SemanticModelRelationship;

@@ -290,16 +290,24 @@ class EntityListContainerToDsv {
     if (item.nameFromProfiled === null) {
       profile.prefLabel = this.prepareString(item.name);
     } else {
+      // Look up the actual predicate used in the profiled entity
+      const profiledEntity = this.identifierToEntity(item.nameFromProfiled);
+      const nameIri = (profiledEntity as any)?.nameIri ?? SKOS.prefLabel.id;
+      
       profile.reusesPropertyValue.push({
-        reusedPropertyIri: SKOS.prefLabel.id,
+        reusedPropertyIri: nameIri,
         propertyReusedFromResourceIri: this.identifierToIri(item.nameFromProfiled),
       });
     }
     if (item.descriptionFromProfiled === null) {
       profile.definition = this.prepareString(item.description);
     } else {
+      // Look up the actual predicate used in the profiled entity
+      const profiledEntity = this.identifierToEntity(item.descriptionFromProfiled);
+      const descriptionIri = (profiledEntity as any)?.descriptionIri ?? SKOS.definition.id;
+      
       profile.reusesPropertyValue.push({
-        reusedPropertyIri: SKOS.definition.id,
+        reusedPropertyIri: descriptionIri,
         propertyReusedFromResourceIri: this.identifierToIri(item.descriptionFromProfiled),
       });
     }

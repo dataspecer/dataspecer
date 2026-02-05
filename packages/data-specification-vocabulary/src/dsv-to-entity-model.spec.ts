@@ -377,3 +377,77 @@ test("Issue #1005", () => {
   expect(actual).toStrictEqual(dsv);
 
 });
+
+test("Round-trip test with rdfs:label and rdfs:comment predicates", async () => {
+  // Test that DSV with rdfs:label and rdfs:comment is correctly converted
+  // to entity model and back to DSV
+  
+  const RDFS_LABEL = "http://www.w3.org/2000/01/rdf-schema#label";
+  const RDFS_COMMENT = "http://www.w3.org/2000/01/rdf-schema#comment";
+  
+  const originalDsv: ApplicationProfile = {
+    "iri": "http://example.org/ap/",
+    "externalDocumentationUrl": null,
+    "classProfiles": [{
+      "iri": "http://example.org/ap/Person-profile",
+      "prefLabel": {},
+      "definition": {},
+      "usageNote": {},
+      "profileOfIri": [],
+      "reusesPropertyValue": [{
+        "reusedPropertyIri": RDFS_LABEL,
+        "propertyReusedFromResourceIri": "http://example.org/vocab/Person"
+      }, {
+        "reusedPropertyIri": RDFS_COMMENT,
+        "propertyReusedFromResourceIri": "http://example.org/vocab/Person"
+      }],
+      "type": ["class-profile"],
+      "profiledClassIri": ["http://example.org/vocab/Person"],
+      "specializationOfIri": [],
+      "externalDocumentationUrl": null,
+      "classRole": ClassRole.undefined,
+    }],
+    "datatypePropertyProfiles": [],
+    "objectPropertyProfiles": []
+  };
+  
+  // Convert DSV to entity model
+  const entities = conceptualModelToEntityListContainer(
+    originalDsv,
+    { iriToIdentifier: (iri: string) => iri }, // context with identity function
+  );
+  
+  // Add the vocabulary entity that is being profiled
+  const vocabularyEntity = {
+    "id": "http://example.org/vocab/Person",
+    "iri": "http://example.org/vocab/Person",
+    "name": { "en": "Person" },
+    "description": { "en": "A person" },
+    "type": ["class"],
+    "nameIri": RDFS_LABEL,
+    "descriptionIri": RDFS_COMMENT,
+  };
+  entities.entities.push(vocabularyEntity);
+  
+  // Convert back to DSV
+  const context = createContext([entities]);
+  const resultDsv = entityListContainerToDsvModel(
+    originalDsv.iri, entities, context
+  );
+  
+  // Verify that rdfs:label and rdfs:comment are preserved
+  expect(resultDsv.classProfiles).toHaveLength(1);
+  expect(resultDsv.classProfiles[0].reusesPropertyValue).toHaveLength(2);
+  
+  const labelReuse = resultDsv.classProfiles[0].reusesPropertyValue.find(
+    r => r.reusedPropertyIri === RDFS_LABEL
+  );
+  expect(labelReuse).toBeDefined();
+  expect(labelReuse?.propertyReusedFromResourceIri).toBe("http://example.org/vocab/Person");
+  
+  const commentReuse = resultDsv.classProfiles[0].reusesPropertyValue.find(
+    r => r.reusedPropertyIri === RDFS_COMMENT
+  );
+  expect(commentReuse).toBeDefined();
+  expect(commentReuse?.propertyReusedFromResourceIri).toBe("http://example.org/vocab/Person");
+});

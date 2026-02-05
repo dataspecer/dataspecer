@@ -23,7 +23,7 @@ import {
   SemanticModelRelationshipEndProfile,
   SemanticModelRelationshipProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL, SKOS, VANN } from "./vocabulary.ts";
+import { DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL, SKOS, VANN, RDFS } from "./vocabulary.ts";
 import { SEMANTIC_MODEL_GENERALIZATION, SemanticModelGeneralization } from "@dataspecer/core-v2/semantic-model/concepts";
 
 interface MandatoryConceptualModelToEntityListContainerContext {
@@ -147,9 +147,9 @@ class ApplicationProfileToEntityModel {
       externalDocumentationUrl: profile.externalDocumentationUrl,
       // NamedThingProfile
       name: profile.prefLabel ?? {},
-      nameFromProfiled: this.selectFromProfiled(profile, SKOS.prefLabel.id),
+      nameFromProfiled: this.selectFromProfiled(profile, [SKOS.prefLabel.id, RDFS.label.id]),
       description: profile.definition ?? {},
-      descriptionFromProfiled: this.selectFromProfiled(profile, SKOS.definition.id),
+      descriptionFromProfiled: this.selectFromProfiled(profile, [SKOS.definition.id, RDFS.comment.id]),
     };
     this.entities.push(classProfile);
     // Convert generalizations.
@@ -166,11 +166,21 @@ class ApplicationProfileToEntityModel {
 
   private selectFromProfiled(profile: {
     reusesPropertyValue: PropertyValueReuse[],
-  }, property: string): string | null {
-    const reusesPropertyValue = profile.reusesPropertyValue.find(
-      item => item.reusedPropertyIri === property);
-    const iri = reusesPropertyValue?.propertyReusedFromResourceIri ?? null;
-    return iri === null ? null : this.context.iriToIdentifier(iri);
+  }, properties: string | string[]): string | null {
+    // Support both single property and array of properties
+    const propertyList = Array.isArray(properties) ? properties : [properties];
+    
+    // Try to find a reuse for any of the properties
+    for (const property of propertyList) {
+      const reusesPropertyValue = profile.reusesPropertyValue.find(
+        item => item.reusedPropertyIri === property);
+      if (reusesPropertyValue) {
+        const iri = reusesPropertyValue.propertyReusedFromResourceIri;
+        return this.context.iriToIdentifier(iri);
+      }
+    }
+    
+    return null;
   }
 
   private specializationOfToGeneralization(
@@ -255,10 +265,10 @@ class ApplicationProfileToEntityModel {
       // NamedThingProfile
       name: profile.prefLabel ?? {},
       nameFromProfiled: this.selectFromPropertyProfiled(
-        profile, SKOS.prefLabel.id, rangeConcept),
+        profile, [SKOS.prefLabel.id, RDFS.label.id], rangeConcept),
       description: profile.definition ?? {},
       descriptionFromProfiled: this.selectFromPropertyProfiled(
-        profile, SKOS.definition.id, rangeConcept),
+        profile, [SKOS.definition.id, RDFS.comment.id], rangeConcept),
       // Profile
       profiling,
       usageNote: profile.usageNote ?? {},
@@ -286,11 +296,21 @@ class ApplicationProfileToEntityModel {
 
   private selectFromPropertyProfiled(profile: {
     reusesPropertyValue: PropertyValueReuse[],
-  }, property: string, rangeConcept: string): string | null {
-    const reusesPropertyValue = profile.reusesPropertyValue.find(
-      item => item.reusedPropertyIri === property);
-    const iri = reusesPropertyValue?.propertyReusedFromResourceIri ?? null;
-    return iri === null ? null : this.context.iriPropertyToIdentifier(iri, rangeConcept);
+  }, properties: string | string[], rangeConcept: string): string | null {
+    // Support both single property and array of properties
+    const propertyList = Array.isArray(properties) ? properties : [properties];
+    
+    // Try to find a reuse for any of the properties
+    for (const property of propertyList) {
+      const reusesPropertyValue = profile.reusesPropertyValue.find(
+        item => item.reusedPropertyIri === property);
+      if (reusesPropertyValue) {
+        const iri = reusesPropertyValue.propertyReusedFromResourceIri;
+        return this.context.iriPropertyToIdentifier(iri, rangeConcept);
+      }
+    }
+    
+    return null;
   }
 
 }

@@ -20,6 +20,7 @@ export const RDFS = {
   "Class": IRI(RDFS_PREFIX + "Class"),
   "isDefinedBy": IRI(RDFS_PREFIX + "isDefinedBy"),
   "label": IRI(RDFS_PREFIX + "label"),
+  "comment": IRI(RDFS_PREFIX + "comment"),
   "domain": IRI(RDFS_PREFIX + "domain"),
   "range": IRI(RDFS_PREFIX + "range"),
 };
