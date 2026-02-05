@@ -113,7 +113,7 @@ const application = express();
 // If app is served through a proxy, trust the proxy to allow HTTPS protocol to be detected.
 // I am not exactly if or why is this needed, but every example has it including the official one.
 // https://authjs.dev/getting-started/deployment#docker it is mentioned for example here for docker
-application.set('trust proxy', true);
+application.set('trust proxy', true);;
 
 application.use(cors(corsOriginHandler));
 
