@@ -26,7 +26,7 @@ import {
   StructureModelProperty,
   type StructureModelComplexType,
 } from "@dataspecer/core/structure-model/model";
-import { XSD, OFN, OFN_LABELS } from "@dataspecer/core/well-known";
+import { XSD, OFN, OFN_LABELS, LANGUAGE_PROPERTY_LABELS } from "@dataspecer/core/well-known";
 import {
   DataSpecification,
   DataSpecificationArtefact,
@@ -547,15 +547,15 @@ function structureModelPrimitiveToJsonDefinition(
       result.examples = primitive.example;
       break;
     case OFN.text:
-      result = languageString(primitive.languageStringRequiredLanguages);
+      result = languageString(context, primitive.languageStringRequiredLanguages);
       result.title = context.stringSelector(OFN_LABELS[OFN.text]);
       break;
     case OFN.rdfLangString:
       if  (primitive.jsonUseKeyValueForLangString) {
-        result = languageString([], true);
+        result = languageString(context, [], true);
         result.title = context.stringSelector(OFN_LABELS[OFN.text]);
       } else {
-        result = rdfLanguageString();
+        result = rdfLanguageString(context);
         result.title = context.stringSelector(OFN_LABELS[OFN.rdfLangString]);
       }
       break;
@@ -567,7 +567,7 @@ function structureModelPrimitiveToJsonDefinition(
   return result;
 }
 
-function languageString(requiredLanguages: string[], multipleCardinality: boolean = false): JsonSchemaObject {
+function languageString(context: Context, requiredLanguages: string[], multipleCardinality: boolean = false): JsonSchemaObject {
   const result = new JsonSchemaObject();
 
   function getPropertyType(multipleCardinality: boolean) {
@@ -581,33 +581,33 @@ function languageString(requiredLanguages: string[], multipleCardinality: boolea
   }
 
   result.additionalProperties = getPropertyType(multipleCardinality);
-  result.additionalProperties.title = "Hodnota v jiném jazyce";
+  result.additionalProperties.title = context.stringSelector(LANGUAGE_PROPERTY_LABELS.anotherLanguage);
 
   result.required = requiredLanguages;
 
   const cs = getPropertyType(multipleCardinality);
   result.properties["cs"] = cs;
-  cs.title = "Hodnota v českém jazyce";
+  cs.title = context.stringSelector(LANGUAGE_PROPERTY_LABELS.czechLanguage);
 
   const en = getPropertyType(multipleCardinality);
   result.properties["en"] = en;
-  en.title = "Hodnota v anglickém jazyce";
+  en.title = context.stringSelector(LANGUAGE_PROPERTY_LABELS.englishLanguage);
 
   return result;
 }
 
-function rdfLanguageString(): JsonSchemaObject {
+function rdfLanguageString(context: Context): JsonSchemaObject {
   const result = new JsonSchemaObject();
 
   result.required = ["@value", "@language"];
 
   const value = new JsonSchemaString(null);
   result.properties["@value"] = value;
-  value.title = "Text v daném jazyce";
+  value.title = context.stringSelector(LANGUAGE_PROPERTY_LABELS.textInGivenLanguage);
 
   const language = new JsonSchemaString(null);
   result.properties["@language"] = language;
-  language.title = "Jazyk textu";
+  language.title = context.stringSelector(LANGUAGE_PROPERTY_LABELS.textLanguage);
 
   return result;
 }
