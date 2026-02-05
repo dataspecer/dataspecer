@@ -1881,6 +1881,11 @@ const createActions = (
     },
     setViewportToPosition(x, y) {
       console.log("Diagram.setViewToPosition", { x, y });
+      // Since getViewport() negates the values (x: -viewport.x, y: -viewport.y),
+      // we need to negate them back to set the viewport correctly
+      const currentZoom = reactFlow.getViewport().zoom;
+      reactFlow.setViewport({ x: -x, y: -y, zoom: currentZoom });
+      console.log("Diagram.setViewToPosition applied", { x: -x, y: -y, zoom: currentZoom });
     },
     centerViewportToNode(identifier) {
       console.log("Diagram.focusNode", { identifier });
