@@ -118,6 +118,17 @@ export const PropertyEdge = (props: EdgeProps<Edge<ApiEdge>>) => {
             {props.data.cardinalityTarget}
           </div>
         )}
+        {props.data === undefined || props.data.mandatoryLevelLabel === null ? null : (
+          <div style={{
+            position: "absolute",
+            color: "#6B7280",
+            transform: `${targetShift} translate(${targetWaypoint.x}px,${targetWaypoint.y + 20}px)`,
+            fontSize: "0.85em"
+          }}
+          >
+            {props.data.mandatoryLevelLabel}
+          </div>
+        )}
       </EdgeLabelRenderer>
     </>
   );
