@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
 
@@ -10,6 +10,7 @@ export const InputLanguageString = (props: {
   inputType: "text" | "textarea",
   disabled?: boolean,
   className?: string,
+  autoFocus?: boolean,
   onChange: (setter: (previous: LanguageString) => LanguageString) => void,
 }) => {
 
@@ -19,8 +20,29 @@ export const InputLanguageString = (props: {
   // Current language.
   const [activeLanguage, setActiveLanguage] = useState(props.defaultLanguage);
 
+  // Refs for the input elements
+  const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   // Select current value from the language string.
   const value = props.value[activeLanguage] ?? "";
+
+  // Focus the input when autoFocus is true
+  useEffect(() => {
+    if (props.autoFocus) {
+      // Use a small delay to ensure the dialog is fully rendered and visible
+      // This is needed because the HTML dialog element's showModal() needs time to complete
+      const timeoutId = setTimeout(() => {
+        if (props.inputType === "text") {
+          inputRef.current?.focus();
+        } else {
+          textareaRef.current?.focus();
+        }
+      }, 100); // 100ms is sufficient for the dialog to become interactive
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [props.autoFocus, props.inputType]);
 
   // In this hook we make sure that selected language is one of the available ones.
   // For example when user deleted language it will change it to next one.
@@ -82,6 +104,7 @@ export const InputLanguageString = (props: {
       </ul>
       {props.inputType === "text" ? (
         <input
+          ref={inputRef}
           disabled={props.disabled}
           type="text"
           className="w-full"
@@ -90,6 +113,7 @@ export const InputLanguageString = (props: {
         />
       ) : (
         <textarea
+          ref={textareaRef}
           disabled={props.disabled}
           value={value}
           className="w-full"
