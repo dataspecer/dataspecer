@@ -20,6 +20,7 @@ import { DialogProps, DialogWrapper } from "../dialog-api";
 import { filterInMemoryModels } from "../../util/model-utils";
 import { findSourceModelOfEntity } from "../../service/model-service";
 import { generateName } from "../../util/name-utils";
+import { InvalidState } from "../../application/error";
 
 export enum ConnectionType {
   Association,
@@ -98,6 +99,12 @@ export function createCreateConnectionState(
     model = models[0];
   } else {
     model = owner;
+  }
+
+  // If no model is available, throw InvalidState which will be caught by withErrorBoundary
+  // in the caller (openCreateConnectionDialogAction)
+  if (model === undefined) {
+    throw new InvalidState();
   }
 
   const name = generateName();

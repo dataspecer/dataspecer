@@ -26,6 +26,7 @@ import {
 import { findSourceModelOfEntity } from "../service/model-service";
 import { withErrorBoundary } from "./utilities/error-utilities";
 import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
+import { firstInMemorySemanticModel } from "../utilities/model";
 
 const LOG = createLogger(import.meta.url);
 
@@ -44,7 +45,7 @@ export function openCreateConnectionDialogAction(
 ) {
   withErrorBoundary(notifications,
     () => openCreateConnectionDialogActionInternal(
-      cmeExecutor, options, dialogs, graph, visualModel,
+      cmeExecutor, options, dialogs, notifications, graph, visualModel,
       semanticSource, semanticTarget, visualSource, visualTarget
     ));
 }
@@ -56,6 +57,7 @@ function openCreateConnectionDialogActionInternal(
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
+  notifications: UseNotificationServiceWriterType,
   graph: ModelGraphContextType,
   visualModel: WritableVisualModel,
   //
@@ -74,7 +76,7 @@ function openCreateConnectionDialogActionInternal(
     // Can be a relationship or generalization.
     openRelationshipOrGeneralizationDialog(
       options, dialogs, visualExecutor, graph, cmeExecutor,
-      source, target, visualSource, visualTarget);
+      source, target, visualSource, visualTarget, notifications);
   }
   else if (isSemanticModelClassProfile(source)
     && isSemanticModelClass(target)) {
@@ -147,7 +149,15 @@ function openRelationshipOrGeneralizationDialog(
   target: SemanticModelClass,
   visualSource: string,
   visualTarget: string,
+  notifications: UseNotificationServiceWriterType,
 ) {
+  // Check if there's a writable model before opening the dialog
+  const writableModel = firstInMemorySemanticModel(graph.models);
+  if (writableModel === null) {
+    notifications.error("You have to create a writable vocabulary first!");
+    return;
+  }
+
   const onConfirm = (state: CreateConnectionState) => {
     switch (state.type) {
     case ConnectionType.Association:

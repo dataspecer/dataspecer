@@ -773,7 +773,7 @@ function createActionsContext(
 
   const openCreateClassDialog = (model: string) => {
     const visualModel = graph.aggregatorView.getActiveVisualModel();
-    const modelInstance = graph.models.get(model);
+    const modelInstance = graph.models.get(model) ?? null;
     if (modelInstance === null || modelInstance instanceof InMemorySemanticModel) {
       openCreateClassDialogAction(
         cmeExecutor, options, dialogs, classes, graph, notifications, visualModel,
@@ -785,7 +785,7 @@ function createActionsContext(
 
   const openCreateAssociationDialog = (model: string) => {
     const visualModel = graph.aggregatorView.getActiveVisualModel();
-    const modelInstance = graph.models.get(model);
+    const modelInstance = graph.models.get(model) ?? null;
     if (modelInstance === null || modelInstance instanceof InMemorySemanticModel) {
       openCreateAssociationDialogAction(
         cmeExecutor, options, dialogs, classes, graph, notifications, visualModel,
@@ -797,7 +797,7 @@ function createActionsContext(
 
   const openCreateAttributeDialogForModel = (model: string) => {
     const visualModel = graph.aggregatorView.getActiveVisualModel();
-    const modelInstance = graph.models.get(model);
+    const modelInstance = graph.models.get(model) ?? null;
     if (modelInstance === null || modelInstance instanceof InMemorySemanticModel) {
       openCreateAttributeDialogAction(
         cmeExecutor, options, dialogs, classes, graph, notifications,

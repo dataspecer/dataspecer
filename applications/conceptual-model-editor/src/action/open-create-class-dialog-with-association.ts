@@ -16,6 +16,7 @@ import {
 } from "../dialog/association/edit-association-dialog-state-adapter";
 import { CmeReference } from "../dataspecer/cme-model/model";
 import { addSemanticRelationshipToVisualModelAction } from "./add-relationship-to-visual-model";
+import { firstInMemorySemanticModel } from "../utilities/model";
 
 /**
  * Opens dialog which on confirm creates class,
@@ -58,8 +59,14 @@ function createAssociationToCreatedClass(
   createdClassData: CmeReference,
   editClassDialogState: ClassDialogState
 ) {
+  const model = firstInMemorySemanticModel(graph.models);
+  if (model === null) {
+    notifications.error("You have to create a writable vocabulary first!");
+    return;
+  }
+
   const state = createNewAssociationDialogState(
-    classes, graph, visualModel, options.language, null);
+    classes, graph, visualModel, options.language, model.getId());
 
   const node = visualModel.getVisualEntity(nodeIdentifier);
   if (node === null) {
