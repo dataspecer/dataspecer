@@ -59,6 +59,26 @@ export async function modifyUserMetadata(iri: string, metadata: {label?: Languag
     setResourcesReact(copiedResourcesMemory);
 }
 
+/**
+ * Refreshes the metadata (including modification date) of a resource in the local state.
+ * Should be called after updating resource data to ensure the UI reflects the updated modification date.
+ * 
+ * @param iri - The IRI of the resource to refresh
+ */
+export async function refreshResourceMetadata(iri: string) {
+    try {
+        const resource = await packageService.getResource(iri);
+        const copiedResourcesMemory = {...resourcesMemory.current};
+        if (copiedResourcesMemory[iri] && resource) {
+            copiedResourcesMemory[iri] = {...copiedResourcesMemory[iri], metadata: resource.metadata};
+        }
+        setResourcesReact(copiedResourcesMemory);
+        resourcesMemory.current = copiedResourcesMemory;
+    } catch (error) {
+        console.error(`Failed to refresh resource metadata for ${iri}:`, error);
+    }
+}
+
 export async function deleteResource(iri: string) {
     await packageService.deletePackage(iri);
     const copiedResourcesMemory = {...resourcesMemory.current};

@@ -1,7 +1,7 @@
 import { Modal, ModalBody, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { BetterModalProps } from "@/lib/better-modal";
-import { packageService } from "@/package";
+import { packageService, refreshResourceMetadata } from "@/package";
 import { Loader } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -28,6 +28,7 @@ export const ReloadPimWrapper = ({ id, isOpen, resolve }: ReloadPimWrapperProps 
       newModel.id = id;
 
       await packageService.setResourceJsonData(id, newModel.serializeModel());
+      await refreshResourceMetadata(id);
     } catch (e) {
       setIsLoading(false);
       console.error(e);
