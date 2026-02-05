@@ -9,6 +9,7 @@ import { ExternalEntityWrapped, SemanticModelAggregator, LocalEntityWrapped } fr
 import { getSearchRelevance } from "./utils/get-search-relevance.ts";
 import { TupleSet } from "./utils/tuple-set.ts";
 import { withAbsoluteIri } from "../semantic-model/utils/index.ts";
+import { generateModelColor } from "./utils/color-utils.ts";
 
 const APPLICATION_PROFILE_AGGREGATOR_TYPE = "application-profile-aggregator";
 
@@ -114,6 +115,7 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
 
     this.thisVocabularyChain = {
       name: this.profile.getAlias() ?? "AP",
+      color: generateModelColor(this.profile.getId()),
     };
   }
 

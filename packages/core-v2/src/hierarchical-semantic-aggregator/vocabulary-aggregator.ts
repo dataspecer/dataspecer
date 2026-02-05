@@ -6,6 +6,7 @@ import { getSearchRelevance } from "./utils/get-search-relevance.ts";
 import { withAbsoluteIri } from "../semantic-model/utils/index.ts";
 import { createDefaultNoProfileAggregator, NoProfileAggregator } from "./utils/no-profile-aggregator.ts";
 import { AggregatedProfiledSemanticModelRelationship } from "../semantic-model/profile/aggregator/aggregator.ts";
+import { generateModelColor } from "./utils/color-utils.ts";
 
 const VOCABULARY_AGGREGATOR_TYPE = "vocabulary-aggregator";
 
@@ -31,6 +32,7 @@ export class VocabularyAggregator implements SemanticModelAggregator {
 
     this.thisVocabularyChain = {
       name: this.vocabulary.getAlias() ?? "Vocabulary",
+      color: generateModelColor(this.vocabulary.getId()),
     };
 
     this.updateLocalEntities(this.vocabulary.getEntities(), []);
