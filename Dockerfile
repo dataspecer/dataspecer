@@ -97,6 +97,8 @@ ENV DATASPECER_GIT_COMMIT=${GIT_COMMIT} \
 # Copy final files
 COPY --from=builder --chmod=777 /usr/src/app /usr/src/app
 
+RUN addgroup -g 1001 app1001 && adduser -D -u 1001 -G app1001 app1001
+RUN addgroup -g 1000 app1000 && adduser -D -u 1000 -G app1000 app1000
 USER 1000:1000
 VOLUME /usr/src/app/database
 EXPOSE 80
