@@ -67,24 +67,24 @@ export function populateSshKnownHosts() {
 
 export function setSshChmod() {
   // const sshDir = path.join(os.homedir(), ".ssh");
-  // const uid = process.getuid();
-  // const gid = process.getgid();
-  // const knownHosts = path.join(sshDir, "known_hosts");
-  // console.info({uid, gid, knownHosts, sshDir});
-  // try {
-  //   // fs.chownSync(knownHosts, uid, gid);
-  //   fs.chmodSync(knownHosts, 0o644);
-  // }
-  // catch(error) {
-  //   console.error(`Could not set the ${knownHosts} chmod to 644`);
-  // }
-  // try {
-  //   // fs.chownSync(sshDir, uid, gid);
-  //   fs.chmodSync(sshDir, 0o700);
-  // }
-  // catch(error) {
-  //   console.error(`Could not set the ${sshDir} (.ssh dir) chmod to 700`);
-  // }
+  const uid = process.getuid();
+  const gid = process.getgid();
+  const knownHosts = path.join(sshDir, "known_hosts");
+  console.info({uid, gid, knownHosts, sshDir});
+  try {
+    // fs.chownSync(knownHosts, uid, gid);
+    fs.chmodSync(knownHosts, 0o644);
+  }
+  catch(error) {
+    console.error(`Could not set the ${knownHosts} chmod to 644`);
+  }
+  try {
+    // fs.chownSync(sshDir, uid, gid);
+    fs.chmodSync(sshDir, 0o700);
+  }
+  catch(error) {
+    console.error(`Could not set the ${sshDir} (.ssh dir) chmod to 700`);
+  }
 }
 
 /**

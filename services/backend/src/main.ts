@@ -68,7 +68,9 @@ import { newApplicationProfile } from "./routes/new.ts";
 
 
 populateSshKnownHosts();
-setSshChmod();
+if (configuration.inDocker) {
+  setSshChmod();
+}
 for (const [gitProviderName, gitConfiguration] of Object.entries(configuration?.gitBotConfigurations ?? {})) {
   if (gitConfiguration?.dsBotSSHPrivateKey !== undefined && gitConfiguration?.dsBotSSHId !== undefined) {
     storeNewPrivateSSHKeyToBackend(
