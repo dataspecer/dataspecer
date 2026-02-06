@@ -72,6 +72,14 @@ print_banner() {
 
 print_banner
 
+if [ "$HOME" != "/" ]; then
+    mkdir -p $HOME/.ssh && \
+    chmod a+rwx $HOME/.ssh
+else
+    mkdir -p $HOME.ssh && \
+    chmod a+rwx $HOME.ssh
+fi
+
 if [ $# -gt 0 ]; then
   prepareDatabase
   exec node dist/backend-bundle.js "$@"
