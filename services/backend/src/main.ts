@@ -62,12 +62,13 @@ import { markPackageAsHavingNoUncommittedChanges } from "./routes/git/mark-packa
 import { checkExistenceOfSshKeyForUserHandler } from "./routes/git/ssh/check-ssh-key-existence.ts";
 import { deletePrivateSshKeyHandler } from "./routes/git/ssh/remove-private-ssh-key.ts";
 import { GitProviderNamesAsType } from "@dataspecer/git";
-import { populateSshKnownHosts, storeNewPrivateSSHKeyToBackend } from "@dataspecer/git-node";
+import { populateSshKnownHosts, setSshChmod, storeNewPrivateSSHKeyToBackend } from "@dataspecer/git-node";
 import { pathToSSHConfigForDS, pathToSSHForDS } from "./utils/create-ssh-path-constants.ts";
 import { newApplicationProfile } from "./routes/new.ts";
 
 
 populateSshKnownHosts();
+setSshChmod();
 for (const [gitProviderName, gitConfiguration] of Object.entries(configuration?.gitBotConfigurations ?? {})) {
   if (gitConfiguration?.dsBotSSHPrivateKey !== undefined && gitConfiguration?.dsBotSSHId !== undefined) {
     storeNewPrivateSSHKeyToBackend(
