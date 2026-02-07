@@ -67,7 +67,7 @@ import { pathToSSHConfigForDS, pathToSSHForDS } from "./utils/create-ssh-path-co
 import { newApplicationProfile } from "./routes/new.ts";
 
 
-// populateSshKnownHosts();
+populateSshKnownHosts();
 // if (configuration.inDocker) {
 //   setSshChmod();
 // }
