@@ -25,23 +25,8 @@ export const storePrivateSSHKeyHandler = asyncHandler(async (request: express.Re
     return;
   }
 
-  const fs = require("fs");
-  const path = require("path");
-  const os = require("os");
+  storeNewPrivateSSHKeyToBackend(privateSSHKey, userSSHIdentifer, gitProviderLowercase, pathToSSHForDS, pathToSSHConfigForDS);
 
-  const pathToHomeDirectorySShConfig = path.join(os.homedir(), ".ssh");
-
-  if (fs.existsSync(pathToHomeDirectorySShConfig)) {
-    response.sendStatus(403);
-    return;
-    console.log("Path exists");
-  } else {
-    response.sendStatus(404);
-    return;
-  }
-
-  // storeNewPrivateSSHKeyToBackend(privateSSHKey, userSSHIdentifer, gitProviderLowercase, pathToSSHForDS, pathToSSHConfigForDS);
-
-  // response.sendStatus(200);
-  // return;
+  response.sendStatus(200);
+  return;
 });
