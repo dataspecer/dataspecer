@@ -68,6 +68,7 @@ COPY services/backend/git-workflows ./git-workflows
 RUN apk update && apk add --no-cache git
 RUN apk update && apk add --no-cache openssh
 
+# TODO RadStr: Probably can be removed
 # Create the .ssh directory and make it accessible to user (Dataspecer process).
 # Otherwise we get access permissions error, when we try to create it from the Dataspecer.
 # To simulate the permissions run the docker run command with --user option, for example:
@@ -97,8 +98,9 @@ ENV DATASPECER_GIT_COMMIT=${GIT_COMMIT} \
 # Copy final files
 COPY --from=builder --chmod=777 /usr/src/app /usr/src/app
 
+# For the ssh - seems to be the only thing needed, we do not need to create the .ssh directory
 RUN addgroup -g 1001 app1001 && adduser -D -u 1001 -G app1001 app1001
-# RUN addgroup -g 1000 app1000 && adduser -D -u 1000 -G app1000 app1000
+
 USER 1000:1000
 VOLUME /usr/src/app/database
 EXPOSE 80
