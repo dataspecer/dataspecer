@@ -24,8 +24,24 @@ export const storePrivateSSHKeyHandler = asyncHandler(async (request: express.Re
     response.status(400).json("Not a valid git provider");
     return;
   }
-  storeNewPrivateSSHKeyToBackend(privateSSHKey, userSSHIdentifer, gitProviderLowercase, pathToSSHForDS, pathToSSHConfigForDS);
 
-  response.sendStatus(200);
-  return;
+  const fs = require("fs");
+  const path = require("path");
+  const os = require("os");
+
+  const pathToHomeDirectorySShConfig = path.join(os.homedir(), ".ssh");
+
+  if (fs.existsSync(pathToHomeDirectorySShConfig)) {
+    response.sendStatus(403);
+    return;
+    console.log("Path exists");
+  } else {
+    response.sendStatus(404);
+    return;
+  }
+
+  // storeNewPrivateSSHKeyToBackend(privateSSHKey, userSSHIdentifer, gitProviderLowercase, pathToSSHForDS, pathToSSHConfigForDS);
+
+  // response.sendStatus(200);
+  // return;
 });

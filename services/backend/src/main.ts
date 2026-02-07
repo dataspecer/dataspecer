@@ -67,16 +67,18 @@ import { pathToSSHConfigForDS, pathToSSHForDS } from "./utils/create-ssh-path-co
 import { newApplicationProfile } from "./routes/new.ts";
 
 
-populateSshKnownHosts();
-if (configuration.inDocker) {
-  setSshChmod();
-}
-for (const [gitProviderName, gitConfiguration] of Object.entries(configuration?.gitBotConfigurations ?? {})) {
-  if (gitConfiguration?.dsBotSSHPrivateKey !== undefined && gitConfiguration?.dsBotSSHId !== undefined) {
-    storeNewPrivateSSHKeyToBackend(
-      gitConfiguration.dsBotSSHPrivateKey, gitConfiguration.dsBotSSHId, gitProviderName as GitProviderNamesAsType, pathToSSHForDS, pathToSSHConfigForDS);
-  }
-}
+// populateSshKnownHosts();
+// if (configuration.inDocker) {
+//   setSshChmod();
+// }
+// for (const [gitProviderName, gitConfiguration] of Object.entries(configuration?.gitBotConfigurations ?? {})) {
+//   if (gitConfiguration?.dsBotSSHPrivateKey !== undefined && gitConfiguration?.dsBotSSHId !== undefined) {
+//     storeNewPrivateSSHKeyToBackend(
+//       gitConfiguration.dsBotSSHPrivateKey, gitConfiguration.dsBotSSHId, gitProviderName as GitProviderNamesAsType, pathToSSHForDS, pathToSSHConfigForDS);
+//   }
+// }
+
+
 // Create application models
 
 export const webhookUrl = `${configuration.gitWebhookBaseUrl ?? (configuration.baseName + "/api")}/git/webhook-test`;
