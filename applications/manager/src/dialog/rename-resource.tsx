@@ -114,7 +114,7 @@ export const RenameResourceDialog = ({ inputLabel, inputDescription, isOpen, res
                 <Textarea id={name.key} value={name.value} className="grow" onChange={target => setDescription([...description.map(n => n === name ? { ...n, value: target.target.value } : n)])} />
               </div>
             ))}
-            <button type="submit" className="hidden" />
+            <button type="submit" className="hidden" />     { /* TODO RadStr PR: I noticed this and I am not sure if it has any purpose */ }
           </div>
         </ModalBody>
         <ModalFooter className="flex flex-row">

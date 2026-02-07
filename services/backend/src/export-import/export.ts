@@ -1,71 +1,66 @@
-import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
-import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
-import { BaseResource, ResourceModel } from "../models/resource-model.ts";
-import { v4 as uuidv4 } from 'uuid';
-import { currentVersion } from "../tools/migrations/index.ts";
-import configuration from "../configuration.ts";
+import { AvailableFilesystems, GitIgnore, MergeStateCause, resourceTypeToTypeDirectoryMapping } from "@dataspecer/git";
+import { AvailableExports, AllowedExportResults } from "./export-actions.ts";
+import { BaseResource, LoadedPackage } from "../models/resource-model.ts";
+import { LocalStoreModelGetter } from "../models/local-store-model.ts";
+import { ResourceModelForImport } from "./import.ts";
+import { ResourceChangeType } from "../models/resource-change-observer.ts";
 
-export class PackageExporter {
-  resourceModel: ResourceModel;
-  zipStreamDictionary!: ZipStreamDictionary;
 
-  constructor(resourceModel: ResourceModel) {
-    this.resourceModel = resourceModel;
-  }
+/**
+ * Use the {@link PackageExporterBase} as base class for implementation of new exporters.
+ *  Note that there are some quirks in implementation. The biggest (and maybe only) one being setting "_exportVersion" in the meta of root resource.
+ *  For simplicity and consistency we update the value for each exported meta file.
+ */
+export interface PackageExporterInterface {
+  /**
+   * @param gitIgnore can be null for DS-filesystem
+   */
+  doExportFromIRI(
+    iri: string,
+    directory: string,
+    pathToExportStartDirectory: string,
+    importFilesystem: AvailableFilesystems,
+    exportType: AvailableExports,
+    exportFormat: string,
+    resourceModel: ResourceModelForImportExport | null,
+    gitIgnore: GitIgnore | null,
+  ): Promise<AllowedExportResults>;
 
-  async doExport(iri: string): Promise<Buffer> {
-    this.zipStreamDictionary = new ZipStreamDictionary();
-    await this.exportResource(iri, "");
-    return await this.zipStreamDictionary.save();
-  }
+  getExportVersion(): number;
+}
 
-  private async exportResource(iri: string, path: string) {
-    const resource = (await this.resourceModel.getResource(iri))!;
+const typeExportArtificialDirectories = Object.values(resourceTypeToTypeDirectoryMapping);
 
-    let localNameCandidate = iri;
-    if (iri.startsWith(path)) {
-      localNameCandidate = iri.slice(path.length);
-    }
-    if (localNameCandidate.includes("/") || localNameCandidate.length === 0) {
-      localNameCandidate = uuidv4();
-    }
-    let fullName = path + localNameCandidate;
+export function isArtificialExportDirectory(directoryName: string): boolean {
+  return typeExportArtificialDirectories.includes(directoryName);
+}
 
-    if (resource.types.includes(LOCAL_PACKAGE)) {
-      fullName += "/"; // Create directory
 
-      const pckg = (await this.resourceModel.getPackage(iri))!;
+export interface ResourceModelForExport {
+  readonly storeModel: LocalStoreModelGetter;
 
-      for (const subResource of pckg.subResources) {
-        await this.exportResource(subResource.iri, fullName);
-      }
-    }
+  getPackage(iri: string, deep?: boolean): Promise<LoadedPackage | null>;
+  getResource(iri: string): Promise<BaseResource | null>;
 
-    const metadata = this.constructMetadataFromResource(resource);
-    await this.writeBlob(fullName, "meta", metadata);
+  updateResourceMetadata(iri: string, userMetadata: {}, mergeStateUUIDsToIgnoreInUpdating?: string[] | undefined): Promise<void>;
+  updateModificationTime(
+    iri: string, updatedModel: string | null, updateReason: ResourceChangeType,
+    shouldModifyHasUncommittedChanges: boolean, shouldNotifyListeners: boolean,
+    mergeStateUUIDsToIgnoreInUpdating?: string[]
+  ): Promise<void>
+}
 
-    for (const [blobName, storeId] of Object.entries(resource.dataStores)) {
-      const data = await this.resourceModel.storeModel.getModelStore(storeId).getJson();
-      await this.writeBlob(fullName, blobName, data);
-    }
-  }
+export interface ResourceModelForImportExport extends ResourceModelForImport, ResourceModelForExport {
+  // EMPTY
+}
 
-  private constructMetadataFromResource(resource: BaseResource): object {
-    return {
-      iri: resource.iri,
-      types: resource.types,
-      userMetadata: resource.userMetadata,
-      metadata: resource.metadata,
-      _version: currentVersion,
-      _exportVersion: 1,
-      _exportedAt: new Date().toISOString(),
-      _exportedBy: configuration.host,
-    }
-  }
+export interface ResourceModelForFilesystemRepresentation extends ResourceModelForImportExport {
+  deleteModelStore(iri: string, storeName?: string, mergeStateUUIDsToIgnoreInUpdating?: string[] | undefined): Promise<void>;
+}
 
-  private async writeBlob(iri: string, blobName: string, data: object) {
-    const stream = this.zipStreamDictionary.writePath(iri + "." + blobName + ".json");
-    await stream.write(JSON.stringify(data, null, 2));
-    stream.close();
-  }
+/**
+ * @todo Maybe better name
+ */
+export interface ResourceModelForPull extends ResourceModelForFilesystemRepresentation {
+  updateLastCommitHash(iri: string, lastCommitHash: string, updateCause: MergeStateCause): Promise<void>
 }

@@ -75,6 +75,14 @@ async function serializePackageModel(packageModel: PackageModel): Promise<Packag
     types: packageModel.types,
     userMetadata: packageModel.getUserMetadata() || {},
     metadata: null as any,
+    linkedGitRepositoryURL: "",       // TODO RadStr PR: I don't know about this, probably should be specified
+    projectIri: "",                   // TODO RadStr PR: I don't know about this, probably should be specified
+    branch: "",                       // TODO RadStr PR: I don't know about this, probably should be specified
+    representsBranchHead: true,       // TODO RadStr PR: I don't know about this, probably should be specified
+    lastCommitHash: "",               // TODO RadStr PR: I don't know about this, probably should be specified
+    activeMergeStateCount: 0,         // TODO RadStr PR: I don't know about this, probably should be specified
+    hasUncommittedChanges: true,      // TODO RadStr PR: I don't know about this, probably should be specified
+
 
     subResources,
   };

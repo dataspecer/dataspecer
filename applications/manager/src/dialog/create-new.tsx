@@ -17,7 +17,7 @@ export const CreateNew = ({ isOpen, resolve, iri }: { iri: string } & BetterModa
       names = await openModal(RenameResourceDialog, {type: "create"});
       if (!names) return;
     }
-    
+
     await createModelInstructions[type!].createHook({
       iri: "",
       parentIri: iri,

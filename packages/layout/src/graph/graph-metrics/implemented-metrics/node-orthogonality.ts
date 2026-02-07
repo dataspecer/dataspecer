@@ -31,7 +31,7 @@ function areNodesAligned(
  */
 export class NodeOrthogonalityMetric implements Metric {
     computeMetric(graph: Graph): ComputedMetricValues {
-      const alignmentLimit = 20;      // TODO RadStr: Maybe try 0, if somebody chooses to use this metric
+      const alignmentLimit = 20;      // TODO RadStr Idea: Maybe try 0, if somebody chooses to use this metric
       const nodes = Object.values(graph.nodes);
       const alreadyAligned: boolean[] = Array(nodes.length).fill(false);
       for (let i = 0; i < nodes.length; i++) {

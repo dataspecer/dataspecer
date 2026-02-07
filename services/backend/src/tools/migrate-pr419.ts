@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { ResourceModel } from "../models/resource-model.ts";
-import { LocalStoreModel } from "../models/local-store-model.ts";
+import { LocalStoreModelBase } from "../models/local-store-model.ts";
 import { V1 } from "@dataspecer/core-v2/model/known-models";
 import { ROOT_PACKAGE_FOR_V1, createV1RootModel } from "../models/data-specification-model-adapted.ts";
 
@@ -11,7 +11,7 @@ export async function migratePR419() {
     const reuses = await prisma.$queryRaw`SELECT * FROM _DataSpecificationReuse` as any[];
     prisma.$disconnect();
 
-    const storeModel = new LocalStoreModel("./database/stores");
+    const storeModel = new LocalStoreModelBase("./database/stores");
     const adapter = new ResourceModel(storeModel, prisma);
 
     if (await adapter.getPackage(ROOT_PACKAGE_FOR_V1)) {

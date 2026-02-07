@@ -6,7 +6,7 @@ import * as DataPSM from "@dataspecer/core/data-psm/data-psm-vocabulary";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model";
 import { PimResource } from "@dataspecer/core/pim/model";
 import * as PIM from "@dataspecer/core/pim/pim-vocabulary";
-import { cloneDeep } from "lodash";
+import _ from "lodash";
 import { ComplexOperation } from "./complex-operation.ts";
 import { FederatedCoreResourceWriter } from "./federated-core-resource-writer.ts";
 import type { ImmediateCoreResourceReader } from "@dataspecer/core/core/store"
@@ -24,7 +24,7 @@ interface Subscription {
 }
 
 export function cloneResource<ResourceType extends CoreResource | Entity | null>(from: ResourceType, alreadyExists: ResourceType | null = null): ResourceType {
-    return cloneDeep(from);
+    return _.cloneDeep(from);
 }
 
 /**
