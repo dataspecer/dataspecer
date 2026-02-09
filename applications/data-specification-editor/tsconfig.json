@@ -36,7 +36,6 @@
     "noFallthroughCasesInSwitch": true,
 
     /* Coding experience */
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }

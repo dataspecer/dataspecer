@@ -9,6 +9,7 @@
     "module": "NodeNext",
     "moduleDetection": "force",
     "moduleResolution": "nodenext",
+    "rootDir": "src",
     "outDir": "lib",
     "rewriteRelativeImportExtensions": true,
     "skipLibCheck": true,
@@ -19,6 +20,6 @@
     "useDefineForClassFields": true,
     "resolveJsonModule": true,
   },
-  "include": ["src"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules"]
 }
