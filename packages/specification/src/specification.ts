@@ -32,6 +32,7 @@ import {
   isModelVocabulary,
 } from "./utils.ts";
 import { artefactToDsv } from "./v1/artefact-to-dsv.ts";
+import { generatorConfigurationToRdf } from "@dataspecer/data-specification-vocabulary/generator-configuration";
 
 const PIM_STORE_WRAPPER = "https://dataspecer.com/core/model-descriptor/pim-store-wrapper";
 const SGOV = "https://dataspecer.com/core/model-descriptor/sgov";
@@ -512,6 +513,37 @@ export async function generateSpecification(packageId: string, context: Generate
       type: "structure-model",
       URL: url,
     });
+  }
+
+  // Process generator configuration
+  if (Object.values(generatorConfiguration).some(v => Object.keys(v).length > 0)) {
+    // We have useful configuration that we want to share.
+
+    const iri = metaDataBaseIri + "generator-configuration#";
+    const fileName = "generator-configuration.ttl";
+    const url = baseUrl + fileName + queryParams;
+
+    const data = await generatorConfigurationToRdf(iri, generatorConfiguration);
+    await writeFile(fileName, data);
+    const descriptor = {
+      iri,
+      url,
+
+      role: dsvMetadataWellKnown.role.schema,
+      formatMime: dsvMetadataWellKnown.formatMime.turtle,
+      additionalRdfTypes: [],
+
+      conformsTo: [dsvMetadataWellKnown.conformsTo.dsvStructureConfiguration],
+    } satisfies ResourceDescriptor;
+    APHasResource?.push(descriptor);
+
+    externalArtifacts["generator-configuration"] = [
+      ...(externalArtifacts["generator-configuration"] ?? []),
+      {
+        type: fileName,
+        URL: url,
+      },
+    ];
   }
 
   // Process all SVGs. Because we do not know which svg belongs to which model,

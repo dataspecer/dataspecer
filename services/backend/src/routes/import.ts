@@ -27,6 +27,8 @@ import { asyncHandler } from "./../utils/async-handler.ts";
 import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { canonicalizeIds } from "@dataspecer/structure-model";
 import { DataSpecificationConfigurator, type DataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
+import { turtleStringToGeneratorConfiguration } from "@dataspecer/data-specification-vocabulary/generator-configuration";
+
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
   const result: LanguageString = {};
@@ -326,6 +328,15 @@ async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIr
 
   // We create a generator configuration so that re-generation works correctly
   {
+    const gcResource = mainSpecification.resources.find((r) => r.role === dsvMetadataWellKnown.role.schema && r.conformsTo.includes(dsvMetadataWellKnown.conformsTo.dsvStructureConfiguration));
+
+    let configurationModel = {};
+    if (gcResource) {
+      const queryResponse = await fetch(gcResource.url);
+      const data = await queryResponse.text();
+      configurationModel = await turtleStringToGeneratorConfiguration(gcResource.iri, data);
+    }
+
     let rootHref = new URL(".", url).href;
 
     // todo, older specifications had urls ending with /cs/ or /en/ but the root was without it
@@ -335,7 +346,8 @@ async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIr
 
     await resourceModel.createResource(rootPackageId, rootPackageId + "/generator-configuration", V1.GENERATOR_CONFIGURATION, {});
     const generatorConfigurationStore = await resourceModel.getOrCreateResourceModelStore(rootPackageId + "/generator-configuration");
-    const configuration = DataSpecificationConfigurator.setToObject({}, {
+    const configuration = DataSpecificationConfigurator.setToObject(configurationModel, {
+      ...DataSpecificationConfigurator.getFromObject(configurationModel),
       publicBaseUrl: rootHref,
     });
     generatorConfigurationStore.setJson(configuration);
