@@ -24,6 +24,6 @@ mv applications/conceptual-model-editor/dist/* .dist$CONCEPTUAL_MODEL_EDITOR
 mkdir -p .dist$MANAGER
 mv applications/manager/dist/* .dist$MANAGER
 
-# Copy api-specification application
-mkdir -p .dist$API_SPECIFICATION
-mv applications/api-specification/dist/* .dist$API_SPECIFICATION
+# # Copy api-specification application
+# mkdir -p .dist$API_SPECIFICATION
+# mv applications/api-specification/dist/* .dist$API_SPECIFICATION
