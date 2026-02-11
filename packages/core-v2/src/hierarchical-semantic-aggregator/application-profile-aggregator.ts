@@ -173,16 +173,10 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
   private updateEntities(toUpdate: string[]) {
     const updated: Record<string, LocalEntityWrapped> = {};
     const removed: string[] = [];
-const processed = new Set<string>();
 
     let entityId: string | undefined;
     // Newly discovered entities should be at the end to not cause infinite loop by accident
     while (entityId = toUpdate.pop()) {
-// Skip if already processed in this update cycle to prevent infinite loops from circular profiles
-      if (processed.has(entityId)) {
-        continue;
-      }
-      processed.add(entityId);
       const entity = this.profileEntities[entityId];
 
       if (!entity) {
@@ -210,8 +204,7 @@ const processed = new Set<string>();
           } satisfies AggregatedEntityInApplicationProfileAggregator;
           this.entities[entity.id] = updatedEntity;
           this.dependsOn.overrideByFirst(entity.id, entity.profiling);
-          const dependents = this.dependsOn.getBySecond(entity.id);
-          toUpdate.push(...dependents.filter(id => !processed.has(id)));
+          toUpdate.push(...this.dependsOn.getBySecond(entity.id));
           updated[entity.id] = updatedEntity;
         } else if (isSemanticModelRelationshipProfile(entity)) {
           // todo: we need to handle the case with local relations!
@@ -229,8 +222,7 @@ const processed = new Set<string>();
           } satisfies AggregatedEntityInApplicationProfileAggregator;
           this.entities[entity.id] = updatedEntity;
           this.dependsOn.overrideByFirst(entity.id, entity.ends.map(end => end.profiling).flat());
-          const dependents = this.dependsOn.getBySecond(entity.id);
-          toUpdate.push(...dependents.filter(id => !processed.has(id)));
+          toUpdate.push(...this.dependsOn.getBySecond(entity.id));
           updated[entity.id] = updatedEntity;
         } else if (isSemanticModelClass(entity)) {
           if (!this.allowOnlyProfiledEntities) {
@@ -245,8 +237,7 @@ const processed = new Set<string>();
             this.dependsOn.deleteFirst(entity.id); // class is independent
             updated[entity.id] = updatedEntity;
           }
-          const dependents = this.dependsOn.getBySecond(entity.id);
-          toUpdate.push(...dependents.filter(id => !processed.has(id)));
+          toUpdate.push(...this.dependsOn.getBySecond(entity.id));
         } else if (isSemanticModelRelationship(entity)) {
           if (!this.allowOnlyProfiledEntities) {
             const updatedEntity = {
@@ -259,8 +250,7 @@ const processed = new Set<string>();
             this.dependsOn.deleteFirst(entity.id); // relationship is profile-independent
             updated[entity.id] = updatedEntity;
           }
-          const dependents = this.dependsOn.getBySecond(entity.id);
-          toUpdate.push(...dependents.filter(id => !processed.has(id)));
+          toUpdate.push(...this.dependsOn.getBySecond(entity.id));
         } else if (isSemanticModelGeneralization(entity)) {
           const updatedEntity = {
             id: entity.id,
@@ -270,8 +260,7 @@ const processed = new Set<string>();
           } satisfies LocalEntityWrapped;
           this.entities[entity.id] = updatedEntity;
           this.dependsOn.deleteFirst(entity.id); // generalization is profile-independent
-          const dependents = this.dependsOn.getBySecond(entity.id);
-          toUpdate.push(...dependents.filter(id => !processed.has(id)));
+          toUpdate.push(...this.dependsOn.getBySecond(entity.id));
           updated[entity.id] = updatedEntity;
         }
       }
@@ -462,25 +451,17 @@ const processed = new Set<string>();
     const subProfiles: LocalEntityWrapped[] = [this.entities[localEntityId] as LocalEntityWrapped];
     {
       const lookup: LocalEntityWrapped<SemanticModelClassProfile>[] = [this.entities[localEntityId] as LocalEntityWrapped<SemanticModelClassProfile>];
-const visitedInLookup = new Set<string>();
-      visitedInLookup.add(this.entities[localEntityId].aggregatedEntity.id);
       let subProfile: LocalEntityWrapped<SemanticModelClassProfile> | undefined;
       while (subProfile = lookup.pop()) {
         for (const profile of classProfiles) {
           const generalization = generalizations.get(profile.aggregatedEntity.id)?.get(subProfile.aggregatedEntity.id);
           if (generalization) {
-if (!visitedInLookup.has(profile.aggregatedEntity.id)) {
-              visitedInLookup.add(profile.aggregatedEntity.id);
             lookup.push(profile);
             subProfiles.push(profile);
             subProfiles.push(generalization);
-}
           } else if (profile.aggregatedEntity.profiling.includes(subProfile.aggregatedEntity.id)) {
             if (!subProfiles.includes(profile)) {
-if (!visitedInLookup.has(profile.aggregatedEntity.id)) {
-                visitedInLookup.add(profile.aggregatedEntity.id);
               lookup.push(profile);
-}
               subProfiles.push(profile);
               subProfiles.push(this.getFakeGeneralization(profile.aggregatedEntity.id, subProfile.aggregatedEntity.id));
             }
@@ -497,25 +478,17 @@ if (!visitedInLookup.has(profile.aggregatedEntity.id)) {
     const superProfiles: LocalEntityWrapped[] = [this.entities[localEntityId]];
     {
       const lookup: LocalEntityWrapped<SemanticModelClassProfile>[] = [this.entities[localEntityId] as LocalEntityWrapped<SemanticModelClassProfile>];
-const visitedInLookup = new Set<string>();
-      visitedInLookup.add(this.entities[localEntityId].aggregatedEntity.id);
       let superProfile: LocalEntityWrapped<SemanticModelClassProfile> | undefined;
       while (superProfile = lookup.pop()) {
         for (const profile of classProfiles) {
           const generalization = generalizations.get(superProfile.aggregatedEntity.id)?.get(profile.aggregatedEntity.id);
           if (generalization) {
-if (!visitedInLookup.has(profile.aggregatedEntity.id)) {
-              visitedInLookup.add(profile.aggregatedEntity.id);
             lookup.push(profile);
             superProfiles.push(profile);
             superProfiles.push(generalization);
-}
           } else if (superProfile.aggregatedEntity.profiling.includes(profile.aggregatedEntity.id)) {
             if (!superProfiles.includes(profile)) {
-if (!visitedInLookup.has(profile.aggregatedEntity.id)) {
-                visitedInLookup.add(profile.aggregatedEntity.id);
               lookup.push(profile);
-}
               superProfiles.push(profile);
               superProfiles.push(this.getFakeGeneralization(superProfile.aggregatedEntity.id, profile.aggregatedEntity.id));
             }
