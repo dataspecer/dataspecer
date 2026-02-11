@@ -270,6 +270,13 @@ export async function generateSpecification(packageId: string, context: Generate
    */
   const baseUrl = mainUrl.endsWith("/") ? mainUrl : mainUrl + "/";
 
+  /**
+   * Whether we are generating in the "production mode" or in the "preview
+   * mode". In the production mode, we want to use relative IRIs in order to
+   * make images and other resources work.
+   */
+  const isPreviewMode = queryParams && queryParams.length > 0;
+
   // Get used vocabularies
 
   const usedVocabularies: ExternalSpecification[] = [];
@@ -326,15 +333,6 @@ export async function generateSpecification(packageId: string, context: Generate
     }[]
   > = {};
 
-  const PATH_LANGUAGE_PLACEHOLDER = "{language}";
-  const langs = ["cs", "en"];
-  const writeFileAllLanguages = async (pathExceptLanguage: string, data: string) => {
-    for (const lang of langs) {
-      const file = context.output.writePath(`${subdirectory}${lang}/${pathExceptLanguage}`);
-      await file.write(data);
-      await file.close();
-    }
-  };
   const writeFile = async (path: string, data: string) => {
     const file = context.output.writePath(`${subdirectory}${path}`);
     await file.write(data);
@@ -358,7 +356,7 @@ export async function generateSpecification(packageId: string, context: Generate
     const modelIri = model.baseIri ?? "";
     const fileName = isModelVocabulary(model.entities) ? "model.owl.ttl" : "dsv.ttl";
     // This is the physical location of the model
-    const modelUrl = baseUrl + PATH_LANGUAGE_PLACEHOLDER + "/" + fileName + queryParams;
+    const modelUrl = baseUrl + fileName + queryParams;
 
     // @ts-ignore
     let modelDescription = resource.getUserMetadata().description as LanguageString | undefined;
@@ -392,7 +390,7 @@ export async function generateSpecification(packageId: string, context: Generate
       // Serialize the model in OWL
 
       const owl = await generateLightweightOwl(model.entities, model.baseIri ?? "", modelIri);
-      await writeFileAllLanguages(fileName, owl);
+      await writeFile(fileName, owl);
       // Add entry for the documentation
       externalArtifacts["owl-vocabulary"] = [{ type: fileName, URL: modelUrl }];
 
@@ -436,7 +434,7 @@ export async function generateSpecification(packageId: string, context: Generate
         ...idToIriMapping,
         ...(await getIdToIriMapping([model])),
       };
-      await writeFileAllLanguages(fileName, dsv);
+      await writeFile(fileName, dsv);
       externalArtifacts["dsv-profile"] = [{ type: fileName, URL: modelUrl }];
 
       // Create the descriptor of the DSV serialization
@@ -458,8 +456,8 @@ export async function generateSpecification(packageId: string, context: Generate
         const shaclIri = metaDataBaseIri + "shacl";
         const shacl = await generateShaclApplicationProfile(model, models, modelIri);
         const shaclFileName = "shacl.ttl";
-        const shaclUrl = baseUrl + PATH_LANGUAGE_PLACEHOLDER + "/" + shaclFileName + queryParams;
-        await writeFileAllLanguages(shaclFileName, shacl);
+        const shaclUrl = baseUrl + shaclFileName + queryParams;
+        await writeFile(shaclFileName, shacl);
         externalArtifacts["shacl-profile"] = [{ type: shaclFileName, URL: shaclUrl }];
 
         const shaclDescriptor = {
@@ -548,6 +546,7 @@ export async function generateSpecification(packageId: string, context: Generate
 
   // Process all SVGs. Because we do not know which svg belongs to which model,
   // we assign all of them to all models.
+  // Also, currently SVGs are not language dependent, so we generate them to the root of the directory.
   const visualModels = subResources.filter((r) => r.types[0] === LOCAL_VISUAL_MODEL);
   for (const visualModel of visualModels) {
     const model = await visualModel.asBlobModel();
@@ -557,9 +556,9 @@ export async function generateSpecification(packageId: string, context: Generate
     if (svg) {
       const resourceIri = metaDataBaseIri + visualModel.id; // We do not support custom IRIs right now
       const resourceFileName = visualModel.id + ".svg";
-      const resourceUrl = baseUrl + PATH_LANGUAGE_PLACEHOLDER + "/" + resourceFileName + queryParams;
+      const resourceUrl = baseUrl + resourceFileName + queryParams;
 
-      await writeFileAllLanguages(resourceFileName, svg);
+      await writeFile(resourceFileName, svg);
       externalArtifacts["svg"] = [
         ...(externalArtifacts["svg"] ?? []),
         {
@@ -594,7 +593,7 @@ export async function generateSpecification(packageId: string, context: Generate
 
   const htmlDescriptor = {
     iri: metaDataDocumentationIri,
-    url: baseUrl + PATH_LANGUAGE_PLACEHOLDER + "/" + queryParams,
+    url: "THIS STRING WILL BE REPLACED LATER",
 
     role: dsvMetadataWellKnown.role.specification,
     formatMime: dsvMetadataWellKnown.formatMime.html,
@@ -615,14 +614,6 @@ export async function generateSpecification(packageId: string, context: Generate
       }
     }
   }
-
-  // Generate the DSV Metadata serialization in JSON-LD string
-  const dsv = await DSVMetadataToJsonLdString(specifications, {
-    rootHtmlDocumentIri: htmlDescriptor.iri,
-    space: 2,
-    // todo we use placeholders for language, this cannot be absolute until we fix it
-    useAbsoluteUrls: false,
-  });
 
   /**
    * Because we generate documentation in multiple languages, we replace public
@@ -648,22 +639,22 @@ export async function generateSpecification(packageId: string, context: Generate
   }
 
   const langReplacer = createLangReplacer(context.v1Specification.artefacts);
-  for (const lang of langs) {
-    const languageReplacedExternalArtifacts = Object.fromEntries(
-      Object.entries(externalArtifacts).map(([key, artifacts]) => [
-        key,
-        artifacts.map((artifact) => ({
-          ...artifact,
-          URL: artifact.URL.replace(PATH_LANGUAGE_PLACEHOLDER, lang),
-        })),
-      ]),
-    );
+
+  for (const lang of ["cs", "en"]) {
+    // Generate the DSV Metadata serialization in JSON-LD string
+    // Set correct URL for the documentation
+    htmlDescriptor.url = baseUrl + lang + "/" + queryParams;
+    const dsv = await DSVMetadataToJsonLdString(specifications, {
+      rootHtmlDocumentIri: htmlDescriptor.iri,
+      space: 2,
+      useAbsoluteUrls: !isPreviewMode,
+    });
 
     langReplacer(lang);
 
     const documentation = context.output.writePath(`${subdirectory}${lang}/index.html`);
     await documentation.write(
-      await generateHtmlDocumentation(resource, models, { externalArtifacts: languageReplacedExternalArtifacts, dsv, language: lang, prefixMap }, context),
+      await generateHtmlDocumentation(resource, models, { externalArtifacts, dsv, language: lang, prefixMap }, context),
     );
     await documentation.close();
   }
