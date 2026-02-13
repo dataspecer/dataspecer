@@ -42,8 +42,71 @@ function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
   return result;
 }
 
+/**
+ * Creates a resource if it doesn't exist, or updates its metadata if it already exists.
+ */
+async function ensureResource(parentIri: string, iri: string, type: string, userMetadata: any): Promise<void> {
+  const existing = await resourceModel.getResource(iri);
+  if (existing) {
+    await resourceModel.updateResource(iri, userMetadata);
+  } else {
+    await resourceModel.createResource(parentIri, iri, type, userMetadata);
+  }
+}
+
+/**
+ * Creates a package if it doesn't exist, or updates its metadata if it already exists.
+ */
+async function ensurePackage(parentIri: string, iri: string, userMetadata: any): Promise<void> {
+  const existing = await resourceModel.getResource(iri);
+  if (existing) {
+    await resourceModel.updateResource(iri, userMetadata);
+  } else {
+    await resourceModel.createPackage(parentIri, iri, userMetadata);
+  }
+}
+
+/**
+ * Deletes children of a package that are not in the touchedIris set.
+ */
+async function deleteUntouchedChildren(packageIri: string, touchedIris: Set<string>): Promise<void> {
+  const pkg = await resourceModel.getPackage(packageIri);
+  if (pkg?.subResources) {
+    for (const child of pkg.subResources) {
+      if (!touchedIris.has(child.iri)) {
+        await resourceModel.deleteResource(child.iri);
+      }
+    }
+  }
+}
+
+/**
+ * Builds a map from importedFromUrl/documentBaseUrl to child IRI for matching during reload.
+ */
+async function getExistingChildrenByUrl(packageIri: string): Promise<Map<string, string>> {
+  const pkg = await resourceModel.getPackage(packageIri);
+  const map = new Map<string, string>();
+  if (pkg?.subResources) {
+    for (const child of pkg.subResources) {
+      const url = (child.userMetadata as any)?.importedFromUrl ?? (child.userMetadata as any)?.documentBaseUrl;
+      if (url) {
+        map.set(url, child.iri);
+      }
+    }
+  }
+  return map;
+}
+
+/**
+ * Creates a PIM Wrapper that imports an RDFS model. Model has IRI that needs to
+ * be specified, but the IDs inside the model are stable. If the model exists,
+ * it is updated.
+ *
+ * @todo This function should be merged with importRdfsAndDsv and PIM store
+ * wrapper should be deprecated.
+ */
 async function importRdfsModel(parentIri: string, url: string, newIri: string, userMetadata: any): Promise<SemanticModelEntity[]> {
-  await resourceModel.createResource(parentIri, newIri, "https://dataspecer.com/core/model-descriptor/pim-store-wrapper", userMetadata);
+  await ensureResource(parentIri, newIri, "https://dataspecer.com/core/model-descriptor/pim-store-wrapper", userMetadata);
   const store = await resourceModel.getOrCreateResourceModelStore(newIri);
   const wrapper = await createRdfsModel([url], httpFetch);
   const serialization = wrapper.serializeModel();
@@ -56,16 +119,16 @@ async function importRdfsModel(parentIri: string, url: string, newIri: string, u
 /**
  * Performs deterministic import of multiple structure models.
  *
- * The model ID must match the DataPsmSchema IRI. In general, this is not an
- * issue, but it complicates "update by re-import" scenario, as now we need to
- * ensure that IDs are deterministic, but unique, because there might be two
- * models with same structures imported.
+ * The model ID must match the DataPsmSchema IRI.
  *
  * @param urls
  * @param iriPrefix Prefix that will be assigned to all models, must end with slash or be empty.
  * @param rootPackageId
+ * @param touchedModelIds Adds model IDs that were created or updated. This
+ * could be used to track which models were not updated to delete them after the
+ * import.
  */
-async function importAllStructureModels(urls: string[], iriPrefix: string, rootPackageId: string) {
+async function importAllStructureModels(urls: string[], iriPrefix: string, rootPackageId: string, touchedModelIds?: Set<string>) {
   // Load all models so we can derive deterministic IDs
 
   const rawModels: CoreResource[][] = [];
@@ -94,7 +157,8 @@ async function importAllStructureModels(urls: string[], iriPrefix: string, rootP
 
   const models = canonicalizeIds(rawModels, iriMapping);
   for (const model of models) {
-    await resourceModel.createResource(rootPackageId, model.iri, V1.PSM, {});
+    await ensureResource(rootPackageId, model.iri, V1.PSM, {});
+    touchedModelIds?.add(model.iri);
     const store = await resourceModel.getOrCreateResourceModelStore(model.iri);
 
     const modelData = {
@@ -121,9 +185,18 @@ function splitIri(iri: string | null | undefined): [string, string] {
   return [iri.substring(0, separator + 1), iri.substring(separator + 1)];
 }
 
-async function importRdfsAndDsv(parentIri: string, rdfsUrl: string | null, dsvUrl: string | null, userMetadata: any, allImportedEntities: SemanticModelEntity[]) {
+/**
+ * This methods imports or re-imports vocabulary from RDFS or DSV.
+ *
+ * @todo We probably want to split this into two separate functions.
+ * @param touchedModelIds Adds model IDs that were created or updated. This
+ * could be used to track which models were not updated to delete them after the
+ * import.
+ */
+async function importRdfsAndDsv(parentIri: string, rdfsUrl: string | null, dsvUrl: string | null, userMetadata: any, allImportedEntities: SemanticModelEntity[], touchedModelIds?: Set<string>) {
   async function createModelFromEntities(entities: SemanticModelEntity[], id: string, userMetadata: any) {
-    await resourceModel.createResource(parentIri, id, LOCAL_SEMANTIC_MODEL, userMetadata);
+    await ensureResource(parentIri, id, LOCAL_SEMANTIC_MODEL, userMetadata);
+    touchedModelIds?.add(id);
     const store = await resourceModel.getOrCreateResourceModelStore(id);
 
     // Manage prefixes
@@ -310,16 +383,18 @@ async function legacyDsvImport(store: N3.Store, url: string, baseIri: string, pa
 /**
  * Performs import from DSV metadata document.
  */
-async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIri: string): Promise<[BaseResource | null, SemanticModelEntity[]]> {
+async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIri: string, existingPackageIri?: string, touchedModelIds?: Set<string>): Promise<[BaseResource | null, SemanticModelEntity[]]> {
   const dsv = rdfToDSVMetadata(store.getQuads(null, null, null, null), { baseIri });
 
   // todo: what to do when there are multiple specifications that this document describes?
   const mainSpecification = dsv[0];
 
-  // Create package
+  // Create or reuse package
 
-  const rootPackageId = parentIri + "/" + uuidv4();
-  await resourceModel.createPackage(parentIri, rootPackageId, {
+  const rootPackageId = existingPackageIri ?? parentIri + "/" + uuidv4();
+  touchedModelIds?.add(rootPackageId);
+
+  await ensurePackage(parentIri, rootPackageId, {
     label: mainSpecification.title,
     description: mainSpecification.description,
     importedFromUrl: url,
@@ -344,7 +419,8 @@ async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIr
       rootHref = rootHref.substring(0, rootHref.length - 3);
     }
 
-    await resourceModel.createResource(rootPackageId, rootPackageId + "/generator-configuration", V1.GENERATOR_CONFIGURATION, {});
+    await ensureResource(rootPackageId, rootPackageId + "/generator-configuration", V1.GENERATOR_CONFIGURATION, {});
+    touchedModelIds?.add(rootPackageId + "/generator-configuration");
     const generatorConfigurationStore = await resourceModel.getOrCreateResourceModelStore(rootPackageId + "/generator-configuration");
     const configuration = DataSpecificationConfigurator.setToObject(configurationModel, {
       ...DataSpecificationConfigurator.getFromObject(configurationModel),
@@ -376,9 +452,13 @@ async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIr
 
   // Import all profiled semantic data specifications
 
+  const isReload = !!existingPackageIri;
+  const existingChildrenByUrl = isReload ? await getExistingChildrenByUrl(rootPackageId) : undefined;
+
   const allEntitiesFromProfiled: SemanticModelEntity[] = [];
   for (const profile of mainSpecification.isProfileOf) {
-    const [, e] = await importFromUrl(rootPackageId, profile.url);
+    const childExistingIri = existingChildrenByUrl?.get(profile.url);
+    const [, e] = await importFromUrl(rootPackageId, profile.url, childExistingIri, touchedModelIds);
     allEntitiesFromProfiled.push(...e);
   }
 
@@ -393,9 +473,15 @@ async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIr
       documentBaseUrl: url,
     },
     allEntitiesFromProfiled,
+    touchedModelIds,
   );
 
-  await importAllStructureModels(structureModelResources, rootPackageId + "/", rootPackageId);
+  await importAllStructureModels(structureModelResources, rootPackageId + "/", rootPackageId, touchedModelIds);
+
+  // Delete children that were not touched during reload
+  if (touchedModelIds) {
+    await deleteUntouchedChildren(rootPackageId, touchedModelIds);
+  }
 
   return [(await resourceModel.getResource(rootPackageId))!, allEntitiesFromProfiled];
 }
@@ -404,7 +490,7 @@ async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIr
  * Universal function that detects the type of the resource and imports it.
  * @todo move to packages so it is not backend dependent, make more generic such as custom fetch function
  */
-export async function importFromUrl(parentIri: string, url: string): Promise<[BaseResource | null, SemanticModelEntity[]]> {
+export async function importFromUrl(parentIri: string, url: string, existingIri?: string, touchedModelIds?: Set<string>): Promise<[BaseResource | null, SemanticModelEntity[]]> {
   url = url.replace(/#.*$/, "");
 
   // const baseIri = url;
@@ -429,7 +515,7 @@ export async function importFromUrl(parentIri: string, url: string): Promise<[Ba
       // This is a legacy DSV model
       return legacyDsvImport(store, url, baseIri, parentIri);
     } else {
-      return dsvImport(store, url, baseIri, parentIri);
+      return dsvImport(store, url, baseIri, parentIri, existingIri, touchedModelIds);
     }
   } else {
     // Generate name
@@ -442,9 +528,11 @@ export async function importFromUrl(parentIri: string, url: string): Promise<[Ba
     const section = chunks.pop() || chunks.pop() || "unnamed"; // handle potential trailing slash
     const name = section.split(".")[0];
 
+    const newIri = existingIri ?? parentIri + "/" + uuidv4();
+    touchedModelIds?.add(newIri);
     return [
       null,
-      await importRdfsModel(parentIri, url, parentIri + "/" + uuidv4(), {
+      await importRdfsModel(parentIri, url, newIri, {
         documentBaseUrl: url,
         ...(name ? { label: { en: name } } : {}),
       }),
@@ -468,5 +556,42 @@ export const importResource = asyncHandler(async (request: express.Request, resp
   const [result] = await importFromUrl(query.parentIri, query.url);
 
   response.send(result);
+  return;
+});
+
+/**
+ * Reload: Reload endpoint updates an existing imported package by re-fetching
+ * its content from the source URL. The package IRI is preserved.
+ */
+export const reloadResource = asyncHandler(async (request: express.Request, response: express.Response) => {
+  const querySchema = z.object({
+    // IRI of the existing package to reload
+    iri: z.string().min(1),
+    // Optional URL to reload from (defaults to the stored importedFromUrl)
+    url: z.string().url().optional(),
+  });
+
+  const query = querySchema.parse(request.query);
+
+  // Get the existing package
+  const existingResource = await resourceModel.getResource(query.iri);
+  if (!existingResource) {
+    response.status(404).send({ error: "Resource not found" });
+    return;
+  }
+
+  // Determine the URL to reload from
+  const url = query.url ?? (existingResource.userMetadata as any)?.importedFromUrl;
+  if (!url) {
+    response.status(400).send({ error: "No URL provided and no importedFromUrl found on the resource" });
+    return;
+  }
+
+  // Perform reload by re-importing into the existing package.
+  // The import functions will reuse existing resource IRIs and update their
+  // content in-place, then delete any resources that are no longer present.
+  const [result] = await importFromUrl("", url, query.iri);
+
+  response.send(result ?? existingResource);
   return;
 });
