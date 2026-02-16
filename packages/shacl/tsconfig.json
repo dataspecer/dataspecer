@@ -1,12 +1,14 @@
 {
   "compilerOptions": {
     "skipLibCheck": true,
+    "strict": false,
     "declaration": true,
     "declarationMap": true,
     "esModuleInterop": true,
     "moduleResolution": "nodenext",
     "module": "NodeNext",
     "rewriteRelativeImportExtensions": true,
+    "rootDir": "src",
     "outDir": "./lib",
     "sourceMap": true,
     "target": "ESNext",

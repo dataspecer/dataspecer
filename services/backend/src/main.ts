@@ -11,7 +11,7 @@ import { getLightweightOwlFromSimplified } from "./routes/experimental.ts";
 import { getSingleFile, getZip } from "./routes/generate.ts";
 import { exportPackageResource, importPackageResource } from "./routes/export-import-raw.ts";
 import { getGenerateApplicationByModelId, getGeneratedApplication } from "./routes/genapp.ts";
-import { importPackageFromGit, importResource } from "./routes/import.ts";
+import { importPackageFromGit, importResource, reloadResource } from "./routes/import.ts";
 import {
   copyRecursively,
   createPackageResource,
@@ -213,6 +213,7 @@ application.post(apiBasename + "/new/application-profile", newApplicationProfile
  */
 
 application.post(apiBasename + "/resources/import", importResource);
+application.post(apiBasename + "/resources/reload", reloadResource);
 application.post(apiBasename + "/resources/import-zip", multerUpload.single("file"), importPackageResource);
 application.post(apiBasename + "/resources/import-from-git", importPackageFromGit);
 

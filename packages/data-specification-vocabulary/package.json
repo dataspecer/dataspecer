@@ -12,6 +12,7 @@
   },
   "exports": {
     ".": "./lib/index.js",
+    "./generator-configuration": "./lib/generator-configuration/index.js",
     "./specification-description": "./lib/specification-description/index.js",
     "./structure-model": "./lib/structure-model/index.js"
   },

@@ -13,6 +13,7 @@ import configuration from "../../../configuration.ts";
 import { ResourceChangeType } from "../../../models/resource-change-observer.ts";
 import { ResourceModelForFilesystemRepresentation } from "../../export.ts";
 import { FileSystemAbstractionFactoryMethod } from "../backend-filesystem-abstraction-factory.ts";
+import crypto from 'node:crypto';
 
 // Note that DS always works with jsons as formats for datastores, it is too much work to make to make it work for everything.
 // Since we would need to change every component (including cme) to support multiple formats.
@@ -171,7 +172,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
       localIriNameCandidate = iri.slice(irisTreePath.length);
     }
     if (localIriNameCandidate.includes("/") || localIriNameCandidate.length === 0) {
-      localIriNameCandidate = uuidv4();
+      localIriNameCandidate = crypto.hash('sha1', iri);
     }
     let fullIriName = irisTreePath + localIriNameCandidate;
 

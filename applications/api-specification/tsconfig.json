@@ -20,8 +20,6 @@
     "noUnusedParameters": false, // disable for early development
     "noFallthroughCasesInSwitch": true,
 
-    /** shadcn/ui */
-    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./src/*"
