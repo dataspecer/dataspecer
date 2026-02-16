@@ -206,11 +206,11 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
         <ModalHeader>
           <ModalTitle>Project history in Git</ModalTitle>
           <ModalDescription>
-            The "in DS" next to the branch means that the branch is tracked in DS.
-            <br/>
-            Similarly the text "DS" on the commit bubble marks the fact that the commit exists in DS.
-            <br/>
-            Note that you can click on the commit bubbles to perform further actions.
+            <ul>
+              <li>The "in DS" next to the branch means that the branch is tracked in DS.</li>
+              <li>"DS" on the commit bubble marks the fact that the commit exists in DS.</li>
+              <li>Click on the commit bubbles to perform further actions.</li>
+            </ul>
           </ModalDescription>
         </ModalHeader>
         <ModalBody className="overflow-y-auto max-h-[60vh]">    {/* Needed for the scrolling */}

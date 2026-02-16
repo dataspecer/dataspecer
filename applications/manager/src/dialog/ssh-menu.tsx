@@ -103,6 +103,10 @@ export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
           <ModalTitle>Menu for working with SSH keys</ModalTitle>
           <ModalDescription>
             This is so far experimental feature. It only works for GitHub.
+            <br/>
+            The SSH will behave as be your primary access token.
+            <br/>
+            The SSH key can be even a deploy key (that is key for committing to a single repository).
           </ModalDescription>
         </ModalHeader>
         <ModalBody>
