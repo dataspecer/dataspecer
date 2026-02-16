@@ -251,8 +251,7 @@ export const commitPackageToGitUsingAuthSession = async (
   const commitInfo: GitCommitToCreateInfoExplicitWithCredentials = prepareCommitDataForCommit(
     request, response, remoteRepositoryURL, gitCommitInfoBasic, shouldAppendAfterDefaultMergeCommitMessage);
   const commitConflictInfo = await commitPackageToGit(
-    iri, remoteRepositoryURL, branchAndLastCommit, repositoryIdentificationInfo,
-    commitInfo, shouldAlwaysCreateMergeState);
+    iri, remoteRepositoryURL, branchAndLastCommit, repositoryIdentificationInfo, commitInfo, shouldAlwaysCreateMergeState);
   return commitConflictInfo;
 }
 

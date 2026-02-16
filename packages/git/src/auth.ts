@@ -6,6 +6,6 @@ export type Scope = typeof scopes[number];
  */
 export enum ConfigType {
   DeleteRepoControl,      // Note: This is just for debugging, normal user won't use this ever (he could, but I would not trust 3rd party software with removal access).
-  FullPublicRepoControl,
+  FullPublicRepoControl,      // TODO RadStr: maybe it is not only public but also private
   LoginInfo,
 }

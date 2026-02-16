@@ -54,8 +54,12 @@ export async function switchRepresentsBranchHead(examinedPackage: Package, openM
   }
 }
 
-export async function markPackageAsHavingNoUncommittedChanges(iri: string) {
-  const url = import.meta.env.VITE_BACKEND + "/git/mark-package-as-no-uncommitted-changes?iri=" + encodeURIComponent(iri);
+
+/**
+ * Compares remote Git package with the package in DS and sets the is up to date flag based on if the packages is up to date with the Git Remote or not.
+ */
+export async function trySetPackageAsUpToDate(iri: string) {
+  const url = import.meta.env.VITE_BACKEND + "/git/try-set-package-as-up-to-date?iri=" + encodeURIComponent(iri);
   const response = await fetch(
     url,
     {
@@ -65,10 +69,15 @@ export async function markPackageAsHavingNoUncommittedChanges(iri: string) {
   );
 
   if (response.ok) {
-    toast.success("Package marked as having no uncommitted changes.");
+    if (response.status === 200) {
+      toast.success("Package marked as having NO uncommitted changes.");
+    }
+    else {
+      toast.success("Package marked as having uncommitted changes.");
+    }
   }
   else {
-    toast.error("Unknown error when marking package as having no uncommitted changes.");
+    toast.error("Unknown error when comparing package with the Git remote to check for changes.");
   }
 
   requestLoadPackage(iri, true);

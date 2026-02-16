@@ -58,7 +58,7 @@ import { finalizeMergeMergeState } from "./routes/git/merge-states/finalize-merg
 import { finalizePullMergeStateOnFailure } from "./routes/git/merge-states/finalize-pull-merge-state-on-failure.ts";
 import { finalizeMergeMergeStateOnFailure } from "./routes/git/merge-states/finalize-merge-merge-state-on-failure.ts";
 import { finalizePushMergeStateOnFailure } from "./routes/git/merge-states/finalize-push-merge-state-on-failure.ts";
-import { markPackageAsHavingNoUncommittedChanges } from "./routes/git/mark-package-as-having-no-uncommitted-changes.ts";
+import { trySetPackageAsUpToDate } from "./routes/git/try-set-package-as-up-to-date.ts";
 import { checkExistenceOfSshKeyForUserHandler } from "./routes/git/ssh/check-ssh-key-existence.ts";
 import { deletePrivateSshKeyHandler } from "./routes/git/ssh/remove-private-ssh-key.ts";
 import { GitProviderNamesAsType } from "@dataspecer/git";
@@ -157,7 +157,7 @@ application.delete(apiBasename + "/git/remove-merge-state", removeMergeState);
 application.post(apiBasename + "/git/debug-clear-merge-state-table", clearMergeStateTableDebug);
 
 // TODO RadStr: Once I update the URL don't forget to update the ngrok URL in git providers to the same URL suffix
-application.get(apiBasename + "/git/mark-package-as-no-uncommitted-changes", currentSession, markPackageAsHavingNoUncommittedChanges);
+application.get(apiBasename + "/git/try-set-package-as-up-to-date", currentSession, trySetPackageAsUpToDate);
 application.post(apiBasename + "/git/webhook-test", currentSession, handleWebhook);
 application.post(apiBasename + "/git/webhook-test2", currentSession, handleWebhook);
 application.get(apiBasename + "/git/webhook-test", currentSession, createRandomWebook);

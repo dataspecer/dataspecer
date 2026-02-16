@@ -123,14 +123,12 @@ export class DSFilesystem extends FilesystemAbstractionBase {
 
 
   async getDatastoreContent(irisTreePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any> {
-    // TODO RadStr: As said somewhere else ... improve the PrefixName type
-    //              ... already improved now fix the code
-    const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(this.globalFilesystemMappingForIris[irisTreePath], type);
-    if (relevantDatastore === null) {
+    const relevantDatastoreInfo = getDatastoreInfoOfGivenDatastoreType(this.globalFilesystemMappingForIris[irisTreePath], type);
+    if (relevantDatastoreInfo === null) {
       throw new Error(`Datastore with given type (${type}), does not exist`);
     }
-    const datastoreFormat = relevantDatastore.format;
-    return await DSFilesystem.getDatastoreContentForPath(this.resourceModel, relevantDatastore.fullPath, type, datastoreFormat, shouldConvertToDatastoreFormat);
+    const datastoreFormat = relevantDatastoreInfo.format;
+    return await DSFilesystem.getDatastoreContentForPath(this.resourceModel, relevantDatastoreInfo.fullPath, type, datastoreFormat, shouldConvertToDatastoreFormat);
   }
 
   /**
@@ -138,7 +136,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
    */
   async createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType> {
     const rootDirectoryNode = createFilesystemMappingRoot();
-    return this.createFilesystemMappingRecursive(root, rootDirectoryNode.content, rootDirectoryNode);   // TODO RadStr: Once again - should I use await?
+    return await this.createFilesystemMappingRecursive(root, rootDirectoryNode.content, rootDirectoryNode);
   }
 
   // TODO RadStr: Rename to not contain the Recursive in name, since we removed the top level method

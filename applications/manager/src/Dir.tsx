@@ -36,7 +36,7 @@ import { useLogin, UseLoginType } from "./hooks/use-login";
 import { isGitUrlSet, PACKAGE_ROOT } from "@dataspecer/git";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
 import { debugClearMergeStateDBTable } from "./utils/merge-state-backend-requests";
-import { manualPull, markPackageAsHavingNoUncommittedChanges, switchRepresentsBranchHead } from "./utils/git-fetch-related-actions";
+import { manualPull, trySetPackageAsUpToDate, switchRepresentsBranchHead } from "./utils/git-fetch-related-actions";
 import ResourceTooltip from "./components/git-tooltip";
 import { CreateMergeStateCausedByMergeDialog } from "./dialog/open-merge-state";
 import { PackageListDialog } from "./dialog/package-list-dialog";
@@ -274,7 +274,7 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri
           <DropdownMenuContent>
             {/* TODO RadStr: Just for debugging ! */}
             {hasSetRemoteRepository && <DropdownMenuItem onClick={() => debugClearMergeStateDBTable()}><ShieldQuestion className="mr-2 h-4 w-4" />DEBUG - Clear merge db state table</DropdownMenuItem>}
-            {hasSetRemoteRepository && <DropdownMenuItem title="The uncommitted changes tag is sometimes wrong, since for performance reasons we can not compare the current content to Git. Therefore the 'has uncommitted changes' tag marks the fact that there was change between last commit and now. Even if you reversed the change, therefore now there is not any." onClick={() => markPackageAsHavingNoUncommittedChanges(resource.iri)}><TimerResetIcon className="mr-2 h-4 w-4" />Mark as up to date with remote</DropdownMenuItem>}
+            {hasSetRemoteRepository && <DropdownMenuItem title="Compares current package state with the Git remote and sets if it is up to date or not. This is because the uncommitted changes tag is sometimes wrong, since for performance reasons we can not compare the current content to Git for any change. Therefore the 'has uncommitted changes' tag marks the fact that there was change between last commit and now. Even if you reversed the change, therefore now there is not any." onClick={() => trySetPackageAsUpToDate(resource.iri)}><TimerResetIcon className="mr-2 h-4 w-4" />Try to set as up to date</DropdownMenuItem>}
             {hasSetRemoteRepository && <DropdownMenuItem asChild><a href={!hasSetRemoteRepository ? "" : GitProviderFactory.createGitProviderFromRepositoryURL(resource.linkedGitRepositoryURL, fetch, {}).getGitPagesURL(resource.linkedGitRepositoryURL)}><Eye className="mr-2 h-4 w-4" />Visit the remote repository GitHub pages</a></DropdownMenuItem>}
             {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>}
             {hasSetRemoteRepository && <hr className="border-gray-300" />}
