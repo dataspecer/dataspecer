@@ -410,7 +410,7 @@ async function commitDSMergeToGit(
         gitUrl: remoteRepositoryURL,
       };
 
-      const createdMergeStateId = await mergeStateModel.createMergeStateIfNecessary(
+      const createdMergeStateId = await mergeStateModel.createMergeState(
         iri, commitInfo.commitMessage, "merge", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
       if (diffTreeComparisonResult.conflicts.length > 0) {
         return {
@@ -526,7 +526,7 @@ async function commitClassicToGit(
 
 
 
-          const createdMergeStateId = await mergeStateModel.createMergeStateIfNecessary(
+          const createdMergeStateId = await mergeStateModel.createMergeState(
             iri, commitInfo.commitMessage, "push", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
           if (diffTreeComparisonResult.conflicts.length > 0 || shouldAlwaysCreateMergeState) {
             return {

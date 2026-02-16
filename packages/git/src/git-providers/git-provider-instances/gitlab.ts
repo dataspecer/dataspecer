@@ -71,6 +71,15 @@ export class GitLabProvider extends GitProviderBase {
     // };
   }
 
+  extractHashFromWebhookCommitObject(commit: object): string {
+    return (commit as any).id;
+  }
+  isPushWebhook(requestHeader: Record<string, any>): boolean {
+    // https://docs.gitlab.com/user/project/integrations/webhooks/#delivery-headers
+    // The headers from express request are lowercase
+    return requestHeader["x-gitlab-event"] === "Push Hook";
+  }
+
   async removeRemoteRepository(authToken: string, repositoryOwner: string, repoName: string): Promise<FetchResponse> {
     // https://docs.gitlab.com/api/projects/#delete-a-project
     const urlSuffix = encodeURIComponent(`${repositoryOwner}/${repoName}`);

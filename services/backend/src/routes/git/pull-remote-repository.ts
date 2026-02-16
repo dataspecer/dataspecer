@@ -38,6 +38,7 @@ export const pullRemoteRepository = asyncHandler(async (request: express.Request
     cloneDirectoryNamePrefix: MANUAL_CLONE_PATH_PREFIX,
     dsLastCommitHash: resource.lastCommitHash,
     resourceModelForDS: resourceModel,
+    alwaysCreateMergeState: false,
   };
   const createdMergeState = await updateDSRepositoryByGitPull(pullUpdateParams);
   if (createdMergeState) {
@@ -59,6 +60,7 @@ export type UpdateDSRepositoryByGitPullParams = {
   cloneDirectoryNamePrefix: AllowedPrefixes,
   dsLastCommitHash: string,
   resourceModelForDS: ResourceModelForPull,
+  alwaysCreateMergeState: boolean,
   depth?: number,
 }
 
@@ -81,17 +83,20 @@ export const updateDSRepositoryByGitPull = async (
     const gitIgnore: GitIgnore = new GitIgnoreBase(gitProvider);
     storeResult = await saveChangesInDirectoryToBackendFinalVersion(
       cloneURL, git, gitInitialDirectoryParent, iri, gitIgnore,
-      dsLastCommitHash, gitLastCommitHash, commonCommit, branch, "pull", resourceModelForDS);
+      dsLastCommitHash, gitLastCommitHash, commonCommit, branch,
+      "pull", resourceModelForDS, parameters.alwaysCreateMergeState);
   }
   catch (cloneError) {
     throw cloneError;
   }
   finally {
     if (storeResult !== null && storeResult.createdMergeState) {
+      // If we created merge state then do not remove the Git directory
       return true;
     }
     // It is important to not only remove the actual files, but also the .git directory,
     // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
+    resourceModelForDS.setHasUncommittedChanges(iri, false);
     removePathRecursively(gitDirectoryToRemoveAfterWork);
   }
 

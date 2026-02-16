@@ -25,6 +25,8 @@ export abstract class GitProviderBase implements GitProvider {
   abstract setDomainURL(newDomainURL: string): void;
   abstract getGitPagesURL(repositoryUrl: string): string;
   abstract extractDataForWebhookProcessing(webhookPayload: any, getResourceForGitUrlAndBranch: GetResourceForGitUrlAndBranchType): Promise<GitProviderIndependentWebhookRequestData | null>;
+  abstract extractHashFromWebhookCommitObject(commit: object): string;
+  abstract isPushWebhook(requestHeader: Record<string, any>): boolean;
   abstract createRemoteRepository(authToken: string, repositoryOwner: string, repoName: string, isUserRepo: boolean, shouldEnablePublicationBranch: boolean): Promise<CreateRemoteRepositoryReturnType>;
   abstract removeRemoteRepository(authToken: string, repositoryOwner: string, repoName: string): Promise<FetchResponse>;
   abstract createWebhook(authToken: string, repositoryOwner: string, repositoryName: string, webhookHandlerURL: string, webhookEvents: string[]): Promise<FetchResponse>;

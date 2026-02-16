@@ -222,7 +222,7 @@ export class MergeStateModel implements ResourceChangeListener {
   /**
    * @returns Id of the created merge state, if the state was created (there was more than one conflict). otherwise returns null.
    */
-  async createMergeStateIfNecessary(
+  async createMergeState(
     rootResourceIri: string,
     commitMessage: string,
     mergeStateCause: MergeStateCause,
@@ -256,7 +256,7 @@ export class MergeStateModel implements ResourceChangeListener {
       diffTreeSize,
     };
 
-    const mergeStateId = await this.createMergeState(mergeStateInput);
+    const mergeStateId = await this.createMergeStateInternal(mergeStateInput);
     // TODO RadStr Debug: Just debug
     const mergeStateDebug = await this.getMergeStateFromUUID(mergeStateId, true, false, false);   // TODO RadStr Debug: debug
     console.info({mergeStateDebug})
@@ -636,7 +636,7 @@ export class MergeStateModel implements ResourceChangeListener {
   /**
    * @returns The uuid of the newly created merge state in database
    */
-  async createMergeState(inputData: CreateMergeStateInput) {
+  private async createMergeStateInternal(inputData: CreateMergeStateInput) {
     const uuid = uuidv4();
     const convertedMergeStateData = this.convertMergeStateDataToString({...inputData, unresolvedConflicts: inputData.allConflicts});
 

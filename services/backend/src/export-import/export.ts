@@ -62,5 +62,6 @@ export interface ResourceModelForFilesystemRepresentation extends ResourceModelF
  * @todo Maybe better name
  */
 export interface ResourceModelForPull extends ResourceModelForFilesystemRepresentation {
-  updateLastCommitHash(iri: string, lastCommitHash: string, updateCause: MergeStateCause): Promise<void>
+  updateLastCommitHash(iri: string, lastCommitHash: string, updateCause: MergeStateCause): Promise<void>;
+  setHasUncommittedChanges(iri: string, hasUncommittedChanges: boolean): Promise<void>;
 }

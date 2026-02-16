@@ -54,6 +54,10 @@ export function isGitProviderName(value: unknown): value is GitProviderNamesAsTy
 
 export type GitProviderIndependentWebhookRequestData = {
   cloneURL: string;
+  /**
+   * The commits seem to be chronological (at least in GitHub) - that is the first one is the oldest and the last is the newest
+   * see https://gist.github.com/walkingtospace/0dcfe43116ca6481f129cdaa0e112dc4
+   */
   commits: object[];
   repoName: string;
   iri: string;
@@ -129,6 +133,17 @@ export interface GitProvider {
    * @returns Returns null if new branch was added to git, but the branch does not have equivalent in the DS.
    */
   extractDataForWebhookProcessing(webhookPayload: any, getResourceForGitUrlAndBranch: GetResourceForGitUrlAndBranchType): Promise<GitProviderIndependentWebhookRequestData | null>;
+
+  /**
+   * Extracts the hash from the commit objects that lives in the webhook. Usually it is in the commits field (see https://gist.github.com/jrichardsz/3d55df91181e3fb83089d08ada6809a8)
+   */
+  extractHashFromWebhookCommitObject(commit: object): string;
+
+  /**
+   *
+   * @param requestHeader comes from the express request - it is more exactly of type IncomingHttpHeaders and we get it by request.headers
+   */
+  isPushWebhook(requestHeader: Record<string, any>): boolean;
 
   /**
    * Creates remote git repository with following URL .../{@link repositoryOwner}/{@link repoName}.

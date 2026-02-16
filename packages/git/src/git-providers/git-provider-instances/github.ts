@@ -89,6 +89,14 @@ export class GitHubProvider extends GitProviderBase {
     };
   }
 
+  extractHashFromWebhookCommitObject(commit: object): string {
+    return (commit as any).id;
+  }
+  isPushWebhook(requestHeader: Record<string, any>): boolean {
+    // The headers from express request are lowercase
+    return requestHeader["x-github-event"] === "push";
+  }
+
   removeRemoteRepository(authToken: string, repositoryOwner: string, repoName: string): Promise<FetchResponse> {
     // https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#delete-a-repository
     const fetchResponse = this.httpFetch(`https://api.github.com/repos/${repositoryOwner}/${repoName}`, {

@@ -133,7 +133,7 @@ export async function createMergeStateBetweenDSPackages(
       gitUrl: remoteRepositoryUrl,
     };
 
-    const createdMergeStateId = await mergeStateModel.createMergeStateIfNecessary(
+    const createdMergeStateId = await mergeStateModel.createMergeState(
       mergeFrom.rootIri, commitMessage, "merge", diffTreeComparisonResult,
       commonCommitHash, mergeFromInfo, mergeToInfo);
     return {

@@ -38,7 +38,14 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
   // console.info("Webhook - Body payload: ", request.body.payload);
 
   const { gitProvider, webhookPayload } = GitProviderNodeFactory.createGitProviderFromWebhookRequest(request, httpFetch, configuration);
-  const dataForWebhookProcessing = await gitProvider.extractDataForWebhookProcessing(webhookPayload, resourceModel.getResourceForGitUrlAndBranch);
+  const isPushWebhook = gitProvider.isPushWebhook(request.headers);
+  if(!isPushWebhook) {
+    response.sendStatus(200);
+    return;
+  }
+
+  const getResourceForGitUrlAndBranch = async (gitRepositoryUrl: string, branch: string) => {return resourceModel.getResourceForGitUrlAndBranch(gitRepositoryUrl, branch)};
+  const dataForWebhookProcessing = await gitProvider.extractDataForWebhookProcessing(webhookPayload, getResourceForGitUrlAndBranch);
   if (dataForWebhookProcessing === null) {
     return;
   }
@@ -51,6 +58,22 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
     return;
   }
 
+  const webhookCommit = commits.at(-1);
+  if (webhookCommit === undefined) {
+    response.sendStatus(200);
+    return;
+  }
+
+  const webhookCommitHash = gitProvider.extractHashFromWebhookCommitObject(webhookCommit);
+  // Note that it may be technically possible that the webhook runs before we actually store the hash into database after the push.
+  // However, it is highly unlikely. If that happens the user will just have new merge state that has zero changes.
+  if (webhookCommitHash === resource.lastCommitHash) {
+    // The commits comes from this Dataspecer instance.
+    response.sendStatus(200);
+    return;
+  }
+
+
   const pullUpdateParams: UpdateDSRepositoryByGitPullParams = {
     iri,
     gitProvider,
@@ -59,6 +82,7 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
     cloneDirectoryNamePrefix: WEBHOOK_PATH_PREFIX,
     dsLastCommitHash: resource.lastCommitHash,
     resourceModelForDS: resourceModel,
+    alwaysCreateMergeState: true,
     depth: commits.length,
   };
   const createdMergeState = await updateDSRepositoryByGitPull(pullUpdateParams);
@@ -101,8 +125,16 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
   branch: string,
   mergeStateCause: Omit<MergeStateCause, "merge">,
   resourceModelForDS: ResourceModelForPull,
+  alwaysCreateMergeState: boolean,
 ): Promise<GitChangesToDSPackageStoreResult> {
   // Merge from is DS
+  // TODO RadStr: Why am I doing the comparison twice? I think that there was a reason for that, but maybe we just wanted the fakeRoot data, etc.
+  //              If that is the case, then we should just extract the part of the compareGitAndDSFilesystems method, which does it (respective from the method which calls it)
+  //    ......... Well in one case I am comparing to the current head and in after that I checkout to the last commit and do it again
+  //              The issue is - why do i need to do it to the not last commit ever?
+  //    ......... This whole flow feels wrong - why can I in the canPullWithoutCreatingMergeState - updateLastCommit hash to the gitLastCommitHash??? I am not checking against it
+  //              Well I do right in this first compare but i do not check the result anywhere here. I just pass it to the next method.
+  //              I should check also in the "if canPullWithoutCreatingMergeState" that there are also no conflicts
   const {
     diffTreeComparisonResult,
     mergeFromFilesystemInformation,
@@ -117,31 +149,33 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
   const gitRootDirectory = filesystemFakeRoots["fakeRoot" + gitResultNameSuffix as keyof typeof filesystemFakeRoots];              // TODO RadStr: Just backwards compatibility with code so I don't have to change much
 
 
-  try {
-    await git.checkout(dsLastCommitHash);
-    // Basically check against the commit the package is supposed to represent, if we did not change anything, we can always pull without conflict.
-    // Otherwise we changed something and even though we could handle it automatically. We let the user resolve everything manually, it is his responsibility.
-    const comparisonBetweenCurrentDSPackageAndCorrespondingCommit = await compareGitAndDSFilesystems(
-      gitIgnore, iri, gitInitialDirectoryParent, mergeStateCause, resourceModelForDS);
-    const canPullWithoutCreatingMergeState = comparisonBetweenCurrentDSPackageAndCorrespondingCommit.diffTreeComparisonResult.conflicts.length === 0;
+  if (!alwaysCreateMergeState) {
+    try {
+      await git.checkout(dsLastCommitHash);
+      // Basically check against the commit the package is supposed to represent, if we did not change anything, we can always pull without conflict.
+      // Otherwise we changed something and even though we could handle it automatically. We let the user resolve everything manually, it is his responsibility.
+      const comparisonBetweenCurrentDSPackageAndGitCommit = await compareGitAndDSFilesystems(
+        gitIgnore, iri, gitInitialDirectoryParent, mergeStateCause, resourceModelForDS);
+      const canPullWithoutCreatingMergeState = comparisonBetweenCurrentDSPackageAndGitCommit.diffTreeComparisonResult.conflicts.length === 0;
 
-    if (canPullWithoutCreatingMergeState) {
-      // TODO RadStr: Rename ... and update based on the conflicts resolution, like we do not want to update when there is conflict
-      await git.checkout(gitLastCommitHash);
-      await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(gitRootDirectory, gitInitialDirectoryParent, filesystemMergeTo);
-      await resourceModelForDS.updateLastCommitHash(iri, gitLastCommitHash, "pull");
+      if (canPullWithoutCreatingMergeState) {
+        // TODO RadStr: Rename ... and update based on the conflicts resolution, like we do not want to update when there is conflict
+        await git.checkout(gitLastCommitHash);
+        await saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(gitRootDirectory, gitInitialDirectoryParent, filesystemMergeTo);
+        await resourceModelForDS.updateLastCommitHash(iri, gitLastCommitHash, "pull");
 
-      return {
-        createdMergeState: false,
-        conflictCount: -1,
-      };
+        return {
+          createdMergeState: false,
+          conflictCount: -1,
+        };
+      }
     }
-  }
-  catch (err) {
-    // EMPTY
-  }
-  finally {
-    await git.checkout(gitLastCommitHash);
+    catch (err) {
+      // EMPTY
+    }
+    finally {
+      await git.checkout(gitLastCommitHash);
+    }
   }
 
   const mergeFromInfo: MergeEndInfoWithRootNode = {
@@ -166,7 +200,7 @@ export async function saveChangesInDirectoryToBackendFinalVersion(
     gitUrl: remoteRepositoryUrl,
   };
 
-  const createdMergeStateId = mergeStateModel.createMergeStateIfNecessary(
+  const createdMergeStateId = mergeStateModel.createMergeState(
     iri, "", "pull", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
   return {
     createdMergeState: true,
