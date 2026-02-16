@@ -9,6 +9,9 @@ import { GitRef, PACKAGE_ROOT } from "@dataspecer/git";
 import { lng } from "@/Dir";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
 
+import { InfoIcon } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TooltipArrow } from "@radix-ui/react-tooltip";
 
 type GitHistoryCommitActionsDialogProps = {
   examinedPackage: Package,
@@ -85,25 +88,30 @@ export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitH
     <Modal open={isOpen} onClose={() => resolve(null)}>
       <ModalContent className="min-w-[650px]">
         <ModalHeader>
-          <ModalTitle>Perform action on Git commit</ModalTitle>
+          <ModalTitle>
+            <div className="flex flex-1 flex-row">Perform action on Git commit</div>
+          </ModalTitle>
           {isPerformingAction && <Loader className="mr-2 h-4 w-4 animate-spin" /> }
           <ModalDescription>
-            {`You are currently working with the following package (${lng(examinedPackage.userMetadata.label) ?? examinedPackage.iri}) and following commit ${commitHash.substring(0, 10)}.`}
             <br/>
-            <br/>
-            {`You can choose to import the package into DS or visit the corresponding remote Git URL.`}
-            <br/>
+            <div>
+              <strong>IRI:</strong> {examinedPackage.iri}
+            </div>
+            {lng(examinedPackage.userMetadata.label) === undefined ? null : <div><strong>Label:</strong> {lng(examinedPackage.userMetadata.label)}</div>}
+            <div>
+              <strong>Commit Hash:</strong> {commitHash.substring(0, 10)}
+            </div>
             <br/>
             {branchAlreadyExistsInDS ?
-              <div>
-                <p>Note that <strong>branch already exists</strong> inside Dataspecer and it is forbidden (for your own good) to have two packages tracking the same remote branch in Dataspecer.
-                <br/>
-                You can <strong>import static commit</strong> and then turn the commit into branch with <strong>new</strong> name. Or just click on create branch in the Git menu.</p>
-                <br/>
+              <div className="flex flex-1 flex-row">
+                <p>Note that <strong>Branch is already tracked in Dataspecer</strong></p>
+                <GitHistoryDialogInfoTooltip>
+                  <InfoIcon/>
+                </GitHistoryDialogInfoTooltip>
               </div> :
               null
             }
-            {commitAlreadyExistsInDS ? "Note that commit already exists inside DS, however you can still import the commit." : null}
+            {commitAlreadyExistsInDS ? "The commit already exists inside DS. However, you can import it again." : null}
           </ModalDescription>
         </ModalHeader>
         <ModalFooter>
@@ -113,5 +121,34 @@ export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitH
         </ModalFooter>
       </ModalContent>
     </Modal>
+  );
+}
+
+
+interface GitHistoryDialogInfoTooltipProps {
+  children: React.ReactNode;
+}
+
+function GitHistoryDialogInfoTooltip({ children }: GitHistoryDialogInfoTooltipProps) {
+  return (
+    <TooltipProvider delayDuration={80}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {children}
+        </TooltipTrigger>
+
+        <TooltipContent
+          side="top"
+        >
+          <div>
+            <p>Note that if the <strong>branch already exists</strong> inside Dataspecer, it is forbidden (for your own good) to have two packages tracking the same remote branch in Dataspecer.
+            <br/>
+            You can <strong>import static commit</strong> and then turn the commit into branch with <strong>new</strong> name. Or just click on <strong>Create branch</strong> in the Git menu.</p>
+            <br/>
+          </div>
+        <TooltipArrow className="fill-black" />
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
