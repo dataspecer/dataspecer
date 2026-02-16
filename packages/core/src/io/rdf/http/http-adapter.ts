@@ -25,16 +25,24 @@ export async function fetchRdfQuads(
   };
   const response = await httpFetch(url, options);
   const contentType = getContentType(response);
-  switch (asMimeType ?? contentType) {
+
+  let targetMimeType = asMimeType ?? contentType;
+  const content = await response.text();
+
+  if (!supportedTypes().includes(targetMimeType as MimeType)) {
+    targetMimeType = guessMimeType(content);
+  }
+
+  switch (targetMimeType) {
     case MimeType.JsonLd:
-      return await parseRdfQuadsWithJsonLd(await response.text());
+      return await parseRdfQuadsWithJsonLd(content);
     case MimeType.NQuads:
     case MimeType.Turtle:
     case MimeType.TriG:
     case MimeType.NTriples:
-      return await parseRdfQuadsWithN3(await response.text());
+      return await parseRdfQuadsWithN3(content);
     case MimeType.RdfXML:
-      return await parseRdfXml(await response.text());
+      return await parseRdfXml(content);
     default:
       throw new Error(`Unsupported format '${contentType}'`);
   }
@@ -49,6 +57,18 @@ function supportedTypes() {
     MimeType.NTriples,
     MimeType.RdfXML,
   ];
+}
+
+function guessMimeType(content: string): MimeType {
+  if (/^\s*\{/.test(content)) {
+    return MimeType.JsonLd;
+  }
+  if (/^\s*</.test(content)) {
+    return MimeType.RdfXML;
+  }
+
+  // Wild guess
+  return MimeType.Turtle;
 }
 
 function getContentType(response): string {
