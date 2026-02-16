@@ -1,5 +1,5 @@
 import { Entity } from "../entity-model/index.ts";
-import { isSemanticModelClass, isSemanticModelRelationship, SemanticModelClass, SemanticModelRelationship } from "../semantic-model/concepts/index.ts";
+import { SemanticModelClass, SemanticModelRelationship, type SemanticModelEntity } from "../semantic-model/concepts/index.ts";
 import { SemanticEntityIdMerger, StrongerWinsSemanticEntityIdMerger } from "../semantic-model/merge/merger/index.ts";
 import { ExternalEntityWrapped, LocalEntityWrapped, SemanticModelAggregator } from "./interfaces.ts";
 import { TupleSet } from "./utils/tuple-set.ts";
@@ -87,26 +87,13 @@ export class MergeAggregator implements SemanticModelAggregator {
 
         const allEntities = owningModels.map(model => this.entitiesInModels.get(model)![entity]);
 
-        if (isSemanticModelClass(allEntities[0]!.aggregatedEntity) && allEntities.length > 1) {
-          const result = this.semanticEntityIdMerger.mergeClasses(allEntities.map(e => e!.aggregatedEntity as SemanticModelClass));
-          const wrapped = {
-            ...allEntities[0],
-            aggregatedEntity: result
-          } as LocalEntityWrapped;
-          this.entities[entity] = wrapped;
-          updated[entity] = wrapped;
-        } else if (isSemanticModelRelationship(allEntities[0]!.aggregatedEntity) && allEntities.length > 1) {
-          const result = this.semanticEntityIdMerger.mergeRelationships(allEntities.map(e => e!.aggregatedEntity as SemanticModelRelationship));
-          const wrapped = {
-            ...allEntities[0],
-            aggregatedEntity: result
-          } as LocalEntityWrapped;
-          this.entities[entity] = wrapped;
-          updated[entity] = wrapped;
-        } else {
-          this.entities[entity] = allEntities[0]!;
-          updated[entity] = allEntities[0]!;
-        }
+        const result = this.semanticEntityIdMerger.merge(allEntities.map(e => e!.aggregatedEntity as SemanticModelEntity));
+        const wrapped = {
+          ...allEntities[0],
+          aggregatedEntity: result
+        } as LocalEntityWrapped;
+        this.entities[entity] = wrapped;
+        updated[entity] = wrapped;
       }
     }
 
