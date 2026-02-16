@@ -96,7 +96,7 @@ export const updateDSRepositoryByGitPull = async (
     }
     // It is important to not only remove the actual files, but also the .git directory,
     // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
-    resourceModelForDS.setHasUncommittedChanges(iri, false);
+    await resourceModelForDS.setHasUncommittedChanges(iri, false);
     removePathRecursively(gitDirectoryToRemoveAfterWork);
   }
 
