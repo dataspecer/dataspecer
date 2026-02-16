@@ -44,6 +44,10 @@
     "url": {
       "instruction": "URL of DSV specifications, each URL on a separate line",
       "name": "URL"
+    },
+    "git-url": {
+      "name": "Git URL",
+      "instruction": "Insert URL pointing to the specific Git repository (or even specific commit/branch)"
     }
   },
   "format as json": "Format as json",
