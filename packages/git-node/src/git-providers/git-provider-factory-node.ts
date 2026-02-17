@@ -30,7 +30,7 @@ export abstract class GitProviderNodeFactory {
       };
     }
     else {
-      throw new Error(`The given request from webhook is not of any known git provider. Request: ${request}`);
+      throw new Error(`The given request from webhook is not of any known Git provider. Request: ${request}`);
     }
   }
 

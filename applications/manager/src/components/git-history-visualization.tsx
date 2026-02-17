@@ -148,7 +148,7 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
 
   useLayoutEffect(() => {
       if (isOpen) {
-        console.info("useLayoutEffect for git-history-vis");
+        console.info("useLayoutEffect for git-history-vis");      // TODO RadStr Debug: Debug print
         setIsLoading(true);
 
         // Here we load the git history

@@ -1,5 +1,9 @@
 import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
-import { CommitReferenceType, ConvertRepoURLToDownloadZipURLReturnType, CreateRemoteRepositoryReturnType, ExtractedCommitReferenceValueFromRepositoryURL, ExtractedCommitReferenceValueFromRepositoryURLExplicit, GetResourceForGitUrlAndBranchType, GitCredentials, GitProvider, GitProviderEnum, GitRef, RepositoryURLPart, GitProviderIndependentWebhookRequestData } from "../git-provider-api.ts";
+import {
+  CommitReferenceType, ConvertRepoURLToDownloadZipURLReturnType, CreateRemoteRepositoryReturnType, ExtractedCommitReferenceValueFromRepositoryURL,
+  ExtractedCommitReferenceValueFromRepositoryURLExplicit, GetResourceForGitUrlAndBranchType, GitCredentials, GitProvider, GitProviderEnum, GitRef,
+  RepositoryURLPart, GitProviderIndependentWebhookRequestData
+} from "../git-provider-api.ts";
 import { Scope } from "../auth.ts";
 import { type GitBotConfiguration, type OAuthConfiguration } from "@dataspecer/auth";
 
@@ -129,7 +133,7 @@ export abstract class GitProviderBase implements GitProvider {
   }
 
   /**
-   * @param commitReferenceType Some git providers might change the URL based on the type of commit. For example Github - however Github also allows
+   * @param commitReferenceType Some Git providers might change the URL based on the type of commit. For example Github - however Github also allows
    *  one uniform type of download url and it treats it like commit.
    * @returns The zip link from given arguments to download repository.
    */
