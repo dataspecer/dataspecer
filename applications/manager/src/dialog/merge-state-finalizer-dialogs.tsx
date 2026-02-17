@@ -149,7 +149,7 @@ const MergeStateFinalizerForPull = ({ mergeState, shouldRenderAnswerDialog, setS
           </ModalDescription>
         </ModalHeader>
         <ModalFooter>
-          <Button variant="outline" onClick={() => handlePullAction()}>Finish pull</Button>
+          <Button variant="default" onClick={() => handlePullAction()}>Finish pull</Button>
           <Button variant="outline" onClick={() => resolve()}>Close</Button>
         </ModalFooter>
       </>
@@ -180,8 +180,8 @@ const MergeStateFinalizerForPullAnswerDialog = ({ mergeState, resolve }: MergeSt
         </ModalDescription>
       </ModalHeader>
       <ModalFooter>
-        <Button variant="outline" onClick={() => finalizerHandler("pull-anyways")}>Update the last commit hash in DS</Button>
-        <Button variant="outline" onClick={() => finalizerHandler("remove-merge-state")}>Remove merge state</Button>
+        <Button variant="default" onClick={() => finalizerHandler("pull-anyways")}>Update the last commit hash in DS</Button>
+        <Button variant="destructive" onClick={() => finalizerHandler("remove-merge-state")}>Remove merge state</Button>
       </ModalFooter>
     </>;
 };
@@ -320,12 +320,18 @@ const MergeStateFinalizerForMergeAnswerDialog = ({ mergeState, httpStatus, resol
     else {
       toast.error("Finalizing ended in failure");
     }
+    if (mergeState.filesystemTypeMergeFrom === AvailableFilesystems.DS_Filesystem) {
+      await requestLoadPackage(mergeState.rootIriMergeFrom, true);
+    }
+    if (mergeState.filesystemTypeMergeTo === AvailableFilesystems.DS_Filesystem) {
+      await requestLoadPackage(mergeState.rootIriMergeTo, true);
+    }
     resolve();
   }
 
 
   if (httpStatus === null || httpStatus >= 300 || httpStatus < 0) {
-    let text = "Unknown error when finalizing merge state caused by merging. You can check console for possible more info";
+    let text = "Unknown error when finalizing merge state caused by merging. You can check console for more information.\n\nUsually it is caused by one branch not being pushed in the remote repository.";
     if (httpStatus === 409) {
       text = "There are still unresolved conflicts";
     }
@@ -337,11 +343,11 @@ const MergeStateFinalizerForMergeAnswerDialog = ({ mergeState, httpStatus, resol
       <ModalHeader>
         <ModalTitle>Finish merge state caused by merging</ModalTitle>
         <ModalDescription>
-          {text}
+          <p className="whitespace-pre-line">{text}</p>
         </ModalDescription>
       </ModalHeader>
       <ModalFooter>
-        <Button variant="outline" onClick={() => removeMergeStateAction()}>Remove merge state</Button>
+        <Button variant="destructive" onClick={() => removeMergeStateAction()}>Remove merge state</Button>
         <Button variant="outline" onClick={() => resolve()}>Close dialog</Button>
       </ModalFooter>
     </>;
@@ -402,7 +408,7 @@ const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldR
           </ModalDescription>
         </ModalHeader>
         <ModalFooter>
-          <Button variant="outline" onClick={() => finalizePush()}>Push</Button>
+          <Button variant="default" onClick={() => finalizePush()}>Push</Button>
           <Button variant="outline" onClick={() => resolve()}>Close dialog</Button>
         </ModalFooter>
       </>
@@ -425,12 +431,13 @@ const MergeStateFinalizerForPushAnswerDialog = ({ mergeState, httpStatus, resolv
     if (mergeState.filesystemTypeMergeTo === AvailableFilesystems.DS_Filesystem) {
       await requestLoadPackage(mergeState.rootIriMergeTo, true);
     }
+
     resolve();
   }
 
 
   if (httpStatus === null || httpStatus >= 300 || httpStatus < 0) {
-    let text = "Unknown error when finalizing merge state caused by pushing. You can check console for possible more info";
+    let text = "Unknown error when finalizing merge state caused by pushing. You can check console for more information.";
     if (httpStatus === 409) {
       text = "There are still unresolved conflicts";
     }
@@ -446,7 +453,7 @@ const MergeStateFinalizerForPushAnswerDialog = ({ mergeState, httpStatus, resolv
         </ModalDescription>
       </ModalHeader>
       <ModalFooter>
-        <Button variant="outline" onClick={() => finalizerHandler()}>Remove merge state</Button>
+        <Button variant="destructive" onClick={() => finalizerHandler()}>Remove merge state</Button>
         <Button variant="outline" onClick={() => resolve()}>Close dialog</Button>
       </ModalFooter>
     </>;

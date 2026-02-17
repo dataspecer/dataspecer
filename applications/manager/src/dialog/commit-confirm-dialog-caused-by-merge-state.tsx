@@ -29,7 +29,7 @@ export const CommitRedirectForMergeStatesDialog = ({ commitRedirectResponse, isO
         {dialogData.dialogText}
 
         <ModalFooter>
-          <Button variant="outline" onClick={dialogData.actionButton.onClickAction}>{dialogData.actionButton.buttonText}</Button>
+          <Button variant="default" onClick={dialogData.actionButton.onClickAction}>{dialogData.actionButton.buttonText}</Button>
           <Button variant="outline" onClick={dialogData.secondaryActionButton.onClickAction}>{dialogData.secondaryActionButton.buttonText}</Button>
         </ModalFooter>
       </ModalContent>

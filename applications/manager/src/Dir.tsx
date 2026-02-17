@@ -103,7 +103,7 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri
       modalDescription: "Choose branch (or commit) to merge from",
       resources: resources,
       resourcesFilter: (r: ResourceWithIris) => (r.iri !== resource.iri && resource.linkedGitRepositoryURL !== "" && r?.linkedGitRepositoryURL === resource.linkedGitRepositoryURL),
-      noEntriesDialogText: "There are no other branches (or commits) to merge from.",
+      noEntriesDialogText: "⚠️ There are no other branches (or commits) to merge from.",
       comboboxEntryTextGetter: (r: ResourceWithIris) => `${r?.branch}`}
     );
     if (mergeFrom === null) {
