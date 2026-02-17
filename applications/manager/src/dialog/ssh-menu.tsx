@@ -1,12 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { BetterModalProps, useBetterModal } from "@/lib/better-modal";
-import { LockKeyholeIcon } from "lucide-react";
+import { InfoIcon, LockKeyholeIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import SetPrivateSSHKeyDialog from "./set-private-ssh";
 import { UseLoginType } from "@/hooks/use-login";
 import { GitProviderNamesAsType } from "@dataspecer/git";
 import { toast } from "sonner";
 import { Modal, ModalBody, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@/components/modal";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TooltipArrow } from "@radix-ui/react-tooltip";
 
 type SshMenuProps = {
   login: UseLoginType;
@@ -102,11 +104,12 @@ export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
         <ModalHeader>
           <ModalTitle>Menu for working with SSH keys</ModalTitle>
           <ModalDescription>
-            This is so far experimental feature. It only works for GitHub.
+            - At most one SSH key per account.
             <br/>
-            The SSH will behave as be your primary access token.
+            - The SSH will behave as be your primary access token.
             <br/>
-            The SSH key can be even a deploy key (that is key for committing to a single repository).
+            <p className="flex flex-1 flex-row">- The SSH key can be a deploy key <DeployKeyTooltip><InfoIcon/></DeployKeyTooltip></p>
+            <p className="flex flex-1 flex-row">- Security concerns <SecurityTooltip><InfoIcon/></SecurityTooltip></p>
           </ModalDescription>
         </ModalHeader>
         <ModalBody>
@@ -132,9 +135,57 @@ export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
         </ModalBody>
       </ModalContent>
     </Modal>
-
-
   );
 }
 
 
+
+
+interface SecurityTooltipProps {
+  children: React.ReactNode;
+}
+
+function SecurityTooltip({ children }: SecurityTooltipProps) {
+  return (
+    <TooltipProvider delayDuration={80}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {children}
+        </TooltipTrigger>
+
+        <TooltipContent
+          side="bottom"
+        >
+          The SSH key is stored in Dataspecer's filesystem without encryption. The key is never sent back to client.
+          <br/>
+          Possible attacker would have to get possession of the server and the file to steal it.
+          <TooltipArrow className="fill-black" />
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
+
+interface DeployKeyTooltipProps {
+  children: React.ReactNode;
+}
+
+function DeployKeyTooltip({ children }: DeployKeyTooltipProps) {
+  return (
+    <TooltipProvider delayDuration={80}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {children}
+        </TooltipTrigger>
+
+        <TooltipContent
+          side="bottom"
+        >
+          Deploy key is a key for committing to a single repository
+          <TooltipArrow className="fill-black" />
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}

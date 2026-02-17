@@ -11,7 +11,6 @@ import { Toaster } from "@/components/ui/sonner"
 import { VersionInformation } from './components/version-information';
 import { LoginCard } from './components/login-card';
 import { useLogin } from './hooks/use-login';
-import { SshButton } from './components/ssh-button';
 
 const version = import.meta.env.VITE_VERSION || null;
 
@@ -44,7 +43,6 @@ function App() {
                 <GithubLink />
                 <ModeToggle />
                 <LanguageToggle/>
-                <SshButton/>
                 <LoginCard login={login} />
               </div>
             </div>
