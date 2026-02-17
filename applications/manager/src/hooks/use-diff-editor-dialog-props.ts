@@ -34,6 +34,7 @@ import { TextDiffEditorBetterModalProps, UpdateModelDataMethod } from "@/dialog/
 import { MergeStateFinalizerDialog } from "@/dialog/merge-state-finalizer-dialogs";
 import { useBetterModal } from "@/lib/better-modal";
 import { requestLoadPackage } from "@/package";
+import { ChooseActionForDiffEditorUnplannedChange, DiffEditorOutsideChangeChosenAction } from "@/dialog/outside-changes-action-chooser-dialog";
 
 
 type FullTreePath = string;
@@ -553,8 +554,11 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
   console.info({strippedMergeFromContent, strippedMergeToContent, activeMergeFromContentConverted, activeMergeToContentConverted});
 
 
-  const resetUseStates = () => {
-    setExaminedMergeState(null);
+  const resetUseStates = (shouldResetExaminedMergeState: boolean) => {
+    if (shouldResetExaminedMergeState) {
+      setIsLoadingTextData(true);
+      setExaminedMergeState(null);
+    }
     setConflictsToBeResolvedOnSave([]);
     setCreatedDatastores([]);
     setCreatedFilesystemNodes({});
@@ -571,7 +575,6 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     setMergeFromSvg("");
     setMergeToSvg("");
     setComparisonTabType("text-compare");
-    setIsLoadingTextData(true);
     setIsLoadingTreeStructure(true);
     setCacheExplicitUpdateTracker(0);
   };
@@ -582,7 +585,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     }
 
     const fetchedMergeState = await fetchMergeState(initialMergeFromRootMetaPath, initialMergeToRootMetaPath, true, true, shouldForceDiffTreeReload);
-    resetUseStates();
+    resetUseStates(true);
     setExaminedMergeState(fetchedMergeState);
   };
 
@@ -1000,14 +1003,23 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
       const mergeFromRootIri = examinedMergeState.rootIriMergeFrom;
       const mergeToRootIri = examinedMergeState.rootIriMergeTo;
 
-      await saveFileChanges(false);
-      if (examinedMergeState !== null) {
-        await updateMergeState(examinedMergeState, conflictsToBeResolvedOnSave);
+      const saveResult = await saveFileChanges(false);
+      if (saveResult === DiffEditorOutsideChangeChosenAction.Nothing) {
+        return;
       }
-
-      await reloadMergeState(true, false);
-      await requestLoadPackage(mergeFromRootIri, true);
-      await requestLoadPackage(mergeToRootIri, true);
+      else if (saveResult === DiffEditorOutsideChangeChosenAction.Continue) {
+        if (examinedMergeState !== null) {
+          await updateMergeState(examinedMergeState, conflictsToBeResolvedOnSave);
+        }
+        resetUseStates(true);
+        await reloadMergeState(true, true);
+        await requestLoadPackage(mergeFromRootIri, true);
+        await requestLoadPackage(mergeToRootIri, true);
+      }
+      else if (saveResult === DiffEditorOutsideChangeChosenAction.Reload) {
+        resetUseStates(true);
+        await reloadMergeState(true, true);
+      }
     };
     saveToBackend();
   }, [cacheExplicitUpdateTracker]);
@@ -1021,7 +1033,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
 
   console.info({convertedCacheContentForMergeFrom, convertedCacheContentForMergeTo});   // TODO RadStr Debug: DEBUG print
 
-  const saveFileChanges = async (shouldReloadFromBackendAfterFinish: boolean) => {
+  const saveFileChanges = async (shouldReloadFromBackendAfterFinish: boolean): Promise<DiffEditorOutsideChangeChosenAction> => {
     const { editable: editableCacheContents, nonEditable: nonEditableCacheContents } = getEditableAndNonEditableValue(editable, convertedCacheContentForMergeFrom, convertedCacheContentForMergeTo);
     const editableFilesystem = getEditableValue(editable, examinedMergeState?.filesystemTypeMergeFrom, examinedMergeState?.filesystemTypeMergeTo) ?? null;
     await saveCreatedFilesystemNodesToBackend(editableCacheContents, nonEditableCacheContents, editableFilesystem);
@@ -1030,16 +1042,33 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     //              ... But it is quite non-trival implementation-wise
     // TODO RadStr: Also we should do only one fetcheMergeState request, otherwise there might be concurrency issues
     const fetchedMergeStateToCheckForUpToDate = await fetchMergeState(initialMergeFromRootMetaPath, initialMergeToRootMetaPath, true, false, false);
+    if (examinedMergeState === null || fetchedMergeStateToCheckForUpToDate === null) {
+      throw new Error(`Either the old merge state (${examinedMergeState}) or the new merge state (${fetchedMergeStateToCheckForUpToDate}) are null.`);
+    }
 
     // TODO RadStr: pridat kontrolu pres modifiedDiffSubtreeAt - time se vyresi I situace kdyz mi to nekdo modifikuje z diff editor, momentalne to resi akorat kdyz to nekdo modifikuje odnekud jinud - tj. zmeni tu isUpToDate promennou.
-    if (!fetchedMergeStateToCheckForUpToDate?.isUpToDate) {
+    if (!fetchedMergeStateToCheckForUpToDate?.isUpToDate || examinedMergeState.modifiedDiffTreeAt !== fetchedMergeStateToCheckForUpToDate.modifiedDiffTreeAt) {
       // TODO RadStr: ... What to do with this? ... Probably just throw error. However the issue is that we already updated the filesystem nodes. So we can not fully revert the action.
       // .... TODO RadStr: ... Actually just rewrite it - when we work in parallel in cme it is also the last one wins ... we would have to write the DS commits and I really was not feeling up to the task
       // ..... also the commits would be just single commits - basically any time user stores to backend we say that is commit and that's it. Basically it is just forced history. It would help us in some places - like here
       //  but yeah as I said the project already got way more complicated than it should have, so it is better to just ship this. I mean the implementation of DS commits is not that complicated after all, it is just once again ton of thinking and ton of code.
 
-      // TODO: Probably some better dialog
-      alert("It was not up to date");
+
+      // TODO RadStr: Ideally also have what files changed on the backend - it should not be hard just have new field in database which will contain iris of the changed resources
+      //              It will be set in the observer
+      const { result: modalResult } = await openModal(ChooseActionForDiffEditorUnplannedChange, {oldMergeState: examinedMergeState, newMergeState: fetchedMergeStateToCheckForUpToDate});
+      if (modalResult === DiffEditorOutsideChangeChosenAction.Nothing) {
+        return modalResult;
+      }
+      else if (modalResult === DiffEditorOutsideChangeChosenAction.Continue) {
+        // Do nothing
+      }
+      else if (modalResult === DiffEditorOutsideChangeChosenAction.Reload) {
+        return modalResult;
+      }
+      else {
+        throw new Error(`Unknown modalResult: ${modalResult}`)
+      }
     }
     const fetchedMergeState = await fetchMergeState(initialMergeFromRootMetaPath, initialMergeToRootMetaPath, true, true, true);
     console.info({fetchedMergeState});      // TODO RadStr Debug: Debug
@@ -1134,7 +1163,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     setRemovedTreePaths([]);
     setCreatedFilesystemNodes({});
     createdDatastoresToIrisNeedingReplacementMap.current = {};
-
+    return DiffEditorOutsideChangeChosenAction.Continue;
     // // Remove all listeners first
     // const mergeToEditor = monacoEditor.current?.editor.getMergeToEditor();
     // // mergeToEditor?.dispose();
