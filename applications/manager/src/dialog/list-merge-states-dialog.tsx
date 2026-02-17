@@ -8,6 +8,8 @@ import { removeMergeState } from "@/utils/merge-state-backend-requests";
 import { ShowMergeStateInfoDialog } from "./show-merge-state-info-dialog";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
 import { requestLoadPackage } from "@/package";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TooltipArrow } from "@radix-ui/react-tooltip";
 
 type MergeStateDialogProps = {
   iri: string,
@@ -43,18 +45,19 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
 
   return (
     <Modal open={!isInfoDialogShown && isOpen} onClose={() => resolve(null)}>
-      <ModalContent className="min-w-[650px]">
+      <ModalContent className="min-w-[850px]">
         <ModalHeader>
           <ModalTitle>List of currently opened merge states for chosen data specification</ModalTitle>
           <ModalDescription>
-            Diff editor is opened on click
+            <p className="flex flex-1 flex-row">Diff editor is opened on click<MergeStateListTooltip><InfoIcon/></MergeStateListTooltip></p>
           </ModalDescription>
           {isLoading && <Loader className="mr-2 h-4 w-4 animate-spin" /> }
           {
           !isLoading && <>
             {/* The header */}
             {/* The ml-4 is here for the first button, otherwise the merge state cause in the rows is shifted */}
-            <div className="grid grid-cols-[1fr_2fr_2fr] divide-x divide-gray-300 ml-4">
+            <div className="grid grid-cols-[2fr_1fr_2fr_2fr] divide-x divide-gray-300 ml-4">
+              <div className="flex items-center justify-center">Last modified at</div>
               <div className="flex items-center justify-center">Cause</div>
               <div className="flex items-center justify-center">Merge from</div>
               <div className="flex items-center justify-center">Merge to</div>
@@ -110,7 +113,10 @@ const renderMergeState = (
 
 
 function createMergeStateRowText(mergeState: MergeState) {
-  return <div className="grid grid-cols-[1fr_2fr_2fr] justify-center items-center gap-4">
+  return <div className="grid grid-cols-[2fr_1fr_2fr_2fr] justify-center items-center gap-4">
+      <span className="flex text-base font-medium whitespace-nowrap justify-center items-center truncate">
+        {new Date(mergeState.modifiedDiffTreeAt).toLocaleString()}
+      </span>
       <span className="flex text-base font-medium whitespace-nowrap justify-center items-center truncate">{mergeState.mergeStateCause}</span>
       <div className="flex justify-center items-center truncate">
         {createMergeStateSourceText(mergeState, "MergeFrom")}
@@ -139,4 +145,34 @@ function createMergeStateSourceText(mergeState: MergeState, side: "MergeFrom" | 
   //       <span className="text-xs text-gray-500 whitespace-nowrap pl-1 pt-1">{getHumanReadableFilesystemName(mergeState[`filesystemType${side}`])}</span>
   //     </>;
   // }
+}
+
+
+
+interface MergeStateListTooltipProps {
+  children: React.ReactNode;
+}
+
+function MergeStateListTooltip({ children }: MergeStateListTooltipProps) {
+  return (
+    <TooltipProvider delayDuration={80}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {children}
+        </TooltipTrigger>
+        <TooltipContent
+          side="top"
+        >
+          - If an entry is red, then it means that it was modified from somewhere else than the diff editor.
+          <br/>
+          - From user perspective it means, that the user should double check the changes were performed by them and not somebody else.
+          <br/>
+          - Note that user should double check the modification time even if it is not red, to be sure that somebody else did not modify the entry from diff editor
+          <br/>
+          - When entry is read it means on a technical level it means that the diff tree will be recomputed when fetched.
+          <TooltipArrow className="fill-black" />
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }

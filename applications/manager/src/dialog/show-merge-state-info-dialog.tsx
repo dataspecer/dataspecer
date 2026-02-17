@@ -43,6 +43,7 @@ export const ShowMergeStateInfoDialog = ({ mergeState, setIsInfoDialogShown, isO
             <br/>
             <strong>Merge state cause:</strong> {mergeState.mergeStateCause}
             <br/>
+            <br/>
 
             {mergeState.branchMergeFrom === mergeState.branchMergeTo ? (
               <div><strong>Branch:</strong> {mergeState.branchMergeFrom}</div>
@@ -53,6 +54,9 @@ export const ShowMergeStateInfoDialog = ({ mergeState, setIsInfoDialogShown, isO
                 <strong>Merge to branch:</strong> {mergeState.branchMergeTo}
               </div>
             )}
+            <br/>
+            <strong>DiffTree modified at:</strong> {new Date(mergeState.modifiedDiffTreeAt).toLocaleString()}
+            <br/>
 
 
             {/* ---- COLLAPSIBLE SECTION ---- */}
@@ -75,6 +79,8 @@ export const ShowMergeStateInfoDialog = ({ mergeState, setIsInfoDialogShown, isO
                       <strong>Merge from IRI:</strong> {mergeState.rootIriMergeFrom}
                       <br/>
                       <strong>Merge to IRI:</strong> {mergeState.rootIriMergeTo}
+                      <br/>
+                      <br/>
                     </div>
                   )
                 }
@@ -87,6 +93,8 @@ export const ShowMergeStateInfoDialog = ({ mergeState, setIsInfoDialogShown, isO
                       <strong>Merge from commit hash:</strong> {mergeState.lastCommitHashMergeFrom}
                       <br/>
                       <strong>Merge to commit hash:</strong> {mergeState.lastCommitHashMergeTo}
+                      <br/>
+                      <br/>
                     </div>
                   )
                 }
@@ -99,6 +107,7 @@ export const ShowMergeStateInfoDialog = ({ mergeState, setIsInfoDialogShown, isO
                       <strong>Merge from location:</strong> {getHumanReadableFilesystemName(mergeState.filesystemTypeMergeFrom)}
                       <br/>
                       <strong>Merge to location:</strong> {getHumanReadableFilesystemName(mergeState.filesystemTypeMergeTo)}
+                      <br/>
                     </div>
                   )
                 }
