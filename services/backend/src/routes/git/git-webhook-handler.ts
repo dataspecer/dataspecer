@@ -37,59 +37,62 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
   // console.info("Webhook - Body: ", request.body);
   // console.info("Webhook - Body payload: ", request.body.payload);
 
-  const { gitProvider, webhookPayload } = GitProviderNodeFactory.createGitProviderFromWebhookRequest(request, httpFetch, configuration);
-  const isPushWebhook = gitProvider.isPushWebhook(request.headers);
-  if(!isPushWebhook) {
-    response.sendStatus(200);
-    return;
-  }
-
-  const getResourceForGitUrlAndBranch = async (gitRepositoryUrl: string, branch: string) => {return resourceModel.getResourceForGitUrlAndBranch(gitRepositoryUrl, branch)};
-  const dataForWebhookProcessing = await gitProvider.extractDataForWebhookProcessing(webhookPayload, getResourceForGitUrlAndBranch);
-  if (dataForWebhookProcessing === null) {
-    return;
-  }
-  const { commits, cloneURL, iri, branch } = dataForWebhookProcessing;
-
-  console.info("dataForWebhookProcessing", dataForWebhookProcessing);   // TODO RadStr Debug: Debug
-
-  const resource = await resourceModel.getPackage(iri);
-  if (resource === null) {
-    return;
-  }
-
-  const webhookCommit = commits.at(-1);
-  if (webhookCommit === undefined) {
-    response.sendStatus(200);
-    return;
-  }
-
-  const webhookCommitHash = gitProvider.extractHashFromWebhookCommitObject(webhookCommit);
-  // Note that it may be technically possible that the webhook runs before we actually store the hash into database after the push.
-  // However, it is highly unlikely. If that happens the user will just have new merge state that has zero changes.
-  if (webhookCommitHash === resource.lastCommitHash) {
-    // The commits comes from this Dataspecer instance.
-    response.sendStatus(200);
-    return;
-  }
-
-
-  const pullUpdateParams: UpdateDSRepositoryByGitPullParams = {
-    iri,
-    gitProvider,
-    branch,
-    cloneURL,
-    cloneDirectoryNamePrefix: WEBHOOK_PATH_PREFIX,
-    dsLastCommitHash: resource.lastCommitHash,
-    resourceModelForDS: resourceModel,
-    alwaysCreateMergeState: true,
-    depth: commits.length,
-  };
-  const createdMergeState = await updateDSRepositoryByGitPull(pullUpdateParams);
-
-  // Actually we don't need to answer based on response, since this comes from git provider, only think we might need is to notify users that there was update, which we do by setting the isInSyncWithRemote
-  response.sendStatus(200);
+  response.sendStatus(405);
   return;
+
+  // const { gitProvider, webhookPayload } = GitProviderNodeFactory.createGitProviderFromWebhookRequest(request, httpFetch, configuration);
+  // const isPushWebhook = gitProvider.isPushWebhook(request.headers);
+  // if(!isPushWebhook) {
+  //   response.sendStatus(200);
+  //   return;
+  // }
+
+  // const getResourceForGitUrlAndBranch = async (gitRepositoryUrl: string, branch: string) => {return resourceModel.getResourceForGitUrlAndBranch(gitRepositoryUrl, branch)};
+  // const dataForWebhookProcessing = await gitProvider.extractDataForWebhookProcessing(webhookPayload, getResourceForGitUrlAndBranch);
+  // if (dataForWebhookProcessing === null) {
+  //   return;
+  // }
+  // const { commits, cloneURL, iri, branch } = dataForWebhookProcessing;
+
+  // console.info("dataForWebhookProcessing", dataForWebhookProcessing);   // TODO RadStr Debug: Debug
+
+  // const resource = await resourceModel.getPackage(iri);
+  // if (resource === null) {
+  //   return;
+  // }
+
+  // const webhookCommit = commits.at(-1);
+  // if (webhookCommit === undefined) {
+  //   response.sendStatus(200);
+  //   return;
+  // }
+
+  // const webhookCommitHash = gitProvider.extractHashFromWebhookCommitObject(webhookCommit);
+  // // Note that it may be technically possible that the webhook runs before we actually store the hash into database after the push.
+  // // However, it is highly unlikely. If that happens the user will just have new merge state that has zero changes.
+  // if (webhookCommitHash === resource.lastCommitHash) {
+  //   // The commits comes from this Dataspecer instance.
+  //   response.sendStatus(200);
+  //   return;
+  // }
+
+
+  // const pullUpdateParams: UpdateDSRepositoryByGitPullParams = {
+  //   iri,
+  //   gitProvider,
+  //   branch,
+  //   cloneURL,
+  //   cloneDirectoryNamePrefix: WEBHOOK_PATH_PREFIX,
+  //   dsLastCommitHash: resource.lastCommitHash,
+  //   resourceModelForDS: resourceModel,
+  //   alwaysCreateMergeState: true,
+  //   depth: commits.length,
+  // };
+  // const createdMergeState = await updateDSRepositoryByGitPull(pullUpdateParams);
+
+  // // Actually we don't need to answer based on response, since this comes from git provider, only think we might need is to notify users that there was update, which we do by setting the isInSyncWithRemote
+  // response.sendStatus(200);
+  // return;
 });
 
 export type GitChangesToDSPackageStoreResult = {
