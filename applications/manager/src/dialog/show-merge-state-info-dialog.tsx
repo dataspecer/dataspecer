@@ -32,12 +32,12 @@ export const ShowMergeStateInfoDialog = ({ mergeState, setIsInfoDialogShown, isO
 
   return (
     <Modal open={isOpen} onClose={closeModal}>
-      <ModalContent className="max-w-[40%]!">
+      <ModalContent>
         <ModalHeader>
           <ModalTitle>Info about merge state</ModalTitle>
         </ModalHeader>
 
-        <div>
+        <div className="overflow-auto">
           <div className="text-sm">
             <strong>Conflict count:</strong> {mergeState.conflictCount}
             <br/>

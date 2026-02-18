@@ -86,13 +86,13 @@ export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitH
 
   return (
     <Modal open={isOpen} onClose={() => resolve(null)}>
-      <ModalContent className="min-w-[650px]">
+      <ModalContent className="md:min-w-[650px]">
         <ModalHeader>
           <ModalTitle>
             <div className="flex flex-1 flex-row">Perform action on Git commit</div>
           </ModalTitle>
           {isPerformingAction && <Loader className="mr-2 h-4 w-4 animate-spin" /> }
-          <ModalDescription>
+          <ModalDescription className="overflow-x-auto">
             <br/>
             <div>
               <strong>IRI:</strong> {examinedPackage.iri}
