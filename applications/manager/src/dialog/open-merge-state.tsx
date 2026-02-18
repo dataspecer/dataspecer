@@ -177,8 +177,14 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
       await requestLoadPackage(mergeTo.iri, true);
       fetchedMergeState = createdMergeState.mergeState;
       if (createdMergeState.error !== null) {
-        setMergeStateCreatingFailure(true);
-        isMergeStateCreated = false;
+        if (createdMergeState.error.includes("Unique constraint failed on the fields")) {   // This is because of strict mode - since it may have been created by the first run. Therefore, we just resolve it.
+          resolve(null);
+          return;
+        }
+        if (fetchedMergeState === null) {   // If we failed for different reason
+          setMergeStateCreatingFailure(true);
+          isMergeStateCreated = false;
+        }
       }
       else if (createdMergeState.mergeState === null) {
         setMergeStateIdInCaseOfNoConflicts(createdMergeState.mergeStateId);
@@ -189,8 +195,9 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
     else {
       alreadyExists = true;
     }
-    if (fetchedMergeState?.rootFullPathToMetaMergeFrom !== mergeFrom.iri || fetchedMergeState.rootFullPathToMetaMergeTo !== mergeTo.iri) {        // TODO RadStr Debug: Debug if to check that my assert about development is true
-      alert("Not equal iri to path when merging");
+    if (fetchedMergeState?.rootFullPathToMetaMergeFrom !== mergeFrom.iri || fetchedMergeState.rootFullPathToMetaMergeTo !== mergeTo.iri) {
+      console.error({rootFullPathToMetaMergeFrom: fetchedMergeState?.rootFullPathToMetaMergeFrom, mergeFromIri: mergeFrom.iri,
+        rootFullPathToMetaMergeTo: fetchedMergeState?.rootFullPathToMetaMergeTo, mergeToIri: mergeTo.iri, fetchedMergeState});
       throw new Error("Not equal iri to path when merging");
     }
     setMergeState(fetchedMergeState);
