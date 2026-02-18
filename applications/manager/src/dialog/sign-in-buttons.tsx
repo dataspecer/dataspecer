@@ -1,60 +1,40 @@
 import { Modal, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@/components/modal";
+import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 import { BetterModalProps } from "@/lib/better-modal";
 import { ConfigType } from "@dataspecer/git";
-import { InfoIcon } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { TooltipArrow } from "@radix-ui/react-tooltip";
 
 
-interface SignInInfoTooltipProps {
-  children: React.ReactNode;
-}
-
-function SignInInfoTooltip({ children }: SignInInfoTooltipProps) {
-  return (
-    <TooltipProvider delayDuration={80}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          {children}
-        </TooltipTrigger>
-
-        <TooltipContent
-          side="bottom"
-        >
-          <div>- The access token should be automatically revoked after you sign out.</div>
-          <br/>
-          <div>
-            - Choose the the <strong>Name + E-mail</strong> option to commit to a repository accessible by bot under your name.
-          </div>
-          <br/>
-          <div>
-            - <strong>Once you sign-in</strong> you can also set your <strong>SSH key</strong> under your account.
-          </div>
-          <br/>
-          <div>
-            - Use the <strong>Name + E-mail + Git push scope</strong> if you want to <strong>create new repositories</strong> or <strong>commit</strong> to repositories to which you have access.
-          </div>
-          <br/>
-          <div>
-            - Use the <strong>Delete</strong> rights if you are developer who is debugging Dataspecer's Git integration.
-            <br/>
-            &nbsp;&nbsp;&nbsp;It is, of course, accessible to non-developers, but due to <strong>security concerns it is discouraged.</strong>
-          </div>
-          <br/>
-          <div>- Note that the provided rights are for <strong>each repository you have access to</strong>.</div>
-          <br/>
-          <br/>
-          <div>
-            - The access tokens are tried out until one succeeds in this order. Your SSH, your PAT, bot SSH, bot PAT
-            <br/>
-            &nbsp;&nbsp;&nbsp;PAT = Personal Access Token
-          </div>
-
-          <TooltipArrow className="fill-black" />
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
+function SignInInfoTooltip() {
+  return <div>
+    <div>- The access token should be automatically revoked after you sign out.</div>
+    <br/>
+    <div>
+      - Choose the the <strong>Name + E-mail</strong> option to commit to a repository accessible by bot under your name.
+    </div>
+    <br/>
+    <div>
+      - <strong>Once you sign-in</strong> you can also set your <strong>SSH key</strong> under your account.
+    </div>
+    <br/>
+    <div>
+      - Use the <strong>Name + E-mail + Git push scope</strong> if you want to <strong>create new repositories</strong> or <strong>commit</strong> to repositories to which you have access.
+    </div>
+    <br/>
+    <div>
+      - Use the <strong>Delete</strong> rights if you are developer who is debugging Dataspecer's Git integration.
+      <br/>
+      &nbsp;&nbsp;&nbsp;It is, of course, accessible to non-developers, but due to <strong>security concerns it is discouraged.</strong>
+    </div>
+    <br/>
+    <div>- Note that the provided rights are for <strong>each repository you have access to</strong>.</div>
+    <br/>
+    <br/>
+    <div>
+      - The access tokens are tried out until one succeeds in this order. Your SSH, your PAT, bot SSH, bot PAT
+      <br/>
+      &nbsp;&nbsp;&nbsp;PAT = Personal Access Token
+    </div>
+  </div>;
 }
 
 
@@ -65,7 +45,7 @@ export const SignInDialog = ({ isOpen, resolve }: BetterModalProps) => {
         <ModalHeader>
           <ModalTitle>
             <div className="flex flex-1 flex-row">
-              Sign in options <SignInInfoTooltip><InfoIcon/></SignInInfoTooltip>
+              Sign in options <PopOverGitGeneralComponent><SignInInfoTooltip/></PopOverGitGeneralComponent>
             </div>
           </ModalTitle>
         </ModalHeader>

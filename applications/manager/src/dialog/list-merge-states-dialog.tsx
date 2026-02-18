@@ -8,8 +8,7 @@ import { removeMergeState } from "@/utils/merge-state-backend-requests";
 import { ShowMergeStateInfoDialog } from "./show-merge-state-info-dialog";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
 import { requestLoadPackage } from "@/package";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { TooltipArrow } from "@radix-ui/react-tooltip";
+import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 
 type MergeStateDialogProps = {
   iri: string,
@@ -49,7 +48,7 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
         <ModalHeader>
           <ModalTitle>List of currently opened merge states for chosen data specification</ModalTitle>
           <ModalDescription>
-            <p className="flex flex-1 flex-row">Diff editor is opened on click<MergeStateListTooltip><InfoIcon/></MergeStateListTooltip></p>
+            <p className="flex flex-1 flex-row">Diff editor is opened on click<PopOverGitGeneralComponent><MergeStateListTooltip/></PopOverGitGeneralComponent></p>
           </ModalDescription>
           {isLoading && <Loader className="mr-2 h-4 w-4 animate-spin" /> }
           {
@@ -153,30 +152,14 @@ function createMergeStateSourceText(mergeState: MergeState, side: "MergeFrom" | 
 
 
 
-interface MergeStateListTooltipProps {
-  children: React.ReactNode;
-}
-
-function MergeStateListTooltip({ children }: MergeStateListTooltipProps) {
-  return (
-    <TooltipProvider delayDuration={80}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          {children}
-        </TooltipTrigger>
-        <TooltipContent
-          side="top"
-        >
-          - If an entry is red, then it means that it was modified from somewhere else than the diff editor.
-          <br/>
-          - From user perspective it means, that the user should double check the changes were performed by them and not somebody else.
-          <br/>
-          - Note that user should double check the modification time even if it is not red, to be sure that somebody else did not modify the entry from diff editor
-          <br/>
-          - When entry is read it means on a technical level it means that the diff tree will be recomputed when fetched.
-          <TooltipArrow className="fill-black" />
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
+function MergeStateListTooltip() {
+  return <div>
+    - If an entry is red, then it means that it was modified from somewhere else than the diff editor.
+    <br/>
+    - From user perspective it means, that the user should double check the changes were performed by them and not somebody else.
+    <br/>
+    - Note that user should double check the modification time even if it is not red, to be sure that somebody else did not modify the entry from diff editor
+    <br/>
+    - When entry is read it means on a technical level it means that the diff tree will be recomputed when fetched.
+  </div>;
 }

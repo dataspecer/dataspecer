@@ -1,14 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { BetterModalProps, useBetterModal } from "@/lib/better-modal";
-import { InfoIcon, LockKeyholeIcon } from "lucide-react";
+import { LockKeyholeIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import SetPrivateSSHKeyDialog from "./set-private-ssh";
 import { UseLoginType } from "@/hooks/use-login";
 import { GitProviderNamesAsType } from "@dataspecer/git";
 import { toast } from "sonner";
 import { Modal, ModalBody, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@/components/modal";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { TooltipArrow } from "@radix-ui/react-tooltip";
+import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 
 type SshMenuProps = {
   login: UseLoginType;
@@ -108,8 +107,8 @@ export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
             <br/>
             - The SSH will behave as be your primary access token.
             <br/>
-            <p className="flex flex-1 flex-row">- The SSH key can be a deploy key <DeployKeyTooltip><InfoIcon/></DeployKeyTooltip></p>
-            <p className="flex flex-1 flex-row">- Security concerns <SecurityTooltip><InfoIcon/></SecurityTooltip></p>
+            <p className="flex flex-1 flex-row">- The SSH key can be a deploy key <PopOverGitGeneralComponent><DeployKeyTooltip/></PopOverGitGeneralComponent></p>
+            <p className="flex flex-1 flex-row">- Security concerns <PopOverGitGeneralComponent><SecurityTooltip/></PopOverGitGeneralComponent></p>
           </ModalDescription>
         </ModalHeader>
         <ModalBody>
@@ -140,52 +139,15 @@ export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
 
 
 
-
-interface SecurityTooltipProps {
-  children: React.ReactNode;
-}
-
-function SecurityTooltip({ children }: SecurityTooltipProps) {
-  return (
-    <TooltipProvider delayDuration={80}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          {children}
-        </TooltipTrigger>
-
-        <TooltipContent
-          side="bottom"
-        >
-          The SSH key is stored in Dataspecer's filesystem without encryption. The key is never sent back to client.
-          <br/>
-          Possible attacker would have to get possession of the server and the file to steal it.
-          <TooltipArrow className="fill-black" />
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
+function SecurityTooltip() {
+  return <div>
+    The SSH key is stored in Dataspecer's filesystem without encryption. The key is never sent back to client.
+    <br/>
+    Possible attacker would have to get possession of the server and the file to steal it.
+  </div>;
 }
 
 
-interface DeployKeyTooltipProps {
-  children: React.ReactNode;
-}
-
-function DeployKeyTooltip({ children }: DeployKeyTooltipProps) {
-  return (
-    <TooltipProvider delayDuration={80}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          {children}
-        </TooltipTrigger>
-
-        <TooltipContent
-          side="bottom"
-        >
-          Deploy key is a key for committing to a single repository
-          <TooltipArrow className="fill-black" />
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
+function DeployKeyTooltip() {
+  return <div>Deploy key is a key for committing to a single repository</div>;
 }

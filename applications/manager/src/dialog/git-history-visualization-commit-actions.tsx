@@ -8,10 +8,8 @@ import { refreshRootPackage } from "@/package";
 import { GitRef, PACKAGE_ROOT } from "@dataspecer/git";
 import { lng } from "@/Dir";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
+import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 
-import { InfoIcon } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { TooltipArrow } from "@radix-ui/react-tooltip";
 
 type GitHistoryCommitActionsDialogProps = {
   examinedPackage: Package,
@@ -105,9 +103,7 @@ export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitH
             {branchAlreadyExistsInDS ?
               <div className="flex flex-1 flex-row">
                 <p>Note that <strong>Branch is already tracked in Dataspecer</strong></p>
-                <GitHistoryDialogInfoTooltip>
-                  <InfoIcon/>
-                </GitHistoryDialogInfoTooltip>
+                  <PopOverGitGeneralComponent><GitHistoryDialogInfoTooltip/></PopOverGitGeneralComponent>
               </div> :
               null
             }
@@ -125,30 +121,10 @@ export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitH
 }
 
 
-interface GitHistoryDialogInfoTooltipProps {
-  children: React.ReactNode;
-}
-
-function GitHistoryDialogInfoTooltip({ children }: GitHistoryDialogInfoTooltipProps) {
-  return (
-    <TooltipProvider delayDuration={80}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          {children}
-        </TooltipTrigger>
-
-        <TooltipContent
-          side="top"
-        >
-          <div>
-            <p>Note that if the <strong>branch already exists</strong> inside Dataspecer, it is forbidden (for your own good) to have two packages tracking the same remote branch in Dataspecer.
-            <br/>
-            You can <strong>import static commit</strong> and then turn the commit into branch with <strong>new</strong> name. Or just click on <strong>Create branch</strong> in the Git menu.</p>
-            <br/>
-          </div>
-        <TooltipArrow className="fill-black" />
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
+function GitHistoryDialogInfoTooltip() {
+  return <div>
+    <p>Note that if the <strong>branch already exists</strong> inside Dataspecer, it is forbidden (for your own good) to have two packages tracking the same remote branch in Dataspecer.
+    <br/>
+    You can <strong>import static commit</strong> and then turn the commit into branch with <strong>new</strong> name. Or just click on <strong>Create branch</strong> in the Git menu.</p>
+  </div>;
 }
