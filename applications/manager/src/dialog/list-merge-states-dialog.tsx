@@ -45,7 +45,7 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
 
   return (
     <Modal open={!isInfoDialogShown && isOpen} onClose={() => resolve(null)}>
-      <ModalContent className="min-w-[850px]">
+      <ModalContent className="md:min-w-[950px] overflow-x-auto">
         <ModalHeader>
           <ModalTitle>List of currently opened merge states for chosen data specification</ModalTitle>
           <ModalDescription>
@@ -56,7 +56,8 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
           !isLoading && <>
             {/* The header */}
             {/* The ml-4 is here for the first button, otherwise the merge state cause in the rows is shifted */}
-            <div className="grid grid-cols-[2fr_1fr_2fr_2fr] divide-x divide-gray-300 ml-4">
+            <div className="grid grid-cols-[2fr_2fr_1fr_2fr_2fr] divide-x divide-gray-300 ml-4 max-lg:min-w-[950px]">
+              <div className="flex items-center justify-center">Created at</div>
               <div className="flex items-center justify-center">Last modified at</div>
               <div className="flex items-center justify-center">Cause</div>
               <div className="flex items-center justify-center">Merge from</div>
@@ -113,7 +114,10 @@ const renderMergeState = (
 
 
 function createMergeStateRowText(mergeState: MergeState) {
-  return <div className="grid grid-cols-[2fr_1fr_2fr_2fr] justify-center items-center gap-4">
+  return <div className="grid grid-cols-[2fr_2fr_1fr_2fr_2fr] justify-center items-center gap-4">
+      <span className="flex text-base font-medium whitespace-nowrap justify-center items-center truncate">
+        {new Date(mergeState.createdAt).toLocaleString()}
+      </span>
       <span className="flex text-base font-medium whitespace-nowrap justify-center items-center truncate">
         {new Date(mergeState.modifiedDiffTreeAt).toLocaleString()}
       </span>
