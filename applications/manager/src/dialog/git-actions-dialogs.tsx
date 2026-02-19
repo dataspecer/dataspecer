@@ -1,20 +1,22 @@
 import { Modal, ModalBody, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { BetterModalProps, OpenBetterModal } from "@/lib/better-modal";
-import { RefObject, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { RefObject, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { gitOperationResultToast } from "@/utils/utilities";
 import { requestLoadPackage } from "@/package";
 import { createIdentifierForHTMLElement, InputComponent } from "@/components/simple-input-component";
 import { Package } from "@dataspecer/core-v2/project";
 import { toast } from "sonner";
 import { ExportFormatRadioButtons, ExportFormatType } from "@/components/export-format-radio-buttons";
-import { CommitRedirectResponseJson, createSetterWithGitValidation, CommitRedirectExtendedResponseJson, MergeFromDataType, MergeState, SingleBranchCommitType, convertMergeStateCauseToEditable, CommitConflictInfo } from "@dataspecer/git";
+import { CommitRedirectResponseJson, createSetterWithGitValidation, CommitRedirectExtendedResponseJson, MergeFromDataType, MergeState, SingleBranchCommitType, convertMergeStateCauseToEditable, CommitConflictInfo, GitProviderEnum, convertGitProviderNameToEnum } from "@dataspecer/git";
 import { CommitRedirectForMergeStatesDialog } from "./commit-confirm-dialog-caused-by-merge-state";
 import { commitToGitRequest, createNewRemoteRepositoryRequest, linkToExistingGitRepositoryRequest, mergeCommitToGitRequest } from "@/utils/git-backend-requests";
 import { createCloseDialogObject, LoadingDialog } from "@/components/loading-dialog";
 import { ComboBox, createGitProviderComboBoxOptions } from "@/components/combo-box";
 import { removeMergeState } from "@/utils/merge-state-backend-requests";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
+import { useLogin } from "@/hooks/use-login";
+import { getGitProviderDomain } from "@dataspecer/git/git-providers";
 
 /**
  * Checks if the {@link requiredFieldsRefs} are valid (non-empty). If so, the {@link resolve} method is called.
@@ -72,20 +74,55 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   type = type ?? "create-new-repository-and-commit";
 
   const gitProvidersComboboxOptions = useMemo(() => {
+    // TODO RadStr PR: In future this should be ideally set based on the Git provider the user logged in as.
     return createGitProviderComboBoxOptions();
   }, []);
 
+  const { accountProvider, username, genericScope } = useLogin();
+
   const [repositoryName, setRepositoryName] = useState<string>(inputPackage.iri);
-  const [remoteRepositoryURL, setRemoteRepositoryURL] = useState<string>("https://github.com/userName/repositoryName")
+  const [remoteRepositoryURL, setRemoteRepositoryURL] = useState<string>("https://github.com/userName/repositoryName");
   const [user, setUser] = useState<string>("");
-  const [gitProvider, setGitProvider] = useState<string>(gitProvidersComboboxOptions[0].value);
+  const [gitProvider, setGitProvider] = useState<string>(getGitProviderDomain(gitProvidersComboboxOptions[0].value, true, true));
   const [commitMessage, setCommitMessage] = useState<string>(defaultCommitMessage ?? "");
   const [isUserRepo, setIsUserRepo] = useState<boolean>(true);
   // We want the shouldAlwaysCreateMergeState option on, except when we are not showing it, then it can cause recursion
   const [shouldAlwaysCreateMergeState, setShouldAlwaysCreateMergeState] = useState<boolean>(shouldShowAlwaysCreateMergeStateOption !== false);
   const [shouldAppendAfterDefaultMergeCommitMessage, setShouldAppendAfterDefaultMergeCommitMessage] = useState<boolean>(true);
   const [exportFormat, setExportFormat] = useState<ExportFormatType>("json");
+
+  // Values for non-empty inputbox check
   const repositoryNameInputFieldRef = useRef<HTMLInputElement | null>(null);
+  const commitMessageInputFieldRef = useRef<HTMLInputElement | null>(null);
+
+  const requiredFields: RefObject<HTMLInputElement | null>[] = useMemo(() => {
+    const requiredFieldsInternal: RefObject<HTMLInputElement | null>[] = [];
+    switch(type) {
+      case "create-new-repository-and-commit":
+        // TODO RadStr: For now without the repositoryOwnerInputFieldRef - we just use the bot, if it is empty
+        requiredFieldsInternal.push(repositoryNameInputFieldRef, commitMessageInputFieldRef);
+        break;
+      case "commit":
+        requiredFieldsInternal.push(commitMessageInputFieldRef);
+        break;
+      case "merge-commit":
+        requiredFieldsInternal.push(commitMessageInputFieldRef);
+        break;
+      case "link-to-existing-repository":
+        break;
+      default:
+        throw new Error(`Unknown type ${type} of Git dialog`);
+    }
+    return requiredFieldsInternal;
+  }, []);
+
+  useEffect(() => {
+    // We have to it like this because the login is asynchronous
+    // If the Git provider matches and we have a push scope, then show the user's name instead of empty string.
+    if (convertGitProviderNameToEnum(accountProvider) === gitProvidersComboboxOptions[0].value && genericScope.includes("publicRepo")) {
+      setUser(username);
+    }
+  }, [accountProvider, username, genericScope]);
 
 
   let suffixNumber = 0;
@@ -102,22 +139,30 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
       resolve({ user, repositoryName, remoteRepositoryURL, gitProvider, commitMessage, isUserRepo, shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage, exportFormat });
     };
 
-    resolveWithRequiredCheck(resolveAsNoParamsMethod, repositoryNameInputFieldRef);
+    resolveWithRequiredCheck(resolveAsNoParamsMethod, ...requiredFields);
   }
 
   const shouldDisableConfirm = useMemo(() => {
+    let shouldDisableConfirmInternal: boolean;
     switch(type) {
       case "create-new-repository-and-commit":
-        return false;
+        shouldDisableConfirmInternal = false;
+        break;
       case "commit":
-        return !inputPackage.representsBranchHead;
+        shouldDisableConfirmInternal = !inputPackage.representsBranchHead;
+        break;
       case "link-to-existing-repository":
-        return false;
+        shouldDisableConfirmInternal = false;
+        break;
       case "merge-commit":
-        return false;
+        shouldDisableConfirmInternal = false;
+        break;
       default:
-        return true;
+        shouldDisableConfirmInternal = true;
+        break;
     };
+
+    return shouldDisableConfirmInternal;
   }, [type]);
 
   const modalTitle = useMemo(() => {
@@ -157,9 +202,11 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   switch(type) {
     case "create-new-repository-and-commit":
       modalBody = <div>
-        <ComboBox options={gitProvidersComboboxOptions} onChange={(value: string) => setGitProvider(value)}/>
+        <ComboBox options={gitProvidersComboboxOptions} onChange={(value: GitProviderEnum) => setGitProvider(getGitProviderDomain(value, true, true))}/>
         <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Repository name" setInput={createSetterWithGitValidation(setRepositoryName)} input={repositoryName} requiredRefObject={repositoryNameInputFieldRef}/>
-        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Repository owner" tooltip="Name under which should be the repository created. If empty - auth user name is used, if not logged in or user did not provide rights to create repo, bot name is used" setInput={createSetterWithGitValidation(setUser)} input={user} />
+        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Repository owner"
+          tooltip="Name under which should be the repository created. If empty - bot name is used"
+          setInput={createSetterWithGitValidation(setUser)} input={user}/>
         <div className="-mt-2 mb-8 flex items-center space-x-6">
           <label className="flex items-center space-x-2 cursor-pointer">
             <input
@@ -182,7 +229,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
           </label>
         </div>
         <div className="my-8"/>
-        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Initial commit message" setInput={setCommitMessage} input={commitMessage} />
+        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Initial commit message" setInput={setCommitMessage} input={commitMessage} requiredRefObject={commitMessageInputFieldRef}/>
         <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
       </div>;
       break;
@@ -192,7 +239,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
       }
       else {
         modalBody = <div>
-            <InputComponent disabled={shouldDisableConfirm} idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Commit message" setInput={setCommitMessage} input={commitMessage} />
+            <InputComponent disabled={shouldDisableConfirm} idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Commit message" setInput={setCommitMessage} input={commitMessage} requiredRefObject={commitMessageInputFieldRef}/>
             <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
             {!shouldShowAlwaysCreateMergeStateOption ?
               null :
@@ -210,7 +257,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
       break;
     case "merge-commit":
       modalBody = <div>
-          <InputComponent disabled={shouldDisableConfirm} idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Merge Commit message" setInput={setCommitMessage} input={commitMessage} />
+          <InputComponent disabled={shouldDisableConfirm} idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Merge Commit message" setInput={setCommitMessage} input={commitMessage} requiredRefObject={commitMessageInputFieldRef}/>
           <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
           <label className="flex items-center gap-2">
             <input

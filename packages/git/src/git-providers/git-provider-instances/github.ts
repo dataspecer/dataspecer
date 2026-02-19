@@ -2,7 +2,7 @@ import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 // Using this one since I could not make the ones for nodeJS (one is not using ES modules and the other one seems to be too old and correctly support types)
 import sodium from "libsodium-wrappers-sumo";
 import { AuthenticationGitProviderData, GitProviderBase } from "../git-provider-base.ts";
-import { AuthenticationGitProvidersData, gitProviderDomains } from "../git-provider-factory.ts";
+import { AuthenticationGitProvidersData, getGitProviderDomain, gitProviderDomains } from "../git-provider-factory.ts";
 import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, PUBLICATION_BRANCH_NAME, GitProviderIndependentWebhookRequestData } from "../../git-provider-api.ts";
 import { Scope } from "../../auth.ts";
 import { GitRestApiOperationError } from "../../error-definitions.ts";
@@ -41,8 +41,7 @@ export class GitHubProvider extends GitProviderBase {
   }
 
   getDomainURL(shouldPrefixWithHttps: boolean): string {
-    const prefix = shouldPrefixWithHttps ? "https://" : "";
-    return prefix + gitProviderDomains[this.getGitProviderEnumValue()];
+    return getGitProviderDomain(this.getGitProviderEnumValue(), shouldPrefixWithHttps, false);
   }
 
   setDomainURL(newDomainURL: string): void {

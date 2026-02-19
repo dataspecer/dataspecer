@@ -96,6 +96,12 @@ export const gitProviderDomains: Readonly<Record<GitProviderEnum, string>> = {
   [GitProviderEnum.GitHub]: "github.com",
   [GitProviderEnum.GitLab]: "gitlab.com",
 };
+export function getGitProviderDomain(gitProvider: GitProviderEnum, shouldPrefixWithHttps: boolean, shouldEndWithSlash: boolean) {
+  const prefix = shouldPrefixWithHttps ? "https://" : "";
+  const suffix = shouldEndWithSlash ? "/" : "";
+  return prefix + gitProviderDomains[gitProvider] + suffix;
+}
+
 /**
  * @deprecated This expects KNOWN git provider, but I noticed that there are possibly more providers per one provider.
  *  For example there is only one GitHub

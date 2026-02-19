@@ -3,6 +3,7 @@
 import { ReactNode, useState, useEffect } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { GithubIcon } from "lucide-react";
+import { GitProviderEnum } from "@dataspecer/git";
 
 interface Option<T = any> {
   key: ReactNode;
@@ -62,12 +63,14 @@ export const ComboBox = <T extends any>({
   );
 };
 
+type ProviderComboBoxType = { key: ReactNode, value: GitProviderEnum }[];
+
 /**
  *
  * @returns The key which is how it is rendered in the combobox and the value which is the URL to the Git Provider.
- *  The value should contain the schema and end with / - for example https://github.com/
+ *  The value is the provider, which can be converted to the url using {@link getGitProviderDomain}.
  */
-export function createGitProviderComboBoxOptions() {
+export function createGitProviderComboBoxOptions(): ProviderComboBoxType {
   const gitProvidersComboBoxOptions = [
     {
       key: (
@@ -76,7 +79,7 @@ export function createGitProviderComboBoxOptions() {
           <GithubIcon className="w-4 h-4" />
         </span>
       ),
-      value: "https://github.com/"
+      value: GitProviderEnum.GitHub,
     },
   ];
   return gitProvidersComboBoxOptions;

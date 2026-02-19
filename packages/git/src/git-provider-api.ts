@@ -40,7 +40,7 @@ export type GitCredentials = CommitterInfo & {
 
 export type GitRef = { type: "branch"; name: string } | { type: "commit"; sha: string };
 
-
+// TODO RadStr: ... both the GitProviderEnum and gitProviderNames needs to be extended ... I have already mentioned in the in the other TODO in the git-provider-factory.ts
 export enum GitProviderEnum {
   GitHub,
   GitLab
@@ -50,6 +50,15 @@ export const gitProviderNames = ["github", "gitlab"] as const;
 export type GitProviderNamesAsType = typeof gitProviderNames[number];
 export function isGitProviderName(value: unknown): value is GitProviderNamesAsType {
   return typeof value === "string" && gitProviderNames.includes(value as GitProviderNamesAsType);
+}
+
+
+const gitProviderNameToEnumMap: Readonly<Record<GitProviderNamesAsType, GitProviderEnum>> = {
+  github: GitProviderEnum.GitHub,
+  gitlab: GitProviderEnum.GitLab,
+}
+export function convertGitProviderNameToEnum(gitProviderName: GitProviderNamesAsType) {
+  return gitProviderNameToEnumMap[gitProviderName];
 }
 
 export type GitProviderIndependentWebhookRequestData = {
