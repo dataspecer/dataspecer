@@ -145,7 +145,9 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri
               null :
               <ResourceTooltip resource={resource}>
                 <div className="flex pl-4 pr-2 w-16">
-                  <a href={resource.linkedGitRepositoryURL} className={(resource.activeMergeStateCount !== 0 || resource.hasUncommittedChanges) ? "text-red-400" : "text-green-400" } >GIT</a>
+                  <a href={resource.linkedGitRepositoryURL}
+                      className={(resource.activeMergeStateCount !== 0) ? "text-red-400" :
+                      (resource.hasUncommittedChanges ? "text-yellow-400" : "text-green-400") } >GIT</a>
                   {
                     resource.representsBranchHead ?
                       null :
