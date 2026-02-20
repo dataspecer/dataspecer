@@ -1,0 +1,18 @@
+{
+  "name": "@dataspecer/model-store",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\""
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./entity-model": "./lib/entity-model/index.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
