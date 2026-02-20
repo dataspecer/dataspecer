@@ -273,8 +273,16 @@ const createGitGraph = (
             // commitOnClickHandler(openModal, examinedPackage, gitGraphCommit, dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches[gitGraphCommit.hash]);
           // };
           if (dsPackagesInProjectForAll[commit.hash] !== undefined) {
-            commit.dotText = "DS";      // Kind of weird, but this is not documented anywhere I noticed it when I was looking at the implementation in
-                                        // https://github.com/nicoespeon/gitgraph.js/blob/ed72d11d1e50ccd208326d9ded551f719cfa2b3a/packages/gitgraph-react/src/Dot.tsx#L42
+            const branchesWithTheCommit = Object.entries(dsPackagesInProjectForBranches)
+              .filter(entry => entry[1].lastCommitHash === commit.hash)
+            if (branchesWithTheCommit.length > 0) {
+              commit.dotText = "DS\nb";   // Kind of weird, but this is not documented anywhere I noticed it when I was looking at the implementation in
+                                          // https://github.com/nicoespeon/gitgraph.js/blob/ed72d11d1e50ccd208326d9ded551f719cfa2b3a/packages/gitgraph-react/src/Dot.tsx#L42
+            }
+            else {
+              commit.dotText = "DS";      // Kind of weird, but this is not documented anywhere I noticed it when I was looking at the implementation in
+                                          // https://github.com/nicoespeon/gitgraph.js/blob/ed72d11d1e50ccd208326d9ded551f719cfa2b3a/packages/gitgraph-react/src/Dot.tsx#L42
+            }
           }
         }
 
@@ -367,6 +375,7 @@ function defaultCommitRenderDot(commit: any) {
           textAnchor="middle"
           x={commit.style.dot.size}
           y={commit.style.dot.size}
+          className="whitespace-pre-line"
           style={{ font: commit.style.dot.font, cursor: "pointer" }}
         >
           {commit.dotText}
