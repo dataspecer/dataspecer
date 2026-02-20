@@ -9,17 +9,19 @@ import { GitRef, PACKAGE_ROOT } from "@dataspecer/git";
 import { lng } from "@/Dir";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
+import { gitOperationResultToast } from "@/utils/utilities";
 
 
 type GitHistoryCommitActionsDialogProps = {
-  examinedPackage: Package,
-  commitHash: string,
-  branch: string | null,
-  branchAlreadyExistsInDS: boolean,
-  commitAlreadyExistsInDS: boolean,
+  examinedPackage: Package;
+  commitHash: string;
+  branch: string | null;
+  branchAlreadyExistsInDS: boolean;
+  commitAlreadyExistsInDS: boolean;
+  closeMainGitGraphDialog: () => void;
 } & BetterModalProps<null>;
 
-export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitHash, branchAlreadyExistsInDS, commitAlreadyExistsInDS, isOpen, resolve }: GitHistoryCommitActionsDialogProps) => {
+export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitHash, branchAlreadyExistsInDS, commitAlreadyExistsInDS, isOpen, resolve, closeMainGitGraphDialog }: GitHistoryCommitActionsDialogProps) => {
   const [isPerformingAction, setIsPerformingAction] = useState<boolean>(false);
 
   const handleRedirect = () => {
@@ -70,7 +72,7 @@ export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitH
     }
     const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(examinedPackage.linkedGitRepositoryURL, fetch, {});
     const gitUrl = gitProvider.extendGitRepositoryURLByGitRefSuffix(examinedPackage.linkedGitRepositoryURL, gitRef);
-    await fetch(import.meta.env.VITE_BACKEND +
+    const response = await fetch(import.meta.env.VITE_BACKEND +
       "/resources/import-from-git?parentIri=" + encodeURIComponent(PACKAGE_ROOT) +
       "&gitURL=" + encodeURIComponent(gitUrl) +
       `&commitReferenceType=${importType}`, {
@@ -80,6 +82,8 @@ export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitH
 
     setIsPerformingAction(false);
     resolve(null);
+    gitOperationResultToast(response);
+    closeMainGitGraphDialog();
   };
 
   return (

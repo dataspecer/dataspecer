@@ -188,7 +188,8 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
 
             const gitGraphElement = createGitGraph(
               openModal, examinedPackage, gitGraphTemplate, convertedCommits,
-              dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches, dsPackagesInProjectForAll, setShouldHideDialog);
+              dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches,
+              dsPackagesInProjectForAll, setShouldHideDialog, () => resolve(null));
             setGitGraphElement(gitGraphElement);
             setIsLoading(false);
           })
@@ -237,6 +238,7 @@ const createGitGraph = (
   dsPackagesInProjectForNonBranches: Record<string, DSPackageInProjectVisualizationData[]>,
   dsPackagesInProjectForAll: Record<string, DSPackageInProjectVisualizationData[]>,
   setShouldHideDialog: (shouldHide: boolean) => void,
+  closeGitGraphDialog: () => void,
 ) => {
   return <div>
     <Gitgraph options={{template: gitGraphTemplate}}>
@@ -261,7 +263,7 @@ const createGitGraph = (
             setShouldHideDialog(true);
             // Small delay because the closing of the top dialog takes a moment
             setTimeout(() => {
-              commitOnClickHandler(openModal, examinedPackage, gitGraphCommit, dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches[gitGraphCommit.hash])
+              commitOnClickHandler(openModal, examinedPackage, gitGraphCommit, dsPackagesInProjectForBranches, closeGitGraphDialog, dsPackagesInProjectForNonBranches[gitGraphCommit.hash])
                 .then(() => {
                   setShouldHideDialog(false);
                 });
@@ -419,6 +421,7 @@ const commitOnClickHandler = (
   examinedPackage: Package,
   gitGraphCommit: any,
   dsPackagesInProjectForBranches: Record<string, DSPackageInProjectVisualizationData>,
+  closeGitGraphDialog: () => void,
   packagesRelatedToCommit?: DSPackageInProjectVisualizationData[],
 ) => {
   console.info({gitGraphCommit});
@@ -436,7 +439,9 @@ const commitOnClickHandler = (
 
   const branchAlreadyExistsInDS = renderBranchName !== null && dsPackagesInProjectForBranches[renderBranchName] !== undefined;
   const commitAlreadyExistsInDS = packagesRelatedToCommit !== undefined && packagesRelatedToCommit.length > 0;
-  return openModal(GitHistoryCommitActionsDialog, { examinedPackage, branch: renderBranchName, commitHash: gitGraphCommit.hash, branchAlreadyExistsInDS, commitAlreadyExistsInDS });
+  return openModal(GitHistoryCommitActionsDialog, {
+    examinedPackage, branch: renderBranchName, commitHash: gitGraphCommit.hash,
+    branchAlreadyExistsInDS, commitAlreadyExistsInDS, closeMainGitGraphDialog: closeGitGraphDialog });
 }
 
 
