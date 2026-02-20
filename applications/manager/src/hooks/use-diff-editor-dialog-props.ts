@@ -1011,13 +1011,11 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         if (examinedMergeState !== null) {
           await updateMergeState(examinedMergeState, conflictsToBeResolvedOnSave);
         }
-        resetUseStates(true);
         await reloadMergeState(true, true);
         await requestLoadPackage(mergeFromRootIri, true);
         await requestLoadPackage(mergeToRootIri, true);
       }
       else if (saveResult === DiffEditorOutsideChangeChosenAction.Reload) {
-        resetUseStates(true);
         await reloadMergeState(true, true);
       }
     };
