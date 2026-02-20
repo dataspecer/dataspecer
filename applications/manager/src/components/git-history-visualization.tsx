@@ -147,63 +147,65 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
   const [shouldHideDialog, setShouldHideDialog] = useState<boolean>(false);
 
   useLayoutEffect(() => {
-      if (isOpen) {
-        console.info("useLayoutEffect for git-history-vis");      // TODO RadStr Debug: Debug print
-        setIsLoading(true);
+    if (isOpen) {
+      console.info("useLayoutEffect for git-history-vis");      // TODO RadStr Debug: Debug print
+      setIsLoading(true);
 
-        // Here we load the git history
-        // Note that we could send the the git link directly and don't need to send the package iri and then find the link on backend
-        // But we do it like this because there might be some possible attack by requesting some kind of weird url (can't think of any now though)
-        const urlQuery = `?iri=${examinedPackage.iri}`;
-        // Theoretically we can just fetch it directly from GitHub (or other provider) without calling the DS server, BUT:
-        // Somebody has to implement it. We have to implement it for each provider.
-        // GitHub has REST API request limits, so if we ask the server a bit too much, we have to call the DS backend anyways.
-        // The commits are paginated (100 commits max per page) and we have to ask for each branch commit history separately - that is ton of requests.
-        //  For unathenticated user (which is the case for browser), it is only 60/h, for authenticated it is 5k ... in case of GitHub (https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api?apiVersion=2022-11-28)
-        //  So for example GitHub repo with 10 branches and 120 commits on each is 21 requests (20 to fetch the commits, 1 to fetch the branches on project)
-        fetch(import.meta.env.VITE_BACKEND + `/git/fetch-git-commit-history${urlQuery}`, {
-          method: "GET",
-        })
-          .then((res) => res.json())
-          .then((data: FetchedGitRawHistory) => {
-            const convertedCommits = convertFetchedCommitsFormat(data.rawCommits);
+      // Here we load the git history
+      // Note that we could send the the git link directly and don't need to send the package iri and then find the link on backend
+      // But we do it like this because there might be some possible attack by requesting some kind of weird url (can't think of any now though)
+      const urlQuery = `?iri=${examinedPackage.iri}`;
+      // Theoretically we can just fetch it directly from GitHub (or other provider) without calling the DS server, BUT:
+      // Somebody has to implement it. We have to implement it for each provider.
+      // GitHub has REST API request limits, so if we ask the server a bit too much, we have to call the DS backend anyways.
+      // The commits are paginated (100 commits max per page) and we have to ask for each branch commit history separately - that is ton of requests.
+      //  For unathenticated user (which is the case for browser), it is only 60/h, for authenticated it is 5k ... in case of GitHub (https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api?apiVersion=2022-11-28)
+      //  So for example GitHub repo with 10 branches and 120 commits on each is 21 requests (20 to fetch the commits, 1 to fetch the branches on project)
+      fetch(import.meta.env.VITE_BACKEND + `/git/fetch-git-commit-history${urlQuery}`, {
+        method: "GET",
+      })
+        .then((res) => res.json())
+        .then((data: FetchedGitRawHistory) => {
+          const convertedCommits = convertFetchedCommitsFormat(data.rawCommits);
 
-            const gitGraphTemplate = templateExtend(TemplateName.Metro, {
-              commit: {
-                message: {
-                  displayAuthor: true,
-                  displayHash: true,
-                },
-                dot: {
-                  font: "oblique small-caps bold 12pt Trebuchet MS",      // Carefully chosen for the dot text to appear inside the circle
-                }
+          const gitGraphTemplate = templateExtend(TemplateName.Metro, {
+            commit: {
+              message: {
+                displayAuthor: true,
+                displayHash: true,
               },
-            });
-
-            const root = allResources[PACKAGE_ROOT];
-            const rootPackages = root.subResourcesIri
-              .map(rootPackage => allResources[rootPackage])
-              ?.filter(rootPackage => rootPackage !== undefined && rootPackage.projectIri === examinedPackage.projectIri);
-            const { dsPackagesInProjectForAll, dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches } = createGitToPackagesForProjectMapping(rootPackages);
-
-            const gitGraphElement = createGitGraph(
-              openModal, examinedPackage, gitGraphTemplate, convertedCommits,
-              dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches,
-              dsPackagesInProjectForAll, setShouldHideDialog, () => resolve(null));
-            setGitGraphElement(gitGraphElement);
-            setIsLoading(false);
-          })
-          .catch((error) => {
-            setIsLoading(false);
-            alert("Fetch error, check console for more info");
-            console.error(`Error when fetching Git history for ${examinedPackage.iri}. The error: ${error}`);
+              dot: {
+                font: "oblique small-caps bold 12pt Trebuchet MS",      // Carefully chosen for the dot text to appear inside the circle
+              }
+            },
           });
-      }
-    }, []);
+
+          const root = allResources[PACKAGE_ROOT];
+          const rootPackages = root.subResourcesIri
+            .map(rootPackage => allResources[rootPackage])
+            ?.filter(rootPackage => rootPackage !== undefined && rootPackage.projectIri === examinedPackage.projectIri);
+          const { dsPackagesInProjectForAll, dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches } = createGitToPackagesForProjectMapping(rootPackages);
+
+          const gitGraphElement = createGitGraph(
+            openModal, examinedPackage, gitGraphTemplate, convertedCommits,
+            dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches,
+            dsPackagesInProjectForAll, setShouldHideDialog, () => resolve(null));
+          setGitGraphElement(gitGraphElement);
+          setIsLoading(false);
+        })
+        .catch((error) => {
+          setIsLoading(false);
+          alert("Fetch error, check console for more info");
+          console.error(`Error when fetching Git history for ${examinedPackage.iri}. The error: ${error}`);
+        });
+    }
+  }, []);
+
 
   return (
     <Modal open={!shouldHideDialog && isOpen} onClose={() => resolve(null)}>
-      <ModalContent className={shouldHideDialog ? "hidden" : "max-w-[90%]!"}>
+      {/* The isLoading min is there when we go back from the dialog with actions on the commit, otherwise there is a small empty dialog for a moment */}
+      <ModalContent className={(shouldHideDialog ? "hidden" : "max-w-[90%]!") + (isLoading ? "" : " min-w-[90%] min-h-[90%]")}>
         <ModalHeader>
           <ModalTitle>Project history in Git</ModalTitle>
           <ModalDescription>
@@ -263,7 +265,7 @@ const createGitGraph = (
             setShouldHideDialog(true);
             // Small delay because the closing of the top dialog takes a moment
             setTimeout(() => {
-              commitOnClickHandler(openModal, examinedPackage, gitGraphCommit, dsPackagesInProjectForBranches, closeGitGraphDialog, dsPackagesInProjectForNonBranches[gitGraphCommit.hash])
+              gitVisualizationCommitDotOnClickHandler(openModal, examinedPackage, gitGraphCommit, dsPackagesInProjectForBranches, closeGitGraphDialog, dsPackagesInProjectForNonBranches[gitGraphCommit.hash])
                 .then(() => {
                   setShouldHideDialog(false);
                 });
@@ -416,7 +418,7 @@ function renderLabel(branch: any) {
   </svg>;
 }
 
-const commitOnClickHandler = (
+const gitVisualizationCommitDotOnClickHandler = (
   openModal: OpenBetterModal,
   examinedPackage: Package,
   gitGraphCommit: any,
@@ -424,7 +426,7 @@ const commitOnClickHandler = (
   closeGitGraphDialog: () => void,
   packagesRelatedToCommit?: DSPackageInProjectVisualizationData[],
 ) => {
-  console.info({gitGraphCommit});
+  console.info({gitGraphCommit});       // TODO RadStr Debug: DEbug
   let renderBranchName: string | null;
   if (gitGraphCommit.branches[0] === "") {
     renderBranchName = null;

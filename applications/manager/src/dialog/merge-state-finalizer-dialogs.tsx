@@ -87,7 +87,7 @@ export const MergeStateFinalizerDialog = ({ mergeState, openModal, isOpen, resol
 
   return (
     <Modal open={isOpen} onClose={() => resolve()}>
-      <ModalContent>
+      <ModalContent className="min-h-[20%]">  { /* Otherwise there is a small dialog shown for a moment when we are moving to the last step at rebase/merge commit */ }
         {
         isWaitingForAnswer ?
           waitingContent :
