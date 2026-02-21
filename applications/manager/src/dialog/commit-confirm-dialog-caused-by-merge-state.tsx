@@ -1,7 +1,7 @@
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { BetterModalProps, OpenBetterModal, useBetterModal } from "@/lib/better-modal";
-import { CommitHttpRedirectionCause, CommitRedirectExtendedResponseJson, SingleBranchCommitType } from "@dataspecer/git";
+import { CommitHttpRedirectionCause, CommitRedirectExtendedResponseJson, isSingleBranchCommitType } from "@dataspecer/git";
 import { ListMergeStatesDialog } from "./list-merge-states-dialog";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
 import { commitToGitHandler, mergeCommitToGitHandler } from "./git-actions-dialogs";
@@ -62,10 +62,14 @@ const getDataForMergeStateDialog = (
   let secondaryActionButtonOnClick;
 
   if (commitRedirectResponse.commitHttpRedirectionCause === CommitHttpRedirectionCause.HasAtLeastOneMergeStateActive) {
+    const commitType = commitRedirectResponse.commitType;
+    if (!isSingleBranchCommitType(commitType)) {
+      throw new Error(`Expected ${commitRedirectResponse.commitType} to be a not merge commit.`);
+    }
     firstActionButtonText = "Commit anyways";
     firstActionButtonOnClick = async () => {
       await commitToGitHandler(
-        openModal, commitRedirectResponse.iri, commitRedirectResponse.commitType as SingleBranchCommitType, true,
+        openModal, commitRedirectResponse.iri, commitType, true,
         commitRedirectResponse.commitMessage, commitRedirectResponse.exportFormat, commitRedirectResponse.shouldAlwaysCreateMergeState,
         false, commitRedirectResponse.onSuccessCallback);
       resolve();
@@ -127,10 +131,15 @@ const getDataForMergeStateDialog = (
         editable: commitRedirectResponse.mergeStateCausedByMerge!.editable
       }).finally(() => resolve())
     };
+
+    const commitType = commitRedirectResponse.commitType;
+    if (!isSingleBranchCommitType(commitType)) {
+      throw new Error(`Expected ${commitRedirectResponse.commitType} to be a not merge commit.`);
+    }
     secondaryActionButtonText = "Commit anyways";
     secondaryActionButtonOnClick = async () => {
       await commitToGitHandler(
-        openModal, commitRedirectResponse.iri, commitRedirectResponse.commitType as SingleBranchCommitType, true,
+        openModal, commitRedirectResponse.iri, commitType, true,
         commitRedirectResponse.commitMessage, commitRedirectResponse.exportFormat, commitRedirectResponse.shouldAlwaysCreateMergeState,
         false, commitRedirectResponse.onSuccessCallback);
       resolve();
