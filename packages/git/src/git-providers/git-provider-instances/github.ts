@@ -516,7 +516,8 @@ export class GitHubProvider extends GitProviderBase {
   }
 
   extractCommitReferenceValueFromRepositoryURLSplit(repositoryURLSplit: string[], _commitReferenceType: CommitReferenceType): string | null {
-    if (repositoryURLSplit.length < 4 || repositoryURLSplit.at(-2) !== "tree") {
+    // It has to have correct length and the type has to be "tree" or "commit", otherwise we return null
+    if (repositoryURLSplit.length < 4 || !(repositoryURLSplit.at(-2) === "tree" || repositoryURLSplit.at(-2) === "commit")) {
       return null;
     }
 
