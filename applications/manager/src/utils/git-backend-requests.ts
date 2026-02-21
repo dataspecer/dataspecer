@@ -2,7 +2,7 @@ import { ExportFormatType } from "@/components/export-format-radio-buttons";
 import { MergeFromDataType } from "@dataspecer/git";
 
 
-export async function commitToGitRequest(
+export async function commitToGitBackendRequest(
   iri: string,
   commitMessage: string | null,
   exportFormat: string,
@@ -23,7 +23,7 @@ export async function commitToGitRequest(
   return response;
 }
 
-export async function mergeCommitToGitRequest(
+export async function mergeCommitToGitBackendRequest(
   iri: string,
   commitMessage: string | null,
   shouldAppendAfterDefaultMergeCommitMessage: boolean,

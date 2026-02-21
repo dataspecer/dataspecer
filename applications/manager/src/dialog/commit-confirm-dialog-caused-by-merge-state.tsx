@@ -1,10 +1,11 @@
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { BetterModalProps, OpenBetterModal, useBetterModal } from "@/lib/better-modal";
-import { CommitHttpRedirectionCause, CommitRedirectExtendedResponseJson } from "@dataspecer/git";
+import { CommitHttpRedirectionCause, CommitRedirectExtendedResponseJson, SingleBranchCommitType } from "@dataspecer/git";
 import { ListMergeStatesDialog } from "./list-merge-states-dialog";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
-import { commitToGitRequest, mergeCommitToGitRequest } from "@/utils/git-backend-requests";
+import { commitToGitHandler, mergeCommitToGitHandler } from "./git-actions-dialogs";
+import { useMemo, useRef } from "react";
 
 
 type CommitRedirectForMergeStatesProps = {
@@ -12,8 +13,20 @@ type CommitRedirectForMergeStatesProps = {
 } & BetterModalProps;
 
 export const CommitRedirectForMergeStatesDialog = ({ commitRedirectResponse, isOpen, resolve }: CommitRedirectForMergeStatesProps) => {
+  const didRun = useRef<boolean>(false);
   const openModal = useBetterModal();
-  const dialogData = getDataForMergeStateDialog(commitRedirectResponse, openModal, resolve);
+
+  const dialogData = useMemo(() => {
+    if (didRun.current) {
+      // We need this because of the strict react mode. Otherwise for example if we ran rebase for the case when we have 1 merge state that is caused by merge
+      // We would commit twice.
+      // ... Well technically, for the redirect we decided to never perform the redirect. Therefore, we never call it with the rabase value.
+      // ... However, if we decided to bring it back one day, then this is needed.
+      return null;
+    }
+    didRun.current = true;
+    return getDataForMergeStateDialog(commitRedirectResponse, openModal, resolve);
+  }, []);
 
   if (dialogData === null) {
     return null;
@@ -50,8 +63,11 @@ const getDataForMergeStateDialog = (
 
   if (commitRedirectResponse.commitHttpRedirectionCause === CommitHttpRedirectionCause.HasAtLeastOneMergeStateActive) {
     firstActionButtonText = "Commit anyways";
-    firstActionButtonOnClick = () => {
-      commitToGitRequest(commitRedirectResponse.iri, commitRedirectResponse.commitMessage, commitRedirectResponse.exportFormat, false, true);
+    firstActionButtonOnClick = async () => {
+      await commitToGitHandler(
+        openModal, commitRedirectResponse.iri, commitRedirectResponse.commitType as SingleBranchCommitType, true,
+        commitRedirectResponse.commitMessage, commitRedirectResponse.exportFormat, commitRedirectResponse.shouldAlwaysCreateMergeState,
+        false, commitRedirectResponse.onSuccessCallback);
       resolve();
     };
     secondaryActionButtonText = "Open merge states list";
@@ -59,18 +75,33 @@ const getDataForMergeStateDialog = (
       openModal(ListMergeStatesDialog, { iri: commitRedirectResponse.iri }).finally(() => resolve());
     };
     dialogText = <div>
-        You can either perform the commit or open the list of opened merge states or cancel the action of committing by closing dialog.
-        <br/>
         <p>
-          Note that there exists <span><strong>{commitRedirectResponse.openedMergeStatesCount}</strong></span> opened merge state{commitRedirectResponse.openedMergeStatesCount === 1 ? "" : "s"} for current package.
+          There are currently <span><strong>{commitRedirectResponse.openedMergeStatesCount}</strong></span> opened merge state{commitRedirectResponse.openedMergeStatesCount === 1 ? "" : "s"} for current package.
         </p>
+        <br/>
+        You can:
+        <br/>
+
+        - Perform the commit
+        <br/>
+        - Open the list of existing merge states
+        <br/>
+        - Cancel the action of committing by closing dialog
+        <br/>
       </div>;
   }
   else if (commitRedirectResponse.commitHttpRedirectionCause === CommitHttpRedirectionCause.HasExactlyOneMergeStateAndItIsResolvedAndCausedByMerge) {
-    throw new Error("TODO RadStr: Implement");
+    // Ok this is special case, which is "obvious" to solve - that is we wanted to commit and the type of commit is obvious by the fact that we have single merge state.
+    // Either it was rebase commit - then we just perform it
+    // Or it was merge commit, then we just perform it - though we no longer perform the redirect for merge or rebase commits (so these 2 are dead code ... for now)
+    //   the allowed types are either "rebase-commit" or "classic-commit"
+    // Or it was just classic commit, then the user can either choose to do rebase commit or open the diff editor
     if (commitRedirectResponse.commitType === "rebase-commit") {
       firstActionButtonText = "Commit anyways";
-      commitToGitRequest(commitRedirectResponse.iri, commitRedirectResponse.commitMessage, commitRedirectResponse.exportFormat, false, true);
+      commitToGitHandler(
+        openModal, commitRedirectResponse.iri, commitRedirectResponse.commitType, true,
+        commitRedirectResponse.commitMessage, commitRedirectResponse.exportFormat, commitRedirectResponse.shouldAlwaysCreateMergeState,
+        false, commitRedirectResponse.onSuccessCallback);
       resolve();
       return null;
     }
@@ -78,10 +109,12 @@ const getDataForMergeStateDialog = (
       if (commitRedirectResponse.shouldAppendAfterDefaultMergeCommitMessage === null) {
         console.error("shouldAppendAfterDefaultMergeCommitMessage is null, but it should be defined and of type boolean");
       }
-      mergeCommitToGitRequest(
-        commitRedirectResponse.iri, commitRedirectResponse.commitMessage, commitRedirectResponse.shouldAppendAfterDefaultMergeCommitMessage ?? true,
-        commitRedirectResponse.exportFormat, commitRedirectResponse.mergeFromData!, false,
-      );
+      if (commitRedirectResponse.mergeStateCausedByMerge === null) {
+        throw new Error("The redirection cause is HasExactlyOneMergeStateAndItIsResolvedAndCausedByMerge, but the merge state is null");
+      }
+      mergeCommitToGitHandler(
+        openModal, commitRedirectResponse.iri, commitRedirectResponse.mergeStateCausedByMerge, commitRedirectResponse.commitMessage,
+        commitRedirectResponse.shouldAppendAfterDefaultMergeCommitMessage ?? true, commitRedirectResponse.exportFormat);
       resolve();
       return null;
     }
@@ -95,16 +128,21 @@ const getDataForMergeStateDialog = (
       }).finally(() => resolve())
     };
     secondaryActionButtonText = "Commit anyways";
-    secondaryActionButtonOnClick = () => {
-      commitToGitRequest(commitRedirectResponse.iri, commitRedirectResponse.commitMessage, commitRedirectResponse.exportFormat, false, true);
+    secondaryActionButtonOnClick = async () => {
+      await commitToGitHandler(
+        openModal, commitRedirectResponse.iri, commitRedirectResponse.commitType as SingleBranchCommitType, true,
+        commitRedirectResponse.commitMessage, commitRedirectResponse.exportFormat, commitRedirectResponse.shouldAlwaysCreateMergeState,
+        false, commitRedirectResponse.onSuccessCallback);
       resolve();
     };
     dialogText = <p>
-        You can either commit anyways.
+        <strong>Available actions:</strong>
         <br/>
-        Or Open the diff editor for the merge state, check that everything is as you expect and finalize the merge state (that is close it with (merge) commit action).
+        - Commit
         <br/>
-        Or you can of course close this dialog.
+        - Open the diff editor for the merge state, and finalize it
+        <br/>
+        - Close this dialog and handle it later
       </p>;
 
   }

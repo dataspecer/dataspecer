@@ -11,7 +11,7 @@ import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { mergeStateModel, resourceModel } from "../../main.ts";
 import { BranchSummary, CommitResult, SimpleGit } from "simple-git";
-import { extractPartOfRepositoryURL, getAuthorizationURL, GitIgnoreBase, GitProviderNode, stringToBoolean } from "@dataspecer/git";
+import { extractPartOfRepositoryURL, getAuthorizationURL, GitIgnoreBase, GitProviderNode, MergeState, stringToBoolean } from "@dataspecer/git";
 import { AvailableFilesystems, ConfigType, GitCredentials, getMergeFromMergeToForGitAndDS, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase, createUniqueCommitMessage } from "@dataspecer/git";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import { AvailableExports } from "../../export-import/export-actions.ts";
@@ -173,16 +173,22 @@ const commitHandlerInternal = async (
     if (mergeStatesForResource.length >= 1) {
       let redirectMessage = "There is at least one open merge state.";
       let redirectCause: CommitHttpRedirectionCause = CommitHttpRedirectionCause.HasAtLeastOneMergeStateActive;
+      let prismaMergeStateCausedByMerge: PrismaMergeStateWithData | null;
+      let mergeStateCausedByMerge: MergeState | null;
       if (mergeStatesForResource.length === 1 && resolvedMergeStatesCausedByMerge.length === 1) {
         redirectMessage = "There is exactly one merge state caused by merge, which has 0 conflicts.";
         redirectCause = CommitHttpRedirectionCause.HasExactlyOneMergeStateAndItIsResolvedAndCausedByMerge;
-      }
-      const prismaMergeStateCausedByMerge: PrismaMergeStateWithData | null = redirectCause === CommitHttpRedirectionCause.HasAtLeastOneMergeStateActive ?
-        null :
-        {
+        prismaMergeStateCausedByMerge = {
           ...mergeStatesForResource[0],
           mergeStateData: null
         };
+        mergeStateCausedByMerge = await mergeStateModel.prismaMergeStateToMergeState(prismaMergeStateCausedByMerge!, false, false);
+      }
+      else {
+        prismaMergeStateCausedByMerge = null;
+        mergeStateCausedByMerge = null;
+      }
+
       const commitRedirectResponseJson: CommitRedirectResponseJson = {
         iri,
         redirectMessage,
@@ -192,10 +198,7 @@ const commitHandlerInternal = async (
         commitMessage: originalCommitMessage,
         exportFormat: exportFormat ?? "json",
         mergeFromData,
-        mergeStateCausedByMerge: redirectCause === CommitHttpRedirectionCause.HasAtLeastOneMergeStateActive ?
-          null :
-          // We use the merge state without diff data, so we do not need the diff data to be up to date
-          await mergeStateModel.prismaMergeStateToMergeState(prismaMergeStateCausedByMerge!, false, false),
+        mergeStateCausedByMerge,
       };
 
       const status = 300;

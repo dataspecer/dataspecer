@@ -25,6 +25,8 @@ export type CommitRedirectResponseJson = {
 }
 
 export type CommitRedirectExtendedResponseJson = {
+  shouldAlwaysCreateMergeState: boolean;
   shouldAppendAfterDefaultMergeCommitMessage: boolean | null;
   commitType: CommitType;
+  onSuccessCallback: (() => void) | null;
 } & CommitRedirectResponseJson;

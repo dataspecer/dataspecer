@@ -1,7 +1,7 @@
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { BetterModalProps, OpenBetterModal } from "@/lib/better-modal";
-import { finalizeMergeMergeState, finalizeMergeMergeStateOnFailure, finalizePullMergeState, finalizePullMergeStateOnFailure, finalizePushMergeState, finalizePushMergeStateOnFailure, removeMergeState } from "@/utils/merge-state-backend-requests";
+import { finalizeMergeMergeState, finalizeMergeMergeStateOnFailure, finalizePullMergeState, finalizePullMergeStateOnFailure, finalizePushMergeState, finalizePushMergeStateOnFailure, FinalizerResponse, removeMergeState } from "@/utils/merge-state-backend-requests";
 import { AvailableFilesystems, FinalizerVariantsForPullOnFailure, getEditableValue, MergeCommitType, MergeState } from "@dataspecer/git";
 import { Loader } from "lucide-react";
 import { Dispatch, SetStateAction, useContext, useEffect, useState } from "react";
@@ -27,7 +27,7 @@ type MergeStateFinalizerMergeCauseProps = {
 } & MergeStateFinalizerSpecificCauseProps;
 
 type MergeStateFinalizerAnswerDialogProps = {
-  httpStatus: number;
+  httpResponse: FinalizerResponse;
 } & Omit<MergeStateFinalizerProps, "isOpen" | "openModal">;
 
 export const MergeStateFinalizerDialog = ({ mergeState, openModal, isOpen, resolve }: MergeStateFinalizerProps) => {
@@ -39,6 +39,7 @@ export const MergeStateFinalizerDialog = ({ mergeState, openModal, isOpen, resol
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
     if (mergeState.mergeStateCause === "merge") {
+      // This probably causes redrawing of the dialog each second (even when we are not counting), but since we are computing on client we can afford that
       interval = setInterval(() => {
         setSecondsPassed(prev => prev + 1);
       }, 1000);
@@ -100,24 +101,24 @@ export const MergeStateFinalizerDialog = ({ mergeState, openModal, isOpen, resol
 
 
 const MergeStateFinalizerForPull = ({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, setIsWaitingForAnswer, resolve }: MergeStateFinalizerSpecificCauseProps) => {
-  const [httpStatusCode, setHttpStatusCode] = useState<number>(-1);
+  const [httpResponse, setHttpResponse] = useState<FinalizerResponse>(null);
 
   const handlePullAction = async () => {
     setIsWaitingForAnswer(true);
     const response = await finalizePullMergeState(mergeState.uuid);
     const iri = getEditableValue(mergeState.editable, mergeState.rootIriMergeFrom, mergeState.rootIriMergeTo);
     requestLoadPackage(iri, true);
-    setHttpStatusCode(response ?? -1);
+    setHttpResponse(response);
     if (response !== null) {
-      if (response === 409) {
+      if (response.status === 409) {
         toast.error("There are still unresolved conflicts");
         resolve();
       }
-      else if (response < 300) {
+      else if (response.status < 300) {
         toast.success("Finalizer succcessfully finished");
         resolve();
       }
-      else if (response < 400) {
+      else if (response.status < 400) {
         // TODO RadStr: Probably do nothing - we will just show the another dialog.
         setIsWaitingForAnswer(false);
         setShouldRenderAnswerDialog(true);
@@ -138,7 +139,7 @@ const MergeStateFinalizerForPull = ({ mergeState, shouldRenderAnswerDialog, setS
 
   return (
     shouldRenderAnswerDialog ?
-      <MergeStateFinalizerForPullAnswerDialog mergeState={mergeState} resolve={resolve} httpStatus={httpStatusCode} /> :
+      <MergeStateFinalizerForPullAnswerDialog mergeState={mergeState} resolve={resolve} httpResponse={httpResponse} /> :
       <>
         <ModalHeader>
           <ModalTitle>Finish merge state caused by pulling</ModalTitle>
@@ -187,7 +188,7 @@ const MergeStateFinalizerForPullAnswerDialog = ({ mergeState, resolve }: MergeSt
 };
 
 const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, secondsPassed, setSecondsAtStartofMerge, setIsWaitingForAnswer, resolve, openModal }: MergeStateFinalizerMergeCauseProps) => {
-  const [httpStatusCode, setHttpStatusCode] = useState<number>(-1);
+  const [httpResponse, setHttpResponse] = useState<FinalizerResponse>(null);
   const [chosenCommitType, setChosenCommitType] = useState<MergeCommitType | null>(null);
 
   const iri = getEditableValue(mergeState.editable, mergeState.rootIriMergeFrom, mergeState.rootIriMergeTo);
@@ -200,18 +201,18 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
     setChosenCommitType("merge-commit");
     const response = await finalizeMergeMergeState(mergeState.uuid, "merge-commit");
     if (response !== null) {
-      if (response === 409) {
+      if (response.status === 409) {
         toast.error("There are still unresolved conflicts");
         resolve();
       }
-      else if (response < 300) {
+      else if (response.status < 300) {
         resolve();
         toast.success("Everything seems to be ok. Proceed with merging.");
         setTimeout(() => {
           mergeCommitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, mergeState);
         }, 10);     // Small delay to keep the background of same color (that is we wait until the resolve which closes the currently opened dialog is done)
       }
-      else if (response < 400) {
+      else if (response.status < 400) {
         // TODO RadStr: Probably do nothing - we will just show the another dialog.
       }
       else {
@@ -221,7 +222,7 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
     else {
       toast.error("There was error when finalizing, check console for more info");
     }
-    setHttpStatusCode(response ?? -1);
+    setHttpResponse(response);
     setIsWaitingForAnswer(false);
     setShouldRenderAnswerDialog(true);
   };
@@ -232,11 +233,11 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
     setIsWaitingForAnswer(true);
     const response = await finalizeMergeMergeState(mergeState.uuid, "rebase-commit");
     if (response !== null) {
-      if (response === 409) {
+      if (response.status === 409) {
         toast.error("There are still unresolved conflicts");
         resolve();
       }
-      else if (response < 300) {
+      else if (response.status < 300) {
         resolve();
         toast.success("Everything seems to be ok. Proceed with rebasing.");
         const onSuccessCallback = async () => {
@@ -248,7 +249,7 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
           commitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, "rebase-commit", false, mergeState.commitMessage, onSuccessCallback);
         }, 10);     // Same as for merge, small delay to keep the background same color.
       }
-      else if (response < 400) {
+      else if (response.status < 400) {
         // TODO RadStr: Probably do nothing - we will just show the another dialog.
       }
       else {
@@ -258,17 +259,17 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
     else {
       toast.error("There was error when finalizing, check console for more info");
     }
-    setHttpStatusCode(response ?? -1);
+    setHttpResponse(response);
     setIsWaitingForAnswer(false);
     setShouldRenderAnswerDialog(true);
   };
 
   if (shouldRenderAnswerDialog) {
     if (chosenCommitType === "rebase-commit") {
-      return <MergeStateFinalizerForPushAnswerDialog mergeState={mergeState} resolve={resolve} httpStatus={httpStatusCode} />;
+      return <MergeStateFinalizerForPushAnswerDialog mergeState={mergeState} resolve={resolve} httpResponse={httpResponse} />;
     }
     else {
-      return <MergeStateFinalizerForMergeAnswerDialog mergeState={mergeState} resolve={resolve} httpStatus={httpStatusCode} />;
+      return <MergeStateFinalizerForMergeAnswerDialog mergeState={mergeState} resolve={resolve} httpResponse={httpResponse} />;
     }
   }
 
@@ -311,7 +312,7 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
   );
 }
 
-const MergeStateFinalizerForMergeAnswerDialog = ({ mergeState, httpStatus, resolve }: MergeStateFinalizerAnswerDialogProps) => {
+const MergeStateFinalizerForMergeAnswerDialog = ({ mergeState, httpResponse, resolve }: MergeStateFinalizerAnswerDialogProps) => {
   const removeMergeStateAction = async () => {
     const response = await finalizeMergeMergeStateOnFailure(mergeState.uuid, "remove-merge-state");
     if (response) {
@@ -330,14 +331,23 @@ const MergeStateFinalizerForMergeAnswerDialog = ({ mergeState, httpStatus, resol
   }
 
 
-  if (httpStatus === null || httpStatus >= 300 || httpStatus < 0) {
-    let text = "Unknown error when finalizing merge state caused by merging. You can check console for more information.\n\nUsually it is caused by one branch not being pushed in the remote repository.";
-    if (httpStatus === 409) {
+  // TODO RadStr: This seems to be almost copy-pasted from the Answer dialog for push
+  if (httpResponse === null || httpResponse.status >= 300 || httpResponse?.status < 0) {
+    let text = "⚠️ Unknown error when finalizing merge state caused by merging. You can check console for more information.\n\nUsually it is caused by one branch not matching the remote state (or not being pushed in the remote repository).";
+    if (httpResponse?.status === 409) {
       text = "There are still unresolved conflicts";
     }
-    else if (httpStatus >= 300 && httpStatus < 400) {
+    else if (httpResponse !== null && httpResponse.status >= 300 && httpResponse.status < 400) {
       text = `It appears that the remote head moved, therefore you are no longer pushing on top of the latest commit.
           You can either remove the merge state (and run push again, which will create new merge state) or close dialog.`;
+    }
+    else {
+      if (httpResponse?.content?.error !== undefined && httpResponse?.content?.error !== null &&
+          typeof httpResponse.content.error === "string" &&
+          httpResponse.content.error.includes("does not match the local one")
+      ) {
+        text = httpResponse.content.error;
+      }
     }
     return <>
       <ModalHeader>
@@ -357,7 +367,7 @@ const MergeStateFinalizerForMergeAnswerDialog = ({ mergeState, httpStatus, resol
 
 
 const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, resolve, openModal }: MergeStateFinalizerSpecificCauseProps) => {
-  const [httpStatusCode, setHttpStatusCode] = useState<number>(-1);
+  const [httpReponse, setHttpResponse] = useState<FinalizerResponse>(null);
 
   const iri = getEditableValue(mergeState.editable, mergeState.rootIriMergeFrom, mergeState.rootIriMergeTo);
   const resources = useContext(ResourcesContext);
@@ -369,16 +379,16 @@ const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldR
     requestLoadPackage(iri, true);
 
     if (response !== null) {
-      if (response === 409) {
+      if (response.status === 409) {
         toast.error("There are still unresolved conflicts");
         resolve();
       }
-      else if (response < 300) {
+      else if (response.status < 300) {
         toast.success("Finalizer succcessfully finished");
         resolve();
         commitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, "classic-commit", false, mergeState.commitMessage, null);
       }
-      else if (response < 400) {
+      else if (response.status < 400) {
         // TODO RadStr: Probably do nothing - we will just show the another dialog.
       }
       else {
@@ -389,14 +399,14 @@ const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldR
       toast.error("There was error when finalizing, check console for more info");
     }
 
-    setHttpStatusCode(response ?? -1);
+    setHttpResponse(response);
     setIsWaitingForAnswer(false);
     setShouldRenderAnswerDialog(true);
   };
 
   return (
     shouldRenderAnswerDialog ?
-      <MergeStateFinalizerForPushAnswerDialog mergeState={mergeState} resolve={resolve} httpStatus={httpStatusCode} /> :
+      <MergeStateFinalizerForPushAnswerDialog mergeState={mergeState} resolve={resolve} httpResponse={httpReponse} /> :
       <>
         <ModalHeader>
           <ModalTitle>Finish merge state caused by pushing to remote repository</ModalTitle>
@@ -416,7 +426,7 @@ const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldR
 }
 
 
-const MergeStateFinalizerForPushAnswerDialog = ({ mergeState, httpStatus, resolve }: MergeStateFinalizerAnswerDialogProps) => {
+const MergeStateFinalizerForPushAnswerDialog = ({ mergeState, httpResponse, resolve }: MergeStateFinalizerAnswerDialogProps) => {
   const finalizerHandler = async () => {
     const response = await finalizePushMergeStateOnFailure(mergeState.uuid, "remove-merge-state");
     if (response) {
@@ -436,14 +446,21 @@ const MergeStateFinalizerForPushAnswerDialog = ({ mergeState, httpStatus, resolv
   }
 
 
-  if (httpStatus === null || httpStatus >= 300 || httpStatus < 0) {
-    let text = "Unknown error when finalizing merge state caused by pushing. You can check console for more information.";
-    if (httpStatus === 409) {
+  if (httpResponse === null || httpResponse.status >= 300 || httpResponse.status < 0) {
+    let text = "⚠️ Unknown error when finalizing merge state caused by pushing. You can check console for more information.\n\nUsually it is caused by the branch not matching the remote state";
+    if (httpResponse?.status === 409) {
       text = "There are still unresolved conflicts";
     }
-    else if (httpStatus >= 300 && httpStatus < 400) {
+    else if (httpResponse !== null && httpResponse.status >= 300 && httpResponse.status < 400) {
       text = `It appears that the remote head moved, therefore you are no longer pushing on top of the latest commit.
           You can either remove the merge state (and run push again, which will create new merge state) or close dialog.`;
+    }
+    else {
+      if (httpResponse?.content?.error !== undefined && httpResponse?.content?.error !== null &&
+          typeof httpResponse.content.error === "string" &&
+          httpResponse.content.includes("does not match the local one")) {
+        text = httpResponse.content.error;
+      }
     }
     return <>
       <ModalHeader>

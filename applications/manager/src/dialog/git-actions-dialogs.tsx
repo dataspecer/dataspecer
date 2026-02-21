@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { ExportFormatRadioButtons, ExportFormatType } from "@/components/export-format-radio-buttons";
 import { CommitRedirectResponseJson, createSetterWithGitValidation, CommitRedirectExtendedResponseJson, MergeFromDataType, MergeState, SingleBranchCommitType, convertMergeStateCauseToEditable, CommitConflictInfo, GitProviderEnum, convertGitProviderNameToEnum } from "@dataspecer/git";
 import { CommitRedirectForMergeStatesDialog } from "./commit-confirm-dialog-caused-by-merge-state";
-import { commitToGitRequest, createNewRemoteRepositoryRequest, linkToExistingGitRepositoryRequest, mergeCommitToGitRequest } from "@/utils/git-backend-requests";
+import { commitToGitBackendRequest, createNewRemoteRepositoryRequest, linkToExistingGitRepositoryRequest, mergeCommitToGitBackendRequest } from "@/utils/git-backend-requests";
 import { createCloseDialogObject, LoadingDialog } from "@/components/loading-dialog";
 import { ComboBox, createGitProviderComboBoxOptions } from "@/components/combo-box";
 import { removeMergeState } from "@/utils/merge-state-backend-requests";
@@ -335,49 +335,59 @@ export const mergeCommitToGitDialogOnClickHandler = async (
     shouldShowAlwaysCreateMergeStateOption: false,
   });
   if (result) {
-    const closeDialogObject = createCloseDialogObject();
-    // TODO RadStr: Localization
-    openModal(LoadingDialog, {
-      dialogTitle: "Committing merge",
-      waitingText: "Usually takes around 5-15 seconds",
-      setCloseDialogAction: closeDialogObject.setCloseDialogAction,
-      shouldShowTimer: true,
-    });
-    const mergeFromData: MergeFromDataType = {
-      branch: mergeState.branchMergeFrom,
-      commitHash: mergeState.lastCommitHashMergeFrom,
-      iri: mergeState.rootIriMergeFrom,
-    };
+    await mergeCommitToGitHandler(openModal, iri, mergeState, result.commitMessage, result.shouldAppendAfterDefaultMergeCommitMessage, result.exportFormat);
+  }
+};
 
+export const mergeCommitToGitHandler = async (
+  openModal: OpenBetterModal,
+  iri: string,
+  mergeState: MergeState,
+  commitMessage: string | null,
+  shouldAppendAfterDefaultMergeCommitMessage: boolean,
+  exportFormat: string,
+) => {
+  const closeDialogObject = createCloseDialogObject();
+  // TODO RadStr: Localization
+  openModal(LoadingDialog, {
+    dialogTitle: "Committing merge",
+    waitingText: "Usually takes around 5-15 seconds",
+    setCloseDialogAction: closeDialogObject.setCloseDialogAction,
+    shouldShowTimer: true,
+  });
+  const mergeFromData: MergeFromDataType = {
+    branch: mergeState.branchMergeFrom,
+    commitHash: mergeState.lastCommitHashMergeFrom,
+    iri: mergeState.rootIriMergeFrom,
+  };
 
-    // We do not care about existence of merge states, so we pass in false
-    mergeCommitToGitRequest(iri, result.commitMessage, result.shouldAppendAfterDefaultMergeCommitMessage, result.exportFormat, mergeFromData, false)
-      .then(async (response) => {
-        closeDialogObject.closeDialogAction();
-        if (response.status === 500) {
-          const jsonResponse: any = await response.json();
-          // TODO: ..... Not really clean: The check for the equality of strings of error. But can't really think of anything much better now
-          if (jsonResponse.error === "Error: The merge from branch was already merged. We can not merge again.") {
-            // In this case we want to always remove the merge state. User has to move heads by committing and then he can create new merge state.
-            toast.error("Failure, check console for more info.");
-            console.error(jsonResponse.error + " Removing the merge state.");
-            const removalResult = await removeMergeState(mergeState.uuid);
-            if (!removalResult) {
-              setTimeout(() => {
-                toast.error("The removal of merge state failed");
-              }, 1000);
-            }
+  // We do not care about existence of merge states, so we pass in false
+  mergeCommitToGitBackendRequest(iri, commitMessage, shouldAppendAfterDefaultMergeCommitMessage, exportFormat, mergeFromData, false)
+    .then(async (response) => {
+      closeDialogObject.closeDialogAction();
+      if (response.status === 500) {
+        const jsonResponse: any = await response.json();
+        // TODO: ..... Not really clean: The check for the equality of strings of error. But can't really think of anything much better now
+        if (jsonResponse.error === "Error: The merge from branch was already merged. We can not merge again.") {
+          // In this case we want to always remove the merge state. User has to move heads by committing and then he can create new merge state.
+          toast.error("Failure, check console for more info.");
+          console.error(jsonResponse.error + " Removing the merge state.");
+          const removalResult = await removeMergeState(mergeState.uuid);
+          if (!removalResult) {
+            setTimeout(() => {
+              toast.error("The removal of merge state failed");
+            }, 1000);
           }
         }
-        else if (response.status === 200) {
-          // Unlike for other merge states, we remove th emerge state here instead when finalizing backend (the merge state is exception).
-          // Since other mergestates just updated the last commit in the finalizer. But that is not the case for merge
-          await removeMergeState(mergeState.uuid);
-        }
-        await requestLoadPackage(mergeState.rootIriMergeFrom, true);
-        await requestLoadPackage(mergeState.rootIriMergeTo, true);
-      });
-  }
+      }
+      else if (response.status === 200) {
+        // Unlike for other merge states, we remove th emerge state here instead when finalizing backend (the merge state is exception).
+        // Since other mergestates just updated the last commit in the finalizer. But that is not the case for merge
+        await removeMergeState(mergeState.uuid);
+      }
+      await requestLoadPackage(mergeState.rootIriMergeFrom, true);
+      await requestLoadPackage(mergeState.rootIriMergeTo, true);
+    });
 };
 
 export const commitToGitDialogOnClickHandler = async (
@@ -391,43 +401,75 @@ export const commitToGitDialogOnClickHandler = async (
 ) => {
   const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage, type: "commit", shouldShowAlwaysCreateMergeStateOption });
   if (result) {
-    const closeDialogObject = createCloseDialogObject();
-    // TODO RadStr: Localization
-    openModal(LoadingDialog, {
-      dialogTitle: "Committing",
-      waitingText: "Usually takes around 5-15 seconds",
-      setCloseDialogAction: closeDialogObject.setCloseDialogAction,
-      shouldShowTimer: true,
-    });
+    await commitToGitHandler(
+      openModal, iri, commitType, shouldShowAlwaysCreateMergeStateOption,
+      result.commitMessage, result.exportFormat, result.shouldAlwaysCreateMergeState, true, onSuccessCallback);
+  }
+};
 
-    commitToGitRequest(iri, result.commitMessage, result.exportFormat, result.shouldAlwaysCreateMergeState, false)
-      .then(async (response) => {
+/**
+ * @param shouldRedirectWithExistenceOfMergeStates for commitType singalizing "rebase-commit", this parameter will be ignored and false will be used instead.
+ */
+export const commitToGitHandler = async (
+  openModal: OpenBetterModal,
+  iri: string,
+  commitType: SingleBranchCommitType,
+  canCreateMergeStateIfNecessary: boolean,
+  commitMessage: string | null,
+  exportFormat: string,
+  shouldAlwaysCreateMergeState: boolean,
+  shouldRedirectWithExistenceOfMergeStates: boolean,
+  onSuccessCallback: (() => void) | null,
+) => {
+  const closeDialogObject = createCloseDialogObject();
+  // TODO RadStr: Localization
+  openModal(LoadingDialog, {
+    dialogTitle: "Committing",
+    waitingText: "Usually takes around 5-15 seconds",
+    setCloseDialogAction: closeDialogObject.setCloseDialogAction,
+    shouldShowTimer: true,
+  });
+
+  if (commitType === "rebase-commit") {
+    // In rebase case we just commit. Otherwise, the LoadingDialog runs twice, which we do not want,
+    //  since for rebase the default action is committing again without any other invervention
+    // TODO RadStr PR: I feel like this is the correct decision - when we are rebasing from diff editor, and we passed the validation, then we want to commit
+    //                 even if other merge states exist - this is equivalent to merging - there we also do not care that merge states exist.
+    //                 Technically, it could be rewritten to rebase exactly if the one commit exist, but we will keep it like this.
+    shouldRedirectWithExistenceOfMergeStates = false;
+  }
+  commitToGitBackendRequest(iri, commitMessage, exportFormat, shouldAlwaysCreateMergeState, shouldRedirectWithExistenceOfMergeStates)
+    .then(async (response) => {
+      if (response.status === 300) {
+        const jsonResponse: CommitRedirectResponseJson = await response.json();
+        const extendedResponse: CommitRedirectExtendedResponseJson = {
+          ...jsonResponse,
+          commitType,
+          shouldAppendAfterDefaultMergeCommitMessage: null,
+          shouldAlwaysCreateMergeState,
+          onSuccessCallback,
+        };
+        openModal(CommitRedirectForMergeStatesDialog, {commitRedirectResponse: extendedResponse});
         closeDialogObject.closeDialogAction();
-        if (response.status === 300) {
-          // TODO: ... I am calling the "commitToGitRequest" with false. This means that it should never return 300
-          const jsonResponse: CommitRedirectResponseJson = await response.json();
-          const extendedResponse: CommitRedirectExtendedResponseJson = {
-            ...jsonResponse,
-            commitType,
-            shouldAppendAfterDefaultMergeCommitMessage: null,
-          };
-          openModal(CommitRedirectForMergeStatesDialog, {commitRedirectResponse: extendedResponse});
-          console.info({jsonResponse});     // TODO RadStr Debug: Debug print
-        }
-        else if (response.status === 409 && shouldShowAlwaysCreateMergeStateOption) {
-          const jsonResponse: NonNullable<CommitConflictInfo> = await response.json();
-          openModal(TextDiffEditorDialog, { initialMergeFromRootMetaPath: jsonResponse.conflictMergeFromRootPath, initialMergeToRootMetaPath: jsonResponse.conflictMergeToRootPath, editable: convertMergeStateCauseToEditable("push")});
-          toast.success("Created merge state");
-          requestLoadPackage(iri, true);
-          return;
-        }
+        console.info({jsonResponse});     // TODO RadStr Debug: Debug print
+      }
+      else if (response.status === 409 && canCreateMergeStateIfNecessary) {
+        closeDialogObject.closeDialogAction();
+        const jsonResponse: NonNullable<CommitConflictInfo> = await response.json();
+        openModal(TextDiffEditorDialog, { initialMergeFromRootMetaPath: jsonResponse.conflictMergeFromRootPath, initialMergeToRootMetaPath: jsonResponse.conflictMergeToRootPath, editable: convertMergeStateCauseToEditable("push")});
+        toast.success("Created merge state");
+        requestLoadPackage(iri, true);
+        return;
+      }
+      else {
+        closeDialogObject.closeDialogAction();
         gitOperationResultToast(response);
         requestLoadPackage(iri, true);
         if (response.ok) {
           onSuccessCallback?.();
         }
-      });
-  }
+      }
+    });
 };
 
 

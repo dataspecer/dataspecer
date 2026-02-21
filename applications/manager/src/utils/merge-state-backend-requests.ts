@@ -1,9 +1,28 @@
 import { DatastoreComparison, FinalizerVariantsForMergeOnFailure, FinalizerVariantsForPullOnFailure, FinalizerVariantsForPushOnFailure, MergeCommitType, MergeState } from "@dataspecer/git";
 
+
+export type FinalizerResponse = {
+  status: number;
+  ok: boolean;
+  content: any | null;
+} | null;
+
+async function createFinalizerResponseFromResponse(response: Response | null): Promise<FinalizerResponse> {
+  if (response === null) {
+    return null;
+  }
+  const finalizerResponse: FinalizerResponse = {
+    status: response.status,
+    ok: response.ok,
+    content: response.ok ? null : await response.json(),
+  };
+  return finalizerResponse;
+}
+
 export const updateMergeState = async (
   fetchedMergeState: MergeState,
   conflictsToBeResolvedOnSave: DatastoreComparison[],
-) => {
+): Promise<FinalizerResponse> => {
   try {
     const pathsForConflictsToBeResolvedOnSave = conflictsToBeResolvedOnSave.map(conflict => conflict.affectedDataStore.fullPath);
 
@@ -21,7 +40,8 @@ export const updateMergeState = async (
 
     console.info("update merge state response", fetchResult);   // TODO RadStr Debug:
 
-    return fetchResult;
+
+    return await createFinalizerResponseFromResponse(fetchResult);
   }
   catch(error) {
     console.error(`Error when updating merge state (${fetchedMergeState}). The error: ${error}`);
@@ -29,7 +49,7 @@ export const updateMergeState = async (
   }
 };
 
-export const finalizePullMergeState = async (mergeStateUuid: string) => {
+export const finalizePullMergeState = async (mergeStateUuid: string): Promise<FinalizerResponse>  => {
   try {
     const fetchResult = await fetch(
       `${import.meta.env.VITE_BACKEND}/git/finalize-pull-merge-state?uuid=${mergeStateUuid}`, {
@@ -38,7 +58,7 @@ export const finalizePullMergeState = async (mergeStateUuid: string) => {
     );
     console.info("Finalize merge state response", fetchResult);   // TODO RadStr Debug:
 
-    return fetchResult.status;
+    return await createFinalizerResponseFromResponse(fetchResult);
   }
   catch(error) {
     console.error(`Error when finalizing merge state (${mergeStateUuid}). The error: ${error}`);
@@ -49,7 +69,7 @@ export const finalizePullMergeState = async (mergeStateUuid: string) => {
 export const finalizePullMergeStateOnFailure = async (
   mergeState: MergeState,
   finalizerVariant: FinalizerVariantsForPullOnFailure,
-) => {
+): Promise<FinalizerResponse>  => {
   const queryParams = "uuid=" + mergeState.uuid +
     "&rootIriToUpdate=" + mergeState.rootIriMergeFrom +
     "&pulledCommitHash=" + mergeState.lastCommitHashMergeTo +
@@ -63,16 +83,16 @@ export const finalizePullMergeStateOnFailure = async (
     );
     console.info("Finalize merge state response", fetchResult);   // TODO RadStr Debug:
 
-    return fetchResult.ok;
+    return await createFinalizerResponseFromResponse(fetchResult);
   }
   catch(error) {
     console.error(`Error when finalizing merge state (${mergeState}). The error: ${error}`);
-    return false;
+    return null;
   }
 }
 
 
-export const finalizePushMergeState = async (mergeStateUuid: string) => {
+export const finalizePushMergeState = async (mergeStateUuid: string): Promise<FinalizerResponse>  => {
   try {
     const fetchResult = await fetch(
       `${import.meta.env.VITE_BACKEND}/git/finalize-push-merge-state?uuid=${mergeStateUuid}`, {
@@ -81,7 +101,7 @@ export const finalizePushMergeState = async (mergeStateUuid: string) => {
     );
     console.info("Finalize merge state response", fetchResult);   // TODO RadStr Debug:
 
-    return fetchResult.status;
+    return await createFinalizerResponseFromResponse(fetchResult);
   }
   catch(error) {
     console.error(`Error when finalizing merge state (${mergeStateUuid}). The error: ${error}`);
@@ -92,7 +112,7 @@ export const finalizePushMergeState = async (mergeStateUuid: string) => {
 export const finalizePushMergeStateOnFailure = async (
   mergeStateUuid: string,
   finalizerVariant: FinalizerVariantsForPushOnFailure,
-) => {
+): Promise<FinalizerResponse>  => {
   const queryParams = "mergeStateUuid=" + mergeStateUuid +
                       "&finalizerVariant=" + finalizerVariant;
 
@@ -104,15 +124,15 @@ export const finalizePushMergeStateOnFailure = async (
     );
     console.info("Finalize merge state response", fetchResult);   // TODO RadStr Debug:
 
-    return fetchResult.ok;
+    return await createFinalizerResponseFromResponse(fetchResult);
   }
   catch(error) {
     console.error(`Error when finalizing merge state (${mergeStateUuid}). The error: ${error}`);
-    return false;
+    return null;
   }
 }
 
-export const finalizeMergeMergeState = async (mergeStateUuid: string, mergeCommitType: MergeCommitType) => {
+export const finalizeMergeMergeState = async (mergeStateUuid: string, mergeCommitType: MergeCommitType): Promise<FinalizerResponse>  => {
   try {
     const fetchResult = await fetch(
       `${import.meta.env.VITE_BACKEND}/git/finalize-merge-merge-state?mergeStateUuid=${mergeStateUuid}&mergeCommitType=${mergeCommitType}`, {
@@ -121,7 +141,7 @@ export const finalizeMergeMergeState = async (mergeStateUuid: string, mergeCommi
     );
     console.info("Finalize merge state response", fetchResult);   // TODO RadStr Debug:
 
-    return fetchResult.status;
+    return await createFinalizerResponseFromResponse(fetchResult);
   }
   catch(error) {
     console.error(`Error when finalizing merge state (${mergeStateUuid}). The error: ${error}`);
@@ -132,7 +152,7 @@ export const finalizeMergeMergeState = async (mergeStateUuid: string, mergeCommi
 export const finalizeMergeMergeStateOnFailure = async (
   mergeStateUuid: string,
   finalizerVariant: FinalizerVariantsForMergeOnFailure,
-) => {
+): Promise<FinalizerResponse>  => {
   const queryParams = "mergeStateUuid=" + mergeStateUuid +
     "&finalizerVariant=" + finalizerVariant;
 
@@ -144,11 +164,11 @@ export const finalizeMergeMergeStateOnFailure = async (
     );
     console.info("Finalize merge state response", fetchResult);   // TODO RadStr Debug:
 
-    return fetchResult.ok;
+    return await createFinalizerResponseFromResponse(fetchResult);
   }
   catch(error) {
     console.error(`Error when finalizing merge state (${mergeStateUuid}). The error: ${error}`);
-    return false;
+    return null;
   }
 }
 
