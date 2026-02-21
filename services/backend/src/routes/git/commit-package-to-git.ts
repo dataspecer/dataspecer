@@ -713,7 +713,10 @@ async function exportAndPushToGit(
       hashOfPeformedCommit,
     };    // We are done
   }
-  catch(error) {
+  catch(error: any) {
+    if (error?.message?.includes("The merge from branch was already merged.")) {
+      throw error;
+    }
     // Error can be caused by Not sufficient rights for the pushing - then we have to try all and fail on last
     if (isLastAccessToken) {
       // It is important to not only remove the actual files, but also the .git directory,

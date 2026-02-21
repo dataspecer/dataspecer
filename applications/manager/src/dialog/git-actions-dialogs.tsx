@@ -370,7 +370,7 @@ export const mergeCommitToGitHandler = async (
         // TODO: ..... Not really clean: The check for the equality of strings of error. But can't really think of anything much better now
         if (jsonResponse.error === "Error: The merge from branch was already merged. We can not merge again.") {
           // In this case we want to always remove the merge state. User has to move heads by committing and then he can create new merge state.
-          toast.error("Failure, check console for more info.");
+          toast.error("The merge from branch was already merged. We can not merge again.");
           console.error(jsonResponse.error + " Removing the merge state.");
           const removalResult = await removeMergeState(mergeState.uuid);
           if (!removalResult) {
@@ -379,11 +379,23 @@ export const mergeCommitToGitHandler = async (
             }, 1000);
           }
         }
+        else {
+          gitOperationResultToast(response);
+        }
       }
       else if (response.status === 200) {
         // Unlike for other merge states, we remove th emerge state here instead when finalizing backend (the merge state is exception).
         // Since other mergestates just updated the last commit in the finalizer. But that is not the case for merge
-        await removeMergeState(mergeState.uuid);
+        gitOperationResultToast(response);
+        const removalResult = await removeMergeState(mergeState.uuid);
+        if (!removalResult) {
+          setTimeout(() => {
+            toast.error("The removal of merge state failed");
+          }, 1000);
+        }
+      }
+      else {
+        gitOperationResultToast(response);
       }
       await requestLoadPackage(mergeState.rootIriMergeFrom, true);
       await requestLoadPackage(mergeState.rootIriMergeTo, true);
