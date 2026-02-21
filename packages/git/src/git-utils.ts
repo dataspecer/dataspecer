@@ -12,6 +12,10 @@ export type MergeCommitType = "merge-commit" | "rebase-commit";
 export type CommitType = "classic-commit" | MergeCommitType;
 export type SingleBranchCommitType = "classic-commit" | "rebase-commit";
 
+export function isSingleBranchCommitType(commitType: CommitType): commitType is SingleBranchCommitType {
+  return commitType === "classic-commit" || commitType === "rebase-commit";
+}
+
 export function isGitUrlSet(gitUrl: string | undefined | null): boolean {
   const length = gitUrl?.length;
   return length !== undefined && length > 0;
