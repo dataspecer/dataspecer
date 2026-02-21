@@ -398,7 +398,7 @@ export class MergeStateModel implements ResourceChangeListener {
       // If we throw error then it means that the commit on which the DS resource already is within DS is actually after the commit to which we are updating.
       const commonCommit = await getCommonCommitInHistory(git, gitCommitHash, mergeState.lastCommitHashMergeFrom);
       if (gitCommitHash !== mergeState.lastCommitHashMergeFrom) {
-        throw new Error("The remote commit of the merge from does not match the local one");
+        throw new Error("The remote commit of the merge from branch does not match the local one");
       }
 
       {
@@ -408,7 +408,7 @@ export class MergeStateModel implements ResourceChangeListener {
         // If we throw error then it means that the commit on which the DS resource already is within DS is actually after the commit to which we are updating.
         const commonCommit = await getCommonCommitInHistory(git, gitCommitHash, mergeState.lastCommitHashMergeTo);
         if (gitCommitHash !== mergeState.lastCommitHashMergeTo) {
-          throw new Error("The remote commit of the merge to does not match the local one");
+          throw new Error("The remote commit of the merge to branch does not match the local one");
         }
       }
     }
