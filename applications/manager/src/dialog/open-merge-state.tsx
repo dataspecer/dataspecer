@@ -1,5 +1,5 @@
 import { BetterModalProps, useBetterModal, } from "@/lib/better-modal";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
@@ -111,6 +111,9 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
   const [secondsPassed, setSecondsPassed] = useState<number>(0);
   const [secondsPassedStartTime, setSecondsPassedStartTime] = useState<number>(0);
 
+  // Once again for strict mode. Otherwise, the dialog closes because it finds out that the merge state was already created.
+  const didRun = useRef<boolean>(false);
+
   useEffect(() => {
     const interval: NodeJS.Timeout | null = setInterval(() => {
       setSecondsPassed(prev => prev + 1);
@@ -136,22 +139,19 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
     setMergeState(createdMergeState.mergeState);
     if (createdMergeState.error !== null) {
       setMergeStateCreatingFailure(true);
-    }
-    else if (createdMergeState.mergeState === null) {
-      setMergeStateIdInCaseOfNoConflicts(createdMergeState.mergeStateId);
+      setIsLoading(false);
     }
     else {
       resolve(null);
       openModal(
         TextDiffEditorDialog,
         {
-          initialMergeFromRootMetaPath: createdMergeState.mergeState.rootFullPathToMetaMergeFrom,
-          initialMergeToRootMetaPath: createdMergeState.mergeState.rootFullPathToMetaMergeTo,
+          initialMergeFromRootMetaPath: mergeFrom.iri,
+          initialMergeToRootMetaPath: mergeTo.iri,
           editable: editable,
         }
       );
     }
-    setIsLoading(false);
   }
 
   const handleKeepExisting = async () => {
@@ -170,32 +170,38 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
     setIsLoading(true);
     let fetchedMergeState = await fetchMergeState(mergeFrom.iri, mergeTo.iri, false, true, false);
     let alreadyExists: boolean;
-    let isMergeStateCreated = true;
+    let newlyCreatedWithNoConflicts: boolean = false;
     if (fetchedMergeState === null) {
       const createdMergeState = await createMergeStateOnBackend(mergeFrom.iri, mergeTo.iri);
       await requestLoadPackage(mergeFrom.iri, true);
       await requestLoadPackage(mergeTo.iri, true);
       fetchedMergeState = createdMergeState.mergeState;
       if (createdMergeState.error !== null) {
+        alreadyExists = false;
         if (createdMergeState.error.includes("Unique constraint failed on the fields")) {   // This is because of strict mode - since it may have been created by the first run. Therefore, we just resolve it.
-          resolve(null);
-          return;
+          fetchedMergeState = await fetchMergeState(mergeFrom.iri, mergeTo.iri, false, true, false);
+          if (fetchedMergeState !== null && fetchedMergeState?.conflictCount === 0) {
+            setMergeStateIdInCaseOfNoConflicts(createdMergeState.mergeStateId);
+          }
+          alreadyExists = true;
         }
         if (fetchedMergeState === null) {   // If we failed for different reason
           setMergeStateCreatingFailure(true);
-          isMergeStateCreated = false;
         }
       }
       else if (createdMergeState.mergeState === null) {
         setMergeStateIdInCaseOfNoConflicts(createdMergeState.mergeStateId);
-        isMergeStateCreated = false;
+        newlyCreatedWithNoConflicts = true;
+        alreadyExists = false;
       }
-      alreadyExists = false;
+      else {
+        alreadyExists = false;
+      }
     }
     else {
       alreadyExists = true;
     }
-    if (fetchedMergeState?.rootFullPathToMetaMergeFrom !== mergeFrom.iri || fetchedMergeState.rootFullPathToMetaMergeTo !== mergeTo.iri) {
+    if (!newlyCreatedWithNoConflicts && (fetchedMergeState?.rootFullPathToMetaMergeFrom !== mergeFrom.iri || fetchedMergeState.rootFullPathToMetaMergeTo !== mergeTo.iri)) {
       console.error({rootFullPathToMetaMergeFrom: fetchedMergeState?.rootFullPathToMetaMergeFrom, mergeFromIri: mergeFrom.iri,
         rootFullPathToMetaMergeTo: fetchedMergeState?.rootFullPathToMetaMergeTo, mergeToIri: mergeTo.iri, fetchedMergeState});
       throw new Error("Not equal iri to path when merging");
@@ -204,25 +210,16 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
     console.info({fetchedMergeState, editable});    // TODO RadStr Debug:
     setAlreadyExisted(alreadyExists);
     setIsLoading(false);
-    if (isMergeStateCreated) {
-      if (!alreadyExists) {
-        resolve(null);
-        openModal(
-          TextDiffEditorDialog,
-          {
-            initialMergeFromRootMetaPath: fetchedMergeState!.rootFullPathToMetaMergeFrom,
-            initialMergeToRootMetaPath: fetchedMergeState!.rootFullPathToMetaMergeTo,
-            editable: editable,
-          }
-        );
-      }
-    }
   }
 
   useEffect(() => {
-    if (mergeFrom.isBranch && mergeTo.isBranch) {
+    if (mergeFrom.isBranch && mergeTo.isBranch && !didRun.current) {
+      didRun.current = true;
       initialLoad();
     }
+    return () => {
+      didRun.current = true;
+    };
   }, []);
 
   const openDiffEditorPreviewNoConflicts = async () => {
@@ -269,7 +266,7 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
     }
   }
 
-  if (mergeStateIdInCaseOfNoConflicts !== null) {
+  if (mergeStateIdInCaseOfNoConflicts !== null && !alreadyExisted) {
     return (
       <Modal open={isOpen} onClose={() => resolve(null)}>
         <ModalContent>
@@ -283,6 +280,23 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
         </ModalContent>
       </Modal>);
   }
+  else if (mergeStateIdInCaseOfNoConflicts === null && mergeState !== null && !alreadyExisted) {
+    // Basically copy paste of the if, just changing one word ... so it can be refactored
+    return (
+      <Modal open={isOpen} onClose={() => resolve(null)}>
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>Created merge state for DS packages and there were conflicts.</ModalTitle>
+          </ModalHeader>
+          <ModalFooter>
+            <Button title="Opens the diff editor with the preview of the merge commit. Finalize the merging inside the editor." variant="default" onClick={openDiffEditorPreviewNoConflicts}>Open diff editor preview</Button>
+            <Button title="Closes the dialog. Note that the merge state still exists. You can resolve it later" variant="outline" onClick={() => resolve(null)}>Close dialog</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>);
+  }
+
+  console.info({isLoading, mergeStateCreationFailure, alreadyExisted});
 
   return (
     <Modal open={isOpen} onClose={() => resolve(null)}>
@@ -316,7 +330,6 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
           </ModalDescription>
         </ModalHeader>
         { mergeStateCreationFailure ? "There was some failure when fetching/creating merge state, check console for more info." : null }
-        { !isLoading && !mergeStateCreationFailure && <div>Root iri merge from: {mergeState?.rootIriMergeFrom}</div> }
         { !isLoading && !mergeStateCreationFailure && alreadyExisted ?
           <div>
             The merge state already exists. Do you wish to replace it with new one?
