@@ -4,6 +4,10 @@ import { mergeStateModel } from "../../../main.ts";
 import express from "express";
 
 
+/**
+ * Handles user's request. The request comes when there was some failure in finalizing the merge state caused by merge.
+ *  Currently the only possible variant to handle such case is to remove the merge state entry from the database.
+ */
 export const finalizeMergeMergeStateOnFailure = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
     mergeStateUuid: z.string().min(1),

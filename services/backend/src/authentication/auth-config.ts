@@ -14,6 +14,7 @@ import { GitHubScope, GitHubProvider, GitProviderFactory } from "@dataspecer/git
 
 
 /**
+ * Creates {@link ExpressAuthConfig} for the given {@link genericScope}. The {@link dsBackendURL} and {@link callerURL} are used to create the URL used in the callbacks.
  * The returned ConfigType is not null if there is {@link ConfigType} which exactly matches provided scope (on permission level of course, not on string level).
  * @param genericScope is the scope as from the authJS user account - that is the scopes separated by comma (,) but converted to the generic scopes
  * @param dsBackendURL is the url of the ds backend
@@ -71,7 +72,7 @@ function getScopesForAuthConfig(configType: ConfigType | null): Scope[] {
 
 
 /**
- *
+ * Creates {@link ExpressAuthConfig} for the given {@link configType}. The {@link dsBackendURL} and {@link callerURL} are used to create the URL used in the callbacks.
  * @param configType if null or the value is unknown, then default scope (permission) is used
  * @param callerURL is the URL of the caller to which we will be redirected after the auth request is finished
  * @returns
@@ -196,12 +197,13 @@ function createAuthConfig(configType: ConfigType | null, dsBackendURL: string, c
 
 
 /**
- *
+ * Creates {@link ExpressAuthConfig} matching the given {@link authPermissions}.
+ * The {@link dsBackendURL} and {@link callerURL} are used to create the URL used in the callbacks.
  * @param authPermissions are the request authPermissions which should be in the created instance.
  * @param dsBackendURL the URL of the ds backend
  * @param callerURL is the URL of the caller to which we can be possibly redirected after request is finished
  */
-export function createAuthConfigWithCorrectPermissions(authPermissions: string, dsBackendURL: string, callerURL?: string) {
+export function createAuthConfigWithCorrectPermissions(authPermissions: string, dsBackendURL: string, callerURL?: string): ExpressAuthConfig {
   const configType = ConfigType[authPermissions as keyof typeof ConfigType];
   return createAuthConfig(configType, dsBackendURL, callerURL);
 }
@@ -209,6 +211,8 @@ export function createAuthConfigWithCorrectPermissions(authPermissions: string, 
 // TODO RadStr Idea: For performance reasons try later create one basic auth config, which will be used everywhere where we don't need redirect or scope.
 
 /**
+ * Creates {@link ExpressAuthConfig} with auth permissions containing only the login info (name and email).
+ * The {@link dsBackendURL} and {@link callerURL} are used to create the URL used in the callbacks.
  * Contains just the info needed for login. The user info and e-mail.
  * @param dsBackendURL is the url of the ds backend
  * @param callerURL is the URL of the caller to which we can be possibly redirected after request is finished
@@ -216,7 +220,9 @@ export function createAuthConfigWithCorrectPermissions(authPermissions: string, 
 export const createBasicAuthConfig = (dsBackendURL: string, callerURL?: string) => createAuthConfig(ConfigType.LoginInfo, dsBackendURL, callerURL);
 
 /**
- * Contains full repo control - Used to create repo or give access to bot to commit to repository (that is add it as a collaborator).
+ * Creates {@link ExpressAuthConfig} that contains full repo control -
+ *  Used to create repo or give access to bot to commit to repository (that is add it as a collaborator).
+ * The {@link dsBackendURL} and {@link callerURL} are used to create the URL used in the callbacks.
  * @param callerURL is the URL of the caller to which we can be possibly redirected after request is finished
  * @param dsBackendURL is the url of the ds backend
  * @deprecated The {@link createBasicAuthConfig} is enough to use

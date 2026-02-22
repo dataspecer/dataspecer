@@ -6,7 +6,12 @@ import { gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { GitRawHistoryToSendToClient, GitHistory, BranchHistory, RawCommit } from "@dataspecer/git";
 import { createSimpleGitUsingPredefinedGitRoot, FETCH_GIT_HISTORY_PREFIX, removePathRecursively } from "@dataspecer/git-node";
 
-
+/**
+ * Handles the client's request to get Git history of the project.
+ * Sends back to the client the Git history using git command.
+ * The history is in reverse chronological order (first the most recent and last the oldest).
+ * The commit information has specific format and contains specific parts of the commit information. Look into the code for the format.
+ */
 export const fetchGitCommitHistory = asyncHandler(async (request: express.Request, response: express.Response) => {
     const querySchema = z.object({
         iri: z.string().min(1),

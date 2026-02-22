@@ -13,6 +13,10 @@ import configuration from "../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 import { ResourceModelForFilesystemRepresentation } from "../export-import/export.ts";
 
+/**
+ * Base type containing data about merge end point. It is extended by other types, which add additional fields.
+ * For example, {@link MergeEndpointForComparison} and {@link MergeEndpointForStateUpdate}.
+ */
 type MergeEndpointBase = {
   rootIri: string,
   filesystemType: AvailableFilesystems,
@@ -103,7 +107,10 @@ export type PrismaMergeStateWithoutData = Prisma.MergeStateGetPayload<{
 }>;
 
 
-
+/**
+ * The class which should be used as an api point to work with merge states.
+ * It handles storing and retrieving of merge states to the database.
+ */
 export class MergeStateModel implements ResourceChangeListener {
   private prismaClient: PrismaClient;
   private resourceModel: ResourceModel;
@@ -123,6 +130,9 @@ export class MergeStateModel implements ResourceChangeListener {
     return path.dirname(pathToDirectoryRootMeta);
   }
 
+  /**
+   * Updates modification time of a merge state identified by {@link uuid}.
+   */
   async updateModificationTime(uuid: string) {
     await this.prismaClient.mergeState.update({
       where: {uuid},
@@ -132,6 +142,9 @@ export class MergeStateModel implements ResourceChangeListener {
     });
   }
 
+  /**
+   * This is the implementation of the {@link ResourceChangeListener} method for the observer pattern.
+   */
   async updateBasedOnResourceChange(
     resourceIri: string,
     changedModel: string | null,
@@ -177,6 +190,7 @@ export class MergeStateModel implements ResourceChangeListener {
 
 
   /**
+   * Sets the upToDate value on the merge state to be true and updates the content of the database entry based on the given data.
    * @param commonCommitHash if undefined, then use the old one
    * @returns True if it was successfully updated
    */
@@ -220,6 +234,7 @@ export class MergeStateModel implements ResourceChangeListener {
 
 
   /**
+   * Creates a new merge state. In other words a new entry in the database table with the merege states.
    * @returns Id of the created merge state, if the state was created (there was more than one conflict). otherwise returns null.
    */
   async createMergeState(
@@ -266,11 +281,18 @@ export class MergeStateModel implements ResourceChangeListener {
     return mergeStateId;
   }
 
+  /**
+   * @deprecated I am not sure what was the purpose of this, but since we do not use, we can probably just remove it.
+   */
   async propagateResourceChange(packageIri: string, resourceIri: string): Promise<string[]> {
     throw new Error("TODO RadStr: Implement");
   }
 
 
+  /**
+   * The main finalizer method - it gets the {@link uuid} of the merge state and then it handles it correctly based on the merge state cause.
+   * @returns Returns the finalized merge state
+   */
   async mergeStateFinalizer(uuid: string, mergeCommitType?: MergeCommitType): Promise<MergeState | null> {
     const mergeState = await this.getMergeStateFromUUID(uuid, true, true, false);
     if (mergeState === null) {
@@ -285,6 +307,7 @@ export class MergeStateModel implements ResourceChangeListener {
   }
 
   /**
+   * Handles the finalization of pull by checking pre-conditions and then updating the last commit hash, respectively calling the {@link forceHandlePullFinalizer}
    * @throws Error if the commit on which the DS resource already is within DS is actually after the commit to which we are updating.
    */
   async handlePullFinalizer(mergeState: MergeState) {
@@ -333,10 +356,17 @@ export class MergeStateModel implements ResourceChangeListener {
     };
   }
 
+  /**
+   * Handles the finalization of merge state caused by pull. It is handled by updating the last commit hash.
+   * It is force, because we just update it, unlike in {@link handlePullFinalizer}, where we check the pre-conditions first.
+   */
   async forceHandlePullFinalizer(rootIriToUpdate: string, pulledCommitHash: string) {
     await this.resourceModel.updateLastCommitHash(rootIriToUpdate, pulledCommitHash, "pull");
   }
 
+  /**
+   * Handles the push finalization. Currently it is handled the same way as pull (we just check pre-conditions set the last commit hash).
+   */
   async handlePushFinalizer(mergeState: MergeState) {
     // Same as pull, but we want the user to push, that is to insert the commit message back,
     //  but that is handled in the request handler, not here
@@ -344,6 +374,10 @@ export class MergeStateModel implements ResourceChangeListener {
     // TODO RadStr: Or just for now don't do anything about it ... make the user commit again
   }
 
+
+  /**
+   * Handles the finalization of the merge state caused by merge. The performed action depends on if it is rebase or merge commit.
+   */
   async handleMergeFinalizer(mergeState: MergeState, mergeCommitType?: MergeCommitType) {
     if (mergeCommitType === undefined) {
       throw new Error("mergeCommitType is undefined, we can not finalize merge state caused by merge. This is most likely programmer error.");
@@ -359,6 +393,11 @@ export class MergeStateModel implements ResourceChangeListener {
     }
   }
 
+
+  /**
+   * The finalization of the {@link mergeState}. It is finalization through rebase commit.
+   * The finalization just moves the tracked last commit hash in the resource (the merge to resoruce) to the commit hash on the Git remote.
+   */
   private async finalizeMergeStateWithRebaseCommit(mergeState: MergeState) {
     const createdSimpleGitData = createSimpleGitUsingPredefinedGitRoot(mergeState.rootIriMergeTo, MERGE_DS_CONFLICTS_PREFIX, false);
     try {
@@ -386,6 +425,12 @@ export class MergeStateModel implements ResourceChangeListener {
     await this.handlePushFinalizer(mergeState);
   }
 
+
+  /**
+   * Validates the {@link mergeState} to the linked Git remote. In other words, it checks if the hashes in the merge state and in the remote are equal.
+   * Both the merge from and merge to.
+   * This is used for the merge commit, for the rebase commit we use the {@link finalizeMergeStateWithRebaseCommit}
+   */
   private async finalizeMergeStateWithMergeCommit(mergeState: MergeState) {
     const mergeFromGitData = createSimpleGitUsingPredefinedGitRoot(mergeState.rootIriMergeFrom, MERGE_DS_CONFLICTS_PREFIX, false);
     try {
@@ -448,9 +493,16 @@ export class MergeStateModel implements ResourceChangeListener {
     return true;
   }
 
-  private removeRepository(filesystem: AvailableFilesystems, pathToRootMetaFile: string, shouldPrintErrorToConsole: boolean) {
+
+  /**
+   * If the given {@link filesystem} is ClassicFilesystem, then this method removes the directory with the Git repository from the filesystem.
+   * The directory is given by the path {@link pathToRootMetaFile}. It will remove the whole project, not just the directory containg meta.
+   *  In other words, it will remove its unique parent root directory.
+   * @returns Returns false on failure or if the filesystem is not "classic". True otherwise.
+   */
+  private removeRepository(filesystem: AvailableFilesystems, pathToRootMetaFile: string, shouldPrintErrorToConsole: boolean): boolean {
     if (filesystem !== AvailableFilesystems.ClassicFilesystem) {
-      return;
+      return false;
     }
 
     try {
@@ -480,6 +532,9 @@ export class MergeStateModel implements ResourceChangeListener {
     }
   }
 
+  /**
+   * @todo Debug method used in development. It clears the database table containing the merge states.
+   */
   async clearTable() {
     // It is important to also remove the repository together with the mergeState
     const mergeStates = await this.prismaClient.mergeState.findMany({include: {mergeStateData: false}});
@@ -488,6 +543,11 @@ export class MergeStateModel implements ResourceChangeListener {
     }
   }
 
+
+  /**
+   * Notice that it checks for the iri and not for the path. This should be used just to get all the merge states related to a DS package.
+   * @returns Returns the merge states, where either the merge from or merge to iri is equal to the given {@link iri}.
+   */
   async getMergeStates(iri: string, shouldIncludeMergeStateData: boolean): Promise<MergeState[]> {
     const mergeStates = await this.prismaClient.mergeState.findMany({
       where: {
@@ -504,7 +564,20 @@ export class MergeStateModel implements ResourceChangeListener {
     return await Promise.all(mergeStates.map(mergeState => this.prismaMergeStateToMergeState(mergeState, false, false)));
   }
 
-  async getMergeStateFromUUID(uuid: string, shouldIncludeMergeStateData: boolean, shouldUpdateIfNotUpToDate: boolean, shouldForceDiffTreeReload: boolean): Promise<MergeState | null> {
+  /**
+   *
+   * @param uuid is the identifier of the merge state.
+   * @param shouldIncludeMergeStateData if true, then the returned merge states contains also the merge state data part.
+   * @param shouldUpdateIfNotUpToDate if the diff tree is not up to date it will be updated and set up to date.
+   * @param shouldForceDiffTreeReload It forces reloading of the diff tree (even if it is up to date).
+   * @returns The merge state identified by {@link uuid}, the content and possible updated are based on the given arguments.
+   */
+  async getMergeStateFromUUID(
+    uuid: string,
+    shouldIncludeMergeStateData: boolean,
+    shouldUpdateIfNotUpToDate: boolean,
+    shouldForceDiffTreeReload: boolean,
+  ): Promise<MergeState | null> {
     const mergeState = await this.prismaClient.mergeState.findFirst({
       where: {
         uuid: uuid,
@@ -521,6 +594,11 @@ export class MergeStateModel implements ResourceChangeListener {
     return this.prismaMergeStateToMergeState(mergeState, shouldUpdateIfNotUpToDate, shouldForceDiffTreeReload);
   }
 
+
+  /**
+   * @returns Returns merge state which has the rootFullPathToMetaMergeFrom equal to {@link rootPathMergeFrom} and
+   *  the rootFullPathToMetaMergeTo equal to {@link rootPathMergeTo}.
+   */
   async getMergeState(
     rootPathMergeFrom: string,
     rootPathMergeTo: string,
@@ -544,6 +622,9 @@ export class MergeStateModel implements ResourceChangeListener {
     return this.prismaMergeStateToMergeState(mergeState, true, shouldForceDiffTreeReload);
   }
 
+  /**
+   * @returns Returns the merge states where the rootIriMergeTo is equal to the given {@link rootIriMergeTo}.
+   */
   async getMergeStatesForMergeTo(
     rootIriMergeTo: string,
     shouldIncludeMergeStateData: boolean
@@ -582,10 +663,13 @@ export class MergeStateModel implements ResourceChangeListener {
     };
   }
 
-  private async setMergeStateIsUpToDate(mergeStateId: string, isUpToDate: boolean) {
+  /**
+   * Sets the {@link isUpToDate} value of the merge state identified by {@link mergeStateUuId}.
+   */
+  private async setMergeStateIsUpToDate(mergeStateUuId: string, isUpToDate: boolean) {
     await this.prismaClient.mergeState.update({
       where: {
-        uuid: mergeStateId,
+        uuid: mergeStateUuId,
       },
       data: {
         isUpToDate
@@ -594,6 +678,9 @@ export class MergeStateModel implements ResourceChangeListener {
   }
 
 
+  /**
+   * Updated merge state identified by {@link uuid} with the given {@link inputData}.
+   */
   async updateMergeState(uuid: string, inputData: UpdateMergeStateInput) {
     const convertedMergeStateData = this.convertMergeStateDataToString(inputData);
 
@@ -634,6 +721,7 @@ export class MergeStateModel implements ResourceChangeListener {
   }
 
   /**
+   * Inserts new merge state into the database. It will contain the given {@link inputData}. The uuid is randomly generated.
    * @returns The uuid of the newly created merge state in database
    */
   private async createMergeStateInternal(inputData: CreateMergeStateInput) {
@@ -721,6 +809,7 @@ export class MergeStateModel implements ResourceChangeListener {
 
   /**
    * @todo TODO RadStr: Probably remove, I am not using it from anywhere
+   * @deprecated Again no longer used. it is similar to the {@link updateMergeStateWithStrings} but gets the data as objects array rather than strings.
    */
   async updateMergeStateWithObjects(
     uuid: string,
@@ -757,6 +846,10 @@ export class MergeStateModel implements ResourceChangeListener {
     });
   }
 
+  /**
+   * Updates merge state identified by {@link uuid} with other data given in parameter.
+   * @deprecated No longer used
+   */
   async updateMergeStateWithStrings(
     uuid: string,
     diffTree: string,
@@ -786,6 +879,9 @@ export class MergeStateModel implements ResourceChangeListener {
     });
   }
 
+  /**
+   * Removes merge state from the database. The state is identified by {@link mergeStateUuid}.
+   */
   async removeMergeStateByUuid(mergeStateUuid: string) {
     const mergeState = await this.getMergeStateFromUUID(mergeStateUuid, false, false, false);
     if (mergeState === null) {
@@ -794,6 +890,9 @@ export class MergeStateModel implements ResourceChangeListener {
     await this.removeMergeState(mergeState);
   }
 
+  /**
+   * Removes given {@link mergeState} from the database.
+   */
   async removeMergeState(mergeState: PrismaMergeStateWithoutData | MergeState) {
     await this.prismaClient.mergeState.delete({where: {uuid: mergeState.uuid}});
     if (mergeState.mergeStateCause === "merge" || mergeState.mergeStateCause === "pull") {
@@ -806,6 +905,9 @@ export class MergeStateModel implements ResourceChangeListener {
     this.removeRepository(mergeState.filesystemTypeMergeTo as AvailableFilesystems, mergeState.rootFullPathToMetaMergeTo, true);
   }
 
+  /**
+   * Helper method that creates instance of {@link SimpleGit} and {@link GitProvider} from the provided data.
+   */
   private async createMergeEndPointGitData(
     rootIri: string,
     filesystemType: string,
@@ -828,6 +930,9 @@ export class MergeStateModel implements ResourceChangeListener {
     };
   }
 
+  /**
+   * Converts prisma merge (that is database entry) state to {@link MergeState}.
+   */
   async prismaMergeStateToMergeState(prismaMergeState: PrismaMergeStateWithData, shouldUpdateIfNotUpToDate: boolean, shouldForceDiffTreeReload: boolean): Promise<MergeState> {
     if (shouldForceDiffTreeReload || (shouldUpdateIfNotUpToDate && !prismaMergeState.isUpToDate)) {
       const { git: gitForMergeFrom, gitProvider: gitProviderForMergeFrom } = await this.createMergeEndPointGitData(

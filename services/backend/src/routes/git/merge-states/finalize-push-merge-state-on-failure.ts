@@ -4,6 +4,10 @@ import { mergeStateModel } from "../../../main.ts";
 import express from "express";
 
 
+/**
+ * Handles client request when finalization of merge request caused by push failed.
+ * The only current implemented solution is to remove the merge state.
+ */
 export const finalizePushMergeStateOnFailure = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
     mergeStateUuid: z.string().min(1),

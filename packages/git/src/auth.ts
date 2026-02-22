@@ -1,6 +1,7 @@
 const scopes = ["userInfo", "email", "publicRepo", "workflow", "deleteRepo"] as const;
 export type Scope = typeof scopes[number];
 
+// TODO RadStr: Rename the ConfigType and probably also the Scope
 /**
  * Should be sorted from the highest to lowest. But it does not actually matter in the implementation.
  */

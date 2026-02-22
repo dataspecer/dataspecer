@@ -7,6 +7,10 @@ import path from "path";
 import { convertToPosixPath, createUserSSHIdentifier, splitIntoLinesAndCheckForMatchingLine } from "@dataspecer/git-node";
 import { pathToSSHConfigForDS, pathToSSHForDS } from "../../../utils/create-ssh-path-constants.ts";
 
+
+/**
+ * Handles client's request to server to remove stored private SSH key.
+ */
 export const deletePrivateSshKeyHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
     gitProviderLowercase: z.string().min(1),
@@ -29,7 +33,7 @@ export const deletePrivateSshKeyHandler = asyncHandler(async (request: express.R
     response.status(400).json("Not a valid git provider");
     return;
   }
-  const successfullyRemoved = removePrivateSshKeyFromConfigFile(userSSHIdentifer, gitProviderLowercase);
+  const successfullyRemoved = removePrivateSshKeyFromDataspecer(userSSHIdentifer, gitProviderLowercase);
 
   if (successfullyRemoved) {
     response.sendStatus(200);
@@ -40,7 +44,12 @@ export const deletePrivateSshKeyHandler = asyncHandler(async (request: express.R
   return;
 });
 
-function removePrivateSshKeyFromConfigFile(userSSHIdentifer: string, gitProviderLowercase: string,): boolean {
+
+/**
+ * Removes the private ssh key entry from the configuration file and also removes the file containing the key itself.
+ * The config file is the one contaning the ssh keys for Dataspecer. Not the general config file.
+ */
+function removePrivateSshKeyFromDataspecer(userSSHIdentifer: string, gitProviderLowercase: string,): boolean {
   if (gitProviderLowercase !== "github") {
     throw new Error("TODO: Currently only implementation for github");
   }

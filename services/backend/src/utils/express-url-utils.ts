@@ -1,11 +1,17 @@
 import express from "express";
-
+/**
+ * @returns Constructs URL of the given {@link request}.
+ */
 export function createURLFromExpressRequest(request: express.Request): string {
   return `${request.protocol}://${request.get("host")}${request.originalUrl}`;
 }
 
+
+/**
+ * Converts Express request to "classic" Request type.
+ */
 export function convertExpressRequestToNormalRequest(url: string, request: express.Request) {
-  const convertedRequest  = new Request(url, {
+  const convertedRequest = new Request(url, {
     method: request.method,
     headers: request.headers as Record<string, string>,
     // body: req.method !== "GET" && req.method !== "HEAD" ? req : undefined,

@@ -10,6 +10,9 @@ import { createUserSSHIdentifier } from "@dataspecer/git-node";
 import { checkExistenceOfSshKeyFileForUser } from "../routes/git/ssh/check-ssh-key-existence.ts";
 
 
+/**
+ * Gets the auth data from current session and puts them into the {@link response}.locals.session (respectively *.user) for further use.
+ */
 export async function currentSession(
   request: express.Request,
   response: express.Response,
@@ -53,7 +56,9 @@ export async function currentSession(
   next();
 }
 
-
+/**
+ * Returns the auth session stored in {@link response}.locals.session
+ */
 export function getStoredSession(response: express.Response): Session | null {
   if (response?.locals?.session === undefined) {
     return null;

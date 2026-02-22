@@ -7,6 +7,10 @@ import { pathToSSHConfigForDS, pathToSSHForDS } from "../../../utils/create-ssh-
 import path from "path";
 import fs from "fs";
 
+/**
+ * Handles user's request to check if the user has set ssh private key. Note that this method works only if the user is signed in.
+ * The existence of the key is returned to user using HTTP status codes. 200 if it is present, otherwise other error codes (in the 4** range)
+ */
 export const checkExistenceOfSshKeyForUserHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
     gitProviderLowercase: z.string().min(1),

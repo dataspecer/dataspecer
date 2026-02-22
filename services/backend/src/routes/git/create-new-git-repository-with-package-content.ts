@@ -12,7 +12,7 @@ import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 
 
 /**
- * Creates GitHub repo with content equal to the package with given iri inside the query part of express http request.
+ * Creates Git provider repository with content equal to the package with given iri inside the query part of express http request.
  */
 export const createNewGitRepositoryWithPackageContent = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({

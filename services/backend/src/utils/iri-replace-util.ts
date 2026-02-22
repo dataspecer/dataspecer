@@ -11,11 +11,26 @@ export type ResourceToFindWhenReplacingIri = {
   userMetadata: string;
 }
 
+/**
+ * The replacement methods takes this interface on input.
+ * This is used to abstract the retrieving and updating of the resource from the resourceModel.
+ * Now it can be any storage that implements the interface.
+ */
 export interface StorageApiForIriReplacement {
+  /**
+   * Finds the resource of the given {@link iri} in the storage.
+   */
   findResource(iri: string): Promise<ResourceToFindWhenReplacingIri | null>;
+  /**
+   * Updates the resource (meta part of the resource) of given {@link iri} with new metadata ({@link newUserMetadata}) in the storage.
+   */
   updateResource(iri: string, newUserMetadata: string): Promise<void>;
 };
 
+
+/**
+ * Implementation of the {@link StorageApiForIriReplacement} for the storage represent by Prisma database.
+ */
 export class PrismaClientStorageApiForIriReplacement implements StorageApiForIriReplacement {
   private prismaClientForStorage: PrismaClientType;
 

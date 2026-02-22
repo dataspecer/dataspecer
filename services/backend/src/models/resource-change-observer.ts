@@ -1,9 +1,16 @@
+
+/**
+ * Reprensents the possible changes made to resource and to watch for with relation to the observer pattern.
+ */
 export enum ResourceChangeType {
   Removed,
   Created,
   Modified,
 }
 
+/**
+ * Interface which should be implemented by the listener to the resource model in the observer pattern.
+ */
 export interface ResourceChangeListener {
   /**
    * @param changedModel If null then the resource itself was changed
@@ -16,9 +23,24 @@ export interface ResourceChangeListener {
   ): Promise<void>;
 }
 
-export interface ResourceChangeObserver {
+/**
+ * Interface which should be implemented by the "subject" of the observer pattern.
+ * It's purpose is to notify the listeners ({@link ResourceChangeListener}).
+ */
+export interface ResourceChangePublisher {
+  /**
+   * Adds new {@link listener}, which will be notified in future when change on some of the resource happens.
+   */
   addListener(listener: ResourceChangeListener): void;
+
+  /**
+   * Removes existing {@link listener} from the list of listeners, which should be notified in the future.
+   */
   removeListener(listener: ResourceChangeListener): void;
+
+  /**
+   * The notify method of the observer pattern.
+   */
   notifyListeners(
     resourceIri: string,
     changedModel: string,
@@ -27,7 +49,7 @@ export interface ResourceChangeObserver {
   ): Promise<void>;
 }
 
-export class ResourceChangeObserverBase implements ResourceChangeObserver {
+export class ResourceChangeObserverBase implements ResourceChangePublisher {
   private listeners: ResourceChangeListener[] = [];
 
   addListener(listener: ResourceChangeListener): void {

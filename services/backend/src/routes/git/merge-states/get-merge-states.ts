@@ -5,6 +5,10 @@ import express from "express";
 import { stringToBoolean } from "@dataspecer/git";
 
 
+/**
+ * Handles clients request to get all the merge states for the given iri. Notice that it is iri and not the paths.
+ * Therefore, it should be used to only get merge states, where the merge actor with the iri is stored in Dataspecer.
+ */
 export const getMergeStates = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
     iri: z.string().min(1),

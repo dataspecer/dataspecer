@@ -11,6 +11,9 @@ import { createSimpleGitUsingPredefinedGitRoot, MERGE_CONFLICTS_PRIVATE, removeP
 import { ResourceModelForFilesystemRepresentation } from "../../../export-import/export.ts";
 
 
+/**
+ * Handles the client request to create a merge state of given Dataspecer packages.
+ */
 export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
     mergeFromIri: z.string().min(1),
@@ -84,6 +87,9 @@ type CreateMergeStateBetweenDSPackagesType = {
   resourceModel: ResourceModelForFilesystemRepresentation;
 };
 
+/**
+ * Creates merge state between two Dataspecer packages.
+ */
 export async function createMergeStateBetweenDSPackages(
   git: SimpleGit,
   commitMessage: string,
@@ -142,6 +148,11 @@ export async function createMergeStateBetweenDSPackages(
     };
 }
 
+
+/**
+ * Compares the given {@link mergeFrom} and {@link mergeTo} and together with the {@link previousMergeState}
+ *  possibly extends the previous state with new conflicts. In the end we update the database entry and set it to be up to date.
+ */
 export async function updateMergeStateToBeUpToDate(
   uuid: string,
   commitMessage: string,

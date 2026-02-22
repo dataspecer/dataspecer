@@ -47,7 +47,7 @@ export function isFrontendAllowedForAuthentication(origin: string | undefined): 
 
 
 /**
- * Method to correctly set cors options based on origin of request {@link request}.
+ * Method to correctly set cors options based on origin of {@link request}.
  */
 export function corsOriginHandler(request: express.Request, callback: (err: Error | null, options?: CorsOptions | undefined) => void): void {
   // Based on https://expressjs.com/en/resources/middleware/cors.html - concretely the "Customizing CORS Settings Dynamically per Request"

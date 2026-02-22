@@ -5,6 +5,10 @@ import { isGitProviderName } from "@dataspecer/git";
 import { createUserSSHIdentifier, storeNewPrivateSSHKeyToBackend } from "@dataspecer/git-node";
 import { pathToSSHConfigForDS, pathToSSHForDS } from "../../../utils/create-ssh-path-constants.ts";
 
+
+/**
+ * Handles users request to store the private SSH key to Dataspecer.
+ */
 export const storePrivateSSHKeyHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
   const bodySchema = z.object({
     privateSSHKey: z.string().min(1),

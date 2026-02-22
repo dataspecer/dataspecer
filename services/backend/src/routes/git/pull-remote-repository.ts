@@ -12,6 +12,10 @@ import { ResourceModelForPull } from "../../export-import/export.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 
 
+/**
+ * Handles request, usually manual from the user, that results in pulling the linked remote Git repository and updating Dataspecer accordingly.
+ *  Either by updating the data or creating relevant merge state, all depending on the state of the Git remote and Dataspecer.
+ */
 export const pullRemoteRepository = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
     iri: z.string().min(1),
@@ -65,8 +69,9 @@ export type UpdateDSRepositoryByGitPullParams = {
 }
 
 /**
+ * Updates the data in Dataspecer based on the data coming from git pull. Depending on the parameters and the incoming changes Dataspecer content is
+ *  either updated immediately or a new merge state is created and expected to be resolved later by the user.
  * @param depth is the number of commits to clone. In case of webhooks this number is given in the webhook payload. For normal pull we have to clone whole history.
- *
  * @returns Return true if merge state was created
  */
 export const updateDSRepositoryByGitPull = async (

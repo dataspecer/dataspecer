@@ -621,6 +621,11 @@ function debugPrintDirectoryContent(path: string) {
   }
 }
 
+/**
+ * Gets the package iri from the array {@link imported}. It is at the 0th index.
+ * Following that uses the existing methods to generate the artifacts into zip and the zip is then put into the filesystem in specific hardcoded directory.
+ * (The GitHub actions then takes this directory and puts into the wanted directory named 'artifacts')
+ */
 async function generateArtifactsFromImported(imported: string[]) {
   if (imported.length === 0) {
     console.error("Could not import");
@@ -655,7 +660,9 @@ async function generateArtifactsFromImported(imported: string[]) {
 }
 
 
-// Something kinda like .gitignore
+/**
+ * Something kinda like .gitignore
+ */
 const namesToIgnoreInHomeDirectory: string[] = [
   "README.md",
   ".git",
@@ -690,7 +697,14 @@ async function createImportZipFromFilesystem(fullPath: string, writeToRelativePa
   }
 }
 
-async function generateSpecificationFromFileSystem() {
+/**
+ * Generates documentation (and artifacts) from the data specification stored inside filesystem.
+ * This assumes that the specification is present in the place where the implemented GitHub Action would put it.
+ * This internally uses the already existing method to generate data documentation from specifications stored inside Dataspecer.
+ *
+ * So the flow is that we import it into Dataspecer and following that, generate the documentation
+ */
+async function generateDocumentationFromFileSystem() {
   // TODO RadStr: Commented DEBUG - can safely remove later
   // let path: string;
   // path = ".";
@@ -729,7 +743,7 @@ async function generateSpecificationFromFileSystem() {
  * Generates specification from Git URL passed in as argument from command line
  * @param gitZipDownloadURL is the URL of git provider, which returns the zip on access - for example https://github.com/RadStr-bot/4f21bf6d-2116-4ab3-b387-1f8074f7f412/archive/refs/heads/main.zip
  */
-async function generateSpecificationFromGitURL(httpFetch: HttpFetch, authenticationGitProvidersData: AuthenticationGitProvidersData) {
+async function generateDocumentationFromGitURL(httpFetch: HttpFetch, authenticationGitProvidersData: AuthenticationGitProvidersData) {
   console.info("process.argv", process.argv);
   // Example of download URL - https://github.com/RadStr-bot/4f21bf6d-2116-4ab3-b387-1f8074f7f412/archive/refs/heads/main.zip (or commit SHA instead of refs/heads/main)
   const gitZipDownloadURL = process.argv[2];
@@ -741,8 +755,8 @@ async function generateSpecificationFromGitURL(httpFetch: HttpFetch, authenticat
 }
 
 
-// await generateSpecificationFromGitURL();   // Alternative
-await generateSpecificationFromFileSystem();
+// await generateDocumentationFromGitURL();   // Alternative
+await generateDocumentationFromFileSystem();
 
 
 
