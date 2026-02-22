@@ -137,6 +137,12 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
   await commitHandlerInternal(request, response, iri, null, commitMessage, exportFormat, shouldRedirectWithExistenceOfMergeStates, shouldAlwaysCreateMergeState, null);
 });
 
+/**
+ * The internal commit method used by both the merge and classic commit requests.
+ * Note that the method also handles the response with setting and sending the response status code and so on.
+ *
+ * @returns The HTTP response code.
+ */
 const commitHandlerInternal = async (
   request: express.Request,
   response: express.Response,
@@ -258,6 +264,10 @@ export const commitPackageToGitUsingAuthSession = async (
   return commitConflictInfo;
 }
 
+/**
+ * @returns The data which will be used for the commit. Check the return type for more information.
+ *  Note that Git credentials are described in the {@link GitCredentials} type.
+ */
 export function prepareCommitDataForCommit(
   request: express.Request,
   response: express.Response,
@@ -282,7 +292,7 @@ export function prepareCommitDataForCommit(
 
 // TODO RadStr Idea: Teoreticky bych mohl mit defaultni commit message ulozenou v konfiguraci (na druhou stranu vzdy chci zadat nejakou commit message)
 /**
- * Commit to the repository for package identifier by given iri.
+ * Commit to the repository for package identifier by given {@link iri}. This method decides based on the data if the it is the classic commit or merge commit.
  * @param commitMessage if null then default message is used.
  * @param localLastCommitHash if empty string then there is no check for conflicts -
  *  it is expected to be the first commit on repository
@@ -312,7 +322,11 @@ export const commitPackageToGit = async (
 };
 
 
-
+/**
+ * Performs the merge commit based on the given data.
+ * If there is there is reason to create merge state, then it is created and we end. Otherwise, we end on successful commit or when the last access token fails.
+ * If the last fails we throw an error.
+ */
 async function commitDSMergeToGit(
   iri: string,
   remoteRepositoryURL: string,
@@ -451,6 +465,12 @@ async function commitDSMergeToGit(
   throw new Error("Unknown error when merging DS branches. This should be unreachable code. There were probably no access tokens available in DS at all");
 }
 
+
+/**
+ * Performs the classic commit to the remote repository. It keeps trying access tokens until one succeeds.
+ * If there is there is reason to create merge state, then it is created and we end. Otherwise, we end on successful commit or when the last access token fails.
+ * If the last fails we throw an error.
+ */
 async function commitClassicToGit(
   iri: string,
   remoteRepositoryURL: string,
@@ -823,6 +843,7 @@ async function checkoutBranchIfExists(git: SimpleGit, branches: BranchSummary, b
 }
 
 /**
+ * Performs the 'git clone' using the {@link git} and into the {@link gitInitialDirectory}. This method is used for merge commits, for classic commits we have {@link cloneBeforeCommit}.
  * Note that method switches the git to the {@link mergeToBranch}.
  * @param mergeToBranch If null then it is considered to be the current branch (therefore it exists)
  */
@@ -879,6 +900,9 @@ async function cloneBeforeMerge(
   return cloneResult;
 }
 
+/**
+ * Performs the 'git clone' using the {@link git} and into the {@link gitInitialDirectory}. It is used before classic commit, for merge commits we have {@link cloneBeforeMerge}.
+ */
 async function cloneBeforeCommit(
   git: SimpleGit,
   gitInitialDirectory: string,
@@ -951,6 +975,11 @@ async function createClassicGitCommit(
   return commitResult;
 }
 
+
+/**
+ * Similar to the {@link createClassicGitCommit}, but for merge.
+ * It possibly prefixes the message with the {@link mergeDefaultCommitMessage} based on the {@link shouldAppendAfterDefaultMergeCommitMessage}.
+ */
 async function createMergeCommit(
   git: SimpleGit,
   files: string[],
@@ -992,6 +1021,10 @@ async function createMergeCommit(
   return await git.commit(commitMessages, undefined, { "--amend": null, });
 }
 
+
+/**
+ * Sets the name and email of the {@link git} instance.
+ */
 async function setUserConfigForGitInstance(git: SimpleGit, committerName: string, committerEmail: string) {
   const committerNameToUse = committerName;
   const committerEmailToUse = committerEmail;
