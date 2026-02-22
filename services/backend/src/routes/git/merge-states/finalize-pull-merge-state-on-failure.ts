@@ -17,6 +17,7 @@ export const finalizePullMergeStateOnFailure = asyncHandler(async (request: expr
 
   if (finalizerVariant === "pull-anyways") {
     await mergeStateModel.forceHandlePullFinalizer(rootIriToUpdate, pulledCommitHash);
+    await mergeStateModel.removeMergeStateByUuid(mergeStateUuid);
   }
   else if (finalizerVariant === "remove-merge-state") {
     await mergeStateModel.removeMergeStateByUuid(mergeStateUuid);
