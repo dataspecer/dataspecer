@@ -1,0 +1,28 @@
+{
+  "name": "@dataspecer/git",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w",
+    "prebuild": "rimraf lib",
+    "test": "vitest run"
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./git-providers": "./lib/git-providers/index.js"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@dataspecer/core": "*",
+    "@dataspecer/core-v2": "*",
+    "@dataspecer/auth": "*",
+    "yaml": "2.8.0"
+  },
+  "peerDependencies": {
+
+  }
+}

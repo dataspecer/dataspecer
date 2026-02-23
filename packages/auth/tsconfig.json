@@ -1,0 +1,29 @@
+// https://www.totaltypescript.com/tsconfig-cheat-sheet
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "target": "ESNext",
+    "allowJs": false,
+    "resolveJsonModule": true,
+    "moduleDetection": "force",
+    "isolatedModules": true,
+
+    // todo enable strict mode
+    "strict": false,
+    "noUncheckedIndexedAccess": false,
+
+    "moduleResolution": "nodenext",
+    "module": "NodeNext",
+    "rewriteRelativeImportExtensions": true,
+    "outDir": "lib",
+    "sourceMap": true,
+
+    "declaration": true,
+
+    "declarationMap": true,
+
+    "lib": ["ESNext"]
+  },
+  "include": ["src/**/*"]
+}

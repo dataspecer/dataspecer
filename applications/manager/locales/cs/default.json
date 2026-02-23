@@ -44,6 +44,10 @@
     "url": {
       "instruction": "URL DSV specifikací, každá URL na separátní řádek",
       "name": "URL"
+    },
+    "git-url": {
+      "name": "Git URL",
+      "instruction": "Vložte URL Git repozitáře (nebo URL ukazující přímo na commit/větev)"
     }
   },
   "format as json": "Formátovat jako JSON",

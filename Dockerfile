@@ -63,6 +63,19 @@ RUN bunx prisma@6 migrate deploy --schema /usr/src/app/dist/schema.prisma
 FROM base AS final
 WORKDIR /usr/src/app
 
+COPY services/backend/git-workflows ./git-workflows
+
+RUN apk update && apk add --no-cache git
+RUN apk update && apk add --no-cache openssh
+
+# TODO RadStr: Probably can be removed
+# Create the .ssh directory and make it accessible to user (Dataspecer process).
+# Otherwise we get access permissions error, when we try to create it from the Dataspecer.
+# To simulate the permissions run the docker run command with --user option, for example:
+# docker run -p 3100:80 --user nobody ds-dckr
+# RUN mkdir -p /.ssh && \
+#     chmod a+rwx /.ssh
+
 # Makes directory accessible for the user
 # Instals prisma for migrations and cleans install cache
 RUN apk add --no-cache openssl && \
@@ -84,6 +97,9 @@ ENV DATASPECER_GIT_COMMIT=${GIT_COMMIT} \
 
 # Copy final files
 COPY --from=builder --chmod=777 /usr/src/app /usr/src/app
+
+# For the ssh - seems to be the only thing needed, we do not need to create the .ssh directory
+RUN addgroup -g 1001 app1001 && adduser -D -u 1001 -G app1001 app1001
 
 USER 1000:1000
 VOLUME /usr/src/app/database

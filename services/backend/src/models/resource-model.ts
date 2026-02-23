@@ -6,6 +6,9 @@ import { storeModel } from './../main.ts';
 import { LocalStoreModel, ModelStore } from "./local-store-model.ts";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { CoreResource } from "@dataspecer/core/core/core-resource";
+import { CommitReferenceType, createDatastoreWithReplacedIris, defaultBranchForPackageInDatabase, defaultEmptyGitUrlForDatabase, MergeStateCause } from "@dataspecer/git";
+import { ResourceChangeListener, ResourceChangeObserverBase, ResourceChangeType } from "./resource-change-observer.ts";
+import { ResourceModelForPull } from "../export-import/export.ts";
 
 /**
  * Base information every resource has or should have.
@@ -36,6 +39,14 @@ export interface BaseResource {
         creationDate?: Date;
     };
 
+    linkedGitRepositoryURL: string;
+    projectIri: string;
+    branch: string;
+    representsBranchHead: boolean;
+    lastCommitHash: string;
+    activeMergeStateCount: number;
+    hasUncommittedChanges: boolean;
+
     dataStores: Record<string, string>;
 }
 
@@ -47,16 +58,29 @@ export interface Package extends BaseResource {
     subResources?: BaseResource[];
 }
 
+export interface LoadedPackage extends BaseResource {
+    subResources: BaseResource[];
+}
+
 /**
  * Resource model manages resource in local database that is managed by Prisma.
  */
-export class ResourceModel {
+export class ResourceModel implements ResourceModelForPull {
     readonly storeModel: LocalStoreModel;
     private readonly prismaClient: PrismaClient;
+    private resourceChangeObserver: ResourceChangeObserverBase;
 
     constructor(storeModel: LocalStoreModel, prismaClient: PrismaClient) {
         this.storeModel = storeModel;
         this.prismaClient = prismaClient;
+        this.resourceChangeObserver = new ResourceChangeObserverBase();
+    }
+
+    addResourceChangeListener(listener: ResourceChangeListener) {
+        this.resourceChangeObserver.addListener(listener);
+    }
+    removeResourceChangeListener(listener: ResourceChangeListener) {
+        this.resourceChangeObserver.removeListener(listener);
     }
 
     async getRootResources(): Promise<BaseResource[]> {
@@ -73,32 +97,321 @@ export class ResourceModel {
         if (prismaResource === null) {
             return null;
         }
+
+        return await this.prismaResourceToResource(prismaResource);
+    }
+
+    /**
+     * Returns a single resource or null if the resource does not exist.
+     */
+    async getResourceForId(id: number): Promise<BaseResource | null> {
+        const prismaResource = await this.prismaClient.resource.findFirst({where: {id}});
+        if (prismaResource === null) {
+            return null;
+        }
+
+        return await this.prismaResourceToResource(prismaResource);
+    }
+
+    /**
+     * Returns a root resource for the given {@link iri}, note that this is not the absolute root,
+     *  meaning the root which we get by running getRoots
+     */
+    async getRootResourceForIri(iri: string): Promise<BaseResource | null> {
+        const prismaResource = await this.prismaClient.resource.findFirst({where: {iri}});
+        if (prismaResource === null) {
+            return null;
+        }
+
+        const absoluteRoots = await this.prismaClient.resource.findMany({where: {parentResourceId: null}});
+        const absoluteRootsIds = absoluteRoots.map(root => root.id);
+
+        let parentId: number = prismaResource.id;
+        let currentPrismaResource = prismaResource;
+        while (!(currentPrismaResource.parentResourceId === null || absoluteRootsIds.includes(currentPrismaResource.parentResourceId))) {
+            parentId = currentPrismaResource.parentResourceId;
+            const parentResource = await this.prismaClient.resource.findFirst({where: {id: parentId}});
+            if (parentResource === null) {
+                break;
+            }
+            currentPrismaResource = parentResource;
+        }
+
+        return await this.prismaResourceToResource(currentPrismaResource);
+    }
+
+    /**
+     * @returns Returns resources with the given {@link projectIri}.
+     */
+    async getProjectResources(projectIri: string): Promise<BaseResource[]> {
+        const prismaResources = await this.prismaClient.resource.findMany({where: { projectIri: projectIri }});
+        const result = prismaResources.map(prismaResource => this.prismaResourceToResource(prismaResource));
+        return await Promise.all(result);
+    }
+
+
+    /**
+     * Removes given {@link gitURL} from each resource, which has it.
+     *  This method should be called, when the remote repository was removed.
+     * @returns The affected iris, that is iris of resources, which had linkedGitRepositoryURL === {@link gitURL}
+     */
+    async removeGitLinkFromResourceModel(gitURL: string) {
+        const affectedResources = await this.getResourcesForGitUrl(gitURL);
+
+        const result = await this.prismaClient.resource.updateMany({
+            where: {
+                linkedGitRepositoryURL: gitURL
+            },
+            data: {
+                linkedGitRepositoryURL: defaultEmptyGitUrlForDatabase,
+                hasUncommittedChanges: false,
+                activeMergeStateCount: 0,           // TODO RadStr: ... since setting to 0 we should also remove all related merge states
+                lastCommitHash: "",
+            },
+        });
+
+        if (result.count !== affectedResources.length) {
+            throw new Error("For some reason the amount of removed git links is not equal to the amount of resources, which had the git link");
+        }
+
+        for (const affectedResource of affectedResources) {
+            // TODO RadStr: Commented code - at first we were resetting all the projectIris and branches, but because of possible moving to different repository we don't do anything.
+            // TODO RadStr Don't know by myself, but probably shouldnt reset the project iris and branch: Well should we really?
+            //  I don't know on one side - yeah we removed the repo so the packages are no longer connected. On other side what if we somehow want to move them to different repository?
+            // ... Yeah I will not remove it then because of the moving to different repository !!!
+            // They are no longer part of the same project.
+
+            // TODO RadStr: Actually nevermind the above. If we want to migrate, then just use the existing git repository import it all back to ds.
+            await this.updateResourceProjectIriAndBranch(affectedResource, affectedResource, defaultBranchForPackageInDatabase);
+            await this.updateModificationTime(affectedResource, "meta", ResourceChangeType.Modified, false, true);
+        }
+
+        return affectedResources;
+    }
+
+    /**
+     * @returns The first resource, which is linked to given {@link gitRepositoryUrl}.
+     *  If {@link forbiddenIri} is provided, then the returned resource can not have the same iri as {@link forbiddenIri}.
+     */
+    async getResourceForGitUrl(gitRepositoryUrl: string, forbiddenIri?: string): Promise<{ resource: BaseResource, resourceId: number } | null> {
+        let prismaResource;
+        if (forbiddenIri === undefined) {
+            prismaResource = await this.prismaClient.resource.findFirst({where: { linkedGitRepositoryURL: gitRepositoryUrl }});
+        }
+        else {
+            prismaResource = await this.prismaClient.resource.findFirst({where: {
+                linkedGitRepositoryURL: gitRepositoryUrl,
+                NOT: {
+                    iri: forbiddenIri
+                }
+            }});
+        }
+        if (prismaResource === null) {
+            return null;
+        }
+
+        const resourceToReturn = await this.prismaResourceToResource(prismaResource);
+        return {
+            resource: resourceToReturn,
+            resourceId: prismaResource.id,
+        };
+    }
+
+    async getResourcesForGitUrl(gitRepositoryUrl: string): Promise<string[]> {
+        const prismaResources = await this.prismaClient.resource.findMany({
+            where: {
+                linkedGitRepositoryURL: gitRepositoryUrl,
+            }
+        });
+
+        return await Promise.all(prismaResources.map(resource => resource.iri));
+    }
+
+    /**
+     * @returns The first resource, which is linked to given {@link gitRepositoryUrl} and has the given {@link branch}.
+     */
+    async getResourceForGitUrlAndBranch(gitRepositoryUrl: string, branch: string): Promise<BaseResource | null> {
+        const prismaResource = await this.prismaClient.resource.findFirst({where: {
+            linkedGitRepositoryURL: gitRepositoryUrl,
+            branch: branch,
+         }});
+        if (prismaResource === null) {
+            return null;
+        }
+
         return await this.prismaResourceToResource(prismaResource);
     }
 
     /**
      * Updates user metadata of the resource.
      */
-    async updateResource(iri: string, userMetadata: {}) {
+    async updateResourceMetadata(iri: string, userMetadata: {}, mergeStateUUIDsToIgnoreInUpdating?: string[]) {
         const resource = await this.prismaClient.resource.findFirst({where: {iri}});
         let metadata = resource?.userMetadata ? JSON.parse(resource?.userMetadata!) as object : {};
         metadata = {
             ...metadata,
             ...userMetadata
-        }
+        };
         await this.prismaClient.resource.update({
             where: {iri},
             data: {
                 userMetadata: JSON.stringify(metadata),
             }
         });
-        await this.updateModificationTime(iri);
+        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified, true, true, mergeStateUUIDsToIgnoreInUpdating);
+    }
+
+    /**
+     * Updates the last commit hash of package
+     */
+    async updateLastCommitHash(iri: string, lastCommitHash: string, updateCause: MergeStateCause) {
+        if (!(lastCommitHash.length === 40 || lastCommitHash.length === 0)) {
+            throw new Error("Updating lastCommitHash to invalid hash, is not of length 40 or 0");
+        }
+
+        await this.prismaClient.resource.update({
+            where: {iri},
+            data: {
+                lastCommitHash: lastCommitHash,
+                hasUncommittedChanges: updateCause === "pull" ? undefined : false,
+            }
+        });
+        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified, false, false);
+    }
+
+    /**
+     * Updates user metadata of the resource with given {@link linkedGit}.
+     *  It is important to note that setting {@link shouldSetProjectIris} does not behave as you probably think it does.
+     * If it is true, we always set the projectIri either to the projectIri of existing resource or to the iri of the resource we are updating.
+     * But for the children? We can not map between resources, we don't have data by which we could link the resources together - we have just iris and project iris.
+     * Well and iris are different between the different packages representing the same Git URL and projectIris either don't match or they should match.
+     * So if it is true we just set the projectIri to the iri of the resource itself. But note that this should be already the case after creating the resource.
+     * @param shouldSetProjectIris Should be true only if you want to make sure that the projectIri is set in the resource and its children (recursively)
+     */
+    async updateResourceGitLink(iri: string, linkedGit: string, shouldSetProjectIris: boolean) {
+        if (linkedGit.endsWith("/")) {
+            linkedGit = linkedGit.substring(0, linkedGit.length - 1);
+        }
+
+        const resourceToUpdate = await this.prismaClient.resource.findFirst({where: {iri}});
+        if (resourceToUpdate === null) {
+            throw new Error(`The resource with iri (${iri}) is missing. Can't set linked Git URL: ${linkedGit}`);
+        }
+
+        if (shouldSetProjectIris) {
+            // We have to set Project iri. If not present, just use the iri of this resource.
+            const sourceForProjectResource = await this.getResourceForGitUrl(linkedGit, iri);
+            const projectIri = sourceForProjectResource?.resource.projectIri ?? iri;
+
+            await this.prismaClient.resource.update({
+                where: {iri},
+                data: {
+                    linkedGitRepositoryURL: linkedGit,
+                    projectIri: projectIri
+                }
+            });
+            await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified, true, false);
+
+            if (sourceForProjectResource !== null) {
+                // This needs explanation.
+                // Since it is not obvious why we don't set the projectIri of children to the found project.
+                // For this we have to think, when we actually update to projectIri.
+                // 1) We created new repo from DS - Then sourceForProjectResource === null, so we perform the recursive copy in the "else"
+                // 2) We imported git repo. Well we store projectIri in the export, therefore the projectIri should be already set
+                // 3) We created branch in DS, well since creation of a branch is only a copy, we also copied to projectIris
+                // 4) We linked to existing repo - well here I don't know, but I feel like the linking to existing has only one use-case:
+                //     - That is the REST API to create repo did not work. Therefore we just created empty repo and linked it manually
+                //      - So I would say that we are basically in case 1)
+                // This is all. There are no other ways to set git link.
+                return;
+            }
+            await this.copyIriToProjectIriForChildrenRecursively(resourceToUpdate.id);
+
+        }
+        else {
+            await this.prismaClient.resource.update({
+                where: {iri},
+                data: {
+                    linkedGitRepositoryURL: linkedGit,
+                }
+            });
+        }
+    }
+
+    private async copyIriToProjectIriForChildrenRecursively(parentResourceId: number) {
+        const resourcesToUpdate = await this.prismaClient.resource.findMany({where: {parentResourceId}});
+        for (const resourceToUpdate of resourcesToUpdate) {
+            this.prismaClient.resource.update({
+                where: {iri: resourceToUpdate.iri},
+                data: {
+                    projectIri: resourceToUpdate.projectIri ?? resourceToUpdate.iri,
+                }
+            });
+            await this.updateModificationTime(resourceToUpdate.iri, "meta", ResourceChangeType.Modified, true, true);
+            await this.copyIriToProjectIriForChildrenRecursively(resourceToUpdate.id);
+        }
+    }
+
+    /**
+     * Updates {@link projectIri} and {@link branch} if given for resource identified by {@link iri}. If not given the previous value is kept.
+     */
+    async updateResourceProjectIriAndBranch(iri: string, projectIri?: string, branch?: string) {
+        await this.prismaClient.resource.update({
+            where: {iri},
+            data: {
+                // undefined values won't update the resource, the previous value will be kept.
+                branch,
+                projectIri
+            }
+        });
+        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified, true, projectIri !== undefined);
+    }
+
+    async updateRepresentsBranchHead(iri: string, commitReferenceType: CommitReferenceType) {
+        await this.prismaClient.resource.update({
+            where: {iri},
+            data: {
+                representsBranchHead: commitReferenceType === "branch",
+            }
+        });
+        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified, false, false);
+    }
+
+
+    async setHasUncommittedChanges(iri: string, hasUncommittedChanges: boolean) {
+        await this.prismaClient.resource.update({
+            where: {iri},
+            data: {
+                hasUncommittedChanges: hasUncommittedChanges,
+            }
+        });
+        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified, false, false);
+    }
+
+    async increaseActiveMergeStateCount(iri: string) {
+        await this.prismaClient.resource.update({
+            where: {iri},
+            data: {
+                activeMergeStateCount: { increment: 1 }
+            }
+        });
+        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified, false, false);
+    }
+
+    async decreaseActiveMergeStateCount(iri: string) {
+        await this.prismaClient.resource.update({
+            where: {iri},
+            data: {
+                activeMergeStateCount: { decrement: 1 }
+            }
+        });
+        await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified, false, false);
     }
 
     /**
      * Deletes the resource and if the resource is a package, all sub-resources.
      */
-    async deleteResource(iri: string) {
+    async deleteResource(iri: string, mergeStateUUIDsToIgnoreInUpdating?: string[]) {
         const recursivelyDeleteResourceByPrismaResource = async (resource: PrismaResource) => {
             if (resource.representationType === LOCAL_PACKAGE) {
                 const subResources = await this.prismaClient.resource.findMany({where: {parentResourceId: resource.id}});
@@ -106,7 +419,7 @@ export class ResourceModel {
                     await recursivelyDeleteResourceByPrismaResource(subResource);
                 }
             }
-            await this.deleteSingleResource(resource.iri);
+            await this.deleteSingleResource(resource.iri, mergeStateUUIDsToIgnoreInUpdating);
         }
 
         const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri}});
@@ -116,7 +429,7 @@ export class ResourceModel {
 
         await recursivelyDeleteResourceByPrismaResource(prismaResource);
         if (prismaResource.parentResourceId !== null) {
-            await this.updateModificationTimeById(prismaResource.parentResourceId);
+            await this.updateModificationTimeById(prismaResource.parentResourceId, true);
         }
     }
 
@@ -124,12 +437,14 @@ export class ResourceModel {
      * Removes a single resource in database and all stores attached to it.
      * If the resource is a package, all sub-resources must be deleted manuyally first.
      */
-    private async deleteSingleResource(iri: string) {
+    private async deleteSingleResource(iri: string, mergeStateUUIDsToIgnoreInUpdating?: string[]) {
         const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri}});
         if (prismaResource === null) {
             throw new Error("Resource not found.");
         }
 
+        // TODO RadStr: ? Again don't know what iri to provide
+        await this.updateModificationTime(iri, "resource", ResourceChangeType.Removed, true, true, mergeStateUUIDsToIgnoreInUpdating);
         await this.prismaClient.resource.delete({where: {id: prismaResource.id}});
 
         for (const storeId of Object.values(JSON.parse(prismaResource.dataStoreId))) {
@@ -175,13 +490,20 @@ export class ResourceModel {
                 modificationDate: prismaResource.modifiedAt
             },
             dataStores,
+            linkedGitRepositoryURL: prismaResource.linkedGitRepositoryURL,
+            projectIri: prismaResource.projectIri,
+            branch: prismaResource.branch,
+            representsBranchHead: prismaResource.representsBranchHead,
+            lastCommitHash: prismaResource.lastCommitHash,
+            activeMergeStateCount: prismaResource.activeMergeStateCount,
+            hasUncommittedChanges: prismaResource.hasUncommittedChanges,
         }
     }
 
     /**
      * Returns data about the package and its sub-resources.
      */
-    async getPackage(iri: string, deep: boolean = false) {
+    async getPackage(iri: string, deep: boolean = false): Promise<LoadedPackage | null> {
         const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri, representationType: LOCAL_PACKAGE}});
         if (prismaResource === null) {
             return null;
@@ -197,12 +519,13 @@ export class ResourceModel {
     /**
      * Creates resource of type LOCAL_PACKAGE.
      */
-    createPackage(parentIri: string | null, iri: string, userMetadata: {}) {
-        return this.createResource(parentIri, iri, LOCAL_PACKAGE, userMetadata);
+    createPackage(parentIri: string | null, iri: string, userMetadata: {}, projectIri?: string) {
+        return this.createResource(parentIri, iri, LOCAL_PACKAGE, userMetadata, projectIri);
     }
 
     /**
      * Copies package or resource by IRI to another package identified by parentIri.
+     * @returns The iri of new root
      */
     async copyRecursively(iri: string, parentIri: string, userMetadata: {}) {
         const prismaParentResource = await this.prismaClient.resource.findFirst({where: {iri: parentIri}});
@@ -211,46 +534,76 @@ export class ResourceModel {
         }
 
         const copyResource = async (sourceIri: string, parentIri: string, newIri: string) => {
+            const existingIriToCreatedIriForResourceMap: Record<string, string> = {};
+            // First create only the resourced and collect the iri mapping from existing to created copy
+            await copyOnlyResourcesInternal(sourceIri, parentIri, newIri, existingIriToCreatedIriForResourceMap);
+            // Now replace every every copied iri (which is not project iri) in the existing metas + create datastores and replace
+            await copyResourcedWithDatastoresAndReplace(existingIriToCreatedIriForResourceMap);
+        }
+
+        const copyOnlyResourcesInternal = async (sourceIri: string, parentIri: string, newIri: string, existingIriToCreatedIriForResourceMap: Record<string, string>) => {
             const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: sourceIri}});
             if (prismaResource === null) {
                 throw new Error("Resource to copy not found.");
             }
-            await this.createResource(parentIri, newIri, prismaResource.representationType, JSON.parse(prismaResource.userMetadata));
-            const newDataStoreId = {} as Record<string, string>;
-            for (const [key, store] of Object.entries(JSON.parse(prismaResource.dataStoreId))) {
-                const newStore = await this.storeModel.create();
-                newDataStoreId[key] = newStore.uuid;
-
-                const contents = await storeModel.getModelStore(store as string).getString();
-                await this.storeModel.getModelStore(newStore.uuid).setString(contents);
-            }
-            await this.prismaClient.resource.update({
-                where: {iri: newIri},
-                data: {
-                    dataStoreId: JSON.stringify(newDataStoreId)
-                }
-            });
+            await this.createResource(parentIri, newIri, prismaResource.representationType, JSON.parse(prismaResource.userMetadata), prismaResource.projectIri);
+            existingIriToCreatedIriForResourceMap[sourceIri] = newIri;
 
             // Copy children
             if (prismaResource.representationType === LOCAL_PACKAGE) {
                 const subResources = await this.prismaClient.resource.findMany({where: {parentResourceId: prismaResource.id}});
                 for (const subResource of subResources) {
-                    await copyResource(subResource.iri, newIri, newIri + "/" + uuidv4());
+                    // TODO RadStr: Old code - Why the "/", the iris are new?
+                    await copyOnlyResourcesInternal(subResource.iri, newIri, newIri + "/" + uuidv4(), existingIriToCreatedIriForResourceMap);
                 }
             }
         }
 
-        // Copy the root
-        await copyResource(iri, parentIri, uuidv4());
+        const copyResourcedWithDatastoresAndReplace = async (existingIriToCreatedIriForResourceMap: Record<string, string>) => {
+            for (const [oldIri, newIri] of Object.entries(existingIriToCreatedIriForResourceMap)) {
+                const oldPrismaResource = await this.prismaClient.resource.findFirst({where: {iri: oldIri}});
+                if (oldPrismaResource === null) {
+                    throw new Error("Resource to copy not found.");
+                }
 
-        await this.updateModificationTimeById(prismaParentResource.id);
+                const newDataStoreId = {} as Record<string, string>;
+                for (const [key, store] of Object.entries(JSON.parse(oldPrismaResource.dataStoreId))) {
+                    const newStore = await this.storeModel.create();
+                    newDataStoreId[key] = newStore.uuid;
+
+                    const datastoreContentAsJson = await storeModel.getModelStore(store as string).getJson();
+                    const { datastoreWithReplacedIris } = createDatastoreWithReplacedIris(datastoreContentAsJson, existingIriToCreatedIriForResourceMap);
+                    await this.storeModel.getModelStore(newStore.uuid).setJson(datastoreWithReplacedIris);
+                }
+                await this.prismaClient.resource.update({
+                    where: {iri: newIri},
+                    data: {
+                        dataStoreId: JSON.stringify(newDataStoreId)
+                    }
+                });
+            }
+        }
+
+        // Copy the root
+        const newRootIri = uuidv4();
+        await copyResource(iri, parentIri, newRootIri);
+
+        const sourcePrismaResource = await this.prismaClient.resource.findFirst({where: { iri }});
+        const sourceGitLink = sourcePrismaResource?.linkedGitRepositoryURL;
+        if (sourceGitLink !== undefined) {
+            await this.updateResourceGitLink(newRootIri, sourceGitLink, false);
+        }
+        await this.updateLastCommitHash(newRootIri, sourcePrismaResource?.lastCommitHash ?? "", "push");
+
+        await this.updateModificationTimeById(prismaParentResource.id, true);
+        return newRootIri;
     }
 
     /**
      * Low level function to create a resource.
      * If parent IRI is null, the resource is created as root resource.
      */
-    async createResource(parentIri: string | null, iri: string, type: string, userMetadata: {}) {
+    async createResource(parentIri: string | null, iri: string, type: string, userMetadata: {}, projectIri?: string, mergeStateUUIDsToIgnoreInUpdating?: string[]) {
         let parentResourceId: number | null = null;
 
         if (parentIri !== null) {
@@ -271,14 +624,17 @@ export class ResourceModel {
         await this.prismaClient.resource.create({
             data: {
                 iri: iri,
+                projectIri: projectIri ?? iri,
                 parentResourceId: parentResourceId,
                 representationType: type,
-                userMetadata: JSON.stringify(userMetadata)
+                userMetadata: JSON.stringify(userMetadata),
             }
         });
 
         if (parentResourceId !== null) {
-            await this.updateModificationTimeById(parentResourceId);
+            // TODO RadStr: ? Again don't know what iri to provide
+            await this.updateModificationTime(parentIri ?? iri, "resource", ResourceChangeType.Created, true, true, mergeStateUUIDsToIgnoreInUpdating);
+            await this.updateModificationTimeById(parentResourceId, true);
         }
     }
 
@@ -288,7 +644,7 @@ export class ResourceModel {
             throw new Error("Resource not found.");
         }
 
-        const onUpdate = () => this.updateModificationTime(iri);
+        const onUpdate = () => this.updateModificationTime(iri, storeName, ResourceChangeType.Modified, true, true);
 
         const dataStoreId = JSON.parse(prismaResource.dataStoreId);
 
@@ -299,13 +655,13 @@ export class ResourceModel {
         }
     }
 
-    async getOrCreateResourceModelStore(iri: string, storeName: string = "model"): Promise<ModelStore> {
+    async getOrCreateResourceModelStore(iri: string, storeName: string = "model", mergeStateUUIDsToIgnoreInUpdating?: string[]): Promise<ModelStore> {
         const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri}});
         if (prismaResource === null) {
             throw new Error("Resource not found.");
         }
 
-        const onUpdate = () => this.updateModificationTime(iri);
+        const onUpdate = () => this.updateModificationTime(iri, storeName, ResourceChangeType.Modified, true, true, mergeStateUUIDsToIgnoreInUpdating);
 
         const dataStoreId = JSON.parse(prismaResource.dataStoreId);
 
@@ -320,11 +676,12 @@ export class ResourceModel {
                     dataStoreId: JSON.stringify(dataStoreId)
                 }
             });
+            await this.updateModificationTime(iri, storeName, ResourceChangeType.Created, true, true);
             return this.storeModel.getModelStore(store.uuid, [onUpdate]);
         }
     }
 
-    async deleteModelStore(iri: string, storeName: string = "model") {
+    async deleteModelStore(iri: string, storeName: string = "model", mergeStateUUIDsToIgnoreInUpdating?: string[]) {
         const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri}});
         if (prismaResource === null) {
             throw new Error("Resource not found.");
@@ -347,13 +704,13 @@ export class ResourceModel {
             }
         });
 
-        await this.updateModificationTime(iri);
+        await this.updateModificationTime(iri, storeName, ResourceChangeType.Removed, true, true, mergeStateUUIDsToIgnoreInUpdating);
     }
 
     /**
      * @internal for importing resources
      */
-    async assignExistingStoreToResource(iri: string, storeId: string, storeName: string = "model") {
+    async assignExistingStoreToResource(iri: string, storeId: string, storeName: string = "model", mergeStateUUIDsToIgnoreInUpdating?: string[]) {
         const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri}});
         if (prismaResource === null) {
             throw new Error("Resource not found.");
@@ -368,29 +725,40 @@ export class ResourceModel {
             }
         });
 
-        await this.updateModificationTime(iri);
+        // TODO RadStr: Or modified? does it even matter?
+        await this.updateModificationTime(iri, storeName, ResourceChangeType.Created, true, true, mergeStateUUIDsToIgnoreInUpdating);
     }
 
     /**
      * Updates modification time of the resource and all its parent packages.
-     * @param iri
      */
-    async updateModificationTime(iri: string) {
+    async updateModificationTime(
+        iri: string,
+        updatedModel: string | null,
+        updateReason: ResourceChangeType,
+        shouldModifyHasUncommittedChanges: boolean,
+        shouldNotifyListeners: boolean,
+        mergeStateUUIDsToIgnoreInUpdating?: string[],
+    ) {
         const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri}});
         if (prismaResource === null) {
             throw new Error("Cannot update modification time. Resource does not exists.");
         }
 
         let id: number | null = prismaResource.id;
-        await this.updateModificationTimeById(id);
+        if (shouldNotifyListeners) {
+            await this.resourceChangeObserver.notifyListeners(iri, updatedModel, updateReason, mergeStateUUIDsToIgnoreInUpdating ?? []);
+        }
+        await this.updateModificationTimeById(id, shouldModifyHasUncommittedChanges);
     }
 
-    private async updateModificationTimeById(id: number) {
+    private async updateModificationTimeById(id: number, shouldModifyHasUncommittedChanges: boolean) {
         while (id !== null) {
             await this.prismaClient.resource.update({
                 where: {id},
                 data: {
                     modifiedAt: new Date(),
+                    hasUncommittedChanges: shouldModifyHasUncommittedChanges ? true : undefined,            // TODO RadStr: Note that only the root should be updated
                 }
             });
 

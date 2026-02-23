@@ -369,7 +369,7 @@ const runMainLayoutAlgorithm = async (
 		computedMetricsData.metricResultAggregations[key].avg.relativeValue /= numberOfAlgorithmRuns;
 	}
 
-	// TODO RadStr: Just for debug - I am keeping it here for future
+	// TODO RadStr DEBUG: Just for debug - I am keeping it here for future
 	// console.log("Metrics aggregations result: ", computedMetricsData.metricResultAggregations);
 	// console.log("Metrics all results: ", computedMetricsData.metricResults);
 	// console.log(await computedMetricsData.metricResultAggregations["total"].max.graphPromise);
