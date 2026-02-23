@@ -7,18 +7,19 @@ import { OpenBetterModal } from "@/lib/better-modal";
 import { TFunction } from "i18next";
 
 
-export async function manualPull(iri: string) {
+export async function manualPull(t: TFunction<"translation", undefined>, iri: string) {
   const fetchUrl = import.meta.env.VITE_BACKEND + "/git/pull?iri=" + encodeURIComponent(iri);
 
   const response = await fetch(fetchUrl, {
     method: "GET",
   });
 
+  // TODO RadStr: Fix localization if needed
   if (response.ok) {
-    toast.success("git pull went ok, there were no conflicts");
+    toast.success(t("git pull went ok, there were no conflicts"));
   }
   else {
-    toast.error("There were conflicts in the git pull, resolve them in DS");
+    toast.error(t("There were conflicts in the git pull, resolve them in DS"));
   }
   requestLoadPackage(iri, true);
 }
