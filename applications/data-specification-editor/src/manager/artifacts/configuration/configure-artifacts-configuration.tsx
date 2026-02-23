@@ -12,7 +12,8 @@ import {CsvConfiguration, CsvConfigurator} from "@dataspecer/csv/configuration";
 import {JsonConfiguration, JsonConfigurator} from "@dataspecer/json/configuration";
 import {XmlConfiguration, XmlConfigurator} from "@dataspecer/xml/configuration";
 import { ArtifactNames } from "./tabs/artifact-names";
-
+import { ShaclV2 } from "./tabs/shacl-v2";
+import { ShaclV2Configurator, type ShaclConfiguration } from "@dataspecer/specification/shacl-v2";
 /**
  * Component that renders the UI for configuration change. It is possible to pre-set default configuration, or keep it
  * undefined for setting only the temporary configuration.
@@ -30,6 +31,7 @@ export const ConfigureArtifactsConfiguration = ({defaultConfiguration, configura
                 <Tab label="JSON" />
                 <Tab label="CSV" />
                 <Tab label="XSD" />
+                <Tab label="SHACL" />
                 <Tab label="File names" />
             </Tabs>
         </Box>
@@ -62,6 +64,13 @@ export const ConfigureArtifactsConfiguration = ({defaultConfiguration, configura
             />
         }
         {currentTab === 4 &&
+            <ShaclV2
+                input={ShaclV2Configurator.getFromObject(configuration)}
+                onChange={u => onConfigurationChange(ShaclV2Configurator.setToObject(configuration, u))}
+                defaultObject={defaultConfiguration ? ShaclV2Configurator.getFromObject(defaultConfiguration) as ShaclConfiguration : undefined}
+            />
+        }
+        {currentTab === 5 &&
             <ArtifactNames
                 input={DataSpecificationConfigurator.getFromObject(configuration)}
                 onChange={u => onConfigurationChange(DataSpecificationConfigurator.setToObject(configuration, u))}

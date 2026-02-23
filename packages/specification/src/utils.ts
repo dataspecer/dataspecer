@@ -11,7 +11,7 @@ import { mergeDocumentationConfigurations } from "./documentation/documentation.
 import { BlobModel } from "./model-repository/blob-model.ts";
 import { ModelDescription } from "./model.ts";
 import { GenerateSpecificationContext } from "./specification.ts";
-import { semanticModelsToShacl, shaclToRdf } from "@dataspecer/shacl-v2";
+import { semanticModelsToShacl, shaclToRdf, type SemanticModelsToShaclConfiguration } from "@dataspecer/shacl-v2";
 
 /**
  * Helper function that check whether the model is a vocabulary. If not, it is probably an application profile.
@@ -68,7 +68,7 @@ export async function generateDsvApplicationProfile(forExportModels: ModelDescri
   return dsvString;
 }
 
-export async function generateShaclApplicationProfile(forExportModel: ModelDescription, forContextModels: ModelDescription[], iri: string) {
+export async function generateShaclApplicationProfile(forExportModel: ModelDescription, forContextModels: ModelDescription[], iri: string, configuration: SemanticModelsToShaclConfiguration) {
   const mapModel = (model: ModelDescription) => ({
     getId: () => model.baseIri!,
     getBaseIri: () => model.baseIri ?? null,
@@ -100,12 +100,7 @@ export async function generateShaclApplicationProfile(forExportModel: ModelDescr
     forContextModels.filter((model) => isModelVocabulary(model.entities)).map(mapModel),
     forContextModels.filter((model) => !model.isPrimary && isModelProfile(model.entities)).map(mapModel),
     mapModel(forExportModel),
-    {
-      policy: "semic-v1",
-      languages: [],
-      noClassConstraints: false,
-      splitPropertyShapesByConstraints: false,
-    }, { baseIri: iri, defaultPrefixes: prefixesForIriConstruction },
+    configuration, { baseIri: iri, defaultPrefixes: prefixesForIriConstruction },
   );
 
   const rdf = await shaclToRdf(shacl, {});

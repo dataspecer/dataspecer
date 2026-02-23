@@ -13,6 +13,7 @@
     "./dsv": "./lib/dsv/index.js",
     "./model-hierarchy": "./lib/model-hierarchy/index.js",
     "./model-repository": "./lib/model-repository/index.js",
+    "./shacl-v2": "./lib/shacl-v2.js",
     "./specification": "./lib/specification/index.js",
     "./v1": "./lib/v1/index.js",
     "./memory-store": "./lib/memory-store.js",

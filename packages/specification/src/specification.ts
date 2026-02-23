@@ -7,6 +7,7 @@ import { LanguageString, type CoreResource } from "@dataspecer/core/core/core-re
 import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model/data-specification-artefact";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
+import { generatorConfigurationToRdf } from "@dataspecer/data-specification-vocabulary/generator-configuration";
 import {
   DSV_APPLICATION_PROFILE_TYPE,
   DSV_VOCABULARY_SPECIFICATION_DOCUMENT_TYPE,
@@ -22,6 +23,7 @@ import { structureModelToRdf } from "@dataspecer/data-specification-vocabulary/s
 import { canonicalizeIds, garbageCollect } from "@dataspecer/structure-model";
 import { ModelRepository } from "./model-repository/index.ts";
 import { ModelDescription, type StructureModelDescription } from "./model.ts";
+import { DefaultShaclConfiguration, DefaultShaclFileKey, ShaclV2Configurator } from "./shacl-v2.ts";
 import {
   generateDsvApplicationProfile,
   generateHtmlDocumentation,
@@ -32,7 +34,6 @@ import {
   isModelVocabulary,
 } from "./utils.ts";
 import { artefactToDsv } from "./v1/artefact-to-dsv.ts";
-import { generatorConfigurationToRdf } from "@dataspecer/data-specification-vocabulary/generator-configuration";
 
 const PIM_STORE_WRAPPER = "https://dataspecer.com/core/model-descriptor/pim-store-wrapper";
 const SGOV = "https://dataspecer.com/core/model-descriptor/sgov";
@@ -451,26 +452,31 @@ export async function generateSpecification(packageId: string, context: Generate
       } satisfies ResourceDescriptor;
       hasResource.push(descriptor);
 
-      // Create shacl shape
+      // Create shacl shape(s) — one per entry in the ShaclConfiguration
       {
-        const shaclIri = metaDataBaseIri + "shacl";
-        const shacl = await generateShaclApplicationProfile(model, models, modelIri);
-        const shaclFileName = "shacl.ttl";
-        const shaclUrl = baseUrl + shaclFileName + queryParams;
-        await writeFile(shaclFileName, shacl);
-        externalArtifacts["shacl-profile"] = [{ type: shaclFileName, URL: shaclUrl }];
-
-        const shaclDescriptor = {
-          iri: shaclIri,
-          url: shaclUrl,
-
-          role: dsvMetadataWellKnown.role.constraints,
-          formatMime: dsvMetadataWellKnown.formatMime.turtle,
-          additionalRdfTypes: [],
-
-          conformsTo: [dsvMetadataWellKnown.conformsTo.shacl],
-        } satisfies ResourceDescriptor;
-        hasResource.push(shaclDescriptor);
+        const shaclConfig = ShaclV2Configurator.merge(
+          DefaultShaclConfiguration,
+          ShaclV2Configurator.getFromObject(generatorConfiguration),
+        );
+        const shaclProfileExternalArtifacts: typeof externalArtifacts[keyof typeof externalArtifacts] = [];
+        externalArtifacts["shacl-profile"] = shaclProfileExternalArtifacts;
+        for (const [fileKey, fileConf] of Object.entries(shaclConfig.files)) {
+          const shaclFileName = fileKey === DefaultShaclFileKey ? "shacl.ttl" : `shacl-${fileKey}.ttl`;
+          const shaclIri = metaDataBaseIri + (fileKey === "" ? "shacl" : `shacl-${fileKey}`);
+          const shaclUrl = baseUrl + shaclFileName + queryParams;
+          const shacl = await generateShaclApplicationProfile(model, models, modelIri, fileConf);
+          await writeFile(shaclFileName, shacl);
+          shaclProfileExternalArtifacts.push({ type: shaclFileName, URL: shaclUrl });
+          const shaclDescriptor = {
+            iri: shaclIri,
+            url: shaclUrl,
+            role: dsvMetadataWellKnown.role.constraints,
+            formatMime: dsvMetadataWellKnown.formatMime.turtle,
+            additionalRdfTypes: [],
+            conformsTo: [dsvMetadataWellKnown.conformsTo.shacl],
+          } satisfies ResourceDescriptor;
+          hasResource.push(shaclDescriptor);
+        }
       }
     }
   }
