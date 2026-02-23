@@ -89,8 +89,8 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
           <Translate
             text={resource.userMetadata?.label}
             match={(t, isMatch, language) => <>
-              <span className={isMatch ? "" : "text-gray-500"}>{t}</span>
-              {!isMatch && <Badge variant="outline" className="ml-2 text-xs">{language}</Badge>}
+              <span className={isMatch ? "" : "text-muted-foreground"}>{t}</span>
+              {!isMatch && <span className="ml-1 ">@{language}</span>}
               <span className="ml-5 text-gray-500 font-normal">{modelTypeToName[resource.types[0]]}</span>
             </>}
             fallback={modelTypeToName[resource.types[0]]}
@@ -283,8 +283,8 @@ function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean
         <Translate
           text={pckg.userMetadata?.label}
           match={(t, isMatch, language) => <>
-            <span className={isMatch ? "" : "text-gray-500"}>{t}</span>
-            {!isMatch && <Badge variant="outline" className="ml-2 text-xs">{language}</Badge>}
+            <span className={isMatch ? "" : "text-muted-foreground"}>{t}</span>
+            {!isMatch && <span className="ml-1 ">@{language}</span>}
           </>}
         />
       </h2>
