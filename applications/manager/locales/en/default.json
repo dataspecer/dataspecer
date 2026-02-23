@@ -11,6 +11,7 @@
   "autolayout": "Auto layout",
   "changed": "Changed on {{val, datetime(dateStyle: short; timeStyle: short)}}",
   "close": "Close",
+  "confirm": "Confirm",
   "conceptual editor button": "Edit vocabularies and application profiles",
   "created": "Created on {{val, datetime(dateStyle: short)}}",
   "data specification button": "Edit data structures",
@@ -85,5 +86,75 @@
     "name-az": "Alphabetically",
     "name-za": "Reverse alphabetically"
   },
-  "successfully saved": "Successfully saved."
+  "successfully saved": "Successfully saved.",
+
+
+  "git": {
+    "choose-an-export-format": "Export format",
+    "loading-dialog-seconds-passed": "seconds passed",
+    "dialog": {
+      "title": {
+        "create-new-repository-and-commit": "Create new remote Git repository",
+        "commit": "Commit to remote Git repository",
+        "merge-commit": "Create merge commit to remote Git repository",
+        "link-to-existing-repository": "Link package to remote Git repository",
+        "fallback": "[Programmer oversight - Git dialog title missing]"
+      },
+      "description": {
+        "create-new-repository-and-commit": "On confirm new remote Git repository will be created and the current package will be linked to it",
+        "commit": "Insert the commit message for Git",
+        "commit-tag-error": "You cannot commit into a package representing a tag. Turn it into a branch first.",
+        "merge-commit": "Insert the commit message for Git merge",
+        "link-to-existing-repository": "Insert URL of an existing remote Git repository you want to link to this package. URL may point to commit/branch/tag.",
+        "fallback": "[Programmer oversight - Git dialog description missing]"
+      },
+      "label": {
+        "repository-name": "Repository name",
+        "repository-owner": "Repository owner",
+        "initial-commit-message": "Initial commit message",
+        "commit-message": "Commit message",
+        "merge-commit-message": {
+          "input-title": "Merge commit message",
+          "append": "The given message will be appended after the default merge message automatically created bz Git (current option)",
+          "exact": "The merge message will look exactly as given (current option)"
+        },
+        "remote-url": "Git remote repository URL"
+      },
+      "tooltip": {
+        "repository-owner": "Name under which the repository should be created. If empty, bot name is used."
+      },
+      "radio": {
+        "user-repository": "User repository",
+        "organization-repository": "Organization repository"
+      },
+      "merge-state": {
+        "always": "Always create merge state (current option)",
+        "on-conflict": "Create merge state only on conflict (current option)"
+      }
+    },
+    "loading": {
+      "create-repository": {
+        "title": "Creating repository with initial commit",
+        "wait": "Usually takes around 10-20 seconds"
+      },
+      "merge": {
+        "title": "Creating merge commit"
+      },
+      "commit": {
+        "title": "Committing"
+      },
+      "default": {
+        "wait": "Usually takes around 5-15 seconds"
+      }
+    },
+    "toast": {
+      "merge-state-created": "Created merge state",
+      "link-success": "Successfully updated link to remote Git repository",
+      "link-failed": "Failed updating link to remote Git repository"
+    },
+    "error": {
+      "merge-already-merged": "The merge from branch was already merged. We cannot merge again.",
+      "merge-state-removal-failed": "Removal of merge state failed"
+    }
+  }
 }

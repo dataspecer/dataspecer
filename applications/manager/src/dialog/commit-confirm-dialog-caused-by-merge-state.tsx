@@ -6,6 +6,8 @@ import { ListMergeStatesDialog } from "./list-merge-states-dialog";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
 import { commitToGitHandler, mergeCommitToGitHandler } from "./git-actions-dialogs";
 import { useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
+import { TFunction } from "i18next";
 
 
 type CommitRedirectForMergeStatesProps = {
@@ -15,6 +17,7 @@ type CommitRedirectForMergeStatesProps = {
 export const CommitRedirectForMergeStatesDialog = ({ commitRedirectResponse, isOpen, resolve }: CommitRedirectForMergeStatesProps) => {
   const didRun = useRef<boolean>(false);
   const openModal = useBetterModal();
+  const { t } = useTranslation();
 
   const dialogData = useMemo(() => {
     if (didRun.current) {
@@ -25,7 +28,7 @@ export const CommitRedirectForMergeStatesDialog = ({ commitRedirectResponse, isO
       return null;
     }
     didRun.current = true;
-    return getDataForMergeStateDialog(commitRedirectResponse, openModal, resolve);
+    return getDataForMergeStateDialog(t, commitRedirectResponse, openModal, resolve);
   }, []);
 
   if (dialogData === null) {
@@ -51,6 +54,7 @@ export const CommitRedirectForMergeStatesDialog = ({ commitRedirectResponse, isO
 }
 
 const getDataForMergeStateDialog = (
+  t: TFunction<"translation", undefined>,
   commitRedirectResponse: CommitRedirectExtendedResponseJson,
   openModal: OpenBetterModal,
   resolve: (value: void) => void
@@ -69,7 +73,7 @@ const getDataForMergeStateDialog = (
     firstActionButtonText = "Commit anyways";
     firstActionButtonOnClick = async () => {
       await commitToGitHandler(
-        openModal, commitRedirectResponse.iri, commitType, true,
+        t, openModal, commitRedirectResponse.iri, commitType, true,
         commitRedirectResponse.commitMessage, commitRedirectResponse.exportFormat, commitRedirectResponse.shouldAlwaysCreateMergeState,
         false, commitRedirectResponse.onSuccessCallback);
       resolve();
@@ -103,7 +107,7 @@ const getDataForMergeStateDialog = (
     if (commitRedirectResponse.commitType === "rebase-commit") {
       firstActionButtonText = "Commit anyways";
       commitToGitHandler(
-        openModal, commitRedirectResponse.iri, commitRedirectResponse.commitType, true,
+        t, openModal, commitRedirectResponse.iri, commitRedirectResponse.commitType, true,
         commitRedirectResponse.commitMessage, commitRedirectResponse.exportFormat, commitRedirectResponse.shouldAlwaysCreateMergeState,
         false, commitRedirectResponse.onSuccessCallback);
       resolve();
@@ -117,7 +121,7 @@ const getDataForMergeStateDialog = (
         throw new Error("The redirection cause is HasExactlyOneMergeStateAndItIsResolvedAndCausedByMerge, but the merge state is null");
       }
       mergeCommitToGitHandler(
-        openModal, commitRedirectResponse.iri, commitRedirectResponse.mergeStateCausedByMerge, commitRedirectResponse.commitMessage,
+        t, openModal, commitRedirectResponse.iri, commitRedirectResponse.mergeStateCausedByMerge, commitRedirectResponse.commitMessage,
         commitRedirectResponse.shouldAppendAfterDefaultMergeCommitMessage ?? true, commitRedirectResponse.exportFormat);
       resolve();
       return null;
@@ -139,7 +143,7 @@ const getDataForMergeStateDialog = (
     secondaryActionButtonText = "Commit anyways";
     secondaryActionButtonOnClick = async () => {
       await commitToGitHandler(
-        openModal, commitRedirectResponse.iri, commitType, true,
+        t, openModal, commitRedirectResponse.iri, commitType, true,
         commitRedirectResponse.commitMessage, commitRedirectResponse.exportFormat, commitRedirectResponse.shouldAlwaysCreateMergeState,
         false, commitRedirectResponse.onSuccessCallback);
       resolve();

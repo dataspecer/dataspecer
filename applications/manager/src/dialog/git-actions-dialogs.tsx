@@ -17,6 +17,8 @@ import { removeMergeState } from "@/utils/merge-state-backend-requests";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
 import { useLogin } from "@/hooks/use-login";
 import { getGitProviderDomain } from "@dataspecer/git/git-providers";
+import { useTranslation } from "react-i18next";
+import { TFunction } from "i18next";
 
 /**
  * Checks if the {@link requiredFieldsRefs} are valid (non-empty). If so, the {@link resolve} method is called.
@@ -71,6 +73,7 @@ const gitDialogInputIdPrefix = "git-dialog-prefix";
  * The type of shown dialog depends on the "type" property.
  */
 export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, resolve, type, shouldShowAlwaysCreateMergeStateOption }: GitActionsDialogProps) => {
+  const { t } = useTranslation();
   type = type ?? "create-new-repository-and-commit";
 
   const gitProvidersComboboxOptions = useMemo(() => {
@@ -168,45 +171,56 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   const modalTitle = useMemo(() => {
     switch(type) {
       case "create-new-repository-and-commit":
-        return "Create new remote Git repository";
+        return t("git.dialog.title.create-new-repository-and-commit");
       case "commit":
-        return "Commit to remote Git repository";
+        return t("git.dialog.title.commit");
       case "merge-commit":
-        return "Create merge commit to remote Git repository";
+        return t("git.dialog.title.merge-commit");
       case "link-to-existing-repository":
-        return "Link package to remote Git repository";
+        return t("git.dialog.title.link-to-existing-repository");
       default:
-        return "[Programmer oversight - We forgot to extend modal title memo for Git dialog]"
+        return t("git.dialog.title.fallback");
     }
-  }, [type]);
+  }, [type, t]);
 
   const modalDescription = useMemo(() => {
     switch(type) {
       case "create-new-repository-and-commit":
-        return "On confirm new remote Git repository will be created and the current package will be linked to it";
+        return t("git.dialog.description.create-new-repository-and-commit");
       case "commit":
         if (!inputPackage.representsBranchHead) {
-          return "You can not commit into package, which represents tag. Turn it into branch first.";
+          return t("git.dialog.description.commit-tag-error");
         }
-        return "Insert the commit message for Git";
+        return t("git.dialog.description.commit");
       case "merge-commit":
-        return "Insert the commit message for git merge";
+        return t("git.dialog.description.merge-commit");
       case "link-to-existing-repository":
-        return "Insert URL of Git remote repository, which already exists and to which you want to link the current package. Note that you can put in URL pointing to commit/branch/tag.";
+        return t("git.dialog.description.link-to-existing-repository");
       default:
-        return "[Programmer oversight - We forgot to extend modal description memo for Git dialog]"
+        return t("git.dialog.description.fallback");
     }
-  }, [type]);
+  }, [type, inputPackage.representsBranchHead, t]);
 
   let modalBody;
   switch(type) {
     case "create-new-repository-and-commit":
       modalBody = <div>
         <ComboBox options={gitProvidersComboboxOptions} onChange={(value: GitProviderEnum) => setGitProvider(getGitProviderDomain(value, true, true))}/>
-        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Repository name" setInput={createSetterWithGitValidation(setRepositoryName)} input={repositoryName} requiredRefObject={repositoryNameInputFieldRef}/>
-        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Repository owner"
-          tooltip="Name under which should be the repository created. If empty - bot name is used"
-          setInput={createSetterWithGitValidation(setUser)} input={user}/>
+        <InputComponent
+          idPrefix={gitDialogInputIdPrefix}
+          idSuffix={suffixNumber++}
+          label={t("git.dialog.label.repository-name")}
+          setInput={createSetterWithGitValidation(setRepositoryName)}
+          input={repositoryName}
+          requiredRefObject={repositoryNameInputFieldRef}
+        />
+        <InputComponent
+          idPrefix={gitDialogInputIdPrefix}
+          idSuffix={suffixNumber++}
+          label={t("git.dialog.label.repository-owner")}
+          tooltip={t("git.dialog.tooltip.repository-owner")}
+          setInput={createSetterWithGitValidation(setUser)} input={user}
+        />
         <div className="-mt-2 mb-8 flex items-center space-x-6">
           <label className="flex items-center space-x-2 cursor-pointer">
             <input
@@ -215,7 +229,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
               onChange={() => setIsUserRepo(true)}
               className="w-5 h-5 border-gray-400 text-blue-600 focus:ring-blue-500 form-radio text-blue-600"
             />
-            <span >User repository</span>
+            <span>{t("git.dialog.radio.user-repository")}</span>
           </label>
 
           <label className="flex items-center space-x-2 cursor-pointer">
@@ -225,11 +239,18 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
               onChange={() => setIsUserRepo(false)}
               className="w-5 h-5 border-gray-400 text-blue-600 focus:ring-blue-500 form-radio text-blue-600"
             />
-            <span>Organization repository</span>
+            <span>{t("git.dialog.radio.organization-repository")}</span>
           </label>
         </div>
         <div className="my-8"/>
-        <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Initial commit message" setInput={setCommitMessage} input={commitMessage} requiredRefObject={commitMessageInputFieldRef}/>
+        <InputComponent
+          idPrefix={gitDialogInputIdPrefix}
+          idSuffix={suffixNumber++}
+          label={t("git.dialog.label.initial-commit-message")}
+          setInput={setCommitMessage}
+          input={commitMessage}
+          requiredRefObject={commitMessageInputFieldRef}
+        />
         <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
       </div>;
       break;
@@ -239,7 +260,15 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
       }
       else {
         modalBody = <div>
-            <InputComponent disabled={shouldDisableConfirm} idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Commit message" setInput={setCommitMessage} input={commitMessage} requiredRefObject={commitMessageInputFieldRef}/>
+            <InputComponent
+              disabled={shouldDisableConfirm}
+              idPrefix={gitDialogInputIdPrefix}
+              idSuffix={suffixNumber++}
+              label={t("git.dialog.label.commit-message")}
+              setInput={setCommitMessage}
+              input={commitMessage}
+              requiredRefObject={commitMessageInputFieldRef}
+            />
             <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
             {!shouldShowAlwaysCreateMergeStateOption ?
               null :
@@ -250,14 +279,22 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
                   onChange={(e) => setShouldAlwaysCreateMergeState(e.target.checked)}
                   className="w-5 h-5 accent-blue-600"
                 />
-                <span>{shouldAlwaysCreateMergeState ? "Always create merge state (current option)" : "Create merge state only on conflict (current option)"}</span>
+                <span>{shouldAlwaysCreateMergeState ? t("git.dialog.merge-state.always") : t("git.dialog.merge-state.on-conflict")}</span>
               </label>}
           </div>;
       }
       break;
     case "merge-commit":
       modalBody = <div>
-          <InputComponent disabled={shouldDisableConfirm} idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Merge Commit message" setInput={setCommitMessage} input={commitMessage} requiredRefObject={commitMessageInputFieldRef}/>
+          <InputComponent
+            disabled={shouldDisableConfirm}
+            idPrefix={gitDialogInputIdPrefix}
+            idSuffix={suffixNumber++}
+            label={t("git.dialog.label.merge-commit-message.input-title")}
+            setInput={setCommitMessage}
+            input={commitMessage}
+            requiredRefObject={commitMessageInputFieldRef}
+          />
           <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
           <label className="flex items-center gap-2">
             <input
@@ -267,13 +304,13 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
               className="w-5 h-5 accent-blue-600"
             />
             <span>{shouldAppendAfterDefaultMergeCommitMessage ?
-              "The given message will be put after the default merge message created in Git (current option)" :
-              "The merge message will look exactly as given (current option)"}</span>
+              t("git.dialog.merge-commit-message.append") :
+              t("git.dialog.merge-commit-message.exact")}</span>
           </label>
         </div>;
       break;
     case "link-to-existing-repository":
-      modalBody = <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label="Git remote repository URL" setInput={setRemoteRepositoryURL} input={remoteRepositoryURL} />;
+      modalBody = <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label={t("git.dialog.label.remote-url")} setInput={setRemoteRepositoryURL} input={remoteRepositoryURL} />;
       break;
     default:
       modalBody = <div/>;
@@ -293,15 +330,15 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
           {modalBody}
         </ModalBody>
         <ModalFooter className="flex flex-row">
-          <Button variant="outline" onClick={() => resolve(null)}>Cancel</Button>
-          <Button type="submit" className="hover:bg-purple-700" onClick={tryCloseWithSuccess} disabled={shouldDisableConfirm}>Confirm</Button>
+          <Button variant="outline" onClick={() => resolve(null)}>{t("close")}</Button>
+          <Button type="submit" className="hover:bg-purple-700" onClick={tryCloseWithSuccess} disabled={shouldDisableConfirm}>{t("confirm")}</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
   );
 };
 
-export const createNewRemoteRepositoryHandler = async (openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
+export const createNewRemoteRepositoryHandler = async (t: TFunction<"translation", undefined>, openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
   // {@link DropdownMenuItem} has to be used in the tree, when it is part of another component, it is rendered incorrectly,
   // that is why we implement it like this and not like react component
   const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage: null, type: "create-new-repository-and-commit", shouldShowAlwaysCreateMergeStateOption: null });
@@ -309,20 +346,21 @@ export const createNewRemoteRepositoryHandler = async (openModal: OpenBetterModa
     const closeDialogObject = createCloseDialogObject();
     // TODO RadStr: Localization
     openModal(LoadingDialog, {
-      dialogTitle: "Creating repository with initial commit",
-      waitingText: "Usually takes around 10-20 seconds",
+      dialogTitle: "git.loading.create-repository.title",
+      waitingText: "git.loading.create-repository.wait",
       setCloseDialogAction: closeDialogObject.setCloseDialogAction,
       shouldShowTimer: true,
     });
     const response = await createNewRemoteRepositoryRequest(iri, result);
     closeDialogObject.closeDialogAction();
     await requestLoadPackage(iri, true);
-    gitOperationResultToast(response);
+    gitOperationResultToast(t, response);
   }
 };
 
 
 export const mergeCommitToGitDialogOnClickHandler = async (
+  t: TFunction<"translation", undefined>,
   openModal: OpenBetterModal,
   iri: string,
   inputPackage: Package,
@@ -335,11 +373,12 @@ export const mergeCommitToGitDialogOnClickHandler = async (
     shouldShowAlwaysCreateMergeStateOption: false,
   });
   if (result) {
-    await mergeCommitToGitHandler(openModal, iri, mergeState, result.commitMessage, result.shouldAppendAfterDefaultMergeCommitMessage, result.exportFormat);
+    await mergeCommitToGitHandler(t, openModal, iri, mergeState, result.commitMessage, result.shouldAppendAfterDefaultMergeCommitMessage, result.exportFormat);
   }
 };
 
 export const mergeCommitToGitHandler = async (
+  t: TFunction<"translation", undefined>,
   openModal: OpenBetterModal,
   iri: string,
   mergeState: MergeState,
@@ -350,8 +389,8 @@ export const mergeCommitToGitHandler = async (
   const closeDialogObject = createCloseDialogObject();
   // TODO RadStr: Localization
   openModal(LoadingDialog, {
-    dialogTitle: "Committing merge",
-    waitingText: "Usually takes around 5-15 seconds",
+    dialogTitle: "git.loading.merge.title",
+    waitingText: "git.loading.default.wait",
     setCloseDialogAction: closeDialogObject.setCloseDialogAction,
     shouldShowTimer: true,
   });
@@ -370,32 +409,32 @@ export const mergeCommitToGitHandler = async (
         // TODO: ..... Not really clean: The check for the equality of strings of error. But can't really think of anything much better now
         if (jsonResponse.error === "Error: The merge from branch was already merged. We can not merge again.") {
           // In this case we want to always remove the merge state. User has to move heads by committing and then he can create new merge state.
-          toast.error("The merge from branch was already merged. We can not merge again.");
+          toast.error(t("git.error.merge-already-merged"));
           console.error(jsonResponse.error + " Removing the merge state.");
           const removalResult = await removeMergeState(mergeState.uuid);
           if (!removalResult) {
             setTimeout(() => {
-              toast.error("The removal of merge state failed");
+              toast.error(t("git.error.merge-state-removal-failed"));
             }, 1000);
           }
         }
         else {
-          gitOperationResultToast(response);
+          gitOperationResultToast(t, response);
         }
       }
       else if (response.status === 200) {
         // Unlike for other merge states, we remove th emerge state here instead when finalizing backend (the merge state is exception).
         // Since other mergestates just updated the last commit in the finalizer. But that is not the case for merge
-        gitOperationResultToast(response);
+        gitOperationResultToast(t, response);
         const removalResult = await removeMergeState(mergeState.uuid);
         if (!removalResult) {
           setTimeout(() => {
-            toast.error("The removal of merge state failed");
+            toast.error(t("git.error.merge-state-removal-failed"));
           }, 1000);
         }
       }
       else {
-        gitOperationResultToast(response);
+        gitOperationResultToast(t, response);
       }
       await requestLoadPackage(mergeState.rootIriMergeFrom, true);
       await requestLoadPackage(mergeState.rootIriMergeTo, true);
@@ -403,6 +442,7 @@ export const mergeCommitToGitHandler = async (
 };
 
 export const commitToGitDialogOnClickHandler = async (
+  t: TFunction<"translation", undefined>,
   openModal: OpenBetterModal,
   iri: string,
   inputPackage: Package,
@@ -414,7 +454,7 @@ export const commitToGitDialogOnClickHandler = async (
   const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage, type: "commit", shouldShowAlwaysCreateMergeStateOption });
   if (result) {
     await commitToGitHandler(
-      openModal, iri, commitType, shouldShowAlwaysCreateMergeStateOption,
+      t, openModal, iri, commitType, shouldShowAlwaysCreateMergeStateOption,
       result.commitMessage, result.exportFormat, result.shouldAlwaysCreateMergeState, true, onSuccessCallback);
   }
 };
@@ -423,6 +463,7 @@ export const commitToGitDialogOnClickHandler = async (
  * @param shouldRedirectWithExistenceOfMergeStates for commitType singalizing "rebase-commit", this parameter will be ignored and false will be used instead.
  */
 export const commitToGitHandler = async (
+  t: TFunction<"translation", undefined>,
   openModal: OpenBetterModal,
   iri: string,
   commitType: SingleBranchCommitType,
@@ -436,8 +477,8 @@ export const commitToGitHandler = async (
   const closeDialogObject = createCloseDialogObject();
   // TODO RadStr: Localization
   openModal(LoadingDialog, {
-    dialogTitle: "Committing",
-    waitingText: "Usually takes around 5-15 seconds",
+    dialogTitle: "git.loading.commit.title",
+    waitingText: "git.loading.default.wait",
     setCloseDialogAction: closeDialogObject.setCloseDialogAction,
     shouldShowTimer: true,
   });
@@ -469,13 +510,13 @@ export const commitToGitHandler = async (
         closeDialogObject.closeDialogAction();
         const jsonResponse: NonNullable<CommitConflictInfo> = await response.json();
         openModal(TextDiffEditorDialog, { initialMergeFromRootMetaPath: jsonResponse.conflictMergeFromRootPath, initialMergeToRootMetaPath: jsonResponse.conflictMergeToRootPath, editable: convertMergeStateCauseToEditable("push")});
-        toast.success("Created merge state");
+        toast.success(t("git.toast.merge-state-created"));
         requestLoadPackage(iri, true);
         return;
       }
       else {
         closeDialogObject.closeDialogAction();
-        gitOperationResultToast(response);
+        gitOperationResultToast(t, response);
         requestLoadPackage(iri, true);
         if (response.ok) {
           onSuccessCallback?.();
@@ -485,17 +526,17 @@ export const commitToGitHandler = async (
 };
 
 
-export const linkToExistingGitRepositoryHandler = async (openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
+export const linkToExistingGitRepositoryHandler = async (t: TFunction<"translation", undefined>, openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
   const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage: null, type: "link-to-existing-repository", shouldShowAlwaysCreateMergeStateOption: null });
   if (result) {
     const response = await linkToExistingGitRepositoryRequest(iri, result.remoteRepositoryURL);
     if (response.ok) {
       // TODO RadStr later: Localization
-      toast.success("Sucessfully updated link to remote Git repository");
+      toast.success(t("git.toast.link-success"));
     }
     else {
       // TODO RadStr later: Localization
-      toast.error("Failed updating link to remote Git repository");
+      toast.error(t("git.toast.link-failed"));
     }
     requestLoadPackage(iri, true);
   }

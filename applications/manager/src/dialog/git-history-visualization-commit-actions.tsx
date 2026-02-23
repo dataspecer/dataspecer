@@ -10,6 +10,7 @@ import { lng } from "@/Dir";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 import { gitOperationResultToast } from "@/utils/utilities";
+import { useTranslation } from "react-i18next";
 
 
 type GitHistoryCommitActionsDialogProps = {
@@ -22,6 +23,7 @@ type GitHistoryCommitActionsDialogProps = {
 } & BetterModalProps<null>;
 
 export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitHash, branchAlreadyExistsInDS, commitAlreadyExistsInDS, isOpen, resolve, closeMainGitGraphDialog }: GitHistoryCommitActionsDialogProps) => {
+  const { t } = useTranslation();
   const [isPerformingAction, setIsPerformingAction] = useState<boolean>(false);
 
   const handleRedirect = () => {
@@ -82,7 +84,7 @@ export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitH
 
     setIsPerformingAction(false);
     resolve(null);
-    gitOperationResultToast(response);
+    gitOperationResultToast(t, response);
     closeMainGitGraphDialog();
   };
 

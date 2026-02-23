@@ -8,6 +8,7 @@ import { Dispatch, SetStateAction, useContext, useEffect, useState } from "react
 import { toast } from "sonner";
 import { commitToGitDialogOnClickHandler, mergeCommitToGitDialogOnClickHandler } from "./git-actions-dialogs";
 import { requestLoadPackage, ResourcesContext } from "@/package";
+import { useTranslation } from "react-i18next";
 
 
 type MergeStateFinalizerProps = {
@@ -188,6 +189,7 @@ const MergeStateFinalizerForPullAnswerDialog = ({ mergeState, resolve }: MergeSt
 };
 
 const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, secondsPassed, setSecondsAtStartofMerge, setIsWaitingForAnswer, resolve, openModal }: MergeStateFinalizerMergeCauseProps) => {
+  const { t } = useTranslation();
   const [httpResponse, setHttpResponse] = useState<FinalizerResponse>(null);
   const [chosenCommitType, setChosenCommitType] = useState<MergeCommitType | null>(null);
 
@@ -209,7 +211,7 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
         resolve();
         toast.success("Everything seems to be ok. Proceed with merging.");
         setTimeout(() => {
-          mergeCommitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, mergeState);
+          mergeCommitToGitDialogOnClickHandler(t, openModal, iri, sourceDSPackage, mergeState);
         }, 10);     // Small delay to keep the background of same color (that is we wait until the resolve which closes the currently opened dialog is done)
       }
       else if (response.status < 400) {
@@ -246,7 +248,7 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
           requestLoadPackage(mergeState.rootIriMergeTo, true);
         };
         setTimeout(() => {
-          commitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, "rebase-commit", false, mergeState.commitMessage, onSuccessCallback);
+          commitToGitDialogOnClickHandler(t, openModal, iri, sourceDSPackage, "rebase-commit", false, mergeState.commitMessage, onSuccessCallback);
         }, 10);     // Same as for merge, small delay to keep the background same color.
       }
       else if (response.status < 400) {
@@ -367,6 +369,7 @@ const MergeStateFinalizerForMergeAnswerDialog = ({ mergeState, httpResponse, res
 
 
 const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, resolve, openModal }: MergeStateFinalizerSpecificCauseProps) => {
+  const { t } = useTranslation();
   const [httpReponse, setHttpResponse] = useState<FinalizerResponse>(null);
 
   const iri = getEditableValue(mergeState.editable, mergeState.rootIriMergeFrom, mergeState.rootIriMergeTo);
@@ -386,7 +389,7 @@ const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldR
       else if (response.status < 300) {
         toast.success("Finalizer succcessfully finished");
         resolve();
-        commitToGitDialogOnClickHandler(openModal, iri, sourceDSPackage, "classic-commit", false, mergeState.commitMessage, null);
+        commitToGitDialogOnClickHandler(t, openModal, iri, sourceDSPackage, "classic-commit", false, mergeState.commitMessage, null);
       }
       else if (response.status < 400) {
         // TODO RadStr: Probably do nothing - we will just show the another dialog.

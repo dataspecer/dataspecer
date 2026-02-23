@@ -2,6 +2,7 @@ import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalT
 import { Button } from "@/components/ui/button";
 import { BetterModalProps } from "@/lib/better-modal";
 import { removeGitLinkFromPackage } from "@/utils/git-fetch-related-actions";
+import { useTranslation } from "react-i18next";
 
 
 type DeleteGitRepositoryProps = {
@@ -10,8 +11,10 @@ type DeleteGitRepositoryProps = {
 } & BetterModalProps<null>;
 
 export const DeleteGitRepoDialog = ({ iri, gitUrl, isOpen, resolve }: DeleteGitRepositoryProps) => {
+  const { t } = useTranslation();
+
   const removeAndClose = () => {
-    removeGitLinkFromPackage(iri);
+    removeGitLinkFromPackage(t, iri);
     resolve(null);
   };
 

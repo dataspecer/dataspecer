@@ -11,6 +11,7 @@
   "autolayout": "Automatický layout",
   "changed": "Změněno {{val, datetime(dateStyle: short; timeStyle: short)}}",
   "close": "Zavřít",
+  "confirm": "Potvrdit",
   "conceptual editor button": "Upravovat slovníky a aplikační profily",
   "created": "Vytvořeno {{val, datetime(dateStyle: short)}}",
   "data specification button": "Upravovat datové struktury",
@@ -85,5 +86,75 @@
     "name-az": "Abecedně",
     "name-za": "Obráceně abecedně"
   },
-  "successfully saved": "Úspěšně uloženo."
+  "successfully saved": "Úspěšně uloženo.",
+
+
+  "git": {
+    "choose-an-export-format": "Formát exportu",
+    "loading-dialog-seconds-passed": "sekund uplynulo",
+    "dialog": {
+      "title": {
+        "create-new-repository-and-commit": "Vytvořit nový vzdálený Git repozitář",
+        "commit": "Commit do vzdáleného Git repozitáře",
+        "merge-commit": "Vytvořit merge commit do vzdáleného Git repozitáře",
+        "link-to-existing-repository": "Propojit package se vzdáleným Git repozitářem",
+        "fallback": "[Chyba vývojáře - chybí název dialogu Git]"
+      },
+      "description": {
+        "create-new-repository-and-commit": "Po potvrzení se vytvoří nový vzdálený Git repozitář a bude propojen s aktuální packagí",
+        "commit": "Zadejte commit zprávu pro Git",
+        "commit-tag-error": "Nelze commitovat package reprezentující tag. Nejprve jí převeďte na větev.",
+        "merge-commit": "Zadejte commit zprávu pro Git merge",
+        "link-to-existing-repository": "Zadejte URL existujícího vzdáleného Git repozitáře, ke kterému chcete package připojit. URL může odkazovat na commit/větev/tag.",
+        "fallback": "[Chyba vývojáře - chybí popis dialogu Git]"
+      },
+      "label": {
+        "repository-name": "Název repozitáře",
+        "repository-owner": "Vlastník repozitáře",
+        "initial-commit-message": "Počáteční commit zpráva",
+        "commit-message": "Commit zpráva",
+        "merge-commit-message": {
+          "input-title": "Merge commit zpráva",
+          "append": "Zadaná zpráva bude připojena za výchozí merge zprávu automaticky vytvořenou Gitem (aktuální volba)",
+          "exact": "Merge zpráva bude přesně odpovídat zadanému textu (aktuální volba)"
+        },
+        "remote-url": "URL vzdáleného Git repozitáře"
+      },
+      "tooltip": {
+        "repository-owner": "Jméno vlastníka, pod kterým bude repozitář vytvořen. Pokud je pole prázdné, použije se jméno bota."
+      },
+      "radio": {
+        "user-repository": "Uživatelský repozitář",
+        "organization-repository": "Repozitář organizace"
+      },
+      "merge-state": {
+        "always": "Vždy vytvořit merge stav (aktuální volba)",
+        "on-conflict": "Vytvořit merge stav pouze při konfliktu (aktuální volba)"
+      }
+    },
+    "loading": {
+      "create-repository": {
+        "title": "Vytváření repozitáře s počátečním commitem",
+        "wait": "Obvykle trvá 10-20 sekund"
+      },
+      "merge": {
+        "title": "Provádím merge commit"
+      },
+      "commit": {
+        "title": "Commituji"
+      },
+      "default": {
+        "wait": "Obvykle trvá 5-15 sekund"
+      }
+    },
+    "toast": {
+      "merge-state-created": "Merge stav byl vytvořen",
+      "link-success": "Odkaz na vzdálený Git repozitář byl úspěšně aktualizován",
+      "link-failed": "Nepodařilo se aktualizovat odkaz na vzdálený Git repozitář"
+    },
+    "error": {
+      "merge-already-merged": "Větev již byla mergována. Merge nelze provést znovu.",
+      "merge-state-removal-failed": "Odstranění merge stavu selhalo"
+    }
+  }
 }

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { gitOperationResultToast } from "./utilities";
 import { BranchAction, CreateNewBranchDialog } from "@/dialog/create-new-branch";
 import { OpenBetterModal } from "@/lib/better-modal";
+import { TFunction } from "i18next";
 
 
 export async function manualPull(iri: string) {
@@ -23,7 +24,7 @@ export async function manualPull(iri: string) {
 }
 
 
-export async function removeGitLinkFromPackage(iri: string) {
+export async function removeGitLinkFromPackage(t: TFunction<"translation", undefined>, iri: string) {
   const removeFetchURL = import.meta.env.VITE_BACKEND + "/git/remove-git-repository?iri=" + encodeURIComponent(iri);
   const response = await fetch(
     removeFetchURL,
@@ -38,7 +39,7 @@ export async function removeGitLinkFromPackage(iri: string) {
     await requestLoadPackage(iriToUpdate, true);
   }
 
-  gitOperationResultToast(response);
+  gitOperationResultToast(t, response);
 }
 
 export async function switchRepresentsBranchHead(examinedPackage: Package, openModal: OpenBetterModal) {
