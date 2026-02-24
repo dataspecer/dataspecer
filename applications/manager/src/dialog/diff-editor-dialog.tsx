@@ -14,6 +14,7 @@ import { MergeStrategyComponent } from "@/components/merge-strategy-component";
 import { useDiffEditorDialogProps } from "@/hooks/use-diff-editor-dialog-props";
 import { DatastoreInfo, EditableType } from "@dataspecer/git";
 import { BetterModalProps } from "@/lib/better-modal";
+import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 
 export type UpdateModelDataMethod = (
   treePathToNodeContainingDatastore: string,
@@ -89,7 +90,10 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
             <ResizablePanelGroup direction="horizontal" className="overflow-hidden">
               <ResizablePanel defaultSize={20} className="flex! flex-col pr-16">
                 <ModalHeader className="mb-2">
-                  <h1 className="font-bold bg-gray-200 text-lg"><p>Diff editor to resolve {examinedMergeState?.mergeStateCause} conflict</p></h1>
+                  <h1 className="flex flex-1 flex-row font-bold bg-gray-200 text-lg">
+                    <p>Diff editor to resolve {examinedMergeState?.mergeStateCause} conflict</p>
+                    <DiffEditorInfoPopOver/>
+                  </h1>
                   <Tabs value={comparisonTabType} onValueChange={setComparisonTabType as any}>
                     {/* <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="text-compare">Text comparison</TabsTrigger>
@@ -195,4 +199,21 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
       </Modal>
     </Tabs>
   );
+}
+
+function DiffEditorInfoPopOver() {
+  return <div className="pt-1">
+    <PopOverGitGeneralComponent>
+      <p>- This editor's purpose is to resolve the merge state by performing changes and marking conflicts as resolved.</p>
+      <p>- The left component contains directory diff. The directory diff is visualized with regards to the editable window.</p>
+      <p>- This means that:</p>
+      <p>&nbsp;&nbsp; - If file node is red, it means that the editable window does not have it.</p>
+      <p>&nbsp;&nbsp; - Similarly if green it means that it is present in the editable, but not in the other one.</p>
+      <p>- The merge actors are not changed in any way. This means that you have to manually do all the changes if needed.</p>
+      <p>- The editable window is always on the right.</p>
+      <p>- For pull and merge the editable windows are the "merge to" actors.</p>
+      <p>- The push is reversed, that is the editable window is the "merge from" actor. This is same as in Git, since the "merge to" is the remote.</p>
+      <p>&nbsp;&nbsp; Therefore, we have to update the local (the merge from) and then we can perform the push.</p>
+    </PopOverGitGeneralComponent>
+  </div>;
 }
