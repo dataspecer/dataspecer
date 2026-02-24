@@ -2,8 +2,8 @@ import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 // Using this one since I could not make the ones for nodeJS (one is not using ES modules and the other one seems to be too old and correctly support types)
 import sodium from "libsodium-wrappers-sumo";
 import { AuthenticationGitProviderData, GitProviderBase } from "../git-provider-base.ts";
-import { AuthenticationGitProvidersData, getGitProviderDomain, gitProviderDomains } from "../git-provider-factory.ts";
-import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, PUBLICATION_BRANCH_NAME, GitProviderIndependentWebhookRequestData } from "../../git-provider-api.ts";
+import { AuthenticationGitProvidersData, getGitProviderDomain } from "../git-provider-factory.ts";
+import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, PUBLICATION_BRANCH_DEFAULT_NAME, GitProviderIndependentWebhookRequestData } from "../../git-provider-api.ts";
 import { Scope } from "../../auth.ts";
 import { GitRestApiOperationError } from "../../error-definitions.ts";
 import { findPatAccessToken, GITHUB_USER_AGENT } from "../../git-utils.ts";
@@ -174,8 +174,11 @@ export class GitHubProvider extends GitProviderBase {
     repositoryOwner: string,
     repoName: string,
     isUserRepo: boolean,
-    shouldEnablePublicationBranch: boolean
+    shouldEnablePublicationBranch: boolean,
+    publicationBranchName: string | null,
   ): Promise<CreateRemoteRepositoryReturnType> {
+    publicationBranchName ??= PUBLICATION_BRANCH_DEFAULT_NAME;
+
     // https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#create-an-organization-repository - org repo
     // vs
     // https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#create-a-repository-for-the-authenticated-user - user repo
@@ -215,9 +218,8 @@ export class GitHubProvider extends GitProviderBase {
       // We have to create the branch first, we can not enable GH pages on not existing branch
       const defaultBranchExplicit = defaultBranch ?? "main";
       const initialCommitHash = await this.getLatestCommit(repositoryOwner, repoName, defaultBranchExplicit, authToken);
-      await this.createBranch(repositoryOwner, repoName, PUBLICATION_BRANCH_NAME, initialCommitHash, authToken);
-
-      const pagesResponse = await this.enableGitHubPages(repoName, repositoryOwner, PUBLICATION_BRANCH_NAME, authToken);
+      await this.createBranch(repositoryOwner, repoName, publicationBranchName, initialCommitHash, authToken);
+      const pagesResponse = await this.enableGitHubPages(repoName, repositoryOwner, publicationBranchName, authToken);
       // TODO RadStr Debug: Debug prints
       // console.info({pagesResponse});
       // console.info({json: await pagesResponse.json()});
@@ -453,7 +455,7 @@ export class GitHubProvider extends GitProviderBase {
       throw new Error("Can not create publication repository, since there is no access token - neiter from user and from bot");
     }
 
-    await this.createRemoteRepository(accessToken, repositoryOwner, repoName, isUserRepo, false);
+    await this.createRemoteRepository(accessToken, repositoryOwner, repoName, isUserRepo, false, null);
     await this.setBotAsCollaborator(repositoryOwner, repoName, accessToken);
     return this.enableGitHubPages(repoName, repositoryOwner, "main", accessToken);
   }

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { resourceModel, webhookUrl } from "../../main.ts";
-import { ConfigType, convertToValidGitName, extractPartOfRepositoryURL, findPatAccessToken, findPatAccessTokens, stringToBoolean, transformCommitMessageIfEmpty } from "@dataspecer/git";
+import { ConfigType, convertToValidGitName, extractPartOfRepositoryURL, findPatAccessToken, findPatAccessTokens, PUBLICATION_BRANCH_DEFAULT_NAME, stringToBoolean, transformCommitMessageIfEmpty } from "@dataspecer/git";
 import { CommitBranchAndHashInfo, commitPackageToGitUsingAuthSession, GitCommitToCreateInfoBasic, RepositoryIdentification } from "./commit-package-to-git.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import { checkErrorBoundaryForCommitAction } from "@dataspecer/git-node";
@@ -22,6 +22,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
     gitProviderURL: z.string().min(1),
     commitMessage: z.string(),
     isUserRepo: z.string().min(1),
+    publicationBranch: z.string().min(1).optional(),
     exportFormat: z.string().min(1).optional(),
   });
 
@@ -29,6 +30,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
   const debugResponse: Record<string, any> = {};
 
   const query = querySchema.parse(request.query);
+  query.publicationBranch ??= PUBLICATION_BRANCH_DEFAULT_NAME;
   debugResponse["iri"] = query.iri;
   debugResponse["givenRepositoryOwner"] = query.givenRepositoryOwner;
   debugResponse["givenRepositoryName"] = query.givenRepositoryName;
@@ -67,7 +69,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
         }
       }
 
-      const { defaultBranch } = await gitProvider.createRemoteRepository(patAccessToken.value, repositoryOwner, repositoryName, isUserRepo, true);
+      const { defaultBranch } = await gitProvider.createRemoteRepository(patAccessToken.value, repositoryOwner, repositoryName, isUserRepo, true, query.publicationBranch);
 
 
       await gitProvider.createWebhook(patAccessToken.value, repositoryOwner, repositoryName, webhookUrl, ["push"]);

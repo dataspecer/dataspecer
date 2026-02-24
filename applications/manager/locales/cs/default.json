@@ -118,7 +118,8 @@
           "append": "Zadaná zpráva bude připojena za výchozí merge zprávu automaticky vytvořenou Gitem (aktuální volba)",
           "exact": "Merge zpráva bude přesně odpovídat zadanému textu (aktuální volba)"
         },
-        "remote-url": "URL vzdáleného Git repozitáře"
+        "remote-url": "URL vzdáleného Git repozitáře",
+        "advanced-settings": "Pokročilé nastavení"
       },
       "tooltip": {
         "repository-owner": "Jméno vlastníka, pod kterým bude repozitář vytvořen. Pokud je pole prázdné, použije se jméno bota."
@@ -155,6 +156,12 @@
     "error": {
       "merge-already-merged": "Větev již byla mergována. Merge nelze provést znovu.",
       "merge-state-removal-failed": "Odstranění merge stavu selhalo"
+    },
+    "configuration": {
+      "publication-branch": {
+        "title": "Jméno publikační větve (branch)",
+        "tooltip": "Publikační Git větev, která bude obsahovat vygenerovanou dokumentaci v Gitovém repozitáři."
+      }
     }
   }
 }

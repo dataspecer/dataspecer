@@ -4,6 +4,9 @@ import { RefObject } from "react";
 
 type SetStringState = (value: string) => void;
 
+/**
+   * requiredRefObject should be provided if we expect the input field to be required (non-empty)
+   */
 export type InputComponentProps = {
   idPrefix: string;
   idSuffix: number;

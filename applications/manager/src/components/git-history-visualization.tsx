@@ -12,7 +12,7 @@ import { GitHistoryCommitActionsDialog } from "@/dialog/git-history-visualizatio
 import { Loader } from "lucide-react";
 import { Template } from "@gitgraph/core/lib/template";
 import { ResourceWithIris } from "@/package";
-import { PACKAGE_ROOT, CommitInfo, RawCommit, BranchHistory, FetchedGitRawHistory, PUBLICATION_BRANCH_NAME } from "@dataspecer/git";
+import { PACKAGE_ROOT, CommitInfo, RawCommit, BranchHistory, FetchedGitRawHistory, PUBLICATION_BRANCH_DEFAULT_NAME } from "@dataspecer/git";
 
 type DSPackageInProjectVisualizationData = {
   iri: string;
@@ -297,7 +297,7 @@ const createGitGraph = (
         const coreGraph = (userApi as any)._graph;
         const validCommits: any[] = [];
         for (const commit of coreGraph.commits) {
-          if (commit.branches.includes(`origin/${PUBLICATION_BRANCH_NAME}`)) {
+          if (commit.branches.includes(`origin/${PUBLICATION_BRANCH_DEFAULT_NAME}`)) { ... Use the name from the configuration
             continue;
           }
           commit.renderDot = defaultCommitRenderDot;

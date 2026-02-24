@@ -128,8 +128,11 @@ export class GitLabProvider extends GitProviderBase {
     repositoryOwner: string,
     repoName: string,
     isUserRepo: boolean,
-    shouldEnablePublicationBranch: boolean
+    shouldEnablePublicationBranch: boolean,
+    publicationBranchName: string | null,
   ): Promise<CreateRemoteRepositoryReturnType> {
+    // TODO: Does not have implemented the publication branches.
+
     // https://docs.gitlab.com/api/projects/#create-a-project
     // Example curl request:
     // curl --request POST --header "PRIVATE-TOKEN: <your-token>" \

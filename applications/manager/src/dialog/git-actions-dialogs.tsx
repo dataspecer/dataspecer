@@ -7,8 +7,12 @@ import { requestLoadPackage } from "@/package";
 import { createIdentifierForHTMLElement, InputComponent } from "@/components/simple-input-component";
 import { Package } from "@dataspecer/core-v2/project";
 import { toast } from "sonner";
-import { ExportFormatRadioButtons, ExportFormatType } from "@/components/export-format-radio-buttons";
-import { CommitRedirectResponseJson, createSetterWithGitValidation, CommitRedirectExtendedResponseJson, MergeFromDataType, MergeState, SingleBranchCommitType, convertMergeStateCauseToEditable, CommitConflictInfo, GitProviderEnum, convertGitProviderNameToEnum } from "@dataspecer/git";
+import {
+  CommitRedirectResponseJson, createSetterWithGitValidation, CommitRedirectExtendedResponseJson, MergeFromDataType,
+  MergeState, SingleBranchCommitType, convertMergeStateCauseToEditable, CommitConflictInfo, GitProviderEnum, convertGitProviderNameToEnum,
+  getGitRemoteConfigurationModelFromPackage, GitRemoteConfigurations, ExportFormatType, saveGitRemoteConfiguration,
+  PUBLICATION_BRANCH_DEFAULT_NAME
+} from "@dataspecer/git";
 import { CommitRedirectForMergeStatesDialog } from "./commit-confirm-dialog-caused-by-merge-state";
 import { commitToGitBackendRequest, createNewRemoteRepositoryRequest, linkToExistingGitRepositoryRequest, mergeCommitToGitBackendRequest } from "@/utils/git-backend-requests";
 import { createCloseDialogObject, LoadingDialog } from "@/components/loading-dialog";
@@ -19,6 +23,9 @@ import { useLogin } from "@/hooks/use-login";
 import { getGitProviderDomain } from "@dataspecer/git/git-providers";
 import { useTranslation } from "react-i18next";
 import { TFunction } from "i18next";
+import { SetGitRemoteConfigurationComponent } from "./set-git-remote-configuration-dialog";
+import { useRequiredFieldsForGitConfig } from "@/hooks/use-required-fields-for-git-config";
+import { ChevronsDownIcon, ChevronsUpIcon } from "lucide-react";
 
 /**
  * Checks if the {@link requiredFieldsRefs} are valid (non-empty). If so, the {@link resolve} method is called.
@@ -44,6 +51,32 @@ export const resolveWithRequiredCheck = (resolve: () => void, ...requiredFieldsR
   return areRefsValid;
 }
 
+type NullableGitRemoteConfigurations = GitRemoteConfigurations | null;
+
+// TODO RadStr: ... I can not type it correctly ... try to fix it later
+
+export type SetGitRemoteConfigurationStatePartMethod = (gitRemoteConfigurationSetter: SetGitConfigurationReactStateType, key: keyof GitRemoteConfigurations, newValue: any) => void;
+// ((prevState: T) => T) => void
+export type SetGitConfigurationReactStateType = (value: NullableGitRemoteConfigurations | ((prevState: NullableGitRemoteConfigurations) => NullableGitRemoteConfigurations)) => void;
+// type SetGitConfigurationReactStateType = ((prevState: NullableGitRemoteConfigurations): NullableGitRemoteConfigurations) => void;
+// type SetGitConfigurationReactStateType = (((prevState: NullableGitRemoteConfigurations) => NullableGitRemoteConfigurations)) => void;
+
+export function setGitRemoteConfigurationStatePart(
+  gitRemoteConfigurationSetter: SetGitConfigurationReactStateType,
+  key: keyof GitRemoteConfigurations,
+  newValue: any,
+) {
+  gitRemoteConfigurationSetter((prevState: NullableGitRemoteConfigurations) => {
+    if (prevState === null) {
+      return null;
+    }
+    return {
+      ...prevState,
+      [key]: newValue
+    } as NullableGitRemoteConfigurations;
+  });
+}
+
 
 type GitActionsDialogProps = {
   inputPackage: Package;
@@ -59,6 +92,7 @@ type GitActionsDialogProps = {
   isUserRepo: boolean;
   shouldAlwaysCreateMergeState: boolean;
   shouldAppendAfterDefaultMergeCommitMessage: boolean;
+  publicationBranch: string;
   exportFormat: ExportFormatType;
 } | null>;
 
@@ -81,7 +115,26 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
     return createGitProviderComboBoxOptions();
   }, []);
 
+  const [rootPackageContent, setRootPackageContent] = useState<any>(null);
+  const [gitRemoteConfiguration, setGitRemoteConfiguration] = useState<GitRemoteConfigurations | null>(null);
+  useEffect(() => {
+    const setGitRemoteConfigurationState = async () => {
+      // For the commits (and creating of repo) we will pass in the exportFormat directly, instead of retrieving it again on server.
+      const isGitDialogSettingGitConfiguration = type !== "link-to-existing-repository";
+      const rootPackageFetchResponse = await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(inputPackage.iri));
+      const rootPackageFetchedContent = await rootPackageFetchResponse.json();
+      const fetchedGitRemoteConfiguration = isGitDialogSettingGitConfiguration ? await getGitRemoteConfigurationModelFromPackage(rootPackageFetchedContent) : null;
+      setRootPackageContent(rootPackageFetchedContent);
+      setGitRemoteConfiguration(fetchedGitRemoteConfiguration);
+    };
+    setGitRemoteConfigurationState();
+  }, [inputPackage]);
+
+  console.info({gitRemoteConfiguration});     // TODO RadStr: Debug print
+
   const { accountProvider, username, genericScope } = useLogin();
+
+  const [showMore, setShowMore] = useState<boolean>(false);
 
   const [repositoryName, setRepositoryName] = useState<string>(inputPackage.iri);
   const [remoteRepositoryURL, setRemoteRepositoryURL] = useState<string>("https://github.com/userName/repositoryName");
@@ -92,18 +145,18 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   // We want the shouldAlwaysCreateMergeState option on, except when we are not showing it, then it can cause recursion
   const [shouldAlwaysCreateMergeState, setShouldAlwaysCreateMergeState] = useState<boolean>(shouldShowAlwaysCreateMergeStateOption !== false);
   const [shouldAppendAfterDefaultMergeCommitMessage, setShouldAppendAfterDefaultMergeCommitMessage] = useState<boolean>(true);
-  const [exportFormat, setExportFormat] = useState<ExportFormatType>("json");
 
   // Values for non-empty inputbox check
   const repositoryNameInputFieldRef = useRef<HTMLInputElement | null>(null);
   const commitMessageInputFieldRef = useRef<HTMLInputElement | null>(null);
+  const { publicationBranchRef, requiredGitConfigFieldsMap } = useRequiredFieldsForGitConfig();
 
   const requiredFields: RefObject<HTMLInputElement | null>[] = useMemo(() => {
     const requiredFieldsInternal: RefObject<HTMLInputElement | null>[] = [];
     switch(type) {
       case "create-new-repository-and-commit":
         // TODO RadStr: For now without the repositoryOwnerInputFieldRef - we just use the bot, if it is empty
-        requiredFieldsInternal.push(repositoryNameInputFieldRef, commitMessageInputFieldRef);
+        requiredFieldsInternal.push(repositoryNameInputFieldRef, commitMessageInputFieldRef, publicationBranchRef);
         break;
       case "commit":
         requiredFieldsInternal.push(commitMessageInputFieldRef);
@@ -139,7 +192,24 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
 
   const tryCloseWithSuccess = () => {
     const resolveAsNoParamsMethod = () => {
-      resolve({ user, repositoryName, remoteRepositoryURL, gitProvider, commitMessage, isUserRepo, shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage, exportFormat });
+      resolve({
+        user, repositoryName, remoteRepositoryURL, gitProvider, commitMessage, isUserRepo,
+        shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage,
+        publicationBranch: gitRemoteConfiguration?.publicationBranch ?? PUBLICATION_BRANCH_DEFAULT_NAME,
+        exportFormat: gitRemoteConfiguration?.exportFormat ?? "json",
+      });
+      // TODO RadStr: It is kind of weird that there is no exported method with this functionality yet.
+      const storeModelToBackend = async (iri: string, newPackageContent: object) => {
+        await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(iri), {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newPackageContent),
+        });
+        toast(t("successfully saved"));
+      };
+      saveGitRemoteConfiguration(inputPackage.iri, rootPackageContent, gitRemoteConfiguration, storeModelToBackend)
     };
 
     resolveWithRequiredCheck(resolveAsNoParamsMethod, ...requiredFields);
@@ -222,7 +292,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
           setInput={createSetterWithGitValidation(setUser)} input={user}
         />
         <div className="-mt-2 mb-8 flex items-center space-x-6">
-          <label className="flex items-center space-x-2 cursor-pointer">
+          <label className="flex items-center space-x-2">
             <input
               type="radio"
               checked={isUserRepo === true}
@@ -232,7 +302,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
             <span>{t("git.dialog.radio.user-repository")}</span>
           </label>
 
-          <label className="flex items-center space-x-2 cursor-pointer">
+          <label className="flex items-center space-x-2">
             <input
               type="radio"
               checked={isUserRepo === false}
@@ -251,7 +321,20 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
           input={commitMessage}
           requiredRefObject={commitMessageInputFieldRef}
         />
-        <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
+        {/* ---- COLLAPSIBLE SECTION ---- */}
+        <Button
+          variant="ghost"
+          className="mt-2 mb-2 p-0 text-sm"
+          onClick={() => setShowMore(!showMore)}
+        >
+          {showMore ? <ChevronsUpIcon /> : <ChevronsDownIcon />}
+          {t("git.dialog.label.advanced-settings")}:
+        </Button>
+        { (gitRemoteConfiguration === null || !showMore) ? null : <SetGitRemoteConfigurationComponent
+                                                                    configuration={gitRemoteConfiguration!}
+                                                                    setGitConfigurationReactState={setGitRemoteConfiguration}
+                                                                    requiredFieldsMap={requiredGitConfigFieldsMap}
+                                                                  />}
       </div>;
       break;
     case "commit":
@@ -269,7 +352,6 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
               input={commitMessage}
               requiredRefObject={commitMessageInputFieldRef}
             />
-            <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
             {!shouldShowAlwaysCreateMergeStateOption ?
               null :
               <label className="flex items-center gap-2">
@@ -295,7 +377,6 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
             input={commitMessage}
             requiredRefObject={commitMessageInputFieldRef}
           />
-          <ExportFormatRadioButtons exportFormat={exportFormat} setExportFormat={setExportFormat} />
           <label className="flex items-center gap-2">
             <input
               type="checkbox"

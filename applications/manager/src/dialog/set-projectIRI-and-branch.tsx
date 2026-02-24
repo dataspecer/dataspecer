@@ -7,10 +7,10 @@ import { modifyPackageProjectData, requestLoadPackage } from "@/package";
 import { createIdentifierForHTMLElement, InputComponent } from "@/components/simple-input-component";
 
 type SetProjectIriAndBranchDialogProps = {
-  examinedPackage: Package,
+  examinedPackage: Package;
 } & BetterModalProps<{
-  newBranch: string,
-  newProjectIri: string,
+  newBranch: string;
+  newProjectIri: string;
 } | null>;
 
 const idPrefix = "setProjectIriAndBranchDialog";

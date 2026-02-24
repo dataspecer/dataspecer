@@ -1,5 +1,4 @@
-import { ExportFormatType } from "@/components/export-format-radio-buttons";
-import { MergeFromDataType } from "@dataspecer/git";
+import { ExportFormatType, MergeFromDataType } from "@dataspecer/git";
 
 
 export async function commitToGitBackendRequest(
@@ -48,18 +47,19 @@ export async function mergeCommitToGitBackendRequest(
   return response;
 }
 
-export type CommitBackendRequestData = {
+type CreanteNewRepoBackendRequestData = {
   repositoryName: string;
   user: string;
   gitProvider: string;
   commitMessage: string;
   isUserRepo: boolean;
+  publicationBranch: string;
   exportFormat: ExportFormatType;
 }
 
 export async function createNewRemoteRepositoryRequest(
   iri: string,
-  commitBackendRequestData: CommitBackendRequestData,
+  commitBackendRequestData: CreanteNewRepoBackendRequestData,
 ) {
   const url = import.meta.env.VITE_BACKEND + "/git/create-new-git-repository-with-package-content?iri=" + encodeURIComponent(iri) +
                                             "&givenRepositoryName=" + encodeURIComponent(commitBackendRequestData.repositoryName) +
@@ -67,6 +67,7 @@ export async function createNewRemoteRepositoryRequest(
                                             "&gitProviderURL=" + encodeURIComponent(commitBackendRequestData.gitProvider ?? "") +
                                             "&commitMessage=" + encodeURIComponent(commitBackendRequestData.commitMessage ?? "") +
                                             "&isUserRepo=" + encodeURIComponent(commitBackendRequestData.isUserRepo ?? true) +
+                                            "&publicationBranch=" + encodeURIComponent(commitBackendRequestData.publicationBranch) +
                                             "&exportFormat=" + commitBackendRequestData.exportFormat;
   const response = await fetch(
     url,

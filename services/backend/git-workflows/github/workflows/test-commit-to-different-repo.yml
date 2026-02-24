@@ -664,6 +664,15 @@ jobs:
           path: dataspecer-source-code
           token: ${{ secrets.GITHUB_TOKEN }}   # Should not be needed sice we get it from the public version of repository
           ref: git-integration # TODO RadStr: In future use main branch
+      ... 2 things: 1) The code has to be in typescript since I do not know if it is .meta.json nebo .meta.yaml
+                  2) fix and better name than my_value
+
+      - name: Get publication branch name
+        working-directory: dataspecer-source-code/packages/git
+        run: |
+          node src/git-workflows-subprograms/github/config-reader.ts
+          VALUE=$(cat config.yaml | node dist/index.js config.yaml config.name)
+          echo "my_value=$VALUE" >> $GITHUB_OUTPUT
       - name: Copy config
         working-directory: dataspecer-source-code/services/backend
         run: cp main.config.sample.js main.config.js

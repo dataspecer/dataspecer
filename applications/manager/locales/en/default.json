@@ -118,7 +118,8 @@
           "append": "The given message will be appended after the default merge message automatically created bz Git (current option)",
           "exact": "The merge message will look exactly as given (current option)"
         },
-        "remote-url": "Git remote repository URL"
+        "remote-url": "Git remote repository URL",
+        "advanced-settings": "Advanced settings"
       },
       "tooltip": {
         "repository-owner": "Name under which the repository should be created. If empty, bot name is used."
@@ -155,6 +156,12 @@
     "error": {
       "merge-already-merged": "The merge from branch was already merged. We cannot merge again.",
       "merge-state-removal-failed": "Removal of merge state failed"
+    },
+    "configuration": {
+      "publication-branch": {
+        "title": "Publication branch name",
+        "tooltip": "The publication Git branch, which will contain the generated documentation in the Git repository."
+      }
     }
   }
 }
