@@ -50,7 +50,7 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
 
   try {
     // Create package
-    const packageIri = query.parentIri + "/" + uuidv4();
+    const packageIri = uuidv4();
     await resourceModel.createPackage(query.parentIri, packageIri, {
       label: body.label ? { en: body.label } : {},
       description: body.description ? { en: body.description } : {},
