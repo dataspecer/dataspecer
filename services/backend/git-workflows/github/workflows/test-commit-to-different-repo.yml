@@ -688,7 +688,6 @@ jobs:
         with:
           path: generated-content
           ref: ${{ github.ref }} # fallback if branch exists
-
       - name: Create branch if missing
         working-directory: generated-content
         run: |
@@ -699,15 +698,6 @@ jobs:
           else
             git checkout $BRANCH_NAME
           fi
-      - name: Checkout the current repository into DIRECTORY_WITH_GENERATED_CONTENT directory
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-          path: generated-content  # The path overrides the repo name directory to which it would be normally given
-          repository: ${{ github.repository }}
-          # For some reason it does not work if we do not specify ref.
-          # However this has advantage that we no longer have to switch to the branch, we are on it by default
-          ref: ${{ steps.getPublicationBranchName.outputs.publication_branch }}
       - name: Build backend   # TODO RadStr: Probably unnecessary
         working-directory: dataspecer-source-code/services/backend
         run: npm run build
