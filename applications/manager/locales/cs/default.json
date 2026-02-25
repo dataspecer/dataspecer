@@ -58,7 +58,7 @@
   "generate application": "Vygenerovat aplikaci",
   "ID": "ID",
   "import": "Import",
-  "import specification from url": "Importovat z URL",
+  "import specification from url": "Profilovat specifikaci z URL",
   "mode-toggle": {
     "dark": "Tmavé",
     "light": "Světlé",

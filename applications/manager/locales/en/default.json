@@ -58,7 +58,7 @@
   "generate application": "Generate the application",
   "ID": "ID",
   "import": "Import",
-  "import specification from url": "Import from url",
+  "import specification from url": "Profile dataspec from URL",
   "mode-toggle": {
     "dark": "Dark",
     "light": "Light",
