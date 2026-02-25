@@ -44,8 +44,7 @@ async function main() {
     parsed = YAML.parse(fileContent);
   }
 
-  console.info(parsed);
-  const fieldValue = parsed["configuration"][GIT_REMOTE_CONFIGURATION_IRI]["publicationBranch"] ?? PUBLICATION_BRANCH_DEFAULT_NAME;
+  const fieldValue = parsed?.["configuration"]?.[GIT_REMOTE_CONFIGURATION_IRI]?.["publicationBranch"] ?? PUBLICATION_BRANCH_DEFAULT_NAME;
 
   // Print ONLY the value so GitHub Actions can capture it cleanly
   process.stdout.write(String(fieldValue) + "\n");
