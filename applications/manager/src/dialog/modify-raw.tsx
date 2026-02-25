@@ -67,7 +67,7 @@ export const ModifyRawDialog = ({isOpen, resolve, iri}: ModifyRawDialogProps) =>
       },
       body: value,
     });
-    toast(t("successfully saved"));
+    toast.success(t("successfully saved"));
   });
 
   const formatJson = useEventCallback(() => {

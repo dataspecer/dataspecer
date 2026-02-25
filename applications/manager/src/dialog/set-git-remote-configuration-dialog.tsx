@@ -46,7 +46,7 @@ export function SetGitRemoteConfigurationDialog({ inputPackage, isOpen, resolve 
           },
           body: JSON.stringify(newPackageContent),
         });
-        toast(t("successfully saved"));
+        toast.success(t("successfully saved"));
       };
       await saveGitRemoteConfiguration(inputPackage.iri, rootPackageContent, gitRemoteConfiguration, storeModelToBackend);
       await requestLoadPackage(inputPackage.iri, true);

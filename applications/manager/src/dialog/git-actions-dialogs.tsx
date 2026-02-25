@@ -207,7 +207,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
           },
           body: JSON.stringify(newPackageContent),
         });
-        toast(t("successfully saved"));
+        toast.success(t("successfully saved"));
       };
       saveGitRemoteConfiguration(inputPackage.iri, rootPackageContent, gitRemoteConfiguration, storeModelToBackend);
     };
