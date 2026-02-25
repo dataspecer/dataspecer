@@ -198,18 +198,21 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
         publicationBranch: gitRemoteConfiguration?.publicationBranch ?? PUBLICATION_BRANCH_DEFAULT_NAME,
         exportFormat: gitRemoteConfiguration?.exportFormat ?? "json",
       });
-      // TODO RadStr: It is kind of weird that there is no exported method with this functionality yet.
-      const storeModelToBackend = async (iri: string, newPackageContent: object) => {
-        await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(iri), {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(newPackageContent),
-        });
-        toast.success(t("successfully saved"));
-      };
-      saveGitRemoteConfiguration(inputPackage.iri, rootPackageContent, gitRemoteConfiguration, storeModelToBackend);
+      if (type === "create-new-repository-and-commit") {
+        // We store the new configuration only when creating new repository,
+        // TODO RadStr: It is kind of weird that there is no exported method with this functionality yet.
+        const storeModelToBackend = async (iri: string, newPackageContent: object) => {
+          await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(iri), {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(newPackageContent),
+          });
+          toast.success(t("successfully saved"));
+        };
+        saveGitRemoteConfiguration(inputPackage.iri, rootPackageContent, gitRemoteConfiguration, storeModelToBackend);
+      }
     };
 
     resolveWithRequiredCheck(resolveAsNoParamsMethod, ...requiredFields);
