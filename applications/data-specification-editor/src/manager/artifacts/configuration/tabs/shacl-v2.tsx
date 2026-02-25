@@ -5,7 +5,7 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { Accordion, AccordionDetails, AccordionSummary, Box, Chip, Divider, FormGroup, Grid, IconButton, TextField, Tooltip, Typography } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Box, Divider, FormGroup, Grid, IconButton, TextField, Tooltip, Typography } from "@mui/material";
 import { FC, useRef, useState } from "react";
 import { SwitchWithDefault } from "../ui-components/index";
 
@@ -17,21 +17,15 @@ const FileConfigPanel: FC<{
   defaultConfig?: SemanticModelsToShaclConfiguration;
   onChange: (updated: FileConfig) => void;
 }> = ({ fileConfig, defaultConfig, onChange }) => {
-  const [languageInput, setLanguageInput] = useState("");
-
   const languages: string[] = Array.isArray((fileConfig as any)?.languages) ? ((fileConfig as any).languages as string[]) : [];
+  const languagesText = languages.join(", ");
 
-  const addLanguage = () => {
-    const lang = languageInput.trim();
-    if (lang && !languages.includes(lang)) {
-      const updated: FileConfig = { ...fileConfig, languages: [...languages, lang] };
-      onChange(updated);
-    }
-    setLanguageInput("");
-  };
-
-  const removeLanguage = (lang: string) => {
-    const updated: FileConfig = { ...fileConfig, languages: languages.filter((l) => l !== lang) };
+  const handleLanguagesChange = (value: string) => {
+    const parsed = value
+      .split(/[^a-zA-Z0-9]/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    const updated: FileConfig = { ...fileConfig, languages: [... new Set(parsed)] };
     onChange(updated);
   };
 
@@ -47,40 +41,17 @@ const FileConfigPanel: FC<{
         Languages
       </Typography>
       <Typography variant="body2" sx={{ mb: 1 }}>
-        Languages for <code>sh:name</code> and <code>sh:description</code>. Leave empty to include all.
+        Comma-separated language tags for <code>sh:name</code> and <code>sh:description</code>. For example: <code>en, cs</code> or <code>en, de, fr</code>. Leave empty to include all languages.
       </Typography>
-      <Grid container alignItems="center" spacing={1}>
-        <Grid item xs>
-          <TextField
-            variant="standard"
-            label="Add language tag (e.g. en, cs)"
-            value={languageInput}
-            onChange={(e) => setLanguageInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addLanguage();
-              }
-            }}
-            fullWidth
-          />
-        </Grid>
-        <Grid item>
-          <IconButton onClick={addLanguage} size="small">
-            <AddIcon />
-          </IconButton>
-        </Grid>
-      </Grid>
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 1, mb: 2 }}>
-        {languages.map((lang) => (
-          <Chip key={lang} label={lang} onDelete={() => removeLanguage(lang)} size="small" />
-        ))}
-        {languages.length === 0 && (
-          <Typography variant="body2" color="text.secondary">
-            No languages specified — all languages will be included.
-          </Typography>
-        )}
-      </Box>
+      <TextField
+        variant="standard"
+        label="Comma-separated languages or empty for all"
+        placeholder="cs, en, de"
+        defaultValue={languagesText}
+        onChange={(e) => handleLanguagesChange(e.target.value)}
+        fullWidth
+        sx={{ mb: 2 }}
+      />
 
       <Typography variant="subtitle2" component="h4" sx={{ mt: 1 }}>
         Constraints
