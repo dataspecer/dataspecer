@@ -24,7 +24,7 @@ async function main() {
   const files = fs.readdirSync(directory);
 
   const metaFile = files.find(file =>
-    file.startsWith(".meta") &&
+    file.startsWith(".model") &&
     (file.endsWith(".json") || file.endsWith(".yaml") || file.endsWith(".yml"))
   );
 
@@ -44,6 +44,7 @@ async function main() {
     parsed = YAML.parse(fileContent);
   }
 
+  console.info(parsed);
   const fieldValue = parsed["configuration"][GIT_REMOTE_CONFIGURATION_IRI]["publicationBranch"] ?? PUBLICATION_BRANCH_DEFAULT_NAME;
 
   // Print ONLY the value so GitHub Actions can capture it cleanly
