@@ -291,18 +291,7 @@ function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean
       <Button variant="ghost" size="sm" className="shrink-0 ml-4"
         onClick={() => openModal(AddImported, {id: iri})}>
         <Import className="mr-2 h-4 w-4" /> {t("import")}
-      </Button>
-      <Button variant="ghost" size={"sm"} className="shrink-0 ml-4" onClick={async () => {
-        const names = await openModal(RenameResourceDialog, {type: "create"});
-        if (!names) return;
-        await createModelInstructions[LOCAL_PACKAGE].createHook({
-          iri: "",
-          parentIri: iri,
-          modelType: LOCAL_PACKAGE,
-          label: names?.name,
-          description: names?.description,
-        });
-      }}><Folder className="mr-2 h-4 w-4" /> {t("new-package")}</Button>
+      </Button> 
       <Button variant="default" size={"sm"} className="shrink-0 ml-4" onClick={() => openModal(ProjectWizard, {iri})}><WandSparkles className="mr-2 h-4 w-4" /> {t("project-wizard")}</Button>
     </div>
     {isOpen &&
