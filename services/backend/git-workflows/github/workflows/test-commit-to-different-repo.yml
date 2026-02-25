@@ -821,11 +821,11 @@ jobs:
           fi
           pwd
           ls
-          echo "${PUBLICATION_BRANCH}"
+          echo "${{ steps.getPublicationBranchName.outputs.publication_branch }}"
           git remote -v
           git status
           git branch
           git log
-          git push -u origin ${PUBLICATION_BRANCH}
+          git push -u origin ${{ steps.getPublicationBranchName.outputs.publication_branch }}
 
 # Pushing is based on https://sameeradissanayaka.medium.com/how-to-use-github-actions-to-push-code-commit-to-another-branch-af04d8406f08
