@@ -3,11 +3,11 @@
   "$datetime": "{{val, datetime(dateStyle: long; timeStyle: short)}}",
   "add-imported": {
     "error": "An error occurred while importing some specifications",
-    "file-description": "Use this dialog to drop ZIP file with file exported from Dataspecer.",
-    "file-warning": "This is still an experimental feature. The imported package must not exists otherwise the import fails. The import/export functionality cannot be used to create copies, only backups.",
+    "file-description": "Use this dialog to drop a Dataspecer ZIP archive.",
+    "file-warning": "The restored specification must not already exist. If it does, delete it first.",
     "import": "Import",
     "success": "Import was successful",
-    "tab-file": "File",
+    "tab-file": "Restore archive",
     "tab-url": "URL",
     "title": "Import specification(s)",
     "warning": "Insert URLs to specifications you want to import."

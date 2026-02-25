@@ -3,11 +3,11 @@
   "$datetime": "{{val, datetime(dateStyle: long; timeStyle: short)}}",
   "add-imported": {
     "error": "Při importu některých specifikací nastala chyba",
-    "file-description": "V tomto dialogu můžete vložit ZIP soubor se souborem exportovaným z Dataspeceru.",
-    "file-warning": "Jedná se stále o experimentální funkci. Importovaný balíček nesmí existovat, jinak import selže. Funkcionalitu importu/exportu nelze použít k vytváření kopií, pouze záloh.",
+    "file-description": "V tomto dialogu můžete obnovit specifikaci ze záložního ZIP souboru.",
+    "file-warning": "Obnovovaná specifikace nesmí v Dataspeceru existovat. Pokud existuje, nejprve ji smažte.",
     "import": "Importovat",
     "success": "Import proběhl v pořádku",
-    "tab-file": "Soubor",
+    "tab-file": "Obnovit ze souboru",
     "tab-url": "URL",
     "title": "Importovat specifikaci/e",
     "warning": "Vložte URL specifikací, které chcete importovat."
