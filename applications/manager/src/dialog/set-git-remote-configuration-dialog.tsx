@@ -10,6 +10,7 @@ import { Package } from "@dataspecer/core-v2/project";
 import { useRequiredFieldsForGitConfig } from "@/hooks/use-required-fields-for-git-config";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { requestLoadPackage } from "@/package";
 
 export type RequiredFieldsPartialMap = Partial<Record<keyof GitRemoteConfigurations, RefObject<HTMLInputElement | null>>>;
 
@@ -33,7 +34,7 @@ export function SetGitRemoteConfigurationDialog({ inputPackage, isOpen, resolve 
 
   // TODO RadStr: Once again everything is kind of copy-pasted - refactor in the following commits
   const tryCloseWithSuccess = () => {
-    const resolveAsNoParamsMethod = () => {
+    const resolveAsNoParamsMethod = async () => {
       resolve(null);
 
       // TODO RadStr: It is kind of weird that there is no exported method with this functionality yet.
@@ -47,7 +48,8 @@ export function SetGitRemoteConfigurationDialog({ inputPackage, isOpen, resolve 
         });
         toast(t("successfully saved"));
       };
-      saveGitRemoteConfiguration(inputPackage.iri, rootPackageContent, gitRemoteConfiguration, storeModelToBackend);
+      await saveGitRemoteConfiguration(inputPackage.iri, rootPackageContent, gitRemoteConfiguration, storeModelToBackend);
+      await requestLoadPackage(inputPackage.iri, true);
     };
 
     resolveWithRequiredCheck(resolveAsNoParamsMethod, ...Object.values(requiredGitConfigFieldsMap));
