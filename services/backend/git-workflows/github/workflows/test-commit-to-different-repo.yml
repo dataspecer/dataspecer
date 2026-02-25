@@ -696,6 +696,7 @@ jobs:
             git checkout -b $BRANCH_NAME
             git push origin $BRANCH_NAME
           else
+            git fetch origin $BRANCH_NAME:$BRANCH_NAME    # We have to fetch, we have fetched only the current (main) branch
             git checkout $BRANCH_NAME
           fi
       - name: Build backend   # TODO RadStr: Probably unnecessary
