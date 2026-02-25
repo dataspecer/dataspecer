@@ -653,7 +653,7 @@ export async function generateSpecification(packageId: string, context: Generate
     const dsv = await DSVMetadataToJsonLdString(specifications, {
       rootHtmlDocumentIri: htmlDescriptor.iri,
       space: 2,
-      useAbsoluteUrls: !isPreviewMode,
+      useAbsoluteUrls: false, // !isPreviewMode,
     });
 
     langReplacer(lang);
