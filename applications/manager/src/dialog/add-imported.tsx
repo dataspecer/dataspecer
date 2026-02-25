@@ -13,9 +13,10 @@ import { toast } from "sonner";
 
 export interface AddImportedProps {
   id: string;
+  urlOnly?: boolean;
 }
 
-export const AddImported = ({ id, isOpen, resolve }: AddImportedProps & BetterModalProps<boolean>) => {
+export const AddImported = ({ id, urlOnly, isOpen, resolve }: AddImportedProps & BetterModalProps<boolean>) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
@@ -90,6 +91,21 @@ export const AddImported = ({ id, isOpen, resolve }: AddImportedProps & BetterMo
           <ModalTitle>{t("add-imported.title")}</ModalTitle>
         </ModalHeader>
         <ModalBody className="mt-auto flex flex-col gap-2 p-4">
+          {urlOnly ? (
+            <form className="grid gap-4" onSubmit={formSubmit}>
+              <div className="grid gap-2">
+                <Label htmlFor="url">
+                  {t("form.url.name")}
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Textarea id="url" placeholder={t("form.url.instruction")} required />
+              </div>
+
+              <LoadingButton type="submit" loading={loading}>
+                {t("add-imported.import")}
+              </LoadingButton>
+            </form>
+          ) : (
           <Tabs defaultValue="account">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="URL">URL</TabsTrigger>
@@ -124,6 +140,7 @@ export const AddImported = ({ id, isOpen, resolve }: AddImportedProps & BetterMo
               />
             </TabsContent>
           </Tabs>
+          )}
         </ModalBody>
       </ModalContent>
     </Modal>
