@@ -26,6 +26,7 @@
     "success": "Copied IRI to the clipboard",
     "text": "copy"
   },
+  "loading specification": "Loading specification...",
   "more": "more",
   "name": "Name",
   "new schema description format": "Data structure for {label}. {description}",
@@ -33,6 +34,7 @@
   "no schema text": "Start by clicking on <1>set root element</1> button to set class as a root of the schema.",
   "no title": "no title",
   "open data structure": "Open data structure",
+  "profile": "Profile",
   "report a bug": "report a bug",
   "request a feature": "request a feature",
   "return back button": "Go back to {{toolName}}",
@@ -45,6 +47,11 @@
     "use structured class": "Use structured class (non-interpreted)"
   },
   "set root element button": "Set root element",
+  "theme": {
+    "dark": "Dark",
+    "light": "Light",
+    "system": "System"
+  },
   "title": "schema editor",
   "version": "Version"
 }

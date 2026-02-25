@@ -1,22 +1,27 @@
 import { DataPsmClass, DataPsmSchema } from "@dataspecer/core/data-psm/model";
 import { useFederatedObservableStore } from "@dataspecer/federated-observable-store-react/store";
 import { useResource } from "@dataspecer/federated-observable-store-react/use-resource";
-import { IconButton, Paper, Typography } from "@mui/material";
+import { IconButton, Paper, Typography, useTheme } from "@mui/material";
 import Skeleton from '@mui/material/Skeleton';
 import React, { useCallback } from "react";
 import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 import { useTranslation } from "react-i18next";
 import { useDialog } from "../../dialog";
-import { Icons } from "../../icons";
+import { Icons, IconsTwoTone } from "../../icons";
 import { SetOrder } from "../../operations/set-order";
 import { EntityChainDetailDialog } from "../detail/entity-chain-detail-dialog";
 import { LanguageStringFallback } from "../helper/LanguageStringComponents";
 import { DataPsmSchemaRootItem } from "./entities/schema-root";
+import { ProfileInformation } from "./profiling/profile-information";
 
 export const DataPsmSchemaItem: React.FC<{dataPsmSchemaIri: string}> = ({dataPsmSchemaIri}) => {
   const {resource: dataPsmSchema} = useResource<DataPsmSchema>(dataPsmSchemaIri);
   const readOnly = false;
   const store = useFederatedObservableStore();
+  const theme = useTheme();
+  
+  // Use TwoTone icons in light mode, regular icons in dark mode
+  const iconSet = theme.palette.mode === 'dark' ? Icons : IconsTwoTone;
 
   const DetailDialog = useDialog(EntityChainDetailDialog, ["iris"]);
   const openDetail = useCallback(() => DetailDialog.open({}), [DetailDialog]);
@@ -55,9 +60,10 @@ export const DataPsmSchemaItem: React.FC<{dataPsmSchemaIri: string}> = ({dataPsm
         <DetailDialog.Component iris={[dataPsmSchemaIri]} />
         <Typography variant="h5">
           <LanguageStringFallback from={dataPsmSchema.dataPsmHumanLabel} fallback={<i>{t("no label")}</i>}/>
+          <ProfileInformation id={dataPsmSchema.iri} />
           {readOnly ||
               <IconButton sx={{ml: .5}} onClick={openDetail}>
-                <Icons.Tree.Edit/>
+                <iconSet.Tree.Edit/>
               </IconButton>
           }
         </Typography>

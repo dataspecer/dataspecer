@@ -96,10 +96,12 @@ export function createBaseEntityDialogController<
     if (languages.length === 0) {
       return state;
     }
+    // Use the current UI language if available, otherwise fallback to first available language
+    const nameForIri = name[state.language] ?? name[languages[0]] ?? "";
     return validateBaseEntityDialogState({
       ...state,
       name,
-      iri: generateIriFromName(name[languages[0]] ?? ""),
+      iri: generateIriFromName(nameForIri),
     });
   });
 

@@ -4,15 +4,36 @@ import { createSgovModel } from "@dataspecer/core-v2/semantic-model/simplified";
 import { withAbsoluteIri } from "@dataspecer/core-v2/semantic-model/utils";
 import { PimStoreWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import { LanguageString, type CoreResource } from "@dataspecer/core/core/core-resource";
+import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model/data-specification-artefact";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
+import { generatorConfigurationToRdf } from "@dataspecer/data-specification-vocabulary/generator-configuration";
+import {
+  DSV_APPLICATION_PROFILE_TYPE,
+  DSV_VOCABULARY_SPECIFICATION_DOCUMENT_TYPE,
+  DSVMetadataToJsonLdString,
+  dsvMetadataWellKnown,
+  type ApplicationProfile,
+  type ExternalSpecification,
+  type ResourceDescriptor,
+  type Specification,
+  type VocabularySpecificationDocument,
+} from "@dataspecer/data-specification-vocabulary/specification-description";
+import { structureModelToRdf } from "@dataspecer/data-specification-vocabulary/structure-model";
+import { canonicalizeIds, garbageCollect } from "@dataspecer/structure-model";
 import { ModelRepository } from "./model-repository/index.ts";
 import { ModelDescription, type StructureModelDescription } from "./model.ts";
-import { generateDsvApplicationProfile, generateHtmlDocumentation, generateLightweightOwl, generateShaclApplicationProfile, getIdToIriMapping, isModelProfile, isModelVocabulary } from "./utils.ts";
-import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model/data-specification-artefact";
+import { DefaultShaclConfiguration, DefaultShaclFileKey, ShaclV2Configurator } from "./shacl-v2.ts";
+import {
+  generateDsvApplicationProfile,
+  generateHtmlDocumentation,
+  generateLightweightOwl,
+  generateShaclApplicationProfile,
+  getIdToIriMapping,
+  isModelProfile,
+  isModelVocabulary,
+} from "./utils.ts";
 import { artefactToDsv } from "./v1/artefact-to-dsv.ts";
-import { DSV_APPLICATION_PROFILE_TYPE, DSV_VOCABULARY_SPECIFICATION_DOCUMENT_TYPE, DSVMetadataToJsonLdString, dsvMetadataWellKnown, type ApplicationProfile, type ExternalSpecification, type ResourceDescriptor, type Specification, type VocabularySpecificationDocument } from "@dataspecer/data-specification-vocabulary/specification-description";
-import { processStructureModelIrisBeforeExport, structureModelToRdf } from "@dataspecer/data-specification-vocabulary/structure-model";
 
 const PIM_STORE_WRAPPER = "https://dataspecer.com/core/model-descriptor/pim-store-wrapper";
 const SGOV = "https://dataspecer.com/core/model-descriptor/sgov";
@@ -219,16 +240,43 @@ export async function generateSpecification(packageId: string, context: Generate
   const metaDataDocumentationIri = metaDataBaseIri.endsWith("#") ? metaDataBaseIri.substring(0, metaDataBaseIri.length - 1) : metaDataBaseIri;
 
   /**
-   * Main URL for the physical distribution of the specification. It points to
-   * the main page of the specification.
+   * Global generator configuration for this specification.
    */
-  const mainUrl = "."; //metaDataDocumentationIri;
+  let generatorConfiguration: Record<string, any> = {};
+
+  const generatorConfigurationModel = subResources.find((r) => r.types.includes(V1.GENERATOR_CONFIGURATION)) ?? null;
+  if (generatorConfigurationModel) {
+    const blobModel = await generatorConfigurationModel.asBlobModel();
+    generatorConfiguration = (await blobModel.getJsonBlob()) as Record<string, unknown>;
+  }
 
   /**
-   * Base URL for the physical distribution of the specification. It ends with a
-   * slash.
+   * Main URL for the physical distribution of the specification.
+   *
+   * @todo Since vocabularies and APs did not need this at all, we used "/".
+   * Now, when data structures are generated, we actually need to have proper base URL.
+   * For now, we will use the one provided by the configuration model, if any.
+   */
+  let mainUrl = generatorConfiguration["data-specification"]?.["publicBaseUrl"] ?? "/";
+
+  /**
+   * Base URL for all generated files for this specification. This is the root.
+   *
+   * Ends with a slash.
+   *
+   * @todo So far we are generating the html documentation into subdirectories
+   * "en" and "cs". This is not ideal.
+   *
+   * @todo We need to normalize the path so that domains only do not end with slash.
    */
   const baseUrl = mainUrl.endsWith("/") ? mainUrl : mainUrl + "/";
+
+  /**
+   * Whether we are generating in the "production mode" or in the "preview
+   * mode". In the production mode, we want to use relative IRIs in order to
+   * make images and other resources work.
+   */
+  const isPreviewMode = queryParams && queryParams.length > 0;
 
   // Get used vocabularies
 
@@ -286,13 +334,10 @@ export async function generateSpecification(packageId: string, context: Generate
     }[]
   > = {};
 
-  const langs = ["cs", "en"];
   const writeFile = async (path: string, data: string) => {
-    for (const lang of langs) {
-      const file = context.output.writePath(`${subdirectory}${lang}/${path}`);
-      await file.write(data);
-      await file.close();
-    }
+    const file = context.output.writePath(`${subdirectory}${path}`);
+    await file.write(data);
+    await file.close();
   };
 
   // Array of all models' resource descriptors' has resource
@@ -407,52 +452,54 @@ export async function generateSpecification(packageId: string, context: Generate
       } satisfies ResourceDescriptor;
       hasResource.push(descriptor);
 
-
-      // Create shacl shape
+      // Create shacl shape(s) — one per entry in the ShaclConfiguration
       {
-        const shaclIri = metaDataBaseIri + "shacl";
-        const shacl = await generateShaclApplicationProfile(model, models, modelIri);
-        const shaclFileName = "shacl.ttl";
-        const shaclUrl = baseUrl + shaclFileName + queryParams;
-        await writeFile(shaclFileName, shacl);
-        externalArtifacts["shacl-profile"] = [{ type: shaclFileName, URL: shaclUrl }];
-
-        const shaclDescriptor = {
-          iri: shaclIri,
-          url: shaclUrl,
-
-          role: dsvMetadataWellKnown.role.constraints,
-          formatMime: dsvMetadataWellKnown.formatMime.turtle,
-          additionalRdfTypes: [],
-
-          conformsTo: [dsvMetadataWellKnown.conformsTo.shacl],
-        } satisfies ResourceDescriptor;
-        hasResource.push(shaclDescriptor);
+        const shaclConfig = ShaclV2Configurator.merge(
+          DefaultShaclConfiguration,
+          ShaclV2Configurator.getFromObject(generatorConfiguration),
+        );
+        const shaclProfileExternalArtifacts: typeof externalArtifacts[keyof typeof externalArtifacts] = [];
+        externalArtifacts["shacl-profile"] = shaclProfileExternalArtifacts;
+        for (const [fileKey, fileConf] of Object.entries(shaclConfig.files)) {
+          const shaclFileName = fileKey === DefaultShaclFileKey ? "shacl.ttl" : `shacl-${fileKey}.ttl`;
+          const shaclIri = metaDataBaseIri + (fileKey === "" ? "shacl" : `shacl-${fileKey}`);
+          const shaclUrl = baseUrl + shaclFileName + queryParams;
+          const shacl = await generateShaclApplicationProfile(model, models, modelIri, fileConf);
+          await writeFile(shaclFileName, shacl);
+          shaclProfileExternalArtifacts.push({ type: shaclFileName, URL: shaclUrl });
+          const shaclDescriptor = {
+            iri: shaclIri,
+            url: shaclUrl,
+            role: dsvMetadataWellKnown.role.constraints,
+            formatMime: dsvMetadataWellKnown.formatMime.turtle,
+            additionalRdfTypes: [],
+            conformsTo: [dsvMetadataWellKnown.conformsTo.shacl],
+          } satisfies ResourceDescriptor;
+          hasResource.push(shaclDescriptor);
+        }
       }
     }
   }
 
-  // Iterate over all structure models and
-  //  - create DSV entries
-  //  - create their serializations
+  /**
+   * This part iterates over all structure models, garbage collects them, fixes
+   * their IDs and exports them as individual Turtle files.
+   */
 
-  // First we need to process structure models to use proper IRIs
-  if (false) { // Disable for now
+  let structureModels = primaryStructureModels.map((sm) => Object.values(sm.entities as unknown as Record<string, CoreResource>));
+  structureModels = structureModels.map((sm) => garbageCollect(sm));
+  const processedStructureModels = canonicalizeIds(structureModels, idToIriMapping, metaDataBaseIri + "structure-model/");
 
-
-  const processedStructureModels = processStructureModelIrisBeforeExport(
-    primaryStructureModels.map(sm => Object.values(sm.entities as unknown as Record<string, CoreResource>)),
-    idToIriMapping,
-    "https://example.com/structure-models/"
-  );
-
+  if (processedStructureModels.length > 0) {
+    externalArtifacts["structure-model"] = [];
+  }
   for (const structureModel of processedStructureModels) {
-    const fileName = structureModel.fileNamePart + ".ttl";
-    const url = baseUrl + fileName + queryParams;
+    const path = structureModel.fileNamePart + "/structure.ttl";
+    const url = baseUrl + path + queryParams;
     const iri = structureModel.iri;
 
     const sm = await structureModelToRdf(structureModel.model, {});
-    await writeFile(fileName, sm);
+    await writeFile(path, sm);
 
     const resourceDescriptor = {
       iri,
@@ -462,17 +509,50 @@ export async function generateSpecification(packageId: string, context: Generate
       formatMime: dsvMetadataWellKnown.formatMime.turtle,
       additionalRdfTypes: [],
 
-      conformsTo: [
-        dsvMetadataWellKnown.conformsTo.dsvStructure,
-      ],
+      conformsTo: [dsvMetadataWellKnown.conformsTo.dsvStructure],
     } satisfies ResourceDescriptor;
     APHasResource?.push(resourceDescriptor);
+
+    externalArtifacts["structure-model"]?.push({
+      type: "structure-model",
+      URL: url,
+    });
   }
 
+  // Process generator configuration
+  if (Object.values(generatorConfiguration).some(v => Object.keys(v).length > 0)) {
+    // We have useful configuration that we want to share.
+
+    const iri = metaDataBaseIri + "generator-configuration#";
+    const fileName = "generator-configuration.ttl";
+    const url = baseUrl + fileName + queryParams;
+
+    const data = await generatorConfigurationToRdf(iri, generatorConfiguration);
+    await writeFile(fileName, data);
+    const descriptor = {
+      iri,
+      url,
+
+      role: dsvMetadataWellKnown.role.schema,
+      formatMime: dsvMetadataWellKnown.formatMime.turtle,
+      additionalRdfTypes: [],
+
+      conformsTo: [dsvMetadataWellKnown.conformsTo.dsvStructureConfiguration],
+    } satisfies ResourceDescriptor;
+    APHasResource?.push(descriptor);
+
+    externalArtifacts["generator-configuration"] = [
+      ...(externalArtifacts["generator-configuration"] ?? []),
+      {
+        type: fileName,
+        URL: url,
+      },
+    ];
   }
 
   // Process all SVGs. Because we do not know which svg belongs to which model,
   // we assign all of them to all models.
+  // Also, currently SVGs are not language dependent, so we generate them to the root of the directory.
   const visualModels = subResources.filter((r) => r.types[0] === LOCAL_VISUAL_MODEL);
   for (const visualModel of visualModels) {
     const model = await visualModel.asBlobModel();
@@ -489,7 +569,7 @@ export async function generateSpecification(packageId: string, context: Generate
         ...(externalArtifacts["svg"] ?? []),
         {
           type: "svg",
-          URL: "./" + resourceFileName + queryParams,
+          URL: resourceUrl,
           label: visualModel.getUserMetadata()?.label,
         },
       ];
@@ -519,7 +599,7 @@ export async function generateSpecification(packageId: string, context: Generate
 
   const htmlDescriptor = {
     iri: metaDataDocumentationIri,
-    url: mainUrl + queryParams,
+    url: "THIS STRING WILL BE REPLACED LATER",
 
     role: dsvMetadataWellKnown.role.specification,
     formatMime: dsvMetadataWellKnown.formatMime.html,
@@ -541,15 +621,47 @@ export async function generateSpecification(packageId: string, context: Generate
     }
   }
 
-  // Generate the DSV Metadata serialization in JSON-LD string
-  const dsv = await DSVMetadataToJsonLdString(specifications, {
-    rootHtmlDocumentIri: htmlDescriptor.iri,
-    space: 2,
-  });
+  /**
+   * Because we generate documentation in multiple languages, we replace public
+   * URLs with the current language in order to have correct links.
+   */
+  function createLangReplacer(artefacts: DataSpecificationArtefact[]) {
+    const replacers: ((lang: string) => void)[] = [];
 
-  for (const lang of langs) {
+    for (const artefact of artefacts) {
+      if (artefact.generator === "https://schemas.dataspecer.com/generator/template-artifact") {
+        const originalUrl = artefact.publicUrl!;
+        replacers.push((lang: string) => {
+          artefact.publicUrl = originalUrl.replace("/en/", "/" + lang + "/");
+        });
+      }
+    }
+
+    return (lang: string) => {
+      for (const replacer of replacers) {
+        replacer(lang);
+      }
+    }
+  }
+
+  const langReplacer = createLangReplacer(context.v1Specification.artefacts);
+
+  for (const lang of ["cs", "en"]) {
+    // Generate the DSV Metadata serialization in JSON-LD string
+    // Set correct URL for the documentation
+    htmlDescriptor.url = baseUrl + lang + "/" + queryParams;
+    const dsv = await DSVMetadataToJsonLdString(specifications, {
+      rootHtmlDocumentIri: htmlDescriptor.iri,
+      space: 2,
+      useAbsoluteUrls: false, // !isPreviewMode,
+    });
+
+    langReplacer(lang);
+
     const documentation = context.output.writePath(`${subdirectory}${lang}/index.html`);
-    await documentation.write(await generateHtmlDocumentation(resource, models, { externalArtifacts, dsv, language: lang, prefixMap }, context));
+    await documentation.write(
+      await generateHtmlDocumentation(resource, models, { externalArtifacts, dsv, language: lang, prefixMap }, context),
+    );
     await documentation.close();
   }
 }

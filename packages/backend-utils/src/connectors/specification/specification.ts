@@ -41,7 +41,14 @@ export type DataSpecification = Package & {
   importsDataSpecificationIds: string[];
 
   /**
-   * List of artifact configurations.
+   * This is a list of ids of models of type "Generator Configuration". You
+   * should read the given model in oder to properly configure the artifact
+   * generation.
+   *
+   * @todo There was this idea that we can have multiple artifact configurations
+   * per data specification, but probably this was a mistake. Backend generator,
+   * for example, uses the first one always. We should probably change this to a
+   * single artifact configuration in the future.
    */
   artifactConfigurations: ArtifactConfigurationDescriptor[];
 

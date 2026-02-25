@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "prebuild": "rimraf lib",
+    "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\"",
     "test": "vitest run --pass-with-no-tests",
     "test:watch": "vitest"
   },
@@ -17,7 +17,6 @@
   },
   "devDependencies": {
     "@types/n3": "~1.24.2",
-    "rimraf": "^6.0.1",
     "typescript": "^5.9.3",
     "vitest": "^3.1.1"
   }

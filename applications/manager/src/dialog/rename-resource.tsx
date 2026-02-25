@@ -8,6 +8,7 @@ import { LanguageString } from "@dataspecer/core/core/core-resource"
 import _uniqueId from 'lodash/uniqueId'
 import { Plus, X } from "lucide-react"
 import { useLayoutEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 interface LS {
   key: string;
@@ -26,6 +27,7 @@ type RenameResourceDialogProps = {
 
 export const RenameResourceDialog = ({ inputLabel, inputDescription, isOpen, resolve, type }: RenameResourceDialogProps) => {
   type = type ?? "edit";
+  const { t } = useTranslation();
 
   const [labels, setLabels] = useState<LS[]>(() => {
     if (inputLabel && Object.keys(inputLabel).length > 0) {
@@ -72,24 +74,24 @@ export const RenameResourceDialog = ({ inputLabel, inputDescription, isOpen, res
     <Modal open={isOpen} onClose={() => resolve(null)}>
       <ModalContent className="sm:max-w-[700px]">
         <ModalHeader>
-          <ModalTitle>{type === "create" ? "Name" : "Rename"} the resource</ModalTitle>
+          <ModalTitle>{type === "create" ? t("rename-resource.title-create") : t("rename-resource.title-edit")}</ModalTitle>
           <ModalDescription>
-            Please {type === "create" ? "select" : "change"} the name and the description of the resource.
+            {type === "create" ? t("rename-resource.subtitle-create") : t("rename-resource.subtitle-edit")}
           </ModalDescription>
         </ModalHeader>
         <ModalBody>
           <div className="flex justify-end">
-            <Button variant="ghost" onClick={() => setLabels([...labels, { lang: "cs", value: "", key: _uniqueId() }])}><Plus className="mr-2 h-4 w-4" /> Add name</Button>
-            <Button variant="ghost" onClick={() => setDescription([...description, { lang: "cs", value: "", key: _uniqueId() }])}><Plus className="mr-2 h-4 w-4" /> Add description</Button>
+            <Button variant="ghost" onClick={() => setLabels([...labels, { lang: "cs", value: "", key: _uniqueId() }])}><Plus className="mr-2 h-4 w-4" /> {t("rename-resource.add-name")}</Button>
+            <Button variant="ghost" onClick={() => setDescription([...description, { lang: "cs", value: "", key: _uniqueId() }])}><Plus className="mr-2 h-4 w-4" /> {t("rename-resource.add-description")}</Button>
           </div>
           <div className="grid gap-4">
             {labels.map(name => (
               <div key={name.key}>
                 <Label htmlFor={name.key} className="flex grow-3 items-baseline gap-2 mb-2">
                   <div>
-                    Name:
+                    {t("rename-resource.name")}:
                   </div>
-                  <input className="flex rounded-md border border-input bg-slate-300/30 px-3 bac text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-[1.5cm] text-center border-none p-0" value={name.lang} placeholder="xx" onChange={target => setLabels([...labels.map(n => n === name ? { ...n, lang: target.target.value } : n)])} />
+                  <input className="flex rounded-md border border-input bg-slate-300/30 px-3 bac text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-[1.5cm] text-center border-none p-0" value={name.lang} placeholder="xx" onChange={target => setLabels([...labels.map(n => n === name ? { ...n, lang: target.target.value } : n)])} />
                   <div className="grow"></div>
                   <Button variant={"ghost"} size="smallIcon" onClick={() => removeName(name.key)}>
                     <X className="text-muted-foreground" size={16} />
@@ -103,9 +105,9 @@ export const RenameResourceDialog = ({ inputLabel, inputDescription, isOpen, res
               <div key={name.key}>
                 <Label htmlFor={name.key} className="flex grow-3 items-baseline gap-2 mb-2">
                   <div>
-                    Description:
+                    {t("rename-resource.description")}:
                   </div>
-                  <input className="flex rounded-md border border-input bg-slate-300/30 px-3 bac text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-[1.5cm] text-center border-none p-0" value={name.lang} placeholder="xx" onChange={target => setDescription([...description.map(n => n === name ? { ...n, lang: target.target.value } : n)])} />                
+                  <input className="flex rounded-md border border-input bg-slate-300/30 px-3 bac text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-[1.5cm] text-center border-none p-0" value={name.lang} placeholder="xx" onChange={target => setDescription([...description.map(n => n === name ? { ...n, lang: target.target.value } : n)])} />                
                   <div className="grow"></div>
                   <Button variant={"ghost"} size="smallIcon" onClick={() => removeDescription(name.key)}>
                     <X className="text-muted-foreground" size={16} />
@@ -118,8 +120,8 @@ export const RenameResourceDialog = ({ inputLabel, inputDescription, isOpen, res
           </div>
         </ModalBody>
         <ModalFooter className="flex flex-row">
-          <Button variant="outline" onClick={() => resolve(null)}>Cancel</Button>
-          <Button type="submit" onClick={closeWithSuccess}>Save changes</Button>
+          <Button variant="outline" onClick={() => resolve(null)}>{t("rename-resource.cancel")}</Button>
+          <Button type="submit" onClick={closeWithSuccess}>{t("rename-resource.save-changes")}</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>

@@ -128,16 +128,16 @@ export function simplifiedSemanticModelToSemanticModel(simplifiedSemanticModel: 
             id: entity?.id ?? uuidv4(),
             iri: gen.iri,
             type: [SEMANTIC_MODEL_GENERALIZATION],
-            child: reverseGetResourceIdentifier(gen.specialClass, classes)?.id!,
-            parent: reverseGetResourceIdentifier(gen.generalClass, classes)?.id!,
+            child: reverseGetResourceIdentifier(gen.specialClass, classes)?.id ?? gen.specialClass,
+            parent: reverseGetResourceIdentifier(gen.generalClass, classes)?.id ?? gen.generalClass,
         };
     });
 
     const relationships: SemanticModelRelationship[] = simplifiedSemanticModel.attributes.concat(simplifiedSemanticModel.relationships).map(rel => {
         const existing = orig.filter(isSemanticModelRelationship).find(entity => entity.ends.some(e => e.iri === rel.iri)) as SemanticModelRelationship | null;
 
-        const domainId = rel.domain ? reverseGetResourceIdentifier(rel.domain, classes)?.id ?? null : null;
-        const targetId = rel.range ? reverseGetResourceIdentifier(rel.range, classes)?.id ?? null : null;
+        const domainId = rel.domain ? reverseGetResourceIdentifier(rel.domain, classes)?.id ?? rel.domain : null;
+        const targetId = rel.range ? reverseGetResourceIdentifier(rel.range, classes)?.id ?? rel.range : null;
 
         let origDomain: SemanticModelRelationshipEnd | null = null;
         let origRange: SemanticModelRelationshipEnd | null = null;
@@ -165,7 +165,7 @@ export function simplifiedSemanticModelToSemanticModel(simplifiedSemanticModel: 
             name: {...origRange?.name, en: rel.title},
             description: {...origRange?.description, en: rel.description},
         };
-        
+
         let ends = isDomainFirst ? [domainEnd, rangeEnd] : [rangeEnd, domainEnd];
 
         return {

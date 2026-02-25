@@ -3,7 +3,11 @@ import { shallow } from "zustand/shallow";
 import { type ReactFlowState, useInternalNode, useStore } from "@xyflow/react";
 
 import { DiagramContext, NodeMenuType } from "../diagram-controller";
-import { computeScreenPosition, onAddWaypoint } from "./edge-utilities";
+import {
+  computeScreenPosition,
+  onAddWaypoint,
+  calculateEdgeToolbarLines,
+} from "./edge-utilities";
 import { EdgeToolbarProps, viewportStoreSelector } from "./edge-toolbar";
 import { Edge } from "../diagram-model";
 import { ToolbarPortal } from "../canvas/toolbar-portal";
@@ -28,6 +32,9 @@ export function PropertyEdgeToolbar({ value }: { value: EdgeToolbarProps | null 
     return null;
   }
 
+  // Calculate SVG lines for connecting buttons to center
+  const { svgSize, lines } = calculateEdgeToolbarLines();
+
   const position = computeScreenPosition(value.x, value.y, { x, y, zoom });
 
   const onDetail = () => context?.callbacks().onShowEdgeDetail(data);
@@ -42,6 +49,31 @@ export function PropertyEdgeToolbar({ value }: { value: EdgeToolbarProps | null 
     <>
       <ToolbarPortal>
         <div className="edge-toolbar" style={{ transform: `translate(${position.x}px, ${position.y}px)` }}>
+          <svg
+            className="edge-toolbar-lines"
+            style={{
+              position: "absolute",
+              width: `${svgSize}px`,
+              height: `${svgSize}px`,
+              left: `${-svgSize / 2}px`,
+              top: `${-svgSize / 2}px`,
+              pointerEvents: "none",
+              zIndex: 1,
+            }}
+            viewBox={`0 0 ${svgSize} ${svgSize}`}
+          >
+            {lines.map((line, index) => (
+              <line
+                key={index}
+                x1={line.x1}
+                y1={line.y1}
+                x2={line.x2}
+                y2={line.y2}
+                stroke="#333"
+                strokeWidth="2"
+              />
+            ))}
+          </svg>
           <div className="property-edge">
             <button onClick={onDetail}>ℹ</button>
             <ul className="edge-toolbar">

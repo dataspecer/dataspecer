@@ -6,7 +6,7 @@ import * as Actions from "./catalog-action";
 import { configuration, createLogger } from "../application";
 import { Language } from "../configuration";
 import { createUiModelState } from "../dataspecer/ui-model";
-import { updateItemsOrder, updatePath, updateVisualEntities } from "./catalog-state-adapter";
+import { updateItemsOrder, updatePath, updateVisualEntities, preserveCollapsedState } from "./catalog-state-adapter";
 
 const LOG = createLogger(import.meta.url);
 
@@ -60,14 +60,26 @@ export const useController = (
       configuration().defaultModelColor);
 
     const availableLayoutItems = state.availableLayouts
-      .map(layout => updatePath(
-        updateVisualEntities(visualModel,
-          updateItemsOrder(
-            layout.layoutFactory(uiModelState)))));
+      .map((layout, index) => preserveCollapsedState(
+        updatePath(
+          updateVisualEntities(visualModel,
+            updateItemsOrder(
+              layout.layoutFactory(uiModelState)))),
+        state.availableLayoutItems[index] ?? []));
+
+    // Reapply search filter if there is one
+    let items = availableLayoutItems[layoutIndex];
+    if (state.search) {
+      const sanitizedValue = state.search.toLocaleLowerCase();
+      const filter = (item: TreeNode): boolean => {
+        return item.filterText.includes(sanitizedValue);
+      };
+      items = updateFilter(items, filter);
+    }
 
     return {
       ...state,
-      items: availableLayoutItems[layoutIndex],
+      items,
       availableLayoutItems
     };
   });
@@ -340,25 +352,38 @@ function setNode(
   path: number[],
   node: TreeNode,
 ): CatalogState {
-  const result: CatalogState = {
-    ...state,
-    items: [...state.items],
-  };
+  const layoutIndex = state.availableLayouts
+    .findIndex(item => item === state.layout) ?? 0;
 
-  const updateNode = (currentNode: TreeNode, index: number): TreeNode => {
-    if (path.length === index) {
-      return node;
+  const updateNodeInItems = (items: TreeNode[], currentPath: number[], depth: number = 0): TreeNode[] => {
+    if (currentPath.length === depth) {
+      return items;
     }
-    const result = {
-      ...currentNode,
-      items: [...state.items],
-    };
-    result.items[path[index]] = updateNode(node, index + 1);
-    return result;
+    const index = currentPath[depth];
+    const newItems = [...items];
+    if (depth === currentPath.length - 1) {
+      newItems[index] = node;
+    } else {
+      newItems[index] = {
+        ...newItems[index],
+        items: updateNodeInItems(newItems[index].items, currentPath, depth + 1),
+      };
+    }
+    return newItems;
   };
 
-  result.items[path[0]] = updateNode(node, 1);
-  return result;
+  const updatedItems = updateNodeInItems(state.items, path);
+  const updatedAvailableLayoutItems = [...state.availableLayoutItems];
+  updatedAvailableLayoutItems[layoutIndex] = updateNodeInItems(
+    state.availableLayoutItems[layoutIndex],
+    path
+  );
+
+  return {
+    ...state,
+    items: updatedItems,
+    availableLayoutItems: updatedAvailableLayoutItems,
+  };
 }
 
 function updateFilter(
@@ -386,6 +411,9 @@ function collapseExpandAll(
   state: CatalogState,
   collapsed: boolean,
 ): CatalogState {
+  const layoutIndex = state.availableLayouts
+    .findIndex(item => item === state.layout) ?? 0;
+
   const updateNodes = (items: TreeNode[]): TreeNode[] => {
     return items.map(item => {
       const result = { ...item };
@@ -399,8 +427,15 @@ function collapseExpandAll(
     });
   };
 
+  const updatedItems = updateNodes(state.items);
+  const updatedAvailableLayoutItems = [...state.availableLayoutItems];
+  updatedAvailableLayoutItems[layoutIndex] = updateNodes(
+    state.availableLayoutItems[layoutIndex]
+  );
+
   return {
     ...state,
-    items: updateNodes(state.items),
+    items: updatedItems,
+    availableLayoutItems: updatedAvailableLayoutItems,
   };
 }

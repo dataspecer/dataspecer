@@ -13,9 +13,11 @@ import { modelTypeToName } from "@/known-models"
 import { ResourcesContext } from "@/package"
 import { Pencil, Trash2 } from "lucide-react"
 import { useContext } from "react"
+import { useTranslation } from "react-i18next"
 
 export const ResourceDetail = ({isOpen, close, iri}: {isOpen: boolean, close: () => void, iri: string}) => {
   const resource = useContext(ResourcesContext)[iri]!;
+  const { t } = useTranslation();
 
   return (
     <Drawer open={isOpen} onOpenChange={(value: boolean) => value ? null : close()}>
@@ -29,20 +31,20 @@ export const ResourceDetail = ({isOpen, close, iri}: {isOpen: boolean, close: ()
         </DrawerHeader>
         <div className="grid gap-x-4 p-4">
           <div className="grid grid-cols-3 items-center gap-4">
-            <strong>Vytvořeno: </strong>
+            <strong>{t("created")}: </strong>
             <span className="col-span-2"><Time time={resource.metadata.creationDate} /></span>
           </div>
           <div className="grid grid-cols-3 items-center gap-4">
-            <strong>Upraveno: </strong>
+            <strong>{t("resource-detail.modified")}: </strong>
             <span className="col-span-2"><Time time={resource.metadata.modificationDate} /></span>
           </div>
         </div>
         <DrawerFooter>
           <div className="grid grid-cols-2 gap-2">
-            <Button onClick={close} variant="destructive"><Trash2 className="mr-2 h-4 w-4" /> Odstranit</Button>
-            <Button onClick={close} variant="outline"><Pencil className="mr-2 h-4 w-4" /> Přejmenovat</Button>
+            <Button onClick={close} variant="destructive"><Trash2 className="mr-2 h-4 w-4" /> {t("remove")}</Button>
+            <Button onClick={close} variant="outline"><Pencil className="mr-2 h-4 w-4" /> {t("resource-detail.rename")}</Button>
           </div>
-          <Button onClick={close}>Editovat</Button>
+          <Button onClick={close}>{t("resource-detail.edit")}</Button>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

@@ -15,6 +15,8 @@ export class ConceptualModelClass {
 
   humanDescription: LanguageString | null = null;
 
+  usageNote: LanguageString | null = null;
+
   isCodelist = false;
 
   codelistUrl: string[] = [];

@@ -11,7 +11,7 @@ import { getLightweightOwlFromSimplified } from "./routes/experimental.ts";
 import { getSingleFile, getZip } from "./routes/generate.ts";
 import { exportPackageResource, importPackageResource } from "./routes/export-import-raw.ts";
 import { getGenerateApplicationByModelId, getGeneratedApplication } from "./routes/genapp.ts";
-import { importResource } from "./routes/import.ts";
+import { importResource, reloadResource } from "./routes/import.ts";
 import {
   copyRecursively,
   createPackageResource,
@@ -29,6 +29,7 @@ import { getSimplifiedSemanticModel, setSimplifiedSemanticModel } from "./routes
 import { getSystemData } from "./routes/system.ts";
 import { useStaticSpaHandler } from "./static.ts";
 import { migratePR419 } from "./tools/migrate-pr419.ts";
+import { newApplicationProfile } from "./routes/new.ts";
 
 // Create application models
 
@@ -96,11 +97,14 @@ application.get(apiBasename + "/resources/root-resources", getRootPackages); // 
 
 application.post(apiBasename + "/repository/copy-recursively", copyRecursively);
 
+application.post(apiBasename + "/new/application-profile", newApplicationProfile);
+
 /**
  * Import: Import endpoint is a wizard that allows you to import specific package/model from a remote source.
  */
 
 application.post(apiBasename + "/resources/import", importResource);
+application.post(apiBasename + "/resources/reload", reloadResource);
 application.post(apiBasename + "/resources/import-zip", multerUpload.single("file"), importPackageResource);
 
 // Interactive import of packages
@@ -134,7 +138,7 @@ application.post(apiBasename + "/generate-app", getGeneratedApplication);
 
 application.get(apiBasename + "/system/data", getSystemData); // Downloads database directory as ZIP file
 
-application.get("/health", (_, res) => res.status(200).send("OK"));
+application.get("/health", (_, res) => res.status(200).send("ok"));
 
 // Static files server by this backend
 

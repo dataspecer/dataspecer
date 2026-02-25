@@ -17,6 +17,7 @@ import { DataPsmBaseRow, RowSlots } from "../base-row";
 import { ObjectContext } from "../data-psm-row";
 import { Span, sxStyles } from "../styles";
 import { DataPsmOrSubtree } from "../subtrees/or-subtree";
+import { ProfileInformation } from "../profiling/profile-information";
 
 /**
  * Represents a regular PSM OR entity (not the inheritance OR visualization)
@@ -66,6 +67,8 @@ export const RegularOr: React.FC<{ iri: string } & ObjectContext & RowSlots> = m
     {typeof resource.dataPsmTechnicalLabel === "string" && resource.dataPsmTechnicalLabel.length > 0 &&
       <> (<Span sx={sxStyles.technicalLabel}>{resource.dataPsmTechnicalLabel}</Span>)</>
     }
+
+    <ProfileInformation id={props.iri} />
   </>;
 
   const thisMenu = <>

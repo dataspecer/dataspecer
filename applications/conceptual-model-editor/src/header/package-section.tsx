@@ -5,7 +5,7 @@ import { t } from "../application";
 export const PackageSection = () => {
   const { packageHasIdentifier, packageLabel, save, saveAndClose } = usePackageSectionService();
   return (
-    <div className="flex flex-row text-nowrap gap-x-2">
+    <div className="flex flex-wrap text-nowrap gap-x-2 items-center">
       {packageLabel === null ? t("header.package.missing") : t("header.package.label", packageLabel)}
       <SavePackageButton
         disabled={!packageHasIdentifier}

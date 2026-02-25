@@ -599,7 +599,7 @@ function createActionsContext(
   if (prevOptions !== options) changed.push("options");
   if (prevDialogs !== dialogs) changed.push("dialogs");
   if (prevClasses !== classes) changed.push("classes");
-  if (prevUseClasses !== useClasses) changed.push("prevUseClasses");
+  if (prevUseClasses !== useClasses) changed.push("useClasses");
   if (prevNotifications !== notifications) changed.push("notifications");
   if (prevGraph !== graph) changed.push("graph");
   if (prevUseGraph !== useGraph) changed.push("useGraph");

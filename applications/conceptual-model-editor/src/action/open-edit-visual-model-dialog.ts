@@ -18,9 +18,17 @@ export function openEditVisualModelDialogAction(
 
   const onConfirm = (nextState: EditVisualModelDialogState) => {
     visualModel.setLabel(nextState.label);
+    options.setVisualOptions({
+      labelVisual: Number(nextState.labelVisual),
+      entityMainColor: Number(nextState.entityMainColor),
+      profileOfVisual: Number(nextState.profileOfVisual),
+      displayRangeDetail: nextState.displayRangeDetail,
+      displayRelationshipProfileArchetype:
+        nextState.displayRelationshipProfileArchetype,
+    });
   };
 
   const state = createEditVisualModelDialogState(
-    options.language, visualModel.getLabel());
+    options.language, visualModel.getLabel(), options.visualOptions);
   dialogs?.openDialog(editVisualModelDialog(state, onConfirm));
 }

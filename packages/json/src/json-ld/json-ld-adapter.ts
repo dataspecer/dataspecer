@@ -9,6 +9,7 @@ import { JSON_LD_GENERATOR } from "./json-ld-generator.ts";
 import { AggregatedEntityInApplicationProfileAggregator, LocalEntityWrapped, splitProfileToSingleConcepts } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
 import { SemanticModelClass, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import { SemanticModelClassProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import type { AggregatedProfiledSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/profile/aggregator";
 
 // JSON-LD version
 const VERSION = 1.1;
@@ -30,7 +31,7 @@ function tryPrefix(iri: string, prefixes: Record<string, string>): string {
 function pickTypeLabel(text: LanguageString, configuration: JsonConfiguration): string | null {
   let label = text[configuration.jsonDefaultTypeKeyMappingHumanLabelLang];
   if (!label) {
-    console.warn(`JSON-LD Generator: There is no ${configuration.jsonDefaultTypeKeyMappingHumanLabelLang} label for given entity.`);
+    //console.warn(`JSON-LD Generator: There is no ${configuration.jsonDefaultTypeKeyMappingHumanLabelLang} label for given entity.`);
     label = text[Object.keys(text)[0]];
   }
   if (label) {
@@ -177,8 +178,15 @@ export class JsonLdAdapter {
   }
 
   /**
-   * Fills the given context with context of given classes.
-   * The trick is that if classes share something or are profiles, then we need to separate them.
+   * Fills the given context with context of given classes. The trick is that if
+   * classes share something or are profiles, then we need to separate them.
+   *
+   * This approach tries to go through all profiles up in the hierarchy until it
+   * finds a profile with a single IRI (profile that profiles single class). It
+   * uses those profile names for types in json-ld. However, we can have diamond
+   * profiles as well, meaning two profiles profiling same class. Then the
+   * approach becomes more complex as sometimes it is not clear which profile
+   * should be used for the type name.
    */
   protected generateClassesContext(classes: StructureModelClass[], inputContext: object, prefixes: Record<string, string>, customTypeNames: Record<string, string>) {
     // Main context that will be used
@@ -205,7 +213,6 @@ export class JsonLdAdapter {
       }
 
       const contextType = cls.instancesSpecifyTypes === "NEVER" ? "PROPERTY-SCOPED" : (cls.instancesSpecifyTypes === "OPTIONAL" ? "BOTH" : "TYPE-SCOPED");
-      console.log("JSON-LD generator: context type", contextType);
       const propertiesUseParentContext = contextType !== "TYPE-SCOPED";
 
       const semanticClassWrapped = this.semanticModel[cls.pimIri] as LocalEntityWrapped<SemanticModelClassProfile>;
@@ -241,14 +248,13 @@ export class JsonLdAdapter {
             continue;
           }
 
-          // For each property we need to find the original concepts (not
-          // profile) and assign them to appropriate classes
-
-          const semanticPropertyWrapped = this.semanticModel[property.pimIri] as AggregatedEntityInApplicationProfileAggregator<SemanticModelRelationship>;
+          const semanticPropertyWrapped = this.semanticModel[property.pimIri] as AggregatedEntityInApplicationProfileAggregator<SemanticModelRelationship & AggregatedProfiledSemanticModelRelationship>;
           const concepts = splitProfileToSingleConcepts(semanticPropertyWrapped);
 
-          if (concepts.length > 1) {
-            throw new Error("JSON-LD generator: Multiprofile for relationships is not supported by JSON generators!");
+          const conceptIris = [... new Set(semanticPropertyWrapped.aggregatedEntity.ends[property.isReverse ? 0 : 1].conceptIris)];
+
+          if (conceptIris.length > 1) {
+            throw new Error("JSON-LD generator: Multiprofile for relationships is not supported by JSON generators! Given relationship has following IRIs: " + conceptIris.join(", "));
           }
 
           const relationshipConceptWrapped = concepts[0] as LocalEntityWrapped<SemanticModelRelationship>;

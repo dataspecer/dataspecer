@@ -17,6 +17,7 @@ import {ReplaceAssociationEndWithReference} from "../references/replace-associat
 import { ExtendedSemanticModelClass, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { useResource } from "@dataspecer/federated-observable-store-react/use-resource";
+import { ProfileInformation } from "../profiling/profile-information";
 
 const StrikeOut: React.FC<{
   children: React.ReactNode,
@@ -90,6 +91,8 @@ export const DataPsmAssociationEndItem: React.FC<{iri: string} & RowSlots & Clas
     </StrikeOut>
     {" "}
     {isDematerialized && ` [${t("is dematerialized")}] `}
+
+    <ProfileInformation id={props.iri} />
   </>;
 
   const thisEndRow = <>

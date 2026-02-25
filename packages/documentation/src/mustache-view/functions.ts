@@ -11,8 +11,12 @@ export function prepareFunctions(
 ) {
     return {
         ...view,
-        relativePath: function () {
-            return pathRelative(context.artefact.publicUrl, this);
+        relativePath: function (...args: unknown[]) {
+            if (args.length === 2) {
+                return pathRelative(context.artefact.publicUrl, args[0] as string);
+            } else {
+                return pathRelative(context.artefact.publicUrl, this);
+            }
         },
         sanitizeLink: function () {
             // remove diacritics

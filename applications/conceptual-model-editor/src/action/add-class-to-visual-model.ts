@@ -35,7 +35,7 @@ export async function addSemanticClassToVisualModelAction(
         visualModel,
         entity, modelIdentifier, position, content);
       addRelatedEntitiesAction(
-        notifications, graph, visualModel, Object.values(entities),
+        notifications, graph, classes, visualModel, Object.values(entities),
         graph.models, entity);
     });
 }

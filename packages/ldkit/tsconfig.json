@@ -13,6 +13,7 @@
     "moduleResolution": "nodenext",
     "module": "NodeNext",
     "rewriteRelativeImportExtensions": true,
+    "rootDir": "src",
     "outDir": "lib",
     "sourceMap": true,
     "declaration": true,

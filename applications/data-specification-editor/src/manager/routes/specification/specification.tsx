@@ -6,6 +6,9 @@ import { useSearchParams } from "react-router-dom";
 import { BackendConnectorContext } from "../../../application";
 import { modelRepository } from "../../../generators/configuration/provided-configuration";
 import { DocumentationSpecification } from "./documentation-specification";
+import { Box, CircularProgress, Container, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
+import { CachedModelRepository } from "@dataspecer/specification/model-repository";
 
 export const SpecificationContext = createContext<[DataSpecification & Package, (update: DataSpecification & Package) => void]>(null);
 
@@ -16,6 +19,7 @@ export const AllSpecificationsContext = createContext<Record<string, BaseResourc
  * to use.
  */
 export const Specification: FC = () => {
+  const { t } = useTranslation("ui");
   const [searchParams] = useSearchParams();
   const dataSpecificationIri = searchParams.get("dataSpecificationIri");
 
@@ -26,11 +30,11 @@ export const Specification: FC = () => {
 
   useEffect(() => {
     (async () => {
-      const model = await modelRepository.getModelById(dataSpecificationIri as string);
+      const cachedModelRepository = new CachedModelRepository(modelRepository);
+      const model = await cachedModelRepository.getModelById(dataSpecificationIri as string);
       const packageModel = await model?.asPackageModel();
       const dataSpecification = packageModel ? await getDataSpecification(packageModel) : undefined;
       updateSpecification(dataSpecification);
-
     })();
   }, [dataSpecificationIri, updateSpecification]);
 
@@ -50,6 +54,13 @@ export const Specification: FC = () => {
       </SpecificationContext.Provider>
     );
   } else {
-    return null;
+    return <Container>
+    <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight="50vh" gap={2}>
+      <CircularProgress />
+      <Typography variant="h6" color="textSecondary">
+        {t("loading specification")}
+      </Typography>
+    </Box>
+  </Container>;
   }
 };

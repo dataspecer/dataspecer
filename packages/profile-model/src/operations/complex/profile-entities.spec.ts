@@ -1,11 +1,11 @@
-import { createDefaultSemanticModelBuilder } from "@dataspecer/semantic-model";
+import { createDefaultSemanticModelBuilder, SemanticModelGeneralization } from "@dataspecer/semantic-model";
 import { describe, test } from "vitest";
 import { createWritableInMemoryProfileModel, ProfileRelationship } from "../../index.ts";
 import { profileEntities } from "./profile-entities.ts";
 
 describe("profileEntities", () => {
 
-  test("Profile vocabulary.", async () => {
+  test("Profile a vocabulary.", async () => {
     const semantic = createDefaultSemanticModelBuilder({
       baseIdentifier: "semantic",
       baseIri: "http://semantic/"
@@ -62,7 +62,6 @@ describe("profileEntities", () => {
     expect(result.relationships.length).toBe(1);
     expect(result.generalizations.length).toBe(0);
 
-
     const entityProfile = profileModel.getEntities()[result.relationships[0]];
     expect(entityProfile).not.toBeUndefined();
 
@@ -71,7 +70,35 @@ describe("profileEntities", () => {
     expect(urlProfile.ends[0].concept).toBe("url-domain");
     expect(urlProfile.ends[1].concept).toBe("url-range");
 
+  });
 
+  test("https://github.com/dataspecer/dataspecer/issues/1354", async () => {
+    const semanticModel = createDefaultSemanticModelBuilder({
+      baseIdentifier: "semantic-",
+      baseIri: "http://semantic/"
+    });
+    const human = semanticModel.class({ id: "human" });
+    const person = semanticModel.class({ id: "person" });
+    person.specializationOf({ parent: human });
+    //
+    const targetModel = createWritableInMemoryProfileModel({
+      identifier: "output-",
+      baseIri: "http://output/"
+    });
+    //
+    const result = await profileEntities(
+      { targetModel: targetModel },
+      { entities: Object.values(semanticModel.build().getEntities()) },
+    );
+
+    // We just check the numbers here.
+    expect(result.classes.length).toBe(2);
+    expect(result.generalizations.length).toBe(1);
+    // And not the generalization must have different ends.
+    const entity = targetModel.getEntities()[result.generalizations[0]];
+    expect(entity).toBeDefined();
+    const generalization = entity as SemanticModelGeneralization;
+    expect(generalization.child).not.toBe(generalization.parent);
   });
 
 });

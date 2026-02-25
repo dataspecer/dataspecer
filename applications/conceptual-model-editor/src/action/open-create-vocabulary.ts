@@ -72,7 +72,7 @@ function addModelsToGraph(graph: ModelGraphContextType, models: EntityModel[]) {
 
   for (const model of models) {
     graph.aggregator.addModel(model);
-    graph.setModels((previous) => previous.set(model.getId(), model));
+    graph.setModels((previous) => [...previous, model]);
     for (const [_, visualModel] of graph.visualModels) {
       visualModel.setModelColor(model.getId(), randomColorFromPalette());
     }

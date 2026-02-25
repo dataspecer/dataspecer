@@ -156,13 +156,13 @@ function testCreatedNodeDuplicateAndCreateRelationshipAfter(
 
 test("Create node duplicate and after that create relationship from the original node without specifying visual ends" +
   " - it should create all the edges - association", () => {
-  testCreateNodeDuplicateAndCreateRelationshipAfterWithoutSpecifyingEnds(RelationshipToTestType.Association);
-});
+    testCreateNodeDuplicateAndCreateRelationshipAfterWithoutSpecifyingEnds(RelationshipToTestType.Association);
+  });
 
 test("Create node duplicate and after that create relationship from the original node without specifying visual ends" +
   " - it should create all the edges - generalization", () => {
-  testCreateNodeDuplicateAndCreateRelationshipAfterWithoutSpecifyingEnds(RelationshipToTestType.Generalization);
-});
+    testCreateNodeDuplicateAndCreateRelationshipAfterWithoutSpecifyingEnds(RelationshipToTestType.Generalization);
+  });
 
 function testCreateNodeDuplicateAndCreateRelationshipAfterWithoutSpecifyingEnds(
   relationshipToTestType: RelationshipToTestType,
@@ -367,7 +367,7 @@ function testCreateNodeDuplicateOfNodeDuplicate(
   const actualVisualRelationships = [];
   actualVisualRelationships.push(visualModel.getVisualEntitiesForRepresented(createdTestRelationships[0].identifier));
   actualVisualRelationships.push(visualModel.getVisualEntitiesForRepresented(createdTestRelationships[1].identifier));
-  for(const actualVisualRelationship of actualVisualRelationships) {
+  for (const actualVisualRelationship of actualVisualRelationships) {
     const edgesFromDuplicate = actualVisualRelationship.filter(relationship =>
       (relationship as any).visualSource === lastDuplicateNodeIdentifier);
     expect(edgesFromDuplicate.length).toBe(1);
@@ -389,12 +389,12 @@ const prepareVisualModelWithFourNodes = () => {
   const modelAlias = "TEST MODEL";
 
   const visualIdentifiers = [];
-  for(let i = 0; i < 4; i++) {
+  for (let i = 0; i < 4; i++) {
     const visualIdentifier = createNewVisualNodeForTesting(visualModel, modelIdentifier, i);
     visualIdentifiers.push(visualIdentifier);
   }
 
-  const models : Map<string, EntityModel> = new Map();
+  const models: Map<string, EntityModel> = new Map();
   const model = new InMemorySemanticModel();
   model.setAlias(modelAlias);
   models.set(model.getId(), model);
@@ -417,13 +417,13 @@ const prepareVisualModelWithFourNodes = () => {
       throw new Error("Function not implemented.");
     },
     models: models,
-    setModels: function (_value: SetStateAction<Map<string, EntityModel>>): void {
+    setModels: function (_): void {
       throw new Error("Function not implemented.");
     },
     visualModels,
-    setVisualModels: function (_value: SetStateAction<Map<string, WritableVisualModel>>): void {
+    setVisualModels: function (): void {
       throw new Error("Function not implemented.");
-    }
+    },
   };
 
   return {
@@ -534,8 +534,8 @@ function createSemanticGeneralizationTestVariant(
 }
 
 enum RelationshipToTestType {
- Generalization,
- Association
+  Generalization,
+  Association
 };
 
 /**
@@ -559,11 +559,11 @@ function createTestRelationshipOfGivenType(
 ): CreatedRelationshipData {
 
   let result: CreatedRelationshipData
-  if(relationshipToTestType === RelationshipToTestType.Generalization) {
+  if (relationshipToTestType === RelationshipToTestType.Generalization) {
     result = createSemanticGeneralizationTestVariant(
       semanticTarget, semanticSource, identifier, models, modelDsIdentifier);
   }
-  else if(relationshipToTestType === RelationshipToTestType.Association) {
+  else if (relationshipToTestType === RelationshipToTestType.Association) {
     result = createSemanticRelationshipTestVariant(
       models, semanticSource, semanticTarget, modelDsIdentifier, name ?? "");
   }
@@ -571,7 +571,7 @@ function createTestRelationshipOfGivenType(
     throw new Error("Unexpected relationshipToTestType");
   }
 
-  if(shouldAlsoAddTheCreatedRelationshipToVisualModel) {
+  if (shouldAlsoAddTheCreatedRelationshipToVisualModel) {
     addTestRelationshipToVisualModel(
       graph, visualModel, modelDsIdentifier, relationshipToTestType,
       result.identifier, visualSources, visualTargets);
@@ -588,13 +588,13 @@ function addTestRelationshipToVisualModel(
   visualSourceIdentifiers: string[],
   visualTargetIdentifiers: string[],
 ) {
-  if(visualSourceIdentifiers.length === 0 || visualTargetIdentifiers.length === 0) {
-    if(relationshipToTestType === RelationshipToTestType.Generalization) {
+  if (visualSourceIdentifiers.length === 0 || visualTargetIdentifiers.length === 0) {
+    if (relationshipToTestType === RelationshipToTestType.Generalization) {
       addSemanticGeneralizationToVisualModelAction(
         notificationMockup, graph, visualModel,
         relationshipIdentifier, modelDsIdentifier);
     }
-    else if(relationshipToTestType === RelationshipToTestType.Association) {
+    else if (relationshipToTestType === RelationshipToTestType.Association) {
       addSemanticRelationshipToVisualModelAction(
         notificationMockup, graph, visualModel,
         relationshipIdentifier, modelDsIdentifier);

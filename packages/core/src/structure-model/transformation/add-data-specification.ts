@@ -16,6 +16,11 @@ export function addDataSpecification(
   result.specification = schemaToSpecification[structure.psmIri] ?? null;
   for (const structureClass of classes) {
     structureClass.specification = schemaToSpecification[structureClass.structureSchema] ?? null;
+    structureClass.properties.forEach(property => {
+      if (property.referencingStructureSchema) {
+        property.referencingSpecification = schemaToSpecification[property.referencingStructureSchema] ?? null;
+      }
+    });
   }
   return result;
 }

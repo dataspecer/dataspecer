@@ -16,15 +16,21 @@ export type DiagramOptions = {
    */
   displayRelationshipProfileArchetype: boolean;
 
+  /**
+   * Label used for "profile of" entity list rendering.
+   */
+  profileOfLabel: string;
+
 }
 
-export function defaultDiagramOptions(): DiagramOptions {
+export function defaultDiagramOptions(profileOfLabel: string): DiagramOptions {
   return {
     labelVisual: LabelVisual.Entity,
     entityMainColor: EntityColor.Entity,
     profileOfVisual: ProfileOfVisual.Entity,
     displayRangeDetail: true,
     displayRelationshipProfileArchetype: true,
+    profileOfLabel,
   };
 }
 

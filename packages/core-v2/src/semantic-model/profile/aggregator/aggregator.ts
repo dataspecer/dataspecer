@@ -125,7 +125,7 @@ class DefaultProfileEntityAggregator implements ProfileEntityAggregator {
       description: profiled(profile.descriptionFromProfiled)?.description ?? profile.description ?? null,
       descriptionFromProfiled: profile.descriptionFromProfiled,
       //
-      conceptIris: conceptIris,
+      conceptIris: Array.from(new Set(conceptIris)),
     } satisfies AggregatedProfiledSemanticModelClass;
   }
 
@@ -181,7 +181,7 @@ class DefaultProfileEntityAggregator implements ProfileEntityAggregator {
           }
           return cardinalityIntersection(cardinalities);
         })(),
-        conceptIris: end.profiling
+        conceptIris: Array.from(new Set(end.profiling
           .map(identifier => profiled(identifier))
           .map(item => {
             if (isSemanticModelRelationship(item) && !isSemanticModelRelationshipProfile(item) && item.ends?.[index]?.iri) {
@@ -194,7 +194,7 @@ class DefaultProfileEntityAggregator implements ProfileEntityAggregator {
             }
           })
           .flat()
-          .filter(item => item && item !== ""),
+          .filter(item => item && item !== ""))),
       })),
     }
   }

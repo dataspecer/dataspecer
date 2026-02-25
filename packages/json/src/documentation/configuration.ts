@@ -25,9 +25,9 @@ export const defaultJsonPartials: Record<string, string> = {
 
 {{#def "json-tree-ref"}}
   {{#if fromExternalSpecification}}
-    {{#iflng "cs"}}jež je definován v referencovaném schématu <a href="{{link}}">{{link}}</a>.{{lng}}which is defined in the referenced schema <a href="{{link}}">{{link}}</a>.{{/iflng}}
+    {{#iflng "cs"}}jež je definován v referencovaném schématu <a href="{{{link}}}">{{link}}</a>.{{lng}}which is defined in the referenced schema <a href="{{{link}}}">{{link}}</a>.{{/iflng}}
   {{else}}
-    {{#iflng "cs"}}dle <a href="{{link}}"></a>{{lng}}according to <a href="{{link}}"></a>{{/iflng}}
+    {{#iflng "cs"}}dle <a href="{{{link}}}"></a>{{lng}}according to <a href="{{{link}}}"></a>{{/iflng}}
   {{/if}}
 {{/def}}
 
@@ -118,10 +118,16 @@ export const defaultJsonPartials: Record<string, string> = {
 {{#def "json-tree-array"}}
   {{#iflng "cs"}}
     pole hodnot <code>{{cardinalityText}}</code> typu {{#with items}}{{json-tree-or-link}}{{/with}}
-    {{#if contains}}, které musí obsahovat alespoň jednu položku typu {{#with contains}}{{json-tree-or-link}}{{/with}}{{/if}}
+    {{#if requiresStringConstantsOnly}} a musí obsahovat: {{#each requiresStringConstantsOnly}}<code>{{this}}</code>{{#unless @last}}, {{/unless}}{{/each}}
+    {{else}}
+      {{#if contains}} a musí obsahovat alespoň jednu položku typu {{#with contains}}{{json-tree-or-link}}{{/with}}{{/if}}
+    {{/if}}
   {{lng}}
     array of values <code>{{cardinalityText}}</code> of type {{#with items}}{{json-tree-or-link}}{{/with}}
-    {{#if contains}}, which must contain at least one item of type {{#with contains}}{{json-tree-or-link}}{{/with}}{{/if}}
+    {{#if requiresStringConstantsOnly}} and must contain: {{#each requiresStringConstantsOnly}}<code>{{this}}</code>{{#unless @last}}, {{/unless}}{{/each}}
+    {{else}}
+      {{#if contains}} and must contain at least one item of type {{#with contains}}{{json-tree-or-link}}{{/with}}{{/if}}
+    {{/if}}
   {{/iflng}}
 {{/def}}
 
@@ -138,7 +144,7 @@ export const defaultJsonPartials: Record<string, string> = {
       <dt>IRI</dt>
       <dd><code>{{id}}</code></dd>
       <dt>{{#iflng "cs"}}Definováno v{{lng}}Defined in{{/iflng}}</dt>
-      <dd><code><a href="{{artifact.json-schema.relativePath}}">{{artifact.json-schema.relativePath}}</a></code></dd>
+      <dd><code><a href="{{{artifact.json-schema.relativePath}}}">{{artifact.json-schema.relativePath}}</a></code></dd>
       {{#with dialect}}
         <dt>{{#iflng "cs"}}Verze použitého jazyka{{lng}}Language version used{{/iflng}}</dt>
         <dd><a href="{{specificationUrl}}" target="_blank">{{number}}</a> (metaschema IRI: <code>{{metaschemaIri}}</code>)</dd>

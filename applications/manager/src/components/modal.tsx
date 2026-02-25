@@ -20,6 +20,7 @@ import {
     DrawerTrigger,
 } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
+import type { ComponentProps } from "react";
 
 interface BaseProps {
     children?: React.ReactNode
@@ -80,6 +81,10 @@ const ModalClose = ({ className, children, ...props }: ModalProps) => {
 const ModalContent = ({ className, children, ...props }: ModalProps & {disableClose?: boolean}) => {
     const isDesktop = !useIsMobile();
     const ModalContent = isDesktop ? DialogContent : DrawerContent
+
+    if (props.disableClose) {
+        (props as ComponentProps<typeof DialogContent>).showCloseButton = false;
+    }
 
     return (
         <ModalContent className={className} {...props}>

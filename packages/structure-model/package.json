@@ -1,0 +1,20 @@
+{
+  "name": "@dataspecer/structure-model",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w",
+    "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\""
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./profile": "./lib/profile/index.js"
+  },
+  "dependencies": {
+    "@dataspecer/core": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

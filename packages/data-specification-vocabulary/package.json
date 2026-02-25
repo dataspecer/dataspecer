@@ -5,13 +5,14 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "prebuild": "rimraf lib",
+    "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\"",
     "dev": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "exports": {
     ".": "./lib/index.js",
+    "./generator-configuration": "./lib/generator-configuration/index.js",
     "./specification-description": "./lib/specification-description/index.js",
     "./structure-model": "./lib/structure-model/index.js"
   },
@@ -26,7 +27,6 @@
   "devDependencies": {
     "@types/jsonld": "^1.5.15",
     "@types/n3": "~1.24.2",
-    "rimraf": "^6.0.1",
     "typescript": "^5.9.3",
     "vitest": "^3.1.1"
   }

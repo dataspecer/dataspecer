@@ -1,6 +1,5 @@
-import { mkdirSync, copyFileSync } from "fs";
-import { sync as rmSync } from "rimraf";
+import { mkdirSync, copyFileSync, rmSync } from "fs";
 
-rmSync("lib");
+rmSync("lib", { recursive: true, force: true });
 mkdirSync("./lib", {recursive: true});
 copyFileSync("./package.json", "./lib/package.json");

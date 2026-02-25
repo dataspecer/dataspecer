@@ -3,6 +3,7 @@ import { SemanticModelClass, SemanticModelEntity } from '@dataspecer/core-v2/sem
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
 import { OperationContext } from "../../editor/operations/context/operation-context";
 import { SemanticModelAggregator } from '@dataspecer/core-v2/hierarchical-semantic-aggregator';
+import type { MemoryStoreFromBlob } from '@dataspecer/specification/memory-store';
 
 /**
  * Editor's configuration (or context) that specifies how the editor should work.
@@ -19,6 +20,12 @@ export interface Configuration {
      * todo experimental
      */
     semanticModelAggregator: SemanticModelAggregator;
+
+    /**
+     * Individual structure models mapped by their IRIs.
+     * All of them are registered in the `store` as well.
+     */
+    structureModels: Record<string, MemoryStoreFromBlob>;
 }
 
 /**

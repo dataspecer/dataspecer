@@ -1,19 +1,22 @@
+import { CoreResourceReader } from "@dataspecer/core/core/core-reader";
 import { DataSpecificationConfiguration, DataSpecificationConfigurator } from "@dataspecer/core/data-specification/configuration";
+import { loadDataSpecifications } from "@dataspecer/specification/specification";
+import { DefaultArtifactBuilder, GenerateReport } from "@dataspecer/specification/v1";
 import AddIcon from "@mui/icons-material/Add";
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import LoadingButton from "@mui/lab/LoadingButton";
-import { Box, Button, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
+import { Box, Button, Fab, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
 import { saveAs } from "file-saver";
 import React, { memo, useCallback, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { BackendConnectorContext, DefaultConfigurationContext } from "../../../application";
 import { LanguageStringText } from "../../../editor/components/helper/LanguageStringComponents";
-import { modelRepository, getConfiguration } from "../../../generators/configuration/provided-configuration";
 import { useDialog } from "../../../editor/dialog";
+import { getConfiguration, modelRepository } from "../../../generators/configuration/provided-configuration";
+import { ZipStreamDictionary } from "../../../generators/zip-stream-dictionary";
 import { ConfigureArtifacts } from "../../artifacts/configuration/configure-artifacts";
 import { ConfigureButton } from "../../artifacts/configuration/configure-button";
-import { DefaultArtifactBuilder } from "@dataspecer/specification/v1";
-import { GenerateReport } from "@dataspecer/specification/v1";
 import { DeleteDataSchemaForm } from "../../components/delete-data-schema-form";
 import { SpecificationTags } from "../../components/specification-tags";
 import { getEditorLink } from "../../shared/get-schema-generator-link";
@@ -21,12 +24,11 @@ import { ConceptualModelTargets } from "./conceptual-model-targets";
 import { CopyIri } from "./copy-iri";
 import { DataStructureBox } from "./data-structure-row";
 import { GeneratingDialog } from "./generating-dialog";
+import { ProfileStructureDialog } from "./profile-structure";
 import { RedirectDialog } from "./redirect-dialog";
 import { ReuseDataSpecifications } from "./reuse-data-specifications";
 import { AllSpecificationsContext, SpecificationContext } from "./specification";
-import { loadDataSpecifications } from "@dataspecer/specification/specification";
-import { CoreResourceReader } from "@dataspecer/core/core/core-reader";
-import { ZipStreamDictionary } from "../../../generators/zip-stream-dictionary";
+import { Magnet } from "lucide-react";
 
 export const DocumentationSpecification = memo(() => {
   const { t } = useTranslation("ui");
@@ -49,6 +51,8 @@ export const DocumentationSpecification = memo(() => {
       setRedirecting(false);
     }
   }, [navigate, backendConnector, dataSpecificationIri]);
+
+  const profileStructureDialog = useDialog(ProfileStructureDialog, ["dataSpecificationId"]);
 
   const [zipLoading, setZipLoading] = React.useState<false | "stores-loading" | "generating">(false);
   const [generateDialogOpen, setGenerateDialogOpen] = React.useState<boolean>(false);
@@ -104,7 +108,14 @@ export const DocumentationSpecification = memo(() => {
       </Box>
       <SpecificationTags specification={specification} />
 
-      <Box display="flex" flexDirection="row" justifyContent="space-between" sx={{ mt: 10 }}>
+      <Box display="flex" flexDirection="row" sx={{ mt: 5 }}>
+        <div className="grow" />
+        <Fab variant="extended" size="medium" color={"primary"} onClick={profileStructureDialog.open}>
+          <Magnet className="mr-1" />
+          {t("profile")}
+        </Fab>
+      </Box>
+      <Box display="flex" flexDirection="row" justifyContent="space-between" sx={{ mt: 2 }}>
         <Grid container spacing={3}>
           {specification?.dataStructures.map((psm) => (
             <Grid item xs={4} key={psm.id}>
@@ -195,6 +206,7 @@ export const DocumentationSpecification = memo(() => {
 
       <RedirectDialog isOpen={redirecting} />
       <DeleteForm.Component />
+      <profileStructureDialog.Component dataSpecificationId={dataSpecificationIri} />
     </>
   );
 });

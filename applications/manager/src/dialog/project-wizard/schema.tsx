@@ -66,9 +66,9 @@ export const Schema = ({ isOpen, resolve, iri }: { iri: string } & BetterModalPr
                   <Label htmlFor="sgov" className="-mx-2 flex items-start space-x-4 rounded-md p-2 transition-all hover:bg-accent hover:text-accent-foreground border-2 border-muted bg-popover peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
                     <img src="https://flagcdn.com/w40/cz.png" srcSet="https://flagcdn.com/w80/cz.png 2x" className="mt-px w-5 block" alt="Czechia" />
                     <div className="space-y-1">
-                      <p className="text-sm font-medium leading-none">Czech Semantic Government Vocabulary</p>
+                      <p className="text-sm font-medium leading-none">{t("project-wizard:projects.schema.sgov-title")}</p>
                       <p className="text-sm text-muted-foreground">
-                        Uses SGOV as a source ontology and local semantic model to store applied changes.
+                        {t("project-wizard:projects.schema.sgov-description")}
                       </p>
                     </div>
                   </Label>

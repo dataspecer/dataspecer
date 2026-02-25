@@ -40,9 +40,18 @@ export function openCreateVisualModelDialogAction(
       changeVisualModelAction(
         graph, queryParamsContext,
         createdVisualModel.getIdentifier());
+      options.setVisualOptions({
+        labelVisual: Number(nextState.labelVisual),
+        entityMainColor: Number(nextState.entityMainColor),
+        profileOfVisual: Number(nextState.profileOfVisual),
+        displayRangeDetail: nextState.displayRangeDetail,
+        displayRelationshipProfileArchetype:
+          nextState.displayRelationshipProfileArchetype,
+      });
     }
   };
 
-  const state = createEditVisualModelDialogState(options.language, null);
+  const state = createEditVisualModelDialogState(
+    options.language, null, options.visualOptions);
   dialogs?.openDialog(createVisualModelDialog(state, onConfirm));
 }

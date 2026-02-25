@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w",
-    "prebuild": "rimraf lib generated",
+    "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\" -e \"fs.rmSync('generated', { recursive: true, force: true })\"",
     "start": "node ./lib/engine/app-generator.js",
     "test": "vitest run --pass-with-no-tests"
   },
@@ -24,7 +24,6 @@
   },
   "devDependencies": {
     "@types/node": "^20.16.5",
-    "rimraf": "^6.0.1",
     "typescript": "^5.9.3",
     "vitest": "^3.1.1"
   },

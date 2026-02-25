@@ -33,7 +33,12 @@
 
     /* Linting */
     "strict": false,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    /* Coding experience */
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": [
     "src"

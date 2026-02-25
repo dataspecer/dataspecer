@@ -15,7 +15,7 @@ import { ProjectWizard } from "./dialog/project-wizard/project-wizard";
 import { RenameResourceDialog } from "./dialog/rename-resource";
 import { ResourceDetail } from "./dialog/resource-detail";
 import { useToggle } from "./hooks/use-toggle";
-import { ModelIcon, createModelInstructions, modelTypeToName } from "./known-models";
+import { ModelIcon, modelTypeToName } from "./known-models";
 import { useBetterModal } from "./lib/better-modal";
 import { ResourcesContext, ensurePackageWorksForDSE, modifyUserMetadata, requestLoadPackage } from "./package";
 import { ModifyDocumentationTemplate } from "./dialog/modify-documentation-template";
@@ -80,7 +80,7 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
 
   return <li className="first:border-y last:border-none border-b">
     <div className="flex items-center space-x-4 hover:bg-accent">
-       {resource.types.includes(LOCAL_PACKAGE) ? <div className="flex"><button onClick={stopPropagation(() => isOpen ? setIsOpen(false) : open())}>
+       {resource.types.includes(LOCAL_PACKAGE) ? <div className="flex"><button className="cursor-pointer" onClick={stopPropagation(() => isOpen ? setIsOpen(false) : open())}>
         {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
       </button><Folder className="text-gray-400 ml-1" /></div> : <div><ModelIcon type={resource.types} /></div>}
 
@@ -88,7 +88,11 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
         <div className="font-medium">
           <Translate
             text={resource.userMetadata?.label}
-            match={t => <>{t} <span className="ml-5 text-gray-500 font-normal">{modelTypeToName[resource.types[0]]}</span></>}
+            match={(t, isMatch, language) => <>
+              <span className={isMatch ? "" : "text-muted-foreground"}>{t}</span>
+              {!isMatch && <span className="ml-1 ">@{language}</span>}
+              <span className="ml-5 text-gray-500 font-normal">{modelTypeToName[resource.types[0]]}</span>
+            </>}
             fallback={modelTypeToName[resource.types[0]]}
           />
         </div>
@@ -210,7 +214,7 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a target="_blank" href={import.meta.env.VITE_BACKEND + `/preview/${i18n.language}/index.html?iri=` + encodeURIComponent(iri)}><FileText className="mr-2 h-4 w-4" /> {t("show-documentation")} ({i18n.language})</a></DropdownMenuItem>}
           {i18n.language !== "en" && resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a target="_blank" href={import.meta.env.VITE_BACKEND + `/preview/en/index.html?iri=` + encodeURIComponent(iri)}><FileText className="mr-2 h-4 w-4" /> {t("show-documentation")} (en)</a></DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(ModifyDocumentationTemplate, {iri})}><NotepadTextDashed className="mr-2 h-4 w-4" /> {t("modify-documentation-template")}</DropdownMenuItem>}
-          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(AddImported, {id: iri})}><Import className="mr-2 h-4 w-4" /> {t("import specification from url")}</DropdownMenuItem>}
+          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(AddImported, {id: iri, urlOnly: true})}><Import className="mr-2 h-4 w-4" /> {t("import specification from url")}</DropdownMenuItem>}
           <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/resources/export.zip?iri=" + encodeURIComponent(iri)}><CloudDownload className="mr-2 h-4 w-4" /> {t("export")}</a></DropdownMenuItem>
           <DropdownMenuItem onClick={async () => {
             const result = await openModal(RenameResourceDialog, {inputLabel: resource.userMetadata?.label, inputDescription: resource.userMetadata?.description});
@@ -272,25 +276,22 @@ function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean
 
   return <div className="mb-12">
     <div className="flex flex-row">
-      <button onClick={() => setIsOpen(!isOpen)}>
+      <button onClick={() => setIsOpen(!isOpen)} className="cursor-pointer">
         {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
       </button>
-      <h2 className="font-heading ml-3 scroll-m-20 pb-2 text-2xl font-semibold tracking-tight first:mt-0 grow"><Translate text={pckg.userMetadata?.label} /></h2>
-      <Button variant="ghost" size="sm" className="shrink=0 ml-4"
+      <h2 className="font-heading ml-3 scroll-m-20 pb-2 text-2xl font-semibold tracking-tight first:mt-0 grow">
+        <Translate
+          text={pckg.userMetadata?.label}
+          match={(t, isMatch, language) => <>
+            <span className={isMatch ? "" : "text-muted-foreground"}>{t}</span>
+            {!isMatch && <span className="ml-1 ">@{language}</span>}
+          </>}
+        />
+      </h2>
+      <Button variant="ghost" size="sm" className="shrink-0 ml-4"
         onClick={() => openModal(AddImported, {id: iri})}>
         <Import className="mr-2 h-4 w-4" /> {t("import")}
       </Button>
-      <Button variant="ghost" size={"sm"} className="shrink-0 ml-4" onClick={async () => {
-        const names = await openModal(RenameResourceDialog, {type: "create"});
-        if (!names) return;
-        await createModelInstructions[LOCAL_PACKAGE].createHook({
-          iri: "",
-          parentIri: iri,
-          modelType: LOCAL_PACKAGE,
-          label: names?.name,
-          description: names?.description,
-        });
-      }}><Folder className="mr-2 h-4 w-4" /> {t("new-package")}</Button>
       <Button variant="default" size={"sm"} className="shrink-0 ml-4" onClick={() => openModal(ProjectWizard, {iri})}><WandSparkles className="mr-2 h-4 w-4" /> {t("project-wizard")}</Button>
     </div>
     {isOpen &&

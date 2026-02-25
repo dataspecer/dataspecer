@@ -234,7 +234,8 @@ const createTestNodeType = (): NodeType => {
       entityMainColor: EntityColor.Entity,
       profileOfVisual: ProfileOfVisual.None,
       displayRangeDetail: false,
-      displayRelationshipProfileArchetype: false
+      displayRelationshipProfileArchetype: false,
+      profileOfLabel: "profile of",
     },
     profileOf: [],
     vocabulary: []
@@ -261,7 +262,8 @@ const createTestEdgeType = (source: string, target: string): EdgeType => {
       entityMainColor: EntityColor.Entity,
       profileOfVisual: ProfileOfVisual.None,
       displayRangeDetail: false,
-      displayRelationshipProfileArchetype: false
+      displayRelationshipProfileArchetype: false,
+      profileOfLabel: "profile of",
     },
     iri: null,
     mandatoryLevelLabel: null,

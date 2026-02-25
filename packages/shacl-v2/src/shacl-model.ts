@@ -124,6 +124,22 @@ export interface ShaclPropertyShape {
 
 }
 
+export function createShaclPropertyShape(
+  value: Partial<ShaclPropertyShape> & { iri: Node, path: Node },
+): ShaclPropertyShape {
+  return {
+    seeAlso: null,
+    description: null,
+    name: null,
+    nodeKind: null,
+    minCount: null,
+    maxCount: null,
+    datatype: null,
+    class: null,
+    ...value,
+  }
+};
+
 /**
  * Enum for SHACL Node Kinds.
  */

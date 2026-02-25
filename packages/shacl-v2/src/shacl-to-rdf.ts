@@ -27,6 +27,9 @@ interface ShaclModelToRdfConfiguration {
 
 }
 
+/**
+ * Return an RDF turtle representation of the given data.
+ */
 export async function shaclToRdf(
   model: ShaclModel,
   configuration: ShaclModelToRdfConfiguration,

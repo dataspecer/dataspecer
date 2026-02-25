@@ -1,9 +1,9 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
 import { BaseResource, ResourceModel } from "../models/resource-model.ts";
-import { v4 as uuidv4 } from 'uuid';
 import { currentVersion } from "../tools/migrations/index.ts";
 import configuration from "../configuration.ts";
+import crypto from 'node:crypto';
 
 export class PackageExporter {
   resourceModel: ResourceModel;
@@ -27,7 +27,7 @@ export class PackageExporter {
       localNameCandidate = iri.slice(path.length);
     }
     if (localNameCandidate.includes("/") || localNameCandidate.length === 0) {
-      localNameCandidate = uuidv4();
+      localNameCandidate = crypto.hash('sha1', iri);
     }
     let fullName = path + localNameCandidate;
 

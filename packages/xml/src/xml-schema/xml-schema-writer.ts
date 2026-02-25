@@ -1,4 +1,5 @@
-import {OutputStream} from "@dataspecer/core/io/stream/output-stream";
+import { OutputStream } from "@dataspecer/core/io/stream/output-stream";
+import { LanguageString } from "@dataspecer/core/core/core-resource";
 
 import {
   XmlSchema,
@@ -28,6 +29,14 @@ import { langStringName } from "../conventions.ts";
 
 const xsNamespace = "http://www.w3.org/2001/XMLSchema";
 const xsVerNamespace = "http://www.w3.org/2007/XMLSchema-versioning";
+
+/**
+ * Checks if a LanguageString has any non-empty values.
+ */
+function hasLanguageStringContent(ls: LanguageString | null): boolean {
+  if (!ls) return false;
+  return Object.values(ls).some(value => value && value.trim().length > 0);
+}
 
 /**
  * Writes the full XML Schema to output.
@@ -206,18 +215,39 @@ async function writeAnnotation(
         "sawsdl", "modelReference", annotation.modelReference.join(" ")
       );
     }
-    if (annotation.metaTitle || annotation.metaDescription) {
+    const hasTitle = hasLanguageStringContent(annotation.metaTitle);
+    const hasDescription = hasLanguageStringContent(annotation.metaDescription);
+    const hasUsageNote = hasLanguageStringContent(annotation.metaUsageNote);
+
+    if (hasTitle || hasDescription || hasUsageNote) {
       await writer.writeElementFull("xs", "annotation")(async writer => {
-        const languages = [...new Set([...Object.keys(annotation.metaTitle ?? {}), ...Object.keys(annotation.metaDescription ?? {})])].sort();
+        const languages = [...new Set([
+          ...Object.keys(annotation.metaTitle ?? {}),
+          ...Object.keys(annotation.metaDescription ?? {}),
+          ...Object.keys(annotation.metaUsageNote ?? {})
+        ])].sort();
+
         for (const language of languages) {
+          // Write title and description in first xs:documentation element
+          const title = annotation.metaTitle?.[language];
+          const description = annotation.metaDescription?.[language];
+          const usageNote = annotation.metaUsageNote?.[language];
+
           await writer.writeElementFull("xs", "documentation")(async writer => {
             await writer.writeLocalAttributeValue("xml:lang", language);
-            const title = annotation.metaTitle?.[language];
-            const description = annotation.metaDescription?.[language];
-            await writer.writeText(
-              `${title ?? ""}${title && description ? " - " : ""}${description ?? ""}\n`
-            );
+
+            let text = "";
+            if (title || description) {
+              text += `${title ?? ""}${title && description ? " - " : ""}${description ?? ""}\n`;
+            }
+
+            if (usageNote) {
+              text += `${usageNote}\n`;
+            }
+
+            await writer.writeText(text);
           });
+
         }
       });
     }

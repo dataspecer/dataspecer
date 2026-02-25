@@ -32,9 +32,9 @@ export async function structureModelToRdf(entities: CoreResource[], configuratio
   const baseIri = schema.iri!;
 
   const prefixes: Record<string, NamedNode | string> = {
-    fixme: STRUCTURE_MODEL_DSV["base"],
-    dump: STRUCTURE_MODEL_DSV["dump"],
     "": baseIri,
+    "dsvs": STRUCTURE_MODEL_DSV.base,
+    "kv": STRUCTURE_MODEL_DSV.dump,
     ...(configuration.prefixes || {}),
   };
 
@@ -42,7 +42,8 @@ export async function structureModelToRdf(entities: CoreResource[], configuratio
 
   for (const entity of entities) {
     writer.addQuad(IRI(entity.iri!), RDF.type, STRUCTURE_MODEL_DSV["entity"]);
-    for (const [key, value] of Object.entries(entity)) {
+    const sortedEntries = Object.entries(entity).sort(([a], [b]) => a > b ? 1 : a < b ? -1 : 0);
+    for (const [key, value] of sortedEntries) {
       const data = JSON.stringify(value);
       writer.addQuad(IRI(entity.iri!), IRI(DUMP_BASE_IRI + key), Literal(data));
     }

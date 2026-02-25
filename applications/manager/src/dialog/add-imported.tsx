@@ -13,9 +13,10 @@ import { toast } from "sonner";
 
 export interface AddImportedProps {
   id: string;
+  urlOnly?: boolean;
 }
 
-export const AddImported = ({ id, isOpen, resolve }: AddImportedProps & BetterModalProps<boolean>) => {
+export const AddImported = ({ id, urlOnly, isOpen, resolve }: AddImportedProps & BetterModalProps<boolean>) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
@@ -90,10 +91,25 @@ export const AddImported = ({ id, isOpen, resolve }: AddImportedProps & BetterMo
           <ModalTitle>{t("add-imported.title")}</ModalTitle>
         </ModalHeader>
         <ModalBody className="mt-auto flex flex-col gap-2 p-4">
+          {urlOnly ? (
+            <form className="grid gap-4" onSubmit={formSubmit}>
+              <div className="grid gap-2">
+                <Label htmlFor="url">
+                  {t("form.url.name")}
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Textarea id="url" placeholder={t("form.url.instruction")} required />
+              </div>
+
+              <LoadingButton type="submit" loading={loading}>
+                {t("add-imported.import")}
+              </LoadingButton>
+            </form>
+          ) : (
           <Tabs defaultValue="account">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="URL">URL</TabsTrigger>
-              <TabsTrigger value="file">File</TabsTrigger>
+              <TabsTrigger value="URL">{t("add-imported.tab-url")}</TabsTrigger>
+              <TabsTrigger value="file">{t("add-imported.tab-file")}</TabsTrigger>
             </TabsList>
             <TabsContent value="URL">
               <form className="grid gap-4 mt-4" onSubmit={formSubmit}>
@@ -111,8 +127,8 @@ export const AddImported = ({ id, isOpen, resolve }: AddImportedProps & BetterMo
               </form>
             </TabsContent>
             <TabsContent value="file">
-              <CardDescription className="">Use this dialog to drop ZIP file with file exported from Dataspecer.</CardDescription>
-              <CardDescription className="mb-2 text-red-700">This is still an experimental feature. The imported package must not exists otherwise the import fails. The import/export functionality cannot be used to create copies, only backups.</CardDescription>
+              <CardDescription className="">{t("add-imported.file-description")}</CardDescription>
+              <CardDescription className="mb-2 text-red-700">{t("add-imported.file-warning")}</CardDescription>
               <Dropzone
                 accept={{
                   "application/zip": [],
@@ -124,6 +140,7 @@ export const AddImported = ({ id, isOpen, resolve }: AddImportedProps & BetterMo
               />
             </TabsContent>
           </Tabs>
+          )}
         </ModalBody>
       </ModalContent>
     </Modal>

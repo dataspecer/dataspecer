@@ -80,7 +80,10 @@ export const EntityNode = (props: NodeProps<Node<ApiNode>>) => {
               <div>{label}</div>
               {data.position.anchored ? <div>⚓</div> : null}
             </div>
-            <ProfileOf options={data.options} profileOf={data.profileOf} />
+            <ProfileOf
+              options={data.options}
+              profileOf={data.profileOf}
+            />
           </div>
           {hideIri ? null : <div className="overflow-x-clip text-gray-500 px-1">
             {data.iri}
@@ -184,9 +187,10 @@ function ProfileOf({ options, profileOf }: {
   }
   return (
     <div className="text-gray-600">
-      profile&nbsp;of&nbsp;
+      {options.profileOfLabel}&nbsp;
       <ul className="inline-grid">
-        {labels.filter(item => item !== null).map(item => <li>{item}</li>)}
+        {labels.filter(item => item !== null)
+          .map((item, index) => <li key={index}>{item}</li>)}
       </ul>
     </div>
   )

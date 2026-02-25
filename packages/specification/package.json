@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w",
-    "prebuild": "rimraf lib"
+    "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\""
   },
   "exports": {
     ".": "./lib/index.js",
@@ -13,6 +13,7 @@
     "./dsv": "./lib/dsv/index.js",
     "./model-hierarchy": "./lib/model-hierarchy/index.js",
     "./model-repository": "./lib/model-repository/index.js",
+    "./shacl-v2": "./lib/shacl-v2.js",
     "./specification": "./lib/specification/index.js",
     "./v1": "./lib/v1/index.js",
     "./memory-store": "./lib/memory-store.js",
@@ -31,13 +32,13 @@
     "@dataspecer/shacl": "*",
     "@dataspecer/shacl-v2": "*",
     "@dataspecer/shex": "*",
+    "@dataspecer/structure-model": "*",
     "@dataspecer/lightweight-owl": "*",
     "@dataspecer/xml": "*",
     "pako": "^2.1.0"
   },
   "devDependencies": {
     "@types/pako": "^2.0.0",
-    "rimraf": "^6.0.1",
     "typescript": "^5.9.3"
   }
 }

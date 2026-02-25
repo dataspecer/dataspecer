@@ -23,6 +23,15 @@ interface ProfileModel {
 /**
  * Create data specification vocabulary representation for given profile models.
  * The function also require list all models as transitive dependencies.
+ *
+ * Result of this method does not include the intermediate entities.
+ *
+ * @param dependencies Semantic and semantic profiles models.
+ *  They must provide connection from the second function argument to the semantic model.
+ *  This is required to properly determine profile types.
+ * @param profiles The top level semantic profile model to create the DSV representation for.
+ *  This model must be connected to the semantic entities by dependencies.
+ * @param configuration
  */
 export function createDataSpecificationVocabulary(
   dependencies: {

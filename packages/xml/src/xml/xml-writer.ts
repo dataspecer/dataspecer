@@ -334,7 +334,16 @@ export abstract class XmlIndentingTextWriter
 
   async writeText(text: string): Promise<void> {
     await this.leaveElementAttributes();
-    await this.write(this.currentIndent + xmlEscape(text));
+    const escaped = xmlEscape(text);
+    const lines = escaped.split(/(\r\n|\r|\n)/); // This keeps line endings in the result
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (line === "\r\n" || line === "\r" || line === "\n") {
+        await this.write(line);
+      } else if (line.length > 0) {
+        await this.write(this.currentIndent + line);
+      }
+    }
   }
 
   async writeElementEnd(

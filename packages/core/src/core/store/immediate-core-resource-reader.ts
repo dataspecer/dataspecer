@@ -1,4 +1,4 @@
-import {CoreResource} from "@dataspecer/core/core";
+import type { CoreResource } from "../core-resource.ts";
 
 /**
  * Interface for immediate access to resources without using promises.

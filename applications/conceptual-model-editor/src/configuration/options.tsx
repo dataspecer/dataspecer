@@ -1,3 +1,4 @@
+import { DiagramOptions, EntityColor, LabelVisual, ProfileOfVisual } from "../diagram/model";
 import React, { useContext, useMemo, useState } from "react";
 
 export enum Language {
@@ -27,19 +28,58 @@ export interface Options {
    */
   setLanguage: (language: Language) => void;
 
+  /**
+   * This is temporary!
+   */
+  visualOptions: VisualModelOptions;
+
+  /**
+   * This is temporary!
+   */
+  setVisualOptions: (next: VisualModelOptions) => void;
+
+}
+
+export interface VisualModelOptions {
+
+  labelVisual: LabelVisual;
+
+  entityMainColor: EntityColor;
+
+  profileOfVisual: ProfileOfVisual;
+
+  /**
+   * Show range label using {@link labelVisual} and cardinality.
+   */
+  displayRangeDetail: boolean;
+
+  /**
+   * When true <<profile>> is shown for relationship profiles.
+   */
+  displayRelationshipProfileArchetype: boolean;
+
 }
 
 const OptionsContext = React.createContext<Options>(null as any);
 
 export const OptionsContextProvider = (props: { children: React.ReactNode }) => {
   const [language, setLanguage] = useState(Language.English);
+  const [visualOptions, setVisualOptions] = useState<VisualModelOptions>({
+    entityMainColor: EntityColor.Entity,
+    labelVisual: LabelVisual.Entity,
+    profileOfVisual: ProfileOfVisual.Entity,
+    displayRangeDetail: true,
+    displayRelationshipProfileArchetype: false,
+  });
 
   const context = useMemo(() => {
     return {
       language,
       setLanguage,
+      visualOptions,
+      setVisualOptions,
     };
-  }, [language, setLanguage])
+  }, [language, setLanguage, visualOptions, setVisualOptions])
 
   return (
     <OptionsContext.Provider value={context}>

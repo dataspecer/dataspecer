@@ -49,6 +49,23 @@ export class XmlSchema {
   elements: XmlSchemaElement[];
 
   options: XmlConfiguration;
+
+  /**
+   * If the schema is treated as a view for documentation purposes, and this
+   * view represents profile, then this entity will be non-null containing
+   * information about the profile.
+   */
+  documentationProfileView: null | {
+    /**
+     * Due to technical limitations of XML language, each namespace must be in
+     * its own file. This structure holds the files and their namespaces.
+     */
+    namespaces: {
+      prefix: string | null;
+      namespace: string | null;
+      fileUrl: string;
+    }[];
+  };
 }
 
 /**
@@ -96,6 +113,11 @@ export class XmlSchemaAnnotation {
    * The description of the annotation for non-technical use.
    */
   metaDescription: LanguageString | null;
+
+  /**
+   * The usage note of the annotation for non-technical use.
+   */
+  metaUsageNote: LanguageString | null;
 
   structureModelEntity?: any;
 }

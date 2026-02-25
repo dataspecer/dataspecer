@@ -276,27 +276,34 @@ export class ActionsTestSuite {
     givenGeneralizations: CreatedSemanticEntityData[],
     givenRelationshipProfiles: CreatedSemanticEntityData[],
   ): ClassesContextType {
+    const sourceModelOfEntityMap = new Map();
+
     const classesAsSemanticEntities: SemanticModelClass[] = [];
-    givenClasses.forEach(cclass => {
-      classesAsSemanticEntities.push(cclass.model.getEntities()[cclass.identifier] as SemanticModelClass);
+    givenClasses.forEach(item => {
+      const entity = item.model.getEntities()[item.identifier] as SemanticModelClass;
+      sourceModelOfEntityMap.set(entity.id, item.model.getId());
+      classesAsSemanticEntities.push(entity);
     });
 
     const relationshipsAsSemanticEntities: SemanticModelRelationship[] = [];
-    givenRelationships.forEach(relationship => {
-      relationshipsAsSemanticEntities.push(
-        relationship.model.getEntities()[relationship.identifier] as SemanticModelRelationship);
+    givenRelationships.forEach(item => {
+      const entity = item.model.getEntities()[item.identifier] as SemanticModelRelationship;
+      sourceModelOfEntityMap.set(entity.id, item.model.getId());
+      relationshipsAsSemanticEntities.push(entity);
     });
 
     const generalizationsAsSemanticEntities: SemanticModelGeneralization[] = [];
-    givenGeneralizations.forEach(generalization => {
-      generalizationsAsSemanticEntities.push(
-        generalization.model.getEntities()[generalization.identifier] as SemanticModelGeneralization);
+    givenGeneralizations.forEach(item => {
+      const entity = item.model.getEntities()[item.identifier] as SemanticModelGeneralization;
+      sourceModelOfEntityMap.set(entity.id, item.model.getId());
+      generalizationsAsSemanticEntities.push(entity);
     });
 
     const relationshipProfilesAsSemanticEntities: SemanticModelRelationshipProfile[] = [];
-    givenRelationshipProfiles.forEach(relationshipProfile => {
-      relationshipProfilesAsSemanticEntities.push(
-        relationshipProfile.model.getEntities()[relationshipProfile.identifier] as SemanticModelRelationshipProfile);
+    givenRelationshipProfiles.forEach(item => {
+      const entity = item.model.getEntities()[item.identifier] as SemanticModelRelationshipProfile;
+      sourceModelOfEntityMap.set(entity.id, item.model.getId());
+      relationshipProfilesAsSemanticEntities.push(entity);
     });
 
     const rawEntities = (classesAsSemanticEntities as Entity[])
@@ -310,7 +317,7 @@ export class ActionsTestSuite {
       setAllowedClasses: function (_) { },
       relationships: relationshipsAsSemanticEntities,
       generalizations: generalizationsAsSemanticEntities,
-      sourceModelOfEntityMap: new Map(),
+      sourceModelOfEntityMap,
       rawEntities,
       classProfiles: [],
       relationshipProfiles: relationshipProfilesAsSemanticEntities
@@ -399,15 +406,15 @@ export class ActionsTestSuite {
     const graph: ModelGraphContextType = {
       aggregator,
       aggregatorView,
-      setAggregatorView: function (_value: SetStateAction<SemanticModelAggregatorView>): void {
+      setAggregatorView: function (): void {
         // Do nothing
       },
       models: models,
-      setModels: function (_value: SetStateAction<Map<string, EntityModel>>): void {
+      setModels: function (): void {
         throw new Error("Function not implemented.");
       },
       visualModels,
-      setVisualModels: function (_value: SetStateAction<Map<string, WritableVisualModel>>): void {
+      setVisualModels: function (): void {
         throw new Error("Function not implemented.");
       }
     };
@@ -432,9 +439,6 @@ export class ActionsTestSuite {
       },
       models,
       visualModels,
-      setVisualModels: function (_value: SetStateAction<Map<string, WritableVisualModel>>): void {
-        throw new Error("Function not implemented.");
-      },
       addModel: function (..._models: EntityModel[]): void {
         throw new Error("Function not implemented.");
       },
