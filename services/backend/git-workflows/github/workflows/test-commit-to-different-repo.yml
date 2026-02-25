@@ -674,7 +674,7 @@ jobs:
         id: getPublicationBranchName
         working-directory: dataspecer-source-code/packages/git
         run: |
-          VALUE=$(npm run read-publication-branch "../../..")
+          VALUE=$(npm run read-publication-branch --silent "../../..")
           echo "publication_branch=$VALUE" >> $GITHUB_OUTPUT
 
       - name: TODO RadStr Debug print
