@@ -679,7 +679,7 @@ jobs:
 
       - name: TODO RadStr Debug print
         run: |
-          echo "Meta value is: ${{ steps.getPublicationBranchName.outputs.publicationBranch }}"
+          echo "Meta value is: ${{ steps.getPublicationBranchName.outputs.publication_branch }}"
       - name: Checkout the current repository into DIRECTORY_WITH_GENERATED_CONTENT directory
         uses: actions/checkout@v4
         with:

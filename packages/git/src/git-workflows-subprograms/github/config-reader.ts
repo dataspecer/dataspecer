@@ -13,8 +13,7 @@ import { GIT_REMOTE_CONFIGURATION_IRI } from "../../git-remote-configuration.ts"
  */
 
 async function main() {
-  console.log(String("Test value console log"));
-  process.stdout.write(String("Test value"));
+  process.stdout.write(String("Test value\n"));
   // const directory = process.argv[2];
 
   // if (!directory) {
