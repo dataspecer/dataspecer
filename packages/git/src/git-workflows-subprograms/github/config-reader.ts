@@ -6,6 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 import YAML from "yaml";
 import { GIT_REMOTE_CONFIGURATION_IRI } from "../../git-remote-configuration.ts";
+import { PUBLICATION_BRANCH_DEFAULT_NAME } from "../../git-provider-api.ts";
 
 /**
  * Usage:
@@ -13,45 +14,40 @@ import { GIT_REMOTE_CONFIGURATION_IRI } from "../../git-remote-configuration.ts"
  */
 
 async function main() {
-  process.stdout.write(String("publication-branch\n"));
-  // const directory = process.argv[2];
+  const directory = process.argv[2];
 
-  // if (!directory) {
-  //   console.error("Usage: config-reader <directory>");
-  //   process.exit(1);
-  // }
+  if (!directory) {
+    console.error("Usage: config-reader <directory>");
+    process.exit(1);
+  }
 
-  // const files = fs.readdirSync(directory);
+  const files = fs.readdirSync(directory);
 
-  // const metaFile = files.find(file =>
-  //   file.startsWith(".meta") &&
-  //   (file.endsWith(".json") || file.endsWith(".yaml") || file.endsWith(".yml"))
-  // );
+  const metaFile = files.find(file =>
+    file.startsWith(".meta") &&
+    (file.endsWith(".json") || file.endsWith(".yaml") || file.endsWith(".yml"))
+  );
 
-  // if (!metaFile) {
-  //   console.error("No .meta file found");
-  //   process.exit(1);
-  // }
+  if (!metaFile) {
+    console.error("No .meta file found");
+    process.exit(1);
+  }
 
-  // const fullPath = path.join(directory, metaFile);
-  // const fileContent = fs.readFileSync(fullPath, "utf8");
+  const fullPath = path.join(directory, metaFile);
+  const fileContent = fs.readFileSync(fullPath, "utf8");
 
-  // let parsed: any;
+  let parsed: any;
 
-  // if (metaFile.endsWith(".json")) {
-  //   parsed = JSON.parse(fileContent);
-  // } else {
-  //   parsed = YAML.parse(fileContent);
-  // }
+  if (metaFile.endsWith(".json")) {
+    parsed = JSON.parse(fileContent);
+  } else {
+    parsed = YAML.parse(fileContent);
+  }
 
-  // const fieldValue = parsed["configuration"][GIT_REMOTE_CONFIGURATION_IRI]["publicationBranch"];
-  // if (fieldValue === undefined) {
-  //   console.error(`Field not found`);
-  //   process.exit(1);
-  // }
+  const fieldValue = parsed["configuration"][GIT_REMOTE_CONFIGURATION_IRI]["publicationBranch"] ?? PUBLICATION_BRANCH_DEFAULT_NAME;
 
-  // // Print ONLY the value so GitHub Actions can capture it cleanly
-  // process.stdout.write(String(fieldValue));
+  // Print ONLY the value so GitHub Actions can capture it cleanly
+  process.stdout.write(String(fieldValue) + "\n");
 }
 
 main().catch(err => {
