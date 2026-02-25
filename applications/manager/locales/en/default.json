@@ -16,7 +16,7 @@
   "changed": "Changed on {{val, datetime(dateStyle: short; timeStyle: short)}}",
   "close": "Close",
   "create-new": {
-    "description-prefix": "Create a new package/model under",
+    "description-prefix": "Create a new dataspec under",
     "title": "Create new"
   },
   "conceptual editor button": "Edit vocabularies and application profiles",
@@ -88,9 +88,8 @@
     "template": "Template",
     "title": "Documentation template management"
   },
-  "new-package": "New package",
   "open": "Open",
-  "project-wizard": "Project Wizard",
+  "project-wizard": "New dataspec",
   "reload-pim-wrapper": {
     "confirm": "Are you sure you want to reload the contents of this external model?",
     "description": "Reload contents of external model",

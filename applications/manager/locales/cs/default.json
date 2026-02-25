@@ -88,9 +88,8 @@
     "template": "Šablona",
     "title": "Správa šablony dokumentace"
   },
-  "new-package": "Nová složka",
   "open": "Otevřít",
-  "project-wizard": "Průvodce projektem",
+  "project-wizard": "Nová specifikace",
   "reload-pim-wrapper": {
     "confirm": "Opravdu chcete znovu načíst obsah tohoto externího modelu?",
     "description": "Znovu načíst obsah externího modelu",

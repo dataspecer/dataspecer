@@ -6,7 +6,7 @@ If you find yourself struggling with how to use the app, refer yourself to [user
 
 If you want to persist your work throughout your exploration of `dscme`, please:
 
--   create a package in the [manager app](https://tool.dataspecer.com/manager) by clicking `new package` button in the top right corner
+-   create a package in the [manager app](https://tool.dataspecer.com/manager) by clicking `new package` button in the top right corner (TODO: no longer present. Create new dataspec instead)
 -   create a directory
 -   name it however you like
 -   then just create a `visual model`

@@ -59,8 +59,8 @@ const defaultConfiguration = {
     localRootIri: "http://dataspecer.com/packages/local-root",
     localRootMetadata: {
         label: {
-            cs: "Lokální modely",
-            en: "Local models"
+            cs: "Specifikace",
+            en: "Specifications"
         },
     },
 } as Partial<Configuration>
