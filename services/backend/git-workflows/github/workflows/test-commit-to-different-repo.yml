@@ -620,15 +620,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Checkout the current repository into DIRECTORY_WITH_GENERATED_CONTENT directory
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-          path: generated-content  # The path overrides the repo name directory to which it would be normally given
-          repository: ${{ github.repository }}
-          # For some reason it does not work if we do not specify ref.
-          # However this has advantage that we no longer have to switch to the branch, we are on it by default
-          ref: publication-branch
 
       # TODO RadStr: was there justt for testing
       # - name: Create README and html index file
@@ -664,15 +655,26 @@ jobs:
           path: dataspecer-source-code
           token: ${{ secrets.GITHUB_TOKEN }}   # Should not be needed sice we get it from the public version of repository
           ref: git-integration # TODO RadStr: In future use main branch
-      ... 2 things: 1) The code has to be in typescript since I do not know if it is .meta.json nebo .meta.yaml
-                  2) fix and better name than my_value
 
       - name: Get publication branch name
+        id: getPublicationBranchName
         working-directory: dataspecer-source-code/packages/git
         run: |
-          node src/git-workflows-subprograms/github/config-reader.ts
-          VALUE=$(cat config.yaml | node dist/index.js config.yaml config.name)
-          echo "my_value=$VALUE" >> $GITHUB_OUTPUT
+          VALUE=$(npm run read-publication-branch "../../..")
+          echo "publication_branch=$VALUE" >> $GITHUB_OUTPUT
+
+      - name: TODO RadStr Debug print
+        run: |
+          echo "Meta value is: ${{ steps.getPublicationBranchName.outputs.publicationBranch }}"
+      - name: Checkout the current repository into DIRECTORY_WITH_GENERATED_CONTENT directory
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          path: generated-content  # The path overrides the repo name directory to which it would be normally given
+          repository: ${{ github.repository }}
+          # For some reason it does not work if we do not specify ref.
+          # However this has advantage that we no longer have to switch to the branch, we are on it by default
+          ref: ${{ steps.getPublicationBranchName.outputs.publicationBranch }}
       - name: Copy config
         working-directory: dataspecer-source-code/services/backend
         run: cp main.config.sample.js main.config.js

@@ -2,13 +2,14 @@ import { ExportFormatRadioButtons } from "@/components/export-format-radio-butto
 import { Modal, ModalBody, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { BetterModalProps } from "@/lib/better-modal";
-import { createSetterWithGitValidation, ExportFormatType, getGitRemoteConfigurationModelFromPackage, GitRemoteConfigurations } from "@dataspecer/git";
+import { createSetterWithGitValidation, ExportFormatType, getGitRemoteConfigurationModelFromPackage, GitRemoteConfigurations, saveGitRemoteConfiguration } from "@dataspecer/git";
 import { resolveWithRequiredCheck, SetGitConfigurationReactStateType, setGitRemoteConfigurationStatePart } from "./git-actions-dialogs";
 import { InputComponent } from "@/components/simple-input-component";
 import { RefObject, useEffect, useState } from "react";
 import { Package } from "@dataspecer/core-v2/project";
 import { useRequiredFieldsForGitConfig } from "@/hooks/use-required-fields-for-git-config";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 export type RequiredFieldsPartialMap = Partial<Record<keyof GitRemoteConfigurations, RefObject<HTMLInputElement | null>>>;
 
@@ -24,13 +25,29 @@ type SetGitRemoteConfigurationDialogProps = {
 
 
 export function SetGitRemoteConfigurationDialog({ inputPackage, isOpen, resolve }: SetGitRemoteConfigurationDialogProps) {
+  const [rootPackageContent, setRootPackageContent] = useState<any>();
   const [gitRemoteConfiguration, setGitRemoteConfiguration] = useState<GitRemoteConfigurations | null>(null);
+  const { t } = useTranslation();
 
   const { requiredGitConfigFieldsMap } = useRequiredFieldsForGitConfig();
-Just put get and set config here and also do not forget to NOT use the inputPackage, we need the content of the .model not .meta
+
+  // TODO RadStr: Once again everything is kind of copy-pasted - refactor in the following commits
   const tryCloseWithSuccess = () => {
     const resolveAsNoParamsMethod = () => {
       resolve(null);
+
+      // TODO RadStr: It is kind of weird that there is no exported method with this functionality yet.
+      const storeModelToBackend = async (iri: string, newPackageContent: object) => {
+        await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(iri), {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newPackageContent),
+        });
+        toast(t("successfully saved"));
+      };
+      saveGitRemoteConfiguration(inputPackage.iri, rootPackageContent, gitRemoteConfiguration, storeModelToBackend);
     };
 
     resolveWithRequiredCheck(resolveAsNoParamsMethod, ...Object.values(requiredGitConfigFieldsMap));
@@ -38,8 +55,14 @@ Just put get and set config here and also do not forget to NOT use the inputPack
 
   useEffect(() => {
     const setGitRemoteConfigurationState = async () => {
-      const valueToSetWith = await getGitRemoteConfigurationModelFromPackage(inputPackage);
-      setGitRemoteConfiguration(valueToSetWith);
+      // For the commits (and creating of repo) we will pass in the exportFormat directly, instead of retrieving it again on server.
+      // const isGitDialogSettingGitConfiguration = type !== "link-to-existing-repository";     // TODO RadStr: Except for this it is the same - we can use hook probably
+      const rootPackageFetchResponse = await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(inputPackage.iri));
+      const rootPackageFetchedContent = await rootPackageFetchResponse.json();
+      // const fetchedGitRemoteConfiguration = isGitDialogSettingGitConfiguration ? await getGitRemoteConfigurationModelFromPackage(rootPackageFetchedContent) : null;
+      const fetchedGitRemoteConfiguration = await getGitRemoteConfigurationModelFromPackage(rootPackageFetchedContent);
+      setRootPackageContent(rootPackageFetchedContent);
+      setGitRemoteConfiguration(fetchedGitRemoteConfiguration);
     };
     setGitRemoteConfigurationState();
   }, [inputPackage]);

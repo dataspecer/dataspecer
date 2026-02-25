@@ -6,7 +6,8 @@
     "build": "tsc",
     "dev": "tsc -w",
     "prebuild": "rimraf lib",
-    "test": "vitest run"
+    "test": "vitest run",
+    "read-publication-branch": "node --enable-source-maps dist/git-workflows-subprograms/github/config-reader.js"
   },
   "exports": {
     ".": "./lib/index.js",

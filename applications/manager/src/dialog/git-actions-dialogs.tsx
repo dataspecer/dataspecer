@@ -209,11 +209,11 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
         });
         toast(t("successfully saved"));
       };
-      saveGitRemoteConfiguration(inputPackage.iri, rootPackageContent, gitRemoteConfiguration, storeModelToBackend)
+      saveGitRemoteConfiguration(inputPackage.iri, rootPackageContent, gitRemoteConfiguration, storeModelToBackend);
     };
 
     resolveWithRequiredCheck(resolveAsNoParamsMethod, ...requiredFields);
-  }
+  };
 
   const shouldDisableConfirm = useMemo(() => {
     let shouldDisableConfirmInternal: boolean;

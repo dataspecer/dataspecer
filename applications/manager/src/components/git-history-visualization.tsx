@@ -12,7 +12,7 @@ import { GitHistoryCommitActionsDialog } from "@/dialog/git-history-visualizatio
 import { Loader } from "lucide-react";
 import { Template } from "@gitgraph/core/lib/template";
 import { ResourceWithIris } from "@/package";
-import { PACKAGE_ROOT, CommitInfo, RawCommit, BranchHistory, FetchedGitRawHistory, PUBLICATION_BRANCH_DEFAULT_NAME } from "@dataspecer/git";
+import { PACKAGE_ROOT, CommitInfo, RawCommit, BranchHistory, FetchedGitRawHistory, PUBLICATION_BRANCH_DEFAULT_NAME, getGitRemoteConfigurationModelFromPackage } from "@dataspecer/git";
 
 type DSPackageInProjectVisualizationData = {
   iri: string;
@@ -145,11 +145,12 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
 
   // This is used, so we can hide the dialog when we show another one. We could also close it completely. But getting the git log from backend is not so cheap operation.
   const [shouldHideDialog, setShouldHideDialog] = useState<boolean>(false);
-
   useLayoutEffect(() => {
     if (isOpen) {
       console.info("useLayoutEffect for git-history-vis");      // TODO RadStr Debug: Debug print
       setIsLoading(true);
+
+      // TODO RadStr: Probably rewrite using async/await, this seems kind of unreadable
 
       // Here we load the git history
       // Note that we could send the the git link directly and don't need to send the package iri and then find the link on backend
@@ -185,13 +186,23 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
             .map(rootPackage => allResources[rootPackage])
             ?.filter(rootPackage => rootPackage !== undefined && rootPackage.projectIri === examinedPackage.projectIri);
           const { dsPackagesInProjectForAll, dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches } = createGitToPackagesForProjectMapping(rootPackages);
-
-          const gitGraphElement = createGitGraph(
-            openModal, examinedPackage, gitGraphTemplate, convertedCommits,
-            dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches,
-            dsPackagesInProjectForAll, setShouldHideDialog, () => resolve(null));
-          setGitGraphElement(gitGraphElement);
-          setIsLoading(false);
+          // For the commits (and creating of repo) we will pass in the exportFormat directly, instead of retrieving it again on server.
+          // const isGitDialogSettingGitConfiguration = type !== "link-to-existing-repository";     // TODO RadStr: Except for this it is the same - we can use hook probably
+          fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(examinedPackage.iri))
+            .then(rootPackageFetchResponse => {
+                rootPackageFetchResponse.json()
+                  .then(rootPackageFetchedContent => {
+                    getGitRemoteConfigurationModelFromPackage(rootPackageFetchedContent)
+                      .then(fetchedGitRemoteConfiguration => {
+                        const gitGraphElement = createGitGraph(
+                          openModal, examinedPackage, gitGraphTemplate, fetchedGitRemoteConfiguration?.publicationBranch, convertedCommits,
+                          dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches,
+                          dsPackagesInProjectForAll, setShouldHideDialog, () => resolve(null));
+                        setGitGraphElement(gitGraphElement);
+                        setIsLoading(false);
+                      });
+                  })
+            });
         })
         .catch((error) => {
           setIsLoading(false);
@@ -235,6 +246,7 @@ const createGitGraph = (
   openModal: OpenBetterModal,
   examinedPackage: Package,
   gitGraphTemplate: Template,
+  publicationBranch: string | undefined,
   commits: CommitInfo[],
   dsPackagesInProjectForBranches: Record<string, DSPackageInProjectVisualizationData>,
   dsPackagesInProjectForNonBranches: Record<string, DSPackageInProjectVisualizationData[]>,
@@ -297,7 +309,7 @@ const createGitGraph = (
         const coreGraph = (userApi as any)._graph;
         const validCommits: any[] = [];
         for (const commit of coreGraph.commits) {
-          if (commit.branches.includes(`origin/${PUBLICATION_BRANCH_DEFAULT_NAME}`)) { ... Use the name from the configuration
+          if (commit.branches.includes(`origin/${publicationBranch ?? PUBLICATION_BRANCH_DEFAULT_NAME}`)) {
             continue;
           }
           commit.renderDot = defaultCommitRenderDot;
