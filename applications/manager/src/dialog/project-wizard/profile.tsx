@@ -87,11 +87,11 @@ export const Profile = ({ isOpen, resolve, iri }: { iri: string } & BetterModalP
             </div>
             <div className="grid gap-2">
               <Label htmlFor="auto-profile" className="grow">
-                Autoprofile
+                {t("project-wizard:projects.profile.auto-profile-title")}
               </Label>
               <div className="flex items-center space-x-5">
                 <Switch id="auto-profile" defaultChecked />
-                <p className="text-muted-foreground text-sm">Automatically create default profile of all concepts from profiled specifications including all structures, if any.</p>
+                <p className="text-muted-foreground text-sm">{t("project-wizard:projects.profile.auto-profile-description")}</p>
               </div>
             </div>
             <div className="grid gap-2">

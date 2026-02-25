@@ -3,14 +3,22 @@
   "$datetime": "{{val, datetime(dateStyle: long; timeStyle: short)}}",
   "add-imported": {
     "error": "An error occurred while importing some specifications",
+    "file-description": "Use this dialog to drop ZIP file with file exported from Dataspecer.",
+    "file-warning": "This is still an experimental feature. The imported package must not exists otherwise the import fails. The import/export functionality cannot be used to create copies, only backups.",
     "import": "Import",
     "success": "Import was successful",
+    "tab-file": "File",
+    "tab-url": "URL",
     "title": "Import specification(s)",
     "warning": "Insert URLs to specifications you want to import."
   },
   "autolayout": "Auto layout",
   "changed": "Changed on {{val, datetime(dateStyle: short; timeStyle: short)}}",
   "close": "Close",
+  "create-new": {
+    "description-prefix": "Create a new package/model under",
+    "title": "Create new"
+  },
   "conceptual editor button": "Edit vocabularies and application profiles",
   "created": "Created on {{val, datetime(dateStyle: short)}}",
   "data specification button": "Edit data structures",
@@ -58,10 +66,37 @@
     "title": "Toggle theme"
   },
   "modify raw data": "Modify raw data",
+  "modify-raw": {
+    "create-new-tab": "Create new tab"
+  },
   "modify-documentation-template": "Modify documentation template",
+  "modify-documentation-template-dialog": {
+    "add-new": "Add new",
+    "cancel": "Cancel",
+    "generator-parts": "Generator parts",
+    "new-partial-placeholder": "New partial...",
+    "reusable-parts": "Reusable template parts",
+    "reusable-parts-help-prefix": "You can define your own parts and use them as",
+    "save-close": "Save & Close",
+    "save-ctrl-s": "Save (Ctrl + S)",
+    "saved": "Saved",
+    "source-template": "Source template",
+    "state-local": "created locally",
+    "state-modified": "changed",
+    "state-removed": "removed",
+    "state-unchanged": "without change",
+    "template": "Template",
+    "title": "Documentation template management"
+  },
   "new-package": "New package",
   "open": "Open",
   "project-wizard": "Project Wizard",
+  "reload-pim-wrapper": {
+    "confirm": "Are you sure you want to reload the contents of this external model?",
+    "description": "Reload contents of external model",
+    "error": "Reloading model failed. More information in the console.",
+    "success": "Model reloaded successfully."
+  },
   "reload-imported": {
     "reload": "Reload",
     "success": "Specification was successfully reloaded.",
@@ -71,6 +106,23 @@
     "warning-no-name": "You are about to reload the specification from the following URL. If the reload is successful, the specification will be completely overwritten."
   },
   "remove": "Remove",
+  "resource-detail": {
+    "edit": "Edit",
+    "modified": "Modified",
+    "rename": "Rename"
+  },
+  "rename-resource": {
+    "add-description": "Add description",
+    "add-name": "Add name",
+    "cancel": "Cancel",
+    "description": "Description",
+    "name": "Name",
+    "save-changes": "Save changes",
+    "subtitle-create": "Please select the name and the description of the resource.",
+    "subtitle-edit": "Please change the name and the description of the resource.",
+    "title-create": "Name the resource",
+    "title-edit": "Rename the resource"
+  },
   "save": "Save",
   "show-documentation": "Show documentation",
   "sort-models": {

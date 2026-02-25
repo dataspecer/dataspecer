@@ -16,6 +16,7 @@ import { defaultDocumentationConfiguration, documentationPartialsFromGenerators 
 import { useOnBeforeUnload } from "@/hooks/use-on-before-unload";
 import { useOnKeyDown } from "@/hooks/use-on-key-down";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 type PartialState = "UNCHANGED" | "MODIFIED" | "LOCAL" | "REMOVED";
 const MAIN_TEMPLATE = DOCUMENTATION_MAIN_TEMPLATE_PARTIAL;
@@ -23,31 +24,33 @@ const MAIN_TEMPLATE = DOCUMENTATION_MAIN_TEMPLATE_PARTIAL;
 const KNOWN_GENERATORS = documentationPartialsFromGenerators;
 
 function PartialState({ state }: { state: PartialState }) {
+  const { t } = useTranslation();
+
   if (state === "UNCHANGED") {
     return (
       <div>
-        <span className="inline-block w-2 h-2 rounded-full bg-green-600"></span> without change
+        <span className="inline-block w-2 h-2 rounded-full bg-green-600"></span> {t("modify-documentation-template-dialog.state-unchanged")}
       </div>
     );
   }
   if (state === "MODIFIED") {
     return (
       <div>
-        <span className="inline-block w-2 h-2 rounded-full bg-orange-600"></span> changed
+        <span className="inline-block w-2 h-2 rounded-full bg-orange-600"></span> {t("modify-documentation-template-dialog.state-modified")}
       </div>
     );
   }
   if (state === "LOCAL") {
     return (
       <div>
-        <span className="inline-block w-2 h-2 rounded-full bg-orange-600"></span> created locally
+        <span className="inline-block w-2 h-2 rounded-full bg-orange-600"></span> {t("modify-documentation-template-dialog.state-local")}
       </div>
     );
   }
   if (state === "REMOVED") {
     return (
       <div>
-        <span className="inline-block w-2 h-2 rounded-full bg-red-600"></span> removed
+        <span className="inline-block w-2 h-2 rounded-full bg-red-600"></span> {t("modify-documentation-template-dialog.state-removed")}
       </div>
     );
   }
@@ -117,13 +120,14 @@ function getNewPartialsState(defaultPartials: Record<string, string>, current: R
 
 export const ModifyDocumentationTemplate = ({ isOpen, resolve, iri }: { iri: string } & BetterModalProps) => {
   const monaco = useRef<{ editor: monaco.editor.IStandaloneCodeEditor }>(undefined);
+  const { t } = useTranslation();
 
   useOnBeforeUnload(true);
   useOnKeyDown(e => {
     if (e.key === "s" && e.ctrlKey) {
       e.preventDefault();
       save();
-      toast.success("Saved");
+      toast.success(t("modify-documentation-template-dialog.saved"));
     }
   });
 
@@ -207,26 +211,26 @@ export const ModifyDocumentationTemplate = ({ isOpen, resolve, iri }: { iri: str
           <ResizablePanelGroup direction="horizontal" className="overflow-hidden">
             <ResizablePanel defaultSize={20} className="flex flex-col pr-5 pl-1 my-6">
               <ModalHeader className="mb-4">
-                <ModalTitle>Documentation template management</ModalTitle>
+                <ModalTitle>{t("modify-documentation-template-dialog.title")}</ModalTitle>
               </ModalHeader>
 
               {!isLoading &&
                 <div className="flex flex-col grow overflow-y-auto pr-2 -mr-2 -ml-2 pl-2">
-                  <h5 className="scroll-m-20 text-l mb-3 tracking-tight">Template</h5>
+                  <h5 className="scroll-m-20 text-l mb-3 tracking-tight">{t("modify-documentation-template-dialog.template")}</h5>
 
                   <PartialButton
-                    text="Source template"
+                    text={t("modify-documentation-template-dialog.source-template")}
                     state={partialsState[MAIN_TEMPLATE]}
                     selected={selectedPartial === MAIN_TEMPLATE}
                     onSelect={() => selectNewPartial(MAIN_TEMPLATE)}
                     onRevert={partialsState[MAIN_TEMPLATE] === "MODIFIED" ? () => revert(MAIN_TEMPLATE) : undefined}
                   />
 
-                  <h5 className="scroll-m-20 text-l mb-3 tracking-tight mt-3">Reusable template parts</h5>
+                  <h5 className="scroll-m-20 text-l mb-3 tracking-tight mt-3">{t("modify-documentation-template-dialog.reusable-parts")}</h5>
 
                   <Alert variant="info" className="mb-3">
                     <AlertDescription>
-                      You can define your own parts and use them as <code>{"{{> name}}"}</code>.
+                      {t("modify-documentation-template-dialog.reusable-parts-help-prefix")} <code>{"{{> name}}"}</code>.
                     </AlertDescription>
                   </Alert>
 
@@ -252,13 +256,13 @@ export const ModifyDocumentationTemplate = ({ isOpen, resolve, iri }: { iri: str
                     })}
                     className="flex gap-2 mb-2"
                   >
-                    <Input placeholder="New partial..." name="partialName" />
+                    <Input placeholder={t("modify-documentation-template-dialog.new-partial-placeholder")} name="partialName" />
                     <Button variant="default" type="submit">
-                      Add new
+                      {t("modify-documentation-template-dialog.add-new")}
                     </Button>
                   </form>
 
-                  <h5 className="scroll-m-20 text-l mb-3 tracking-tight mt-3">Generator parts</h5>
+                  <h5 className="scroll-m-20 text-l mb-3 tracking-tight mt-3">{t("modify-documentation-template-dialog.generator-parts")}</h5>
 
                   {Object.entries(partialsState)
                     .filter(([name]) => KNOWN_GENERATORS.includes(name))
@@ -278,13 +282,13 @@ export const ModifyDocumentationTemplate = ({ isOpen, resolve, iri }: { iri: str
 
               <div className="flex gap-2 mt-4 justify-end mb-2">
                 <Button variant="outline" onClick={() => resolve()}>
-                  Cancel
+                  {t("modify-documentation-template-dialog.cancel")}
                 </Button>
                 <Button variant="outline" onClick={() => save()} disabled={isLoading}>
-                  Save (Ctrl + S)
+                  {t("modify-documentation-template-dialog.save-ctrl-s")}
                 </Button>
                 <Button variant={"default"} onClick={() => save().then(resolve)} disabled={isLoading}>
-                  Save & Close
+                  {t("modify-documentation-template-dialog.save-close")}
                 </Button>
               </div>
             </ResizablePanel>

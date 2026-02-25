@@ -5,11 +5,13 @@ import { ModelIcon, createModelInstructions, modelTypeToName } from "@/known-mod
 import { BetterModalProps, useBetterModal } from "@/lib/better-modal";
 import { ResourcesContext } from "@/package";
 import { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import { RenameResourceDialog } from "./rename-resource";
 
 export const CreateNew = ({ isOpen, resolve, iri }: { iri: string } & BetterModalProps) => {
   const resource = useContext(ResourcesContext)[iri]!;
   const openModal = useBetterModal();
+  const { t } = useTranslation();
 
   const selectModel = async (type: string) => {
     let names = null;
@@ -33,9 +35,9 @@ export const CreateNew = ({ isOpen, resolve, iri }: { iri: string } & BetterModa
     <Modal open={isOpen} onOpenChange={(value: boolean) => value ? null : resolve()}>
       <ModalContent>
         <ModalHeader>
-          <ModalTitle>Create new</ModalTitle>
+          <ModalTitle>{t("create-new.title")}</ModalTitle>
           <ModalDescription>
-            Create a new package/model under <i>{lng(resource.userMetadata?.label) ?? modelTypeToName[resource.types?.[0]]}</i>.
+            {t("create-new.description-prefix")} <i>{lng(resource.userMetadata?.label) ?? modelTypeToName[resource.types?.[0]]}</i>.
           </ModalDescription>
         </ModalHeader>
           <ModalBody className="mt-auto flex flex-col gap-2 p-4">

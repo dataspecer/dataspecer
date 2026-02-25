@@ -108,8 +108,8 @@ export const AddImported = ({ id, urlOnly, isOpen, resolve }: AddImportedProps &
           ) : (
           <Tabs defaultValue="account">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="URL">URL</TabsTrigger>
-              <TabsTrigger value="file">File</TabsTrigger>
+              <TabsTrigger value="URL">{t("add-imported.tab-url")}</TabsTrigger>
+              <TabsTrigger value="file">{t("add-imported.tab-file")}</TabsTrigger>
             </TabsList>
             <TabsContent value="URL">
               <form className="grid gap-4 mt-4" onSubmit={formSubmit}>
@@ -127,8 +127,8 @@ export const AddImported = ({ id, urlOnly, isOpen, resolve }: AddImportedProps &
               </form>
             </TabsContent>
             <TabsContent value="file">
-              <CardDescription className="">Use this dialog to drop ZIP file with file exported from Dataspecer.</CardDescription>
-              <CardDescription className="mb-2 text-red-700">This is still an experimental feature. The imported package must not exists otherwise the import fails. The import/export functionality cannot be used to create copies, only backups.</CardDescription>
+              <CardDescription className="">{t("add-imported.file-description")}</CardDescription>
+              <CardDescription className="mb-2 text-red-700">{t("add-imported.file-warning")}</CardDescription>
               <Dropzone
                 accept={{
                   "application/zip": [],

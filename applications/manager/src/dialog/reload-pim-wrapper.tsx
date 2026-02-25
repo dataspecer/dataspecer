@@ -31,12 +31,12 @@ export const ReloadPimWrapper = ({ id, isOpen, resolve }: ReloadPimWrapperProps 
     } catch (e) {
       setIsLoading(false);
       console.error(e);
-      toast.error("Reloading model failed. More information in the console.");
+      toast.error(t("reload-pim-wrapper.error"));
       return;
     }
 
     resolve(true);
-    toast.success("Model reloaded successfully.");
+    toast.success(t("reload-pim-wrapper.success"));
   }
 
   return (
@@ -45,11 +45,11 @@ export const ReloadPimWrapper = ({ id, isOpen, resolve }: ReloadPimWrapperProps 
         <ModalHeader>
           <ModalTitle>{t("reload-imported.title")}</ModalTitle>
           <ModalDescription>
-            Reload contents of external model
+            {t("reload-pim-wrapper.description")}
           </ModalDescription>
         </ModalHeader>
         <ModalBody>
-          Are you sure you want to reload the contents of this external model?
+          {t("reload-pim-wrapper.confirm")}
         </ModalBody>
         <ModalFooter>
           <Button variant="destructive" onClick={doReload} disabled={isLoading}>

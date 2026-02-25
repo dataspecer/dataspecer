@@ -3,14 +3,22 @@
   "$datetime": "{{val, datetime(dateStyle: long; timeStyle: short)}}",
   "add-imported": {
     "error": "Při importu některých specifikací nastala chyba",
+    "file-description": "V tomto dialogu můžete vložit ZIP soubor se souborem exportovaným z Dataspeceru.",
+    "file-warning": "Jedná se stále o experimentální funkci. Importovaný balíček nesmí existovat, jinak import selže. Funkcionalitu importu/exportu nelze použít k vytváření kopií, pouze záloh.",
     "import": "Importovat",
     "success": "Import proběhl v pořádku",
+    "tab-file": "Soubor",
+    "tab-url": "URL",
     "title": "Importovat specifikaci/e",
     "warning": "Vložte URL specifikací, které chcete importovat."
   },
   "autolayout": "Automatický layout",
   "changed": "Změněno {{val, datetime(dateStyle: short; timeStyle: short)}}",
   "close": "Zavřít",
+  "create-new": {
+    "description-prefix": "Vytvořit nový balíček/model pod",
+    "title": "Vytvořit nový"
+  },
   "conceptual editor button": "Upravovat slovníky a aplikační profily",
   "created": "Vytvořeno {{val, datetime(dateStyle: short)}}",
   "data specification button": "Upravovat datové struktury",
@@ -58,10 +66,37 @@
     "title": "Změnit motiv"
   },
   "modify raw data": "Upravit data modelu",
+  "modify-raw": {
+    "create-new-tab": "Vytvořit novou záložku"
+  },
   "modify-documentation-template": "Upravit šablonu dokumentace",
+  "modify-documentation-template-dialog": {
+    "add-new": "Přidat novou",
+    "cancel": "Zrušit",
+    "generator-parts": "Části generátoru",
+    "new-partial-placeholder": "Nová část...",
+    "reusable-parts": "Znovupoužitelné části šablony",
+    "reusable-parts-help-prefix": "Můžete definovat vlastní části a použít je jako",
+    "save-close": "Uložit a zavřít",
+    "save-ctrl-s": "Uložit (Ctrl + S)",
+    "saved": "Uloženo",
+    "source-template": "Zdrojová šablona",
+    "state-local": "vytvořeno lokálně",
+    "state-modified": "změněno",
+    "state-removed": "odebráno",
+    "state-unchanged": "beze změny",
+    "template": "Šablona",
+    "title": "Správa šablony dokumentace"
+  },
   "new-package": "Nová složka",
   "open": "Otevřít",
   "project-wizard": "Průvodce projektem",
+  "reload-pim-wrapper": {
+    "confirm": "Opravdu chcete znovu načíst obsah tohoto externího modelu?",
+    "description": "Znovu načíst obsah externího modelu",
+    "error": "Znovunačtení modelu selhalo. Více informací je v konzoli.",
+    "success": "Model byl úspěšně znovu načten."
+  },
   "reload-imported": {
     "reload": "Aktualizovat",
     "success": "Specifikace byla úspěšně aktualizována.",
@@ -71,6 +106,23 @@
     "warning-no-name": "Chystáte se aktualizovat specifikaci z následující URL. Pokud načtení proběhne úspěšně, specifikace bude kompletně přepsána."
   },
   "remove": "Odstranit",
+  "resource-detail": {
+    "edit": "Editovat",
+    "modified": "Upraveno",
+    "rename": "Přejmenovat"
+  },
+  "rename-resource": {
+    "add-description": "Přidat popis",
+    "add-name": "Přidat název",
+    "cancel": "Zrušit",
+    "description": "Popis",
+    "name": "Název",
+    "save-changes": "Uložit změny",
+    "subtitle-create": "Vyberte prosím název a popis prostředku.",
+    "subtitle-edit": "Změňte prosím název a popis prostředku.",
+    "title-create": "Pojmenujte prostředek",
+    "title-edit": "Přejmenovat prostředek"
+  },
   "save": "Uložit",
   "show-documentation": "Zobrazit dokumentaci",
   "sort-models": {

@@ -130,7 +130,7 @@ export const ModifyRawDialog = ({isOpen, resolve, iri}: ModifyRawDialogProps) =>
                 />
                 <Button onClick={() => newTabInput.current?.value && setSelectedModel(newTabInput.current?.value)} size="xsm" variant="outline">
                   <Plus className="h-4 w-4" />
-                  <span className="sr-only">Create new tab</span>
+                  <span className="sr-only">{t("modify-raw.create-new-tab")}</span>
                 </Button>
               </div>
             </div>

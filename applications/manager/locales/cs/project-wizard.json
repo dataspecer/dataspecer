@@ -9,11 +9,15 @@
       "title": "Datové schéma"
     },
     "profile": {
+      "auto-profile-description": "Automaticky vytvořit výchozí profil všech konceptů z profilovaných specifikací včetně všech struktur, pokud existují.",
+      "auto-profile-title": "Autoprofil",
       "create-title": "Vytvořit aplikační profil",
       "help": "Zadejte URL adresu specifikace na internetu ze které bude vytvořen nový aplikační profil. Specifikace se importuje do nově vytvořeného package."
     },
     "schema": {
-      "create-title": "Vytvořit datové schéma"
+      "create-title": "Vytvořit datové schéma",
+      "sgov-description": "Používá SSP jako zdrojovou ontologii a lokální sémantický model pro uložení aplikovaných změn.",
+      "sgov-title": "Český sémantický slovník veřejné správy"
     },
     "vocabulary": {
       "create-title": "Vytvořit nový slovník",
