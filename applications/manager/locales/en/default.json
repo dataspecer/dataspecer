@@ -42,7 +42,7 @@
       "name": "Name"
     },
     "url": {
-      "instruction": "URL of DSV specifications, each URL on a separate line",
+      "instruction": "URL of DSV specifications or RDFS/OWL vocabularies, each URL on a separate line",
       "name": "URL"
     }
   },
