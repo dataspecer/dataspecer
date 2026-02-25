@@ -655,6 +655,20 @@ jobs:
           path: dataspecer-source-code
           token: ${{ secrets.GITHUB_TOKEN }}   # Should not be needed sice we get it from the public version of repository
           ref: git-integration # TODO RadStr: In future use main branch
+      # Prepare node and build Dataspecer using npm run build
+      - name: Copy config
+        working-directory: dataspecer-source-code/services/backend
+        run: cp main.config.sample.js main.config.js
+      - name: Set up node
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install packages
+        working-directory: dataspecer-source-code
+        run: npm ci
+      - name: Build     # Takes around 1m40s-1m50s with building /applications. 50s-60s without. ... so TODO RadStr: think how to do it, we can have package.json file sideways and just swap it with it if we want some hacky solution
+        working-directory: dataspecer-source-code
+        run: npm run build
 
       - name: Get publication branch name
         id: getPublicationBranchName
@@ -675,20 +689,7 @@ jobs:
           # For some reason it does not work if we do not specify ref.
           # However this has advantage that we no longer have to switch to the branch, we are on it by default
           ref: ${{ steps.getPublicationBranchName.outputs.publicationBranch }}
-      - name: Copy config
-        working-directory: dataspecer-source-code/services/backend
-        run: cp main.config.sample.js main.config.js
-      - name: Set up node
-        uses: actions/setup-node@v2
-        with:
-          node-version: ${{ matrix.node-version }}
-      - name: Install packages
-        working-directory: dataspecer-source-code
-        run: npm ci
-      - name: Build     # Takes around 1m40s-1m50s with building /applications. 50s-60s without. ... so TODO RadStr: think how to do it, we can have package.json file sideways and just swap it with it if we want some hacky solution
-        working-directory: dataspecer-source-code
-        run: npm run build
-      - name: Build backend
+      - name: Build backend   # TODO RadStr: Probably unnecessary
         working-directory: dataspecer-source-code/services/backend
         run: npm run build
 
