@@ -11,6 +11,7 @@ import { GitProviderFactory } from "@dataspecer/git/git-providers";
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 import { gitOperationResultToast } from "@/utils/utilities";
 import { useTranslation } from "react-i18next";
+import { importFromGit } from "@/utils/git-backend-requests";
 
 
 type GitHistoryCommitActionsDialogProps = {
@@ -74,12 +75,7 @@ export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitH
     }
     const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(examinedPackage.linkedGitRepositoryURL, fetch, {});
     const gitUrl = gitProvider.extendGitRepositoryURLByGitRefSuffix(examinedPackage.linkedGitRepositoryURL, gitRef);
-    const response = await fetch(import.meta.env.VITE_BACKEND +
-      "/resources/import-from-git?parentIri=" + encodeURIComponent(PACKAGE_ROOT) +
-      "&gitURL=" + encodeURIComponent(gitUrl) +
-      `&commitReferenceType=${importType}`, {
-      method: "POST",
-    });
+    const response = await importFromGit(PACKAGE_ROOT, gitUrl, importType);
     await refreshRootPackage();
 
     setIsPerformingAction(false);

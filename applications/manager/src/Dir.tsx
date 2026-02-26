@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { ArrowLeftRight, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, Eye, EyeIcon, FileText, Filter, FilterX, Folder, FolderDown, GitBranchPlus, GitCommit, GitGraph, GitMerge, GitPullRequestIcon, Import, Link, Menu, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, ShieldQuestion, Sparkles, TagIcon, TimerResetIcon, Trash2, WandSparkles } from "lucide-react";
+import { ArrowLeftRight, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, Eye, EyeIcon, FileText, Filter, FilterX, Folder, FolderDown, GitBranchPlus, GitCommit, GitGraph, GitMerge, GitPullRequestArrowIcon, GitPullRequestIcon, Import, Link, Menu, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, ShieldQuestion, Sparkles, TagIcon, TimerResetIcon, Trash2, WandSparkles } from "lucide-react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getValidTime } from "./components/time";
@@ -42,6 +42,7 @@ import { CreateMergeStateCausedByMergeDialog } from "./dialog/open-merge-state";
 import { PackageListDialog } from "./dialog/package-list-dialog";
 import { DeleteGitRepoDialog } from "./dialog/remove-git-repo-dialog";
 import { SetGitRemoteConfigurationDialog } from "./dialog/set-git-remote-configuration-dialog";
+import { GitPrsListDialog } from "./dialog/git-pr-dialog";
 
 export function lng(text: LanguageString | undefined): string | undefined {
   return text?.["cs"] ?? text?.["en"];
@@ -280,6 +281,7 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri
             {hasSetRemoteRepository && <DropdownMenuItem title="Compares current package state with the Git remote and sets if it is up to date or not. This is because the uncommitted changes tag is sometimes wrong, since for performance reasons we can not compare the current content to Git for any change. Therefore the 'has uncommitted changes' tag marks the fact that there was change between last commit and now. Even if you reversed the change, therefore now there is not any." onClick={() => trySetPackageAsUpToDate(resource.iri)}><TimerResetIcon className="mr-2 h-4 w-4" />Try to set as up to date</DropdownMenuItem>}
             {hasSetRemoteRepository && <DropdownMenuItem asChild><a href={!hasSetRemoteRepository ? "" : GitProviderFactory.createGitProviderFromRepositoryURL(resource.linkedGitRepositoryURL, fetch, {}).getGitPagesURL(resource.linkedGitRepositoryURL)}><Eye className="mr-2 h-4 w-4" />Visit the remote repository GitHub pages</a></DropdownMenuItem>}
             {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>}
+            {hasSetRemoteRepository && resource.representsBranchHead && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialog, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: resource.branch})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Opened Pull Requests</DropdownMenuItem>}
             {hasSetRemoteRepository && <hr className="border-gray-300" />}
             {<DropdownMenuItem onClick={async () => createNewRemoteRepositoryHandler(t, openModal, iri, resource)}><GitPullRequestIcon className="mr-2 h-4 w-4" />Create remote repository</DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => linkToExistingGitRepositoryHandler(t, openModal, iri, resource)}><Link className="mr-2 h-4 w-4" />Link to remote repository</DropdownMenuItem>}
@@ -311,7 +313,7 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a target="_blank" href={import.meta.env.VITE_BACKEND + `/preview/${i18n.language}/index.html?iri=` + encodeURIComponent(iri)}><FileText className="mr-2 h-4 w-4" /> {t("show-documentation")} ({i18n.language})</a></DropdownMenuItem>}
           {i18n.language !== "en" && resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a target="_blank" href={import.meta.env.VITE_BACKEND + `/preview/en/index.html?iri=` + encodeURIComponent(iri)}><FileText className="mr-2 h-4 w-4" /> {t("show-documentation")} (en)</a></DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(ModifyDocumentationTemplate, {iri})}><NotepadTextDashed className="mr-2 h-4 w-4" /> {t("modify-documentation-template")}</DropdownMenuItem>}
-          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(AddImported, {id: iri})}><Import className="mr-2 h-4 w-4" /> {t("import specification from url")}</DropdownMenuItem>}
+          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(AddImported, {iri})}><Import className="mr-2 h-4 w-4" /> {t("import specification from url")}</DropdownMenuItem>}
           <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/resources/export.zip?iri=" + encodeURIComponent(iri) + "&exportFormat=json"}><CloudDownload className="mr-2 h-4 w-4" /> {t("export") + " as json"}</a></DropdownMenuItem>
           <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/resources/export.zip?iri=" + encodeURIComponent(iri) + "&exportFormat=yaml"}><CloudDownload className="mr-2 h-4 w-4" /> {t("export") + " as yaml"}</a></DropdownMenuItem>
           <DropdownMenuItem onClick={async () => {
@@ -393,7 +395,7 @@ function RootPackage({iri, defaultToggle, login}: {iri: string, defaultToggle?: 
           </Button>
       }
       <Button variant="ghost" size="sm" className="shrink=0 ml-4"
-        onClick={() => openModal(AddImported, {id: iri})}>
+        onClick={() => openModal(AddImported, {iri})}>
         <Import className="mr-2 h-4 w-4" /> {t("import")}
       </Button>
       <Button variant="ghost" size={"sm"} className="shrink-0 ml-4" onClick={async () => {

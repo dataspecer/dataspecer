@@ -2,7 +2,8 @@ import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import {
   CommitReferenceType, ConvertRepoURLToDownloadZipURLReturnType, CreateRemoteRepositoryReturnType, ExtractedCommitReferenceValueFromRepositoryURL,
   ExtractedCommitReferenceValueFromRepositoryURLExplicit, GetResourceForGitUrlAndBranchType, GitCredentials, GitProvider, GitProviderEnum, GitRef,
-  RepositoryURLPart, GitProviderIndependentWebhookRequestData
+  RepositoryURLPart, GitProviderIndependentWebhookRequestData,
+  PullRequestFetchResponse
 } from "../git-provider-api.ts";
 import { Scope } from "../auth.ts";
 import { type GitBotConfiguration, type OAuthConfiguration } from "@dataspecer/auth";
@@ -50,6 +51,7 @@ export abstract class GitProviderBase implements GitProvider {
   abstract convertGenericScopeToProviderScope(scope: Scope): string[];
   abstract convertProviderScopeToGenericScope(scope: string): Scope;
   abstract revokePAT(personalAccessToken: string): Promise<FetchResponse>;
+  abstract getOpenedPullRequests(gitUrl: string, branchToMatch: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse>;
 
   /**
    * @param repositoryURLSplit is the repository URL split by "/", this is internal method used inside {@link extractPartOfRepositoryURL}.

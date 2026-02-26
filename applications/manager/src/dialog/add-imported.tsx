@@ -7,12 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { BetterModalProps } from "@/lib/better-modal";
 import { refreshRootPackage, requestLoadPackage } from "@/package";
+import { importFromGit } from "@/utils/git-backend-requests";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 export interface AddImportedProps {
-  id: string;
+  iri: string;
 }
 
 enum URLImportType {
@@ -20,7 +21,7 @@ enum URLImportType {
   Git,
 };
 
-export const AddImported = ({ id, isOpen, resolve }: AddImportedProps & BetterModalProps<boolean>) => {
+export const AddImported = ({ iri, isOpen, resolve }: AddImportedProps & BetterModalProps<boolean>) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
@@ -55,17 +56,13 @@ export const AddImported = ({ id, isOpen, resolve }: AddImportedProps & BetterMo
         switch(importType) {
           case URLImportType.ClassicUrl:
             importResults.push(
-              await fetch(import.meta.env.VITE_BACKEND + "/resources/import?parentIri=" + encodeURIComponent(id) + "&url=" + encodeURIComponent(url), {
+              await fetch(import.meta.env.VITE_BACKEND + "/resources/import?parentIri=" + encodeURIComponent(iri) + "&url=" + encodeURIComponent(url), {
                 method: "POST",
               })
             );
             break;
           case URLImportType.Git:
-            importResults.push(
-              await fetch(import.meta.env.VITE_BACKEND + "/resources/import-from-git?parentIri=" + encodeURIComponent(id) + "&gitURL=" + encodeURIComponent(url), {
-                method: "POST",
-              })
-            );
+            importResults.push(await importFromGit(iri, url));
             break;
           default:
             console.error("Forgot to add new type of import, programmer error");
@@ -74,7 +71,7 @@ export const AddImported = ({ id, isOpen, resolve }: AddImportedProps & BetterMo
         }
       }
 
-      await requestLoadPackage(id, true);
+      await requestLoadPackage(iri, true);
 
       if (importResults.every((r) => r.ok)) {
         toast.success(t("add-imported.success"));

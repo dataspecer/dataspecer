@@ -89,3 +89,14 @@ export async function linkToExistingGitRepositoryRequest(iri: string, remoteRepo
     });
   return response;
 }
+
+
+export async function importFromGit(parentIri: string, gitUrl: string, importType?: "commit" | "branch") {
+  let url = import.meta.env.VITE_BACKEND + "/resources/import-from-git?parentIri=" + encodeURIComponent(parentIri) + "&gitURL=" + encodeURIComponent(gitUrl);
+  if (importType !== undefined) {
+    url += "&commitReferenceType=" + importType;
+  }
+  return await fetch(url, {
+    method: "POST",
+  });
+}

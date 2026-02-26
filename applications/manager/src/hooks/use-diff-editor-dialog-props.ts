@@ -34,7 +34,7 @@ import { TextDiffEditorBetterModalProps, UpdateModelDataMethod } from "@/dialog/
 import { MergeStateFinalizerDialog } from "@/dialog/merge-state-finalizer-dialogs";
 import { useBetterModal } from "@/lib/better-modal";
 import { requestLoadPackage } from "@/package";
-import { ChooseActionForDiffEditorUnplannedChange, DiffEditorOutsideChangeChosenAction } from "@/dialog/outside-changes-action-chooser-dialog";
+import { ChooseActionForDiffEditorUnplannedChange, DiffEditorOutsideChangeChosenAction } from "@/dialog/outside-changes-to-diff-editor-action-dialog";
 
 
 type FullTreePath = string;

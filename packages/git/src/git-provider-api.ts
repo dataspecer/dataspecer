@@ -3,6 +3,27 @@ import { Scope } from "./auth.ts";
 
 export const PUBLICATION_BRANCH_DEFAULT_NAME: string = "publication-branch";
 
+export type PullRequestInfo = {
+  title: string;
+  //
+  createdAt: Date;
+  modifiedAt: Date;
+  //
+  mergeFromBranch: string;
+  mergeToBranch: string;
+  //
+  commitCountWithinPR: number;
+  additions: number;
+  deletions: number;
+  //
+  urlToPR: string;
+};
+
+export type PullRequestFetchResponse = {
+  pullRequests: PullRequestInfo[];
+  totalPrCount: number;
+};
+
 export type ConvertRepoURLToDownloadZipURLReturnType = {
   zipURL: string,
   commitReferenceValueInfo: ExtractedCommitReferenceValueFromRepositoryURLExplicit,
@@ -107,6 +128,8 @@ export type CreateRemoteRepositoryReturnType = {
 
 export type GetResourceForGitUrlAndBranchType = (gitRepositoryUrl: string, branch: string) => Promise<{iri: string} | null>
 
+// TODO RadStr: Documentation ... also put into documentation the fact that we do not store the url into the implementation (for good and bad).
+//                                It has to be provdied to each method that needs it. .... put it as future TODO, since it is not the best design decision probably.
 export interface GitProvider {
   /**
    * Returns the provider enum value for this provider.
@@ -320,6 +343,13 @@ export interface GitProvider {
    * @returns The git provider response from REST API (or possibly other API in future, like GraphQL)
    */
   revokePAT(personalAccessToken: string): Promise<FetchResponse>;
+
+  /**
+   * Looks for pull requests at given {@link gitUrl}. The pull requests have {@link branchToMatch} as either merge from or merge to branch.
+   * @param authToken is the auth token of the user (PAT). If not present, then the bot auth token is used.
+   * @returns The pull requests at given {@link page}, where page as at most {@link perPage} elements, also returns the total pull request count.
+   */
+  getOpenedPullRequests(gitUrl: string, branchToMatch: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse>;
 }
 
 /**

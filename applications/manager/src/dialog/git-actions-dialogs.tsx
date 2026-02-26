@@ -15,7 +15,7 @@ import {
 } from "@dataspecer/git";
 import { CommitRedirectForMergeStatesDialog } from "./commit-confirm-dialog-caused-by-merge-state";
 import { commitToGitBackendRequest, createNewRemoteRepositoryRequest, linkToExistingGitRepositoryRequest, mergeCommitToGitBackendRequest } from "@/utils/git-backend-requests";
-import { createCloseDialogObject, LoadingDialog } from "@/components/loading-dialog";
+import { createCloseDialogObject, LoadingDialog } from "@/dialog/loading-dialog";
 import { ComboBox, createGitProviderComboBoxOptions } from "@/components/combo-box";
 import { removeMergeState } from "@/utils/merge-state-backend-requests";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";

@@ -760,7 +760,7 @@ export const importPackageFromGit = asyncHandler(async (request: express.Request
     return;
   }
   else {
-    response.send(result);
+    response.status(200).send(result);
     return;
   }
 });

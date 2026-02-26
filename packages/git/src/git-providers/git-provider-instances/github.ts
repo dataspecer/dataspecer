@@ -3,7 +3,7 @@ import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import sodium from "libsodium-wrappers-sumo";
 import { AuthenticationGitProviderData, GitProviderBase } from "../git-provider-base.ts";
 import { AuthenticationGitProvidersData, getGitProviderDomain } from "../git-provider-factory.ts";
-import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, PUBLICATION_BRANCH_DEFAULT_NAME, GitProviderIndependentWebhookRequestData } from "../../git-provider-api.ts";
+import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, PUBLICATION_BRANCH_DEFAULT_NAME, GitProviderIndependentWebhookRequestData, PullRequestFetchResponse, PullRequestInfo } from "../../git-provider-api.ts";
 import { Scope } from "../../auth.ts";
 import { GitRestApiOperationError } from "../../error-definitions.ts";
 import { findPatAccessToken, GITHUB_USER_AGENT } from "../../git-utils.ts";
@@ -653,4 +653,75 @@ export class GitHubProvider extends GitProviderBase {
 
     return response;
   }
+
+  async getOpenedPullRequests(gitUrl: string, branchToMatch: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse> {
+    // https://docs.github.com/en/rest/search/search?apiVersion=2022-11-28#search-issues-and-pull-requests
+    // https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests#search-by-branch-name
+    // Based on https://chatgpt.com/share/699f6225-7044-8011-80b7-3e4229ea2248
+    // GET https://api.github.com/search/issues?q=repo:owner/repo+is:pr+(base:main+OR+head:main) - ideally we would use, but it does not work
+    // https://github.com/orgs/community/discussions/125409 ... OR does not work
+    const repoOwner = this.extractPartOfRepositoryURL(gitUrl, "repository-owner");
+    const repoName = this.extractPartOfRepositoryURL(gitUrl, "repository-name");
+
+    const token: string | null = authToken ?? this.authenticationGitProviderData?.gitBotConfiguration?.dsBotAbsoluteGitProviderControlToken;
+    const urlMergeFrom = `https://api.github.com/search/issues?q=repo:${repoOwner}/${repoName}+is:pr+head:${branchToMatch}&per_page=${perPage}&page=${page}`;
+    const urlMergeTo = `https://api.github.com/search/issues?q=repo:${repoOwner}/${repoName}+is:pr+base:${branchToMatch}&per_page=${perPage}&page=${page}`;
+
+    const responseMergeFrom = await fetch(urlMergeFrom, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+
+    const responseMergeTo = await fetch(urlMergeTo, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+
+    if (!responseMergeFrom.ok) {
+      throw new Error(`GitHub API error: ${responseMergeFrom.status}`);
+    }
+    if (!responseMergeTo.ok) {
+      throw new Error(`GitHub API error: ${responseMergeTo.status}`);
+    }
+
+    const mergeFromData: any = await responseMergeFrom.json();
+    const mergeToData: any = await responseMergeTo.json();
+    const mergeData: any = (mergeFromData.items.concat(mergeToData.items));   // No need for checking for duplicates
+
+    return {
+      pullRequests: await Promise.all(mergeData.map(async (pr: any) => await convertRestPrToDataspecerPr(pr, token))),
+      totalPrCount: mergeFromData.total_count + mergeToData.total_count,
+    }
+  }
+}
+
+async function convertRestPrToDataspecerPr(pullRequest: any, token: string): Promise<PullRequestInfo> {
+  const pullRequestMoreInfoResponse = await fetch(pullRequest.pull_request.url, {
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+  });
+
+  // https://api.github.com/repos/dataspecer/dataspecer/pulls/1339 - example of the output
+  const prInfo: any = await pullRequestMoreInfoResponse.json();
+
+  return {
+    title: pullRequest.title,
+    additions: prInfo.additions,
+    deletions: prInfo.deletions,
+    createdAt: pullRequest.created_at,
+    modifiedAt: pullRequest.updated_at,
+    mergeFromBranch: prInfo.head.ref,
+    mergeToBranch: prInfo.base.ref,
+    commitCountWithinPR: prInfo.commits,
+    urlToPR: pullRequest.pull_request.html_url,
+  };
 }

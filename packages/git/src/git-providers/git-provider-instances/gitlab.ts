@@ -1,7 +1,7 @@
 import { FetchResponse, type HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { AuthenticationGitProviderData, GitProviderBase } from "../git-provider-base.ts";
 import { AuthenticationGitProvidersData, gitProviderDomains } from "../git-provider-factory.ts";
-import { CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, GitProviderIndependentWebhookRequestData } from "../../git-provider-api.ts";
+import { CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, GitProviderIndependentWebhookRequestData, PullRequestFetchResponse } from "../../git-provider-api.ts";
 import { Scope } from "../../auth.ts";
 
 // Note that students for some reason there have max 10 repositories limit on school mff gitlab (idk if it is for creations a day or something)
@@ -239,6 +239,10 @@ export class GitLabProvider extends GitProviderBase {
   }
 
   revokePAT(personalAccessToken: string): Promise<FetchResponse> {
+    throw new Error("Method not implemented.");
+  }
+
+  getOpenedPullRequests(gitUrl: string, branchToMatch: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse> {
     throw new Error("Method not implemented.");
   }
 }

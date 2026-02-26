@@ -21,7 +21,7 @@ export const LoginCard = (props: {login: UseLoginType}) => {
       <div className="flex login-card">
         {isSignedIn ?
           <Button variant="ghost" className="flex focus:outline-none hover:bg-red-300 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-2 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900"
-                onClick={(_) => goToPage(`${import.meta.env.VITE_BACKEND}/auth/signout?redirectURL=${encodeURI(window.location.href)}`)}
+                onClick={(_) => redirectToPage(`${import.meta.env.VITE_BACKEND}/auth/signout?redirectURL=${encodeURI(window.location.href)}`)}
                 title="Note that if you provide Git permissions. The token with permissions should be revoked after, unless some error happened, if so then for safety reasons you should remove the permissions provided to this page inside GitHub (or the used Git provider)">
             <LogOut className="pl-2" />
             <p className="pt-0.5 pl-1.5">Sign Out</p>
@@ -43,7 +43,7 @@ export const LoginCard = (props: {login: UseLoginType}) => {
     </div>);
 };
 
-function goToPage(url: string) {
+export function redirectToPage(url: string) {
   window.location.href = url;
 }
 

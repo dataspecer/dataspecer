@@ -65,6 +65,7 @@ import { GitProviderNamesAsType } from "@dataspecer/git";
 import { populateSshKnownHosts, storeNewPrivateSSHKeyToBackend } from "@dataspecer/git-node";
 import { pathToSSHConfigForDS, pathToSSHForDS } from "./utils/create-ssh-path-constants.ts";
 import { newApplicationProfile } from "./routes/new.ts";
+import { getOpenedPullRequests } from "./routes/git/get-opened-pull-requests.ts";
 
 
 populateSshKnownHosts();
@@ -172,7 +173,8 @@ application.get(apiBasename + "/git/create-package-from-existing-git-repository"
 application.get(apiBasename + "/git/test-docker", currentSession, exportPackageResource);
 application.get(apiBasename + "/git/fetch-git-commit-history", currentSession, fetchGitCommitHistory);
 application.get(apiBasename + "/git/pull", currentSession, pullRemoteRepository);
-application.get(apiBasename + "/git/link-to-existing-git-repository", linkToExistingGitRepository);
+application.get(apiBasename + "/git/link-to-existing-git-repository", currentSession, linkToExistingGitRepository);
+application.get(apiBasename + "/git/opened-pull-requests", currentSession, getOpenedPullRequests);
 
 
 // Api for packages (core-v2)
