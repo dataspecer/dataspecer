@@ -105,14 +105,14 @@ const renderMergeState = (
               onClick={openDiffEditor}>
               {/* TODO RadStr: Just debug to directly open the merge state dialog */}
               {/* onClick={() => openModal(MergeStateFinalizerDialog, {mergeState, openModal}).finally(() => closeMergeStateList(null))}> */}
-        {createMergeStateRowText(mergeState)}
+        {mergeStateRowText(mergeState)}
       </button>
       <button onClick={removeMergeStateOnClickHandler} className="cursor-pointer bg-red-500 hover:bg-red-600 relative top-[6px]"><X/></button>
     </div>;
 }
 
 
-function createMergeStateRowText(mergeState: MergeState) {
+function mergeStateRowText(mergeState: MergeState) {
   return <div className="grid grid-cols-[2fr_2fr_1fr_2fr_2fr] justify-center items-center gap-4">
       <span className="flex text-base font-medium whitespace-nowrap justify-center items-center truncate">
         {new Date(mergeState.createdAt).toLocaleString()}
@@ -122,15 +122,15 @@ function createMergeStateRowText(mergeState: MergeState) {
       </span>
       <span className="flex text-base font-medium whitespace-nowrap justify-center items-center truncate">{mergeState.mergeStateCause}</span>
       <div className="flex justify-center items-center truncate">
-        {createMergeStateSourceText(mergeState, "MergeFrom")}
+        {mergeStateSourceText(mergeState, "MergeFrom")}
       </div>
       <div className="flex justify-center items-center truncate">
-        {createMergeStateSourceText(mergeState, "MergeTo")}
+        {mergeStateSourceText(mergeState, "MergeTo")}
       </div>
     </div>;
 }
 
-function createMergeStateSourceText(mergeState: MergeState, side: "MergeFrom" | "MergeTo") {
+function mergeStateSourceText(mergeState: MergeState, side: "MergeFrom" | "MergeTo") {
   return <>
       <span className="text-base font-medium whitespace-nowrap truncate">{mergeState[`branch${side}`]}</span>
       <span className="text-xs text-gray-500 whitespace-nowrap pl-1 pt-1">{getHumanReadableFilesystemName(mergeState[`filesystemType${side}`])}</span>
