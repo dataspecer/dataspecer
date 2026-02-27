@@ -409,7 +409,7 @@ async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIr
     if (gcResource) {
       const queryResponse = await fetch(gcResource.url);
       const data = await queryResponse.text();
-      configurationModel = await turtleStringToGeneratorConfiguration(gcResource.iri, data);
+      configurationModel = await turtleStringToGeneratorConfiguration(null, data); // todo: iri of resource descriptor is not iri of the configuration IMO
     }
 
     let rootHref = new URL(".", url).href;
