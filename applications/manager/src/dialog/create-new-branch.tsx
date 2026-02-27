@@ -1,4 +1,4 @@
-import { BetterModalProps, } from "@/lib/better-modal";
+import { BetterModalProps, useBetterModal, } from "@/lib/better-modal";
 import { useContext, useLayoutEffect, useRef, useState } from "react";
 import { Package } from "@dataspecer/core-v2/project";
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
@@ -8,6 +8,8 @@ import { createIdentifierForHTMLElement, InputComponent } from "@/components/sim
 import { toast } from "sonner";
 import { createSetterWithGitValidation, PACKAGE_ROOT } from "@dataspecer/git";
 import { resolveWithRequiredCheck } from "./git-actions-dialogs";
+import { createCloseDialogObject, LoadingDialog } from "./loading-dialog";
+
 
 export enum BranchAction {
   CreateNewBranch,
@@ -24,6 +26,9 @@ type CreateBranchDialogProps = {
 const idPrefix = "createNewbranch";
 
 export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, resolve }: CreateBranchDialogProps) => {
+  const openModal = useBetterModal();
+
+  const [shouldHideDialog, setShouldHideDialog] = useState<boolean>(false);
   const [branch, setBranch] = useState<string>(sourcePackage.branch);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -62,22 +67,46 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
 
     let response: any;
     if (actionOnConfirm === BranchAction.CreateNewBranch) {
-      response = await packageService.copyRecursively(sourcePackage.iri, PACKAGE_ROOT);
-      console.info("Created resource response:", { response });
-      const newRootIri: string | undefined = response?.newRootIri;
-      if (newRootIri === undefined) {
-        return;
+      const closeDialogObject = createCloseDialogObject();
+      setShouldHideDialog(true);
+      openModal(LoadingDialog, {
+        dialogTitle: "Creating new branch in Dataspecer. Do not forget to push it to the remote after you are done.",
+        waitingText: "TODO RadStr: Add estimated wait time",
+        setCloseDialogAction: closeDialogObject.setCloseDialogAction,
+        shouldShowTimer: true,
+      });
+      try {
+        response = await packageService.copyRecursively(sourcePackage.iri, PACKAGE_ROOT);
+        const newRootIri: string | undefined = response?.newRootIri;
+        if (newRootIri === undefined) {
+          toast.error("Failed to create the new branch");
+          resolve(null);
+          return;
+        }
+        await modifyPackageProjectData(newRootIri, sourcePackage.projectIri, branch);
+        toast.success("Successfully created new branch in Dataspecer. Don't forget to push it.");
       }
-      await modifyPackageProjectData(newRootIri, sourcePackage.projectIri, branch);
+      catch (error) {
+        toast.error("Unknown failure when creating new branch");
+        throw error;
+      }
+      finally {
+        // Has to be in the finally block, since if error is thrown, then the loading dialog is not closed and we wait forever
+        closeDialogObject.closeDialogAction();
+      }
       await refreshRootPackage();
     }
-    else {
+    else if (actionOnConfirm === BranchAction.TurnExistingIntoBranch) {
       response = await modifyPackageRepresentsBranchHead(sourcePackage.iri, !sourcePackage.representsBranchHead);
       await modifyPackageProjectData(sourcePackage.iri, sourcePackage.projectIri, branch);
       await requestLoadPackage(sourcePackage.iri, true);
+      resolve({ newBranch: branch, });
+    }
+    else {
+      throw new Error(`Programmer error, wrong enum: ${actionOnConfirm}`)
     }
 
-    resolve({ newBranch: branch, });
+    resolve({ newBranch: branch });
   };
   const handleDialogCloseWithoutSave = () => {
     resolve(null);
@@ -93,9 +122,10 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
     `On confirm creates new package, which is copy of the source package and has branch set to given name` :
     `On confirm sets branch of chosen package`;
 
+
   return (
-    <Modal open={isOpen} onClose={() => resolve(null)}>
-        <ModalContent>
+    <Modal open={!shouldHideDialog && isOpen} onClose={() => resolve(null)}>
+        <ModalContent className={(shouldHideDialog ? "hidden" : "")}>
           <ModalHeader>
             <ModalTitle>{modalTitle}</ModalTitle>
             <ModalDescription>{modalDescription}</ModalDescription>

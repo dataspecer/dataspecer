@@ -11,6 +11,7 @@ import { importFromGit } from "@/utils/git-backend-requests";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
 import { toast } from "sonner";
+import { createCloseDialogObject, LoadingDialog } from "./loading-dialog";
 
 
 type GitPrsListDialogProps = {
@@ -22,7 +23,7 @@ type GitPrsListDialogProps = {
 export const GitPrsListDialog = ({ resources, branch, gitUrl, isOpen, resolve }: GitPrsListDialogProps) => {
   const [page, setPage] = useState<number>(1);
   const [itemCountPerPage, _setItemCountPerPage] = useState<number>(100);
-  const [totalItemCount, setTotalItemCount] = useState<number>(1);
+  const [totalItemCount, setTotalItemCount] = useState<number>(0);
   const totalPageCount = Math.ceil(totalItemCount / itemCountPerPage);
 
   const [openedPrs, cannotUseOpenedPrs] = useAsyncMemo(async () => {
@@ -59,66 +60,68 @@ export const GitPrsListDialog = ({ resources, branch, gitUrl, isOpen, resolve }:
 
   return (
     <Modal open={isOpen} onClose={() => resolve(null)}>
-        <ModalContent className="min-w-[80%] overflow-x-auto">
-          <ModalHeader>
-            <ModalTitle>List of opened pull requests for given package and branch</ModalTitle>
-            <ModalDescription>
-              The PRs where one of the merge actors is the examined branch. You can click on the PR to get redirected to the PR.
-              <br/>
-              Resolving PR in DS means performing reverse merge. That is, from the merge to branch to the merge from and then finish the PR.
-            </ModalDescription>
-            {
-              cannotUseOpenedPrs ? <Loader className="mr-2 mt-1 h-4 w-4 animate-spin" /> :
-              <div className=" w-full">
-                <div className="grid grid-cols-[1.5fr_4fr_2fr_2fr_3fr_3fr_2fr] divide-x divide-y border-gray-300 divide-gray-300 ml-4 pt-6 w-full">
-                  <div className="flex items-center justify-center border-gray-300"></div>
-                  <div className="flex items-center justify-center border-gray-300">Title</div>
-                  <div className="flex items-center justify-center">Created at</div>
-                  <div className="flex items-center justify-center">Modified at</div>
-                  <div className="flex items-center justify-center">Merge from</div>
-                  <div className="flex items-center justify-center">Merge to</div>
-                  <div className="flex items-center justify-center border-gray-300 border-b border-r">Add/Del</div>
-                </div>
-                {openedPrs?.map(pr => <PullRequestComponent pullRequestInfo={pr} resources={resources} resourceGitUrl={gitUrl} resolve={resolve}/>) ?? null}
+      <ModalContent className={"min-w-[80%] overflow-x-auto"}>
+        <ModalHeader>
+          <ModalTitle>List of opened pull requests for given package and branch</ModalTitle>
+          <ModalDescription>
+            The PRs where one of the merge actors is the examined branch. You can click on the PR to get redirected to the PR.
+            <br/>
+            Resolving PR in DS means performing reverse merge. That is, from the merge to branch to the merge from and then finish the PR outside of DS.
+          </ModalDescription>
+          {
+            cannotUseOpenedPrs ? <Loader className="mr-2 mt-1 h-4 w-4 animate-spin" /> :
+            <div className=" w-full">
+              <div className="grid grid-cols-[1.5fr_4fr_2fr_2fr_3fr_3fr_2fr] divide-x divide-y border-gray-300 divide-gray-300 ml-4 pt-6 w-full">
+                <div className="flex items-center justify-center border-gray-300"></div>
+                <div className="flex items-center justify-center border-gray-300">Title</div>
+                <div className="flex items-center justify-center">Created at</div>
+                <div className="flex items-center justify-center">Modified at</div>
+                <div className="flex items-center justify-center">Merge from</div>
+                <div className="flex items-center justify-center">Merge to</div>
+                <div className="flex items-center justify-center border-gray-300 border-b border-r">Add/Del</div>
               </div>
-            }
-              <div className="flex items-center justify-between">
-                <div className="flex justify-center items-center text-sm">
-                  Total PR count: {totalItemCount}
-                </div>
-                <div className="flex justify-center items-center pt-4 space-x-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setPage((prevPage) => prevPage - 1)}
-                    disabled={page === 1}
-                    className=""
-                  >
-                    Previous
-                  </Button>
-
-                  <span className="flex justify-center items-center text-sm">
-                    Page {page} of {totalPageCount}
-                  </span>
-
-                  <Button
-                    variant="outline"
-                    onClick={() => setPage((prevPage) => prevPage + 1)}
-                    disabled={page === totalPageCount}
-                    className=""
-                  >
-                    Next
-                  </Button>
-                </div>
-                <div className="flex justify-center items-center text-sm">
-                  {/* Per page: {itemCountPerPage * 2} */}
-                  PR count on page: {openedPrs?.length ?? 0}
-                </div>
+              {openedPrs?.map(pr => <PullRequestComponent pullRequestInfo={pr} resources={resources} resourceGitUrl={gitUrl} resolve={resolve}/>) ?? null}
+            </div>
+          }
+          {
+            cannotUseOpenedPrs ? null : <div className="flex items-center justify-between">
+              <div className="flex justify-center items-center text-sm">
+                Total PR count: {totalItemCount}
               </div>
-          </ModalHeader>
-          {/* <ModalFooter>
-            <Button variant="outline" onClick={() => resolve(null)}>Close</Button>
-          </ModalFooter> */}
-        </ModalContent>
+              <div className="flex justify-center items-center pt-4 space-x-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setPage((prevPage) => prevPage - 1)}
+                  disabled={page === 1}
+                  className=""
+                >
+                  Previous
+                </Button>
+
+                <span className="flex justify-center items-center text-sm">
+                  Page {page} of {totalPageCount}
+                </span>
+
+                <Button
+                  variant="outline"
+                  onClick={() => setPage((prevPage) => prevPage + 1)}
+                  disabled={page === totalPageCount}
+                  className=""
+                >
+                  Next
+                </Button>
+              </div>
+              <div className="flex justify-center items-center text-sm">
+                {/* Per page: {itemCountPerPage * 2} */}
+                PR count on page: {openedPrs?.length ?? 0}
+              </div>
+            </div>
+          }
+        </ModalHeader>
+        {/* <ModalFooter>
+          <Button variant="outline" onClick={() => resolve(null)}>Close</Button>
+        </ModalFooter> */}
+      </ModalContent>
     </Modal>
   );
 };
@@ -152,7 +155,7 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
 
   const [actionButtonData, isActionButtonNotReady] = useAsyncMemo(async () => {
     if (isMergeFromInDS && isMergeToInDS) {
-      // Note that it is swapped - if we are resolving PR in Git we always first import the changes from the merge to branch to the merge from and then finish the PR.
+      // Note that it is swapped - if we are resolving PR in Git we always first import the changes from the merge to branch to the merge from and then finish the PR outside of DS.
       const mergeStateFromBackend = await fetchMergeState(mergeToInDataspecer.iri, mergeFromInDataspecer.iri, true, false, false);
       setFetchedMergeState(mergeStateFromBackend);
       if (mergeStateFromBackend !== null) {
@@ -194,6 +197,8 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
   }, []);
 
   const actionButton = async () => {
+    const closeLoadingDialogObject = createCloseDialogObject();
+
     let mergeFromIri: string | null = null;
     let mergeToIri: string | null = null;
 
@@ -208,68 +213,126 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
     const mergeToBranchUrl = gitProvider.createGitRepositoryURL(repositoryOwner, repositoryName, {type: "branch", name: pullRequestInfo.mergeToBranch});
     let performedImport: boolean = true;
 
-    if (isMergeFromInDS && isMergeToInDS) {
-      performedImport = false;
-      if (fetchedMergeState !== null) {
+    try {
+      if (isMergeFromInDS && isMergeToInDS) {
+        performedImport = false;
+        if (fetchedMergeState !== null) {
+          resolve(null);
+          openModal(
+            TextDiffEditorDialog,
+            {
+              initialMergeFromRootMetaPath: mergeToInDataspecer.iri,
+              initialMergeToRootMetaPath: mergeFromInDataspecer.iri,
+              editable: fetchedMergeState.editable,
+            }
+          );
+          return;
+        }
+
+        mergeFromIri = mergeFromInDataspecer.iri;
+        mergeToIri = mergeToInDataspecer.iri;
+      }
+      else {
         resolve(null);
+        if (isMergeFromInDS) {
+          setTimeout(() => {
+          // Add small delay so the second dialog appears after the first one is closed
+            openModal(LoadingDialog, {
+              dialogTitle: "Importing the 'merge to' branch from the PR",
+              waitingText: `TODO RadStr: Replace me ... The branch name is ${pullRequestInfo.mergeToBranch}`,
+              setCloseDialogAction: closeLoadingDialogObject.setCloseDialogAction,
+              shouldShowTimer: true,
+            });
+          }, 40);
+          const response = await importFromGit(PACKAGE_ROOT, mergeToBranchUrl, "branch");
+          const importedIris = await response.json();
+          mergeFromIri = mergeFromInDataspecer.iri;
+          mergeToIri = importedIris[0];
+        }
+        else if (isMergeToInDS) {
+          setTimeout(() => {
+            // Add small delay so the second dialog appears after the first one is closed
+            openModal(LoadingDialog, {
+              dialogTitle: "Importing the 'merge from' branch from the PR",
+              waitingText: `TODO RadStr: Replace me ... The branch name is ${pullRequestInfo.mergeFromBranch}`,
+              setCloseDialogAction: closeLoadingDialogObject.setCloseDialogAction,
+              shouldShowTimer: true,
+            });
+          }, 40);
+          const response = await importFromGit(PACKAGE_ROOT, mergeFromBranchUrl, "branch");
+          const importedIris = await response.json();
+          mergeFromIri = importedIris[0];
+          mergeToIri = mergeToInDataspecer.iri;
+        }
+        else {
+          setTimeout(() => {
+            // Add small delay so the second dialog appears after the first one is closed
+            openModal(LoadingDialog, {
+              dialogTitle: "Importing the 'merge from' branch from the PR",
+              waitingText: `TODO RadStr: Replace me ... The branch name is ${pullRequestInfo.mergeFromBranch}`,
+              setCloseDialogAction: closeLoadingDialogObject.setCloseDialogAction,
+              shouldShowTimer: true,
+            });
+          }, 40);
+          const mergeFromFetchResponse = await importFromGit(PACKAGE_ROOT, mergeFromBranchUrl, "branch");
+          const importedMergeFromIris = await mergeFromFetchResponse.json();
+          mergeFromIri = importedMergeFromIris[0];
+
+          closeLoadingDialogObject.closeDialogAction();
+          setTimeout(() => {
+            // Add small delay so the second dialog appears after the first one is closed
+            openModal(LoadingDialog, {
+              dialogTitle: "Importing the 'merge to' branch from the PR",
+              waitingText: `TODO RadStr: Replace me ... The branch name is ${pullRequestInfo.mergeToBranch}`,
+              setCloseDialogAction: closeLoadingDialogObject.setCloseDialogAction,
+              shouldShowTimer: true,
+            });
+          }, 40);
+          const mergeToFetchResponse = await importFromGit(PACKAGE_ROOT, mergeToBranchUrl, "branch");
+          const importedMergeToIris = await mergeToFetchResponse.json();
+          mergeToIri = importedMergeToIris[0];
+        }
+      }
+
+      closeLoadingDialogObject.closeDialogAction();
+      setTimeout(() => {
+        // Add small delay so the second dialog appears after the first one is closed
+        openModal(LoadingDialog, {
+          dialogTitle: "Creating merge state",
+          waitingText: `TODO RadStr: Replace me ... From ${pullRequestInfo.mergeToBranch} to ${pullRequestInfo.mergeFromBranch}`,
+          setCloseDialogAction: closeLoadingDialogObject.setCloseDialogAction,
+          shouldShowTimer: true,
+        });
+      }, 40);
+
+      const { error: createMergeStateError } = await createMergeStateOnBackend(mergeToIri!, mergeFromIri!);   // Again it is swapped
+      requestLoadPackage(mergeToIri!, true);
+      requestLoadPackage(mergeFromIri!, true);
+      if (performedImport) {
+        requestLoadPackage(PACKAGE_ROOT, true);
+      }
+
+      if (createMergeStateError === null) {
+        toast.success("The creation of merge state succeeded");
         openModal(
           TextDiffEditorDialog,
           {
-            initialMergeFromRootMetaPath: mergeToInDataspecer.iri,
-            initialMergeToRootMetaPath: mergeFromInDataspecer.iri,
-            editable: fetchedMergeState.editable,
+            initialMergeFromRootMetaPath: mergeToIri!,      // Again merge to and merge from swapped
+            initialMergeToRootMetaPath: mergeFromIri!,
+            editable: "mergeTo",
           }
         );
-        return;
       }
-
-      mergeFromIri = mergeFromInDataspecer.iri;
-      mergeToIri = mergeToInDataspecer.iri;
+      else {
+        toast.error("The creation of merge state failed");
+      }
     }
-    else if (isMergeFromInDS) {
-      const response = await importFromGit(PACKAGE_ROOT, mergeToBranchUrl, "branch");
-      const importedIris = await response.json();
-      mergeFromIri = mergeFromInDataspecer.iri;
-      mergeToIri = importedIris[0];
+    catch (error) {
+      throw error;
     }
-    else if (isMergeToInDS) {
-      const response = await importFromGit(PACKAGE_ROOT, mergeFromBranchUrl, "branch");
-      const importedIris = await response.json();
-      mergeFromIri = importedIris[0];
-      mergeToIri = mergeToInDataspecer.iri;
+    finally {
+      closeLoadingDialogObject.closeDialogAction();
     }
-    else {
-      const mergeFromFetchResponse = await importFromGit(PACKAGE_ROOT, mergeFromBranchUrl, "branch");
-      const importedMergeFromIris = await mergeFromFetchResponse.json();
-      mergeFromIri = importedMergeFromIris[0];
-
-      const mergeToFetchResponse = await importFromGit(PACKAGE_ROOT, mergeToBranchUrl, "branch");
-      const importedMergeToIris = await mergeToFetchResponse.json();
-      mergeToIri = importedMergeToIris[0];
-    }
-
-    const { error: createMergeStateError } = await createMergeStateOnBackend(mergeToIri!, mergeFromIri!);   // Again it is swapped
-    requestLoadPackage(mergeToIri!, true);
-    requestLoadPackage(mergeFromIri!, true);
-    if (performedImport) {
-      requestLoadPackage(PACKAGE_ROOT, true);
-    }
-
-    if (createMergeStateError === null) {
-      toast.success("The creation of merge state succeeded");
-      openModal(
-        TextDiffEditorDialog,
-        {
-          initialMergeFromRootMetaPath: mergeToIri!,      // Again merge to and merge from swapped
-          initialMergeToRootMetaPath: mergeFromIri!,
-          editable: "mergeTo",
-        }
-      );
-    }
-    else {
-      toast.error("The creation of merge state failed");
-    }
-    resolve(null);
   }
 
 

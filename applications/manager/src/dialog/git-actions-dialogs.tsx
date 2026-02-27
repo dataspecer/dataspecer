@@ -428,17 +428,22 @@ export const createNewRemoteRepositoryHandler = async (t: TFunction<"translation
   const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage: null, type: "create-new-repository-and-commit", shouldShowAlwaysCreateMergeStateOption: null });
   if (result) {
     const closeDialogObject = createCloseDialogObject();
-    // TODO RadStr: Localization
     openModal(LoadingDialog, {
       dialogTitle: "git.loading.create-repository.title",
       waitingText: "git.loading.create-repository.wait",
       setCloseDialogAction: closeDialogObject.setCloseDialogAction,
       shouldShowTimer: true,
     });
-    const response = await createNewRemoteRepositoryRequest(iri, result);
-    closeDialogObject.closeDialogAction();
-    await requestLoadPackage(iri, true);
-    gitOperationResultToast(t, response);
+    try {
+      const response = await createNewRemoteRepositoryRequest(iri, result);
+      closeDialogObject.closeDialogAction();
+      await requestLoadPackage(iri, true);
+      gitOperationResultToast(t, response);
+    }
+    catch (error) {
+      closeDialogObject.closeDialogAction();  // Closing the dialog twice is fine
+      throw error;
+    }
   }
 };
 
@@ -522,6 +527,9 @@ export const mergeCommitToGitHandler = async (
       }
       await requestLoadPackage(mergeState.rootIriMergeFrom, true);
       await requestLoadPackage(mergeState.rootIriMergeTo, true);
+    })
+    .catch(() => {
+      closeDialogObject.closeDialogAction();
     });
 };
 
@@ -606,6 +614,9 @@ export const commitToGitHandler = async (
           onSuccessCallback?.();
         }
       }
+    })
+    .catch(() => {
+      closeDialogObject.closeDialogAction();
     });
 };
 

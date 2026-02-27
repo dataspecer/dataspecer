@@ -23,6 +23,10 @@ export const createCloseDialogObject = () => {
 
 /**
  * The {@link dialogTitle} and {@link waitingText} should be the keys for translation. They will be translated in the React component.
+ * The {@link setCloseDialogAction} is a setter, which is set when the dialog is mounted. The caller is then expected to call the function,
+ *  which was passed to the set method. When the the passed in method is called it closes this loading dialog.
+ * Therefore, and this is important, the caller is responsible for closing this dialog (unless the user closes the dialog explicitly).
+ *  The idea is that the caller closes the loading dialog after the action we were waiting for is done.
  */
 export const LoadingDialog = ({ isOpen, resolve, waitingText, dialogTitle, setCloseDialogAction, shouldShowTimer }: LoadingDialogProps) => {
   const [secondsPassed, setSecondsPassed] = useState<number>(0);
