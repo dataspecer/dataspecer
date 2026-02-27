@@ -4,6 +4,7 @@ import { InMemorySemanticModel } from "../semantic-model/in-memory/index.ts";
 import { createClass, CreatedEntityOperationResult, createRelationship } from "../semantic-model/operations/index.ts";
 import { copyInheritanceToModel } from "./utils/copy-inheritance-to-model.ts";
 import { ExternalEntityWrapped, SemanticModelAggregator, LocalEntityWrapped } from "./interfaces.ts";
+import { generateModelColor } from "./utils/color-utils.ts";
 
 const EXTERNAL_MODEL_WITH_CACHE_AGGREGATOR_TYPE = "external-model-with-cache-aggregator";
 
@@ -44,6 +45,7 @@ export class ExternalModelWithCacheAggregator implements SemanticModelAggregator
 
     this.thisVocabularyChain = {
       name: this.cacheSemanticModel.getAlias() ?? "Vocabulary",
+      color: generateModelColor(this.cacheSemanticModel.getId()),
     };
   }
 
