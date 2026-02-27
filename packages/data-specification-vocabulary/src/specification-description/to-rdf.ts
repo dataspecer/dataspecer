@@ -110,7 +110,7 @@ function specificationToJson(specification: Specification, parameters: Parameter
   }
 
   const result: DSVMetadataSpecification = {
-    [DSV_METADATA_SCHEMA_ID]: specification.iri,
+    [DSV_METADATA_SCHEMA_ID]: specification.iri ?? undefined,
     [DSV_METADATA_SCHEMA_TYPE]: [...types, PROF.Profile],
 
     // http://purl.org/dc/terms/title
@@ -139,7 +139,7 @@ function specificationToJson(specification: Specification, parameters: Parameter
  */
 function resourceDescriptorToJson(model: ResourceDescriptor, parameters: Parameters): DSVMetadataResourceDescriptor {
   const result = {
-    [DSV_METADATA_SCHEMA_ID]: model.iri,
+    [DSV_METADATA_SCHEMA_ID]: model.iri ?? undefined,
     [DSV_METADATA_SCHEMA_TYPE]: [...(model.additionalRdfTypes ?? []), ADMS.AssetDistribution, PROF.ResourceDescriptor], // todo adms may be not needed
 
     // http://www.w3.org/ns/dx/prof/hasArtifact

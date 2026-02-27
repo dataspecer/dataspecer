@@ -4,7 +4,7 @@ import type { dsvMetadataWellKnown } from "./well-known.ts";
 export interface Specification {
   types: string[];
 
-  iri: string;
+  iri: string | null;
 
   title: LanguageString;
   description: LanguageString;
@@ -39,7 +39,7 @@ export function isVocabularySpecificationDocument(spec: Specification): spec is 
 }
 
 export interface ResourceDescriptor {
-  iri: string;
+  iri: string | null;
   url: string;
 
   /**

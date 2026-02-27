@@ -195,49 +195,46 @@ export async function generateSpecification(packageId: string, context: Generate
   await fillModels(packageId, true);
 
   /**
-   * Each model has formally its own IRI and a base IRI of its own entities.
-   * Usually these two IRIs are the same. For example we may have a model with
-   * IRI <http://w3id.org/dsv-dap#> and a resource with IRI
-   * <http://w3id.org/dsv-dap#Resource>. Please not that the IRI of the model
-   * ends with a #. In theory, we can have different IRIs for the model and its
-   * entities.
+   * Each specification has a **base URL** and a **base IRI**, both of which
+   * should end with a slash. We require a base URL because we expect all files
+   * to be served from a web server at that location. Similarly, a base IRI is
+   * necessary because there will be many resources, and we need the flexibility
+   * to generate path and hash sections.
    *
-   * We then need URL for the physical distribution of the model. The URL may
-   * not match the IRI of the model but is expected that you will be redirected
-   * to the URL.
+   * Individual artifacts may influence their own IRIs and URLs. They can do
+   * this by either specifying a different relative path than the one preset by
+   * Dataspecer or, in theory, by providing an entirely different absolute IRI
+   * and URL.
    *
-   * We also need IRIs for helper concepts outside of the model. These concepts
-   * describe the distribution of the model for example. For these concepts we
-   * will use IRI of the package.
+   * The base URL and base IRI do not need to be identical; in fact, the base
+   * IRI does not even need to dereference to the base URL. For example, a user
+   * might want to use `http://w3id.org/` IRIs where the base IRI represents the
+   * vocabulary, while the base URL represents the documentation (which may have
+   * its own distinct IRI).
+   *
+   * ---
+   *
+   * In theory, we can use a base URL without a slash for a main document where
+   * everything else resides in a subdirectory. We could also use a base IRI
+   * with a hash. In this case, every resource from every artifact would share
+   * the same pathname but have a unique hash. This approach may be intended for
+   * cases where all content is contained within a single file.
+   *
+   * ---
+   *
+   * In DSV metadata descriptions, the resource descriptors are not the
+   * resources themselves. These descriptors have their own IRIs, preferably in
+   * the format: `{metadata base iri}#{id of the descriptor}`.
    */
-
-  const userInputIri = models.find((m) => m.isPrimary)?.baseIri ?? "";
 
   /**
-   * Base IRI for helper concepts that belongs to the package and not to the
-   * model.
+   * Currently, Dataspecer uses base URL from generator configuration. Some
+   * artifacts may influence relative URLs. Base IRI is currently taken from the
+   * primary semantic model.
    *
-   * Should be dereferenceable and point to some file that describes them.
-   * Therefore should end with a hash.
-   *
-   * @todo So far user provide only base IRI for the model. We will use it as a base
-   * IRI for metadata.
+   * We use base URL as is. We transform base IRI to end with a slash for
+   * everything else than the model.
    */
-  let metaDataBaseIri = userInputIri;
-  // This could be considered as a hotfix to generate IRIs for metadata resources
-  if (userInputIri.endsWith("#")) {
-    const withoutHash = userInputIri.substring(0, userInputIri.length - 1);
-    if (withoutHash.endsWith("/")) {
-      metaDataBaseIri = withoutHash.substring(0, withoutHash.length - 1) + "#";
-    } else {
-      metaDataBaseIri = withoutHash + "/#";
-    }
-  }
-
-  /**
-   * Edge case, this is the IRI of the resource descriptor for HTML as it must not collide with package IRI.
-   */
-  const metaDataDocumentationIri = metaDataBaseIri.endsWith("#") ? metaDataBaseIri.substring(0, metaDataBaseIri.length - 1) : metaDataBaseIri;
 
   /**
    * Global generator configuration for this specification.
@@ -251,25 +248,29 @@ export async function generateSpecification(packageId: string, context: Generate
   }
 
   /**
-   * Main URL for the physical distribution of the specification.
-   *
-   * @todo Since vocabularies and APs did not need this at all, we used "/".
-   * Now, when data structures are generated, we actually need to have proper base URL.
-   * For now, we will use the one provided by the configuration model, if any.
-   */
-  let mainUrl = generatorConfiguration["data-specification"]?.["publicBaseUrl"] ?? "/";
-
-  /**
    * Base URL for all generated files for this specification. This is the root.
    *
    * Ends with a slash.
    *
-   * @todo So far we are generating the html documentation into subdirectories
-   * "en" and "cs". This is not ideal.
-   *
+   * @todo Since vocabularies and APs did not need this at all, we used "/".
    * @todo We need to normalize the path so that domains only do not end with slash.
    */
-  const baseUrl = mainUrl.endsWith("/") ? mainUrl : mainUrl + "/";
+  let baseUrl = generatorConfiguration["data-specification"]?.["publicBaseUrl"] ?? "/";
+  if (!baseUrl.endsWith("/")) {
+    baseUrl += "/";
+  }
+
+  const mainModelBaseIri = models.find((m) => m.isPrimary)?.baseIri ?? "";
+  let baseIri = mainModelBaseIri;
+  if (baseIri.endsWith("#")) {
+    baseIri = baseIri.substring(0, baseIri.length - 1);
+  }
+  if (!baseIri.endsWith("/")) {
+    baseIri += "/";
+  }
+  if (baseIri.length === 0) {
+    baseIri = baseUrl;
+  }
 
   /**
    * Whether we are generating in the "production mode" or in the "preview
@@ -348,13 +349,12 @@ export async function generateSpecification(packageId: string, context: Generate
   // List of all specifications (according to DSV metadata definition) that this package contains
   const specifications: Specification[] = [];
 
-  // Id to iri mapping
   let idToIriMapping: Record<string, string> = {};
 
   // For each model we need to decide whether it is a standalone vocabulary of application profile
   for (const model of models.filter((m) => m.isPrimary)) {
     // Resource ID of the Model
-    const modelIri = model.baseIri ?? "";
+    const modelIri = model.baseIri ?? (baseIri + isModelVocabulary(model.entities) ? "vocabulary" : "profile");
     const fileName = isModelVocabulary(model.entities) ? "model.owl.ttl" : "dsv.ttl";
     // This is the physical location of the model
     const modelUrl = baseUrl + fileName + queryParams;
@@ -398,7 +398,7 @@ export async function generateSpecification(packageId: string, context: Generate
       // Create the descriptor of the OWL serialization
 
       const descriptor = {
-        iri: metaDataBaseIri + "spec", // We use URL as IRI of the descriptor resource as it describes itself
+        iri: null, // blank node
         url: modelUrl,
         role: dsvMetadataWellKnown.role.vocabulary,
         formatMime: dsvMetadataWellKnown.formatMime.turtle,
@@ -441,7 +441,7 @@ export async function generateSpecification(packageId: string, context: Generate
       // Create the descriptor of the DSV serialization
 
       const descriptor = {
-        iri: metaDataBaseIri + "dsv",
+        iri: null,
         url: modelUrl,
 
         additionalRdfTypes: [],
@@ -462,13 +462,12 @@ export async function generateSpecification(packageId: string, context: Generate
         externalArtifacts["shacl-profile"] = shaclProfileExternalArtifacts;
         for (const [fileKey, fileConf] of Object.entries(shaclConfig.files)) {
           const shaclFileName = fileKey === DefaultShaclFileKey ? "shacl.ttl" : `shacl-${fileKey}.ttl`;
-          const shaclIri = metaDataBaseIri + (fileKey === "" ? "shacl" : `shacl-${fileKey}`);
           const shaclUrl = baseUrl + shaclFileName + queryParams;
           const shacl = await generateShaclApplicationProfile(model, models, modelIri, fileConf);
           await writeFile(shaclFileName, shacl);
           shaclProfileExternalArtifacts.push({ type: shaclFileName, URL: shaclUrl });
           const shaclDescriptor = {
-            iri: shaclIri,
+            iri: null,
             url: shaclUrl,
             role: dsvMetadataWellKnown.role.constraints,
             formatMime: dsvMetadataWellKnown.formatMime.turtle,
@@ -488,7 +487,7 @@ export async function generateSpecification(packageId: string, context: Generate
 
   let structureModels = primaryStructureModels.map((sm) => Object.values(sm.entities as unknown as Record<string, CoreResource>));
   structureModels = structureModels.map((sm) => garbageCollect(sm));
-  const processedStructureModels = canonicalizeIds(structureModels, idToIriMapping, metaDataBaseIri + "structure-model/");
+  const processedStructureModels = canonicalizeIds(structureModels, idToIriMapping, baseIri);
 
   if (processedStructureModels.length > 0) {
     externalArtifacts["structure-model"] = [];
@@ -496,13 +495,12 @@ export async function generateSpecification(packageId: string, context: Generate
   for (const structureModel of processedStructureModels) {
     const path = structureModel.fileNamePart + "/structure.ttl";
     const url = baseUrl + path + queryParams;
-    const iri = structureModel.iri;
 
     const sm = await structureModelToRdf(structureModel.model, {});
     await writeFile(path, sm);
 
     const resourceDescriptor = {
-      iri,
+      iri: null,
       url,
 
       role: dsvMetadataWellKnown.role.schema,
@@ -523,14 +521,14 @@ export async function generateSpecification(packageId: string, context: Generate
   if (Object.values(generatorConfiguration).some(v => Object.keys(v).length > 0)) {
     // We have useful configuration that we want to share.
 
-    const iri = metaDataBaseIri + "generator-configuration#";
+    const iri = baseIri + "generator-configuration#";
     const fileName = "generator-configuration.ttl";
     const url = baseUrl + fileName + queryParams;
 
     const data = await generatorConfigurationToRdf(iri, generatorConfiguration);
     await writeFile(fileName, data);
     const descriptor = {
-      iri,
+      iri: null,
       url,
 
       role: dsvMetadataWellKnown.role.schema,
@@ -560,7 +558,6 @@ export async function generateSpecification(packageId: string, context: Generate
     const svg = svgModel ? (svgModel as { svg: string }).svg : null;
 
     if (svg) {
-      const resourceIri = metaDataBaseIri + visualModel.id; // We do not support custom IRIs right now
       const resourceFileName = visualModel.id + ".svg";
       const resourceUrl = baseUrl + resourceFileName + queryParams;
 
@@ -575,7 +572,7 @@ export async function generateSpecification(packageId: string, context: Generate
       ];
 
       const descriptor = {
-        iri: resourceIri,
+        iri: null,
         url: resourceUrl,
 
         role: dsvMetadataWellKnown.role.guidance,
@@ -598,7 +595,7 @@ export async function generateSpecification(packageId: string, context: Generate
   }
 
   const htmlDescriptor = {
-    iri: metaDataDocumentationIri,
+    iri: baseIri,
     url: "THIS STRING WILL BE REPLACED LATER",
 
     role: dsvMetadataWellKnown.role.specification,
