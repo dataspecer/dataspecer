@@ -3,6 +3,9 @@ import { Scope } from "./auth.ts";
 
 export const PUBLICATION_BRANCH_DEFAULT_NAME: string = "publication-branch";
 
+////////////////////
+// Pull requests
+////////////////////
 export type PullRequestInfo = {
   title: string;
   //
@@ -24,10 +27,43 @@ export type PullRequestFetchResponse = {
   totalPrCount: number;
 };
 
+////////////////////
+// End of pull requests
+////////////////////
+
+/////////////
+// Issues
+/////////////
+export enum IssueState {
+  Open = "open",
+  Closed = "closed",
+  All = "all",
+}
+
+export type GitIssueInfo = {
+  title: string;
+  author: string;
+  urlToIssue: string;
+  //
+  labels: {name: string, color: string}[];
+  //
+  createdAt: Date;
+  lastActivityAt: Date;
+};
+
+export type GitIssuesFetchResponse = {
+  issues: GitIssueInfo[];
+};
+
+///////////////////
+// End of Issues
+///////////////////
+
 export type ConvertRepoURLToDownloadZipURLReturnType = {
   zipURL: string,
   commitReferenceValueInfo: ExtractedCommitReferenceValueFromRepositoryURLExplicit,
 };
+
 
 export enum AccessTokenType {
   PAT,
@@ -82,6 +118,9 @@ export function convertGitProviderNameToEnum(gitProviderName: GitProviderNamesAs
   return gitProviderNameToEnumMap[gitProviderName];
 }
 
+/**
+ * Simple type which represents webhook data. This type is Git provider independent. Meaning, the program first has to perform transformation to get this structure.
+ */
 export type GitProviderIndependentWebhookRequestData = {
   cloneURL: string;
   /**
@@ -345,11 +384,47 @@ export interface GitProvider {
   revokePAT(personalAccessToken: string): Promise<FetchResponse>;
 
   /**
+   * @param gitUrl the url of the repository.
+   * @returns Transforms given {@link gitUrl} to url which points to the page containing the pull requests of the repository.
+   */
+  getUrlToPRs(gitUrl: string): string
+
+  /**
    * Looks for pull requests at given {@link gitUrl}. The pull requests have {@link branchToMatch} as either merge from or merge to branch.
    * @param authToken is the auth token of the user (PAT). If not present, then the bot auth token is used.
    * @returns The pull requests at given {@link page}, where page as at most {@link perPage} elements, also returns the total pull request count.
    */
   getOpenedPullRequests(gitUrl: string, branchToMatch: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse>;
+
+
+  /**
+   * @param gitUrl the url of the repository.
+   * @returns Transforms given {@link gitUrl} to url which points to the page containing the issues of the repository.
+   */
+  getUrlToIssues(gitUrl: string): string;
+
+  /**
+   * @param gitUrl the url of the repository.
+   * @returns Transforms given {@link gitUrl} to url which points to the page that allows the user to create a new issue.
+   */
+  getCreateNewIssueUrl(gitUrl: string): string;
+
+  /**
+   * Looks for issues at given {@link gitUrl}. The type of issue (opened, closed, all) is given by {@link issueState}.
+   * @param authToken is the auth token of the user (PAT). If not present, then the bot auth token is used.
+   * @returns The issues at given {@link page}, where page has at most {@link perPage} elements.
+   */
+  getIssues(gitUrl: string, issueState: IssueState, page: number, perPage: number, authToken: string | null): Promise<GitIssuesFetchResponse>;
+
+  /**
+   * @returns Converted enum {@link issueState} to a string, which can be used for the web request to the Git provider (for example IssueState.Open for GitHub returns open and so on).
+   */
+  convertIssueStateEnumToStringForRequest(issueState: IssueState): string;
+
+  /**
+   * @returns Returns total number of issues in given {@link issueState} for given repository ({@link gitUrl}) using {@link authToken} to fetch the data.
+   */
+  getTotalIssueCount(gitUrl: string, issueState: IssueState, authToken: string | null): Promise<number>;
 }
 
 /**

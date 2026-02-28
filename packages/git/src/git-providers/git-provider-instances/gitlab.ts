@@ -1,7 +1,11 @@
 import { FetchResponse, type HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { AuthenticationGitProviderData, GitProviderBase } from "../git-provider-base.ts";
 import { AuthenticationGitProvidersData, gitProviderDomains } from "../git-provider-factory.ts";
-import { CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, GitProviderIndependentWebhookRequestData, PullRequestFetchResponse } from "../../git-provider-api.ts";
+import {
+  CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType,
+  GitCredentials, GitProviderEnum, GitRef, GitProviderIndependentWebhookRequestData,
+  PullRequestFetchResponse, GitIssuesFetchResponse, IssueState
+} from "../../git-provider-api.ts";
 import { Scope } from "../../auth.ts";
 
 // Note that students for some reason there have max 10 repositories limit on school mff gitlab (idk if it is for creations a day or something)
@@ -242,7 +246,37 @@ export class GitLabProvider extends GitProviderBase {
     throw new Error("Method not implemented.");
   }
 
+  getUrlToPRs(gitUrl: string) {
+    if (!gitUrl.endsWith("/")) {
+      gitUrl += "/";
+    }
+    return `${gitUrl}merge_requests`;
+  }
+
   getOpenedPullRequests(gitUrl: string, branchToMatch: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse> {
+    throw new Error("Method not implemented.");
+  }
+
+  getUrlToIssues(gitUrl: string): string {
+    if (!gitUrl.endsWith("/")) {
+      gitUrl += "/";
+    }
+    return `${gitUrl}issues`;
+  }
+
+  getCreateNewIssueUrl(gitUrl: string): string {
+    throw new Error("Method not implemented.");
+  }
+
+  convertIssueStateEnumToStringForRequest(issueState: IssueState): string {
+    throw new Error("Method not implemented.");
+  }
+
+  getTotalIssueCount(gitUrl: string, issueState: IssueState, authToken: string | null): Promise<number> {
+    throw new Error("Method not implemented.");
+  }
+
+  getIssues(gitUrl: string, issueState: IssueState, page: number, perPage: number, authToken: string | null): Promise<GitIssuesFetchResponse> {
     throw new Error("Method not implemented.");
   }
 }

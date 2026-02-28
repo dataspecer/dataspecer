@@ -3,7 +3,7 @@ import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import sodium from "libsodium-wrappers-sumo";
 import { AuthenticationGitProviderData, GitProviderBase } from "../git-provider-base.ts";
 import { AuthenticationGitProvidersData, getGitProviderDomain } from "../git-provider-factory.ts";
-import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, PUBLICATION_BRANCH_DEFAULT_NAME, GitProviderIndependentWebhookRequestData, PullRequestFetchResponse, PullRequestInfo } from "../../git-provider-api.ts";
+import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, PUBLICATION_BRANCH_DEFAULT_NAME, GitProviderIndependentWebhookRequestData, PullRequestFetchResponse, PullRequestInfo, GitIssuesFetchResponse, GitIssueInfo, IssueState } from "../../git-provider-api.ts";
 import { Scope } from "../../auth.ts";
 import { GitRestApiOperationError } from "../../error-definitions.ts";
 import { findPatAccessToken, GITHUB_USER_AGENT } from "../../git-utils.ts";
@@ -654,6 +654,66 @@ export class GitHubProvider extends GitProviderBase {
     return response;
   }
 
+  getUrlToPRs(gitUrl: string) {
+    if (!gitUrl.endsWith("/")) {
+      gitUrl += "/";
+    }
+    return `${gitUrl}pulls`;
+  }
+
+  getUrlToIssues(gitUrl: string) {
+    if (!gitUrl.endsWith("/")) {
+      gitUrl += "/";
+    }
+    return `${gitUrl}issues`;
+  }
+
+  getCreateNewIssueUrl(gitUrl: string): string {
+    if (!gitUrl.endsWith("/")) {
+      gitUrl += "/";
+    }
+    return `${gitUrl}issues/new`;
+  }
+
+  convertIssueStateEnumToStringForRequest(issueState: IssueState): string {
+    switch(issueState) {
+      case IssueState.Open:
+        return "open";
+      case IssueState.Closed:
+        return "closed";
+      case IssueState.All:
+        return "all";
+      default:
+        throw new Error(`Unknown issue state (${issueState}) - programmer error, forgot to extend the switch`);
+    }
+  }
+
+  async getTotalIssueCount(gitUrl: string, issueState: IssueState, authToken: string | null): Promise<number> {
+    // Using the query API, similarly as in the PR fetching.
+    const repoOwner = this.extractPartOfRepositoryURL(gitUrl, "repository-owner");
+    const repoName = this.extractPartOfRepositoryURL(gitUrl, "repository-name");
+
+    const issueStateAsString = this.convertIssueStateEnumToStringForRequest(issueState);
+    const token: string | null = authToken ?? this.authenticationGitProviderData?.gitBotConfiguration?.dsBotAbsoluteGitProviderControlToken;
+    const issuesURL = `https://api.github.com/search/issues?q=repo:${repoOwner}/${repoName}+type:issue+state:${issueStateAsString}&page=1&per_page=1`
+
+    const response = await this.httpFetch(issuesURL, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+
+    const isResponseOk = (status: number) => status >= 200 && status < 300;
+    if (!isResponseOk(response.status)) {
+      throw new Error(`GitHub API error when fetching issue count info: ${response.status}`);
+    }
+
+    const responseData: any = await response.json();
+    return responseData.total_count;
+  }
+
   async getOpenedPullRequests(gitUrl: string, branchToMatch: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse> {
     // https://docs.github.com/en/rest/search/search?apiVersion=2022-11-28#search-issues-and-pull-requests
     // https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests#search-by-branch-name
@@ -667,7 +727,7 @@ export class GitHubProvider extends GitProviderBase {
     const urlMergeFrom = `https://api.github.com/search/issues?q=repo:${repoOwner}/${repoName}+is:pr+head:${branchToMatch}&per_page=${perPage}&page=${page}`;
     const urlMergeTo = `https://api.github.com/search/issues?q=repo:${repoOwner}/${repoName}+is:pr+base:${branchToMatch}&per_page=${perPage}&page=${page}`;
 
-    const responseMergeFrom = await fetch(urlMergeFrom, {
+    const responseMergeFrom = await this.httpFetch(urlMergeFrom, {
       headers: {
         Accept: "application/vnd.github+json",
         Authorization: `Bearer ${token}`,
@@ -675,7 +735,7 @@ export class GitHubProvider extends GitProviderBase {
       },
     });
 
-    const responseMergeTo = await fetch(urlMergeTo, {
+    const responseMergeTo = await this.httpFetch(urlMergeTo, {
       headers: {
         Accept: "application/vnd.github+json",
         Authorization: `Bearer ${token}`,
@@ -683,11 +743,12 @@ export class GitHubProvider extends GitProviderBase {
       },
     });
 
-    if (!responseMergeFrom.ok) {
-      throw new Error(`GitHub API error: ${responseMergeFrom.status}`);
+    const isResponseOk = (status: number) => status >= 200 && status < 300;
+    if (!isResponseOk(responseMergeFrom.status)) {
+      throw new Error(`GitHub API error when fetching PRs: ${responseMergeFrom.status}`);
     }
-    if (!responseMergeTo.ok) {
-      throw new Error(`GitHub API error: ${responseMergeTo.status}`);
+    if (!isResponseOk(responseMergeTo.status)) {
+      throw new Error(`GitHub API error when fetching PRs: ${responseMergeTo.status}`);
     }
 
     const mergeFromData: any = await responseMergeFrom.json();
@@ -695,33 +756,73 @@ export class GitHubProvider extends GitProviderBase {
     const mergeData: any = (mergeFromData.items.concat(mergeToData.items));   // No need for checking for duplicates
 
     return {
-      pullRequests: await Promise.all(mergeData.map(async (pr: any) => await convertRestPrToDataspecerPr(pr, token))),
+      pullRequests: await Promise.all(mergeData.map(async (pr: any) => await this.convertRestPrToDataspecerPr(pr, token))),
       totalPrCount: mergeFromData.total_count + mergeToData.total_count,
+    };
+  }
+
+  async getIssues(gitUrl: string, issueState: IssueState, page: number, perPage: number, authToken: string | null): Promise<GitIssuesFetchResponse> {
+    const repoOwner = this.extractPartOfRepositoryURL(gitUrl, "repository-owner");
+    const repoName = this.extractPartOfRepositoryURL(gitUrl, "repository-name");
+    const token: string | null = authToken ?? this.authenticationGitProviderData?.gitBotConfiguration?.dsBotAbsoluteGitProviderControlToken;
+
+    const issueStateAsString = this.convertIssueStateEnumToStringForRequest(issueState);
+    const query = `?page=${page}&per_page=${perPage}&state=${issueStateAsString}`
+
+    const response = await this.httpFetch(`https://api.github.com/repos/${repoOwner}/${repoName}/issues${query}`, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+
+    const isResponseOk = (status: number) => status >= 200 && status < 300;
+    if (!isResponseOk(response.status)) {
+      throw new Error(`GitHub API error when fetching Git issues: ${response.status}`);
+    }
+
+    const responseData: any = await response.json();
+    const strippedIssues: GitIssueInfo[] = responseData
+      .filter((issueOrPullRequest: any) => {
+        return issueOrPullRequest.pull_request === undefined;
+      })
+      .map(githubIssue => ({
+        title: githubIssue.title,
+        author: githubIssue.user.login,
+        urlToIssue: githubIssue.html_url,
+        labels: githubIssue.labels.map((label: any) => ({name: label.name, color: label.color})),
+        createdAt: githubIssue.created_at,
+        lastActivityAt: githubIssue.updated_at,
+      }));
+
+    return {
+      issues: strippedIssues,
     }
   }
-}
 
-async function convertRestPrToDataspecerPr(pullRequest: any, token: string): Promise<PullRequestInfo> {
-  const pullRequestMoreInfoResponse = await fetch(pullRequest.pull_request.url, {
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${token}`,
-      "X-GitHub-Api-Version": "2022-11-28",
-    },
-  });
+  private async convertRestPrToDataspecerPr(pullRequest: any, token: string): Promise<PullRequestInfo> {
+    const pullRequestMoreInfoResponse = await this.httpFetch(pullRequest.pull_request.url, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
 
-  // https://api.github.com/repos/dataspecer/dataspecer/pulls/1339 - example of the output
-  const prInfo: any = await pullRequestMoreInfoResponse.json();
+    // https://api.github.com/repos/dataspecer/dataspecer/pulls/1339 - example of the output
+    const prInfo: any = await pullRequestMoreInfoResponse.json();
 
-  return {
-    title: pullRequest.title,
-    additions: prInfo.additions,
-    deletions: prInfo.deletions,
-    createdAt: pullRequest.created_at,
-    modifiedAt: pullRequest.updated_at,
-    mergeFromBranch: prInfo.head.ref,
-    mergeToBranch: prInfo.base.ref,
-    commitCountWithinPR: prInfo.commits,
-    urlToPR: pullRequest.pull_request.html_url,
-  };
+    return {
+      title: pullRequest.title,
+      additions: prInfo.additions,
+      deletions: prInfo.deletions,
+      createdAt: pullRequest.created_at,
+      modifiedAt: pullRequest.updated_at,
+      mergeFromBranch: prInfo.head.ref,
+      mergeToBranch: prInfo.base.ref,
+      commitCountWithinPR: prInfo.commits,
+      urlToPR: pullRequest.pull_request.html_url,
+    };
+  }
 }

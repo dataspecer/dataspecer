@@ -7,7 +7,7 @@ import { Loader } from "lucide-react";
 import { EditableType, MergeState } from "@dataspecer/git";
 import { requestLoadPackage } from "@/package";
 import { removeMergeState } from "@/utils/merge-state-backend-requests";
-import { MergeActor } from "@/hooks/use-merge";
+import { MergeActor } from "@/hooks/use-merge-actors";
 
 
 export async function fetchMergeState(

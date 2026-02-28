@@ -3,7 +3,9 @@ import {
   CommitReferenceType, ConvertRepoURLToDownloadZipURLReturnType, CreateRemoteRepositoryReturnType, ExtractedCommitReferenceValueFromRepositoryURL,
   ExtractedCommitReferenceValueFromRepositoryURLExplicit, GetResourceForGitUrlAndBranchType, GitCredentials, GitProvider, GitProviderEnum, GitRef,
   RepositoryURLPart, GitProviderIndependentWebhookRequestData,
-  PullRequestFetchResponse
+  PullRequestFetchResponse,
+  GitIssuesFetchResponse,
+  IssueState
 } from "../git-provider-api.ts";
 import { Scope } from "../auth.ts";
 import { type GitBotConfiguration, type OAuthConfiguration } from "@dataspecer/auth";
@@ -24,6 +26,7 @@ export abstract class GitProviderBase implements GitProvider {
   public getAuthenticationGitProviderData(): AuthenticationGitProviderData {
     return this.authenticationGitProviderData;
   }
+
 
   abstract getGitProviderEnumValue(): GitProviderEnum;
   abstract getDomainURL(shouldPrefixWithHttps: boolean): string;
@@ -51,7 +54,13 @@ export abstract class GitProviderBase implements GitProvider {
   abstract convertGenericScopeToProviderScope(scope: Scope): string[];
   abstract convertProviderScopeToGenericScope(scope: string): Scope;
   abstract revokePAT(personalAccessToken: string): Promise<FetchResponse>;
+  abstract getUrlToPRs(gitUrl: string): string
   abstract getOpenedPullRequests(gitUrl: string, branchToMatch: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse>;
+  abstract getUrlToIssues(gitUrl: string): string;
+  abstract getCreateNewIssueUrl(gitUrl: string): string;
+  abstract getIssues(gitUrl: string, issueState: IssueState, page: number, perPage: number, authToken: string | null): Promise<GitIssuesFetchResponse>;
+  abstract convertIssueStateEnumToStringForRequest(issueState: IssueState): string;
+  abstract getTotalIssueCount(gitUrl: string, issueState: IssueState, authToken: string | null): Promise<number>;
 
   /**
    * @param repositoryURLSplit is the repository URL split by "/", this is internal method used inside {@link extractPartOfRepositoryURL}.
