@@ -27,20 +27,20 @@ export function usePaginationComponent<T>() {
       <Button
         variant="outline"
         onClick={() => setPage((prevPage) => prevPage - 1)}
-        disabled={page === 1}
+        disabled={page === 1 || totalItemCount === 0}
         className=""
       >
         Previous
       </Button>
 
       <span className="flex justify-center items-center text-sm">
-        Page {page} of {totalPageCount}
+        Page {page} of {totalItemCount === 0 ? 1 : totalPageCount}
       </span>
 
       <Button
         variant="outline"
         onClick={() => setPage((prevPage) => prevPage + 1)}
-        disabled={page === totalPageCount}
+        disabled={page === totalPageCount || totalItemCount === 0}
         className=""
       >
         Next
