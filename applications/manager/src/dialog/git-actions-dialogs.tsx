@@ -13,7 +13,8 @@ import {
   getGitRemoteConfigurationModelFromPackage, GitRemoteConfigurations, ExportFormatType, saveGitRemoteConfiguration,
   PUBLICATION_BRANCH_DEFAULT_NAME,
   ExportVersionType,
-  getDefaultExportVersion
+  getDefaultExportVersion,
+  getDefaultExportFormat
 } from "@dataspecer/git";
 import { CommitRedirectForMergeStatesDialog } from "./commit-confirm-dialog-caused-by-merge-state";
 import { commitToGitBackendRequest, createNewRemoteRepositoryRequest, GitCommitData, linkToExistingGitRepositoryRequest, mergeCommitToGitBackendRequest } from "@/utils/git-backend-requests";
@@ -199,7 +200,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
         user, repositoryName, remoteRepositoryURL, gitProvider, commitMessage, isUserRepo,
         shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage,
         publicationBranch: gitRemoteConfiguration?.publicationBranch ?? PUBLICATION_BRANCH_DEFAULT_NAME,
-        exportFormat: gitRemoteConfiguration?.exportFormat ?? "json",
+        exportFormat: gitRemoteConfiguration?.exportFormat ?? getDefaultExportFormat(),
         exportVersion: gitRemoteConfiguration?.exportVersion ?? getDefaultExportVersion(),
       });
       if (type === "create-new-repository-and-commit") {

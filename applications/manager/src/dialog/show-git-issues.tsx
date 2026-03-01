@@ -22,7 +22,7 @@ type GitIssuesListDialogProps = {
  *   Thereofre, the code duplication is fine. Well it is not that much of a code duplicaiton but rather sharing structure.
  */
 export function GitIssuesListDialog({ gitUrl, isOpen, resolve }: GitIssuesListDialogProps) {
-  // Sets the total item count when mounting and uses the PaginationComponent from the hook to render the pagination.
+  // Uses the PaginationComponent from the hook to render the pagination.
   const {
     pageOnFrontend, trackedPageOnBackend, setIsLastPageBasedOnServerResponse, setTrackedPageOnBackend,
     itemCountPerPage, setTotalItemCount, PaginationComponent
