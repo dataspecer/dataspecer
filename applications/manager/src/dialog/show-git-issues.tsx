@@ -85,7 +85,8 @@ export function GitIssuesListDialog({ gitUrl, isOpen, resolve }: GitIssuesListDi
             </div>
           }
           {
-            cannotUseGitIssues ? null : <PaginationComponent items={gitIssues!} itemsOnPageScalingFactor={1} itemCountOnPageText="Issues on page" totalItemCountText="Total issue count"/>
+            cannotUseGitIssues ? null : <PaginationComponent items={gitIssues!} itemsOnPageScalingFactor={1} isPageNumberingExact={false}
+                                                             itemCountOnPageText="Issues on page" totalItemCountText="Total issue count"/>
           }
         </ModalHeader>
         <ModalFooter>

@@ -7,6 +7,7 @@ type PaginationComponentProps<T> = {
   itemsOnPageScalingFactor: number;
   totalItemCountText: string;
   itemCountOnPageText: string;
+  isPageNumberingExact: boolean;
 };
 
 
@@ -21,7 +22,7 @@ export function usePaginationComponent<T>() {
   const totalPageCount = Math.ceil(totalItemCount / itemCountPerPage);
 
 
-  const PaginationComponent = ({ items, itemCountOnPageText, itemsOnPageScalingFactor, totalItemCountText }: PaginationComponentProps<T>) =>
+  const PaginationComponent = ({ items, itemCountOnPageText, itemsOnPageScalingFactor, totalItemCountText, isPageNumberingExact }: PaginationComponentProps<T>) =>
     <div className="flex items-center justify-between">
       <div className="flex justify-center items-center text-sm">
         {t(totalItemCountText)}: {totalItemCount}
@@ -40,7 +41,7 @@ export function usePaginationComponent<T>() {
         </Button>
 
         <span className="flex justify-center items-center text-sm">
-          Page {pageOnFrontend} of {totalItemCount === 0 ? 1 : totalPageCount}
+          Page {pageOnFrontend} {isPageNumberingExact ? `of ${totalItemCount === 0 ? 1 : totalPageCount}` : ""}
         </span>
 
         <Button
@@ -49,7 +50,7 @@ export function usePaginationComponent<T>() {
             setPageOnFrontend((prevPage) => prevPage + 1);
             setTrackedPageOnBackend((prevPage) => prevPage + 1);
           }}
-          disabled={pageOnFrontend === totalPageCount || totalItemCount === 0 || isLastPageBasedOnServerResponse}
+          disabled={(isPageNumberingExact && pageOnFrontend === totalPageCount) || totalItemCount === 0 || isLastPageBasedOnServerResponse}
           className=""
         >
           Next
