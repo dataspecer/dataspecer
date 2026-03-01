@@ -5,7 +5,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import YAML from "yaml";
-import { GIT_REMOTE_CONFIGURATION_IRI } from "../../git-remote-configuration.ts";
+import { GIT_REMOTE_CONFIGURATION_IRI } from "../../git-configuration/git-remote-configuration.ts";
 import { PUBLICATION_BRANCH_DEFAULT_NAME } from "../../git-provider-api.ts";
 
 /**

@@ -1,16 +1,23 @@
-import { ExportFormatType, MergeFromDataType } from "@dataspecer/git";
+import { ExportFormatType, ExportVersionType, MergeFromDataType } from "@dataspecer/git";
 
+
+export type GitCommitData = {
+  commitMessage: string | null;
+  exportFormat: ExportFormatType;
+  exportVersion: ExportVersionType;
+  shouldAlwaysCreateMergeState: boolean;
+};
 
 export async function commitToGitBackendRequest(
   iri: string,
-  commitMessage: string | null,
-  exportFormat: string,
-  shouldAlwaysCreateMergeState: boolean,
+  gitCommitData: GitCommitData,
   shouldRedirectWithExistenceOfMergeStates: boolean,
 ) {
+  const { commitMessage, exportFormat, exportVersion, shouldAlwaysCreateMergeState } = gitCommitData;
   const url = import.meta.env.VITE_BACKEND + "/git/commit-package-to-git?iri=" + encodeURIComponent(iri) +
                                               "&commitMessage=" + encodeURIComponent(commitMessage ?? "") +
                                               "&exportFormat=" + exportFormat +
+                                              "&exportVersion=" + exportVersion +
                                               "&shouldAlwaysCreateMergeState=" + shouldAlwaysCreateMergeState +
                                               "&shouldRedirectWithExistenceOfMergeStates=" + shouldRedirectWithExistenceOfMergeStates;
   const response = await fetch(
@@ -55,6 +62,7 @@ type CreanteNewRepoBackendRequestData = {
   isUserRepo: boolean;
   publicationBranch: string;
   exportFormat: ExportFormatType;
+  exportVersion: ExportVersionType;
 }
 
 export async function createNewRemoteRepositoryRequest(
@@ -68,7 +76,8 @@ export async function createNewRemoteRepositoryRequest(
                                             "&commitMessage=" + encodeURIComponent(commitBackendRequestData.commitMessage ?? "") +
                                             "&isUserRepo=" + encodeURIComponent(commitBackendRequestData.isUserRepo ?? true) +
                                             "&publicationBranch=" + encodeURIComponent(commitBackendRequestData.publicationBranch) +
-                                            "&exportFormat=" + commitBackendRequestData.exportFormat;
+                                            "&exportFormat=" + commitBackendRequestData.exportFormat +
+                                            "&exportVersion=" + commitBackendRequestData.exportVersion;
   const response = await fetch(
     url,
     {

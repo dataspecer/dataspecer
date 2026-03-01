@@ -25,7 +25,7 @@ export * from "./resource-types.ts";
 export * from "./merge/comparison/resource-datastore-strip-handler-base.ts"
 export * from "./commit-redirect-info.ts";
 export * from "./error-definitions.ts";
-export * from "./git-remote-configuration-interface.ts";
-export * from "./git-remote-configuration.ts";
+export * from "./git-configuration/git-remote-configuration-interface.ts";
+export * from "./git-configuration/git-remote-configuration.ts";
 export * from "./git-issues/git-issue-types.ts";
 export * from "./git-issues/git-issue-labels.ts";

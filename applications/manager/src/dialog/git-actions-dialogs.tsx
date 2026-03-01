@@ -11,10 +11,12 @@ import {
   CommitRedirectResponseJson, createSetterWithGitValidation, CommitRedirectExtendedResponseJson, MergeFromDataType,
   MergeState, SingleBranchCommitType, convertMergeStateCauseToEditable, CommitConflictInfo, GitProviderEnum, convertGitProviderNameToEnum,
   getGitRemoteConfigurationModelFromPackage, GitRemoteConfigurations, ExportFormatType, saveGitRemoteConfiguration,
-  PUBLICATION_BRANCH_DEFAULT_NAME
+  PUBLICATION_BRANCH_DEFAULT_NAME,
+  ExportVersionType,
+  getDefaultExportVersion
 } from "@dataspecer/git";
 import { CommitRedirectForMergeStatesDialog } from "./commit-confirm-dialog-caused-by-merge-state";
-import { commitToGitBackendRequest, createNewRemoteRepositoryRequest, linkToExistingGitRepositoryRequest, mergeCommitToGitBackendRequest } from "@/utils/git-backend-requests";
+import { commitToGitBackendRequest, createNewRemoteRepositoryRequest, GitCommitData, linkToExistingGitRepositoryRequest, mergeCommitToGitBackendRequest } from "@/utils/git-backend-requests";
 import { createCloseDialogObject, LoadingDialog } from "@/dialog/loading-dialog";
 import { ComboBox, createGitProviderComboBoxOptions } from "@/components/combo-box";
 import { removeMergeState } from "@/utils/merge-state-backend-requests";
@@ -94,6 +96,7 @@ type GitActionsDialogProps = {
   shouldAppendAfterDefaultMergeCommitMessage: boolean;
   publicationBranch: string;
   exportFormat: ExportFormatType;
+  exportVersion: ExportVersionType;
 } | null>;
 
 const gitDialogInputIdPrefix = "git-dialog-prefix";
@@ -197,6 +200,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
         shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage,
         publicationBranch: gitRemoteConfiguration?.publicationBranch ?? PUBLICATION_BRANCH_DEFAULT_NAME,
         exportFormat: gitRemoteConfiguration?.exportFormat ?? "json",
+        exportVersion: gitRemoteConfiguration?.exportVersion ?? getDefaultExportVersion(),
       });
       if (type === "create-new-repository-and-commit") {
         // We store the new configuration only when creating new repository,
@@ -209,6 +213,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
             },
             body: JSON.stringify(newPackageContent),
           });
+
           toast.success(t("successfully saved"));
         };
         saveGitRemoteConfiguration(inputPackage.iri, rootPackageContent, gitRemoteConfiguration, storeModelToBackend);
@@ -546,10 +551,10 @@ export const commitToGitDialogOnClickHandler = async (
   const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage, type: "commit", shouldShowAlwaysCreateMergeStateOption });
   if (result) {
     await commitToGitHandler(
-      t, openModal, iri, commitType, shouldShowAlwaysCreateMergeStateOption,
-      result.commitMessage, result.exportFormat, result.shouldAlwaysCreateMergeState, true, onSuccessCallback);
+      t, openModal, iri, commitType, shouldShowAlwaysCreateMergeStateOption, result, true, onSuccessCallback);
   }
 };
+
 
 /**
  * @param shouldRedirectWithExistenceOfMergeStates for commitType singalizing "rebase-commit", this parameter will be ignored and false will be used instead.
@@ -560,9 +565,7 @@ export const commitToGitHandler = async (
   iri: string,
   commitType: SingleBranchCommitType,
   canCreateMergeStateIfNecessary: boolean,
-  commitMessage: string | null,
-  exportFormat: string,
-  shouldAlwaysCreateMergeState: boolean,
+  gitCommitData: GitCommitData,
   shouldRedirectWithExistenceOfMergeStates: boolean,
   onSuccessCallback: (() => void) | null,
 ) => {
@@ -583,7 +586,7 @@ export const commitToGitHandler = async (
     //                 Technically, it could be rewritten to rebase exactly if the one commit exist, but we will keep it like this.
     shouldRedirectWithExistenceOfMergeStates = false;
   }
-  commitToGitBackendRequest(iri, commitMessage, exportFormat, shouldAlwaysCreateMergeState, shouldRedirectWithExistenceOfMergeStates)
+  commitToGitBackendRequest(iri, gitCommitData, shouldRedirectWithExistenceOfMergeStates)
     .then(async (response) => {
       if (response.status === 300) {
         const jsonResponse: CommitRedirectResponseJson = await response.json();
@@ -591,7 +594,7 @@ export const commitToGitHandler = async (
           ...jsonResponse,
           commitType,
           shouldAppendAfterDefaultMergeCommitMessage: null,
-          shouldAlwaysCreateMergeState,
+          shouldAlwaysCreateMergeState: gitCommitData.shouldAlwaysCreateMergeState,
           onSuccessCallback,
         };
         openModal(CommitRedirectForMergeStatesDialog, {commitRedirectResponse: extendedResponse});

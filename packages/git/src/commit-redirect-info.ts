@@ -1,3 +1,4 @@
+import { ExportFormatType, ExportVersionType } from "./git-configuration/git-remote-configuration-interface.ts";
 import { CommitType } from "./git-utils.ts";
 import { MergeState } from "./merge/merge-state.ts";
 
@@ -19,7 +20,8 @@ export type CommitRedirectResponseJson = {
   commitHttpRedirectionCause: CommitHttpRedirectionCause;
   mergeStateUuids: string[];
   commitMessage: string;
-  exportFormat: string;
+  exportFormat: ExportFormatType;
+  exportVersion: ExportVersionType;
   mergeStateCausedByMerge: MergeState | null;
   mergeFromData: MergeFromDataType | null;
 }

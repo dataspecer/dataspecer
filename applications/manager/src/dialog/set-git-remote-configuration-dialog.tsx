@@ -2,7 +2,7 @@ import { ExportFormatRadioButtons } from "@/components/export-format-radio-butto
 import { Modal, ModalBody, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { BetterModalProps } from "@/lib/better-modal";
-import { createSetterWithGitValidation, ExportFormatType, getGitRemoteConfigurationModelFromPackage, GitRemoteConfigurations, saveGitRemoteConfiguration } from "@dataspecer/git";
+import { createSetterWithGitValidation, ExportFormatType, ExportVersionType, getGitRemoteConfigurationModelFromPackage, GitRemoteConfigurations, saveGitRemoteConfiguration } from "@dataspecer/git";
 import { resolveWithRequiredCheck, SetGitConfigurationReactStateType, setGitRemoteConfigurationStatePart } from "./git-actions-dialogs";
 import { InputComponent } from "@/components/simple-input-component";
 import { RefObject, useEffect, useState } from "react";
@@ -11,6 +11,7 @@ import { useRequiredFieldsForGitConfig } from "@/hooks/use-required-fields-for-g
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { requestLoadPackage } from "@/package";
+import { ExportVersionRadioButtons } from "@/components/export-version-radio-buttons";
 
 export type RequiredFieldsPartialMap = Partial<Record<keyof GitRemoteConfigurations, RefObject<HTMLInputElement | null>>>;
 
@@ -99,7 +100,7 @@ const gitRemoteConfigurationIdPrefix = "sgrcc"
 /**
  * @todo This component can be much more general in future - basically define the names of fields and their values and then just generate.
  *  Therefore, we would not need to touch this component at all when introducing new types.
- * But since we have currently only 2 values and we have no idea what might be the future ones, we will just keep it "hardcoded"
+ * But since we have currently only 3 values and we have no idea what might be the future ones, we will just keep it "hardcoded".
  */
 export function SetGitRemoteConfigurationComponent({ configuration, requiredFieldsMap, setGitConfigurationReactState }: SetGitRemoteConfigurationComponentProps) {
   const { t } = useTranslation();
@@ -113,6 +114,10 @@ export function SetGitRemoteConfigurationComponent({ configuration, requiredFiel
     setGitRemoteConfigurationStatePart(setGitConfigurationReactState, "exportFormat", newExportFormat);
   };
 
+  const setExportVersionInConfig = (newExportVersion: ExportVersionType) => {
+    setGitRemoteConfigurationStatePart(setGitConfigurationReactState, "exportVersion", newExportVersion);
+  };
+
 
   return <div>
     <InputComponent
@@ -124,5 +129,6 @@ export function SetGitRemoteConfigurationComponent({ configuration, requiredFiel
       requiredRefObject={requiredFieldsMap["publicationBranch"]}
     />
     <ExportFormatRadioButtons exportFormat={configuration.exportFormat} setExportFormat={setExportFormatInConfig} />
+    <ExportVersionRadioButtons exportVersion={configuration.exportVersion} setExportVersion={setExportVersionInConfig} />
   </div>;
 }

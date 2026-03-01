@@ -2,7 +2,7 @@ import { z } from "zod";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { resourceModel, webhookUrl } from "../../main.ts";
-import { ConfigType, convertToValidGitName, extractPartOfRepositoryURL, findPatAccessToken, findPatAccessTokens, PUBLICATION_BRANCH_DEFAULT_NAME, stringToBoolean, transformCommitMessageIfEmpty } from "@dataspecer/git";
+import { ConfigType, convertToValidGitName, extractPartOfRepositoryURL, findPatAccessToken, findPatAccessTokens, convertStringToExportVersion, PUBLICATION_BRANCH_DEFAULT_NAME, stringToBoolean, transformCommitMessageIfEmpty, getDefaultExportVersion, getDefaultExportFormat, isExportFormatType, convertStringToExportFormat } from "@dataspecer/git";
 import { CommitBranchAndHashInfo, commitPackageToGitUsingAuthSession, GitCommitToCreateInfoBasic, RepositoryIdentification } from "./commit-package-to-git.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import { checkErrorBoundaryForCommitAction } from "@dataspecer/git-node";
@@ -24,6 +24,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
     isUserRepo: z.string().min(1),
     publicationBranch: z.string().min(1).optional(),
     exportFormat: z.string().min(1).optional(),
+    exportVersion: z.string().min(1).optional(),
   });
 
   // TODO RadStr: Remove debugResponse after we are done
@@ -81,9 +82,12 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
         repositoryOwner,
         repositoryName,
       };
+
+      const exportFormat = convertStringToExportFormat(query.exportFormat);
       const commitInfo: GitCommitToCreateInfoBasic = {
         commitMessage,
-        exportFormat: query.exportFormat ?? null,
+        exportFormat: exportFormat,
+        exportVersion: convertStringToExportVersion(query.exportVersion),
       };
 
       const commitBranchAndHashInfo: CommitBranchAndHashInfo = {
@@ -129,6 +133,7 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
     gitRepositoryURL: z.string().min(1),
     commitMessage: z.string(),
     exportFormat: z.string().min(1).optional(),
+    exportVersion: z.string().min(1).optional(),
   });
 
   const query = querySchema.parse(request.query);
@@ -152,9 +157,12 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
     repositoryOwner: repositoryOwner!,
     repositoryName: repositoryName!,
   };
+
+  const exportFormat = convertStringToExportFormat(query.exportFormat);
   const commitInfo: GitCommitToCreateInfoBasic = {
     commitMessage,
-    exportFormat: query.exportFormat ?? null
+    exportFormat: exportFormat,
+    exportVersion: convertStringToExportVersion(query.exportVersion),
   };
 
   const commitBranchAndHashInfo: CommitBranchAndHashInfo = {

@@ -6,7 +6,7 @@ import { PackageImporter } from "../export-import/import.ts";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
 import { AvailableExports } from "../export-import/export-actions.ts";
-import { AvailableFilesystems } from "@dataspecer/git";
+import { AvailableFilesystems, getDefaultExportFormat } from "@dataspecer/git";
 import { PackageExporterNew } from "../export-import/export-new.ts";
 import { bunHotfixHttpFileName } from "./generate.ts";
 import { PackageExporterDeprecated } from "../export-import/deprecated-import-export-for-regression-testing/deprecated-export-for-regression-testing.ts";
@@ -36,7 +36,7 @@ export const exportPackageResource = asyncHandler(async (request: express.Reques
   const exporter = new PackageExporterByResourceType();
   const buffer = await exporter.doExportFromIRI(
     query.iri, "", "", AvailableFilesystems.DS_Filesystem, AvailableExports.Zip,
-    query.exportFormat ?? "json", resourceModel, null);
+    query.exportFormat ?? getDefaultExportFormat(), resourceModel, null);
 
   // const exporter = new PackageExporterByResourceType();
   // const buffer = await exporter.doExportFromIRI(query.iri, "", `radstr/export/directory`, AvailableFilesystems.DS_Filesystem, AvailableExports.Zip, query.exportFormat ?? "json", null);

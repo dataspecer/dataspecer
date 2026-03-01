@@ -1,7 +1,26 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import path from "path";
 import { PackageExporterBase } from "./export-base.ts";
-import { DirectoryNode, FilesystemNode, isDatastoreForMetadata, ResourceTypes, resourceTypeToTypeDirectoryMapping } from "@dataspecer/git";
+import { DirectoryNode, ExportVersionType, FilesystemNode, isDatastoreForMetadata, ResourceTypes, resourceTypeToTypeDirectoryMapping } from "@dataspecer/git";
+import { PackageExporterNew } from "./export-new.ts";
+
+
+export class PackageExporterFactory {
+  /**
+   * @todo Could be probably programmed better by having Map, having the static export version stored as static element at the Export classes and so on.
+   */
+  public static createPackageExporter(exportVersion: ExportVersionType) {
+    switch(exportVersion) {
+      case 1:
+        return new PackageExporterNew();
+      case 2:
+        return new PackageExporterByResourceType();
+      default:
+        throw new Error(`Programmer error - forgot to extend factory switch. Unknown export version: ${exportVersion}`);
+    }
+  }
+}
+
 
 export class PackageExporterByResourceType extends PackageExporterBase {
   getExportVersion(): number {

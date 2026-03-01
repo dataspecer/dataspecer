@@ -4,6 +4,7 @@ import { AllowedExportResults, AvailableExports, ExportActionForFilesystem, Expo
 import { FilesystemFactory } from "./filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 import { PackageExporterInterface, ResourceModelForFilesystemRepresentation } from "./export.ts";
 
+
 export abstract class PackageExporterBase implements PackageExporterInterface {
   protected exportActions!: ExportActions<AllowedExportResults>;
   protected importFilesystem!: FilesystemAbstraction;

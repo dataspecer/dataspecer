@@ -11,13 +11,12 @@ import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { mergeStateModel, resourceModel } from "../../main.ts";
 import { BranchSummary, CommitResult, SimpleGit } from "simple-git";
-import { extractPartOfRepositoryURL, getAuthorizationURL, GitIgnoreBase, GitProviderNode, MergeState, stringToBoolean } from "@dataspecer/git";
+import { ExportVersionType, extractPartOfRepositoryURL, getAuthorizationURL, GitIgnoreBase, GitProviderNode, convertStringToExportVersion, MergeState, stringToBoolean, ExportFormatType, getDefaultExportFormat, isExportFormatType, convertStringToExportFormat } from "@dataspecer/git";
 import { AvailableFilesystems, ConfigType, GitCredentials, getMergeFromMergeToForGitAndDS, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase, createUniqueCommitMessage } from "@dataspecer/git";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import { AvailableExports } from "../../export-import/export-actions.ts";
 import { getCommonCommitInHistory, gitCloneBasic, CreateSimpleGitResult, UniqueDirectory } from "@dataspecer/git-node/simple-git-methods";
 import { compareBackendFilesystems, compareGitAndDSFilesystems } from "../../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
-import { PackageExporterByResourceType } from "../../export-import/export-by-resource-type.ts";
 import { MergeEndInfoWithRootNode, MergeEndpointForComparison, PrismaMergeStateWithData } from "../../models/merge-state-model.ts";
 import fs from "fs";
 import {
@@ -31,6 +30,7 @@ import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
 import { ResourceModelForFilesystemRepresentation } from "../../export-import/export.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
+import { PackageExporterFactory } from "../../export-import/export-by-resource-type.ts";
 
 
 export type RepositoryIdentification = {
@@ -42,17 +42,19 @@ export type RepositoryIdentification = {
  * {@link GitCommitToCreateInfoBasic} but no more ambiguities, everything is set
  */
 type GitCommitToCreateInfoExplicitWithCredentials = {
-  gitCredentials: GitCredentials,
-  commitMessage: string,
-  gitProvider: GitProviderNode,
-  exportFormat: string | null,
-  shouldAppendAfterDefaultMergeCommitMessage: boolean | null,
+  gitCredentials: GitCredentials;
+  commitMessage: string;
+  gitProvider: GitProviderNode;
+  exportFormat: ExportFormatType;
+  exportVersion: ExportVersionType;
+  shouldAppendAfterDefaultMergeCommitMessage: boolean | null;
 }
 
 export type GitCommitToCreateInfoBasic = {
-  commitMessage: string | null,
-  gitProvider?: GitProviderNode,
-  exportFormat: string | null,
+  commitMessage: string | null;
+  gitProvider?: GitProviderNode;
+  exportFormat: ExportFormatType;
+  exportVersion: ExportVersionType;
 }
 
 
@@ -87,12 +89,17 @@ function convertBranchAndHashToMergeInfo(input: CommitBranchAndHashInfo): Commit
 
 /**
  * Commit to the repository for package identifier by given iri inside the query part of express http request.
+ * @todo Personally I would rewrite the commit related handlers to not get the configuration from client (exportFormat and exportVersion) from client,
+ *  but rather read it on the server from the configuration. We did it for performance reasons, but if we keep adding configuration related to committing.
+ *  It will get to complicated real quick and also it is kind of messy, that if we do it like this we have to extend each related handler any time we do it
+ *  (that is commit, mergeCommit and create new repository handlers).
  */
 export const mergeCommitPackageToGitHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
     iri: z.string().min(1),
     commitMessage: z.string(),
     exportFormat: z.string().min(1).optional(),
+    exportVersion: z.string().min(1).optional(),
     branchMergeFrom: z.string().min(1),
     lastCommitHashMergeFrom: z.string().min(1),
     rootIriMergeFrom: z.string().min(1),
@@ -103,18 +110,19 @@ export const mergeCommitPackageToGitHandler = asyncHandler(async (request: expre
   const query = querySchema.parse(request.query);
   const shouldRedirectWithExistenceOfMergeStates = stringToBoolean(query.shouldRedirectWithExistenceOfMergeStates);
   const shouldAppendAfterDefaultMergeCommitMessage = stringToBoolean(query.shouldAppendAfterDefaultMergeCommitMessage);
-  const {
-    iri, exportFormat, commitMessage,
-    branchMergeFrom, lastCommitHashMergeFrom, rootIriMergeFrom,
-  } = query;
+  const { iri, commitMessage, branchMergeFrom, lastCommitHashMergeFrom, rootIriMergeFrom } = query;
+
+  const exportVersion = convertStringToExportVersion(query.exportVersion);
   const mergeFromData: MergeFromDataType = {
     branch: branchMergeFrom,
     commitHash: lastCommitHashMergeFrom,
     iri: rootIriMergeFrom,
   };
 
+  const exportFormat = convertStringToExportFormat(query.exportFormat);
+
   const returnedStatus = await commitHandlerInternal(
-    request, response, iri, mergeFromData, commitMessage, exportFormat,
+    request, response, iri, mergeFromData, commitMessage, exportFormat, exportVersion,
     shouldRedirectWithExistenceOfMergeStates, false, shouldAppendAfterDefaultMergeCommitMessage);
 });
 
@@ -126,6 +134,7 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
     iri: z.string().min(1),
     commitMessage: z.string(),
     exportFormat: z.string().min(1).optional(),
+    exportVersion: z.string().min(1).optional(),
     shouldAlwaysCreateMergeState: z.string().min(1),
     shouldRedirectWithExistenceOfMergeStates: z.string().min(1),
   });
@@ -133,8 +142,10 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
   const query = querySchema.parse(request.query);
   const shouldAlwaysCreateMergeState = stringToBoolean(query.shouldAlwaysCreateMergeState);
   const shouldRedirectWithExistenceOfMergeStates = stringToBoolean(query.shouldRedirectWithExistenceOfMergeStates);
-  const { iri, exportFormat, commitMessage } = query;
-  await commitHandlerInternal(request, response, iri, null, commitMessage, exportFormat, shouldRedirectWithExistenceOfMergeStates, shouldAlwaysCreateMergeState, null);
+  const { iri, commitMessage } = query;
+  const exportVersion = convertStringToExportVersion(query.exportVersion);
+  const exportFormat = convertStringToExportFormat(query.exportFormat);
+  await commitHandlerInternal(request, response, iri, null, commitMessage, exportFormat, exportVersion, shouldRedirectWithExistenceOfMergeStates, shouldAlwaysCreateMergeState, null);
 });
 
 /**
@@ -149,7 +160,8 @@ const commitHandlerInternal = async (
   iri: string,
   mergeFromData: MergeFromDataType | null,
   originalCommitMessage: string,
-  exportFormat: string | undefined,
+  exportFormat: ExportFormatType,
+  exportVersion: ExportVersionType,
   shouldRedirectWithExistenceOfMergeStates: boolean,
   shouldAlwaysCreateMergeState: boolean,
   shouldAppendAfterDefaultMergeCommitMessage: boolean | null,
@@ -202,7 +214,8 @@ const commitHandlerInternal = async (
         openedMergeStatesCount: mergeStatesForResource.length,
         mergeStateUuids: mergeStatesForResource.map(mergeState => mergeState.uuid),
         commitMessage: originalCommitMessage,
-        exportFormat: exportFormat ?? "json",
+        exportFormat: exportFormat,
+        exportVersion: exportVersion,
         mergeFromData,
         mergeStateCausedByMerge,
       };
@@ -222,7 +235,8 @@ const commitHandlerInternal = async (
   const gitCommitInfo: GitCommitToCreateInfoBasic = {
     commitMessage: transformedCommitMessage,
     gitProvider: undefined,
-    exportFormat: exportFormat ?? null
+    exportFormat: exportFormat,
+    exportVersion: exportVersion,
   };
 
   const commitConflictInfo: CommitConflictInfo = await commitPackageToGitUsingAuthSession(
@@ -283,6 +297,7 @@ export function prepareCommitDataForCommit(
     commitMessage: gitCommitInfoBasic.commitMessage ?? createUniqueCommitMessage(),
     gitProvider: gitProvider,
     exportFormat: gitCommitInfoBasic.exportFormat,
+    exportVersion: gitCommitInfoBasic.exportVersion,
     shouldAppendAfterDefaultMergeCommitMessage,
   };
 
@@ -655,7 +670,7 @@ async function exportAndPushToGit(
       }
     }
     await fillGitDirectoryWithExport(
-      iri, createSimpleGitResult, commitInfo.gitProvider, commitInfo.exportFormat,
+      iri, createSimpleGitResult, commitInfo.gitProvider, commitInfo.exportFormat, commitInfo.exportVersion,
       hasSetLastCommit, shouldContainWorkflowFiles, isBranchAlreadyTrackedOnRemote);
 
     // TODO RadStr Debug: Debug print to remove
@@ -779,7 +794,8 @@ async function fillGitDirectoryWithExport(
   iri: string,
   gitPaths: UniqueDirectory,
   gitProvider: GitProviderNode,
-  exportFormat: string | null,
+  exportFormat: ExportFormatType,
+  exportVersion: ExportVersionType,
   hasSetLastCommit: boolean,
   shouldContainWorkflowFiles: boolean,
   isBranchAlreadyTrackedOnRemote: boolean,
@@ -795,12 +811,10 @@ async function fillGitDirectoryWithExport(
       exceptionsForDirectoryRemoval.push(gitProvider.getWorkflowFilesDirectoryName());
     }
     removeEverythingExcept(gitInitialDirectory, exceptionsForDirectoryRemoval);
-    const exporter = new PackageExporterByResourceType();
-    // const exporter = new PackageExporterNew();     // TODO RadStr Debug: Debug
+    const exporter = PackageExporterFactory.createPackageExporter(exportVersion);
     await exporter.doExportFromIRI(
       iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem,
-      exportFormat ?? "json", resourceModel, null
-    );
+      exportFormat, resourceModel, null);
 
     if (shouldContainWorkflowFiles && !hasSetLastCommit) {
       createGitReadMeFile(gitInitialDirectory);
