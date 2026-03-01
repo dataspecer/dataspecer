@@ -27,3 +27,5 @@ export * from "./commit-redirect-info.ts";
 export * from "./error-definitions.ts";
 export * from "./git-remote-configuration-interface.ts";
 export * from "./git-remote-configuration.ts";
+export * from "./git-issues/git-issue-types.ts";
+export * from "./git-issues/git-issue-labels.ts";

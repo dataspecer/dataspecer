@@ -4,11 +4,10 @@ import {
   ExtractedCommitReferenceValueFromRepositoryURLExplicit, GetResourceForGitUrlAndBranchType, GitCredentials, GitProvider, GitProviderEnum, GitRef,
   RepositoryURLPart, GitProviderIndependentWebhookRequestData,
   PullRequestFetchResponse,
-  GitIssuesFetchResponse,
-  IssueState
 } from "../git-provider-api.ts";
 import { Scope } from "../auth.ts";
 import { type GitBotConfiguration, type OAuthConfiguration } from "@dataspecer/auth";
+import { GitIssuesFetchResponse, IssueState } from "../git-issues/git-issue-types.ts";
 
 export type AuthenticationGitProviderData = {
   gitBotConfiguration?: GitBotConfiguration;
@@ -61,6 +60,7 @@ export abstract class GitProviderBase implements GitProvider {
   abstract getIssues(gitUrl: string, issueState: IssueState, page: number, perPage: number, authToken: string | null): Promise<GitIssuesFetchResponse>;
   abstract convertIssueStateEnumToStringForRequest(issueState: IssueState): string;
   abstract getTotalIssueCount(gitUrl: string, issueState: IssueState, authToken: string | null): Promise<number>;
+  abstract createDataspecerIssueLabels(gitUrl: string, authToken: string): Promise<boolean>;
 
   /**
    * @param repositoryURLSplit is the repository URL split by "/", this is internal method used inside {@link extractPartOfRepositoryURL}.

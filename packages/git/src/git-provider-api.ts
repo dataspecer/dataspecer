@@ -1,5 +1,6 @@
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
 import { Scope } from "./auth.ts";
+import { GitIssuesFetchResponse, IssueState } from "./git-issues/git-issue-types.ts";
 
 export const PUBLICATION_BRANCH_DEFAULT_NAME: string = "publication-branch";
 
@@ -30,34 +31,6 @@ export type PullRequestFetchResponse = {
 ////////////////////
 // End of pull requests
 ////////////////////
-
-/////////////
-// Issues
-/////////////
-export enum IssueState {
-  Open = "open",
-  Closed = "closed",
-  All = "all",
-}
-
-export type GitIssueInfo = {
-  title: string;
-  author: string;
-  urlToIssue: string;
-  //
-  labels: {name: string, color: string}[];
-  //
-  createdAt: Date;
-  lastActivityAt: Date;
-};
-
-export type GitIssuesFetchResponse = {
-  issues: GitIssueInfo[];
-};
-
-///////////////////
-// End of Issues
-///////////////////
 
 export type ConvertRepoURLToDownloadZipURLReturnType = {
   zipURL: string,
@@ -425,6 +398,14 @@ export interface GitProvider {
    * @returns Returns total number of issues in given {@link issueState} for given repository ({@link gitUrl}) using {@link authToken} to fetch the data.
    */
   getTotalIssueCount(gitUrl: string, issueState: IssueState, authToken: string | null): Promise<number>;
+
+  /**
+   * Creates Dataspecer labels for issues in repository given by {@link gitUrl}. The labels can be seen at {@link dataspecerGitIssueLabels}.
+   * @param authToken is the PAT used for the requests to te Git provider.
+   * @returns True if all labels were sucessfully created. Otherwise throws error.
+   * @todo Now throws error if any of the labels fails to be created, ut maybe returning false is enough in future.
+   */
+  createDataspecerIssueLabels(gitUrl: string, authToken: string): Promise<boolean>;
 }
 
 /**

@@ -3,10 +3,12 @@ import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import sodium from "libsodium-wrappers-sumo";
 import { AuthenticationGitProviderData, GitProviderBase } from "../git-provider-base.ts";
 import { AuthenticationGitProvidersData, getGitProviderDomain } from "../git-provider-factory.ts";
-import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, PUBLICATION_BRANCH_DEFAULT_NAME, GitProviderIndependentWebhookRequestData, PullRequestFetchResponse, PullRequestInfo, GitIssuesFetchResponse, GitIssueInfo, IssueState } from "../../git-provider-api.ts";
+import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, PUBLICATION_BRANCH_DEFAULT_NAME, GitProviderIndependentWebhookRequestData, PullRequestFetchResponse, PullRequestInfo } from "../../git-provider-api.ts";
 import { Scope } from "../../auth.ts";
 import { GitRestApiOperationError } from "../../error-definitions.ts";
 import { findPatAccessToken, GITHUB_USER_AGENT } from "../../git-utils.ts";
+import { GitIssueInfo, GitIssuesFetchResponse, IssueState } from "../../git-issues/git-issue-types.ts";
+import { dataspecerGitIssueLabels } from "../../git-issues/git-issue-labels.ts";
 
 
 const scopes = ["read:user", "user:email", "public_repo", "workflow", "delete_repo"] as const;
@@ -800,6 +802,42 @@ export class GitHubProvider extends GitProviderBase {
       issues: strippedIssues,
     }
   }
+
+  async createDataspecerIssueLabels(gitUrl: string, authToken: string): Promise<boolean> {
+    const repoOwner = this.extractPartOfRepositoryURL(gitUrl, "repository-owner");
+    const repoName = this.extractPartOfRepositoryURL(gitUrl, "repository-name");
+    const token: string | null = authToken ?? this.authenticationGitProviderData?.gitBotConfiguration?.dsBotAbsoluteGitProviderControlToken;
+
+    const responses: Promise<FetchResponse>[] = [];
+    for (const dataspecerLabel of Object.values(dataspecerGitIssueLabels)) {
+      const response = this.httpFetch(
+        `https://api.github.com/repos/${repoOwner}/${repoName}/labels`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/vnd.github+json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(dataspecerLabel),
+        }
+      );
+      responses.push(response);
+    }
+
+    const isOk = (status: number) => status >= 200 && status < 300;
+    const resolvedResponses = await Promise.all(responses);
+    const failedResponseIndex = resolvedResponses.findIndex(response => !isOk(response.status));
+
+    if (failedResponseIndex !== -1) {
+      const failedResponse = resolvedResponses[failedResponseIndex];
+      const error = await failedResponse.json();
+      throw new Error(`Failed to create ${dataspecerGitIssueLabels[failedResponseIndex]}: ${error}`);
+    }
+
+    return true;
+  }
+
 
   private async convertRestPrToDataspecerPr(pullRequest: any, token: string): Promise<PullRequestInfo> {
     const pullRequestMoreInfoResponse = await this.httpFetch(pullRequest.pull_request.url, {

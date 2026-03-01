@@ -4,9 +4,10 @@ import { AuthenticationGitProvidersData, gitProviderDomains } from "../git-provi
 import {
   CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType,
   GitCredentials, GitProviderEnum, GitRef, GitProviderIndependentWebhookRequestData,
-  PullRequestFetchResponse, GitIssuesFetchResponse, IssueState
+  PullRequestFetchResponse
 } from "../../git-provider-api.ts";
 import { Scope } from "../../auth.ts";
+import { GitIssuesFetchResponse, IssueState } from "../../git-issues/git-issue-types.ts";
 
 // Note that students for some reason there have max 10 repositories limit on school mff gitlab (idk if it is for creations a day or something)
 
@@ -277,6 +278,10 @@ export class GitLabProvider extends GitProviderBase {
   }
 
   getIssues(gitUrl: string, issueState: IssueState, page: number, perPage: number, authToken: string | null): Promise<GitIssuesFetchResponse> {
+    throw new Error("Method not implemented.");
+  }
+
+  createDataspecerIssueLabels(gitUrl: string, authToken: string): Promise<boolean> {
     throw new Error("Method not implemented.");
   }
 }
