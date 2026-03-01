@@ -23,14 +23,17 @@ type GitIssuesListDialogProps = {
  */
 export function GitIssuesListDialog({ gitUrl, isOpen, resolve }: GitIssuesListDialogProps) {
   // Sets the total item count when mounting and uses the PaginationComponent from the hook to render the pagination.
-  const { page, itemCountPerPage, setTotalItemCount, PaginationComponent } = usePaginationComponent();
+  const {
+    pageOnFrontend, trackedPageOnBackend, setIsLastPageBasedOnServerResponse, setTrackedPageOnBackend,
+    itemCountPerPage, setTotalItemCount, PaginationComponent
+  } = usePaginationComponent();
 
   const gitProvider: GitProvider = useMemo(() => {
     return GitProviderFactory.createGitProviderFromRepositoryURL(gitUrl, fetch, null);
   }, []);
 
   const [gitIssues, cannotUseGitIssues] = useAsyncMemo(async () => {
-    const issuesFetchUrl: string = import.meta.env.VITE_BACKEND + `/git/issues?gitUrl=${gitUrl}&issueState=${IssueState.Open}&page=${page}&perPage=${itemCountPerPage}`;
+    const issuesFetchUrl: string = import.meta.env.VITE_BACKEND + `/git/issues?gitUrl=${gitUrl}&issueState=${IssueState.Open}&page=${trackedPageOnBackend}&perPage=${itemCountPerPage}`;
 
     // Optimization - we start this request without await and handle it in the .then, this measn that we can move on to the other fetch while this one is being performed.
     const issueCountFetchUrl: string = import.meta.env.VITE_BACKEND + `/git/issue-total-count?gitUrl=${gitUrl}&issueState=${IssueState.Open}`;
@@ -54,8 +57,10 @@ export function GitIssuesListDialog({ gitUrl, isOpen, resolve }: GitIssuesListDi
       });
     const gitIssuesResponseData: GitIssuesFetchResponse = await issuesFetchResponse.json();
 
+    setTrackedPageOnBackend(gitIssuesResponseData.page);
+    setIsLastPageBasedOnServerResponse(gitIssuesResponseData.isLastPage);
     return gitIssuesResponseData.issues;
-  }, []);
+  }, [pageOnFrontend, itemCountPerPage]);
 
 
   return (

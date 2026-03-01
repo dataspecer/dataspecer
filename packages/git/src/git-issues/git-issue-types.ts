@@ -17,4 +17,9 @@ export type GitIssueInfo = {
 
 export type GitIssuesFetchResponse = {
   issues: GitIssueInfo[];
+  /**
+   * Since it may be possible that the page will be different than the one currently shown on frontend.
+   */
+  page: number;
+  isLastPage: boolean;
 };

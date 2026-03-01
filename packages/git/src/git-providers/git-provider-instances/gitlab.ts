@@ -281,7 +281,7 @@ export class GitLabProvider extends GitProviderBase {
     throw new Error("Method not implemented.");
   }
 
-  createDataspecerIssueLabels(gitUrl: string, authToken: string): Promise<boolean> {
+  createDataspecerIssueLabels(repoOwner: string, repoName: string, authToken: string): Promise<boolean> {
     throw new Error("Method not implemented.");
   }
 }

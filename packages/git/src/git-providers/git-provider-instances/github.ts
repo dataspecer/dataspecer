@@ -227,6 +227,8 @@ export class GitHubProvider extends GitProviderBase {
       // console.info({json: await pagesResponse.json()});
     }
 
+    await this.createDataspecerIssueLabels(repositoryOwner, repoName, authToken);
+
     return {
       response: fetchResponse,
       defaultBranch,
@@ -769,43 +771,64 @@ export class GitHubProvider extends GitProviderBase {
     const token: string | null = authToken ?? this.authenticationGitProviderData?.gitBotConfiguration?.dsBotAbsoluteGitProviderControlToken;
 
     const issueStateAsString = this.convertIssueStateEnumToStringForRequest(issueState);
-    const query = `?page=${page}&per_page=${perPage}&state=${issueStateAsString}`
+    while (true) {  // We are in while, because it is possible that the page will contain only pull requests and 0 issues.
+      const query = `?page=${page}&per_page=${perPage}&state=${issueStateAsString}`;
 
-    const response = await this.httpFetch(`https://api.github.com/repos/${repoOwner}/${repoName}/issues${query}`, {
-      headers: {
-        Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${token}`,
-        "X-GitHub-Api-Version": "2022-11-28",
-      },
-    });
+      const response = await this.httpFetch(`https://api.github.com/repos/${repoOwner}/${repoName}/issues${query}`, {
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${token}`,
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+      });
 
-    const isResponseOk = (status: number) => status >= 200 && status < 300;
-    if (!isResponseOk(response.status)) {
-      throw new Error(`GitHub API error when fetching Git issues: ${response.status}`);
-    }
 
-    const responseData: any = await response.json();
-    const strippedIssues: GitIssueInfo[] = responseData
-      .filter((issueOrPullRequest: any) => {
-        return issueOrPullRequest.pull_request === undefined;
-      })
-      .map(githubIssue => ({
-        title: githubIssue.title,
-        author: githubIssue.user.login,
-        urlToIssue: githubIssue.html_url,
-        labels: githubIssue.labels.map((label: any) => ({name: label.name, color: label.color})),
-        createdAt: githubIssue.created_at,
-        lastActivityAt: githubIssue.updated_at,
-      }));
+      const linkHeader = response.headers.get("link");
+      const isLastPage: boolean = linkHeader === undefined || !linkHeader.includes('rel="next"');
 
-    return {
-      issues: strippedIssues,
+      const isResponseOk = (status: number) => status >= 200 && status < 300;
+      if (!isResponseOk(response.status)) {
+        throw new Error(`GitHub API error when fetching Git issues: ${response.status}`);
+      }
+
+      const responseData: any = await response.json();
+      // kdyz 0 tak fetchnout znova - po tom filtru ale az
+      const onlyIssues: any[] = responseData
+        .filter((issueOrPullRequest: any) => {
+          return issueOrPullRequest.pull_request === undefined;
+        }
+      );
+      if (onlyIssues.length === 0) {
+        if (isLastPage) {
+          return {
+            issues: [],
+            page,
+            isLastPage,
+          };
+        }
+        page++;
+        continue;
+      }
+
+      const strippedIssues: GitIssueInfo[] = onlyIssues
+        .map(githubIssue => ({
+          title: githubIssue.title,
+          author: githubIssue.user.login,
+          urlToIssue: githubIssue.html_url,
+          labels: githubIssue.labels.map((label: any) => ({name: label.name, color: label.color})),
+          createdAt: githubIssue.created_at,
+          lastActivityAt: githubIssue.updated_at,
+        }));
+
+      return {
+        issues: strippedIssues,
+        page,
+        isLastPage,
+      };
     }
   }
 
-  async createDataspecerIssueLabels(gitUrl: string, authToken: string): Promise<boolean> {
-    const repoOwner = this.extractPartOfRepositoryURL(gitUrl, "repository-owner");
-    const repoName = this.extractPartOfRepositoryURL(gitUrl, "repository-name");
+  async createDataspecerIssueLabels(repoOwner: string, repoName: string, authToken: string): Promise<boolean> {
     const token: string | null = authToken ?? this.authenticationGitProviderData?.gitBotConfiguration?.dsBotAbsoluteGitProviderControlToken;
 
     const responses: Promise<FetchResponse>[] = [];

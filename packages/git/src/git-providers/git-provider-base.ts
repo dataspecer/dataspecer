@@ -60,7 +60,7 @@ export abstract class GitProviderBase implements GitProvider {
   abstract getIssues(gitUrl: string, issueState: IssueState, page: number, perPage: number, authToken: string | null): Promise<GitIssuesFetchResponse>;
   abstract convertIssueStateEnumToStringForRequest(issueState: IssueState): string;
   abstract getTotalIssueCount(gitUrl: string, issueState: IssueState, authToken: string | null): Promise<number>;
-  abstract createDataspecerIssueLabels(gitUrl: string, authToken: string): Promise<boolean>;
+  abstract createDataspecerIssueLabels(repoOwner: string, repoName: string, authToken: string): Promise<boolean>;
 
   /**
    * @param repositoryURLSplit is the repository URL split by "/", this is internal method used inside {@link extractPartOfRepositoryURL}.

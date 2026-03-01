@@ -6,22 +6,22 @@ type GitIssueLabel = {
 
 export const dataspecerGitIssueLabels: Readonly<Record<string, GitIssueLabel>> = {
   "cs": {
-    name: "CZ",
+    name: "cs",
     description: "Issue related to the Czech version of specification/documentation",
     color: "73da1a",
   },
   "en": {
-    name: "EN",
+    name: "en",
     description: "Issue related to the English version of specification/documentation",
     color: "c1ae1b",
   },
   "cme": {
-    name: "CME",
+    name: "cme",
     description: "Issue related to the visual models generated in Conceptual Model Editor (CME)",
     color: "814e70",
   },
   "structural-editor": {
-    name: "Structural editor",
+    name: "structural editor",
     description: "Issue related to the models modified using the Strucural editor",
     color: "cfe5b2",
   },

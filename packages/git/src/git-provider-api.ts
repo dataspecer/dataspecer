@@ -400,12 +400,12 @@ export interface GitProvider {
   getTotalIssueCount(gitUrl: string, issueState: IssueState, authToken: string | null): Promise<number>;
 
   /**
-   * Creates Dataspecer labels for issues in repository given by {@link gitUrl}. The labels can be seen at {@link dataspecerGitIssueLabels}.
+   * Creates Dataspecer labels for issues in repository, which is under {@link repoOwner} and is named {@link repoName}. The labels can be seen at {@link dataspecerGitIssueLabels}.
    * @param authToken is the PAT used for the requests to te Git provider.
    * @returns True if all labels were sucessfully created. Otherwise throws error.
    * @todo Now throws error if any of the labels fails to be created, ut maybe returning false is enough in future.
    */
-  createDataspecerIssueLabels(gitUrl: string, authToken: string): Promise<boolean>;
+  createDataspecerIssueLabels(repoOwner: string, repoName: string, authToken: string): Promise<boolean>;
 }
 
 /**
