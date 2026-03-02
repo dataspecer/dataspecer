@@ -74,7 +74,7 @@ export function GitIssuesListDialog({ gitUrl, isOpen, resolve }: GitIssuesListDi
           {
             cannotUseGitIssues ? <Loader className="mr-2 mt-1 h-4 w-4 animate-spin" /> :
             <div className=" w-full">
-              <div className="grid grid-cols-[4fr_2fr_2fr_3fr_3fr] divide-x divide-y border-gray-300 divide-gray-300 ml-4 pt-6 w-full">
+              <div className="grid grid-cols-[4fr_2fr_2fr_2fr_4fr] divide-x divide-y border-gray-300 divide-gray-300 ml-4 pt-6 w-full">
                 <div className="flex items-center justify-center border-gray-300">Title</div>
                 <div className="flex items-center justify-center">Created at</div>
                 <div className="flex items-center justify-center">Last activity at</div>
@@ -104,7 +104,7 @@ type GitIssueComponentProps = {
 }
 
 function GitIssueComponent({ gitIssueInfo }: GitIssueComponentProps) {
-  return <a href={gitIssueInfo.urlToIssue} className={"grid grid-cols-[4fr_2fr_2fr_3fr_3fr] divide-x divide-y divide-gray-300 pt-1 ml-4 w-full cursor-pointer hover:bg-gray-200"}>
+  return <a href={gitIssueInfo.urlToIssue} className={"grid grid-cols-[4fr_2fr_2fr_2fr_4fr] divide-x divide-y divide-gray-300 pt-1 ml-4 w-full cursor-pointer hover:bg-gray-200"}>
     <div className="flex justify-center items-center border-gray-300">{gitIssueInfo.title}</div>
     <div className="flex justify-center items-center">{new Date(gitIssueInfo.createdAt).toLocaleString()}</div>
     <div className="flex justify-center items-center">{new Date(gitIssueInfo.lastActivityAt).toLocaleString()}</div>
