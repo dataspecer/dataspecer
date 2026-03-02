@@ -698,7 +698,10 @@ export class GitHubProvider extends GitProviderBase {
     const repoName = this.extractPartOfRepositoryURL(gitUrl, "repository-name");
 
     const issueStateAsString = this.convertIssueStateEnumToStringForRequest(issueState);
-    const token: string | null = authToken ?? this.authenticationGitProviderData?.gitBotConfiguration?.dsBotAbsoluteGitProviderControlToken;
+    const token: string | null | undefined = authToken ?? this.authenticationGitProviderData?.gitBotConfiguration?.dsBotAbsoluteGitProviderControlToken;
+    if (token === null || token === undefined) {
+      throw new Error("Can not get total issue count, since there is not auth token to use");
+    }
     const issuesURL = `https://api.github.com/search/issues?q=repo:${repoOwner}/${repoName}+type:issue+state:${issueStateAsString}&page=1&per_page=1`
 
     const response = await this.httpFetch(issuesURL, {
@@ -718,7 +721,7 @@ export class GitHubProvider extends GitProviderBase {
     return responseData.total_count;
   }
 
-  async getOpenedPullRequests(gitUrl: string, branchToMatch: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse> {
+  async getOpenedPullRequestsForBranch(gitUrl: string, branchToMatch: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse> {
     // https://docs.github.com/en/rest/search/search?apiVersion=2022-11-28#search-issues-and-pull-requests
     // https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests#search-by-branch-name
     // Based on https://chatgpt.com/share/699f6225-7044-8011-80b7-3e4229ea2248
@@ -727,7 +730,11 @@ export class GitHubProvider extends GitProviderBase {
     const repoOwner = this.extractPartOfRepositoryURL(gitUrl, "repository-owner");
     const repoName = this.extractPartOfRepositoryURL(gitUrl, "repository-name");
 
-    const token: string | null = authToken ?? this.authenticationGitProviderData?.gitBotConfiguration?.dsBotAbsoluteGitProviderControlToken;
+    const token: string | null | undefined = authToken ?? this.authenticationGitProviderData?.gitBotConfiguration?.dsBotAbsoluteGitProviderControlToken;
+    if (token === null || token === undefined) {
+      throw new Error("Can not get pull requests, since there is not auth token to use");
+    }
+
     const urlMergeFrom = `https://api.github.com/search/issues?q=repo:${repoOwner}/${repoName}+is:pr+head:${branchToMatch}&per_page=${perPage}&page=${page}`;
     const urlMergeTo = `https://api.github.com/search/issues?q=repo:${repoOwner}/${repoName}+is:pr+base:${branchToMatch}&per_page=${perPage}&page=${page}`;
 
@@ -738,6 +745,7 @@ export class GitHubProvider extends GitProviderBase {
         "X-GitHub-Api-Version": "2022-11-28",
       },
     });
+    const isLastPageForMergeFrom: boolean = this.isLastPageBasedOnLinkHeader(responseMergeFrom);
 
     const responseMergeTo = await this.httpFetch(urlMergeTo, {
       headers: {
@@ -746,6 +754,7 @@ export class GitHubProvider extends GitProviderBase {
         "X-GitHub-Api-Version": "2022-11-28",
       },
     });
+    const isLastPageForMergeTo: boolean = this.isLastPageBasedOnLinkHeader(responseMergeTo);
 
     const isResponseOk = (status: number) => status >= 200 && status < 300;
     if (!isResponseOk(responseMergeFrom.status)) {
@@ -762,13 +771,17 @@ export class GitHubProvider extends GitProviderBase {
     return {
       pullRequests: await Promise.all(mergeData.map(async (pr: any) => await this.convertRestPrToDataspecerPr(pr, token))),
       totalPrCount: mergeFromData.total_count + mergeToData.total_count,
+      isLastPage: isLastPageForMergeFrom && isLastPageForMergeTo,
     };
   }
 
   async getIssues(gitUrl: string, issueState: IssueState, page: number, perPage: number, authToken: string | null): Promise<GitIssuesFetchResponse> {
     const repoOwner = this.extractPartOfRepositoryURL(gitUrl, "repository-owner");
     const repoName = this.extractPartOfRepositoryURL(gitUrl, "repository-name");
-    const token: string | null = authToken ?? this.authenticationGitProviderData?.gitBotConfiguration?.dsBotAbsoluteGitProviderControlToken;
+    const token: string | null | undefined = authToken ?? this.authenticationGitProviderData?.gitBotConfiguration?.dsBotAbsoluteGitProviderControlToken;
+    if (token === null || token === undefined) {
+      throw new Error("Can not get issues, since there is not auth token to use");
+    }
 
     const issueStateAsString = this.convertIssueStateEnumToStringForRequest(issueState);
     while (true) {  // We are in while, because it is possible that the page will contain only pull requests and 0 issues.
@@ -781,10 +794,7 @@ export class GitHubProvider extends GitProviderBase {
           "X-GitHub-Api-Version": "2022-11-28",
         },
       });
-
-
-      const linkHeader = response.headers.get("link");
-      const isLastPage: boolean = linkHeader === undefined || !linkHeader.includes('rel="next"');
+      const isLastPage: boolean = this.isLastPageBasedOnLinkHeader(response);
 
       const isResponseOk = (status: number) => status >= 200 && status < 300;
       if (!isResponseOk(response.status)) {
@@ -792,7 +802,6 @@ export class GitHubProvider extends GitProviderBase {
       }
 
       const responseData: any = await response.json();
-      // kdyz 0 tak fetchnout znova - po tom filtru ale az
       const onlyIssues: any[] = responseData
         .filter((issueOrPullRequest: any) => {
           return issueOrPullRequest.pull_request === undefined;
@@ -828,8 +837,17 @@ export class GitHubProvider extends GitProviderBase {
     }
   }
 
+  private isLastPageBasedOnLinkHeader(response: FetchResponse): boolean {
+    const linkHeader = response.headers.get("link");
+    const isLastPage: boolean = linkHeader === undefined || linkHeader === null || !linkHeader.includes('rel="next"');
+    return isLastPage;
+  }
+
   async createDataspecerIssueLabels(repoOwner: string, repoName: string, authToken: string): Promise<boolean> {
-    const token: string | null = authToken ?? this.authenticationGitProviderData?.gitBotConfiguration?.dsBotAbsoluteGitProviderControlToken;
+    const token: string | null | undefined = authToken ?? this.authenticationGitProviderData?.gitBotConfiguration?.dsBotAbsoluteGitProviderControlToken;
+    if (token === null || token === undefined) {
+      throw new Error("Can not create Dataspecer issue labels, since there is not auth token to use");
+    }
 
     const responses: Promise<FetchResponse>[] = [];
     for (const dataspecerLabel of Object.values(dataspecerGitIssueLabels)) {
