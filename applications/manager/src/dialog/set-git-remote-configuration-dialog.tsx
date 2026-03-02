@@ -131,11 +131,16 @@ export function SetGitRemoteConfigurationComponent({ configuration, requiredFiel
       idPrefix={gitRemoteConfigurationIdPrefix}
       idSuffix={suffixNumber++}
       label={t("git.configuration.publication-branch.title")}
-      tooltip={t("git.configuration.publication-branch.tooltip")}
+      TooltipComponent={<PublicationBranchTooltip/>}
       setInput={createSetterWithGitValidation(setPublicationBranchInConfig)} input={configuration.publicationBranch}
       requiredRefObject={requiredFieldsMap["publicationBranch"]}
     />
     <ExportFormatRadioButtons exportFormat={configuration.exportFormat} setExportFormat={setExportFormatInConfig} />
     <ExportVersionRadioButtons exportVersion={configuration.exportVersion} setExportVersion={setExportVersionInConfig} />
   </div>;
+}
+
+function PublicationBranchTooltip() {
+  const { t } = useTranslation();
+  return <div>{t("git.configuration.publication-branch.tooltip")}</div>;
 }

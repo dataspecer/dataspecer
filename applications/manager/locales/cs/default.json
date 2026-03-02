@@ -121,9 +121,6 @@
         "remote-url": "URL vzdáleného Git repozitáře",
         "advanced-settings": "Pokročilé nastavení"
       },
-      "tooltip": {
-        "repository-owner": "Jméno vlastníka, pod kterým bude repozitář vytvořen. Pokud je pole prázdné, použije se jméno bota."
-      },
       "radio": {
         "user-repository": "Uživatelský repozitář",
         "organization-repository": "Repozitář organizace"

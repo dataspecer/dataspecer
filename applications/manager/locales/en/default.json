@@ -121,9 +121,6 @@
         "remote-url": "Git remote repository URL",
         "advanced-settings": "Advanced settings"
       },
-      "tooltip": {
-        "repository-owner": "Name under which the repository should be created. If empty, bot name is used."
-      },
       "radio": {
         "user-repository": "User repository",
         "organization-repository": "Organization repository"

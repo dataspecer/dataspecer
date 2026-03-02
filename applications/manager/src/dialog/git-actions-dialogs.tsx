@@ -301,7 +301,6 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
           idPrefix={gitDialogInputIdPrefix}
           idSuffix={suffixNumber++}
           label={t("git.dialog.label.repository-owner")}
-          tooltip={t("git.dialog.tooltip.repository-owner")}
           TooltipComponent={<RepositoryOwnerTooltip/>}
           setInput={createSetterWithGitValidation(setUser)} input={user}
         />
