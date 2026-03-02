@@ -33,6 +33,7 @@ export function SetGitRemoteConfigurationDialog({ inputPackage, isOpen, resolve 
 
   const { requiredGitConfigFieldsMap } = useRequiredFieldsForGitConfig();
 
+  // ... ok fixnout refactor
   // TODO RadStr: Once again everything is kind of copy-pasted - refactor in the following commits
   const tryCloseWithSuccess = () => {
     const resolveAsNoParamsMethod = async () => {
@@ -40,14 +41,20 @@ export function SetGitRemoteConfigurationDialog({ inputPackage, isOpen, resolve 
 
       // TODO RadStr: It is kind of weird that there is no exported method with this functionality yet.
       const storeModelToBackend = async (iri: string, newPackageContent: object) => {
-        await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(iri), {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(newPackageContent),
-        });
-        toast.success(t("successfully saved"));
+        try {
+          await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(iri), {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(newPackageContent),
+          });
+          toast.success(t("successfully saved"));
+        }
+        catch (error) {
+          toast.error("Failed storing the new Git configuration to backend");
+          throw error;
+        }
       };
       await saveGitRemoteConfiguration(inputPackage.iri, rootPackageContent, gitRemoteConfiguration, storeModelToBackend);
       await requestLoadPackage(inputPackage.iri, true);
