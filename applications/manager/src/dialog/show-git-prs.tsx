@@ -118,9 +118,10 @@ export const GitPrsListDialog = ({ resources, branch, gitUrl, isOpen, resolve }:
             </div>
           }
         </ModalHeader>
-        {/* <ModalFooter>
+        <ModalFooter>
           <Button variant="outline" onClick={() => resolve(null)}>Close</Button>
-        </ModalFooter> */}
+          <Button variant="default" onClick={() => redirectToPage(gitProvider.getUrlToPRs(gitUrl))}>Visit page with PRs</Button>
+        </ModalFooter>
       </ModalContent>
     </Modal>
   );
