@@ -4,7 +4,7 @@ import { Package } from "@dataspecer/core-v2/project";
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { modifyPackageProjectData, modifyPackageRepresentsBranchHead, packageService, refreshRootPackage, requestLoadPackage, ResourcesContext } from "@/package";
-import { createIdentifierForHTMLElement, InputComponent } from "@/components/simple-input-component";
+import { createIdentifierForHTMLElement, InputComponent } from "@/components/input-component";
 import { toast } from "sonner";
 import { createSetterWithGitValidation, PACKAGE_ROOT } from "@dataspecer/git";
 import { resolveWithRequiredCheck } from "./git-actions-dialogs";

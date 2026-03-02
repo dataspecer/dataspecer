@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { BetterModalProps, useBetterModal } from "@/lib/better-modal";
-import { LockKeyholeIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import SetPrivateSSHKeyDialog from "./set-private-ssh";
 import { UseLoginType } from "@/hooks/use-login";
@@ -105,7 +104,7 @@ export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
           <ModalDescription>
             - At most one SSH key per account.
             <br/>
-            - The SSH will behave as be your primary access token.
+            - The SSH will behave as be your primary access token. If it fails the other available access tokens will be used.
             <br/>
             <p className="flex flex-1 flex-row">- The SSH key can be a deploy key <PopOverGitGeneralComponent><DeployKeyTooltip/></PopOverGitGeneralComponent></p>
             <p className="flex flex-1 flex-row">- Security concerns <PopOverGitGeneralComponent><SecurityTooltip/></PopOverGitGeneralComponent></p>
@@ -119,7 +118,6 @@ export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
               onClick={handleAddSSH}
             >
               <div className="flex">
-                <LockKeyholeIcon className="h-4 w-4 mt-0.5 mr-1" />
                 <p>Add private SSH key</p>
               </div>
             </Button>
@@ -149,5 +147,5 @@ function SecurityTooltip() {
 
 
 function DeployKeyTooltip() {
-  return <div>Deploy key is a key for committing to a single repository</div>;
+  return <div>Deploy key is a private SSH key for committing to a single repository</div>;
 }

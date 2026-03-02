@@ -4,7 +4,7 @@ import { Package } from "@dataspecer/core-v2/project";
 import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { modifyPackageProjectData, requestLoadPackage } from "@/package";
-import { createIdentifierForHTMLElement, InputComponent } from "@/components/simple-input-component";
+import { createIdentifierForHTMLElement, InputComponent } from "@/components/input-component";
 
 type SetProjectIriAndBranchDialogProps = {
   examinedPackage: Package;

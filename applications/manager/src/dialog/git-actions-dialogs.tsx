@@ -4,7 +4,7 @@ import { BetterModalProps, OpenBetterModal } from "@/lib/better-modal";
 import { RefObject, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { gitOperationResultToast } from "@/utils/utilities";
 import { requestLoadPackage } from "@/package";
-import { createIdentifierForHTMLElement, InputComponent } from "@/components/simple-input-component";
+import { createIdentifierForHTMLElement, InputComponent } from "@/components/input-component";
 import { Package } from "@dataspecer/core-v2/project";
 import { toast } from "sonner";
 import {
@@ -302,6 +302,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
           idSuffix={suffixNumber++}
           label={t("git.dialog.label.repository-owner")}
           tooltip={t("git.dialog.tooltip.repository-owner")}
+          TooltipComponent={<RepositoryOwnerTooltip/>}
           setInput={createSetterWithGitValidation(setUser)} input={user}
         />
         <div className="-mt-2 mb-8 flex items-center space-x-6">
@@ -431,6 +432,15 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
     </Modal>
   );
 };
+
+function RepositoryOwnerTooltip() {
+  return <div>
+    Name under which the repository should be created. If empty, bot name is used.
+    <br/>
+    For example https://github.com/torvalds/linux - "torvalds" is the owner, while "linux" is the name of the repository.
+  </div>;
+}
+
 
 export const createNewRemoteRepositoryHandler = async (t: TFunction<"translation", undefined>, openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
   // {@link DropdownMenuItem} has to be used in the tree, when it is part of another component, it is rendered incorrectly,

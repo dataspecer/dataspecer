@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { BetterModalProps } from "@/lib/better-modal";
 import { createSetterWithGitValidation, ExportFormatType, ExportVersionType, getGitRemoteConfigurationModelFromPackage, GitRemoteConfigurations, saveGitRemoteConfiguration } from "@dataspecer/git";
 import { resolveWithRequiredCheck, SetGitConfigurationReactStateType, setGitRemoteConfigurationStatePart } from "./git-actions-dialogs";
-import { InputComponent } from "@/components/simple-input-component";
+import { InputComponent } from "@/components/input-component";
 import { RefObject, useEffect, useState } from "react";
 import { Package } from "@dataspecer/core-v2/project";
 import { useRequiredFieldsForGitConfig } from "@/hooks/use-required-fields-for-git-config";
