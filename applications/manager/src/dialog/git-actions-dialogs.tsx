@@ -28,7 +28,7 @@ import { useTranslation } from "react-i18next";
 import { TFunction } from "i18next";
 import { SetGitRemoteConfigurationComponent } from "./set-git-remote-configuration-dialog";
 import { useRequiredFieldsForGitConfig } from "@/hooks/use-required-fields-for-git-config";
-import { ChevronsDownIcon, ChevronsUpIcon } from "lucide-react";
+
 
 /**
  * Checks if the {@link requiredFieldsRefs} are valid (non-empty). If so, the {@link resolve} method is called.
@@ -138,7 +138,6 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
 
   const { accountProvider, username, genericScope } = useLogin();
 
-  const [showMore, setShowMore] = useState<boolean>(false);
 
   const [repositoryName, setRepositoryName] = useState<string>(inputPackage.iri);
   const [remoteRepositoryURL, setRemoteRepositoryURL] = useState<string>("https://github.com/userName/repositoryName");
@@ -334,16 +333,9 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
           input={commitMessage}
           requiredRefObject={commitMessageInputFieldRef}
         />
-        {/* ---- COLLAPSIBLE SECTION ---- */}
-        <Button
-          variant="ghost"
-          className="mt-2 mb-2 p-0 text-sm"
-          onClick={() => setShowMore(!showMore)}
-        >
-          {showMore ? <ChevronsUpIcon /> : <ChevronsDownIcon />}
-          {t("git.dialog.label.advanced-settings")}:
-        </Button>
-        { (gitRemoteConfiguration === null || !showMore) ? null : <SetGitRemoteConfigurationComponent
+        <hr className="mt-2 -mb-2 h-1 bg-gray-300 border-0"></hr>
+        <div className="mt-3 font-semibold">Git configuration:</div>
+        { gitRemoteConfiguration === null ? null : <SetGitRemoteConfigurationComponent
                                                                     configuration={gitRemoteConfiguration!}
                                                                     setGitConfigurationReactState={setGitRemoteConfiguration}
                                                                     requiredFieldsMap={requiredGitConfigFieldsMap}
@@ -413,7 +405,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
 
   return (
     <Modal open={isOpen} onClose={() => resolve(null)}>
-      <ModalContent className="sm:max-w-[700px]!">
+      <ModalContent className="sm:max-w-[700px]! overflow-auto">
         <ModalHeader>
           <ModalTitle>{modalTitle}</ModalTitle>
           <ModalDescription>
