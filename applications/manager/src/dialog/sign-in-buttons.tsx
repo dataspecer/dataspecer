@@ -9,30 +9,40 @@ function SignInInfoTooltip() {
     <div>- The access token should be automatically revoked after you sign out.</div>
     <br/>
     <div>
-      - Choose the the <strong>Name + E-mail</strong> option to commit to a repository accessible by bot under your name.
-    </div>
-    <br/>
-    <div>
       - <strong>Once you sign-in</strong> you can also set your <strong>SSH key</strong> under your account.
     </div>
     <br/>
     <div>
+      - Choose the <strong>Name + E-mail</strong> option to either
+    </div>
+    <div>
+      &nbsp;&nbsp;&nbsp;- Commit and pull to repositories using your private SSH key.
+      <br/>
+      &nbsp;&nbsp;&nbsp;- Fetch issues, pull requests, Git history or similar stuff from the Git provider.
+      <br/>
+      &nbsp;&nbsp;&nbsp;- Commit under your name to repositories accessible by the Dataspecer bot.
+      <br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;You can think of a Dataspecer bot as a fallback Git user.
+    </div>
+    <br/>
+    <div>
       - Use the <strong>Name + E-mail + Git push scope</strong> if you want to <strong>create new repositories</strong> or <strong>commit</strong> to repositories to which you have access.
+      <br/>
+      &nbsp;&nbsp; This is the option you should usually pick.
     </div>
     <br/>
     <div>
       - Use the <strong>Delete</strong> rights if you are developer who is debugging Dataspecer's Git integration.
       <br/>
-      &nbsp;&nbsp;&nbsp;It is, of course, accessible to non-developers, but due to <strong>security concerns it is discouraged.</strong>
+      &nbsp;&nbsp;&nbsp;It is, of course, accessible to non-developers, but it is discouraged.
     </div>
     <br/>
     <div>- Note that the provided rights are for <strong>each repository you have access to</strong>.</div>
     <br/>
-    <br/>
     <div>
       - The access tokens are tried out until one succeeds in this order. Your SSH, your PAT, bot SSH, bot PAT
       <br/>
-      &nbsp;&nbsp;&nbsp;PAT = Personal Access Token
+      &nbsp;&nbsp;&nbsp;where PAT = Personal Access Token
     </div>
   </div>;
 }

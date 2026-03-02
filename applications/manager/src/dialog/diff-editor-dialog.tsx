@@ -204,16 +204,16 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
 function DiffEditorInfoPopOver() {
   return <div className="pt-1">
     <PopOverGitGeneralComponent>
-      <p>- This editor's purpose is to resolve the merge state by performing changes and marking conflicts as resolved.</p>
+      <p>- Diff Editor's purpose is to resolve the merge state by performing changes to models and marking conflicts as resolved.</p>
       <p>- The left component contains directory diff. The directory diff is visualized with regards to the editable window.</p>
       <p>- This means that:</p>
-      <p>&nbsp;&nbsp; - If file node is red, it means that the editable window does not have it.</p>
-      <p>&nbsp;&nbsp; - Similarly if green it means that it is present in the editable, but not in the other one.</p>
+      <p>&nbsp;&nbsp; - If node is red, then the editable window does not have it.</p>
+      <p>&nbsp;&nbsp; - Similarly if green then it is present in the editable, but not in the other one.</p>
       <p>- The merge actors are not changed in any way. This means that you have to manually do all the changes if needed.</p>
       <p>- The editable window is always on the right.</p>
       <p>- For pull and merge the editable windows are the "merge to" actors.</p>
       <p>- The push is reversed, that is the editable window is the "merge from" actor. This is same as in Git, since the "merge to" is the remote.</p>
-      <p>&nbsp;&nbsp; Therefore, we have to update the local (the merge from) and then we can perform the push.</p>
+      <p>&nbsp;&nbsp; Therefore, we have to update the local (the "merge from") to contain the changes from remote and then we can perform the push.</p>
     </PopOverGitGeneralComponent>
   </div>;
 }

@@ -1,5 +1,6 @@
 import { Modal, ModalBody, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { BetterModalProps } from "@/lib/better-modal";
 import { GitProviderNamesAsType } from "@dataspecer/git";
 import { FormEventHandler, useState } from "react";
@@ -71,7 +72,7 @@ export default function SetPrivateSSHKeyDialog({ isOpen, resolve }: SetPrivateSS
         </ModalHeader>
         <ModalBody>
           <form id="send-private-ssh-key-form" onSubmit={handleSubmit} >
-            <input
+            <Input
               type="password"
               className="w-full grow"
               value={privateSSHKey}

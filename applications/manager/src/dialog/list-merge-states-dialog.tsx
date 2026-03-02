@@ -158,8 +158,8 @@ function MergeStateListTooltip() {
     <br/>
     - From user perspective it means, that the user should double check the changes were performed by them and not somebody else.
     <br/>
-    - Note that user should double check the modification time even if it is not red, to be sure that somebody else did not modify the entry from diff editor
+    - Note that user should double check the modification time even if it is not red, to be sure that somebody else did not modify the entry from the diff editor.
     <br/>
-    - When entry is read it means on a technical level it means that the diff tree will be recomputed when fetched.
+    - When entry is red it means, on a technical level, that the diff tree will be recomputed when fetched.
   </div>;
 }

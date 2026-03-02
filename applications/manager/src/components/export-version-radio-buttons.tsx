@@ -15,7 +15,7 @@ export const ExportVersionRadioButtons = (props: ExportVersionRadioButtonsProps)
 
   return (
     <div className="grid grid-cols-[1fr_1.5fr] mb-4 items-center space-x-6">
-      <span className="flex flex-1 flex-row text-sm">{t("git.choose-an-export-version")}:
+      <span className="flex flex-1 flex-row text-sm">{t("git.choose-an-export-version")}
         <div className="">
           <PopOverGitGeneralComponent>
             <RepositoryExportVersionTooltip/>
@@ -54,7 +54,7 @@ function RepositoryExportVersionTooltip() {
   return <div>
     &nbsp; - The old version maps packages to directories and the models are put as files within the specific package.
     <br/>
-    &nbsp; - The new version is more structured. It still holds true that models are files, which are inside directories that were packages.
+    &nbsp; - The new version is more structured. It still holds true that models are files, which are inside directories that map to packages.
     <br/>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - The structure comes from the fact the models are put to a directory based on a type of the model.
     <br/>

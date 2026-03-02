@@ -15,7 +15,7 @@ export const ExportFormatRadioButtons = (props: ExportFormatRadioButtonsProps) =
 
   return (
     <div className="grid grid-cols-[1fr_1.5fr] mt-4 items-center justify-between space-x-6">
-      <span className="flex flex-1 flex-row text-sm">{t("git.choose-an-export-format")}:
+      <span className="flex flex-1 flex-row text-sm">{t("git.choose-an-export-format")}
         <div className="">
           <PopOverGitGeneralComponent>
             <RepositoryExportFormatTooltip/>
@@ -51,7 +51,7 @@ export const ExportFormatRadioButtons = (props: ExportFormatRadioButtonsProps) =
 
 function RepositoryExportFormatTooltip() {
   return <div>
-    The format  in which will be the models exported to Git. Also the diff editor shows the models in this format.
+    The format in which will be the models exported to Git. Also the diff editor shows the models in this format.
     <br/>
     &nbsp;- JSON is well-tested and the default for the rest of Dataspecer. Therefore, it is recommended.
     <br/>
