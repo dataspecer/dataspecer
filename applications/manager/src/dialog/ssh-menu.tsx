@@ -7,6 +7,7 @@ import { GitProviderNamesAsType } from "@dataspecer/git";
 import { toast } from "sonner";
 import { Modal, ModalBody, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@/components/modal";
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
+import { MinusIcon, PlusIcon } from "lucide-react";
 
 type SshMenuProps = {
   login: UseLoginType;
@@ -106,8 +107,9 @@ export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
             <br/>
             - The SSH will behave as be your primary access token. If it fails the other available access tokens will be used.
             <br/>
-            <p className="flex flex-1 flex-row">- The SSH key can be a deploy key <PopOverGitGeneralComponent><DeployKeyTooltip/></PopOverGitGeneralComponent></p>
-            <p className="flex flex-1 flex-row">- Security concerns <PopOverGitGeneralComponent><SecurityTooltip/></PopOverGitGeneralComponent></p>
+            - SSH can be only used for pull and committing, but not Git providers specifics, such as creating new repository or fetching issues.
+            <p className="flex flex-1 flex-row">- The SSH key can be a deploy key<PopOverGitGeneralComponent><DeployKeyTooltip/></PopOverGitGeneralComponent></p>
+            <p className="flex flex-1 flex-row -mt-4">- Security<PopOverGitGeneralComponent><SecurityTooltip/></PopOverGitGeneralComponent></p>
           </ModalDescription>
         </ModalHeader>
         <ModalBody>
@@ -118,6 +120,7 @@ export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
               onClick={handleAddSSH}
             >
               <div className="flex">
+                <PlusIcon className="w-4 h-4 mt-1 mr-1" />
                 <p>Add private SSH key</p>
               </div>
             </Button>
@@ -125,6 +128,7 @@ export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
             {!hasSsh ?
               null :
               <Button variant="ghost" className="border hover:bg-red-100" onClick={handleRemoveSSH}>
+                <MinusIcon className="w-4 h-4 mt-1 mr-1" />
                 Remove private SSH key
               </Button>
             }
