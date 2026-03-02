@@ -140,7 +140,7 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri
           <span className="truncate w-[6cm]">
             {getValidTime(resource.metadata?.modificationDate) && t("changed", {val: new Date(resource.metadata?.modificationDate!)})}
           </span>
-          <span className="truncate">
+          <span className="truncate w-[5cm]">
             {resource.iri}
           </span>
           {
@@ -162,7 +162,7 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri
           {!isGitUrlSet(resource.linkedGitRepositoryURL) ?
             null :
             <>
-              <span className="truncate px-2 w-[2cm]">
+              <span className="truncate px-2 w-[2.5cm]">
                 {resource.projectIri}
               </span>
               <span className="truncate px-2 w-[4cm]">
@@ -268,22 +268,39 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri
       }
 
       {/* Git actions */}
-
+      {/* Git show actions */}
+      { (resource.types.includes(LOCAL_PACKAGE) && parentIri === PACKAGE_ROOT) ?
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="shrink-0" disabled={!hasSetRemoteRepository}>
+              <EllipsisVertical className="h-4 w-4" /><p className="text-xs">Git<sup>S</sup></p>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {hasSetRemoteRepository && <DropdownMenuItem asChild><a href={!hasSetRemoteRepository ? "" : GitProviderFactory.createGitProviderFromRepositoryURL(resource.linkedGitRepositoryURL, fetch, {}).getGitPagesURL(resource.linkedGitRepositoryURL)}><Eye className="mr-2 h-4 w-4" />Visit the remote repository GitHub pages</a></DropdownMenuItem>}
+            {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>}
+            {hasSetRemoteRepository && <hr className="border-gray-300" />}
+            {hasSetRemoteRepository && resource.representsBranchHead && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialog, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: resource.branch})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Opened Pull Requests</DropdownMenuItem>}
+            {hasSetRemoteRepository && resource.representsBranchHead && <DropdownMenuItem onClick={async () => openModal(GitIssuesListDialog, {gitUrl: resource.linkedGitRepositoryURL})}><Eye className="mr-2 h-4 w-4" />Opened issues</DropdownMenuItem>}
+            {hasSetRemoteRepository && <hr className="border-gray-300" />}
+            {hasSetRemoteRepository && <DropdownMenuItem onClick={() => openModal(ListMergeStatesDialog, { iri })}><EyeIcon className="mr-2 h-4 w-4" /> Show merge states</DropdownMenuItem>}
+            {hasSetRemoteRepository && <DropdownMenuItem onClick={() => setPackageGitFilter(resource.projectIri)}><Filter className="mr-2 h-4 w-4" />Show Same Repository Projects</DropdownMenuItem>}
+          </DropdownMenuContent>
+        </DropdownMenu> :
+        null
+      }
+      {/* Git perform actions */}
       { (resource.types.includes(LOCAL_PACKAGE) && parentIri === PACKAGE_ROOT) ?
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="shrink-0">
-              <EllipsisVertical className="h-4 w-4" /><p className="text-xs">Git</p>
+              <EllipsisVertical className="h-4 w-4" /><p className="text-xs">Git<sup>A</sup></p>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             {/* TODO RadStr: Just for debugging ! */}
             {hasSetRemoteRepository && <DropdownMenuItem onClick={() => debugClearMergeStateDBTable()}><ShieldQuestion className="mr-2 h-4 w-4" />DEBUG - Clear merge db state table</DropdownMenuItem>}
             {hasSetRemoteRepository && <DropdownMenuItem title="Compares current package state with the Git remote and sets if it is up to date or not. This is because the uncommitted changes tag is sometimes wrong, since for performance reasons we can not compare the current content to Git for any change. Therefore the 'has uncommitted changes' tag marks the fact that there was change between last commit and now. Even if you reversed the change, therefore now there is not any." onClick={() => trySetPackageAsUpToDate(resource.iri)}><TimerResetIcon className="mr-2 h-4 w-4" />Try to set as up to date</DropdownMenuItem>}
-            {hasSetRemoteRepository && <DropdownMenuItem asChild><a href={!hasSetRemoteRepository ? "" : GitProviderFactory.createGitProviderFromRepositoryURL(resource.linkedGitRepositoryURL, fetch, {}).getGitPagesURL(resource.linkedGitRepositoryURL)}><Eye className="mr-2 h-4 w-4" />Visit the remote repository GitHub pages</a></DropdownMenuItem>}
-            {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>}
-            {hasSetRemoteRepository && resource.representsBranchHead && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialog, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: resource.branch})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Opened Pull Requests</DropdownMenuItem>}
-            {hasSetRemoteRepository && resource.representsBranchHead && <DropdownMenuItem onClick={async () => openModal(GitIssuesListDialog, {gitUrl: resource.linkedGitRepositoryURL})}><Eye className="mr-2 h-4 w-4" />Opened issues</DropdownMenuItem>}
             {hasSetRemoteRepository && <hr className="border-gray-300" />}
             {<DropdownMenuItem onClick={async () => createNewRemoteRepositoryHandler(t, openModal, iri, resource)}><GitPullRequestIcon className="mr-2 h-4 w-4" />Create remote repository</DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => linkToExistingGitRepositoryHandler(t, openModal, iri, resource)}><Link className="mr-2 h-4 w-4" />Link to remote repository</DropdownMenuItem>}
@@ -291,12 +308,10 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri
             {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => manualPull(t, iri)}><Import className="mr-2 h-4 w-4" />Pull</DropdownMenuItem>}
             {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => openModal(SetGitRemoteConfigurationDialog, {inputPackage: resource})}><Pencil className="mr-2 h-4 w-4" />Set Git configuration</DropdownMenuItem>}
             {hasSetRemoteRepository && <hr className="border-gray-300" />}
-            {hasSetRemoteRepository && <DropdownMenuItem onClick={() => openModal(ListMergeStatesDialog, { iri })}><EyeIcon className="mr-2 h-4 w-4" /> Show merge states</DropdownMenuItem>}
             {hasSetRemoteRepository && <DropdownMenuItem onClick={() => openModal(CreateNewBranchDialog, { sourcePackage: resource, actionOnConfirm: BranchAction.CreateNewBranch })}><GitBranchPlus className="mr-2 h-4 w-4" />Create branch</DropdownMenuItem>}
             {hasSetRemoteRepository && <DropdownMenuItem onClick={createMergeStateAction}><GitMerge className="mr-2 h-4 w-4"/>Merge - Choose merge from</DropdownMenuItem>}
             {hasSetRemoteRepository && <hr className="border-gray-300" />}
             {hasSetRemoteRepository && <DropdownMenuItem onClick={() => switchRepresentsBranchHead(resource, openModal)}><ArrowLeftRight className="mr-2 h-4 w-4" /> Convert to {resource.representsBranchHead ? "tag" : "branch"}</DropdownMenuItem>}
-            {hasSetRemoteRepository && <DropdownMenuItem onClick={() => setPackageGitFilter(resource.projectIri)}><Filter className="mr-2 h-4 w-4" />Show Same Repository Projects</DropdownMenuItem>}
             {hasSetRemoteRepository && <hr className="border-gray-300" />}
             {hasSetRemoteRepository && <DropdownMenuItem className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={() => openModal(DeleteGitRepoDialog, {iri, gitUrl: resource.linkedGitRepositoryURL})}><Trash2 className="mr-2 h-4 w-4" />Delete Git repository</DropdownMenuItem>}
           </DropdownMenuContent>
