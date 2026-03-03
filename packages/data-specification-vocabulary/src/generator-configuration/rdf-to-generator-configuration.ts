@@ -1,7 +1,7 @@
 import type { Quad } from "@rdfjs/types";
 import { DataFactory, Parser, Store } from "n3";
 import { GENERATOR_CONFIGURATION_DSV, GENERATOR_CONFIGURATION_DUMP_BASE_IRI } from "./vocabulary.ts";
-import { RDF } from "../vocabulary.ts";
+import { RDF } from "../semantic-model/vocabulary.ts";
 
 const IRI = DataFactory.namedNode;
 

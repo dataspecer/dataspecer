@@ -9,7 +9,7 @@ import {
   PropertyValueReuse,
   ObjectPropertyProfile,
   DatatypePropertyProfile,
-} from "@dataspecer/data-specification-vocabulary";
+} from "@dataspecer/data-specification-vocabulary/semantic-model";
 import {
   OwlClass,
   OwlOntology,

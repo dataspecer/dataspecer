@@ -1,6 +1,6 @@
 import type { NamedNode } from "@rdfjs/types";
 import { DataFactory, Writer } from "n3";
-import { RDF } from "../vocabulary.ts";
+import { RDF } from "../semantic-model/vocabulary.ts";
 import { GENERATOR_CONFIGURATION_DSV, GENERATOR_CONFIGURATION_DUMP_BASE_IRI } from "./vocabulary.ts";
 
 const IRI = DataFactory.namedNode;

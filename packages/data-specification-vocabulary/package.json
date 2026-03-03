@@ -11,7 +11,7 @@
     "test:watch": "vitest"
   },
   "exports": {
-    ".": "./lib/index.js",
+    "./semantic-model": "./lib/semantic-model/index.js",
     "./generator-configuration": "./lib/generator-configuration/index.js",
     "./specification-description": "./lib/specification-description/index.js",
     "./structure-model": "./lib/structure-model/index.js"

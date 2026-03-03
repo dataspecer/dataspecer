@@ -1,4 +1,4 @@
-import { RequirementLevel } from "@dataspecer/data-specification-vocabulary";
+import { RequirementLevel } from "@dataspecer/data-specification-vocabulary/semantic-model";
 
 type IRI = string;
 
