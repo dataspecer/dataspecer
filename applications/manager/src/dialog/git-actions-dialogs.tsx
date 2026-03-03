@@ -334,7 +334,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
           input={commitMessage}
           requiredRefObject={commitMessageInputFieldRef}
         />
-        <hr className="mt-2 -mb-2 h-1 bg-gray-300 border-0"></hr>
+        <hr className="mt-9 -mb-2 h-1 bg-gray-400 border-0"></hr>
         <div className="mt-3 font-semibold">Git configuration:</div>
         { gitRemoteConfiguration === null ? null : <SetGitRemoteConfigurationComponent
                                                                     configuration={gitRemoteConfiguration!}
@@ -406,7 +406,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
 
   return (
     <Modal open={isOpen} onClose={() => resolve(null)}>
-      <ModalContent className="sm:max-w-[700px]! overflow-auto">
+      <ModalContent className="sm:max-w-[700px]! max-h-[95%] overflow-auto">
         <ModalHeader>
           <ModalTitle>{modalTitle}</ModalTitle>
           <ModalDescription>
@@ -427,9 +427,12 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
 
 function RepositoryOwnerTooltip() {
   return <div>
-    Name under which the repository should be created. If empty, bot name is used.
+    Example: https://github.com/torvalds/linux - "torvalds" is the owner, while "linux" is the name of the repository.
     <br/>
-    For example https://github.com/torvalds/linux - "torvalds" is the owner, while "linux" is the name of the repository.
+    <br/>
+    Owner is the name under which the repository should be created. If empty, bot name is used. You can think of a Dataspecer bot as a fallback user.
+    <br/>
+    &nbsp;&nbsp; Note that certain Dataspecer instances may not have the bot set up.
   </div>;
 }
 

@@ -87,7 +87,7 @@ export function SetGitRemoteConfigurationDialog({ inputPackage, isOpen, resolve 
         <ModalHeader>
           <ModalTitle>Set new Git configuration</ModalTitle>
           <ModalDescription>
-            Note that the values after opening the dialogs are the current ones.
+            The listed values are taken from the Git configuration.
           </ModalDescription>
         </ModalHeader>
         <ModalBody>

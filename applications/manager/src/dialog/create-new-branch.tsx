@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { createSetterWithGitValidation, PACKAGE_ROOT } from "@dataspecer/git";
 import { resolveWithRequiredCheck } from "./git-actions-dialogs";
 import { createCloseDialogObject, LoadingDialog } from "./loading-dialog";
+import { CREATE_NEW_BRANCH_WAIT_TIME } from "@/utils/git-wait-times";
 
 
 export enum BranchAction {
@@ -71,7 +72,8 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
       setShouldHideDialog(true);
       openModal(LoadingDialog, {
         dialogTitle: "Creating new branch in Dataspecer. Do not forget to push it to the remote after you are done.",
-        waitingText: "TODO RadStr: Add estimated wait time",
+        waitingText: null,
+        waitTime: CREATE_NEW_BRANCH_WAIT_TIME,
         setCloseDialogAction: closeDialogObject.setCloseDialogAction,
         shouldShowTimer: true,
       });

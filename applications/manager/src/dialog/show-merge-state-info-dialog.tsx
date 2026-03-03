@@ -55,6 +55,8 @@ export const ShowMergeStateInfoDialog = ({ mergeState, setIsInfoDialogShown, isO
               </div>
             )}
             <br/>
+            <strong>DiffTree created at:</strong> {new Date(mergeState.createdAt).toLocaleString()}
+            <br/>
             <strong>DiffTree modified at:</strong> {new Date(mergeState.modifiedDiffTreeAt).toLocaleString()}
             <br/>
 

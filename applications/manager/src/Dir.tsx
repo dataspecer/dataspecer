@@ -106,7 +106,7 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri
       modalDescription: "Choose branch (or commit) to merge from",
       resources: resources,
       resourcesFilter: (r: ResourceWithIris) => (r.iri !== resource.iri && resource.linkedGitRepositoryURL !== "" && r?.linkedGitRepositoryURL === resource.linkedGitRepositoryURL),
-      noEntriesDialogText: "⚠️ There are no other branches (or commits) to merge from.",
+      noEntriesDialogText: "⚠️ There are no other branches (or commits) in Dataspecer to merge from.",
       comboboxEntryTextGetter: (r: ResourceWithIris) => `${r?.branch}`}
     );
     if (mergeFrom === null) {
@@ -118,6 +118,14 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri
       editable: "mergeTo"
     });
   };
+
+  const tooltipForSetUpToDateMenuItem = `Compares current package state with the Git remote and sets if it is up to date or not.
+
+This is because the uncommitted changes tag is sometimes wrong, since for performance reasons we can not compare the current package content to Git content for any change.
+
+Therefore the 'has uncommitted changes' tag marks the fact that there occurred any change between last commit and now.
+
+This means that the tag may say that there was change even though the change may have already been reversed.`;
 
   return <li className="first:border-y last:border-none border-b">
     <div className="flex items-center space-x-4 hover:bg-accent">
@@ -300,7 +308,7 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri
           <DropdownMenuContent>
             {/* TODO RadStr: Just for debugging ! */}
             {hasSetRemoteRepository && <DropdownMenuItem onClick={() => debugClearMergeStateDBTable()}><ShieldQuestion className="mr-2 h-4 w-4" />DEBUG - Clear merge db state table</DropdownMenuItem>}
-            {hasSetRemoteRepository && <DropdownMenuItem title="Compares current package state with the Git remote and sets if it is up to date or not. This is because the uncommitted changes tag is sometimes wrong, since for performance reasons we can not compare the current content to Git for any change. Therefore the 'has uncommitted changes' tag marks the fact that there was change between last commit and now. Even if you reversed the change, therefore now there is not any." onClick={() => trySetPackageAsUpToDate(resource.iri)}><TimerResetIcon className="mr-2 h-4 w-4" />Try to set as up to date</DropdownMenuItem>}
+            {hasSetRemoteRepository && <DropdownMenuItem title={tooltipForSetUpToDateMenuItem} onClick={() => trySetPackageAsUpToDate(resource.iri)}><TimerResetIcon className="mr-2 h-4 w-4" />Try to set as up to date</DropdownMenuItem>}
             {hasSetRemoteRepository && <hr className="border-gray-300" />}
             {<DropdownMenuItem onClick={async () => createNewRemoteRepositoryHandler(t, openModal, iri, resource)}><GitPullRequestIcon className="mr-2 h-4 w-4" />Create remote repository</DropdownMenuItem>}
             {<DropdownMenuItem onClick={async () => linkToExistingGitRepositoryHandler(t, openModal, iri, resource)}><Link className="mr-2 h-4 w-4" />Link to remote repository</DropdownMenuItem>}

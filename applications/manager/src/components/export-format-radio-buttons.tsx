@@ -15,7 +15,7 @@ export const ExportFormatRadioButtons = (props: ExportFormatRadioButtonsProps) =
 
   return (
     <div className="grid grid-cols-[1fr_1.5fr] mt-4 items-center justify-between space-x-6">
-      <span className="flex flex-1 flex-row text-sm">{t("git.choose-an-export-format")}
+      <span className="flex flex-1 flex-row text-sm">{t("git.choose-an-export-format")}&nbsp;
         <div className="">
           <PopOverGitGeneralComponent>
             <RepositoryExportFormatTooltip/>
@@ -55,8 +55,8 @@ function RepositoryExportFormatTooltip() {
     <br/>
     &nbsp;- JSON is well-tested and the default for the rest of Dataspecer. Therefore, it is recommended.
     <br/>
-    &nbsp;- YAML may be slightly more friendly for diff viewing experience. However, YAML is experimental. Therefore, there may be possible errors, that were not discovered during testing.
+    &nbsp;- YAML may be slightly more friendly for diff viewing experience. However, the implementation is experimental with no guarantee of being bug-free.
     <br/>
-    (From a software perspective we are still working with JSON in Dataspecer, this format only affects the Git export and diff editor)
+    (From a software perspective we are still working with JSON within Dataspecer, this format only affects the Git export and the diff editor)
   </div>;
 }
