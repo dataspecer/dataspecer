@@ -141,6 +141,7 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
   // if I put it inside the JSX tree in this component, it does not update on react change
   const [gitGraphElement, setGitGraphElement] = useState<React.ReactNode | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [commitCount, setCommitCount] = useState<number>(0);
   const openModal = useBetterModal();
 
   // This is used, so we can hide the dialog when we show another one. We could also close it completely. But getting the git log from backend is not so cheap operation.
@@ -168,6 +169,7 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
         .then((res) => res.json())
         .then((data: FetchedGitRawHistory) => {
           const convertedCommits = convertFetchedCommitsFormat(data.rawCommits);
+          setCommitCount(convertedCommits.length);
 
           const gitGraphTemplate = templateExtend(TemplateName.Metro, {
             commit: {
@@ -213,10 +215,13 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
   }, []);
 
 
+  // The isLoading min is there when we go back from the dialog with actions on the commit, otherwise there is a small empty dialog for a moment
+  // The if is there because for small numer of commits there is too much empty space
+  const classNameSizeBasedOnCommitCount = isLoading ? "" : ` min-w-[90%]! ${commitCount < 8 ? "min-h-[40%]!" : "min-h-[90%]!"}`;
+
   return (
     <Modal open={!shouldHideDialog && isOpen} onClose={() => resolve(null)}>
-      {/* The isLoading min is there when we go back from the dialog with actions on the commit, otherwise there is a small empty dialog for a moment */}
-      <ModalContent className={(shouldHideDialog ? "hidden" : "max-w-[90%]!") + (isLoading ? "" : " min-w-[90%] min-h-[90%]")}>
+      <ModalContent className={(shouldHideDialog ? "hidden" : "max-w-[90%]!") + classNameSizeBasedOnCommitCount}>
         <ModalHeader>
           <ModalTitle>Project history in Git</ModalTitle>
           <ModalDescription>

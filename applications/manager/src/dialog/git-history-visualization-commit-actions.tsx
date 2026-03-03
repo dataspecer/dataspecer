@@ -118,8 +118,8 @@ export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitH
           </ModalDescription>
         </ModalHeader>
         <ModalFooter>
-          <Button variant="outline" onClick={handleImportGitCommitToDS} disabled={isPerformingAction}>Import static commit to DS</Button>
-          {branch !== null && !branchAlreadyExistsInDS && <Button variant="outline" onClick={handleImportGitBranchToDS} disabled={isPerformingAction}>Import branch to DS</Button>}
+          <Button variant="outline" className="bg-blue-400 hover:bg-blue-600" onClick={handleImportGitCommitToDS} disabled={isPerformingAction}>Import static commit to DS</Button>
+          {branch !== null && !branchAlreadyExistsInDS && <Button className="bg-green-500 hover:bg-green-700" variant="outline" onClick={handleImportGitBranchToDS} disabled={isPerformingAction}>Import branch to DS</Button>}
           <Button variant="outline" onClick={handleRedirect} disabled={isPerformingAction}>View commit in Git remote</Button>
         </ModalFooter>
       </ModalContent>

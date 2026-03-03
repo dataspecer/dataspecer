@@ -207,8 +207,10 @@ function DiffEditorInfoPopOver() {
       <p>- Diff Editor's purpose is to resolve the merge state by performing changes to models and marking conflicts as resolved.</p>
       <p>- The left component contains directory diff. The directory diff is visualized with regards to the editable window.</p>
       <p>- This means that:</p>
-      <p>&nbsp;&nbsp; - If node is red, then the editable window does not have it.</p>
-      <p>&nbsp;&nbsp; - Similarly if green then it is present in the editable, but not in the other one.</p>
+      <p>&nbsp;&nbsp; - Red node - It is NOT present in the editable window.</p>
+      <p>&nbsp;&nbsp; - Green node - It is present in the editable window. And not in the other one.</p>
+      <p>&nbsp;&nbsp; - Blue node - Present in both, but they differ.</p>
+      <p>&nbsp;&nbsp; - Otherwise - Same value in both.</p>
       <p>- The merge actors are not changed in any way. This means that you have to manually do all the changes if needed.</p>
       <p>- The editable window is always on the right.</p>
       <p>- For pull and merge the editable windows are the "merge to" actors.</p>
