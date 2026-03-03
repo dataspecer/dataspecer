@@ -347,8 +347,7 @@ describe("semanticModelsToShacl", () => {
       { baseIri: "http://example/shacl.ttl" });
 
     // This should produce only one SHACL shape.
-
-    console.log("https://github.com/dataspecer/dataspecer/issues/1377\n", shacl);
+    expect(shacl.members.length).toBe(1);
 
   });
 

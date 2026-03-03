@@ -21,7 +21,18 @@ describe("applyNoClassConstraint", () => {
         closed: false,
         seeAlso: "http://localhost/does-not-matter",
         targetClass: "http://example.com/vocabulary#object",
-        propertyShapes: [],
+        propertyShapes: [{
+          iri: "",
+          seeAlso: null,
+          description: null,
+          name: null,
+          nodeKind: null,
+          path: "",
+          minCount: null,
+          maxCount: null,
+          datatype: null,
+          class: "http://to-be-removed",
+        }],
       }]
     };
 
@@ -29,7 +40,7 @@ describe("applyNoClassConstraint", () => {
 
     const actual = applyNoClassConstraint(input);
 
-    expect(actual.members[0].targetClass).toBe(null);
+    expect(actual.members[0].propertyShapes[0].class).toBe(null);
 
   });
 

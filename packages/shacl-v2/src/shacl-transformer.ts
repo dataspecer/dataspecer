@@ -13,9 +13,12 @@ import {
 export function applyNoClassConstraint(shacl: ShaclModel): ShaclModel {
   return {
     iri: shacl.iri,
-    members: shacl.members.map(node => ({
-      ...node,
-      targetClass: null,
+    members: shacl.members.map(shape => ({
+      ...shape,
+      propertyShapes: shape.propertyShapes.map(propertyShape => ({
+        ...propertyShape,
+        class: null,
+      }))
     })),
   };
 }
