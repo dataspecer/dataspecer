@@ -28,6 +28,7 @@ import { useTranslation } from "react-i18next";
 import { TFunction } from "i18next";
 import { SetGitRemoteConfigurationComponent } from "./set-git-remote-configuration-dialog";
 import { useRequiredFieldsForGitConfig } from "@/hooks/use-required-fields-for-git-config";
+import { CREATE_REPOSITORY_WAIT_TIME, GIT_COMMIT_WAIT_TIME, MERGE_COMMIT_WAIT_TIME } from "@/utils/git-wait-times";
 
 
 /**
@@ -439,12 +440,15 @@ export const createNewRemoteRepositoryHandler = async (t: TFunction<"translation
   const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage: null, type: "create-new-repository-and-commit", shouldShowAlwaysCreateMergeStateOption: null });
   if (result) {
     const closeDialogObject = createCloseDialogObject();
-    openModal(LoadingDialog, {
-      dialogTitle: "git.loading.create-repository.title",
-      waitingText: "git.loading.create-repository.wait",
-      setCloseDialogAction: closeDialogObject.setCloseDialogAction,
-      shouldShowTimer: true,
-    });
+    setTimeout(() => {
+      openModal(LoadingDialog, {
+        dialogTitle: "git.loading.create-repository.title",
+        waitingText: null,
+        waitTime: CREATE_REPOSITORY_WAIT_TIME,
+        setCloseDialogAction: closeDialogObject.setCloseDialogAction,
+        shouldShowTimer: true,
+      });
+    }, 20);
     try {
       const response = await createNewRemoteRepositoryRequest(iri, result);
       closeDialogObject.closeDialogAction();
@@ -490,7 +494,8 @@ export const mergeCommitToGitHandler = async (
   // TODO RadStr: Localization
   openModal(LoadingDialog, {
     dialogTitle: "git.loading.merge.title",
-    waitingText: "git.loading.default.wait",
+    waitingText: null,
+    waitTime: MERGE_COMMIT_WAIT_TIME,
     setCloseDialogAction: closeDialogObject.setCloseDialogAction,
     shouldShowTimer: true,
   });
@@ -579,7 +584,8 @@ export const commitToGitHandler = async (
   // TODO RadStr: Localization
   openModal(LoadingDialog, {
     dialogTitle: "git.loading.commit.title",
-    waitingText: "git.loading.default.wait",
+    waitingText: null,
+    waitTime: GIT_COMMIT_WAIT_TIME,
     setCloseDialogAction: closeDialogObject.setCloseDialogAction,
     shouldShowTimer: true,
   });

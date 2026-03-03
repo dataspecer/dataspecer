@@ -90,7 +90,10 @@
 
 
   "git": {
+    "wait-seconds": "sekund",
+    "wait-prefix-text": "Běžně trvá zhruba",
     "choose-an-export-format": "Formát exportu",
+    "choose-an-export-version": "Verze exportu",
     "loading-dialog-seconds-passed": "sekund uplynulo",
     "dialog": {
       "title": {
@@ -103,7 +106,7 @@
       "description": {
         "create-new-repository-and-commit": "Po potvrzení se vytvoří nový vzdálený Git repozitář a bude propojen s aktuální packagí",
         "commit": "Zadejte commit zprávu pro Git",
-        "commit-tag-error": "Nelze commitovat package reprezentující tag. Nejprve jí převeďte na větev.",
+        "commit-tag-error": "Nelze commitovat z package reprezentující tag. Nejprve jí převeďte na větev.",
         "merge-commit": "Zadejte commit zprávu pro Git merge",
         "link-to-existing-repository": "Zadejte URL existujícího vzdáleného Git repozitáře, ke kterému chcete package připojit. URL může odkazovat na commit/větev/tag.",
         "fallback": "[Chyba vývojáře - chybí popis dialogu Git]"
@@ -132,17 +135,13 @@
     },
     "loading": {
       "create-repository": {
-        "title": "Vytváření repozitáře s počátečním commitem",
-        "wait": "Obvykle trvá 10-20 sekund"
+        "title": "Vytváření repozitáře s počátečním commitem"
       },
       "merge": {
         "title": "Provádím merge commit"
       },
       "commit": {
         "title": "Commituji"
-      },
-      "default": {
-        "wait": "Obvykle trvá 5-15 sekund"
       }
     },
     "toast": {

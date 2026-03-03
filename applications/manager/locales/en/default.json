@@ -90,7 +90,10 @@
 
 
   "git": {
+    "wait-seconds": "seconds",
+    "wait-prefix-text": "Usually takes around",
     "choose-an-export-format": "Export format",
+    "choose-an-export-version": "Export version",
     "loading-dialog-seconds-passed": "seconds passed",
     "dialog": {
       "title": {
@@ -103,7 +106,7 @@
       "description": {
         "create-new-repository-and-commit": "On confirm new remote Git repository will be created and the current package will be linked to it",
         "commit": "Insert the commit message for Git",
-        "commit-tag-error": "You cannot commit into a package representing a tag. Turn it into a branch first.",
+        "commit-tag-error": "You cannot commit from a package representing a tag. Turn it into a branch first.",
         "merge-commit": "Insert the commit message for Git merge",
         "link-to-existing-repository": "Insert URL of an existing remote Git repository you want to link to this package. URL may point to commit/branch/tag.",
         "fallback": "[Programmer oversight - Git dialog description missing]"
@@ -132,17 +135,13 @@
     },
     "loading": {
       "create-repository": {
-        "title": "Creating repository with initial commit",
-        "wait": "Usually takes around 10-20 seconds"
+        "title": "Creating repository with initial commit"
       },
       "merge": {
         "title": "Creating merge commit"
       },
       "commit": {
         "title": "Committing"
-      },
-      "default": {
-        "wait": "Usually takes around 5-15 seconds"
       }
     },
     "toast": {
