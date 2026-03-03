@@ -101,6 +101,11 @@ export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitH
             <div>
               <strong>Commit Hash:</strong> {commitHash.substring(0, 10)}
             </div>
+            {branch === null ? null :
+              <div>
+                <strong>Branch:</strong> {branch}
+              </div>
+            }
             <br/>
             {branchAlreadyExistsInDS ?
               <div className="flex flex-1 flex-row">
@@ -114,7 +119,7 @@ export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitH
         </ModalHeader>
         <ModalFooter>
           <Button variant="outline" onClick={handleImportGitCommitToDS} disabled={isPerformingAction}>Import static commit to DS</Button>
-          {branch !== null && !branchAlreadyExistsInDS && <Button variant="outline" onClick={handleImportGitBranchToDS} disabled={isPerformingAction}>Import branch ({branch}) to DS</Button>}
+          {branch !== null && !branchAlreadyExistsInDS && <Button variant="outline" onClick={handleImportGitBranchToDS} disabled={isPerformingAction}>Import branch to DS</Button>}
           <Button variant="outline" onClick={handleRedirect} disabled={isPerformingAction}>View commit in Git remote</Button>
         </ModalFooter>
       </ModalContent>
