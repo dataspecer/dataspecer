@@ -26,6 +26,7 @@ export type PullRequestInfo = {
 export type PullRequestFetchResponse = {
   pullRequests: PullRequestInfo[];
   totalPrCount: number;
+  isLastPage: boolean;
 };
 
 ////////////////////
@@ -367,7 +368,14 @@ export interface GitProvider {
    * @param authToken is the auth token of the user (PAT). If not present, then the bot auth token is used.
    * @returns The pull requests at given {@link page}, where page as at most {@link perPage} elements, also returns the total pull request count.
    */
-  getOpenedPullRequests(gitUrl: string, branchToMatch: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse>;
+  getOpenedPullRequestsForBranch(gitUrl: string, branchToMatch: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse>;
+
+  /**
+   * Looks for pull requests at given {@link gitUrl}. This returns paginated list of the PRs, if you want PRs for certain branch, use {@link getOpenedPullRequestsForBranch}.
+   * @param authToken is the auth token of the user (PAT). If not present, then the bot auth token is used.
+   * @returns The pull requests at given {@link page}, where page as at most {@link perPage} elements, also returns the total pull request count.
+   */
+  getOpenedPullRequests(gitUrl: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse>;
 
 
   /**
