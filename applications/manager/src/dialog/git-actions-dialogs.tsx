@@ -29,6 +29,7 @@ import { TFunction } from "i18next";
 import { SetGitRemoteConfigurationComponent } from "./set-git-remote-configuration-dialog";
 import { useRequiredFieldsForGitConfig } from "@/hooks/use-required-fields-for-git-config";
 import { CREATE_REPOSITORY_WAIT_TIME, GIT_COMMIT_WAIT_TIME, MERGE_COMMIT_WAIT_TIME } from "@/utils/git-wait-times";
+import { ArrowDownNarrowWide, ArrowUpNarrowWide } from "lucide-react";
 
 
 /**
@@ -114,6 +115,8 @@ const gitDialogInputIdPrefix = "git-dialog-prefix";
 export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, resolve, type, shouldShowAlwaysCreateMergeStateOption }: GitActionsDialogProps) => {
   const { t } = useTranslation();
   type = type ?? "create-new-repository-and-commit";
+
+  const [showMore, setShowMore] = useState<boolean>(false);
 
   const gitProvidersComboboxOptions = useMemo(() => {
     // TODO RadStr PR: In future this should be ideally set based on the Git provider the user logged in as.
@@ -334,13 +337,26 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
           input={commitMessage}
           requiredRefObject={commitMessageInputFieldRef}
         />
-        <hr className="mt-9 -mb-2 h-1 bg-gray-400 border-0"></hr>
-        <div className="mt-3 font-semibold">Git configuration:</div>
-        { gitRemoteConfiguration === null ? null : <SetGitRemoteConfigurationComponent
-                                                                    configuration={gitRemoteConfiguration!}
-                                                                    setGitConfigurationReactState={setGitRemoteConfiguration}
-                                                                    requiredFieldsMap={requiredGitConfigFieldsMap}
-                                                                  />}
+        {/* ---- COLLAPSIBLE SECTION ---- */}
+        <Button
+          variant="ghost"
+          className="mt-2 mb-2 p-0 text-sm"
+          onClick={() => setShowMore(!showMore)}
+        >
+          {showMore ? <ArrowUpNarrowWide /> : <ArrowDownNarrowWide />} Advanced settings (Keeping defaults is fine):
+        </Button>
+        { (!showMore || gitRemoteConfiguration === null) ?
+            null :
+            <div>
+              <div className="mt-3 font-semibold">Git configuration:</div>
+              <SetGitRemoteConfigurationComponent
+                configuration={gitRemoteConfiguration!}
+                setGitConfigurationReactState={setGitRemoteConfiguration}
+                requiredFieldsMap={requiredGitConfigFieldsMap}
+              />
+            </div>
+        }
+        {/* ---- END OF COLLAPSIBLE SECTION ---- */}
       </div>;
       break;
     case "commit":
