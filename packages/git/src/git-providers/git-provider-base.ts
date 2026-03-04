@@ -54,7 +54,8 @@ export abstract class GitProviderBase implements GitProvider {
   abstract convertProviderScopeToGenericScope(scope: string): Scope;
   abstract revokePAT(personalAccessToken: string): Promise<FetchResponse>;
   abstract getUrlToPRs(gitUrl: string): string
-  abstract getOpenedPullRequests(gitUrl: string, branchToMatch: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse>;
+  abstract getOpenedPullRequestsForBranch(gitUrl: string, branchToMatch: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse>;
+  abstract getOpenedPullRequests(gitUrl: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse>;
   abstract getUrlToIssues(gitUrl: string): string;
   abstract getCreateNewIssueUrl(gitUrl: string): string;
   abstract getIssues(gitUrl: string, issueState: IssueState, page: number, perPage: number, authToken: string | null): Promise<GitIssuesFetchResponse>;

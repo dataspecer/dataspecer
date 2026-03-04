@@ -254,7 +254,11 @@ export class GitLabProvider extends GitProviderBase {
     return `${gitUrl}merge_requests`;
   }
 
-  getOpenedPullRequests(gitUrl: string, branchToMatch: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse> {
+  getOpenedPullRequestsForBranch(gitUrl: string, branchToMatch: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse> {
+    throw new Error("Method not implemented.");
+  }
+
+  getOpenedPullRequests(gitUrl: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse> {
     throw new Error("Method not implemented.");
   }
 

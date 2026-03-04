@@ -775,6 +775,41 @@ export class GitHubProvider extends GitProviderBase {
     };
   }
 
+  async getOpenedPullRequests(gitUrl: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse> {
+    // Simpler than the getOpenedPullRequests for branch, only one REST API call and we do not need to be afraid that the pages have different sizes.
+    const repoOwner = this.extractPartOfRepositoryURL(gitUrl, "repository-owner");
+    const repoName = this.extractPartOfRepositoryURL(gitUrl, "repository-name");
+
+    const token: string | null | undefined = authToken ?? this.authenticationGitProviderData?.gitBotConfiguration?.dsBotAbsoluteGitProviderControlToken;
+    if (token === null || token === undefined) {
+      throw new Error("Can not get pull requests, since there is not auth token to use");
+    }
+
+    const requestUrl = `https://api.github.com/search/issues?q=repo:${repoOwner}/${repoName}+is:pr&per_page=${perPage}&page=${page}`;
+
+    const response = await this.httpFetch(requestUrl, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+    const isLastPage: boolean = this.isLastPageBasedOnLinkHeader(response);
+
+    const isResponseOk = (status: number) => status >= 200 && status < 300;
+    if (!isResponseOk(response.status)) {
+      throw new Error(`GitHub API error when fetching PRs: ${response.status}`);
+    }
+
+    const mergeData: any = await response.json();
+
+    return {
+      pullRequests: await Promise.all(mergeData.items.map(async (pr: any) => await this.convertRestPrToDataspecerPr(pr, token))),
+      totalPrCount: mergeData.total_count,
+      isLastPage: isLastPage,
+    };
+  }
+
   async getIssues(gitUrl: string, issueState: IssueState, page: number, perPage: number, authToken: string | null): Promise<GitIssuesFetchResponse> {
     const repoOwner = this.extractPartOfRepositoryURL(gitUrl, "repository-owner");
     const repoName = this.extractPartOfRepositoryURL(gitUrl, "repository-name");
