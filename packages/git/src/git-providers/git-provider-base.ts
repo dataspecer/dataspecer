@@ -27,6 +27,7 @@ export abstract class GitProviderBase implements GitProvider {
   }
 
 
+  abstract getProviderName(): string;
   abstract getGitProviderEnumValue(): GitProviderEnum;
   abstract getDomainURL(shouldPrefixWithHttps: boolean): string;
   abstract setDomainURL(newDomainURL: string): void;

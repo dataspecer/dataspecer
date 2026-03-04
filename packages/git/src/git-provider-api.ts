@@ -145,9 +145,14 @@ export type GetResourceForGitUrlAndBranchType = (gitRepositoryUrl: string, branc
 //                                It has to be provdied to each method that needs it. .... put it as future TODO, since it is not the best design decision probably.
 export interface GitProvider {
   /**
-   * Returns the provider enum value for this provider.
+   * @returns Returns the provider enum value for this provider.
    */
   getGitProviderEnumValue(): GitProviderEnum;
+
+  /**
+   * @returns Returns Git provider's name. For example for GitHub it is "GitHub".
+   */
+  getProviderName(): string;
 
   /**
    * Returns the domain URL for this instance. For example for github is is "github.com". But for GitLab we can have different domains:

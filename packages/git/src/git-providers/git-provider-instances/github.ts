@@ -37,6 +37,9 @@ export class GitHubProvider extends GitProviderBase {
   ////////////////////////////
   // Methods
   ////////////////////////////
+  getProviderName(): string {
+    return "GitHub";
+  }
 
   getGitProviderEnumValue(): GitProviderEnum {
     return GitProviderEnum.GitHub;

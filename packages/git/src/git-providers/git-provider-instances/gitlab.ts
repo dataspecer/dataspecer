@@ -33,6 +33,10 @@ export class GitLabProvider extends GitProviderBase {
   ////////////////////////////
   // Methods
   ////////////////////////////
+  getProviderName(): string {
+    return "GitLab";
+  }
+
   getGitProviderEnumValue(): GitProviderEnum {
     return GitProviderEnum.GitLab;
   }
