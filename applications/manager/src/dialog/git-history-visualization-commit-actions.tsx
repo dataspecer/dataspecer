@@ -26,10 +26,10 @@ type GitHistoryCommitActionsDialogProps = {
 export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitHash, branchAlreadyExistsInDS, commitAlreadyExistsInDS, isOpen, resolve, closeMainGitGraphDialog }: GitHistoryCommitActionsDialogProps) => {
   const { t } = useTranslation();
   const [isPerformingAction, setIsPerformingAction] = useState<boolean>(false);
+  const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(examinedPackage.linkedGitRepositoryURL, fetch, {});
 
   const handleRedirect = () => {
     setIsPerformingAction(true);
-    const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(examinedPackage.linkedGitRepositoryURL, fetch, {});
     const gitUrl = gitProvider.extendGitRepositoryURLByGitRefSuffix(examinedPackage.linkedGitRepositoryURL, {type: "commit", sha: commitHash});
     const newTab = window.open(gitUrl, "_blank");
     newTab?.focus();
@@ -109,7 +109,7 @@ export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitH
             <br/>
             {branchAlreadyExistsInDS ?
               <div className="flex flex-1 flex-row">
-                <p>Note that <strong>Branch is already tracked in Dataspecer</strong></p>
+                <p><strong>The Branch is already tracked in Dataspecer</strong></p>
                   <PopOverGitGeneralComponent><GitHistoryDialogInfoTooltip/></PopOverGitGeneralComponent>
               </div> :
               null
@@ -118,9 +118,9 @@ export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitH
           </ModalDescription>
         </ModalHeader>
         <ModalFooter>
-          <Button variant="outline" className="bg-blue-400 hover:bg-blue-600" onClick={handleImportGitCommitToDS} disabled={isPerformingAction}>Import static commit to DS</Button>
-          {branch !== null && !branchAlreadyExistsInDS && <Button className="bg-green-500 hover:bg-green-700" variant="outline" onClick={handleImportGitBranchToDS} disabled={isPerformingAction}>Import branch to DS</Button>}
-          <Button variant="outline" onClick={handleRedirect} disabled={isPerformingAction}>View commit in Git remote</Button>
+          <Button variant="default" className="hover:bg-purple-700" onClick={handleImportGitCommitToDS} disabled={isPerformingAction}>Import commit as new Dataspec</Button>
+          {branch !== null && !branchAlreadyExistsInDS && <Button className="bg-green-500 hover:bg-green-700" variant="outline" onClick={handleImportGitBranchToDS} disabled={isPerformingAction}>Import branch as new Dataspec</Button>}
+          <Button variant="outline" onClick={handleRedirect} disabled={isPerformingAction}>View in {gitProvider.getProviderName()}</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
@@ -130,7 +130,7 @@ export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitH
 
 function GitHistoryDialogInfoTooltip() {
   return <div>
-    <p>Note that if the <strong>branch already exists</strong> inside Dataspecer, it is forbidden (for your own good) to have two packages tracking the same remote branch in Dataspecer.
+    <p>If the <strong>branch already exists</strong> inside Dataspecer, it is forbidden (for your own good) to have two packages tracking the same remote branch in Dataspecer.
     <br/>
     You can <strong>import static commit</strong> and then turn the commit into branch with <strong>new</strong> name. Or just click on <strong>Create branch</strong> in the Git menu.</p>
   </div>;

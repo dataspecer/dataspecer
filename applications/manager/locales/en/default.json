@@ -118,7 +118,7 @@
         "commit-message": "Commit message",
         "merge-commit-message": {
           "input-title": "Merge commit message",
-          "append": "The given message will be appended after the default merge message automatically created bz Git (current option)",
+          "append": "The given message will be appended after the default merge message automatically created by Git (current option)",
           "exact": "The merge message will look exactly as given (current option)"
         },
         "remote-url": "Git remote repository URL",
