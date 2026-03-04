@@ -288,7 +288,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   switch(type) {
     case "create-new-repository-and-commit":
       modalBody = <div>
-        <ComboBox options={gitProvidersComboboxOptions} onChange={(value: GitProviderEnum) => setGitProvider(getGitProviderDomain(value, true, true))}/>
+        Git provider:&nbsp;&nbsp;&nbsp;&nbsp; <ComboBox options={gitProvidersComboboxOptions} onChange={(value: GitProviderEnum) => setGitProvider(getGitProviderDomain(value, true, true))}/>
         <InputComponent
           idPrefix={gitDialogInputIdPrefix}
           idSuffix={suffixNumber++}
@@ -391,8 +391,8 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
               className="w-5 h-5 accent-blue-600"
             />
             <span>{shouldAppendAfterDefaultMergeCommitMessage ?
-              t("git.dialog.merge-commit-message.append") :
-              t("git.dialog.merge-commit-message.exact")}</span>
+              t("git.dialog.label.merge-commit-message.append") :
+              t("git.dialog.label.merge-commit-message.exact")}</span>
           </label>
         </div>;
       break;

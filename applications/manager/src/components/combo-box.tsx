@@ -22,10 +22,8 @@ export const ComboBox = <T extends any>({
   onChange,
   selectedValue,
 }: ComboBoxProps<T>) => {
-  // Internal state for uncontrolled mode
   const [internalSelected, setInternalSelected] = useState<Option<T>>(options[0]);
 
-  // Update internalSelected if controlled selectedValue changes
   useEffect(() => {
     if (selectedValue !== undefined) {
       const found = options.find((opt) => opt.value === selectedValue);
@@ -34,7 +32,7 @@ export const ComboBox = <T extends any>({
   }, [selectedValue, options]);
 
   const handleSelect = (option: Option<T>) => {
-    setInternalSelected(option); // Update internal state
+    setInternalSelected(option);
     if (onChange) onChange(option.value);
   };
 
@@ -42,18 +40,40 @@ export const ComboBox = <T extends any>({
 
   return (
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger className="flex inline-flex justify-between items-center w-auto px-3 py-2 border border-gray-300 hover:bg-gray-200 rounded-md bg-white cursor-pointer focus:outline-none">
+      <DropdownMenu.Trigger
+        className="
+          flex inline-flex justify-between items-center
+          w-auto px-3 py-2 rounded-md cursor-pointer
+          border
+          bg-white text-gray-900 border-gray-300 hover:bg-gray-100
+          dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700
+          focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400
+        "
+      >
         <span>{selectedOption?.key}</span>
-        {/* <span className="ml-2"><ChevronDown/></span> */}
       </DropdownMenu.Trigger>
 
-      <DropdownMenu.Content className="min-w-(--radix-dropdown-menu-trigger-width) mt-1 w-full border border-gray-300 rounded-md bg-white max-h-60 overflow-auto focus:outline-none">
+      <DropdownMenu.Content
+        className="
+          min-w-(--radix-dropdown-menu-trigger-width)
+          mt-1 w-full rounded-md border max-h-60 overflow-auto
+          bg-white text-gray-900 border-gray-300
+          dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600
+          shadow-md
+          focus:outline-none
+        "
+      >
         {options.map((option, idx) => (
           <DropdownMenu.Item
             key={idx}
             title={option.tooltip}
             onSelect={() => handleSelect(option)}
-            className="px-3 py-2 cursor-pointer hover:bg-gray-100 focus:outline-none"
+            className="
+              px-3 py-2 cursor-pointer
+              hover:bg-gray-100
+              dark:hover:bg-gray-700
+              focus:outline-none
+            "
           >
             {option.key}
           </DropdownMenu.Item>
