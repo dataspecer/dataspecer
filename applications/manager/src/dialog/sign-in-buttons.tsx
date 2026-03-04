@@ -2,16 +2,21 @@ import { Modal, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 import { BetterModalProps } from "@/lib/better-modal";
 import { ConfigType } from "@dataspecer/git";
+import { EyeIcon } from "lucide-react";
 
 
 function SignInInfoTooltip() {
   return <div>
     <div>- The access token should be automatically revoked after you sign out.</div>
+    <div>- Note that the provided rights are for <strong>each repository you have access to</strong>.</div>
     <br/>
-    <div>
-      - <strong>Once you sign-in</strong> you can also set your <strong>SSH key</strong> under your account.
-    </div>
+    <h1 className="text-2xl font-bold">In short:</h1>
+    <div className="flex flex-1 flex-row">- Choose the option with&nbsp;<strong>Name + E-mail</strong>&nbsp;to access all "<EyeIcon/>" Git features.</div>
+    <div>- Choose the option with <strong>Name + E-mail + Git push scope</strong> to access all the important Git features - <strong className="text-green-600">Recommended</strong></div>
+    <div>- Choose the option with <strong>Name + E-mail + Git push + Delete scope</strong> to get the ability to remove any owned repository.</div>
+
     <br/>
+    <h1 className="text-2xl font-bold">In long:</h1>
     <div>
       - Choose the <strong>Name + E-mail</strong> option to either
     </div>
@@ -23,6 +28,9 @@ function SignInInfoTooltip() {
       &nbsp;&nbsp;&nbsp;- Commit under your name to repositories accessible by the Dataspecer bot.
       <br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;You can think of a Dataspecer bot as a fallback Git user.
+    </div>
+    <div>
+      - <strong>Once you sign-in</strong> you can also set your <strong>SSH key</strong> under your account.
     </div>
     <br/>
     <div>
