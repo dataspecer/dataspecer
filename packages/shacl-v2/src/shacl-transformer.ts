@@ -102,7 +102,9 @@ function splitShaclPropertyShape(
       nodeKind: shape.nodeKind,
     });
   }
-  if (shape.minCount !== null) {
+  // There is no need to store minCount if === 0.
+  // See https://github.com/dataspecer/dataspecer/issues/1297
+  if (shape.minCount !== null && shape.minCount > 0) {
     result.push({
       ...template,
       iri: shape.iri + "/minCount",

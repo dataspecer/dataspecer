@@ -9,6 +9,7 @@ import {
   ShaclModel,
   ShaclNodeKind,
 } from "./shacl-model.ts";
+import { shaclToRdf } from "./shacl-to-rdf.ts";
 
 describe("applyNoClassConstraint", () => {
 
@@ -147,6 +148,59 @@ describe("splitConstraints", () => {
           path: "http://spdx.org/rdf/terms#checksum",
           class: "http://spdx.org/rdf/terms#Checksum",
         })],
+      }]
+    };
+
+    //
+
+    expect(actual).toStrictEqual(expected);
+
+  });
+
+  /**
+   * This is related to https://github.com/dataspecer/dataspecer/issues/1297.
+   * Where we do not render min-count == 0 as it is a default.
+   * Combined with spit this cause the issue.
+   * A solution is to not split if the min-count == 0;
+   */
+  test("https://github.com/dataspecer/dataspecer/issues/1458", async () => {
+
+    const input: ShaclModel = {
+      iri: "http://localhost/does-not-matter",
+      members: [{
+        iri: "http://localhost/does-not-matter",
+        closed: false,
+        seeAlso: "http://localhost/does-not-matter",
+        targetClass: "http://www.w3.org/ns/dcat#Dataset",
+        propertyShapes: [{
+          iri: "http://example/shape",
+          seeAlso: null,
+          description: { en: "Description.." },
+          name: { en: "checksum" },
+          nodeKind: null,
+          path: "http://spdx.org/rdf/terms#checksum",
+          minCount: 0,
+          maxCount: null,
+          datatype: null,
+          class: null,
+        }],
+      }]
+    };
+
+    // Actual
+
+    const actual = splitConstraints(input);
+
+    // Expected
+
+    const expected: ShaclModel = {
+      iri: "http://localhost/does-not-matter",
+      members: [{
+        iri: "http://localhost/does-not-matter",
+        closed: false,
+        seeAlso: "http://localhost/does-not-matter",
+        targetClass: "http://www.w3.org/ns/dcat#Dataset",
+        propertyShapes: [],
       }]
     };
 
