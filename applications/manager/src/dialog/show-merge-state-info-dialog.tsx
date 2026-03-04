@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { BetterModalProps } from "@/lib/better-modal";
 import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { getHumanReadableFilesystemName, MergeState } from "@dataspecer/git";
-import { ChevronsDownIcon, ChevronsUpIcon } from "lucide-react";
 
 export enum BranchAction {
   CreateNewBranch,
@@ -16,8 +15,6 @@ type ShowMergeStateInfoDialogProps = {
 } & BetterModalProps<null>;
 
 export const ShowMergeStateInfoDialog = ({ mergeState, setIsInfoDialogShown, isOpen, resolve }: ShowMergeStateInfoDialogProps) => {
-  const [showMore, setShowMore] = useState(false);
-
   useEffect(() => {
     setIsInfoDialogShown(true);
   }, []);
@@ -60,63 +57,50 @@ export const ShowMergeStateInfoDialog = ({ mergeState, setIsInfoDialogShown, isO
             <strong>DiffTree modified at:</strong> {new Date(mergeState.modifiedDiffTreeAt).toLocaleString()}
             <br/>
 
-
-            {/* ---- COLLAPSIBLE SECTION ---- */}
-            <Button
-              variant="ghost"
-              className="mt-2 mb-2 p-0 underline text-sm"
-              onClick={() => setShowMore(!showMore)}
-            >
-              {showMore ? <ChevronsUpIcon /> : <ChevronsDownIcon />}
-            </Button>
-
-            {showMore && (
-              <div className="mt-1 text-sm">
-                {mergeState.rootIriMergeFrom === mergeState.rootIriMergeTo ?
-                  (
-                    <div><strong>IRI:</strong> {mergeState.rootIriMergeTo}</div>
-                  ) :
-                  (
-                    <div>
-                      <strong>Merge from IRI:</strong> {mergeState.rootIriMergeFrom}
-                      <br/>
-                      <strong>Merge to IRI:</strong> {mergeState.rootIriMergeTo}
-                      <br/>
-                      <br/>
-                    </div>
-                  )
-                }
-                {mergeState.lastCommitHashMergeFrom === mergeState.lastCommitHashMergeTo ?
-                  (
-                    <div><strong>Commit hash:</strong> {mergeState.lastCommitHashMergeFrom}</div>
-                  ) :
-                  (
-                    <div>
-                      <strong>Merge from commit hash:</strong> {mergeState.lastCommitHashMergeFrom}
-                      <br/>
-                      <strong>Merge to commit hash:</strong> {mergeState.lastCommitHashMergeTo}
-                      <br/>
-                      <br/>
-                    </div>
-                  )
-                }
-                {mergeState.filesystemTypeMergeFrom === mergeState.filesystemTypeMergeTo ?
-                  (
-                    <div><strong>Location:</strong> {getHumanReadableFilesystemName(mergeState.filesystemTypeMergeFrom)}</div>
-                  ) :
-                  (
-                    <div>
-                      <strong>Merge from location:</strong> {getHumanReadableFilesystemName(mergeState.filesystemTypeMergeFrom)}
-                      <br/>
-                      <strong>Merge to location:</strong> {getHumanReadableFilesystemName(mergeState.filesystemTypeMergeTo)}
-                      <br/>
-                    </div>
-                  )
-                }
-                <strong>Git URL:</strong> <a className="text-blue-600 underline hover:text-blue-800" href={gitUrl}>{gitUrl}</a>
-              </div>
-            )}
-            {/* ---- END OF COLLAPSIBLE SECTION ---- */}
+            <div className="mt-1 text-sm">
+              {mergeState.rootIriMergeFrom === mergeState.rootIriMergeTo ?
+                (
+                  <div><strong>IRI:</strong> {mergeState.rootIriMergeTo}</div>
+                ) :
+                (
+                  <div>
+                    <strong>Merge from IRI:</strong> {mergeState.rootIriMergeFrom}
+                    <br/>
+                    <strong>Merge to IRI:</strong> {mergeState.rootIriMergeTo}
+                    <br/>
+                    <br/>
+                  </div>
+                )
+              }
+              {mergeState.lastCommitHashMergeFrom === mergeState.lastCommitHashMergeTo ?
+                (
+                  <div><strong>Commit hash:</strong> {mergeState.lastCommitHashMergeFrom}</div>
+                ) :
+                (
+                  <div>
+                    <strong>Merge from commit hash:</strong> {mergeState.lastCommitHashMergeFrom}
+                    <br/>
+                    <strong>Merge to commit hash:</strong> {mergeState.lastCommitHashMergeTo}
+                    <br/>
+                    <br/>
+                  </div>
+                )
+              }
+              {mergeState.filesystemTypeMergeFrom === mergeState.filesystemTypeMergeTo ?
+                (
+                  <div><strong>Location:</strong> {getHumanReadableFilesystemName(mergeState.filesystemTypeMergeFrom)}</div>
+                ) :
+                (
+                  <div>
+                    <strong>Merge from location:</strong> {getHumanReadableFilesystemName(mergeState.filesystemTypeMergeFrom)}
+                    <br/>
+                    <strong>Merge to location:</strong> {getHumanReadableFilesystemName(mergeState.filesystemTypeMergeTo)}
+                    <br/>
+                  </div>
+                )
+              }
+              <strong>Git URL:</strong> <a className="text-blue-600 underline hover:text-blue-800" href={gitUrl}>{gitUrl}</a>
+            </div>
           </div>
         </div>
 
