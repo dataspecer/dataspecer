@@ -30,6 +30,8 @@ import { SetGitRemoteConfigurationComponent } from "./set-git-remote-configurati
 import { useRequiredFieldsForGitConfig } from "@/hooks/use-required-fields-for-git-config";
 import { CREATE_REPOSITORY_WAIT_TIME, GIT_COMMIT_WAIT_TIME, MERGE_COMMIT_WAIT_TIME } from "@/utils/git-wait-times";
 import { ArrowDownNarrowWide, ArrowUpNarrowWide } from "lucide-react";
+import { BooleanRadioButtons } from "@/components/boolean-radio-buttons";
+import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 
 
 /**
@@ -140,12 +142,13 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
 
   console.info({gitRemoteConfiguration});     // TODO RadStr: Debug print
 
-  const { accountProvider, username, genericScope } = useLogin();
+  const { accountProvider, username, genericScope, isSignedIn } = useLogin();
 
 
   const [repositoryName, setRepositoryName] = useState<string>(inputPackage.iri);
   const [remoteRepositoryURL, setRemoteRepositoryURL] = useState<string>("https://github.com/userName/repositoryName");
-  const [user, setUser] = useState<string>("");
+  const [organization, setOrganization] = useState<string>("");
+  const [isOwnerSignedInUser, setIsOwnerSignedInUser] = useState<boolean>(true);
   const [gitProvider, setGitProvider] = useState<string>(getGitProviderDomain(gitProvidersComboboxOptions[0].value, true, true));
   const [commitMessage, setCommitMessage] = useState<string>(defaultCommitMessage ?? "");
   const [isUserRepo, setIsUserRepo] = useState<boolean>(true);
@@ -183,7 +186,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
     // We have to it like this because the login is asynchronous
     // If the Git provider matches and we have a push scope, then show the user's name instead of empty string.
     if (convertGitProviderNameToEnum(accountProvider) === gitProvidersComboboxOptions[0].value && genericScope.includes("publicRepo")) {
-      setUser(username);
+      setOrganization(username);
     }
   }, [accountProvider, username, genericScope]);
 
@@ -219,8 +222,16 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
         };
         await saveGitRemoteConfiguration(inputPackage.iri, rootPackageContent, gitRemoteConfiguration, storeModelToBackend);
       }
+
+      let owner: string;
+      if (isUserRepo) {
+        owner = isOwnerSignedInUser ? "" : (isSignedIn ? username : "");
+      }
+      else {
+        owner = organization;
+      }
       resolve({
-        user, repositoryName, remoteRepositoryURL, gitProvider, commitMessage, isUserRepo,
+        user: owner, repositoryName, remoteRepositoryURL, gitProvider, commitMessage, isUserRepo,
         shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage,
         publicationBranch: gitRemoteConfiguration?.publicationBranch ?? PUBLICATION_BRANCH_DEFAULT_NAME,
         exportFormat: gitRemoteConfiguration?.exportFormat ?? getDefaultExportFormat(),
@@ -291,7 +302,20 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   switch(type) {
     case "create-new-repository-and-commit":
       modalBody = <div>
-        Git provider:&nbsp;&nbsp;&nbsp;&nbsp; <ComboBox options={gitProvidersComboboxOptions} onChange={(value: GitProviderEnum) => setGitProvider(getGitProviderDomain(value, true, true))}/>
+        Git provider:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <ComboBox options={gitProvidersComboboxOptions} onChange={(value: GitProviderEnum) => setGitProvider(getGitProviderDomain(value, true, true))}/>
+        <div className="pt-4 flex flex-1 flex-row">
+          Owner type <PopOverGitGeneralComponent><RepositoryOwnerTooltip/></PopOverGitGeneralComponent>
+          <div className="pt-2 flex flex-1 flex-row">
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <BooleanRadioButtons value={isUserRepo}
+                                  setValue={setIsUserRepo}
+                                  isFalseDisabled={false}
+                                  isTrueDisabled={false}
+                                  trueText="git.dialog.radio.user-repository"
+                                  falseText="git.dialog.radio.organization-repository"
+              />
+          </div>
+        </div>
         <InputComponent
           idPrefix={gitDialogInputIdPrefix}
           idSuffix={suffixNumber++}
@@ -300,35 +324,31 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
           input={repositoryName}
           requiredRefObject={repositoryNameInputFieldRef}
         />
-        <InputComponent
-          idPrefix={gitDialogInputIdPrefix}
-          idSuffix={suffixNumber++}
-          label={t("git.dialog.label.repository-owner")}
-          TooltipComponent={<RepositoryOwnerTooltip/>}
-          setInput={createSetterWithGitValidation(setUser)} input={user}
-        />
-        <div className="-mt-2 mb-8 flex items-center space-x-6">
-          <label className="flex items-center space-x-2">
-            <input
-              type="radio"
-              checked={isUserRepo === true}
-              onChange={() => setIsUserRepo(true)}
-              className="w-5 h-5 border-gray-400 text-blue-600 focus:ring-blue-500 form-radio text-blue-600"
-            />
-            <span>{t("git.dialog.radio.user-repository")}</span>
-          </label>
-
-          <label className="flex items-center space-x-2">
-            <input
-              type="radio"
-              checked={isUserRepo === false}
-              onChange={() => setIsUserRepo(false)}
-              className="w-5 h-5 border-gray-400 text-blue-600 focus:ring-blue-500 form-radio text-blue-600"
-            />
-            <span>{t("git.dialog.radio.organization-repository")}</span>
-          </label>
-        </div>
-        <div className="my-8"/>
+        {
+          isUserRepo ?
+            <div className="flex flex-1 flex-row">
+              <p className="pb-3 pt-1 text-sm">{t("git.dialog.label.repository-owner")}:</p>
+              <div className="pl-10 items-center justify-center pt-3">
+                <BooleanRadioButtons
+                  value={isSignedIn && isOwnerSignedInUser}
+                  setValue={setIsOwnerSignedInUser}
+                  isFalseDisabled={false}
+                  isTrueDisabled={!isSignedIn}
+                  trueText="User"
+                  falseText="Bot (fallback user)"
+                />
+              </div>
+            </div> :
+            <div>
+              <InputComponent
+                idPrefix={gitDialogInputIdPrefix}
+                idSuffix={suffixNumber++}
+                label={t("git.dialog.label.repository-owner")}
+                setInput={createSetterWithGitValidation(setOrganization)} input={organization}
+              />
+              <div className="my-8"/>
+            </div>
+        }
         <InputComponent
           idPrefix={gitDialogInputIdPrefix}
           idSuffix={suffixNumber++}
@@ -343,7 +363,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
           className="mt-2 mb-2 p-0 text-sm"
           onClick={() => setShowMore(!showMore)}
         >
-          {showMore ? <ArrowUpNarrowWide /> : <ArrowDownNarrowWide />} Advanced settings (Keeping defaults is fine):
+          {showMore ? <ArrowUpNarrowWide /> : <ArrowDownNarrowWide />} Advanced settings (Keeping the defaults is fine):
         </Button>
         { (!showMore || gitRemoteConfiguration === null) ?
             null :
@@ -443,12 +463,11 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
 
 function RepositoryOwnerTooltip() {
   return <div>
-    Example: https://github.com/torvalds/linux - "torvalds" is the owner, while "linux" is the name of the repository.
+    For Example: https://github.com/torvalds/linux
     <br/>
+     &nbsp; - "torvalds" is the <strong>Owner</strong>, while "linux" is the <strong>Name</strong> of the repository.
     <br/>
-    Owner is the name under which the repository should be created. If empty, bot name is used. You can think of a Dataspecer bot as a fallback user.
-    <br/>
-    &nbsp;&nbsp; Note that certain Dataspecer instances may not have the bot set up.
+     &nbsp; - <strong>Owner</strong> can be either Organization or User (that is it will be equal user's name)
   </div>;
 }
 
