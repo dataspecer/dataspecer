@@ -47,6 +47,7 @@ export function updateCmeRelationshipProfile(
       cardinality: next.rangeCardinality,
       externalDocumentationUrl: emptyAsNull(next.externalDocumentationUrl),
       tags,
+      order: next.order,
     }]
   })
 

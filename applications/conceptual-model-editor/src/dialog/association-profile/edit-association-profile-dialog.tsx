@@ -178,6 +178,12 @@ export const EditAssociationProfileDialog = (props: DialogProps<AssociationProfi
             onChange={controller.setExternalDocumentationUrl}
           />
         </DialogDetailRow>
+        <DialogDetailRow detailKey={t("create-class-dialog.order")}>
+          <InputText
+            value={state.order}
+            onChange={controller.setOrder}
+          />
+        </DialogDetailRow>
         <DialogDetailRow detailKey={t("relationship-profile.mandatory-level")}>
           <SelectBuildIn
             items={state.availableMandatoryLevels}

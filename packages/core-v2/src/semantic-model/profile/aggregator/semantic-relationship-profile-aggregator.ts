@@ -53,6 +53,7 @@ function aggregateSemanticModelRelationshipProfile(
       iri: end.iri,
       externalDocumentationUrl: end.externalDocumentationUrl,
       tags: end.tags,
+      order: end.order ?? null,
       //
       name: profiled(end.nameFromProfiled)?.ends[index]?.name ?? end.name ?? null,
       nameFromProfiled: end.nameFromProfiled,

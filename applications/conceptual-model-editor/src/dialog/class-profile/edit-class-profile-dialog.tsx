@@ -127,6 +127,12 @@ export const EditClassProfileDialog = (props: DialogProps<ClassProfileDialogStat
             onChange={controller.setExternalDocumentationUrl}
           />
         </DialogDetailRow>
+        <DialogDetailRow detailKey={t("create-class-dialog.order")}>
+          <InputText
+            value={state.order}
+            onChange={controller.setOrder}
+          />
+        </DialogDetailRow>
         <DialogDetailRow detailKey={t("create-class-dialog.class-role")}>
           <SelectBuildIn
             items={state.availableRoles}

@@ -31,6 +31,7 @@ export function createCmeClassProfile(
     usageNoteFromProfiled: value.usageNoteSource,
     externalDocumentationUrl: value.externalDocumentationUrl,
     tags,
+    order: value.order,
   });
 
   const result = model.executeOperation(operation);

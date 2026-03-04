@@ -49,6 +49,7 @@ export function createCmeRelationshipProfile(
       cardinality: value.rangeCardinality,
       externalDocumentationUrl: emptyAsNull(value.externalDocumentationUrl),
       tags,
+      order: value.order,
     }]
   })
 

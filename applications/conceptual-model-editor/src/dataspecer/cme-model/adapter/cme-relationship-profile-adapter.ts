@@ -26,6 +26,7 @@ export const semanticRelationshipProfileToCmeRelationshipProfile = (
     usageNoteSource: range.usageNoteFromProfiled,
     // We use ?? [] as this may not be always there.
     mandatoryLevel: asMandatoryLevel(range.tags ?? []),
+    order: range.order ?? null,
   };
 };
 

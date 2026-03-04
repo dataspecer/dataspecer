@@ -34,6 +34,8 @@ export interface BaseEntityProfileDialogController<
 
   setUsageNoteSource: (value: ProfileType) => void;
 
+  setOrder: (value: string) => void;
+
 }
 
 export function createBaseEntityProfileDialogController<
@@ -111,6 +113,11 @@ export function createBaseEntityProfileDialogController<
     usageNoteSourceValue: value.usageNote,
   }));
 
+  const setOrder = (value: string) => changeState(state => ({
+    ...state,
+    order: value,
+  }));
+
   return {
     ...entityController,
     addProfile: (value) => changeState(state => addProfile(state, value)),
@@ -122,6 +129,7 @@ export function createBaseEntityProfileDialogController<
     setUsageNote,
     toggleUsageNoteOverride,
     setUsageNoteSource,
+    setOrder,
   };
 }
 
