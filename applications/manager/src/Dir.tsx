@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { ArrowLeftRight, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, Eye, EyeIcon, FileText, Filter, FilterX, Folder, FolderDown, GitBranchPlus, GitCommit, GitCommitIcon, GitGraph, GitMerge, GitPullRequestArrowIcon, GitPullRequestIcon, Import, Link, Menu, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, Sparkles, TagIcon, TimerResetIcon, Trash2, WandSparkles } from "lucide-react";
+import { AlertTriangleIcon, ArrowLeftRight, BugIcon, CheckIcon, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, Eye, EyeIcon, FileText, Filter, FilterX, Folder, FolderDown, GitBranchPlus, GitCommit, GitCommitIcon, GitGraph, GitMerge, GitPullRequestArrowIcon, GitPullRequestIcon, Import, Link, Menu, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, Sparkles, TagIcon, TimerResetIcon, Trash2, WandSparkles } from "lucide-react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getValidTime } from "./components/time";
@@ -123,6 +123,19 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri
 
 Reason: Since the comparison with remote is costly, we do not perform it automatically, we only track if there was change in DS since last Git pull/push.`;
 
+  let gitPart: React.ReactNode;
+  if (resource.activeMergeStateCount !== 0) {
+    gitPart = <a href={resource.linkedGitRepositoryURL} className="text-red-500 pt-1">GIT<AlertTriangleIcon className="w-4 h-4 ml-0.75"/></a>;
+  }
+  else {
+    if (resource.hasUncommittedChanges) {
+      gitPart = <a href={resource.linkedGitRepositoryURL} className="text-yellow-400 pt-1">GIT<AlertTriangleIcon className="w-4 h-4 ml-0.75"/></a>;
+    }
+    else {
+      gitPart = <a href={resource.linkedGitRepositoryURL} className="text-green-400 pt-1">GIT<CheckIcon className="w-4 h-4 ml-0.75"/></a>;
+    }
+  }
+
   return <li className="first:border-y last:border-none border-b">
     <div className="flex items-center space-x-4 hover:bg-accent">
        {resource.types.includes(LOCAL_PACKAGE) ? <div className="flex"><button className="cursor-pointer" onClick={stopPropagation(() => isOpen ? setIsOpen(false) : open())}>
@@ -151,10 +164,8 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
             !isGitUrlSet(resource.linkedGitRepositoryURL) ?
               null :
               <ResourceTooltip resource={resource}>
-                <div className="flex pl-4 pr-2 w-16">
-                  <a href={resource.linkedGitRepositoryURL}
-                      className={(resource.activeMergeStateCount !== 0) ? "text-red-400" :
-                      (resource.hasUncommittedChanges ? "text-yellow-400" : "text-green-400") } >GIT</a>
+                <div className="flex pl-4 pr-2 w-16 -mt-6">
+                  {gitPart}
                   {
                     resource.representsBranchHead ?
                       null :
