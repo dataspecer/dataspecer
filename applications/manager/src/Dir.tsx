@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { ArrowLeftRight, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, Eye, EyeIcon, FileText, Filter, FilterX, Folder, FolderDown, GitBranchPlus, GitCommit, GitForkIcon, GitGraph, GitMerge, GitPullRequestArrowIcon, GitPullRequestIcon, Import, Link, Menu, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, Sparkles, TagIcon, TimerResetIcon, Trash2, WandSparkles } from "lucide-react";
+import { ArrowLeftRight, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, Eye, EyeIcon, FileText, Filter, FilterX, Folder, FolderDown, GitBranchPlus, GitCommit, GitCommitIcon, GitGraph, GitMerge, GitPullRequestArrowIcon, GitPullRequestIcon, Import, Link, Menu, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, Sparkles, TagIcon, TimerResetIcon, Trash2, WandSparkles } from "lucide-react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getValidTime } from "./components/time";
@@ -302,7 +302,7 @@ This means that the tag may say that there was change even though the change may
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="shrink-0">
-              <EllipsisVertical className="h-4 w-4" /><p className="text-xs">Git<GitForkIcon className="h-4 w-4"></GitForkIcon></p>
+              <EllipsisVertical className="h-4 w-4" /><p className="text-xs">Git<GitCommitIcon className="h-4 w-4"></GitCommitIcon></p>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
