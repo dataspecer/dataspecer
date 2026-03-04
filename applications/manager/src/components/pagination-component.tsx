@@ -17,10 +17,9 @@ export function usePaginationComponent<T>() {
   const [isLastPageBasedOnServerResponse, setIsLastPageBasedOnServerResponse] = useState<boolean>(false);
   const [pageOnFrontend, setPageOnFrontend] = useState<number>(1);
   const [trackedPageOnBackend, setTrackedPageOnBackend] = useState<number>(1);
-  const [itemCountPerPage, _setItemCountPerPage] = useState<number>(1);
+  const [itemCountPerPage, _setItemCountPerPage] = useState<number>(100);
   const [totalItemCount, setTotalItemCount] = useState<number>(0);
   const totalPageCount = Math.ceil(totalItemCount / itemCountPerPage);
-
 
   const PaginationComponent = ({ items, itemCountOnPageText, itemsOnPageScalingFactor, totalItemCountText, isPageNumberingExact }: PaginationComponentProps<T>) =>
     <div className="flex items-center justify-between">

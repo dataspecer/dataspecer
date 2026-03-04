@@ -1,17 +1,21 @@
-import { Modal, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@/components/modal";
-import { Button } from "@/components/ui/button";
+import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { useAsyncMemo } from "@/hooks/use-async-memo";
 import { BetterModalProps, useBetterModal } from "@/lib/better-modal";
 import { requestLoadPackage, ResourceWithIris } from "@/package";
 import { MergeState, PACKAGE_ROOT, PullRequestFetchResponse, PullRequestInfo } from "@dataspecer/git";
 import { Loader } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createMergeStateOnBackend, fetchMergeState } from "./open-merge-state";
 import { importFromGit } from "@/utils/git-backend-requests";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
 import { toast } from "sonner";
 import { createCloseDialogObject, LoadingDialog } from "./loading-dialog";
+import { usePaginationComponent } from "@/components/pagination-component";
+import { Button } from "@/components/ui/button";
+import { redirectToPage } from "@/components/login-card";
+import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
+import { CREATE_MERGE_STATE_WAIT_TIME, GIT_IMPORT_WAIT_TIME } from "@/utils/git-wait-times";
 
 
 type GitPrsListDialogProps = {
@@ -20,20 +24,22 @@ type GitPrsListDialogProps = {
   resources: Record<string, ResourceWithIris>;
 } & BetterModalProps<null>;
 
-export const GitPrsListDialog = ({ resources, branch, gitUrl, isOpen, resolve }: GitPrsListDialogProps) => {
-  const [page, setPage] = useState<number>(1);
-  const [itemCountPerPage, _setItemCountPerPage] = useState<number>(100);
-  const [totalItemCount, setTotalItemCount] = useState<number>(0);
-  const totalPageCount = Math.ceil(totalItemCount / itemCountPerPage);
+export const GitPrsListDialogForBranch = ({ resources, branch, gitUrl, isOpen, resolve }: GitPrsListDialogProps) => {
+  // Uses the PaginationComponent from the hook to render the pagination.
+  const { pageOnFrontend, itemCountPerPage, setTotalItemCount, setIsLastPageBasedOnServerResponse, PaginationComponent } = usePaginationComponent();
+
+  const gitProvider = useMemo(() => {
+    return GitProviderFactory.createGitProviderFromRepositoryURL(gitUrl, fetch, null);
+  }, []);
 
   const [openedPrs, cannotUseOpenedPrs] = useAsyncMemo(async () => {
     const queryParams: Record<string, string | number> = {
       branch,
       gitUrl: encodeURIComponent(gitUrl),
-      page,
+      page: pageOnFrontend,
       perPage: itemCountPerPage
     };
-    let pullRequestsFetchUrl: string = import.meta.env.VITE_BACKEND + "/git/opened-pull-requests";
+    let pullRequestsFetchUrl: string = import.meta.env.VITE_BACKEND + "/git/opened-pull-requests-for-branch";
     let isFirst: boolean = true;
     for (const [key, value] of Object.entries(queryParams)) {
       if (isFirst) {
@@ -54,23 +60,26 @@ export const GitPrsListDialog = ({ resources, branch, gitUrl, isOpen, resolve }:
       });
     const pullRequestResponseData: PullRequestFetchResponse = await pullRequestsFetchResponse.json();
     setTotalItemCount(pullRequestResponseData.totalPrCount);
+    setIsLastPageBasedOnServerResponse(pullRequestResponseData.isLastPage);
     return pullRequestResponseData.pullRequests;
-  }, [page, itemCountPerPage]);
+  }, [pageOnFrontend, itemCountPerPage]);
 
 
   return (
     <Modal open={isOpen} onClose={() => resolve(null)}>
-      <ModalContent className={"min-w-[80%] overflow-x-auto"}>
+      <ModalContent className={"min-w-[80%] overflow-x-auto overflow-y-auto max-h-[90%]"}>
         <ModalHeader>
           <ModalTitle>List of opened pull requests for given package and branch</ModalTitle>
           <ModalDescription>
-            The PRs where one of the merge actors is the examined branch. You can click on the PR to get redirected to the PR.
+            The PRs where one of the merge actors is the examined branch.
             <br/>
-            Resolving PR in DS means performing reverse merge. That is, from the merge to branch to the merge from and then finish the PR outside of DS.
+            You can click on the PR to get redirected to the PR.
+            <br/>
+            <p className="flex flex-1 flex-row">Resolving PR in DS means performing reverse merge. <PRMergeTooltip/></p>
           </ModalDescription>
           {
             cannotUseOpenedPrs ? <Loader className="mr-2 mt-1 h-4 w-4 animate-spin" /> :
-            <div className=" w-full">
+            <div className=" w-full max-h-[95%]">
               <div className="grid grid-cols-[1.5fr_4fr_2fr_2fr_3fr_3fr_2fr] divide-x divide-y border-gray-300 divide-gray-300 ml-4 pt-6 w-full">
                 <div className="flex items-center justify-center border-gray-300"></div>
                 <div className="flex items-center justify-center border-gray-300">Title</div>
@@ -80,42 +89,14 @@ export const GitPrsListDialog = ({ resources, branch, gitUrl, isOpen, resolve }:
                 <div className="flex items-center justify-center">Merge to</div>
                 <div className="flex items-center justify-center border-gray-300 border-b border-r">Add/Del</div>
               </div>
-              {openedPrs?.map(pr => <PullRequestComponent pullRequestInfo={pr} resources={resources} resourceGitUrl={gitUrl} resolve={resolve}/>) ?? null}
+              <div className="w-full">
+                {openedPrs?.map(pr => <PullRequestComponent pullRequestInfo={pr} resources={resources} resourceGitUrl={gitUrl} resolve={resolve}/>) ?? null}
+              </div>
             </div>
           }
           {
-            cannotUseOpenedPrs ? null : <div className="flex items-center justify-between">
-              <div className="flex justify-center items-center text-sm">
-                Total PR count: {totalItemCount}
-              </div>
-              <div className="flex justify-center items-center pt-4 space-x-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setPage((prevPage) => prevPage - 1)}
-                  disabled={page === 1}
-                  className=""
-                >
-                  Previous
-                </Button>
-
-                <span className="flex justify-center items-center text-sm">
-                  Page {page} of {totalPageCount}
-                </span>
-
-                <Button
-                  variant="outline"
-                  onClick={() => setPage((prevPage) => prevPage + 1)}
-                  disabled={page === totalPageCount}
-                  className=""
-                >
-                  Next
-                </Button>
-              </div>
-              <div className="flex justify-center items-center text-sm">
-                {/* Per page: {itemCountPerPage * 2} */}
-                PR count on page: {openedPrs?.length ?? 0}
-              </div>
-            </div>
+            cannotUseOpenedPrs ? null : <PaginationComponent items={openedPrs!} itemsOnPageScalingFactor={1} isPageNumberingExact={false}
+                                                             itemCountOnPageText="PR count on page" totalItemCountText="Total PR count"/>
           }
         </ModalHeader>
         <ModalFooter>
@@ -127,6 +108,16 @@ export const GitPrsListDialog = ({ resources, branch, gitUrl, isOpen, resolve }:
   );
 };
 
+function PRMergeTooltip() {
+  return <div>
+    <PopOverGitGeneralComponent>
+      <div>That is, in Dataspecer we will create merge state where the PR's "merge from" actor will be the "merge to" actor.</div>
+      <div>This is the expected flow when working with Git. That is:</div>
+         <div>&nbsp;&nbsp;&nbsp; - Merge the changes from the branch to which you are merging to your branch.</div>
+         <div>&nbsp;&nbsp;&nbsp; - Close the PR in Git provider.</div>
+    </PopOverGitGeneralComponent>
+  </div>;
+}
 
 
 type PullRequestComponentProps = {
@@ -240,7 +231,8 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
           // Add small delay so the second dialog appears after the first one is closed
             openModal(LoadingDialog, {
               dialogTitle: "Importing the 'merge to' branch from the PR",
-              waitingText: `TODO RadStr: Replace me ... The branch name is ${pullRequestInfo.mergeToBranch}`,
+              waitingText: `Branch name: ${pullRequestInfo.mergeToBranch}`,
+              waitTime: GIT_IMPORT_WAIT_TIME,
               setCloseDialogAction: closeLoadingDialogObject.setCloseDialogAction,
               shouldShowTimer: true,
             });
@@ -255,7 +247,8 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
             // Add small delay so the second dialog appears after the first one is closed
             openModal(LoadingDialog, {
               dialogTitle: "Importing the 'merge from' branch from the PR",
-              waitingText: `TODO RadStr: Replace me ... The branch name is ${pullRequestInfo.mergeFromBranch}`,
+              waitingText: `Branch name: ${pullRequestInfo.mergeFromBranch}`,
+              waitTime: GIT_IMPORT_WAIT_TIME,
               setCloseDialogAction: closeLoadingDialogObject.setCloseDialogAction,
               shouldShowTimer: true,
             });
@@ -270,7 +263,8 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
             // Add small delay so the second dialog appears after the first one is closed
             openModal(LoadingDialog, {
               dialogTitle: "Importing the 'merge from' branch from the PR",
-              waitingText: `TODO RadStr: Replace me ... The branch name is ${pullRequestInfo.mergeFromBranch}`,
+              waitingText: `Branch name: ${pullRequestInfo.mergeFromBranch}`,
+              waitTime: GIT_IMPORT_WAIT_TIME,
               setCloseDialogAction: closeLoadingDialogObject.setCloseDialogAction,
               shouldShowTimer: true,
             });
@@ -284,7 +278,8 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
             // Add small delay so the second dialog appears after the first one is closed
             openModal(LoadingDialog, {
               dialogTitle: "Importing the 'merge to' branch from the PR",
-              waitingText: `TODO RadStr: Replace me ... The branch name is ${pullRequestInfo.mergeToBranch}`,
+              waitingText: `Branch name: ${pullRequestInfo.mergeToBranch}`,
+              waitTime: GIT_IMPORT_WAIT_TIME,
               setCloseDialogAction: closeLoadingDialogObject.setCloseDialogAction,
               shouldShowTimer: true,
             });
@@ -300,7 +295,8 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
         // Add small delay so the second dialog appears after the first one is closed
         openModal(LoadingDialog, {
           dialogTitle: "Creating merge state",
-          waitingText: `TODO RadStr: Replace me ... From ${pullRequestInfo.mergeToBranch} to ${pullRequestInfo.mergeFromBranch}`,
+          waitingText: `"${pullRequestInfo.mergeToBranch}" -> "${pullRequestInfo.mergeFromBranch}"`,
+          waitTime: CREATE_MERGE_STATE_WAIT_TIME,
           setCloseDialogAction: closeLoadingDialogObject.setCloseDialogAction,
           shouldShowTimer: true,
         });
