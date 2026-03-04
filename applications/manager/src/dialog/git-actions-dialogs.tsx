@@ -17,7 +17,7 @@ import {
   getDefaultExportFormat
 } from "@dataspecer/git";
 import { CommitRedirectForMergeStatesDialog } from "./commit-confirm-dialog-caused-by-merge-state";
-import { commitToGitBackendRequest, createNewRemoteRepositoryRequest, GitCommitData, linkToExistingGitRepositoryRequest, mergeCommitToGitBackendRequest } from "@/utils/git-backend-requests";
+import { commitToGitBackendRequest, createNewRemoteRepositoryRequest, GitCommitData, GitMergeCommitData, linkToExistingGitRepositoryRequest, mergeCommitToGitBackendRequest } from "@/utils/git-backend-requests";
 import { createCloseDialogObject, LoadingDialog } from "@/dialog/loading-dialog";
 import { ComboBox, createGitProviderComboBoxOptions } from "@/components/combo-box";
 import { removeMergeState } from "@/utils/merge-state-backend-requests";
@@ -496,7 +496,12 @@ export const mergeCommitToGitDialogOnClickHandler = async (
     shouldShowAlwaysCreateMergeStateOption: false,
   });
   if (result) {
-    await mergeCommitToGitHandler(t, openModal, iri, mergeState, result.commitMessage, result.shouldAppendAfterDefaultMergeCommitMessage, result.exportFormat);
+    const gitMergeCommitData: GitMergeCommitData = {
+      commitMessage: result.commitMessage,
+      exportFormat: result.exportFormat,
+      exportVersion: result.exportVersion,
+    };
+    await mergeCommitToGitHandler(t, openModal, iri, mergeState, gitMergeCommitData, result.shouldAppendAfterDefaultMergeCommitMessage);
   }
 };
 
@@ -505,12 +510,10 @@ export const mergeCommitToGitHandler = async (
   openModal: OpenBetterModal,
   iri: string,
   mergeState: MergeState,
-  commitMessage: string | null,
+  gitMergeCommitData: GitMergeCommitData,
   shouldAppendAfterDefaultMergeCommitMessage: boolean,
-  exportFormat: string,
 ) => {
   const closeDialogObject = createCloseDialogObject();
-  // TODO RadStr: Localization
   openModal(LoadingDialog, {
     dialogTitle: "git.loading.merge.title",
     waitingText: null,
@@ -525,7 +528,7 @@ export const mergeCommitToGitHandler = async (
   };
 
   // We do not care about existence of merge states, so we pass in false
-  mergeCommitToGitBackendRequest(iri, commitMessage, shouldAppendAfterDefaultMergeCommitMessage, exportFormat, mergeFromData, false)
+  mergeCommitToGitBackendRequest(iri, gitMergeCommitData, shouldAppendAfterDefaultMergeCommitMessage, mergeFromData, false)
     .then(async (response) => {
       closeDialogObject.closeDialogAction();
       if (response.status === 500) {

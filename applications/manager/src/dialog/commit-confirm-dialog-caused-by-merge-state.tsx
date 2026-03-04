@@ -125,8 +125,8 @@ const getDataForMergeStateDialog = (
         throw new Error("The redirection cause is HasExactlyOneMergeStateAndItIsResolvedAndCausedByMerge, but the merge state is null");
       }
       mergeCommitToGitHandler(
-        t, openModal, commitRedirectResponse.iri, commitRedirectResponse.mergeStateCausedByMerge, commitRedirectResponse.commitMessage,
-        commitRedirectResponse.shouldAppendAfterDefaultMergeCommitMessage ?? true, commitRedirectResponse.exportFormat);
+        t, openModal, commitRedirectResponse.iri, commitRedirectResponse.mergeStateCausedByMerge, commitRedirectResponse,
+        commitRedirectResponse.shouldAppendAfterDefaultMergeCommitMessage ?? true);
       resolve();
       return null;
     }

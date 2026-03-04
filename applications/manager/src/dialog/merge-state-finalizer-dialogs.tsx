@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { commitToGitDialogOnClickHandler, mergeCommitToGitDialogOnClickHandler } from "./git-actions-dialogs";
 import { requestLoadPackage, ResourcesContext } from "@/package";
 import { useTranslation } from "react-i18next";
+import { GIT_MERGE_VALIDATION_WAIT_TIME } from "@/utils/git-wait-times";
 
 
 type MergeStateFinalizerProps = {
@@ -61,7 +62,7 @@ export const MergeStateFinalizerDialog = ({ mergeState, openModal, isOpen, resol
     waitingContent = <div>
       <p className="font-bold">Step 2/3</p>
       <p>Validating merge state against Git remote.</p>
-      <p>Usually takes around 5-15 seconds.</p>
+      <p>Usually takes around {GIT_MERGE_VALIDATION_WAIT_TIME.lowerBound}-{GIT_MERGE_VALIDATION_WAIT_TIME.upperBound} seconds.</p>
       <div className="flex">
         <Loader className="mr-2 h-4 w-4 mt-1 animate-spin" /> {secondsPassed - secondsAtStartOfMerge} seconds passed
       </div>

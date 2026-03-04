@@ -45,9 +45,9 @@ export const removeGitRepository = asyncHandler(async (request: express.Request,
       }
       // If either already removed or we removed it now, then we can safely remove the url from the database, since either it no longer exists or we successfully removed it
 
-      console.info("Git link before removal:", (await resourceModel.getResource(query.iri))?.linkedGitRepositoryURL);
+      console.info("Git link before removal:", (await resourceModel.getResource(query.iri))?.linkedGitRepositoryURL);   // TODO RadStr Debug: Debug print
       const irisToUpdate = await resourceModel.removeGitLinkFromResourceModel(repositoryURL);
-      console.info("Git link after removal:", (await resourceModel.getResource(query.iri))?.linkedGitRepositoryURL);
+      console.info("Git link after removal:", (await resourceModel.getResource(query.iri))?.linkedGitRepositoryURL);    // TODO RadStr Debug: Debug print
 
       response.status(200);
       response.json({irisToUpdate})

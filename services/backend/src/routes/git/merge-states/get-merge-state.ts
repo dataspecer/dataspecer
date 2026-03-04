@@ -19,7 +19,8 @@ export const getMergeState = asyncHandler(async (request: express.Request, respo
 
   const { rootPathMergeFrom, rootPathMergeTo, includeDiffData, shouldForceDiffTreeReload } = query;
 
-  const mergeState = await mergeStateModel.getMergeState(rootPathMergeFrom, rootPathMergeTo, stringToBoolean(includeDiffData), stringToBoolean(shouldForceDiffTreeReload));
+  const mergeState = await mergeStateModel.getMergeState(
+    rootPathMergeFrom, rootPathMergeTo, stringToBoolean(includeDiffData), stringToBoolean(shouldForceDiffTreeReload));
 
   if (mergeState === null) {
     response.status(404).send({ error: `Merge state for ${rootPathMergeFrom} and ${rootPathMergeTo} does not exist.` });

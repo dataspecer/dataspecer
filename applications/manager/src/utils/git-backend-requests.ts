@@ -1,12 +1,15 @@
 import { ExportFormatType, ExportVersionType, MergeFromDataType } from "@dataspecer/git";
 
 
-export type GitCommitData = {
+export type GitMergeCommitData = {
   commitMessage: string | null;
   exportFormat: ExportFormatType;
   exportVersion: ExportVersionType;
+}
+
+export type GitCommitData = {
   shouldAlwaysCreateMergeState: boolean;
-};
+} & GitMergeCommitData;
 
 export async function commitToGitBackendRequest(
   iri: string,
@@ -31,16 +34,16 @@ export async function commitToGitBackendRequest(
 
 export async function mergeCommitToGitBackendRequest(
   iri: string,
-  commitMessage: string | null,
+  gitMergeCommitData: GitMergeCommitData,
   shouldAppendAfterDefaultMergeCommitMessage: boolean,
-  exportFormat: string,
   mergeFrom: MergeFromDataType,
   shouldRedirectWithExistenceOfMergeStates: boolean
 ) {
   const url = import.meta.env.VITE_BACKEND + "/git/merge-commit-package-to-git?iri=" + encodeURIComponent(iri) +
-                                              "&commitMessage=" + encodeURIComponent(commitMessage ?? "") +
+                                              "&commitMessage=" + encodeURIComponent(gitMergeCommitData.commitMessage ?? "") +
                                               "&shouldAppendAfterDefaultMergeCommitMessage=" + shouldAppendAfterDefaultMergeCommitMessage +
-                                              "&exportFormat=" + exportFormat +
+                                              "&exportFormat=" + gitMergeCommitData.exportFormat +
+                                              "&exportVersion=" + gitMergeCommitData.exportVersion +
                                               "&branchMergeFrom=" + mergeFrom.branch +
                                               "&lastCommitHashMergeFrom=" + mergeFrom.commitHash +
                                               "&rootIriMergeFrom=" + mergeFrom.iri +
