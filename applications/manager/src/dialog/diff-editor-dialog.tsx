@@ -15,6 +15,7 @@ import { useDiffEditorDialogProps } from "@/hooks/use-diff-editor-dialog-props";
 import { AvailableFilesystems, DatastoreInfo, EditableType, getEditableAndNonEditableValue } from "@dataspecer/git";
 import { BetterModalProps } from "@/lib/better-modal";
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
+import { saveChangesTooltipText } from "./outside-changes-to-diff-editor-action-dialog";
 
 export type UpdateModelDataMethod = (
   treePathToNodeContainingDatastore: string,
@@ -236,11 +237,12 @@ function DiffEditorInfoPopOver() {
   return <div className="pt-1">
     <PopOverGitGeneralComponent>
       <p>- Diff Editor's purpose is to resolve the merge state by performing changes to models and marking conflicts as resolved.</p>
+      <p>- {saveChangesTooltipText}</p>
       <p>- The left component contains directory diff. The directory diff is visualized with regards to the editable window.</p>
       <p>- This means that:</p>
-      <p>&nbsp;&nbsp; - Red node - It is NOT present in the editable window.</p>
-      <p>&nbsp;&nbsp; - Green node - It is present in the editable window. And not in the other one.</p>
-      <p>&nbsp;&nbsp; - Blue node - Present in both, but they differ.</p>
+      <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;<p className="text-red-600">Red</p>&nbsp;node - It is NOT present in the editable window.</div>
+      <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;<p className="text-green-600">Green</p>&nbsp;node - It is present in the editable window. And not in the other one.</div>
+      <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;<p className="text-blue-600">Blue</p>&nbsp;node - Present in both, but they differ.</div>
       <p>&nbsp;&nbsp; - Otherwise - Same value in both.</p>
       <p>- The merge actors are not changed in any way. This means that you have to manually do all the changes if needed.</p>
       <p>- The editable window is always on the right.</p>

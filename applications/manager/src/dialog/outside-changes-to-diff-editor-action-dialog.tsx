@@ -54,3 +54,5 @@ export const ChooseActionForDiffEditorUnplannedChange = ({ oldMergeState, newMer
     </Modal>
   );
 }
+
+export const saveChangesTooltipText: string = "Only the files loaded in diff editor are saved. That is those which you touched while working in diff editor. They can be identified by the 📥 icon next to them.";
