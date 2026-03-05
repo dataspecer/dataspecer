@@ -10,6 +10,7 @@ import { commitToGitDialogOnClickHandler, mergeCommitToGitDialogOnClickHandler }
 import { requestLoadPackage, ResourcesContext } from "@/package";
 import { useTranslation } from "react-i18next";
 import { GIT_MERGE_VALIDATION_WAIT_TIME } from "@/utils/git-wait-times";
+import Stepper from "@/components/merge-state-finalizer-stepper";
 
 
 type MergeStateFinalizerProps = {
@@ -60,8 +61,9 @@ export const MergeStateFinalizerDialog = ({ mergeState, openModal, isOpen, resol
   if (mergeState.mergeStateCause === "merge") {
     content = MergeStateFinalizerForMerge({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, setIsWaitingForAnswer, secondsPassed, setSecondsAtStartofMerge, openModal, resolve });
     waitingContent = <div>
-      <p className="font-bold">Step 2/3</p>
+      <Stepper currentStep={1}/>
       <p>Validating merge state against Git remote.</p>
+      <br/>
       <p>Usually takes around {GIT_MERGE_VALIDATION_WAIT_TIME.lowerBound}-{GIT_MERGE_VALIDATION_WAIT_TIME.upperBound} seconds.</p>
       <div className="flex">
         <Loader className="mr-2 h-4 w-4 mt-1 animate-spin" /> {secondsPassed - secondsAtStartOfMerge} seconds passed
@@ -300,10 +302,9 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
   return (
     <>
       <ModalHeader>
-        <ModalTitle>Finish merge state caused by merging (Step 1/3)</ModalTitle>
+        <ModalTitle>Finish merge state caused by merging</ModalTitle>
         <ModalDescription>
-          <p>Note that you can also safely close this dialog and finish the merge later.</p>
-          <br></br>
+          <Stepper currentStep={0}/>
           <p>Check tooltips on button{mergeState.isMergeFromBranch ? "s" : ""} for more info.</p>
         </ModalDescription>
       </ModalHeader>
