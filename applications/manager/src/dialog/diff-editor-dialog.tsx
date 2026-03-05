@@ -12,7 +12,7 @@ import SvgVisualDiff from "@/components/images-conflict-resolver";
 import { MonacoDiffEditor } from "@/components/monaco-diff-editor";
 import { MergeStrategyComponent } from "@/components/merge-strategy-component";
 import { useDiffEditorDialogProps } from "@/hooks/use-diff-editor-dialog-props";
-import { DatastoreInfo, EditableType } from "@dataspecer/git";
+import { AvailableFilesystems, DatastoreInfo, EditableType, getEditableAndNonEditableValue } from "@dataspecer/git";
 import { BetterModalProps } from "@/lib/better-modal";
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 
@@ -35,6 +35,11 @@ type TextDiffEditorDialogProps = {
   initialMergeFromRootMetaPath: string,
   initialMergeToRootMetaPath: string,
   editable: EditableType,
+}
+
+type BranchDataToRender = {
+  branch?: string;
+  filesystem?: AvailableFilesystems;
 }
 
 export const DIFF_EDITOR_EDIT_ICON_TAILWIND_WIDTH = "w-6";
@@ -79,6 +84,22 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
       toast.success("Saved currently opened file to backend");
     }
   });
+
+
+  const mergeFromBranchDataToRender: BranchDataToRender = {
+    branch: examinedMergeState?.branchMergeFrom,
+    filesystem: examinedMergeState?.filesystemTypeMergeFrom,
+  };
+  const mergeToBranchDataToRender: BranchDataToRender = {
+    branch: examinedMergeState?.branchMergeTo,
+    filesystem: examinedMergeState?.filesystemTypeMergeTo,
+  };
+  const {editable: editableBranchDataToRender, nonEditable: nonEditableBranchDataToRender} = examinedMergeState === null ?
+    {
+      editable: { branch: "", filesystem: AvailableFilesystems.DS_Filesystem },
+      nonEditable: { branch: "", filesystem: AvailableFilesystems.DS_Filesystem }
+    } :
+    getEditableAndNonEditableValue(examinedMergeState?.editable, mergeFromBranchDataToRender, mergeToBranchDataToRender);
 
 
   return (
@@ -163,7 +184,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
                       </TabsContent>
                       <TabsContent value="text-compare">
                         <div className="grid grid-cols-[5%_95%]! border-b">
-                            <RotateCw className="flex! mt-3 ml-1 h-4 w-4 cursor-pointer" onClick={reloadModelsDataFromBackend} />
+                          <RotateCw className="flex! mt-3 ml-1 h-4 w-4 cursor-pointer" onClick={reloadModelsDataFromBackend} />
                           <div className="flex! items-center justify-center space-x-4 ml-16 pl-32">
                             <MergeStrategyComponent handleMergeStateResolving={applyAutomaticMergeStateResolver}/>
                             <label className="flex! items-center">
@@ -173,8 +194,18 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
                                 onChange={(e) => setShowStrippedVersion(e.target.checked)}
                                 className="w-5 h-5 accent-blue-600 ml-28"
                               />
-                              <span>{showStrippedVersion ? "Showing stripped version" : "Showing raw version"}</span>
+                              &nbsp;<span>{showStrippedVersion ? "Showing stripped version" : "Showing raw version"}</span>
                             </label>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 items-center w-full pt-2 pb-2">
+                          <div className="text-center">
+                            {nonEditableBranchDataToRender?.branch} {nonEditableBranchDataToRender?.filesystem === AvailableFilesystems.ClassicFilesystem ? " (Git)" : ""}
+                          </div>
+
+
+                          <div className="text-center">
+                            {editableBranchDataToRender?.branch} {editableBranchDataToRender?.filesystem === AvailableFilesystems.ClassicFilesystem ? " (Git)" : ""}
                           </div>
                         </div>
                         {/* Also small note - there is loading effect when first starting up the editor, it is not any custom made functionality */}
