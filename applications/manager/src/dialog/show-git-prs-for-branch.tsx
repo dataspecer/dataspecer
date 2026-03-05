@@ -321,7 +321,7 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
         );
       }
       else {
-        toast.error("The creation of merge state failed");
+        toast.error("The creation of merge state failed", { "richColors": true });
       }
     }
     catch (error) {

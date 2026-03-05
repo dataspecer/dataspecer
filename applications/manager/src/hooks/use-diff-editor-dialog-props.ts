@@ -348,7 +348,7 @@ async function onCascadeUpdateForCreatedDatastores(
       if (isFilesystemNodeNotYetAdded) {
         visitedFirstNodeToCreate = true;
         if (parentNode === null) {
-          toast.error("Fatal Merge error, check console");
+          toast.error("Fatal Merge error, check console", { "richColors": true });
           throw new Error("We can not (at least currently) have 2 roots. That is both packages have to have one common root.");
         }
 
@@ -1188,7 +1188,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
       }
 
       if (filesystemNodesBatchToCreate.firstExistingParentIri === null) {
-        toast.error("Fatal Merge error, check console");
+        toast.error("Fatal Merge error, check console", { "richColors": true });
         throw new Error("We can not (at least currently) have 2 roots. That is both packages have to have one common root.");
       }
 

@@ -113,7 +113,7 @@ const MergeStateFinalizerForPull = ({ mergeState, shouldRenderAnswerDialog, setS
     setHttpResponse(response);
     if (response !== null) {
       if (response.status === 409) {
-        toast.error("There are still unresolved conflicts");
+        toast.error("There are still unresolved conflicts", { "richColors": true });
         resolve();
       }
       else if (response.status < 300) {
@@ -126,13 +126,13 @@ const MergeStateFinalizerForPull = ({ mergeState, shouldRenderAnswerDialog, setS
         setShouldRenderAnswerDialog(true);
       }
       else {
-        toast.error("There was error when finalizing, check console for more info");
+        toast.error("There was error when finalizing, check console for more info", { "richColors": true });
         setIsWaitingForAnswer(false);
         setShouldRenderAnswerDialog(true);
       }
     }
     else {
-      toast.error("There was error when finalizing, check console for more info");
+      toast.error("There was error when finalizing, check console for more info", { "richColors": true });
       setIsWaitingForAnswer(false);
       setShouldRenderAnswerDialog(true);
     }
@@ -166,7 +166,7 @@ const MergeStateFinalizerForPullAnswerDialog = ({ mergeState, resolve }: MergeSt
       toast.success("Finalizing was successful");
     }
     else {
-      toast.error("Finalizing ended in failure");
+      toast.error("Finalizing ended in failure", { "richColors": true });
     }
     resolve();
   }
@@ -205,7 +205,7 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
     const response = await finalizeMergeMergeState(mergeState.uuid, "merge-commit");
     if (response !== null) {
       if (response.status === 409) {
-        toast.error("There are still unresolved conflicts");
+        toast.error("There are still unresolved conflicts", { "richColors": true });
         resolve();
       }
       else if (response.status < 300) {
@@ -219,11 +219,11 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
         // TODO RadStr: Probably do nothing - we will just show the another dialog.
       }
       else {
-        toast.error("There was error when finalizing, check console for more info");
+        toast.error("There was error when finalizing, check console for more info", { "richColors": true });
       }
     }
     else {
-      toast.error("There was error when finalizing, check console for more info");
+      toast.error("There was error when finalizing, check console for more info", { "richColors": true });
     }
     setHttpResponse(response);
     setIsWaitingForAnswer(false);
@@ -237,7 +237,7 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
     const response = await finalizeMergeMergeState(mergeState.uuid, "rebase-commit");
     if (response !== null) {
       if (response.status === 409) {
-        toast.error("There are still unresolved conflicts");
+        toast.error("There are still unresolved conflicts", { "richColors": true });
         resolve();
       }
       else if (response.status < 300) {
@@ -256,11 +256,11 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
         // TODO RadStr: Probably do nothing - we will just show the another dialog.
       }
       else {
-        toast.error("There was error when finalizing, check console for more info");
+        toast.error("There was error when finalizing, check console for more info", { "richColors": true });
       }
     }
     else {
-      toast.error("There was error when finalizing, check console for more info");
+      toast.error("There was error when finalizing, check console for more info", { "richColors": true });
     }
     setHttpResponse(response);
     setIsWaitingForAnswer(false);
@@ -322,7 +322,7 @@ const MergeStateFinalizerForMergeAnswerDialog = ({ mergeState, httpResponse, res
       toast.success("Finalizing was successful");
     }
     else {
-      toast.error("Finalizing ended in failure");
+      toast.error("Finalizing ended in failure", { "richColors": true });
     }
     if (mergeState.filesystemTypeMergeFrom === AvailableFilesystems.DS_Filesystem) {
       await requestLoadPackage(mergeState.rootIriMergeFrom, true);
@@ -384,7 +384,7 @@ const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldR
 
     if (response !== null) {
       if (response.status === 409) {
-        toast.error("There are still unresolved conflicts");
+        toast.error("There are still unresolved conflicts", { "richColors": true });
         resolve();
       }
       else if (response.status < 300) {
@@ -396,11 +396,11 @@ const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldR
         // TODO RadStr: Probably do nothing - we will just show the another dialog.
       }
       else {
-        toast.error("There was error when finalizing, check console for more info");
+        toast.error("There was error when finalizing, check console for more info", { "richColors": true });
       }
     }
     else {
-      toast.error("There was error when finalizing, check console for more info");
+      toast.error("There was error when finalizing, check console for more info", { "richColors": true });
     }
 
     setHttpResponse(response);
@@ -437,7 +437,7 @@ const MergeStateFinalizerForPushAnswerDialog = ({ mergeState, httpResponse, reso
       toast.success("Finalizing was successful");
     }
     else {
-      toast.error("Finalizing ended in failure");
+      toast.error("Finalizing ended in failure", { "richColors": true });
     }
     if (mergeState.filesystemTypeMergeFrom === AvailableFilesystems.DS_Filesystem) {
       await requestLoadPackage(mergeState.rootIriMergeFrom, true);

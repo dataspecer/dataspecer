@@ -55,13 +55,13 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
     if (branch === "") {
       // Should be covered by the resolve check.
       // TODO RadStr Later: Localization
-      toast.error("Given branch name is empty");
+      toast.error("Given branch name is empty", { "richColors": true });
       resolve(null);
       return;
     }
     else if (branchAlreadyExists) {
       // TODO RadStr Later: Localization
-      toast.error("Branch already exists");
+      toast.error("Branch already exists", { "richColors": true });
       resolve(null);
       return;
     }
@@ -81,7 +81,7 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
         response = await packageService.copyRecursively(sourcePackage.iri, PACKAGE_ROOT);
         const newRootIri: string | undefined = response?.newRootIri;
         if (newRootIri === undefined) {
-          toast.error("Failed to create the new branch");
+          toast.error("Failed to create the new branch", { "richColors": true });
           resolve(null);
           return;
         }
@@ -89,7 +89,7 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
         toast.success("Successfully created new branch in Dataspecer. Don't forget to push it.");
       }
       catch (error) {
-        toast.error("Unknown failure when creating new branch");
+        toast.error("Unknown failure when creating new branch", { "richColors": true });
         throw error;
       }
       finally {

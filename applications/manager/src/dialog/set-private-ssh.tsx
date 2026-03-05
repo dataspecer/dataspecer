@@ -43,7 +43,7 @@ export default function SetPrivateSSHKeyDialog({ isOpen, resolve }: SetPrivateSS
     }
     catch (error) {
       console.error(error);
-      toast.error("Failed to set private SSH key, check console for more info");
+      toast.error("Failed to set private SSH key, check console for more info", { "richColors": true });
     }
     finally {
       resolve(null);

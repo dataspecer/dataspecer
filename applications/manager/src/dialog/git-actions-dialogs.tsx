@@ -216,7 +216,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
             });
           }
           catch (error) {
-            toast.error("Failed saving the new Git configuration to Dataspecer backend");
+            toast.error("Failed saving the new Git configuration to Dataspecer backend", { "richColors": true });
             throw error;
           }
         };
@@ -555,12 +555,12 @@ export const mergeCommitToGitHandler = async (
         // TODO: ..... Not really clean: The check for the equality of strings of error. But can't really think of anything much better now
         if (jsonResponse.error === "Error: The merge from branch was already merged. We can not merge again.") {
           // In this case we want to always remove the merge state. User has to move heads by committing and then he can create new merge state.
-          toast.error(t("git.error.merge-already-merged"));
+          toast.error(t("git.error.merge-already-merged"), { "richColors": true });
           console.error(jsonResponse.error + " Removing the merge state.");
           const removalResult = await removeMergeState(mergeState.uuid);
           if (!removalResult) {
             setTimeout(() => {
-              toast.error(t("git.error.merge-state-removal-failed"));
+              toast.error(t("git.error.merge-state-removal-failed"), { "richColors": true });
             }, 1000);
           }
         }
@@ -575,7 +575,7 @@ export const mergeCommitToGitHandler = async (
         const removalResult = await removeMergeState(mergeState.uuid);
         if (!removalResult) {
           setTimeout(() => {
-            toast.error(t("git.error.merge-state-removal-failed"));
+            toast.error(t("git.error.merge-state-removal-failed"), { "richColors": true });
           }, 1000);
         }
       }
@@ -687,7 +687,7 @@ export const linkToExistingGitRepositoryHandler = async (t: TFunction<"translati
     }
     else {
       // TODO RadStr later: Localization
-      toast.error(t("git.toast.link-failed"));
+      toast.error(t("git.toast.link-failed"), { "richColors": true });
     }
     requestLoadPackage(iri, true);
   }

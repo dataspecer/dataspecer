@@ -6,6 +6,6 @@ export function gitOperationResultToast(t: TFunction<"translation", undefined>, 
     toast.success(t("Git operation was successful"));
   }
   else {
-    toast.error(t("Git operation failed"));
+    toast.error(t("Git operation failed", { "richColors": true }));
   }
 }

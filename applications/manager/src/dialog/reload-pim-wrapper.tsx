@@ -31,7 +31,7 @@ export const ReloadPimWrapper = ({ id, isOpen, resolve }: ReloadPimWrapperProps 
     } catch (e) {
       setIsLoading(false);
       console.error(e);
-      toast.error("Reloading model failed. More information in the console.");
+      toast.error("Reloading model failed. More information in the console.", { "richColors": true });
       return;
     }
 

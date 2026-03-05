@@ -19,7 +19,7 @@ export async function manualPull(t: TFunction<"translation", undefined>, iri: st
     toast.success(t("git pull went ok, there were no conflicts"));
   }
   else {
-    toast.error(t("There were conflicts in the git pull, resolve them in DS"));
+    toast.error(t("There were conflicts in the git pull, resolve them in DS", { "richColors": true }));
   }
   requestLoadPackage(iri, true);
 }
@@ -79,7 +79,7 @@ export async function trySetPackageAsUpToDate(iri: string) {
     }
   }
   else {
-    toast.error("Unknown error when comparing package with the Git remote to check for changes.");
+    toast.error("Unknown error when comparing package with the Git remote to check for changes.", { "richColors": true });
   }
 
   requestLoadPackage(iri, true);

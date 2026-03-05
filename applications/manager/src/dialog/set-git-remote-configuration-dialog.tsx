@@ -52,7 +52,7 @@ export function SetGitRemoteConfigurationDialog({ inputPackage, isOpen, resolve 
           toast.success(t("successfully saved"));
         }
         catch (error) {
-          toast.error("Failed storing the new Git configuration to backend");
+          toast.error("Failed storing the new Git configuration to backend", { "richColors": true });
           throw error;
         }
       };

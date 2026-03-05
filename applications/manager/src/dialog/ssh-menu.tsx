@@ -50,7 +50,7 @@ export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
       }
       catch (error) {
         console.error(error);
-        toast.error("Failed to get private SSH key, check console for more info");
+        toast.error("Failed to get private SSH key, check console for more info", { "richColors": true });
         resolve(null);
       }
     };

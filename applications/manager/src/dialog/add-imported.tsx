@@ -80,15 +80,15 @@ export const AddImported = ({ iri, isOpen, resolve }: AddImportedProps & BetterM
           // TODO RadStr: Localization
           const hasTooManyImportedAtOnceResult = importResults.find(result => result.status === 500) !== undefined;
           if (hasTooManyImportedAtOnceResult) {
-            toast.error("On some of the imports more than one root was imported");
+            toast.error("On some of the imports more than one root was imported", { "richColors": true });
           }
           const hasBranchAlreadyExistsResult = importResults.find(result => result.status === 409) !== undefined;
           if (hasBranchAlreadyExistsResult) {
-            toast.error("On some of the imports branch was imported, but the branch is already present inside DS");
+            toast.error("On some of the imports branch was imported, but the branch is already present inside DS", { "richColors": true });
           }
         }
         else {
-          toast.error(t("add-imported.error"));
+          toast.error(t("add-imported.error"), { "richColors": true });
         }
       }
 
@@ -119,7 +119,7 @@ export const AddImported = ({ iri, isOpen, resolve }: AddImportedProps & BetterM
       await refreshRootPackage();
       resolve(true);
     } else {
-      toast.error(t("add-imported.error"));
+      toast.error(t("add-imported.error"), { "richColors": true });
     }
 
     setLoading(false);

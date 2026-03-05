@@ -51,7 +51,7 @@ export function GitIssuesListDialog({ gitUrl, isOpen, resolve }: GitIssuesListDi
               return;
             }
             failureOccurred = true;
-            toast.error((issueTotalCount as any).error);
+            toast.error((issueTotalCount as any).error, { "richColors": true });
             resolve(null);
             return;
          }
@@ -71,7 +71,7 @@ export function GitIssuesListDialog({ gitUrl, isOpen, resolve }: GitIssuesListDi
         return;
       }
       failureOccurred = true;
-      toast.error((gitIssuesResponseData as any).error);
+      toast.error((gitIssuesResponseData as any).error, { "richColors": true });
       resolve(null);
       return;
     }
