@@ -35,7 +35,6 @@ import { ListMergeStatesDialog } from "./dialog/list-merge-states-dialog";
 import { useLogin, UseLoginType } from "./hooks/use-login";
 import { isGitUrlSet, PACKAGE_ROOT } from "@dataspecer/git";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
-import { debugClearMergeStateDBTable } from "./utils/merge-state-backend-requests";
 import { manualPull, trySetPackageAsUpToDate, switchRepresentsBranchHead } from "./utils/git-fetch-related-actions";
 import ResourceTooltip from "./components/git-tooltip";
 import { CreateMergeStateCausedByMergeDialog } from "./dialog/open-merge-state";
