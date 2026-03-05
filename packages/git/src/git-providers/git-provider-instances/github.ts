@@ -738,8 +738,8 @@ export class GitHubProvider extends GitProviderBase {
       throw new Error("Can not get pull requests, since there is not auth token to use");
     }
 
-    const urlMergeFrom = `https://api.github.com/search/issues?q=repo:${repoOwner}/${repoName}+is:pr+head:${branchToMatch}&per_page=${perPage}&page=${page}`;
-    const urlMergeTo = `https://api.github.com/search/issues?q=repo:${repoOwner}/${repoName}+is:pr+base:${branchToMatch}&per_page=${perPage}&page=${page}`;
+    const urlMergeFrom = `https://api.github.com/search/issues?q=repo:${repoOwner}/${repoName}+is:pr+is:open+head:${branchToMatch}&per_page=${perPage}&page=${page}`;
+    const urlMergeTo = `https://api.github.com/search/issues?q=repo:${repoOwner}/${repoName}+is:pr+is:open+base:${branchToMatch}&per_page=${perPage}&page=${page}`;
 
     const responseMergeFrom = await this.httpFetch(urlMergeFrom, {
       headers: {
@@ -788,7 +788,7 @@ export class GitHubProvider extends GitProviderBase {
       throw new Error("Can not get pull requests, since there is not auth token to use");
     }
 
-    const requestUrl = `https://api.github.com/search/issues?q=repo:${repoOwner}/${repoName}+is:pr&per_page=${perPage}&page=${page}`;
+    const requestUrl = `https://api.github.com/search/issues?q=repo:${repoOwner}/${repoName}+is:pr+is:open&per_page=${perPage}&page=${page}`;
 
     const response = await this.httpFetch(requestUrl, {
       headers: {
