@@ -125,14 +125,14 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
 
   let gitPart: React.ReactNode;
   if (resource.activeMergeStateCount !== 0) {
-    gitPart = <a href={resource.linkedGitRepositoryURL} className="text-red-500 pt-1">GIT<AlertTriangleIcon className="w-4 h-4 ml-0.75"/></a>;
+    gitPart = <a href={resource.linkedGitRepositoryURL} className="text-red-500 pt-1 flex flex-1 flex-row">GIT<AlertTriangleIcon className="w-4 h-4 ml-0.75 mt-1"/></a>;
   }
   else {
     if (resource.hasUncommittedChanges) {
-      gitPart = <a href={resource.linkedGitRepositoryURL} className="text-yellow-400 pt-1">GIT<AlertTriangleIcon className="w-4 h-4 ml-0.75"/></a>;
+      gitPart = <a href={resource.linkedGitRepositoryURL} className="text-yellow-400 pt-1 flex flex-1 flex-row">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/></a>;
     }
     else {
-      gitPart = <a href={resource.linkedGitRepositoryURL} className="text-green-400 pt-1">GIT<CheckIcon className="w-4 h-4 ml-0.75"/></a>;
+      gitPart = <a href={resource.linkedGitRepositoryURL} className="text-green-400 pt-1 flex flex-1 flex-row">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/></a>;
     }
   }
 
@@ -164,12 +164,12 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
             !isGitUrlSet(resource.linkedGitRepositoryURL) ?
               null :
               <ResourceTooltip resource={resource}>
-                <div className="flex pl-4 pr-2 w-16 -mt-6">
+                <div className="flex pl-4 pr-2 w-20 -mt-1">
                   {gitPart}
                   {
                     resource.representsBranchHead ?
                       null :
-                      <TagIcon className="w-4 h-4" />
+                      <TagIcon className="w-4 h-4 pl-0.5 mt-1" />
                   }
                 </div>
               </ResourceTooltip>
