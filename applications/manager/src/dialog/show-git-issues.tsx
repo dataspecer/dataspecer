@@ -8,6 +8,7 @@ import { GitIssueInfo, GitIssuesFetchResponse, GitProvider, IssueState } from "@
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
 import { Loader } from "lucide-react";
 import { useMemo } from "react";
+import { toast } from "sonner";
 
 
 type GitIssuesListDialogProps = {
@@ -34,7 +35,7 @@ export function GitIssuesListDialog({ gitUrl, isOpen, resolve }: GitIssuesListDi
 
   const [gitIssues, cannotUseGitIssues] = useAsyncMemo(async () => {
     const issuesFetchUrl: string = import.meta.env.VITE_BACKEND + `/git/issues?gitUrl=${gitUrl}&issueState=${IssueState.Open}&page=${trackedPageOnBackend}&perPage=${itemCountPerPage}`;
-
+    let failureOccurred = false;
     // Optimization - we start this request without await and handle it in the .then, this measn that we can move on to the other fetch while this one is being performed.
     const issueCountFetchUrl: string = import.meta.env.VITE_BACKEND + `/git/issue-total-count?gitUrl=${gitUrl}&issueState=${IssueState.Open}`;
     fetch(
@@ -44,7 +45,16 @@ export function GitIssuesListDialog({ gitUrl, isOpen, resolve }: GitIssuesListDi
         method: "GET",
       })
       .then(async (issueCountFetchResponse) => {
-         const issueTotalCount: number = (await issueCountFetchResponse.json());
+         const issueTotalCount: any = (await issueCountFetchResponse.json());
+         if (issueTotalCount?.error !== undefined) {
+            if (failureOccurred) {
+              return;
+            }
+            failureOccurred = true;
+            toast.error((issueTotalCount as any).error);
+            resolve(null);
+            return;
+         }
          setTotalItemCount(issueTotalCount);
       });
 
@@ -56,6 +66,15 @@ export function GitIssuesListDialog({ gitUrl, isOpen, resolve }: GitIssuesListDi
         method: "GET",
       });
     const gitIssuesResponseData: GitIssuesFetchResponse = await issuesFetchResponse.json();
+    if ((gitIssuesResponseData as any).error !== undefined) {
+      if (failureOccurred) {
+        return;
+      }
+      failureOccurred = true;
+      toast.error((gitIssuesResponseData as any).error);
+      resolve(null);
+      return;
+    }
 
     setTrackedPageOnBackend(gitIssuesResponseData.page);
     setIsLastPageBasedOnServerResponse(gitIssuesResponseData.isLastPage);
@@ -65,11 +84,13 @@ export function GitIssuesListDialog({ gitUrl, isOpen, resolve }: GitIssuesListDi
 
   return (
     <Modal open={isOpen} onClose={() => resolve(null)}>
-      <ModalContent className={"min-w-[80%] overflow-x-auto"}>
+      <ModalContent className={"min-w-[80%] overflow-x-auto overflow-y-auto max-h-[90%]"}>
         <ModalHeader>
           <ModalTitle>List of opened issues</ModalTitle>
           <ModalDescription>
-            You can click on the issues and get redirected to them. You can also click on the 'Create new issue' to get redirected on the corresponding page.
+            You can click on the issues and get redirected to them.
+            <br/>
+            You can also click on the 'Create new issue' to get redirected on the corresponding page.
           </ModalDescription>
           {
             cannotUseGitIssues ? <Loader className="mr-2 mt-1 h-4 w-4 animate-spin" /> :
