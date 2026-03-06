@@ -1,13 +1,13 @@
 import { Badge } from "@/components/ui/badge";
 import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { AlertTriangleIcon, ArrowLeftRight, BugIcon, CheckIcon, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, Eye, EyeIcon, FileText, Filter, FilterX, Folder, FolderDown, GitBranchPlus, GitCommit, GitCommitIcon, GitGraph, GitMerge, GitPullRequestArrowIcon, GitPullRequestIcon, Import, Link, Menu, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, ShieldQuestion, Sparkles, TagIcon, TimerResetIcon, Trash2, WandSparkles } from "lucide-react";
+import { AlertTriangleIcon, ArrowLeftRight, BugIcon, CheckIcon, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, Eye, EyeIcon, FileText, Filter, FilterX, Folder, FolderDown, GitBranchPlus, GitCommit, GitGraph, GitMerge, GitPullRequestArrowIcon, GitPullRequestIcon, Import, Link, Menu, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, ShieldQuestion, Sparkles, TagIcon, TimerResetIcon, Trash2, WandSparkles } from "lucide-react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getValidTime } from "./components/time";
 import { Translate } from "./components/translate";
 import { Button } from "./components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "./components/ui/dropdown-menu";
 import { Skeleton } from "./components/ui/skeleton";
 import { CreateNew } from "./dialog/create-new";
 import { DeleteResource } from "./dialog/delete-resource";
@@ -319,53 +319,60 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
       }
 
       {/* Git actions */}
-      {/* Git show actions */}
-      { (resource.types.includes(LOCAL_PACKAGE) && parentIri === PACKAGE_ROOT) ?
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="shrink-0" disabled={!hasSetRemoteRepository}>
-              <EllipsisVertical className="h-4 w-4" /><p className="text-xs">Git<Eye className="h-4 w-4" /></p>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            {hasSetRemoteRepository && <DropdownMenuItem asChild><a href={gitProvider === null ? "" : gitProvider.createGitRepositoryURL(repositoryOwner!, repositoryName!, gitRef!)}><Eye className="mr-2 h-4 w-4" />Show {resource.representsBranchHead ? "branch" : "commit"} on GitHub</a></DropdownMenuItem>}
-            {hasSetRemoteRepository && <DropdownMenuItem asChild><a href={gitProvider === null ? "" : gitProvider.getGitPagesURL(resource.linkedGitRepositoryURL)}><Eye className="mr-2 h-4 w-4" />Show GitHub Pages</a></DropdownMenuItem>}
-            {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>}
-            {hasSetRemoteRepository && <hr className="border-gray-300" />}
-            {hasSetRemoteRepository && resource.representsBranchHead && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialogForBranch, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: resource.branch})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Opened Pull Requests For Branch</DropdownMenuItem>}
-            {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => openModal(GitIssuesListDialog, {gitUrl: resource.linkedGitRepositoryURL})}><BugIcon className="mr-2 h-4 w-4" />All Opened Issues</DropdownMenuItem>}
-            {hasSetRemoteRepository && <hr className="border-gray-300" />}
-            {hasSetRemoteRepository && <DropdownMenuItem onClick={() => openModal(ListMergeStatesDialog, { iri })}><EyeIcon className="mr-2 h-4 w-4" /> Show merge states</DropdownMenuItem>}
-            {hasSetRemoteRepository && <DropdownMenuItem onClick={() => setPackageGitFilter(resource.projectIri)}><Filter className="mr-2 h-4 w-4" />Show Same Repository Projects</DropdownMenuItem>}
-          </DropdownMenuContent>
-        </DropdownMenu> :
-        null
-      }
-      {/* Git perform actions */}
       { (resource.types.includes(LOCAL_PACKAGE) && parentIri === PACKAGE_ROOT) ?
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="shrink-0">
-              <EllipsisVertical className="h-4 w-4" /><p className="text-xs">Git<GitCommitIcon className="h-4 w-4"></GitCommitIcon></p>
+              <EllipsisVertical className="h-4 w-4" /><p className="text-xs">Git</p>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            {/* TODO RadStr: Just for debugging ! */}
-            {hasSetRemoteRepository && <DropdownMenuItem onClick={() => debugClearMergeStateDBTable()}><ShieldQuestion className="mr-2 h-4 w-4" />DEBUG - Clear merge db state table</DropdownMenuItem>}
-            {hasSetRemoteRepository && <DropdownMenuItem title={tooltipForSetUpToDateMenuItem} onClick={() => trySetPackageAsUpToDate(resource.iri)}><TimerResetIcon className="mr-2 h-4 w-4" />Check local changes status</DropdownMenuItem>}
-            {hasSetRemoteRepository && <hr className="border-gray-300" />}
-            {<DropdownMenuItem onClick={async () => createNewRemoteRepositoryHandler(t, openModal, iri, resource)}><GitPullRequestIcon className="mr-2 h-4 w-4" />Create remote repository</DropdownMenuItem>}
-            {<DropdownMenuItem onClick={async () => linkToExistingGitRepositoryHandler(t, openModal, iri, resource)}><Link className="mr-2 h-4 w-4" />Link to remote repository</DropdownMenuItem>}
-            {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => commitToGitDialogOnClickHandler(t, openModal, iri, resource, "classic-commit", true, null, null)}><GitCommit className="mr-2 h-4 w-4" />Commit</DropdownMenuItem>}
-            {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => manualPull(t, iri)}><Import className="mr-2 h-4 w-4" />Pull</DropdownMenuItem>}
-            {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => openModal(SetGitRemoteConfigurationDialog, {inputPackage: resource})}><Pencil className="mr-2 h-4 w-4" />Configure Git</DropdownMenuItem>}
-            {hasSetRemoteRepository && <hr className="border-gray-300" />}
-            {hasSetRemoteRepository && <DropdownMenuItem onClick={() => openModal(CreateNewBranchDialog, { sourcePackage: resource, actionOnConfirm: BranchAction.CreateNewBranch })}><GitBranchPlus className="mr-2 h-4 w-4" />Create branch</DropdownMenuItem>}
-            {hasSetRemoteRepository && <DropdownMenuItem onClick={createMergeStateAction}><GitMerge className="mr-2 h-4 w-4"/>Merge - Choose merge from</DropdownMenuItem>}
-            {hasSetRemoteRepository && <hr className="border-gray-300" />}
-            {hasSetRemoteRepository && <DropdownMenuItem onClick={() => switchRepresentsBranchHead(resource, openModal)}><ArrowLeftRight className="mr-2 h-4 w-4" /> Convert to {resource.representsBranchHead ? "tag" : "branch"}</DropdownMenuItem>}
-            {hasSetRemoteRepository && <hr className="border-gray-300" />}
-            {hasSetRemoteRepository && <DropdownMenuItem className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={() => openModal(DeleteGitRepoDialog, {iri, gitUrl: resource.linkedGitRepositoryURL})}><Trash2 className="mr-2 h-4 w-4" />Delete Git repository</DropdownMenuItem>}
+            {
+              // Git show actions. The menu is shown only when it is already linked to the remote
+              !hasSetRemoteRepository ? null :
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <div className="flex flex-1 flex-row"><Eye className="h-4 w-4 mt-0.75 mr-2" />Show</div>
+                </DropdownMenuSubTrigger>
+
+                <DropdownMenuSubContent className="data-[side=top]">
+                  {hasSetRemoteRepository && <DropdownMenuItem asChild><a href={gitProvider === null ? "" : gitProvider.createGitRepositoryURL(repositoryOwner!, repositoryName!, gitRef!)}><Eye className="mr-2 h-4 w-4" />Show {resource.representsBranchHead ? "branch" : "commit"} on GitHub</a></DropdownMenuItem>}
+                  {hasSetRemoteRepository && <DropdownMenuItem asChild><a href={gitProvider === null ? "" : gitProvider.getGitPagesURL(resource.linkedGitRepositoryURL)}><Eye className="mr-2 h-4 w-4" />Show GitHub Pages</a></DropdownMenuItem>}
+                  {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>}
+                  {hasSetRemoteRepository && <hr className="border-gray-300" />}
+                  {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialogAll, {resources, gitUrl: resource.linkedGitRepositoryURL})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />All Opened Pull Requests</DropdownMenuItem>}
+                  {hasSetRemoteRepository && resource.representsBranchHead && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialogForBranch, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: resource.branch})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Opened Pull Requests For Branch</DropdownMenuItem>}
+                  {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => openModal(GitIssuesListDialog, {gitUrl: resource.linkedGitRepositoryURL})}><BugIcon className="mr-2 h-4 w-4" />All Opened Issues</DropdownMenuItem>}
+                  {hasSetRemoteRepository && <hr className="border-gray-300" />}
+                  {hasSetRemoteRepository && <DropdownMenuItem onClick={() => openModal(ListMergeStatesDialog, { iri })}><EyeIcon className="mr-2 h-4 w-4" /> Show merge states</DropdownMenuItem>}
+                  {hasSetRemoteRepository && <DropdownMenuItem onClick={() => setPackageGitFilter(resource.projectIri)}><Filter className="mr-2 h-4 w-4" />Show Same Repository Projects</DropdownMenuItem>}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            }
+            {/* Git perform actions */}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <div className="flex flex-1 flex-row"><GitCommit className="h-4 w-4 mt-0.75 mr-2" />Act</div>
+              </DropdownMenuSubTrigger>
+
+              <DropdownMenuSubContent className="data-[side=top]">
+                {hasSetRemoteRepository && <DropdownMenuItem onClick={() => debugClearMergeStateDBTable()}><ShieldQuestion className="mr-2 h-4 w-4" />DEBUG - Clear merge db state table</DropdownMenuItem>}
+                {hasSetRemoteRepository && <DropdownMenuItem title={tooltipForSetUpToDateMenuItem} onClick={() => trySetPackageAsUpToDate(resource.iri)}><TimerResetIcon className="mr-2 h-4 w-4" />Check local changes status</DropdownMenuItem>}
+                {hasSetRemoteRepository && <hr className="border-gray-300" />}
+                {<DropdownMenuItem onClick={async () => createNewRemoteRepositoryHandler(t, openModal, iri, resource)}><GitPullRequestIcon className="mr-2 h-4 w-4" />Create remote repository</DropdownMenuItem>}
+                {<DropdownMenuItem onClick={async () => linkToExistingGitRepositoryHandler(t, openModal, iri, resource)}><Link className="mr-2 h-4 w-4" />Link to remote repository</DropdownMenuItem>}
+                {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => commitToGitDialogOnClickHandler(t, openModal, iri, resource, "classic-commit", true, null, null)}><GitCommit className="mr-2 h-4 w-4" />Commit</DropdownMenuItem>}
+                {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => manualPull(t, iri)}><Import className="mr-2 h-4 w-4" />Pull</DropdownMenuItem>}
+                {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => openModal(SetGitRemoteConfigurationDialog, {inputPackage: resource})}><Pencil className="mr-2 h-4 w-4" />Configure Git</DropdownMenuItem>}
+                {hasSetRemoteRepository && <hr className="border-gray-300" />}
+                {hasSetRemoteRepository && <DropdownMenuItem onClick={() => openModal(CreateNewBranchDialog, { sourcePackage: resource, actionOnConfirm: BranchAction.CreateNewBranch })}><GitBranchPlus className="mr-2 h-4 w-4" />Create branch</DropdownMenuItem>}
+                {hasSetRemoteRepository && <DropdownMenuItem onClick={createMergeStateAction}><GitMerge className="mr-2 h-4 w-4"/>Merge - Choose merge from</DropdownMenuItem>}
+                {hasSetRemoteRepository && <hr className="border-gray-300" />}
+                {hasSetRemoteRepository && <DropdownMenuItem onClick={() => switchRepresentsBranchHead(resource, openModal)}><ArrowLeftRight className="mr-2 h-4 w-4" /> Convert to {resource.representsBranchHead ? "tag" : "branch"}</DropdownMenuItem>}
+                {hasSetRemoteRepository && <hr className="border-gray-300" />}
+                {hasSetRemoteRepository && <DropdownMenuItem className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={() => openModal(DeleteGitRepoDialog, {iri, gitUrl: resource.linkedGitRepositoryURL})}><Trash2 className="mr-2 h-4 w-4" />Delete Git repository</DropdownMenuItem>}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
           </DropdownMenuContent>
         </DropdownMenu> :
         null
