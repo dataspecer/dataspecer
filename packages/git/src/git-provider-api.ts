@@ -396,8 +396,16 @@ export interface GitProvider {
    * @param authToken the token of user. If null then returns null.
    * @returns Returns the pull requests that involve the user with {@link authToken} (the user is either asignee, or commented on the PR and so on).
    *  Note that we return the URL of the repository for each pull request.
+   * @todo In future it would be nice, to extend this method to return only the pull requests than involve user and have given "merge to" branch.
+   *  There are two reasons why we did not do it now:
+   *   1) The GitHub search API does not return in the response the merge from and merge to branches. You have to send separate request for that (that follows link the resposse).
+   *   ... Clearly this is a lot of requests and even if we optimize it, it is a lot of requests (for each repository that has PR it is 1+ requests, depending if there are more than 100)
+   *   2) So the solution to this issue would be use GraphQL, but there is no library added to Dataspecer yet and I do not have time to do some research group audit on which library to add.
+   * ...
+   * ... So we just put the PR tag to any package that tracks the repository containing PR. The negative effect of this is that certain branches may have PR tag on the frontend,
+   *      even though they are not part of the PR. But there is also a positive effect - when there exists PR that goes between branches that are not present in Dataspecer.
    */
-  getOpenedPullRequestsInvolvingUser(authToken: string | null): Promise<PullRequestInvolvingUserFetchResponse | null>
+  getOpenedPullRequestsInvolvingUser(authToken: string | null): Promise<PullRequestInvolvingUserFetchResponse | null>;
 
 
   /**
