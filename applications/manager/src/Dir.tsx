@@ -33,7 +33,7 @@ import { gitHistoryVisualizationOnClickHandler } from "./components/git-history-
 import { BranchAction, CreateNewBranchDialog } from "./dialog/create-new-branch";
 import { ListMergeStatesDialog } from "./dialog/list-merge-states-dialog";
 import { useLogin, UseLoginType } from "./hooks/use-login";
-import { isGitUrlSet, PACKAGE_ROOT } from "@dataspecer/git";
+import { isGitUrlSet, PACKAGE_ROOT, PullRequestInvolvingUserFetchResponse } from "@dataspecer/git";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
 import { manualPull, trySetPackageAsUpToDate, switchRepresentsBranchHead } from "./utils/git-fetch-related-actions";
 import ResourceTooltip from "./components/git-tooltip";
@@ -76,7 +76,16 @@ const useSortIris = (iris: string[]) => {
   }, [iris, resources, selectedOption]);
 };
 
-const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri }: { iri: string, packageGitFilter: string | null, setPackageGitFilter: (value: string | null) => void, isSignedIn: boolean, parentIri?: string }) => {
+type ManagerRowType = {
+  iri: string;
+  signedInUserPullRequests: string[];
+  packageGitFilter: string | null;
+  setPackageGitFilter: (value: string | null) => void;
+  isSignedIn: boolean;
+  parentIri?: string
+}
+
+const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri, signedInUserPullRequests }: ManagerRowType) => {
   const resources = useContext(ResourcesContext);
   const resource = resources[iri]!;
 
@@ -123,16 +132,24 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri
 
 Reason: Since the comparison with remote is costly, we do not perform it automatically, we only track if there was change in DS since last Git pull/push.`;
 
+  const prInfo = signedInUserPullRequests.findIndex(url => url === resource.linkedGitRepositoryURL) === -1 ? null : <div className="pl-0.5 text-red-600">PR</div>;
+
   let gitPart: React.ReactNode;
   if (resource.activeMergeStateCount !== 0) {
-    gitPart = <a href={resource.linkedGitRepositoryURL} className="text-red-500 pt-1 flex flex-1 flex-row">GIT<AlertTriangleIcon className="w-4 h-4 ml-0.75 mt-1"/></a>;
+    gitPart = <a href={resource.linkedGitRepositoryURL} className="text-red-500 pt-1 flex flex-1 flex-row">GIT<AlertTriangleIcon className="w-4 h-4 ml-0.75 mt-1"/>
+      <sup className="pt-2">{prInfo}</sup>
+    </a>;
   }
   else {
     if (resource.hasUncommittedChanges) {
-      gitPart = <a href={resource.linkedGitRepositoryURL} className="text-yellow-400 pt-1 flex flex-1 flex-row">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/></a>;
+      gitPart = <a href={resource.linkedGitRepositoryURL} className="text-yellow-400 pt-1 flex flex-1 flex-row">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/>
+        <sup className="pt-2">{prInfo}</sup>
+      </a>;
     }
     else {
-      gitPart = <a href={resource.linkedGitRepositoryURL} className="text-green-400 pt-1 flex flex-1 flex-row">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/></a>;
+      gitPart = <a href={resource.linkedGitRepositoryURL} className="text-green-400 pt-1 flex flex-1 flex-row">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/>
+        <sup className="pt-2">{prInfo}</sup>
+      </a>;
     }
   }
 
@@ -174,16 +191,17 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
                 </div>
               </ResourceTooltip>
           }
-          {!isGitUrlSet(resource.linkedGitRepositoryURL) ?
-            null :
-            <>
-              <span className="truncate px-2 w-[2.5cm]">
-                {resource.projectIri}
-              </span>
-              <span className="truncate px-2 w-[4cm]">
-                {resource.branch}
-              </span>
-            </>
+          {
+            !isGitUrlSet(resource.linkedGitRepositoryURL) ?
+              null :
+              <>
+                <span className="truncate px-2 w-[2.5cm]">
+                  {resource.projectIri}
+                </span>
+                <span className="truncate px-2 w-[4cm]">
+                  {resource.branch}
+                </span>
+              </>
           }
         </div>
       </div>
@@ -362,7 +380,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
     </div>
     {subResources.length > 0 && isOpen && <ul className="pl-8">
       {/* We pass null for the filter, since we want to render the children and the root packages, which we do not render are already blocked by the filter */}
-      {subResources.map(iri => <Row iri={iri} key={iri} parentIri={resource.iri} isSignedIn={isSignedIn} packageGitFilter={null} setPackageGitFilter={setPackageGitFilter} />)}
+      {subResources.map(iri => <Row iri={iri} key={iri} parentIri={resource.iri} isSignedIn={isSignedIn} packageGitFilter={null} setPackageGitFilter={setPackageGitFilter} signedInUserPullRequests={signedInUserPullRequests} />)}
     </ul>}
     <ResourceDetail isOpen={detailModalToggle.isOpen} close={detailModalToggle.close} iri={iri} />
   </li>
@@ -371,16 +389,35 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
 export default function Component() {
   const login = useLogin();
 
+
+  const [signedInUserPullRequests, setSignedInUserPullRequests] = useState<string[]>([]);
+  useEffect(() => {
+    if (login.isSignedIn) {
+      fetch(import.meta.env.VITE_BACKEND + "/git/opened-pull-requests-involving-user", {
+          method: "GET",
+          credentials: "include",         // Important, without this we don't send the authorization cookies
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+        .then(async (response) => {
+          const responseData = await response.json();
+          setSignedInUserPullRequests((await responseData as PullRequestInvolvingUserFetchResponse)?.pullRequestRepositoryUrls ?? [])
+        });
+      }
+  }, [login.isSignedIn]);
+
+
   return (
     <div>
-      <RootPackage iri={PACKAGE_ROOT} login={login} />
-      <RootPackage iri={"http://dataspecer.com/packages/v1"} login={login} />
-      <RootPackage iri={"https://dataspecer.com/resources/import/lod"} defaultToggle={false} login={login} />
+      <RootPackage iri={PACKAGE_ROOT} login={login} signedInUserPullRequests={signedInUserPullRequests} />
+      <RootPackage iri={"http://dataspecer.com/packages/v1"} login={login} signedInUserPullRequests={signedInUserPullRequests} />
+      <RootPackage iri={"https://dataspecer.com/resources/import/lod"} defaultToggle={false} login={login} signedInUserPullRequests={signedInUserPullRequests} />
     </div>
   )
 }
 
-function RootPackage({iri, defaultToggle, login}: {iri: string, defaultToggle?: boolean, login: UseLoginType}) {
+function RootPackage({iri, defaultToggle, login, signedInUserPullRequests}: {iri: string, defaultToggle?: boolean, login: UseLoginType, signedInUserPullRequests: string[]}) {
   const openModal = useBetterModal();
   const resources = useContext(ResourcesContext);
   const pckg = resources[iri];
@@ -446,7 +483,15 @@ function RootPackage({iri, defaultToggle, login}: {iri: string, defaultToggle?: 
     {isOpen &&
       <ul>
         {subResources.map(iri => {
-          return <Row iri={iri} parentIri={pckg.iri} key={iri} isSignedIn={login.isSignedIn} packageGitFilter={packageGitFilter} setPackageGitFilter={setPackageGitFilter} />;
+          return <Row
+            iri={iri}
+            parentIri={pckg.iri}
+            key={iri}
+            isSignedIn={login.isSignedIn}
+            signedInUserPullRequests={signedInUserPullRequests}
+            packageGitFilter={packageGitFilter}
+            setPackageGitFilter={setPackageGitFilter}
+          />;
         })}
       </ul>
     }

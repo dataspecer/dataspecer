@@ -4,7 +4,8 @@ import { AuthenticationGitProvidersData, gitProviderDomains } from "../git-provi
 import {
   CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType,
   GitCredentials, GitProviderEnum, GitRef, GitProviderIndependentWebhookRequestData,
-  PullRequestFetchResponse
+  PullRequestFetchResponse,
+  PullRequestInvolvingUserFetchResponse
 } from "../../git-provider-api.ts";
 import { Scope } from "../../auth.ts";
 import { GitIssuesFetchResponse, IssueState } from "../../git-issues/git-issue-types.ts";
@@ -41,7 +42,7 @@ export class GitLabProvider extends GitProviderBase {
     return GitProviderEnum.GitLab;
   }
 
-  getDomainURL(shouldPrefixWithHttps: boolean): string {
+  getDomainURL(shouldPrefixWithHttps: boolean, shouldEndWithSlash: boolean): string {
     const prefix = shouldPrefixWithHttps ? "https://" : "";
     return prefix + this.domainURL;
   }
@@ -263,6 +264,10 @@ export class GitLabProvider extends GitProviderBase {
   }
 
   getOpenedPullRequests(gitUrl: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse> {
+    throw new Error("Method not implemented.");
+  }
+
+  getOpenedPullRequestsInvolvingUser(authToken: string | null): Promise<PullRequestInvolvingUserFetchResponse | null> {
     throw new Error("Method not implemented.");
   }
 

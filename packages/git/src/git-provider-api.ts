@@ -23,6 +23,15 @@ export type PullRequestInfo = {
   urlToPR: string;
 };
 
+/**
+ * The {@link pullRequestUrls} contain for each pull request the URL of the repository they are part of.
+ */
+export type PullRequestInvolvingUserFetchResponse = {
+  pullRequestRepositoryUrls: string[];
+  totalPrCount: number;
+  isLastPage: boolean;
+}
+
 export type PullRequestFetchResponse = {
   pullRequests: PullRequestInfo[];
   totalPrCount: number;
@@ -88,7 +97,7 @@ const gitProviderNameToEnumMap: Readonly<Record<GitProviderNamesAsType, GitProvi
   github: GitProviderEnum.GitHub,
   gitlab: GitProviderEnum.GitLab,
 }
-export function convertGitProviderNameToEnum(gitProviderName: GitProviderNamesAsType) {
+export function convertGitProviderNameToEnum(gitProviderName: GitProviderNamesAsType): GitProviderEnum | undefined {
   return gitProviderNameToEnumMap[gitProviderName];
 }
 
@@ -155,10 +164,11 @@ export interface GitProvider {
   getProviderName(): string;
 
   /**
-   * Returns the domain URL for this instance. For example for github is is "github.com". But for GitLab we can have different domains:
-   *  "gitlab.com" or "gitlab.mff.cuni.cz". If {@link shouldPrefixWithHttps} is set to true, the domain will start with https://, otherwise not
+   * @returns Returns the domain URL for this instance. For example for github is is "github.com". But for GitLab we can have different domains:
+   *  "gitlab.com" or "gitlab.mff.cuni.cz". If {@link shouldPrefixWithHttps} is set to true, the domain will start with https://, otherwise not.
+   *  It ends with "/" if provided {@link shouldEndWithSlash} is true.
    */
-  getDomainURL(shouldPrefixWithHttps: boolean): string;
+  getDomainURL(shouldPrefixWithHttps: boolean, shouldEndWithSlash: boolean): string;
 
   /**
    * Sets the new domain URL for this instance. For example GitHub does nothing on this call. But for GitLab we can have different domains:
@@ -381,6 +391,13 @@ export interface GitProvider {
    * @returns The pull requests at given {@link page}, where page as at most {@link perPage} elements, also returns the total pull request count.
    */
   getOpenedPullRequests(gitUrl: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse>;
+
+  /**
+   * @param authToken the token of user. If null then returns null.
+   * @returns Returns the pull requests that involve the user with {@link authToken} (the user is either asignee, or commented on the PR and so on).
+   *  Note that we return the URL of the repository for each pull request.
+   */
+  getOpenedPullRequestsInvolvingUser(authToken: string | null): Promise<PullRequestInvolvingUserFetchResponse | null>
 
 
   /**

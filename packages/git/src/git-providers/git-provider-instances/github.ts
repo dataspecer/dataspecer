@@ -3,7 +3,7 @@ import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import sodium from "libsodium-wrappers-sumo";
 import { AuthenticationGitProviderData, GitProviderBase } from "../git-provider-base.ts";
 import { AuthenticationGitProvidersData, getGitProviderDomain } from "../git-provider-factory.ts";
-import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, PUBLICATION_BRANCH_DEFAULT_NAME, GitProviderIndependentWebhookRequestData, PullRequestFetchResponse, PullRequestInfo } from "../../git-provider-api.ts";
+import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, PUBLICATION_BRANCH_DEFAULT_NAME, GitProviderIndependentWebhookRequestData, PullRequestFetchResponse, PullRequestInfo, PullRequestInvolvingUserFetchResponse } from "../../git-provider-api.ts";
 import { Scope } from "../../auth.ts";
 import { GitRestApiOperationError } from "../../error-definitions.ts";
 import { findPatAccessToken, GITHUB_USER_AGENT } from "../../git-utils.ts";
@@ -45,8 +45,8 @@ export class GitHubProvider extends GitProviderBase {
     return GitProviderEnum.GitHub;
   }
 
-  getDomainURL(shouldPrefixWithHttps: boolean): string {
-    return getGitProviderDomain(this.getGitProviderEnumValue(), shouldPrefixWithHttps, false);
+  getDomainURL(shouldPrefixWithHttps: boolean, shouldEndWithSlash: boolean): string {
+    return getGitProviderDomain(this.getGitProviderEnumValue(), shouldPrefixWithHttps, shouldEndWithSlash);
   }
 
   setDomainURL(newDomainURL: string): void {
@@ -554,7 +554,7 @@ export class GitHubProvider extends GitProviderBase {
   }
 
   createGitRepositoryURL(repositoryOwner: string, repoName: string, gitRef?: GitRef): string {
-    const url = `${this.getDomainURL(true)}/${repositoryOwner}/${repoName}`;
+    const url = `${this.getDomainURL(true, false)}/${repositoryOwner}/${repoName}`;
     return this.extendGitRepositoryURLByGitRefSuffix(url, gitRef);
   }
 
@@ -811,6 +811,55 @@ export class GitHubProvider extends GitProviderBase {
       totalPrCount: mergeData.total_count,
       isLastPage: isLastPage,
     };
+  }
+
+  async getOpenedPullRequestsInvolvingUser(authToken: string | null): Promise<PullRequestInvolvingUserFetchResponse | null> {
+    if (authToken === null) {
+      return null;
+    }
+
+    const allMergeData: any[] = [];
+    let page = 1;
+    for (; page <= 10; page++) {    // Hardcoded limit - the REST API allows at most 10 pages of size 100
+      const requestUrl = `https://api.github.com/search/issues?q=is:pr+involves:@me+is:open&per_page=${100}&page=${page}`;
+
+      const response = await this.httpFetch(requestUrl, {
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${authToken}`,
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+      });
+      const isLastPage: boolean = this.isLastPageBasedOnLinkHeader(response);
+
+      const isResponseOk = (status: number) => status >= 200 && status < 300;
+      if (!isResponseOk(response.status)) {
+        throw new Error(`GitHub API error when fetching PRs involving user: ${response.status}`);
+      }
+
+      const mergeData: any = await response.json();
+      if (mergeData.items.length === 0) {
+        break;
+      }
+      allMergeData.push(mergeData);
+      if (isLastPage) {
+        break;
+      }
+
+    }
+
+    const items = [].concat(...allMergeData.map(data => data.items));
+    return {
+      pullRequestRepositoryUrls: items.map((pr: any) => this.convertApiUrlToClassic(pr.repository_url)),
+      totalPrCount: allMergeData.at(-1).total_count,
+      isLastPage: allMergeData.at(-1).total_count <= 1000,
+    };
+  }
+
+  private convertApiUrlToClassic(apiUrl: string): string {
+    const urlPartToToKeep: string = apiUrl.substring("https://api.github.com/repos/".length);
+    const outputUrl: string = this.getDomainURL(true, true) + urlPartToToKeep;
+    return outputUrl;
   }
 
   async getIssues(gitUrl: string, issueState: IssueState, page: number, perPage: number, authToken: string | null): Promise<GitIssuesFetchResponse> {

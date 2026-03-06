@@ -4,6 +4,7 @@ import {
   ExtractedCommitReferenceValueFromRepositoryURLExplicit, GetResourceForGitUrlAndBranchType, GitCredentials, GitProvider, GitProviderEnum, GitRef,
   RepositoryURLPart, GitProviderIndependentWebhookRequestData,
   PullRequestFetchResponse,
+  PullRequestInvolvingUserFetchResponse,
 } from "../git-provider-api.ts";
 import { Scope } from "../auth.ts";
 import { type GitBotConfiguration, type OAuthConfiguration } from "@dataspecer/auth";
@@ -29,7 +30,7 @@ export abstract class GitProviderBase implements GitProvider {
 
   abstract getProviderName(): string;
   abstract getGitProviderEnumValue(): GitProviderEnum;
-  abstract getDomainURL(shouldPrefixWithHttps: boolean): string;
+  abstract getDomainURL(shouldPrefixWithHttps: boolean, shouldEndWithSlash: boolean): string;
   abstract setDomainURL(newDomainURL: string): void;
   abstract getGitPagesURL(repositoryUrl: string): string;
   abstract extractDataForWebhookProcessing(webhookPayload: any, getResourceForGitUrlAndBranch: GetResourceForGitUrlAndBranchType): Promise<GitProviderIndependentWebhookRequestData | null>;
@@ -57,6 +58,7 @@ export abstract class GitProviderBase implements GitProvider {
   abstract getUrlToPRs(gitUrl: string): string
   abstract getOpenedPullRequestsForBranch(gitUrl: string, branchToMatch: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse>;
   abstract getOpenedPullRequests(gitUrl: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse>;
+  abstract getOpenedPullRequestsInvolvingUser(authToken: string | null): Promise<PullRequestInvolvingUserFetchResponse>;
   abstract getUrlToIssues(gitUrl: string): string;
   abstract getCreateNewIssueUrl(gitUrl: string): string;
   abstract getIssues(gitUrl: string, issueState: IssueState, page: number, perPage: number, authToken: string | null): Promise<GitIssuesFetchResponse>;
