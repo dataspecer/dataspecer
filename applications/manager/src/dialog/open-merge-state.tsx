@@ -271,7 +271,7 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
       <Modal open={isOpen} onClose={() => resolve(null)}>
         <ModalContent>
           <ModalHeader>
-            <ModalTitle>Created merge state for DS packages and there were no conflicts.</ModalTitle>
+            <ModalTitle className="p-1">Created merge state for DS packages and there were no conflicts.</ModalTitle>
           </ModalHeader>
           <ModalFooter>
             <Button title="Opens the diff editor with the preview of the merge commit. Finalize the merging inside the editor." variant="default" onClick={openDiffEditorPreviewNoConflicts}>Open diff editor preview</Button>
@@ -286,7 +286,7 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
       <Modal open={isOpen} onClose={() => resolve(null)}>
         <ModalContent>
           <ModalHeader>
-            <ModalTitle>Created merge state for DS packages and there were conflicts.</ModalTitle>
+            <ModalTitle className="p-1">Created merge state for DS packages and there were conflicts.</ModalTitle>
           </ModalHeader>
           <ModalFooter>
             <Button title="Opens the diff editor with the preview of the merge commit. Finalize the merging inside the editor." variant="default" onClick={openDiffEditorPreviewNoConflicts}>Open diff editor preview</Button>

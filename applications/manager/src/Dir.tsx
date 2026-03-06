@@ -174,7 +174,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
           <span className="truncate w-[6cm]">
             {getValidTime(resource.metadata?.modificationDate) && t("changed", {val: new Date(resource.metadata?.modificationDate!)})}
           </span>
-          <span className="truncate w-[5cm]">
+          <span className="truncate w-[5cm]" title={resource.iri}>
             {resource.iri}
           </span>
           {

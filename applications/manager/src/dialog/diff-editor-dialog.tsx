@@ -238,6 +238,7 @@ function DiffEditorInfoPopOver() {
     <PopOverGitGeneralComponent>
       <p>- Diff Editor's purpose is to resolve the merge state by performing changes to models and marking conflicts as resolved.</p>
       <p>- {saveChangesTooltipText}</p>
+      <p>- The stripped version of file hides content, which is expected to be changed, such as export time.</p>
       <p>- The left component contains directory diff. The directory diff is visualized with regards to the editable window.</p>
       <p>- This means that:</p>
       <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;<p className="text-red-600">Red</p>&nbsp;node - It is NOT present in the editable window.</div>
