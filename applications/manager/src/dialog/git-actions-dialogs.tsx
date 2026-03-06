@@ -302,11 +302,15 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   switch(type) {
     case "create-new-repository-and-commit":
       modalBody = <div>
-        Git provider:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <ComboBox options={gitProvidersComboboxOptions} onChange={(value: GitProviderEnum) => setGitProvider(getGitProviderDomain(value, true, true))}/>
-        <div className="pt-4 flex flex-1 flex-row">
-          Owner type <PopOverGitGeneralComponent><RepositoryOwnerTooltip/></PopOverGitGeneralComponent>
-          <div className="pt-2 flex flex-1 flex-row">
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <div className="pt-2 flex flex-1 flex-row">
+          <p className="text-sm pt-2.5">Git provider</p>
+          <div className="pl-23">
+            <ComboBox options={gitProvidersComboboxOptions} onChange={(value: GitProviderEnum) => setGitProvider(getGitProviderDomain(value, true, true))}/>
+          </div>
+        </div>
+        <div className="pt-6 flex flex-1 flex-row">
+          <p className="text-sm">Repository type</p> <PopOverGitGeneralComponent><RepositoryOwnerTooltip/></PopOverGitGeneralComponent>
+          <div className="pt-2 pl-8 flex flex-1 flex-row">
             <BooleanRadioButtons value={isUserRepo}
                                   setValue={setIsUserRepo}
                                   isFalseDisabled={false}
@@ -316,19 +320,11 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
               />
           </div>
         </div>
-        <InputComponent
-          idPrefix={gitDialogInputIdPrefix}
-          idSuffix={suffixNumber++}
-          label={t("git.dialog.label.repository-name")}
-          setInput={createSetterWithGitValidation(setRepositoryName)}
-          input={repositoryName}
-          requiredRefObject={repositoryNameInputFieldRef}
-        />
         {
           isUserRepo ?
             <div className="flex flex-1 flex-row">
-              <p className="pb-3 pt-1 text-sm">{t("git.dialog.label.repository-owner")}:</p>
-              <div className="pl-10 items-center justify-center pt-3">
+              <p className="pb-3 pt-1 text-sm">{t("git.dialog.label.repository-owner")}</p>
+              <div className="pl-14 items-center justify-center pt-3">
                 <BooleanRadioButtons
                   value={isSignedIn && isOwnerSignedInUser}
                   setValue={setIsOwnerSignedInUser}
@@ -349,6 +345,14 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
               <div className="my-8"/>
             </div>
         }
+        <InputComponent
+          idPrefix={gitDialogInputIdPrefix}
+          idSuffix={suffixNumber++}
+          label={t("git.dialog.label.repository-name")}
+          setInput={createSetterWithGitValidation(setRepositoryName)}
+          input={repositoryName}
+          requiredRefObject={repositoryNameInputFieldRef}
+        />
         <InputComponent
           idPrefix={gitDialogInputIdPrefix}
           idSuffix={suffixNumber++}
