@@ -33,7 +33,7 @@ import { gitHistoryVisualizationOnClickHandler } from "./components/git-history-
 import { BranchAction, CreateNewBranchDialog } from "./dialog/create-new-branch";
 import { ListMergeStatesDialog } from "./dialog/list-merge-states-dialog";
 import { useLogin, UseLoginType } from "./hooks/use-login";
-import { isGitUrlSet, PACKAGE_ROOT, PullRequestInvolvingUserFetchResponse } from "@dataspecer/git";
+import { GitProvider, GitRef, isGitUrlSet, PACKAGE_ROOT, PullRequestInvolvingUserFetchResponse } from "@dataspecer/git";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
 import { manualPull, trySetPackageAsUpToDate, switchRepresentsBranchHead } from "./utils/git-fetch-related-actions";
 import ResourceTooltip from "./components/git-tooltip";
@@ -93,6 +93,24 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri
     return null;
   }
   const hasSetRemoteRepository: boolean = resource.linkedGitRepositoryURL !== "";
+  const gitProvider: GitProvider | null = !hasSetRemoteRepository ? null : GitProviderFactory.createGitProviderFromRepositoryURL(resource.linkedGitRepositoryURL, fetch, {});
+  const repositoryOwner: string | null = gitProvider?.extractPartOfRepositoryURL(resource.linkedGitRepositoryURL, "repository-owner") ?? null;
+  const repositoryName: string | null = gitProvider?.extractPartOfRepositoryURL(resource.linkedGitRepositoryURL, "repository-name") ?? null;
+  let gitRef: GitRef | null = null;
+  if (hasSetRemoteRepository) {
+    if (resource.representsBranchHead) {
+      gitRef = {
+        type: "branch",
+        name: resource.branch,
+      };
+    }
+    else {
+      gitRef = {
+        type: "commit",
+        sha: resource.lastCommitHash,
+      };
+    }
+  }
 
   const {t, i18n} = useTranslation();
 
@@ -310,7 +328,8 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            {hasSetRemoteRepository && <DropdownMenuItem asChild><a href={!hasSetRemoteRepository ? "" : GitProviderFactory.createGitProviderFromRepositoryURL(resource.linkedGitRepositoryURL, fetch, {}).getGitPagesURL(resource.linkedGitRepositoryURL)}><Eye className="mr-2 h-4 w-4" />Show GitHub Pages</a></DropdownMenuItem>}
+            {hasSetRemoteRepository && <DropdownMenuItem asChild><a href={gitProvider === null ? "" : gitProvider.createGitRepositoryURL(repositoryOwner!, repositoryName!, gitRef!)}><Eye className="mr-2 h-4 w-4" />Show {resource.representsBranchHead ? "branch" : "commit"} on GitHub</a></DropdownMenuItem>}
+            {hasSetRemoteRepository && <DropdownMenuItem asChild><a href={gitProvider === null ? "" : gitProvider.getGitPagesURL(resource.linkedGitRepositoryURL)}><Eye className="mr-2 h-4 w-4" />Show GitHub Pages</a></DropdownMenuItem>}
             {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>}
             {hasSetRemoteRepository && <hr className="border-gray-300" />}
             {hasSetRemoteRepository && resource.representsBranchHead && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialogForBranch, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: resource.branch})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Opened Pull Requests For Branch</DropdownMenuItem>}
