@@ -967,6 +967,10 @@ export class GitHubProvider extends GitProviderBase {
   }
 
 
+  /**
+   * @todo This method will not be needed once (respectively if) we introduce GraphQL later in the development.
+   *  We will just get all the data needed directly in one GraphQL request instead of sending separate REST API request.
+   */
   private async convertRestPrToDataspecerPr(pullRequest: any, token: string): Promise<PullRequestInfo> {
     const pullRequestMoreInfoResponse = await this.httpFetch(pullRequest.pull_request.url, {
       headers: {

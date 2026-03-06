@@ -8,7 +8,7 @@ import { GitProviderFactory } from "@dataspecer/git/git-providers";
 
 /**
  * Returns the opened pull requests which are in any way involving the signed in user.
- *   The implementation sends queries to the Git provider using (at least now) REST API and returns the response in changed format.
+ *   The implementation sends queries to the Git provider and returns the response in changed format.
  * @todo This works only for the Git provider that you used for signing in.
  *  (In future it might be possible (once we introduce database) to have one DS account which is linked to many OAuth providers - GitHub, GitLab, ...
  */

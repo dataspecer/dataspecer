@@ -9,7 +9,7 @@ import { GitProviderFactory } from "@dataspecer/git/git-providers";
 
 /**
  * Returns the opened pull requests, where one end is the given branch.
- * The implementation sends queries to the Git provider using (at least now) REST API and returns the response in changed format.
+ * The implementation sends queries to the Git provider and returns the response in changed format.
  */
 export const getOpenedPullRequestsForBranch = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
