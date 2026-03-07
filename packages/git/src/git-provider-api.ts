@@ -42,6 +42,12 @@ export type PullRequestFetchResponse = {
 // End of pull requests
 ////////////////////
 
+export type UserOrganizationsFetchResponse = {
+  organizations: string[];
+  isLastPage: boolean;
+};
+
+
 export type ConvertRepoURLToDownloadZipURLReturnType = {
   zipURL: string,
   commitReferenceValueInfo: ExtractedCommitReferenceValueFromRepositoryURLExplicit,
@@ -444,6 +450,16 @@ export interface GitProvider {
    * @todo Now throws error if any of the labels fails to be created, ut maybe returning false is enough in future.
    */
   createDataspecerIssueLabels(repoOwner: string, repoName: string, authToken: string): Promise<boolean>;
+
+  /**
+   * @param authToken is auth token to get organizations for.
+   * @returns If {@link authToken} is not null then returns the organizations, which can be accessed by the user represented by {@link authToken}.
+   *  Otherwise (if {@link authToken} is null) the organizations for bot (if provided in constructor).
+   *  Returns empty array (+ isLastPage: true) if neither token can be found.
+   *  The response also contains fact if we returned all the organizations the user is member of or not.
+   * @todo Currently (at least for GitHub) there is a hardcoded limit for at most 1000 organizations.
+   */
+  getOrganizationsForAuthenticatedUser(authToken: string | null): Promise<UserOrganizationsFetchResponse>;
 }
 
 /**

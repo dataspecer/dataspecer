@@ -4,7 +4,7 @@ import { BetterModalProps, OpenBetterModal } from "@/lib/better-modal";
 import { RefObject, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { gitOperationResultToast } from "@/utils/utilities";
 import { requestLoadPackage } from "@/package";
-import { createIdentifierForHTMLElement, InputComponent } from "@/components/input-component";
+import { createIdentifierForHTMLElement, InputComponent, InputSuggestionsType } from "@/components/input-component";
 import { Package } from "@dataspecer/core-v2/project";
 import { toast } from "sonner";
 import {
@@ -14,7 +14,8 @@ import {
   PUBLICATION_BRANCH_DEFAULT_NAME,
   ExportVersionType,
   getDefaultExportVersion,
-  getDefaultExportFormat
+  getDefaultExportFormat,
+  UserOrganizationsFetchResponse
 } from "@dataspecer/git";
 import { CommitRedirectForMergeStatesDialog } from "./commit-confirm-dialog-caused-by-merge-state";
 import { commitToGitBackendRequest, createNewRemoteRepositoryRequest, GitCommitData, GitMergeCommitData, linkToExistingGitRepositoryRequest, mergeCommitToGitBackendRequest } from "@/utils/git-backend-requests";
@@ -32,6 +33,7 @@ import { CREATE_REPOSITORY_WAIT_TIME, GIT_COMMIT_WAIT_TIME, MERGE_COMMIT_WAIT_TI
 import { ArrowDownNarrowWide, ArrowUpNarrowWide } from "lucide-react";
 import { BooleanRadioButtons } from "@/components/boolean-radio-buttons";
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
+import { useAsyncMemo } from "@/hooks/use-async-memo";
 
 
 /**
@@ -144,6 +146,66 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
 
   const { accountProvider, username, genericScope, isSignedIn } = useLogin();
 
+  const [userOrganizationSuggestions, canUseUserOrganizationSuggestions] = useAsyncMemo(async () => {
+    try {
+      const fetchResponse = await fetch(import.meta.env.VITE_BACKEND + "/git/authenticated-user-organizations", {
+        method: "GET",
+        credentials: "include",
+      });
+
+      const userOrganizations: UserOrganizationsFetchResponse = await fetchResponse.json();
+      if (!userOrganizations.isLastPage) {
+        // TODO RadStr PR: For now just report error to console
+        console.error("The user is member of more than limit number of organizations (first implmementation had hardcoded limit of 1000)")
+      }
+      return userOrganizations.organizations.map(org => {
+        const suggestion: InputSuggestionsType = {
+          value: org,
+          textSuffix: "",
+        };
+        return suggestion;
+      });
+    }
+    catch (error) {
+      console.error("Failed fetching organizations the authenticated user is part of.");
+      return []
+    }
+  }, [isSignedIn]);
+
+  const [botOrganizationSuggestions, canUseBotOrganizationSuggestions] = useAsyncMemo(async () => {
+    try {
+      const fetchResponse = await fetch(import.meta.env.VITE_BACKEND + "/git/bot-organizations", {
+        method: "GET",
+      });
+
+      const botOrganizations: UserOrganizationsFetchResponse = await fetchResponse.json();
+      if (!botOrganizations.isLastPage) {
+        // TODO RadStr PR: For now just report error to console
+        console.error("The user is member of more than limit number of organizations (first implmementation had hardcoded limit of 1000)")
+      }
+      return botOrganizations.organizations.map(org => {
+        const suggestion: InputSuggestionsType = {
+          value: org,
+          textSuffix: " (bot)",
+        };
+        return suggestion;
+      });
+    }
+    catch (error) {
+      console.error("Failed fetching the bot organizations.");
+      return [];
+    }
+  }, []);
+
+  const suggestionsForOrganization: InputSuggestionsType[] = useMemo(() => {
+    const suggestionsWithDuplicates: InputSuggestionsType[] = (botOrganizationSuggestions ?? []).concat(userOrganizationSuggestions ?? []);
+    const isInUserSuggestions = (suggestionToCheck: InputSuggestionsType) => {
+      return botOrganizationSuggestions?.find(botSuggestion => suggestionToCheck.value === botSuggestion.value) !== undefined;
+    };
+    // Either it is bot suggestion or it is not and then it also has to not be present in the bot suggestion
+    return suggestionsWithDuplicates
+      .filter(suggestion => suggestion.textSuffix === "" || !isInUserSuggestions(suggestion));
+  }, [userOrganizationSuggestions, botOrganizationSuggestions]);
 
   const [repositoryName, setRepositoryName] = useState<string>(inputPackage.iri);
   const [remoteRepositoryURL, setRemoteRepositoryURL] = useState<string>("https://github.com/userName/repositoryName");
@@ -340,7 +402,9 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
                 idPrefix={gitDialogInputIdPrefix}
                 idSuffix={suffixNumber++}
                 label={t("git.dialog.label.repository-owner")}
-                setInput={createSetterWithGitValidation(setOrganization)} input={organization}
+                input={organization}
+                setInput={createSetterWithGitValidation(setOrganization)}
+                suggestions={suggestionsForOrganization}
               />
               <div className="my-8"/>
             </div>

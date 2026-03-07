@@ -3,7 +3,7 @@ import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import sodium from "libsodium-wrappers-sumo";
 import { AuthenticationGitProviderData, GitProviderBase } from "../git-provider-base.ts";
 import { AuthenticationGitProvidersData, getGitProviderDomain } from "../git-provider-factory.ts";
-import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, PUBLICATION_BRANCH_DEFAULT_NAME, GitProviderIndependentWebhookRequestData, PullRequestFetchResponse, PullRequestInfo, PullRequestInvolvingUserFetchResponse } from "../../git-provider-api.ts";
+import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, PUBLICATION_BRANCH_DEFAULT_NAME, GitProviderIndependentWebhookRequestData, PullRequestFetchResponse, PullRequestInfo, PullRequestInvolvingUserFetchResponse, UserOrganizationsFetchResponse } from "../../git-provider-api.ts";
 import { Scope } from "../../auth.ts";
 import { GitRestApiOperationError } from "../../error-definitions.ts";
 import { findPatAccessToken, GITHUB_USER_AGENT } from "../../git-utils.ts";
@@ -11,7 +11,7 @@ import { GitIssueInfo, GitIssuesFetchResponse, IssueState } from "../../git-issu
 import { dataspecerGitIssueLabels } from "../../git-issues/git-issue-labels.ts";
 
 
-const scopes = ["read:user", "user:email", "public_repo", "workflow", "delete_repo"] as const;
+const scopes = ["read:user", "read:org", "user:email", "public_repo", "workflow", "delete_repo"] as const;
 export type GitHubScope = typeof scopes[number];
 
 // Note:
@@ -597,6 +597,8 @@ export class GitHubProvider extends GitProviderBase {
     switch(scope) {
       case "userInfo":
         return ["read:user"];
+      case "readOrg":
+        return ["read:org"];
       case "email":
         return ["user:email"];
       case "publicRepo":
@@ -618,6 +620,8 @@ export class GitHubProvider extends GitProviderBase {
     switch(scope) {
       case "read:user":
         return "userInfo";
+      case "read:org":
+        return "readOrg";
       case "user:email":
         return "email";
       case "public_repo":
@@ -994,5 +998,52 @@ export class GitHubProvider extends GitProviderBase {
       commitCountWithinPR: prInfo.commits,
       urlToPR: pullRequest.pull_request.html_url,
     };
+  }
+
+
+  async getOrganizationsForAuthenticatedUser(authToken: string | null): Promise<UserOrganizationsFetchResponse> {
+    // https://docs.github.com/en/rest/orgs/orgs?apiVersion=2022-11-28#list-organizations-for-the-authenticated-user
+
+    const token: string | null | undefined = authToken ?? this.authenticationGitProviderData?.gitBotConfiguration?.dsBotAbsoluteGitProviderControlToken;
+    if (token === null || token === undefined) {
+      return {
+        organizations: [],
+        isLastPage: true,
+      };
+    }
+
+    const organizations: string[] = [];
+    let page = 1;
+    // TODO RadStr PR: Hardcoded limit - expect that user is not a member of more than 1000 organizations
+    for (; page <= 10; page++) {    // Hardcoded limit - the REST API allows at most 10 pages of size 100
+      const response = await this.httpFetch(`https://api.github.com/user/orgs?page=${page}&per_page=${100}`, {
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${token}`,
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+      });
+      const isLastPage: boolean = this.isLastPageBasedOnLinkHeader(response);
+
+      const isResponseOk = (status: number) => status >= 200 && status < 300;
+      if (!isResponseOk(response.status)) {
+        throw new Error(`GitHub API error when fetching PRs involving user: ${response.status}`);
+      }
+
+      const fetchedOrganizations: any = await response.json();
+      if (fetchedOrganizations.length === 0) {
+        break;
+      }
+      organizations.push(fetchedOrganizations.map((org: { login: string }) => org.login));
+      if (isLastPage) {
+        break;
+      }
+    }
+
+    const result: UserOrganizationsFetchResponse = {
+      organizations,
+      isLastPage: page <= 10,
+    };
+    return result;
   }
 }

@@ -5,7 +5,8 @@ import {
   CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType,
   GitCredentials, GitProviderEnum, GitRef, GitProviderIndependentWebhookRequestData,
   PullRequestFetchResponse,
-  PullRequestInvolvingUserFetchResponse
+  PullRequestInvolvingUserFetchResponse,
+  UserOrganizationsFetchResponse
 } from "../../git-provider-api.ts";
 import { Scope } from "../../auth.ts";
 import { GitIssuesFetchResponse, IssueState } from "../../git-issues/git-issue-types.ts";
@@ -295,6 +296,10 @@ export class GitLabProvider extends GitProviderBase {
   }
 
   createDataspecerIssueLabels(repoOwner: string, repoName: string, authToken: string): Promise<boolean> {
+    throw new Error("Method not implemented.");
+  }
+
+  getOrganizationsForAuthenticatedUser(authToken: string | null): Promise<UserOrganizationsFetchResponse> {
     throw new Error("Method not implemented.");
   }
 }

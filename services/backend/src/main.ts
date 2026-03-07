@@ -69,6 +69,8 @@ import { getOpenedPullRequests } from "./routes/git/get-opened-pull-requests.ts"
 import { getGitIssues } from "./routes/git/get-git-issues.ts";
 import { getGitIssueTotalCount } from "./routes/git/get-git-issues-total-count.ts";
 import { getOpenedPullRequestsInvolvingUser } from "./routes/git/get-opened-pull-requests-involving-user.ts";
+import { getAuthenticatedUserOrganizations } from "./routes/git/get-git-organizations-for-authenticated-user.ts";
+import { getBotOrganizations } from "./routes/git/get-git-organizations-for-bot.ts";
 
 
 populateSshKnownHosts();
@@ -182,6 +184,8 @@ application.get(apiBasename + "/git/opened-pull-requests-for-branch", currentSes
 application.get(apiBasename + "/git/opened-pull-requests-involving-user", currentSession, getOpenedPullRequestsInvolvingUser);
 application.get(apiBasename + "/git/issues", currentSession, getGitIssues);
 application.get(apiBasename + "/git/issue-total-count", currentSession, getGitIssueTotalCount);
+application.get(apiBasename + "/git/authenticated-user-organizations", currentSession, getAuthenticatedUserOrganizations);
+application.get(apiBasename + "/git/bot-organizations", currentSession, getBotOrganizations);
 
 
 // Api for packages (core-v2)
