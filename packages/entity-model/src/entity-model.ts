@@ -1,8 +1,10 @@
 import { EntityRecord } from "./model/entity.ts";
 
+export type ModelIdentifier = string;
+
 export interface EntityModel {
 
-  getId(): string;
+  getId(): ModelIdentifier;
 
   getEntities(): EntityRecord;
 
