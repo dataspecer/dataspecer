@@ -136,6 +136,9 @@ function createGitToPackagesForProjectMapping(rootPackages: BaseResource[] | und
 }
 
 
+const commitTextFont = "oblique small-caps bold 12pt Trebuchet MS";
+const commitTextSmallerFont = "oblique small-caps bold 8pt Trebuchet MS";
+
 export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allResources }: GitHistoryVisualizationProps) => {
   // For some reason I have to put the gitgraph component into component stored in variable,
   // if I put it inside the JSX tree in this component, it does not update on react change
@@ -178,7 +181,7 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
                 displayHash: true,
               },
               dot: {
-                font: "oblique small-caps bold 12pt Trebuchet MS",      // Carefully chosen for the dot text to appear inside the circle
+                font: commitTextFont,      // Carefully chosen for the dot text to appear inside the circle
               }
             },
           });
@@ -247,6 +250,10 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
 }
 
 
+const defaultDSCommitTextTag = "DS";
+const defaultDSBranchTextAdditionalTag = "HEAD";
+const defaultDSBranchTextTag = defaultDSCommitTextTag + " " + defaultDSBranchTextAdditionalTag;
+
 const createGitGraph = (
   openModal: OpenBetterModal,
   examinedPackage: Package,
@@ -295,13 +302,15 @@ const createGitGraph = (
           // };
           if (dsPackagesInProjectForAll[commit.hash] !== undefined) {
             const branchesWithTheCommit = Object.entries(dsPackagesInProjectForBranches)
-              .filter(entry => entry[1].lastCommitHash === commit.hash)
+              .filter(entry => entry[1].lastCommitHash === commit.hash);
+            // The different texts behave more of a field to tell the commits representing branch and those only commits apart.
+            // New fields are for some reason removed from the object
             if (branchesWithTheCommit.length > 0) {
-              commit.dotText = "DS\nb";   // Kind of weird, but this is not documented anywhere I noticed it when I was looking at the implementation in
+              commit.dotText = defaultDSBranchTextTag;   // Kind of weird, but this is not documented anywhere I noticed it when I was looking at the implementation in
                                           // https://github.com/nicoespeon/gitgraph.js/blob/ed72d11d1e50ccd208326d9ded551f719cfa2b3a/packages/gitgraph-react/src/Dot.tsx#L42
             }
             else {
-              commit.dotText = "DS";      // Kind of weird, but this is not documented anywhere I noticed it when I was looking at the implementation in
+              commit.dotText = defaultDSCommitTextTag;      // Kind of weird, but this is not documented anywhere I noticed it when I was looking at the implementation in
                                           // https://github.com/nicoespeon/gitgraph.js/blob/ed72d11d1e50ccd208326d9ded551f719cfa2b3a/packages/gitgraph-react/src/Dot.tsx#L42
             }
           }
@@ -339,6 +348,7 @@ const createGitGraph = (
 }
 
 // Copy-paste of https://github.com/nicoespeon/gitgraph.js/blob/master/packages/gitgraph-react/src/Dot.tsx
+//  with modifications
 // We want to keep the default style, but change the cursor to pointer and this is the simplest way
 function defaultCommitRenderDot(commit: any) {
   return (
@@ -362,19 +372,41 @@ function defaultCommitRenderDot(commit: any) {
     but it's still a W3C Draft ¯\_(ツ)_/¯
     https://svgwg.org/specs/strokes/#SpecifyingStrokeAlignment
   */
+
+  // ... New additions the - branch commits are rectangles and containing extra "HEAD" text
   <>
     <defs>
-      <circle
-        id={commit.hash}
-        cx={commit.style.dot.size}
-        cy={commit.style.dot.size}
-        r={commit.style.dot.size}
-        fill={commit.style.dot.color as string}
-        style={{cursor: "pointer"}}
-      />
-      <clipPath id={`clip-${commit.hash}`}>
-        <use xlinkHref={`#${commit.hash}`} />
-      </clipPath>
+      {
+        commit.dotText === undefined || commit.dotText === defaultDSCommitTextTag ?
+          <>
+            <circle
+              id={commit.hash}
+              cx={commit.style.dot.size}
+              cy={commit.style.dot.size}
+              r={commit.style.dot.size}
+              fill={commit.style.dot.color as string}
+              style={{cursor: "pointer"}}
+            />
+            <clipPath id={`clip-${commit.hash}`}>
+              <use xlinkHref={`#${commit.hash}`} />
+            </clipPath>
+          </> :
+        <>
+          <rect
+            id={commit.hash}
+            x={0}
+            y={0}
+            width={commit.style.dot.size * 2}
+            height={commit.style.dot.size + 16}   // The previous size + enough size to fit the "HEAD" text
+            fill={commit.style.dot.color as string}
+            style={{ cursor: "pointer" }}
+          />
+
+          <clipPath id={`clip-${commit.hash}`}>
+            <use xlinkHref={`#${commit.hash}`} />
+          </clipPath>
+        </>
+      }
     </defs>
 
     <g
@@ -391,16 +423,30 @@ function defaultCommitRenderDot(commit: any) {
         }
       />
       {commit.dotText && (
-        <text
-          alignmentBaseline="central"
-          textAnchor="middle"
-          x={commit.style.dot.size}
-          y={commit.style.dot.size}
-          className="whitespace-pre-line"
-          style={{ font: commit.style.dot.font, cursor: "pointer" }}
-        >
-          {commit.dotText}
-        </text>
+        <>
+          <text
+            alignmentBaseline="central"
+            textAnchor="middle"
+            x={commit.style.dot.size}
+            y={commit.style.dot.size}
+            className="whitespace-pre-line"
+            style={{ font: commit.style.dot.font, cursor: "pointer"}}
+          >
+            {defaultDSCommitTextTag}
+          </text>
+          {
+            (commit.dotText === defaultDSCommitTextTag) ? null : <text
+              alignmentBaseline="central"
+              textAnchor="middle"
+              x={commit.style.dot.size}
+              y={commit.style.dot.size + 11}
+              className="whitespace-pre-line"
+              style={{ font: commitTextSmallerFont, cursor: "pointer"}}
+            >
+              {defaultDSBranchTextAdditionalTag}
+            </text>
+          }
+      </>
       )}
     </g>
   </>);
