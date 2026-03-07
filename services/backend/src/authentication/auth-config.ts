@@ -57,8 +57,8 @@ function getScopesForAuthConfig(configType: ConfigType | null): Scope[] {
   // Using Record instead of switch because for Records compiler forces you to define any newly added enum value
   const scopes: Record<ConfigType, Scope[]> = {
     [ConfigType.LoginInfo]: ["userInfo", "email"],
-    [ConfigType.FullPublicRepoControl]: ["userInfo", "email", "publicRepo", "workflow"],
-    [ConfigType.DeleteRepoControl]: ["userInfo", "email", "publicRepo", "workflow", "deleteRepo"],
+    [ConfigType.FullPublicRepoControl]: ["userInfo", "readOrg", "email", "publicRepo", "workflow"],
+    [ConfigType.DeleteRepoControl]: ["userInfo", "readOrg", "email", "publicRepo", "workflow", "deleteRepo"],
   };
 
   const scope = scopes[configType];
