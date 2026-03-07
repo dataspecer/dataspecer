@@ -41,9 +41,10 @@ import { CreateMergeStateCausedByMergeDialog } from "./dialog/open-merge-state";
 import { PackageListDialog } from "./dialog/package-list-dialog";
 import { DeleteGitRepoDialog } from "./dialog/remove-git-repo-dialog";
 import { SetGitRemoteConfigurationDialog } from "./dialog/set-git-remote-configuration-dialog";
-import { GitPrsListDialogForBranch } from "./dialog/show-git-prs-for-branch";
+import { GitPrsListDialog } from "./dialog/show-git-prs-for-branch";
 import { GitIssuesListDialog } from "./dialog/show-git-issues";
 import { debugClearMergeStateDBTable } from "./utils/merge-state-backend-requests";
+
 
 export function lng(text: LanguageString | undefined): string | undefined {
   return text?.["cs"] ?? text?.["en"];
@@ -340,8 +341,8 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
                   {hasSetRemoteRepository && <DropdownMenuItem asChild><a href={gitProvider === null ? "" : gitProvider.getGitPagesURL(resource.linkedGitRepositoryURL)}><Eye className="mr-2 h-4 w-4" />Show GitHub Pages</a></DropdownMenuItem>}
                   {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>}
                   {hasSetRemoteRepository && <hr className="border-gray-300" />}
-                  {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialogAll, {resources, gitUrl: resource.linkedGitRepositoryURL})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />All Opened Pull Requests</DropdownMenuItem>}
-                  {hasSetRemoteRepository && resource.representsBranchHead && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialogForBranch, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: resource.branch})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Opened Pull Requests For Branch</DropdownMenuItem>}
+                  {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialog, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: null})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />All Opened Pull Requests</DropdownMenuItem>}
+                  {hasSetRemoteRepository && resource.representsBranchHead && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialog, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: resource.branch})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Opened Pull Requests For Branch</DropdownMenuItem>}
                   {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => openModal(GitIssuesListDialog, {gitUrl: resource.linkedGitRepositoryURL})}><BugIcon className="mr-2 h-4 w-4" />All Opened Issues</DropdownMenuItem>}
                   {hasSetRemoteRepository && <hr className="border-gray-300" />}
                   {hasSetRemoteRepository && <DropdownMenuItem onClick={() => openModal(ListMergeStatesDialog, { iri })}><EyeIcon className="mr-2 h-4 w-4" /> Show merge states</DropdownMenuItem>}

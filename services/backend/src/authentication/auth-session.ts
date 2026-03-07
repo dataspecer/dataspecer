@@ -2,7 +2,7 @@ import { getSession, Session } from "@auth/express"
 import express, { NextFunction } from "express"
 import { createBasicAuthConfig, createAuthConfigBasedOnAccountScope } from "./auth-config.ts"
 import { asyncHandler } from "../utils/async-handler.ts";
-import { AccessToken, AccessTokenType, ConfigType, GitProvider, GitCredentials } from "@dataspecer/git";
+import { AccessToken, AccessTokenType, ConfigType, GitProvider, GitCredentials, convertGitProviderNameToEnum, GitProviderEnum } from "@dataspecer/git";
 import { getToken } from "@auth/core/jwt"
 import configuration from "../configuration.ts";
 import { convertExpressRequestToNormalRequest, getBaseBackendUrl } from "../utils/express-url-utils.ts";
@@ -67,6 +67,24 @@ export function getStoredSession(response: express.Response): Session | null {
   return response.locals.session;
 }
 
+/**
+ * Takes the stored auth session in {@link response} and checks the Git provider in it.
+ * @returns Returns null if it can not find the name in session or if the name of git provider from the sesion can not be mapped to the enum.
+ */
+export function getGitProviderEnumFromSession(response: express.Response<any, Record<string, any>>): GitProviderEnum | null {
+  const session = getStoredSession(response);
+  const gitProviderName = (session?.user as any)?.accountProvider;
+  if (gitProviderName === undefined) {
+    return null;
+  }
+
+  const gitProviderEnum = convertGitProviderNameToEnum(gitProviderName);
+  if (gitProviderEnum === undefined) {
+    return null;
+  }
+
+  return gitProviderEnum;
+}
 
 /**
  * Returns in response basic user info (in json), which at minimum contains: name, email and image. Any of them can be null.

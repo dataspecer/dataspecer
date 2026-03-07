@@ -19,12 +19,16 @@ import { CREATE_MERGE_STATE_WAIT_TIME, GIT_IMPORT_WAIT_TIME } from "@/utils/git-
 
 
 type GitPrsListDialogProps = {
-  branch: string;
+  branch: string | null;
   gitUrl: string;
   resources: Record<string, ResourceWithIris>;
 } & BetterModalProps<null>;
 
-export const GitPrsListDialogForBranch = ({ resources, branch, gitUrl, isOpen, resolve }: GitPrsListDialogProps) => {
+
+/**
+ * If the provided branch is null then it lists all PRs for resource.
+ */
+export const GitPrsListDialog = ({ resources, branch, gitUrl, isOpen, resolve }: GitPrsListDialogProps) => {
   // Uses the PaginationComponent from the hook to render the pagination.
   const { pageOnFrontend, itemCountPerPage, setTotalItemCount, setIsLastPageBasedOnServerResponse, PaginationComponent } = usePaginationComponent();
 
@@ -34,12 +38,21 @@ export const GitPrsListDialogForBranch = ({ resources, branch, gitUrl, isOpen, r
 
   const [openedPrs, cannotUseOpenedPrs] = useAsyncMemo(async () => {
     const queryParams: Record<string, string | number> = {
-      branch,
       gitUrl: encodeURIComponent(gitUrl),
       page: pageOnFrontend,
       perPage: itemCountPerPage
     };
-    let pullRequestsFetchUrl: string = import.meta.env.VITE_BACKEND + "/git/opened-pull-requests-for-branch";
+    if (branch !== null) {
+      queryParams["branch"] = branch;
+    }
+
+    let pullRequestsFetchUrl: string;
+    if (branch === null) {
+      pullRequestsFetchUrl = import.meta.env.VITE_BACKEND + "/git/opened-pull-requests";
+    }
+    else {
+      pullRequestsFetchUrl = import.meta.env.VITE_BACKEND + "/git/opened-pull-requests-for-branch";
+    }
     let isFirst: boolean = true;
     for (const [key, value] of Object.entries(queryParams)) {
       if (isFirst) {
@@ -69,10 +82,21 @@ export const GitPrsListDialogForBranch = ({ resources, branch, gitUrl, isOpen, r
     <Modal open={isOpen} onClose={() => resolve(null)}>
       <ModalContent className={"min-w-[80%] overflow-x-auto overflow-y-auto max-h-[90%]"}>
         <ModalHeader>
-          <ModalTitle>List of opened pull requests for given package and branch</ModalTitle>
+          <ModalTitle>
+            {
+              branch === null ?
+                "List of all opened pull requests for given Git" :
+                "List of opened pull requests for given package and branch"
+            }
+          </ModalTitle>
           <ModalDescription>
-            The PRs where one of the merge actors is the examined branch.
-            <br/>
+            {
+              branch === null ? null : <>
+                The PRs where one of the merge actors is the examined branch.
+                <br/>
+              </>
+
+            }
             You can click on the PR to get redirected to the PR.
             <br/>
             <p className="flex flex-1 flex-row">Resolving PR in DS means performing reverse merge. <PRMergeTooltip/></p>
@@ -95,7 +119,7 @@ export const GitPrsListDialogForBranch = ({ resources, branch, gitUrl, isOpen, r
             </div>
           }
           {
-            cannotUseOpenedPrs ? null : <PaginationComponent items={openedPrs!} itemsOnPageScalingFactor={1} isPageNumberingExact={false}
+            cannotUseOpenedPrs ? null : <PaginationComponent items={openedPrs!} itemsOnPageScalingFactor={1} isPageNumberingExact={branch === null}
                                                              itemCountOnPageText="PR count on page" totalItemCountText="Total PR count"/>
           }
         </ModalHeader>

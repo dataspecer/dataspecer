@@ -1,9 +1,9 @@
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
-import { ConfigType, convertGitProviderNameToEnum, GitProvider } from "@dataspecer/git";
+import { ConfigType, GitProvider, GitProviderEnum } from "@dataspecer/git";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
-import { getGitCredentialsFromSession, getStoredSession } from "../../authentication/auth-session.ts";
+import { getGitCredentialsFromSession, getGitProviderEnumFromSession } from "../../authentication/auth-session.ts";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
 
 /**
@@ -13,15 +13,8 @@ import { GitProviderFactory } from "@dataspecer/git/git-providers";
  *  (In future it might be possible (once we introduce database) to have one DS account which is linked to many OAuth providers - GitHub, GitLab, ...
  */
 export const getOpenedPullRequestsInvolvingUser = asyncHandler(async (request: express.Request, response: express.Response) => {
-  const session = getStoredSession(response);
-  const gitProviderName = (session?.user as any)?.accountProvider;
-  if (gitProviderName === undefined) {
-    response.status(401);
-    return;
-  }
-
-  const gitProviderEnum = convertGitProviderNameToEnum(gitProviderName);
-  if (gitProviderEnum === undefined) {
+  const gitProviderEnum: GitProviderEnum | null = getGitProviderEnumFromSession(response);
+  if (gitProviderEnum === null) {
     response.status(401);
     return;
   }
