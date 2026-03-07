@@ -6,13 +6,17 @@ import { BetterModalProps, OpenBetterModal, useBetterModal } from "@/lib/better-
 import { Gitgraph, templateExtend, TemplateName } from "@gitgraph/react";
 import { Modal, ModalBody, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "./modal";
 import { Button } from "./ui/button";
-import React, { useLayoutEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useState } from "react";
 import { BaseResource, Package } from "@dataspecer/core-v2/project";
 import { GitHistoryCommitActionsDialog } from "@/dialog/git-history-visualization-commit-actions";
 import { Loader } from "lucide-react";
 import { Template } from "@gitgraph/core/lib/template";
 import { ResourceWithIris } from "@/package";
 import { PACKAGE_ROOT, CommitInfo, RawCommit, BranchHistory, FetchedGitRawHistory, PUBLICATION_BRANCH_DEFAULT_NAME, getGitRemoteConfigurationModelFromPackage } from "@dataspecer/git";
+import branchTextImage from "../graphics/git-visualization-branch-text.png";
+import notTrackedBranchTextImage from "../graphics/git-visualization-branch-text-not-tracked.png";
+import branchBubbleImage from "../graphics/git-visualization-branch-bubble.png";
+import commitBubbleImage from "../graphics/git-visualization-commit-bubble.png";
 
 type DSPackageInProjectVisualizationData = {
   iri: string;
@@ -217,6 +221,18 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
     }
   }, []);
 
+  const [isLoadingImages, setIsLoadingImages] = useState<boolean>(true);
+  useEffect(() => {
+    new Image().src = branchTextImage;
+    new Image().src = notTrackedBranchTextImage;
+    new Image().src = commitBubbleImage;
+    const image = new Image();
+    image.src = branchBubbleImage;
+    image.onload = () => {
+      setIsLoadingImages(false);
+    };
+  }, []);
+
 
   // The isLoading min is there when we go back from the dialog with actions on the commit, otherwise there is a small empty dialog for a moment
   // The if is there because for small numer of commits there is too much empty space
@@ -228,11 +244,15 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
         <ModalHeader>
           <ModalTitle>Project history in Git</ModalTitle>
           <ModalDescription>
-            <ul>
-              <li>The "in DS" next to the branch means that the branch is tracked in DS.</li>
-              <li>"DS" on the commit bubble marks the fact that the commit exists in DS.</li>
-              <li>Click on the commit bubbles to perform further actions.</li>
-            </ul>
+            {
+              isLoadingImages ? null :
+                <ul>
+                  <li className="flex flex-1 flex-row"><img src={branchTextImage} alt="Branch text image" loading="eager"/> <p className="pt-2"> = Branch is tracked in DS.</p></li>
+                  <li className="flex flex-1 flex-row"><img src={notTrackedBranchTextImage} alt="Branch text image" loading="eager"/> <p className="pt-2"> = Branch not tracked in DS.</p></li>
+                  <li className="flex flex-1 flex-row"><img src={commitBubbleImage} alt="Commit bubble image" loading="eager"/> <p className="pt-2"> = The commit exists in DS and it tracks commit, similarly </p><img src={branchBubbleImage} alt="Branch bubble image" loading="eager"/> <p className="pt-2">tracks head of branch. Click on the ⚪/⬜ to perform further actions. </p></li>
+                </ul>
+            }
+          <hr className="border-t-3 p-2 border-black"/>
           </ModalDescription>
         </ModalHeader>
         <ModalBody className="overflow-y-auto max-h-[60vh]">    {/* Needed for the scrolling */}
