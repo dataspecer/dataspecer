@@ -181,6 +181,8 @@ export type CreateRemoteRepositoryReturnType = {
   response: FetchResponse
 }
 
+export type GitHubLabel = "Pull Request" | "GitHub Pages";
+
 export type GetResourceForGitUrlAndBranchType = (gitRepositoryUrl: string, branch: string) => Promise<{iri: string} | null>
 
 // TODO RadStr: Documentation ... also put into documentation the fact that we do not store the url into the implementation (for good and bad).
@@ -195,6 +197,11 @@ export interface GitProvider {
    * @returns Returns Git provider's name. For example for GitHub it is "GitHub".
    */
   getProviderName(): string;
+
+  /**
+   * Converts the GitHub label to a Git provider specific. For example implementation in GitLab will return for "Pull Request" string "Merge Request".
+   */
+  getProviderSpecificLabel(githubLabel: GitHubLabel): string;
 
   /**
    * @returns Returns the domain URL for this instance. For example for github is is "github.com". But for GitLab we can have different domains:

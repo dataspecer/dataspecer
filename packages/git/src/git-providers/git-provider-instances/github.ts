@@ -3,7 +3,7 @@ import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import sodium from "libsodium-wrappers-sumo";
 import { AuthenticationGitProviderData, GitProviderBase } from "../git-provider-base.ts";
 import { AuthenticationGitProvidersData, getGitProviderDomain } from "../git-provider-factory.ts";
-import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, PUBLICATION_BRANCH_DEFAULT_NAME, GitProviderIndependentWebhookRequestData, PullRequestFetchResponse, PullRequestInfo, PullRequestInvolvingUserFetchResponse, UserOrganizationsFetchResponse } from "../../git-provider-api.ts";
+import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, PUBLICATION_BRANCH_DEFAULT_NAME, GitProviderIndependentWebhookRequestData, PullRequestFetchResponse, PullRequestInfo, PullRequestInvolvingUserFetchResponse, UserOrganizationsFetchResponse, GitHubLabel } from "../../git-provider-api.ts";
 import { Scope } from "../../auth.ts";
 import { GitRestApiOperationError } from "../../error-definitions.ts";
 import { findPatAccessToken, GITHUB_USER_AGENT } from "../../git-utils.ts";
@@ -39,6 +39,10 @@ export class GitHubProvider extends GitProviderBase {
   ////////////////////////////
   getProviderName(): string {
     return "GitHub";
+  }
+
+  getProviderSpecificLabel(githubLabel: GitHubLabel): string {
+    return githubLabel;
   }
 
   getGitProviderEnumValue(): GitProviderEnum {

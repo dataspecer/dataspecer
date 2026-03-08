@@ -6,7 +6,8 @@ import {
   GitCredentials, GitProviderEnum, GitRef, GitProviderIndependentWebhookRequestData,
   PullRequestFetchResponse,
   PullRequestInvolvingUserFetchResponse,
-  UserOrganizationsFetchResponse
+  UserOrganizationsFetchResponse,
+  GitHubLabel
 } from "../../git-provider-api.ts";
 import { Scope } from "../../auth.ts";
 import { GitIssuesFetchResponse, IssueState } from "../../git-issues/git-issue-types.ts";
@@ -37,6 +38,15 @@ export class GitLabProvider extends GitProviderBase {
   ////////////////////////////
   getProviderName(): string {
     return "GitLab";
+  }
+
+  getProviderSpecificLabel(githubLabel: GitHubLabel): string {
+    const labelMap: Record<GitHubLabel, string> = {
+      "Pull Request": "Merge Request",
+      "GitHub Pages": "GitLab Pages"
+    };
+
+    return labelMap[githubLabel];
   }
 
   getGitProviderEnumValue(): GitProviderEnum {

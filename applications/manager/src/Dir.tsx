@@ -172,6 +172,8 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
     }
   }
 
+  const gitProviderSpecificNameForPR = gitProvider?.getProviderSpecificLabel("Pull Request") ?? "Pull Request";
+
   return <li className="first:border-y last:border-none border-b">
     <div className="flex items-center space-x-4 hover:bg-accent">
        {resource.types.includes(LOCAL_PACKAGE) ? <div className="flex"><button className="cursor-pointer" onClick={stopPropagation(() => isOpen ? setIsOpen(false) : open())}>
@@ -338,14 +340,14 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
 
                 <DropdownMenuSubContent className="data-[side=top]">
                   {hasSetRemoteRepository && <DropdownMenuItem asChild><a href={gitProvider === null ? "" : gitProvider.createGitRepositoryURL(repositoryOwner!, repositoryName!, gitRef!)}><Eye className="mr-2 h-4 w-4" />Show {resource.representsBranchHead ? "branch" : "commit"} on GitHub</a></DropdownMenuItem>}
-                  {hasSetRemoteRepository && <DropdownMenuItem asChild><a href={gitProvider === null ? "" : gitProvider.getGitPagesURL(resource.linkedGitRepositoryURL)}><Eye className="mr-2 h-4 w-4" />Show GitHub Pages</a></DropdownMenuItem>}
+                  {hasSetRemoteRepository && <DropdownMenuItem asChild><a href={gitProvider === null ? "" : gitProvider.getGitPagesURL(resource.linkedGitRepositoryURL)}><Eye className="mr-2 h-4 w-4" />Show {gitProvider?.getProviderSpecificLabel("GitHub Pages")}</a></DropdownMenuItem>}
                   {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>}
                   {hasSetRemoteRepository && <hr className="border-gray-300" />}
-                  {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialog, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: null})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />All Opened Pull Requests</DropdownMenuItem>}
-                  {hasSetRemoteRepository && resource.representsBranchHead && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialog, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: resource.branch})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Opened Pull Requests For Branch</DropdownMenuItem>}
-                  {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => openModal(GitIssuesListDialog, {gitUrl: resource.linkedGitRepositoryURL})}><BugIcon className="mr-2 h-4 w-4" />All Opened Issues</DropdownMenuItem>}
+                  {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialog, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: null, gitProviderSpecificNameForPR})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Active {gitProviderSpecificNameForPR}s</DropdownMenuItem>}
+                  {hasSetRemoteRepository && resource.representsBranchHead && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialog, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: resource.branch, gitProviderSpecificNameForPR})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Active {gitProviderSpecificNameForPR}s For Branch</DropdownMenuItem>}
+                  {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => openModal(GitIssuesListDialog, {gitUrl: resource.linkedGitRepositoryURL})}><BugIcon className="mr-2 h-4 w-4" />Active Issues</DropdownMenuItem>}
                   {hasSetRemoteRepository && <hr className="border-gray-300" />}
-                  {hasSetRemoteRepository && <DropdownMenuItem onClick={() => openModal(ListMergeStatesDialog, { iri })}><EyeIcon className="mr-2 h-4 w-4" /> Show merge states</DropdownMenuItem>}
+                  {hasSetRemoteRepository && <DropdownMenuItem onClick={() => openModal(ListMergeStatesDialog, { iri })}><EyeIcon className="mr-2 h-4 w-4" />Show merge states</DropdownMenuItem>}
                   {hasSetRemoteRepository && <DropdownMenuItem onClick={() => setPackageGitFilter(resource.projectIri)}><Filter className="mr-2 h-4 w-4" />Show Same Repository Projects</DropdownMenuItem>}
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
