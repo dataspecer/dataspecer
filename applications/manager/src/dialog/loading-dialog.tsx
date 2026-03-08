@@ -59,7 +59,7 @@ export const LoadingDialog = ({ isOpen, resolve, waitTime, waitingText, dialogTi
         <ModalHeader>
           <ModalTitle>{t(dialogTitle)}</ModalTitle>
           <ModalDescription>
-            {translatedWaitingText}
+            <p className="whitespace-pre-line">{translatedWaitingText}</p>
             {waitingText === null ? null : <br/>}
             {createTranslationForWaitTime(t, waitTime)}
             <div className="flex">

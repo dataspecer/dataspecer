@@ -178,36 +178,36 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
       if (mergeStateFromBackend !== null) {
         return {
           actionButtonText: "Open",
-          actionButtonClassname: "bg-green-400 hover:bg-green-600",
+          actionButtonClassname: "border-1 bg-blue-100 border-blue-600 hover:bg-blue-600 hover:text-white text-sm font-semibold rounded-md transition cursor-pointer",
           actionButtonTooltip: "The merge state already exists in Dataspecer. The button opens it.",
         };
       }
       else {
         return {
-          actionButtonText: "Create",
-          actionButtonClassname: "bg-orange-200 hover:bg-orange-400",
+          actionButtonText: "Merge",
+          actionButtonClassname: "border-1 bg-green-100 border-green-600 hover:bg-green-600 hover:text-white text-sm font-semibold rounded-md transition cursor-pointer",
           actionButtonTooltip: "Both branches are already tracked inside Dataspecer. This button will create new merge state between them",
         };
       }
     }
     else if (isMergeFromInDS) {
       return {
-        actionButtonText: "Import + Create",
-        actionButtonClassname: "bg-orange-400 hover:bg-orange-600",
+        actionButtonText: "Import + Merge",
+        actionButtonClassname: "border-1 bg-purple-100 border-purple-600 hover:bg-purple-600 hover:text-white text-sm font-semibold rounded-md transition cursor-pointer",
         actionButtonTooltip: "Imports the merge to branch of the PR and creates a new merge state between the two branches tracked in Dataspecer",
       };
     }
     else if (isMergeToInDS) {
       return {
-        actionButtonText: "Import + Create",
-        actionButtonClassname: "bg-orange-400 hover:bg-orange-600",
+        actionButtonText: "Import + Merge",
+        actionButtonClassname: "border-1 bg-purple-100 border-purple-600 hover:bg-purple-600 hover:text-white text-sm font-semibold rounded-md transition cursor-pointer",
         actionButtonTooltip: "Imports the merge from branch of the PR and creates a new merge state between the two branches tracked in Dataspecer",
       };
     }
     else {
       return {
-        actionButtonText: "Import + Create",
-        actionButtonClassname: "bg-orange-700 hover:bg-orange-800",
+        actionButtonText: "Import both + Merge",
+        actionButtonClassname: "border-1 bg-orange-100 border-orange-600 hover:bg-orange-600 hover:text-white text-sm font-semibold rounded-md transition cursor-pointer",
         actionButtonTooltip: "Imports both the merge from and merge to branches into Dataspecer and creates a new merge state between them.",
       };
     }
