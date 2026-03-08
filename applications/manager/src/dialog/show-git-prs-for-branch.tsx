@@ -22,13 +22,14 @@ type GitPrsListDialogProps = {
   branch: string | null;
   gitUrl: string;
   resources: Record<string, ResourceWithIris>;
+  gitProviderSpecificNameForPR: string;
 } & BetterModalProps<null>;
 
 
 /**
  * If the provided branch is null then it lists all PRs for resource.
  */
-export const GitPrsListDialog = ({ resources, branch, gitUrl, isOpen, resolve }: GitPrsListDialogProps) => {
+export const GitPrsListDialog = ({ resources, branch, gitUrl, gitProviderSpecificNameForPR, isOpen, resolve }: GitPrsListDialogProps) => {
   // Uses the PaginationComponent from the hook to render the pagination.
   const { pageOnFrontend, itemCountPerPage, setTotalItemCount, setIsLastPageBasedOnServerResponse, PaginationComponent } = usePaginationComponent();
 
@@ -85,8 +86,8 @@ export const GitPrsListDialog = ({ resources, branch, gitUrl, isOpen, resolve }:
           <ModalTitle>
             {
               branch === null ?
-                "List of all opened pull requests for given Git" :
-                "List of opened pull requests for given package and branch"
+                `List of all opened ${gitProviderSpecificNameForPR}s for given Git` :
+                `List of opened ${gitProviderSpecificNameForPR}s for given package and branch`
             }
           </ModalTitle>
           <ModalDescription>

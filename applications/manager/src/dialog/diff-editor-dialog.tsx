@@ -153,7 +153,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
                       <Button title="This does save both the changes to files and updates the merge state"
                               variant={"outline"}
                               onClick={() => saveEverything()}
-                              className="m-1 bg-blue-400 hover:bg-blue-600">
+                              className="m-1 border bg-blue-100 border-blue-500 hover:bg-blue-500 hover:text-white transition">
                         Save All (Ctrl + S)
                       </Button>
                       {
@@ -161,7 +161,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
                         <Button title="First saves all the unsaved changes and then it performs the operation, which triggered the merge state. Can be pull/push/merge"
                                 variant={"outline"}
                                 onClick={finalizeMergeStateHandler}
-                                className="m-1 bg-green-600 hover:bg-green-700">
+                                className="m-1 border bg-green-100 border-green-500 hover:bg-green-500 hover:text-white transition">
                           Save and Finalize
                         </Button>
                       }
