@@ -60,7 +60,7 @@ export async function mergeCommitToGitBackendRequest(
 type CreanteNewRepoBackendRequestData = {
   repositoryName: string;
   user: string;
-  gitProvider: string;
+  gitProviderDomain: string;
   commitMessage: string;
   isUserRepo: boolean;
   publicationBranch: string;
@@ -75,7 +75,7 @@ export async function createNewRemoteRepositoryRequest(
   const url = import.meta.env.VITE_BACKEND + "/git/create-new-git-repository-with-package-content?iri=" + encodeURIComponent(iri) +
                                             "&givenRepositoryName=" + encodeURIComponent(commitBackendRequestData.repositoryName) +
                                             "&givenRepositoryOwner=" + encodeURIComponent(commitBackendRequestData.user ?? "") +
-                                            "&gitProviderURL=" + encodeURIComponent(commitBackendRequestData.gitProvider ?? "") +
+                                            "&gitProviderURL=" + encodeURIComponent(commitBackendRequestData.gitProviderDomain ?? "") +
                                             "&commitMessage=" + encodeURIComponent(commitBackendRequestData.commitMessage ?? "") +
                                             "&isUserRepo=" + encodeURIComponent(commitBackendRequestData.isUserRepo ?? true) +
                                             "&publicationBranch=" + encodeURIComponent(commitBackendRequestData.publicationBranch) +

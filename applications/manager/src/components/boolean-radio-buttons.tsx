@@ -12,7 +12,7 @@ type BooleanRadioButtonsProps = {
 export function BooleanRadioButtons({ value, setValue, falseText, trueText, isFalseDisabled, isTrueDisabled }: BooleanRadioButtonsProps) {
   const { t } = useTranslation();
 
-  return <div className="-mt-2 mb-8 flex items-center space-x-6">
+  return <div className="-mt-2 mb-8 flex items-center space-x-6 grid grid-col-2">
     <label className="flex items-center space-x-2">
       <input
         type="radio"

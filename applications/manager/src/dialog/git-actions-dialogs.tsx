@@ -15,7 +15,9 @@ import {
   ExportVersionType,
   getDefaultExportVersion,
   getDefaultExportFormat,
-  UserOrganizationsFetchResponse
+  convertEnumToGitProviderName,
+  UserOrganizationsFetchResponseFrontend,
+  isGitProviderName
 } from "@dataspecer/git";
 import { CommitRedirectForMergeStatesDialog } from "./commit-confirm-dialog-caused-by-merge-state";
 import { commitToGitBackendRequest, createNewRemoteRepositoryRequest, GitCommitData, GitMergeCommitData, linkToExistingGitRepositoryRequest, mergeCommitToGitBackendRequest } from "@/utils/git-backend-requests";
@@ -30,7 +32,7 @@ import { TFunction } from "i18next";
 import { SetGitRemoteConfigurationComponent } from "./set-git-remote-configuration-dialog";
 import { useRequiredFieldsForGitConfig } from "@/hooks/use-required-fields-for-git-config";
 import { CREATE_REPOSITORY_WAIT_TIME, GIT_COMMIT_WAIT_TIME, MERGE_COMMIT_WAIT_TIME } from "@/utils/git-wait-times";
-import { ArrowDownNarrowWide, ArrowUpNarrowWide } from "lucide-react";
+import { ArrowDownNarrowWide, ArrowUpNarrowWide, Loader } from "lucide-react";
 import { BooleanRadioButtons } from "@/components/boolean-radio-buttons";
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 import { useAsyncMemo } from "@/hooks/use-async-memo";
@@ -96,7 +98,7 @@ type GitActionsDialogProps = {
   repositoryName: string;
   remoteRepositoryURL: string;
   user: string;
-  gitProvider: string;
+  gitProviderDomain: string;
   commitMessage: string;
   isUserRepo: boolean;
   shouldAlwaysCreateMergeState: boolean;
@@ -120,6 +122,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   const { t } = useTranslation();
   type = type ?? "create-new-repository-and-commit";
 
+  const [isLoadingInitialData, setIsLoadingInitialData] = useState<boolean>(true);
   const [showMore, setShowMore] = useState<boolean>(false);
 
   const gitProvidersComboboxOptions = useMemo(() => {
@@ -138,6 +141,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
       const fetchedGitRemoteConfiguration = isGitDialogSettingGitConfiguration ? await getGitRemoteConfigurationModelFromPackage(rootPackageFetchedContent) : null;
       setRootPackageContent(rootPackageFetchedContent);
       setGitRemoteConfiguration(fetchedGitRemoteConfiguration);
+      setIsLoadingInitialData(false);
     };
     setGitRemoteConfigurationState();
   }, [inputPackage]);
@@ -146,89 +150,152 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
 
   const { accountProvider, username, genericScope, isSignedIn } = useLogin();
 
-  const [userOrganizationSuggestions, canUseUserOrganizationSuggestions] = useAsyncMemo(async () => {
-    try {
-      const fetchResponse = await fetch(import.meta.env.VITE_BACKEND + "/git/authenticated-user-organizations", {
-        method: "GET",
-        credentials: "include",
-      });
-
-      const userOrganizations: UserOrganizationsFetchResponse = await fetchResponse.json();
-      if (!userOrganizations.isLastPage) {
-        // TODO RadStr PR: For now just report error to console
-        console.error("The user is member of more than limit number of organizations (first implmementation had hardcoded limit of 1000)")
-      }
-      return userOrganizations.organizations.map(org => {
-        const suggestion: InputSuggestionsType = {
-          value: org,
-          textSuffix: "",
-        };
-        return suggestion;
-      });
-    }
-    catch (error) {
-      console.error("Failed fetching organizations the authenticated user is part of.");
-      return []
-    }
-  }, [isSignedIn]);
-
-  const [botOrganizationSuggestions, canUseBotOrganizationSuggestions] = useAsyncMemo(async () => {
-    try {
-      const fetchResponse = await fetch(import.meta.env.VITE_BACKEND + "/git/bot-organizations", {
-        method: "GET",
-      });
-
-      const botOrganizations: UserOrganizationsFetchResponse = await fetchResponse.json();
-      if (!botOrganizations.isLastPage) {
-        // TODO RadStr PR: For now just report error to console
-        console.error("The user is member of more than limit number of organizations (first implmementation had hardcoded limit of 1000)")
-      }
-      return botOrganizations.organizations.map(org => {
-        const suggestion: InputSuggestionsType = {
-          value: org,
-          textSuffix: " (bot)",
-        };
-        return suggestion;
-      });
-    }
-    catch (error) {
-      console.error("Failed fetching the bot organizations.");
-      return [];
-    }
-  }, []);
-
-  const suggestionsForOrganization: InputSuggestionsType[] = useMemo(() => {
-    const suggestionsWithDuplicates: InputSuggestionsType[] = (botOrganizationSuggestions ?? []).concat(userOrganizationSuggestions ?? []);
-    const isInUserSuggestions = (suggestionToCheck: InputSuggestionsType) => {
-      return botOrganizationSuggestions?.find(botSuggestion => suggestionToCheck.value === botSuggestion.value) !== undefined;
-    };
-    // Either it is bot suggestion or it is not and then it also has to not be present in the bot suggestion
-    return suggestionsWithDuplicates
-      .filter(suggestion => suggestion.textSuffix === "" || !isInUserSuggestions(suggestion));
-  }, [userOrganizationSuggestions, botOrganizationSuggestions]);
-
   const [repositoryName, setRepositoryName] = useState<string>(inputPackage.iri);
   const [remoteRepositoryURL, setRemoteRepositoryURL] = useState<string>("https://github.com/userName/repositoryName");
   const [organization, setOrganization] = useState<string>("");
+  const [isLoadingOrganizationSuggestions, setIsLoadingOrganizationSuggestions] = useState<boolean>(false);
   const [isOwnerSignedInUser, setIsOwnerSignedInUser] = useState<boolean>(true);
-  const [gitProvider, setGitProvider] = useState<string>(getGitProviderDomain(gitProvidersComboboxOptions[0].value, true, true));
+  const [gitProvider, setGitProvider] = useState<GitProviderEnum>(gitProvidersComboboxOptions[0].value);
   const [commitMessage, setCommitMessage] = useState<string>(defaultCommitMessage ?? "");
   const [isUserRepo, setIsUserRepo] = useState<boolean>(true);
   // We want the shouldAlwaysCreateMergeState option on, except when we are not showing it, then it can cause recursion
   const [shouldAlwaysCreateMergeState, setShouldAlwaysCreateMergeState] = useState<boolean>(shouldShowAlwaysCreateMergeStateOption !== false);
   const [shouldAppendAfterDefaultMergeCommitMessage, setShouldAppendAfterDefaultMergeCommitMessage] = useState<boolean>(true);
 
+  useEffect(() => {
+    if (accountProvider !== convertEnumToGitProviderName(gitProvider) || !isSignedIn || !genericScope.includes("publicRepo")) {
+      // It has to be bot
+      setIsOwnerSignedInUser(false);
+    }
+  }, [accountProvider, isSignedIn, genericScope]);
+
+
+  useEffect(() => {
+    if (isSignedIn)  {
+      if (!isGitProviderName(accountProvider)) {
+        return;     // We just return, since it might be possible that the user might be signed in using KeyCloak or something like that
+      }
+      const initialGitProvider = convertGitProviderNameToEnum(accountProvider);
+      if (initialGitProvider === undefined) {
+        throw new Error(`For some reason could not convert ${accountProvider} to the existing enum. Most-likely programmer error`);
+      }
+      setGitProvider(initialGitProvider);
+    }
+  }, [isSignedIn]);
+
+  // Fetching organizations so they show in input box when writing
+  // TODO RadStr PR: The suggestion (both user and bot) should be a Record, so we do not keep fetching data of Git provider we already have.
+  //                 But it is just optimization user usually does not keep changing between Git providers.
+  //                 They just pick one and create repository
+  const [userOrganizationSuggestions, userOrganizationSuggestionsNotReady] = useAsyncMemo(async () => {
+    if (!isUserRepo && isSignedIn) {
+      setIsLoadingOrganizationSuggestions(true);
+      try {
+        const fetchResponse = await fetch(import.meta.env.VITE_BACKEND + "/git/authenticated-user-organizations?targetGitProvider=" + convertEnumToGitProviderName(gitProvider), {
+          method: "GET",
+          credentials: "include",
+        });
+
+        const userOrganizations: UserOrganizationsFetchResponseFrontend = await fetchResponse.json();
+        if ("error" in userOrganizations) {
+          throw new Error(userOrganizations.error);
+        }
+
+        if (!userOrganizations.isLastPage) {
+          // TODO RadStr PR: For now just report error to console
+          console.error("The user is member of more than limit number of organizations (first implmementation had hardcoded limit of 1000)")
+        }
+        return userOrganizations.organizations.map(org => {
+          const suggestion: InputSuggestionsType = {
+            value: org,
+            textSuffix: "",
+          };
+          return suggestion;
+        });
+      }
+      catch (error: any) {
+        console.error("Failed fetching organizations the authenticated user is part of.");
+        console.error(error.message);
+        return [];
+      }
+    }
+  }, [isSignedIn, gitProvider, isUserRepo]);
+
+  const [botOrganizationSuggestions, botOrganizationSuggestionsNotReady] = useAsyncMemo(async () => {
+    if (!isUserRepo) {
+      try {
+        setIsLoadingOrganizationSuggestions(true);
+        const fetchResponse = await fetch(import.meta.env.VITE_BACKEND + "/git/bot-organizations?targetGitProvider=" + convertEnumToGitProviderName(gitProvider), {
+          method: "GET",
+        });
+        const botOrganizations: UserOrganizationsFetchResponseFrontend = await fetchResponse.json();
+        if ("error" in botOrganizations) {
+          throw new Error(botOrganizations.error);
+        }
+
+        if (!botOrganizations.isLastPage) {
+          // TODO RadStr PR: For now just report error to console
+          console.error("The user is member of more than limit number of organizations (first implmementation had hardcoded limit of 1000)")
+        }
+        return botOrganizations.organizations.map(org => {
+          const suggestion: InputSuggestionsType = {
+            value: org,
+            textSuffix: " (bot)",
+          };
+          return suggestion;
+        });
+      }
+      catch (error: any) {
+        console.error("Failed fetching the bot organizations.");
+        console.error(error.message);
+        return [];
+      }
+    }
+  }, [gitProvider, isUserRepo]);
+
+  // Combine the bot and singed in user organizations into one array.
+  const suggestionsForOrganization: InputSuggestionsType[] = useMemo(() => {
+    let botOrganizationSuggestionsToUse: InputSuggestionsType[];
+    if (botOrganizationSuggestionsNotReady) {
+      botOrganizationSuggestionsToUse = [];
+    }
+    else {
+      botOrganizationSuggestionsToUse = botOrganizationSuggestions ?? [];
+    }
+    let userOrganizationSuggestionsToUse: InputSuggestionsType[];
+    if (userOrganizationSuggestionsNotReady) {
+      userOrganizationSuggestionsToUse = [];
+    }
+    else {
+      userOrganizationSuggestionsToUse = userOrganizationSuggestions ?? [];
+    }
+
+    const suggestionsWithDuplicates: InputSuggestionsType[] = userOrganizationSuggestionsToUse.concat(botOrganizationSuggestionsToUse);
+    const isInUserSuggestions = (botSuggestionToCheck: InputSuggestionsType) => {
+      return userOrganizationSuggestionsToUse?.find(userSuggestion => botSuggestionToCheck.value === userSuggestion.value) !== undefined;
+    };
+    // Either it is user suggestion or it is not and then it has to not be present in the user suggestions.
+    const suggestionsWithoutDuplicates = suggestionsWithDuplicates
+      .filter(suggestion => suggestion.textSuffix === "" || !isInUserSuggestions(suggestion));
+    if (suggestionsWithoutDuplicates.length > 0) {
+      setOrganization(suggestionsWithoutDuplicates[0].value);
+    }
+    setIsLoadingOrganizationSuggestions(false);
+    return suggestionsWithoutDuplicates;
+  }, [userOrganizationSuggestions, botOrganizationSuggestions]);
+  //
+
   // Values for non-empty inputbox check
   const repositoryNameInputFieldRef = useRef<HTMLInputElement | null>(null);
   const commitMessageInputFieldRef = useRef<HTMLInputElement | null>(null);
+  const organizationInputFieldRef = useRef<HTMLInputElement | null>(null);
   const { publicationBranchRef, requiredGitConfigFieldsMap } = useRequiredFieldsForGitConfig();
 
   const requiredFields: RefObject<HTMLInputElement | null>[] = useMemo(() => {
     const requiredFieldsInternal: RefObject<HTMLInputElement | null>[] = [];
     switch(type) {
       case "create-new-repository-and-commit":
-        // TODO RadStr: For now without the repositoryOwnerInputFieldRef - we just use the bot, if it is empty
-        requiredFieldsInternal.push(repositoryNameInputFieldRef, commitMessageInputFieldRef, publicationBranchRef);
+        requiredFieldsInternal.push(repositoryNameInputFieldRef, organizationInputFieldRef, commitMessageInputFieldRef, publicationBranchRef);
         break;
       case "commit":
         requiredFieldsInternal.push(commitMessageInputFieldRef);
@@ -248,7 +315,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
     // We have to it like this because the login is asynchronous
     // If the Git provider matches and we have a push scope, then show the user's name instead of empty string.
     if (convertGitProviderNameToEnum(accountProvider) === gitProvidersComboboxOptions[0].value && genericScope.includes("publicRepo")) {
-      setOrganization(username);
+      setIsOwnerSignedInUser(true);
     }
   }, [accountProvider, username, genericScope]);
 
@@ -266,9 +333,9 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
     const resolveAsNoParamsMethod = async () => {
       if (type === "create-new-repository-and-commit") {
         // We store the new configuration only when creating new repository,
-        // TODO RadStr: It is kind of weird that there is no exported method with this functionality yet.
         const storeModelToBackend = async (iri: string, newPackageContent: object) => {
           try {
+            // TODO RadStr PR: This probably should be in some interface, maybe the BackendPackageService
             await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(iri), {
               method: "PUT",
               headers: {
@@ -292,8 +359,10 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
       else {
         owner = organization;
       }
+
+      const gitProviderDomain = getGitProviderDomain(gitProvider, true, true);
       resolve({
-        user: owner, repositoryName, remoteRepositoryURL, gitProvider, commitMessage, isUserRepo,
+        user: owner, repositoryName, remoteRepositoryURL, gitProviderDomain, commitMessage, isUserRepo,
         shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage,
         publicationBranch: gitRemoteConfiguration?.publicationBranch ?? PUBLICATION_BRANCH_DEFAULT_NAME,
         exportFormat: gitRemoteConfiguration?.exportFormat ?? getDefaultExportFormat(),
@@ -367,7 +436,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
         <div className="pt-2 flex flex-1 flex-row">
           <p className="text-sm pt-2.5">Git provider</p>
           <div className="pl-23">
-            <ComboBox options={gitProvidersComboboxOptions} onChange={(value: GitProviderEnum) => setGitProvider(getGitProviderDomain(value, true, true))}/>
+            <ComboBox options={gitProvidersComboboxOptions} onChange={(value: GitProviderEnum) => setGitProvider(value)}/>
           </div>
         </div>
         <div className="pt-6 flex flex-1 flex-row">
@@ -388,7 +457,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
               <p className="pb-3 pt-1 text-sm">{t("git.dialog.label.repository-owner")}</p>
               <div className="pl-14 items-center justify-center pt-3">
                 <BooleanRadioButtons
-                  value={isSignedIn && isOwnerSignedInUser}
+                  value={isOwnerSignedInUser}
                   setValue={setIsOwnerSignedInUser}
                   isFalseDisabled={false}
                   isTrueDisabled={!isSignedIn}
@@ -397,54 +466,62 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
                 />
               </div>
             </div> :
-            <div>
-              <InputComponent
-                idPrefix={gitDialogInputIdPrefix}
-                idSuffix={suffixNumber++}
-                label={t("git.dialog.label.repository-owner")}
-                input={organization}
-                setInput={createSetterWithGitValidation(setOrganization)}
-                suggestions={suggestionsForOrganization}
-              />
-              <div className="my-8"/>
-            </div>
+            isLoadingOrganizationSuggestions ?
+              <div className="flex flex-1 flex-row"><Loader className="mr-2 mt-1.5 h-4 w-4 animate-spin" />Fetching organizations names</div> :
+              <div>
+                <InputComponent
+                  idPrefix={gitDialogInputIdPrefix}
+                  idSuffix={suffixNumber++}
+                  label={t("git.dialog.label.repository-owner")}
+                  input={organization}
+                  setInput={createSetterWithGitValidation(setOrganization)}
+                  suggestions={suggestionsForOrganization}
+                  requiredRefObject={organizationInputFieldRef}
+                />
+                <div className="my-8"/>
+              </div>
         }
-        <InputComponent
-          idPrefix={gitDialogInputIdPrefix}
-          idSuffix={suffixNumber++}
-          label={t("git.dialog.label.repository-name")}
-          setInput={createSetterWithGitValidation(setRepositoryName)}
-          input={repositoryName}
-          requiredRefObject={repositoryNameInputFieldRef}
-        />
-        <InputComponent
-          idPrefix={gitDialogInputIdPrefix}
-          idSuffix={suffixNumber++}
-          label={t("git.dialog.label.initial-commit-message")}
-          setInput={setCommitMessage}
-          input={commitMessage}
-          requiredRefObject={commitMessageInputFieldRef}
-        />
-        {/* ---- COLLAPSIBLE SECTION ---- */}
-        <Button
-          variant="ghost"
-          className="mt-2 mb-2 p-0 text-sm"
-          onClick={() => setShowMore(!showMore)}
-        >
-          {showMore ? <ArrowUpNarrowWide /> : <ArrowDownNarrowWide />} Advanced settings (Keeping the defaults is fine):
-        </Button>
-        { (!showMore || gitRemoteConfiguration === null) ?
-            null :
-            <div>
-              <div className="mt-3 font-semibold">Git configuration:</div>
-              <SetGitRemoteConfigurationComponent
-                configuration={gitRemoteConfiguration!}
-                setGitConfigurationReactState={setGitRemoteConfiguration}
-                requiredFieldsMap={requiredGitConfigFieldsMap}
-              />
-            </div>
+        {
+          isLoadingOrganizationSuggestions ? null :
+          <>
+            <InputComponent
+              idPrefix={gitDialogInputIdPrefix}
+              idSuffix={suffixNumber++}
+              label={t("git.dialog.label.repository-name")}
+              setInput={createSetterWithGitValidation(setRepositoryName)}
+              input={repositoryName}
+              requiredRefObject={repositoryNameInputFieldRef}
+            />
+            <InputComponent
+              idPrefix={gitDialogInputIdPrefix}
+              idSuffix={suffixNumber++}
+              label={t("git.dialog.label.initial-commit-message")}
+              setInput={setCommitMessage}
+              input={commitMessage}
+              requiredRefObject={commitMessageInputFieldRef}
+            />
+            {/* ---- COLLAPSIBLE SECTION ---- */}
+            <Button
+              variant="ghost"
+              className="mt-2 mb-2 p-0 text-sm"
+              onClick={() => setShowMore(!showMore)}
+            >
+              {showMore ? <ArrowUpNarrowWide /> : <ArrowDownNarrowWide />} Advanced settings (Keeping the defaults is fine):
+            </Button>
+            { (!showMore || gitRemoteConfiguration === null) ?
+                null :
+                <div>
+                  <div className="mt-3 font-semibold">Git configuration:</div>
+                  <SetGitRemoteConfigurationComponent
+                    configuration={gitRemoteConfiguration!}
+                    setGitConfigurationReactState={setGitRemoteConfiguration}
+                    requiredFieldsMap={requiredGitConfigFieldsMap}
+                  />
+                </div>
+            }
+            {/* ---- END OF COLLAPSIBLE SECTION ---- */}
+          </>
         }
-        {/* ---- END OF COLLAPSIBLE SECTION ---- */}
       </div>;
       break;
     case "commit":
@@ -518,11 +595,15 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
           </ModalDescription>
         </ModalHeader>
         <ModalBody>
-          {modalBody}
+          {isLoadingInitialData ? null : modalBody}
         </ModalBody>
         <ModalFooter className="flex flex-row">
-          <Button variant="outline" onClick={() => resolve(null)}>{t("close")}</Button>
-          <Button type="submit" className="hover:bg-purple-700" onClick={tryCloseWithSuccess} disabled={shouldDisableConfirm}>{t("confirm")}</Button>
+          {
+            isLoadingInitialData ? null : <>
+              <Button variant="outline" onClick={() => resolve(null)}>{t("close")}</Button>
+              <Button type="submit" className="hover:bg-purple-700" onClick={tryCloseWithSuccess} disabled={shouldDisableConfirm}>{t("confirm")}</Button>
+            </>
+          }
         </ModalFooter>
       </ModalContent>
     </Modal>

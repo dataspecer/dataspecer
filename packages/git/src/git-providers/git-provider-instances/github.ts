@@ -1040,8 +1040,9 @@ export class GitHubProvider extends GitProviderBase {
       }
     }
 
+    const flattenedOrganizations = [].concat(...organizations);
     const result: UserOrganizationsFetchResponse = {
-      organizations,
+      organizations: flattenedOrganizations,
       isLastPage: page <= 10,
     };
     return result;
