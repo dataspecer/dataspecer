@@ -60,6 +60,7 @@ export const ModifyRawDialog = ({isOpen, resolve, iri}: ModifyRawDialogProps) =>
   const save = useEventCallback(async () => {
     if (selectedModel === null) return;
     const value = monaco.current!.editor.getValue();
+    // TODO RadStr PR: This probably should be in some interface, maybe the BackendPackageService
     await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(iri) + "&name=" + encodeURIComponent(selectedModel), {
       method: "PUT",
       headers: {

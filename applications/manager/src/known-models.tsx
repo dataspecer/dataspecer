@@ -43,6 +43,7 @@ function getHookForStandardModel(type: string, initialContent: (iri: string, con
         }
       }),
     });
+    // TODO RadStr PR: This probably should be in some interface, maybe the BackendPackageService
     await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(iri), {
       method: "PUT",
       headers: {
@@ -69,6 +70,7 @@ export const createModelInstructions = {
           documentBaseUrl: context.documentBaseUrl,
         }
       });
+      // TODO: Can be replaced with storeResourceToBackend function, I am not doing it to not break any code which is not mine by accident.
       await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(iri), {
         method: "PUT",
         headers: {

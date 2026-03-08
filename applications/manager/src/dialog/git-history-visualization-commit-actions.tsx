@@ -115,6 +115,7 @@ export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitH
               null
             }
             {commitAlreadyExistsInDS ? "The commit already exists inside DS. However, you can import it again." : null}
+            Closing the dialog brings back the Git graph.
           </ModalDescription>
         </ModalHeader>
         <ModalFooter>

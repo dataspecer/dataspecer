@@ -51,6 +51,7 @@ export const usePackageSectionService = (): PackageSectionServiceType => {
 
     if (activeVisualModel !== null && svg !== undefined && svg !== null) {
       const iri = encodeURIComponent(activeVisualModel.getIdentifier());
+      // TODO RadStr PR: This probably should be in some interface, maybe the BackendPackageService
       await fetch((import.meta.env.VITE_PUBLIC_APP_BACKEND ?? "") + "/resources/blob?iri=" + iri + "&name=svg", {
         method: "PUT",
         headers: {

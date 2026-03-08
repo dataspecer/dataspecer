@@ -113,6 +113,7 @@ export const Autolayout = ({ iri, isOpen, resolve, parentIri }: { iri: string, p
       await requestLoadPackage(parentIri, true);
     }
 
+    // TODO RadStr PR: This probably should be in some interface, maybe the BackendPackageService
     await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(modelVisualizationId), {
       method: "PUT",
       headers: {

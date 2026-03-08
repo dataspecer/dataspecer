@@ -6,6 +6,7 @@ import {
   PullRequestFetchResponse,
   PullRequestInvolvingUserFetchResponse,
   UserOrganizationsFetchResponse,
+  GitHubLabel,
 } from "../git-provider-api.ts";
 import { Scope } from "../auth.ts";
 import { type GitBotConfiguration, type OAuthConfiguration } from "@dataspecer/auth";
@@ -30,6 +31,7 @@ export abstract class GitProviderBase implements GitProvider {
 
 
   abstract getProviderName(): string;
+  abstract getProviderSpecificLabel(githubLabel: GitHubLabel): string;
   abstract getGitProviderEnumValue(): GitProviderEnum;
   abstract getDomainURL(shouldPrefixWithHttps: boolean, shouldEndWithSlash: boolean): string;
   abstract setDomainURL(newDomainURL: string): void;

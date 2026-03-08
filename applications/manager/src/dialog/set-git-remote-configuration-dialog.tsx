@@ -42,6 +42,7 @@ export function SetGitRemoteConfigurationDialog({ inputPackage, isOpen, resolve 
       // TODO RadStr: It is kind of weird that there is no exported method with this functionality yet.
       const storeModelToBackend = async (iri: string, newPackageContent: object) => {
         try {
+          // TODO RadStr PR: This probably should be in some interface, maybe the BackendPackageService
           await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(iri), {
             method: "PUT",
             headers: {
