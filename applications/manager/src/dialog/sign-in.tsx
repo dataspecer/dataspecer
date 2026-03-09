@@ -47,12 +47,9 @@ function SignInInfoTooltipAdvanced() {
           <br/>
           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;You can think of a Dataspecer bot as a fallback Git user.
           <br/>
-          &nbsp;&nbsp;&nbsp;- Commit and pull to repositories using your private SSH key.
+          &nbsp;&nbsp;&nbsp;- Commit and pull to repositories using your private SSH key, which you can set up once you sign in.
         </div>
         <br/>
-        <div>
-          - <strong>Once you sign-in</strong> you can also set your <strong>SSH key</strong> under your account.
-        </div>
         <div>
           - The access tokens for Git operations are tried out until one succeeds in this order. Your SSH, your PAT, bot SSH, bot PAT
           <br/>
