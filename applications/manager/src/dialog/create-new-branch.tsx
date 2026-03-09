@@ -72,10 +72,11 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
       setShouldHideDialog(true);
       openModal(LoadingDialog, {
         dialogTitle: "Creating new branch in Dataspecer. Do not forget to push it to the remote after you are done.",
-        waitingText: null,
+        waitingText: "Do not modify the package while branch is being created",
         waitTime: CREATE_NEW_BRANCH_WAIT_TIME,
         setCloseDialogAction: closeDialogObject.setCloseDialogAction,
         shouldShowTimer: true,
+        shouldDisableClosing: true,
       });
       try {
         response = await packageService.copyRecursively(sourcePackage.iri, PACKAGE_ROOT);

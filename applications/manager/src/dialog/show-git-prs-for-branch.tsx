@@ -260,6 +260,7 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
               waitTime: GIT_IMPORT_WAIT_TIME,
               setCloseDialogAction: closeLoadingDialogObject.setCloseDialogAction,
               shouldShowTimer: true,
+              shouldDisableClosing: true,
             });
           }, 40);
           const response = await importFromGit(PACKAGE_ROOT, mergeToBranchUrl, "branch");
@@ -276,6 +277,7 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
               waitTime: GIT_IMPORT_WAIT_TIME,
               setCloseDialogAction: closeLoadingDialogObject.setCloseDialogAction,
               shouldShowTimer: true,
+              shouldDisableClosing: true,
             });
           }, 40);
           const response = await importFromGit(PACKAGE_ROOT, mergeFromBranchUrl, "branch");
@@ -292,6 +294,7 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
               waitTime: GIT_IMPORT_WAIT_TIME,
               setCloseDialogAction: closeLoadingDialogObject.setCloseDialogAction,
               shouldShowTimer: true,
+              shouldDisableClosing: true,
             });
           }, 40);
           const mergeFromFetchResponse = await importFromGit(PACKAGE_ROOT, mergeFromBranchUrl, "branch");
@@ -307,6 +310,7 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
               waitTime: GIT_IMPORT_WAIT_TIME,
               setCloseDialogAction: closeLoadingDialogObject.setCloseDialogAction,
               shouldShowTimer: true,
+              shouldDisableClosing: true,
             });
           }, 40);
           const mergeToFetchResponse = await importFromGit(PACKAGE_ROOT, mergeToBranchUrl, "branch");
@@ -324,6 +328,7 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
           waitTime: CREATE_MERGE_STATE_WAIT_TIME,
           setCloseDialogAction: closeLoadingDialogObject.setCloseDialogAction,
           shouldShowTimer: true,
+          shouldDisableClosing: true,
         });
       }, 40);
 

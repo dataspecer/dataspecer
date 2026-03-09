@@ -13,6 +13,7 @@ type LoadingDialogProps = {
   waitingText: string | null;
   setCloseDialogAction: (newAction: () => void) => void;
   shouldShowTimer: boolean;
+  shouldDisableClosing: boolean;
 } & BetterModalProps;
 
 export const createCloseDialogObject = () => {
@@ -30,7 +31,7 @@ export const createCloseDialogObject = () => {
  * Therefore, and this is important, the caller is responsible for closing this dialog (unless the user closes the dialog explicitly).
  *  The idea is that the caller closes the loading dialog after the action we were waiting for is done.
  */
-export const LoadingDialog = ({ isOpen, resolve, waitTime, waitingText, dialogTitle, setCloseDialogAction, shouldShowTimer }: LoadingDialogProps) => {
+export const LoadingDialog = ({ isOpen, resolve, waitTime, waitingText, dialogTitle, setCloseDialogAction, shouldShowTimer, shouldDisableClosing }: LoadingDialogProps) => {
   const [secondsPassed, setSecondsPassed] = useState<number>(0);
   const { t } = useTranslation();
 
@@ -52,10 +53,9 @@ export const LoadingDialog = ({ isOpen, resolve, waitTime, waitingText, dialogTi
 
 
   const translatedWaitingText = waitingText === null ? "" : t(waitingText);
-
   return (
-    <Modal open={isOpen} onOpenChange={(value: boolean) => value ? null : resolve()}>
-      <ModalContent>
+    <Modal open={isOpen} onClose={() => shouldDisableClosing ? null : resolve()}>
+      <ModalContent disableClose={shouldDisableClosing}>
         <ModalHeader>
           <ModalTitle>{t(dialogTitle)}</ModalTitle>
           <ModalDescription>
@@ -68,9 +68,13 @@ export const LoadingDialog = ({ isOpen, resolve, waitTime, waitingText, dialogTi
             </div>
           </ModalDescription>
         </ModalHeader>
-          <ModalFooter className="flex flex-row">
-            <Button variant="outline" onClick={() => resolve()}>{t("close")}</Button>
-          </ModalFooter>
+        {
+          shouldDisableClosing ?
+            null :
+            <ModalFooter className="flex flex-row">
+              <Button variant="outline" onClick={() => resolve()}>{t("close")}</Button>
+            </ModalFooter>
+        }
       </ModalContent>
     </Modal>
   );

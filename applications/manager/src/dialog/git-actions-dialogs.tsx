@@ -621,6 +621,9 @@ function RepositoryOwnerTooltip() {
 }
 
 
+const committingWarningMessage = "⚠️ Do not modify the committed package during the commit process.";
+
+
 export const createNewRemoteRepositoryHandler = async (t: TFunction<"translation", undefined>, openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
   // {@link DropdownMenuItem} has to be used in the tree, when it is part of another component, it is rendered incorrectly,
   // that is why we implement it like this and not like react component
@@ -630,10 +633,11 @@ export const createNewRemoteRepositoryHandler = async (t: TFunction<"translation
     setTimeout(() => {
       openModal(LoadingDialog, {
         dialogTitle: "git.loading.create-repository.title",
-        waitingText: null,
+        waitingText: committingWarningMessage,
         waitTime: CREATE_REPOSITORY_WAIT_TIME,
         setCloseDialogAction: closeDialogObject.setCloseDialogAction,
         shouldShowTimer: true,
+        shouldDisableClosing: true,
       });
     }, 20);
     try {
@@ -684,10 +688,11 @@ export const mergeCommitToGitHandler = async (
   const closeDialogObject = createCloseDialogObject();
   openModal(LoadingDialog, {
     dialogTitle: "git.loading.merge.title",
-    waitingText: null,
+    waitingText: committingWarningMessage,
     waitTime: MERGE_COMMIT_WAIT_TIME,
     setCloseDialogAction: closeDialogObject.setCloseDialogAction,
     shouldShowTimer: true,
+    shouldDisableClosing: true
   });
   const mergeFromData: MergeFromDataType = {
     branch: mergeState.branchMergeFrom,
@@ -774,10 +779,11 @@ export const commitToGitHandler = async (
   // TODO RadStr: Localization
   openModal(LoadingDialog, {
     dialogTitle: "git.loading.commit.title",
-    waitingText: null,
+    waitingText: committingWarningMessage,
     waitTime: GIT_COMMIT_WAIT_TIME,
     setCloseDialogAction: closeDialogObject.setCloseDialogAction,
     shouldShowTimer: true,
+    shouldDisableClosing: true,
   });
 
   if (commitType === "rebase-commit") {
