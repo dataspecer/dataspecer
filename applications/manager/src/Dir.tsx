@@ -151,7 +151,9 @@ const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri
 
 Reason: Since the comparison with remote is costly, we do not perform it automatically, we only track if there was change in DS since last Git pull/push.`;
 
-  const prInfo = signedInUserPullRequests.findIndex(url => url === resource.linkedGitRepositoryURL) === -1 ? null : <div className="pl-0.5 text-red-600">PR</div>;
+  const gitProviderSpecificNameForPR = gitProvider?.getProviderSpecificLabel("Pull Request") ?? "Pull Request";
+  const gitProviderSpecificNameForPRShortcut = gitProvider?.getProviderSpecificLabel("PR") ?? "PR";
+  const prInfo = signedInUserPullRequests.findIndex(url => url === resource.linkedGitRepositoryURL) === -1 ? null : <div className="pl-0.5 text-red-600">{gitProviderSpecificNameForPRShortcut}</div>;
 
   let gitPart: React.ReactNode;
   if (resource.activeMergeStateCount !== 0) {
@@ -171,8 +173,6 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
       </a>;
     }
   }
-
-  const gitProviderSpecificNameForPR = gitProvider?.getProviderSpecificLabel("Pull Request") ?? "Pull Request";
 
   return <li className="first:border-y last:border-none border-b">
     <div className="flex items-center space-x-4 hover:bg-accent">
@@ -343,8 +343,8 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
                   {hasSetRemoteRepository && <DropdownMenuItem asChild><a href={gitProvider === null ? "" : gitProvider.getGitPagesURL(resource.linkedGitRepositoryURL)}><Eye className="mr-2 h-4 w-4" />Show {gitProvider?.getProviderSpecificLabel("GitHub Pages")}</a></DropdownMenuItem>}
                   {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>}
                   {hasSetRemoteRepository && <hr className="border-gray-300" />}
-                  {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialog, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: null, gitProviderSpecificNameForPR})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Active {gitProviderSpecificNameForPR}s</DropdownMenuItem>}
-                  {hasSetRemoteRepository && resource.representsBranchHead && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialog, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: resource.branch, gitProviderSpecificNameForPR})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Active {gitProviderSpecificNameForPR}s For Branch</DropdownMenuItem>}
+                  {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialog, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: null, gitProviderSpecificNameForPR, gitProviderSpecificNameForPRShortcut})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Active {gitProviderSpecificNameForPR}s</DropdownMenuItem>}
+                  {hasSetRemoteRepository && resource.representsBranchHead && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialog, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: resource.branch, gitProviderSpecificNameForPR, gitProviderSpecificNameForPRShortcut})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Active {gitProviderSpecificNameForPR}s For Branch</DropdownMenuItem>}
                   {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => openModal(GitIssuesListDialog, {gitUrl: resource.linkedGitRepositoryURL})}><BugIcon className="mr-2 h-4 w-4" />Active Issues</DropdownMenuItem>}
                   {hasSetRemoteRepository && <hr className="border-gray-300" />}
                   {hasSetRemoteRepository && <DropdownMenuItem onClick={() => openModal(ListMergeStatesDialog, { iri })}><EyeIcon className="mr-2 h-4 w-4" />Show merge states</DropdownMenuItem>}

@@ -43,7 +43,8 @@ export class GitLabProvider extends GitProviderBase {
   getProviderSpecificLabel(githubLabel: GitHubLabel): string {
     const labelMap: Record<GitHubLabel, string> = {
       "Pull Request": "Merge Request",
-      "GitHub Pages": "GitLab Pages"
+      "PR": "MR",
+      "GitHub Pages": "GitLab Pages",
     };
 
     return labelMap[githubLabel];

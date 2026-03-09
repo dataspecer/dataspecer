@@ -181,7 +181,7 @@ export type CreateRemoteRepositoryReturnType = {
   response: FetchResponse
 }
 
-export type GitHubLabel = "Pull Request" | "GitHub Pages";
+export type GitHubLabel = "Pull Request" | "PR" | "GitHub Pages";
 
 export type GetResourceForGitUrlAndBranchType = (gitRepositoryUrl: string, branch: string) => Promise<{iri: string} | null>
 

@@ -23,13 +23,14 @@ type GitPrsListDialogProps = {
   gitUrl: string;
   resources: Record<string, ResourceWithIris>;
   gitProviderSpecificNameForPR: string;
+  gitProviderSpecificNameForPRShortcut: string;
 } & BetterModalProps<null>;
 
 
 /**
  * If the provided branch is null then it lists all PRs for resource.
  */
-export const GitPrsListDialog = ({ resources, branch, gitUrl, gitProviderSpecificNameForPR, isOpen, resolve }: GitPrsListDialogProps) => {
+export const GitPrsListDialog = ({ resources, branch, gitUrl, gitProviderSpecificNameForPR, gitProviderSpecificNameForPRShortcut, isOpen, resolve }: GitPrsListDialogProps) => {
   // Uses the PaginationComponent from the hook to render the pagination.
   const { pageOnFrontend, itemCountPerPage, setTotalItemCount, setIsLastPageBasedOnServerResponse, PaginationComponent } = usePaginationComponent();
 
@@ -86,8 +87,8 @@ export const GitPrsListDialog = ({ resources, branch, gitUrl, gitProviderSpecifi
           <ModalTitle>
             {
               branch === null ?
-                `List of all opened ${gitProviderSpecificNameForPR}s for given Git` :
-                `List of opened ${gitProviderSpecificNameForPR}s for given package and branch`
+                `List of all opened ${gitProviderSpecificNameForPR}s (${gitProviderSpecificNameForPRShortcut}) for given Git` :
+                `List of opened ${gitProviderSpecificNameForPR}s (${gitProviderSpecificNameForPRShortcut}) for given package and branch`
             }
           </ModalTitle>
           <ModalDescription>
@@ -98,9 +99,11 @@ export const GitPrsListDialog = ({ resources, branch, gitUrl, gitProviderSpecifi
               </>
 
             }
-            You can click on the PR to get redirected to the PR.
+            You can click on the {gitProviderSpecificNameForPRShortcut} to get redirected to the {gitProviderSpecificNameForPRShortcut}.
             <br/>
-            <p className="flex flex-1 flex-row">Resolving PR in DS means performing reverse merge. <PRMergeTooltip/></p>
+            <p className="flex flex-1 flex-row">Resolving {gitProviderSpecificNameForPRShortcut} in Dataspecer means performing reverse merge.
+              <PRMergeTooltip gitProviderSpecificNameForPRShortcut={gitProviderSpecificNameForPRShortcut} />
+            </p>
           </ModalDescription>
           {
             cannotUseOpenedPrs ? <Loader className="mr-2 mt-1 h-4 w-4 animate-spin" /> :
@@ -121,7 +124,7 @@ export const GitPrsListDialog = ({ resources, branch, gitUrl, gitProviderSpecifi
           }
           {
             cannotUseOpenedPrs ? null : <PaginationComponent items={openedPrs!} itemsOnPageScalingFactor={1} isPageNumberingExact={branch === null}
-                                                             itemCountOnPageText="PR count on page" totalItemCountText="Total PR count"/>
+                                                             itemCountOnPageText={`${gitProviderSpecificNameForPRShortcut} count on page`} totalItemCountText={`Total ${gitProviderSpecificNameForPRShortcut} count`}/>
           }
         </ModalHeader>
         <ModalFooter>
@@ -133,13 +136,17 @@ export const GitPrsListDialog = ({ resources, branch, gitUrl, gitProviderSpecifi
   );
 };
 
-function PRMergeTooltip() {
+type PRMergeTooltipProps = {
+  gitProviderSpecificNameForPRShortcut: string
+};
+
+function PRMergeTooltip({gitProviderSpecificNameForPRShortcut}: PRMergeTooltipProps) {
   return <div>
     <PopOverGitGeneralComponent>
-      <div>That is, in Dataspecer we will create merge state where the PR's "merge from" actor will be the "merge to" actor.</div>
+      <div>That is, in Dataspecer we will create merge state where the {gitProviderSpecificNameForPRShortcut}'s "merge from" actor will be the "merge to" actor.</div>
       <div>This is the expected flow when working with Git. That is:</div>
          <div>&nbsp;&nbsp;&nbsp; - Merge the changes from the branch to which you are merging to your branch.</div>
-         <div>&nbsp;&nbsp;&nbsp; - Close the PR in Git provider.</div>
+         <div>&nbsp;&nbsp;&nbsp; - Close the {gitProviderSpecificNameForPRShortcut} in Git provider.</div>
     </PopOverGitGeneralComponent>
   </div>;
 }
