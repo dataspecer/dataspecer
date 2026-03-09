@@ -1,4 +1,4 @@
-import { SignInDialog } from '@/dialog/sign-in-buttons';
+import { SignInDialog } from '@/dialog/sign-in';
 import { UseLoginType } from '@/hooks/use-login';
 import { OpenBetterModal, useBetterModal } from '@/lib/better-modal';
 import { LockKeyholeIcon, LogIn, LogOut } from 'lucide-react';
