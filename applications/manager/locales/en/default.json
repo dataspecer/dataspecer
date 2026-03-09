@@ -141,7 +141,8 @@
         "title": "Creating merge commit"
       },
       "commit": {
-        "title": "Committing"
+        "title": "Committing",
+        "wait-text": "⚠️ Do not modify the committed package during the commit process."
       }
     },
     "toast": {

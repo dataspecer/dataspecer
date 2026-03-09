@@ -621,8 +621,6 @@ function RepositoryOwnerTooltip() {
 }
 
 
-const committingWarningMessage = "⚠️ Do not modify the committed package during the commit process.";
-
 
 export const createNewRemoteRepositoryHandler = async (t: TFunction<"translation", undefined>, openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
   // {@link DropdownMenuItem} has to be used in the tree, when it is part of another component, it is rendered incorrectly,
@@ -633,7 +631,7 @@ export const createNewRemoteRepositoryHandler = async (t: TFunction<"translation
     setTimeout(() => {
       openModal(LoadingDialog, {
         dialogTitle: "git.loading.create-repository.title",
-        waitingText: committingWarningMessage,
+        waitingText: "git.loading.commit.wait-text",
         waitTime: CREATE_REPOSITORY_WAIT_TIME,
         setCloseDialogAction: closeDialogObject.setCloseDialogAction,
         shouldShowTimer: true,
@@ -688,7 +686,7 @@ export const mergeCommitToGitHandler = async (
   const closeDialogObject = createCloseDialogObject();
   openModal(LoadingDialog, {
     dialogTitle: "git.loading.merge.title",
-    waitingText: committingWarningMessage,
+    waitingText: "git.loading.commit.wait-text",
     waitTime: MERGE_COMMIT_WAIT_TIME,
     setCloseDialogAction: closeDialogObject.setCloseDialogAction,
     shouldShowTimer: true,
@@ -779,7 +777,7 @@ export const commitToGitHandler = async (
   // TODO RadStr: Localization
   openModal(LoadingDialog, {
     dialogTitle: "git.loading.commit.title",
-    waitingText: committingWarningMessage,
+    waitingText: "git.loading.commit.wait-text",
     waitTime: GIT_COMMIT_WAIT_TIME,
     setCloseDialogAction: closeDialogObject.setCloseDialogAction,
     shouldShowTimer: true,

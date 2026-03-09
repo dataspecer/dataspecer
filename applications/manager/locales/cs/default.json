@@ -141,7 +141,8 @@
         "title": "Provádím merge commit"
       },
       "commit": {
-        "title": "Commituji"
+        "title": "Commituji",
+        "wait-text": "⚠️ Během commitování neupravujte commitovanou package."
       }
     },
     "toast": {
