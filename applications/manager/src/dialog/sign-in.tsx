@@ -24,7 +24,7 @@ function SignInInfoTooltipAdvanced() {
         <h1 className="text-2xl font-bold">In short:</h1>
         <div>- Choose the option with <strong>Name + E-mail + Git push scope</strong> to access all the important Git features - <strong className="text-green-600">Recommended</strong></div>
         <div>- Choose the option with <strong>Name + E-mail + Git push + Delete scope</strong> to get the ability to remove any owned repository.</div>
-        <div className="flex flex-1 flex-row">- Choose the option with&nbsp;<strong>Name + E-mail</strong>&nbsp;to access all "<EyeIcon/>" Git features.</div>
+        <div className="flex flex-1 flex-row">- Choose the option with&nbsp;<strong>Name + E-mail</strong>&nbsp;to access all "<EyeIcon/>" Git features and nothing else.</div>
 
         <br/>
         <h1 className="text-2xl font-bold">In long:</h1>
