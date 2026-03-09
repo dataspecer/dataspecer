@@ -298,7 +298,6 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
   const rebaseCommitTooltip = "Creates new commit with the changes on top. Basically the same thing as fast-forward.";
   const mergeCommitTooltip = "Creates classic merge commit.";
 
-
   return (
     <>
       <ModalHeader>
@@ -309,8 +308,8 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
         </ModalDescription>
       </ModalHeader>
       <ModalFooter>
-        {mergeState.isMergeFromBranch && <Button className="hover:bg-purple-700" title={mergeCommitTooltip} onClick={() => handleMergeAction()}>Merge</Button>}
-        <Button className="hover:bg-purple-700" title={rebaseCommitTooltip} onClick={() => handleRebaseAction()}>Rebase</Button>
+        {mergeState.isMergeFromBranch && <Button variant="outline" className="border bg-green-100 border-green-500 hover:bg-green-500 hover:text-white transition" title={mergeCommitTooltip} onClick={() => handleMergeAction()}>Merge</Button>}
+        <Button variant="outline" className="border bg-blue-100 border-blue-500 hover:bg-blue-500 hover:text-white transition" title={rebaseCommitTooltip} onClick={() => handleRebaseAction()}>Rebase</Button>
       </ModalFooter>
     </>
   );
