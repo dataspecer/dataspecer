@@ -22,7 +22,7 @@ function SignInInfoTooltipAdvanced() {
       <div>
         <br/>
         <h1 className="text-2xl font-bold">In short:</h1>
-        <div>- Choose the option with <strong>Name + E-mail + Git push scope</strong> to access all the important Git features - <strong className="text-green-600">Recommended</strong></div>
+        <div>- Choose the option with <strong>Name + E-mail + Git push scope</strong> to access all of the important Git features - <strong className="text-green-600">Recommended</strong></div>
         <div>- Choose the option with <strong>Name + E-mail + Git push + Delete scope</strong> to get the ability to remove any owned repository.</div>
         <div className="flex flex-1 flex-row">- Choose the option with&nbsp;<strong>Name + E-mail</strong>&nbsp;to access all "<EyeIcon/>" Git features and nothing else.</div>
 
@@ -80,7 +80,7 @@ export const SignInDialog = ({ isOpen, resolve }: BetterModalProps) => {
           - Hover on the info icon(s) for more info.
         </ModalDescription>
         <div className="flex flex-col max-w-md">
-            <Button variant="outline" className="cursor-pointer focus:outline-none border border-black hover:bg-green-400 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700" onClick={(_) => goToPage(`${import.meta.env.VITE_BACKEND}/auth/signin?authPermissions=${ConfigType[ConfigType.FullPublicRepoControl]}`)}>Name + E-mail + Git Push scope</Button>
+            <Button variant="outline" className="cursor-pointer focus:outline-none border border-black bg-green-100 hover:bg-green-400 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700" onClick={(_) => goToPage(`${import.meta.env.VITE_BACKEND}/auth/signin?authPermissions=${ConfigType[ConfigType.FullPublicRepoControl]}`)}>Name + E-mail + Git Push scope</Button>
             {/* ---- COLLAPSIBLE SECTION ---- */}
             <hr className="border-t-2 border-gray-300 mt-8" />
             <div className="flex flex-row flex-1">
@@ -96,8 +96,8 @@ export const SignInDialog = ({ isOpen, resolve }: BetterModalProps) => {
             { (!showMore) ?
                 null :
                 <div className="flex flex-col max-w-md">
-                  <Button variant="outline" className="cursor-pointer focus:outline-none border border-black hover:bg-green-400 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700" onClick={(_) => goToPage(`${import.meta.env.VITE_BACKEND}/auth/signin?authPermissions=${ConfigType[ConfigType.DeleteRepoControl]}`)}>Name + E-mail + Git Push and Delete scope</Button>
-                  <Button variant="outline" className="cursor-pointer focus:outline-none border border-black hover:bg-green-400 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700" onClick={(_) => goToPage(`${import.meta.env.VITE_BACKEND}/auth/signin?authPermissions=${ConfigType[ConfigType.LoginInfo]}`)}>Name + E-mail</Button>
+                  <Button variant="outline" className="cursor-pointer focus:outline-none border border-black bg-green-100 hover:bg-green-400 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700" onClick={(_) => goToPage(`${import.meta.env.VITE_BACKEND}/auth/signin?authPermissions=${ConfigType[ConfigType.DeleteRepoControl]}`)}>Name + E-mail + Git Push and Delete scope</Button>
+                  <Button variant="outline" className="cursor-pointer focus:outline-none border border-black bg-green-100 hover:bg-green-400 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700" onClick={(_) => goToPage(`${import.meta.env.VITE_BACKEND}/auth/signin?authPermissions=${ConfigType[ConfigType.LoginInfo]}`)}>Name + E-mail</Button>
                 </div>
             }
             {/* ---- END OF COLLAPSIBLE SECTION ---- */}
