@@ -236,16 +236,17 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
 function DiffEditorInfoPopOver() {
   return <div className="pt-1">
     <PopOverGitGeneralComponent>
-      <p>- Diff Editor's purpose is to resolve the merge state by performing changes to models and marking conflicts as resolved.</p>
+      <p>- Diff Editor's purpose is to resolve the merge state by performing changes to models and marking conflicts (⚠️) as resolved (✅).</p>
       <p>- {saveChangesTooltipText}</p>
-      <p>- The stripped version of file hides content, which is expected to be changed, such as export time.</p>
-      <p>- The left component contains directory diff. The directory diff is visualized with regards to the editable window.</p>
+      <p>- The stripped version of file hides content, which is expected to be changed automatically, such as export time.</p>
+      <p>- The left component of this dialog contains directory diff. The directory diff is visualized with regards to the editable window of the text editor.</p>
       <p>- This means that:</p>
       <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;<p className="text-red-600">Red</p>&nbsp;node - It is NOT present in the editable window.</div>
       <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;<p className="text-green-600">Green</p>&nbsp;node - It is present in the editable window. And not in the other one.</div>
       <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;<p className="text-blue-600">Blue</p>&nbsp;node - Present in both, but they differ.</div>
-      <p>&nbsp;&nbsp; - Otherwise - Same value in both.</p>
+      <p>&nbsp;&nbsp; - Otherwise - Same text in both.</p>
       <p>- The merge actors are not changed in any way. This means that you have to manually do all the changes if needed.</p>
+      <p className="pl-5">You can also use merge strategy at the top to do the changes automatically. The changes are applied to the currently opened file.</p>
       <p>- The editable window is always on the right.</p>
       <p>- For pull and merge the editable windows are the "merge to" actors.</p>
       <p>- The push is reversed, that is the editable window is the "merge from" actor. This is same as in Git, since the "merge to" is the remote.</p>

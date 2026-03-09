@@ -154,12 +154,12 @@ function mergeStateSourceText(mergeState: MergeState, side: "MergeFrom" | "Merge
 
 function MergeStateListTooltip() {
   return <div>
-    - If an entry is red, then it means that it was modified from somewhere else than the diff editor.
+    - If an entry is <p className="text-destructive inline">red</p>, then it means that it was modified from somewhere else than the diff editor.
     <br/>
     - From user perspective it means, that the user should double check the changes were performed by them and not somebody else.
     <br/>
     - Note that user should double check the modification time even if it is not red, to be sure that somebody else did not modify the entry from the diff editor.
     <br/>
-    - When entry is red it means, on a technical level, that the diff tree will be recomputed when fetched.
+    - When entry is <p className="text-destructive inline">red</p> it means, on a technical level, that the diff tree will be recomputed when fetched.
   </div>;
 }
