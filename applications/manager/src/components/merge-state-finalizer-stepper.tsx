@@ -10,21 +10,24 @@ export default function Stepper({ currentStep }: StepperProps) {
   const steps = ["Pick commit type", "Validation", "Commit"];
 
   return (
-    <div className="w-full max-w-2xl mx-auto py-10">
+    <div className="w-full py-6">
       <div className="flex items-start w-full">
         {steps.map((step, index) => {
           const isCompleted = index < currentStep;
           const isActive = index === currentStep;
 
           return (
-            <div key={index} className="flex-1 relative flex flex-col items-center text-center">
+            <div
+              key={index}
+              className="flex-1 relative flex flex-col items-center text-center"
+            >
               {/* Connector Line */}
               {index !== steps.length - 1 && (
-                <div className="absolute top-5 left-1/2 w-full flex items-center">
-                  <div className="h-1 w-full bg-gray-200">
+                <div className="absolute top-3 left-1/2 w-full flex items-center">
+                  <div className="h-0.5 w-full bg-gray-200">
                     <div
                       className={`
-                        h-1 transition-all duration-300
+                        h-0.5 transition-all duration-300
                         ${index < currentStep ? "bg-blue-600 w-full" : "w-0"}
                       `}
                     />
@@ -35,14 +38,14 @@ export default function Stepper({ currentStep }: StepperProps) {
               {/* Circle */}
               <div
                 className={`
-                  w-10 h-10 flex items-center justify-center
-                  rounded-full text-sm font-semibold
+                  w-6 h-6 flex items-center justify-center
+                  rounded-full text-xs font-semibold
                   transition-all duration-300 z-10
                   ${
                     isCompleted
                       ? "bg-blue-600 text-white"
                       : isActive
-                      ? "bg-blue-600 text-white ring-4 ring-blue-100"
+                      ? "bg-blue-600 text-white ring-2 ring-blue-100"
                       : "bg-gray-200 text-gray-500"
                   }
                 `}
@@ -53,7 +56,7 @@ export default function Stepper({ currentStep }: StepperProps) {
               {/* Label */}
               <span
                 className={`
-                  mt-2 text-sm font-medium
+                  mt-1 text-xs font-medium
                   ${isCompleted || isActive ? "text-gray-900" : "text-gray-400"}
                 `}
               >
