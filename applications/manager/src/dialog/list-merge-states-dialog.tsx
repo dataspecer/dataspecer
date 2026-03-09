@@ -101,7 +101,7 @@ const renderMergeState = (
 
   return <div className={`flex items-baseline`}>
       <button onClick={() => openModal(ShowMergeStateInfoDialog, {mergeState, setIsInfoDialogShown})} className="cursor-pointer bg-blue-300 hover:bg-blue-500 relative top-[19%]"><InfoIcon/></button>
-      <button className={`${mergeState.isUpToDate ? "" : "bg-red-400"} w-full cursor-pointer hover:bg-gray-300`}
+      <button className={`${mergeState.isUpToDate ? "" : "bg-red-300"} w-full cursor-pointer hover:bg-gray-300`}
               onClick={openDiffEditor}>
               {/* TODO RadStr: Just debug to directly open the merge state dialog */}
               {/* onClick={() => openModal(MergeStateFinalizerDialog, {mergeState, openModal}).finally(() => closeMergeStateList(null))}> */}
