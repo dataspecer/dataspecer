@@ -108,14 +108,14 @@ export const GitPrsListDialog = ({ resources, branch, gitUrl, gitProviderSpecifi
           {
             cannotUseOpenedPrs ? <Loader className="mr-2 mt-1 h-4 w-4 animate-spin" /> :
             <div className=" w-full max-h-[95%]">
-              <div className="grid grid-cols-[1.5fr_4fr_2fr_2fr_3fr_3fr_2fr] divide-x divide-y border-gray-300 divide-gray-300 ml-4 pt-6 w-full">
-                <div className="flex items-center justify-center border-gray-300"></div>
+              <div className="grid grid-cols-[4fr_2fr_2fr_3fr_3fr_2fr_1.5fr] divide-x divide-y border-gray-300 divide-gray-300 ml-4 pt-6 w-full">
                 <div className="flex items-center justify-center border-gray-300">Title</div>
                 <div className="flex items-center justify-center">Created at</div>
                 <div className="flex items-center justify-center">Modified at</div>
                 <div className="flex items-center justify-center">Merge from</div>
                 <div className="flex items-center justify-center">Merge to</div>
                 <div className="flex items-center justify-center border-gray-300 border-b border-r">Add/Del</div>
+                <div className="flex items-center justify-center border-gray-300"></div>
               </div>
               <div className="w-full">
                 {openedPrs?.map(pr => <PullRequestComponent pullRequestInfo={pr} resources={resources} resourceGitUrl={gitUrl} resolve={resolve}/>) ?? null}
@@ -371,7 +371,16 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
 
 
   // We have to use the hoveredOn, because otherwise if we hover on the action button, we highlight the whole line since the hover on also works on the whole div, which we do not want.
-  return <div className={"grid grid-cols-[1.5fr_4fr_2fr_2fr_3fr_3fr_2fr] divide-x divide-y divide-gray-300 ml-4 w-full cursor-pointer" + ((!hoveredOnActionButton && hoveredOnNotActionButton) ? " hover:bg-gray-200" : "")}>
+  return <div className={"grid grid-cols-[4fr_2fr_2fr_3fr_3fr_2fr_1.5fr] divide-x divide-y divide-gray-300 ml-4 w-full cursor-pointer" + ((!hoveredOnActionButton && hoveredOnNotActionButton) ? " hover:bg-gray-200" : "")}>
+    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center border-gray-300">{pullRequestInfo.title}</a>
+    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{new Date(pullRequestInfo.createdAt).toLocaleString()}</a>
+    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{new Date(pullRequestInfo.modifiedAt).toLocaleString()}</a>
+    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{pullRequestInfo.mergeFromBranch}</a>
+    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{pullRequestInfo.mergeToBranch}</a>
+    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="border-r border-b border-gray-300">
+      <div className="flex justify-center items-center text-green-600">+{pullRequestInfo.additions}</div>
+      <div className="flex justify-center items-center text-red-600">-{pullRequestInfo.deletions}</div>
+    </a>
     {!isActionButtonNotReady && actionButtonData !== undefined &&
       <button
         className={"flex justify-center items-center cursor-pointer " + actionButtonData.actionButtonClassname}
@@ -382,14 +391,5 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
         {actionButtonData.actionButtonText}
       </button>
     }
-    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center border-gray-300">{pullRequestInfo.title}</a>
-    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{new Date(pullRequestInfo.createdAt).toLocaleString()}</a>
-    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{new Date(pullRequestInfo.modifiedAt).toLocaleString()}</a>
-    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{pullRequestInfo.mergeFromBranch}</a>
-    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{pullRequestInfo.mergeToBranch}</a>
-    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="border-r border-b border-gray-300">
-      <div className="flex justify-center items-center text-green-600">+{pullRequestInfo.additions}</div>
-      <div className="flex justify-center items-center text-red-600">-{pullRequestInfo.deletions}</div>
-    </a>
   </div>;
 }
