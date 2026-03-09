@@ -101,18 +101,24 @@ export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
     <Modal open={isOpen} onClose={() => resolve(null)}>
       <ModalContent className="sm:max-w-[700px]!">
         <ModalHeader>
-          <ModalTitle>Menu for working with SSH keys</ModalTitle>
+          <ModalTitle>Manage SSH key</ModalTitle>
           <ModalDescription>
             - At most one SSH key per account.
             <br/>
-            - The SSH will behave as be your primary access token. If it fails the other available access tokens will be used.
+            - Use SSH in the two following scenarios:
             <br/>
-            - SSH can be only used for pull and committing, but not Git providers specifics, such as creating new repository or fetching issues.
-            <p className="flex flex-1 flex-row">- The SSH key can be a deploy key<PopOverGitGeneralComponent><DeployKeyTooltip/></PopOverGitGeneralComponent></p>
-            <p className="flex flex-1 flex-row -mt-4">- Security<PopOverGitGeneralComponent><SecurityTooltip/></PopOverGitGeneralComponent></p>
+            &nbsp;&nbsp;&nbsp;&nbsp;- You did not grant push scope during sign-in.
+            <br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;- You have a SSH "deploy" key for a single repo, you normally can't access.
+            <br/>
+            <br/>
+            - SSH supports only pull and commit, not Git provider-specific actions (Create repo, fetch issues, ...).
+            <br/>
+            <br/>
+            <p className="flex flex-1 flex-row">- The private SSH key is stored in Dataspecer filesystem unencrypted.<PopOverGitGeneralComponent><SecurityTooltip/></PopOverGitGeneralComponent></p>
           </ModalDescription>
         </ModalHeader>
-        <ModalBody>
+      <ModalBody>
           <div className="flex flex-col gap-4">
             <Button
               title="Experimental. Adds private SSH key to the Dataspecer."
@@ -143,13 +149,10 @@ export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
 
 function SecurityTooltip() {
   return <div>
-    The SSH key is stored in Dataspecer's filesystem without encryption. The key is never sent back to client.
+    This how SSH works - Keys not protected by password are stored unecrypted. Those with password are stored encrypted.
+    <br/>
+    The key is never sent back to client.
     <br/>
     Possible attacker would have to get possession of the server and the file to steal it.
   </div>;
-}
-
-
-function DeployKeyTooltip() {
-  return <div>Deploy key is a private SSH key for committing to a single repository</div>;
 }
