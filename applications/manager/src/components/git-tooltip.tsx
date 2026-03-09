@@ -6,11 +6,12 @@ import { TooltipArrow } from "@radix-ui/react-tooltip";
 
 interface ResourceTooltipProps {
   resource: ResourceWithIris; // <-- replace this with your actual type
+  side: "left" | "right";
   children: React.ReactNode;
 }
 
 
-export default function ResourceTooltip({ resource, children }: ResourceTooltipProps) {
+export default function ResourceTooltip({ resource, side, children }: ResourceTooltipProps) {
   return (
     <TooltipProvider delayDuration={80}>
       <Tooltip>
@@ -19,7 +20,7 @@ export default function ResourceTooltip({ resource, children }: ResourceTooltipP
         </TooltipTrigger>
 
         <TooltipContent
-          side="right"
+          side={side}
         >
           <div><strong>Has uncommited changes:</strong> {resource.hasUncommittedChanges ? "Yes" : "No" }</div>
           <div><strong>Active merge state count:</strong> {resource.activeMergeStateCount}</div>

@@ -201,7 +201,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
           {
             !isGitUrlSet(resource.linkedGitRepositoryURL) ?
               null :
-              <ResourceTooltip resource={resource}>
+              <ResourceTooltip resource={resource} side="right">
                 <div className="flex pl-4 pr-2 w-20 -mt-1">
                   {gitPart}
                   {
