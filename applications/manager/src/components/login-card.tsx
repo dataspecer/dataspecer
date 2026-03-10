@@ -28,7 +28,7 @@ export const LoginCard = (props: {login: UseLoginType}) => {
           </Button> :
           <Button variant="ghost" className="flex focus:outline-none hover:bg-green-300 focus:ring-4 focus:ring-green-300 text-sm px-2 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
                   onClick={() => openModal(SignInDialog, {})}>
-            <LogIn />
+            <LogIn/>
             <p className="pt-0.5 pl-1.5">Sign In</p>
           </Button>
         }

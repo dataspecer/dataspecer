@@ -3,7 +3,7 @@ import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 import { Button } from "@/components/ui/button";
 import { BetterModalProps } from "@/lib/better-modal";
 import { ConfigType } from "@dataspecer/git";
-import { ArrowDownNarrowWide, ArrowUpNarrowWide, EyeIcon } from "lucide-react";
+import { ArrowDownNarrowWide, ArrowUpNarrowWide, EyeIcon, LogIn } from "lucide-react";
 import { useState } from "react";
 
 
@@ -68,7 +68,7 @@ export const SignInDialog = ({ isOpen, resolve }: BetterModalProps) => {
         <ModalHeader>
           <ModalTitle>
             <div className="flex flex-1 flex-row">
-              Sign in options <SignInInfoTooltipBasic/>
+               <LogIn className="mr-1 pb-1"/> Sign in options <SignInInfoTooltipBasic/>
             </div>
           </ModalTitle>
         </ModalHeader>
@@ -91,7 +91,7 @@ export const SignInDialog = ({ isOpen, resolve }: BetterModalProps) => {
               >
                 {showMore ? <ArrowUpNarrowWide /> : <ArrowDownNarrowWide />} Advanced sign-in options
               </Button>
-              <div className="pt-4 ml-2"><SignInInfoTooltipAdvanced/></div>
+              {!showMore ? null : <div className="pt-4 ml-2"><SignInInfoTooltipAdvanced/></div>}
             </div>
             { (!showMore) ?
                 null :

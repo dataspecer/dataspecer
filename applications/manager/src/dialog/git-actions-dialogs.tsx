@@ -586,8 +586,8 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   }
 
   return (
-    <Modal open={isOpen} onClose={() => resolve(null)}>
-      <ModalContent className="sm:max-w-[700px]! max-h-[95%] overflow-auto">
+    <Modal open={!isLoadingInitialData && isOpen} onClose={() => resolve(null)}>
+      <ModalContent className={(isLoadingInitialData ? "hidden " : "") + "sm:max-w-[700px]! max-h-[95%] overflow-auto"}>
         <ModalHeader>
           <ModalTitle>{modalTitle}</ModalTitle>
           <ModalDescription>
