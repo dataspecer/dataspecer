@@ -57,8 +57,8 @@ export async function compareGitAndDSFilesystems(
     resourceModel: mergeToResourceModel,
   };
 
-  const generalResult = await compareBackendFilesystems(mergeFrom, mergeTo, mergeStateCause as MergeStateCause);
-  return generalResult;
+  const comparisonResult = await compareBackendFilesystems(mergeFrom, mergeTo, mergeStateCause as MergeStateCause);
+  return comparisonResult;
 }
 
 export async function compareBackendFilesystems(
@@ -112,12 +112,12 @@ export async function compareBackendFilesystems(
 
   const editableType = convertMergeStateCauseToEditable(mergeStateCause);
   const { editable: editableFilesystem, nonEditable: nonEditableFilesystem } = getEditableAndNonEditableValue(editableType, resultForMergeFrom, resultForMergeTo);
-  const diffTreeComparisonResult = await compareFileTrees(
+  const diffTreeComparison = await compareFileTrees(
     nonEditableFilesystem.filesystem, nonEditableFilesystem.fakeRoot, editableFilesystem.filesystem, editableFilesystem.fakeRoot);
 
 
   return {
-    diffTreeComparisonResult,
+    diffTreeComparison,
     mergeFromFilesystemInformation: resultForMergeFrom,
     mergeToFilesystemInformation: resultForMergeTo,
   };

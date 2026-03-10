@@ -158,7 +158,7 @@ async function saveChangesInDirectoryToBackendFinalVersion(
   //              Well I do right in this first compare but i do not check the result anywhere here. I just pass it to the next method.
   //              I should check also in the "if canPullWithoutCreatingMergeState" that there are also no conflicts
   const {
-    diffTreeComparisonResult,
+    diffTreeComparison,
     mergeFromFilesystemInformation,
     mergeToFilesystemInformation,
   } = await compareGitAndDSFilesystems(gitIgnore, iri, gitInitialDirectoryParent, mergeStateCause, resourceModelForDS);
@@ -178,7 +178,7 @@ async function saveChangesInDirectoryToBackendFinalVersion(
       // Otherwise we changed something and even though we could handle it automatically. We let the user resolve everything manually, it is his responsibility.
       const currentDSPackageAndGitCommitComparison = await compareGitAndDSFilesystems(
         gitIgnore, iri, gitInitialDirectoryParent, mergeStateCause, resourceModelForDS);
-      const canPullWithoutCreatingMergeState = currentDSPackageAndGitCommitComparison.diffTreeComparisonResult.conflicts.length === 0;
+      const canPullWithoutCreatingMergeState = currentDSPackageAndGitCommitComparison.diffTreeComparison.conflicts.length === 0;
 
       if (canPullWithoutCreatingMergeState) {
         // TODO RadStr: Rename ... and update based on the conflicts resolution, like we do not want to update when there is conflict
@@ -223,10 +223,10 @@ async function saveChangesInDirectoryToBackendFinalVersion(
   };
 
   const createdMergeStateId = mergeStateModel.createMergeState(
-    iri, "", "pull", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
+    iri, "", "pull", diffTreeComparison, commonCommitHash, mergeFromInfo, mergeToInfo);
   return {
     createdMergeState: true,
-    conflictCount: diffTreeComparisonResult.conflicts.length,
+    conflictCount: diffTreeComparison.conflicts.length,
   };
 }
 

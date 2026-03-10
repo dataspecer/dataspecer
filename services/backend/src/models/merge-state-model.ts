@@ -198,7 +198,7 @@ export class MergeStateModel implements ResourceChangeListener {
     uuid: string,
     commitMessage: string,
     mergeStateCause: MergeStateCause,
-    diffTreeComparisonResult: ComparisonFullResult,
+    diffTreeComparison: ComparisonFullResult,
     commonCommitHash: string | undefined,
     mergeFromInfo: MergeEndInfoWithRootNode,
     mergeToInfo: MergeEndInfoWithRootNode,
@@ -207,7 +207,7 @@ export class MergeStateModel implements ResourceChangeListener {
     const {
       changed, conflicts, created, removed,
       diffTree, diffTreeSize
-    } = diffTreeComparisonResult;
+    } = diffTreeComparison;
 
 
     const editable: EditableType = convertMergeStateCauseToEditable(mergeStateCause);
@@ -241,7 +241,7 @@ export class MergeStateModel implements ResourceChangeListener {
     rootResourceIri: string,
     commitMessage: string,
     mergeStateCause: MergeStateCause,
-    diffTreeComparisonResult: ComparisonFullResult,
+    diffTreeComparison: ComparisonFullResult,
     commonCommitHash: string,
     mergeFromInfo: MergeEndInfoWithRootNode,
     mergeToInfo: MergeEndInfoWithRootNode,
@@ -253,7 +253,7 @@ export class MergeStateModel implements ResourceChangeListener {
     const {
       changed, conflicts, created, removed,
       diffTree, diffTreeSize
-    } = diffTreeComparisonResult;
+    } = diffTreeComparison;
 
     const editable: EditableType = convertMergeStateCauseToEditable(mergeStateCause);
     const mergeStateInput = {
@@ -619,7 +619,7 @@ export class MergeStateModel implements ResourceChangeListener {
       return null;
     }
 
-    return this.prismaMergeStateToMergeState(mergeState, true, shouldForceDiffTreeReload);
+    return await this.prismaMergeStateToMergeState(mergeState, true, shouldForceDiffTreeReload);
   }
 
   /**

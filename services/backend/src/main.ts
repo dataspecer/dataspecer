@@ -35,7 +35,7 @@ import { authJSRedirectCallback } from "./routes/auth/auth-redirect-to-frontend-
 import { authHandler } from "./routes/auth/auth-handler.ts";
 import { corsOriginHandler } from "./utils/cors-related.ts";
 import { currentSession } from "./authentication/auth-session.ts";
-import { createRandomWebook, handleWebhook } from "./routes/git/git-webhook-handler.ts";
+import { handleWebhook } from "./routes/git/git-webhook-handler.ts";
 import { createNewGitRepositoryWithPackageContent, createPackageFromExistingGitRepository } from "./routes/git/create-new-git-repository-with-package-content.ts";
 import { commitPackageToGitHandler, mergeCommitPackageToGitHandler } from "./routes/git/commit-package-to-git.ts";
 import { removeGitRepository } from "./routes/git/remove-git-repository.ts";
@@ -167,7 +167,6 @@ application.post(apiBasename + "/git/debug-clear-merge-state-table", clearMergeS
 application.get(apiBasename + "/git/try-set-package-as-up-to-date", currentSession, trySetPackageAsUpToDate);
 application.post(apiBasename + "/git/webhook-test", currentSession, handleWebhook);
 application.post(apiBasename + "/git/webhook-test2", currentSession, handleWebhook);
-application.get(apiBasename + "/git/webhook-test", currentSession, createRandomWebook);
 application.post(apiBasename + "/git/set-private-ssh-key", currentSession, storePrivateSSHKeyHandler);
 application.get(apiBasename + "/git/check-for-existence-of-private-ssh-key", currentSession, checkExistenceOfSshKeyForUserHandler);
 application.delete(apiBasename + "/git/delete-private-ssh-key", currentSession, deletePrivateSshKeyHandler);

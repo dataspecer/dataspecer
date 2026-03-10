@@ -416,7 +416,7 @@ async function commitDSMergeToGit(
 
 
       const {
-        diffTreeComparisonResult,
+        diffTreeComparison,
         mergeFromFilesystemInformation,
         mergeToFilesystemInformation,
       } = await compareBackendFilesystems(mergeFrom, mergeTo, "merge");
@@ -443,8 +443,8 @@ async function commitDSMergeToGit(
       };
 
       const createdMergeStateId = await mergeStateModel.createMergeState(
-        iri, commitInfo.commitMessage, "merge", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
-      if (diffTreeComparisonResult.conflicts.length > 0) {
+        iri, commitInfo.commitMessage, "merge", diffTreeComparison, commonCommitHash, mergeFromInfo, mergeToInfo);
+      if (diffTreeComparison.conflicts.length > 0) {
         return {
           conflictMergeFromRootPath: mergeFromInfo.rootFullPathToMeta,
           conflictMergeToRootPath: mergeToInfo.rootFullPathToMeta,
@@ -536,7 +536,7 @@ async function commitClassicToGit(
         const shouldTryCreateMergeState = localLastCommitHash !== remoteRepositoryLastCommitHash || shouldAlwaysCreateMergeState;
         if (shouldTryCreateMergeState) {
           const {
-            diffTreeComparisonResult,
+            diffTreeComparison,
             mergeFromFilesystemInformation,
             mergeToFilesystemInformation
           } = await compareGitAndDSFilesystems(new GitIgnoreBase(gitProvider), iri, gitInitialDirectoryParent, "push", resourceModelForDS);
@@ -565,8 +565,8 @@ async function commitClassicToGit(
 
 
           const createdMergeStateId = await mergeStateModel.createMergeState(
-            iri, commitInfo.commitMessage, "push", diffTreeComparisonResult, commonCommitHash, mergeFromInfo, mergeToInfo);
-          if (diffTreeComparisonResult.conflicts.length > 0 || shouldAlwaysCreateMergeState) {
+            iri, commitInfo.commitMessage, "push", diffTreeComparison, commonCommitHash, mergeFromInfo, mergeToInfo);
+          if (diffTreeComparison.conflicts.length > 0 || shouldAlwaysCreateMergeState) {
             return {
               conflictMergeFromRootPath: mergeFromInfo.rootFullPathToMeta,
               conflictMergeToRootPath: mergeToInfo.rootFullPathToMeta,

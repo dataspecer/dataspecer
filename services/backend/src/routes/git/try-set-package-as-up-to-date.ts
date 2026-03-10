@@ -77,11 +77,11 @@ export const trySetPackageAsUpToDate = asyncHandler(async (request: express.Requ
         fullPathToRootParent: gitInitialDirectoryParent,      // TODO RadStr: The value probably should not matter
         filesystemType: AvailableFilesystems.DS_Filesystem,
       };
-      const { diffTreeComparisonResult } = await compareBackendFilesystems(gitEndpoint, dsEndpoint, "pull");
+      const { diffTreeComparison } = await compareBackendFilesystems(gitEndpoint, dsEndpoint, "pull");
 
       // 3) Set the result
-      const hasUncommittedChanges = diffTreeComparisonResult.conflicts.length !== 0 || diffTreeComparisonResult.created.length !== 0 ||
-                                    diffTreeComparisonResult.changed.length !== 0 || diffTreeComparisonResult.removed.length !== 0;
+      const hasUncommittedChanges = diffTreeComparison.conflicts.length !== 0 || diffTreeComparison.created.length !== 0 ||
+                                    diffTreeComparison.changed.length !== 0 || diffTreeComparison.removed.length !== 0;
       resourceModel.setHasUncommittedChanges(iri, hasUncommittedChanges);
       if (hasUncommittedChanges) {
         response.sendStatus(204);

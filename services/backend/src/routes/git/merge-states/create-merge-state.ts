@@ -113,7 +113,7 @@ export async function createMergeStateBetweenDSPackages(
   };
 
   const {
-    diffTreeComparisonResult,
+    diffTreeComparison,
     mergeFromFilesystemInformation,
     mergeToFilesystemInformation,
   } = await compareBackendFilesystems(mergeFromForComparison, mergeToForComparison, "merge");
@@ -140,11 +140,11 @@ export async function createMergeStateBetweenDSPackages(
     };
 
     const createdMergeStateId = await mergeStateModel.createMergeState(
-      mergeFrom.rootIri, commitMessage, "merge", diffTreeComparisonResult,
+      mergeFrom.rootIri, commitMessage, "merge", diffTreeComparison,
       commonCommitHash, mergeFromInfo, mergeToInfo);
     return {
       createdMergeStateId,
-      hasConflicts: diffTreeComparisonResult.conflicts.length > 0,
+      hasConflicts: diffTreeComparison.conflicts.length > 0,
     };
 }
 
@@ -162,7 +162,7 @@ export async function updateMergeStateToBeUpToDate(
   previousMergeState: MergeState | null
 ): Promise<boolean> {
   const {
-    diffTreeComparisonResult,
+    diffTreeComparison,
     mergeFromFilesystemInformation,
     mergeToFilesystemInformation,
   } = await compareBackendFilesystems(mergeFrom, mergeTo, mergeStateCause);
@@ -171,14 +171,14 @@ export async function updateMergeStateToBeUpToDate(
     if (previousMergeState !== null) {
       await createConflictsFromDiffTrees(
         previousMergeState.diffTreeData?.diffTree ?? null, previousMergeState.unresolvedConflicts ?? [],
-        diffTreeComparisonResult.diffTree, diffTreeComparisonResult.conflicts,
+        diffTreeComparison.diffTree, diffTreeComparison.conflicts,
         newConflicts
       );
     }
     else {
-      newConflicts = diffTreeComparisonResult.conflicts;
+      newConflicts = diffTreeComparison.conflicts;
     }
-    diffTreeComparisonResult.conflicts = newConflicts;
+    diffTreeComparison.conflicts = newConflicts;
 
 
     let commonCommitHash: string | undefined = undefined;
@@ -226,7 +226,7 @@ export async function updateMergeStateToBeUpToDate(
     };
 
     const isSuccessfullyUpdated = await mergeStateModel.updateMergeStateToBeUpToDate(
-      uuid, commitMessage, mergeStateCause, diffTreeComparisonResult,
+      uuid, commitMessage, mergeStateCause, diffTreeComparison,
       commonCommitHash, mergeFromInfo, mergeToInfo);
     return isSuccessfullyUpdated;
 }
