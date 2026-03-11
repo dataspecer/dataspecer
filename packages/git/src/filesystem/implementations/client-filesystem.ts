@@ -89,7 +89,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
       shouldConvertToDatastoreFormat,
     };
 
-    let url = backendApiPath + "/git/get-datastore-content?";
+    let url = backendApiPath + "/git/datastore-content?";
     for (const [key, value] of Object.entries(queryAsObject)) {
       url += key;
       url += "=";
@@ -153,7 +153,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
       shouldRemoveFileWhenNoDatastores,
     };
 
-    let url = backendApiPath + "/git/remove-datastore-content?";
+    let url = backendApiPath + "/git/datastore-content?";
     for (const [key, value] of Object.entries(queryAsObject)) {
       url += key;
       url += "=";
@@ -204,9 +204,9 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
       return false;
     }
 
-    const url = backendApiPath + "/git/update-datastore-content";
+    const url = backendApiPath + "/git/datastore-content";
     const response = await fetch(url, {
-      method: "POST",
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         pathToDatastore: datastoreInfo.fullPath,
@@ -287,7 +287,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     }
 
 
-    const url = backendApiPath + "/git/create-datastore-content";
+    const url = backendApiPath + "/git/datastore-content";
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -329,7 +329,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     }
 
 
-    const url = backendApiPath + "/git/create-datastore-content";
+    const url = backendApiPath + "/git/datastore-content";
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

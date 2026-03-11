@@ -140,10 +140,10 @@ application.use(apiBasename + "/auth/*", authHandler);
 application.get(apiBasename + "/auth-handler/personal-callback/*", authJSRedirectCallback);
 
 // TODO: Should be one endpoint named datastore-content and just use the http verbs accordingly (the update should be PATCH).
-application.get(apiBasename + "/git/get-datastore-content", getDatastoreContentDirectly);
-application.post(apiBasename + "/git/update-datastore-content", updateDatastoreContentDirectly);
-application.post(apiBasename + "/git/create-datastore-content", createDatastoreContentDirectly);
-application.delete(apiBasename + "/git/remove-datastore-content", removeDatastoreContentDirectly);
+application.get(apiBasename + "/git/datastore-content", getDatastoreContentDirectly);
+application.post(apiBasename + "/git/datastore-content", createDatastoreContentDirectly);
+application.put(apiBasename + "/git/datastore-content", updateDatastoreContentDirectly);
+application.delete(apiBasename + "/git/datastore-content", removeDatastoreContentDirectly);
 application.post(apiBasename + "/git/create-filesystem-nodes", createFilesystemNodesDirectly);
 application.delete(apiBasename + "/git/remove-filesystem-node", removeFilesystemNodeDirectly);
 application.get(apiBasename + "/git/get-merge-state", getMergeState);
