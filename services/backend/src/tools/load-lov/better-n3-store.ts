@@ -27,7 +27,9 @@ export function getQuadsByMany(store: Store, subject: OTerm | OTerm[], predicate
     const results = [];
     for (const s of subject) {
         for (const p of predicate) {
-            results.push(...store.getQuads(s, p, object, graph));
+            for (const o of object) {
+                results.push(...store.getQuads(s, p, o, graph));
+            }
         }
     }
 

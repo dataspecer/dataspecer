@@ -722,9 +722,6 @@
     "typescript": "^5.9.3",
     "vitest": "^3.1.1"
   },
-  "peerDependencies": {
-    "@dataspecer/core-v2": "*"
-  },
   "browser": {
     "buffer": false
   },
