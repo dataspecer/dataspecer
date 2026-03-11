@@ -20,10 +20,9 @@ import path from "path";
 import { updateBlob, updateResourceMetadata } from "../resource.ts";
 import _ from "lodash";
 import { resourceModel } from "../../main.ts";
-import { updateDSRepositoryByGitPull, UpdateDSRepositoryByGitPullParams } from "./pull-remote-repository.ts";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
-import { WEBHOOK_PATH_PREFIX } from "@dataspecer/git-node";
+import { updateDSRepositoryByGitPull, UpdateDSRepositoryByGitPullParams, WEBHOOK_PATH_PREFIX } from "@dataspecer/git-node";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 
 

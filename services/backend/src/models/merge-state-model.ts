@@ -5,7 +5,7 @@ import { ResourceModel } from "./resource-model.ts";
 import { SimpleGit, simpleGit } from "simple-git";
 import { AvailableFilesystems, DatastoreComparison, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, FilesystemNode, GitProvider, isEditableType, MergeCommitType, MergeState, MergeStateCause, GitIgnore } from "@dataspecer/git";
 import { updateMergeStateToBeUpToDate } from "../routes/git/merge-states/create-merge-state.ts";
-import { ALL_GIT_REPOSITORY_ROOTS, createSimpleGitUsingPredefinedGitRoot, getLastCommitHash, MERGE_DS_CONFLICTS_PREFIX, MergeEndpointForStateUpdate, removePathRecursively, ResourceChangeListener, ResourceChangeType } from "@dataspecer/git-node";
+import { ALL_GIT_REPOSITORY_ROOTS, convertToMergeInfoWithIri, createSimpleGitUsingPredefinedGitRoot, getLastCommitHash, MERGE_DS_CONFLICTS_PREFIX, MergeEndInfoWithRootIri, MergeEndInfoWithRootNode, MergeEndpointForStateUpdate, removePathRecursively, ResourceChangeListener, ResourceChangeType } from "@dataspecer/git-node";
 import { getCommonCommitInHistory } from "@dataspecer/git-node/simple-git-methods";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../configuration.ts";
@@ -39,39 +39,11 @@ type CreateMergeStateInput = {
   diffTreeSize: number,
 } & CreateDataToConvertToString;
 
-type UpdateMergeStateInput = {
+export type UpdateMergeStateInput = {
   unresolvedConflicts: DatastoreComparison[],
   lastCommonCommitHash: string | undefined,
 } & Omit<CreateMergeStateInput, "lastCommonCommitHash">;
 
-type MergeEndInfoInternal = {
-  lastCommitHash: string;
-  isBranch: boolean;
-  branch: string;
-  rootFullPathToMeta: string;
-  filesystemType: AvailableFilesystems;
-  gitUrl: string | null;
-}
-
-export type MergeEndInfoWithRootNode = {
-  rootNode: FilesystemNode;
-} & MergeEndInfoInternal;
-
-type MergeEndInfoWithRootIri = {
-  rootIri: string;
-} & MergeEndInfoInternal;
-
-function convertToMergeInfoWithIri(input: MergeEndInfoWithRootNode): MergeEndInfoWithRootIri {
-  return {
-    filesystemType: input.filesystemType,
-    lastCommitHash: input.lastCommitHash,
-    rootFullPathToMeta: input.rootFullPathToMeta,
-    rootIri: input.rootNode.metadata.iri,
-    isBranch: input.isBranch,
-    branch: input.branch,
-    gitUrl: input.gitUrl,
-  };
-}
 
 export type PrismaMergeStateWithData = Prisma.MergeStateGetPayload<{
   include: { mergeStateData: true }

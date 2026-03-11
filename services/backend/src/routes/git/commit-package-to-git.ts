@@ -15,7 +15,7 @@ import { ExportVersionType, extractPartOfRepositoryURL, getAuthorizationURL, Git
 import { AvailableFilesystems, ConfigType, GitCredentials, getMergeFromMergeToForGitAndDS, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase, createUniqueCommitMessage } from "@dataspecer/git";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import { getCommonCommitInHistory, gitCloneBasic, CreateSimpleGitResult, UniqueDirectory } from "@dataspecer/git-node/simple-git-methods";
-import { MergeEndInfoWithRootNode, PrismaMergeStateWithData } from "../../models/merge-state-model.ts";
+import { PrismaMergeStateWithData } from "../../models/merge-state-model.ts";
 import fs from "fs";
 import {
   checkErrorBoundaryForCommitAction, getLastCommit, getLastCommitHash, isDefaultBranch,
@@ -30,6 +30,7 @@ import {
   AvailableExports,
   MergeEndpointForComparison,
   FilesystemAbstractionFactoryMethodParams,
+  MergeEndInfoWithRootNode,
 } from "@dataspecer/git-node";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";

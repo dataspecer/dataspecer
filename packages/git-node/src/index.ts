@@ -21,3 +21,8 @@ export * from "./resource-model-api/model-store-api.ts";
 
 export * from "./resource-model-api/export/implementation/export-by-resource-type.ts";
 export * from "./resource-model-api/export/implementation/export-new.ts";
+
+export * from "./git-operations/commit.ts";
+export * from "./git-operations/pull.ts";
+
+export * from "./merge-state-api/merge-state-types.ts"
