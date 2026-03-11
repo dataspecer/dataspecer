@@ -1,4 +1,4 @@
-import { AvailableFilesystems, ComparisonFullResult, DatastoreInfo, DirectoryNode, dsPathJoin, FilesystemAbstraction, FilesystemNode, getMergeFromMergeToForGitAndDS, getMergeFromMergeToMappingForGitAndDS, GitIgnore, GitIgnoreBase, GitProvider, isDatastoreForMetadata, MergeStateCause } from "@dataspecer/git";
+import { AvailableFilesystems, ComparisonFullResult, DatastoreInfo, DirectoryNode, dsPathJoin, FilesystemAbstraction, FilesystemNode, getMergeFromMergeToForGitAndDS, getMergeFromMergeToMappingForGitAndDS, GitIgnore, GitIgnoreBase, GitProvider, isDatastoreForMetadata, MergeEndInfoWithRootNode, MergeStateCause } from "@dataspecer/git";
 import { compareGitAndDSFilesystems } from "../filesystem-abstractions/backend-filesystem-comparison.ts";
 import { ResourceModelForPull } from "../resource-model-api/export/export-api/export.ts";
 import { AllowedPrefixes, createSimpleGitUsingPredefinedGitRoot } from "../git-store-info.ts";
@@ -6,7 +6,6 @@ import { SimpleGit } from "simple-git";
 import { getLastCommitHash, removePathRecursively } from "../git-utils-node.ts";
 import { getCommonCommitInHistory, gitCloneBasic } from "../simple-git-methods/simple-git-utils.ts";
 import fs from "fs";
-import { MergeEndInfoWithRootNode } from "../merge-state-api/merge-state-types.ts";
 import { DataspecerFilesystemConstructorParams } from "../filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 
 export type GitPullFields = {

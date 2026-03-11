@@ -11,7 +11,7 @@ import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { mergeStateModel, resourceModel } from "../../main.ts";
 import { BranchSummary, CommitResult, SimpleGit } from "simple-git";
-import { ExportVersionType, extractPartOfRepositoryURL, getAuthorizationURL, GitIgnoreBase, GitProviderNode, convertStringToExportVersion, MergeState, stringToBoolean, ExportFormatType, getDefaultExportFormat, isExportFormatType, convertStringToExportFormat, createRootFilesystemNodeLocation } from "@dataspecer/git";
+import { ExportVersionType, extractPartOfRepositoryURL, getAuthorizationURL, GitIgnoreBase, GitProviderNode, convertStringToExportVersion, MergeState, stringToBoolean, ExportFormatType, getDefaultExportFormat, isExportFormatType, convertStringToExportFormat, createRootFilesystemNodeLocation, MergeEndInfoWithRootNode } from "@dataspecer/git";
 import { AvailableFilesystems, ConfigType, GitCredentials, getMergeFromMergeToForGitAndDS, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase, createUniqueCommitMessage } from "@dataspecer/git";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import { getCommonCommitInHistory, gitCloneBasic, CreateSimpleGitResult, UniqueDirectory } from "@dataspecer/git-node/simple-git-methods";
@@ -30,7 +30,6 @@ import {
   AvailableExports,
   MergeEndpointForComparison,
   FilesystemAbstractionFactoryMethodParams,
-  MergeEndInfoWithRootNode,
 } from "@dataspecer/git-node";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
@@ -310,7 +309,6 @@ export function prepareCommitDataForCommit(
 }
 
 
-// TODO RadStr Idea: Teoreticky bych mohl mit defaultni commit message ulozenou v konfiguraci (na druhou stranu vzdy chci zadat nejakou commit message)
 /**
  * Commit to the repository for package identifier by given {@link iri}. This method decides based on the data if the it is the classic commit or merge commit.
  * @param commitMessage if null then default message is used.

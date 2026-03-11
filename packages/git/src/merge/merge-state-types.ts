@@ -1,4 +1,5 @@
-import { AvailableFilesystems, FilesystemNode } from "@dataspecer/git";
+import { FilesystemNode } from "../export-import-data-api.ts";
+import { AvailableFilesystems } from "../filesystem/abstractions/filesystem-abstraction.ts";
 
 type MergeEndInfoInternal = {
   lastCommitHash: string;

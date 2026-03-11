@@ -24,5 +24,3 @@ export * from "./resource-model-api/export/implementation/export-new.ts";
 
 export * from "./git-operations/commit.ts";
 export * from "./git-operations/pull.ts";
-
-export * from "./merge-state-api/merge-state-types.ts"

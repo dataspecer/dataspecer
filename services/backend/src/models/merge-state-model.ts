@@ -3,9 +3,9 @@ import { v4 as uuidv4 } from "uuid";
 import path from "path";
 import { ResourceModel } from "./resource-model.ts";
 import { SimpleGit, simpleGit } from "simple-git";
-import { AvailableFilesystems, DatastoreComparison, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, FilesystemNode, GitProvider, isEditableType, MergeCommitType, MergeState, MergeStateCause, GitIgnore } from "@dataspecer/git";
+import { AvailableFilesystems, DatastoreComparison, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, GitProvider, isEditableType, MergeCommitType, MergeState, MergeStateCause, MergeEndInfoWithRootNode, convertToMergeInfoWithIri, MergeEndInfoWithRootIri } from "@dataspecer/git";
 import { updateMergeStateToBeUpToDate } from "../routes/git/merge-states/create-merge-state.ts";
-import { ALL_GIT_REPOSITORY_ROOTS, convertToMergeInfoWithIri, createSimpleGitUsingPredefinedGitRoot, getLastCommitHash, MERGE_DS_CONFLICTS_PREFIX, MergeEndInfoWithRootIri, MergeEndInfoWithRootNode, MergeEndpointForStateUpdate, removePathRecursively, ResourceChangeListener, ResourceChangeType } from "@dataspecer/git-node";
+import { ALL_GIT_REPOSITORY_ROOTS, createSimpleGitUsingPredefinedGitRoot, getLastCommitHash, MERGE_DS_CONFLICTS_PREFIX, MergeEndpointForStateUpdate, MergeStateCreator, removePathRecursively, ResourceChangeListener, ResourceChangeType } from "@dataspecer/git-node";
 import { getCommonCommitInHistory } from "@dataspecer/git-node/simple-git-methods";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../configuration.ts";
@@ -58,7 +58,7 @@ export type PrismaMergeStateWithoutData = Prisma.MergeStateGetPayload<{
  * The class which should be used as an api point to work with merge states.
  * It handles storing and retrieving of merge states to the database.
  */
-export class MergeStateModel implements ResourceChangeListener {
+export class MergeStateModel implements ResourceChangeListener, MergeStateCreator {
   private prismaClient: PrismaClient;
   private resourceModel: ResourceModel;
 
