@@ -149,3 +149,12 @@ export type FilesystemNodeLocation = {
    */
   projectIrisTreePath: string
 };
+
+export function createRootFilesystemNodeLocation(iri: string, fullPath: string): FilesystemNodeLocation {
+  return {
+    iri,
+    fullPath,
+    irisTreePath: "",
+    projectIrisTreePath: ""
+  };
+}
