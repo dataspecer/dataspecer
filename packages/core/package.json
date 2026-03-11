@@ -717,12 +717,10 @@
     "@typescript-eslint/eslint-plugin": "^5.57.1",
     "@typescript-eslint/parser": "^5.57.1",
     "eslint": "^8.37.0",
+    "eslint-plugin-jest": "^29.15.0",
     "eslint-plugin-unused-imports": "^2.0.0",
     "typescript": "^5.9.3",
     "vitest": "^3.1.1"
-  },
-  "peerDependencies": {
-    "@dataspecer/core-v2": "*"
   },
   "browser": {
     "buffer": false

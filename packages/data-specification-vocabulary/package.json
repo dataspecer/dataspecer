@@ -21,6 +21,7 @@
     "@dataspecer/core-v2": "*",
     "@dataspecer/profile-model": "*",
     "@dataspecer/semantic-model": "*",
+    "@rdfjs/types": "^2.0.1",
     "jsonld": "^8.3.3",
     "n3": "^1.25.1"
   },

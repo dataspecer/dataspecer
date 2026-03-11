@@ -13,7 +13,6 @@
     ".": "./lib/index.js"
   },
   "dependencies": {
-    "@dataspecer/entity-model": "*",
     "@dataspecer/utilities": "*"
   },
   "devDependencies": {

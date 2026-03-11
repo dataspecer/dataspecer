@@ -14,8 +14,10 @@
     "./use-resources-in-memo": "./lib/use-resources-in-memo.js"
   },
   "dependencies": {
-    "@dataspecer/core": "^0.0.0",
-    "@dataspecer/federated-observable-store": "^0.0.0"
+    "@dataspecer/core": "*",
+    "@dataspecer/core-v2": "*",
+    "@dataspecer/federated-observable-store": "*",
+    "react": "^19.2.4"
   },
   "devDependencies": {
     "@types/react": "^19.0.7",
