@@ -461,7 +461,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
                   setValue={setIsOwnerSignedInUser}
                   isFalseDisabled={false}
                   isTrueDisabled={!isSignedIn}
-                  trueText="User"
+                  trueText="Signed-In User"
                   falseText="Bot (fallback user)"
                 />
               </div>
