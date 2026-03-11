@@ -19,11 +19,12 @@ import fs from "fs";
 import path from "path";
 import { updateBlob, updateResourceMetadata } from "../resource.ts";
 import _ from "lodash";
-import { resourceModel } from "../../main.ts";
+import { mergeStateModel, resourceModel } from "../../main.ts";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
-import { updateDSRepositoryByGitPull, UpdateDSRepositoryByGitPullParams, WEBHOOK_PATH_PREFIX } from "@dataspecer/git-node";
+import { PullBase, UpdateDSRepositoryByGitPullParams, WEBHOOK_PATH_PREFIX } from "@dataspecer/git-node";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
+import { createFilesystemFactoryParams } from "../../utils/filesystem-helpers.ts";
 
 
 export const handleWebhook = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -68,7 +69,7 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
     return;
   }
 
-
+  const filesystemConstructorParams = createFilesystemFactoryParams(true);
   const pullUpdateParams: UpdateDSRepositoryByGitPullParams = {
     iri,
     gitProvider,
@@ -78,9 +79,13 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
     dsLastCommitHash: resource.lastCommitHash,
     resourceModelForDS: resourceModel,
     alwaysCreateMergeState: true,
-    depth: commits.length,
+    mergeStateModel: mergeStateModel,
+    updateBlob: updateBlob,
+    updateResourceMetadata: updateResourceMetadata,
+    filesystemConstructorParams,
   };
-  const createdMergeState = await updateDSRepositoryByGitPull(pullUpdateParams);
+  const pullContainer = new PullBase(pullUpdateParams);
+  const createdMergeState = await pullContainer.updateDSRepositoryByGitPull(commits.length);
 
   // Actually we don't need to answer based on response, since this comes from git provider, only think we might need is to notify users that there was update, which we do by setting the isInSyncWithRemote
   response.sendStatus(200);

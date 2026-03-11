@@ -1,11 +1,13 @@
 import { z } from "zod";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
-import { resourceModel } from "../../main.ts";
-import { MANUAL_CLONE_PATH_PREFIX, updateDSRepositoryByGitPull, UpdateDSRepositoryByGitPullParams } from "@dataspecer/git-node";
+import { mergeStateModel, resourceModel } from "../../main.ts";
+import { MANUAL_CLONE_PATH_PREFIX, PullBase, UpdateDSRepositoryByGitPullParams } from "@dataspecer/git-node";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
+import { updateBlob, updateResourceMetadata } from "../resource.ts";
+import { createFilesystemFactoryParams } from "../../utils/filesystem-helpers.ts";
 
 
 /**
@@ -30,6 +32,7 @@ export const pullRemoteRepository = asyncHandler(async (request: express.Request
   }
 
   const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(resource.linkedGitRepositoryURL, httpFetch, configuration);
+  const filesystemConstructorParams = createFilesystemFactoryParams(true);
   const pullUpdateParams: UpdateDSRepositoryByGitPullParams = {
     iri: query.iri,
     gitProvider,
@@ -39,8 +42,13 @@ export const pullRemoteRepository = asyncHandler(async (request: express.Request
     dsLastCommitHash: resource.lastCommitHash,
     resourceModelForDS: resourceModel,
     alwaysCreateMergeState: false,
+    mergeStateModel: mergeStateModel,
+    updateBlob: updateBlob,
+    updateResourceMetadata: updateResourceMetadata,
+    filesystemConstructorParams,
   };
-  const createdMergeState = await updateDSRepositoryByGitPull(pullUpdateParams);
+  const pullContainer = new PullBase(pullUpdateParams);
+  const createdMergeState = await pullContainer.updateDSRepositoryByGitPull();
   if (createdMergeState) {
     response.status(409).json("Created merge state");   // 409 is error code for conflict
     return;
