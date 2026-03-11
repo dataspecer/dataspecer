@@ -2,17 +2,8 @@ import { readFile, rm, writeFile } from "fs/promises";
 import path from "path";
 import { v4 as uuidv4 } from 'uuid';
 import { LocalStoreDescriptor } from "./local-store-descriptor.ts";
+import { LocalStoreModelGetter, ModelStore } from "@dataspecer/git-node";
 
-
-/**
- * Manages reading of the store files.
- *
- * Each store is a file in JSON format and the idea is that stores can be
- * accessed and modified from the client applications.
- */
-export interface LocalStoreModelGetter {
-    getModelStore(uuid: string, onChangeListeners?: (() => Promise<unknown>)[]): ModelStore;
-}
 
 /**
  * Manages creating, reading, updating and deleting of the store files.
@@ -118,18 +109,6 @@ export class LocalStoreModelBase implements LocalStoreModel {
             return path.join(this.storage, unsafeId);
         }
     }
-}
-
-export interface ModelStore {
-    getBuffer(): Promise<Buffer>;
-
-    getString(): Promise<string>;
-
-    getJson(): Promise<any>;
-
-    setString(payload: string): Promise<void>;
-
-    setJson(payload: any): Promise<void>;
 }
 
 export class ModelStoreBase implements ModelStore {

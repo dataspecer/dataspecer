@@ -4,6 +4,7 @@ import {InputStream} from "@dataspecer/core/io/stream/input-stream";
 import {OutputStream} from "@dataspecer/core/io/stream/output-stream";
 
 /**
+ * @todo TODO RadStr PR: Move to some different package - something like core-node or something, it should not be in git-node package
  * Stream dictionary, that can create zip files instead of saving the content
  * directly to the file system. Some methods have missing implementation.
  */

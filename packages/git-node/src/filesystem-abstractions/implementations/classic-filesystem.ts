@@ -6,8 +6,8 @@ import {
  } from "@dataspecer/git";
 
 import fs from "fs";
-import { isArtificialExportDirectory } from "../../export.ts";
-import { FileSystemAbstractionFactoryMethod } from "../backend-filesystem-abstraction-factory.ts";
+import { FileSystemAbstractionFactoryMethod, FilesystemAbstractionFactoryMethodParams } from "../backend-filesystem-abstraction-factory.ts";
+import { isArtificialExportDirectory } from "../../resource-model-api/export/export-api/export.ts";
 
 
 export class ClassicFilesystem extends FilesystemAbstractionBase {
@@ -21,14 +21,13 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
   // Factory method
   /////////////////////////////////////
   public static createFilesystemAbstraction: FileSystemAbstractionFactoryMethod = async (
-    roots: FilesystemNodeLocation[],
-    gitIgnore: GitIgnore | null,
+    params: FilesystemAbstractionFactoryMethodParams,
   ): Promise<ClassicFilesystem> => {
-    if (gitIgnore === null) {
+    if (params.gitIgnore === null) {
       throw new Error("The filesystem abstractions needs to have git provider.");
     }
-    const createdFilesystem = new ClassicFilesystem(gitIgnore);
-    await createdFilesystem.initializeFilesystem(roots);
+    const createdFilesystem = new ClassicFilesystem(params.gitIgnore);
+    await createdFilesystem.initializeFilesystem(params.roots);
     return createdFilesystem;
   };
 
@@ -56,7 +55,8 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
   ) {
     const projectIri = mappedNodeLocation.iri;      // Not a mistake! iri is the same as projectIri in case of git (classic filesystem)
                                                     // So also the tree path for iris and projectIris will be the same.
-    const fullPath: string = dsPathJoin(mappedNodeLocation.fullPath, projectIri);
+    const fullPath: string = dsPathJoin(mappedNodeLocation.fullPath, projectIri);   // Ok 1) zase ten mappedNodeLocation a za druhe to ma byt iri asi ... ne az to opravim tak to bude dobre, ted to je spatne protoze to bere iricka jako jmena v tom git adresari
+                                                                                    // Ta unikatnost je dana tim prefixem takze to muzou byt porjectIri pak
     let irisTreePath: string;
     let projectIrisTreePath: string;
     const isArtificialDirectory = isArtificialExportDirectory(projectIri);

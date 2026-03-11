@@ -598,13 +598,13 @@ import JSZip from 'jszip';
 import * as path from 'path';
 import { PackageImporter } from "./export-import/import.ts";
 import { generateArtifacts } from "./routes/generate.ts";
-import { ZipStreamDictionary } from "./utils/zip-stream-dictionary.ts";
 import { importFromGitUrl } from "./routes/import.ts";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { AuthenticationGitProvidersData } from "@dataspecer/git/git-providers";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 import { GitProviderNode } from "@dataspecer/git";
 import { PrismaClientStorageApiForIriReplacement, StorageApiForIriReplacement } from "./utils/iri-replace-util.ts";
+import { ZipStreamDictionary } from "@dataspecer/git-node";
 
 
 /**

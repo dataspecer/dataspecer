@@ -4,16 +4,15 @@ import express from "express";
 import { AvailableFilesystems, DatastoreInfo, DirectoryNode, dsPathJoin, FilesystemAbstraction, FilesystemNode, getMergeFromMergeToForGitAndDS, getMergeFromMergeToMappingForGitAndDS, GitIgnore, GitIgnoreBase, GitProvider, isDatastoreForMetadata, MergeStateCause } from "@dataspecer/git";
 import { mergeStateModel, resourceModel } from "../../main.ts";
 import { getCommonCommitInHistory, gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
-import { AllowedPrefixes, createSimpleGitUsingPredefinedGitRoot, getLastCommitHash, MANUAL_CLONE_PATH_PREFIX, removePathRecursively } from "@dataspecer/git-node";
+import { AllowedPrefixes, compareGitAndDSFilesystems, createSimpleGitUsingPredefinedGitRoot, getLastCommitHash, MANUAL_CLONE_PATH_PREFIX, removePathRecursively, ResourceModelForPull } from "@dataspecer/git-node";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
-import { ResourceModelForPull } from "../../export-import/export.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 import { SimpleGit } from "simple-git";
-import { compareGitAndDSFilesystems } from "../../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { MergeEndInfoWithRootNode } from "../../models/merge-state-model.ts";
 import { updateBlob, updateResourceMetadata } from "../resource.ts";
 import fs from "fs";
+import { createFilesystemFactoryParamsObjectForResourceModel } from "../../utils/filesystem-helpers.ts";
 
 
 /**
@@ -157,11 +156,13 @@ async function saveChangesInDirectoryToBackendFinalVersion(
   //    ......... This whole flow feels wrong - why can I in the canPullWithoutCreatingMergeState - updateLastCommit hash to the gitLastCommitHash??? I am not checking against it
   //              Well I do right in this first compare but i do not check the result anywhere here. I just pass it to the next method.
   //              I should check also in the "if canPullWithoutCreatingMergeState" that there are also no conflicts
+
+  const filesystemConstructorParams = createFilesystemFactoryParamsObjectForResourceModel(resourceModelForDS);
   const {
     diffTreeComparison,
     mergeFromFilesystemInformation,
     mergeToFilesystemInformation,
-  } = await compareGitAndDSFilesystems(gitIgnore, iri, gitInitialDirectoryParent, mergeStateCause, resourceModelForDS);
+  } = await compareGitAndDSFilesystems(gitIgnore, iri, gitInitialDirectoryParent, mergeStateCause, filesystemConstructorParams);
   const { fakeRoot: fakeRootMergeFrom, root: rootMergeFrom, filesystem: filesystemMergeFrom, pathToRootMeta: pathToRootMetaMergeFrom } = mergeFromFilesystemInformation;
   const { fakeRoot: fakeRootMergeTo, root: rootMergeTo, filesystem: filesystemMergeTo, pathToRootMeta: pathToRootMetaMergeTo } = mergeToFilesystemInformation;
 
@@ -177,7 +178,7 @@ async function saveChangesInDirectoryToBackendFinalVersion(
       // Basically check against the commit the package is supposed to represent, if we did not change anything, we can always pull without conflict.
       // Otherwise we changed something and even though we could handle it automatically. We let the user resolve everything manually, it is his responsibility.
       const currentDSPackageAndGitCommitComparison = await compareGitAndDSFilesystems(
-        gitIgnore, iri, gitInitialDirectoryParent, mergeStateCause, resourceModelForDS);
+        gitIgnore, iri, gitInitialDirectoryParent, mergeStateCause, filesystemConstructorParams);
       const canPullWithoutCreatingMergeState = currentDSPackageAndGitCommitComparison.diffTreeComparison.conflicts.length === 0;
 
       if (canPullWithoutCreatingMergeState) {

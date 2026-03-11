@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
-import { AvailableFilesystems, FilesystemNodeLocation } from "@dataspecer/git";
-import { FilesystemFactory } from "../../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
+import { AvailableFilesystems, createRootFilesystemNodeLocation, FilesystemNodeLocation } from "@dataspecer/git";
 import { resourceModel } from "../../main.ts";
+import { FilesystemAbstractionFactoryMethodParams, FilesystemFactory } from "@dataspecer/git-node";
+import { createFilesystemFactoryParams } from "../../utils/filesystem-helpers.ts";
 
 
 /**
@@ -15,13 +16,13 @@ export const getDataspecerTree = asyncHandler(async (request: express.Request, r
   });
   const query = querySchema.parse(request.query);
 
-  const rootLocation: FilesystemNodeLocation = {
-    iri: query.iri,
-    fullPath: "",
-    irisTreePath: "",
-    projectIrisTreePath: "",
+  const rootLocation: FilesystemNodeLocation = createRootFilesystemNodeLocation(query.iri, "");
+  const factoryParams: FilesystemAbstractionFactoryMethodParams = {
+    roots: [rootLocation],
+    gitIgnore: null,
+    ...createFilesystemFactoryParams(true),
   };
-  const dsFilesystem = await FilesystemFactory.createFileSystem([rootLocation], AvailableFilesystems.DS_Filesystem, null, resourceModel);
+  const dsFilesystem = await FilesystemFactory.createFileSystem(AvailableFilesystems.DS_Filesystem, factoryParams);
   // Either do this or maybe just sending the root is enough probably
   const globalFilesystemMapping = dsFilesystem.getGlobalFilesystemMapForProjectIris();
   response.json(globalFilesystemMapping);

@@ -7,10 +7,10 @@ import { DefaultArtifactBuilder } from "@dataspecer/specification/v1";
 import express from "express";
 import { z } from "zod";
 import configuration from "../configuration.ts";
-import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
 import { resourceModel } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { BackendModelRepository } from "../utils/model-repository.ts";
+import { ZipStreamDictionary } from "@dataspecer/git-node";
 
 // Hotfixes https://github.com/oven-sh/bun/issues/8893
 export function bunHotfixHttpFileName(input: string) {

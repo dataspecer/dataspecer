@@ -1,25 +1,37 @@
 import { FilesystemNodeLocation, FilesystemAbstraction, AvailableFilesystems, GitIgnore } from "@dataspecer/git";
 import { DSFilesystem } from "./implementations/ds-filesystem.ts";
+import { ResourceModelForFilesystemRepresentation } from "../resource-model-api/export/export-api/export.ts";
 import { ClassicFilesystem } from "./implementations/classic-filesystem.ts";
-import { ResourceModelForFilesystemRepresentation } from "../export.ts";
 
 export class FilesystemFactory {
   public static async createFileSystem(
-    roots: FilesystemNodeLocation[],
     filesystem: AvailableFilesystems,
-    gitIgnore: GitIgnore | null,
-    resourceModel: ResourceModelForFilesystemRepresentation | null
+    factoryMethodParameters: FilesystemAbstractionFactoryMethodParams,
   ): Promise<FilesystemAbstraction> {
     switch(filesystem) {
       case AvailableFilesystems.DS_Filesystem:
-        return DSFilesystem.createFilesystemAbstraction(roots, gitIgnore, resourceModel);
+        return DSFilesystem.createFilesystemAbstraction(factoryMethodParameters);
       case AvailableFilesystems.ClassicFilesystem:
-        return ClassicFilesystem.createFilesystemAbstraction(roots, gitIgnore, resourceModel);
+        return ClassicFilesystem.createFilesystemAbstraction(factoryMethodParameters);
       default:
         throw new Error("Not available filesystem, you forgot to extend the factory class");
     }
   }
 }
+
+
+export type FilesystemAbstractionFactoryMethodParams = {
+  roots: FilesystemNodeLocation[];
+  gitIgnore: GitIgnore | null;
+} & DataspecerFilesystemConstructorParams;
+
+export type DataspecerFilesystemConstructorParams = {
+  resourceModel: ResourceModelForFilesystemRepresentation | null;
+  exportedBy: string | null;
+  databaseMigrationVersion: number | null;
+  deleteBlob: ((iri: string, datastoreType: string) => Promise<void>) | null;
+  deleteResource: ((iri: string) => Promise<void>) | null;
+};
 
 
 /**
@@ -29,4 +41,4 @@ export class FilesystemFactory {
  * @param resourceModel the resource model to use. It is used only by the DS filesystem, the Git one ignores it (that is null can be provided).
  * @returns The created instance of type {@link FilesystemAbstraction}.
  */
-export type FileSystemAbstractionFactoryMethod = (roots: FilesystemNodeLocation[], gitIgnore: GitIgnore | null, resourceModel: ResourceModelForFilesystemRepresentation | null) => Promise<FilesystemAbstraction>;
+export type FileSystemAbstractionFactoryMethod = (parameters: FilesystemAbstractionFactoryMethodParams) => Promise<FilesystemAbstraction>;

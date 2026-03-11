@@ -1,8 +1,8 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import path from "path";
-import { PackageExporterBase } from "./export-base.ts";
 import { DirectoryNode, ExportVersionType, FilesystemNode, isDatastoreForMetadata, ResourceTypes, resourceTypeToTypeDirectoryMapping } from "@dataspecer/git";
 import { PackageExporterNew } from "./export-new.ts";
+import { PackageExporterBase } from "../export-api/export-base.ts";
 
 
 export class PackageExporterFactory {

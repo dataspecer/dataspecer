@@ -11,13 +11,11 @@ import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { mergeStateModel, resourceModel } from "../../main.ts";
 import { BranchSummary, CommitResult, SimpleGit } from "simple-git";
-import { ExportVersionType, extractPartOfRepositoryURL, getAuthorizationURL, GitIgnoreBase, GitProviderNode, convertStringToExportVersion, MergeState, stringToBoolean, ExportFormatType, getDefaultExportFormat, isExportFormatType, convertStringToExportFormat } from "@dataspecer/git";
+import { ExportVersionType, extractPartOfRepositoryURL, getAuthorizationURL, GitIgnoreBase, GitProviderNode, convertStringToExportVersion, MergeState, stringToBoolean, ExportFormatType, getDefaultExportFormat, isExportFormatType, convertStringToExportFormat, createRootFilesystemNodeLocation } from "@dataspecer/git";
 import { AvailableFilesystems, ConfigType, GitCredentials, getMergeFromMergeToForGitAndDS, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase, createUniqueCommitMessage } from "@dataspecer/git";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
-import { AvailableExports } from "../../export-import/export-actions.ts";
 import { getCommonCommitInHistory, gitCloneBasic, CreateSimpleGitResult, UniqueDirectory } from "@dataspecer/git-node/simple-git-methods";
-import { compareBackendFilesystems, compareGitAndDSFilesystems } from "../../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
-import { MergeEndInfoWithRootNode, MergeEndpointForComparison, PrismaMergeStateWithData } from "../../models/merge-state-model.ts";
+import { MergeEndInfoWithRootNode, PrismaMergeStateWithData } from "../../models/merge-state-model.ts";
 import fs from "fs";
 import {
   checkErrorBoundaryForCommitAction, getLastCommit, getLastCommitHash, isDefaultBranch,
@@ -25,12 +23,18 @@ import {
   createSimpleGitUsingPredefinedGitRoot,
   PUSH_PREFIX,
   MERGE_DS_CONFLICTS_PREFIX,
+  ResourceModelForFilesystemRepresentation,
+  compareGitAndDSFilesystems,
+  compareBackendFilesystems,
+  PackageExporterFactory,
+  AvailableExports,
+  MergeEndpointForComparison,
+  FilesystemAbstractionFactoryMethodParams,
 } from "@dataspecer/git-node";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
-import { ResourceModelForFilesystemRepresentation } from "../../export-import/export.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
-import { PackageExporterFactory } from "../../export-import/export-by-resource-type.ts";
+import { createFilesystemFactoryParams, createFilesystemFactoryParamsObjectForResourceModel } from "../../utils/filesystem-helpers.ts";
 
 
 export type RepositoryIdentification = {
@@ -403,7 +407,7 @@ async function commitDSMergeToGit(
         rootIri: mergeFromIri,
         filesystemType: AvailableFilesystems.DS_Filesystem,
         fullPathToRootParent: gitInitialDirectoryParent,
-        resourceModel
+        filesystemFactoryParams: createFilesystemFactoryParams(true),     // TODO RadStr: If we move it to different package, we have to set it directly
       };
 
       const mergeTo: MergeEndpointForComparison = {
@@ -411,7 +415,7 @@ async function commitDSMergeToGit(
         rootIri: iri,
         filesystemType: AvailableFilesystems.DS_Filesystem,
         fullPathToRootParent: gitInitialDirectoryParent,
-        resourceModel
+        filesystemFactoryParams: createFilesystemFactoryParams(true),     // TODO RadStr: If we move it to different package, we have to set it directly
       };
 
 
@@ -535,11 +539,12 @@ async function commitClassicToGit(
         const remoteRepositoryLastCommitHash = await getLastCommitHash(git);
         const shouldTryCreateMergeState = localLastCommitHash !== remoteRepositoryLastCommitHash || shouldAlwaysCreateMergeState;
         if (shouldTryCreateMergeState) {
+          const dataspecerFilesystemConstructorParams = createFilesystemFactoryParamsObjectForResourceModel(resourceModelForDS);      // TODO RadStr: Again if we move it to different package, then we have to use different way of setting it
           const {
             diffTreeComparison,
             mergeFromFilesystemInformation,
             mergeToFilesystemInformation
-          } = await compareGitAndDSFilesystems(new GitIgnoreBase(gitProvider), iri, gitInitialDirectoryParent, "push", resourceModelForDS);
+          } = await compareGitAndDSFilesystems(new GitIgnoreBase(gitProvider), iri, gitInitialDirectoryParent, "push", dataspecerFilesystemConstructorParams);
 
           const commonCommitHash = await getCommonCommitInHistory(git, localLastCommitHash, remoteRepositoryLastCommitHash);
           const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS("push", localLastCommitHash, remoteRepositoryLastCommitHash);
@@ -812,9 +817,13 @@ async function fillGitDirectoryWithExport(
     }
     removeEverythingExcept(gitInitialDirectory, exceptionsForDirectoryRemoval);
     const exporter = PackageExporterFactory.createPackageExporter(exportVersion);
+    const filesystemFactoryParams: FilesystemAbstractionFactoryMethodParams = {
+      roots: [createRootFilesystemNodeLocation(iri, "")],
+      gitIgnore: null,
+      ...createFilesystemFactoryParams(true),
+    };
     await exporter.doExportFromIRI(
-      iri, "", gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem,
-      exportFormat, resourceModel, null);
+      filesystemFactoryParams, gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem, exportFormat);
 
     if (shouldContainWorkflowFiles && !hasSetLastCommit) {
       createGitReadMeFile(gitInitialDirectory);

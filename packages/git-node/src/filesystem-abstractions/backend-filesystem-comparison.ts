@@ -2,43 +2,83 @@ import {
   AvailableFilesystems,
   compareFileTrees,
   convertMergeStateCauseToEditable,
+  createRootFilesystemNodeLocation,
   FilesystemNodeLocation,
   getEditableAndNonEditableValue,
   getMetadataDatastoreFile,
   GitIgnore,
   GitIgnoreBase,
+  GitProvider,
   MergeStateCause
 } from "@dataspecer/git";
-import { FilesystemFactory } from "./backend-filesystem-abstraction-factory.ts";
-import { ResourceModelForFilesystemRepresentation } from "../export.ts";
-import { MergeEndpointForComparison, MergeEndpointForStateUpdate } from "../../models/merge-state-model.ts";
+import { DataspecerFilesystemConstructorParams, FilesystemAbstractionFactoryMethodParams, FilesystemFactory } from "./backend-filesystem-abstraction-factory.ts";
+import { SimpleGit } from "simple-git";
+
+
+
+/**
+ * Base type containing data about merge end point. It is extended by other types, which add additional fields.
+ * For example, {@link MergeEndpointForComparison} and {@link MergeEndpointForStateUpdate}.
+ */
+type MergeEndpointBase = {
+  rootIri: string;
+  filesystemType: AvailableFilesystems;
+  fullPathToRootParent: string;
+  filesystemFactoryParams: DataspecerFilesystemConstructorParams;
+}
+
+export type MergeEndpointForComparison = {
+  gitIgnore: GitIgnore | null;
+} & MergeEndpointBase;
+
+export type MergeEndpointForStateUpdate = {
+  gitProvider: GitProvider | null;
+  git: SimpleGit | null;
+  lastCommitHash: string;
+  // TODO RadStr: If we rewrite the update to only update the things which are usually changing on update, then we do not need to pass in the isBranch, since it does not change.
+  isBranch: boolean;
+  branch: string;
+} & MergeEndpointBase
+
 
 export async function compareGitAndDSFilesystems(
   gitIgnore: GitIgnore,
   rootIri: string,
   gitInitialDirectoryParent: string,
   mergeStateCause: Omit<MergeStateCause, "merge">,
-  resourceModelForDSFilesystem: ResourceModelForFilesystemRepresentation,
+  dataspecerFilesystemFactoryMethodParams: DataspecerFilesystemConstructorParams,
 ) {
   let mergeFromFilesystemType: AvailableFilesystems;
   let mergeToFilesystemType: AvailableFilesystems;
-  let mergeFromResourceModel: ResourceModelForFilesystemRepresentation | null;
-  let mergeToResourceModel: ResourceModelForFilesystemRepresentation | null;
+  let mergeFromFactoryMethodParams: DataspecerFilesystemConstructorParams;
+  let mergeToFactoryMethodParams: DataspecerFilesystemConstructorParams;
 
   const editable = convertMergeStateCauseToEditable(mergeStateCause as MergeStateCause);
   if (editable == "mergeFrom") {
     mergeFromFilesystemType = AvailableFilesystems.DS_Filesystem;
-    mergeFromResourceModel = resourceModelForDSFilesystem;
+    mergeFromFactoryMethodParams = dataspecerFilesystemFactoryMethodParams;
 
     mergeToFilesystemType = AvailableFilesystems.ClassicFilesystem;
-    mergeToResourceModel = null;
+    mergeToFactoryMethodParams = {
+      databaseMigrationVersion: -1,
+      deleteBlob: null,
+      deleteResource: null,
+      exportedBy: "unknown",
+      resourceModel: null,
+    };
   }
   else {
     mergeFromFilesystemType = AvailableFilesystems.ClassicFilesystem;
-    mergeFromResourceModel = null;
+    mergeFromFactoryMethodParams = {
+      databaseMigrationVersion: -1,
+      deleteBlob: null,
+      deleteResource: null,
+      exportedBy: "unknown",
+      resourceModel: null,
+    };
 
     mergeToFilesystemType = AvailableFilesystems.DS_Filesystem;
-    mergeToResourceModel = resourceModelForDSFilesystem;
+    mergeToFactoryMethodParams = dataspecerFilesystemFactoryMethodParams;
   }
 
   const mergeFrom: MergeEndpointForComparison = {
@@ -46,7 +86,7 @@ export async function compareGitAndDSFilesystems(
     rootIri,
     filesystemType: mergeFromFilesystemType,
     fullPathToRootParent: gitInitialDirectoryParent,
-    resourceModel: mergeFromResourceModel,
+    filesystemFactoryParams: mergeFromFactoryMethodParams,
   };
 
   const mergeTo: MergeEndpointForComparison = {
@@ -54,7 +94,7 @@ export async function compareGitAndDSFilesystems(
     rootIri,
     filesystemType: mergeToFilesystemType,
     fullPathToRootParent: gitInitialDirectoryParent,
-    resourceModel: mergeToResourceModel,
+    filesystemFactoryParams: mergeToFactoryMethodParams,
   };
 
   const comparisonResult = await compareBackendFilesystems(mergeFrom, mergeTo, mergeStateCause as MergeStateCause);
@@ -66,23 +106,20 @@ export async function compareBackendFilesystems(
   mergeTo: MergeEndpointForComparison | MergeEndpointForStateUpdate,
   mergeStateCause: MergeStateCause,
 ) {
-  const mergeFromRootLocation: FilesystemNodeLocation = {
-    iri: mergeFrom.rootIri,
-    fullPath: mergeFrom.fullPathToRootParent,
-    irisTreePath: "",
-    projectIrisTreePath: "",
+  const mergeFromFactoryParams: FilesystemAbstractionFactoryMethodParams = {
+    ...mergeFrom.filesystemFactoryParams,
+    gitIgnore: getGitIgnoreFromMergeEndpoint(mergeFrom),
+    roots: [createRootFilesystemNodeLocation(mergeFrom.rootIri, mergeFrom.fullPathToRootParent)],
   };
-  const mergeToRootLocation: FilesystemNodeLocation = {
-    iri: mergeTo.rootIri,
-    fullPath: mergeTo.fullPathToRootParent,
-    irisTreePath: "",
-    projectIrisTreePath: "",
+  const mergeToFactoryParams: FilesystemAbstractionFactoryMethodParams = {
+    ...mergeTo.filesystemFactoryParams,
+    gitIgnore: getGitIgnoreFromMergeEndpoint(mergeTo),
+    roots: [createRootFilesystemNodeLocation(mergeTo.rootIri, mergeTo.fullPathToRootParent)],
   };
 
-  let mergeFromGitIgnore: GitIgnore | null = getGitIgnoreFromMergeEndpoint(mergeFrom);
-  let mergeToGitIgnore: GitIgnore | null = getGitIgnoreFromMergeEndpoint(mergeTo);
-  const filesystemMergeFrom = await FilesystemFactory.createFileSystem([mergeFromRootLocation], mergeFrom.filesystemType, mergeFromGitIgnore, mergeFrom.resourceModel);
-  const filesystemMergeTo = await FilesystemFactory.createFileSystem([mergeToRootLocation], mergeTo.filesystemType, mergeToGitIgnore, mergeTo.resourceModel);
+  // TODO RadStr: Ok here - once again - it does not work because we are expecting the path to be projectIri and not an IRI
+  const filesystemMergeFrom = await FilesystemFactory.createFileSystem(mergeFrom.filesystemType, mergeFromFactoryParams);
+  const filesystemMergeTo = await FilesystemFactory.createFileSystem(mergeTo.filesystemType, mergeToFactoryParams);
 
   const fakeRootMergeFrom = filesystemMergeFrom.getRoot();
   const fakeRootMergeTo = filesystemMergeTo.getRoot();

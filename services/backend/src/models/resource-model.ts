@@ -1,66 +1,12 @@
 import { LOCAL_PACKAGE, V1 } from "@dataspecer/core-v2/model/known-models";
-import { LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
 import { PrismaClient, Resource as PrismaResource } from "@prisma/client";
 import { v4 as uuidv4 } from 'uuid';
 import { storeModel } from './../main.ts';
-import { LocalStoreModel, ModelStore } from "./local-store-model.ts";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { CoreResource } from "@dataspecer/core/core/core-resource";
 import { CommitReferenceType, createDatastoreWithReplacedIris, defaultBranchForPackageInDatabase, defaultEmptyGitUrlForDatabase, MergeStateCause } from "@dataspecer/git";
-import { ResourceChangeListener, ResourceChangeObserverBase, ResourceChangeType } from "./resource-change-observer.ts";
-import { ResourceModelForPull } from "../export-import/export.ts";
-
-/**
- * Base information every resource has or should have.
- */
-export interface BaseResource {
-    /**
-     * Unique identifier of the resource.
-     */
-    iri: string;
-
-    /**
-     * All available types of the resource.
-     * This means how the given resource can be interpreted.
-     */
-    types: string[];
-
-    /**
-     * User-friendly metadata that each resource may have.
-     */
-    userMetadata: {
-        label?: LanguageString;
-        description?: LanguageString;
-        tags?: string[];
-    };
-
-    metadata: {
-        modificationDate?: Date;
-        creationDate?: Date;
-    };
-
-    linkedGitRepositoryURL: string;
-    projectIri: string;
-    branch: string;
-    representsBranchHead: boolean;
-    lastCommitHash: string;
-    activeMergeStateCount: number;
-    hasUncommittedChanges: boolean;
-
-    dataStores: Record<string, string>;
-}
-
-export interface Package extends BaseResource {
-    /**
-     * List of sub-resources that are contained in this package.
-     * If the value is undefined, the package was not-yet loaded.
-     */
-    subResources?: BaseResource[];
-}
-
-export interface LoadedPackage extends BaseResource {
-    subResources: BaseResource[];
-}
+import { BaseResource, LoadedPackage, ModelStore, ResourceChangeListener, ResourceChangeObserverBase, ResourceChangeType, ResourceModelForPull } from "@dataspecer/git-node";
+import { LocalStoreModel } from "./local-store-model.ts";
 
 /**
  * Resource model manages resource in local database that is managed by Prisma.

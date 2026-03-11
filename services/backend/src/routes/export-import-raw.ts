@@ -4,14 +4,13 @@ import { prismaClient, resourceModel, storeModel } from "../main.ts";
 import z from "zod";
 import { PackageImporter } from "../export-import/import.ts";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { PackageExporterByResourceType } from "../export-import/export-by-resource-type.ts";
-import { AvailableExports } from "../export-import/export-actions.ts";
-import { AvailableFilesystems, getDefaultExportFormat } from "@dataspecer/git";
-import { PackageExporterNew } from "../export-import/export-new.ts";
+import { AvailableFilesystems, createRootFilesystemNodeLocation, getDefaultExportFormat } from "@dataspecer/git";
 import { bunHotfixHttpFileName } from "./generate.ts";
 import { PackageExporterDeprecated } from "../export-import/deprecated-import-export-for-regression-testing/deprecated-export-for-regression-testing.ts";
 import JSZip from "jszip";
 import { PrismaClientStorageApiForIriReplacement, StorageApiForIriReplacement } from "../utils/iri-replace-util.ts";
+import { AvailableExports, FilesystemAbstractionFactoryMethodParams, PackageExporterByResourceType } from "@dataspecer/git-node";
+import { createFilesystemFactoryParams } from "../utils/filesystem-helpers.ts";
 
 function getName(name: LanguageString | undefined, defaultName: string) {
   return name?.["cs"] || name?.["en"] || defaultName;
@@ -34,9 +33,13 @@ export const exportPackageResource = asyncHandler(async (request: express.Reques
   // const buffer = await exporter.doExport(query.iri);
   // const exporter = new PackageExporterNew();
   const exporter = new PackageExporterByResourceType();
+  const filesystemFactoryParams: FilesystemAbstractionFactoryMethodParams = {
+    roots: [createRootFilesystemNodeLocation(query.iri, "")],
+    gitIgnore: null,
+    ...createFilesystemFactoryParams(true),
+  };
   const buffer = await exporter.doExportFromIRI(
-    query.iri, "", "", AvailableFilesystems.DS_Filesystem, AvailableExports.Zip,
-    query.exportFormat ?? getDefaultExportFormat(), resourceModel, null);
+    filesystemFactoryParams, "", AvailableFilesystems.DS_Filesystem, AvailableExports.Zip, query.exportFormat ?? getDefaultExportFormat());
 
   // const exporter = new PackageExporterByResourceType();
   // const buffer = await exporter.doExportFromIRI(query.iri, "", `radstr/export/directory`, AvailableFilesystems.DS_Filesystem, AvailableExports.Zip, query.exportFormat ?? "json", null);

@@ -2,13 +2,12 @@ import { z } from "zod";
 import { asyncHandler } from "../../../utils/async-handler.ts";
 import { mergeStateModel, resourceModel } from "../../../main.ts";
 import express from "express";
-import { AvailableFilesystems, DatastoreComparison, createConflictsFromDiffTrees, MergeState, MergeStateCause, getEditableAndNonEditableValue, convertMergeStateCauseToEditable } from "@dataspecer/git";
-import { compareBackendFilesystems } from "../../../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
+import { AvailableFilesystems, DatastoreComparison, createConflictsFromDiffTrees, MergeState, MergeStateCause } from "@dataspecer/git";
 import { getCommonCommitInHistory, gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { SimpleGit } from "simple-git";
-import { MergeEndInfoWithRootNode, MergeEndpointForComparison, MergeEndpointForStateUpdate } from "../../../models/merge-state-model.ts";
-import { createSimpleGitUsingPredefinedGitRoot, MERGE_CONFLICTS_PRIVATE, removePathRecursively } from "@dataspecer/git-node";
-import { ResourceModelForFilesystemRepresentation } from "../../../export-import/export.ts";
+import { MergeEndInfoWithRootNode } from "../../../models/merge-state-model.ts";
+import { compareBackendFilesystems, createSimpleGitUsingPredefinedGitRoot, DataspecerFilesystemConstructorParams, MERGE_CONFLICTS_PRIVATE, MergeEndpointForComparison, MergeEndpointForStateUpdate, removePathRecursively } from "@dataspecer/git-node";
+import { createFilesystemFactoryParams } from "../../../utils/filesystem-helpers.ts";
 
 
 /**
@@ -38,14 +37,14 @@ export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (requ
       isBranch: mergeFromResource.representsBranchHead,
       branch: mergeFromResource.branch,
       lastCommitHash: mergeFromResource.lastCommitHash,
-      resourceModel: resourceModel,
+      factoryMethodParameters: createFilesystemFactoryParams(true),
     };
     const mergeToData: CreateMergeStateBetweenDSPackagesType = {
       rootIri: mergeToIri,
       isBranch: mergeToResource.representsBranchHead,
       branch: mergeToResource.branch,
       lastCommitHash: mergeToResource.lastCommitHash,
-      resourceModel: resourceModel,
+      factoryMethodParameters: createFilesystemFactoryParams(true),
     };
 
     const { createdMergeStateId, hasConflicts } = await createMergeStateBetweenDSPackages(
@@ -84,7 +83,7 @@ type CreateMergeStateBetweenDSPackagesType = {
   isBranch: boolean;
   branch: string;
   lastCommitHash: string;
-  resourceModel: ResourceModelForFilesystemRepresentation;
+  factoryMethodParameters: DataspecerFilesystemConstructorParams;
 };
 
 /**
@@ -102,14 +101,14 @@ export async function createMergeStateBetweenDSPackages(
     filesystemType: AvailableFilesystems.DS_Filesystem,
     fullPathToRootParent: "",
     gitIgnore: null,
-    resourceModel: mergeFrom.resourceModel,
+    filesystemFactoryParams: mergeFrom.factoryMethodParameters,
   };
   const mergeToForComparison: MergeEndpointForComparison = {
     rootIri: mergeTo.rootIri,
     filesystemType: AvailableFilesystems.DS_Filesystem,
     fullPathToRootParent: "",
     gitIgnore: null,
-    resourceModel: mergeTo.resourceModel,
+    filesystemFactoryParams: mergeTo.factoryMethodParameters,
   };
 
   const {

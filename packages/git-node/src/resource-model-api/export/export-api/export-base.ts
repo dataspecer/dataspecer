@@ -1,8 +1,8 @@
-import { DirectoryNode, FilesystemNodeLocation, FilesystemAbstraction, AvailableFilesystems, GitIgnore } from "@dataspecer/git";
-import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
+import { DirectoryNode, FilesystemAbstraction, AvailableFilesystems } from "@dataspecer/git";
 import { AllowedExportResults, AvailableExports, ExportActionForFilesystem, ExportActionForZip, ExportActions } from "./export-actions.ts";
-import { FilesystemFactory } from "./filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
-import { PackageExporterInterface, ResourceModelForFilesystemRepresentation } from "./export.ts";
+import { ZipStreamDictionary } from "../../utils/zip-stream-dictionary.ts";
+import { FilesystemAbstractionFactoryMethodParams, FilesystemFactory } from "../../../filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
+import { PackageExporterInterface } from "./package-export.ts";
 
 
 export abstract class PackageExporterBase implements PackageExporterInterface {
@@ -32,22 +32,13 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
 
   // Note that this is the only public export method
   public async doExportFromIRI(
-    iri: string,
-    directory: string,
+    filesystemFactoryParams: FilesystemAbstractionFactoryMethodParams,
     pathToExportStartDirectory: string,
     importFilesystem: AvailableFilesystems,
     exportType: AvailableExports,
     exportFormat: string,
-    resourceModel: ResourceModelForFilesystemRepresentation | null,
-    gitIgnore: GitIgnore | null,
   ): Promise<AllowedExportResults> {
-    const filesystemLocationToIri: FilesystemNodeLocation = {
-      iri,
-      fullPath: directory,
-      irisTreePath: "",
-      projectIrisTreePath: "",
-    };
-    const filesystem = await FilesystemFactory.createFileSystem([filesystemLocationToIri], importFilesystem, gitIgnore, resourceModel);
+    const filesystem = await FilesystemFactory.createFileSystem(importFilesystem, filesystemFactoryParams);
     const fakeRoot = filesystem.getRoot();
 
     const root = Object.values(fakeRoot.content)[0] as DirectoryNode;

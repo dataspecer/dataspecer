@@ -1,5 +1,5 @@
-import { PackageExporterBase } from "./export-base.ts";
 import { DirectoryNode, FilesystemNode, isDatastoreForMetadata } from "@dataspecer/git";
+import { PackageExporterBase } from "../export-api/export-base.ts";
 
 
 export class PackageExporterNew extends PackageExporterBase {

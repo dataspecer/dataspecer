@@ -1,6 +1,5 @@
 import express from "express";
 import fs from "fs";
-import { DSFilesystem } from "../../export-import/filesystem-abstractions/implementations/ds-filesystem.ts";
 import { resourceModel } from "../../main.ts";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import { z } from "zod";
@@ -8,7 +7,9 @@ import { AvailableFilesystems, ExportShareableMetadataType, convertDatastoreCont
 import path from "path";
 import { updateBlob } from "../resource.ts";
 import { v4 as uuidv4 } from "uuid";
-import { isAccessibleGitRepository } from "@dataspecer/git-node";
+import { DSFilesystem, isAccessibleGitRepository } from "@dataspecer/git-node";
+import { currentVersion } from "../../tools/migrations/index.ts";
+import configuration from "../../configuration.ts";
 
 // TODO RadStr: Add document comments after I decide if I should run the conversion on client or not.
 
@@ -17,6 +18,8 @@ export async function getDatastoreContent(
   filesystem: AvailableFilesystems,
   type: string,
   shouldConvertToDatastoreFormat: boolean,
+  exportedBy: string,
+  databaseMigrationVersion: number,
   format?: string
 ): Promise<any | {accessDenied: true}> {
   // TODO RadStr: Run conversion on client?
@@ -30,7 +33,7 @@ export async function getDatastoreContent(
     return convertDatastoreContentBasedOnFormat(content, format ?? null, shouldConvertToDatastoreFormat, null);
   }
   else {
-    return await DSFilesystem.getDatastoreContentForPath(resourceModel, pathToDatastore, type, format ?? null, shouldConvertToDatastoreFormat);
+    return await DSFilesystem.getDatastoreContentForPath(resourceModel, pathToDatastore, type, format ?? null, shouldConvertToDatastoreFormat, exportedBy, databaseMigrationVersion);
   }
 }
 
@@ -49,7 +52,8 @@ export const getDatastoreContentDirectly = asyncHandler(async (request: express.
   const filesystem: AvailableFilesystems = query.filesystem as AvailableFilesystems;
   const datastoreContent = await getDatastoreContent(
     decodeURIComponent(query.pathToDatastore), filesystem, query.type,
-    stringToBoolean(query.shouldConvertToDatastoreFormat), query.format);
+    stringToBoolean(query.shouldConvertToDatastoreFormat), configuration.host ?? "unknown",
+    currentVersion, query.format);
   if (datastoreContent?.accessDenied === true && Object.keys(datastoreContent).length === 1) {
     response.status(403);
     response.json(`Trying to access ${query.pathToDatastore}`);

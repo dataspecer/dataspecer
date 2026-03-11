@@ -4,38 +4,13 @@ import path from "path";
 import { ResourceModel } from "./resource-model.ts";
 import { SimpleGit, simpleGit } from "simple-git";
 import { AvailableFilesystems, DatastoreComparison, ComparisonFullResult, convertMergeStateCauseToEditable, DiffTree, EditableType, FilesystemNode, GitProvider, isEditableType, MergeCommitType, MergeState, MergeStateCause, GitIgnore } from "@dataspecer/git";
-import { ResourceChangeListener, ResourceChangeType } from "./resource-change-observer.ts";
 import { updateMergeStateToBeUpToDate } from "../routes/git/merge-states/create-merge-state.ts";
-import { ALL_GIT_REPOSITORY_ROOTS, createSimpleGitUsingPredefinedGitRoot, getLastCommitHash, MERGE_DS_CONFLICTS_PREFIX, removePathRecursively } from "@dataspecer/git-node";
+import { ALL_GIT_REPOSITORY_ROOTS, createSimpleGitUsingPredefinedGitRoot, getLastCommitHash, MERGE_DS_CONFLICTS_PREFIX, MergeEndpointForStateUpdate, removePathRecursively, ResourceChangeListener, ResourceChangeType } from "@dataspecer/git-node";
 import { getCommonCommitInHistory } from "@dataspecer/git-node/simple-git-methods";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
-import { ResourceModelForFilesystemRepresentation } from "../export-import/export.ts";
-
-/**
- * Base type containing data about merge end point. It is extended by other types, which add additional fields.
- * For example, {@link MergeEndpointForComparison} and {@link MergeEndpointForStateUpdate}.
- */
-type MergeEndpointBase = {
-  rootIri: string,
-  filesystemType: AvailableFilesystems,
-  fullPathToRootParent: string,
-  resourceModel: ResourceModelForFilesystemRepresentation | null,
-}
-
-export type MergeEndpointForComparison = {
-  gitIgnore: GitIgnore | null;
-} & MergeEndpointBase
-
-export type MergeEndpointForStateUpdate = {
-  gitProvider: GitProvider | null;
-  git: SimpleGit | null;
-  lastCommitHash: string;
-  // TODO RadStr: If we rewrite the update to only update the things which are usually changing on update, then we do not need to pass in the isBranch, since it does not change.
-  isBranch: boolean;
-  branch: string;
-} & MergeEndpointBase
+import { createFilesystemFactoryParams, createFilesystemFactoryParamsObjectForResourceModel } from "../utils/filesystem-helpers.ts";
 
 
 type Nullable<T> = {
@@ -947,7 +922,9 @@ export class MergeStateModel implements ResourceChangeListener {
         lastCommitHash: prismaMergeState.lastCommitHashMergeFrom,
         isBranch: prismaMergeState.isMergeFromBranch,
         branch: prismaMergeState.branchMergeFrom,
-        resourceModel: gitForMergeFrom === null ? this.resourceModel : null,     // If Git === null then it is DS filesystem
+        filesystemFactoryParams: gitForMergeFrom === null ?       // If Git === null then it is DS filesystem
+          createFilesystemFactoryParamsObjectForResourceModel(this.resourceModel) :
+          createFilesystemFactoryParams(false),
       };
 
 
@@ -963,7 +940,9 @@ export class MergeStateModel implements ResourceChangeListener {
         lastCommitHash: prismaMergeState.lastCommitHashMergeTo,
         isBranch: prismaMergeState.isMergeToBranch,
         branch: prismaMergeState.branchMergeTo,
-        resourceModel: gitForMergeTo === null ? this.resourceModel : null,      // If Git === null then it is DS filesystem
+        filesystemFactoryParams: createFilesystemFactoryParams(gitForMergeTo === null) ?      // If Git === null then it is DS filesystem
+          createFilesystemFactoryParamsObjectForResourceModel(this.resourceModel) :
+          createFilesystemFactoryParams(false),
       };
 
       const previousMergeState = await this.getMergeStateFromUUID(prismaMergeState.uuid, true, false, false);

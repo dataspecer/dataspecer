@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
-import { AvailableFilesystems, FilesystemNodeLocation } from "@dataspecer/git";
-import { FilesystemFactory } from "../../export-import/filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
+import { AvailableFilesystems, createRootFilesystemNodeLocation, FilesystemNodeLocation } from "@dataspecer/git";
+import { FilesystemAbstractionFactoryMethodParams, FilesystemFactory } from "@dataspecer/git-node";
+import { createFilesystemFactoryParams } from "../../utils/filesystem-helpers.ts";
 
 /**
  * @deprecated Similarly to {@link getDataspecerTree} also not used.
@@ -17,13 +18,14 @@ export const getGitTree = asyncHandler(async (request: express.Request, response
 
 
   const fullPathToGitRepository = findPathToGitRepository(query.iri);
-  const rootLocation: FilesystemNodeLocation = {
-    iri: query.iri,
-    fullPath: fullPathToGitRepository,
-    irisTreePath: "",
-    projectIrisTreePath: "",
+  const rootLocation: FilesystemNodeLocation = createRootFilesystemNodeLocation(query.iri, fullPathToGitRepository);
+
+  const factoryParams: FilesystemAbstractionFactoryMethodParams = {
+    roots: [rootLocation],
+    gitIgnore: null,
+    ...createFilesystemFactoryParams(false),
   };
-  const gitFilesystem = FilesystemFactory.createFileSystem([rootLocation], AvailableFilesystems.ClassicFilesystem, null, null);
+  const gitFilesystem = FilesystemFactory.createFileSystem(AvailableFilesystems.ClassicFilesystem, factoryParams);
   // TODO: Decide if we want to use global mapping or getRoot (of course if we want to use the direct access at all)
   response.json((await gitFilesystem).getRoot());
 });

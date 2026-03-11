@@ -1,10 +1,8 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
-import { ZipStreamDictionary } from "../../utils/zip-stream-dictionary.ts";
-import { BaseResource, ResourceModel } from "../../models/resource-model.ts";
 import { v4 as uuidv4 } from 'uuid';
 import { currentVersion } from "../../tools/migrations/index.ts";
 import configuration from "../../configuration.ts";
-import { ResourceModelForExport } from "../export.ts";
+import { BaseResource, ResourceModelForExport, ZipStreamDictionary } from "@dataspecer/git-node";
 
 /**
  * @deprecated This is the previous exporter before we have implemented new version for Git, which uses the filesystem trees. This is used for regression testing.

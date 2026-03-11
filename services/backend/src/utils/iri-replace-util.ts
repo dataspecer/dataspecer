@@ -1,5 +1,5 @@
 import { convertDatastoreContentBasedOnFormat, createDatastoreWithReplacedIris, stringifyDatastoreContentBasedOnFormat } from "@dataspecer/git";
-import { LocalStoreModelGetter } from "../models/local-store-model.ts";
+import { LocalStoreModelGetter } from "@dataspecer/git-node";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { DefaultArgs } from "@prisma/client/runtime/index.js";
 

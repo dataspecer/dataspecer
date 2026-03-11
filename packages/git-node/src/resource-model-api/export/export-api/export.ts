@@ -1,40 +1,15 @@
-import { AvailableFilesystems, GitIgnore, MergeStateCause, resourceTypeToTypeDirectoryMapping } from "@dataspecer/git";
-import { AvailableExports, AllowedExportResults } from "./export-actions.ts";
-import { BaseResource, LoadedPackage } from "../models/resource-model.ts";
-import { LocalStoreModelGetter } from "../models/local-store-model.ts";
-import { ResourceModelForImport } from "./import.ts";
-import { ResourceChangeType } from "../models/resource-change-observer.ts";
+import { MergeStateCause, resourceTypeToTypeDirectoryMapping } from "@dataspecer/git";
+import { ResourceChangeType } from "../../resource-change-observer.ts";
+import { BaseResource, LoadedPackage } from "../../resource-model-api.ts";
+import { LocalStoreModelGetter, ModelStore } from "../../model-store-api.ts";
 
 
-/**
- * Use the {@link PackageExporterBase} as base class for implementation of new exporters.
- *  Note that there are some quirks in implementation. The biggest (and maybe only) one being setting "_exportVersion" in the meta of root resource.
- *  For simplicity and consistency we update the value for each exported meta file.
- */
-export interface PackageExporterInterface {
-  /**
-   * @param gitIgnore can be null for DS-filesystem
-   */
-  doExportFromIRI(
-    iri: string,
-    directory: string,
-    pathToExportStartDirectory: string,
-    importFilesystem: AvailableFilesystems,
-    exportType: AvailableExports,
-    exportFormat: string,
-    resourceModel: ResourceModelForImportExport | null,
-    gitIgnore: GitIgnore | null,
-  ): Promise<AllowedExportResults>;
-
-  getExportVersion(): number;
-}
-
+// TODO RadStr PR: This file probably does not use node specifics, it can be in some "non-node" package
 const typeExportArtificialDirectories = Object.values(resourceTypeToTypeDirectoryMapping);
 
 export function isArtificialExportDirectory(directoryName: string): boolean {
   return typeExportArtificialDirectories.includes(directoryName);
 }
-
 
 export interface ResourceModelForExport {
   readonly storeModel: LocalStoreModelGetter;
@@ -49,6 +24,31 @@ export interface ResourceModelForExport {
     mergeStateUUIDsToIgnoreInUpdating?: string[]
   ): Promise<void>
 }
+
+export interface ResourceModelForImport {
+  createPackage(
+    parentIri: string | null,
+    iri: string,
+    userMetadata: {},
+    projectIri?: string,
+  ): Promise<void>;
+
+  createResource(
+    parentIri: string | null,
+    iri: string,
+    type: string,
+    userMetadata: {},
+    projectIri?: string,
+    mergeStateUUIDsToIgnoreInUpdating?: string[],
+  ): Promise<void>;
+
+  getOrCreateResourceModelStore(
+    iri: string,
+    storeName?: string,
+    mergeStateUUIDsToIgnoreInUpdating?: string[]
+  ): Promise<ModelStore>;
+}
+
 
 export interface ResourceModelForImportExport extends ResourceModelForImport, ResourceModelForExport {
   // EMPTY

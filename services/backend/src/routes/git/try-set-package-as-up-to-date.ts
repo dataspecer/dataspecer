@@ -3,14 +3,13 @@ import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { resourceModel } from "../../main.ts";
 import { gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
-import { createSimpleGitUsingPredefinedGitRoot, removePathRecursively, TMP_CLONE_PATH_PREFIX } from "@dataspecer/git-node";
+import { compareBackendFilesystems, createSimpleGitUsingPredefinedGitRoot, MergeEndpointForComparison, removePathRecursively, TMP_CLONE_PATH_PREFIX } from "@dataspecer/git-node";
 import { AvailableFilesystems, ConfigType, extractPartOfRepositoryURL, getAuthorizationURL, GitIgnoreBase } from "@dataspecer/git";
-import { MergeEndpointForComparison } from "../../models/merge-state-model.ts";
-import { compareBackendFilesystems } from "../../export-import/filesystem-abstractions/backend-filesystem-comparison.ts";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import configuration from "../../configuration.ts";
+import { createFilesystemFactoryParams } from "../../utils/filesystem-helpers.ts";
 
 
 /**
@@ -65,14 +64,14 @@ export const trySetPackageAsUpToDate = asyncHandler(async (request: express.Requ
       // 2) Compare
       const gitEndpoint: MergeEndpointForComparison = {
         rootIri: iri,
-        resourceModel: resourceModel,
+        filesystemFactoryParams: createFilesystemFactoryParams(false),
         gitIgnore: new GitIgnoreBase(gitProvider),
         fullPathToRootParent: gitInitialDirectoryParent,
         filesystemType: AvailableFilesystems.ClassicFilesystem,
       };
       const dsEndpoint: MergeEndpointForComparison = {
         rootIri: iri,
-        resourceModel: resourceModel,
+        filesystemFactoryParams: createFilesystemFactoryParams(true),
         gitIgnore: null,
         fullPathToRootParent: gitInitialDirectoryParent,      // TODO RadStr: The value probably should not matter
         filesystemType: AvailableFilesystems.DS_Filesystem,

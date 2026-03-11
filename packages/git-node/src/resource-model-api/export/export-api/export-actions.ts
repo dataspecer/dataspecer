@@ -1,8 +1,8 @@
 
 import { DatastoreInfo, stringifyDatastoreContentBasedOnFormat } from "@dataspecer/git";
-import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
 import fs from "fs";
 import path from "path";
+import { ZipStreamDictionary } from "../../utils/zip-stream-dictionary.ts";
 
 
 

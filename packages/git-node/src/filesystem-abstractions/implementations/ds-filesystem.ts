@@ -4,16 +4,14 @@ import {
   FilesystemAbstractionBase, DatastoreComparison, DatastoreInfo, DirectoryNode, FilesystemMappingType, FilesystemNode,
   FilesystemNodeLocation, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaDatastoreInfo, FilesystemAbstraction,
   removeDatastoreFromNode, isDatastoreForMetadata, getDatastoreInfoOfGivenDatastoreType, AvailableFilesystems, convertDatastoreContentBasedOnFormat,
-  ExportMetadataType, GitIgnore
+  ExportMetadataType
 } from "@dataspecer/git";
-import { deleteBlob, deleteResource } from "../../../routes/resource.ts";
-import { BaseResource } from "@dataspecer/core-v2/project";
-import { currentVersion } from "../../../tools/migrations/index.ts";
-import configuration from "../../../configuration.ts";
-import { ResourceChangeType } from "../../../models/resource-change-observer.ts";
-import { ResourceModelForFilesystemRepresentation } from "../../export.ts";
-import { FileSystemAbstractionFactoryMethod } from "../backend-filesystem-abstraction-factory.ts";
+import { FileSystemAbstractionFactoryMethod, DataspecerFilesystemConstructorParams, FilesystemAbstractionFactoryMethodParams } from "../backend-filesystem-abstraction-factory.ts";
 import crypto from 'node:crypto';
+import { ResourceModelForFilesystemRepresentation } from "../../resource-model-api/export/export-api/export.ts";
+import { ResourceChangeType } from "../../resource-model-api/resource-change-observer.ts";
+import { BaseResource } from "@dataspecer/core-v2/project";
+
 
 // Note that DS always works with jsons as formats for datastores, it is too much work to make to make it work for everything.
 // Since we would need to change every component (including cme) to support multiple formats.
@@ -24,24 +22,38 @@ export class DSFilesystem extends FilesystemAbstractionBase {
   // Properties
   /////////////////////////////////////
   private resourceModel: ResourceModelForFilesystemRepresentation;
+  private exportedBy: string;
+  private databaseMigrationVersion: number;
+  private deleteBlob: (iri: string, datastoreType: string) => Promise<void>;
+  private deleteResource: (iri: string) => Promise<void>;
 
 
   /////////////////////////////////////
   // Factory method
   /////////////////////////////////////
   public static createFilesystemAbstraction: FileSystemAbstractionFactoryMethod = async (
-    roots: FilesystemNodeLocation[],
-    gitIgnore: GitIgnore | null,
-    resourceModel: ResourceModelForFilesystemRepresentation | null,
+    p: FilesystemAbstractionFactoryMethodParams,
   ): Promise<DSFilesystem> => {
-    if (resourceModel === null) {
+    if (p.resourceModel === null) {
       // Alternatively we could allow the field in the class to be null and crash when performing the operation.
       throw new Error("Expected the resourceModel to be not null. The DSFilesystem needs it to perform certain operations.");
     }
+    if (p.deleteBlob === null) {
+      throw new Error("Expected the deleteBlob to be not null. The DSFilesystem needs it to perform certain operations.");
+    }
+    if (p.deleteResource === null) {
+      throw new Error("Expected the deleteResource to be not null. The DSFilesystem needs it to perform certain operations.");
+    }
+    if (p.exportedBy === null) {
+      throw new Error("Expected the exportedBy to be not null. The DSFilesystem needs it to perform certain operations.");
+    }
+    if (p.databaseMigrationVersion === null) {
+      throw new Error("Expected the databaseMigrationVersion to be not null. The DSFilesystem needs it to perform certain operations.");
+    }
 
     // Note that we ignore the git provider
-    const createdFilesystem = new DSFilesystem(resourceModel);
-    await createdFilesystem.initializeFilesystem(roots);
+    const createdFilesystem = new DSFilesystem(p);
+    await createdFilesystem.initializeFilesystem(p.roots);
     return createdFilesystem;
   };
 
@@ -49,9 +61,13 @@ export class DSFilesystem extends FilesystemAbstractionBase {
   /////////////////////////////////////
   // Constructor
   /////////////////////////////////////
-  private constructor(resourceModel: ResourceModelForFilesystemRepresentation) {
+  private constructor(p: DataspecerFilesystemConstructorParams) {
     super();
-    this.resourceModel = resourceModel;
+    this.resourceModel = p.resourceModel;
+    this.exportedBy = p.exportedBy;
+    this.databaseMigrationVersion = p.databaseMigrationVersion;
+    this.deleteBlob = p.deleteBlob;
+    this.deleteResource = p.deleteResource;
   }
 
 
@@ -69,6 +85,8 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     type: string,
     datastoreFormat: string | null,
     shouldConvertToDatastoreFormat: boolean,
+    exportedBy: string,
+    databaseMigrationVersion: number,
   ): Promise<any> {
     if (isDatastoreForMetadata(type)) {
       const resource = (await givenResourceModel.getResource(fullPath));
@@ -76,7 +94,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
         throw new Error("The resource is not present in database. Therefore, we can not extract the metadata file");
       }
 
-      const metadata = DSFilesystem.constructMetadataFromResource(resource);
+      const metadata = DSFilesystem.constructMetadataFromResource(resource, exportedBy, databaseMigrationVersion);
       const metadataAsString: string = JSON.stringify(metadata);
       return convertDatastoreContentBasedOnFormat(metadataAsString, datastoreFormat, shouldConvertToDatastoreFormat, null);
     }
@@ -129,7 +147,9 @@ export class DSFilesystem extends FilesystemAbstractionBase {
       throw new Error(`Datastore with given type (${type}), does not exist`);
     }
     const datastoreFormat = relevantDatastoreInfo.format;
-    return await DSFilesystem.getDatastoreContentForPath(this.resourceModel, relevantDatastoreInfo.fullPath, type, datastoreFormat, shouldConvertToDatastoreFormat);
+    return await DSFilesystem.getDatastoreContentForPath(
+      this.resourceModel, relevantDatastoreInfo.fullPath, type, datastoreFormat,
+      shouldConvertToDatastoreFormat, this.exportedBy, this.databaseMigrationVersion);
   }
 
   /**
@@ -243,7 +263,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
 
     // Maybe in future we will have something else than JSONs on backend, but right now always use JSONs for DS filesystem.
     // Check top of file for more info.
-    const metadata = DSFilesystem.constructMetadataFromResource(resource);
+    const metadata = DSFilesystem.constructMetadataFromResource(resource, this.exportedBy, this.databaseMigrationVersion);
     filesystemNode.metadata = metadata;
 
     // TODO RadStr: Once again using the iri, otherwise we crash ... so yeah it is no longer cache.
@@ -268,17 +288,17 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     return filesystemMapping;
   }
 
-  public static constructMetadataFromResource(resource: BaseResource): ExportMetadataType {
+  public static constructMetadataFromResource(resource: BaseResource, exportedBy: string, databaseMigationVersion: number): ExportMetadataType {
     return {
       iri: resource.iri,
       projectIri: resource.projectIri,
       types: resource.types,
       userMetadata: resource.userMetadata,
       metadata: resource.metadata,
-      _version: currentVersion,
+      _version: databaseMigationVersion,
       _exportVersion: -1,   // This has to be rewritten by the exporter for the root resource! That is why it is -1 so we know that it is wrong on check
       _exportedAt: new Date().toISOString(),
-      _exportedBy: configuration.host,
+      _exportedBy: exportedBy,
     };
   }
 
@@ -298,11 +318,11 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     // We have to perform 2 actions:
     // 1) remove the datastore, that is remove the blob with datastore and update the resource to no longer contain the datastore
     // 2) If the resource will become empty, we also have to remove the datastore
-    await deleteBlob(filesystemNode.metadata.iri, datastoreType);
+    await this.deleteBlob(filesystemNode.metadata.iri, datastoreType);
     removeDatastoreFromNode(filesystemNode, datastoreType);
     if (shouldRemoveFileWhenNoDatastores) {
       if (filesystemNode.datastores.length === 0) {       // TODO RadStr: Not sure about this, we will always have metadata, right? or no?
-        await deleteResource(filesystemNode.metadata.iri);
+        await this.deleteResource(filesystemNode.metadata.iri);
         // TODO RadStr: Just put fullPath inside the FilesystemNode and be done with it
         this.removeValueInFilesystemMapping(filesystemNode.name, this.getParentForNode(filesystemNode)?.content ?? this.root.content);
       }

@@ -1,9 +1,8 @@
 import JSZip from "jszip";
-import { isArtificialExportDirectory } from "./export.ts";
 import { v4 as uuidv4 } from "uuid";
 import { PACKAGE_ROOT } from "@dataspecer/git";
 import { replaceIrisRecursively, StorageApiForIriReplacement } from "../utils/iri-replace-util.ts";
-import { LocalStoreModelGetter, ModelStore } from "../models/local-store-model.ts";
+import { isArtificialExportDirectory, LocalStoreModelGetter, ResourceModelForImport } from "@dataspecer/git-node";
 
 
 const FILE_EXTENSION_REGEX = /^\.([-0-9a-zA-Z]+)\.json$/;
@@ -301,28 +300,4 @@ export class PackageImporter {
 
     return thisPackageIri;
   }
-}
-
-export interface ResourceModelForImport {
-  createPackage(
-    parentIri: string | null,
-    iri: string,
-    userMetadata: {},
-    projectIri?: string,
-  ): Promise<void>;
-
-  createResource(
-    parentIri: string | null,
-    iri: string,
-    type: string,
-    userMetadata: {},
-    projectIri?: string,
-    mergeStateUUIDsToIgnoreInUpdating?: string[],
-  ): Promise<void>;
-
-  getOrCreateResourceModelStore(
-    iri: string,
-    storeName?: string,
-    mergeStateUUIDsToIgnoreInUpdating?: string[]
-  ): Promise<ModelStore>;
 }

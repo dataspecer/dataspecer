@@ -1,6 +1,7 @@
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { BaseModel, BlobModel, ModelRepository, PackageModel } from "@dataspecer/specification/model-repository";
-import { BaseResource, ResourceModel } from "../models/resource-model.ts";
+import { ResourceModel } from "../models/resource-model.ts";
+import { BaseResource } from "@dataspecer/git-node";
 
 export class BackendModelRepository implements ModelRepository {
   constructor(private resourceModel: ResourceModel) {}
