@@ -15,12 +15,9 @@
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
     "@dataspecer/data-specification-vocabulary": "*",
-    "@dataspecer/documentation": "*",
     "@dataspecer/genapp": "*",
-    "@dataspecer/json": "*",
-    "@dataspecer/ldkit": "*",
+    "@dataspecer/lightweight-owl": "*",
     "@dataspecer/profile-model": "*",
-    "@dataspecer/rdfs-adapter": "*",
     "@dataspecer/specification": "*",
     "@dataspecer/structure-model": "*",
     "@prisma/client": "^4.12.0",
@@ -40,12 +37,10 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@types/body-parser": "^1.19.2",
     "@types/cors": "^2.8.13",
     "@types/express": "^4.17.17",
     "@types/jsonld": "^1.5.14",
     "@types/multer": "^1.4.12",
-    "@types/temp": "^0.9.1",
     "@types/uuid": "^9.0.1",
     "prisma": "^4.12.0",
     "typescript": "^5.9.3"

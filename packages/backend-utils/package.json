@@ -17,8 +17,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@dataspecer/core": "*",
-    "@dataspecer/specification": "*"
+    "@dataspecer/core": "*"
   },
   "peerDependencies": {
     "@dataspecer/core-v2": "*"

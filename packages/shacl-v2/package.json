@@ -15,11 +15,11 @@
   "dependencies": {
     "@dataspecer/core-v2": "*",
     "@dataspecer/data-specification-vocabulary": "*",
-    "@dataspecer/entity-model": "*",
     "@dataspecer/lightweight-owl": "*",
     "@dataspecer/profile-model": "*",
     "@dataspecer/rdf-adapter": "*",
-    "crypto-js": "^4.2.0"
+    "@dataspecer/semantic-model": "*",
+    "n3": "^1.25.1"
   },
   "devDependencies": {
     "typescript": "^5.9.3",
