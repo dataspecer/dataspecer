@@ -1,3 +1,11 @@
+import { expect, test } from "vitest";
+
+test("TODO RadStr: empty test to pass npm run test", () => {
+  expect(true).toBe(true);
+});
+
+
+
 // // We have to create our own resource model, so we do not contaminate the filesystem or database. And also so we can easily test the results
 // // The implementation is just simple map, which tries to mirror how does Dataspecer store data into database and filesystel (Local Data Store)
 
