@@ -182,6 +182,17 @@ export class DefaultVisualModel
     return this.sourceDataVersion;
   }
 
+  getVisualView(): VisualView | null {
+    if (this.visualViewIdentifier === null) {
+      return null;
+    }
+    const entity = this.getVisualEntity(this.visualViewIdentifier);
+    if (entity === null || !isVisualView(entity)) {
+      return null;
+    }
+    return entity;
+  }
+
   getLabel(): LanguageString | null {
     return this.model.getLabel();
   }
