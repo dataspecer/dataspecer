@@ -123,6 +123,12 @@ export interface BaseEntityProfileDialogState<
    */
   allSpecializations: EntityRepresentative[];
 
+  /**
+   * Optional ordering string for custom sorting of profiles in documentation.
+   * Uses natural sort order, items without order are placed at the end.
+   */
+  order: string;
+
 }
 
 /**
@@ -206,6 +212,7 @@ export function createNewBaseEntityProfileDialogState<
     hideUsageNoteProfile: usageNoteSource === noProfile,
     //
     externalDocumentationUrl: "",
+    order: "",
   };
 }
 
@@ -299,6 +306,7 @@ export function createEditBaseEntityProfileDialogState
   usageNote: LanguageString | null,
   usageNoteSourceIdentifier: string | null,
   allSpecializations: EntityRepresentative[],
+  order: string = "",
 ): BaseEntityProfileDialogState<ProfileType> {
 
   const semanticModels: InMemorySemanticModel[] =
@@ -392,6 +400,7 @@ export function createEditBaseEntityProfileDialogState
       entity.identifier, allSpecializations, semanticModels),
     //
     externalDocumentationUrl,
+    order,
   };
 }
 

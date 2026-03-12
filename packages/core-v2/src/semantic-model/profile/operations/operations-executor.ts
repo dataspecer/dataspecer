@@ -137,6 +137,7 @@ function executeModifySemanticModelClassProfile(
     profiling: entity.profiling ?? previous.profiling,
     externalDocumentationUrl: mergeFromProfiled(entity.externalDocumentationUrl, previous.externalDocumentationUrl),
     tags: mergeFromProfiled(entity.tags, previous.tags),
+    order: mergeFromProfiled(entity.order, previous.order) ?? null,
   };
   entityWriter.change({ [identifier]: updatedEntity }, []);
   return {
@@ -192,6 +193,7 @@ function defaultRelationshipEndProfile():
     profiling: [],
     externalDocumentationUrl: null,
     tags: [],
+    order: null,
   }
 }
 

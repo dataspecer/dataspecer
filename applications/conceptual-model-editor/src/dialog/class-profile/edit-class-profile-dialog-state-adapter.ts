@@ -19,5 +19,6 @@ export function classProfileDialogStateToNewCmeClassProfile(
       state.usageNoteSource.identifier ?? null,
     externalDocumentationUrl: emptyAsNull(state.externalDocumentationUrl),
     role: state.availableRoles.find(item => item.value === state.role)?.cme ?? null,
+    order: emptyAsNull(state.order),
   }
 }

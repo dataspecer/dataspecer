@@ -12,6 +12,12 @@ export interface SemanticModelClassProfile extends SemanticModelEntity, Profile,
    */
   tags: string[];
 
+  /**
+   * Optional ordering string for custom sorting of profiles.
+   * Uses natural sort order, items without order are placed at the end.
+   */
+  order?: string | null;
+
 }
 
 export const SEMANTIC_MODEL_CLASS_PROFILE = "class-profile";

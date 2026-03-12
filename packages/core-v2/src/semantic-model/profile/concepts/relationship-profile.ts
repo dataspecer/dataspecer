@@ -50,4 +50,10 @@ export interface SemanticModelRelationshipEndProfile extends NamedThingProfile, 
    */
   tags: string[];
 
+  /**
+   * Optional ordering string for custom sorting of profiles.
+   * Uses natural sort order, items without order are placed at the end.
+   */
+  order?: string | null;
+
 }

@@ -134,6 +134,19 @@ export async function generateDocumentation(
   }
 
   const sortedSemanticModel = Object.values(semanticModel).sort((a, b) => {
+    const getOrder = (entity: Entity & {aggregation?: Entity}): string | null => {
+      if (isSemanticModelClassProfile(entity)) return entity.order ?? null;
+      if (isSemanticModelRelationshipProfile(entity)) return entity.ends?.[1]?.order ?? null;
+      return null;
+    };
+    const aOrder = getOrder(a);
+    const bOrder = getOrder(b);
+    // Items with order come before items without order
+    if (aOrder !== null && bOrder !== null) {
+      return aOrder.localeCompare(bOrder, undefined, { numeric: true, sensitivity: "base" });
+    }
+    if (aOrder !== null) return -1;
+    if (bOrder !== null) return 1;
     const aLang = getLabel(a.aggregation, configuration.language);
     const bLang = getLabel(b.aggregation, configuration.language);
     return aLang.localeCompare(bLang);
