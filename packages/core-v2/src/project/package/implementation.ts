@@ -10,6 +10,13 @@ import { BaseResource, Package, ResourceEditable } from "../resource/resource.ts
 import { PackageService, SemanticModelPackageService } from "./package-service.ts";
 
 /**
+ * Check if HTTP status code indicates success.
+ */
+function isHttpSuccess(status: number): boolean {
+    return status >= 200 && status < 300;
+}
+
+/**
  * Implementation of PackageService that communicates with backend and provides semantic models.
  */
 export class BackendPackageService implements PackageService, SemanticModelPackageService {
@@ -82,7 +89,7 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
 
     async getResourceJsonData(id: string, blobId?: string): Promise<object | null> {
         const result = await this.httpFetch(this.getBlobUrl(id, blobId));
-        return (result.status >= 200 && result.status < 300) ? (await result.json() as object) : null;
+        return isHttpSuccess(result.status) ? (await result.json() as object) : null;
     }
 
     async setResourceJsonData(id: string, data: any, blobId?: string) {
@@ -144,7 +151,8 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
 
             const response = await this.httpFetch(this.getResourceUrl(iri));
             const userMetadata = name ? { label: { en: name } } : {};
-            if (response.status !== 200) {
+            let resourceExistsOrCreated = false;
+            if (!isHttpSuccess(response.status)) {
                 const createdResponse = await this.httpFetch(this.getResourceUrl(packageId, true), {
                     method: "POST",
                     headers: {
@@ -157,6 +165,7 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
                     }),
                 });
                 responseStatuses.add(createdResponse.status);
+                resourceExistsOrCreated = isHttpSuccess(createdResponse.status);
             } else {
                 const updatedResponse = await this.httpFetch(this.getResourceUrl(iri), {
                     method: "PUT",
@@ -168,16 +177,20 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
                     }),
                 });
                 responseStatuses.add(updatedResponse.status);
+                resourceExistsOrCreated = isHttpSuccess(updatedResponse.status);
             }
 
-            const updatedResponse = await this.httpFetch(this.getBlobUrl(iri), {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(modelSerialization),
-            });
-            responseStatuses.add(updatedResponse.status);
+            // Only save blob data if the resource exists or was successfully created
+            if (resourceExistsOrCreated) {
+                const updatedResponse = await this.httpFetch(this.getBlobUrl(iri), {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(modelSerialization),
+                });
+                responseStatuses.add(updatedResponse.status);
+            }
         }
 
         // Remove other models
