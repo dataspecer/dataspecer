@@ -16,11 +16,18 @@ import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/a
 import { PrismaMergeStateWithData } from "../../models/merge-state-model.ts";
 import {
   checkErrorBoundaryForCommitAction,
-  commitPackageToGit,
+  CommitBranchAndHashInfo,
+  GitCommit,
+  GitCommitBaseType,
+  GitCommitConstructorParams,
+  GitCommitToCreateInfoBasic,
+  GitCommitToCreateInfoExplicitWithCredentials,
+  GitRepositoryIdentification,
 } from "@dataspecer/git-node";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
+import { createFilesystemFactoryParamsWithStrongerResourceModel } from "../../utils/filesystem-helpers.ts";
 
 /**
  * Commit to the repository for package identifier by given iri inside the query part of express http request.
@@ -107,10 +114,10 @@ const commitHandlerInternal = async (
   if (resource === null) {
     throw new Error(`Can not commit to git since the resource (iri: ${iri}) does not exist`);
   }
-  const gitLink = resource.linkedGitRepositoryURL;
-  const repositoryOwner = extractPartOfRepositoryURL(gitLink, "repository-owner");
-  const repoName = extractPartOfRepositoryURL(gitLink, "repository-name");
-  checkErrorBoundaryForCommitAction(gitLink, repoName, repositoryOwner);
+  const remoteRepositoryUrl = resource.linkedGitRepositoryURL;
+  const repositoryOwner = extractPartOfRepositoryURL(remoteRepositoryUrl, "repository-owner");
+  const repoName = extractPartOfRepositoryURL(remoteRepositoryUrl, "repository-name");
+  checkErrorBoundaryForCommitAction(remoteRepositoryUrl, repoName, repositoryOwner);
 
   const branch = resource.branch === defaultBranchForPackageInDatabase ? null : resource.branch;
   const repositoryIdentificationInfo: GitRepositoryIdentification = {
@@ -174,9 +181,18 @@ const commitHandlerInternal = async (
     exportVersion: exportVersion,
   };
 
-  const commitConflictInfo: CommitConflictInfo = await commitPackageToGitUsingAuthSession(
-    request, iri, gitLink, branchAndLastCommit, repositoryIdentificationInfo,
-    response, gitCommitInfo, shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage);
+  const commitParams: CommitUsingAuthSessionParams = {
+    iri,
+    request,
+    response,
+    branchAndLastCommit,
+    repositoryIdentificationInfo,
+    gitCommitInfoBasic: gitCommitInfo,
+    shouldAlwaysCreateMergeState,
+    shouldAppendAfterDefaultMergeCommitMessage,
+    remoteRepositoryUrl,
+  };
+  const commitConflictInfo: CommitConflictInfo = await commitPackageToGitUsingAuthSession(commitParams);
 
   if (commitConflictInfo !== null) {
     const status = 409;
@@ -189,6 +205,12 @@ const commitHandlerInternal = async (
   return status;
 }
 
+export type CommitUsingAuthSessionParams = {
+  request: express.Request;
+  response: express.Response;
+  gitCommitInfoBasic: GitCommitToCreateInfoBasic;
+  shouldAppendAfterDefaultMergeCommitMessage: boolean | null;
+} & GitCommitBaseType;
 
 /**
  * Gets authorization information from current session (if someting is missing use default bot credentials)
@@ -196,20 +218,26 @@ const commitHandlerInternal = async (
  * @returns null if there were no conflicts, otherwise to root iris of the conflict
  */
 export const commitPackageToGitUsingAuthSession = async (
-  request: express.Request,
-  iri: string,
-  remoteRepositoryURL: string,
-  branchAndLastCommit: CommitBranchAndHashInfo,
-  repositoryIdentificationInfo: GitRepositoryIdentification,
-  response: express.Response,
-  gitCommitInfoBasic: GitCommitToCreateInfoBasic,
-  shouldAlwaysCreateMergeState: boolean,
-  shouldAppendAfterDefaultMergeCommitMessage: boolean | null,
+  commitParams: CommitUsingAuthSessionParams,
 ): Promise<CommitConflictInfo> => {
+  const {
+    branchAndLastCommit, gitCommitInfoBasic, iri, remoteRepositoryUrl, repositoryIdentificationInfo,
+    request, response, shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage,
+   } = commitParams;
   const commitInfo: GitCommitToCreateInfoExplicitWithCredentials = prepareCommitDataForCommit(
-    request, response, remoteRepositoryURL, gitCommitInfoBasic, shouldAppendAfterDefaultMergeCommitMessage);
-  const commitConflictInfo = await commitPackageToGit(
-    iri, remoteRepositoryURL, branchAndLastCommit, repositoryIdentificationInfo, commitInfo, shouldAlwaysCreateMergeState);
+    request, response, remoteRepositoryUrl, gitCommitInfoBasic, shouldAppendAfterDefaultMergeCommitMessage);
+  const commitObjectParams: GitCommitConstructorParams = {
+    iri,
+    branchAndLastCommit,
+    commitInfo,
+    filesystemFactoryParams: createFilesystemFactoryParamsWithStrongerResourceModel(true),
+    mergeStateModel: mergeStateModel,
+    remoteRepositoryUrl,
+    repositoryIdentificationInfo,
+    shouldAlwaysCreateMergeState,
+  }
+  const gitCommitObject = new GitCommit(commitObjectParams);
+  const commitConflictInfo = await gitCommitObject.commitPackageToGit();
   return commitConflictInfo;
 }
 
@@ -220,12 +248,12 @@ export const commitPackageToGitUsingAuthSession = async (
 export function prepareCommitDataForCommit(
   request: express.Request,
   response: express.Response,
-  remoteRepositoryURL: string,
+  remoteRepositoryUrl: string,
   gitCommitInfoBasic: GitCommitToCreateInfoBasic,
   shouldAppendAfterDefaultMergeCommitMessage: boolean | null,
 ): GitCommitToCreateInfoExplicitWithCredentials {
   // If gitProvider not given - extract it from url
-  const gitProvider = gitCommitInfoBasic.gitProvider ?? GitProviderNodeFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL, httpFetch, configuration);
+  const gitProvider = gitCommitInfoBasic.gitProvider ?? GitProviderNodeFactory.createGitProviderFromRepositoryURL(remoteRepositoryUrl, httpFetch, configuration);
   const committer = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
   const commitInfo: GitCommitToCreateInfoExplicitWithCredentials = {
     gitCredentials: committer,

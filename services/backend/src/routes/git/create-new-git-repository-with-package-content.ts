@@ -3,9 +3,9 @@ import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { resourceModel, webhookUrl } from "../../main.ts";
 import { ConfigType, convertToValidGitName, extractPartOfRepositoryURL, findPatAccessToken, findPatAccessTokens, convertStringToExportVersion, PUBLICATION_BRANCH_DEFAULT_NAME, stringToBoolean, transformCommitMessageIfEmpty, getDefaultExportVersion, getDefaultExportFormat, isExportFormatType, convertStringToExportFormat } from "@dataspecer/git";
-import { commitPackageToGitUsingAuthSession } from "./commit-package-to-git.ts";
+import { commitPackageToGitUsingAuthSession, CommitUsingAuthSessionParams } from "./commit-package-to-git.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
-import { checkErrorBoundaryForCommitAction } from "@dataspecer/git-node";
+import { checkErrorBoundaryForCommitAction, CommitBranchAndHashInfo, GitCommitToCreateInfoBasic, GitRepositoryIdentification } from "@dataspecer/git-node";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
@@ -96,10 +96,19 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
         mergeFromData: null,
       };
 
+      const commitParams: CommitUsingAuthSessionParams = {
+        iri: query.iri,
+        request,
+        response,
+        branchAndLastCommit: commitBranchAndHashInfo,
+        repositoryIdentificationInfo,
+        gitCommitInfoBasic: commitInfo,
+        shouldAlwaysCreateMergeState: false,
+        shouldAppendAfterDefaultMergeCommitMessage: null,
+        remoteRepositoryUrl: fullLinkedGitRepositoryURL,
+      };
       // Just provide empty merge from values, since we are newly creating the link we can not perform merge right away anyways
-      const commitConflictInfo = await commitPackageToGitUsingAuthSession(
-        request, query.iri, fullLinkedGitRepositoryURL, commitBranchAndHashInfo,
-        repositoryIdentificationInfo, response, commitInfo, false, null);
+      const commitConflictInfo = await commitPackageToGitUsingAuthSession(commitParams);
 
       if (commitConflictInfo !== null) {
         response.sendStatus(409);
@@ -171,11 +180,20 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
     mergeFromData: null,
   };
 
+  const commitParams: CommitUsingAuthSessionParams = {
+    iri: query.iri,
+    request,
+    response,
+    branchAndLastCommit: commitBranchAndHashInfo,
+    repositoryIdentificationInfo,
+    gitCommitInfoBasic: commitInfo,
+    shouldAlwaysCreateMergeState: false,
+    shouldAppendAfterDefaultMergeCommitMessage: null,
+    remoteRepositoryUrl: query.gitRepositoryURL,
+  };
   // Just provide empty merge from values, since we are newly creating the link we can not perform merge right away anyways
-  await commitPackageToGitUsingAuthSession(
-    request, query.iri, query.gitRepositoryURL, commitBranchAndHashInfo,
-    repositoryIdentificationInfo, response, commitInfo, false, null);
-  });
+  await commitPackageToGitUsingAuthSession(commitParams);
+});
 
 /**
  * TODO RadStr After: Not used

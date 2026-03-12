@@ -1,12 +1,11 @@
 import { AvailableFilesystems, ComparisonFullResult, DatastoreInfo, DirectoryNode, dsPathJoin, FilesystemAbstraction, FilesystemNode, getMergeFromMergeToForGitAndDS, getMergeFromMergeToMappingForGitAndDS, GitIgnore, GitIgnoreBase, GitProvider, isDatastoreForMetadata, MergeEndInfoWithRootNode, MergeStateCause } from "@dataspecer/git";
 import { compareGitAndDSFilesystems } from "../filesystem-abstractions/backend-filesystem-comparison.ts";
-import { ResourceModelForPull } from "../resource-model-api/export/export-api/export.ts";
 import { AllowedPrefixes, createSimpleGitUsingPredefinedGitRoot } from "../git-store-info.ts";
 import { SimpleGit } from "simple-git";
 import { getLastCommitHash, removePathRecursively } from "../git-utils-node.ts";
 import { getCommonCommitInHistory, gitCloneBasic } from "../simple-git-methods/simple-git-utils.ts";
 import fs from "fs";
-import { DataspecerFilesystemConstructorParams } from "../filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
+import { DataspecerFilesystemConstructorParamsWithStrongerResourceModel } from "../filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 
 export type GitPullFields = {
   iri: string;
@@ -15,12 +14,11 @@ export type GitPullFields = {
   cloneURL: string;
   cloneDirectoryNamePrefix: AllowedPrefixes;
   dsLastCommitHash: string;
-  resourceModelForDS: ResourceModelForPull;       // Also present in the filesystemConstructorParams, but there it is more restricted type. so possible TODO:
   alwaysCreateMergeState: boolean;
   updateBlob: UpdateBlobMethod;
   updateResourceMetadata: UpdateResourceMetadataMethod;
   mergeStateModel: MergeStateCreator;
-  filesystemConstructorParams: DataspecerFilesystemConstructorParams;
+  filesystemConstructorParams: DataspecerFilesystemConstructorParamsWithStrongerResourceModel;
 }
 
 type GitChangesToDSPackageStoreResult = {
@@ -53,7 +51,7 @@ export class GitPullBase {
    * @returns Return true if merge state was created
    */
   updateDSRepositoryByGitPull = async (depth?: number): Promise<boolean> => {
-    const { iri, gitProvider, branch, cloneURL, cloneDirectoryNamePrefix, dsLastCommitHash, resourceModelForDS } = this.fields;
+    const { iri, gitProvider, branch, cloneURL, cloneDirectoryNamePrefix, dsLastCommitHash, filesystemConstructorParams } = this.fields;
     const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGitUsingPredefinedGitRoot(iri, cloneDirectoryNamePrefix, true);
     let storeResult: GitChangesToDSPackageStoreResult | null = null;
     try {
@@ -76,7 +74,7 @@ export class GitPullBase {
       }
       // It is important to not only remove the actual files, but also the .git directory,
       // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
-      await resourceModelForDS.setHasUncommittedChanges(iri, false);
+      await filesystemConstructorParams.resourceModel.setHasUncommittedChanges(iri, false);
       removePathRecursively(gitDirectoryToRemoveAfterWork);
     }
 
@@ -109,7 +107,7 @@ export class GitPullBase {
     commonCommitHash: string,
     mergeStateCause: Omit<MergeStateCause, "merge">,
   ): Promise<GitChangesToDSPackageStoreResult> {
-    const { iri, resourceModelForDS, dsLastCommitHash, alwaysCreateMergeState, branch, mergeStateModel, filesystemConstructorParams } = this.fields;
+    const { iri, dsLastCommitHash, alwaysCreateMergeState, branch, mergeStateModel, filesystemConstructorParams } = this.fields;
 
     // Merge from is DS
     // TODO RadStr: Why am I doing the comparison twice? I think that there was a reason for that, but maybe we just wanted the fakeRoot data, etc.
@@ -147,7 +145,7 @@ export class GitPullBase {
           // TODO RadStr: Rename ... and update based on the conflicts resolution, like we do not want to update when there is conflict
           await git.checkout(gitLastCommitHash);
           await this.saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(gitRootDirectory, gitInitialDirectoryParent, filesystemMergeTo);
-          await resourceModelForDS.updateLastCommitHash(iri, gitLastCommitHash, "pull");
+          await filesystemConstructorParams.resourceModel.updateLastCommitHash(iri, gitLastCommitHash, "pull");
 
           return {
             createdMergeState: false,
