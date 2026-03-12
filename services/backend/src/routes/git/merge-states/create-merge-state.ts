@@ -5,7 +5,7 @@ import express from "express";
 import { AvailableFilesystems, DatastoreComparison, createConflictsFromDiffTrees, MergeState, MergeStateCause, MergeEndInfoWithRootNode } from "@dataspecer/git";
 import { getCommonCommitInHistory, gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { SimpleGit } from "simple-git";
-import { compareBackendFilesystems, createSimpleGitUsingPredefinedGitRoot, DataspecerFilesystemConstructorParams, MERGE_CONFLICTS_PRIVATE, MergeEndpointForComparison, MergeEndpointForStateUpdate, removePathRecursively } from "@dataspecer/git-node";
+import { compareBackendFilesystems, createSimpleGitUsingPredefinedGitRoot, DsFsConstructorParams, MERGE_CONFLICTS_PRIVATE, MergeEndpointForComparison, MergeEndpointForStateUpdate, removePathRecursively } from "@dataspecer/git-node";
 import { createFilesystemFactoryParams } from "../../../utils/filesystem-helpers.ts";
 
 
@@ -82,7 +82,7 @@ type CreateMergeStateBetweenDSPackagesType = {
   isBranch: boolean;
   branch: string;
   lastCommitHash: string;
-  factoryMethodParameters: DataspecerFilesystemConstructorParams;
+  factoryMethodParameters: DsFsConstructorParams;
 };
 
 /**

@@ -4,7 +4,7 @@ import { CreateSimpleGitResult, getCommonCommitInHistory, gitCloneBasic, UniqueD
 import { createGitReadMeFile } from "../git-readme/git-readme-generator.ts";
 import { AvailableFilesystems, CommitConflictInfo, createRootFilesystemNodeLocation, ExportFormatType, ExportVersionType, getAuthorizationURL, getMergeFromMergeToForGitAndDS, GitCredentials, GitIgnoreBase, GitProviderNode, MergeEndInfoWithRootNode, MergeFromDataType } from "@dataspecer/git";
 import { AvailableExports } from "../resource-model-api/export/export-api/export-actions.ts";
-import { DataspecerFilesystemConstructorParams, DataspecerFilesystemConstructorParamsWithStrongerResourceModel, FilesystemAbstractionFactoryMethodParams } from "../filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
+import { DsFsConstructorParams, DsFsConstructorParamsWithStrongerResourceModel, FilesystemFactoryMethodParams } from "../filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 import { PackageExporterFactory } from "../resource-model-api/export/implementation/export-by-resource-type.ts";
 import fs from "fs";
 import { compareBackendFilesystems, compareGitAndDSFilesystems, MergeEndpointForComparison } from "../filesystem-abstractions/backend-filesystem-comparison.ts";
@@ -29,6 +29,9 @@ export type GitCommitToCreateInfoExplicitWithCredentials = {
   shouldAppendAfterDefaultMergeCommitMessage: boolean | null;
 }
 
+/**
+ * @param commitMessage if null then default message is used.
+ */
 export type GitCommitToCreateInfoBasic = {
   commitMessage: string | null;
   gitProvider?: GitProviderNode;
@@ -37,6 +40,12 @@ export type GitCommitToCreateInfoBasic = {
 }
 
 
+/**
+ * @param localLastCommitHash if empty string then there is no check for conflicts -
+ *  it is expected to be the first commit on repository
+ *  (however it also works the if we just want to set new last commit and
+ *   do not want to cause any conflicts, we just commit current content and push it)
+ */
 export type CommitBranchAndHashInfo = {
   localBranch: string | null;
   localLastCommitHash: string;
@@ -78,7 +87,7 @@ export type GitCommitBaseType = {
 
 export type GitCommitConstructorParams = {
   commitInfo: GitCommitToCreateInfoExplicitWithCredentials;
-  filesystemFactoryParams: DataspecerFilesystemConstructorParamsWithStrongerResourceModel;
+  filesystemFactoryParams: DsFsConstructorParamsWithStrongerResourceModel;
   mergeStateModel: MergeStateCreator;
 } & GitCommitBaseType;
 
@@ -93,7 +102,19 @@ function convertBranchAndHashToMergeInfo(input: CommitBranchAndHashInfo): Commit
   };
 }
 
+/**
+ * This class has methods which are used when committing to the remote repository.
+ * The entry point method for committing is {@link commitPackageToGit}.
+ * The commit action from {@link commitPackageToGit} will commit to repository for package identified by given {@link iri}.
+ */
 export class GitCommit {
+  /**
+   * The commit action from {@link commitPackageToGit} will commit to repository for package identified by given {@link iri}.
+   * @param localLastCommitHash if empty string then there is no check for conflicts -
+   *  it is expected to be the first commit on repository
+   *  (however it also works the if we just want to set new last commit and
+   *   do not want to cause any conflicts, we just commit current content and push it)
+   */
   public constructor(params: GitCommitConstructorParams) {
     this.params = params;
   }
@@ -104,15 +125,11 @@ export class GitCommit {
   // Methods
 
   /**
-   * Commit to the repository for package identifier by given {@link iri}. This method decides based on the data if the it is the classic commit or merge commit.
-   * @param commitMessage if null then default message is used.
-   * @param localLastCommitHash if empty string then there is no check for conflicts -
-   *  it is expected to be the first commit on repository
-   *  (however it also works the if we just want to set new last commit and
-   *   do not want to cause any conflicts, we just commit current content and push it)
-   * @returns true on successful commit. False when merge state was created (that is there were conflicts).
+   * Performs commit based on the data passed in constructor.
+   * This method decides based on the data if the it is the classic commit or merge commit.
+   * @returns Null on successful commit. Otherwise returns the paths to root which are in the merge state.
    */
-  public async commitPackageToGit(): Promise<CommitConflictInfo> {
+  public async commitPackageToGit(): Promise<CommitConflictInfo | null> {
     // Note that the logic for both is similiar create git, clone, check if should create merge state conflict, perform export and "force" push.
     if (this.params.branchAndLastCommit.mergeFromData === null) {
       return await this.commitClassicToGit();
@@ -399,7 +416,7 @@ export class GitCommit {
     hashOfCommitToUse: string | null,
     shouldContainWorkflowFiles: boolean,
     isBranchAlreadyTrackedOnRemote: boolean,
-    dataspecerFilesystemFactoryParams: DataspecerFilesystemConstructorParamsWithStrongerResourceModel,
+    dataspecerFilesystemFactoryParams: DsFsConstructorParamsWithStrongerResourceModel,
   ): Promise<PushToGitResult> {
     // Will be used in the result
     const shouldSkipCommitting = hashOfCommitToUse !== null;
@@ -579,7 +596,7 @@ export class GitCommit {
     hasSetLastCommit: boolean,
     shouldContainWorkflowFiles: boolean,
     isBranchAlreadyTrackedOnRemote: boolean,
-    dataspecerFilesystemFactoryParams: DataspecerFilesystemConstructorParams,
+    dataspecerFilesystemFactoryParams: DsFsConstructorParams,
   ): Promise<void> {
     const { gitDirectoryToRemoveAfterWork, gitInitialDirectory, gitInitialDirectoryParent } = gitPaths;
 
@@ -593,7 +610,7 @@ export class GitCommit {
       }
       removeEverythingExcept(gitInitialDirectory, exceptionsForDirectoryRemoval);
       const exporter = PackageExporterFactory.createPackageExporter(exportVersion);
-      const filesystemFactoryParams: FilesystemAbstractionFactoryMethodParams = {
+      const filesystemFactoryParams: FilesystemFactoryMethodParams = {
         roots: [createRootFilesystemNodeLocation(iri, "")],
         gitIgnore: null,
         ...dataspecerFilesystemFactoryParams,

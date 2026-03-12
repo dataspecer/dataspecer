@@ -40,7 +40,6 @@ export const pullRemoteRepository = asyncHandler(async (request: express.Request
     cloneURL: resource.linkedGitRepositoryURL,
     cloneDirectoryNamePrefix: MANUAL_CLONE_PATH_PREFIX,
     dsLastCommitHash: resource.lastCommitHash,
-    resourceModelForDS: resourceModel,
     alwaysCreateMergeState: false,
     mergeStateModel: mergeStateModel,
     updateBlob: updateBlob,

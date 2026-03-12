@@ -1,12 +1,12 @@
 import { FilesystemNodeLocation, FilesystemAbstraction, AvailableFilesystems, GitIgnore } from "@dataspecer/git";
 import { DSFilesystem } from "./implementations/ds-filesystem.ts";
-import { ResourceModelForFilesystemRepresentation } from "../resource-model-api/export/export-api/export.ts";
+import { ResourceModelForFilesystemRepresentation, ResourceModelForPull } from "../resource-model-api/export/export-api/export.ts";
 import { ClassicFilesystem } from "./implementations/classic-filesystem.ts";
 
 export class FilesystemFactory {
   public static async createFileSystem(
     filesystem: AvailableFilesystems,
-    factoryMethodParameters: FilesystemAbstractionFactoryMethodParams,
+    factoryMethodParameters: FilesystemFactoryMethodParams,
   ): Promise<FilesystemAbstraction> {
     switch(filesystem) {
       case AvailableFilesystems.DS_Filesystem:
@@ -20,18 +20,28 @@ export class FilesystemFactory {
 }
 
 
-export type FilesystemAbstractionFactoryMethodParams = {
+export type FilesystemFactoryMethodParams = {
   roots: FilesystemNodeLocation[];
   gitIgnore: GitIgnore | null;
-} & DataspecerFilesystemConstructorParams;
+} & DsFsConstructorParams;
 
-export type DataspecerFilesystemConstructorParams = {
-  resourceModel: ResourceModelForFilesystemRepresentation | null;
+type DataspecerFilesystemConstructorBaseType = {
   exportedBy: string | null;
   databaseMigrationVersion: number | null;
   deleteBlob: ((iri: string, datastoreType: string) => Promise<void>) | null;
   deleteResource: ((iri: string) => Promise<void>) | null;
-};
+}
+
+export type DsFsConstructorParams = {
+  resourceModel: ResourceModelForFilesystemRepresentation | null;
+} & DataspecerFilesystemConstructorBaseType;
+
+/**
+ * @todo The naming really is not the best ...
+ */
+export type DsFsConstructorParamsWithStrongerResourceModel = {
+  resourceModel: ResourceModelForPull | null;
+} & DataspecerFilesystemConstructorBaseType;
 
 
 /**
@@ -41,4 +51,4 @@ export type DataspecerFilesystemConstructorParams = {
  * @param resourceModel the resource model to use. It is used only by the DS filesystem, the Git one ignores it (that is null can be provided).
  * @returns The created instance of type {@link FilesystemAbstraction}.
  */
-export type FileSystemAbstractionFactoryMethod = (parameters: FilesystemAbstractionFactoryMethodParams) => Promise<FilesystemAbstraction>;
+export type FileSystemAbstractionFactoryMethod = (parameters: FilesystemFactoryMethodParams) => Promise<FilesystemAbstraction>;

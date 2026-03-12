@@ -2,7 +2,7 @@ import { z } from "zod";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { AvailableFilesystems, createRootFilesystemNodeLocation, FilesystemNodeLocation } from "@dataspecer/git";
-import { FilesystemAbstractionFactoryMethodParams, FilesystemFactory } from "@dataspecer/git-node";
+import { FilesystemFactoryMethodParams, FilesystemFactory } from "@dataspecer/git-node";
 import { createFilesystemFactoryParams } from "../../utils/filesystem-helpers.ts";
 
 /**
@@ -20,7 +20,7 @@ export const getGitTree = asyncHandler(async (request: express.Request, response
   const fullPathToGitRepository = findPathToGitRepository(query.iri);
   const rootLocation: FilesystemNodeLocation = createRootFilesystemNodeLocation(query.iri, fullPathToGitRepository);
 
-  const factoryParams: FilesystemAbstractionFactoryMethodParams = {
+  const factoryParams: FilesystemFactoryMethodParams = {
     roots: [rootLocation],
     gitIgnore: null,
     ...createFilesystemFactoryParams(false),

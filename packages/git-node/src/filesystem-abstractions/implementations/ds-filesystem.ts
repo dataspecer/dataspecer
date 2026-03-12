@@ -6,7 +6,7 @@ import {
   removeDatastoreFromNode, isDatastoreForMetadata, getDatastoreInfoOfGivenDatastoreType, AvailableFilesystems, convertDatastoreContentBasedOnFormat,
   ExportMetadataType
 } from "@dataspecer/git";
-import { FileSystemAbstractionFactoryMethod, DataspecerFilesystemConstructorParams, FilesystemAbstractionFactoryMethodParams } from "../backend-filesystem-abstraction-factory.ts";
+import { FileSystemAbstractionFactoryMethod, DsFsConstructorParams, FilesystemFactoryMethodParams } from "../backend-filesystem-abstraction-factory.ts";
 import crypto from 'node:crypto';
 import { ResourceModelForFilesystemRepresentation } from "../../resource-model-api/export/export-api/export.ts";
 import { ResourceChangeType } from "../../resource-model-api/resource-change-observer.ts";
@@ -32,7 +32,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
   // Factory method
   /////////////////////////////////////
   public static createFilesystemAbstraction: FileSystemAbstractionFactoryMethod = async (
-    p: FilesystemAbstractionFactoryMethodParams,
+    p: FilesystemFactoryMethodParams,
   ): Promise<DSFilesystem> => {
     if (p.resourceModel === null) {
       // Alternatively we could allow the field in the class to be null and crash when performing the operation.
@@ -61,7 +61,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
   /////////////////////////////////////
   // Constructor
   /////////////////////////////////////
-  private constructor(p: DataspecerFilesystemConstructorParams) {
+  private constructor(p: DsFsConstructorParams) {
     super();
     this.resourceModel = p.resourceModel;
     this.exportedBy = p.exportedBy;

@@ -2,8 +2,7 @@ import { z } from "zod";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { AvailableFilesystems, createRootFilesystemNodeLocation, FilesystemNodeLocation } from "@dataspecer/git";
-import { resourceModel } from "../../main.ts";
-import { FilesystemAbstractionFactoryMethodParams, FilesystemFactory } from "@dataspecer/git-node";
+import { FilesystemFactoryMethodParams, FilesystemFactory } from "@dataspecer/git-node";
 import { createFilesystemFactoryParams } from "../../utils/filesystem-helpers.ts";
 
 
@@ -17,7 +16,7 @@ export const getDataspecerTree = asyncHandler(async (request: express.Request, r
   const query = querySchema.parse(request.query);
 
   const rootLocation: FilesystemNodeLocation = createRootFilesystemNodeLocation(query.iri, "");
-  const factoryParams: FilesystemAbstractionFactoryMethodParams = {
+  const factoryParams: FilesystemFactoryMethodParams = {
     roots: [rootLocation],
     gitIgnore: null,
     ...createFilesystemFactoryParams(true),

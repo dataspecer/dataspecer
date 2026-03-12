@@ -1,6 +1,6 @@
 import { AvailableFilesystems } from "@dataspecer/git";
 import { AllowedExportResults, AvailableExports } from "./export-actions.ts";
-import { FilesystemAbstractionFactoryMethodParams } from "../../../filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
+import { FilesystemFactoryMethodParams } from "../../../filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 
 /**
  * Use the {@link PackageExporterBase} as base class for implementation of new exporters.
@@ -12,7 +12,7 @@ export interface PackageExporterInterface {
    * @param gitIgnore can be null for DS-filesystem
    */
   doExportFromIRI(
-    filesystemFactoryParams: FilesystemAbstractionFactoryMethodParams,
+    filesystemFactoryParams: FilesystemFactoryMethodParams,
     pathToExportStartDirectory: string,
     importFilesystem: AvailableFilesystems,
     exportType: AvailableExports,

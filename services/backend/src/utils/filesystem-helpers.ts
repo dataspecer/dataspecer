@@ -1,10 +1,12 @@
-import { DataspecerFilesystemConstructorParams, ResourceModelForFilesystemRepresentation } from "@dataspecer/git-node";
+import { DsFsConstructorParams, DsFsConstructorParamsWithStrongerResourceModel, ResourceModelForFilesystemRepresentation } from "@dataspecer/git-node";
 import { currentVersion } from "../tools/migrations/index.ts";
 import { deleteBlob, deleteResource } from "../routes/resource.ts";
 import configuration from "../configuration.ts";
 import { resourceModel } from "../main.ts";
 
-export function createFilesystemFactoryParams(isDataspecerFilesystem: boolean): DataspecerFilesystemConstructorParams {
+
+
+export function createFilesystemFactoryParams(isDataspecerFilesystem: boolean): DsFsConstructorParamsWithStrongerResourceModel {
   if (!isDataspecerFilesystem) {
     return {
       databaseMigrationVersion: null,
@@ -24,29 +26,7 @@ export function createFilesystemFactoryParams(isDataspecerFilesystem: boolean): 
   };
 }
 
-/**
- * TODO RadStr: Move elsewhere
- */
-export function createFilesystemFactoryParamsObject(
-  databaseMigrationVersion: number,
-  deleteBlob: (iri: string, datastoreType: string) => Promise<void>,
-  deleteResource: (iri: string) => Promise<void>,
-  exportedBy: string,
-  resourceModel: ResourceModelForFilesystemRepresentation,
-): DataspecerFilesystemConstructorParams {
-  return {
-    databaseMigrationVersion,
-    deleteBlob,
-    deleteResource,
-    exportedBy,
-    resourceModel,
-  };
-}
-
-/**
- * TODO RadStr: ... just for now until I move the pull stuff elsewhere
- */
-export function createFilesystemFactoryParamsObjectForResourceModel(providedResourceModel: ResourceModelForFilesystemRepresentation): DataspecerFilesystemConstructorParams {
+export function createFilesystemFactoryParamsObject(providedResourceModel: ResourceModelForFilesystemRepresentation): DsFsConstructorParams {
   return {
     resourceModel: providedResourceModel,
     deleteBlob: deleteBlob,

@@ -11,7 +11,7 @@ import {
   GitProvider,
   MergeStateCause
 } from "@dataspecer/git";
-import { DataspecerFilesystemConstructorParams, FilesystemAbstractionFactoryMethodParams, FilesystemFactory } from "./backend-filesystem-abstraction-factory.ts";
+import { DsFsConstructorParams, FilesystemFactoryMethodParams, FilesystemFactory } from "./backend-filesystem-abstraction-factory.ts";
 import { SimpleGit } from "simple-git";
 
 
@@ -24,7 +24,7 @@ type MergeEndpointBase = {
   rootIri: string;
   filesystemType: AvailableFilesystems;
   fullPathToRootParent: string;
-  filesystemFactoryParams: DataspecerFilesystemConstructorParams;
+  filesystemFactoryParams: DsFsConstructorParams;
 }
 
 export type MergeEndpointForComparison = {
@@ -46,12 +46,12 @@ export async function compareGitAndDSFilesystems(
   rootIri: string,
   gitInitialDirectoryParent: string,
   mergeStateCause: Omit<MergeStateCause, "merge">,
-  dataspecerFilesystemFactoryMethodParams: DataspecerFilesystemConstructorParams,
+  dataspecerFilesystemFactoryMethodParams: DsFsConstructorParams,
 ) {
   let mergeFromFilesystemType: AvailableFilesystems;
   let mergeToFilesystemType: AvailableFilesystems;
-  let mergeFromFactoryMethodParams: DataspecerFilesystemConstructorParams;
-  let mergeToFactoryMethodParams: DataspecerFilesystemConstructorParams;
+  let mergeFromFactoryMethodParams: DsFsConstructorParams;
+  let mergeToFactoryMethodParams: DsFsConstructorParams;
 
   const editable = convertMergeStateCauseToEditable(mergeStateCause as MergeStateCause);
   if (editable == "mergeFrom") {
@@ -106,12 +106,12 @@ export async function compareBackendFilesystems(
   mergeTo: MergeEndpointForComparison | MergeEndpointForStateUpdate,
   mergeStateCause: MergeStateCause,
 ) {
-  const mergeFromFactoryParams: FilesystemAbstractionFactoryMethodParams = {
+  const mergeFromFactoryParams: FilesystemFactoryMethodParams = {
     ...mergeFrom.filesystemFactoryParams,
     gitIgnore: getGitIgnoreFromMergeEndpoint(mergeFrom),
     roots: [createRootFilesystemNodeLocation(mergeFrom.rootIri, mergeFrom.fullPathToRootParent)],
   };
-  const mergeToFactoryParams: FilesystemAbstractionFactoryMethodParams = {
+  const mergeToFactoryParams: FilesystemFactoryMethodParams = {
     ...mergeTo.filesystemFactoryParams,
     gitIgnore: getGitIgnoreFromMergeEndpoint(mergeTo),
     roots: [createRootFilesystemNodeLocation(mergeTo.rootIri, mergeTo.fullPathToRootParent)],

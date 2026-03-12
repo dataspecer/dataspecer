@@ -27,7 +27,7 @@ import {
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
-import { createFilesystemFactoryParamsWithStrongerResourceModel } from "../../utils/filesystem-helpers.ts";
+import { createFilesystemFactoryParams } from "../../utils/filesystem-helpers.ts";
 
 /**
  * Commit to the repository for package identifier by given iri inside the query part of express http request.
@@ -230,12 +230,12 @@ export const commitPackageToGitUsingAuthSession = async (
     iri,
     branchAndLastCommit,
     commitInfo,
-    filesystemFactoryParams: createFilesystemFactoryParamsWithStrongerResourceModel(true),
+    filesystemFactoryParams: createFilesystemFactoryParams(true),
     mergeStateModel: mergeStateModel,
     remoteRepositoryUrl,
     repositoryIdentificationInfo,
     shouldAlwaysCreateMergeState,
-  }
+  };
   const gitCommitObject = new GitCommit(commitObjectParams);
   const commitConflictInfo = await gitCommitObject.commitPackageToGit();
   return commitConflictInfo;
@@ -244,6 +244,7 @@ export const commitPackageToGitUsingAuthSession = async (
 /**
  * @returns The data which will be used for the commit. Check the return type for more information.
  *  Note that Git credentials are described in the {@link GitCredentials} type.
+ * @param commitMessage if null then default message is used.
  */
 export function prepareCommitDataForCommit(
   request: express.Request,

@@ -9,7 +9,7 @@ import { bunHotfixHttpFileName } from "./generate.ts";
 import { PackageExporterDeprecated } from "../export-import/deprecated-import-export-for-regression-testing/deprecated-export-for-regression-testing.ts";
 import JSZip from "jszip";
 import { PrismaClientStorageApiForIriReplacement, StorageApiForIriReplacement } from "../utils/iri-replace-util.ts";
-import { AvailableExports, FilesystemAbstractionFactoryMethodParams, PackageExporterByResourceType } from "@dataspecer/git-node";
+import { AvailableExports, FilesystemFactoryMethodParams, PackageExporterByResourceType } from "@dataspecer/git-node";
 import { createFilesystemFactoryParams } from "../utils/filesystem-helpers.ts";
 
 function getName(name: LanguageString | undefined, defaultName: string) {
@@ -33,7 +33,7 @@ export const exportPackageResource = asyncHandler(async (request: express.Reques
   // const buffer = await exporter.doExport(query.iri);
   // const exporter = new PackageExporterNew();
   const exporter = new PackageExporterByResourceType();
-  const filesystemFactoryParams: FilesystemAbstractionFactoryMethodParams = {
+  const filesystemFactoryParams: FilesystemFactoryMethodParams = {
     roots: [createRootFilesystemNodeLocation(query.iri, "")],
     gitIgnore: null,
     ...createFilesystemFactoryParams(true),

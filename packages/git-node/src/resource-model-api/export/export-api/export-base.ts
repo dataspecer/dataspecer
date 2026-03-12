@@ -1,7 +1,7 @@
 import { DirectoryNode, FilesystemAbstraction, AvailableFilesystems } from "@dataspecer/git";
 import { AllowedExportResults, AvailableExports, ExportActionForFilesystem, ExportActionForZip, ExportActions } from "./export-actions.ts";
 import { ZipStreamDictionary } from "../../utils/zip-stream-dictionary.ts";
-import { FilesystemAbstractionFactoryMethodParams, FilesystemFactory } from "../../../filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
+import { FilesystemFactoryMethodParams, FilesystemFactory } from "../../../filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 import { PackageExporterInterface } from "./package-export.ts";
 
 
@@ -32,7 +32,7 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
 
   // Note that this is the only public export method
   public async doExportFromIRI(
-    filesystemFactoryParams: FilesystemAbstractionFactoryMethodParams,
+    filesystemFactoryParams: FilesystemFactoryMethodParams,
     pathToExportStartDirectory: string,
     importFilesystem: AvailableFilesystems,
     exportType: AvailableExports,

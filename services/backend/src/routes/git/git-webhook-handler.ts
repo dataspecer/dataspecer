@@ -77,7 +77,6 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
     cloneURL,
     cloneDirectoryNamePrefix: WEBHOOK_PATH_PREFIX,
     dsLastCommitHash: resource.lastCommitHash,
-    resourceModelForDS: resourceModel,
     alwaysCreateMergeState: true,
     mergeStateModel: mergeStateModel,
     updateBlob: updateBlob,

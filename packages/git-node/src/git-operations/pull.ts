@@ -5,7 +5,7 @@ import { SimpleGit } from "simple-git";
 import { getLastCommitHash, removePathRecursively } from "../git-utils-node.ts";
 import { getCommonCommitInHistory, gitCloneBasic } from "../simple-git-methods/simple-git-utils.ts";
 import fs from "fs";
-import { DataspecerFilesystemConstructorParamsWithStrongerResourceModel } from "../filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
+import { DsFsConstructorParamsWithStrongerResourceModel } from "../filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 
 export type GitPullFields = {
   iri: string;
@@ -18,7 +18,7 @@ export type GitPullFields = {
   updateBlob: UpdateBlobMethod;
   updateResourceMetadata: UpdateResourceMetadataMethod;
   mergeStateModel: MergeStateCreator;
-  filesystemConstructorParams: DataspecerFilesystemConstructorParamsWithStrongerResourceModel;
+  filesystemConstructorParams: DsFsConstructorParamsWithStrongerResourceModel;
 }
 
 type GitChangesToDSPackageStoreResult = {

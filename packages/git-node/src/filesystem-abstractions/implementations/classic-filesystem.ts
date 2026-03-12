@@ -6,7 +6,7 @@ import {
  } from "@dataspecer/git";
 
 import fs from "fs";
-import { FileSystemAbstractionFactoryMethod, FilesystemAbstractionFactoryMethodParams } from "../backend-filesystem-abstraction-factory.ts";
+import { FileSystemAbstractionFactoryMethod, FilesystemFactoryMethodParams } from "../backend-filesystem-abstraction-factory.ts";
 import { isArtificialExportDirectory } from "../../resource-model-api/export/export-api/export.ts";
 
 
@@ -21,7 +21,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
   // Factory method
   /////////////////////////////////////
   public static createFilesystemAbstraction: FileSystemAbstractionFactoryMethod = async (
-    params: FilesystemAbstractionFactoryMethodParams,
+    params: FilesystemFactoryMethodParams,
   ): Promise<ClassicFilesystem> => {
     if (params.gitIgnore === null) {
       throw new Error("The filesystem abstractions needs to have git provider.");
