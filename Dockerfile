@@ -57,7 +57,7 @@ COPY --chmod=777 ./docker/ws/docker-entrypoint.sh ./docker/ws/docker-healthcheck
 RUN mv /usr/src/app /usr/src/build && mv /usr/src/final /usr/src/app
 
 RUN mkdir -p /usr/src/app/database
-RUN bunx prisma@6 migrate deploy --schema /usr/src/app/dist/schema.prisma
+RUN bunx prisma@4 migrate deploy --schema /usr/src/app/dist/schema.prisma
 
 # Final image for production
 FROM base AS final
@@ -69,7 +69,7 @@ RUN apk add --no-cache openssl && \
   rm -rf /var/lib/apt/lists/* && \
   rm -rf /var/cache/apk/* && \
   chmod a+rwx /usr/src/app && \
-  bun install --no-cache prisma@6 && \
+  bun install --no-cache prisma@4 && \
   rm -rf ~/.bun ~/.cache
 
 # Redeclare build args and expose them as runtime env so entrypoint can print metadata (prefixed to avoid collisions)
