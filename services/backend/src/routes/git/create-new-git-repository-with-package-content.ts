@@ -3,7 +3,7 @@ import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { resourceModel, webhookUrl } from "../../main.ts";
 import { ConfigType, convertToValidGitName, extractPartOfRepositoryURL, findPatAccessToken, findPatAccessTokens, convertStringToExportVersion, PUBLICATION_BRANCH_DEFAULT_NAME, stringToBoolean, transformCommitMessageIfEmpty, getDefaultExportVersion, getDefaultExportFormat, isExportFormatType, convertStringToExportFormat } from "@dataspecer/git";
-import { CommitBranchAndHashInfo, commitPackageToGitUsingAuthSession, GitCommitToCreateInfoBasic, RepositoryIdentification } from "./commit-package-to-git.ts";
+import { commitPackageToGitUsingAuthSession } from "./commit-package-to-git.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import { checkErrorBoundaryForCommitAction } from "@dataspecer/git-node";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
@@ -78,7 +78,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
       await resourceModel.updateResourceProjectIriAndBranch(query.iri, undefined, defaultBranch ?? undefined);
       await resourceModel.updateResourceGitLink(query.iri, fullLinkedGitRepositoryURL, true);
 
-      const repositoryIdentificationInfo: RepositoryIdentification = {
+      const repositoryIdentificationInfo: GitRepositoryIdentification = {
         repositoryOwner,
         repositoryName,
       };
@@ -153,7 +153,7 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
   }
   await gitProvider.createWebhook(accessToken.value, repositoryOwner!, repositoryName!, webhookUrl, ["push"]);
 
-  const repositoryIdentificationInfo: RepositoryIdentification = {
+  const repositoryIdentificationInfo: GitRepositoryIdentification = {
     repositoryOwner: repositoryOwner!,
     repositoryName: repositoryName!,
   };
