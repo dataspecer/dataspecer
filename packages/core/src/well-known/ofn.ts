@@ -56,3 +56,29 @@ export const OFN_LABELS = {
     "en": "Language tagged string"
   }
 };
+
+/**
+ * Labels for language-specific property descriptions in JSON schema
+ */
+export const LANGUAGE_PROPERTY_LABELS = {
+  czechLanguage: {
+    cs: "Hodnota v českém jazyce",
+    en: "Value in Czech language",
+  },
+  englishLanguage: {
+    cs: "Hodnota v anglickém jazyce",
+    en: "Value in English language",
+  },
+  anotherLanguage: {
+    cs: "Hodnota v jiném jazyce",
+    en: "Value in another language",
+  },
+  textInGivenLanguage: {
+    cs: "Text v daném jazyce",
+    en: "Text in given language",
+  },
+  textLanguage: {
+    cs: "Jazyk textu",
+    en: "Language of text",
+  },
+};
