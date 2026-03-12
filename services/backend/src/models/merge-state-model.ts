@@ -10,7 +10,7 @@ import { getCommonCommitInHistory } from "@dataspecer/git-node/simple-git-method
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
-import { createFilesystemFactoryParams, createFilesystemFactoryParamsObjectForResourceModel } from "../utils/filesystem-helpers.ts";
+import { createFilesystemFactoryParams, createFilesystemFactoryParamsObject } from "../utils/filesystem-helpers.ts";
 
 
 type Nullable<T> = {
@@ -895,7 +895,7 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
         isBranch: prismaMergeState.isMergeFromBranch,
         branch: prismaMergeState.branchMergeFrom,
         filesystemFactoryParams: gitForMergeFrom === null ?       // If Git === null then it is DS filesystem
-          createFilesystemFactoryParamsObjectForResourceModel(this.resourceModel) :
+          createFilesystemFactoryParamsObject(this.resourceModel) :
           createFilesystemFactoryParams(false),
       };
 
@@ -913,7 +913,7 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
         isBranch: prismaMergeState.isMergeToBranch,
         branch: prismaMergeState.branchMergeTo,
         filesystemFactoryParams: createFilesystemFactoryParams(gitForMergeTo === null) ?      // If Git === null then it is DS filesystem
-          createFilesystemFactoryParamsObjectForResourceModel(this.resourceModel) :
+          createFilesystemFactoryParamsObject(this.resourceModel) :
           createFilesystemFactoryParams(false),
       };
 
