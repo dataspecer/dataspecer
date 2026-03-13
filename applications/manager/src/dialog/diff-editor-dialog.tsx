@@ -1,4 +1,4 @@
-import { Modal, ModalBody, ModalContent, ModalHeader } from "@/components/modal";
+import { Modal, ModalBody, ModalContent, ModalHeader, ModalTitle } from "@/components/modal";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -112,10 +112,11 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
             <ResizablePanelGroup direction="horizontal" className="overflow-hidden">
               <ResizablePanel defaultSize={20} className="flex! flex-col pr-16">
                 <ModalHeader className="mb-2">
-                  <h1 className="flex flex-1 flex-row font-bold bg-gray-200 text-lg">
+                  <ModalTitle className="flex flex-1 flex-row font-bold text-lg">
                     <p>Diff editor to resolve {examinedMergeState?.mergeStateCause} conflict</p>
                     <DiffEditorInfoPopOver/>
-                  </h1>
+                  </ModalTitle>
+                  <hr className="-mt-3"/>
                   <Tabs value={comparisonTabType} onValueChange={setComparisonTabType as any}>
                     {/* <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="text-compare">Text comparison</TabsTrigger>
