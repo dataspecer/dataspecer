@@ -145,7 +145,7 @@ function PRMergeTooltip({gitProviderSpecificNameForPRShortcut}: PRMergeTooltipPr
     <PopOverGitGeneralComponent>
       <div>That is, in Dataspecer we will create merge state where the {gitProviderSpecificNameForPRShortcut}'s "merge from" actor will be the "merge to" actor.</div>
       <div>This is the expected flow when working with Git. That is:</div>
-         <div>&nbsp;&nbsp;&nbsp; - Merge the changes from the branch to which you are merging to your branch.</div>
+         <div>&nbsp;&nbsp;&nbsp; - Merge the changes from the branch to which you are merging into your branch.</div>
          <div>&nbsp;&nbsp;&nbsp; - Close the {gitProviderSpecificNameForPRShortcut} in Git provider.</div>
     </PopOverGitGeneralComponent>
   </div>;
@@ -180,11 +180,11 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
   const [actionButtonData, isActionButtonNotReady] = useAsyncMemo(async () => {
     if (isMergeFromInDS && isMergeToInDS) {
       // Note that it is swapped - if we are resolving PR in Git we always first import the changes from the merge to branch to the merge from and then finish the PR outside of DS.
-      const mergeStateFromBackend = await fetchMergeState(mergeToInDataspecer.iri, mergeFromInDataspecer.iri, true, false, false);
+      const mergeStateFromBackend = await fetchMergeState(mergeToInDataspecer.iri, mergeFromInDataspecer.iri, false, false, false);
       setFetchedMergeState(mergeStateFromBackend);
       if (mergeStateFromBackend !== null) {
         return {
-          actionButtonText: "Open",
+          actionButtonText: "Open merge state",
           actionButtonClassname: "border-1 bg-blue-100 border-blue-600 hover:bg-blue-600 hover:text-white text-sm font-semibold rounded-md transition cursor-pointer",
           actionButtonTooltip: "The merge state already exists in Dataspecer. The button opens it.",
         };
@@ -237,11 +237,11 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
     const mergeToBranchUrl = gitProvider.createGitRepositoryURL(repositoryOwner, repositoryName, {type: "branch", name: pullRequestInfo.mergeToBranch});
     let performedImport: boolean = true;
 
+    resolve(null);
     try {
       if (isMergeFromInDS && isMergeToInDS) {
         performedImport = false;
         if (fetchedMergeState !== null) {
-          resolve(null);
           openModal(
             TextDiffEditorDialog,
             {
@@ -257,7 +257,6 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
         mergeToIri = mergeToInDataspecer.iri;
       }
       else {
-        resolve(null);
         if (isMergeFromInDS) {
           setTimeout(() => {
           // Add small delay so the second dialog appears after the first one is closed
