@@ -103,19 +103,26 @@ export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
         <ModalHeader>
           <ModalTitle>Manage SSH key</ModalTitle>
           <ModalDescription>
-            - At most one SSH key per account.
-            <br/>
-            - Use SSH in the two following scenarios:
-            <br/>
-            &nbsp;&nbsp;&nbsp;&nbsp;- You did not grant push scope during sign-in.
-            <br/>
-            &nbsp;&nbsp;&nbsp;&nbsp;- You have a SSH "deploy" key for a single repo, you normally can't access.
+            SSH keys in Dataspecer are useful mainly for two types of users:
             <br/>
             <br/>
-            - SSH supports only pull and commit, not Git provider-specific actions (Create repo, fetch issues, ...).
+
+            <div className="flex flex-1 flex-row">1) You signed in using a non-Git authentication provider (e.g., Keycloak). <PopOverGitGeneralComponent><FutureUseCaseTooltip/></PopOverGitGeneralComponent>.</div>
+
+            2) You have security concerns.
+            <br/>
+            &nbsp;&nbsp;&nbsp; - You simply do not trust Dataspecer to have access to anything except the profile info (name + email).
+            <br/>
+            &nbsp;&nbsp;&nbsp; - SSH key gives Dataspecer weaker permissions compared to the sign-in using "push" scope.
+            <br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Also you can use so-called "deploy" SSH key associated with a single repository.
             <br/>
             <br/>
-            <p className="flex flex-1 flex-row">- The private SSH key is stored in Dataspecer filesystem unencrypted.<PopOverGitGeneralComponent><SecurityTooltip/></PopOverGitGeneralComponent></p>
+            Limitations:
+            <br/>
+            &nbsp;&nbsp;- At most one SSH key per authentication provider.
+            <br/>
+            <p className="flex flex-1 flex-row">&nbsp;&nbsp;- The private SSH key is stored in Dataspecer filesystem unencrypted.<PopOverGitGeneralComponent><SecurityTooltip/></PopOverGitGeneralComponent></p>
           </ModalDescription>
         </ModalHeader>
       <ModalBody>
@@ -154,5 +161,11 @@ function SecurityTooltip() {
     The key is never sent back to client.
     <br/>
     Possible attacker would have to get possession of the server and the file to steal it.
+  </div>;
+}
+
+function FutureUseCaseTooltip() {
+  return <div>
+    Currently not possible. However, in future it might be.
   </div>;
 }
