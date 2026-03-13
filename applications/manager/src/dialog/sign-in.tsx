@@ -76,7 +76,7 @@ export const SignInDialog = ({ isOpen, resolve }: BetterModalProps) => {
           </ModalTitle>
         </ModalHeader>
         <ModalDescription>
-          - Sign-in so you can sync up your Dataspecer package with a Git repository.
+          - Sign-in with the default option so you can sync up your Dataspecer package with a Git repository.
           <br/>
           - Next dialog lets you choose authentication provider.
           <br/>

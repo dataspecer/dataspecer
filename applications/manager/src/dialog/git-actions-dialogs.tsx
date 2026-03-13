@@ -145,8 +145,6 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
 
   const { accountProvider, username, genericScope, isSignedIn, isLoginDataReady } = useLogin();
 
-  const { accountProvider, username, genericScope, isSignedIn } = useLogin();
-
   const [repositoryName, setRepositoryName] = useState<string>(inputPackage.iri);
   const defaultRemoteRepositoryUrl = inputPackage.linkedGitRepositoryURL.length === 0 ? "https://github.com/userName/repositoryName" : inputPackage.linkedGitRepositoryURL;
   const [remoteRepositoryUrl, setRemoteRepositoryUrl] = useState<string>(defaultRemoteRepositoryUrl);
