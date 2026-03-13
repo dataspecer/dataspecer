@@ -6,12 +6,15 @@ import { ConfigType } from "@dataspecer/git";
 import { ArrowDownNarrowWide, ArrowUpNarrowWide, EyeIcon, LogIn } from "lucide-react";
 import { useState } from "react";
 
+type SignInInfoTooltipProps = {
+  showMore: boolean;
+};
 
-function SignInInfoTooltipBasic() {
+function SignInInfoTooltipBasic({ showMore }: SignInInfoTooltipProps) {
   return <PopOverGitGeneralComponent>
     <div>
-      <div>- Choose the option with <strong>Name + E-mail + Git push scope</strong> to access all the important Git features - <strong className="text-green-600">Recommended</strong></div>
-      <div>- The provided rights are for <strong>each repository you have access to</strong>.</div>
+      <div>- Choose the option with <strong>Default option {showMore ? "(Name + E-mail + Git push scope)" : ""}</strong> to access all the important Git features - <strong className="text-green-600">Recommended</strong></div>
+      <div>- The provided rights, which you are asked further in the sign-in process, are for <strong>each repository you have access to</strong>.</div>
       <div>- The access token, which comes with the sign-in, should be automatically revoked after you sign out.</div>
     </div>
   </PopOverGitGeneralComponent>;
@@ -68,19 +71,21 @@ export const SignInDialog = ({ isOpen, resolve }: BetterModalProps) => {
         <ModalHeader>
           <ModalTitle>
             <div className="flex flex-1 flex-row">
-               <LogIn className="mr-1 pb-1"/> Sign in options <SignInInfoTooltipBasic/>
+               <LogIn className="mr-1 pb-1"/> Sign in options <SignInInfoTooltipBasic showMore={showMore}/>
             </div>
           </ModalTitle>
         </ModalHeader>
         <ModalDescription>
-          - Choose <strong>how much information</strong> do you want to provide <strong>to Dataspecer</strong>.
+          - Sign-in so you can sync up your Dataspecer package with a Git repository.
           <br/>
           - Next dialog lets you choose authentication provider.
           <br/>
           - Hover on the info icon(s) for more info.
+          <br/>
         </ModalDescription>
         <div className="flex flex-col max-w-md">
-            <Button variant="outline" className="cursor-pointer focus:outline-none border border-black bg-green-100 hover:bg-green-400 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700" onClick={(_) => goToPage(`${import.meta.env.VITE_BACKEND}/auth/signin?authPermissions=${ConfigType[ConfigType.FullPublicRepoControl]}`)}>Name + E-mail + Git Push scope</Button>
+            <Button variant="outline" className="cursor-pointer focus:outline-none border border-black bg-green-100 hover:bg-green-400 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700" onClick={(_) => goToPage(`${import.meta.env.VITE_BACKEND}/auth/signin?authPermissions=${ConfigType[ConfigType.FullPublicRepoControl]}`)}>
+              {showMore ? "Name + E-mail + Git Push scope" : "Default sign-in option"}</Button>
             {/* ---- COLLAPSIBLE SECTION ---- */}
             <hr className="border-t-2 border-gray-300 mt-8" />
             <div className="flex flex-row flex-1">
@@ -94,10 +99,12 @@ export const SignInDialog = ({ isOpen, resolve }: BetterModalProps) => {
               {!showMore ? null : <div className="pt-4 ml-2"><SignInInfoTooltipAdvanced/></div>}
             </div>
             { (!showMore) ?
-                null :
-                <div className="flex flex-col max-w-md">
-                  <Button variant="outline" className="cursor-pointer focus:outline-none border border-black bg-green-100 hover:bg-green-400 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700" onClick={(_) => goToPage(`${import.meta.env.VITE_BACKEND}/auth/signin?authPermissions=${ConfigType[ConfigType.DeleteRepoControl]}`)}>Name + E-mail + Git Push and Delete scope</Button>
-                  <Button variant="outline" className="cursor-pointer focus:outline-none border border-black bg-green-100 hover:bg-green-400 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700" onClick={(_) => goToPage(`${import.meta.env.VITE_BACKEND}/auth/signin?authPermissions=${ConfigType[ConfigType.LoginInfo]}`)}>Name + E-mail</Button>
+                null : <div>
+                  <p className="text-sm text-gray-500 pb-4">- Choose <strong>how much information</strong> should be provided <strong>to Dataspecer</strong>.</p>
+                  <div className="flex flex-col max-w-md">
+                    <Button variant="outline" className="cursor-pointer focus:outline-none border border-black bg-green-100 hover:bg-green-400 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700" onClick={(_) => goToPage(`${import.meta.env.VITE_BACKEND}/auth/signin?authPermissions=${ConfigType[ConfigType.DeleteRepoControl]}`)}>Name + E-mail + Git Push and Delete scope</Button>
+                    <Button variant="outline" className="cursor-pointer focus:outline-none border border-black bg-green-100 hover:bg-green-400 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700" onClick={(_) => goToPage(`${import.meta.env.VITE_BACKEND}/auth/signin?authPermissions=${ConfigType[ConfigType.LoginInfo]}`)}>Name + E-mail</Button>
+                  </div>
                 </div>
             }
             {/* ---- END OF COLLAPSIBLE SECTION ---- */}
