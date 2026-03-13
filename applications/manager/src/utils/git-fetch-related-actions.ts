@@ -72,10 +72,10 @@ export async function trySetPackageAsUpToDate(iri: string) {
 
   if (response.ok) {
     if (response.status === 200) {
-      toast.success("Package marked as having NO uncommitted changes.");
+      toast.success("Package marked as up to date.", { richColors: true });
     }
     else {
-      toast.success("Package marked as having uncommitted changes.");
+      toast.error("Package marked as having uncommitted changes.", { richColors: true });
     }
   }
   else {

@@ -10,6 +10,7 @@ export interface UseLoginType {
   scope: string;
   genericScope: Scope[];
   imageUrl: string;
+  isLoginDataReady: boolean;
 }
 
 export const useLogin = (): UseLoginType => {
@@ -20,6 +21,7 @@ export const useLogin = (): UseLoginType => {
   const [scope, setScope] = useState<string>("");
   const [genericScope, setGenericScope] = useState<Scope[]>([]);
   const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
+  const [isLoginDataReady, setIsLoginDataReady] = useState<boolean>(false);
   // Set to true if the frontend can use the authentication capabilities. That is cors for credentials is allowed
   const [canSignIn, setCanSignIn] = useState<boolean>(false);
 
@@ -43,12 +45,14 @@ export const useLogin = (): UseLoginType => {
           setIsSignedIn(false);
         }
         setCanSignIn(true);
+        setIsLoginDataReady(true);
       })
       .catch((_error) => {
         // I am not sure if there can be any other error,
         // which can cause this other than the cors errors, so maybe possible TODO: in future
         setCanSignIn(false);
         setIsSignedIn(false);
+        setIsLoginDataReady(true);
       });
   }, []);
 
@@ -61,5 +65,6 @@ export const useLogin = (): UseLoginType => {
     genericScope,
     scope,
     imageUrl,
+    isLoginDataReady,
   };
 }

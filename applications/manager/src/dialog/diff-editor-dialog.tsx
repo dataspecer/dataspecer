@@ -111,12 +111,11 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
             {/* The pr-2 is there so the cross at the top right corner is seen */}
             <ResizablePanelGroup direction="horizontal" className="overflow-hidden">
               <ResizablePanel defaultSize={20} className="flex! flex-col pr-16">
-                <ModalHeader className="mb-2">
-                  <ModalTitle className="flex flex-1 flex-row font-bold text-lg">
+                <ModalHeader>
+                  <ModalTitle className="flex flex-1 flex-row font-bold text-lg pt-1.25 border-b">
                     <p>Diff editor to resolve {examinedMergeState?.mergeStateCause} conflict</p>
                     <DiffEditorInfoPopOver/>
                   </ModalTitle>
-                  <hr className="-mt-3"/>
                   <Tabs value={comparisonTabType} onValueChange={setComparisonTabType as any}>
                     {/* <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="text-compare">Text comparison</TabsTrigger>
@@ -142,7 +141,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
                                               setRemovedDatastoresAndLoadIntoCache={addToRemovedDatastoresAndAddToCache}
                                               removedTreePaths={removedTreePaths}
                                               setRemovedTreePaths={setRemovedTreePaths}
-                                              />
+                      />
                     </div>
                     <div className="gap-2 mt-7 justify-start -pl-8">
                       <Button title="Closes the diff editor without saving changes"
@@ -185,7 +184,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
                         </div>
                       </TabsContent>
                       <TabsContent value="text-compare">
-                        <div className="grid grid-cols-[5%_95%]! border-b">
+                        <div className="grid grid-cols-[5%_95%]! border-b pb-1">
                           <RotateCw className="flex! mt-3 ml-1 h-4 w-4 cursor-pointer" onClick={reloadModelsDataFromBackend} />
                           <div className="flex! items-center justify-center space-x-4 ml-16 pl-32">
                             <MergeStrategyComponent handleMergeStateResolving={applyAutomaticMergeStateResolver}/>
@@ -200,13 +199,13 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
                             </label>
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 items-center w-full pt-2 pb-2">
-                          <div className="text-center">
+                        <div className="grid grid-cols-2 items-center w-full pt-1 pb-1">
+                          <div className="text-center font-semibold">
                             {nonEditableBranchDataToRender?.branch} {nonEditableBranchDataToRender?.filesystem === AvailableFilesystems.ClassicFilesystem ? " (Git)" : ""}
                           </div>
 
 
-                          <div className="text-center">
+                          <div className="text-center font-semibold">
                             {editableBranchDataToRender?.branch} {editableBranchDataToRender?.filesystem === AvailableFilesystems.ClassicFilesystem ? " (Git)" : ""}
                           </div>
                         </div>
