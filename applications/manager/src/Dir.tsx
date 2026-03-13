@@ -43,7 +43,6 @@ import { DeleteGitRepoDialog } from "./dialog/remove-git-repo-dialog";
 import { SetGitRemoteConfigurationDialog } from "./dialog/set-git-remote-configuration-dialog";
 import { GitPrsListDialog } from "./dialog/show-git-prs-for-branch";
 import { GitIssuesListDialog } from "./dialog/show-git-issues";
-import { debugClearMergeStateDBTable } from "./utils/merge-state-backend-requests";
 
 
 export function lng(text: LanguageString | undefined): string | undefined {
@@ -355,7 +354,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
             {/* Git perform actions */}
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <div className="flex flex-1 flex-row"><GitCommit className="h-4 w-4 mt-0.75 mr-2" />Act</div>
+                <div className="flex flex-1 flex-row"><GitCommit className="h-4 w-4 mt-0.75 mr-2" />Actions</div>
               </DropdownMenuSubTrigger>
 
               <DropdownMenuSubContent className="data-[side=top]">
