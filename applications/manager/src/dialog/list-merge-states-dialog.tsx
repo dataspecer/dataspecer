@@ -1,6 +1,6 @@
 import { BetterModalProps, OpenBetterModal, useBetterModal, } from "@/lib/better-modal";
 import { useEffect, useState } from "react";
-import { InfoIcon, Loader, Trash2 } from "lucide-react";
+import { BookOpenTextIcon, InfoIcon, Loader, Trash2 } from "lucide-react";
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { getHumanReadableFilesystemName, MergeState } from "@dataspecer/git";
@@ -44,7 +44,7 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
 
   return (
     <Modal open={!isInfoDialogShown && isOpen} onClose={() => resolve(null)}>
-      <ModalContent className="md:min-w-[950px] overflow-x-auto">
+      <ModalContent className="md:min-w-[1200px] overflow-x-auto">
         <ModalHeader>
           <ModalTitle>List of currently opened merge states for chosen data specification</ModalTitle>
           <ModalDescription>
@@ -55,19 +55,21 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
           !isLoading && <>
             {/* The header */}
             {/* The ml-4 is here for the first button, otherwise the merge state cause in the rows is shifted */}
-            <div className="grid grid-cols-[2fr_2fr_1fr_2fr_2fr] divide-x divide-gray-300 ml-4 max-lg:min-w-[950px]">
-              <div className="flex items-center justify-center">Created at</div>
-              <div className="flex items-center justify-center">Last modified at</div>
-              <div className="flex items-center justify-center">Cause</div>
-              <div className="flex items-center justify-center">Merge from</div>
-              <div className="flex items-center justify-center">Merge to</div>
+            <div className="grid grid-cols-[91%_9%] mr-12">
+              <div className="grid grid-cols-[2fr_2fr_1fr_2.1fr_2.1fr] divide-x divide-gray-300 min-w-[1000px] max-lg:min-w-[1000px]">
+                <div className="flex items-center justify-center">Created at</div>
+                <div className="flex items-center justify-center">Last modified at</div>
+                <div className="flex items-center justify-center">Cause</div>
+                <div className="flex items-center justify-center">Merge from</div>
+                <div className="flex items-center justify-center">Merge to</div>
+              </div>
             </div>
 
             { mergeStates.map(mergeState => renderMergeState(mergeState, removeFromMergeStatesInDialog, setIsInfoDialogShown, openModal, resolve)) }
           </>
           }
         </ModalHeader>
-        <ModalFooter>
+        <ModalFooter className="pt-8">
           <Button variant="outline" onClick={() => resolve(null)}>Close</Button>
         </ModalFooter>
       </ModalContent>
@@ -100,14 +102,16 @@ const renderMergeState = (
 
 
   return <div className={`flex items-baseline`}>
-      <button onClick={() => openModal(ShowMergeStateInfoDialog, {mergeState, setIsInfoDialogShown})} className="cursor-pointer bg-blue-300 hover:bg-blue-500 relative top-[19%]"><InfoIcon/></button>
-      <button className={`${mergeState.isUpToDate ? "" : "bg-red-300"} w-full cursor-pointer hover:bg-gray-300`}
-              onClick={openDiffEditor}>
-              {/* TODO RadStr: Just debug to directly open the merge state dialog */}
-              {/* onClick={() => openModal(MergeStateFinalizerDialog, {mergeState, openModal}).finally(() => closeMergeStateList(null))}> */}
-        {mergeStateRowText(mergeState)}
-      </button>
-      <button onClick={removeMergeStateOnClickHandler} className="cursor-pointer bg-red-500 hover:bg-red-600 relative top-[19%]"><Trash2/></button>
+      <div className="grid grid-cols-[91%_9%] min-w-[1075px] ">
+        <div className={`${mergeState.isUpToDate ? "" : "bg-red-400"} w-full`}>
+          {mergeStateRowText(mergeState)}
+        </div>
+        <div className="flex flex-row relative top-[10%] ml-8 gap-x-8">
+          <button onClick={() => openModal(ShowMergeStateInfoDialog, {mergeState, setIsInfoDialogShown})} className="cursor-pointer bg-blue-300 hover:bg-blue-500 relative"><InfoIcon className="bg-white text-blue-400 hover:bg-blue-400 hover:text-white"/></button>
+          <button onClick={removeMergeStateOnClickHandler} className="cursor-pointer bg-red-500 hover:bg-red-600 relative"><Trash2 className="bg-white text-destructive hover:bg-destructive hover:text-black"/></button>
+          <button onClick={openDiffEditor} className="cursor-pointer relative"><BookOpenTextIcon className="hover:bg-gray-400 hover:text-white"/></button>
+        </div>
+      </div>
     </div>;
 }
 
