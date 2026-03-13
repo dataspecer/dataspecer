@@ -1,10 +1,10 @@
 import { Modal, ModalBody, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { BetterModalProps, OpenBetterModal } from "@/lib/better-modal";
-import { RefObject, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { gitOperationResultToast } from "@/utils/utilities";
 import { requestLoadPackage } from "@/package";
-import { createIdentifierForHTMLElement, InputComponent, InputSuggestionsType } from "@/components/input-component";
+import { InputComponent, InputSuggestionsType } from "@/components/input-component";
 import { Package } from "@dataspecer/core-v2/project";
 import { toast } from "sonner";
 import {
@@ -121,8 +121,6 @@ const gitDialogInputIdPrefix = "git-dialog-prefix";
 export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, resolve, type, shouldShowAlwaysCreateMergeStateOption }: GitActionsDialogProps) => {
   const { t } = useTranslation();
   type = type ?? "create-new-repository-and-commit";
-
-  const [isLoadingInitialData, setIsLoadingInitialData] = useState<boolean>(true);
   const [showMore, setShowMore] = useState<boolean>(false);
 
   const gitProvidersComboboxOptions = useMemo(() => {
@@ -141,17 +139,17 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
       const fetchedGitRemoteConfiguration = isGitDialogSettingGitConfiguration ? await getGitRemoteConfigurationModelFromPackage(rootPackageFetchedContent) : null;
       setRootPackageContent(rootPackageFetchedContent);
       setGitRemoteConfiguration(fetchedGitRemoteConfiguration);
-      setIsLoadingInitialData(false);
     };
     setGitRemoteConfigurationState();
   }, [inputPackage]);
 
-  console.info({gitRemoteConfiguration});     // TODO RadStr: Debug print
+  const { accountProvider, username, genericScope, isSignedIn, isLoginDataReady } = useLogin();
 
   const { accountProvider, username, genericScope, isSignedIn } = useLogin();
 
   const [repositoryName, setRepositoryName] = useState<string>(inputPackage.iri);
-  const [remoteRepositoryURL, setRemoteRepositoryURL] = useState<string>("https://github.com/userName/repositoryName");
+  const defaultRemoteRepositoryUrl = inputPackage.linkedGitRepositoryURL.length === 0 ? "https://github.com/userName/repositoryName" : inputPackage.linkedGitRepositoryURL;
+  const [remoteRepositoryUrl, setRemoteRepositoryUrl] = useState<string>(defaultRemoteRepositoryUrl);
   const [organization, setOrganization] = useState<string>("");
   const [isLoadingOrganizationSuggestions, setIsLoadingOrganizationSuggestions] = useState<boolean>(false);
   const [isOwnerSignedInUser, setIsOwnerSignedInUser] = useState<boolean>(true);
@@ -163,15 +161,17 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   const [shouldAppendAfterDefaultMergeCommitMessage, setShouldAppendAfterDefaultMergeCommitMessage] = useState<boolean>(true);
 
   useEffect(() => {
-    if (accountProvider !== convertEnumToGitProviderName(gitProvider) || !isSignedIn || !genericScope.includes("publicRepo")) {
-      // It has to be bot
-      setIsOwnerSignedInUser(false);
+    if (isLoginDataReady) {
+      if (accountProvider !== convertEnumToGitProviderName(gitProvider) || !isSignedIn || !genericScope.includes("publicRepo")) {
+        // It has to be bot
+        setIsOwnerSignedInUser(false);
+      }
     }
-  }, [accountProvider, isSignedIn, genericScope]);
+  }, [accountProvider, isSignedIn, genericScope, isLoginDataReady]);
 
 
   useEffect(() => {
-    if (isSignedIn)  {
+    if (isSignedIn && isLoginDataReady)  {
       if (!isGitProviderName(accountProvider)) {
         return;     // We just return, since it might be possible that the user might be signed in using KeyCloak or something like that
       }
@@ -181,7 +181,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
       }
       setGitProvider(initialGitProvider);
     }
-  }, [isSignedIn]);
+  }, [isLoginDataReady, isSignedIn, accountProvider]);
 
   // Fetching organizations so they show in input box when writing
   // TODO RadStr PR: The suggestion (both user and bot) should be a Record, so we do not keep fetching data of Git provider we already have.
@@ -312,22 +312,18 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   }, []);
 
   useEffect(() => {
-    // We have to it like this because the login is asynchronous
-    // If the Git provider matches and we have a push scope, then show the user's name instead of empty string.
-    if (convertGitProviderNameToEnum(accountProvider) === gitProvidersComboboxOptions[0].value && genericScope.includes("publicRepo")) {
-      setIsOwnerSignedInUser(true);
+    if (isLoginDataReady) {
+      // We have to it like this because the login is asynchronous
+      // If the Git provider matches and we have a push scope, then show the user's name instead of empty string.
+      if (convertGitProviderNameToEnum(accountProvider) === gitProvidersComboboxOptions[0].value && genericScope.includes("publicRepo")) {
+        setIsOwnerSignedInUser(true);
+      }
     }
-  }, [accountProvider, username, genericScope]);
+  }, [accountProvider, username, genericScope, isLoginDataReady]);
 
 
   let suffixNumber = 0;
 
-  useLayoutEffect(() => {
-    if (isOpen) {
-      const idToFocus = createIdentifierForHTMLElement(gitDialogInputIdPrefix, suffixNumber, "input");
-      window.requestAnimationFrame(() => document.getElementById(idToFocus)?.focus());
-    }
-  }, []);
 
   const tryCloseWithSuccess = () => {
     const resolveAsNoParamsMethod = async () => {
@@ -362,7 +358,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
 
       const gitProviderDomain = getGitProviderDomain(gitProvider, true, true);
       resolve({
-        user: owner, repositoryName, remoteRepositoryURL, gitProviderDomain, commitMessage, isUserRepo,
+        user: owner, repositoryName, remoteRepositoryURL: remoteRepositoryUrl, gitProviderDomain, commitMessage, isUserRepo,
         shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage,
         publicationBranch: gitRemoteConfiguration?.publicationBranch ?? PUBLICATION_BRANCH_DEFAULT_NAME,
         exportFormat: gitRemoteConfiguration?.exportFormat ?? getDefaultExportFormat(),
@@ -578,7 +574,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
         </div>;
       break;
     case "link-to-existing-repository":
-      modalBody = <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label={t("git.dialog.label.remote-url")} setInput={setRemoteRepositoryURL} input={remoteRepositoryURL} />;
+      modalBody = <InputComponent idPrefix={gitDialogInputIdPrefix} idSuffix={suffixNumber++} label={t("git.dialog.label.remote-url")} setInput={setRemoteRepositoryUrl} input={remoteRepositoryUrl} />;
       break;
     default:
       modalBody = <div/>;
@@ -586,8 +582,8 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   }
 
   return (
-    <Modal open={!isLoadingInitialData && isOpen} onClose={() => resolve(null)}>
-      <ModalContent className={(isLoadingInitialData ? "hidden " : "") + "sm:max-w-[700px]! max-h-[95%] overflow-auto"}>
+    <Modal open={isOpen} onClose={() => resolve(null)}>
+      <ModalContent className="sm:max-w-[700px]! max-h-[95%] overflow-auto">
         <ModalHeader>
           <ModalTitle>{modalTitle}</ModalTitle>
           <ModalDescription>
@@ -595,15 +591,11 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
           </ModalDescription>
         </ModalHeader>
         <ModalBody>
-          {isLoadingInitialData ? null : modalBody}
+          {modalBody}
         </ModalBody>
         <ModalFooter className="flex flex-row">
-          {
-            isLoadingInitialData ? null : <>
-              <Button variant="outline" onClick={() => resolve(null)}>{t("close")}</Button>
-              <Button type="submit" className="hover:bg-purple-700" onClick={tryCloseWithSuccess} disabled={shouldDisableConfirm}>{t("confirm")}</Button>
-            </>
-          }
+          <Button variant="outline" onClick={() => resolve(null)}>{t("close")}</Button>
+          <Button type="submit" className="hover:bg-purple-700" onClick={tryCloseWithSuccess} disabled={shouldDisableConfirm}>{t("confirm")}</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
