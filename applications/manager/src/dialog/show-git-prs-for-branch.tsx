@@ -102,7 +102,7 @@ export const GitPrsListDialog = ({ resources, branch, gitUrl, gitProviderSpecifi
             You can click on the {gitProviderSpecificNameForPRShortcut} to get redirected to the {gitProviderSpecificNameForPRShortcut}.
             <br/>
             <p className="flex flex-1 flex-row">Resolving {gitProviderSpecificNameForPRShortcut} in Dataspecer means performing reverse merge.
-              <PRMergeTooltip gitProviderSpecificNameForPRShortcut={gitProviderSpecificNameForPRShortcut} />
+              <PRMergeTooltip gitProviderSpecificNameForPRShortcut={gitProviderSpecificNameForPRShortcut} isSpecificBranchPRsList={branch !== null} />
             </p>
           </ModalDescription>
           {
@@ -137,16 +137,22 @@ export const GitPrsListDialog = ({ resources, branch, gitUrl, gitProviderSpecifi
 };
 
 type PRMergeTooltipProps = {
-  gitProviderSpecificNameForPRShortcut: string
+  gitProviderSpecificNameForPRShortcut: string;
+  isSpecificBranchPRsList: boolean;
 };
 
-function PRMergeTooltip({gitProviderSpecificNameForPRShortcut}: PRMergeTooltipProps) {
+function PRMergeTooltip({ gitProviderSpecificNameForPRShortcut, isSpecificBranchPRsList }: PRMergeTooltipProps) {
   return <div>
     <PopOverGitGeneralComponent>
       <div>That is, in Dataspecer we will create merge state where the {gitProviderSpecificNameForPRShortcut}'s "merge from" actor will be the "merge to" actor.</div>
       <div>This is the expected flow when working with Git. That is:</div>
          <div>&nbsp;&nbsp;&nbsp; - Merge the changes from the branch to which you are merging into your branch.</div>
          <div>&nbsp;&nbsp;&nbsp; - Close the {gitProviderSpecificNameForPRShortcut} in Git provider.</div>
+      <div>The buttons do the following:</div>
+      <div><p className="text-blue-600 inline">Open Merge state</p> - opens the already existing merge state</div>
+      <div><p className="text-green-600 inline">Merge</p> - Creates new (reverse) merge state, since it does not exist.</div>
+      <div><p className="text-purple-600 inline">Import + Merge</p> - Imports the missing package and creates merge state between them</div>
+      {isSpecificBranchPRsList ? null : <div><p className="text-orange-600 inline">Import both + Merge</p> - Imports both packages and creates merge state between them.</div>}
     </PopOverGitGeneralComponent>
   </div>;
 }
