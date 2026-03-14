@@ -768,6 +768,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     // Note that it must be always string because of the if guard for both nulls at the start of method
     const newDatastoreType = (newMergeFromDatastoreInfo?.type ?? newMergeToDatastoreInfo?.type) as string;
     const oldDatastoreType: string | null = activeDatastoreType;
+    const oldDatastoreFormat: string | null = activeFormat;     // TODO RadStr: Honestly I think that the code is fine, the main issue are the names
+                                                                //              - it is not clear why I use old for active - like active and old does not come together name-wise
 
     // Pick the format in the classic filesystem. If the datastore does not exist (it was deleted datastore), then pick format from the other one. If none present pick text
     const newFormat = (
@@ -816,7 +818,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         convertDataAndUpdateCacheContentEntryAsCombination(
           setConvertedCacheContentForMergeFrom,
           activeTreePathBeforeUpdate, oldDatastoreType,
-          currentMergeFromContentInEditor, newFormat);
+          currentMergeFromContentInEditor, oldDatastoreFormat);
       }
 
       let currentMergeToContentInEditor = editors.mergeToEditor?.getValue();
@@ -827,7 +829,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         convertDataAndUpdateCacheContentEntryAsCombination(
           setConvertedCacheContentForMergeTo,
           activeTreePathBeforeUpdate, oldDatastoreType,
-          currentMergeToContentInEditor, newFormat);
+          currentMergeToContentInEditor, oldDatastoreFormat);
       }
     }
 
