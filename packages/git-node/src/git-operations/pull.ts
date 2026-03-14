@@ -50,7 +50,7 @@ export class GitPullBase {
    * @param depth is the number of commits to clone. In case of webhooks this number is given in the webhook payload. For normal pull we have to clone whole history.
    * @returns Return true if merge state was created
    */
-  updateDSRepositoryByGitPull = async (depth?: number): Promise<boolean> => {
+  public async updateDSRepositoryByGitPull(depth?: number): Promise<boolean> {
     const { iri, gitProvider, branch, cloneURL, cloneDirectoryNamePrefix, dsLastCommitHash, filesystemConstructorParams } = this.fields;
     const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGitUsingPredefinedGitRoot(iri, cloneDirectoryNamePrefix, true);
     let storeResult: GitChangesToDSPackageStoreResult | null = null;
@@ -60,7 +60,7 @@ export class GitPullBase {
       const gitLastCommitHash = await getLastCommitHash(git);
       const commonCommit = await getCommonCommitInHistory(git, dsLastCommitHash, gitLastCommitHash);
       const gitIgnore: GitIgnore = new GitIgnoreBase(gitProvider);
-      storeResult = await this.saveChangesInDirectoryToBackendFinalVersion(
+      storeResult = await this.storeGitChangesToDataspecer(
         cloneURL, git, gitInitialDirectoryParent, gitIgnore,
         gitLastCommitHash, commonCommit, "pull");
     }
@@ -98,7 +98,7 @@ export class GitPullBase {
    *  We don't create merge state only if we haven't performed any changes inside DS,
    *  so we can just safely move HEAD to the last git commit and update DS package based on that
    */
-  async saveChangesInDirectoryToBackendFinalVersion(
+  async storeGitChangesToDataspecer(
     remoteRepositoryUrl: string,
     git: SimpleGit,
     gitInitialDirectoryParent: string,
@@ -144,7 +144,7 @@ export class GitPullBase {
         if (canPullWithoutCreatingMergeState) {
           // TODO RadStr: Rename ... and update based on the conflicts resolution, like we do not want to update when there is conflict
           await git.checkout(gitLastCommitHash);
-          await this.saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(gitRootDirectory, gitInitialDirectoryParent, filesystemMergeTo);
+          await this.storeGitChangesToDataspecerInternal(gitRootDirectory, gitInitialDirectoryParent, filesystemMergeTo);
           await filesystemConstructorParams.resourceModel.updateLastCommitHash(iri, gitLastCommitHash, "pull");
 
           return {
@@ -191,27 +191,27 @@ export class GitPullBase {
     };
   }
 
-  async saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(
+  private async storeGitChangesToDataspecerInternal(
     currentlyProcessedDirectoryNode: DirectoryNode,
     treePath: string,
     filesystem: FilesystemAbstraction,
   ): Promise<void> {
     console.info("RECURSIVE MAPPING", currentlyProcessedDirectoryNode);       // TODO RadStr: Debug
-    await this.handleResourceUpdateFinalVersion(currentlyProcessedDirectoryNode);
+    await this.handleResourceUpdate(currentlyProcessedDirectoryNode);
 
     for (const [name, value] of Object.entries(currentlyProcessedDirectoryNode.content)) {
       // TODO RadStr: Name vs IRI
       if(value.type === "directory") {
         const newDirectory = dsPathJoin(treePath, name);
-        await this.saveChangesInDirectoryToBackendFinalVersionRecursiveFinalFinal(value, newDirectory, filesystem);
+        await this.storeGitChangesToDataspecerInternal(value, newDirectory, filesystem);
       }
       else {
-        await this.handleResourceUpdateFinalVersion(value);
+        await this.handleResourceUpdate(value);
       }
     }
   }
 
-  private async handleResourceUpdateFinalVersion(filesystemNode: FilesystemNode): Promise<void> {
+  private async handleResourceUpdate(filesystemNode: FilesystemNode): Promise<void> {
     // Note that the the files added from git are handled as other ones - it works since update
     // of blob is create/update. However it stops working if we add some completely new resource and
     // not just something which we put under existing filesystem node.
@@ -232,6 +232,8 @@ export class GitPullBase {
       // TODO RadStr: Should check if it already exists, or if not it should be created
       if (isDatastoreForMetadata(datastore.type)) {
         // TODO: Just for now - I don't know about used encodings, etc. - but this is just detail
+        // TODO RadStr PR: If we check for existence here, we can allow to create new models from Git. However, there is more work then just checking for existence.
+        //                 There is validation, ...
         const metaFileContent = JSON.parse(fs.readFileSync(datastore.fullPath, "utf-8"));
         // TODO RadStr:  - since the iri may differ from name for example in the case of imported DCAT-AP
         await this.fields.updateResourceMetadata(nodeIri, metaFileContent!.userMetadata);
