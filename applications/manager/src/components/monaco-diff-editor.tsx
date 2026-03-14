@@ -133,8 +133,10 @@ export const MonacoDiffEditor: FC<{
 
       options={{
         minimap: {
-          enabled: false
+          enabled: false,
         },
+        readOnly: editorsContent.editable === "null",
+
         // This is if we want to editable editor to be different than the right one
         // originalEditable: props.editable === "mergeFrom",
         // readOnly: props.editable === "mergeFrom",
