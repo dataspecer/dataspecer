@@ -154,8 +154,8 @@ const MergeStateFinalizerForPull = ({ mergeState, shouldRenderAnswerDialog, setS
           </ModalDescription>
         </ModalHeader>
         <ModalFooter>
-          <Button variant="default" onClick={() => handlePullAction()}>Finish pull</Button>
-          <Button variant="outline" onClick={() => resolve()}>Close</Button>
+        <Button variant="outline" onClick={() => resolve()}>Close</Button>
+        <Button variant="default" onClick={() => handlePullAction()}>Finish pull</Button>
         </ModalFooter>
       </>
   );
@@ -185,8 +185,8 @@ const MergeStateFinalizerForPullAnswerDialog = ({ mergeState, resolve }: MergeSt
         </ModalDescription>
       </ModalHeader>
       <ModalFooter>
-        <Button variant="default" onClick={() => finalizerHandler("pull-anyways")}>Update the last commit hash in DS</Button>
         <Button variant="destructive" onClick={() => finalizerHandler("remove-merge-state")}>Remove merge state</Button>
+        <Button variant="default" onClick={() => finalizerHandler("pull-anyways")}>Update the last commit hash in DS</Button>
       </ModalFooter>
     </>;
 };
@@ -308,8 +308,8 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
         </ModalDescription>
       </ModalHeader>
       <ModalFooter>
-        {mergeState.isMergeFromBranch && <Button variant="outline" className="border bg-green-100 border-green-500 hover:bg-green-500 hover:text-white transition" title={mergeCommitTooltip} onClick={() => handleMergeAction()}>Merge</Button>}
         <Button variant="outline" className="border bg-blue-100 border-blue-500 hover:bg-blue-500 hover:text-white transition" title={rebaseCommitTooltip} onClick={() => handleRebaseAction()}>Rebase</Button>
+        {mergeState.isMergeFromBranch && <Button variant="outline" className="border bg-green-100 border-green-500 hover:bg-green-500 hover:text-white transition" title={mergeCommitTooltip} onClick={() => handleMergeAction()}>Merge</Button>}
       </ModalFooter>
     </>
   );
@@ -422,8 +422,8 @@ const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldR
           </ModalDescription>
         </ModalHeader>
         <ModalFooter>
-          <Button variant="default" onClick={() => finalizePush()}>Push</Button>
           <Button variant="outline" onClick={() => resolve()}>Close dialog</Button>
+          <Button variant="default" onClick={() => finalizePush()}>Push</Button>
         </ModalFooter>
       </>
   );

@@ -243,8 +243,8 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
               <ModalDescription>You can not perform any Git action after finishing.<br/>This is only useful if you want to move data from one package to another within Dataspecer.</ModalDescription>
             </ModalHeader>
             <ModalFooter>
-              <Button title="Creates the merge state, user can do normal actions, but when finalizing nothing happens and the state is removed" variant="default" onClick={createMergeStateHandler}>Create merge state</Button>
               <Button title="Closes the dialog" variant="outline" onClick={() => resolve(null)}>Close dialog</Button>
+              <Button title="Creates the merge state, user can do normal actions, but when finalizing nothing happens and the state is removed" variant="default" onClick={createMergeStateHandler}>Create merge state</Button>
             </ModalFooter>
           </ModalContent>
         </Modal>);
@@ -258,8 +258,8 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
               <ModalDescription>This kind of merge state can be finalized only through rebase commit.</ModalDescription>
             </ModalHeader>
             <ModalFooter>
-              <Button title="Creates the merge state. Finalizing through merge commit is not available, only the rebase commit." variant="default" onClick={createMergeStateHandler}>Create merge state</Button>
               <Button title="Closes the dialog." variant="outline" onClick={() => resolve(null)}>Close dialog</Button>
+              <Button title="Creates the merge state. Finalizing through merge commit is not available, only the rebase commit." variant="default" onClick={createMergeStateHandler}>Create merge state</Button>
             </ModalFooter>
           </ModalContent>
         </Modal>);
@@ -274,8 +274,8 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
             <ModalTitle className="p-1">Created merge state for DS packages and there were no conflicts.</ModalTitle>
           </ModalHeader>
           <ModalFooter>
-            <Button title="Opens the diff editor with the preview of the merge commit. Finalize the merging inside the editor." variant="default" onClick={openDiffEditorPreviewNoConflicts}>Open diff editor preview</Button>
             <Button title="Closes the dialog. Note that the merge state still exists. You can resolve it later" variant="outline" onClick={() => resolve(null)}>Close dialog</Button>
+            <Button title="Opens the diff editor with the preview of the merge commit. Finalize the merging inside the editor." variant="default" onClick={openDiffEditorPreviewNoConflicts}>Open diff editor preview</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>);
@@ -289,8 +289,8 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
             <ModalTitle className="p-1">Created merge state for DS packages and there were conflicts.</ModalTitle>
           </ModalHeader>
           <ModalFooter>
-            <Button title="Opens the diff editor with the preview of the merge commit. Finalize the merging inside the editor." variant="default" onClick={openDiffEditorPreviewNoConflicts}>Open diff editor preview</Button>
             <Button title="Closes the dialog. Note that the merge state still exists. You can resolve it later" variant="outline" onClick={() => resolve(null)}>Close dialog</Button>
+            <Button title="Opens the diff editor with the preview of the merge commit. Finalize the merging inside the editor." variant="default" onClick={openDiffEditorPreviewNoConflicts}>Open diff editor preview</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>);
