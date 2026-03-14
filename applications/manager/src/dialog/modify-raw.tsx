@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAsyncMemo } from "@/hooks/use-async-memo";
 import { useEventCallback } from "@/hooks/use-event-callback";
-import { packageService } from "@/package";
+import { packageService, requestLoadPackage } from "@/package";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
 import * as monaco from 'monaco-editor';
@@ -34,6 +34,7 @@ export const ModifyRawDialog = ({isOpen, resolve, iri}: ModifyRawDialogProps) =>
   });
 
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
+  const [didSave, setDidSave] = useState<boolean>(false);
 
   useEffect(() => {
     if (dataStores && Object.values(dataStores).length > 0 && selectedModel === null) {
@@ -69,6 +70,7 @@ export const ModifyRawDialog = ({isOpen, resolve, iri}: ModifyRawDialogProps) =>
       body: value,
     });
     toast.success(t("successfully saved"));
+    setDidSave(true);
   });
 
   const formatJson = useEventCallback(() => {
@@ -89,9 +91,17 @@ export const ModifyRawDialog = ({isOpen, resolve, iri}: ModifyRawDialogProps) =>
     refetch();
   });
 
+  const resolveWithLoad = () => {
+    // We do this because of Git
+    if (didSave) {
+      requestLoadPackage(iri, true);
+    }
+    resolve();
+  };
+
   return (
     // Forbid modal auto close
-    <Modal open={isOpen} onOpenChange={state => state || resolve()}>
+    <Modal open={isOpen} onOpenChange={state => state || resolveWithLoad()}>
       <ModalContent className="max-w-none! h-full rounded-none! border-none!">
         <ModalHeader>
           <ModalTitle>{t("modify raw data")}</ModalTitle>
