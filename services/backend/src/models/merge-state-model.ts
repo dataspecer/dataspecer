@@ -720,10 +720,7 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
     return uuid;
   }
 
-  /**
-   * TODO RadStr: Still creating the API, just remove the invalid methods after finish
-   */
-  async updateMergeStateConflictList(uuid: string, currentlyUnresolvedConflicts: string[]) {
+  async updateMergeStateConflictList(uuid: string, conflictPathsToResolve: string[]) {
     const mergeState = await this.prismaClient.mergeState.findFirst({
       where: {uuid},
       include: {
@@ -734,13 +731,14 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
       throw new Error(`There is no such MergeState with uuid: ${uuid}`);
     }
 
-    const allConflicts = mergeState.mergeStateData?.conflicts;
-    if (allConflicts === undefined) {
+
+    const oldUnresolvedConflicts = mergeState.mergeStateData?.unresolvedConflicts;
+    if (oldUnresolvedConflicts === undefined) {
       throw new Error(`For some reasons the unresolved conflicts are undefined in the MergeState with uuid: ${uuid}. It has to be array`);
     }
-    const newUnresolvedConflicts: DatastoreComparison[] = JSON.parse(allConflicts)
-      .filter((conflict: DatastoreComparison) => currentlyUnresolvedConflicts.includes(conflict.affectedDataStore.fullPath));
-
+    // Remove from the current unresolved conflicts those which were given
+    const newUnresolvedConflicts: DatastoreComparison[] = JSON.parse(oldUnresolvedConflicts)
+      .filter((conflict: DatastoreComparison) => !conflictPathsToResolve.includes(conflict.affectedDataStore.fullPath));
     await this.prismaClient.mergeState.update({
         where: { uuid: uuid },
         data: {

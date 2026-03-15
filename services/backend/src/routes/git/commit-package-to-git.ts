@@ -246,7 +246,7 @@ export const commitPackageToGitUsingAuthSession = async (
  *  Note that Git credentials are described in the {@link GitCredentials} type.
  * @param commitMessage if null then default message is used.
  */
-export function prepareCommitDataForCommit(
+function prepareCommitDataForCommit(
   request: express.Request,
   response: express.Response,
   remoteRepositoryUrl: string,

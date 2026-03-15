@@ -25,16 +25,13 @@ export const updateMergeState = async (
 ): Promise<FinalizerResponse> => {
   try {
     const pathsForConflictsToBeResolvedOnSave = conflictsToBeResolvedOnSave.map(conflict => conflict.affectedDataStore.fullPath);
-
     const fetchResult = await fetch(
       `${import.meta.env.VITE_BACKEND}/git/update-merge-state`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           uuid: fetchedMergeState.uuid,
-          currentlyUnresolvedConflicts: fetchedMergeState.unresolvedConflicts
-            ?.filter(unresolvedConflict => !pathsForConflictsToBeResolvedOnSave.includes(unresolvedConflict.affectedDataStore.fullPath))
-            .map(conflict => conflict.affectedDataStore.fullPath),
+          conflictPathsToResolve: pathsForConflictsToBeResolvedOnSave,
         }),
       });
 
