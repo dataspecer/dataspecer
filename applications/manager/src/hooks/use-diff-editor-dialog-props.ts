@@ -441,6 +441,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
   const [comparisonTabType, setComparisonTabType] = useState<"image-compare" | "text-compare">("text-compare");
   // Internal state used to track that cache was explictly updated
   const [cacheExplicitUpdateTracker, setCacheExplicitUpdateTracker] = useState<number>(0);
+  // Similarly - if true then we also perform the finalization when the updateTracker is bumped up
+  const [shouldFinalize, setShouldFinalize] = useState<boolean>(false);
 
   // When loading the specific file (or rather model) data from backend
   const [isLoadingTextData, setIsLoadingTextData] = useState<boolean>(true);
@@ -986,9 +988,20 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     resolve({ newResourceContent: editedNewVersion });
   };
 
+
+  const finalizeMergeStateHandler = async () => {
+    if (examinedMergeState === null) {
+      return undefined;
+    }
+    setShouldFinalize(true);
+    await saveEverything();
+  };
+
   // Not really clean, but can't think of anything better new. We want to update the cache and then use the values. we use useEffect depending on version number state to solve this issue.
   // Other solution could be to use ref next to the state tracking cache, or some other combinations, but I don't see them being too much better than this one
   const saveEverything = async () => {
+    // We first save the changes into the cache and then we store to the backend. Note that if the editor content is currently invalid,
+    //  we will continue, but the content will be kept as it was before the editing
     await saveChangesToCache();
     setCacheExplicitUpdateTracker(prev => prev + 1);
   };
@@ -999,6 +1012,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     }
 
     const saveToBackend = async () => {
+      setShouldFinalize(false);
+      const finalizing = shouldFinalize;
       if (examinedMergeState === null) {
         throw new Error("The merge state is not set when we are saving to backend. Should not happen.")
       }
@@ -1019,6 +1034,10 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
       }
       else if (saveResult === DiffEditorOutsideChangeChosenAction.Reload) {
         await reloadMergeState(true, true);
+      }
+
+      if (finalizing) {
+        openModal(MergeStateFinalizerDialog, { mergeState: examinedMergeState, openModal }).finally(() => closeWithSuccess());
       }
     };
     saveToBackend();
