@@ -1,7 +1,7 @@
 import JSZip from "jszip";
 import { v4 as uuidv4 } from "uuid";
 import { PACKAGE_ROOT } from "@dataspecer/git";
-import { replaceIrisRecursively, StorageApiForIriReplacement } from "../utils/iri-replace-util.ts";
+import { replaceIris, StorageApiForIriReplacement } from "../utils/iri-replace-util.ts";
 import { isArtificialExportDirectory, LocalStoreModelGetter, ResourceModelForImport } from "@dataspecer/git-node";
 
 
@@ -163,7 +163,7 @@ export class PackageImporter {
     }
 
 
-    await replaceIrisRecursively(this.mapToNewIds, this.storeModel, this.storageApi);
+    await replaceIris(this.mapToNewIds, this.storeModel, this.storageApi);
     return createdPackages;
   }
 
