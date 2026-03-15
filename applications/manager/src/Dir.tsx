@@ -399,6 +399,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
             const result = await openModal(RenameResourceDialog, {inputLabel: resource.userMetadata?.label, inputDescription: resource.userMetadata?.description});
             if (result) {
               await modifyUserMetadata(iri, {label: result.name, description: result.description});
+              await requestLoadPackage(iri, true);
             }
           }}><Pencil className="mr-2 h-4 w-4" /> Rename</DropdownMenuItem>
           {resource.types.includes(LOCAL_SEMANTIC_MODEL) && <DropdownMenuItem onClick={() => openModal(Autolayout, {iri, parentIri: parentIri!})}><Sparkles className="mr-2 h-4 w-4" /> {t("autolayout")}</DropdownMenuItem>}
