@@ -60,11 +60,14 @@ export class PrismaClientStorageApiForIriReplacement implements StorageApiForIri
  * Takes the values from the {@link resourceReplacementIrisMap} map. And for each resource it replaces all the keys it found from the map by the corresponding value.
  *  So what this does: It changes userMetadata if it contained the iri and the datastores under the resources if they contained the any of the iris to replace.
  */
-export async function replaceIrisRecursively(
+export async function replaceIris(
   resourceReplacementIrisMap: Record<string, string>,
   localStoreModel: LocalStoreModelGetter,
   storageApi: StorageApiForIriReplacement,
 ) {
+  // TODO RadStr PR: I think that it is better to fail absolutely before changing anything than changing only some.
+  const allReplacements: Record<string, string> = {};
+
   for (const newIri of Object.values(resourceReplacementIrisMap)) {
     const prismaResource = await storageApi.findResource(newIri);
     if (prismaResource === null) {
@@ -78,10 +81,18 @@ export async function replaceIrisRecursively(
     }
 
     const metadataAsJson = convertDatastoreContentBasedOnFormat(prismaResource.userMetadata, "json", true, null);
-    const { datastoreWithReplacedIris: convertedMetadata, containedIriToReplace } = createDatastoreWithReplacedIris(metadataAsJson, resourceReplacementIrisMap);
-    const stringifiedConvertedMetadata = stringifyDatastoreContentBasedOnFormat(convertedMetadata, "json", true);
-    if (containedIriToReplace) {
-      storageApi.updateResource(newIri, stringifiedConvertedMetadata);
+    if (!metadataAsJson.ok) {
+      throw new Error(metadataAsJson.error);
     }
+    const { datastoreWithReplacedIris: convertedMetadata, containedIriToReplace } = createDatastoreWithReplacedIris(metadataAsJson.value, resourceReplacementIrisMap);
+    const stringifiedConvertedMetadata = stringifyDatastoreContentBasedOnFormat(convertedMetadata, "json", true);
+    if (stringifiedConvertedMetadata)
+    if (containedIriToReplace) {
+      allReplacements[newIri] = stringifiedConvertedMetadata;
+    }
+  }
+
+  for (const [newIri, stringifiedConvertedMetadata] of Object.entries(allReplacements)) {
+    storageApi.updateResource(newIri, stringifiedConvertedMetadata);
   }
 }

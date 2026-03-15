@@ -11,6 +11,13 @@ export function getDefaultValueForMissingDatastoreInDiffEditor() {
 }
 
 
+type Result<T, E> =
+  | { ok: true; value: T }
+  | { ok: false; error: E };
+
+export type ConversionResult<T> = Result<T, string>;
+
+
 /**
  * Inverse to {@link stringifyDatastoreContentBasedOnFormat}
  * @param shouldConvert if false then returns the given {@link datastoreContent} without performing any converting action.
@@ -22,27 +29,44 @@ export function convertDatastoreContentBasedOnFormat(
   format: string | null,
   shouldConvert: boolean,
   resourceDatastoreStripHandler: DatastoreStripHandlerMethod | null,
-): any {
+): ConversionResult<any> {
   if (!shouldConvert) {
-    return datastoreContent;
+    return {
+      ok: true,
+      value: datastoreContent,
+    };
   }
 
-  let convertedDatastore: any
-  if (format === "json") {
-    convertedDatastore = JSON.parse(datastoreContent);
-  }
-  else if (format === "yaml") {
-    convertedDatastore = YAML.parse(datastoreContent);
-  }
-  else {
-    throw new Error("The provided format of string is unknown, can not convert to JSON object.");
-  }
+  try {
+    let convertedDatastore: any
+    if (format === "json") {
+      convertedDatastore = JSON.parse(datastoreContent);
+    }
+    else if (format === "yaml") {
+      convertedDatastore = YAML.parse(datastoreContent);
+    }
+    else {
+      return {
+        ok: false,
+        error: "The provided format of string is unknown, can not convert to JSON object.",
+      }
+    }
 
-  if (resourceDatastoreStripHandler !== null) {
-    convertedDatastore = resourceDatastoreStripHandler(convertedDatastore);
-  }
+    if (resourceDatastoreStripHandler !== null) {
+      convertedDatastore = resourceDatastoreStripHandler(convertedDatastore);
+    }
 
-  return convertedDatastore;
+    return {
+      ok: true,
+      value: convertedDatastore,
+    };
+  }
+  catch (error: any) {
+    return {
+      ok: false,
+      error: error.message,
+    };
+  }
 }
 
 /**
@@ -54,9 +78,16 @@ export function convertDatastoreContentToOutputFormat(
   outputFormat: string,
   shouldConvert: boolean,
   resourceDatastoreStripHandler: DatastoreStripHandlerMethod | null,
-): string {
-  const datastoreAsObject: any = convertDatastoreContentBasedOnFormat(datastoreContent, inputFormat, shouldConvert, resourceDatastoreStripHandler);
-  return stringifyDatastoreContentBasedOnFormat(datastoreAsObject, outputFormat, shouldConvert);
+): ConversionResult<string> {
+  const datastoreAsObject: ConversionResult<any> = convertDatastoreContentBasedOnFormat(datastoreContent, inputFormat, shouldConvert, resourceDatastoreStripHandler);
+  if (!datastoreAsObject.ok) {
+    return datastoreAsObject;
+  }
+  const stringifiedObject = stringifyDatastoreContentBasedOnFormat(datastoreAsObject.value, outputFormat, shouldConvert);
+  return {
+    ok: true,
+    value: stringifiedObject,
+  };
 }
 
 
@@ -101,8 +132,14 @@ export function extractShareableMetadata(
   metadataContent: string,
   format: string | null,
   resourceDatastoreStripHandler: DatastoreStripHandlerMethod | null,
-): ShareableMetadata {
+): ConversionResult<ShareableMetadata> {
   const metadataContentAsJSON = convertDatastoreContentBasedOnFormat(metadataContent, format, true, resourceDatastoreStripHandler);
-  const strippedContent = pickShareableMetadata(metadataContentAsJSON);
-  return strippedContent;
+  if (!metadataContentAsJSON.ok) {
+    return metadataContentAsJSON;
+  }
+  const strippedContent = pickShareableMetadata(metadataContentAsJSON.value);
+  return {
+    ok: true,
+    value: strippedContent,
+  };
 }

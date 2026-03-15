@@ -21,7 +21,7 @@ export async function manualPull(t: TFunction<"translation", undefined>, iri: st
   else {
     toast.error(t("There were conflicts in the git pull, resolve them in DS", { "richColors": true }));
   }
-  requestLoadPackage(iri, true);
+  await requestLoadPackage(iri, true);
 }
 
 

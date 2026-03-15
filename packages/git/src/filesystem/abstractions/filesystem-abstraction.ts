@@ -110,7 +110,7 @@ export interface FilesystemAbstraction {
    *  {@link otherFilesystem} is the other filesystem containing the data of the new version.
    * @deprecated We are not using it in the end
    */
-  changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<void>;
+  changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<boolean>;
 
   /**
    * Removes datastore from the {@link filesystemNode}, if it was the last {@link datastoreType} inside the node, also removes the whole node.
@@ -129,7 +129,7 @@ export interface FilesystemAbstraction {
   /**
    * Updates datastore (if it does not exist, creates one) of {@link datastoreType} inside {@link fileNode} in the underlying filesystem with given {@link content}.
    */
-  updateDatastore(fileNode: FileNode, datastoreType: string, content: string): Promise<void>;
+  updateDatastore(fileNode: FileNode, datastoreType: string, content: string): Promise<boolean>;
 
 
   // TODO RadStr: createFile and createDirectory replaced by createDatastore

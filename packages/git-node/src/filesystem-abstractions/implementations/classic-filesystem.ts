@@ -3,6 +3,7 @@ import {
   isDatastoreForMetadata, ExportMetadataType, DatastoreComparison, GitIgnore, dsPathJoin,
   DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, DatastoreInfo,
   FilesystemAbstractionBase, FilesystemAbstraction, removeDatastoreFromNode,
+  ConversionResult,
  } from "@dataspecer/git";
 
 import fs from "fs";
@@ -234,15 +235,19 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     const pathToDatastore = datastore.fullPath;
 
     const content = fs.readFileSync(pathToDatastore, "utf-8");
-    return convertDatastoreContentBasedOnFormat(content, datastore.format, shouldConvertToDatastoreFormat, null);
+    const convertedContent = convertDatastoreContentBasedOnFormat(content, datastore.format, shouldConvertToDatastoreFormat, null);
+    if (convertedContent.ok === false) {
+      throw new Error(convertedContent.error);
+    }
+    return convertedContent.value;
   }
 
   createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType> {
     throw new Error("Method not implemented.");
   }
-  async changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<void> {
+  async changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<boolean> {
     const newContent = await otherFilesystem.getDatastoreContent(changed.new!.name, changed.affectedDataStore.type, false);
-    this.updateDatastore(changed.old!, changed.affectedDataStore.type, newContent);
+    return this.updateDatastore(changed.old!, changed.affectedDataStore.type, newContent);
   }
   async removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<void> {
     const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType)!;
@@ -262,9 +267,10 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
       await this.removeDatastore(filesystemNode, datastore.type, true);
     }
   }
-  async updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, content: string): Promise<void> {
+  async updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, content: string): Promise<boolean> {
     const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType)!;
     fs.writeFileSync(relevantDatastore.fullPath, content);
+    return true;
   }
   async createDatastore(parentIriInToBeChangedFilesystem: string, otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<void> {
     throw new Error("Method not implemented.");
@@ -286,9 +292,10 @@ function setMetadata(node: FilesystemNode, directory: string) {
 
 function constructMetadata(metadataFilePath: string, format: string | null, oldCache?: object) {
   oldCache ??= {};
+  const metadataFileContent = readMetadataFile(metadataFilePath, format);
   return {
     ...oldCache,
-    ...readMetadataFile(metadataFilePath, format),
+    ...metadataFileContent,
   };
 }
 
@@ -298,7 +305,11 @@ function constructMetadata(metadataFilePath: string, format: string | null, oldC
  */
 function readMetadataFile(metadataFilePath: string, format: string | null) {
   const metadata = convertDatastoreContentBasedOnFormat(fs.readFileSync(metadataFilePath, "utf-8"), format, true, null);
-  return metadata;
+  // Have to compare to false like this, otherwise TypeScript complains.
+  if (metadata.ok === false) {
+    throw new Error(metadata.error);
+  }
+  return metadata.value;
 }
 
 function getMetadataDatastoreFile(datastores: DatastoreInfo[]): DatastoreInfo | undefined {

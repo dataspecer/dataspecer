@@ -30,7 +30,11 @@ export async function getDatastoreContent(
       return { accessDenied: true };
     }
     const content = fs.readFileSync(normalizedGitPath, "utf-8");
-    return convertDatastoreContentBasedOnFormat(content, format ?? null, shouldConvertToDatastoreFormat, null);
+    const convertedDatastoreContent = convertDatastoreContentBasedOnFormat(content, format ?? null, shouldConvertToDatastoreFormat, null);
+    if (!convertedDatastoreContent.ok) {
+      throw new Error(convertedDatastoreContent.error);
+    }
+    return convertedDatastoreContent.value;
   }
   else {
     return await DSFilesystem.getDatastoreContentForPath(resourceModel, pathToDatastore, type, format ?? null, shouldConvertToDatastoreFormat, exportedBy, databaseMigrationVersion);
@@ -81,7 +85,10 @@ export async function updateDatastoreContent(
       return { success: false, accessDenied: true };
     }
     const newContentConverted = convertDatastoreContentBasedOnFormat(newContent, format ?? null, true, null);
-    fs.writeFileSync(normalizedGitPath, newContentConverted, "utf-8");
+    if (!newContentConverted.ok) {
+      return { success: false, accessDenied: false };
+    }
+    fs.writeFileSync(normalizedGitPath, newContentConverted.value, "utf-8");
   }
   else {
     DSFilesystem.setDatastoreContentForPath(datastoreParentIri, resourceModel, pathToDatastore, format ?? null, type, newContent, [mergeStateUuid]);
@@ -158,7 +165,10 @@ export async function createDatastoreContent(
       currentParentIri = currentNewIri;
     }
     const newContentAsJSON = convertDatastoreContentBasedOnFormat(content, format ?? null, true, null);
-    await updateBlob(currentParentIri, type, newContentAsJSON, [mergeStateUuid]);
+    if (!newContentAsJSON.ok) {
+      return { success: false, accessDenied: false };
+    }
+    await updateBlob(currentParentIri, type, newContentAsJSON.value, [mergeStateUuid]);
   }
   return { success: true, accessDenied: false };
 }
@@ -287,6 +297,10 @@ export const updateDatastoreContentDirectly = asyncHandler(async (request: expre
     response.json(`Trying to access ${body.pathToDatastore}`);
     return;
   }
+  else if (!datastoreContent.success) {
+    response.sendStatus(400);
+    return;
+  }
 
   response.sendStatus(200);
   return;
@@ -319,6 +333,10 @@ export const createDatastoreContentDirectly = asyncHandler(async (request: expre
   if (datastoreContent.accessDenied) {
     response.status(403);
     response.json(`Trying to access ${body.type}`);
+    return;
+  }
+  else if (!datastoreContent.success) {
+    response.sendStatus(400);
     return;
   }
 

@@ -119,7 +119,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
   createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType> {
     throw new Error("Method not implemented.");
   }
-  changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<void> {
+  changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<boolean> {
     throw new Error("Method not implemented.");
   }
 
@@ -225,11 +225,11 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
   }
 
 
-  async updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, content: string): Promise<void> {
+  async updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, content: string): Promise<boolean> {
     const datastoreInfo: DatastoreInfo | null = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType);
     // The "" will throw error on backend, so for it to work it should be allowed to have missing merge state id in the request,
     // but since we are currently (and probably always will be) using just the static methods, there is no need to implement it
-    ClientFilesystem.updateDatastoreContentDirectly("", filesystemNode.metadata.iri, datastoreInfo, content, this.backendFilesystem, this.backendApiPath);
+    return ClientFilesystem.updateDatastoreContentDirectly("", filesystemNode.metadata.iri, datastoreInfo, content, this.backendFilesystem, this.backendApiPath);
   }
 
 

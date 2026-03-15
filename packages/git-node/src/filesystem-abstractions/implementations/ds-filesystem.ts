@@ -96,11 +96,19 @@ export class DSFilesystem extends FilesystemAbstractionBase {
 
       const metadata = DSFilesystem.constructMetadataFromResource(resource, exportedBy, databaseMigrationVersion);
       const metadataAsString: string = JSON.stringify(metadata);
-      return convertDatastoreContentBasedOnFormat(metadataAsString, datastoreFormat, shouldConvertToDatastoreFormat, null);
+      const result = convertDatastoreContentBasedOnFormat(metadataAsString, datastoreFormat, shouldConvertToDatastoreFormat, null);
+      if (result.ok === false) {
+        throw new Error(result.error);
+      }
+      return result.value;
     }
     else {
       const data = await givenResourceModel.storeModel.getModelStore(fullPath).getString();
-      return convertDatastoreContentBasedOnFormat(data, datastoreFormat, shouldConvertToDatastoreFormat, null);
+      const result = convertDatastoreContentBasedOnFormat(data, datastoreFormat, shouldConvertToDatastoreFormat, null);
+      if (result.ok === false) {
+        throw new Error(result.error);
+      }
+      return result.value;
     }
   }
 
@@ -118,13 +126,16 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     }
     // Hardcoded JSON. Check top of file for more info.
     const contentAsObject = convertDatastoreContentBasedOnFormat(newContent, datastoreFormat, true, null);
+    if (!contentAsObject.ok) {
+      return false;
+    }
     if (isDatastoreForMetadata(type)) {
       // Pass in only the userMetadata
-      await givenResourceModel.updateResourceMetadata(fullPath, contentAsObject.userMetadata ?? {}, mergeStateUUIDsToIgnoreInUpdating);
+      await givenResourceModel.updateResourceMetadata(fullPath, contentAsObject.value.userMetadata ?? {}, mergeStateUUIDsToIgnoreInUpdating);
     }
     else {
       const onUpdate = () => givenResourceModel.updateModificationTime(datastoreParentIri, type, ResourceChangeType.Modified, true, true, mergeStateUUIDsToIgnoreInUpdating);
-      await givenResourceModel.storeModel.getModelStore(fullPath, [onUpdate]).setJson(contentAsObject);
+      await givenResourceModel.storeModel.getModelStore(fullPath, [onUpdate]).setJson(contentAsObject.value);
     }
 
     return true;
@@ -302,7 +313,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     };
   }
 
-  async changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<void> {
+  async changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<boolean> {
     // Here we just update the blob
 
     const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(changed.old!, changed.affectedDataStore.type);
@@ -311,7 +322,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     }
 
     const newContent = await otherFilesystem.getDatastoreContent(changed.new!.irisTreePath, changed.affectedDataStore.type, false);
-    await this.updateDatastore(changed.old!, changed.affectedDataStore.type, newContent);
+    return await this.updateDatastore(changed.old!, changed.affectedDataStore.type, newContent);
   }
 
   async removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<void> {
@@ -336,12 +347,12 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     }
   }
 
-  async updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, newContent: string): Promise<void> {
+  async updateDatastore(filesystemNode: FilesystemNode, datastoreType: string, newContent: string): Promise<boolean> {
     const relevantDatastore = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType);
     if (relevantDatastore === null) {
       throw new Error(`Could not update datastore of type ${datastoreType} inside ${filesystemNode.projectIrisTreePath}, since it does not exist on the node`);
     }
-    DSFilesystem.setDatastoreContentForPath(filesystemNode.metadata.iri, this.resourceModel, relevantDatastore.fullPath, relevantDatastore.format, datastoreType, newContent)
+    return DSFilesystem.setDatastoreContentForPath(filesystemNode.metadata.iri, this.resourceModel, relevantDatastore.fullPath, relevantDatastore.format, datastoreType, newContent)
   }
 
   createDatastore(parentIriInToBeChangedFilesystem: string, otherFilesystem: FilesystemAbstraction, filesystemNode: FilesystemNode, changedDatastore: DatastoreInfo): Promise<void> {
