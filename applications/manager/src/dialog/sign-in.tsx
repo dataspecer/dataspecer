@@ -56,7 +56,7 @@ function SignInInfoTooltipAdvanced() {
         <div>
           - The access tokens for Git operations are tried out until one succeeds in this order. Your SSH, your PAT, bot SSH, bot PAT
           <br/>
-          &nbsp;&nbsp;&nbsp;where PAT = Personal Access Token, that is the things you get from the Git provider on sign in.
+          &nbsp;&nbsp;&nbsp;where PAT = Personal Access Token, that is the thing you get from the Git provider on sign in.
         </div>
       </div>
     </PopOverGitGeneralComponent>;

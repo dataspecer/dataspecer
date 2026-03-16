@@ -456,7 +456,7 @@ function StyledNode({
   const isCurrentlyInConflict = node.data.nowInConflictCount > 0;
   icon = isCurrentlyInConflict ? "⚠️" : "";   // Always show the conflict mark
   icon = (node.data.isInEditableTree && node.data.conflictsToBeResolvedOnSaveInThisComponent.find(resolvedConflict => node.data.id === createIdForDatastoreRenderNode(resolvedConflict, node.data.treeType))) ? "✅" : icon;
-  icon = "✅⚠️✅"     // TODO RadStr: Just debug to know tht we show the right tree
+  // icon = "✅⚠️✅"     // TODO RadStr: Just debug to know tht we show the right tree
   if (node.data.dataSourceType == "datastore") {
     icon += "📄";
   }

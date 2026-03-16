@@ -86,7 +86,6 @@ export async function replaceIris(
     }
     const { datastoreWithReplacedIris: convertedMetadata, containedIriToReplace } = createDatastoreWithReplacedIris(metadataAsJson.value, resourceReplacementIrisMap);
     const stringifiedConvertedMetadata = stringifyDatastoreContentBasedOnFormat(convertedMetadata, "json", true);
-    if (stringifiedConvertedMetadata)
     if (containedIriToReplace) {
       allReplacements[newIri] = stringifiedConvertedMetadata;
     }
