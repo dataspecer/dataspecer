@@ -894,7 +894,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
 
       // TODO RadStr Debug: Debug print and alert
       console.info({ newMergeFromDatastoreInfo, newMergeToDatastoreInfo, examinedMergeState });
-      alert("Getting values:")
+      // alert("Getting values:")
       const newMergeFromDataAsText = await ClientFilesystem.getDatastoreContentDirectly(newMergeFromDatastoreInfo, false, import.meta.env.VITE_BACKEND, examinedMergeState?.filesystemTypeMergeFrom ?? null);
       const newMergeToDataAsText = await ClientFilesystem.getDatastoreContentDirectly(newMergeToDatastoreInfo, false, import.meta.env.VITE_BACKEND, examinedMergeState?.filesystemTypeMergeTo ?? null);
 
