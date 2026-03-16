@@ -4,7 +4,7 @@ import express from "express";
 import { resourceModel } from "../../main.ts";
 import { gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { compareBackendFilesystems, createSimpleGitUsingPredefinedGitRoot, MergeEndpointForComparison, removePathRecursively, TMP_CLONE_PATH_PREFIX } from "@dataspecer/git-node";
-import { AvailableFilesystems, ConfigType, extractPartOfRepositoryURL, getAuthorizationURL, GitIgnoreBase } from "@dataspecer/git";
+import { AvailableFilesystems, ConfigType, extractPartOfRepositoryURL, getAuthorizationURL, GitIgnoreBase, GitProvider } from "@dataspecer/git";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
@@ -15,7 +15,7 @@ import { createFilesystemFactoryParams } from "../../utils/filesystem-helpers.ts
 /**
  * Compares remote Git package with the package in DS and sets the is up to date flag based on if the packages is up to date with the Git Remote or not.
  */
-export const trySetPackageAsUpToDate = asyncHandler(async (request: express.Request, response: express.Response) => {
+export const trySetPackageAsUpToDateHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
     iri: z.string().min(1),
   });

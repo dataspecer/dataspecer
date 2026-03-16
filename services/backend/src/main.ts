@@ -36,7 +36,7 @@ import { authHandler } from "./routes/auth/auth-handler.ts";
 import { corsOriginHandler } from "./utils/cors-related.ts";
 import { currentSession } from "./authentication/auth-session.ts";
 import { handleWebhook } from "./routes/git/git-webhook-handler.ts";
-import { createNewGitRepositoryWithPackageContent, createPackageFromExistingGitRepository } from "./routes/git/create-new-git-repository-with-package-content.ts";
+import { createNewGitRepositoryWithPackageContent } from "./routes/git/create-new-git-repository-with-package-content.ts";
 import { commitPackageToGitHandler, mergeCommitPackageToGitHandler } from "./routes/git/commit-package-to-git.ts";
 import { removeGitRepository } from "./routes/git/remove-git-repository.ts";
 import { fetchGitCommitHistory } from "./routes/git/fetch-git-commit-history.ts";
@@ -58,7 +58,7 @@ import { finalizeMergeMergeState } from "./routes/git/merge-states/finalize-merg
 import { finalizePullMergeStateOnFailure } from "./routes/git/merge-states/finalize-pull-merge-state-on-failure.ts";
 import { finalizeMergeMergeStateOnFailure } from "./routes/git/merge-states/finalize-merge-merge-state-on-failure.ts";
 import { finalizePushMergeStateOnFailure } from "./routes/git/merge-states/finalize-push-merge-state-on-failure.ts";
-import { trySetPackageAsUpToDate } from "./routes/git/try-set-package-as-up-to-date.ts";
+import { trySetPackageAsUpToDateHandler } from "./routes/git/try-set-package-as-up-to-date.ts";
 import { checkExistenceOfSshKeyForUserHandler } from "./routes/git/ssh/check-ssh-key-existence.ts";
 import { deletePrivateSshKeyHandler } from "./routes/git/ssh/remove-private-ssh-key.ts";
 import { GitProviderNamesAsType } from "@dataspecer/git";
@@ -163,8 +163,7 @@ application.delete(apiBasename + "/git/remove-merge-state", removeMergeState);
 // TODO RadStr: Just for debugging !
 application.post(apiBasename + "/git/debug-clear-merge-state-table", clearMergeStateTableDebug);
 
-// TODO RadStr: Once I update the URL don't forget to update the ngrok URL in git providers to the same URL suffix
-application.get(apiBasename + "/git/try-set-package-as-up-to-date", currentSession, trySetPackageAsUpToDate);
+application.get(apiBasename + "/git/try-set-package-as-up-to-date", currentSession, trySetPackageAsUpToDateHandler);
 application.post(apiBasename + "/git/webhook-test", currentSession, handleWebhook);
 application.post(apiBasename + "/git/webhook-test2", currentSession, handleWebhook);
 application.post(apiBasename + "/git/set-private-ssh-key", currentSession, storePrivateSSHKeyHandler);
@@ -174,7 +173,6 @@ application.get(apiBasename + "/git/create-new-git-repository-with-package-conte
 application.get(apiBasename + "/git/commit-package-to-git", currentSession, commitPackageToGitHandler);
 application.get(apiBasename + "/git/merge-commit-package-to-git", currentSession, mergeCommitPackageToGitHandler);
 application.get(apiBasename + "/git/remove-git-repository", currentSession, removeGitRepository);
-application.get(apiBasename + "/git/create-package-from-existing-git-repository", currentSession, createPackageFromExistingGitRepository);    // TODO RadStr: Not called for naywhere
 application.get(apiBasename + "/git/test-docker", currentSession, exportPackageResource);
 application.get(apiBasename + "/git/fetch-git-commit-history", currentSession, fetchGitCommitHistory);
 application.get(apiBasename + "/git/pull", currentSession, pullRemoteRepository);
@@ -211,7 +209,7 @@ application.post(apiBasename + "/resources/packages", createPackageResource);
 application.patch(apiBasename + "/resources/packages", updateResourceMetadataHandler); // same
 application.delete(apiBasename + "/resources/packages", deleteResourceHandler); // same
 
-application.patch(apiBasename + "/resources/packages/update-project-iri-and-branch", updateResourceProjectIriAndBranchHandler);     // TODO RadStr: Testing manual udpate of projectIri and branch
+application.patch(apiBasename + "/resources/packages/update-project-iri-and-branch", updateResourceProjectIriAndBranchHandler);
 application.patch(apiBasename + "/resources/packages/update-represents-branch-head", updateRepresentsBranchHeadOnResourceHandler);
 
 // Special operation to list all root packages
@@ -280,7 +278,7 @@ if (configuration.staticFilesPath) {
 }
 
 
-// TODO RadStr: Have to await, because of the generate-specification
+// TODO RadStr PR: Have to await, because of the generate-specification
 await (async () => {
   // Run migrations or throw
   await migration.tryUp();

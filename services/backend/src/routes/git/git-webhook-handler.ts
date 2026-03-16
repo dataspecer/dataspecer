@@ -22,7 +22,7 @@ import _ from "lodash";
 import { mergeStateModel, resourceModel } from "../../main.ts";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
-import { GitPullBase, GitPullFields, WEBHOOK_PATH_PREFIX } from "@dataspecer/git-node";
+import { GitPull, GitPullFields, WEBHOOK_PATH_PREFIX } from "@dataspecer/git-node";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 import { createFilesystemFactoryParams } from "../../utils/filesystem-helpers.ts";
 
@@ -83,7 +83,7 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
     updateResourceMetadata: updateResourceMetadata,
     filesystemConstructorParams,
   };
-  const pullContainer = new GitPullBase(pullUpdateParams);
+  const pullContainer = new GitPull(pullUpdateParams);
   const createdMergeState = await pullContainer.updateDSRepositoryByGitPull(commits.length);
 
   // Actually we don't need to answer based on response, since this comes from git provider, only think we might need is to notify users that there was update, which we do by setting the isInSyncWithRemote

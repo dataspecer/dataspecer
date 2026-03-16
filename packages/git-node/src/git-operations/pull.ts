@@ -37,7 +37,7 @@ type UpdateBlobMethod = (iri: string, datastoreType: string, newBlobContent: any
 type UpdateResourceMetadataMethod = (iri: string, userMetadata: Record<string, unknown> | undefined) => Promise<void>;
 
 
-export class GitPullBase {
+export class GitPull {
   public constructor(fields: GitPullFields) {
     this.fields = fields;
   }
@@ -82,7 +82,6 @@ export class GitPullBase {
   };
 
 
-  // TODO RadStr: Here also ideally reduce the number of parameters.
   /**
    * This method handles the storing of directory content, which usually comes from git clone, back to the DS store.
    * That means:
