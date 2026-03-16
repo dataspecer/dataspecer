@@ -112,7 +112,7 @@ export const getBasicUserInfo = asyncHandler(async (request: express.Request, re
  *  ... Can't think of anything though - maybe just provide the string value describing permission (but that does not work for different Git providers)
  *  ... so possible future TODO RadStr Idea:
  */
-export const getGitCredentialsFromSession = (request: express.Request, response: express.Response, wantedAccessTokenLevels: ConfigType[], debugObject?: Record<string, any>) => {
+export const getGitCredentialsFromSession = (request: express.Request, response: express.Response, wantedAccessTokenLevels: ConfigType[]) => {
   let committerName: string | null = null;
   let committerEmail: string | null = null;
   let committerAccessToken: string | null = null;
@@ -120,17 +120,11 @@ export const getGitCredentialsFromSession = (request: express.Request, response:
   const dsBackendURL = getBaseBackendUrl(request);
 
   const currentSession = getStoredSession(response);
-  if (debugObject !== undefined) {
-    debugObject["currentSession"] = currentSession;
-    debugObject["dsBackendURL"] = dsBackendURL;
-  }
   if (currentSession !== null) {
     committerName = currentSession.user?.name ?? null;
     committerEmail = currentSession.user?.email ?? null;
     const [, configType] = createAuthConfigBasedOnAccountScope((currentSession.user as any)?.genericScope ?? null, dsBackendURL);      // The express request won't be used so just set it to null
-    if (debugObject !== undefined) {
-      debugObject["configType"] = configType;
-    }
+
     // TODO RadStr Idea: In future if there will be better granulization in permissions then the check should be more complex + should check if we have access to the repo
     if (configType !== null && wantedAccessTokenLevels.includes(configType)) {
       committerAccessToken = (currentSession.user as any)?.accessToken ?? null;
@@ -165,14 +159,13 @@ export const getGitCredentialsFromSessionWithDefaults = (
   request: express.Request,
   response: express.Response,
   wantedAccessTokenLevels: ConfigType[],
-  debugObject?: Record<string, any>,
 ): GitCredentials => {
   const {
     committerName,
     committerEmail,
     committerAccessToken,
     committerSSH
-  } = getGitCredentialsFromSession(request, response, wantedAccessTokenLevels, debugObject);
+  } = getGitCredentialsFromSession(request, response, wantedAccessTokenLevels);
   const botCredentials = gitProvider.getBotCredentials();
 
   const isBotName = committerName === null;
@@ -199,15 +192,6 @@ export const getGitCredentialsFromSessionWithDefaults = (
 
   if (botCredentials !== null) {
     accessTokens.push(...botCredentials.accessTokens);
-  }
-
-  if (debugObject !== undefined) {
-    debugObject["committerName"] = committerName;
-    debugObject["committerEmail"] = committerEmail;
-    debugObject["committerAccessToken"] = committerAccessToken;
-    debugObject["committerSSH"] = committerSSH;
-    debugObject["isBotName"] = isBotName;
-    debugObject["isBotEmail"] = isBotEmail;
   }
 
   return {
