@@ -123,7 +123,7 @@ const MergeStateFinalizerForPull = ({ mergeState, shouldRenderAnswerDialog, setS
         resolve();
       }
       else if (response.status < 400) {
-        // TODO RadStr: Probably do nothing - we will just show the another dialog.
+        // Probably do nothing - we will just show the another dialog.
         setIsWaitingForAnswer(false);
         setShouldRenderAnswerDialog(true);
       }
@@ -218,7 +218,7 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
         }, 10);     // Small delay to keep the background of same color (that is we wait until the resolve which closes the currently opened dialog is done)
       }
       else if (response.status < 400) {
-        // TODO RadStr: Probably do nothing - we will just show the another dialog.
+        // Probably do nothing - we will just show the another dialog.
       }
       else {
         toast.error("There was error when finalizing, check console for more info", { "richColors": true });
@@ -255,7 +255,7 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
         }, 10);     // Same as for merge, small delay to keep the background same color.
       }
       else if (response.status < 400) {
-        // TODO RadStr: Probably do nothing - we will just show the another dialog.
+        // Probably do nothing - we will just show the another dialog.
       }
       else {
         toast.error("There was error when finalizing, check console for more info", { "richColors": true });
@@ -334,7 +334,7 @@ const MergeStateFinalizerForMergeAnswerDialog = ({ mergeState, httpResponse, res
   }
 
 
-  // TODO RadStr: This seems to be almost copy-pasted from the Answer dialog for push
+  // TODO RadStr PR: Almost copy-pasted from the Answer dialog for push - if somebody will have time, they can refactor it
   if (httpResponse === null || httpResponse.status >= 300 || httpResponse?.status < 0) {
     let text = "⚠️ Unknown error when finalizing merge state caused by merging. You can check console for more information.\n\nUsually it is caused by one branch not matching the remote state (or not being pushed in the remote repository).";
     if (httpResponse?.status === 409) {
@@ -393,7 +393,7 @@ const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldR
         commitToGitDialogOnClickHandler(t, openModal, iri, sourceDSPackage, "classic-commit", false, mergeState.commitMessage, null);
       }
       else if (response.status < 400) {
-        // TODO RadStr: Probably do nothing - we will just show the another dialog.
+        // Probably do nothing - we will just show the another dialog.
       }
       else {
         toast.error("There was error when finalizing, check console for more info", { "richColors": true });

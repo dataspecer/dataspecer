@@ -158,7 +158,9 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
       console.info("useLayoutEffect for git-history-vis");      // TODO RadStr Debug: Debug print
       setIsLoading(true);
 
-      // TODO RadStr: Probably rewrite using async/await, this seems kind of unreadable
+      // TODO RadStr PR: It would be probably more readable if it was rewritten using async/await, instead of .then
+      //                 That being said I am not doing it - since this can probably be handled by just using AI.
+      //                 (https://chatgpt.com/share/69b8478b-c380-8011-bf87-e2e2c73c7641)
 
       // Here we load the git history
       // Note that we could send the the git link directly and don't need to send the package iri and then find the link on backend
@@ -196,7 +198,6 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
             ?.filter(rootPackage => rootPackage !== undefined && rootPackage.projectIri === examinedPackage.projectIri);
           const { dsPackagesInProjectForAll, dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches } = createGitToPackagesForProjectMapping(rootPackages);
           // For the commits (and creating of repo) we will pass in the exportFormat directly, instead of retrieving it again on server.
-          // const isGitDialogSettingGitConfiguration = type !== "link-to-existing-repository";     // TODO RadStr: Except for this it is the same - we can use hook probably
           fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(examinedPackage.iri))
             .then(rootPackageFetchResponse => {
                 rootPackageFetchResponse.json()
