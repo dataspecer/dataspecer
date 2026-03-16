@@ -1,5 +1,6 @@
 import { Entity } from "../../entity-model/entity.ts";
 import { SEMANTIC_MODEL_CLASS, SEMANTIC_MODEL_GENERALIZATION, SEMANTIC_MODEL_RELATIONSHIP } from "./concepts-utils.ts";
+import { OrderedThing } from "./ordered-thing.ts";
 
 /**
  * A human text that is translated into multiple languages.
@@ -28,7 +29,7 @@ export interface NamedThing {
 /**
  * Represent classes, enumerations and simple data types.
  */
-export interface SemanticModelClass extends NamedThing, SemanticModelEntity {
+export interface SemanticModelClass extends NamedThing, SemanticModelEntity, OrderedThing {
     type: [typeof SEMANTIC_MODEL_CLASS];
 
     // todo: is it class, enumeration, datatype, code list, ...
@@ -56,7 +57,7 @@ export interface SemanticModelRelationship extends NamedThing, SemanticModelEnti
     // todo: is it attribute or association
 }
 
-export interface SemanticModelRelationshipEnd extends NamedThing {
+export interface SemanticModelRelationshipEnd extends NamedThing, OrderedThing {
     iri: string | null;
     cardinality?: [number, number | null];
 

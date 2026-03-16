@@ -143,7 +143,8 @@ export function createEditAssociationDialogState(
     { identifier: entity.id, model: model.getId() },
     range.iri ?? "", range.name, range.description,
     range.externalDocumentationUrl ?? "",
-    allSpecializations);
+    allSpecializations,
+    range.order ?? "");
 
   // RelationshipState
 

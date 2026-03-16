@@ -23,6 +23,8 @@ export interface NewCmeRelationship {
 
   externalDocumentationUrl: string | null;
 
+  order?: string | null;
+
 }
 
 export interface CmeRelationship extends CmeEntity, NewCmeRelationship {

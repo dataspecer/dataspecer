@@ -88,6 +88,12 @@ export interface BaseEntityDialogState {
    */
   externalDocumentationUrl: string;
 
+  /**
+   * Optional ordering string for custom sorting in documentation.
+   * Uses natural sort order, items without order are placed at the end.
+   */
+  order: string;
+
 }
 
 /**
@@ -134,6 +140,8 @@ export function createNewBaseEntityDialogState(
     specializations: [],
     // Documentation
     externalDocumentationUrl: "",
+    // Order
+    order: "",
   };
 }
 
@@ -176,6 +184,7 @@ export function createEditBaseEntityDialogState(
   description: LanguageString,
   externalDocumentationUrl: string,
   allSpecializations: EntityRepresentative[],
+  order: string = "",
 ): BaseEntityDialogState {
 
   const semanticModels: InMemorySemanticModel[] =
@@ -215,6 +224,8 @@ export function createEditBaseEntityDialogState(
       entity.identifier, allSpecializations, semanticModels),
     // Documentation
     externalDocumentationUrl,
+    // Order
+    order,
   };
 }
 

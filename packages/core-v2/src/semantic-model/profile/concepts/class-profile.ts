@@ -2,8 +2,9 @@ import { Entity } from "../../../entity-model/index.ts";
 import { SemanticModelEntity } from "../../concepts/index.ts";
 import { NamedThingProfile } from "./named-thing-profile.ts";
 import { Profile } from "./profile.ts";
+import { OrderedThing } from "../../concepts/ordered-thing.ts";
 
-export interface SemanticModelClassProfile extends SemanticModelEntity, Profile, NamedThingProfile {
+export interface SemanticModelClassProfile extends SemanticModelEntity, Profile, NamedThingProfile, OrderedThing {
 
   type: [typeof SEMANTIC_MODEL_CLASS_PROFILE];
 
@@ -11,12 +12,6 @@ export interface SemanticModelClassProfile extends SemanticModelEntity, Profile,
    * Collections of IRIs tagging this resources.
    */
   tags: string[];
-
-  /**
-   * Optional ordering string for custom sorting of profiles.
-   * Uses natural sort order, items without order are placed at the end.
-   */
-  order?: string | null;
 
 }
 

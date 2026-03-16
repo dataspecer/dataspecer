@@ -1,6 +1,7 @@
 import { Entity } from "../../../entity-model/index.ts";
 import { NamedThingProfile } from "./named-thing-profile.ts";
 import { Profile } from "./profile.ts";
+import { OrderedThing } from "../../concepts/ordered-thing.ts";
 
 /**
  * For now we do not extend {@link NamedThingProfile} here.
@@ -21,7 +22,7 @@ export function isSemanticModelRelationshipProfile(entity: Entity | null): entit
   return entity?.type.includes(SEMANTIC_MODEL_RELATIONSHIP_PROFILE) ?? false;
 }
 
-export interface SemanticModelRelationshipEndProfile extends NamedThingProfile, Profile {
+export interface SemanticModelRelationshipEndProfile extends NamedThingProfile, Profile, OrderedThing {
 
   /**
    * Public, usually globally-recognized, identifier of the entity.
@@ -49,11 +50,5 @@ export interface SemanticModelRelationshipEndProfile extends NamedThingProfile, 
    * Collections of IRIs tagging this resources.
    */
   tags: string[];
-
-  /**
-   * Optional ordering string for custom sorting of profiles.
-   * Uses natural sort order, items without order are placed at the end.
-   */
-  order?: string | null;
 
 }

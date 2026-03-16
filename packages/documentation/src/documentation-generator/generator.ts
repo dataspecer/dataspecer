@@ -137,6 +137,8 @@ export async function generateDocumentation(
     const getOrder = (entity: Entity & {aggregation?: Entity}): string | null => {
       if (isSemanticModelClassProfile(entity)) return entity.order ?? null;
       if (isSemanticModelRelationshipProfile(entity)) return entity.ends?.[1]?.order ?? null;
+      if (isSemanticModelClass(entity)) return entity.order ?? null;
+      if (isSemanticModelRelationship(entity)) return entity.ends?.[1]?.order ?? null;
       return null;
     };
     const aOrder = getOrder(a);

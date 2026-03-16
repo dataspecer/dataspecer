@@ -111,6 +111,12 @@ export const AttributeDialog = (props: DialogProps<AttributeDialogState>) => {
             onChange={controller.setExternalDocumentationUrl}
           />
         </DialogDetailRow>
+        <DialogDetailRow detailKey={t("create-class-dialog.order")}>
+          <InputText
+            value={state.order}
+            onChange={controller.setOrder}
+          />
+        </DialogDetailRow>
       </div>
     </>
   );

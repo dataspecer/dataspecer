@@ -13,6 +13,8 @@ export interface NewCmeClass {
 
   externalDocumentationUrl: string | null;
 
+  order?: string | null;
+
 }
 
 export interface CmeClass extends CmeEntity, NewCmeClass {

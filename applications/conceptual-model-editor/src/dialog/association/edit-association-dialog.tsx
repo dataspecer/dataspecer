@@ -110,6 +110,12 @@ export const EditAssociationDialog = (props: DialogProps<AssociationDialogState>
             onChange={controller.setExternalDocumentationUrl}
           />
         </DialogDetailRow>
+        <DialogDetailRow detailKey={t("create-class-dialog.order")}>
+          <InputText
+            value={state.order}
+            onChange={controller.setOrder}
+          />
+        </DialogDetailRow>
       </div>
     </>
   );

@@ -1,4 +1,5 @@
 import { NewCmeRelationship } from "../../dataspecer/cme-model/model";
+import { emptyAsNull } from "../../utilities/string";
 import { AssociationDialogState } from "./edit-association-dialog-state";
 
 export function associationDialogStateToNewCmeRelationship(
@@ -13,5 +14,6 @@ export function associationDialogStateToNewCmeRelationship(
     range: state.range.identifier,
     rangeCardinality: state.rangeCardinality.cardinality,
     externalDocumentationUrl: state.externalDocumentationUrl,
+    order: emptyAsNull(state.order),
   }
 }
