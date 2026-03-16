@@ -64,13 +64,12 @@ export const resolveWithRequiredCheck = (resolve: () => void, ...requiredFieldsR
 
 type NullableGitRemoteConfigurations = GitRemoteConfigurations | null;
 
-// TODO RadStr: ... I can not type it correctly ... try to fix it later
-
 export type SetGitRemoteConfigurationStatePartMethod = (gitRemoteConfigurationSetter: SetGitConfigurationReactStateType, key: keyof GitRemoteConfigurations, newValue: any) => void;
-// ((prevState: T) => T) => void
+
+/**
+ * TODO RadStr PR: Could be probably typed better
+ */
 export type SetGitConfigurationReactStateType = (value: NullableGitRemoteConfigurations | ((prevState: NullableGitRemoteConfigurations) => NullableGitRemoteConfigurations)) => void;
-// type SetGitConfigurationReactStateType = ((prevState: NullableGitRemoteConfigurations): NullableGitRemoteConfigurations) => void;
-// type SetGitConfigurationReactStateType = (((prevState: NullableGitRemoteConfigurations) => NullableGitRemoteConfigurations)) => void;
 
 export function setGitRemoteConfigurationStatePart(
   gitRemoteConfigurationSetter: SetGitConfigurationReactStateType,

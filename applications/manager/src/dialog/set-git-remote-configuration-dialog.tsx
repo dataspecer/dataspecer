@@ -33,13 +33,10 @@ export function SetGitRemoteConfigurationDialog({ inputPackage, isOpen, resolve 
 
   const { requiredGitConfigFieldsMap } = useRequiredFieldsForGitConfig();
 
-  // ... ok fixnout refactor
-  // TODO RadStr: Once again everything is kind of copy-pasted - refactor in the following commits
   const tryCloseWithSuccess = () => {
     const resolveAsNoParamsMethod = async () => {
       resolve(null);
 
-      // TODO RadStr: It is kind of weird that there is no exported method with this functionality yet.
       const storeModelToBackend = async (iri: string, newPackageContent: object) => {
         try {
           // TODO RadStr PR: This probably should be in some interface, maybe the BackendPackageService

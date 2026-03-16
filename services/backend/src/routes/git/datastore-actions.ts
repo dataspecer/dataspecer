@@ -104,7 +104,6 @@ export async function removeDatastoreContent(
   shouldRemoveFileWhenNoDatastores: boolean,
   mergeStateUuid: string,
 ): Promise<{ success: boolean, accessDenied: boolean}> {
-  // TODO RadStr: Run conversion on client?
   if (filesystem === AvailableFilesystems.ClassicFilesystem) {
     const { isAccessible, normalizedGitPath } = isAccessibleGitRepository(pathToDatastore);
     // This is very very important, if we didn't do this, we would user allow to esentially query any file stored on server
@@ -183,8 +182,6 @@ export async function createFilesystemNodes(
   filesystem: AvailableFilesystems,
   mergeStateUuid: string,
 ): Promise<{ success: boolean, accessDenied: boolean, createdIris: string[]}> {
-  // TODO RadStr: Run conversion on client?
-
   const createdIris: string[] = [];
   if (filesystem === AvailableFilesystems.ClassicFilesystem) {
     // TODO RadStr: Also note that here you would have to use the format inside the CreateDatastoreFilesystemNodesData, to convert since we pass the data as JSON object
@@ -211,7 +208,7 @@ const removeFilesystemNode = async (
   mergeStateUuid: string,
 ): Promise<{accessDenied: boolean}> => {
   if (filesystem === AvailableFilesystems.ClassicFilesystem) {
-    // TODO RadStr: Removal implementation only for DS. We do not need the git one anyways. The DS is enough
+    // TODO RadStr PR: It is unnecessary now to have implementation for Git, but maybe in future? NOw implementation for DS only
     throw new Error("Not implemented, we would have to pass it filesystem path, which we do not need for DS");
   }
   else {
