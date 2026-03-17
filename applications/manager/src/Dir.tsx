@@ -1,5 +1,13 @@
 import { Badge } from "@/components/ui/badge";
-import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import {
+  API_SPECIFICATION_MODEL,
+  APPLICATION_GRAPH_NEW,
+  APPLICATION_GRAPH_OLD,
+  LOCAL_PACKAGE,
+  LOCAL_SEMANTIC_MODEL,
+  LOCAL_VISUAL_MODEL,
+  V1,
+} from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, FileText, Folder, FolderDown, Import, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, Sparkles, Trash2, WandSparkles } from "lucide-react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
@@ -111,10 +119,17 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
 
       {resource.userMetadata?.tags?.map(tag => <Badge variant="secondary" key={tag}>{tag}</Badge>)}
 
-      {resource.types.includes(APPLICATION_GRAPH) &&
+      {resource.types.includes(APPLICATION_GRAPH_OLD) &&
         <Button asChild variant={"ghost"} onClick={stopPropagation()}>
           <a href={import.meta.env.VITE_BACKEND + "/generate/application?iri=" + encodeURIComponent(iri)}>
-            {t("generate application")}
+            {t("generate application old")}
+          </a>
+        </Button>
+      }
+      {resource.types.includes(APPLICATION_GRAPH_NEW) &&
+        <Button asChild variant={"ghost"} onClick={stopPropagation()}>
+          <a href={import.meta.env.VITE_BACKEND + "/app-generator/generate?iri=" + encodeURIComponent(iri)}>
+            {t("generate application new")}
           </a>
         </Button>
       }

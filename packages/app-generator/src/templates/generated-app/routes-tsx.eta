@@ -1,0 +1,15 @@
+<% it.pages.forEach((page) => { %>
+import { <%= page.componentName %> } from "./pages/<%= page.fileName %>";
+<% }) %>
+
+export const routes = [
+<% it.pages.forEach((page) => { %>
+  {
+    id: <%~ it.json(page.operation.routeId) %>,
+    nodeId: <%~ it.json(page.operation.nodeId) %>,
+    path: <%~ it.json(it.model.routes.find((route) => route.operationId === page.operation.id)?.path) %>,
+    title: <%~ it.json(page.operation.pageTitle) %>,
+    component: <%= page.componentName %>,
+  },
+<% }) %>
+] as const;

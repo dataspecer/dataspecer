@@ -1,0 +1,25 @@
+# <%= it.model.app.name %>
+
+This Generated application was produced by the Dataspecer application prototype generator.
+
+## Generated/User-Owned Boundaries
+
+- Files under `src/shared/` are the bundled reusable runtime copied as normal TypeScript source. Generator developers can modify these files in the generator package; application developers may inspect or adapt them after generation.
+- Files under `src/modules/*/model.ts` and `src/modules/*/descriptor.ts` are generated from Dataspecer aggregate metadata.
+- Files under `src/modules/*/*-operation.ts` are default operation overrides and are the main application-developer extension points.
+- Files under `src/data-source/` contain the data source factory and can be replaced with a custom datasource.
+- Files under `src/generated/` and `src/routes.tsx` are graph-specific generated configuration.
+
+## Current Prototype Limits
+
+- `ReadList` and `ReadDetail` are wired through operation strategies to the RDF/LDKit datasource.
+- `Create`, `Update`, and `Delete` pages are placeholders.
+- LDKit schemas in `src/modules/*/ldkit-schema.ts` must be completed from Dataspecer JSON-LD context data before real RDF reads can return data.
+
+## Commands
+
+```sh
+npm install
+npm run dev
+npm run build
+```

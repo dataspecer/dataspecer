@@ -1,0 +1,33 @@
+import { routes } from "./routes.tsx";
+
+export function App() {
+  const currentPath = window.location.pathname;
+  const route =
+    routes.find((candidate) => matchPath(candidate.path, currentPath)) ?? routes[0];
+  const Page = route.component;
+
+  return (
+    <main>
+      <header>
+        <h1><%= it.model.app.name %></h1>
+        <nav>
+          {routes.map((candidate) => (
+            <a key={candidate.id} href={candidate.path.replace("/:id", "/example-id")}>
+              {candidate.title}
+            </a>
+          ))}
+        </nav>
+      </header>
+      <Page />
+    </main>
+  );
+}
+
+function matchPath(routePath: string, currentPath: string): boolean {
+  if (!routePath.includes(":id")) {
+    return routePath === currentPath || (currentPath === "/" && routePath === routes[0].path);
+  }
+
+  const prefix = routePath.replace("/:id", "");
+  return currentPath.startsWith(`${prefix}/`);
+}

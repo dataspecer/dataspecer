@@ -1,0 +1,12 @@
+{
+  "dataSpecificationIri": "https://example.org/specification/library",
+  "datasources": [
+    {
+      "id": "main-rdf",
+      "type": "rdf",
+      "endpoint": "https://example.org/sparql"
+    }
+  ],
+  "nodes": [],
+  "edges": []
+}

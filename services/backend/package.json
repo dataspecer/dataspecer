@@ -13,6 +13,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@dataspecer/app-generator": "*",
     "@dataspecer/backend-utils": "*",
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",

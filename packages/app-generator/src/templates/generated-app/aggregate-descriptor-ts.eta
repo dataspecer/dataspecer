@@ -1,0 +1,33 @@
+import type { AggregateDescriptor } from "../../shared/types/aggregate.ts";
+import { createEmpty<%= it.aggregate.modelName %>, type <%= it.aggregate.modelName %> } from "./model.ts";
+
+export const <%= it.aggregate.descriptorName %>: AggregateDescriptor<<%= it.aggregate.modelName %>> = {
+  iri: <%~ it.json(it.aggregate.iri) %>,
+  name: <%~ it.json(it.aggregate.name) %>,
+  classIri: <%~ it.json(it.aggregate.classIri) %>,
+  fields: [
+<% it.aggregate.fields.forEach((field) => { %>
+    {
+      path: <%~ it.json(field.path) %>,
+      propertyName: <%~ it.json(field.propertyName) %>,
+      label: <%~ it.json(field.label) %>,
+      kind: <%~ it.json(field.kind) %>,
+      many: <%= field.many ? "true" : "false" %>,
+      required: <%= field.required ? "true" : "false" %>,
+<% if (field.datatype) { %>
+      datatype: <%~ it.json(field.datatype) %>,
+<% } %>
+<% if (field.targetAggregateIri) { %>
+      targetAggregateIri: <%~ it.json(field.targetAggregateIri) %>,
+<% } %>
+<% if (field.targetClassIri) { %>
+      targetClassIri: <%~ it.json(field.targetClassIri) %>,
+<% } %>
+<% if (field.associationKind) { %>
+      associationKind: <%~ it.json(field.associationKind) %>,
+<% } %>
+    },
+<% }) %>
+  ],
+  createEmpty: createEmpty<%= it.aggregate.modelName %>,
+};

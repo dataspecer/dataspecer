@@ -1,4 +1,12 @@
-import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import {
+  API_SPECIFICATION_MODEL,
+  APPLICATION_GRAPH_NEW,
+  APPLICATION_GRAPH_OLD,
+  LOCAL_PACKAGE,
+  LOCAL_SEMANTIC_MODEL,
+  LOCAL_VISUAL_MODEL,
+  V1,
+} from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { AppWindowMac, Code, Cog, Eye, Folder, Globe2, LibraryBig } from "lucide-react";
 import { v4 as uuidv4 } from 'uuid';
@@ -113,15 +121,26 @@ export const createModelInstructions = {
       }
     })),
   },
-  [APPLICATION_GRAPH]: {
+  [APPLICATION_GRAPH_OLD]: {
     needsNaming: true,
-    createHook: getHookForStandardModel(APPLICATION_GRAPH, (id, context) => ({
+    createHook: getHookForStandardModel(APPLICATION_GRAPH_OLD, (id, context) => ({
       "id": id,
       "label": context.label?.cs ?? context.label?.en ?? "Application",
       "datasources": [],
       "nodes": [],
       "edges": [],
       "dataSpecification": []
+    })),
+  },
+  [APPLICATION_GRAPH_NEW]: {
+    needsNaming: true,
+    createHook: getHookForStandardModel(APPLICATION_GRAPH_NEW, (id, context) => ({
+      "id": id,
+      "name": context.label?.cs ?? context.label?.en ?? "Application",
+      "dataSources": [],
+      "nodes": [],
+      "edges": [],
+      "dataSpecification": context.parentIri ?? ""
     })),
   },
   [LOCAL_SEMANTIC_MODEL]: {
@@ -149,11 +168,15 @@ export const modelTypeToName = {
     "https://dataspecer.com/core/model-descriptor/sgov": "SSP",
     "https://dataspecer.com/core/model-descriptor/pim-store-wrapper": "PIM Wrapper",
     [API_SPECIFICATION_MODEL]: "OpenAPI Specification",
-    [APPLICATION_GRAPH]: "Application graph"
+    [APPLICATION_GRAPH_OLD]: "Application graph (old)",
+    [APPLICATION_GRAPH_NEW]: "Application graph (new)"
   };
 
 export const ModelIcon = ({ type, className }: { type: string[], className?: string }) => {
-  if (type.includes(APPLICATION_GRAPH)) {
+  if (type.includes(APPLICATION_GRAPH_OLD)) {
+    return <AppWindowMac className={cn("text-gray-400", className)} />
+  }
+  if (type.includes(APPLICATION_GRAPH_NEW)) {
     return <AppWindowMac className={cn("text-rose-600", className)} />
   }
   if (type.includes(LOCAL_PACKAGE)) {

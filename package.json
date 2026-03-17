@@ -3,6 +3,7 @@
   "packageManager": "npm@10.8.2",
   "scripts": {
     "build": "turbo build",
+    "build:backend": "turbo build --filter=backend",
     "test": "turbo test"
   },
   "devDependencies": {

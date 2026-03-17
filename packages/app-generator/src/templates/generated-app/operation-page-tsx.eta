@@ -1,0 +1,75 @@
+import { useEffect, useState } from "react";
+
+import { DetailView } from "../shared/components/detail-view.tsx";
+import { ListView } from "../shared/components/list-view.tsx";
+import { PlaceholderOperationView } from "../shared/components/placeholder-operation-view.tsx";
+import { invokeOperation } from "../shared/operations/operation-strategy.ts";
+import { dataSource, operations } from "../generated/operation-registry.ts";
+import type { <%= it.page.modelName %> } from "../modules/<%= it.page.moduleName %>/model.ts";
+
+const operation = operations[<%~ it.json(it.page.operation.id) %>];
+
+export function <%= it.page.componentName %>() {
+<% if (it.page.operation.operation === "ReadList") { %>
+  const [items, setItems] = useState<<%= it.page.modelName %>[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    invokeOperation(operation.strategy, {
+      aggregate: operation.aggregate,
+      datasource: dataSource,
+      params: {},
+    })
+      .then((result) => {
+        if (result.ok) {
+          setItems(result.data);
+        } else {
+          setError(result.issues.map((issue) => issue.message).join(", "));
+        }
+      })
+      .catch((caught: unknown) => {
+        console.error(caught);
+        setError(caught instanceof Error ? caught.message : String(caught));
+      });
+  }, []);
+
+  return (
+    <>
+      {error ? <p role="alert">{error}</p> : null}
+      <ListView title={operation.title} fields={operation.aggregate.fields} items={items} />
+    </>
+  );
+<% } else if (it.page.operation.operation === "ReadDetail") { %>
+  const id = window.location.pathname.split("/").filter(Boolean).at(-1) ?? "";
+  const [item, setItem] = useState<<%= it.page.modelName %> | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    invokeOperation(operation.strategy, {
+      aggregate: operation.aggregate,
+      datasource: dataSource,
+      params: { id },
+    })
+      .then((result) => {
+        if (result.ok) {
+          setItem(result.data);
+        } else {
+          setError(result.issues.map((issue) => issue.message).join(", "));
+        }
+      })
+      .catch((caught: unknown) => {
+        console.error(caught);
+        setError(caught instanceof Error ? caught.message : String(caught));
+      });
+  }, [id]);
+
+  return (
+    <>
+      {error ? <p role="alert">{error}</p> : null}
+      {item ? <DetailView title={operation.title} fields={operation.aggregate.fields} item={item} /> : <p>No item loaded.</p>}
+    </>
+  );
+<% } else { %>
+  return <PlaceholderOperationView title={operation.title} operation={operation.operation} />;
+<% } %>
+}

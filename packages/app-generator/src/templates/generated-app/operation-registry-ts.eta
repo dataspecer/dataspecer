@@ -1,0 +1,22 @@
+import { createDataSource } from "../data-source/create-data-source.ts";
+<% it.aggregates.forEach((aggregate) => { %>
+import { <%= aggregate.descriptorName %> } from "../modules/<%= aggregate.moduleName %>/descriptor.ts";
+<% }) %>
+<% it.pages.forEach((page) => { %>
+import { <%= page.operationClassName %> } from "../modules/<%= page.moduleName %>/<%= page.operation.routeId %>-operation.ts";
+<% }) %>
+
+export const dataSource = createDataSource();
+
+export const operations = {
+<% it.pages.forEach((page) => { %>
+  <%~ it.json(page.operation.id) %>: {
+    id: <%~ it.json(page.operation.id) %>,
+    nodeId: <%~ it.json(page.operation.nodeId) %>,
+    operation: <%~ it.json(page.operation.operation) %>,
+    title: <%~ it.json(page.operation.pageTitle) %>,
+    aggregate: <%= it.aggregates.find((aggregate) => aggregate.moduleName === page.moduleName).descriptorName %>,
+    strategy: new <%= page.operationClassName %>(),
+  },
+<% }) %>
+} as const;

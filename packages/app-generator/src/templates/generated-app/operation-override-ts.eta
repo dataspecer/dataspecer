@@ -1,0 +1,29 @@
+<% if (it.page.operation.operation === "ReadList") { %>
+import { DefaultReadListStrategy } from "../../shared/operations/read-list-strategy.ts";
+<% } else if (it.page.operation.operation === "ReadDetail") { %>
+import { DefaultReadDetailStrategy } from "../../shared/operations/read-detail-strategy.ts";
+<% } else if (it.page.operation.operation === "Create") { %>
+import { DefaultCreateStrategy } from "../../shared/operations/create-strategy.ts";
+<% } else if (it.page.operation.operation === "Update") { %>
+import { DefaultUpdateStrategy } from "../../shared/operations/update-strategy.ts";
+<% } else { %>
+import { DefaultDeleteStrategy } from "../../shared/operations/delete-strategy.ts";
+<% } %>
+import type { OperationContext } from "../../shared/operations/operation-strategy.ts";
+import type { OperationResult, ValidationResult } from "../../shared/operations/operation-result.ts";
+import type { <%= it.page.modelName %> } from "./model.ts";
+
+export class <%= it.page.operationClassName %> extends <% if (it.page.operation.operation === "ReadList") { %>DefaultReadListStrategy<<%= it.page.modelName %>><% } else if (it.page.operation.operation === "ReadDetail") { %>DefaultReadDetailStrategy<<%= it.page.modelName %>><% } else if (it.page.operation.operation === "Create") { %>DefaultCreateStrategy<<%= it.page.modelName %>><% } else if (it.page.operation.operation === "Update") { %>DefaultUpdateStrategy<<%= it.page.modelName %>><% } else { %>DefaultDeleteStrategy<<%= it.page.modelName %>><% } %> {
+  async validateRequest(
+    _ctx: OperationContext<<%= it.page.modelName %>>,
+  ): Promise<ValidationResult> {
+    return { ok: true, issues: [] };
+  }
+
+  async postprocess(
+    _ctx: OperationContext<<%= it.page.modelName %>>,
+    result: OperationResult<<% if (it.page.operation.operation === "ReadList") { %><%= it.page.modelName %>[]<% } else if (it.page.operation.operation === "Delete") { %>void<% } else { %><%= it.page.modelName %><% } %>>,
+  ): Promise<OperationResult<<% if (it.page.operation.operation === "ReadList") { %><%= it.page.modelName %>[]<% } else if (it.page.operation.operation === "Delete") { %>void<% } else { %><%= it.page.modelName %><% } %>>> {
+    return result;
+  }
+}

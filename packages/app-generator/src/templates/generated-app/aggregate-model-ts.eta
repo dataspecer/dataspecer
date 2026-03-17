@@ -1,0 +1,15 @@
+import type { EntityModel } from "../../shared/types/aggregate.ts";
+
+export interface <%= it.aggregate.modelName %> extends EntityModel {
+<% it.aggregate.fields.forEach((field) => { %>
+  <%= field.propertyName %><%= field.required ? "" : "?" %>: <%= field.modelType %>;
+<% }) %>
+}
+
+export function createEmpty<%= it.aggregate.modelName %>(): <%= it.aggregate.modelName %> {
+  return {
+<% it.aggregate.fields.filter((field) => field.required).forEach((field) => { %>
+    <%= field.propertyName %>: <%= field.many ? "[]" : field.modelType === "number" ? "0" : field.modelType === "boolean" ? "false" : "\"\"" %>,
+<% }) %>
+  };
+}

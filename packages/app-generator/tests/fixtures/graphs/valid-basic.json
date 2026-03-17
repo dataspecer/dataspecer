@@ -1,0 +1,34 @@
+{
+  "name": "Library application",
+  "dataSpecificationIri": "https://example.org/specification/library",
+  "datasources": [
+    {
+      "id": "main-rdf",
+      "type": "rdf",
+      "endpoint": "https://example.org/sparql"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "Book.ReadList",
+      "aggregateIri": "https://example.org/aggregate/book-list",
+      "operation": "ReadList",
+      "config": {
+        "pageTitle": "Books"
+      }
+    },
+    {
+      "id": "Book.ReadDetail",
+      "aggregateIri": "https://example.org/aggregate/book-detail",
+      "operation": "ReadDetail"
+    }
+  ],
+  "edges": [
+    {
+      "id": "Book.ReadList.Book.ReadDetail",
+      "source": "Book.ReadList",
+      "target": "Book.ReadDetail",
+      "type": "transition"
+    }
+  ]
+}
