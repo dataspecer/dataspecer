@@ -7,5 +7,6 @@ node_modules
 .env.local
 !.env
 *.config.js
+!vitest.config.js
 
 lov.nq
