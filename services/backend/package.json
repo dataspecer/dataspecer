@@ -8,7 +8,9 @@
     "prebuild": "prisma generate",
     "start": "node --enable-source-maps dist/main.js",
     "update-database": "prisma migrate deploy",
-    "load-lov": "./load-lov.sh"
+    "load-lov": "./load-lov.sh",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@dataspecer/backend-utils": "*",
@@ -43,6 +45,7 @@
     "@types/multer": "^1.4.12",
     "@types/uuid": "^9.0.1",
     "prisma": "^6.19.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.1.1"
   }
 }

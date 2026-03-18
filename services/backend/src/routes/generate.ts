@@ -11,18 +11,7 @@ import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
 import { resourceModel } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { BackendModelRepository } from "../utils/model-repository.ts";
-
-// Hotfixes https://github.com/oven-sh/bun/issues/8893
-export function bunHotfixHttpFileName(input: string) {
-  return input.replace(/[\u0080-\u00FF]/g, (ch) => {
-    // Try to decompose accents: e.g. "é" -> "é" -> strip combining marks -> "e"
-    const decomposed = ch.normalize("NFKD").replace(/[\u0300-\u036F]/g, "");
-    if (decomposed && decomposed.charCodeAt(0) < 0x80) return decomposed;
-
-    // Otherwise give up or use unknown
-    return "";
-  });
-}
+import { getContentDispositionAttachmentHeaderValue, safeAsciiFileName, safeUnicodeFileName } from "../utils/safe-file-name.ts";
 
 interface DataSpecifications {
   [key: string]: any;
@@ -99,8 +88,14 @@ export const getZip = asyncHandler(async (request: express.Request, response: ex
   await generateArtifacts(query.iri, zip);
 
   // Send zip file
-  const filename = getName(resource?.userMetadata?.label, "export") + ".zip";
-  response.type("application/zip").attachment(bunHotfixHttpFileName(filename)).send(await zip.save());
+  const filename = getName(resource?.userMetadata?.label, "export");
+
+  const ascii = safeAsciiFileName(filename, "export") + ".zip";
+  const unicode = safeUnicodeFileName(filename, "export") + ".zip";
+  response.header("Content-Disposition", getContentDispositionAttachmentHeaderValue(ascii, unicode));
+  // Express's res.attachment() method does not work with Unicode names properly
+
+  response.type("application/zip").send(await zip.save());
   return;
 });
 

@@ -5,7 +5,7 @@ import { resourceModel } from "../main.ts";
 import z from "zod";
 import { PackageImporter } from "../export-import/import.ts";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { bunHotfixHttpFileName } from "./generate.ts";
+import { getContentDispositionAttachmentHeaderValue, safeAsciiFileName, safeUnicodeFileName } from "../utils/safe-file-name.ts";
 
 function getName(name: LanguageString | undefined, defaultName: string) {
   return name?.["cs"] || name?.["en"] || defaultName;
@@ -25,8 +25,14 @@ export const exportPackageResource = asyncHandler(async (request: express.Reques
   const buffer = await exporter.doExport(query.iri);
 
   const resource = await resourceModel.getResource(query.iri);
-  const filename = getName(resource?.userMetadata?.label, "package") + "-backup.zip";
-  response.type("application/zip").attachment(bunHotfixHttpFileName(filename)).send(buffer);
+  const filename = getName(resource?.userMetadata?.label, "package");
+
+  const ascii = safeAsciiFileName(filename, "dataspecer-project") + "-backup.zip";
+  const unicode = safeUnicodeFileName(filename, "dataspecer-project") + "-backup.zip";
+  response.header("Content-Disposition", getContentDispositionAttachmentHeaderValue(ascii, unicode));
+  // Express's res.attachment() method does not work with Unicode names properly
+
+  response.type("application/zip").send(buffer);
 });
 
 export const importPackageResource = asyncHandler(async (request: express.Request, response: express.Response) => {
