@@ -7,6 +7,7 @@ import {
 import { isRepresentingAttribute } from "../../dialog/utilities/dialog-utilities";
 import { EntityDsIdentifier } from "../entity-model";
 import { Operation } from "@dataspecer/core-v2/semantic-model/operations";
+import { isPrimitiveType } from "@dataspecer/core-v2/semantic-model/datatypes";
 
 export * from "./data-type";
 export * from "./external-semantic-model";
@@ -15,7 +16,6 @@ export * from "./semantic-model-factory";
 export * from "./semantic-model-utilities";
 
 export {
-  isPrimitiveType as isSemanticPrimitiveType,
   isComplexType as isSemanticComplexType,
 } from "@dataspecer/core-v2/semantic-model/datatypes";
 
@@ -58,3 +58,8 @@ export function isOwlThing(identifier: EntityDsIdentifier): boolean {
 }
 
 export const OwlThingIdentifier = OWL_THING_IDENTIFIER;
+
+export function isSemanticPrimitiveType(iri: string | null): boolean {
+  // We use owl:Thing as a default value.
+  return isPrimitiveType(iri ?? OWL_THING_IDENTIFIER);
+}
