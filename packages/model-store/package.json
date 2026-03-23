@@ -11,7 +11,9 @@
     ".": "./lib/index.js",
     "./entity-model": "./lib/entity-model/index.js"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@dataspecer/core": "*"
+  },
   "devDependencies": {
     "typescript": "^5.9.3"
   }

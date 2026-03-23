@@ -1,2 +1,1 @@
-export * from "./interfaces.ts";
-export * from "./legacy-model-store.ts";
+export * from "./interfaces/index.ts";
