@@ -31,7 +31,7 @@ import { stopPropagation } from "./utils/events";
 import { commitToGitDialogOnClickHandler, linkToExistingGitRepositoryHandler, createNewRemoteRepositoryHandler } from "./dialog/git-actions-dialogs";
 import { gitHistoryVisualizationOnClickHandler } from "./components/git-history-visualization";
 import { BranchAction, CreateNewBranchDialog } from "./dialog/create-new-branch";
-import { ListMergeStatesDialog } from "./dialog/list-merge-states-dialog";
+import { ListMergeStatesDialog } from "./dialog/list-merge-states";
 import { useLogin, UseLoginType } from "./hooks/use-login";
 import { GitProvider, GitRef, isGitUrlSet, PACKAGE_ROOT, PullRequestInvolvingUserFetchResponse } from "@dataspecer/git";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
@@ -41,8 +41,8 @@ import { CreateMergeStateCausedByMergeDialog } from "./dialog/open-merge-state";
 import { PackageListDialog } from "./dialog/package-list-dialog";
 import { DeleteGitRepoDialog } from "./dialog/remove-git-repo-dialog";
 import { SetGitRemoteConfigurationDialog } from "./dialog/set-git-remote-configuration-dialog";
-import { GitPrsListDialog } from "./dialog/show-git-prs-for-branch";
-import { GitIssuesListDialog } from "./dialog/show-git-issues";
+import { GitPrsListDialog } from "./dialog/list-git-prs-for-branch";
+import { GitIssuesListDialog } from "./dialog/list-git-issues";
 
 
 export function lng(text: LanguageString | undefined): string | undefined {

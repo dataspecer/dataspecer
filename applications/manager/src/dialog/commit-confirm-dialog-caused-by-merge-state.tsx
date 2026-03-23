@@ -2,7 +2,7 @@ import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalT
 import { Button } from "@/components/ui/button";
 import { BetterModalProps, OpenBetterModal, useBetterModal } from "@/lib/better-modal";
 import { CommitHttpRedirectionCause, CommitRedirectExtendedResponseJson, isSingleBranchCommitType } from "@dataspecer/git";
-import { ListMergeStatesDialog } from "./list-merge-states-dialog";
+import { ListMergeStatesDialog } from "./list-merge-states";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
 import { commitToGitHandler, mergeCommitToGitHandler } from "./git-actions-dialogs";
 import { useMemo, useRef } from "react";
