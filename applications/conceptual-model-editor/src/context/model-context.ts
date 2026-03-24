@@ -147,7 +147,7 @@ export const useModelGraphContext = (): UseModelGraphContextType => {
       // Now we can remove this from the package.
       aggregator.deleteModel(model);
       models.delete(modelId);
-      context.setModels([...Object.values(models)]);
+      context.setModels([...models.values()]);
     };
 
     const removeVisualModel = (modelId: string) => {
@@ -158,7 +158,7 @@ export const useModelGraphContext = (): UseModelGraphContextType => {
       }
       aggregator.deleteModel(visualModel);
       visualModels.delete(modelId);
-      context.setVisualModels([...Object.values(visualModels)]);
+      context.setVisualModels([...visualModels.values()]);
       context.setAggregatorView(aggregator.getView());
     };
 
