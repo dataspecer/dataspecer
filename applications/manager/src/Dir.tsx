@@ -146,7 +146,7 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
       {resource.types.includes("https://dataspecer.com/core/model-descriptor/pim-store-wrapper") &&
         <Tooltip>
           <TooltipTrigger>
-            <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(ReloadPimWrapper, {id: iri}))}>
+            <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(ReloadPimWrapper, {id: iri, parentId: parentIri ?? ""}))}>
               <span>
                 <RotateCw className="h-4 w-4" />
               </span>
