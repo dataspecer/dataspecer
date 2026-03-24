@@ -580,6 +580,20 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
     return;
   }
 
+  // Check if it is a PIM wrapper and if so, we can reload it directly
+  if (existingResource.types.includes("https://dataspecer.com/core/model-descriptor/pim-store-wrapper")) {
+    const store = await resourceModel.getOrCreateResourceModelStore(existingResource.iri);
+    const data = await store.getJson()  as {urls: string[]};
+    const urls = data.urls;
+    const newModel = await createRdfsModel(urls, httpFetch);
+    // We need to override its id
+    newModel.id = existingResource.iri;
+    await store.setJson(newModel.serializeModel());
+
+    response.send(await resourceModel.getResource(existingResource.iri));
+    return;
+  }
+
   // Determine the URL to reload from
   const url = query.url ?? (existingResource.userMetadata as any)?.importedFromUrl;
   if (!url) {
