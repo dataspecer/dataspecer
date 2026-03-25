@@ -1,7 +1,5 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import { v4 as uuidv4 } from 'uuid';
-import { currentVersion } from "../../tools/migrations/index.ts";
-import configuration from "../../configuration.ts";
 import { BaseResource, ResourceModelForExport, ZipStreamDictionary } from "@dataspecer/git-node";
 
 /**
@@ -58,10 +56,10 @@ export class PackageExporterDeprecated {
       types: resource.types,
       userMetadata: resource.userMetadata,
       metadata: resource.metadata,
-      _version: currentVersion,
+      _version: 1,      // Just Hardcode it for testing
       _exportVersion: 1,
       _exportedAt: new Date().toISOString(),
-      _exportedBy: configuration.host,
+      _exportedBy: undefined,   // Just undefined for testing
     }
   }
 

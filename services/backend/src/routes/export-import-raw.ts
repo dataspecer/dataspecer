@@ -6,7 +6,6 @@ import { PackageImporter } from "../export-import/import.ts";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { AvailableFilesystems, createRootFilesystemNodeLocation, getDefaultExportFormat } from "@dataspecer/git";
 import { bunHotfixHttpFileName } from "./generate.ts";
-import { PackageExporterDeprecated } from "../export-import/deprecated-import-export-for-regression-testing/deprecated-export-for-regression-testing.ts";
 import JSZip from "jszip";
 import { PrismaClientStorageApiForIriReplacement, StorageApiForIriReplacement } from "../utils/iri-replace-util.ts";
 import { AvailableExports, FilesystemFactoryMethodParams, PackageExporterByResourceType } from "@dataspecer/git-node";

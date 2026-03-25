@@ -1,5 +1,4 @@
 import JSZip from "jszip";
-import { ResourceModel } from "../../models/resource-model.ts";
 import { ResourceModelForImport } from "@dataspecer/git-node";
 
 const FILE_EXTENSION_REGEX = /^\.([-0-9a-zA-Z]+)\.json$/;
