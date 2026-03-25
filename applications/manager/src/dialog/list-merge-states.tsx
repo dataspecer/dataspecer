@@ -107,9 +107,9 @@ const renderMergeState = (
           {mergeStateRowText(mergeState)}
         </div>
         <div className="flex flex-row relative top-[10%] ml-8 gap-x-8">
+          <button onClick={openDiffEditor} className="cursor-pointer relative"><BookOpenTextIcon className="hover:bg-gray-400 hover:text-white"/></button>
           <button onClick={() => openModal(ShowMergeStateInfoDialog, {mergeState, setIsInfoDialogShown})} className="cursor-pointer bg-blue-300 hover:bg-blue-500 relative"><InfoIcon className="bg-white text-blue-400 hover:bg-blue-400 hover:text-white"/></button>
           <button onClick={removeMergeStateOnClickHandler} className="cursor-pointer bg-red-500 hover:bg-red-600 relative"><Trash2 className="bg-white text-destructive hover:bg-destructive hover:text-black"/></button>
-          <button onClick={openDiffEditor} className="cursor-pointer relative"><BookOpenTextIcon className="hover:bg-gray-400 hover:text-white"/></button>
         </div>
       </div>
     </div>;
