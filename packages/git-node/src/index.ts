@@ -24,3 +24,4 @@ export * from "./resource-model-api/export/implementation/export-new.ts";
 
 export * from "./git-operations/commit.ts";
 export * from "./git-operations/pull.ts";
+export * from "./git-operations/simple-git-utils.ts";

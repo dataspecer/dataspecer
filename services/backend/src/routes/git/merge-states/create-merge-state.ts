@@ -3,9 +3,8 @@ import { asyncHandler } from "../../../utils/async-handler.ts";
 import { mergeStateModel, resourceModel } from "../../../main.ts";
 import express from "express";
 import { AvailableFilesystems, DatastoreComparison, createConflictsFromDiffTrees, MergeState, MergeStateCause, MergeEndInfoWithRootNode } from "@dataspecer/git";
-import { getCommonCommitInHistory, gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { SimpleGit } from "simple-git";
-import { compareBackendFilesystems, createSimpleGitUsingPredefinedGitRoot, DsFsConstructorParams, MERGE_CONFLICTS_PRIVATE, MergeEndpointForComparison, MergeEndpointForStateUpdate, removePathRecursively } from "@dataspecer/git-node";
+import { compareBackendFilesystems, createSimpleGitUsingPredefinedGitRoot, DsFsConstructorParams, getCommonCommitInHistory, gitCloneBasic, MERGE_CONFLICTS_PRIVATE, MergeEndpointForComparison, MergeEndpointForStateUpdate, removePathRecursively } from "@dataspecer/git-node";
 import { createFilesystemFactoryParams } from "../../../utils/filesystem-helpers.ts";
 
 

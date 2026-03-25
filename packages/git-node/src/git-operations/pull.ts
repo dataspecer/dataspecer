@@ -3,9 +3,9 @@ import { compareGitAndDSFilesystems } from "../filesystem-abstractions/backend-f
 import { AllowedPrefixes, createSimpleGitUsingPredefinedGitRoot } from "../git-store-info.ts";
 import { SimpleGit } from "simple-git";
 import { getLastCommitHash, removePathRecursively } from "../git-utils-node.ts";
-import { getCommonCommitInHistory, gitCloneBasic } from "../simple-git-methods/simple-git-utils.ts";
 import fs from "fs";
 import { DsFsConstructorParamsWithStrongerResourceModel } from "../filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
+import { getCommonCommitInHistory, gitCloneBasic } from "./simple-git-utils.ts";
 
 export type GitPullFields = {
   iri: string;

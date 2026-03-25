@@ -1,5 +1,5 @@
 import path from "path";
-import { createSimpleGit, CreateSimpleGitResult, createUniqueDirectory, UniqueDirectory } from "./simple-git-methods/simple-git-utils.ts";
+import { createSimpleGit, CreateSimpleGitResult, createUniqueDirectory, UniqueDirectory } from "./git-operations/simple-git-utils.ts";
 
 export const ROOT_DIRECTORY_FOR_ANY_GIT: string = path.resolve("./database/git-repos");
 export const ROOT_DIRECTORY_FOR_PUBLIC_GITS: string = path.resolve(ROOT_DIRECTORY_FOR_ANY_GIT + "/public");

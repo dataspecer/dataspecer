@@ -1,6 +1,5 @@
 import { BranchSummary, CommitResult, SimpleGit } from "simple-git";
 import { getLastCommit, getLastCommitHash, isDefaultBranch, removeEverythingExcept, removePathRecursively } from "../git-utils-node.ts";
-import { CreateSimpleGitResult, getCommonCommitInHistory, gitCloneBasic, UniqueDirectory } from "../simple-git-methods/simple-git-utils.ts";
 import { createGitReadMeFile } from "../git-readme/git-readme-generator.ts";
 import { AvailableFilesystems, CommitConflictInfo, createRootFilesystemNodeLocation, ExportFormatType, ExportVersionType, getAuthorizationURL, getMergeFromMergeToForGitAndDS, GitCredentials, GitIgnoreBase, GitProviderNode, MergeEndInfoWithRootNode, MergeFromDataType } from "@dataspecer/git";
 import { AvailableExports } from "../resource-model-api/export/export-api/export-actions.ts";
@@ -11,6 +10,7 @@ import { compareBackendFilesystems, compareGitAndDSFilesystems, MergeEndpointFor
 import { createSimpleGitUsingPredefinedGitRoot, MERGE_DS_CONFLICTS_PREFIX, PUSH_PREFIX } from "../git-store-info.ts";
 import { ResourceModelForFilesystemRepresentation, ResourceModelForPull } from "../resource-model-api/export/export-api/export.ts";
 import { MergeStateCreator } from "./pull.ts";
+import { CreateSimpleGitResult, getCommonCommitInHistory, gitCloneBasic, UniqueDirectory } from "./simple-git-utils.ts";
 
 export type GitRepositoryIdentification = {
   repositoryOwner: string,

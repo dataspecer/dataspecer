@@ -2,9 +2,8 @@ import { z } from "zod";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import { resourceModel } from "../../main.ts";
 import express from "express";
-import { gitCloneBasic } from "@dataspecer/git-node/simple-git-methods";
 import { GitRawHistoryToSendToClient, GitHistory, BranchHistory, RawCommit } from "@dataspecer/git";
-import { createSimpleGitUsingPredefinedGitRoot, FETCH_GIT_HISTORY_PREFIX, removePathRecursively } from "@dataspecer/git-node";
+import { createSimpleGitUsingPredefinedGitRoot, FETCH_GIT_HISTORY_PREFIX, gitCloneBasic, removePathRecursively } from "@dataspecer/git-node";
 
 /**
  * Handles the client's request to get Git history of the project.
