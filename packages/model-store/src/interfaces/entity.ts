@@ -1,9 +1,10 @@
 import type { Entity, EntityIdentifier } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
-import type { ChangeEvent, ObservableModelStore } from "./observable.ts";
 
 export interface EntityChange<T extends Entity = Entity> {
   id: EntityIdentifier;
+  modelId: ModelIdentifier;
+
   old: T | null;
   new: T | null;
 }
@@ -21,9 +22,23 @@ export interface EntityChangeUpdated<T extends Entity = Entity> extends EntityCh
   new: T;
 }
 
-export interface EntityChangeEvent<T extends Entity = Entity> extends ChangeEvent {
-  entityChanges?: Map<ModelIdentifier, (EntityChangeCreated<T> | EntityChangeDeleted<T> | EntityChangeUpdated<T>)[]>;
+export interface EntityChangeEvent {
+  entityChanges: Map<ModelIdentifier, (EntityChangeCreated | EntityChangeDeleted | EntityChangeUpdated)[]>;
 }
 
-export interface EntityObservableModelStore<T extends EntityChangeEvent = EntityChangeEvent> extends ObservableModelStore<T> {
+export interface EntityObservableModelStore {
+  /**
+   * Subscribes to entity changes across all models in the store. This is useful
+   * for gathering all changes at once to avoid redundant multiple
+   * notifications.
+   *
+   * The event fires synchronously upon transaction submission, provided that
+   * changes have occurred.
+   *
+   * To synchronize with the current state, you need to subscribe and fetch the
+   * state from the models.
+   *
+   * @returns Unsubscribe function.
+   */
+  subscribeToEntityChanges(listener: (change: EntityChangeEvent) => void): () => void;
 }

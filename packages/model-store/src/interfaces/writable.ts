@@ -33,4 +33,19 @@ export interface TransactionMetadata {
 
 export interface TransactionResult {
   transactionId: string;
+
+  /**
+   * This promise is resolved when the backend acknowledges the transaction,
+   * sends back the final transaction order, and all subscribers were notified
+   * about the changes.
+   *
+   * You can await this promise to ensure that the operation was applied as
+   * expected by simply checking the local state of the model after the promise
+   * is resolved.
+   */
+  confirmation: Promise<TransactionConfirmationStatus>;
+}
+
+export interface TransactionConfirmationStatus {
+  // Currently empty
 }

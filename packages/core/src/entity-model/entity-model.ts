@@ -5,11 +5,20 @@ import type { Entity, EntityIdentifier, EntityList } from "./entity.ts";
  * Entity model is a capability of a model to provide entities. This does not
  * necessarily mean that everything from the model can be obtained via entities.
  *
+ * As an extreme example, consider a model that represents an uploaded file,
+ * such as an image for HTML documentation. In this case, it would be highly
+ * inefficient to represent the file as a JSON-serializable entity. Instead, the
+ * model provides its own API to access the file data more efficiently.
+ *
  * To simplify the implementation, each entity model has to provide a main
  * entity. A main entity is an entity in that model that describes the model
  * itself. Pure entity models (meaning models that are just a collection of
  * entities) can be accessed only via its entities, including the metadata about
  * the model which are stored in the main entity.
+ *
+ * To further simplify the implementation, every model in Dataspecer is an
+ * entity model, thus providing a main entity. Most models are pure entity
+ * models, but some models may have additional capabilities.
  */
 export interface EntityModel<T extends Entity = Entity, MainEntity extends Entity = Entity> extends Model {
   /**

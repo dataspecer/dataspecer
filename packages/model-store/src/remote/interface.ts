@@ -1,10 +1,7 @@
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
-import type { EntityChangeEvent, EntityObservableModelStore } from "../interfaces/entity.ts";
-import type { UndoRedoChangeEvent, UndoRedoModelStore } from "../interfaces/undo-redo.ts";
+import type { EntityObservableModelStore } from "../interfaces/entity.ts";
+import type { UndoRedoModelStore } from "../interfaces/undo-redo.ts";
 import type { WritableModelStore } from "../interfaces/writable.ts";
-
-// Due to TS limitations, we need to manually define the type of change event
-type RemoteModelChangeEvent = EntityChangeEvent & UndoRedoChangeEvent;
 
 /**
  * The purpose of the remote model store is to provide a unified interface for
@@ -12,9 +9,14 @@ type RemoteModelChangeEvent = EntityChangeEvent & UndoRedoChangeEvent;
  * applications need transactions, change observation, undo/redo,
  * synchronization, etc.
  */
-export interface RemoteModelStore extends WritableModelStore, EntityObservableModelStore<RemoteModelChangeEvent>, UndoRedoModelStore<RemoteModelChangeEvent>, SimpleSyncRemoteModelStore {
+export interface RemoteModelStore extends WritableModelStore, EntityObservableModelStore, UndoRedoModelStore, SimpleSyncRemoteModelStore {
   /**
    * Returns a materialized model for remote use.
+   *
+   * Since most models can be interpreted as entity models, this method is not
+   * required for most cases. Use this method only if you need to work with the
+   * model as a whole or with models that cannot be interpreted as entity
+   * models.
    *
    * If model does not exist or if id is nullish, null is returned.
    *
@@ -24,6 +26,19 @@ export interface RemoteModelStore extends WritableModelStore, EntityObservableMo
    * Subsequent calls return the same model instance.
    */
   getModel(id: ModelIdentifier | null | undefined): Model | null;
+
+  getConnectionStatus(): ConnectionStatus;
+  subscribeToConnectionStatus(update: (status: ConnectionStatus) => void): () => void;
+}
+
+/**
+ * Reports information about the state of synchronization with the backend.
+ */
+export interface ConnectionStatus {
+  /**
+   * List of transaction IDs that are not yet confirmed by the backend.
+   */
+  pendingTransactionIds: string[];
 }
 
 export interface SimpleSyncRemoteModelStore {
