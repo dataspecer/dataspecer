@@ -39,6 +39,8 @@ While nice at first sight. The algorithm does not work on the Elk layouting libr
 
 **Not working examples:**
 
+Unfortunately deprecated. The online demonstrator no longer works.
+
 Well actually for some reason the first sometimes work,
 but try to remove some empty line and you will get error that the algorithm ran for more than 5 seconds,
 which doesn't happen even for large graphs layouted through Elk stress, which is much more resource heavy algorithm.
