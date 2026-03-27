@@ -68,12 +68,12 @@ class XsltGenerator implements ArtefactGenerator {
       null,
       transformations
     );
-    
+
     const xmlModel = await structureModelAddXmlProperties(
       model, context.reader
     );
 
-    return structureModelToXslt(
+    return await structureModelToXslt(
       context, specification, schemaArtefact, xmlModel
     );
   }

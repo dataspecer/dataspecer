@@ -88,7 +88,7 @@ const XML_IMPORT = {
  *
  * Example: If C profiles B which profiles A, returns [A, B, C]
  */
-async function collectProfilingChain(model: StructureModel, context: ArtefactGeneratorContext, mainArtifact: DataSpecificationArtefact): Promise<XmlStructureModel[]> {
+export async function collectProfilingChain(model: StructureModel, context: ArtefactGeneratorContext, mainArtifact: DataSpecificationArtefact): Promise<XmlStructureModel[]> {
   const chain: XmlStructureModel[] = [];
 
   let currentModelId: string | null = model.psmIri;
@@ -865,7 +865,10 @@ class XmlSchemaAdapter {
     const contents = [];
     for (const property of properties) {
       if (!property.xmlIsAttribute) {
-        contents.push(await this.propertyToComplexContentElement(property));
+        const item = await this.propertyToComplexContentElement(property);
+        if (item) {
+          contents.push(item);
+        }
       }
     }
     return {
@@ -917,6 +920,9 @@ class XmlSchemaAdapter {
       const thisCardinalityMax = property.cardinalityMax ?? null;
 
       const containerContents = (property.dataTypes[0] as StructureModelComplexType).dataType.properties;
+      if (!containerContents || containerContents.length === 0) {
+        return null;
+      }
       const item = await this.propertiesToComplexSequence(containerContents, container);
 
       // Propagate effective cardinality by finding all elements
