@@ -1,0 +1,20 @@
+@prefix : </#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix per: <https://example.org/person/>.
+@prefix pe: <https://example.com/person-vocabulary#>.
+@prefix pet: <https://example.org/pet/>.
+
+per:jane-doe
+    a pe:Person;
+    pe:hasPet pet:fluffy, pet:spot;
+    pe:id "PERSON123";
+    pe:personName "Jane Doe".
+pet:fluffy
+    a pe:Pet;
+    pe:hasKind [ a pe:PetKind; pe:kind "Dog" ];
+    pe:name "Fluffy"^^rdfs:Literal.
+pet:spot
+    a pe:Pet;
+    pe:hasKind [ a pe:PetKind; pe:kind "Cat" ];
+    pe:name "Spot"^^rdfs:Literal.
+

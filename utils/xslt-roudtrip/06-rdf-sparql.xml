@@ -1,0 +1,173 @@
+<sparql xmlns="http://www.w3.org/2005/sparql-results#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.w3.org/2005/sparql-results# http://www.w3.org/2001/sw/DataAccess/rf1/result2.xsd">
+  <head>
+   <variable name="slovnik"/>
+   <variable name="nazev_slovniku"/>
+  </head>
+  <results distinct="false" ordered="true">
+    <result>
+      <binding name="s">
+        <uri>https://example.org/person/jane-doe</uri>
+      </binding>
+      <binding name="p">
+        <uri>http://www.w3.org/1999/02/22-rdf-syntax-ns#type</uri>
+      </binding>
+      <binding name="o">
+        <uri>https://example.com/person-vocabulary#Person</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="s">
+        <uri>https://example.org/person/jane-doe</uri>
+      </binding>
+      <binding name="p">
+        <uri>https://example.com/person-vocabulary#hasPet</uri>
+      </binding>
+      <binding name="o">
+        <uri>https://example.org/pet/fluffy</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="s">
+        <uri>https://example.org/person/jane-doe</uri>
+      </binding>
+      <binding name="p">
+        <uri>https://example.com/person-vocabulary#hasPet</uri>
+      </binding>
+      <binding name="o">
+        <uri>https://example.org/pet/spot</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="s">
+        <uri>https://example.org/person/jane-doe</uri>
+      </binding>
+      <binding name="p">
+        <uri>https://example.com/person-vocabulary#id</uri>
+      </binding>
+      <binding name="o">
+        <literal>PERSON123</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="s">
+        <uri>https://example.org/person/jane-doe</uri>
+      </binding>
+      <binding name="p">
+        <uri>https://example.com/person-vocabulary#personName</uri>
+      </binding>
+      <binding name="o">
+        <literal>Jane Doe</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="s">
+        <uri>https://example.org/pet/fluffy</uri>
+      </binding>
+      <binding name="p">
+        <uri>http://www.w3.org/1999/02/22-rdf-syntax-ns#type</uri>
+      </binding>
+      <binding name="o">
+        <uri>https://example.com/person-vocabulary#Pet</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="s">
+        <uri>_g_L13C371</uri>
+      </binding>
+      <binding name="p">
+        <uri>http://www.w3.org/1999/02/22-rdf-syntax-ns#type</uri>
+      </binding>
+      <binding name="o">
+        <uri>https://example.com/person-vocabulary#PetKind</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="s">
+        <uri>_g_L13C371</uri>
+      </binding>
+      <binding name="p">
+        <uri>https://example.com/person-vocabulary#kind</uri>
+      </binding>
+      <binding name="o">
+        <literal>Dog</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="s">
+        <uri>https://example.org/pet/fluffy</uri>
+      </binding>
+      <binding name="p">
+        <uri>https://example.com/person-vocabulary#hasKind</uri>
+      </binding>
+      <binding name="o">
+        <uri>_g_L13C371</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="s">
+        <uri>https://example.org/pet/fluffy</uri>
+      </binding>
+      <binding name="p">
+        <uri>https://example.com/person-vocabulary#name</uri>
+      </binding>
+      <binding name="o">
+        <literal>Fluffy</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="s">
+        <uri>https://example.org/pet/spot</uri>
+      </binding>
+      <binding name="p">
+        <uri>http://www.w3.org/1999/02/22-rdf-syntax-ns#type</uri>
+      </binding>
+      <binding name="o">
+        <uri>https://example.com/person-vocabulary#Pet</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="s">
+        <uri>_g_L17C478</uri>
+      </binding>
+      <binding name="p">
+        <uri>http://www.w3.org/1999/02/22-rdf-syntax-ns#type</uri>
+      </binding>
+      <binding name="o">
+        <uri>https://example.com/person-vocabulary#PetKind</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="s">
+        <uri>_g_L17C478</uri>
+      </binding>
+      <binding name="p">
+        <uri>https://example.com/person-vocabulary#kind</uri>
+      </binding>
+      <binding name="o">
+        <literal>Cat</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="s">
+        <uri>https://example.org/pet/spot</uri>
+      </binding>
+      <binding name="p">
+        <uri>https://example.com/person-vocabulary#hasKind</uri>
+      </binding>
+      <binding name="o">
+        <uri>_g_L17C478</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="s">
+        <uri>https://example.org/pet/spot</uri>
+      </binding>
+      <binding name="p">
+        <uri>https://example.com/person-vocabulary#name</uri>
+      </binding>
+      <binding name="o">
+        <literal>Spot</literal>
+      </binding>
+    </result>
+  </results>
+</sparql>

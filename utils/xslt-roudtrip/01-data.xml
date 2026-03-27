@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<person xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://base/"
+  xsi:schemaLocation="http://base/ 02-schema.xsd"
+  id="PERSON123"
+>
+  <iri>https://example.org/person/jane-doe</iri>
+  <name>Jane Doe</name>
+  <has_pet>
+    <iri>https://example.org/pet/fluffy</iri>
+    <name>Fluffy</name>
+    <kind>Dog</kind>
+  </has_pet>
+  <has_pet>
+    <iri>https://example.org/pet/spot</iri>
+    <name>Spot</name>
+    <kind>Cat</kind>
+  </has_pet>
+</person>
