@@ -98,13 +98,8 @@ export interface FilesystemAbstraction {
    */
   getDatastoreTypes(treePath: string): DatastoreInfo[];
 
-  /**
-   * @param root is the location info of the root needed to build the filesystem tree.
-   */
-  createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType>
-
-  // TODO RadStr: After I am done with the implementation fix the docs here - for example I newly added datastoreType: string, but I'm not sure if it will stay.
-  // TODO RadStr: I don't know - the api could also be oldFileSystemNode, newFileSystemNode (and its abstraction). and it just replaces stuff
+  // TODO RadStr Critical: After I am done with the implementation fix the docs here - for example I newly added datastoreType: string, but I'm not sure if it will stay.
+  // TODO RadStr Critical: I don't know - the api could also be oldFileSystemNode, newFileSystemNode (and its abstraction). and it just replaces stuff
   /**
    * Changes content of the given version of datastore inside {@link changed} to the new version inside the filesystem.
    *  {@link otherFilesystem} is the other filesystem containing the data of the new version.
@@ -241,7 +236,7 @@ export class GitIgnoreBase implements GitIgnore {
  * @returns Returns newly created root, which can and should be used as fake root.
  *  But note that it does not create the map of root to the parent. That is handled by {@link createInitialNodeToParentMap}
  */
-export function createFilesystemMappingRoot(): DirectoryNode {
+export function createFilesystemMappingFakeRoot(): DirectoryNode {
   const root: DirectoryNode = {
     type: "directory",
     name: "",

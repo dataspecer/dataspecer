@@ -2,7 +2,7 @@ import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import { v4 as uuidv4 } from 'uuid';
 import {
   FilesystemAbstractionBase, DatastoreComparison, DatastoreInfo, DirectoryNode, FilesystemMappingType, FilesystemNode,
-  FilesystemNodeLocation, createEmptyFilesystemMapping, createFilesystemMappingRoot, createMetaDatastoreInfo, FilesystemAbstraction,
+  FilesystemNodeLocation, createEmptyFilesystemMapping, createMetaDatastoreInfo, FilesystemAbstraction,
   removeDatastoreFromNode, isDatastoreForMetadata, getDatastoreInfoOfGivenDatastoreType, AvailableFilesystems, convertDatastoreContentBasedOnFormat,
   ExportMetadataType
 } from "@dataspecer/git";
@@ -163,16 +163,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
       shouldConvertToDatastoreFormat, this.exportedBy, this.databaseMigrationVersion);
   }
 
-  /**
-   * @deprecated Calling the Recursive variant straight from constructor ... remove later
-   */
-  async createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType> {
-    const rootDirectoryNode = createFilesystemMappingRoot();
-    return await this.createFilesystemMappingRecursive(root, rootDirectoryNode.content, rootDirectoryNode);
-  }
-
-  // TODO RadStr: Rename to not contain the Recursive in name, since we removed the top level method
-  protected async createFilesystemMappingRecursive(
+  protected async createFilesystemMapping(
     mappedNodeLocation: FilesystemNodeLocation,
     filesystemMapping: FilesystemMappingType,
     parentDirectoryNode: DirectoryNode | null,
@@ -249,7 +240,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
           irisTreePath: fullIriName,
           projectIrisTreePath: fullProjectIriName,
         };
-        await this.createFilesystemMappingRecursive(newDirectoryNodeLocation, filesystemNode.content, filesystemNode);
+        await this.createFilesystemMapping(newDirectoryNodeLocation, filesystemNode.content, filesystemNode);
       }
     }
     else {  // Not a package

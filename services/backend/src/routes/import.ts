@@ -624,8 +624,6 @@ export async function importFromGitUrl(
   storageApi: StorageApiForIriReplacement,
   commitReferenceType?: CommitReferenceType,
 ) {
-  // TODO RadStr: If there will be some issues with the defaults when importing from git, then
-  // TODO RadStr: we can clone the repository and do some git actions to find out what type of reference it is
   const commitReferenceTypeForZip = commitReferenceType === undefined ? getDefaultCommitReferenceTypeForZipDownload() : commitReferenceType;
   const gitZipDownloadURLData = await gitProvider.convertRepoURLToDownloadZipURL(repositoryURL, commitReferenceTypeForZip);
   if (gitZipDownloadURLData.commitReferenceValueInfo.fallbackToDefaultBranch) {

@@ -49,7 +49,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     return AvailableFilesystems.ClassicFilesystem;
   }
 
-  protected async createFilesystemMappingRecursive(
+  protected async createFilesystemMapping(
     mappedNodeLocation: FilesystemNodeLocation,
     filesystemMapping: FilesystemMappingType,
     parentDirectoryNode: DirectoryNode | null,
@@ -215,7 +215,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
         projectIrisTreePath,
       };
 
-      await this.createFilesystemMappingRecursive(newDirectoryLocation, directoryContentContainer, parentDirectoryNodeForRecursion);
+      await this.createFilesystemMapping(newDirectoryLocation, directoryContentContainer, parentDirectoryNodeForRecursion);
     }
 
     return filesystemMapping;
@@ -242,9 +242,6 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     return convertedContent.value;
   }
 
-  createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType> {
-    throw new Error("Method not implemented.");
-  }
   async changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<boolean> {
     const newContent = await otherFilesystem.getDatastoreContent(changed.new!.name, changed.affectedDataStore.type, false);
     return this.updateDatastore(changed.old!, changed.affectedDataStore.type, newContent);

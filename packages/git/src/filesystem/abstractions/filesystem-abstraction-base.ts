@@ -4,7 +4,7 @@
 //  Possible future solutions would be to generate new iri as project iri on import inside resource (or only if there is conflict)
 
 import { FilesystemNode, FilesystemMappingType, DirectoryNode, FilesystemNodeLocation, DatastoreInfo, ExportMetadataType } from "../../export-import-data-api.ts";
-import { AvailableFilesystems, createEmptyFilesystemMapping, createFilesystemMappingRoot, createInitialNodeToParentMap, FilesystemAbstraction, getMetaPrefixType } from "./filesystem-abstraction.ts";
+import { AvailableFilesystems, createEmptyFilesystemMapping, createFilesystemMappingFakeRoot, createInitialNodeToParentMap, FilesystemAbstraction, getMetaPrefixType } from "./filesystem-abstraction.ts";
 
 import path from "path";
 import { DatastoreComparison } from "../../merge/merge-state.ts";
@@ -34,7 +34,7 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
 
   protected constructor() {
     const emptyMapping = createEmptyFilesystemMapping();
-    const topLevelRoot = createFilesystemMappingRoot();
+    const topLevelRoot = createFilesystemMappingFakeRoot();
     this.nodeToParentMap = createInitialNodeToParentMap(topLevelRoot);
     this.globalFilesystemMappingForProjectIris = createEmptyFilesystemMapping();
     this.globalFilesystemMappingForIris = createEmptyFilesystemMapping();
@@ -105,7 +105,7 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
 
   async initializeFilesystem(filesystemRoots: FilesystemNodeLocation[]): Promise<void> {
     for (const givenRoot of filesystemRoots) {
-      await this.createFilesystemMappingRecursive(givenRoot, this.root.content, this.root);
+      await this.createFilesystemMapping(givenRoot, this.root.content, this.root);
     }
   }
 
@@ -148,7 +148,7 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
    * The internal mapping to set the {@link filesystemMapping} recursively with the provided {@link iri} and the {@link path}, where the iri is the last part of the path.
    * @param parentDirectoryNode is the last directory node on the path. That is the parent in the fileystem.
    */
-  protected abstract createFilesystemMappingRecursive(
+  protected abstract createFilesystemMapping(
     mappedNodeLocation: FilesystemNodeLocation,
     filesystemMapping: FilesystemMappingType,
     parentDirectoryNode: DirectoryNode | null,
@@ -156,7 +156,6 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
 
   abstract getFilesystemType(): AvailableFilesystems;
   abstract getDatastoreContent(irisTreePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any>;
-  abstract createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType>;
   abstract changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<boolean>;
   abstract removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<void>;
   abstract removeFile(filesystemNode: FilesystemNode): Promise<void>;
