@@ -3,7 +3,7 @@ import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { resourceModel } from "../../main.ts";
 import { compareBackendFilesystems, createSimpleGitUsingPredefinedGitRoot, gitCloneBasic, MergeEndpointForComparison, removePathRecursively, TMP_CLONE_PATH_PREFIX } from "@dataspecer/git-node";
-import { AvailableFilesystems, ConfigType, extractPartOfRepositoryURL, getAuthorizationURL, GitIgnoreBase, GitProvider } from "@dataspecer/git";
+import { AvailableFilesystems, ScopeGroup, extractPartOfRepositoryURL, getAuthorizationURL, GitIgnoreBase, GitProvider } from "@dataspecer/git";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
@@ -28,7 +28,7 @@ export const trySetPackageAsUpToDateHandler = asyncHandler(async (request: expre
 
   const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGitUsingPredefinedGitRoot(iri, TMP_CLONE_PATH_PREFIX, true);
   let isLastAccessToken = false;
-  const gitCredentials = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl]);
+  const gitCredentials = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.FullPublicRepoControl]);
   const repositoryOwner = extractPartOfRepositoryURL(resource.linkedGitRepositoryURL, "repository-owner");
   const repositoryName = extractPartOfRepositoryURL(resource.linkedGitRepositoryURL, "repository-name");
   if (repositoryOwner === null || repositoryName === null) {

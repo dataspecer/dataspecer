@@ -2,7 +2,7 @@ import { Modal, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 import { Button } from "@/components/ui/button";
 import { BetterModalProps } from "@/lib/better-modal";
-import { ConfigType } from "@dataspecer/git";
+import { ScopeGroup } from "@dataspecer/git";
 import { ArrowDownNarrowWide, ArrowUpNarrowWide, EyeIcon, LogIn } from "lucide-react";
 import { useState } from "react";
 
@@ -76,7 +76,7 @@ export const SignInDialog = ({ isOpen, resolve }: BetterModalProps) => {
           </ModalTitle>
         </ModalHeader>
         <ModalDescription>
-          - Sign-in with the default option so you can sync up your Dataspecer package with a Git repository.
+          - Sign-in with the <strong>default option</strong> to give Dataspecer Git permissions so you can sync up your Dataspecer package with a Git repository.
           <br/>
           - Next dialog lets you choose authentication provider.
           <br/>
@@ -84,7 +84,7 @@ export const SignInDialog = ({ isOpen, resolve }: BetterModalProps) => {
           <br/>
         </ModalDescription>
         <div className="flex flex-col max-w-md">
-            <Button variant="outline" className="cursor-pointer focus:outline-none border border-black bg-green-100 hover:bg-green-400 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700" onClick={(_) => goToPage(`${import.meta.env.VITE_BACKEND}/auth/signin?authPermissions=${ConfigType[ConfigType.FullPublicRepoControl]}`)}>
+            <Button variant="outline" className="cursor-pointer focus:outline-none border border-black bg-green-100 hover:bg-green-400 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700" onClick={(_) => goToPage(`${import.meta.env.VITE_BACKEND}/auth/signin?authPermissions=${ScopeGroup[ScopeGroup.FullPublicRepoControl]}`)}>
               {showMore ? "Name + E-mail + Git Push scope" : "Default sign-in option"}</Button>
             {/* ---- COLLAPSIBLE SECTION ---- */}
             <hr className="border-t-2 border-gray-300 mt-8" />
@@ -102,8 +102,8 @@ export const SignInDialog = ({ isOpen, resolve }: BetterModalProps) => {
                 null : <div>
                   <p className="text-sm text-gray-500 pb-4">- Choose <strong>how much information</strong> should be provided <strong>to Dataspecer</strong>.</p>
                   <div className="flex flex-col max-w-md">
-                    <Button variant="outline" className="cursor-pointer focus:outline-none border border-black bg-green-100 hover:bg-green-400 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700" onClick={(_) => goToPage(`${import.meta.env.VITE_BACKEND}/auth/signin?authPermissions=${ConfigType[ConfigType.DeleteRepoControl]}`)}>Name + E-mail + Git Push and Delete scope</Button>
-                    <Button variant="outline" className="cursor-pointer focus:outline-none border border-black bg-green-100 hover:bg-green-400 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700" onClick={(_) => goToPage(`${import.meta.env.VITE_BACKEND}/auth/signin?authPermissions=${ConfigType[ConfigType.LoginInfo]}`)}>Name + E-mail</Button>
+                    <Button variant="outline" className="cursor-pointer focus:outline-none border border-black bg-green-100 hover:bg-green-400 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700" onClick={(_) => goToPage(`${import.meta.env.VITE_BACKEND}/auth/signin?authPermissions=${ScopeGroup[ScopeGroup.DeleteRepoControl]}`)}>Name + E-mail + Git Push and Delete scope</Button>
+                    <Button variant="outline" className="cursor-pointer focus:outline-none border border-black bg-green-100 hover:bg-green-400 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700" onClick={(_) => goToPage(`${import.meta.env.VITE_BACKEND}/auth/signin?authPermissions=${ScopeGroup[ScopeGroup.LoginInfo]}`)}>Name + E-mail</Button>
                   </div>
                 </div>
             }

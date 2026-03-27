@@ -2,7 +2,7 @@ import { z } from "zod";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { resourceModel, webhookUrl } from "../../main.ts";
-import { ConfigType, convertToValidGitName, extractPartOfRepositoryURL, findPatAccessToken, findPatAccessTokens, convertStringToExportVersion, PUBLICATION_BRANCH_DEFAULT_NAME, stringToBoolean, transformCommitMessageIfEmpty, getDefaultExportVersion, getDefaultExportFormat, isExportFormatType, convertStringToExportFormat } from "@dataspecer/git";
+import { ScopeGroup, convertToValidGitName, extractPartOfRepositoryURL, findPatAccessToken, findPatAccessTokens, convertStringToExportVersion, PUBLICATION_BRANCH_DEFAULT_NAME, stringToBoolean, transformCommitMessageIfEmpty, getDefaultExportVersion, getDefaultExportFormat, isExportFormatType, convertStringToExportFormat } from "@dataspecer/git";
 import { commitPackageToGitUsingAuthSession, CommitUsingAuthSessionParams } from "./commit-package-to-git.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import { checkErrorBoundaryForCommitAction, CommitBranchAndHashInfo, GitCommitToCreateInfoBasic, GitRepositoryIdentification } from "@dataspecer/git-node";
@@ -30,7 +30,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
   const query = querySchema.parse(request.query);
   query.publicationBranch ??= PUBLICATION_BRANCH_DEFAULT_NAME;
   const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(query.gitProviderURL, httpFetch, configuration);
-  const { name: sessionUserName, accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
+  const { name: sessionUserName, accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
   const repositoryOwner = convertToValidGitName(query.givenRepositoryOwner.length === 0 ? sessionUserName : query.givenRepositoryOwner);
   const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
   const repositoryName = convertToValidGitName(query.givenRepositoryName);
@@ -135,7 +135,7 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
 
   checkErrorBoundaryForCommitAction(query.gitRepositoryURL, repositoryName, repositoryOwner);
 
-  const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
+  const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
   const accessToken = findPatAccessToken(accessTokens);
   if (accessToken === null) {
     throw new Error("There is neither user or bot pat token to perform operations needed to create the link. For example creating remote repo");

@@ -1,6 +1,6 @@
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
-import { ConfigType, convertGitProviderNameToEnum, GitProvider, GitProviderEnum, isGitProviderName, UserOrganizationsFetchResponse } from "@dataspecer/git";
+import { ScopeGroup, convertGitProviderNameToEnum, GitProvider, GitProviderEnum, isGitProviderName, UserOrganizationsFetchResponse } from "@dataspecer/git";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
 import { getGitCredentialsFromSession, getGitProviderEnumFromSession } from "../../authentication/auth-session.ts";
@@ -35,7 +35,7 @@ export const getAuthenticatedUserOrganizations = asyncHandler(async (request: ex
   }
 
   const gitProvider: GitProvider = GitProviderFactory.createGitProvider(gitProviderEnum, httpFetch, configuration);
-  const credentials = getGitCredentialsFromSession(request, response, [ConfigType.LoginInfo, ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
+  const credentials = getGitCredentialsFromSession(request, response, [ScopeGroup.LoginInfo, ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
   const organizations = await gitProvider.getOrganizationsForAuthenticatedUser(credentials.committerAccessToken);
   response.status(200).json(organizations);
 });

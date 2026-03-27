@@ -3,7 +3,7 @@ import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { mergeStateModel, resourceModel } from "../../main.ts";
 import { ExportVersionType, extractPartOfRepositoryURL, convertStringToExportVersion, MergeState, stringToBoolean, ExportFormatType, convertStringToExportFormat } from "@dataspecer/git";
-import { ConfigType, GitCredentials, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase, createUniqueCommitMessage } from "@dataspecer/git";
+import { ScopeGroup, GitCredentials, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase, createUniqueCommitMessage } from "@dataspecer/git";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import { PrismaMergeStateWithData } from "../../models/merge-state-model.ts";
 import {
@@ -247,7 +247,7 @@ function prepareCommitDataForCommit(
 ): GitCommitToCreateInfoExplicitWithCredentials {
   // If gitProvider not given - extract it from url
   const gitProvider = gitCommitInfoBasic.gitProvider ?? GitProviderNodeFactory.createGitProviderFromRepositoryURL(remoteRepositoryUrl, httpFetch, configuration);
-  const committer = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
+  const committer = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
   const commitInfo: GitCommitToCreateInfoExplicitWithCredentials = {
     gitCredentials: committer,
     commitMessage: gitCommitInfoBasic.commitMessage ?? createUniqueCommitMessage(),

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
-import { ConfigType, GitProvider, IssueState } from "@dataspecer/git";
+import { ScopeGroup, GitProvider, IssueState } from "@dataspecer/git";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
 import { getGitCredentialsFromSession } from "../../authentication/auth-session.ts";
@@ -20,7 +20,7 @@ export const getGitIssueTotalCount = asyncHandler(async (request: express.Reques
   const { gitUrl, issueState } = query;
 
   const gitProvider: GitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(gitUrl, httpFetch, configuration);
-  const { committerAccessToken } = getGitCredentialsFromSession(request, response, [ConfigType.LoginInfo, ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
+  const { committerAccessToken } = getGitCredentialsFromSession(request, response, [ScopeGroup.LoginInfo, ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
   const issueCount = await gitProvider.getTotalIssueCount(gitUrl, issueState, committerAccessToken);
   response.status(200).json(issueCount);
 });

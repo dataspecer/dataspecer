@@ -5,7 +5,7 @@ import express, { NextFunction } from "express";
 import { createAuthConfigWithCorrectPermissions, createBasicAuthConfig } from "../../authentication/auth-config.ts";
 import { getRedirectLink } from "./auth-handler.ts";
 import { z } from "zod";
-import { ConfigType } from "@dataspecer/git";
+import { ScopeGroup } from "@dataspecer/git";
 import { getBaseBackendUrl } from "../../utils/express-url-utils.ts";
 import { stripApiPrefixFromUrl } from "@dataspecer/git-node";
 
@@ -45,7 +45,7 @@ export const handleSignin = asyncHandler(async (request: express.Request, respon
     const callerURL = callbackUrlAsUrl.searchParams.get("callerURL") ?? undefined;
     // Get the auth scope from the redirect, it is the link which we visited in the first step - so it has the permissions inside authPermissions
     const redirectLinkAsURL = new URL(redirectLink);
-    const authPermissions = redirectLinkAsURL.searchParams.get("authPermissions") ?? ConfigType.LoginInfo.toString();
+    const authPermissions = redirectLinkAsURL.searchParams.get("authPermissions") ?? ScopeGroup.LoginInfo.toString();
     // Get Auth config
     const dsBackendURL = getBaseBackendUrl(request);
     authConfig = createAuthConfigWithCorrectPermissions(authPermissions, dsBackendURL, callerURL);

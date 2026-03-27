@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
-import { ConfigType, GitProvider, IssueState } from "@dataspecer/git";
+import { ScopeGroup, GitProvider, IssueState } from "@dataspecer/git";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
 import { getGitCredentialsFromSession } from "../../authentication/auth-session.ts";
@@ -24,7 +24,7 @@ export const getGitIssues = asyncHandler(async (request: express.Request, respon
   const perPage = Number(query.perPage);
 
   const gitProvider: GitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(gitUrl, httpFetch, configuration);
-  const { committerAccessToken } = getGitCredentialsFromSession(request, response, [ConfigType.LoginInfo, ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
+  const { committerAccessToken } = getGitCredentialsFromSession(request, response, [ScopeGroup.LoginInfo, ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
   const issues = await gitProvider.getIssues(gitUrl, issueState, page, perPage, committerAccessToken);
   response.status(200).json(issues);
 });

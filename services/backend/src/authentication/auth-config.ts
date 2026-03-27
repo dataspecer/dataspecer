@@ -4,7 +4,7 @@ import GitHub from "@auth/express/providers/github"
 import GitLab from "@auth/express/providers/gitlab"
 import Google from "@auth/express/providers/google"
 import Keycloak from "@auth/express/providers/keycloak"
-import { ConfigType, GitProviderEnum, Scope } from "@dataspecer/git";
+import { ScopeGroup, GitProviderEnum, GenericScope, getScopesForScopeGroup } from "@dataspecer/git";
 import configuration from "../configuration.ts";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import { GitHubScope, GitHubProvider, GitProviderFactory } from "@dataspecer/git/git-providers"
@@ -15,22 +15,22 @@ import { GitHubScope, GitHubProvider, GitProviderFactory } from "@dataspecer/git
 
 /**
  * Creates {@link ExpressAuthConfig} for the given {@link genericScope}. The {@link dsBackendURL} and {@link callerURL} are used to create the URL used in the callbacks.
- * The returned ConfigType is not null if there is {@link ConfigType} which exactly matches provided scope (on permission level of course, not on string level).
+ * The returned ScopeGroup is not null if there is {@link ScopeGroup} which exactly matches provided scope (on permission level of course, not on string level).
  * @param genericScope is the scope as from the authJS user account - that is the scopes separated by comma (,) but converted to the generic scopes
  * @param dsBackendURL is the url of the ds backend
  * @param callerURL is the URL of the caller to which we can be possibly redirected after request is finished
  */
-export function createAuthConfigBasedOnAccountScope(genericScope: Scope[] | null, dsBackendURL: string, callerURL?: string): [ExpressAuthConfig, ConfigType | null] {
+export function createAuthConfigBasedOnAccountScope(genericScope: GenericScope[] | null, dsBackendURL: string, callerURL?: string): [ExpressAuthConfig, ScopeGroup | null] {
   if (genericScope === null) {
     return [createAuthConfig(null, dsBackendURL, callerURL), null];
   }
 
-  for (const configTypeKey of Object.values(ConfigType).filter(value => typeof value === "number") as number[]) {
-    const configType = ConfigType[ConfigType[configTypeKey] as keyof typeof ConfigType];
-    const scopesForConfig = getScopesForAuthConfig(configType);
+  for (const scopeGroupKey of Object.values(ScopeGroup).filter(value => typeof value === "number") as number[]) {
+    const scopeGroup = ScopeGroup[ScopeGroup[scopeGroupKey] as keyof typeof ScopeGroup];
+    const scopesForConfig = getScopesForAuthConfig(scopeGroup);
     const coveredScopes: Record<string, true> = {};
     for (const scope of genericScope) {
-      if (scopesForConfig.includes(scope as Scope)) {
+      if (scopesForConfig.includes(scope as GenericScope)) {
         coveredScopes[scope] = true;
       }
       else {
@@ -40,31 +40,22 @@ export function createAuthConfigBasedOnAccountScope(genericScope: Scope[] | null
 
     const coveredScopesCount = Object.keys(coveredScopes).length;   // We covered all the scopes in the config
     if (coveredScopesCount === scopesForConfig.length && coveredScopesCount === genericScope.length) {
-      return [createAuthConfig(configType, dsBackendURL, callerURL), configType];
+      return [createAuthConfig(scopeGroup, dsBackendURL, callerURL), scopeGroup];
     }
   }
 
   return [createAuthConfig(null, dsBackendURL, callerURL), null];
 }
 
-function getScopesForAuthConfig(configType: ConfigType | null): Scope[] {
-  if (configType === null) {
+function getScopesForAuthConfig(scopeGroup: ScopeGroup | null): GenericScope[] {
+  if (scopeGroup === null) {
     return ["userInfo", "email"];
   }
 
-  // Note that we also need the workflow scope for full control related to commiting/pushing. Othwerwise we will get:
-  //  refusing to allow an OAuth App to create or update workflow `.github/workflows/learn-github-actions.yml` without `workflow` scope
-  // Using Record instead of switch because for Records compiler forces you to define any newly added enum value
-  const scopes: Record<ConfigType, Scope[]> = {
-    [ConfigType.LoginInfo]: ["userInfo", "email"],
-    [ConfigType.FullPublicRepoControl]: ["userInfo", "readOrg", "email", "publicRepo", "workflow"],
-    [ConfigType.DeleteRepoControl]: ["userInfo", "readOrg", "email", "publicRepo", "workflow", "deleteRepo"],
-  };
-
-  const scope = scopes[configType];
+  const scope = getScopesForScopeGroup(scopeGroup);
   if (scope === undefined) {
-    // It can be undefined only if the given configType is of different type (user did some typecasting)
-    console.error("Passing in invalid configType which is not of type ConfigType - Incorrect casting", configType);
+    // It can be undefined only if the given scopeGroup is of different type (user did some typecasting)
+    console.error("Passing in invalid scopeGroup which is not of type ScopeGroup - Incorrect casting", scopeGroup);
     return ["userInfo", "email"];
   }
   return scope;
@@ -72,14 +63,14 @@ function getScopesForAuthConfig(configType: ConfigType | null): Scope[] {
 
 
 /**
- * Creates {@link ExpressAuthConfig} for the given {@link configType}. The {@link dsBackendURL} and {@link callerURL} are used to create the URL used in the callbacks.
- * @param configType if null or the value is unknown, then default scope (permission) is used
+ * Creates {@link ExpressAuthConfig} for the given {@link scopeGroup}. The {@link dsBackendURL} and {@link callerURL} are used to create the URL used in the callbacks.
+ * @param scopeGroup if null or the value is unknown, then default scope (permission) is used
  * @param callerURL is the URL of the caller to which we will be redirected after the auth request is finished
  * @returns
  */
-function createAuthConfig(configType: ConfigType | null, dsBackendURL: string, callerURL?: string): ExpressAuthConfig {
+function createAuthConfig(scopeGroup: ScopeGroup | null, dsBackendURL: string, callerURL?: string): ExpressAuthConfig {
   // NOTE: ! Don't forget to set the scopes everywhere not only for the GitHub.
-  let scope = getScopesForAuthConfig(configType);
+  let scope = getScopesForAuthConfig(scopeGroup);
 
   // This URI stuff needs explaining - so first - the issue - when we get back from github we can redirect only back on the server. ("localhost:3100" if ran locally)
   //                                                          so we need some workaround to get back on the url we came from
@@ -204,8 +195,8 @@ function createAuthConfig(configType: ConfigType | null, dsBackendURL: string, c
  * @param callerURL is the URL of the caller to which we can be possibly redirected after request is finished
  */
 export function createAuthConfigWithCorrectPermissions(authPermissions: string, dsBackendURL: string, callerURL?: string): ExpressAuthConfig {
-  const configType = ConfigType[authPermissions as keyof typeof ConfigType];
-  return createAuthConfig(configType, dsBackendURL, callerURL);
+  const scopeGroup = ScopeGroup[authPermissions as keyof typeof ScopeGroup];
+  return createAuthConfig(scopeGroup, dsBackendURL, callerURL);
 }
 
 // TODO RadStr Idea: For performance reasons try later create one basic auth config, which will be used everywhere where we don't need redirect or scope.
@@ -217,7 +208,7 @@ export function createAuthConfigWithCorrectPermissions(authPermissions: string, 
  * @param dsBackendURL is the url of the ds backend
  * @param callerURL is the URL of the caller to which we can be possibly redirected after request is finished
  */
-export const createBasicAuthConfig = (dsBackendURL: string, callerURL?: string) => createAuthConfig(ConfigType.LoginInfo, dsBackendURL, callerURL);
+export const createBasicAuthConfig = (dsBackendURL: string, callerURL?: string) => createAuthConfig(ScopeGroup.LoginInfo, dsBackendURL, callerURL);
 
 /**
  * Creates {@link ExpressAuthConfig} that contains full repo control -
@@ -227,4 +218,4 @@ export const createBasicAuthConfig = (dsBackendURL: string, callerURL?: string) 
  * @param dsBackendURL is the url of the ds backend
  * @deprecated The {@link createBasicAuthConfig} is enough to use
  */
-export const createFullRepoControlAuthConfig = (dsBackendURL: string, callerURL?: string) => createAuthConfig(ConfigType.FullPublicRepoControl, dsBackendURL, callerURL);
+export const createFullRepoControlAuthConfig = (dsBackendURL: string, callerURL?: string) => createAuthConfig(ScopeGroup.FullPublicRepoControl, dsBackendURL, callerURL);

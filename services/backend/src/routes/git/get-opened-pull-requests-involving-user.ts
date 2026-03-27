@@ -1,6 +1,6 @@
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
-import { ConfigType, GitProvider, GitProviderEnum } from "@dataspecer/git";
+import { ScopeGroup, GitProvider, GitProviderEnum } from "@dataspecer/git";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
 import { getGitCredentialsFromSession, getGitProviderEnumFromSession } from "../../authentication/auth-session.ts";
@@ -20,7 +20,7 @@ export const getOpenedPullRequestsInvolvingUser = asyncHandler(async (request: e
   }
 
   const gitProvider: GitProvider = GitProviderFactory.createGitProvider(gitProviderEnum, httpFetch, configuration);
-  const credentials = getGitCredentialsFromSession(request, response, [ConfigType.LoginInfo, ConfigType.FullPublicRepoControl, ConfigType.DeleteRepoControl]);
+  const credentials = getGitCredentialsFromSession(request, response, [ScopeGroup.LoginInfo, ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
   const openedPullRequests = await gitProvider.getOpenedPullRequestsInvolvingUser(credentials.committerAccessToken);
   response.status(200).json(openedPullRequests);
 });

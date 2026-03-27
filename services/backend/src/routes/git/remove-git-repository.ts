@@ -3,7 +3,7 @@ import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/a
 import { resourceModel } from "../../main.ts";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
-import { ConfigType, extractPartOfRepositoryURL, findPatAccessTokens } from "@dataspecer/git";
+import { ScopeGroup, extractPartOfRepositoryURL, findPatAccessTokens } from "@dataspecer/git";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
@@ -35,7 +35,7 @@ export const removeGitRepository = asyncHandler(async (request: express.Request,
   }
 
   const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(repositoryURL, httpFetch, configuration);
-  const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.DeleteRepoControl]);
+  const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.DeleteRepoControl]);
   const patAccessTokens = findPatAccessTokens(accessTokens);
   for (const patAccessToken of patAccessTokens) {
     try {

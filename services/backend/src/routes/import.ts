@@ -27,7 +27,7 @@ import { PackageImporter } from "../export-import/import.ts";
 import { Readable } from "stream";
 import { ReadableStream } from "stream/web";
 import { buffer } from "stream/consumers";
-import { AccessToken, AccessTokenType, CommitReferenceType, ConfigType, getDefaultCommitReferenceTypeForZipDownload, GitProviderNode, isCommitReferenceType } from "@dataspecer/git";
+import { AccessToken, AccessTokenType, CommitReferenceType, ScopeGroup, getDefaultCommitReferenceTypeForZipDownload, GitProviderNode, isCommitReferenceType } from "@dataspecer/git";
 import { BaseResource, createSimpleGitUsingPredefinedGitRoot, gitCloneBasic, INTERNAL_COMPUTATION_FOR_IMPORT, removePathRecursively } from "@dataspecer/git-node";
 import configuration from "../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
@@ -745,7 +745,7 @@ export const importPackageFromGit = asyncHandler(async (request: express.Request
 
   const gitProvider: GitProviderNode = GitProviderNodeFactory.createGitProviderFromRepositoryURL(gitURL, httpFetch, configuration);
   // TODO: Can have better scope
-  const gitCredentials = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ConfigType.FullPublicRepoControl]);
+  const gitCredentials = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.FullPublicRepoControl]);
   const prismaClientApi: StorageApiForIriReplacement = new PrismaClientStorageApiForIriReplacement(prismaClient);
   const result = await importFromGitUrl(gitProvider, gitCredentials.accessTokens, gitURL, storeModel, prismaClientApi, commitReferenceType);
   if (result.length === 0) {
