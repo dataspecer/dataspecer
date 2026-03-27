@@ -27,7 +27,7 @@ describe("DependencyTracker", () => {
           .dependencies.map(item => values[item] ?? 0)
           .reduce((prev, next) => prev + next, (entity as TestEntity).value);
       },
-      onEntityDidChange(_, next) {
+      onEntityDidChange(_model, _prev, next) {
         values[next!.id] = (next as TestEntity)
           .dependencies.map(item => values[item] ?? 0)
           .reduce((prev, next) => prev + next, (next as TestEntity).value);
