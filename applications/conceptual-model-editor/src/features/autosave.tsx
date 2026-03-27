@@ -14,7 +14,7 @@ export const useAutoSave = () => {
 
   const { updateSemanticModelPackageModels } = useBackendConnection();
   const [autosaveActive, setAutosaveActive] = useState(AUTOSAVE_ENABLED_BY_DEFAULT);
-  const [autosaveInterval, setAutosaveInterval] = useState<NodeJS.Timeout | null>(null);
+  const [autosaveInterval, setAutosaveInterval] = useState<number | null>(null);
   const [autosaveButtonLabel, setAutosaveButtonLabel] = useState(getAutosaveLabel(AUTOSAVE_ENABLED_BY_DEFAULT));
 
   useEffect(() => {
