@@ -52,10 +52,7 @@ export function useModelObserver(
   useEffect(() => {
     const state = stateRef.current;
 
-    console.log("use-model-observer.use-effect", {
-      entityModels, visualModels, state,
-      observerDidChanged: state.observer !== observer,
-    });
+    console.log("use-model-observer.use-effect", { entityModels, visualModels });
 
     // When component reload in develop mode the observer change.
     // Thus we need to reload all entities, we do this bu updating the state.
@@ -63,6 +60,7 @@ export function useModelObserver(
       state.entityModels.clear();
       state.visualModels.clear();
       state.observer = observer;
+      console.log("  observer has changed, running full reload!")
     }
 
     const [removedEntityModels, newEntityModels] =
@@ -70,6 +68,11 @@ export function useModelObserver(
 
     const [removedVisualModel, newVisualModels] =
       diffArrays([...state.visualModels.keys()], [...visualModels.keys()]);
+
+    console.log("  ", {
+      removedEntityModels, newEntityModels,
+      removedVisualModel, newVisualModels,
+    });
 
     // We store all changes here and invoke the observer only once at the end.
     // We know we are in a single thread so no updates are going interrupt.

@@ -26,14 +26,12 @@ import { languageStringToStringNext } from "../utilities/string";
 import {
   isModelVisualInformation,
   isVisualNode,
-  isVisualProfileRelationship,
   isVisualRelationship,
-  VisualEntity,
   VisualNode,
-  VisualProfileRelationship,
   VisualRelationship,
   VisualModelData as VisualModelInformation
 } from "@dataspecer/visual-model";
+import { removeFromArray } from "../utilities/functional";
 
 export class CatalogTracker implements Tracker {
 
@@ -142,20 +140,20 @@ export class CatalogTracker implements Tracker {
     }
     // We need to cast to any here as VisualEntity is using identifier not id.
     else if (isVisualNode(next as any)) {
-      const visual = next as unknown as VisualNode;
+      const typed = next as unknown as VisualNode;
       const entity = this.getOrCreateCatalogEntity(
-        visual.model, visual.representedEntity, next);
-      this.addVisualRepresentation(entity, model, visual.identifier);
+        typed.model, typed.representedEntity, next);
+      this.addVisualRepresentation(entity, model, typed.identifier);
     } else if (isVisualRelationship(next as any)) {
-      const visual = next as unknown as VisualRelationship;
+      const typed = next as unknown as VisualRelationship;
       const entity = this.getOrCreateCatalogEntity(
-        visual.model, visual.representedRelationship, next);
-      this.addVisualRepresentation(entity, model, visual.identifier);
+        typed.model, typed.representedRelationship, next);
+      this.addVisualRepresentation(entity, model, typed.identifier);
     } else if (isModelVisualInformation(next as any)) {
-      const visual = next as unknown as VisualModelInformation;
+      const typed = next as unknown as VisualModelInformation;
       const visualModel = this.getOrCreateVisualModelData(model);
-      if (visual.representedModel !== null && visual.color !== null) {
-        visualModel.colors[visual.representedModel] = visual.color;
+      if (typed.representedModel !== null && typed.color !== null) {
+        visualModel.colors[typed.representedModel] = typed.color;
       }
     }
   }
@@ -222,40 +220,71 @@ export class CatalogTracker implements Tracker {
 
   onEntityDidRemove(model: ModelIdentifier, previous: Entity): void {
     if (isSemanticModelEntity(previous)) {
-
+      this.removeSemanticModel(model);
     } else if (isExternalSemanticModelEntity(previous)) {
-
+      this.removeSemanticModel(model);
     } else if (isPimStoreModelEntity(previous)) {
-
+      this.removeSemanticModel(model);
     } else if (isVisualModelEntity(previous)) {
-
+      this.visualModels.delete(model);
     } else if (previous.type.includes("entity-model-type")) {
       // Contains information about the visual model see ModelEntity.
-
+      console.warn("  Ignored remove on \"entity-model-type\".");
     } else if (isSemanticClass(previous)) {
-
+      this.entities.delete(previous.id);
     } else if (isSemanticRelationship(previous)) {
-
+      this.entities.delete(previous.id);
     } else if (isSemanticGeneralization(previous)) {
-
+      this.entities.delete(previous.id);
     } else if (isProfileClass(previous)) {
-
+      this.entities.delete(previous.id);
     } else if (isProfileRelationship(previous)) {
-
+      this.entities.delete(previous.id);
     } else if (isProfileGeneralization(previous)) {
-
+      this.entities.delete(previous.id);
     }
     // We need to cast to any here as VisualEntity is using identifier not id.
     else if (isVisualNode(previous as any)) {
-      const visual = previous as unknown as VisualNode;
-
+      const typed = previous as unknown as VisualNode;
+      const entity = this.entities.get(typed.representedEntity);
+      if (entity !== undefined) {
+        this.removeVisualRepresentation(entity, model, typed.identifier);
+      }
     } else if (isVisualRelationship(previous as any)) {
-      const visual = previous as unknown as VisualRelationship;
-
+      const typed = previous as unknown as VisualRelationship;
+      const entity = this.entities.get(typed.representedRelationship);
+      if (entity !== undefined) {
+        this.removeVisualRepresentation(entity, model, typed.identifier);
+      }
     } else if (isModelVisualInformation(previous as any)) {
-      const visual = previous as unknown as VisualModelInformation;
-
+      const typed = previous as unknown as VisualModelInformation;
+      const visualModel = this.visualModels.get(typed.representedModel);
+      if (visualModel !== undefined) {
+        delete visualModel.colors[typed.representedModel];
+      }
     }
+  }
+
+  private removeSemanticModel(model: ModelIdentifier) {
+    // Remove from a semantic list.
+    this.semanticModels.delete(model);
+    // TODO This should not be needed once we properly delete all model entities.
+    // Remove visual information from all models.
+    this.visualModels.values().forEach(visualModel => {
+      delete visualModel.colors[model];
+    });
+  }
+
+  private removeVisualRepresentation(
+    entity: CatalogEntity,
+    visualModel: ModelIdentifier,
+    visualIdentifier: EntityIdentifier,
+  ): void {
+    entity.visualEntities[visualModel] = [
+      ...(entity.visualEntities[visualModel] ?? []),
+      visualIdentifier,
+    ];
+    removeFromArray(visualIdentifier, entity.visualEntities[visualModel]);
   }
 
   onDependenciesDidChange(next: Entity): void {
@@ -396,7 +425,6 @@ export function getEntityLabel(
   languages: string[],
   { label, iri, identifier }: CatalogEntity,
 ): string {
-  console.log("getEntityLabel", languages, label);
   if (label === null) {
     return iri ?? identifier;
   }

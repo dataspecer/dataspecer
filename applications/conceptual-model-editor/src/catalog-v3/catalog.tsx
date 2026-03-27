@@ -52,7 +52,6 @@ export const Catalog = () => {
   // Catalog state.
   const [state, setState] = useState<CatalogState>(createCatalogState());
   const controller = useMemo(() => {
-    console.log("catalog-v3.controller.use-memo");
     return {
       onActivateView(view: CatalogView) {
         setState(previous => {
@@ -75,7 +74,6 @@ export const Catalog = () => {
         model: string | null,
         identifier: string | null,
       ) {
-        console.log("catalog-v3.on-handle-click", { action, model, identifier });
         // Actions without model or identifier.
         switch (action) {
           case Actions.MODEL_CREATE:
@@ -302,7 +300,7 @@ export const Catalog = () => {
       props, state.views[state.activeViewIndex]),
     [state.views, state.activeViewIndex]);
 
-  console.log("catalog-v3.render", { state, visualModel });
+  console.log("catalog-v3.render", { state, visualModel, catalogTracker });
 
   const itemsCount = state.views[state.activeViewIndex].visibleItems.length;
   return (
@@ -549,7 +547,7 @@ interface CatalogItem {
   /**
    * Use null when this item can not be filtered out.
    */
-  filterText: string | null;
+  filterText: string | undefined;
 
   /**
    * Function to render an element.
@@ -597,7 +595,12 @@ interface CatalogEntityItem extends CatalogItem {
   /**
    * True when the entity can be expanded.
    */
-  expandable: boolean;
+  isExpandable: boolean | undefined;
+
+  /**
+   * Is from read only model.
+   */
+  isReadOnly: boolean | undefined;
 
   /**
    * True when a visual entity can be added to visual model.
@@ -668,7 +671,7 @@ function updateVisibleItems(
     }
     //
     const item = allItems[index];
-    const visible = item.filterText === null ||
+    const visible = item.filterText === undefined ||
       item.filterText.includes(normalizedSearch);
     if (visible === false) {
       continue;
@@ -920,6 +923,7 @@ function asModel(
   entity: SemanticModelData,
 ): CatalogItem {
   const label = entity.label[""] ?? entity.model;
+  const model = tracker.semanticModels.get(entity.model);
   return {
     level: 0,
     model: entity.model,
@@ -987,7 +991,7 @@ function asCreateModel(): CatalogItem {
     backgroundColor: "#ffffff",
     label: "",
     sortText: "",
-    filterText: null,
+    filterText: undefined,
     renderItem: renderCreateModel,
   }
 }
@@ -1078,6 +1082,7 @@ function asSemanticClass(
   level: number,
 ): CatalogEntityItem {
   const label = getEntityLabel(languages, catalogEntity);
+  const model = tracker.semanticModels.get(catalogEntity.model);
   return {
     level,
     model: catalogEntity.model,
@@ -1090,7 +1095,8 @@ function asSemanticClass(
     renderItem: renderSemanticClass,
     //
     identifier: catalogEntity.identifier,
-    expandable: false,
+    isExpandable: false,
+    isReadOnly: model?.isReadOnly,
     canBeVisible: true,
     hasVisualEntity: tracker.hasVisualEntity(catalogEntity, visualModel),
   }
@@ -1113,7 +1119,7 @@ function renderSemanticClass(item: CatalogItem) {
         data-identifier={typed.identifier}
         data-model={item.model}
       >
-        {typed.expandable ? (
+        {typed.isExpandable ? (
           <Button
             action={Actions.CLASS_ADD_SURROUNDINGS}
             title="catalog.class.add-surroundings"
@@ -1121,7 +1127,7 @@ function renderSemanticClass(item: CatalogItem) {
             ➕
           </Button>
         ) : null}
-        {typed.expandable ? (
+        {typed.isExpandable ? (
           <Button
             action={Actions.CLASS_RELEASE_SURROUNDINGS}
             title="catalog.class.release-surroundings"
@@ -1139,12 +1145,14 @@ function renderSemanticClass(item: CatalogItem) {
         <Button
           action={Actions.CLASS_DELETE}
           title="catalog.class.delete"
+          hidden={typed.isReadOnly}
         >
           🗑️
         </Button>
         <Button
           action={Actions.CLASS_EDIT}
           title="catalog.class.edit"
+          hidden={typed.isReadOnly}
         >
           ✏
         </Button>
@@ -1159,7 +1167,7 @@ function renderSemanticClass(item: CatalogItem) {
             Actions.CLASS_HIDE : Actions.CLASS_SHOW}
           title="catalog.class.toggle"
         >
-          {visible ? "🕶️" : "👁"}
+          {visible ? "👁" : "🕶️"}
         </Button>
         <Button
           action={Actions.CLASS_PROFILE}
@@ -1186,6 +1194,7 @@ function asSemanticClassProfile(
   level: number,
 ): CatalogEntityItem {
   const label = getEntityLabel(languages, catalogEntity);
+  const model = tracker.semanticModels.get(catalogEntity.model);
   return {
     level,
     model: catalogEntity.model,
@@ -1198,7 +1207,8 @@ function asSemanticClassProfile(
     renderItem: renderSemanticClassProfile,
     //
     identifier: catalogEntity.identifier,
-    expandable: false,
+    isExpandable: false,
+    isReadOnly: model?.isReadOnly,
     canBeVisible: true, // TODO
     hasVisualEntity: tracker.hasVisualEntity(catalogEntity, visualModel),
   }
@@ -1231,12 +1241,14 @@ function renderSemanticClassProfile(item: CatalogItem) {
         <Button
           action={Actions.CLASS_PROFILE_DELETE}
           title="catalog.class-profile.delete"
+          hidden={typed.isReadOnly}
         >
           🗑️
         </Button>
         <Button
           action={Actions.CLASS_PROFILE_EDIT}
           title="catalog.class-profile.edit"
+          hidden={typed.isReadOnly}
         >
           ✏
         </Button>
@@ -1251,7 +1263,7 @@ function renderSemanticClassProfile(item: CatalogItem) {
             Actions.CLASS_PROFILE_HIDE : Actions.CLASS_PROFILE_SHOW}
           title="catalog.class-profile.toggle"
         >
-          {visible ? "🕶️" : "👁"}
+          {visible ? "👁" : "🕶️"}
         </Button>
         <Button
           action={Actions.CLASS_PROFILE_PROFILE}
@@ -1278,6 +1290,7 @@ function asSemanticRelationship(
   level: number,
 ): CatalogEntityItem {
   const label = getEntityLabel(languages, catalogEntity);
+  const model = tracker.semanticModels.get(catalogEntity.model);
   return {
     level,
     model: catalogEntity.model,
@@ -1290,7 +1303,8 @@ function asSemanticRelationship(
     renderItem: renderSemanticRelationship,
     //
     identifier: catalogEntity.identifier,
-    expandable: false,
+    isExpandable: false,
+    isReadOnly: model?.isReadOnly,
     canBeVisible: true, // TODO
     hasVisualEntity: tracker.hasVisualEntity(catalogEntity, visualModel),
   };
@@ -1323,12 +1337,14 @@ function renderSemanticRelationship(item: CatalogItem) {
         <Button
           action={Actions.RELATIONSHIP_DELETE}
           title="catalog.relationship.delete"
+          hidden={typed.isReadOnly}
         >
           🗑️
         </Button>
         <Button
           action={Actions.RELATIONSHIP_EDIT}
           title="catalog.relationship.edit"
+          hidden={typed.isReadOnly}
         >
           ✏
         </Button>
@@ -1344,7 +1360,7 @@ function renderSemanticRelationship(item: CatalogItem) {
               Actions.RELATIONSHIP_HIDE : Actions.RELATIONSHIP_SHOW}
             title="catalog.relationship.toggle"
           >
-            {visible ? "🕶️" : "👁"}
+            {visible ? "👁" : "🕶️"}
           </Button> : null}
         <Button
           action={Actions.RELATIONSHIP_PROFILE}
@@ -1389,6 +1405,7 @@ function asSemanticRelationshipProfile(
     label = `[${domainLabel}] -> ${associationLabel}`;
     sortText = `${domainLabel} ${associationLabel}`;
   }
+  const model = tracker.semanticModels.get(catalogEntity.model);
   return {
     level,
     model: catalogEntity.model,
@@ -1401,7 +1418,8 @@ function asSemanticRelationshipProfile(
     renderItem: renderSemanticRelationshipProfile,
     //
     identifier: catalogEntity.identifier,
-    expandable: false,
+    isExpandable: false,
+    isReadOnly: model?.isReadOnly,
     canBeVisible: true, // TODO
     hasVisualEntity: tracker.hasVisualEntity(catalogEntity, visualModel),
   };
@@ -1434,12 +1452,14 @@ function renderSemanticRelationshipProfile(item: CatalogItem) {
         <Button
           action={Actions.RELATIONSHIP_PROFILE_DELETE}
           title="catalog.relationship-profile.delete"
+          hidden={typed.isReadOnly}
         >
           🗑️
         </Button>
         <Button
           action={Actions.RELATIONSHIP_PROFILE_EDIT}
           title="catalog.relationship-profile.edit"
+          hidden={typed.isReadOnly}
         >
           ✏
         </Button>
@@ -1456,7 +1476,7 @@ function renderSemanticRelationshipProfile(item: CatalogItem) {
               Actions.RELATIONSHIP_PROFILE_SHOW}
             title="catalog.relationship-profile.toggle"
           >
-            {visible ? "🕶️" : "👁"}
+            {visible ? "👁" : "🕶️"}
           </Button> : null}
         <Button
           action={Actions.RELATIONSHIP_PROFILE_PROFILE}
@@ -1494,7 +1514,7 @@ function asSemanticGeneralization(
     }
     label = `${parentName} -> ${childName}`;
   }
-
+  const model = tracker.semanticModels.get(catalogEntity.model);
   return {
     level,
     model: catalogEntity.model,
@@ -1507,7 +1527,8 @@ function asSemanticGeneralization(
     renderItem: renderGeneralization,
     //
     identifier: catalogEntity.identifier,
-    expandable: false,
+    isExpandable: model?.isExternal,
+    isReadOnly: model?.isReadOnly,
     canBeVisible: true, // TODO
     hasVisualEntity: tracker.hasVisualEntity(catalogEntity, visualModel),
   };
@@ -1533,6 +1554,7 @@ function renderGeneralization(item: CatalogItem) {
         <Button
           action={Actions.GENERALIZATION_DELETE}
           title="catalog.generalization.delete"
+          hidden={typed.isReadOnly}
         >
           🗑️
         </Button>
@@ -1548,7 +1570,7 @@ function renderGeneralization(item: CatalogItem) {
               Actions.GENERALIZATION_HIDE : Actions.GENERALIZATION_SHOW}
             title="catalog.generalization.toggle"
           >
-            {visible ? "🕶️" : "👁"}
+            {visible ? "👁" : "🕶️"}
           </Button> : null}
       </div>
     </div>
@@ -1691,14 +1713,19 @@ function rowRenderer(
   );
 }
 
-function Button({ action, children, title, ...props }: {
+function Button({ action, children, title, hidden, ...props }: {
   action: string,
   title: string,
+  hidden?: boolean,
   children: React.ReactNode,
 }) {
+  let className = "hover:bg-slate-200";
+  if (hidden) {
+    className += " invisible";
+  }
   return (
     <button
-      className="hover:bg-slate-200"
+      className={className}
       data-action={action}
       title={t(title)}
       {...props}
