@@ -666,7 +666,14 @@ jobs:
       - name: Install packages
         working-directory: dataspecer-source-code
         run: npm ci
-      - name: Build     # Takes around 1m40s-1m50s with building /applications. 50s-60s without. ... so TODO RadStr: think how to do it, we can have package.json file sideways and just swap it with it if we want some hacky solution
+      # Step comes from ChatGPT (https://chatgpt.com/share/69c6e9b1-3ab4-8330-a951-b05da49955e9)
+      - name: Remove applications workspace     # TODO RadStr PR: Just a hacky solution to not build the applications. It could be probably done more cleanly
+                                                #                 Takes around 1m40s-1m50s with building /applications. 50s-60s without
+        working-directory: dataspecer-source-code
+        run: |
+          jq ' .workspaces |= map(select(. != "applications/*")) ' package.json > tmp.json
+          mv tmp.json package.json
+      - name: Build     # Takes around 1m40s-1m50s with building /applications. 50s-60s without. ... so TODO RadStr Critical: think how to do it, we can have package.json file sideways and just swap it with it if we want some hacky solution
         working-directory: dataspecer-source-code
         run: npm run build
 
@@ -744,7 +751,7 @@ jobs:
       #     echo "<html>Hello this is index page for this repository's GitHub pages</html>" > ./index.html
 
 
-      # ChatGPT inspired. We just create simple index files which has the html links directories inside /artifacts
+      # Code is ChatGPT inspired. We just create simple index files which has the html links directories inside /artifacts
       - name: Generate HTML index
         run: |
           OUTPUT="index.html"
