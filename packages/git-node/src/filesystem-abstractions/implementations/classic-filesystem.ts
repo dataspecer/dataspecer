@@ -357,7 +357,7 @@ type SplitDatastoreName = {
  *  So the last two tokens created by {@link separator} and the rest of string are returned. If there is not enough separators the relevant value is null.
  * @example extractModelAndFormat(value="a.b.c.d.e.gh.meta.json", separator=".") returns { basename = "a.b.c.d.e.gh", type = "meta", format = "json" }
  */
-function extractTypeAndFormat(value: string, separator: string): SplitDatastoreName {
+export function extractTypeAndFormat(value: string, separator: string): SplitDatastoreName {
   let index = value.length + 1;
   let previousIndex = -1;
   let basename: string;
