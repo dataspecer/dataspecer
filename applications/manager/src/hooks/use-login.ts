@@ -1,4 +1,4 @@
-import { GitProviderNamesAsType, Scope } from "@dataspecer/git";
+import { GitProviderNamesAsType, GenericScope } from "@dataspecer/git";
 import { useEffect, useState } from "react";
 
 export interface UseLoginType {
@@ -8,7 +8,7 @@ export interface UseLoginType {
   username: string;
   userEmail: string;
   scope: string;
-  genericScope: Scope[];
+  genericScope: GenericScope[];
   imageUrl: string;
   isLoginDataReady: boolean;
 }
@@ -19,7 +19,7 @@ export const useLogin = (): UseLoginType => {
   const [userEmail, setUserEmail] = useState<string>("userEmail");
   const [imageUrl, setImageUrl] = useState<string>("userImg");
   const [scope, setScope] = useState<string>("");
-  const [genericScope, setGenericScope] = useState<Scope[]>([]);
+  const [genericScope, setGenericScope] = useState<GenericScope[]>([]);
   const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
   const [isLoginDataReady, setIsLoginDataReady] = useState<boolean>(false);
   // Set to true if the frontend can use the authentication capabilities. That is cors for credentials is allowed
