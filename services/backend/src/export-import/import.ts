@@ -2,7 +2,7 @@ import JSZip from "jszip";
 import { v4 as uuidv4 } from "uuid";
 import { PACKAGE_ROOT } from "@dataspecer/git";
 import { replaceIris, StorageApiForIriReplacement } from "../utils/iri-replace-util.ts";
-import { isArtificialExportDirectory, LocalStoreModelGetter, ResourceModelForImport } from "@dataspecer/git-node";
+import { extractTypeAndFormat, isArtificialExportDirectory, LocalStoreModelGetter, ResourceModelForImport } from "@dataspecer/git-node";
 
 
 const FILE_EXTENSION_REGEX = /^\.([-0-9a-zA-Z]+)\.json$/;

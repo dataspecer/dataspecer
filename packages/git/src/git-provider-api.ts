@@ -212,8 +212,14 @@ export type GitHubLabel = "Pull Request" | "PR" | "GitHub Pages";
 
 export type GetResourceForGitUrlAndBranchType = (gitRepositoryUrl: string, branch: string) => Promise<{iri: string} | null>
 
-// TODO RadStr Critical: Documentation ... also put into documentation the fact that we do not store the url into the implementation (for good and bad).
-//                                It has to be provdied to each method that needs it. .... put it as future TODO, since it is not the best design decision probably.
+/**
+ * Class that represents the Git provider. Currently the only functional implementation is for GitHub. GitLab has only implementation of some methods.
+ * It contains Git provider specific methods, such as create repository, fetch issues and so on.
+ * We meda a certain design decision and that is, that we do not store the url of the provider to the object.
+ *  Therefore, the class is stateless and all the methods get the url of the repository.
+ *  In future it might be better idea to maybe make it have state, where the state is the url of the repository.
+ *  Thus, there would be no need to pass the url to each method - so this is possible TODO RadStr PR:
+ */
 export interface GitProvider {
   /**
    * @returns Returns the provider enum value for this provider.

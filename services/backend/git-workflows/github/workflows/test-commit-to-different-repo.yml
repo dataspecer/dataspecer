@@ -673,7 +673,7 @@ jobs:
         run: |
           jq ' .workspaces |= map(select(. != "applications/*")) ' package.json > tmp.json
           mv tmp.json package.json
-      - name: Build     # Takes around 1m40s-1m50s with building /applications. 50s-60s without. ... so TODO RadStr Critical: think how to do it, we can have package.json file sideways and just swap it with it if we want some hacky solution
+      - name: Build
         working-directory: dataspecer-source-code
         run: npm run build
 
