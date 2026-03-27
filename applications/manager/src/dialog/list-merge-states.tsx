@@ -139,19 +139,6 @@ function mergeStateSourceText(mergeState: MergeState, side: "MergeFrom" | "Merge
       <span className="text-base font-medium whitespace-nowrap truncate">{mergeState[`branch${side}`]}</span>
       <span className="text-xs text-gray-500 whitespace-nowrap pl-1 pt-1">{getHumanReadableFilesystemName(mergeState[`filesystemType${side}`])}</span>
     </>;
-// TODO RadStr: Don't know if this split is better than jsut putting branch everywhere
-  // if (mergeState.mergeStateCause === "merge") {
-  //   return <>
-  //       <span className="text-base font-medium whitespace-nowrap truncate">{mergeState[`branch${side}`]}</span>
-  //       <span className="text-xs text-gray-500 whitespace-nowrap pl-1 pt-1">{getHumanReadableFilesystemName(mergeState[`filesystemType${side}`])}</span>
-  //     </>;
-  // }
-  // else {
-  //   return <>
-  //       <span className="text-base font-medium whitespace-nowrap truncate">{mergeState[`lastCommitHash${side}`]}</span>
-  //       <span className="text-xs text-gray-500 whitespace-nowrap pl-1 pt-1">{getHumanReadableFilesystemName(mergeState[`filesystemType${side}`])}</span>
-  //     </>;
-  // }
 }
 
 

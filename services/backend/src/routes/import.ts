@@ -645,9 +645,10 @@ export async function importFromGitUrl(
     throw new Error(`Failed to fetch ${gitZipDownloadURLData}`);
   }
 
-  // TODO RadStr: Remove the commented lines here - this is the old variant where we first put the file into filesystem and then load the zip file
+  // TODO: !!! Remove the commented lines here ... we keep it since it might be useful for someone in future, but it is not needed
+  //              - this is the old variant where we first put the file into filesystem and then load the zip file
   //// It is tmp-dir since it is not part of the generated directory, therefore it won't be pushed to the publication repo, because we won't "mv" it
-  // const zipFromGitDownloadPathInFS = "tmp-dir";     // TODO RadStr: Ideally this should be in some file or something or have templates for gh actions. Because now I have to put the filepath on 2 places
+  // const zipFromGitDownloadPathInFS = "tmp-dir";     // TODO: Ideally this should be in some file or something or have templates for gh actions. Because now I have to put the filepath on 2 places
   // if(!fs.existsSync(zipFromGitDownloadPathInFS)) {
   //   fs.mkdirSync(zipFromGitDownloadPathInFS, { recursive: true });
   // }

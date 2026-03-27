@@ -1,11 +1,3 @@
-// TODO RadStr: After long thinking the commit methods (both merge and classic commit) should be inside a class.
-//              That would solve the issue of passing in ton of parameters. Since some of the values are set once and unchanged for the rest of the run.
-//              The good news is that this seems to be the most (and probably only) problematic part of code with lot of parameters, which needs this form of rewrite.
-//              Others are relatively fine.
-// TODO RadStr: Another TODO just to be sure we will not forget is to fix the resource model passes in this file, which were added in this commit (the commit which introduces this new Resource Model Api)
-//              And also fix the TODO name for the resource model interface
-
-
 import { z } from "zod";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";

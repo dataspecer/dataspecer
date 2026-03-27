@@ -102,6 +102,11 @@ function convertBranchAndHashToMergeInfo(input: CommitBranchAndHashInfo): Commit
   };
 }
 
+
+// After long thinking the commit methods (both merge and classic commit) should be inside a class.
+// That would solve the issue of passing in ton of parameters. Since some of the values are set once and unchanged for the rest of the run.
+// Others are relatively fine.
+
 /**
  * This class has methods which are used when committing to the remote repository.
  * The entry point method for committing is {@link commitPackageToGit}.

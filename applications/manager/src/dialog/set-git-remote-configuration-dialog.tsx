@@ -63,8 +63,7 @@ export function SetGitRemoteConfigurationDialog({ inputPackage, isOpen, resolve 
 
   useEffect(() => {
     const setGitRemoteConfigurationState = async () => {
-      // For the commits (and creating of repo) we will pass in the exportFormat directly, instead of retrieving it again on server.
-      // const isGitDialogSettingGitConfiguration = type !== "link-to-existing-repository";     // TODO RadStr: Except for this it is the same - we can use hook probably
+      // For the commits (and creating of repo) we will pass in the exportFormat directly, instead of retrieving it again on server when the requests is processed.
       const rootPackageFetchResponse = await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(inputPackage.iri));
       const rootPackageFetchedContent = await rootPackageFetchResponse.json();
       // const fetchedGitRemoteConfiguration = isGitDialogSettingGitConfiguration ? await getGitRemoteConfigurationModelFromPackage(rootPackageFetchedContent) : null;
