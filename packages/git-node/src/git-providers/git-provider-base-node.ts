@@ -1,5 +1,5 @@
 import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
-import { CommitReferenceType, CreateRemoteRepositoryReturnType, GitProvider, GitProviderEnum, Scope, GitProviderIndependentWebhookRequestData, GitCredentials, GetResourceForGitUrlAndBranchType, GitProviderNode, GitProviderInternalCompositeNode, GitRef } from "@dataspecer/git";
+import { CommitReferenceType, CreateRemoteRepositoryReturnType, GitProvider, GitProviderEnum, GenericScope, GitProviderIndependentWebhookRequestData, GitCredentials, GetResourceForGitUrlAndBranchType, GitProviderNode, GitProviderInternalCompositeNode, GitRef } from "@dataspecer/git";
 import { simpleGit } from "simple-git";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
@@ -41,8 +41,8 @@ export abstract class GitProviderNodeBase extends GitProviderBase implements Git
   abstract createGitRepositoryURL(repositoryOwner: string, repoName: string, gitRef?: GitRef): string;
   abstract createGitRepositoryURL(repositoryOwner: string, repoName: string, gitRef?: GitRef): string;
   abstract extractDefaultRepositoryUrl(repositoryUrl: string): string;
-  abstract convertGenericScopeToProviderScope(scope: Scope): string[];
-  abstract convertProviderScopeToGenericScope(scope: string): Scope;
+  abstract convertGenericScopeToProviderScope(scope: GenericScope): string[];
+  abstract convertProviderScopeToGenericScope(scope: string): GenericScope;
   abstract revokePAT(personalAccessToken: string): Promise<FetchResponse>;
   abstract getLastCommitHash(repositoryOwner: string, repoName: string, commitReference?: string, isCommit?: boolean): Promise<string>;
   abstract getLastCommitHashFromUrl(repositoryUrl: string, commitReferenceType: CommitReferenceType | null, commitReferenceValue: string | null): Promise<string>;

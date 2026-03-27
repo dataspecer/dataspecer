@@ -108,16 +108,13 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
   }
 
 
-  protected createFilesystemMappingRecursive(mappedNodeLocation: FilesystemNodeLocation, filesystemMapping: FilesystemMappingType, parentDirectoryNode: DirectoryNode | null): Promise<FilesystemMappingType> {
+  protected createFilesystemMapping(mappedNodeLocation: FilesystemNodeLocation, filesystemMapping: FilesystemMappingType, parentDirectoryNode: DirectoryNode | null): Promise<FilesystemMappingType> {
     throw new Error("Method not implemented.");
   }
   async getDatastoreContent(irisTreePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any> {
     const resourceWithDatastore: FilesystemNode = this.globalFilesystemMappingForIris[irisTreePath];
     const datastoreInfo: DatastoreInfo | null = getDatastoreInfoOfGivenDatastoreType(resourceWithDatastore, type);
     return ClientFilesystem.getDatastoreContentDirectly(datastoreInfo, shouldConvertToDatastoreFormat, this.backendApiPath, this.backendFilesystem);
-  }
-  createFilesystemMapping(root: FilesystemNodeLocation): Promise<FilesystemMappingType> {
-    throw new Error("Method not implemented.");
   }
   changeDatastore(otherFilesystem: FilesystemAbstraction, changed: DatastoreComparison): Promise<boolean> {
     throw new Error("Method not implemented.");
