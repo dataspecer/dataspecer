@@ -4,7 +4,7 @@ import sodium from "libsodium-wrappers-sumo";
 import { AuthenticationGitProviderData, GitProviderBase } from "../git-provider-base.ts";
 import { AuthenticationGitProvidersData, getGitProviderDomain } from "../git-provider-factory.ts";
 import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, PUBLICATION_BRANCH_DEFAULT_NAME, GitProviderIndependentWebhookRequestData, PullRequestFetchResponse, PullRequestInfo, PullRequestInvolvingUserFetchResponse, UserOrganizationsFetchResponse, GitHubLabel } from "../../git-provider-api.ts";
-import { Scope } from "../../auth.ts";
+import { GenericScope } from "../../auth.ts";
 import { GitRestApiOperationError } from "../../error-definitions.ts";
 import { findPatAccessToken, GITHUB_USER_AGENT } from "../../git-utils.ts";
 import { GitIssueInfo, GitIssuesFetchResponse, IssueState } from "../../git-issues/git-issue-types.ts";
@@ -597,7 +597,7 @@ export class GitHubProvider extends GitProviderBase {
     return "https://" + domain + "/" + owner + "/" + repositoryName;
   }
 
-  public static convertGenericScopeToProviderScopeStatic(scope: Scope): GitHubScope[] {
+  public static convertGenericScopeToProviderScopeStatic(scope: GenericScope): GitHubScope[] {
     switch(scope) {
       case "userInfo":
         return ["read:user"];
@@ -616,11 +616,11 @@ export class GitHubProvider extends GitProviderBase {
     }
   }
 
-  convertGenericScopeToProviderScope(scope: Scope): GitHubScope[] {
+  convertGenericScopeToProviderScope(scope: GenericScope): GitHubScope[] {
     return GitHubProvider.convertGenericScopeToProviderScopeStatic(scope);
   }
 
-  public static convertProviderScopeToGenericScopeStatic(scope: GitHubScope): Scope {
+  public static convertProviderScopeToGenericScopeStatic(scope: GitHubScope): GenericScope {
     switch(scope) {
       case "read:user":
         return "userInfo";
@@ -639,7 +639,7 @@ export class GitHubProvider extends GitProviderBase {
     }
   }
 
-  convertProviderScopeToGenericScope(scope: GitHubScope): Scope {
+  convertProviderScopeToGenericScope(scope: GitHubScope): GenericScope {
     return GitHubProvider.convertProviderScopeToGenericScopeStatic(scope);
   }
 

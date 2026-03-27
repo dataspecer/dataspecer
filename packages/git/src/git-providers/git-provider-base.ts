@@ -8,7 +8,7 @@ import {
   UserOrganizationsFetchResponse,
   GitHubLabel,
 } from "../git-provider-api.ts";
-import { Scope } from "../auth.ts";
+import { GenericScope } from "../auth.ts";
 import { type GitBotConfiguration, type OAuthConfiguration } from "@dataspecer/auth";
 import { GitIssuesFetchResponse, IssueState } from "../git-issues/git-issue-types.ts";
 
@@ -55,8 +55,8 @@ export abstract class GitProviderBase implements GitProvider {
   abstract createGitRepositoryURL(repositoryOwner: string, repoName: string, gitRef?: GitRef): string;
   abstract extendGitRepositoryURLByGitRefSuffix(gitUrl: string, gitRef?: GitRef): string;
   abstract extractDefaultRepositoryUrl(repositoryUrl: string): string;
-  abstract convertGenericScopeToProviderScope(scope: Scope): string[];
-  abstract convertProviderScopeToGenericScope(scope: string): Scope;
+  abstract convertGenericScopeToProviderScope(scope: GenericScope): string[];
+  abstract convertProviderScopeToGenericScope(scope: string): GenericScope;
   abstract revokePAT(personalAccessToken: string): Promise<FetchResponse>;
   abstract getUrlToPRs(gitUrl: string): string
   abstract getOpenedPullRequestsForBranch(gitUrl: string, branchToMatch: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse>;

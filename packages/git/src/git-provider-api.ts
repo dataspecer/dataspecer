@@ -1,5 +1,5 @@
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
-import { Scope } from "./auth.ts";
+import { GenericScope } from "./auth.ts";
 import { GitIssuesFetchResponse, IssueState } from "./git-issues/git-issue-types.ts";
 
 export const PUBLICATION_BRANCH_DEFAULT_NAME: string = "publication-branch";
@@ -88,7 +88,7 @@ export type GitCredentials = CommitterInfo & {
 
 export type GitRef = { type: "branch"; name: string } | { type: "commit"; sha: string };
 
-// TODO RadStr: ... both the GitProviderEnum and gitProviderNames needs to be extended ... I have already mentioned in the in the other TODO in the git-provider-factory.ts
+// TODO RadStr Critical: ... both the GitProviderEnum and gitProviderNames needs to be extended ... I have already mentioned in the in the other TODO in the git-provider-factory.ts
 export enum GitProviderEnum {
   GitHub,
   GitLab
@@ -185,7 +185,7 @@ export type GitHubLabel = "Pull Request" | "PR" | "GitHub Pages";
 
 export type GetResourceForGitUrlAndBranchType = (gitRepositoryUrl: string, branch: string) => Promise<{iri: string} | null>
 
-// TODO RadStr: Documentation ... also put into documentation the fact that we do not store the url into the implementation (for good and bad).
+// TODO RadStr Critical: Documentation ... also put into documentation the fact that we do not store the url into the implementation (for good and bad).
 //                                It has to be provdied to each method that needs it. .... put it as future TODO, since it is not the best design decision probably.
 export interface GitProvider {
   /**
@@ -398,12 +398,12 @@ export interface GitProvider {
   /**
    * @returns The scope strings for the specific generic scope. We return array since technically the mapping is not necessarilly 1:1.
    */
-  convertGenericScopeToProviderScope(scope: Scope): string[];
+  convertGenericScopeToProviderScope(scope: GenericScope): string[];
 
   /**
    * @returns The given provider specific {@link scope} to the the generic scope.
    */
-  convertProviderScopeToGenericScope(scope: string): Scope;
+  convertProviderScopeToGenericScope(scope: string): GenericScope;
 
   /**
    * Removes the given {@link personalAccessToken} from git provider. We have to do this since AuthJS does not do it automatically on log off.
