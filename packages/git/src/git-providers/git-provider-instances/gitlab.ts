@@ -1,13 +1,14 @@
 import { FetchResponse, type HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { AuthenticationGitProviderData, GitProviderBase } from "../git-provider-base.ts";
-import { AuthenticationGitProvidersData, gitProviderDomains } from "../git-provider-factory.ts";
+import { AuthenticationGitProvidersData } from "../git-provider-factory.ts";
 import {
   CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType,
   GitCredentials, GitProviderEnum, GitRef, GitProviderIndependentWebhookRequestData,
   PullRequestFetchResponse,
   PullRequestInvolvingUserFetchResponse,
   UserOrganizationsFetchResponse,
-  GitHubLabel
+  GitHubLabel,
+  gitProviderDomains
 } from "../../git-provider-api.ts";
 import { GenericScope } from "../../auth.ts";
 import { GitIssuesFetchResponse, IssueState } from "../../git-issues/git-issue-types.ts";

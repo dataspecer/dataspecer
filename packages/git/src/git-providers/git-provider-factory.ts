@@ -88,32 +88,6 @@ export abstract class GitProviderFactory {
     return GitProviderFactory.createGitProvider(gitProvider, httpFetch, authenticationGitProvidersData, domainURL);
   }
 }
-// TODO: What about https://gitlab.mff.cuni.cz ???
-/**
- * Maps the provider to the base URL domain.
- */
-export const gitProviderDomains: Readonly<Record<GitProviderEnum, string>> = {
-  [GitProviderEnum.GitHub]: "github.com",
-  [GitProviderEnum.GitLab]: "gitlab.com",
-};
-export function getGitProviderDomain(gitProvider: GitProviderEnum, shouldPrefixWithHttps: boolean, shouldEndWithSlash: boolean) {
-  const prefix = shouldPrefixWithHttps ? "https://" : "";
-  const suffix = shouldEndWithSlash ? "/" : "";
-  return prefix + gitProviderDomains[gitProvider] + suffix;
-}
-
-/**
- * @deprecated This expects KNOWN git provider, but I noticed that there are possibly more providers per one provider.
- *  For example there is only one GitHub
- *  but in case of gitlab, we can have self-hosted instances, for example our faculty uses https://gitlab.mff.cuni.cz,
- *  so there is not single gitlab URL for every organization.
- */
-export const createGitRepositoryURLForKnownProviders = (gitProvider: GitProviderEnum, repositoryOwner: string, repoName: string, branch?: string): string => {
-  const baseURL = gitProviderDomains[gitProvider];
-  const branchSuffix = branch === undefined ? "" : `/tree/${branch}`;
-  const url = `https://${baseURL}/${repositoryOwner}/${repoName}${branchSuffix}`;
-  return url;
-};
 
 const sshURLPrefix = "git@";
 /**

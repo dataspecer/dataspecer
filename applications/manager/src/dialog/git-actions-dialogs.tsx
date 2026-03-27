@@ -17,7 +17,8 @@ import {
   getDefaultExportFormat,
   convertEnumToGitProviderName,
   UserOrganizationsFetchResponseFrontend,
-  isGitProviderName
+  isGitProviderName,
+  getGitProviderDomain
 } from "@dataspecer/git";
 import { CommitRedirectForMergeStatesDialog } from "./commit-confirm-dialog-caused-by-merge-state";
 import { commitToGitBackendRequest, createNewRemoteRepositoryRequest, GitCommitData, GitMergeCommitData, linkToExistingGitRepositoryRequest, mergeCommitToGitBackendRequest } from "@/utils/git-backend-requests";
@@ -26,7 +27,6 @@ import { ComboBox, createGitProviderComboBoxOptions } from "@/components/combo-b
 import { removeMergeState } from "@/utils/merge-state-backend-requests";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
 import { useLogin } from "@/hooks/use-login";
-import { getGitProviderDomain } from "@dataspecer/git/git-providers";
 import { useTranslation } from "react-i18next";
 import { TFunction } from "i18next";
 import { SetGitRemoteConfigurationComponent } from "./set-git-remote-configuration-dialog";
