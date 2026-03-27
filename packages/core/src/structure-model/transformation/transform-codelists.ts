@@ -14,7 +14,7 @@ export function structureModelTransformCodelists(
   for (const structureClass of classes) {
     for (const property of structureClass.properties) {
       property.dataTypes = property.dataTypes.map(dataType => {
-        if (dataType.isAssociation() && dataType.dataType.properties.length === 0 && !dataType.dataType.emptyAsComplex) {
+        if (dataType.isAssociation() && !property.isInOr && dataType.dataType.properties.length === 0 && !dataType.dataType.emptyAsComplex) {
           const dt = new StructureModelPrimitiveType();
           dt.dataType = OFN.url;
           dt.regex = dataType.dataType.regex;
