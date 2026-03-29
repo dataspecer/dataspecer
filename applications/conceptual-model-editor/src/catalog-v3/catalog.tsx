@@ -741,7 +741,6 @@ function createClassView(
   const items: CatalogItem[] = [];
   const entities = [...tracker.entities.values()];
   for (const model of tracker.semanticModels.values()) {
-
     // The add-action depends on model type.
     if (model.isExternal) {
       items.push(asModelSection(visualModel, tracker, model, {

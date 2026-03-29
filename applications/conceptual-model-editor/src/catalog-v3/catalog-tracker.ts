@@ -32,6 +32,7 @@ import {
   VisualModelData as VisualModelInformation
 } from "@dataspecer/visual-model";
 import { removeFromArray } from "../utilities/functional";
+import { preinit } from "react-dom";
 
 export class CatalogTracker implements Tracker {
 
@@ -57,26 +58,37 @@ export class CatalogTracker implements Tracker {
   }
 
   dependencies(entity: Entity): string[] {
-    if (isSemanticGeneralization(entity)) {
-      return [entity.child, entity.parent];
+    const dependencies: string[] = [];
+    // Semantic dependency collector.
+    if (isSemanticRelationship(entity)) {
+      entity.ends.forEach(end => {
+        if (end.concept !== null) {
+          dependencies.push(end.concept);
+        }
+      });
     }
+    if (isSemanticGeneralization(entity)) {
+      dependencies.push(entity.child, entity.parent);
+    }
+    // Semantic profile dependency collector.
     if (isProfileClass(entity)) {
-      return entity.profiling;
+      dependencies.push(...entity.profiling);
     }
     if (isProfileRelationship(entity)) {
-      return entity.ends
-        .map(end => ([...end.profiling, end.concept]))
-        .flat();
+      entity.ends.forEach(end => {
+        dependencies.push(...end.profiling);
+        dependencies.push(end.concept);
+      });
     }
     if (isProfileGeneralization(entity)) {
-      return [entity.child, entity.parent];
+      dependencies.push(entity.child, entity.parent);
     }
-    return [];
+    // Make it uniq.
+    return [... new Set(dependencies)];
   }
 
   onEntityDidCreate(model: ModelIdentifier, next: Entity): void {
-    // A single entity can have multiple types, here we just
-    // use the data from the first type.
+    // TODO: A single entity can have multiple types, we we support only one.
     if (isSemanticModelEntity(next)) {
       this.semanticModels.set(model, {
         metadataEntity: next.id,
@@ -125,29 +137,45 @@ export class CatalogTracker implements Tracker {
     } else if (isSemanticGeneralization(next)) {
       const entity = this.getOrCreateCatalogEntity(model, next.id, next);
       entity.iri = next.iri;
+      // Add generalization information.
+      const child = this.getOrCreateCatalogEntity(model, next.child, null);
+      secureInArrayInPlace(next.parent, child.generalizationOf);
     } else if (isProfileClass(next)) {
       const entity = this.getOrCreateCatalogEntity(model, next.id, next);
       entity.iri = next.iri;
       entity.label = next.name ?? {};
+      // Add profile of information.
+      next.profiling.forEach(identifier => {
+        const profiled = this.getOrCreateCatalogEntity(model, identifier, null);
+        secureInArrayInPlace(next.id, profiled.profiledBy);
+      });
     } else if (isProfileRelationship(next)) {
       const entity = this.getOrCreateCatalogEntity(model, next.id, next);
       const [_, range] = selectDomainAndRange(next.ends);
       entity.iri = range.iri;
       entity.label = range.name ?? {};
+      // Add profile of information.
+      range.profiling.forEach(identifier => {
+        const profiled = this.getOrCreateCatalogEntity(model, identifier, null);
+        secureInArrayInPlace(next.id, profiled.profiledBy);
+      });
     } else if (isProfileGeneralization(next)) {
       const entity = this.getOrCreateCatalogEntity(model, next.id, next);
       entity.iri = next.iri;
+      // Add generalization information.
+      const child = this.getOrCreateCatalogEntity(model, next.child, null);
+      secureInArrayInPlace(next.parent, child.generalizationOf);
     }
     // We need to cast to any here as VisualEntity is using identifier not id.
     else if (isVisualNode(next as any)) {
       const typed = next as unknown as VisualNode;
       const entity = this.getOrCreateCatalogEntity(
-        typed.model, typed.representedEntity, next);
+        typed.model, typed.representedEntity, null);
       this.addVisualRepresentation(entity, model, typed.identifier);
     } else if (isVisualRelationship(next as any)) {
       const typed = next as unknown as VisualRelationship;
       const entity = this.getOrCreateCatalogEntity(
-        typed.model, typed.representedRelationship, next);
+        typed.model, typed.representedRelationship, null);
       this.addVisualRepresentation(entity, model, typed.identifier);
     } else if (isModelVisualInformation(next as any)) {
       const typed = next as unknown as VisualModelInformation;
@@ -158,6 +186,12 @@ export class CatalogTracker implements Tracker {
     }
   }
 
+  /**
+   * @param model
+   * @param identifier
+   * @param entity
+   * @returns Catalog entity for given pair model and identifier.
+   */
   private getOrCreateCatalogEntity(
     model: ModelIdentifier,
     identifier: EntityIdentifier,
@@ -177,9 +211,19 @@ export class CatalogTracker implements Tracker {
       };
       this.entities.set(identifier, result);
     }
+    // It is possible that the catalog entity was created without an entity.
+    // Should we get the entity later we can assign it here.
+    if (result.entity === null) {
+      result.entity = entity;
+    }
     return result;
   }
 
+  /**
+   * @param entity Entity to add visual representation to to.
+   * @param visualModel
+   * @param visualIdentifier
+   */
   private addVisualRepresentation(
     entity: CatalogEntity,
     visualModel: ModelIdentifier,
@@ -209,12 +253,120 @@ export class CatalogTracker implements Tracker {
 
   onEntityDidChange(model: ModelIdentifier, previous: Entity, next: Entity): void {
     console.log("catalog-tracker.entit-did-change", { model, previous, next });
-    if (isModelVisualInformation(next as any)) {
+    if (isSemanticModelEntity(next)) {
+      this.updateSemanticModel(model, semanticModel => {
+        semanticModel.label = next.label
+      });
+    } else if (isExternalSemanticModelEntity(next)) {
+      this.updateSemanticModel(model, semanticModel => {
+        semanticModel.label = next.label
+      });
+    } else if (isPimStoreModelEntity(next)) {
+      this.updateSemanticModel(model, semanticModel => {
+        semanticModel.label = next.label
+      });
+    } else if (isVisualModelEntity(next)) {
+      // No action.
+    } else if (next.type.includes("entity-model-type")) {
+      // No action.
+    } else if (isSemanticClass(next)) {
+      const entity = this.getOrCreateCatalogEntity(model, next.id, next);
+      entity.iri = next.iri;
+      entity.label = next.name;
+    } else if (isSemanticRelationship(next)) {
+      const entity = this.getOrCreateCatalogEntity(model, next.id, next);
+      const [_, range] = selectDomainAndRange(next.ends);
+      entity.iri = range.iri;
+      entity.label = range.name;
+    } else if (isSemanticGeneralization(next)) {
+      const entity = this.getOrCreateCatalogEntity(model, next.id, next);
+      entity.iri = next.iri;
+      // Update generalization information.
+      this.updateGeneralization(model, previous as any, next);
+    } else if (isProfileClass(next)) {
+      const entity = this.getOrCreateCatalogEntity(model, next.id, next);
+      entity.iri = next.iri;
+      entity.label = next.name ?? {};
+      // Update profile of information.
+      this.updateProfile(
+        model, next.id, (previous as any).profiling, next.profiling);
+    } else if (isProfileRelationship(next)) {
+      const entity = this.getOrCreateCatalogEntity(model, next.id, next);
+      const [, range] = selectDomainAndRange(next.ends);
+      entity.iri = range.iri;
+      entity.label = range.name ?? {};
+      // Update profile of information.
+      const [, previousRange] = selectDomainAndRange((previous as any).ends);
+      this.updateProfile(
+        model, next.id, (previousRange as any).profiling, range.profiling);
+    } else if (isProfileGeneralization(next)) {
+      const entity = this.getOrCreateCatalogEntity(model, next.id, next);
+      entity.iri = next.iri;
+      // Update generalization of information.
+      this.updateGeneralization(model, previous as any, next);
+    }
+    // We need to cast to any here as VisualEntity is using identifier not id.
+    else if (isVisualNode(next as any)) {
+      // No action.
+    } else if (isVisualRelationship(next as any)) {
+      // No action.
+    } else if (isModelVisualInformation(next as any)) {
       const visual = next as unknown as VisualModelInformation;
       const visualModel = this.getOrCreateVisualModelData(model);
       if (visual.representedModel !== null && visual.color !== null) {
         visualModel.colors[visual.representedModel] = visual.color;
       }
+    }
+  }
+
+  private updateSemanticModel(
+    model: ModelIdentifier, update: (value: SemanticModelData) => void,
+  ) {
+    const value = this.semanticModels.get(model);
+    if (value === undefined) {
+      return;
+    }
+    update(value);
+  }
+
+  private updateGeneralization(
+    model: ModelIdentifier,
+    previous: { child: EntityIdentifier, parent: EntityIdentifier },
+    next: { child: EntityIdentifier, parent: EntityIdentifier },
+  ) {
+    // Check if there was a change.
+    if (previous.child === next.child && previous.parent === next.parent) {
+      return;
+    }
+    // Remove previous.
+    {
+      const child = this.getOrCreateCatalogEntity(model, previous.child, null);
+      removeFromArrayInPlace(previous.parent, child.generalizationOf);
+    }
+    // Add next.
+    {
+      const child = this.getOrCreateCatalogEntity(model, next.child, null);
+      secureInArrayInPlace(next.parent, child.generalizationOf);
+    }
+  }
+
+  private updateProfile(
+    model: ModelIdentifier,
+    id: EntityIdentifier,
+    previous: EntityIdentifier[],
+    next: EntityIdentifier[],
+  ) {
+    if (previous === next) {
+      return;
+    }
+    const [removed, added] = diffArrays(previous, next);
+    for (const item of removed) {
+      const profiled = this.getOrCreateCatalogEntity(model, item, null);
+      removeFromArrayInPlace(id, profiled.profiledBy);
+    }
+    for (const item of added) {
+      const profiled = this.getOrCreateCatalogEntity(model, item, null);
+      secureInArrayInPlace(id, profiled.profiledBy);
     }
   }
 
@@ -288,34 +440,12 @@ export class CatalogTracker implements Tracker {
   }
 
   onDependenciesDidChange(next: Entity): void {
-    // console.log("catalog-tracker.dependencies-changed", { entity: next });
-    if (isSemanticGeneralization(next)) {
-      // TODO ...
-      this.entities.get(next.parent)?.generalizationOf.push(next.child);
-    } else if (isProfileClass(next)) {
-      // TODO ...
-      next.profiling
-        .map(identifier => this.entities.get(identifier))
-        .filter(entity => entity !== undefined)
-        .forEach(entity => entity.profiledBy.push(next.id));
-    } else if (isProfileRelationship(next)) {
-      // TODO ...
-      const [_, range] = selectDomainAndRange(next.ends);
-      range.profiling
-        .map(identifier => this.entities.get(identifier))
-        .filter(entity => entity !== undefined)
-        .forEach(entity => entity.profiledBy.push(next.id));
-    } else if (isProfileGeneralization(next)) {
-      // TODO ...
-      this.entities.get(next.parent)?.generalizationOf.push(next.child);
-    }
+    // No action here.
   }
 
   onDidUpdate() {
     this.onDidChangeCallback?.(this);
   };
-
-  //
 
   getEntityLabel(
     languages: string[],
@@ -358,6 +488,32 @@ export class CatalogTracker implements Tracker {
 
 }
 
+/**
+ * Add item to the array if not present.
+ */
+function secureInArrayInPlace<Type>(item: Type, items: Type[]) {
+  if (items.includes(item)) {
+    return;
+  }
+  items.push(item);
+}
+
+function removeFromArrayInPlace<Type>(item: Type, items: Type[]) {
+  const index = items.indexOf(item);
+  if (index === -1) {
+    return;
+  }
+  items.splice(index, 1);
+}
+
+function diffArrays<T>(
+  previous: T[], next: T[],
+): [T[], T[]] {
+  const removed: T[] = previous.filter(item => !next.includes(item));
+  const added: T[] = next.filter(item => !previous.includes(item));
+  return [removed, added];
+}
+
 export interface SemanticModelData {
 
   /**
@@ -379,6 +535,7 @@ export interface CatalogEntity {
 
   /**
    * If null the entity was created by referenced entities.
+   * I.e. for example there is a profile or generalization ot this entity.
    */
   entity: Entity | null;
 
