@@ -68,6 +68,46 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     return response.ok;
   }
 
+  public static async getAllMetas(
+    mergeState: MergeState,
+    datastoreCache: DatastoreInfosCache,
+    backendApiPath: string,
+  ): Promise<Record<MergeFromMergeTo, string | any>> {
+    return {
+      mergeFrom: ClientFilesystem.getMetas(mergeState.filesystemTypeMergeFrom, datastoreCache, backendApiPath, "mergeFrom"),
+      mergeTo: ClientFilesystem.getMetas(mergeState.filesystemTypeMergeTo, datastoreCache, backendApiPath, "mergeTo"),
+    };
+  }
+
+  public static async getMetas(
+    filesystem: AvailableFilesystems,
+    datastoreCache: DatastoreInfosCache,
+    backendApiPath: string,
+    mergeFromMergeTo: MergeFromMergeTo,
+  ): Promise<any> {
+    const metaInfos: Record<string, GetMetasDatastoreInfo> = {};
+    for (const [projectIriPath, datastoreInfos] of Object.entries(datastoreCache)) {
+      const metaInfo = datastoreInfos["meta"];
+      metaInfos[projectIriPath] = {
+        fullPath: metaInfo[mergeFromMergeTo].fullPath,
+        format: metaInfo[mergeFromMergeTo].format
+      }
+      datastoreInfos.mergeTo;
+    }
+    const body = {
+      metaInfos,
+      filesystem,
+    };
+
+    const response = await fetch(backendApiPath + "/git/get-metas", {
+      method: "GET",
+      body: JSON.stringify(body),
+    });
+    const jsonResponse = await response.json();
+    console.info("getDatastoreContentDirectly", {jsonResponse});       // TODO RadStr Debug:
+    return jsonResponse;
+  }
+
   public static async getDatastoreContentDirectly(
     datastoreInfo: DatastoreInfo | null,
     shouldConvertToDatastoreFormat: boolean,
