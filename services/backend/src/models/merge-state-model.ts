@@ -169,7 +169,7 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
       removedInEditable: removed,
       createdInEditable: created,
       allConflicts: conflicts,
-      unresolvedConflicts: conflicts,     // TODO RadStr: I don't know, I should probably keep the existing ones
+      unresolvedConflicts: conflicts,     // TODO RadStr Critical: I don't know, I should probably keep the existing ones
       diffTree,
       diffTreeSize,
     };
@@ -225,13 +225,6 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
     console.info("Current merge state without:", await this.getMergeStateFromUUID(mergeStateId, false, false, false));
 
     return mergeStateId;
-  }
-
-  /**
-   * @deprecated I am not sure what was the purpose of this, but since we do not use, we can probably just remove it.
-   */
-  async propagateResourceChange(packageIri: string, resourceIri: string): Promise<string[]> {
-    throw new Error("TODO RadStr: Implement");
   }
 
 
@@ -914,6 +907,9 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
           createFilesystemFactoryParams(false),
       };
 
+      // TODO RadStr Critical: Might be unnecessary, I think that the only reason why we do this is
+      //              because we want to also have the data if they are not present in the given prismaMergeState
+      //              I do not think that we do this to get some new updated data, but maybe I am wrong now
       const previousMergeState = await this.getMergeStateFromUUID(prismaMergeState.uuid, true, false, false);
       const updatedMergeStateResult = await updateMergeStateToBeUpToDate(prismaMergeState.uuid, prismaMergeState.commitMessage, mergeFrom, mergeTo, prismaMergeState.mergeStateCause as MergeStateCause, previousMergeState);
       if (!updatedMergeStateResult) {

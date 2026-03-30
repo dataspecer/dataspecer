@@ -63,16 +63,17 @@ export interface FilesystemAbstraction {
   /**
    * Converts given {@link filesystemAbstractionObject} in such a way that the keys, which may have been possibly uuids when working with filesystem, will be IRIs.
    *  This expects that the structure {@link filesystemAbstractionObject} already contains IRIs.
-   * TODO RadStr: Not sure if it should be with or without argument.
+   * TODO RadStr Critical: Not sure if it should be with or without argument.
    */
   convertFilesystemAbstractionObjectNamesToIris(filesystemAbstractionObject: FilesystemMappingType): FilesystemMappingType;
 
-  // TODO RadStr: still not sure if I should use treePath or fullPath from the DatastoreInfo
+  // TODO RadStr Critical: Let just use treePath ... it makes the most sense
+  // TODO RadStr Critical: still not sure if I should use treePath or fullPath from the DatastoreInfo
   /**
-   * TODO RadStr: I am not sure what is the input for this even - maybe it even isn't part of interface, since this maybe won't be FS speicfic
+   * TODO RadStr Critical: I am not sure what is the input for this even - maybe it even isn't part of interface, since this maybe won't be FS speicfic
    *              ... yeah it probably should be here, I have the names inside the data structure but here I want to get the data from filesystem based on the paths stored in the DataStructure
-   * TODO RadStr: Not sure about using the "treePath" ... maybe use resourceName instead? or something nad the same for others
-   * TODO RadStr: Not sure abotu the returned type.
+   * TODO RadStr Critical: Not sure about using the "treePath" ... maybe use resourceName instead? or something nad the same for others
+   * TODO RadStr Critical: Not sure abotu the returned type.
    * @deprecated Probably deprecated, because we will use {@link getDatastoreContent} instead. or we can just call the getDatastore here instead and be done with it.
    * @param treePath is the path the resource. However the name contains the basis in case of filesystem (it does not contain the .meta suffix). In case of DS filesystem it is the IRI of resource.
    * @returns The metadata for given {@link treePath}
@@ -91,8 +92,8 @@ export interface FilesystemAbstraction {
   getDatastoreContent(irisTreePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any>;
 
   /**
-   * TODO RadStr: Similar TODOs as in {@link getMetadataObject}
-   * TODO RadStr: Return the content or the names? Probably content - I have the names isnide the object ... so yeah it probably should be inisde this IFace
+   * TODO RadStr Critical: Similar TODOs as in {@link getMetadataObject}
+   * TODO RadStr Critical: Return the content or the names? Probably content - I have the names isnide the object ... so yeah it probably should be inisde this IFace
    * @param treePath is the path the resource. However the name contains the basis in case of filesystem (it does not contain the .meta suffix). In case of DS filesystem it is the IRI of resource.
    * @returns The datastores for given {@link treePath}. To get the actual content of the datastores use the {@link getDatastoreContent}.
    */
@@ -110,7 +111,7 @@ export interface FilesystemAbstraction {
   /**
    * Removes datastore from the {@link filesystemNode}, if it was the last {@link datastoreType} inside the node, also removes the whole node.
    *  Removes all the datastores and the resource itself.
-   * TODO RadStr: Maybe write example what exactly it means for each filesystem
+   * TODO RadStr Critical: Maybe write example what exactly it means for each filesystem
    * @param shouldRemoveFileWhenNoDatastores if true, then if after removal no datastore is present, then also the file holding the datastores is deleted.
    */
   removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<void>;
@@ -127,7 +128,7 @@ export interface FilesystemAbstraction {
   updateDatastore(fileNode: FileNode, datastoreType: string, content: string): Promise<boolean>;
 
 
-  // TODO RadStr: createFile and createDirectory replaced by createDatastore
+  // TODO RadStr Critical: ... just remove - createFile and createDirectory replaced by createDatastore
   // /**
   //  * Creates new {@link fileNode} inside the abstraction and in the underlying filesystem with given {@link metadata}. and the file will be of given {@link fileNodeType}.
   //  * The file will be stored inside {@link parent} node, if the {@link parent} is null, it means that it is at root level.

@@ -119,6 +119,7 @@ export function transformCommitMessageIfEmpty(commitMessage: string): string | n
 }
 
 
+// TODO RadStr: Maybe make this function return array/map instead of just the one value (that is it will get parts instead of part in the parameters)
 /**
  * If you want to extract something more then use the same method on Git Provider.
  * @param repositoryURL is the URL of the repository

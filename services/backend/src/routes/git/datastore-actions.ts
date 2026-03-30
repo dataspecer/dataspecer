@@ -11,7 +11,7 @@ import { DSFilesystem, isAccessibleGitRepository } from "@dataspecer/git-node";
 import { currentVersion } from "../../tools/migrations/index.ts";
 import configuration from "../../configuration.ts";
 
-// TODO RadStr: Add document comments after I decide if I should run the conversion on client or not.
+// TODO RadStr Critical: Add document comments after I decide if I should run the conversion on client or not.
 
 export async function getDatastoreContent(
   pathToDatastore: string,
@@ -22,7 +22,7 @@ export async function getDatastoreContent(
   databaseMigrationVersion: number,
   format?: string
 ): Promise<any | {accessDenied: true}> {
-  // TODO RadStr: Run conversion on client?
+  // TODO RadStr Critical: Run conversion on client?
   if (filesystem === AvailableFilesystems.ClassicFilesystem) {
     const { isAccessible, normalizedGitPath } = isAccessibleGitRepository(pathToDatastore);
     // This is very very important, if we didn't do this, we would allow user to esentially query any file stored on server
@@ -37,7 +37,10 @@ export async function getDatastoreContent(
     return convertedDatastoreContent.value;
   }
   else {
-    return await DSFilesystem.getDatastoreContentForPath(resourceModel, pathToDatastore, type, format ?? null, shouldConvertToDatastoreFormat, exportedBy, databaseMigrationVersion);
+    return await DSFilesystem.getDatastoreContentForPath(
+      resourceModel, pathToDatastore, type, format ?? null,
+      shouldConvertToDatastoreFormat, exportedBy, databaseMigrationVersion
+    );
   }
 }
 
@@ -77,7 +80,7 @@ export async function updateDatastoreContent(
   mergeStateUuid: string,
   format?: string,
 ): Promise<{ success: boolean, accessDenied: boolean}> {
-  // TODO RadStr: Run conversion on client?
+  // TODO RadStr Critical: Run conversion on client?
   if (filesystem === AvailableFilesystems.ClassicFilesystem) {
     const { isAccessible, normalizedGitPath } = isAccessibleGitRepository(pathToDatastore);
     // This is very very important, if we didn't do this, we would user allow to esentially query any file stored on server
@@ -140,7 +143,7 @@ export async function createDatastoreContent(
   mergeStateUuid: string,
   format?: string,
 ): Promise<{ success: boolean, accessDenied: boolean}> {
-  // TODO RadStr: Run conversion on client?
+  // TODO RadStr Critical: Run conversion on client?
   if (filesystem === AvailableFilesystems.ClassicFilesystem) {
     throw new Error("Not implemented, we would have to pass it filesystem path, which we do not need for DS");
     // const { isAccessible, normalizedGitPath } = isAccessibleGitRepository(pathToDatastore);

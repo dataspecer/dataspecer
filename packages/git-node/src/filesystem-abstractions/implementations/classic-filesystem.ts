@@ -118,6 +118,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     }
 
 
+    // TODO RadStr Critical: ... wait do I still do this? - if so I need to put it into the text of thesis
     if (invalidNames.length > 0) {
       // We need to process them anyways, since they might be valid files from Git
       for (const invalidName of invalidNames) {

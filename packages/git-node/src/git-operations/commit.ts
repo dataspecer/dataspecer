@@ -263,6 +263,7 @@ export class GitCommit {
 
 
       // If the merge from branch does not exist in git - push it
+      // TODO RadStr Critical: ... I would just crash it (throw error) and let user handle it themselves, I am kinda tired of writing perfect user flows
       // TODO RadStr: For now ... I guess that I will just force the user to create it otherwise he can not merge
       // TODO RadStr: Also sideways note ... I want to always perform merge on DS and GIT, since if I have perform merge on 2 DS branches, there is "small" issue -
       //              - The user can modify the merge from package, that is problem since then we are not actually performing merge in git (That is from fixed point in time),
@@ -563,7 +564,7 @@ export class GitCommit {
         throw error;
       }
       else {
-        // TODO RadStr: Print the error for now, however it really should be only issue with rights
+        // TODO RadStr Debug: Print the error for now, however it really should be only issue with rights
         console.error({error});
         return {
           isPushSuccessful: false,
@@ -648,7 +649,7 @@ export class GitCommit {
       await git.checkout(branch);
     }
     else {
-      // TODO RadStr: Yeah I should either take it from the other Git in DS (but merges do not have other Git) or just throw error or force the Git to be up to date with the merge branches
+      // TODO RadStr Critical: Yeah I should either take it from the other Git in DS (but merges do not have other Git) or just throw error or force the Git to be up to date with the merge branches
       throw new Error("TODO RadStr: This is wrong. We have to create new branch from the other package content. If we ran just the git.branch([mergeFromBranch]), then we create branch with the same exact content as mergeTo. Which we do not want. We want mergeFrom");
       await git.checkoutLocalBranch(branch);
     }

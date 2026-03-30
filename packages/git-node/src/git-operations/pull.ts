@@ -84,15 +84,8 @@ export class GitPull {
 
   /**
    * This method handles the storing of directory content, which usually comes from git clone, back to the DS store.
-   * That means:
-   *  0) Don't do anything with not changed (or copy them if necessary - depends on implementation of versioning inside DS)
-   *  1) Remove removed
-   *  2) Change changed
-   *  3) Create created
-   *   a) If there is new file from Git, which has not .meta and .model, just put it as new model (under the name of the file) to the package - user can edit it under the edit model on package
-   *   b) If it has both .meta and .model create completely new resource - that is there will be new entry inside the package shown in manager
-   *   c) Either only .meta or .model - skip it. We could try to somehow solve it, but we would probably end up in invalid state by some sequence of actions, so it is better to just skip it.
-   * TODO RadStr: This should however account for collisions
+   * If there were no changes from last Git pull, the we simply call the updateBlob/updateResourceMetadata and remove the missing resources.
+   * The files created in Git can be handled in the same way as if they were created in DS - that is through updateBlob/updateResourceMetadata
    * @returns Self-explanatory, just note that (at least for now), if there are 0 conflicts we still create merge state.
    *  We don't create merge state only if we haven't performed any changes inside DS,
    *  so we can just safely move HEAD to the last git commit and update DS package based on that
@@ -109,7 +102,7 @@ export class GitPull {
     const { iri, dsLastCommitHash, alwaysCreateMergeState, branch, mergeStateModel, filesystemConstructorParams } = this.fields;
 
     // Merge from is DS
-    // TODO RadStr: Why am I doing the comparison twice? I think that there was a reason for that, but maybe we just wanted the fakeRoot data, etc.
+    // TODO RadStr Critical: Why am I doing the comparison twice? I think that there was a reason for that, but maybe we just wanted the fakeRoot data, etc.
     //              If that is the case, then we should just extract the part of the compareGitAndDSFilesystems method, which does it (respective from the method which calls it)
     //    ......... Well in one case I am comparing to the current head and in after that I checkout to the last commit and do it again
     //              The issue is - why do i need to do it to the not last commit ever?
@@ -128,7 +121,7 @@ export class GitPull {
     const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS(mergeStateCause, dsLastCommitHash, gitLastCommitHash);
     const filesystemFakeRoots = { fakeRootMergeFrom, fakeRootMergeTo };
     const { gitResultNameSuffix } = getMergeFromMergeToMappingForGitAndDS(mergeStateCause);
-    const gitRootDirectory = filesystemFakeRoots["fakeRoot" + gitResultNameSuffix as keyof typeof filesystemFakeRoots];              // TODO RadStr: Just backwards compatibility with code so I don't have to change much
+    const gitRootDirectory = filesystemFakeRoots["fakeRoot" + gitResultNameSuffix as keyof typeof filesystemFakeRoots];              // Just backwards compatibility with my old code so I didn't have to change it too much during refactor
 
 
     if (!alwaysCreateMergeState) {
@@ -141,7 +134,7 @@ export class GitPull {
         const canPullWithoutCreatingMergeState = currentDSPackageAndGitCommitComparison.diffTreeComparison.conflicts.length === 0;
 
         if (canPullWithoutCreatingMergeState) {
-          // TODO RadStr: Rename ... and update based on the conflicts resolution, like we do not want to update when there is conflict
+          // TODO RadStr Critical: Rename ... and update based on the conflicts resolution, like we do not want to update when there is conflict
           await git.checkout(gitLastCommitHash);
           await this.storeGitChangesToDataspecerInternal(gitRootDirectory, gitInitialDirectoryParent, filesystemMergeTo);
           await filesystemConstructorParams.resourceModel.updateLastCommitHash(iri, gitLastCommitHash, "pull");

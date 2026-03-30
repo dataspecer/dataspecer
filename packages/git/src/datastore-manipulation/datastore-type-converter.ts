@@ -97,7 +97,7 @@ export function convertDatastoreContentToOutputFormat(
  */
 export function stringifyDatastoreContentBasedOnFormat(
   datastoreContent: any,
-  format: string | null,
+  format: string | null,      // TODO RadStr: Maybe ExportFormatType instead of string
   shouldConvert: boolean
 ): string {
   if (!shouldConvert) {

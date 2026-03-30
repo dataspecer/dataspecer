@@ -111,7 +111,7 @@ export class ResourceModel implements ResourceModelForPull {
             data: {
                 linkedGitRepositoryURL: defaultEmptyGitUrlForDatabase,
                 hasUncommittedChanges: false,
-                activeMergeStateCount: 0,           // TODO RadStr: ... since setting to 0 we should also remove all related merge states
+                activeMergeStateCount: 0,           // TODO RadStr Critical: ... since setting to 0 we should also remove all related merge states ... also be careful how it relates to the observer
                 lastCommitHash: "",
             },
         });
@@ -121,6 +121,7 @@ export class ResourceModel implements ResourceModelForPull {
         }
 
         for (const affectedResource of affectedResources) {
+            // TODO RadStr Critical: This is mainly related to the update link
             // TODO RadStr: Commented code - at first we were resetting all the projectIris and branches, but because of possible moving to different repository we don't do anything.
             // TODO RadStr Don't know by myself, but probably shouldnt reset the project iris and branch: Well should we really?
             //  I don't know on one side - yeah we removed the repo so the packages are no longer connected. On other side what if we somehow want to move them to different repository?
@@ -671,7 +672,7 @@ export class ResourceModel implements ResourceModelForPull {
             }
         });
 
-        // TODO RadStr: Or modified? does it even matter?
+        // TODO RadStr Critical: Or modified? does it even matter? ... it does not at least in our listener
         await this.updateModificationTime(iri, storeName, ResourceChangeType.Created, true, true, mergeStateUUIDsToIgnoreInUpdating);
     }
 

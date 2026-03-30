@@ -1,3 +1,5 @@
+// TODO RadStr: Critical file
+
 /**
  * We have to replace each iri inside the {@link datastoreToSearchInForIris} object, which we copy by the iris which exists in the new resources/packages
  * @returns The iris, which could not be replaced, because the resources, which have them do not exist (we have to create them first and get the created iris).
