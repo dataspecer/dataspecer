@@ -3,6 +3,7 @@ import { DatastoreInfo, DirectoryNode, FileNode, FilesystemNode } from "../expor
 import { FilesystemAbstraction, getDatastoreInfoOfGivenDatastoreType } from "../filesystem/abstractions/filesystem-abstraction.ts";
 import { DatastoreComparison, DatastoreComparisonWithChangeTypeInfo, DiffTree, ResourceComparison, ResourceComparisonResult } from "./merge-state.ts";
 import { ResourceDatastoreStripHandlerBase } from "./comparison/resource-datastore-strip-handler-base.ts";
+import { createDatastoreWithReplacedIris } from "../datastore-manipulation/iri-replacement.ts";
 
 export type ComparisonFullResult = {
   diffTree: DiffTree,
@@ -37,9 +38,11 @@ export async function compareFileTrees(
   const conflicts: DatastoreComparison[] = [];
 
 
+  const iriToProjectIriMap = getIriToProjectIriMap(oldFakeTreeRoot, newFakeTreeRoot);
+
   const diffTreeSize = await compareTreesInternal(oldFilesystem, oldFakeTreeRoot,
                                                   newFilesystem, newFakeTreeRoot,
-                                                  diffTree, {changed, removed, created, conflicts});
+                                                  iriToProjectIriMap, diffTree, {changed, removed, created, conflicts});
   return {
     changed,
     removed,
@@ -48,6 +51,28 @@ export async function compareFileTrees(
     diffTree,
     diffTreeSize,
   };
+}
+
+function getIriToProjectIriMap(
+  oldDirectory: DirectoryNode | undefined,
+  newDirectory: DirectoryNode | undefined,
+): Record<string, string> {
+  const iriToProjectIriMap: Record<string, string> = {};
+  getIriToProjectIriMapInternal(oldDirectory, iriToProjectIriMap);
+  getIriToProjectIriMapInternal(newDirectory, iriToProjectIriMap);
+  return iriToProjectIriMap;
+}
+
+function getIriToProjectIriMapInternal(
+  directory: DirectoryNode,
+  iriToProjectIriMap: Record<string, string>,
+): void {
+  for (const node of Object.values(directory?.content ?? {})) {
+    iriToProjectIriMap[node.metadata.iri] = node.metadata.projectIri;
+    if (node.type === "directory") {
+      getIriToProjectIriMapInternal(node, iriToProjectIriMap);
+    }
+  }
 }
 
 /**
@@ -62,6 +87,7 @@ async function compareTreesInternal(
   oldDirectory: DirectoryNode | undefined,
   newFilesystem: FilesystemAbstraction,
   newDirectory: DirectoryNode | undefined,
+  iriToProjectIriMap: Record<string, string>,
   diffTree: DiffTree,
   comparisonDifferences: ComparisonDifferences,
 ): Promise<number> {
@@ -83,7 +109,7 @@ async function compareTreesInternal(
       resources: { old: nodeInOld, new: nodeInNew ?? null },
       resourceComparisonResult,
     };
-    diffTree[nodeName] = currentlyProcessedDiffFilesystemNode;      // TODO RadStr: ... nodeName is IRI (probably unless I rewrite it now), we want projectIri
+    diffTree[nodeName] = currentlyProcessedDiffFilesystemNode;      // TODO RadStr Critical: ... nodeName is IRI (probably unless I rewrite it now), we want projectIri
 
     const processedDatastoresInNew: Set<DatastoreInfo> = new Set();
     for (const datastoreInOld of nodeInOld.datastores) {
@@ -93,7 +119,7 @@ async function compareTreesInternal(
       if (datastoreInNew !== undefined && datastoreInNew !== null) {
         processedDatastoresInNew.add(datastoreInNew);
 
-        if (await compareDatastoresContents(oldFilesystem, nodeInOld, newFilesystem, nodeInNew as FileNode, datastoreInOld)) {
+        if (await compareDatastoresContents(oldFilesystem, nodeInOld, newFilesystem, nodeInNew as FileNode, datastoreInOld, iriToProjectIriMap)) {
           const same: DatastoreComparisonWithChangeTypeInfo = {
             old: nodeInOld,
             new: nodeInNew ?? null,
@@ -146,10 +172,9 @@ async function compareTreesInternal(
 
     // Recursively process "subdirectories"
     if (nodeInOld.type === "directory") {
-      const subtreeSize = await compareTreesInternal(oldFilesystem, nodeInOld,
-                                                      newFilesystem, nodeInNew as (DirectoryNode | undefined),
-                                                      currentlyProcessedDiffFilesystemNode.childrenDiffTree,
-                                                      comparisonDifferences);
+      const subtreeSize = await compareTreesInternal(
+        oldFilesystem, nodeInOld, newFilesystem, nodeInNew as (DirectoryNode | undefined), iriToProjectIriMap,
+        currentlyProcessedDiffFilesystemNode.childrenDiffTree, comparisonDifferences);
       diffTreeSize += subtreeSize;
     }
   }
@@ -184,10 +209,9 @@ async function compareTreesInternal(
     }
 
     if (nodeInNew.type === "directory") {
-      const subtreeSize = await compareTreesInternal(oldFilesystem, undefined,
-                                                      newFilesystem, nodeInNew,
-                                                      currentlyProcessedDiffFilesystemNode.childrenDiffTree,
-                                                      comparisonDifferences);
+      const subtreeSize = await compareTreesInternal(
+        oldFilesystem, undefined, newFilesystem, nodeInNew, iriToProjectIriMap,
+        currentlyProcessedDiffFilesystemNode.childrenDiffTree, comparisonDifferences);
       diffTreeSize += subtreeSize;
     }
   }
@@ -204,16 +228,19 @@ export async function compareDatastoresContents(
   filesystem2: FilesystemAbstraction,
   entry2: FilesystemNode,
   datastore: DatastoreInfo,
+  iriToProjectIriMap: Record<string, string>,
 ): Promise<boolean> {
   const stripMethod = new ResourceDatastoreStripHandlerBase(entry1.metadata.types[0] ?? entry2.metadata.types[0]).createHandlerMethodForDatastoreType(datastore.type);
   const content1 = await filesystem1.getDatastoreContent(entry1.irisTreePath, datastore.type, true);
   const content2 = await filesystem2.getDatastoreContent(entry2.irisTreePath, datastore.type, true);
   const strippedContent1 = stripMethod(content1);
   const strippedContent2 = stripMethod(content2);
+  const datastoreToCompare1 = createDatastoreWithReplacedIris(strippedContent1, iriToProjectIriMap);
+  const datastoreToCompare2 = createDatastoreWithReplacedIris(strippedContent2, iriToProjectIriMap);
 
   console.info({content1, strippedContent1, content2, strippedContent2});    // TODO RadStr DEBUG: DEBUG Print
 
-  return _.isEqual(strippedContent1, strippedContent2);
+  return _.isEqual(datastoreToCompare1, datastoreToCompare2);
 }
 
 
