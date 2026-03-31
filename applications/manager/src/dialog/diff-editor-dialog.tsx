@@ -5,11 +5,11 @@ import { toast } from "sonner";
 import { useOnBeforeUnload } from "@/hooks/use-on-before-unload";
 import { useOnKeyDown } from "@/hooks/use-on-key-down";
 import { DiffTreeVisualization } from "@/components/directory-diff";
-import { Loader, RotateCw } from "lucide-react";
+import { ArrowDownIcon, ArrowUpIcon, Loader, RotateCw } from "lucide-react";
 import { Tabs } from "@/components/ui/tabs";
 import { TabsContent } from "@radix-ui/react-tabs";
 import SvgVisualDiff from "@/components/images-conflict-resolver";
-import { MonacoDiffEditor } from "@/components/monaco-diff-editor";
+import { goToNextDiff, goToPreviousDiff, MonacoDiffEditor } from "@/components/monaco-diff-editor";
 import { MergeStrategyComponent } from "@/components/merge-strategy-component";
 import { useDiffEditorDialogProps } from "@/hooks/use-diff-editor-dialog-props";
 import { AvailableFilesystems, DatastoreInfo, EditableType, getEditableAndNonEditableValue } from "@dataspecer/git";
@@ -186,7 +186,11 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
                       <TabsContent value="text-compare">
                         <div className="grid grid-cols-[5%_95%]! border-b pb-1">
                           <RotateCw className="flex! mt-3 ml-1 h-4 w-4 cursor-pointer" onClick={reloadModelsDataFromBackend} />
-                          <div className="flex! items-center justify-center space-x-4 ml-16 pl-32">
+                          <div className="flex! items-center justify-center space-x-4 -ml-32">    { /* TODO RadStr PR: ... the ml mr is a bit hacky, it does not scale well, but I do not have time to do it perfectly now */ }
+                            <div className="flex flex-row mr-24">
+                              <Button className="flex! cursor-pointer" variant="outline" onClick={() => goToPreviousDiff(monacoEditor.current?.editor)}><ArrowUpIcon/>Prev diff</Button>
+                              <Button className="flex! ml-1 cursor-pointer" variant="outline" onClick={() => goToNextDiff(monacoEditor.current?.editor)}><ArrowDownIcon/>Next diff</Button>
+                            </div>
                             <MergeStrategyComponent handleMergeStateResolving={applyAutomaticMergeStateResolver}/>
                             <label className="flex! items-center">
                               <input
@@ -251,6 +255,7 @@ function DiffEditorInfoPopOver() {
       <p>- For pull and merge the editable windows are the "merge to" actors.</p>
       <p>- The push is reversed, that is the editable window is the "merge from" actor. This is same as in Git, since the "merge to" is the remote.</p>
       <p>&nbsp;&nbsp; Therefore, we have to update the local (the "merge from") to contain the changes from remote and then we can perform the push.</p>
+      <p>&nbsp;&nbsp; You can move between diffs within the "file" using the buttons at the top or ctrl + 'arrow up', respectively ctrl + 'arrow down'</p>
     </PopOverGitGeneralComponent>
   </div>;
 }
