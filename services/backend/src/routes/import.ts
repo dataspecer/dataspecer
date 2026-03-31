@@ -106,12 +106,12 @@ async function getExistingChildrenByUrl(packageIri: string): Promise<Map<string,
  * wrapper should be deprecated.
  */
 async function importRdfsModel(parentIri: string, url: string, newIri: string, userMetadata: any): Promise<SemanticModelEntity[]> {
-  await ensureResource(parentIri, newIri, "https://dataspecer.com/core/model-descriptor/pim-store-wrapper", userMetadata);
-  const store = await resourceModel.getOrCreateResourceModelStore(newIri);
   const wrapper = await createRdfsModel([url], httpFetch);
   const serialization = wrapper.serializeModel();
   serialization.id = newIri;
   serialization.alias = userMetadata?.label?.en ?? userMetadata?.label?.cs;
+  await ensureResource(parentIri, newIri, "https://dataspecer.com/core/model-descriptor/pim-store-wrapper", userMetadata);
+  const store = await resourceModel.getOrCreateResourceModelStore(newIri);
   await store.setJson(serialization);
   return Object.values(wrapper.getEntities()) as SemanticModelEntity[];
 }
