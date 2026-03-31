@@ -38,6 +38,47 @@ export const MonacoDiffEditor: FC<{
   }, [props.projectIrisTreePathToFilesystemNode, props.datastoreType]);
 
 
+  function addKeyBindings(editor: any) {
+      editor.addCommand(
+          monaco.KeyMod.CtrlCmd + monaco.KeyCode.DownArrow,
+          function () {
+            const pos = props.editorRef.current?.editor.getPosition();
+            const changes = props.editorRef.current?.editor.getLineChanges();
+            for (const change of changes ?? []) {
+              if (change.modifiedStartLineNumber > (pos?.lineNumber ?? 1000000000)) {
+                // props.editorRef.current?.editor.revealLine(change.modifiedStartLineNumber);
+                props.editorRef.current?.editor.setPosition({
+                  column: 1,
+                  lineNumber: change.modifiedStartLineNumber,
+                });
+                props.editorRef.current?.editor.revealLineInCenter(change.modifiedStartLineNumber);
+                break;
+              }
+
+            }
+          }
+      )
+      editor.addCommand(
+          monaco.KeyMod.CtrlCmd + monaco.KeyCode.UpArrow,
+          function () {
+            const pos = props.editorRef.current?.editor.getPosition();
+            const changes = props.editorRef.current?.editor.getLineChanges();
+            for (const change of (changes ?? []).reverse()) {     // TODO: Micro-optim - use classic for cycle instead of "foreach"
+              if (change.modifiedStartLineNumber < (pos?.lineNumber ?? -1000000000)) {
+                props.editorRef.current?.editor.setPosition({
+                  column: 1,
+                  lineNumber: change.modifiedStartLineNumber,
+                });
+                props.editorRef.current?.editor.revealLineInCenter(change.modifiedStartLineNumber);
+                // props.editorRef.current?.editor.revealLine(change.modifiedStartLineNumber);
+                break;
+              }
+
+            }
+          }
+      )
+  }
+
   const currentIntervalId = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -89,6 +130,7 @@ export const MonacoDiffEditor: FC<{
 
         currentIntervalId.current = intervalId;
 
+        addKeyBindings(editor);
         props.editorRef.current = {editor};
 
         const model = props.editorRef.current?.editor.getModel() ?? null;
