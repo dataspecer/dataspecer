@@ -29,7 +29,10 @@ import {
   isVisualRelationship,
   VisualNode,
   VisualRelationship,
-  VisualModelData as VisualModelInformation
+  VisualModelData as VisualModelInformation,
+  ColorGenerator,
+  createColorGenerator,
+
 } from "@dataspecer/visual-model";
 import { removeFromArray } from "../utilities/functional";
 
@@ -49,14 +52,12 @@ export class CatalogTracker implements Tracker {
    */
   private readonly onDidChangeCallback: (tracker: CatalogTracker) => void;
 
-  readonly defaultBackgroundColor: string;
+  private readonly colorGenerator: ColorGenerator = createColorGenerator();
 
   constructor(
     onDidChangeCallback: (tracker: CatalogTracker) => void,
-    defaultBackgroundColor: string,
   ) {
     this.onDidChangeCallback = onDidChangeCallback;
-    this.defaultBackgroundColor = defaultBackgroundColor;
   }
 
   dependencies(entity: Entity): string[] {
@@ -172,7 +173,7 @@ export class CatalogTracker implements Tracker {
     else if (isVisualNode(next as any)) {
       const typed = next as unknown as VisualNode;
       const entity = this.getOrCreatePartialCatalogEntity(
-        typed.representedEntity, /* typed.model */ );
+        typed.representedEntity, /* typed.model */);
       this.addVisualRepresentation(entity, model, typed.identifier);
     } else if (isVisualRelationship(next as any)) {
       const typed = next as unknown as VisualRelationship;
@@ -500,13 +501,11 @@ export class CatalogTracker implements Tracker {
     visualModel: string | null,
   ): string {
     if (visualModel === null) {
-      return this.defaultBackgroundColor;
+      return this.colorGenerator.generateModelColor(model);
     }
     const visual = this.visualModels.get(visualModel)
-    if (visual === undefined) {
-      return this.defaultBackgroundColor;
-    }
-    return visual.colors[model] ?? this.defaultBackgroundColor;
+    return visual?.colors[model]
+      ?? this.colorGenerator.generateModelColor(model);
   }
 
   hasVisualEntity(

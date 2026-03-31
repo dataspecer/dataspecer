@@ -1,4 +1,4 @@
-import React, { JSX, useCallback, useEffect, useMemo, useState } from "react";
+import React, { JSX, useCallback, useMemo, useState } from "react";
 import { List, AutoSizer } from "react-virtualized";
 
 import {
@@ -20,7 +20,7 @@ import {
   ModelIdentifier,
 } from "@dataspecer/entity-model";
 
-import { configuration, t } from "../application";
+import { t } from "../application";
 import { useModelGraphContext } from "../context/model-context";
 import { useOptions } from "../configuration";
 import {
@@ -40,7 +40,6 @@ export const Catalog = () => {
 
   const actions = useActions();
   const { language } = useOptions();
-  const { defaultModelColor } = configuration();
 
   // Binding to global context.
   const modelGraphContext = useModelGraphContext();
@@ -287,8 +286,8 @@ export const Catalog = () => {
   }, [setState, language, visualModel]);
 
   const catalogTracker = useMemo(
-    () => new CatalogTracker(onTrackerDidChanged, defaultModelColor),
-    [onTrackerDidChanged, defaultModelColor]);
+    () => new CatalogTracker(onTrackerDidChanged),
+    [onTrackerDidChanged]);
   const dependencyTracker = useMemo(
     () => new DependencyTracker([catalogTracker]),
     [catalogTracker]);
