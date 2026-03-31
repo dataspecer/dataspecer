@@ -697,58 +697,9 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     setExaminedMergeState(fetchedMergeState);
   };
 
-  // TODO RadStr: ... useless code
-  // const fullyFillCache = async () => {
-  //   if (examinedMergeState !== null) {
-  //     const metaInfos = await ClientFilesystem.getAllMetas(examinedMergeState, datastoreInfosForCacheEntries, import.meta.env.VITE_BACKEND);
-  //     const processedProjectIris = new Set<string>();
-  //     for (const [projectIriPath, mergeFromMetaInfo] of Object.entries(metaInfos.mergeFrom)) {
-  //       if (processedProjectIris.has(projectIriPath)) {
-  //         continue;
-  //       }
-  //       processedProjectIris.add(projectIriPath);
-
-  //       const datastoreInfosForEntry = datastoreInfosForCacheEntries[projectIriPath]["meta"];
-  //       const format = pickFormat(examinedMergeState.filesystemTypeMergeFrom, datastoreInfosForEntry.mergeFrom, datastoreInfosForEntry.mergeTo);
-  //       await updateBothCacheEntries(
-  //         datastoreInfosForEntry.mergeFrom, mergeFromMetaInfo,
-  //         datastoreInfosForEntry.mergeTo, metaInfos.mergeTo[projectIriPath],
-  //         projectIriPath, format, "meta", false
-  //       );
-  //     }
-
-
-  //     // Copy paste ... of the above
-  //     for (const [projectIriPath, mergeToMetaInfo] of Object.entries(metaInfos.mergeTo)) {
-  //       if (processedProjectIris.has(projectIriPath)) {
-  //         continue;
-  //       }
-  //       processedProjectIris.add(projectIriPath);
-
-  //       const datastoreInfosForEntry = datastoreInfosForCacheEntries[projectIriPath]["meta"];
-  //       const format = pickFormat(examinedMergeState.filesystemTypeMergeFrom, datastoreInfosForEntry.mergeFrom, datastoreInfosForEntry.mergeTo);
-  //       await updateBothCacheEntries(
-  //         datastoreInfosForEntry.mergeFrom, metaInfos.mergeFrom[projectIriPath],
-  //         datastoreInfosForEntry.mergeTo, mergeToMetaInfo,
-  //         projectIriPath, format, "meta", false
-  //       );
-  //     }
-  //   }
-  // };
-
-  const [isFirstExaminedMergeSet, setIsFirstExaminedMergeState] = useState<boolean>(true);
   useEffect(() => {
     reloadMergeState(true, true);
-    setIsFirstExaminedMergeState(true);     // TODO RadStr: !! SEeems useless
   }, []);
-
-  // TODO RadStr: !! Seems useless
-  useEffect(() => {
-    if (isFirstExaminedMergeSet && examinedMergeState !== null) {
-      setIsFirstExaminedMergeState(false);
-      // fullyFillCache();
-    }
-  }, [examinedMergeState])
 
 
   useEffect(() => {
