@@ -235,9 +235,15 @@ export class CatalogTracker implements Tracker {
   private getOrCreatePartialCatalogEntity(
     identifier: EntityIdentifier,
   ): PartialCatalogEntity {
-    let existing = this.partialEntities.get(identifier);
-    if (existing !== undefined) {
-      return existing;
+    // Try to get and return the entity.
+    let entity = this.entities.get(identifier);
+    if (entity !== undefined) {
+      return entity;
+    }
+    // Try to get and return the partial.
+    let partial = this.partialEntities.get(identifier);
+    if (partial !== undefined) {
+      return partial;
     }
     // Create a new one.
     const created = {
@@ -569,19 +575,7 @@ export interface SemanticModelData {
  */
 interface PartialCatalogEntity {
 
-  /**
-   * If null the entity was created by referenced entities.
-   * I.e. for example there is a profile or generalization ot this entity.
-   */
-  entity: Entity | null;
-
   identifier: EntityIdentifier;
-
-  /**
-   * For the partial we enable model to be null as we may not have the
-   * reference ready yet.
-   */
-  model: ModelIdentifier | null;
 
   iri: string | null;
 
@@ -605,6 +599,8 @@ interface PartialCatalogEntity {
 }
 
 export interface CatalogEntity extends PartialCatalogEntity {
+
+  entity: Entity;
 
   model: ModelIdentifier;
 
