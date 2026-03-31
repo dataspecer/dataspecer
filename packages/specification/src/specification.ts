@@ -294,7 +294,7 @@ export async function generateSpecification(packageId: string, context: Generate
       for (const url of data.urls ?? []) {
         usedVocabularies.push({
           url: url,
-          title: data.alias ? { en: data.alias } : undefined,
+          title: data.alias ? { en: data.alias } : (model.getUserMetadata()?.label ?? undefined),
         } satisfies ExternalSpecification);
       }
     }
