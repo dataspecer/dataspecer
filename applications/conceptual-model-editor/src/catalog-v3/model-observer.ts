@@ -69,23 +69,18 @@ export function useModelObserver(
     const [removedVisualModel, newVisualModels] =
       diffArrays([...state.visualModels.keys()], [...visualModels.keys()]);
 
-    console.log("  ", {
-      removedEntityModels, newEntityModels,
-      removedVisualModel, newVisualModels,
-    });
-
     // We store all changes here and invoke the observer only once at the end.
     // We know we are in a single thread so no updates are going interrupt.
     const changes: EntitiesChanges = {};
 
     // Unsubscribe and remove entities from entity models.
-    for (const identifier of removedEntityModels) {
-      const entry = state.entityModels.get(identifier);
+    for (const modelIdentifier of removedEntityModels) {
+      const entry = state.entityModels.get(modelIdentifier);
       if (entry === undefined) {
         continue;
       }
       entry.unsubscribe();
-      changes[identifier] = {
+      changes[modelIdentifier] = {
         created: [],
         updated: [],
         deleted: [
@@ -93,18 +88,18 @@ export function useModelObserver(
           createModelMetadataEntityId(entry.model),
         ],
       };
-      state.entityModels.delete(identifier);
+      state.entityModels.delete(modelIdentifier);
     }
 
     // Unsubscribe and remove entities from visual models.
-    for (const identifier of removedVisualModel) {
-      const entry = state.visualModels.get(identifier);
+    for (const modelIdentifier of removedVisualModel) {
+      const entry = state.visualModels.get(modelIdentifier);
       if (entry === undefined) {
         continue;
       }
       entry.model.getVisualEntities()
       entry.unsubscribe();
-      changes[identifier] = {
+      changes[modelIdentifier] = {
         created: [],
         updated: [],
         deleted: [
@@ -112,12 +107,12 @@ export function useModelObserver(
           createModelMetadataEntityId(entry.model),
         ],
       };
-      state.entityModels.delete(identifier);
+      state.entityModels.delete(modelIdentifier);
     }
 
     // Register for new entity models.
-    for (const identifier of newEntityModels) {
-      const model = entityModels.get(identifier)!;
+    for (const modelIdentifier of newEntityModels) {
+      const model = entityModels.get(modelIdentifier)!;
       // We keep list of existing entities to distinguish between
       // created and updates.
       const entities = new Set<string>();
@@ -126,18 +121,18 @@ export function useModelObserver(
         ? model.subscribeToChanges((updated, removed) => {
           const created: Entity[] = [];
           const changed: Entity[] = [];
-          for (const [identifier, entity] of Object.entries(updated)) {
-            if (entities.has(identifier)) {
+          for (const [entityIdentifier, entity] of Object.entries(updated)) {
+            if (entities.has(entityIdentifier)) {
               changed.push(entity);
             } else {
               created.push(entity);
-              entities.add(identifier);
+              entities.add(entityIdentifier);
             }
           }
           removed.forEach(item => entities.delete(item));
           //
           observer.onEntitiesDidChange({
-            [identifier]: {
+            [modelIdentifier]: {
               created,
               updated: changed,
               deleted: removed,
@@ -146,7 +141,7 @@ export function useModelObserver(
         })
         : () => null;
       // Add all entities.
-      changes[identifier] = {
+      changes[modelIdentifier] = {
         created: [
           createModelMetadataEntity(model),
           ...Object.values(model.getEntities()),
@@ -155,12 +150,12 @@ export function useModelObserver(
         deleted: [],
       };
       // Add model.
-      state.entityModels.set(identifier, { model, unsubscribe });
+      state.entityModels.set(modelIdentifier, { model, unsubscribe });
     }
 
     // Register for new visual models.
-    for (const identifier of newVisualModels) {
-      const model = visualModels.get(identifier)!;
+    for (const modelIdentifier of newVisualModels) {
+      const model = visualModels.get(modelIdentifier)!;
       // Handle subscription.
       const unsubscribe = model.subscribeToChanges({
         modelColorDidChange() { /* No action here. */ },
@@ -188,21 +183,22 @@ export function useModelObserver(
           }
           //
           observer.onEntitiesDidChange({
-            [identifier]: { created, updated, deleted }
+            [modelIdentifier]: { created, updated, deleted }
           });
         },
       });
       // Add all entities.
-      changes[identifier] = {
+      changes[modelIdentifier] = {
         created: [
           createModelMetadataEntity(model),
-          ...model.getVisualEntities().values().map(item => ({ ...item, id: item.identifier })),
+          ...model.getVisualEntities().values()
+            .map(item => ({ ...item, id: item.identifier })),
         ],
         updated: [],
         deleted: [],
       };
       // Add model.
-      state.visualModels.set(identifier, { model, unsubscribe });
+      state.visualModels.set(modelIdentifier, { model, unsubscribe });
     }
 
     // Call the update at the end, thus we batch all the changes together.

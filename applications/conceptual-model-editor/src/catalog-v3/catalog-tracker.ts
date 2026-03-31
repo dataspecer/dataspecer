@@ -32,13 +32,15 @@ import {
   VisualModelData as VisualModelInformation
 } from "@dataspecer/visual-model";
 import { removeFromArray } from "../utilities/functional";
-import { preinit } from "react-dom";
 
 export class CatalogTracker implements Tracker {
 
   readonly semanticModels: Map<ModelIdentifier, SemanticModelData> = new Map();
 
   readonly entities: Map<EntityIdentifier, CatalogEntity> = new Map();
+
+  readonly partialEntities: Map<EntityIdentifier, PartialCatalogEntity>
+    = new Map();
 
   readonly visualModels: Map<ModelIdentifier, VisualModelData> = new Map();
 
@@ -126,56 +128,56 @@ export class CatalogTracker implements Tracker {
       visualData.metadataEntity = next.id;
       visualData.label = (next as any).label ?? {};
     } else if (isSemanticClass(next)) {
-      const entity = this.getOrCreateCatalogEntity(model, next.id, next);
+      const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       entity.iri = next.iri;
       entity.label = next.name;
     } else if (isSemanticRelationship(next)) {
-      const entity = this.getOrCreateCatalogEntity(model, next.id, next);
+      const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       const [_, range] = selectDomainAndRange(next.ends);
       entity.iri = range.iri;
       entity.label = range.name;
     } else if (isSemanticGeneralization(next)) {
-      const entity = this.getOrCreateCatalogEntity(model, next.id, next);
+      const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       entity.iri = next.iri;
       // Add generalization information.
-      const child = this.getOrCreateCatalogEntity(model, next.child, null);
+      const child = this.getOrCreatePartialCatalogEntity(next.child);
       secureInArrayInPlace(next.parent, child.generalizationOf);
     } else if (isProfileClass(next)) {
-      const entity = this.getOrCreateCatalogEntity(model, next.id, next);
+      const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       entity.iri = next.iri;
       entity.label = next.name ?? {};
       // Add profile of information.
       next.profiling.forEach(identifier => {
-        const profiled = this.getOrCreateCatalogEntity(model, identifier, null);
+        const profiled = this.getOrCreatePartialCatalogEntity(identifier);
         secureInArrayInPlace(next.id, profiled.profiledBy);
       });
     } else if (isProfileRelationship(next)) {
-      const entity = this.getOrCreateCatalogEntity(model, next.id, next);
+      const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       const [_, range] = selectDomainAndRange(next.ends);
       entity.iri = range.iri;
       entity.label = range.name ?? {};
       // Add profile of information.
       range.profiling.forEach(identifier => {
-        const profiled = this.getOrCreateCatalogEntity(model, identifier, null);
+        const profiled = this.getOrCreatePartialCatalogEntity(identifier);
         secureInArrayInPlace(next.id, profiled.profiledBy);
       });
     } else if (isProfileGeneralization(next)) {
-      const entity = this.getOrCreateCatalogEntity(model, next.id, next);
+      const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       entity.iri = next.iri;
       // Add generalization information.
-      const child = this.getOrCreateCatalogEntity(model, next.child, null);
+      const child = this.getOrCreatePartialCatalogEntity(next.child);
       secureInArrayInPlace(next.parent, child.generalizationOf);
     }
     // We need to cast to any here as VisualEntity is using identifier not id.
     else if (isVisualNode(next as any)) {
       const typed = next as unknown as VisualNode;
-      const entity = this.getOrCreateCatalogEntity(
-        typed.model, typed.representedEntity, null);
+      const entity = this.getOrCreatePartialCatalogEntity(
+        typed.representedEntity, /* typed.model */ );
       this.addVisualRepresentation(entity, model, typed.identifier);
     } else if (isVisualRelationship(next as any)) {
       const typed = next as unknown as VisualRelationship;
-      const entity = this.getOrCreateCatalogEntity(
-        typed.model, typed.representedRelationship, null);
+      const entity = this.getOrCreatePartialCatalogEntity(
+        typed.representedRelationship, /* typed.model */);
       this.addVisualRepresentation(entity, model, typed.identifier);
     } else if (isModelVisualInformation(next as any)) {
       const typed = next as unknown as VisualModelInformation;
@@ -190,33 +192,65 @@ export class CatalogTracker implements Tracker {
    * @param model
    * @param identifier
    * @param entity
-   * @returns Catalog entity for given pair model and identifier.
+   * @returns Catalog entity for given identifier.
    */
   private getOrCreateCatalogEntity(
-    model: ModelIdentifier,
     identifier: EntityIdentifier,
-    entity: Entity | null,
+    model: ModelIdentifier,
+    entity: Entity
   ): CatalogEntity {
-    let result = this.entities.get(identifier);
-    if (result === undefined) {
-      result = {
-        entity: entity,
-        identifier: identifier,
-        model: model,
-        iri: null,
-        label: {},
-        profiledBy: [],
-        generalizationOf: [],
-        visualEntities: {},
+    // Try to get and return the entity.
+    let existing = this.entities.get(identifier);
+    if (existing !== undefined) {
+      return existing;
+    }
+    // Check for partial.
+    const partial = this.partialEntities.get(identifier);
+    if (partial !== undefined) {
+      this.partialEntities.delete(identifier);
+      const fromPartial = {
+        ...partial,
+        entity,
+        model
       };
-      this.entities.set(identifier, result);
+      this.entities.set(identifier, fromPartial);
+      return fromPartial;
     }
-    // It is possible that the catalog entity was created without an entity.
-    // Should we get the entity later we can assign it here.
-    if (result.entity === null) {
-      result.entity = entity;
+    // Create a new entity.
+    const created = {
+      identifier: identifier,
+      entity: entity,
+      model: model,
+      iri: null,
+      label: {},
+      profiledBy: [],
+      generalizationOf: [],
+      visualEntities: {},
+    };
+    this.entities.set(identifier, created);
+    return created;
+  }
+
+  private getOrCreatePartialCatalogEntity(
+    identifier: EntityIdentifier,
+  ): PartialCatalogEntity {
+    let existing = this.partialEntities.get(identifier);
+    if (existing !== undefined) {
+      return existing;
     }
-    return result;
+    // Create a new one.
+    const created = {
+      identifier: identifier,
+      entity: null,
+      model: null,
+      iri: null,
+      label: {},
+      profiledBy: [],
+      generalizationOf: [],
+      visualEntities: {},
+    };
+    this.partialEntities.set(identifier, created);
+    return created;
   }
 
   /**
@@ -225,7 +259,7 @@ export class CatalogTracker implements Tracker {
    * @param visualIdentifier
    */
   private addVisualRepresentation(
-    entity: CatalogEntity,
+    entity: PartialCatalogEntity,
     visualModel: ModelIdentifier,
     visualIdentifier: EntityIdentifier,
   ): void {
@@ -270,28 +304,28 @@ export class CatalogTracker implements Tracker {
     } else if (next.type.includes("entity-model-type")) {
       // No action.
     } else if (isSemanticClass(next)) {
-      const entity = this.getOrCreateCatalogEntity(model, next.id, next);
+      const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       entity.iri = next.iri;
       entity.label = next.name;
     } else if (isSemanticRelationship(next)) {
-      const entity = this.getOrCreateCatalogEntity(model, next.id, next);
+      const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       const [_, range] = selectDomainAndRange(next.ends);
       entity.iri = range.iri;
       entity.label = range.name;
     } else if (isSemanticGeneralization(next)) {
-      const entity = this.getOrCreateCatalogEntity(model, next.id, next);
+      const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       entity.iri = next.iri;
       // Update generalization information.
       this.updateGeneralization(model, previous as any, next);
     } else if (isProfileClass(next)) {
-      const entity = this.getOrCreateCatalogEntity(model, next.id, next);
+      const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       entity.iri = next.iri;
       entity.label = next.name ?? {};
       // Update profile of information.
       this.updateProfile(
         model, next.id, (previous as any).profiling, next.profiling);
     } else if (isProfileRelationship(next)) {
-      const entity = this.getOrCreateCatalogEntity(model, next.id, next);
+      const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       const [, range] = selectDomainAndRange(next.ends);
       entity.iri = range.iri;
       entity.label = range.name ?? {};
@@ -300,7 +334,7 @@ export class CatalogTracker implements Tracker {
       this.updateProfile(
         model, next.id, (previousRange as any).profiling, range.profiling);
     } else if (isProfileGeneralization(next)) {
-      const entity = this.getOrCreateCatalogEntity(model, next.id, next);
+      const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       entity.iri = next.iri;
       // Update generalization of information.
       this.updateGeneralization(model, previous as any, next);
@@ -330,7 +364,7 @@ export class CatalogTracker implements Tracker {
   }
 
   private updateGeneralization(
-    model: ModelIdentifier,
+    _model: ModelIdentifier,
     previous: { child: EntityIdentifier, parent: EntityIdentifier },
     next: { child: EntityIdentifier, parent: EntityIdentifier },
   ) {
@@ -340,12 +374,12 @@ export class CatalogTracker implements Tracker {
     }
     // Remove previous.
     {
-      const child = this.getOrCreateCatalogEntity(model, previous.child, null);
+      const child = this.getOrCreatePartialCatalogEntity(previous.child);
       removeFromArrayInPlace(previous.parent, child.generalizationOf);
     }
     // Add next.
     {
-      const child = this.getOrCreateCatalogEntity(model, next.child, null);
+      const child = this.getOrCreatePartialCatalogEntity(next.child);
       secureInArrayInPlace(next.parent, child.generalizationOf);
     }
   }
@@ -361,11 +395,11 @@ export class CatalogTracker implements Tracker {
     }
     const [removed, added] = diffArrays(previous, next);
     for (const item of removed) {
-      const profiled = this.getOrCreateCatalogEntity(model, item, null);
+      const profiled = this.getOrCreatePartialCatalogEntity(item);
       removeFromArrayInPlace(id, profiled.profiledBy);
     }
     for (const item of added) {
-      const profiled = this.getOrCreateCatalogEntity(model, item, null);
+      const profiled = this.getOrCreatePartialCatalogEntity(item);
       secureInArrayInPlace(id, profiled.profiledBy);
     }
   }
@@ -531,7 +565,10 @@ export interface SemanticModelData {
 
 }
 
-export interface CatalogEntity {
+/**
+ * We use this to reference {@link CatalogEntity} that has not yet been created.
+ */
+interface PartialCatalogEntity {
 
   /**
    * If null the entity was created by referenced entities.
@@ -541,7 +578,11 @@ export interface CatalogEntity {
 
   identifier: EntityIdentifier;
 
-  model: ModelIdentifier;
+  /**
+   * For the partial we enable model to be null as we may not have the
+   * reference ready yet.
+   */
+  model: ModelIdentifier | null;
 
   iri: string | null;
 
@@ -561,6 +602,12 @@ export interface CatalogEntity {
    * List of associated visual entities withing a visual model.
    */
   visualEntities: { [identifier: ModelIdentifier]: EntityIdentifier[] };
+
+}
+
+export interface CatalogEntity extends PartialCatalogEntity {
+
+  model: ModelIdentifier;
 
 }
 

@@ -89,7 +89,7 @@ export class DependencyTracker implements ModelObserver {
       deleted: EntityIdentifier[],
     }
   }) {
-    console.log("dependency-tracker.on-entities-did-change", {...event});
+    console.log("dependency-tracker.on-entities-did-change", { ...event });
     this.trackers.forEach(tracker => tracker.onWillUpdate?.());
     // Process changes one model at a time.
     const changed: EntityIdentifier[] = [];
