@@ -1,4 +1,4 @@
-import { DatastoreComparison } from "../../merge/merge-state.ts";
+import { DatastoreComparison, MergeState } from "../../merge/merge-state.ts";
 import { FilesystemNodeLocation, FilesystemMappingType, DirectoryNode, FilesystemNode, DatastoreInfo, ExportShareableMetadataType } from "../../export-import-data-api.ts";
 import { FilesystemAbstractionBase } from "../abstractions/filesystem-abstraction-base.ts";
 import { AvailableFilesystems, FilesystemAbstraction, getDatastoreInfoOfGivenDatastoreType } from "../abstractions/filesystem-abstraction.ts";
@@ -9,6 +9,22 @@ export type CreateDatastoreFilesystemNodesInfo = {
   projectIrisTreePath: string,
   userMetadataDatastoreInfo: DatastoreInfo,
 };
+
+export type GetMetasDatastoreInfo = {
+  fullPath: string;
+  format?: string;
+};
+
+
+export type FullTreePath = string;
+export type ModelName = string;
+export type DatastoreInfosForModel = {
+  mergeFrom: DatastoreInfo | null,
+  mergeTo: DatastoreInfo | null
+};
+export type DatastoreInfosCache = Record<FullTreePath, Record<ModelName, DatastoreInfosForModel>>;
+
+type MergeFromMergeTo = "mergeFrom" | "mergeTo";
 
 
 /**
