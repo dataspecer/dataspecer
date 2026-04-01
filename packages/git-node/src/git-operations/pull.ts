@@ -175,7 +175,7 @@ export class GitPull {
       gitUrl: remoteRepositoryUrl,
     };
 
-    const createdMergeStateId = mergeStateModel.createMergeState(
+    const createdMergeStateId = await mergeStateModel.createMergeState(
       iri, "", "pull", diffTreeComparison, commonCommitHash, mergeFromInfo, mergeToInfo);
     return {
       createdMergeState: true,
