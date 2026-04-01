@@ -356,7 +356,7 @@ class XsltAdapter {
   }
 
   /**
-   * Create a named template from a class (null for codelists).
+   * Create a named template from a class (null for codelists and empty classes).
    */
   classToTemplate(classData: StructureModelClass): XmlTemplate | null {
     if (classData.isCodelist) {
@@ -391,9 +391,9 @@ class XsltAdapter {
     // Enforce the same type (class or datatype)
     // for all types in the property range.
     const result =
-      this.propertyToMatchCheckType(propertyData, dataTypes, (type) => type.isAssociation() && type.dataType.isCodelist, this.classPropertyToCodelistMatch, ownerClass) ??
-      this.propertyToMatchCheckType(propertyData, dataTypes, (type) => type.isAssociation(), this.classPropertyToClassMatch, ownerClass) ??
-      this.propertyToMatchCheckType(propertyData, dataTypes, (type) => type.isAttribute(), this.datatypePropertyToLiteralMatch, ownerClass);
+      this.propertyToMatchCheckType(propertyData, (type) => type.isAssociation() && type.dataType.isCodelist, this.classPropertyToCodelistMatch, ownerClass) ??
+      this.propertyToMatchCheckType(propertyData, (type) => type.isAssociation(), this.classPropertyToClassMatch, ownerClass) ??
+      this.propertyToMatchCheckType(propertyData, (type) => type.isAttribute(), this.datatypePropertyToLiteralMatch, ownerClass);
     if (result == null) {
       throw new Error(`Property ${propertyData.psmIri} must use either only ` + "class types or only primitive types.");
     }
@@ -453,23 +453,19 @@ class XsltAdapter {
    * Calls {@link matchConstructor} if every type in {@link dataTypes}
    * matches {@link rangeChecker}, and constructs a match from the property.
    * @param propertyData The property in the structure model.
-   * @param dataTypes The datatypes used by the property.
    * @param rangeChecker The type predicate.
    * @param matchConstructor The function constructing the type.
    * @returns The match created by {@link matchConstructor}.
    */
   propertyToMatchCheckType(
     propertyData: StructureModelProperty,
-    dataTypes: StructureModelType[],
     rangeChecker: (rangeType: StructureModelType) => boolean,
     matchConstructor: (propertyData: StructureModelProperty, interpretations: QName[], propertyName: QName, dataTypes: StructureModelType[]) => XmlMatch,
     ownerClass: StructureModelClass | null,
   ): XmlMatch | null {
+    const dataTypes = propertyData.dataTypes;
     if (dataTypes.every(rangeChecker)) {
       const propertyIris = propertyData.iris ?? [];
-      if (propertyIris.length === 0) {
-        throw new Error(`Property ${propertyData.psmIri} has no interpretation!`);
-      }
       const interpretations = propertyIris.map((propertyIri) => this.iriToQName(propertyIri));
       const propertyName = this.propertyToQName(propertyData, ownerClass);
       return matchConstructor.call(this, propertyData, interpretations, propertyName, dataTypes);

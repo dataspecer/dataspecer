@@ -1,6 +1,5 @@
 import { OutputStream } from "@dataspecer/core/io/stream/output-stream";
 import {
-  XmlContainerMatch,
   XmlMatch,
   xmlMatchIsClass,
   xmlMatchIsCodelist,
@@ -175,29 +174,6 @@ function propertyResultPath(subjectBinding: string, propertyIris: string[], writ
   );
 }
 
-async function writeMatchedProperty(match: XmlMatch, obj: string, writer: XmlWriter): Promise<void> {
-  if (xmlMatchIsContainer(match)) {
-    throw new Error("Internal error: container passed to matched property writer.");
-  }
-
-  if (xmlMatchIsClass(match) && match.isDematerialized) {
-    // Do not write property tags, only the contents.
-    await writePropertyContents(match, obj, writer);
-  } else if (match.isAttribute) {
-    await writer.writeElementFull(
-      "xsl",
-      "attribute",
-    )(async (writer) => {
-      await writer.writeLocalAttributeValue("name", writer.getQName(...match.propertyName));
-      await writePropertyContents(match, obj, writer);
-    });
-  } else {
-    await writer.writeElementFull(...match.propertyName)(async (writer) => {
-      await writePropertyContents(match, obj, writer);
-    });
-  }
-}
-
 /**
  * Writes the end of the transformation.
  */
@@ -209,6 +185,7 @@ async function writeTransformationEnd(writer: XmlWriter): Promise<void> {
  * Writes common templates used from other places.
  */
 async function writeCommonTemplates(writer: XmlWriter): Promise<void> {
+  // todo only for lang properties
   await writer.writeElementFull(
     "xsl",
     "template",
@@ -383,6 +360,8 @@ async function writeTemplates(model: XmlTransformation, writer: XmlWriter): Prom
  */
 async function writeTemplateContents(template: XmlTemplate, model: XmlTransformation, writer: XmlWriter): Promise<void> {
   const iriElementQName: QName = template.iriElementName ?? [model.targetNamespacePrefix ?? iriElementName[0], iriElementName[1]];
+  // Whether the class has interpretation or it is just a structural wrapper having no type, no iri.
+  const interpreted = template.classIris.length > 0;
 
   // The SPARQL binding content containing the identifier of the resource.
   await writer.writeElementFull(
@@ -392,14 +371,14 @@ async function writeTemplateContents(template: XmlTemplate, model: XmlTransforma
     await writer.writeLocalAttributeValue("name", "id");
   });
 
-  // The value of the xsi:type attribute.
-  await writer.writeElementFull(
-    "xsl",
-    "param",
-  )(async (writer) => {
-    await writer.writeLocalAttributeValue("name", "type_name");
-    await writer.writeLocalAttributeValue("select", "()");
-  });
+  // // The value of the xsi:type attribute.
+  // await writer.writeElementFull(
+  //   "xsl",
+  //   "param",
+  // )(async (writer) => {
+  //   await writer.writeLocalAttributeValue("name", "type_name");
+  //   await writer.writeLocalAttributeValue("select", "()");
+  // });
 
   // Do not match <iri>.
   await writer.writeElementFull(
@@ -410,25 +389,27 @@ async function writeTemplateContents(template: XmlTemplate, model: XmlTransforma
     await writer.writeLocalAttributeValue("select", "false()");
   });
 
-  // Add xsi:type if specified.
-  await writer.writeElementFull(
-    "xsl",
-    "if",
-  )(async (writer) => {
-    await writer.writeLocalAttributeValue("test", "not(empty($type_name))");
-    await writer.writeElementFull(
-      "xsl",
-      "attribute",
-    )(async (writer) => {
-      await writer.writeLocalAttributeValue("name", "xsi:type");
-      await writer.writeElementFull(
-        "xsl",
-        "value-of",
-      )(async (writer) => {
-        await writer.writeLocalAttributeValue("select", "$type_name");
-      });
-    });
-  });
+  // // Add xsi:type if specified.
+  // if (interpreted) {
+  //   await writer.writeElementFull(
+  //     "xsl",
+  //     "if",
+  //   )(async (writer) => {
+  //     await writer.writeLocalAttributeValue("test", "not(empty($type_name))");
+  //     await writer.writeElementFull(
+  //       "xsl",
+  //       "attribute",
+  //     )(async (writer) => {
+  //       await writer.writeLocalAttributeValue("name", "xsi:type");
+  //       await writer.writeElementFull(
+  //         "xsl",
+  //         "value-of",
+  //       )(async (writer) => {
+  //         await writer.writeLocalAttributeValue("select", "$type_name");
+  //       });
+  //     });
+  //   });
+  // }
 
   // Converts the identifier to string for testing.
   await writer.writeElementFull(
@@ -453,42 +434,44 @@ async function writeTemplateContents(template: XmlTemplate, model: XmlTransforma
 
   // Write out <iri> if the identifier is sp:uri.
   // Keep this after attributes, so no attribute is added after child nodes.
-  await writer.writeElementFull(
-    "xsl",
-    "if",
-  )(async (writer) => {
-    await writer.writeLocalAttributeValue("test", "not($no_iri)");
+  if (interpreted) {
     await writer.writeElementFull(
       "xsl",
-      "for-each",
+      "if",
     )(async (writer) => {
-      await writer.writeLocalAttributeValue("select", "$id/sp:uri");
+      await writer.writeLocalAttributeValue("test", "not($no_iri)");
+      await writer.writeElementFull(
+        "xsl",
+        "for-each",
+      )(async (writer) => {
+        await writer.writeLocalAttributeValue("select", "$id/sp:uri");
 
-      if (model.elementIriAsAttribute) {
-        await writer.writeElementFull(
-          "xsl",
-          "attribute",
-        )(async (writer) => {
-          await writer.writeLocalAttributeValue("name", iriElementName[1]);
+        if (model.elementIriAsAttribute) {
           await writer.writeElementFull(
             "xsl",
-            "value-of",
+            "attribute",
           )(async (writer) => {
-            await writer.writeLocalAttributeValue("select", ".");
+            await writer.writeLocalAttributeValue("name", iriElementName[1]);
+            await writer.writeElementFull(
+              "xsl",
+              "value-of",
+            )(async (writer) => {
+              await writer.writeLocalAttributeValue("select", ".");
+            });
           });
-        });
-      } else {
-        await writer.writeElementFull(...iriElementQName)(async (writer) => {
-          await writer.writeElementFull(
-            "xsl",
-            "value-of",
-          )(async (writer) => {
-            await writer.writeLocalAttributeValue("select", ".");
+        } else {
+          await writer.writeElementFull(...iriElementQName)(async (writer) => {
+            await writer.writeElementFull(
+              "xsl",
+              "value-of",
+            )(async (writer) => {
+              await writer.writeLocalAttributeValue("select", ".");
+            });
           });
-        });
-      }
+        }
+      });
     });
-  });
+  }
 
   // Then write all property elements
   for (const match of template.propertyMatches) {
@@ -500,97 +483,73 @@ async function writeTemplateContents(template: XmlTemplate, model: XmlTransforma
 
 /**
  * Writes out a property match from a template.
+ *
+ * Effectively, this writes single property inside a class. Since all classes
+ * are converted to templates, this will effectively either ends with primitive
+ * type or call another template.
  */
 async function writeTemplateMatch(match: XmlMatch, writer: XmlWriter): Promise<void> {
   if (xmlMatchIsContainer(match)) {
-    // For containers, process inner properties within the container element
-    await writeContainerMatch(match, writer);
+    // We simply iterate the contents of the container
+    // For max cardinality of 1, this is OK
+    for (const inner of match.innerMatches) {
+      await writeTemplateMatch(inner, writer);
+    }
   } else {
-    await writer.writeElementFull(
-      "xsl",
-      "for-each-group",
-    )(async (writer) => {
-      const [subj, obj] = resolveBindings(match.isReverse);
-      const path = propertyResultPath(subj, match.propertyIris, writer);
-
-      await writer.writeLocalAttributeValue("select", path);
-      await writer.writeLocalAttributeValue("group-by", elementIdTest(`sp:binding[@name=${obj}]/*[1]`, writer));
-
+    const isInterpreted = match.propertyIris.length > 0;
+    const [subj, obj] = resolveBindings(match.isReverse);
+    if (isInterpreted) {
+      // This is for each that iterates all triples
       await writer.writeElementFull(
         "xsl",
-        "for-each",
+        "for-each-group",
       )(async (writer) => {
-        await writer.writeLocalAttributeValue("select", "current-group()[1]");
-        await writeMatchedProperty(match, obj, writer);
+        const path = propertyResultPath(subj, match.propertyIris, writer);
+
+        await writer.writeLocalAttributeValue("select", path);
+        await writer.writeLocalAttributeValue("group-by", elementIdTest(`sp:binding[@name=${obj}]/*[1]`, writer));
+
+        await writer.writeElementFull(
+          "xsl",
+          "for-each",
+        )(async (writer) => {
+          await writer.writeLocalAttributeValue("select", "current-group()[1]");
+          await writeMatchedProperty(match, obj, writer);
+        });
       });
-    });
+    } else {
+      // In case of non-interpreted property, this means that we do not need to
+      // do the for-each iteration because there is no need. We inherit the ID
+      // from parent.
+      await writeMatchedProperty(match, null, writer);
+    }
   }
 }
 
-/**
- * Writes out a container match from a template.
- * Containers group related elements (e.g., xs:sequence, xs:choice).
- */
-async function writeContainerMatch(containerMatch: XmlContainerMatch, writer: XmlWriter): Promise<void> {
-  async function writeContainerInnerProperty(innerMatch: XmlMatch, writer: XmlWriter): Promise<void> {
-    if (xmlMatchIsContainer(innerMatch)) {
-      throw new Error("Internal error: nested container passed to inner property writer.");
-    }
-
+async function writeMatchedProperty(match: XmlMatch, obj: string | null, writer: XmlWriter): Promise<void> {
+  if (xmlMatchIsClass(match) && match.isDematerialized) {
+    // Do not write property tags, only the contents.
+    await writePropertyContents(match, obj, writer);
+  } else if (match.isAttribute) {
     await writer.writeElementFull(
       "xsl",
-      "for-each-group",
+      "attribute",
     )(async (writer) => {
-      // Inner matches have the same structure but are not wrapped in the container element
-      const [subj, obj] = resolveBindings(innerMatch.isReverse);
-      const path = propertyResultPath(subj, innerMatch.propertyIris, writer);
-
-      await writer.writeLocalAttributeValue("select", path);
-      await writer.writeLocalAttributeValue("group-by", elementIdTest(`sp:binding[@name=${obj}]/*[1]`, writer));
-      await writer.writeElementFull(
-        "xsl",
-        "for-each",
-      )(async (writer) => {
-        await writer.writeLocalAttributeValue("select", "current-group()[1]");
-        await writeMatchedProperty(innerMatch, obj, writer);
-      });
+      await writer.writeLocalAttributeValue("name", writer.getQName(...match.propertyName));
+      await writePropertyContents(match, obj, writer);
     });
-  }
-
-  const containerLocalName = containerMatch.propertyName?.[1];
-  const shouldWrapContainer = containerLocalName != null && containerLocalName !== "" && containerLocalName !== "null";
-
-  const writeContainerContents = async (writer: XmlWriter): Promise<void> => {
-    // Attributes must be emitted before any child elements.
-    for (const innerMatch of containerMatch.innerMatches) {
-      if (!xmlMatchIsContainer(innerMatch) && innerMatch.isAttribute) {
-        await writeContainerInnerProperty(innerMatch, writer);
-      }
-    }
-
-    // Then emit nested containers and element properties.
-    for (const innerMatch of containerMatch.innerMatches) {
-      if (xmlMatchIsContainer(innerMatch)) {
-        await writeContainerMatch(innerMatch, writer);
-      } else if (!innerMatch.isAttribute) {
-        await writeContainerInnerProperty(innerMatch, writer);
-      }
-    }
-  };
-
-  // Anonymous containers (e.g., xsd:sequence) have no XML element name,
-  // so write their children directly without introducing a wrapper element.
-  if (shouldWrapContainer) {
-    await writer.writeElementFull(...containerMatch.propertyName)(writeContainerContents);
   } else {
-    await writeContainerContents(writer);
+    await writer.writeElementFull(...match.propertyName)(async (writer) => { // Here we write property tag
+      await writePropertyContents(match, obj, writer);
+    });
   }
 }
 
 /**
  * Writes out an XML property contents.
+ * @property match either string for variable name or null for $id
  */
-async function writePropertyContents(match: XmlMatch, obj: string, writer: XmlWriter): Promise<void> {
+async function writePropertyContents(match: XmlMatch, obj: string | null, writer: XmlWriter): Promise<void> {
   if (xmlMatchIsLiteral(match)) {
     await writer.writeElementFull(
       "xsl",
@@ -611,9 +570,13 @@ async function writePropertyContents(match: XmlMatch, obj: string, writer: XmlWr
     }
     const noIri = match.isDematerialized;
     const templates = match.targetTemplates;
+    const objectBinding = obj ? `sp:binding[@name=${obj}]/*` : "$id";
     if (templates.length == 1) {
-      await writeTemplateCall(templates[0].templateName, null, noIri, obj, writer);
+      await writeTemplateCall(templates[0].templateName, null, noIri, objectBinding, writer);
     } else {
+      if (obj === null) {
+        throw new Error(`Multiple target templates cannot be used for a property without object binding.`);
+      }
       await writer.writeElementFull(
         "xsl",
         "choose",
@@ -636,10 +599,10 @@ async function writePropertyContents(match: XmlMatch, obj: string, writer: XmlWr
               // For polymorphic properties emit a concrete wrapper element
               // (e.g., <city_house>...</city_house>) inside the property.
               await writer.writeElementFull(...typeName)(async (writer) => {
-                await writeTemplateCall(template.templateName, null, noIri, obj, writer);
+                await writeTemplateCall(template.templateName, null, noIri, `sp:binding[@name=${obj}]/*`, writer);
               });
             } else {
-              await writeTemplateCall(template.templateName, null, noIri, obj, writer);
+              await writeTemplateCall(template.templateName, null, noIri, `sp:binding[@name=${obj}]/*`, writer);
             }
           });
         }
@@ -656,7 +619,7 @@ async function writePropertyContents(match: XmlMatch, obj: string, writer: XmlWr
  * @param obj The object binding, to obtain the identifier.
  * @param writer The XML writer.
  */
-async function writeTemplateCall(templateName: string, typeName: QName | null, noIri: boolean, obj: string, writer: XmlWriter): Promise<void> {
+async function writeTemplateCall(templateName: string, typeName: /* QName | */ null, noIri: boolean, obj: string, writer: XmlWriter): Promise<void> {
   await writer.writeElementFull(
     "xsl",
     "call-template",
@@ -671,18 +634,18 @@ async function writeTemplateCall(templateName: string, typeName: QName | null, n
         "xsl",
         "copy-of",
       )(async (writer) => {
-        await writer.writeLocalAttributeValue("select", `sp:binding[@name=${obj}]/*`);
+        await writer.writeLocalAttributeValue("select", obj); // `sp:binding[@name=${obj}]/*`
       });
     });
     if (typeName != null) {
-      await writer.writeElementFull(
-        "xsl",
-        "with-param",
-      )(async (writer) => {
-        await writer.writeLocalAttributeValue("name", "type_name");
-        const type = writer.getQName(...typeName);
-        await writer.writeLocalAttributeValue("select", `"${type}"`);
-      });
+      // await writer.writeElementFull(
+      //   "xsl",
+      //   "with-param",
+      // )(async (writer) => {
+      //   await writer.writeLocalAttributeValue("name", "type_name");
+      //   const type = writer.getQName(...typeName);
+      //   await writer.writeLocalAttributeValue("select", `"${type}"`);
+      // });
     }
     if (noIri) {
       await writer.writeElementFull(

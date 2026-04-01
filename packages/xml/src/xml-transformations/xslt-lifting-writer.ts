@@ -107,6 +107,7 @@ async function writeTransformationEnd(writer: XmlWriter): Promise<void> {
  * Writes common templates used from other places.
  */
 async function writeCommonTemplates(writer: XmlWriter): Promise<void> {
+  // todo only for lang properties
   await writer.writeElementFull(
     "xsl",
     "template",
@@ -121,6 +122,7 @@ async function writeCommonTemplates(writer: XmlWriter): Promise<void> {
     });
   });
 
+  // todo only for inverse containers
   await writer.writeElementFull(
     "xsl",
     "template",
@@ -245,16 +247,12 @@ async function writeRootTemplate(model: XmlTransformation, rootTemplate: XmlRoot
           "variable",
         )(async (writer) => {
           await writer.writeLocalAttributeValue("name", "result");
+          await writer.writeLocalAttributeValue("as", "element()*");
           await writer.writeElementFull(
             "xsl",
-            "sequence",
+            "call-template",
           )(async (writer) => {
-            await writer.writeElementFull(
-              "xsl",
-              "call-template",
-            )(async (writer) => {
-              await writer.writeLocalAttributeValue("name", rootTemplate.targetTemplate);
-            });
+            await writer.writeLocalAttributeValue("name", rootTemplate.targetTemplate);
           });
         });
 
@@ -320,11 +318,9 @@ async function writeTemplates(model: XmlTransformation, writer: XmlWriter): Prom
  */
 async function writeTemplateContents(template: XmlTemplate, model: XmlTransformation, writer: XmlWriter): Promise<void> {
   const iriElementQName: QName = template.iriElementName ?? [model.targetNamespacePrefix ?? iriElementName[0], iriElementName[1]];
+  const isInterpreted = template.classIris.length > 0;
 
-  await writer.writeElementFull(
-    "rdf",
-    "Description",
-  )(async (writer) => {
+  const contents = async (writer: XmlWriter) => {
     await writer.writeElementFull(
       "xsl",
       "apply-templates",
@@ -332,73 +328,77 @@ async function writeTemplateContents(template: XmlTemplate, model: XmlTransforma
       await writer.writeLocalAttributeValue("select", "@*");
     });
 
-    // The id variable holds the attribute identifying this node, either
-    // via rdf:about or rdf:nodeID.
-    await writer.writeElementFull(
-      "xsl",
-      "variable",
-    )(async (writer) => {
-      await writer.writeLocalAttributeValue("name", "id");
+    if (isInterpreted) {
+
+      // The id variable holds the attribute identifying this node, either
+      // via rdf:about or rdf:nodeID.
       await writer.writeElementFull(
-        null,
-        "id",
+        "xsl",
+        "variable",
       )(async (writer) => {
+        await writer.writeLocalAttributeValue("name", "id");
         await writer.writeElementFull(
-          "xsl",
-          "choose",
+          null,
+          "id",
         )(async (writer) => {
           await writer.writeElementFull(
             "xsl",
-            "when",
+            "choose",
           )(async (writer) => {
-            const iri = writer.getQName(...iriElementQName);
-            const iriPath = model.elementIriAsAttribute ? `@${iri}` : iri;
-            const condition = `${iriPath} and not($no_iri)`;
-            await writer.writeLocalAttributeValue("test", condition);
             await writer.writeElementFull(
               "xsl",
-              "attribute",
+              "when",
             )(async (writer) => {
-              // If <iri> is found, use it in rdf:about
-              await writer.writeLocalAttributeValue("name", "rdf:about");
+              const iri = writer.getQName(...iriElementQName);
+              const iriPath = model.elementIriAsAttribute ? `@${iri}` : iri;
+              const condition = `${iriPath} and not($no_iri)`;
+              await writer.writeLocalAttributeValue("test", condition);
               await writer.writeElementFull(
                 "xsl",
-                "value-of",
+                "attribute",
               )(async (writer) => {
-                await writer.writeLocalAttributeValue("select", iriPath);
+                // If <iri> is found, use it in rdf:about
+                await writer.writeLocalAttributeValue("name", "rdf:about");
+                await writer.writeElementFull(
+                  "xsl",
+                  "value-of",
+                )(async (writer) => {
+                  await writer.writeLocalAttributeValue("select", iriPath);
+                });
               });
             });
-          });
 
-          await writer.writeElementFull(
-            "xsl",
-            "otherwise",
-          )(async (writer) => {
             await writer.writeElementFull(
               "xsl",
-              "attribute",
+              "otherwise",
             )(async (writer) => {
-              // Otherwise generate an identifier from the current context node.
-              await writer.writeLocalAttributeValue("name", "rdf:nodeID");
               await writer.writeElementFull(
                 "xsl",
-                "value-of",
+                "attribute",
               )(async (writer) => {
-                await writer.writeLocalAttributeValue("select", "generate-id()");
+                // Otherwise generate an identifier from the current context node.
+                await writer.writeLocalAttributeValue("name", "rdf:nodeID");
+                await writer.writeElementFull(
+                  "xsl",
+                  "value-of",
+                )(async (writer) => {
+                  await writer.writeLocalAttributeValue("select", "generate-id()");
+                });
               });
             });
           });
         });
       });
-    });
 
-    // Copy the id attribute.
-    await writer.writeElementFull(
-      "xsl",
-      "copy-of",
-    )(async (writer) => {
-      await writer.writeLocalAttributeValue("select", "$id//@*");
-    });
+      // Copy the id attribute.
+      await writer.writeElementFull(
+        "xsl",
+        "copy-of",
+      )(async (writer) => {
+        await writer.writeLocalAttributeValue("select", "$id//@*");
+      });
+
+    }
 
     for (const classIri of template.classIris) {
       // Add all declared rdf:type statements for the resource.
@@ -421,7 +421,16 @@ async function writeTemplateContents(template: XmlTemplate, model: XmlTransforma
     for (const match of template.propertyMatches) {
       await writeTemplateMatch(match, writer);
     }
-  });
+  };
+
+  if (isInterpreted) {
+    await writer.writeElementFull(
+      "rdf",
+      "Description",
+    )(contents);
+  } else {
+    await contents(writer);
+  }
 }
 
 /**
@@ -513,7 +522,7 @@ async function writeProperty(match: XmlMatch, writer: XmlWriter) {
  * Writes out an RDF/XML property.
  */
 async function writeForwardProperty(match: XmlMatch, writer: XmlWriter) {
-  for (const interpretation of match.interpretations) {
+  for (const interpretation of match.interpretations) { // If there are no interpretations, then there is no mapping for this primitive property, so it is not lifted.
     await writer.writeElementFull(...interpretation)(async (writer) => {
       if (xmlMatchIsLiteral(match)) {
         await writer.writeAttributeValue("rdf", "datatype", match.dataTypeIri);
@@ -553,6 +562,13 @@ async function writeForwardProperty(match: XmlMatch, writer: XmlWriter) {
       }
     });
   }
+  // If there is no interpretation and it is class, we still continue but without any wrapping because the class is not interpreted but children can be.
+  if (match.interpretations.length === 0 && xmlMatchIsClass(match)) {
+    if (match.isAttribute) {
+      throw new Error(`Property ${match.propertyName} cannot be lifted from an XML attribute when its range is a class.`);
+    }
+    await writeClassTemplateCall(match, writer);
+  }
 }
 
 /**
@@ -585,14 +601,10 @@ async function writeClassTemplateCall(match: XmlClassMatch, writer: XmlWriter) {
       "variable",
     )(async (writer) => {
       await writer.writeLocalAttributeValue("name", "types");
-      await writer.writeElementFull(
-        "xsl",
-        "sequence",
-      )(async (writer) => {
-        for (const template of templates) {
-          await writer.writeElementEmpty(...(await template.typeName));
-        }
-      });
+      await writer.writeLocalAttributeValue("as", "element()*");
+      for (const template of templates) {
+        await writer.writeElementEmpty(...(await template.typeName));
+      }
     });
     await writer.writeElementFull(
       "xsl",
