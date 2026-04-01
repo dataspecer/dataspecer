@@ -697,7 +697,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
   };
 
   useEffect(() => {
-    reloadMergeState(true, true);
+    reloadMergeState(false, true);
   }, []);
 
 
@@ -794,7 +794,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
       if (metadataDatastoreInfoToCreate !== null &&
         newDatastores.find(datastore => datastore.fullPath === metadataDatastoreInfoToCreate.fullPath) === undefined &&
         (datastoreInfosForCacheEntries[metadataDatastoreInfoToCreate.fullPath]?.mergeTo ?? null) === null) {
-          // TODO RadStr Critical: The mergeTo is not right I think - I will have to fix this everywhere where it occurs. Use only the editable/non-editable
+        // TODO RadStr Critical: The mergeTo is not right I think - I will have to fix this everywhere where it occurs. Use only the editable/non-editable
         // If It is not null and not present in the datastores to be and also it was not yet created.
         newDatastores.push(metadataDatastoreInfoToCreate);
       }
