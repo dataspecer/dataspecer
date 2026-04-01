@@ -216,10 +216,10 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
             !isGitUrlSet(resource.linkedGitRepositoryURL) ?
               null :
               <>
-                <span className="truncate px-2 w-[2.5cm]">
+                <span className="truncate px-2 w-[2.5cm]" title={resource.projectIri}>
                   {resource.projectIri}
                 </span>
-                <span className="truncate px-2 w-[4cm]">
+                <span className="truncate px-2 w-[4cm]" title={resource.branch}>
                   {resource.branch}
                 </span>
               </>
