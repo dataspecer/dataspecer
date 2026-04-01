@@ -180,19 +180,19 @@ function createContext(owl: OwlOntology, dsv: ApplicationProfile): Context {
 function classProfileToStructureClass(
   context: Context, profile: ClassProfile,
 ): StructureClass {
-  const nameSource = findPropertySource(DSV_REUSE_LABEL, profile);
+  const nameSource = findPropertyOnSource(DSV_REUSE_LABEL, profile);
   const name = findSource(
     item => item.name, item => item.prefLabel,
     context.owlClasses, context.dsvClasses,
     nameSource, profile.prefLabel);
 
-  const descriptionSource = findPropertySource(DSV_REUSE_DESCRIPTION, profile);
+  const descriptionSource = findPropertyOnSource(DSV_REUSE_DESCRIPTION, profile);
   const description = findSource(
     item => item.description, item => item.definition,
     context.owlClasses, context.dsvClasses,
     descriptionSource, profile.definition);
 
-  const usageNoteSource = findPropertySource(DSV_REUSE_USAGE_NOTE, profile);
+  const usageNoteSource = findPropertyOnSource(DSV_REUSE_USAGE_NOTE, profile);
   const usageNote = findSource(
     item => null, item => item.usageNote, context.owlClasses, context.dsvClasses,
     usageNoteSource, profile.usageNote);
@@ -221,12 +221,12 @@ function classProfileToStructureClass(
 /**
  * @returns IRI, or null, of source for the given property.
  */
-function findPropertySource(
+function findPropertyOnSource(
   property: string,
   profile: { reusesPropertyValue: PropertyValueReuse[] },
 ): string | null {
   for (const item of profile.reusesPropertyValue) {
-    if (item.reusedPropertyIri === property) {
+    if (item.reusedAsPropertyIri === property) {
       return item.propertyReusedFromResourceIri;
     }
   }
@@ -326,17 +326,17 @@ function createPropertyStructure<DsvType extends PropertyProfile>(
   dsv: { [iri: string]: DsvType },
   profile: PropertyProfile,
 ) {
-  const nameSource = findPropertySource(DSV_REUSE_LABEL, profile);
+  const nameSource = findPropertyOnSource(DSV_REUSE_LABEL, profile);
   const name = findSource(
     item => item.name, item => item.prefLabel,
     owl, dsv, nameSource, profile.prefLabel);
 
-  const descriptionSource = findPropertySource(DSV_REUSE_DESCRIPTION, profile);
+  const descriptionSource = findPropertyOnSource(DSV_REUSE_DESCRIPTION, profile);
   const description = findSource(
     item => item.description, item => item.definition,
     owl, dsv, descriptionSource, profile.definition);
 
-  const usageNoteSource = findPropertySource(DSV_REUSE_USAGE_NOTE, profile);
+  const usageNoteSource = findPropertyOnSource(DSV_REUSE_USAGE_NOTE, profile);
   const usageNote = findSource(
     item => null, item => item.usageNote, owl, dsv,
     usageNoteSource, profile.usageNote);
