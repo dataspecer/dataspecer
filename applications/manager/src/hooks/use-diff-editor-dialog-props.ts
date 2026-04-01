@@ -1292,29 +1292,37 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
           throw new Error(newValueConvertedResult.error);
         }
         let newValueAsJSON: object = newValueConvertedResult.value;
-        if (datastoreInfoForNonEditable !== null && createdDatastoresToIrisNeedingReplacementMap.current[datastoreInfoForNonEditable.fullPath] !== undefined) {
-          // Repair the iris ... The relevant meta files to which we will replace iris should be already created on backend and we got them by fetching the diff state again,
-          // so now just replace with the mapping from non-editable iris to the newly created editable ones
-          // We need to replace only those in cache. Since, the new modified values has to be set by user, they do not appear out of nowhere
-          // TODO RadStr Critical: Does this work correctly with the projectIris or not???????????!!?!?
-          const { datastoreWithReplacedIris, missingIrisInNew } = createDatastoreWithReplacedIris(newValueAsJSON, newIriMappingFromNonEditableToEditableStorage);
-          if (missingIrisInNew.length > 0) {
-            throw new Error("For some reason we still have not created meta files in the editable filesystem, which behave as replacement for pointed to from the old filesystem");
-          }
-
-          newValueAsJSON = datastoreWithReplacedIris;
-        }
-
         const projectIriToIriForEditable: Record<string, string | null> = {};
         for (const [key, value] of Object.entries(localProjectIriToIriMap)) {
           projectIriToIriForEditable[key] = value[editable];
         }
 
-        const {datastoreWithReplacedIris: newValueAsJSONWithIris, missingIrisInNew} = createDatastoreWithReplacedIris(newValueAsJSON, projectIriToIriForEditable);
+        // First replace the project iris to iris. After we are done, we will replace the newly created iris by their correct values.
+        const iriToProjectIriResult = createDatastoreWithReplacedIris(newValueAsJSON, projectIriToIriForEditable);
+        const missingIrisInNew = iriToProjectIriResult.missingIrisInNew;
+        let newValueAsJSONWithIris = iriToProjectIriResult.datastoreWithReplacedIris;
+
         if (missingIrisInNew.length > 0) {
           throw new Error(`${missingIrisInNew} - these iris could not be replaced back from projectIris to iris`);
         }
         // const newValueAsJSONWithIris = newValueAsJSON;   // TODO RadStr Debug: debug set
+
+        if (datastoreInfoForNonEditable !== null && createdDatastoresToIrisNeedingReplacementMap.current[datastoreInfoForNonEditable.fullPath] !== undefined) {
+          // Repair the iris ... The relevant meta files to which we will replace iris should be already created on backend and we got them by fetching the diff state again,
+          // so now just replace with the mapping from non-editable iris to the newly created editable ones
+          // We need to replace only those in cache. Since, the new modified values has to be set by user, they do not appear out of nowhere
+          // TODO RadStr Critical: Does this work correctly with the projectIris or not???????????!!?!? ... I swapped the order so it should be fine now
+          //                       First we map projectIri to iri and then iri to iri
+
+          // Replace the iris of newly created datastores with their newly created iris
+          const { datastoreWithReplacedIris, missingIrisInNew } = createDatastoreWithReplacedIris(newValueAsJSONWithIris, newIriMappingFromNonEditableToEditableStorage);
+          if (missingIrisInNew.length > 0) {
+            throw new Error("For some reason we still have not created meta files in the editable filesystem, which behave as replacement for pointed to from the old filesystem");
+          }
+
+          newValueAsJSONWithIris = datastoreWithReplacedIris;
+        }
+
         const stringifiedNewValue: string = stringifyDatastoreContentBasedOnFormat(newValueAsJSONWithIris, format, true);
         console.info({newValueAsJSON, newValueAsJSONWithIris, localProjectIriToIriMap});  // TODO RadStr Debug: Debug print
         // console.info(newValueAsJSON);                    // TODO RadStr Debug: Debug print
