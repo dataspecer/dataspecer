@@ -44,7 +44,7 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
 
   return (
     <Modal open={!isInfoDialogShown && isOpen} onClose={() => resolve(null)}>
-      <ModalContent className="md:min-w-[1200px] overflow-x-auto">
+      <ModalContent className="md:min-w-[1300px]">
         <ModalHeader>
           <ModalTitle>List of currently opened merge states for chosen data specification</ModalTitle>
           <ModalDescription>
@@ -55,7 +55,7 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
           !isLoading && <>
             {/* The header */}
             {/* The ml-4 is here for the first button, otherwise the merge state cause in the rows is shifted */}
-            <div className="grid grid-cols-[91%_9%] mr-12">
+            <div className="grid grid-cols-[86%_14%]">
               <div className="grid grid-cols-[2fr_2fr_1fr_2.1fr_2.1fr] divide-x divide-gray-300 min-w-[1000px] max-lg:min-w-[1000px]">
                 <div className="flex items-center justify-center">Created at</div>
                 <div className="flex items-center justify-center">Last modified at</div>
@@ -102,7 +102,7 @@ const renderMergeState = (
 
 
   return <div className={`flex items-baseline`}>
-      <div className="grid grid-cols-[91%_9%] min-w-[1075px] ">
+      <div className="grid grid-cols-[91%_9%] min-w-[1175px] ">
         <div className={`${mergeState.isUpToDate ? "" : "bg-red-400"} w-full`}>
           {mergeStateRowText(mergeState)}
         </div>
@@ -117,14 +117,19 @@ const renderMergeState = (
 
 
 function mergeStateRowText(mergeState: MergeState) {
-  return <div className="grid grid-cols-[2fr_2fr_1fr_2fr_2fr] justify-center items-center gap-4">
-      <span className="flex text-base font-medium whitespace-nowrap justify-center items-center truncate">
+  return <div className="grid grid-cols-[2fr_2fr_1fr_2.1fr_2.1fr] justify-center items-center gap-4">
+      <span title={new Date(mergeState.createdAt).toLocaleString()}
+            className="flex text-base font-medium whitespace-nowrap justify-center items-center truncate">
         {new Date(mergeState.createdAt).toLocaleString()}
       </span>
-      <span className="flex text-base font-medium whitespace-nowrap justify-center items-center truncate">
+      <span title={new Date(mergeState.modifiedDiffTreeAt).toLocaleString()}
+            className="flex text-base font-medium whitespace-nowrap justify-center items-center truncate">
         {new Date(mergeState.modifiedDiffTreeAt).toLocaleString()}
       </span>
-      <span className="flex text-base font-medium whitespace-nowrap justify-center items-center truncate">{mergeState.mergeStateCause}</span>
+      <span title={mergeState.mergeStateCause}
+            className="flex text-base font-medium whitespace-nowrap justify-center items-center truncate">
+        {mergeState.mergeStateCause}
+      </span>
       <div className="flex justify-center items-center truncate">
         {mergeStateSourceText(mergeState, "MergeFrom")}
       </div>
@@ -136,8 +141,14 @@ function mergeStateRowText(mergeState: MergeState) {
 
 function mergeStateSourceText(mergeState: MergeState, side: "MergeFrom" | "MergeTo") {
   return <>
-      <span className="text-base font-medium whitespace-nowrap truncate">{mergeState[`branch${side}`]}</span>
-      <span className="text-xs text-gray-500 whitespace-nowrap pl-1 pt-1">{getHumanReadableFilesystemName(mergeState[`filesystemType${side}`])}</span>
+      <span title={mergeState[`branch${side}`]}
+            className="text-base font-medium whitespace-nowrap truncate">
+        {mergeState[`branch${side}`]}
+      </span>
+      <span title={getHumanReadableFilesystemName(mergeState[`filesystemType${side}`])}
+            className="text-xs text-gray-500 whitespace-nowrap pl-1 pt-1">
+        {getHumanReadableFilesystemName(mergeState[`filesystemType${side}`])}
+      </span>
     </>;
 }
 
