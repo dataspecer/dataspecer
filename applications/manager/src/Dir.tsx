@@ -77,15 +77,16 @@ const useSortIris = (iris: string[]) => {
 };
 
 type ManagerRowType = {
+  underRootIri: string;
   iri: string;
   signedInUserPullRequests: string[];
   packageGitFilter: string | null;
   setPackageGitFilter: (value: string | null) => void;
   isSignedIn: boolean;
-  parentIri?: string
+  parentIri?: string;
 }
 
-const Row = ({ iri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri, signedInUserPullRequests }: ManagerRowType) => {
+const Row = ({ iri, underRootIri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri, signedInUserPullRequests }: ManagerRowType) => {
   const resources = useContext(ResourcesContext);
   const resource = resources[iri]!;
 
@@ -399,7 +400,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
             const result = await openModal(RenameResourceDialog, {inputLabel: resource.userMetadata?.label, inputDescription: resource.userMetadata?.description});
             if (result) {
               await modifyUserMetadata(iri, {label: result.name, description: result.description});
-              await requestLoadPackage(iri, true);
+              await requestLoadPackage(underRootIri, true);
             }
           }}><Pencil className="mr-2 h-4 w-4" /> Rename</DropdownMenuItem>
           {resource.types.includes(LOCAL_SEMANTIC_MODEL) && <DropdownMenuItem onClick={() => openModal(Autolayout, {iri, parentIri: parentIri!})}><Sparkles className="mr-2 h-4 w-4" /> {t("autolayout")}</DropdownMenuItem>}
@@ -410,7 +411,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
     </div>
     {subResources.length > 0 && isOpen && <ul className="pl-8">
       {/* We pass null for the filter, since we want to render the children and the root packages, which we do not render are already blocked by the filter */}
-      {subResources.map(iri => <Row iri={iri} key={iri} parentIri={resource.iri} isSignedIn={isSignedIn} packageGitFilter={null} setPackageGitFilter={setPackageGitFilter} signedInUserPullRequests={signedInUserPullRequests} />)}
+      {subResources.map(iri => <Row underRootIri={underRootIri} iri={iri} key={iri} parentIri={resource.iri} isSignedIn={isSignedIn} packageGitFilter={null} setPackageGitFilter={setPackageGitFilter} signedInUserPullRequests={signedInUserPullRequests} />)}
     </ul>}
     <ResourceDetail isOpen={detailModalToggle.isOpen} close={detailModalToggle.close} iri={iri} />
   </li>
@@ -514,6 +515,7 @@ function RootPackage({iri, defaultToggle, login, signedInUserPullRequests}: {iri
       <ul>
         {subResources.map(iri => {
           return <Row
+            underRootIri={iri}
             iri={iri}
             parentIri={pckg.iri}
             key={iri}
