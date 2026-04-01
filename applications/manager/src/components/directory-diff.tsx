@@ -555,7 +555,11 @@ function StyledNode({
                 mergeFromDatastoreInfoForMeta, mergeToDatastoreInfoForMeta,
                 true, true, false);
             }
-            extraRenderNodeProps.setIsCurrentlyAllowedChangeOfModels(true);
+            setTimeout(() => {
+              // Small hack. Since if we swap often, the monaco diff editor logic can not handle the updates correctly it updates the wrong models with incorrect values
+              // ... So possible TODO RadStr PR: ... but I think that this solution is fine. That being said 400ms is kinda long
+              extraRenderNodeProps.setIsCurrentlyAllowedChangeOfModels(true);
+            }, 400);
           }}
           onMouseOver={(_e) => {
             handleMouseHoverHighlightingForNode(node, true);
