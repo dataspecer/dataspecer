@@ -27,7 +27,6 @@ import {
   DiffTree,
   ResourceDatastoreStripHandlerBase,
   getMergeFromAndMergeTo,
-  ConversionResult,
   DatastoreInfosCache,
 } from "@dataspecer/git";
 import { updateMergeState } from "@/utils/merge-state-backend-requests";
@@ -87,7 +86,7 @@ function getDatastoreInCacheAsObject(
   datastoreInfo: DatastoreInfo,
   removedDatastores: DatastoreInfo[],
   useCopyAsMetaDefault: boolean,
-): ConversionResult<any> {
+): any {
   const { value: contentAsString } = findValueInCache(
     datastoreInfo.fullPath, treePathToFilesystemNode, datastoreInfo.type, datastoreInfo.format,
     removedDatastores, [primaryCacheToCheck, secondaryCacheToCheck], useCopyAsMetaDefault);
@@ -1363,16 +1362,11 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         createdMetas.add(filesystemNodeToCreate.projectIrisTreePath);
         // TODO RadStr Debug: Debug
         console.info({editableCacheContents, "treePath": filesystemNodeToCreate.projectIrisTreePath, "userMetadataDatastoreInfo": filesystemNodeToCreate.userMetadataDatastoreInfo});
+        // Throws error on failure since that should not happen in that method ever
         const filesystemNodeMetadata = getDatastoreInCacheAsObject(
           editableCacheContents, nonEditableCacheContents, filesystemNodeToCreate.projectIrisTreePath,
           filesystemNodeToCreate.userMetadataDatastoreInfo, removedDatastores, true);
-        if (filesystemNodeMetadata.ok) {
-          filesystemNodesBatchMetadata.push(filesystemNodeMetadata.value);
-        }
-        else {
-          // We just throw error. It is better than storing just something and ending up in some weird undefined state
-          throw new Error(filesystemNodeMetadata.error);
-        }
+        filesystemNodesBatchMetadata.push(filesystemNodeMetadata);
       }
 
       if (filesystemNodesBatchToCreate.firstExistingParentIri === null) {
