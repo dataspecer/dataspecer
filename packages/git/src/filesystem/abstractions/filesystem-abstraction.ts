@@ -16,6 +16,14 @@ export function getHumanReadableFilesystemName(filesystem: AvailableFilesystems)
   return availableFilesystemToHumanReadableName[filesystem];
 }
 
+const availableFilesystemToHumanReadableShortName: Record<AvailableFilesystems, string> = {
+  [AvailableFilesystems.DS_Filesystem]: "in DS",
+  [AvailableFilesystems.ClassicFilesystem]: "in Git",
+}
+export function getHumanReadableFilesystemShortName(filesystem: AvailableFilesystems) {
+  return availableFilesystemToHumanReadableShortName[filesystem];
+}
+
 
 /**
  * This interface represents abstraction over system with data. The name contains filesystem, since we can think of it as abstraction over filesystem, but

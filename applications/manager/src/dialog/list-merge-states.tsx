@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { BookOpenTextIcon, InfoIcon, Loader, Trash2 } from "lucide-react";
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
-import { getHumanReadableFilesystemName, MergeState } from "@dataspecer/git";
+import { getHumanReadableFilesystemName, getHumanReadableFilesystemShortName, MergeState } from "@dataspecer/git";
 import { removeMergeState } from "@/utils/merge-state-backend-requests";
 import { ShowMergeStateInfoDialog } from "./show-merge-state-info-dialog";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
@@ -142,12 +142,12 @@ function mergeStateRowText(mergeState: MergeState) {
 function mergeStateSourceText(mergeState: MergeState, side: "MergeFrom" | "MergeTo") {
   return <>
       <span title={mergeState[`branch${side}`]}
-            className="text-base font-medium whitespace-nowrap truncate">
+            className="text-base font-medium whitespace-nowrap truncate max-w-[4cm]">
         {mergeState[`branch${side}`]}
       </span>
       <span title={getHumanReadableFilesystemName(mergeState[`filesystemType${side}`])}
-            className="text-xs text-gray-500 whitespace-nowrap pl-1 pt-1">
-        {getHumanReadableFilesystemName(mergeState[`filesystemType${side}`])}
+            className="text-xs text-gray-500 whitespace-nowrap pl-1 pt-1 max-w-[4cm]">
+        {getHumanReadableFilesystemShortName(mergeState[`filesystemType${side}`])}
       </span>
     </>;
 }
