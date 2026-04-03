@@ -504,8 +504,10 @@ export class ResourceModel implements ResourceModelForPull {
             if (prismaResource.representationType === LOCAL_PACKAGE) {
                 const subResources = await this.prismaClient.resource.findMany({where: {parentResourceId: prismaResource.id}});
                 for (const subResource of subResources) {
-                    // TODO RadStr: Old code - Why the "/", the iris are new?
-                    await copyOnlyResourcesInternal(subResource.iri, newIri, newIri + "/" + uuidv4(), existingIriToCreatedIriForResourceMap);
+                    // TODO RadStr Critical TOP done: Old code - Why the "/", the iris are new? ... since they are new we do not need to append it
+                    //                          .... so the uncommented version is without, lets try it
+                    // await copyOnlyResourcesInternal(subResource.iri, newIri, newIri + "/" + uuidv4(), existingIriToCreatedIriForResourceMap);
+                    await copyOnlyResourcesInternal(subResource.iri, newIri, uuidv4(), existingIriToCreatedIriForResourceMap);
                 }
             }
         }
