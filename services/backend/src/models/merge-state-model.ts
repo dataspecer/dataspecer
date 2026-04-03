@@ -19,23 +19,23 @@ type Nullable<T> = {
 type InputForConvertMergeDataToStringMethod = Nullable<CreateDataToConvertToString & { unresolvedConflicts: DatastoreComparison[] }>;
 
 type CreateDataToConvertToString = {
-  changedInEditable: DatastoreComparison[],
-  removedInEditable: DatastoreComparison[],
-  createdInEditable: DatastoreComparison[],
-  allConflicts: DatastoreComparison[],
-  diffTree: DiffTree,
+  changedInEditable: DatastoreComparison[];
+  removedInEditable: DatastoreComparison[];
+  createdInEditable: DatastoreComparison[];
+  allConflicts: DatastoreComparison[];
+  diffTree: DiffTree;
 };
 
 type CreateMergeStateInput = {
-  commitMessage: string,
-  lastCommonCommitHash: string,
-  mergeStateCause: MergeStateCause,
-  editable: EditableType,
+  commitMessage: string;
+  lastCommonCommitHash: string;
+  mergeStateCause: MergeStateCause;
+  editable: EditableType;
   //
-  mergeFromInfo: MergeEndInfoWithRootIri,
-  mergeToInfo: MergeEndInfoWithRootIri,
+  mergeFromInfo: MergeEndInfoWithRootIri;
+  mergeToInfo: MergeEndInfoWithRootIri;
   //
-  diffTreeSize: number,
+  diffTreeSize: number;
 } & CreateDataToConvertToString;
 
 export type UpdateMergeStateInput = {
@@ -132,6 +132,17 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
         await this.setMergeStateIsUpToDate(mergeState.uuid, false);
       }
     }
+  }
+
+  async updateBasedOnGitLinkRemovalFromModel(gitLink: string): Promise<void> {
+    const mergeStates = await this.prismaClient.mergeState.deleteMany({
+      where: {
+        OR: [
+          { gitUrlMergeFrom: gitLink },
+          { gitUrlMergeTo: gitLink },
+        ]
+      },
+    });
   }
 
 

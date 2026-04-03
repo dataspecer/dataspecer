@@ -120,6 +120,8 @@ export class ResourceModel implements ResourceModelForPull {
             throw new Error("For some reason the amount of removed git links is not equal to the amount of resources, which had the git link");
         }
 
+        await this.resourceChangeObserver.notifyListenersAboutGitLinkRemovalFromModel(gitURL);
+
         for (const affectedResource of affectedResources) {
             // TODO RadStr Critical: This is mainly related to the update link
             // TODO RadStr: Commented code - at first we were resetting all the projectIris and branches, but because of possible moving to different repository we don't do anything.
@@ -694,7 +696,9 @@ export class ResourceModel implements ResourceModelForPull {
 
         let id: number | null = prismaResource.id;
         if (shouldNotifyListeners) {
-            await this.resourceChangeObserver.notifyListeners(iri, updatedModel, updateReason, mergeStateUUIDsToIgnoreInUpdating ?? []);
+            // TODO RadStr PR: ... Explore optimization - We should notify only if the ROOT resource has activeMergeStateCount > 0
+            //                     since it prvoides information if there are merge states to change
+            await this.resourceChangeObserver.notifyListenersAboutResourceChange(iri, updatedModel, updateReason, mergeStateUUIDsToIgnoreInUpdating ?? []);
         }
         await this.updateModificationTimeById(id, shouldModifyHasUncommittedChanges);
     }

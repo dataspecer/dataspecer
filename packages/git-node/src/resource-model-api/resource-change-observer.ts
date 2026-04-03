@@ -21,6 +21,8 @@ export interface ResourceChangeListener {
     changeType: ResourceChangeType,
     mergeStateUUIDsToIgnoreInUpdating: string[],
   ): Promise<void>;
+
+  updateBasedOnGitLinkRemovalFromModel(gitLink: string): Promise<void>;
 }
 
 /**
@@ -41,12 +43,17 @@ export interface ResourceChangePublisher {
   /**
    * The notify method of the observer pattern.
    */
-  notifyListeners(
+  notifyListenersAboutResourceChange(
     resourceIri: string,
     changedModel: string,
     changeType: ResourceChangeType,
     mergeStateUUIDsToIgnoreInUpdating: string[],
   ): Promise<void>;
+
+  /**
+   * Another notify method of the observer pattern. This one handles the case when a gitUrl is removed from Dataspecer because the remote repository was removed
+   */
+  notifyListenersAboutGitLinkRemovalFromModel(gitLink: string): Promise<void>;
 }
 
 export class ResourceChangeObserverBase implements ResourceChangePublisher {
@@ -59,7 +66,7 @@ export class ResourceChangeObserverBase implements ResourceChangePublisher {
     this.listeners = this.listeners
       .filter(existingListeners => existingListeners !== listener);
   }
-  async notifyListeners(
+  async notifyListenersAboutResourceChange(
     resourceIri: string,
     changedModel: string | null,
     changeType: ResourceChangeType,
@@ -67,6 +74,11 @@ export class ResourceChangeObserverBase implements ResourceChangePublisher {
   ): Promise<void> {
     for (const listener of this.listeners) {
       await listener.updateBasedOnResourceChange(resourceIri, changedModel, changeType, mergeStateUUIDsToIgnoreInUpdating);
+    }
+  }
+  async notifyListenersAboutGitLinkRemovalFromModel(gitLink: string): Promise<void> {
+    for (const listener of this.listeners) {
+      await listener.updateBasedOnGitLinkRemovalFromModel(gitLink);
     }
   }
 }
