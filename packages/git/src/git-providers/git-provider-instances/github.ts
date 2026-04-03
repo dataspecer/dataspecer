@@ -14,6 +14,15 @@ import { dataspecerGitIssueLabels } from "../../git-issues/git-issue-labels.ts";
 const scopes = ["read:user", "read:org", "user:email", "public_repo", "workflow", "delete_repo"] as const;
 export type GitHubScope = typeof scopes[number];
 
+type GetLatestCommitResult = {
+  type: "ok",
+  sha: string
+} | {
+  type: "error",
+  fetchResponse: FetchResponse,
+  error: GitRestApiOperationError,
+};
+
 // Note:
 // Even though the request usually work without, the docs demand to specify User-Agent in headers for REST API requests
 // https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api?apiVersion=2022-11-28#user-agent
@@ -226,7 +235,31 @@ export class GitHubProvider extends GitProviderBase {
     if (shouldEnablePublicationBranch) {
       // We have to create the branch first, we can not enable GH pages on not existing branch
       const defaultBranchExplicit = defaultBranch ?? "main";
-      const initialCommitHash = await this.getLatestCommit(repositoryOwner, repoName, defaultBranchExplicit, authToken);
+      // We have to try it multiple times, because for some reason one day the remote repository wa not ready after creation
+      //  Therefore, the request to get latest commit failed right after creation
+      let initialCommitHash: string | null = null;
+      let waitTime = 500;
+      for (let i = 0; i < 10; i++) {
+        const latestCommitResult = await this.getLatestCommit(repositoryOwner, repoName, defaultBranchExplicit, authToken);
+        if (latestCommitResult.type === "ok") {
+          initialCommitHash = latestCommitResult.sha;
+          break;
+        }
+        else {
+          if (latestCommitResult.fetchResponse.status !== 404) {
+            throw latestCommitResult.error;
+          }
+        }
+        // We got 404
+        await new Promise(res => setTimeout(res, waitTime));  // Sleep for waitTime ms
+        waitTime *= 2;
+        waitTime = Math.min(waitTime, 10000);     // TODO RadStr PR: Maybe have better wait times or just try it 2 times or something, idk what is the best solution
+        console.info(`... WAiting: ${waitTime}`);     // TODO RadStr Debug: Debug print
+      }
+
+      if (initialCommitHash === null) {
+        throw new Error("Created the remote repository, but it is not available for some reason. We cannot create the publication branch on the remote repository.");
+      }
       await this.createBranch(repositoryOwner, repoName, publicationBranchName, initialCommitHash, authToken);
       const pagesResponse = await this.enableGitHubPages(repoName, repositoryOwner, publicationBranchName, authToken);
       // TODO RadStr Debug: Debug prints
@@ -244,7 +277,7 @@ export class GitHubProvider extends GitProviderBase {
 
 
 
-  private async getLatestCommit(repositoryOwner: string, repoName: string, branch: string, authToken: string) {
+  private async getLatestCommit(repositoryOwner: string, repoName: string, branch: string, authToken: string): Promise<GetLatestCommitResult> {
     const mainRefUrl = `https://api.github.com/repos/${repositoryOwner}/${repoName}/git/ref/heads/${branch}`;
 
     const fetchResponse = await this.httpFetch(mainRefUrl, {
@@ -255,12 +288,19 @@ export class GitHubProvider extends GitProviderBase {
     });
 
     if (fetchResponse.status < 200 || fetchResponse.status >= 300) {
-      throw new GitRestApiOperationError(`Error when getting the latest commit of GitHub repository: ${fetchResponse.status} ${fetchResponse}`);
+      return {
+        type: "error",
+        fetchResponse,
+        error: new GitRestApiOperationError(`Error when getting the latest commit of GitHub repository: ${fetchResponse.status} ${fetchResponse}`),
+      }
     }
 
     const responseAsJSON = (await fetchResponse.json()) as any;
     const latestCommitHash = responseAsJSON.object.sha;
-    return latestCommitHash;
+    return {
+      type: "ok",
+      sha: latestCommitHash
+    };
   }
 
   private async createBranch(repositoryOwner: string, repoName: string, branch: string, latestCommitHash: string, authToken: string) {
