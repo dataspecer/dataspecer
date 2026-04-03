@@ -115,6 +115,15 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
     }
 
     const mergeStates = await this.getMergeStates(rootResource.iri, false);
+    if (changeType === ResourceChangeType.ChangeGitUrl) {
+      const promises: Promise<void>[] = [];
+      for (const mergeState of mergeStates) {
+        promises.push(this.removeMergeStateByUuid(mergeState.uuid));
+      }
+      await Promise.all(promises);
+      return;
+    }
+
     for (const mergeState of mergeStates) {
       if (mergeStateUUIDsToIgnoreInUpdating.includes(mergeState.uuid)) {
         continue;

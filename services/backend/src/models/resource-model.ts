@@ -111,7 +111,7 @@ export class ResourceModel implements ResourceModelForPull {
             data: {
                 linkedGitRepositoryURL: defaultEmptyGitUrlForDatabase,
                 hasUncommittedChanges: false,
-                activeMergeStateCount: 0,           // TODO RadStr Critical: ... since setting to 0 we should also remove all related merge states ... also be careful how it relates to the observer
+                activeMergeStateCount: 0,
                 lastCommitHash: "",
             },
         });
@@ -230,7 +230,8 @@ export class ResourceModel implements ResourceModelForPull {
 
     /**
      * Updates user metadata of the resource with given {@link linkedGit}.
-     *  It is important to note that setting {@link shouldSetProjectIris} does not behave as you probably think it does.
+     *  It is important ot note that this operation removes all of the existing merge states, so we will not end up in some weird state.
+     *  Also, it is important to note that setting {@link shouldSetProjectIris} does not behave as you probably think it does.
      * If it is true, we always set the projectIri either to the projectIri of existing resource or to the iri of the resource we are updating.
      * But for the children? We can not map between resources, we don't have data by which we could link the resources together - we have just iris and project iris.
      * Well and iris are different between the different packages representing the same Git URL and projectIris either don't match or they should match.
@@ -259,7 +260,7 @@ export class ResourceModel implements ResourceModelForPull {
                     projectIri: projectIri
                 }
             });
-            await this.updateModificationTime(iri, "meta", ResourceChangeType.Modified, true, false);
+            await this.updateModificationTime(iri, "meta", ResourceChangeType.ChangeGitUrl, true, false);
 
             if (sourceForProjectResource !== null) {
                 // This needs explanation.
@@ -284,6 +285,7 @@ export class ResourceModel implements ResourceModelForPull {
                     linkedGitRepositoryURL: linkedGit,
                 }
             });
+            await this.updateModificationTime(iri, "meta", ResourceChangeType.ChangeGitUrl, true, false);
         }
     }
 

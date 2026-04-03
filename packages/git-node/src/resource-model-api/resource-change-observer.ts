@@ -6,6 +6,7 @@ export enum ResourceChangeType {
   Removed,
   Created,
   Modified,
+  ChangeGitUrl
 }
 
 /**
