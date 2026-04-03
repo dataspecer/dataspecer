@@ -27,7 +27,7 @@ import {
   CatalogEntity,
   CatalogTracker,
   getEntityLabel,
-  SemanticModelData,
+  SemanticModelEntry,
 } from "./catalog-tracker";
 import { DependencyTracker } from "./dependency-tracker";
 import { useModelObserver } from "./model-observer";
@@ -927,7 +927,7 @@ function createGeneralizationView(
 function asModel(
   visualModel: string | null,
   tracker: CatalogTracker,
-  entity: SemanticModelData,
+  entity: SemanticModelEntry,
 ): CatalogItem {
   const label = entity.label[""] ?? entity.model;
   const model = tracker.semanticModels.get(entity.model);
@@ -1019,7 +1019,7 @@ function renderCreateModel() {
 function asModelSection(
   visualModel: string | null,
   tracker: CatalogTracker,
-  entity: SemanticModelData,
+  entity: SemanticModelEntry,
   addAction: SectionAddAction | null,
 ): CatalogModelSectionItem {
   const label = entity.label[""] ?? entity.model;

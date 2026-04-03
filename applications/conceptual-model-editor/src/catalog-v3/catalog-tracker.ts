@@ -38,7 +38,10 @@ import { removeFromArray } from "../utilities/functional";
 
 export class CatalogTracker implements Tracker {
 
-  readonly semanticModels: Map<ModelIdentifier, SemanticModelData> = new Map();
+  readonly trackers: Tracker[] = [];
+
+  readonly semanticModels:
+    Map<ModelIdentifier, SemanticModelEntry> = new Map();
 
   readonly entities: Map<EntityIdentifier, CatalogEntity> = new Map();
 
@@ -54,9 +57,8 @@ export class CatalogTracker implements Tracker {
 
   private readonly colorGenerator: ColorGenerator = createColorGenerator();
 
-  constructor(
-    onDidChangeCallback: (tracker: CatalogTracker) => void,
-  ) {
+  constructor(onDidChangeCallback: (tracker: CatalogTracker) => void) {
+    this.trackers = [ new SemanticModelTracker(this.semanticModels)];
     this.onDidChangeCallback = onDidChangeCallback;
   }
 
@@ -91,32 +93,10 @@ export class CatalogTracker implements Tracker {
   }
 
   onEntityDidCreate(model: ModelIdentifier, next: Entity): void {
-    // TODO: A single entity can have multiple types, we we support only one.
-    if (isSemanticModelEntity(next)) {
-      this.semanticModels.set(model, {
-        metadataEntity: next.id,
-        model: model,
-        label: next.label,
-        isExternal: false,
-        isReadOnly: false,
-      });
-    } else if (isExternalSemanticModelEntity(next)) {
-      this.semanticModels.set(model, {
-        metadataEntity: next.id,
-        model: model,
-        label: next.label,
-        isExternal: true,
-        isReadOnly: true,
-      });
-    } else if (isPimStoreModelEntity(next)) {
-      this.semanticModels.set(model, {
-        metadataEntity: next.id,
-        model: model,
-        label: next.label,
-        isExternal: false,
-        isReadOnly: true,
-      });
-    } else if (isVisualModelEntity(next)) {
+    this.trackers.forEach(tracker => tracker?.onEntityDidCreate?.(model, next));
+
+    // TODO: A single entity can have multiple types, we support only one.
+    if (isVisualModelEntity(next)) {
       this.visualModels.set(model, {
         metadataEntity: next.id,
         model: model,
@@ -131,12 +111,12 @@ export class CatalogTracker implements Tracker {
     } else if (isSemanticClass(next)) {
       const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       entity.iri = next.iri;
-      entity.label = {...entity.label, ...next.name};
+      entity.label = { ...entity.label, ...next.name };
     } else if (isSemanticRelationship(next)) {
       const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       const [_, range] = selectDomainAndRange(next.ends);
       entity.iri = range.iri;
-      entity.label = {...entity.label, ...next.name};
+      entity.label = { ...entity.label, ...next.name };
     } else if (isSemanticGeneralization(next)) {
       const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       entity.iri = next.iri;
@@ -146,7 +126,7 @@ export class CatalogTracker implements Tracker {
     } else if (isProfileClass(next)) {
       const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       entity.iri = next.iri;
-      entity.label = {...entity.label, ...next.name};
+      entity.label = { ...entity.label, ...next.name };
       // Add profile of information.
       next.profiling.forEach(identifier => {
         const profiled = this.getOrCreatePartialCatalogEntity(identifier);
@@ -156,7 +136,7 @@ export class CatalogTracker implements Tracker {
       const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       const [_, range] = selectDomainAndRange(next.ends);
       entity.iri = range.iri;
-      entity.label = {...entity.label, ...range.name};
+      entity.label = { ...entity.label, ...range.name };
       // Add profile of information.
       range.profiling.forEach(identifier => {
         const profiled = this.getOrCreatePartialCatalogEntity(identifier);
@@ -293,20 +273,10 @@ export class CatalogTracker implements Tracker {
   }
 
   onEntityDidChange(model: ModelIdentifier, previous: Entity, next: Entity): void {
+    this.trackers.forEach(tracker => tracker?.onEntityDidChange?.(model, previous, next));
+
     console.log("catalog-tracker.entit-did-change", { model, previous, next });
-    if (isSemanticModelEntity(next)) {
-      this.updateSemanticModel(model, semanticModel => {
-        semanticModel.label = next.label
-      });
-    } else if (isExternalSemanticModelEntity(next)) {
-      this.updateSemanticModel(model, semanticModel => {
-        semanticModel.label = next.label
-      });
-    } else if (isPimStoreModelEntity(next)) {
-      this.updateSemanticModel(model, semanticModel => {
-        semanticModel.label = next.label
-      });
-    } else if (isVisualModelEntity(next)) {
+    if (isVisualModelEntity(next)) {
       // No action.
     } else if (next.type.includes("entity-model-type")) {
       // No action.
@@ -360,16 +330,6 @@ export class CatalogTracker implements Tracker {
     }
   }
 
-  private updateSemanticModel(
-    model: ModelIdentifier, update: (value: SemanticModelData) => void,
-  ) {
-    const value = this.semanticModels.get(model);
-    if (value === undefined) {
-      return;
-    }
-    update(value);
-  }
-
   private updateGeneralization(
     _model: ModelIdentifier,
     previous: { child: EntityIdentifier, parent: EntityIdentifier },
@@ -412,13 +372,9 @@ export class CatalogTracker implements Tracker {
   }
 
   onEntityDidRemove(model: ModelIdentifier, previous: Entity): void {
-    if (isSemanticModelEntity(previous)) {
-      this.removeSemanticModel(model);
-    } else if (isExternalSemanticModelEntity(previous)) {
-      this.removeSemanticModel(model);
-    } else if (isPimStoreModelEntity(previous)) {
-      this.removeSemanticModel(model);
-    } else if (isVisualModelEntity(previous)) {
+    this.trackers.forEach(tracker => tracker?.onEntityDidRemove?.(model, previous));
+
+    if (isVisualModelEntity(previous)) {
       this.visualModels.delete(model);
     } else if (previous.type.includes("entity-model-type")) {
       // Contains information about the visual model see ModelEntity.
@@ -459,8 +415,6 @@ export class CatalogTracker implements Tracker {
   }
 
   private removeSemanticModel(model: ModelIdentifier) {
-    // Remove from a semantic list.
-    this.semanticModels.delete(model);
     // TODO This should not be needed once we properly delete all model entities.
     // Remove visual information from all models.
     this.visualModels.values().forEach(visualModel => {
@@ -481,6 +435,8 @@ export class CatalogTracker implements Tracker {
   }
 
   onDependenciesDidChange(next: Entity): void {
+    this.trackers.forEach(tracker => tracker?.onDependenciesDidChange?.(next));
+
     const entity = this.entities.get(next.id);
     if (entity !== undefined) {
       if (isProfileClass(next)) {
@@ -584,23 +540,6 @@ function diffArrays<T>(
   return [removed, added];
 }
 
-export interface SemanticModelData {
-
-  /**
-   * We need this as this is how we connect the model to the entity.
-   */
-  metadataEntity: ModelIdentifier;
-
-  model: ModelIdentifier;
-
-  label: LanguageString;
-
-  isReadOnly: boolean;
-
-  isExternal: boolean;
-
-}
-
 /**
  * We use this to reference {@link CatalogEntity} that has not yet been created.
  */
@@ -663,4 +602,91 @@ export function getEntityLabel(
     return iri ?? identifier;
   }
   return result;
+}
+
+//
+// SemanticModelTracker
+//
+
+export class SemanticModelTracker implements Tracker {
+
+  readonly models: Map<ModelIdentifier, SemanticModelEntry>;
+
+  constructor(models: Map<ModelIdentifier, SemanticModelEntry>) {
+    this.models = models;
+  }
+
+  onEntityDidCreate(model: ModelIdentifier, next: Entity) {
+    if (isSemanticModelEntity(next)) {
+      this.models.set(model, {
+        metadataEntity: next.id,
+        model: model,
+        label: next.label,
+        baseIri: next.baseIri,
+        isExternal: false,
+        isReadOnly: false,
+      });
+    } else if (isExternalSemanticModelEntity(next)) {
+      this.models.set(model, {
+        metadataEntity: next.id,
+        model: model,
+        label: next.label,
+        baseIri: next.baseIri,
+        isExternal: true,
+        isReadOnly: true,
+      });
+    } else if (isPimStoreModelEntity(next)) {
+      this.models.set(model, {
+        metadataEntity: next.id,
+        model: model,
+        label: next.label,
+        baseIri: next.baseIri,
+        isExternal: false,
+        isReadOnly: true,
+      });
+    }
+  }
+
+  onEntityDidChange(model: ModelIdentifier, _previous: Entity, next: Entity) {
+    if (isSemanticModelEntity(next)
+      || isExternalSemanticModelEntity(next)
+      || isPimStoreModelEntity(next)) {
+      const entity = this.models.get(model);
+      if (entity === undefined) {
+        return;
+      }
+      entity.label = next.label;
+      entity.baseIri = next.baseIri;
+    }
+  }
+
+  onEntityDidRemove(model: ModelIdentifier, previous: Entity) {
+    if (isSemanticModelEntity(previous)) {
+      this.models.delete(model);
+    } else if (isExternalSemanticModelEntity(previous)) {
+      this.models.delete(model);
+    } else if (isPimStoreModelEntity(previous)) {
+      this.models.delete(model);
+    }
+  }
+
+}
+
+export interface SemanticModelEntry {
+
+  /**
+   * Model is represented by this entity.
+   */
+  metadataEntity: ModelIdentifier;
+
+  model: ModelIdentifier;
+
+  label: LanguageString;
+
+  baseIri: string;
+
+  isReadOnly: boolean;
+
+  isExternal: boolean;
+
 }

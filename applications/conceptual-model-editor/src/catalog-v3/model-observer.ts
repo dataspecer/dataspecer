@@ -51,7 +51,6 @@ export function useModelObserver(
 
   useEffect(() => {
     const state = stateRef.current;
-
     console.log("use-model-observer.use-effect", { entityModels, visualModels });
 
     // When component reload in develop mode the observer change.
@@ -247,17 +246,21 @@ function createModelMetadataEntity(
 ): ModelMetadataEntity {
   let types: string[] = [MAIN_ENTITY_TYPE];
   let label = model.getId();
+  let baseIri: string | undefined = undefined;
   if (model instanceof InMemorySemanticModel) {
     types.push(SEMANTIC_MODEL);
     label = model.getAlias() ?? label;
+    baseIri = model.getBaseIri();
   }
   if (model instanceof InMemoryEntityModel) { // PimStoreWrapper
     types.push(PIM_STORE_MODEL);
     label = model.getAlias() ?? label;
+    baseIri = baseIri ?? "";
   }
   if (model instanceof ExternalSemanticModel) {
     types.push(EXTERNAL_SEMANTIC_MODEL);
     label = model.getAlias() ?? label;
+    baseIri = baseIri ?? "";
   }
   if (isVisualModel(model) || isWritableVisualModel(model)) {
     types.push(VISUAL_MODEL);
@@ -266,7 +269,9 @@ function createModelMetadataEntity(
     id: createModelMetadataEntityId(model),
     type: types,
     label: { "": label },
-  }
+    // Model specific properties.
+    baseIri,
+  } as ModelMetadataEntity;
 }
 
 const MAIN_ENTITY_TYPE = "main-entity";
@@ -296,21 +301,27 @@ export function isModelMetadataEntity(
   return what.type.includes(MAIN_ENTITY_TYPE);
 }
 
+export interface SemanticModelMetadataEntity extends ModelMetadataEntity {
+
+  baseIri: string;
+
+}
+
 export function isSemanticModelEntity(
   what: Entity,
-): what is ModelMetadataEntity {
+): what is SemanticModelMetadataEntity {
   return what.type.includes(SEMANTIC_MODEL);
 }
 
 export function isExternalSemanticModelEntity(
   what: Entity,
-): what is ModelMetadataEntity {
+): what is SemanticModelMetadataEntity {
   return what.type.includes(EXTERNAL_SEMANTIC_MODEL);
 }
 
 export function isPimStoreModelEntity(
   what: Entity,
-): what is ModelMetadataEntity {
+): what is SemanticModelMetadataEntity {
   return what.type.includes(PIM_STORE_MODEL);
 }
 
