@@ -260,7 +260,7 @@ export class ResourceModel implements ResourceModelForPull {
                     projectIri: projectIri
                 }
             });
-            await this.updateModificationTime(iri, "meta", ResourceChangeType.ChangeGitUrl, true, false);
+            await this.updateModificationTime(iri, "meta", ResourceChangeType.ChangeGitUrl, true, true);
 
             if (sourceForProjectResource !== null) {
                 // This needs explanation.
@@ -285,7 +285,7 @@ export class ResourceModel implements ResourceModelForPull {
                     linkedGitRepositoryURL: linkedGit,
                 }
             });
-            await this.updateModificationTime(iri, "meta", ResourceChangeType.ChangeGitUrl, true, false);
+            await this.updateModificationTime(iri, "meta", ResourceChangeType.ChangeGitUrl, true, true);
         }
     }
 

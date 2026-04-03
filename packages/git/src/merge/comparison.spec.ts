@@ -125,7 +125,7 @@ test("Test filesystems comparison - trees differ in removed and created datastor
   expect(comparisonResult.removed[0].affectedDataStore).toEqual(missingDatastore[0]);
   expect(comparisonResult.diffTreeSize).toBe(expectedDefaultTestDiffTreeSize);
 
-  const diffNode = getDiffNodeFromDiffTree(comparisonResult.diffTree, nodeToChangeInNew.irisTreePath);  // TODO RadStr Critical TOP: Now works only with irisTreePath due to error
+  const diffNode = getDiffNodeFromDiffTree(comparisonResult.diffTree, nodeToChangeInNew.irisTreePath);
   expect(diffNode.resourceComparisonResult).toBe("exists-in-both");
   expect(diffNode.datastoreComparisons[0].datastoreComparisonResult).toBe("removed-in-new");
   expect(diffNode.datastoreComparisons[1].datastoreComparisonResult).toBe("created-in-new");
@@ -173,11 +173,11 @@ test("Test filesystems comparison - trees differ in removed and created Filesyst
   expect(comparisonResult.removed[0].old).toEqual(removedFilesystemNodeInNew);
   expect(comparisonResult.conflicts[0].affectedDataStore).toEqual(removedFilesystemNodeInNew.datastores[0]);
 
-  const diffNodeForFirstRemoval = getDiffNodeFromDiffTree(comparisonResult.diffTree, removedFilesystemNodeInOld.irisTreePath);   // TODO RadStr Critical TOP: Now works only with irisTreePath due to error
+  const diffNodeForFirstRemoval = getDiffNodeFromDiffTree(comparisonResult.diffTree, removedFilesystemNodeInOld.irisTreePath);
   expect(diffNodeForFirstRemoval.resourceComparisonResult).toBe("exists-in-new");
   expect(diffNodeForFirstRemoval.datastoreComparisons[0].datastoreComparisonResult).toBe("created-in-new");
 
-  const diffNodeForSecondRemoval = getDiffNodeFromDiffTree(comparisonResult.diffTree, removedFilesystemNodeInNew.irisTreePath);  // TODO RadStr Critical TOP: Now works only with irisTreePath due to error
+  const diffNodeForSecondRemoval = getDiffNodeFromDiffTree(comparisonResult.diffTree, removedFilesystemNodeInNew.irisTreePath);
   expect(diffNodeForSecondRemoval.resourceComparisonResult).toBe("exists-in-old");
   expect(diffNodeForSecondRemoval.datastoreComparisons[0].datastoreComparisonResult).toBe("removed-in-new");
 });
