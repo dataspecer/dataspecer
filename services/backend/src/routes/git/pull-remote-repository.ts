@@ -47,12 +47,18 @@ export const pullRemoteRepository = asyncHandler(async (request: express.Request
     filesystemConstructorParams,
   };
   const pullContainer = new GitPull(pullUpdateParams);
-  const createdMergeState = await pullContainer.updateDSRepositoryByGitPull();
-  if (createdMergeState) {
+  const result = await pullContainer.updateDSRepositoryByGitPull();
+  if (result.hashMatch) {
+    response.sendStatus(204);
+    return;
+  }
+  else if (result.createdMergeState) {
     response.status(409).json("Created merge state");   // 409 is error code for conflict
     return;
   }
   else {
+    await resourceModel.setHasUncommittedChanges(query.iri, false);     // TODO RadStr PR: Just hardcode it instead of perfoming comparison, that being said it should be correct
+    //                                                                  //                  Technically, this happens only when there are no changes, so we just confirm it
     response.sendStatus(200);
     return;
   }

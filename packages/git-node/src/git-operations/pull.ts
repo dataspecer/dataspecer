@@ -37,6 +37,11 @@ type UpdateBlobMethod = (iri: string, datastoreType: string, newBlobContent: any
 type UpdateResourceMetadataMethod = (iri: string, userMetadata: Record<string, unknown> | undefined) => Promise<void>;
 
 
+type GitPullUpdateResult = {
+  createdMergeState: boolean;
+  hashMatch: boolean;
+};
+
 export class GitPull {
   public constructor(fields: GitPullFields) {
     this.fields = fields;
@@ -50,7 +55,7 @@ export class GitPull {
    * @param depth is the number of commits to clone. In case of webhooks this number is given in the webhook payload. For normal pull we have to clone whole history.
    * @returns Return true if merge state was created
    */
-  public async updateDSRepositoryByGitPull(depth?: number): Promise<boolean> {
+  public async updateDSRepositoryByGitPull(depth?: number): Promise<GitPullUpdateResult> {
     const { iri, gitProvider, branch, cloneURL, cloneDirectoryNamePrefix, dsLastCommitHash, filesystemConstructorParams } = this.fields;
     const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGitUsingPredefinedGitRoot(iri, cloneDirectoryNamePrefix, true);
     let storeResult: GitChangesToDSPackageStoreResult | null = null;
@@ -59,6 +64,12 @@ export class GitPull {
       await gitCloneBasic(git, gitInitialDirectory, cloneURL, true, true, branch, depth);
       const gitLastCommitHash = await getLastCommitHash(git);
       const commonCommit = await getCommonCommitInHistory(git, dsLastCommitHash, gitLastCommitHash);
+      if (commonCommit === gitLastCommitHash) {
+        return {
+          hashMatch: true,
+          createdMergeState: false,
+        };
+      }
       const gitIgnore: GitIgnore = new GitIgnoreBase(gitProvider);
       storeResult = await this.storeGitChangesToDataspecer(
         cloneURL, git, gitInitialDirectoryParent, gitIgnore,
@@ -70,15 +81,20 @@ export class GitPull {
     finally {
       if (storeResult !== null && storeResult.createdMergeState) {
         // If we created merge state then do not remove the Git directory
-        return true;
+        return {
+          hashMatch: false,
+          createdMergeState: true,
+        };
       }
       // It is important to not only remove the actual files, but also the .git directory,
       // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
-      await filesystemConstructorParams.resourceModel.setHasUncommittedChanges(iri, false);
       removePathRecursively(gitDirectoryToRemoveAfterWork);
     }
 
-    return storeResult?.createdMergeState ?? false;     // Wrong Typescript type, the value still can be null, if we throw error before setting the value
+    return {
+      hashMatch: false,
+      createdMergeState: storeResult?.createdMergeState ?? false,     // Wrong Typescript type, the value still can be null, if we throw error before setting the value
+    };
   };
 
 

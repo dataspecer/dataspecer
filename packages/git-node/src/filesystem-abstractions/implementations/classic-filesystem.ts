@@ -166,11 +166,11 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
             }
           }
           else {
-            throw new Error ("Probably implementation error. Metadata for directory have been already set");
+            throw new Error("Probably implementation error. Metadata for directory have been already set");
           }
         }
         else {
-          throw new Error ("Probably implementation error. Processing metadata for directory, however we have not yet seen the directory");
+          throw new Error("Probably implementation error. Processing metadata for directory, however we have not yet seen the directory");
         }
         continue;
       }
