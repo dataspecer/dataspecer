@@ -720,7 +720,7 @@
     "eslint-plugin-jest": "^29.15.0",
     "eslint-plugin-unused-imports": "^2.0.0",
     "typescript": "^5.9.3",
-    "vitest": "^3.1.1"
+    "vitest": "^4.1.2"
   },
   "browser": {
     "buffer": false

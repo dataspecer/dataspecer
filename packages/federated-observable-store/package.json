@@ -20,7 +20,7 @@
   "devDependencies": {
     "@types/lodash": "^4.14.192",
     "typescript": "^5.9.3",
-    "vitest": "^3.1.1"
+    "vitest": "^4.1.2"
   },
   "dependencies": {
     "@dataspecer/core": "*",
