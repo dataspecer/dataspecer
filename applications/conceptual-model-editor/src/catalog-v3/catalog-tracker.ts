@@ -131,12 +131,12 @@ export class CatalogTracker implements Tracker {
     } else if (isSemanticClass(next)) {
       const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       entity.iri = next.iri;
-      entity.label = next.name;
+      entity.label = {...entity.label, ...next.name};
     } else if (isSemanticRelationship(next)) {
       const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       const [_, range] = selectDomainAndRange(next.ends);
       entity.iri = range.iri;
-      entity.label = range.name;
+      entity.label = {...entity.label, ...next.name};
     } else if (isSemanticGeneralization(next)) {
       const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       entity.iri = next.iri;
@@ -146,7 +146,7 @@ export class CatalogTracker implements Tracker {
     } else if (isProfileClass(next)) {
       const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       entity.iri = next.iri;
-      entity.label = next.name ?? {};
+      entity.label = {...entity.label, ...next.name};
       // Add profile of information.
       next.profiling.forEach(identifier => {
         const profiled = this.getOrCreatePartialCatalogEntity(identifier);
@@ -156,7 +156,7 @@ export class CatalogTracker implements Tracker {
       const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       const [_, range] = selectDomainAndRange(next.ends);
       entity.iri = range.iri;
-      entity.label = range.name ?? {};
+      entity.label = {...entity.label, ...range.name};
       // Add profile of information.
       range.profiling.forEach(identifier => {
         const profiled = this.getOrCreatePartialCatalogEntity(identifier);
@@ -392,7 +392,7 @@ export class CatalogTracker implements Tracker {
   }
 
   private updateProfile(
-    model: ModelIdentifier,
+    _model: ModelIdentifier,
     id: EntityIdentifier,
     previous: EntityIdentifier[],
     next: EntityIdentifier[],
@@ -481,7 +481,38 @@ export class CatalogTracker implements Tracker {
   }
 
   onDependenciesDidChange(next: Entity): void {
-    // No action here.
+    const entity = this.entities.get(next.id);
+    if (entity !== undefined) {
+      if (isProfileClass(next)) {
+        this.onEntityProfileDependenciesDidChange(next, entity);
+      } else if (isProfileRelationship(next)) {
+        const [, range] = selectDomainAndRange(next.ends);
+        this.onEntityProfileDependenciesDidChange(range, entity);
+      }
+    }
+  }
+
+  /**
+   * Update label based on profile options.
+   */
+  private onEntityProfileDependenciesDidChange(
+    next: {
+      iri: string | null,
+      name: LanguageString | null,
+      nameFromProfiled: string | null
+    },
+    entity: CatalogEntity,
+  ) {
+    if (next.nameFromProfiled === null) {
+      entity.label = next.name ?? { "": entity.iri ?? entity.identifier };
+    } else {
+      const source = this.entities.get(next.nameFromProfiled);
+      if (source === undefined) {
+        console.error("Broken name source.", { entity, next });
+      } else {
+        entity.label = source.label;
+      }
+    }
   }
 
   onDidUpdate() {
