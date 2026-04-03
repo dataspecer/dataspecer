@@ -4,14 +4,6 @@ import { Entity } from "@dataspecer/entity-model";
 
 import { DependencyTracker } from "./dependency-tracker";
 
-interface TestEntity extends Entity {
-
-  value: number;
-
-  dependencies: string[];
-
-}
-
 describe("DependencyTracker", () => {
 
   it("Derive sum of numbers.", () => {
@@ -99,12 +91,7 @@ describe("DependencyTracker", () => {
       dependencies(entity) {
         return (entity as TestEntity).dependencies;
       },
-      onEntityDidChange() {
-        // We do not have to do anything here,
-        // as we will be notified in the via the dependency change method.
-      },
       onDependenciesDidChange(entity) {
-        // We need to recompute.
         updateCounter[entity.id] = (updateCounter[entity.id] ?? 0) + 1;
       },
     }]);
@@ -134,12 +121,7 @@ describe("DependencyTracker", () => {
       dependencies(entity) {
         return (entity as TestEntity).dependencies;
       },
-      onEntityDidChange() {
-        // We do not have to do anything here,
-        // as we will be notified in the via the dependency change method.
-      },
       onDependenciesDidChange(entity) {
-        // We need to recompute.
         updateCounter[entity.id] = (updateCounter[entity.id] ?? 0) + 1;
       },
     }]);
@@ -177,4 +159,136 @@ describe("DependencyTracker", () => {
 
   });
 
+  /**
+   * Create and delete an item.
+   * In addition, delete non-existing item to test resilience.
+   */
+  it("Delete items.", () => {
+
+    const values: Record<string, Entity> = {};
+
+    const dependencyTracker = new DependencyTracker([{
+      onEntityDidCreate(_, entity) {
+        values[entity!.id] = entity;
+      },
+      onEntityDidRemove(_, previous) {
+        delete values[previous!.id];
+      },
+    }]);
+
+    dependencyTracker.onEntitiesDidChange({
+      "m": {
+        created: [{ id: "0", type: [] }],
+        updated: [],
+        deleted: []
+      }
+    });
+
+    expect(values["0"]).not.toBeUndefined();
+
+    dependencyTracker.onEntitiesDidChange({
+      "m": {
+        created: [],
+        updated: [],
+        deleted: ["0", "1"]
+      }
+    });
+
+    expect(values["0"]).toBeUndefined();
+
+  });
+
+  /**
+   * Just a save test, where we try to update entity that
+   * has not been previously created.
+   */
+  it("Create by update.", () => {
+
+    const values: Record<string, Entity> = {};
+
+    const dependencyTracker = new DependencyTracker([{
+      onEntityDidCreate(_, entity) {
+        values[entity!.id] = entity;
+      },
+    }]);
+
+    dependencyTracker.onEntitiesDidChange({
+      "m": {
+        created: [],
+        updated: [{ id: "0", type: [] }],
+        deleted: []
+      }
+    });
+
+    expect(values["0"]).not.toBeUndefined();
+
+  })
+
+  it ("Changing nad missing dependencies.", () => {
+
+    const values: Record<string, number> = {};
+
+    const dependencyTracker = new DependencyTracker([{
+      dependencies(entity) {
+        return (entity as TestEntity).dependencies;
+      },
+      onEntityDidCreate(_, entity) {
+        values[entity!.id] = (entity as TestEntity)
+          .dependencies.map(item => values[item] ?? 0)
+          .reduce((prev, next) => prev + next, (entity as TestEntity).value);
+      },
+      onEntityDidChange(_model, _prev, next) {
+        values[next!.id] = (next as TestEntity)
+          .dependencies.map(item => values[item] ?? 0)
+          .reduce((prev, next) => prev + next, (next as TestEntity).value);
+      },
+      onDependenciesDidChange(entity) {
+        // We need to recompute.
+        values[entity.id] = (entity as TestEntity)
+          .dependencies.map(item => values[item] ?? 0)
+          .reduce((prev, next) => prev + next, (entity as TestEntity).value);
+      },
+    }]);
+
+    dependencyTracker.onEntitiesDidChange({
+      "m": {
+        created: [
+          // There is no record "0".
+          { id: "1", type: [], value: 1, dependencies: ["0"] },
+          { id: "2", type: [], value: 1, dependencies: ["1"] },
+        ] as TestEntity[],
+        updated: [],
+        deleted: []
+      }
+    });
+
+    expect(values["1"]).toBe(1);
+    expect(values["2"]).toBe(2);
+
+    // We remove the dependency thus both values should be 0.
+    dependencyTracker.onEntitiesDidChange({
+      "m": {
+        created: [],
+        updated: [
+          { id: "2", type: [], value: 1, dependencies: []
+
+          }] as TestEntity[],
+        deleted: []
+      }
+    });
+
+    expect(values["1"]).toBe(1);
+    expect(values["1"]).toBe(1);
+
+  });
+
+
 });
+
+interface TestEntity extends Entity {
+
+  value: number;
+
+  dependencies: string[];
+
+}
