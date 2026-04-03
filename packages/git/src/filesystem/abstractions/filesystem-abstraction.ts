@@ -75,7 +75,7 @@ export interface FilesystemAbstraction {
    */
   convertFilesystemAbstractionObjectNamesToIris(filesystemAbstractionObject: FilesystemMappingType): FilesystemMappingType;
 
-  // TODO RadStr Critical: Let just use treePath ... it makes the most sense
+  // TODO RadStr Critical TOP: Let just use treePath ... it makes the most sense
   // TODO RadStr Critical: still not sure if I should use treePath or fullPath from the DatastoreInfo
   /**
    * TODO RadStr Critical: I am not sure what is the input for this even - maybe it even isn't part of interface, since this maybe won't be FS speicfic
@@ -297,7 +297,8 @@ export function createMetaDatastoreInfo(basename: string, format: string): Datas
     type: getMetaPrefixType(),
     name: basename,
     format,
-    fullPath: basename,     // TODO RadStr: ??? For DS filesystem ok, for classic fileystem not
+    fullPath: basename,     // TODO RadStr Critical TOP: ??? For DS filesystem ok, for classic fileystem not
+                            // TODO RadStr Critical TOP done: It is kind of done, since we do not call this from classic fs ... so just put it into ds fs as private function
   };
 }
 

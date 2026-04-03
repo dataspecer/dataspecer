@@ -25,6 +25,10 @@ export const exportPackageResource = asyncHandler(async (request: express.Reques
   });
 
   const query = querySchema.parse(request.query);
+  const resource = await resourceModel.getResource(query.iri);
+  if (resource === null) {
+    throw new Error(`The resource (${query.iri}) does not exist.`);
+  }
 
   // TODO RadStr After: ... maybe keep the old one?
   // The old exporter:
@@ -48,7 +52,6 @@ export const exportPackageResource = asyncHandler(async (request: express.Reques
   // const buffer = await exporter.doExportFromIRI("aa99f378-0ba2-46a2-8642-f7683e778d6d", "C:\\Users\\Radek\\dcat-test-export-from-filesystem\\test2\\radstr\\export\\directory", "radstr\\export\\directory", AvailableFilesystems.ClassicFilesystem, AvailableExports.Zip);
   // const buffer = await exporter.doExportFromIRI("aa99f378-0ba2-46a2-8642-f7683e778d6d", "C:\\Users\\Radek\\dcat-test-export-from-filesystem\\test2\\radstr\\export\\directory", "C:\\Users\\Radek\\dcat-test-export-from-filesystem\\test2\\filesystem-output-from-radstr", AvailableFilesystems.ClassicFilesystem, AvailableExports.Filesystem);
 
-  const resource = await resourceModel.getResource(query.iri);
   const filename = getName(resource?.userMetadata?.label, "package") + "-backup.zip";
   response.type("application/zip").attachment(bunHotfixHttpFileName(filename)).send(buffer);
 });

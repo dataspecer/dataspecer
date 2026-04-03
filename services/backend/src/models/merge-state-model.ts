@@ -931,7 +931,30 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
       //              because we want to also have the data if they are not present in the given prismaMergeState
       //              I do not think that we do this to get some new updated data, but maybe I am wrong now
       const previousMergeState = await this.getMergeStateFromUUID(prismaMergeState.uuid, true, false, false);
-      const updatedMergeStateResult = await updateMergeStateToBeUpToDate(prismaMergeState.uuid, prismaMergeState.commitMessage, mergeFrom, mergeTo, prismaMergeState.mergeStateCause as MergeStateCause, previousMergeState);
+      // TODO RadStr PR: Hack for now ... should be in the database probably, instead of fetching it ... the hack is once again because of the createFilesystemMapping method
+      let rootProjectIri: string | null;
+      if (mergeFrom.filesystemType === AvailableFilesystems.DS_Filesystem) {
+        const resource = await this.resourceModel.getResource(mergeFrom.rootIri);
+        if (resource === null){
+          throw new Error(`Expected the resource to exist in the ds filesystem; iri: (${mergeFrom.rootIri})`);
+        }
+        rootProjectIri = resource.projectIri;
+      }
+      else if (mergeTo.filesystemType === AvailableFilesystems.DS_Filesystem) {
+        const resource = await this.resourceModel.getResource(mergeTo.rootIri);
+        if (resource === null){
+          throw new Error(`Expected the resource to exist in the ds filesystem; iri: (${mergeTo.rootIri})`);
+        }
+        rootProjectIri = resource.projectIri;
+      }
+      else {
+        rootProjectIri = null;
+      }
+
+
+      const updatedMergeStateResult = await updateMergeStateToBeUpToDate(
+        prismaMergeState.uuid, rootProjectIri, prismaMergeState.commitMessage, mergeFrom, mergeTo,
+        prismaMergeState.mergeStateCause as MergeStateCause, previousMergeState);
       if (!updatedMergeStateResult) {
         throw new Error("Could not update merge state to be up to date, when trying to get it from database");
       }

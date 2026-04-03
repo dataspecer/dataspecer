@@ -214,7 +214,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
       };
 
       const directoryNode: DirectoryNode = {
-        name: newNodeLocation.iri,
+        name: localProjectIriNameCandidate,
         type: "directory",
         metadata: {} as ExportMetadataType,    // We are not using the value in the course of creating the mapping!
         datastores: [],
@@ -236,7 +236,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
       for (const subResource of pckg.subResources) {
         const newDirectoryNodeLocation: FilesystemNodeLocation = {
           iri: subResource.iri,
-          fullPath: subResource.iri,      // TODO RadStr: Either that or the fullName, I think it should be the iri
+          fullPath: subResource.iri,      // TODO RadStr Critical TOP done: Either that or the fullName, I think it should be the iri ... YEAH IRI SEEMS RIGHT IT SHOULD BE THE PATH THAT CAN BE USED TO ACCESS THE RESOURCE
           irisTreePath: fullIriName,
           projectIrisTreePath: fullProjectIriName,
         };
@@ -252,7 +252,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
       };
 
       const fileNode: FilesystemNode = {
-        name: newNodeLocation.iri,
+        name: localProjectIriNameCandidate,
         type: "file",
         metadata: {} as ExportMetadataType,    // We are not using the value in the course of creating the mapping!
         datastores: [],

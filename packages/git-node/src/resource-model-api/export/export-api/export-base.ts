@@ -42,7 +42,8 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
     const fakeRoot = filesystem.getRoot();
 
     const root = Object.values(fakeRoot.content)[0] as DirectoryNode;
-    const rootDirectoryName = root.name;
+    // const rootDirectoryName = root.name;
+    const rootDirectoryName = root.metadata.iri;    // The root has IRI
     const rootDirectory = root;
 
     this.importFilesystem = filesystem;

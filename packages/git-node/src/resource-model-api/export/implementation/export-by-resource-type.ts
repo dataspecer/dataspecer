@@ -36,7 +36,8 @@ export class PackageExporterByResourceType extends PackageExporterBase {
     for (const [name, filesystemNode] of Object.entries(directory.content)) {
       if (filesystemNode.type === "directory") {
         const fullPath = this.createPathBasedOnResourceType(pathToDirectory, filesystemNode.name, filesystemNode.metadata.types[0]);
-        const exportFullPath = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.name, filesystemNode.metadata.types[0]);
+        // const exportFullPath = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.name, filesystemNode.metadata.types[0]);
+        const exportFullPath = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.metadata.projectIri, filesystemNode.metadata.types[0]);
         await this.exportDirectory(filesystemNode, fullPath, exportFullPath);
       }
       else {
@@ -59,7 +60,8 @@ export class PackageExporterByResourceType extends PackageExporterBase {
     }
     else {
       fullName = this.createPathBasedOnResourceType(pathToDirectory, filesystemNode.name, filesystemNode.metadata.types[0]);
-      exportFullName = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.name, filesystemNode.metadata.types[0]);
+      // exportFullName = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.name, filesystemNode.metadata.types[0]);
+      exportFullName = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.metadata.projectIri, filesystemNode.metadata.types[0]);
     }
 
     for(const datastore of filesystemNode.datastores) {

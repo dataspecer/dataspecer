@@ -9,6 +9,7 @@ import { getCommonCommitInHistory, gitCloneBasic } from "./simple-git-utils.ts";
 
 export type GitPullFields = {
   iri: string;
+  projectIri: string;
   gitProvider: GitProvider;
   branch: string;
   cloneURL: string;
@@ -115,7 +116,7 @@ export class GitPull {
     commonCommitHash: string,
     mergeStateCause: Omit<MergeStateCause, "merge">,
   ): Promise<GitChangesToDSPackageStoreResult> {
-    const { iri, dsLastCommitHash, alwaysCreateMergeState, branch, mergeStateModel, filesystemConstructorParams } = this.fields;
+    const { iri, projectIri, dsLastCommitHash, alwaysCreateMergeState, branch, mergeStateModel, filesystemConstructorParams } = this.fields;
 
     // Merge from is DS
     // TODO RadStr Critical: Why am I doing the comparison twice? I think that there was a reason for that, but maybe we just wanted the fakeRoot data, etc.
@@ -130,7 +131,7 @@ export class GitPull {
       diffTreeComparison,
       mergeFromFilesystemInformation,
       mergeToFilesystemInformation,
-    } = await compareGitAndDSFilesystems(gitIgnore, iri, gitInitialDirectoryParent, mergeStateCause, filesystemConstructorParams);
+    } = await compareGitAndDSFilesystems(gitIgnore, iri, projectIri, gitInitialDirectoryParent, mergeStateCause, filesystemConstructorParams);
     const { fakeRoot: fakeRootMergeFrom, root: rootMergeFrom, filesystem: filesystemMergeFrom, pathToRootMeta: pathToRootMetaMergeFrom } = mergeFromFilesystemInformation;
     const { fakeRoot: fakeRootMergeTo, root: rootMergeTo, filesystem: filesystemMergeTo, pathToRootMeta: pathToRootMetaMergeTo } = mergeToFilesystemInformation;
 
@@ -146,7 +147,7 @@ export class GitPull {
         // Basically check against the commit the package is supposed to represent, if we did not change anything, we can always pull without conflict.
         // Otherwise we changed something and even though we could handle it automatically. We let the user resolve everything manually, it is his responsibility.
         const currentDSPackageAndGitCommitComparison = await compareGitAndDSFilesystems(
-          gitIgnore, iri, gitInitialDirectoryParent, mergeStateCause, filesystemConstructorParams);
+          gitIgnore, iri, projectIri, gitInitialDirectoryParent, mergeStateCause, filesystemConstructorParams);
         const canPullWithoutCreatingMergeState = currentDSPackageAndGitCommitComparison.diffTreeComparison.conflicts.length === 0;
 
         if (canPullWithoutCreatingMergeState) {
@@ -235,6 +236,7 @@ export class GitPull {
 
       // TODO RadStr:  - since the iri may differ from name for example in the case of imported DCAT-AP
       // TODO RadStr: .... Well could it really?
+      // TODO RadStr Critical: Yes it will differ, since we we will use the projectIri for name ... therefore we should probably throw error
       const nodeIri = filesystemNode.metadata.iri ?? filesystemNode.name;
 
       // TODO RadStr: Should check if it already exists, or if not it should be created
@@ -243,7 +245,7 @@ export class GitPull {
         // TODO RadStr PR: If we check for existence here, we can allow to create new models from Git. However, there is more work then just checking for existence.
         //                 There is validation, ...
         const metaFileContent = JSON.parse(fs.readFileSync(datastore.fullPath, "utf-8"));
-        // TODO RadStr:  - since the iri may differ from name for example in the case of imported DCAT-AP
+        // TODO RadStr Critical: (Same as above) - since the iri may differ from name for example in the case of imported DCAT-AP
         await this.fields.updateResourceMetadata(nodeIri, metaFileContent!.userMetadata);
         continue;
       }

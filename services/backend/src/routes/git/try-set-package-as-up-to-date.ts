@@ -75,7 +75,7 @@ export const trySetPackageAsUpToDateHandler = asyncHandler(async (request: expre
         fullPathToRootParent: gitInitialDirectoryParent,      // TODO RadStr: The value probably should not matter
         filesystemType: AvailableFilesystems.DS_Filesystem,
       };
-      const { diffTreeComparison } = await compareBackendFilesystems(gitEndpoint, dsEndpoint, "pull");
+      const { diffTreeComparison } = await compareBackendFilesystems(gitEndpoint, dsEndpoint, resource.projectIri, "pull");
 
       // 3) Set the result
       const hasUncommittedChanges = diffTreeComparison.conflicts.length !== 0 || diffTreeComparison.created.length !== 0 ||

@@ -1,3 +1,4 @@
+import { dsPathJoin } from "./utils.ts";
 
 /**
  * Contains all info about datastore - including format, type and the path where it can be found.
@@ -130,7 +131,7 @@ export type FilesystemNodeLocation = {
    */
   iri: string;
 
-  // TODO RadStr: I don't like this, maybe just rename it in the methods and pass as parametr or idk. This usage on context is weird.
+  // TODO RadStr Critical TOP: I don't like this, maybe just rename it in the methods and pass as parametr or idk. This usage on context is weird.
   /**
    * Is the full path to the node within filesystem, which can be used to access the node.
    * This value is kind of weird. It depends on used context. It is either the full path, which can be accessed the resource,
@@ -150,11 +151,60 @@ export type FilesystemNodeLocation = {
   projectIrisTreePath: string
 };
 
-export function createRootFilesystemNodeLocation(iri: string, fullPath: string): FilesystemNodeLocation {
+/**
+ * @param projectIri if given then the given fullPath will be the concatenation of the {@link fullPath} and {@link iri}, where the {@link iri}
+ *  should be the actual iri not the projectIri. and the result iri will be projectIri This is because of the createFilesystemMapping method.
+ * @todo See {@link isClassicFilesystem} ... it really is kind of ugly but there was no other way due to time limits, we really do not have another 1-2 weeks for proper fix.
+ */
+export function createRootFilesystemNodeLocation(iri: string, fullPath: string, projectIri?: string): FilesystemNodeLocation {
   return {
     iri,
     fullPath,
     irisTreePath: "",
     projectIrisTreePath: ""
   };
+
+  // TODO RadStr Critical: Just push everything for now, we will clean it up in following commit
+
+  // let fullPathToUse: string;
+  // let iriToUse: string;
+  // if (projectIri !== undefined) {
+  //   fullPathToUse = dsPathJoin(fullPath, iri);
+  //   iriToUse = projectIri;
+  // }
+  // else {
+  //   fullPathToUse = fullPath;
+  //   iriToUse = iri;
+  // }
+  // return {
+  //   iri: iriToUse,
+  //   fullPath: fullPathToUse,
+  //   irisTreePath: "",
+  //   projectIrisTreePath: ""
+  // };
 }
+
+
+// /**
+//  * @param projectIri if given then the given fullPath will be the concatnation of the {@link fullPath} and {@link iri}, where the {@link iri}
+//  *  should be the actual iri not the projectIri. and the result iri will be projectIri This is because of the createFilesystemMapping method.
+//  * @todo See {@link isClassicFilesystem} ... it really is kind of ugly but there was no other way due to time limits, we really do not have another 1-2 weeks for proper fix.
+//  */
+// export function createRootFilesystemNodeLocation(iri: string, fullPath: string, projectIri?: string): FilesystemNodeLocation {
+//   let fullPathToUse: string;
+//   let iriToUse: string;
+//   if (projectIri !== undefined) {
+//     fullPathToUse = dsPathJoin(fullPath, iri);
+//     iriToUse = projectIri;
+//   }
+//   else {
+//     fullPathToUse = fullPath;
+//     iriToUse = iri;
+//   }
+//   return {
+//     iri: iriToUse,
+//     fullPath: fullPathToUse,
+//     irisTreePath: "",
+//     projectIrisTreePath: ""
+//   };
+// }

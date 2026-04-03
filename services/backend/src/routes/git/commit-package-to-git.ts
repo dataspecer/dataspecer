@@ -175,6 +175,7 @@ const commitHandlerInternal = async (
 
   const commitParams: CommitUsingAuthSessionParams = {
     iri,
+    projectIri: resource.projectIri,
     request,
     response,
     branchAndLastCommit,
@@ -193,6 +194,7 @@ const commitHandlerInternal = async (
   }
 
   const status = 200;
+  await resourceModel.setHasUncommittedChanges(iri, false); // TODO RadStr PR: Just hardcode it instead of perfoming comparison, that being said it should be correct
   response.sendStatus(status);
   return status;
 }
@@ -213,13 +215,14 @@ export const commitPackageToGitUsingAuthSession = async (
   commitParams: CommitUsingAuthSessionParams,
 ): Promise<CommitConflictInfo> => {
   const {
-    branchAndLastCommit, gitCommitInfoBasic, iri, remoteRepositoryUrl, repositoryIdentificationInfo,
+    branchAndLastCommit, gitCommitInfoBasic, iri, projectIri, remoteRepositoryUrl, repositoryIdentificationInfo,
     request, response, shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage,
    } = commitParams;
   const commitInfo: GitCommitToCreateInfoExplicitWithCredentials = prepareCommitDataForCommit(
     request, response, remoteRepositoryUrl, gitCommitInfoBasic, shouldAppendAfterDefaultMergeCommitMessage);
   const commitObjectParams: GitCommitConstructorParams = {
     iri,
+    projectIri,
     branchAndLastCommit,
     commitInfo,
     filesystemFactoryParams: createFilesystemFactoryParams(true),

@@ -109,7 +109,7 @@ async function compareTreesInternal(
       resources: { old: nodeInOld, new: nodeInNew ?? null },
       resourceComparisonResult,
     };
-    diffTree[nodeName] = currentlyProcessedDiffFilesystemNode;      // TODO RadStr Critical: ... nodeName is IRI (probably unless I rewrite it now), we want projectIri
+    diffTree[nodeName] = currentlyProcessedDiffFilesystemNode;      // TODO RadStr Critical TOP: ... nodeName is IRI (probably unless I rewrite it now), we want projectIri
 
     const processedDatastoresInNew: Set<DatastoreInfo> = new Set();
     for (const datastoreInOld of nodeInOld.datastores) {
@@ -193,7 +193,7 @@ async function compareTreesInternal(
       resources: { old: null, new: nodeInNew },
       resourceComparisonResult,
     };
-    diffTree[nodeName] = currentlyProcessedDiffFilesystemNode;
+    diffTree[nodeName] = currentlyProcessedDiffFilesystemNode;      // TODO RadStr Critical TOP: Same as above
 
     for (const datastoreInNew of nodeInNew.datastores) {
       // The datastore is not present, since the parent filesystem node does not exist, then it means that all of the datastores are not present neither

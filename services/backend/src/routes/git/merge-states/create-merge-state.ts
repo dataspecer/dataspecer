@@ -32,6 +32,7 @@ export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (requ
     await gitCloneBasic(git, gitInitialDirectory, mergeFromResource.linkedGitRepositoryURL, false, true, undefined);
     const mergeFromData: CreateMergeStateBetweenDSPackagesType = {
       rootIri: mergeFromIri,
+      rootProjectIri: mergeFromResource.projectIri,
       isBranch: mergeFromResource.representsBranchHead,
       branch: mergeFromResource.branch,
       lastCommitHash: mergeFromResource.lastCommitHash,
@@ -39,6 +40,7 @@ export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (requ
     };
     const mergeToData: CreateMergeStateBetweenDSPackagesType = {
       rootIri: mergeToIri,
+      rootProjectIri: mergeToResource.projectIri,
       isBranch: mergeToResource.representsBranchHead,
       branch: mergeToResource.branch,
       lastCommitHash: mergeToResource.lastCommitHash,
@@ -78,6 +80,7 @@ export const createMergeStateBetweenDSPackagesHandler = asyncHandler(async (requ
 
 type CreateMergeStateBetweenDSPackagesType = {
   rootIri: string;
+  rootProjectIri: string;
   isBranch: boolean;
   branch: string;
   lastCommitHash: string;
@@ -87,7 +90,7 @@ type CreateMergeStateBetweenDSPackagesType = {
 /**
  * Creates merge state between two Dataspecer packages.
  */
-export async function createMergeStateBetweenDSPackages(
+async function createMergeStateBetweenDSPackages(
   git: SimpleGit,
   commitMessage: string,
   mergeFrom: CreateMergeStateBetweenDSPackagesType,
@@ -113,7 +116,7 @@ export async function createMergeStateBetweenDSPackages(
     diffTreeComparison,
     mergeFromFilesystemInformation,
     mergeToFilesystemInformation,
-  } = await compareBackendFilesystems(mergeFromForComparison, mergeToForComparison, "merge");
+  } = await compareBackendFilesystems(mergeFromForComparison, mergeToForComparison, null, "merge");
     const commonCommitHash = await getCommonCommitInHistory(git, mergeFrom.lastCommitHash, mergeTo.lastCommitHash);
 
     const mergeFromInfo: MergeEndInfoWithRootNode = {
@@ -152,17 +155,18 @@ export async function createMergeStateBetweenDSPackages(
  */
 export async function updateMergeStateToBeUpToDate(
   uuid: string,
+  rootProjectIri: string | null,
   commitMessage: string,
   mergeFrom: MergeEndpointForStateUpdate,
   mergeTo: MergeEndpointForStateUpdate,
   mergeStateCause: MergeStateCause,
-  previousMergeState: MergeState | null
+  previousMergeState: MergeState | null,
 ): Promise<boolean> {
   const {
     diffTreeComparison,
     mergeFromFilesystemInformation,
     mergeToFilesystemInformation,
-  } = await compareBackendFilesystems(mergeFrom, mergeTo, mergeStateCause);
+  } = await compareBackendFilesystems(mergeFrom, mergeTo, rootProjectIri, mergeStateCause);
 
     let newConflicts: DatastoreComparison[] = [];
     if (previousMergeState !== null) {

@@ -35,6 +35,7 @@ export const pullRemoteRepository = asyncHandler(async (request: express.Request
   const filesystemConstructorParams = createFilesystemFactoryParams(true);
   const pullUpdateParams: GitPullFields = {
     iri: query.iri,
+    projectIri: resource.projectIri,
     gitProvider,
     branch: resource.branch,
     cloneURL: resource.linkedGitRepositoryURL,

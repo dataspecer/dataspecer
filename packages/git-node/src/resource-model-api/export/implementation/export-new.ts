@@ -12,7 +12,7 @@ export class PackageExporterNew extends PackageExporterBase {
     for (const [name, filesystemNode] of Object.entries(directory.content)) {
       if (filesystemNode.type === "directory") {
         const fullPath = `${pathToDirectory}${name}/`;
-        const exportFullPath = `${pathToExportDirectory}${name}/`;
+        const exportFullPath = `${pathToExportDirectory}${directory.metadata.projectIri}/`;
         await this.exportDirectory(filesystemNode, fullPath, exportFullPath)
       }
       else {
@@ -23,7 +23,7 @@ export class PackageExporterNew extends PackageExporterBase {
 
   private async exportDatastores(filesystemNode: FilesystemNode, pathToDirectory: string, pathToExportDirectory: string) {
     const fullname: string = pathToDirectory + filesystemNode.name;
-    const exportFullName: string = pathToExportDirectory + (filesystemNode.type === "directory" ? "" : filesystemNode.name);
+    const exportFullName: string = pathToExportDirectory + (filesystemNode.type === "directory" ? "" : filesystemNode.metadata.projectIri);
     for(const datastore of filesystemNode.datastores) {
       let data;
       if (isDatastoreForMetadata(datastore.type)) {

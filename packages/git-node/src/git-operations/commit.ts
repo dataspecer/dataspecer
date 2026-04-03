@@ -79,6 +79,7 @@ type CloneBeforeMergeResult = {
 
 export type GitCommitBaseType = {
   iri: string;
+  projectIri: string;
   remoteRepositoryUrl: string;
   branchAndLastCommit: CommitBranchAndHashInfo;
   repositoryIdentificationInfo: GitRepositoryIdentification;
@@ -152,7 +153,7 @@ export class GitCommit {
    */
   private async commitDSMergeToGit(): Promise<CommitConflictInfo> {
     const {
-      iri, remoteRepositoryUrl, repositoryIdentificationInfo, commitInfo,
+      iri, projectIri, remoteRepositoryUrl, repositoryIdentificationInfo, commitInfo,
       shouldAlwaysCreateMergeState, mergeStateModel, filesystemFactoryParams
     } = this.params;
     const mergeInfo = convertBranchAndHashToMergeInfo(this.params.branchAndLastCommit);
@@ -226,7 +227,7 @@ export class GitCommit {
           diffTreeComparison,
           mergeFromFilesystemInformation,
           mergeToFilesystemInformation,
-        } = await compareBackendFilesystems(mergeFrom, mergeTo, "merge");
+        } = await compareBackendFilesystems(mergeFrom, mergeTo, projectIri, "merge");
 
         const commonCommitHash = await getCommonCommitInHistory(git, mergeFromCommitHash, mergeToCommitHash);
 
@@ -297,7 +298,7 @@ export class GitCommit {
    */
   private async commitClassicToGit(): Promise<CommitConflictInfo> {
     const {
-      iri, remoteRepositoryUrl, branchAndLastCommit, repositoryIdentificationInfo,
+      iri, projectIri, remoteRepositoryUrl, branchAndLastCommit, repositoryIdentificationInfo,
       commitInfo, mergeStateModel, shouldAlwaysCreateMergeState, filesystemFactoryParams
     } = this.params;
     const { localBranch: branch, localLastCommitHash } = branchAndLastCommit;
@@ -344,7 +345,7 @@ export class GitCommit {
               diffTreeComparison,
               mergeFromFilesystemInformation,
               mergeToFilesystemInformation
-            } = await compareGitAndDSFilesystems(new GitIgnoreBase(gitProvider), iri, gitInitialDirectoryParent, "push", filesystemFactoryParams);
+            } = await compareGitAndDSFilesystems(new GitIgnoreBase(gitProvider), iri, projectIri, gitInitialDirectoryParent, "push", filesystemFactoryParams);
 
             const commonCommitHash = await getCommonCommitInHistory(git, localLastCommitHash, remoteRepositoryLastCommitHash);
             const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS("push", localLastCommitHash, remoteRepositoryLastCommitHash);

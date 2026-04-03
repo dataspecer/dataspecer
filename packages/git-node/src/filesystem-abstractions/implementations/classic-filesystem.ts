@@ -56,8 +56,34 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
   ) {
     const projectIri = mappedNodeLocation.iri;      // Not a mistake! iri is the same as projectIri in case of git (classic filesystem)
                                                     // So also the tree path for iris and projectIris will be the same.
-    const fullPath: string = dsPathJoin(mappedNodeLocation.fullPath, projectIri);   // Ok 1) zase ten mappedNodeLocation a za druhe to ma byt iri asi ... ne az to opravim tak to bude dobre, ted to je spatne protoze to bere iricka jako jmena v tom git adresari
+    let fullPath: string;   // Ok 1) zase ten mappedNodeLocation a za druhe to ma byt iri asi ... ne az to opravim tak to bude dobre, ted to je spatne protoze to bere iricka jako jmena v tom git adresari
                                                                                     // Ta unikatnost je dana tim prefixem takze to muzou byt porjectIri pak
+
+
+    // The root has to get IRI, however, everything else are projectIRI, which we can get from the name of files
+    if (parentDirectoryNode.metadata.iri.startsWith("fake-root")) {
+      const rootDirectory = fs.readdirSync(mappedNodeLocation.fullPath, { withFileTypes: true });
+      if (rootDirectory.length > 1) {
+        throw new Error("The data specification has at least two root directories (root directory is the directory under which should be present the whole data specificaton). This is not allowed.")
+      }
+      if (rootDirectory.length < 1) {
+        throw new Error("The data specification has no root directory (root directory is the directory under which should be present the whole data specificaton). This is not allowed.")
+      }
+      fullPath = dsPathJoin(mappedNodeLocation.fullPath, rootDirectory[0].name);
+    }
+    else {
+      fullPath = dsPathJoin(mappedNodeLocation.fullPath, projectIri);
+    }
+
+    // TODO RadStr: THe previous implementation where we passed in the full path directly for the root
+    // if (parentDirectoryNode.metadata.iri.startsWith("fake-root")) {
+    //   fullPath = mappedNodeLocation.fullPath;
+    // }
+    // else {
+    //   fullPath = dsPathJoin(mappedNodeLocation.fullPath, projectIri);
+    // }
+
+
     let irisTreePath: string;
     let projectIrisTreePath: string;
     const isArtificialDirectory = isArtificialExportDirectory(projectIri);

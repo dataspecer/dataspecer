@@ -3,7 +3,6 @@ import {
   compareFileTrees,
   convertMergeStateCauseToEditable,
   createRootFilesystemNodeLocation,
-  FilesystemNodeLocation,
   getEditableAndNonEditableValue,
   getMetadataDatastoreFile,
   GitIgnore,
@@ -44,19 +43,25 @@ export type MergeEndpointForStateUpdate = {
 export async function compareGitAndDSFilesystems(
   gitIgnore: GitIgnore,
   rootIri: string,
+  rootProjectIri: string,
   gitInitialDirectoryParent: string,
   mergeStateCause: Omit<MergeStateCause, "merge">,
   dataspecerFilesystemFactoryMethodParams: DsFsConstructorParams,
 ) {
   let mergeFromFilesystemType: AvailableFilesystems;
   let mergeToFilesystemType: AvailableFilesystems;
+
   let mergeFromFactoryMethodParams: DsFsConstructorParams;
   let mergeToFactoryMethodParams: DsFsConstructorParams;
+
+  // let mergeFromRootIri: string;     // TODO RadStr Critical: ... maybe we will rewrite, but for now it is fine, we just pass in the projectIri to all
+  // let mergeToRootIri: string;
 
   const editable = convertMergeStateCauseToEditable(mergeStateCause as MergeStateCause);
   if (editable == "mergeFrom") {
     mergeFromFilesystemType = AvailableFilesystems.DS_Filesystem;
     mergeFromFactoryMethodParams = dataspecerFilesystemFactoryMethodParams;
+    // mergeFromRootIri = rootIri;
 
     mergeToFilesystemType = AvailableFilesystems.ClassicFilesystem;
     mergeToFactoryMethodParams = {
@@ -66,6 +71,7 @@ export async function compareGitAndDSFilesystems(
       exportedBy: "unknown",
       resourceModel: null,
     };
+    // mergeToRootIri = rootProjectIri;
   }
   else {
     mergeFromFilesystemType = AvailableFilesystems.ClassicFilesystem;
@@ -76,14 +82,16 @@ export async function compareGitAndDSFilesystems(
       exportedBy: "unknown",
       resourceModel: null,
     };
+    // mergeFromRootIri = rootProjectIri;
 
     mergeToFilesystemType = AvailableFilesystems.DS_Filesystem;
     mergeToFactoryMethodParams = dataspecerFilesystemFactoryMethodParams;
+    // mergeToRootIri = rootIri;
   }
 
   const mergeFrom: MergeEndpointForComparison = {
     gitIgnore,
-    rootIri,
+    rootIri: rootIri,
     filesystemType: mergeFromFilesystemType,
     fullPathToRootParent: gitInitialDirectoryParent,
     filesystemFactoryParams: mergeFromFactoryMethodParams,
@@ -91,33 +99,55 @@ export async function compareGitAndDSFilesystems(
 
   const mergeTo: MergeEndpointForComparison = {
     gitIgnore,
-    rootIri,
+    rootIri: rootIri,
     filesystemType: mergeToFilesystemType,
     fullPathToRootParent: gitInitialDirectoryParent,
     filesystemFactoryParams: mergeToFactoryMethodParams,
   };
 
-  const comparisonResult = await compareBackendFilesystems(mergeFrom, mergeTo, mergeStateCause as MergeStateCause);
+  const comparisonResult = await compareBackendFilesystems(mergeFrom, mergeTo, rootProjectIri, mergeStateCause as MergeStateCause);
   return comparisonResult;
 }
 
+/**
+ * @param rootProjectIri can be null if neither the merge from and merge to are classic filesystems
+ * @returns
+ */
 export async function compareBackendFilesystems(
   mergeFrom: MergeEndpointForComparison | MergeEndpointForStateUpdate,
   mergeTo: MergeEndpointForComparison | MergeEndpointForStateUpdate,
+  rootProjectIri: string | null,
   mergeStateCause: MergeStateCause,
 ) {
+  // TODO RadStr PR: Once again the unfortunate hack related to the createFilesystemMapping method
+  //                 ... if one of the actors is Git, we expect the second one to not be Git (it push/pull), therefore we can borrow its iri.
+  //                 ... if both are not Git then we are performing classic merge.
+
+
+  // TODO RadStr Critical: !!!! Now I am not taking the iri from the other one however my solution should work??? - But not really true anymore, now I just have the createRootFilesystem as I had it before.
+
+  const isMergeFromClassicFS = mergeFrom.filesystemType === AvailableFilesystems.ClassicFilesystem;
+  const rootProjectIriForMergeFrom = isMergeFromClassicFS ? rootProjectIri : undefined;
+  const isMergeToClassicFS = mergeTo.filesystemType === AvailableFilesystems.ClassicFilesystem;
+  const rootProjectIriForMergeTo = isMergeToClassicFS ? rootProjectIri : undefined;
+  if (rootProjectIri === null && (isMergeToClassicFS || isMergeToClassicFS)) {
+    throw new Error("Expected the root project iri to be provided, since one of the given filesystems is the classic filesystem");
+  }
+
+
   const mergeFromFactoryParams: FilesystemFactoryMethodParams = {
     ...mergeFrom.filesystemFactoryParams,
     gitIgnore: getGitIgnoreFromMergeEndpoint(mergeFrom),
-    roots: [createRootFilesystemNodeLocation(mergeFrom.rootIri, mergeFrom.fullPathToRootParent)],
+    roots: [createRootFilesystemNodeLocation(rootProjectIriForMergeFrom ?? mergeFrom.rootIri, mergeFrom.fullPathToRootParent, rootProjectIriForMergeFrom)],
   };
   const mergeToFactoryParams: FilesystemFactoryMethodParams = {
     ...mergeTo.filesystemFactoryParams,
     gitIgnore: getGitIgnoreFromMergeEndpoint(mergeTo),
-    roots: [createRootFilesystemNodeLocation(mergeTo.rootIri, mergeTo.fullPathToRootParent)],
+    roots: [createRootFilesystemNodeLocation(rootProjectIriForMergeTo ?? mergeTo.rootIri, mergeTo.fullPathToRootParent, rootProjectIriForMergeTo)],
   };
 
-  // TODO RadStr: Ok here - once again - it does not work because we are expecting the path to be projectIri and not an IRI
+  // TODO RadStr Critical TOP: Ok here - once again - it does not work because we are expecting the path to be projectIri and not an IRI !!!
+  //   It needs the projectIri so it knows what ID the root has, but at the same time it needs the rootIri so it can find the path to the root.
   const filesystemMergeFrom = await FilesystemFactory.createFileSystem(mergeFrom.filesystemType, mergeFromFactoryParams);
   const filesystemMergeTo = await FilesystemFactory.createFileSystem(mergeTo.filesystemType, mergeToFactoryParams);
 

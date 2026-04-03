@@ -76,8 +76,15 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
         mergeFromData: null,
       };
 
+      // Get the updated resource, howver, it should be already set, so technically we could get it before the for cycle
+      const resource = await resourceModel.getResource(query.iri);
+      if (resource === null) {
+        throw new Error(`Can not commit to git since the resource (iri: ${query.iri}) does not exist`);
+      }
+
       const commitParams: CommitUsingAuthSessionParams = {
         iri: query.iri,
+        projectIri: resource.projectIri,
         request,
         response,
         branchAndLastCommit: commitBranchAndHashInfo,
@@ -95,10 +102,12 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
         return;
       }
 
+      await resourceModel.setHasUncommittedChanges(query.iri, false);
       response.sendStatus(200);
       return;
     }
     catch(error) {
+      throw error;
       // EMPTY, we just want to try another iteration, don't care about errors
     }
   }
@@ -160,8 +169,14 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
     mergeFromData: null,
   };
 
+  const resource = await resourceModel.getResource(query.iri);
+  if (resource === null) {
+    throw new Error(`Can not commit to git since the resource (iri: ${query.iri}) does not exist`);
+  }
+
   const commitParams: CommitUsingAuthSessionParams = {
     iri: query.iri,
+    projectIri: resource.projectIri,
     request,
     response,
     branchAndLastCommit: commitBranchAndHashInfo,
