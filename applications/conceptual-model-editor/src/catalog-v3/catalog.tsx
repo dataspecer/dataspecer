@@ -539,7 +539,10 @@ interface CatalogItem {
 
   label: string;
 
-  backgroundColor: string;
+  /**
+   * When null no color is set.
+   */
+  backgroundColor: string | null;
 
   sortText: string;
 
@@ -986,7 +989,7 @@ function asCreateModel(): CatalogItem {
     level: 0,
     model: "create-model",
     type: CatalogEntityType.CreateModel,
-    backgroundColor: "#ffffff",
+    backgroundColor: null,
     label: "",
     sortText: "",
     filterText: undefined,
@@ -1697,10 +1700,13 @@ function rowRenderer(
   view: CatalogView,
 ) {
   const item = view.visibleItems[props.index];
-  const style = {
+  const style : Record<string, any> = {
     ...props.style,
-    backgroundColor: item.backgroundColor,
   };
+  if (item.backgroundColor !== null) {
+    style.backgroundColor = item.backgroundColor;
+  }
+
   return (
     <div
       key={props.key}
