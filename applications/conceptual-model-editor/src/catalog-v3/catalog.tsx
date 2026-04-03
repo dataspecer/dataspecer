@@ -869,14 +869,14 @@ function createProfileView(
         items.push(asSemanticClassProfile(
           languages, visualModel, tracker, entity, 1));
         items.push(...createEntityTree(
-          CLASS_TYPES, collectProfilesAndGeneralizations,
+          CLASS_TYPES, collectProfiles,
           languages, visualModel, tracker, entity, 2));
       }
       if (isProfileRelationship(entity.entity)) {
         items.push(asSemanticRelationshipProfile(
           languages, visualModel, tracker, entity, 1));
         items.push(...createEntityTree(
-          RELATIONSHIP_TYPES, collectProfilesAndGeneralizations,
+          RELATIONSHIP_TYPES, collectProfiles,
           languages, visualModel, tracker, entity, 2));
       }
     }
@@ -885,6 +885,12 @@ function createProfileView(
     ...previous,
     allItems: sortCatalogItems(items),
   };
+}
+
+function collectProfiles(entity: CatalogEntity) {
+  return [
+    ...entity.profiledBy,
+  ];
 }
 
 function createGeneralizationView(
