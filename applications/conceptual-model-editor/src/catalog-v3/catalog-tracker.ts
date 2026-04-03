@@ -116,7 +116,7 @@ export class CatalogTracker implements Tracker {
       const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       const [_, range] = selectDomainAndRange(next.ends);
       entity.iri = range.iri;
-      entity.label = { ...entity.label, ...next.name };
+      entity.label = { ...entity.label, ...range.name };
     } else if (isSemanticGeneralization(next)) {
       const entity = this.getOrCreateCatalogEntity(next.id, model, next);
       entity.iri = next.iri;
