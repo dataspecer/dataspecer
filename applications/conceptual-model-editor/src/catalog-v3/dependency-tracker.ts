@@ -1,7 +1,5 @@
 import {
-  Entity,
-  EntityIdentifier,
-  ModelIdentifier,
+  Entity, EntityIdentifier, ModelIdentifier,
 } from "@dataspecer/entity-model";
 import { ModelObserver } from "./model-observer";
 
@@ -10,6 +8,9 @@ import { ModelObserver } from "./model-observer";
  */
 export interface Tracker {
 
+  /**
+   * @returns All dependencies for given entity.
+   */
   dependencies?: (entity: Entity) => string[];
 
   /**
@@ -18,7 +19,7 @@ export interface Tracker {
   onWillUpdate?: () => void;
 
   /**
-   * Called once all changes have been handled.
+   * Called once all changes from a change event have been processed.
    */
   onDidUpdate?: () => void;
 
@@ -41,8 +42,8 @@ export interface Tracker {
     model: ModelIdentifier, previous: Entity) => void;
 
   /**
-   * Call if a dependency of the entity has changed.
-   * Argument is the last version of entity available.
+   * Call when an entity's dependency has changed.
+   * Argument is the last version of the entity.
    */
   onDependenciesDidChange?: (next: Entity) => void;
 
@@ -89,7 +90,6 @@ export class DependencyTracker implements ModelObserver {
       deleted: EntityIdentifier[],
     }
   }) {
-    console.log("dependency-tracker.on-entities-did-change", { ...event });
     this.trackers.forEach(tracker => tracker.onWillUpdate?.());
     // Process changes one model at a time.
     const changed: EntityIdentifier[] = [];

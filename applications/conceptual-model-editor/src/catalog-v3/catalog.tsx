@@ -29,8 +29,7 @@ import {
   getEntityLabel,
   SemanticModelEntry,
 } from "./catalog-tracker";
-import { DependencyTracker } from "./dependency-tracker";
-import { useModelObserver } from "./model-observer";
+import { useDependencyTrackers } from "./dependency-tracker-react";
 import { selectDomainAndRange } from "../dataspecer/semantic-model";
 import { useActions } from "../action/actions-react-binding";
 
@@ -43,8 +42,6 @@ export const Catalog = () => {
 
   // Binding to global context.
   const modelGraphContext = useModelGraphContext();
-  const entityModels = modelGraphContext.models;
-  const visualModels = modelGraphContext.visualModels;
   const visualModel = modelGraphContext.aggregatorView
     .getActiveVisualModel()?.getIdentifier() ?? null;
 
@@ -274,32 +271,26 @@ export const Catalog = () => {
   }, [controller]);
 
   // Computation of derived state.
-  const onTrackerDidChanged = useCallback((tracker: CatalogTracker) => {
-    console.log("catalog-v3.tracker-did-change", { tracker, visualModel });
-    // TODO This does not update !
-    setState(previous => ({
-      ...previous,
-      views: previous.views
-        .map(view => view.createView([language], visualModel, tracker, view))
-        .map(view => updateVisibleItems(view, previous.searchText)),
-    }));
+  const trackers = useMemo(() => {
+    const onTrackerDidChanged = (tracker: CatalogTracker) => {
+      // TODO This cause full reload instead of fine grained update.
+      setState(previous => ({
+        ...previous,
+        views: previous.views
+          .map(view => view.createView([language], visualModel, tracker, view))
+          .map(view => updateVisibleItems(view, previous.searchText)),
+      }));
+    };
+    return [new CatalogTracker(onTrackerDidChanged)];
   }, [setState, language, visualModel]);
 
-  const catalogTracker = useMemo(
-    () => new CatalogTracker(onTrackerDidChanged),
-    [onTrackerDidChanged]);
-  const dependencyTracker = useMemo(
-    () => new DependencyTracker([catalogTracker]),
-    [catalogTracker]);
-  useModelObserver(entityModels, visualModels, dependencyTracker);
+  useDependencyTrackers(trackers)
 
   // Catalog row item rendered.
   const rendered = useCallback(
     (props: any) => rowRenderer(
       props, state.views[state.activeViewIndex]),
     [state.views, state.activeViewIndex]);
-
-  console.log("catalog-v3.render", { state, visualModel, catalogTracker });
 
   const itemsCount = state.views[state.activeViewIndex].visibleItems.length;
   return (
@@ -329,7 +320,7 @@ function setModelFolded(
   modelFilter?: ModelIdentifier,
 ): CatalogState {
 
-  const foldModelSection = (item: CatalogItem) : CatalogItem => {
+  const foldModelSection = (item: CatalogItem): CatalogItem => {
     if (item.type !== CatalogEntityType.ModelSection) {
       return item;
     }
@@ -1706,7 +1697,7 @@ function rowRenderer(
   view: CatalogView,
 ) {
   const item = view.visibleItems[props.index];
-  const style : Record<string, any> = {
+  const style: Record<string, any> = {
     ...props.style,
   };
   if (item.backgroundColor !== null) {
