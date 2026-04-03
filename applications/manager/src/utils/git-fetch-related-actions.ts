@@ -15,8 +15,11 @@ export async function manualPull(t: TFunction<"translation", undefined>, iri: st
   });
 
   // TODO RadStr: Fix localization if needed
-  if (response.ok) {
+  if (response.status === 200) {
     toast.success(t("git pull went ok, there were no conflicts"));
+  }
+  else if (response.status === 204) {
+    toast.success(t("The DS last commit hash already matched the Git one"))
   }
   else {
     toast.error(t("There were conflicts in the git pull, resolve them in DS", { "richColors": true }));
