@@ -6,7 +6,7 @@ import { useOnBeforeUnload } from "@/hooks/use-on-before-unload";
 import { useOnKeyDown } from "@/hooks/use-on-key-down";
 import { DiffTreeVisualization } from "@/components/directory-diff";
 import { ArrowDownIcon, ArrowUpIcon, Loader, RotateCw } from "lucide-react";
-import { Tabs } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabsContent } from "@radix-ui/react-tabs";
 import SvgVisualDiff from "@/components/images-conflict-resolver";
 import { goToNextDiff, goToPreviousDiff, MonacoDiffEditor } from "@/components/monaco-diff-editor";
@@ -116,12 +116,6 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
                     <p>Diff editor to resolve {examinedMergeState?.mergeStateCause} conflict</p>
                     <DiffEditorInfoPopOver/>
                   </ModalTitle>
-                  <Tabs value={comparisonTabType} onValueChange={setComparisonTabType as any}>
-                    {/* <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="text-compare">Text comparison</TabsTrigger>
-                      <TabsTrigger value="image-compare">Image comparison</TabsTrigger>
-                    </TabsList> */}
-                  </Tabs>
                 </ModalHeader>
                   {/* The overflow-y is needed however it adds a bit horizontal space between the vertical splitter and the Tree structure */}
                   <div className="h-full">
@@ -175,58 +169,75 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
                   <Loader className="mr-2 h-4 w-4 animate-spin" />
                 }
                 { !isLoadingTextData &&
-                   <div className="flex! flex-col flex-1 h-screen overflow-hidden">
-                    <Tabs value={comparisonTabType}>
-                      <TabsContent value="image-compare">
-                        <RotateCw className="flex! ml-1 h-4 w-4" onClick={reloadModelsDataFromBackend} />
-                        <div>
-                          <SvgVisualDiff mergeFromSvg={mergeFromSvg} mergeToSvg={mergeToSvg} />
+                    <div className="flex! flex-col flex-1 h-screen overflow-hidden">
+                      <div className="grid grid-cols-[5%_95%]! border-b pb-1">
+                        {
+                          comparisonTabType !== "text-compare" ?
+                            <div className="flex! mt-3 ml-1 h-4 w-4" /> :
+                            <RotateCw className="flex! mt-3 ml-1 h-4 w-4 cursor-pointer" onClick={reloadModelsDataFromBackend} />
+                        }
+                        <div className="flex! items-center justify-center space-x-4 -ml-32">    { /* TODO RadStr PR: ... the ml mr is a bit hacky, it does not scale well, but I do not have time to do it perfectly now */ }
+                          {
+                            comparisonTabType !== "text-compare" ? null :
+                            <>
+                              <div className="flex flex-row mr-24">
+                                <Button className="flex! cursor-pointer" variant="outline" onClick={() => goToPreviousDiff(monacoEditor.current?.editor)}><ArrowUpIcon/>Prev diff</Button>
+                                <Button className="flex! ml-1 cursor-pointer" variant="outline" onClick={() => goToNextDiff(monacoEditor.current?.editor)}><ArrowDownIcon/>Next diff</Button>
+                              </div>
+                              <MergeStrategyComponent handleMergeStateResolving={applyAutomaticMergeStateResolver}/>
+                            </>
+                          }
+                          {
+                            activeDatastoreType === "svg" ?
+                              <Tabs value={comparisonTabType} onValueChange={setComparisonTabType as any}>
+                                <TabsList className="grid grid-cols-2 ml-20">
+                                  <TabsTrigger value="text-compare">Text comparison</TabsTrigger>
+                                  <TabsTrigger value="image-compare">Image comparison</TabsTrigger>
+                                </TabsList>
+                              </Tabs> :
+                              <label className="flex! items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={showStrippedVersion}
+                                  onChange={(e) => setShowStrippedVersion(e.target.checked)}
+                                  className="w-5 h-5 accent-blue-600 ml-28"
+                                />
+                                &nbsp;<span>{showStrippedVersion ? "Showing stripped version" : "Showing raw version"}</span>
+                              </label>
+                          }
                         </div>
-                      </TabsContent>
-                      <TabsContent value="text-compare">
-                        <div className="grid grid-cols-[5%_95%]! border-b pb-1">
-                          <RotateCw className="flex! mt-3 ml-1 h-4 w-4 cursor-pointer" onClick={reloadModelsDataFromBackend} />
-                          <div className="flex! items-center justify-center space-x-4 -ml-32">    { /* TODO RadStr PR: ... the ml mr is a bit hacky, it does not scale well, but I do not have time to do it perfectly now */ }
-                            <div className="flex flex-row mr-24">
-                              <Button className="flex! cursor-pointer" variant="outline" onClick={() => goToPreviousDiff(monacoEditor.current?.editor)}><ArrowUpIcon/>Prev diff</Button>
-                              <Button className="flex! ml-1 cursor-pointer" variant="outline" onClick={() => goToNextDiff(monacoEditor.current?.editor)}><ArrowDownIcon/>Next diff</Button>
-                            </div>
-                            <MergeStrategyComponent handleMergeStateResolving={applyAutomaticMergeStateResolver}/>
-                            <label className="flex! items-center">
-                              <input
-                                type="checkbox"
-                                checked={showStrippedVersion}
-                                onChange={(e) => setShowStrippedVersion(e.target.checked)}
-                                className="w-5 h-5 accent-blue-600 ml-28"
-                              />
-                              &nbsp;<span>{showStrippedVersion ? "Showing stripped version" : "Showing raw version"}</span>
-                            </label>
-                          </div>
+                      </div>
+                      <div className="grid grid-cols-2 items-center w-full pt-1 pb-1">
+                        <div className="text-center font-semibold">
+                          {nonEditableBranchDataToRender?.branch} {nonEditableBranchDataToRender?.filesystem === AvailableFilesystems.ClassicFilesystem ? " (Git)" : ""}
                         </div>
-                        <div className="grid grid-cols-2 items-center w-full pt-1 pb-1">
-                          <div className="text-center font-semibold">
-                            {nonEditableBranchDataToRender?.branch} {nonEditableBranchDataToRender?.filesystem === AvailableFilesystems.ClassicFilesystem ? " (Git)" : ""}
-                          </div>
 
 
-                          <div className="text-center font-semibold">
-                            {editableBranchDataToRender?.branch} {editableBranchDataToRender?.filesystem === AvailableFilesystems.ClassicFilesystem ? " (Git)" : ""}
-                          </div>
+                        <div className="text-center font-semibold">
+                          {editableBranchDataToRender?.branch} {editableBranchDataToRender?.filesystem === AvailableFilesystems.ClassicFilesystem ? " (Git)" : ""}
                         </div>
-                        {/* Also small note - there is loading effect when first starting up the editor, it is not any custom made functionality */}
-                        <MonacoDiffEditor className="-ml-2 h-[95.5%]!"       // The h- has to be defined otherwise it takes full window (which goes beyound the start taskbar)
-                                          editorRef={monacoEditor}
-                                          mergeFromContent={strippedMergeFromContent}
-                                          editable={editable}
-                                          mergeToContent={strippedMergeToContent}
-                                          datastoreType={activeDatastoreType}
-                                          format={activeFormat}
-                                          projectIrisTreePathToFilesystemNode={activeTreePathToNodeContainingDatastore}
-                                          setMergeState={setExaminedMergeState}
-                                          />
-                      </TabsContent>
-                    </Tabs>
-                  </div>
+                      </div>
+                      <Tabs value={comparisonTabType}>
+                        <TabsContent value="image-compare">
+                          <div>
+                            <SvgVisualDiff mergeFromSvg={mergeFromSvg} mergeToSvg={mergeToSvg} />
+                          </div>
+                        </TabsContent>
+                        <TabsContent value="text-compare">
+                          {/* Also small note - there is loading effect when first starting up the editor, it is not any custom made functionality */}
+                          <MonacoDiffEditor className="-ml-2 h-[95.5%]!"       // The h- has to be defined otherwise it takes full window (which goes beyound the start taskbar)
+                                            editorRef={monacoEditor}
+                                            mergeFromContent={strippedMergeFromContent}
+                                            editable={editable}
+                                            mergeToContent={strippedMergeToContent}
+                                            datastoreType={activeDatastoreType}
+                                            format={activeFormat}
+                                            projectIrisTreePathToFilesystemNode={activeTreePathToNodeContainingDatastore}
+                                            setMergeState={setExaminedMergeState}
+                            />
+                        </TabsContent>
+                      </Tabs>
+                    </div>
                 }
               </ResizablePanel>
             </ResizablePanelGroup>
