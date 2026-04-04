@@ -378,6 +378,7 @@ export class ResourceModel implements ResourceModelForPull {
            throw new Error("Resource not found.");
         }
 
+        await this.updateModificationTime(iri, null, ResourceChangeType.Removed, true, true, mergeStateUUIDsToIgnoreInUpdating);
         await recursivelyDeleteResourceByPrismaResource(prismaResource);
         if (prismaResource.parentResourceId !== null) {
             await this.updateModificationTimeById(prismaResource.parentResourceId, true);
@@ -395,7 +396,7 @@ export class ResourceModel implements ResourceModelForPull {
         }
 
         // TODO RadStr: ? Again don't know what iri to provide
-        await this.updateModificationTime(iri, "resource", ResourceChangeType.Removed, true, true, mergeStateUUIDsToIgnoreInUpdating);
+        await this.updateModificationTime(iri, null, ResourceChangeType.Removed, false, false, mergeStateUUIDsToIgnoreInUpdating);
         await this.prismaClient.resource.delete({where: {id: prismaResource.id}});
 
         for (const storeId of Object.values(JSON.parse(prismaResource.dataStoreId))) {
@@ -586,7 +587,7 @@ export class ResourceModel implements ResourceModelForPull {
 
         if (parentResourceId !== null) {
             // TODO RadStr: ? Again don't know what iri to provide
-            await this.updateModificationTime(parentIri ?? iri, "resource", ResourceChangeType.Created, true, true, mergeStateUUIDsToIgnoreInUpdating);
+            await this.updateModificationTime(parentIri ?? iri, null, ResourceChangeType.Created, true, true, mergeStateUUIDsToIgnoreInUpdating);
             await this.updateModificationTimeById(parentResourceId, true);
         }
     }
