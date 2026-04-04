@@ -43,10 +43,11 @@ export interface ResourceChangePublisher {
 
   /**
    * The notify method of the observer pattern.
+   * @param changedModel null if it is resource
    */
   notifyListenersAboutResourceChange(
     resourceIri: string,
-    changedModel: string,
+    changedModel: string | null,
     changeType: ResourceChangeType,
     mergeStateUUIDsToIgnoreInUpdating: string[],
   ): Promise<void>;
