@@ -1,6 +1,6 @@
 import JSZip from "jszip";
 import { v4 as uuidv4 } from "uuid";
-import { PACKAGE_ROOT } from "@dataspecer/git";
+import { convertDatastoreContentBasedOnFormat, PACKAGE_ROOT } from "@dataspecer/git";
 import { replaceIris, StorageApiForIriReplacement } from "../utils/iri-replace-util.ts";
 import { extractTypeAndFormat, isArtificialExportDirectory, LocalStoreModelGetter, ResourceModelForImport } from "@dataspecer/git-node";
 
@@ -131,7 +131,7 @@ export class PackageImporter {
     let rootPackagesMeta: string[] = [];
     console.info({files});
     for (let rootDirectoryDepth = 2; rootDirectoryDepth <= maxDepth; rootDirectoryDepth++) {
-      rootPackagesMeta = files.filter((file) => file.endsWith("/.meta.json") && file.split("/").length === rootDirectoryDepth); // It is a directory with one level
+      rootPackagesMeta = files.filter((file) => extractTypeAndFormat(file, ".").type === "meta" && file.split("/").length === rootDirectoryDepth); // It is a directory with one level
       if (rootPackagesMeta.length > 0) {
         break;
       }
@@ -142,8 +142,7 @@ export class PackageImporter {
       return file.substring(0, splitBetweenIdAndType);
     });
 
-    const rootMetaFile = await this.zip.file(rootPackagesMeta[0])!.async("text");
-    const rootMetaAsJSON = JSON.parse(rootMetaFile);
+    const rootMetaAsJSON = await this.convertAndParseZipEntry(rootPackagesMeta[0]);
     const exportVariant: number = rootMetaAsJSON["_exportVersion"];
     const mappings = this.createImportMappingToCanonical(exportVariant, this.zip.files);
     this.canonicalPathsToInputMapping = mappings.canonicalToImported;
@@ -171,8 +170,7 @@ export class PackageImporter {
     const metaFileName = canonicalDirPath + ".meta.json";
     const metaFileNameOnInput = this.canonicalPathsToInputMapping[metaFileName];
     console.info({metaFileName, metaFileNameOnInput, canonicalDirPath});		// TODO RadStr DEBUG: Debug print
-    const metaFile = await this.zip.file(metaFileNameOnInput)!.async("text");     // TODO RadStr: ... what if it is not json
-    const meta = JSON.parse(metaFile);
+    const meta = await this.convertAndParseZipEntry(metaFileNameOnInput);
 
     const thisPackageIri: string = this.createNewIdForResource(meta.iri);
 
@@ -208,8 +206,7 @@ export class PackageImporter {
   async importResource(canonicalDirPath: string, parentPackageIri: string) {
     const metaFileName = canonicalDirPath + ".meta.json";
     const metaFileNameOnInput = this.canonicalPathsToInputMapping[metaFileName];
-    const metaFile = await this.zip.file(metaFileNameOnInput)!.async("text");
-    const meta = JSON.parse(metaFile);
+    const meta = await this.convertAndParseZipEntry(metaFileNameOnInput);
 
     const thisResourceIri = this.createNewIdForResource(meta.iri);
     const projectIri = this.getProjectIriFromMeta(meta, thisResourceIri, canonicalDirPath);
@@ -274,9 +271,7 @@ export class PackageImporter {
           continue;
         }
 
-        const blob = await this.zip.file(file)!.async("text");
-        const blobJson = JSON.parse(blob);
-
+        const blobJson = await this.convertAndParseZipEntry(file);
         const store = await this.resourceModel.getOrCreateResourceModelStore(resourceIri, blobName);
         await store.setJson(blobJson);
       }
@@ -299,5 +294,17 @@ export class PackageImporter {
     }
 
     return thisPackageIri;
+  }
+
+  private async convertAndParseZipEntry(file: string): Promise<any> {
+    console.info(`TODO RadStr Debug: ${file}`)
+    const blob = await this.zip.file(file)!.async("text");
+    const parsedFileName = extractTypeAndFormat(file, ".");
+    const conversionResult = convertDatastoreContentBasedOnFormat(blob, parsedFileName.format, true, null);
+    if (!conversionResult.ok) {
+      throw new Error(`Invalid content of import: ${conversionResult.error} ... ${blob}`);
+    }
+    const blobJson = conversionResult.value;
+    return blobJson;
   }
 }
