@@ -1,10 +1,11 @@
-import { SignInDialog } from '@/dialog/sign-in';
 import { UseLoginType } from '@/hooks/use-login';
 import { OpenBetterModal, useBetterModal } from '@/lib/better-modal';
 import { LockKeyholeIcon, LogIn, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { SshMenu } from '@/dialog/ssh-menu';
+import { ScopeGroup } from '@dataspecer/git';
+import { goToPage, SignInDialog } from '@/dialog/sign-in';
 
 /**
  * Visualizes the sign in/out buttons and user's profile picture with tooltip if signed in.
@@ -25,12 +26,20 @@ export const LoginCard = (props: {login: UseLoginType}) => {
                 title="Note that if you provide Git permissions. The token with permissions should be revoked after, unless some error happened, if so then for safety reasons you should remove the permissions provided to this page inside GitHub (or the used Git provider)">
             <LogOut className="pl-2" />
             <p className="pt-0.5 pl-1.5">Sign Out</p>
-          </Button> :
-          <Button variant="ghost" className="flex focus:outline-none hover:bg-green-300 focus:ring-4 focus:ring-green-300 text-sm px-2 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
-                  onClick={() => openModal(SignInDialog, {})}>
-            <LogIn/>
-            <p className="pt-0.5 pl-1.5">Sign In</p>
-          </Button>
+          </Button> : <>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex focus:outline-none hover:bg-green-300 focus:ring-4 focus:ring-green-300 text-sm px-2 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800">
+                  <LogIn/>
+                  <p className="pl-1.5">Sign In</p>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={(_) => goToPage(`${import.meta.env.VITE_BACKEND}/auth/signin?authPermissions=${ScopeGroup[ScopeGroup.FullPublicRepoControl]}`)}><LogIn/> <p className="pl-1.5 ">Standard sign-in</p><p className="pl-1.5 text-green-600">&nbsp;(Recommended)</p></DropdownMenuItem>
+                <DropdownMenuItem onClick={() => openModal(SignInDialog, {})}><LogIn/><p className="pl-1.5">Advanced sign-in</p></DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
         }
         {!isSignedIn ?
           null :
