@@ -5,9 +5,9 @@ import { replaceIris, StorageApiForIriReplacement } from "../utils/iri-replace-u
 import { extractTypeAndFormat, isArtificialExportDirectory, LocalStoreModelGetter, ResourceModelForImport } from "@dataspecer/git-node";
 
 
-const FILE_EXTENSION_REGEX = /^\.([-0-9a-zA-Z]+)\.json$/;
-const RESOURCE_IN_PACKAGE_REGEX = /^([-0-9a-zA-Z]+)\.meta\.json$/;
-const PACKAGES_IN_PACKAGE_REGEX = /^([-0-9a-zA-Z]+\/)\.meta\.json/;
+const FILE_EXTENSION_REGEX = /^\.([-0-9a-zA-Z]+)\.(json|yaml)$/;
+const RESOURCE_IN_PACKAGE_REGEX = /^([-0-9a-zA-Z]+)\.meta\.(json|yaml)$/;
+const PACKAGES_IN_PACKAGE_REGEX = /^([-0-9a-zA-Z]+\/)\.meta\.(json|yaml)/;
 
 type ImportMapping = {
   canonicalToImported: Record<string, string>,
@@ -167,9 +167,13 @@ export class PackageImporter {
   }
 
   async importPackage(canonicalDirPath: string, parentPackageIri: string): Promise<string> {
-    const metaFileName = canonicalDirPath + ".meta.json";
-    const metaFileNameOnInput = this.canonicalPathsToInputMapping[metaFileName];
-    console.info({metaFileName, metaFileNameOnInput, canonicalDirPath});		// TODO RadStr DEBUG: Debug print
+    const metaFileNameJSON = canonicalDirPath + ".meta.json";
+    let metaFileNameOnInput: string | undefined = this.canonicalPathsToInputMapping[metaFileNameJSON];
+    if (metaFileNameOnInput === undefined) {
+      const metaFileNameYAML = canonicalDirPath + ".meta.yaml";
+      metaFileNameOnInput = this.canonicalPathsToInputMapping[metaFileNameYAML];
+    }
+    console.info({metaFileNameJSON, metaFileNameOnInput, canonicalDirPath});		// TODO RadStr DEBUG: Debug print
     const meta = await this.convertAndParseZipEntry(metaFileNameOnInput);
 
     const thisPackageIri: string = this.createNewIdForResource(meta.iri);
@@ -204,8 +208,12 @@ export class PackageImporter {
    * From file name prefix creates resource (not directory) as a child of parentPackageIri.
    */
   async importResource(canonicalDirPath: string, parentPackageIri: string) {
-    const metaFileName = canonicalDirPath + ".meta.json";
-    const metaFileNameOnInput = this.canonicalPathsToInputMapping[metaFileName];
+    const metaFileNameJSON = canonicalDirPath + ".meta.json";
+    let metaFileNameOnInput: string | undefined = this.canonicalPathsToInputMapping[metaFileNameJSON];
+    if (metaFileNameOnInput === undefined) {
+      const metaFileNameYAML = canonicalDirPath + ".meta.yaml";
+      metaFileNameOnInput = this.canonicalPathsToInputMapping[metaFileNameYAML];
+    }
     const meta = await this.convertAndParseZipEntry(metaFileNameOnInput);
 
     const thisResourceIri = this.createNewIdForResource(meta.iri);
@@ -247,9 +255,11 @@ export class PackageImporter {
     return projectIri;
   }
 
+
   /**
    * For given exiting resource by its IRI sets all blobs found in the zip.
-   * For example this would be a typical store: resourcePath + ".model.json"
+   * For example this would be a typical store: resourcePath + ".model.json".
+   * Respectively, the format depends on the import, it can be json/yaml
    */
   async setBlobsForResource(canonicalResourcePath: string, resourceIri: string) {
     const files = Object.keys(this.zip.files);
