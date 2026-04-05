@@ -36,6 +36,8 @@ import { MergeStateFinalizerDialog } from "@/dialog/merge-state-finalizer-dialog
 import { useBetterModal } from "@/lib/better-modal";
 import { requestLoadPackage } from "@/package";
 import { ChooseActionForDiffEditorUnplannedChange, DiffEditorOutsideChangeChosenAction } from "@/dialog/outside-changes-to-diff-editor-action-dialog";
+import { createCloseDialogObject, LoadingDialog } from "@/dialog/loading-dialog";
+import { SAVING_DIFF_EDITOR_STATE_TO_BACKEND } from "@/utils/git-wait-times";
 
 
 type FullTreePath = string;
@@ -1155,6 +1157,16 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     }
 
     const saveToBackend = async () => {
+      const closeDialogObject = createCloseDialogObject();
+      openModal(LoadingDialog, {
+        dialogTitle: "git.diff-editor.storing-to-backend.title",
+        waitingText: "",
+        waitTime: SAVING_DIFF_EDITOR_STATE_TO_BACKEND,
+        setCloseDialogAction: closeDialogObject.setCloseDialogAction,
+        shouldShowTimer: true,
+        shouldDisableClosing: true
+      });
+
       setShouldFinalize(false);
       const finalizing = shouldFinalize;
       if (examinedMergeState === null) {
@@ -1182,6 +1194,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
       if (finalizing) {
         openModal(MergeStateFinalizerDialog, { mergeState: examinedMergeState, openModal }).finally(() => closeWithSuccess());
       }
+
+      closeDialogObject.closeDialogAction();
     };
     saveToBackend();
   }, [cacheExplicitUpdateTracker]);

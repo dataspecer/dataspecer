@@ -159,6 +159,12 @@
         "title": "Jméno publikační větve (branch)",
         "tooltip": "Publikační Git větev, která bude obsahovat vygenerovanou dokumentaci v Gitovém repozitáři."
       }
+    },
+    "diff-editor": {
+      "storing-to-backend": {
+        "title": "Ukládání změn na backend",
+        "waiting-text": "Ukládání změn na backend"
+      }
     }
   }
 }

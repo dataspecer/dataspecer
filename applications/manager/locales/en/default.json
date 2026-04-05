@@ -159,6 +159,12 @@
         "title": "Publication branch name",
         "tooltip": "The publication Git branch, which will contain the generated documentation in the Git repository."
       }
+    },
+    "diff-editor": {
+      "storing-to-backend": {
+        "title": "Storing changes to backend",
+        "wait-text": "Storing changes to backend"
+      }
     }
   }
 }
