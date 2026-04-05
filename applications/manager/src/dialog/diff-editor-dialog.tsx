@@ -220,7 +220,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
                       <Tabs value={comparisonTabType}>
                         <TabsContent value="image-compare">
                           <div>
-                            <SvgVisualDiff mergeFromSvg={mergeFromSvg} mergeToSvg={mergeToSvg} />
+                            <SvgVisualDiff mergeFromSvg={mergeFromSvg} mergeToSvg={mergeToSvg} editableType={editable} />
                           </div>
                         </TabsContent>
                         <TabsContent value="text-compare">

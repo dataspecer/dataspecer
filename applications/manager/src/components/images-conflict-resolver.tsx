@@ -1,9 +1,13 @@
-const SvgVisualDiff = (props: { mergeFromSvg: string, mergeToSvg: string }) => {
+import { EditableType, getEditableAndNonEditableValue } from "@dataspecer/git";
+
+const SvgVisualDiff = (props: { mergeFromSvg: string, mergeToSvg: string, editableType: EditableType }) => {
+  const { nonEditable: leftSvg, editable: rightSvg } = getEditableAndNonEditableValue(props.editableType, props.mergeFromSvg, props.mergeToSvg);
+
   return (
     <div className="flex h-screen">
-      <SvgImage svgString={props.mergeFromSvg} />
+      <SvgImage svgString={leftSvg} />
       <div className="border-l border-gray-400" />
-      <SvgImage svgString={props.mergeToSvg} />
+      <SvgImage svgString={rightSvg} />
     </div>
   );
 };
