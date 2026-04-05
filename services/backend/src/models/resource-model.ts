@@ -578,7 +578,8 @@ export class ResourceModel implements ResourceModelForPull {
         await this.prismaClient.resource.create({
             data: {
                 iri: iri,
-                projectIri: projectIri ?? iri,
+                // TODO RadStr PR: It used to be projectIri ?? iri, but the iri may contain /, which we do not want. Ideally, it would be iri and if it has '/', then uuidv4
+                projectIri: projectIri ?? uuidv4(),
                 parentResourceId: parentResourceId,
                 representationType: type,
                 userMetadata: JSON.stringify(userMetadata),

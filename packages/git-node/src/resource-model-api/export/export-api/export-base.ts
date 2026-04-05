@@ -3,6 +3,7 @@ import { AllowedExportResults, AvailableExports, ExportActionForFilesystem, Expo
 import { ZipStreamDictionary } from "../../utils/zip-stream-dictionary.ts";
 import { FilesystemFactoryMethodParams, FilesystemFactory } from "../../../filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 import { PackageExporterInterface } from "./package-export.ts";
+import { toSafePath } from "../../../git-operations/simple-git-utils.ts";
 
 
 export abstract class PackageExporterBase implements PackageExporterInterface {
@@ -43,7 +44,7 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
 
     const root = Object.values(fakeRoot.content)[0] as DirectoryNode;
     // const rootDirectoryName = root.name;
-    const rootDirectoryName = root.metadata.iri;    // The root has IRI
+    const rootDirectoryName = toSafePath(root.metadata.iri);    // The root has IRI
     const rootDirectory = root;
 
     this.importFilesystem = filesystem;
