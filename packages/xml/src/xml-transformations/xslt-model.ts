@@ -187,13 +187,6 @@ export class XmlClassTargetTemplate {
 }
 
 /**
- * Represents a match created from a class property.
- */
-export class XmlCodelistMatch extends XmlMatch {
-  isCodelist: true;
-}
-
-/**
  * Represents a match created from a container property.
  * Containers are used to group related elements (e.g., xs:sequence, xs:choice).
  */
@@ -219,12 +212,6 @@ export function xmlMatchIsClass(
   match: XmlMatch
 ): match is XmlClassMatch {
   return (match as XmlClassMatch).targetTemplates !== undefined;
-}
-
-export function xmlMatchIsCodelist(
-  match: XmlMatch
-): match is XmlCodelistMatch {
-  return (match as XmlCodelistMatch).isCodelist === true;
 }
 
 export function xmlMatchIsContainer(

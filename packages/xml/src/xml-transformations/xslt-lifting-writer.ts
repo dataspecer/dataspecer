@@ -4,7 +4,6 @@ import {
   XmlContainerMatch,
   XmlMatch,
   xmlMatchIsClass,
-  xmlMatchIsCodelist,
   xmlMatchIsContainer,
   xmlMatchIsLiteral,
   XmlRootTemplate,
@@ -540,19 +539,6 @@ async function writeForwardProperty(match: XmlMatch, writer: XmlWriter) {
           "value-of",
         )(async (writer) => {
           await writer.writeLocalAttributeValue("select", ".");
-        });
-      } else if (xmlMatchIsCodelist(match)) {
-        await writer.writeElementFull(
-          "xsl",
-          "attribute",
-        )(async (writer) => {
-          await writer.writeLocalAttributeValue("name", "rdf:resource");
-          await writer.writeElementFull(
-            "xsl",
-            "value-of",
-          )(async (writer) => {
-            await writer.writeLocalAttributeValue("select", ".");
-          });
         });
       } else if (xmlMatchIsClass(match)) {
         if (match.isAttribute) {

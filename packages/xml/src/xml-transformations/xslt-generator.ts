@@ -10,7 +10,7 @@ import { writeXsltLifting } from "./xslt-lifting-writer.ts";
 import { writeXsltLowering } from "./xslt-lowering-writer.ts";
 import { structureModelToXslt } from "./xslt-model-adapter.ts";
 import { assertFailed, assertNot } from "@dataspecer/core/core";
-import { defaultStructureTransformations, structureModelDematerialize, structureModelTransformCodelists, transformStructureModel } from "@dataspecer/core/structure-model/transformation";
+import { defaultStructureTransformations, structureModelDematerialize, structureModelTransformPrimitiveTypes, transformStructureModel } from "@dataspecer/core/structure-model/transformation";
 import { XSLT_LIFTING, XSLT_LOWERING } from "./xslt-vocabulary.ts";
 import { structureModelAddXmlProperties } from "../xml-structure-model/add-xml-properties.ts";
 
@@ -61,6 +61,7 @@ class XsltGenerator implements ArtefactGenerator {
       transformation =>
         transformation !== structureModelDematerialize
     );
+    transformations.push(structureModelTransformPrimitiveTypes);
     model = transformStructureModel(
       conceptualModel,
       model,
@@ -68,8 +69,6 @@ class XsltGenerator implements ArtefactGenerator {
       null,
       transformations
     );
-
-    model = structureModelTransformCodelists(model);
 
     const xmlModel = await structureModelAddXmlProperties(
       model, context.reader

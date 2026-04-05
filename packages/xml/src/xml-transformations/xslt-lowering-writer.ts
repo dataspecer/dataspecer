@@ -2,7 +2,6 @@ import { OutputStream } from "@dataspecer/core/io/stream/output-stream";
 import {
   XmlMatch,
   xmlMatchIsClass,
-  xmlMatchIsCodelist,
   xmlMatchIsContainer,
   xmlMatchIsLiteral,
   XmlRootTemplate,
@@ -556,13 +555,6 @@ async function writePropertyContents(match: XmlMatch, obj: string | null, writer
       "apply-templates",
     )(async (writer) => {
       await writer.writeLocalAttributeValue("select", `sp:binding[@name=${obj}]/sp:literal`);
-    });
-  } else if (xmlMatchIsCodelist(match)) {
-    await writer.writeElementFull(
-      "xsl",
-      "apply-templates",
-    )(async (writer) => {
-      await writer.writeLocalAttributeValue("select", `sp:binding[@name=${obj}]/sp:uri`);
     });
   } else if (xmlMatchIsClass(match)) {
     if (match.isAttribute) {

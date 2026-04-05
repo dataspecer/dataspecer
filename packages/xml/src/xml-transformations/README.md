@@ -12,13 +12,11 @@ The common XSLT model is produced by the `XsltAdapter` class in `xslt-model-adap
 
 Individual schema root classes are converted in `rootToTemplate`, producing an instance of `XmlRootTemplate`. The purpose of this template is to match the node that identifies the root class, and call its respective specific template.
 
-All classes (except codelists) in the model are converted in `classToTemplate` to named templates (`XmlTemplate`). Each template consists of a collection of matches (`XmlMatch`) for its individual properties, produced in `propertyToMatch`.
+All classes in the model are converted in `classToTemplate` to named templates (`XmlTemplate`). Each template consists of a collection of matches (`XmlMatch`) for its individual properties, produced in `propertyToMatch`.
 
-The type of the match differs based on the type of the datatypes (associations, attributes, codelists, containers), checked and selected by `propertyToMatchCheckType`.
+The type of the match differs based on the type of the datatypes (associations, attributes, containers), checked and selected by `propertyToMatchCheckType`.
 
 Attributes are turned into an `XmlLiteralMatch` in `datatypePropertyToLiteralMatch`. This match corresponds to an RDF literal with a specific datatype.
-
-Codelist properties are turned into an `XmlCodelistMatch` in `classPropertyToCodelistMatch`. This match corresponds to an IRI node in RDF.
 
 Container properties are turned into an `XmlContainerMatch` in `propertyToContainerMatch`. These represent grouping elements (e.g., `xs:sequence`, `xs:choice`) that wrap multiple inner properties. Each property within the container is converted to its appropriate match type.
 

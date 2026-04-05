@@ -12,7 +12,6 @@ import { XmlStructureModel as StructureModel } from "../xml-structure-model/mode
 import {
   XmlClassMatch,
   XmlClassTargetTemplate,
-  XmlCodelistMatch,
   XmlContainerMatch,
   XmlLiteralMatch,
   XmlMatch,
@@ -356,12 +355,9 @@ class XsltAdapter {
   }
 
   /**
-   * Create a named template from a class (null for codelists and empty classes).
+   * Create a named template from a class.
    */
   classToTemplate(classData: StructureModelClass): XmlTemplate | null {
-    if (classData.isCodelist) {
-      return null;
-    }
     const [imported] = this.resolveImportedClassName(classData);
     if (imported) {
       return null;
@@ -391,7 +387,6 @@ class XsltAdapter {
     // Enforce the same type (class or datatype)
     // for all types in the property range.
     const result =
-      this.propertyToMatchCheckType(propertyData, (type) => type.isAssociation() && type.dataType.isCodelist, this.classPropertyToCodelistMatch, ownerClass) ??
       this.propertyToMatchCheckType(propertyData, (type) => type.isAssociation(), this.classPropertyToClassMatch, ownerClass) ??
       this.propertyToMatchCheckType(propertyData, (type) => type.isAttribute(), this.datatypePropertyToLiteralMatch, ownerClass);
     if (result == null) {
@@ -413,9 +408,6 @@ class XsltAdapter {
     }
 
     const containerClass = (dataTypes[0] as StructureModelComplexType).dataType;
-    if (containerClass.isCodelist) {
-      throw new Error(`Container property ${propertyData.psmIri} cannot be a codelist.`);
-    }
 
     // The container class only contributes structure, not direct RDF triples.
     const innerMatches = containerClass.properties.map((containerProperty) => this.propertyToMatch(containerProperty, containerClass));
@@ -514,20 +506,6 @@ class XsltAdapter {
       isReverse: propertyData.isReverse,
       isAttribute: propertyData.xmlIsAttribute,
       dataTypeIri: this.primitiveToIri(dataTypes[0]),
-    };
-  }
-
-  /**
-   * Construct a codelist match from a class property.
-   */
-  classPropertyToCodelistMatch(propertyData: StructureModelProperty, interpretations: QName[], propertyName: QName): XmlCodelistMatch {
-    return {
-      interpretations: interpretations,
-      propertyIris: propertyData.iris ?? [],
-      propertyName: propertyName,
-      isReverse: propertyData.isReverse,
-      isAttribute: propertyData.xmlIsAttribute,
-      isCodelist: true,
     };
   }
 

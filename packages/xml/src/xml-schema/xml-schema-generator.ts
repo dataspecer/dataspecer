@@ -6,7 +6,7 @@ import {
 } from "@dataspecer/core/data-specification/model";
 import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/core/generator";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
-import { defaultStructureTransformations, structureModelTransformCodelists, transformStructureModel } from "@dataspecer/core/structure-model/transformation";
+import { defaultStructureTransformations, structureModelTransformPrimitiveTypes, transformStructureModel } from "@dataspecer/core/structure-model/transformation";
 import { structureModelAddXmlProperties } from "../xml-structure-model/add-xml-properties.ts";
 import { structureModelToXmlSchema } from "./xml-schema-model-adapter.ts";
 import { XML_SCHEMA } from "./xml-schema-vocabulary.ts";
@@ -80,7 +80,8 @@ export class XmlSchemaGenerator implements ArtefactGenerator {
       `Missing structure model ${schemaArtefact.psm}.`
     );
 
-    const transformations = defaultStructureTransformations;
+    const transformations = [...defaultStructureTransformations];
+    transformations.push(structureModelTransformPrimitiveTypes);
     model = transformStructureModel(
       conceptualModel,
       model,
@@ -88,8 +89,6 @@ export class XmlSchemaGenerator implements ArtefactGenerator {
       null,
       transformations
     );
-
-    model = structureModelTransformCodelists(model);
 
     const xmlModel = await structureModelAddXmlProperties(
       model, context.reader
