@@ -10,6 +10,7 @@ import { TFunction } from "i18next";
 export async function manualPull(t: TFunction<"translation", undefined>, iri: string) {
   const fetchUrl = import.meta.env.VITE_BACKEND + "/git/pull?iri=" + encodeURIComponent(iri);
 
+  toast.info(t("Started git pull. It may take a moment for large dataspecs."));
   const response = await fetch(fetchUrl, {
     method: "GET",
   });
