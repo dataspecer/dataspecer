@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { requestLoadPackage } from "@/package";
 import { ExportVersionRadioButtons } from "@/components/export-version-radio-buttons";
+import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 
 export type RequiredFieldsPartialMap = Partial<Record<keyof GitRemoteConfigurations, RefObject<HTMLInputElement | null>>>;
 
@@ -82,7 +83,10 @@ export function SetGitRemoteConfigurationDialog({ inputPackage, isOpen, resolve 
     <Modal open={isOpen} onClose={() => resolve(null)}>
       <ModalContent className="sm:max-w-[700px]!">
         <ModalHeader>
-          <ModalTitle>Set new Git configuration</ModalTitle>
+          <ModalTitle>
+            Set new Git configuration
+            <PopOverGitGeneralComponent><SetConfigSeparatelyTooltip/></PopOverGitGeneralComponent>
+          </ModalTitle>
           <ModalDescription>
             The listed values are taken from the Git configuration.
           </ModalDescription>
@@ -140,4 +144,12 @@ export function SetGitRemoteConfigurationComponent({ configuration, requiredFiel
 function PublicationBranchTooltip() {
   const { t } = useTranslation();
   return <div>{t("git.configuration.publication-branch.tooltip")}</div>;
+}
+
+function SetConfigSeparatelyTooltip() {
+  return <div>
+    Currently changing these values after the repository was already created may cause issues. It is not tested properly.
+    <br/>
+    Also changing the publication branch expects to you to change the GitHub (respectively Git provider) settings to track the correct branch.
+  </div>;
 }
