@@ -127,76 +127,44 @@ export const MonacoDiffEditor: FC<{
           model.modified.setValue(editorsContent.editable);
         }
 
-          originalEditorContent.current = editor.getModel().original.getValue();
-          modifiedEditorContent.current = editor.getModel().modified.getValue();
+        originalEditorContent.current = editor.getModel().original.getValue();
+        modifiedEditorContent.current = editor.getModel().modified.getValue();
 
-        // props.editorRef.current?.editor.onDidChangeModel(() => {
-        //   originalEditorContent.current = editor.getModel().original.getValue();
-        //   modifiedEditorContent.current = editor.getModel().modified.getValue();
-        //   console.info("CHANGE:", originalEditorContent.current, modifiedEditorContent.current)
-        //   alert("WAITING")
-        // });
-        // editor.onDidChangeModel(() => {
-        //   originalEditorContent.current = editor.getOriginalEditor().getValue();
-        //   alert("WAITING1")
-        // });
         editor.getModifiedEditor().onDidChangeModel(() => {
           // This is called before dispose
           originalEditorContent.current = editor.getModel().original.getValue();
           modifiedEditorContent.current = editor.getModel().modified.getValue();
         });
 
-        // We have to call it on did dispose if we are loading a new diff editor
-        // props.editorRef.current.editor.getModifiedEditor().onDidDispose(() => {
-        //   const hasLineChanges = (editor.getLineChanges()?.length ?? 0) > 0;
-        //   const hashLineChanges2 = (props.editorRef.current?.editor.getLineChanges()?.length ?? 0) > 0;
-        //   const origoValue = props.editorRef.current?.editor.getOriginalEditor().getValue();
-        //   const modValue = props.editorRef.current?.editor.getModifiedEditor().getValue();
-        //   const origoEqualMod = origoValue === modValue;
-        //   const origoValue2 = originalEditorContent.current;
-        //   const modValue2 = modifiedEditorContent.current;
-        //   const origoEqualMod2 = origoValue2 === modValue2;
-        //   console.info("ORIGO");
-        //   console.info({hasLineChanges, hashLineChanges2, origoValue, modValue, origoEqualMod, origoValue2, modValue2, origoEqualMod2});
-        //   // alert("DISPOSE MOD EDTIOR:)))")
-        //   updateDiffNodeOnChange(
-        //     editor ?? null, props.setMergeState, !origoEqualMod2,
-        //     props.projectIrisTreePathToFilesystemNode, props.datastoreType
-        //   );
-        // });
         props.editorRef.current.editor.getOriginalEditor().onDidDispose(() => {
           if (projectIrisTreePathToFilesystemNodeRef.current === null) {
             return;
           }
-          const hasLineChanges = (editor.getLineChanges()?.length ?? 0) > 0;
-          const hashLineChanges2 = (props.editorRef.current?.editor.getLineChanges()?.length ?? 0) > 0;
-          const origoValue = props.editorRef.current?.editor.getOriginalEditor().getValue();
-          const modValue = props.editorRef.current?.editor.getModifiedEditor().getValue();
-          const origoEqualMod = origoValue === modValue;
-          const origoValue2 = originalEditorContent.current;
-          const modValue2 = modifiedEditorContent.current;
-          const origoEqualMod2 = origoValue2 === modValue2;
-          console.info("ORIGO");
-          console.info({hasLineChanges, hashLineChanges2, origoValue, modValue, origoEqualMod, origoValue2, modValue2, origoEqualMod2,
-            "props-projectIrisTreePathToFilesystemNode": props.projectIrisTreePathToFilesystemNode, "props.datastoreType": props.datastoreType, editor,
-          "projectIrisTreePathToFilesystemNodeRef.current": projectIrisTreePathToFilesystemNodeRef.current, "datastoreTypeRef.current": datastoreTypeRef.current});
+          // TODO RadStr Debug: Debug prints
+          // const hasLineChanges = (editor.getLineChanges()?.length ?? 0) > 0;
+          // const hashLineChanges2 = (props.editorRef.current?.editor.getLineChanges()?.length ?? 0) > 0;
+          // const origoValue = props.editorRef.current?.editor.getOriginalEditor().getValue();
+          // const modValue = props.editorRef.current?.editor.getModifiedEditor().getValue();
+          // const origoEqualMod = origoValue === modValue;
+          // const origoValue2 = originalEditorContent.current;
+          // const modValue2 = modifiedEditorContent.current;
+          // const origoEqualMod2 = origoValue2 === modValue2;
+          // console.info("ORIGO");
+          // console.info({hasLineChanges, hashLineChanges2, origoValue, modValue, origoEqualMod, origoValue2, modValue2, origoEqualMod2,
+          //   "props-projectIrisTreePathToFilesystemNode": props.projectIrisTreePathToFilesystemNode, "props.datastoreType": props.datastoreType, editor,
+          // "projectIrisTreePathToFilesystemNodeRef.current": projectIrisTreePathToFilesystemNodeRef.current, "datastoreTypeRef.current": datastoreTypeRef.current});
+          // updateDiffNodeOnChange(
+          //   editor ?? null, props.setMergeState, !origoEqualMod2,
+          //   projectIrisTreePathToFilesystemNodeRef.current, datastoreTypeRef.current
+          // );
+
+
+          const hasLineChanges = originalEditorContent.current === modifiedEditorContent.current;
           updateDiffNodeOnChange(
-            editor ?? null, props.setMergeState, !origoEqualMod2,
+            editor ?? null, props.setMergeState, hasLineChanges,
             projectIrisTreePathToFilesystemNodeRef.current, datastoreTypeRef.current
           );
-          // alert("Dispose origo editor");
         });
-        props.editorRef.current.editor.onDidDispose(() => {
-          alert("Dispose whole editor");
-        });
-        // editor.onDidDispose(() => {
-        //   alert("Updated by dispose");
-        //   const hasLineChanges = (editor.getLineChanges()?.length ?? 0) > 0;
-        //   updateDiffNodeOnChange(
-        //     editor ?? null, props.setMergeState, hasLineChanges,
-        //     props.projectIrisTreePathToFilesystemNode, props.datastoreType
-        //   );
-        // })
       }}
       theme={resolvedTheme === "dark" ? "dataspecer-dark" : "vs"}
       language={props.format}
