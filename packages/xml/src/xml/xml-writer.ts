@@ -89,12 +89,15 @@ export interface XmlWriter extends XmlNamespaceMap {
    * Produces a function used for writing the full content of an element.
    * @param namespacePrefix The namespaces prefix of the element, or null.
    * @param elementName The local name of the element.
-   * @returns A function which, when called, calls its argument to produce
-   * the content, and automatically wraps it in the element's tags.
+   * @param condition If false, the wrapping element is not written at all, only
+   * the content is called.
+   * @returns A function which, when called, calls its argument to produce the
+   * content, and automatically wraps it in the element's tags.
    */
   writeElementFull(
     namespacePrefix: string | null,
-    elementName: string
+    elementName: string,
+    condition?: boolean,
   ): (content: (writer: XmlWriter) => Promise<void>) => Promise<void>;
 
   /**
@@ -283,13 +286,18 @@ export abstract class XmlIndentingTextWriter
 
   writeElementFull(
     namespacePrefix: string | null,
-    elementName: string
+    elementName: string,
+    condition: boolean = true
   ): (content: (writer: XmlWriter) => Promise<void>) => Promise<void> {
-    return async content => {
-      await this.writeElementBegin(namespacePrefix, elementName);
-      await content(this);
-      await this.writeElementEnd(namespacePrefix, elementName);
-    };
+    if (condition) {
+      return async content => {
+        await this.writeElementBegin(namespacePrefix, elementName);
+        await content(this);
+        await this.writeElementEnd(namespacePrefix, elementName);
+      };
+    } else {
+      return content => content(this);
+    }
   }
 
   async writeAttributeValue(

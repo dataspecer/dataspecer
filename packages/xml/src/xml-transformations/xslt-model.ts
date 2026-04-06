@@ -79,9 +79,11 @@ export class XmlTemplate {
 
   /**
    * QName of the <iri> element/attribute for this class template.
-   * It follows the namespace of the class element that owns it.
+   * If null, then the IRI is not used.
+   *
+   * Attribute is set globally for the whole transformation.
    */
-  iriElementName: QName;
+  iriElementName: QName | null;
 }
 
 /**

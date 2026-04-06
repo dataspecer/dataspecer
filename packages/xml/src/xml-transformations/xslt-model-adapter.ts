@@ -32,6 +32,7 @@ import { buildEntityOriginMap, type EntityOriginMap } from "../xml-schema/utils/
 import { collectProfilingChain } from "../xml-schema/xml-schema-model-adapter.ts";
 import { structureModelAddXmlProperties } from "../xml-structure-model/add-xml-properties.ts";
 import { XSLT_LIFTING, XSLT_LOWERING } from "./xslt-vocabulary.ts";
+import { DataSpecificationConfigurator, DefaultDataSpecificationConfiguration, type DataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
 
 /**
  * Converts a {@link StructureModel} to an {@link XmlTransformation}.
@@ -65,6 +66,7 @@ class XsltAdapter {
   private profilingChainModels: StructureModel[];
   private entityOriginMap: EntityOriginMap;
   private options: XmlConfiguration;
+  private generalOptions: DataSpecificationConfiguration;
 
   /**
    *
@@ -81,6 +83,7 @@ class XsltAdapter {
     this.profilingChainModels = profilingChainModels;
     this.entityOriginMap = buildEntityOriginMap(profilingChainModels);
     this.options = XmlConfigurator.merge(DefaultXmlConfiguration, XmlConfigurator.getFromObject(artifact.configuration)) as XmlConfiguration;
+    this.generalOptions = DataSpecificationConfigurator.merge(DefaultDataSpecificationConfiguration, DataSpecificationConfigurator.getFromObject(artifact.configuration)) as DataSpecificationConfiguration;
   }
 
   private getNamespacePrefixForSchema(structureSchema: string | null): string | null {
@@ -362,11 +365,12 @@ class XsltAdapter {
     if (imported) {
       return null;
     }
+    const identityPolicy = classData.instancesHaveIdentity ?? this.generalOptions.instancesHaveIdentity;
     return {
       name: this.classTemplateName(classData),
       classIris: classData.iris ?? [],
       propertyMatches: classData.properties.map((propertyData) => this.propertyToMatch(propertyData, classData)),
-      iriElementName: [this.getNamespacePrefixForSchema(this.getOriginSchemaForEntity(classData)), iriElementName[1]],
+      iriElementName: identityPolicy === "NEVER" ? null : [this.getNamespacePrefixForSchema(this.getOriginSchemaForEntity(classData)), iriElementName[1]],
     };
   }
 

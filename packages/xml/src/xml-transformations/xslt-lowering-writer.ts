@@ -9,7 +9,7 @@ import {
   XmlTransformation,
 } from "./xslt-model.ts";
 import { XmlStreamWriter, XmlWriter } from "../xml/xml-writer.ts";
-import { commonXmlNamespace, commonXmlPrefix, iriElementName, QName } from "../conventions.ts";
+import { commonXmlNamespace, commonXmlPrefix, QName } from "../conventions.ts";
 import { XSLT_LOWERING } from "./xslt-vocabulary.ts";
 
 const xslNamespace = "http://www.w3.org/1999/XSL/Transform";
@@ -358,9 +358,10 @@ async function writeTemplates(model: XmlTransformation, writer: XmlWriter): Prom
  * Writes out the contents of a named template.
  */
 async function writeTemplateContents(template: XmlTemplate, model: XmlTransformation, writer: XmlWriter): Promise<void> {
-  const iriElementQName: QName = template.iriElementName ?? [model.targetNamespacePrefix ?? iriElementName[0], iriElementName[1]];
+  const iriElementQName = template.iriElementName;
   // Whether the class has interpretation or it is just a structural wrapper having no type, no iri.
   const interpreted = template.classIris.length > 0;
+  const emitIdentity = iriElementQName != null;
 
   // The SPARQL binding content containing the identifier of the resource.
   await writer.writeElementFull(
@@ -433,7 +434,7 @@ async function writeTemplateContents(template: XmlTemplate, model: XmlTransforma
 
   // Write out <iri> if the identifier is sp:uri.
   // Keep this after attributes, so no attribute is added after child nodes.
-  if (interpreted) {
+  if (interpreted && emitIdentity) {
     await writer.writeElementFull(
       "xsl",
       "if",
@@ -450,7 +451,7 @@ async function writeTemplateContents(template: XmlTemplate, model: XmlTransforma
             "xsl",
             "attribute",
           )(async (writer) => {
-            await writer.writeLocalAttributeValue("name", iriElementName[1]);
+            await writer.writeLocalAttributeValue("name", iriElementQName[1]);
             await writer.writeElementFull(
               "xsl",
               "value-of",

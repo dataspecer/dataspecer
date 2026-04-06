@@ -11,7 +11,7 @@ import {
   XmlTransformation,
 } from "./xslt-model.ts";
 import { XmlStreamWriter, XmlWriter } from "../xml/xml-writer.ts";
-import { commonXmlNamespace, commonXmlPrefix, iriElementName, QName } from "../conventions.ts";
+import { commonXmlNamespace, commonXmlPrefix, QName } from "../conventions.ts";
 import { XSLT_LIFTING } from "./xslt-vocabulary.ts";
 
 const xslNamespace = "http://www.w3.org/1999/XSL/Transform";
@@ -316,8 +316,13 @@ async function writeTemplates(model: XmlTransformation, writer: XmlWriter): Prom
  * Writes out the contents of a named template.
  */
 async function writeTemplateContents(template: XmlTemplate, model: XmlTransformation, writer: XmlWriter): Promise<void> {
-  const iriElementQName: QName = template.iriElementName ?? [model.targetNamespacePrefix ?? iriElementName[0], iriElementName[1]];
+  const iriElementQName = template.iriElementName;
   const isInterpreted = template.classIris.length > 0;
+  /**
+   * If emitIdentity is false, it means that the entity is still interpreted,
+   * but we want it as a blank node. It still has some blank node IRI!
+   */
+  const emitIdentity = iriElementQName != null;
 
   const contents = async (writer: XmlWriter) => {
     await writer.writeElementFull(
@@ -343,33 +348,37 @@ async function writeTemplateContents(template: XmlTemplate, model: XmlTransforma
           await writer.writeElementFull(
             "xsl",
             "choose",
+            emitIdentity,
           )(async (writer) => {
-            await writer.writeElementFull(
-              "xsl",
-              "when",
-            )(async (writer) => {
-              const iri = writer.getQName(...iriElementQName);
-              const iriPath = model.elementIriAsAttribute ? `@${iri}` : iri;
-              const condition = `${iriPath} and not($no_iri)`;
-              await writer.writeLocalAttributeValue("test", condition);
+            if (emitIdentity) {
               await writer.writeElementFull(
                 "xsl",
-                "attribute",
+                "when",
               )(async (writer) => {
-                // If <iri> is found, use it in rdf:about
-                await writer.writeLocalAttributeValue("name", "rdf:about");
+                const iri = writer.getQName(...iriElementQName);
+                const iriPath = model.elementIriAsAttribute ? `@${iri}` : iri;
+                const condition = `${iriPath} and not($no_iri)`;
+                await writer.writeLocalAttributeValue("test", condition);
                 await writer.writeElementFull(
                   "xsl",
-                  "value-of",
+                  "attribute",
                 )(async (writer) => {
-                  await writer.writeLocalAttributeValue("select", iriPath);
+                  // If <iri> is found, use it in rdf:about
+                  await writer.writeLocalAttributeValue("name", "rdf:about");
+                  await writer.writeElementFull(
+                    "xsl",
+                    "value-of",
+                  )(async (writer) => {
+                    await writer.writeLocalAttributeValue("select", iriPath);
+                  });
                 });
               });
-            });
+            }
 
             await writer.writeElementFull(
               "xsl",
               "otherwise",
+              emitIdentity,
             )(async (writer) => {
               await writer.writeElementFull(
                 "xsl",
