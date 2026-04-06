@@ -133,8 +133,16 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
     const setGitRemoteConfigurationState = async () => {
       // For the commits (and creating of repo) we will pass in the exportFormat directly, instead of retrieving it again on server.
       const isGitDialogSettingGitConfiguration = type !== "link-to-existing-repository";
-      const rootPackageFetchResponse = await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(inputPackage.iri));
-      const rootPackageFetchedContent = await rootPackageFetchResponse.json();
+      let rootPackageFetchResponse = await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(inputPackage.iri));
+      let rootPackageFetchedContent: any;
+      if (rootPackageFetchResponse.status === 404 && type === "create-new-repository-and-commit") {
+        // The "model" does not exist
+        await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(inputPackage.iri), {
+          method: "POST",
+        });
+        rootPackageFetchResponse = await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(inputPackage.iri));
+      }
+      rootPackageFetchedContent = await rootPackageFetchResponse.json();
       const fetchedGitRemoteConfiguration = isGitDialogSettingGitConfiguration ? await getGitRemoteConfigurationModelFromPackage(rootPackageFetchedContent) : null;
       setRootPackageContent(rootPackageFetchedContent);
       setGitRemoteConfiguration(fetchedGitRemoteConfiguration);
