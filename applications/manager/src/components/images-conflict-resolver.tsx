@@ -1,14 +1,36 @@
+import { BetterModalProps } from "@/lib/better-modal";
 import { EditableType, getEditableAndNonEditableValue } from "@dataspecer/git";
+import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "./modal";
+import { Button } from "./ui/button";
 
-const SvgVisualDiff = (props: { mergeFromSvg: string, mergeToSvg: string, editableType: EditableType }) => {
-  const { nonEditable: leftSvg, editable: rightSvg } = getEditableAndNonEditableValue(props.editableType, props.mergeFromSvg, props.mergeToSvg);
+type SvgVisualDiffDialogProps = {
+  mergeFromSvg: string;
+  mergeToSvg: string;
+  editableType: EditableType;
+} & BetterModalProps<null>
+
+const SvgVisualDiffDialog = ({ mergeFromSvg, mergeToSvg, editableType, isOpen, resolve }: SvgVisualDiffDialogProps) => {
+  const { nonEditable: leftSvg, editable: rightSvg } = getEditableAndNonEditableValue(editableType, mergeFromSvg, mergeToSvg);
+
 
   return (
-    <div className="flex h-screen">
-      <SvgImage svgString={leftSvg} />
-      <div className="border-l border-gray-400" />
-      <SvgImage svgString={rightSvg} />
-    </div>
+    <Modal open={isOpen} onClose={() => resolve(null)}>
+        <ModalContent className="max-w-[90%]!">
+          <ModalHeader>
+            <ModalTitle>The visual diff of SVGs</ModalTitle>
+          </ModalHeader>
+
+          <div className="flex flex-1 flex-row">
+            <SvgImage svgString={leftSvg} />
+            <div className="border-l border-gray-400" />
+            <SvgImage svgString={rightSvg} />
+          </div>
+
+          <ModalFooter>
+            <Button variant="outline" onClick={() => resolve(null)}>Close</Button>
+          </ModalFooter>
+        </ModalContent>
+    </Modal>
   );
 };
 
@@ -44,4 +66,4 @@ function SvgRenderer(props: { svgString: string }) {
 }
 
 
-export default SvgVisualDiff;
+export default SvgVisualDiffDialog;

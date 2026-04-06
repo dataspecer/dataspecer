@@ -371,7 +371,7 @@ async function onCascadeUpdateForCreatedDatastores(
           throw new Error("We can not (at least currently) have 2 roots. That is both packages have to have one common root.");
         }
 
-        const { mergeFrom: mergeFromFilesystemNode, mergeTo: mergeToFilesystemNode } =  getMergeFromAndMergeTo(editable, currentDiffNode?.resources.old, currentDiffNode?.resources.new);
+        const { mergeFrom: mergeFromFilesystemNode, mergeTo: mergeToFilesystemNode } = getMergeFromAndMergeTo(editable, currentDiffNode?.resources.old, currentDiffNode?.resources.new);
         const mergeFromMetadataInfo = (mergeFromFilesystemNode === undefined || mergeFromFilesystemNode === null) ? null : getDatastoreInfoOfGivenDatastoreType(mergeFromFilesystemNode, "meta");
         const mergeToMetadataInfo = (mergeToFilesystemNode === undefined || mergeToFilesystemNode === null) ? null : getDatastoreInfoOfGivenDatastoreType(mergeToFilesystemNode, "meta");
         console.info({mergeFromMetadataInfo, mergeToMetadataInfo});     // TODO RadStr DEBUG: Debug print
@@ -472,7 +472,6 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
   const [mergeFromSvg, setMergeFromSvg] = useState<any | "">("");
   const [mergeToSvg, setMergeToSvg] = useState<any | "">("");
 
-  const [comparisonTabType, setComparisonTabType] = useState<"image-compare" | "text-compare">("text-compare");
   // Internal state used to track that cache was explictly updated
   const [cacheExplicitUpdateTracker, setCacheExplicitUpdateTracker] = useState<number>(0);
   // Similarly - if true then we also perform the finalization when the updateTracker is bumped up
@@ -683,7 +682,6 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     setMergeToDatastoreInfo(null);
     setMergeFromSvg("");
     setMergeToSvg("");
-    setComparisonTabType("text-compare");
     setIsLoadingTreeStructure(true);
     setCacheExplicitUpdateTracker(0);
   };
@@ -704,10 +702,6 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
 
 
   useEffect(() => {
-    if (comparisonTabType !== "image-compare") {
-      return;
-    }
-
     const setSvgHelperMethod = (setSvg: (value: any) => void, dataFormat: string, convertedContent: string) => {
       const svgContent = convertDatastoreContentBasedOnFormat(convertedContent, dataFormat, true, null);
       if (!svgContent.ok) {
@@ -732,7 +726,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     else {
       setMergeToSvg("");
     }
-  }, [comparisonTabType, mergeFromDatastoreInfo, mergeToDatastoreInfo]);
+  }, [mergeFromDatastoreInfo, mergeToDatastoreInfo]);
 
 
   useEffect(() => {
@@ -910,16 +904,6 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         [newDatastoreType]: {mergeFrom: newMergeFromDatastoreInfo, mergeTo: newMergeToDatastoreInfo},
       }
     }));
-
-    if (mergeFromDatastoreInfo?.fullPath !== newMergeFromDatastoreInfo?.fullPath || mergeToDatastoreInfo?.fullPath !== newMergeToDatastoreInfo?.fullPath) {
-      // Switched to different datastore
-      if (newMergeFromDatastoreInfo?.type === "svg" || newMergeToDatastoreInfo?.type === "svg") {
-        setComparisonTabType("image-compare");
-      }
-      else {
-        setComparisonTabType("text-compare");
-      }
-    }
 
 
     if (oldDatastoreType !== null && shouldChangeActiveModel) {
@@ -1451,7 +1435,6 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     mergeToDatastoreInfo, setMergeToDatastoreInfo,
     mergeFromSvg, setMergeFromSvg,
     mergeToSvg, setMergeToSvg,
-    comparisonTabType, setComparisonTabType,
     isLoadingTextData, setIsLoadingTextData,
     isLoadingTreeStructure, setIsLoadingTreeStructure,
     activeMergeFromContentConverted, activeMergeToContentConverted,
