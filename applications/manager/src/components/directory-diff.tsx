@@ -529,6 +529,9 @@ function StyledNode({
           // }}
           onClick={async (e) => {
             e.stopPropagation();
+            if (node.isFocused) {
+              return;
+            }
             if (!extraRenderNodeProps.isCurrentlyAllowedChangeOfModels) {
               return;
             }
@@ -548,6 +551,7 @@ function StyledNode({
                 editable, node.data.fullDatastoreInfoInOldTree, node.data.fullDatastoreInfoInNewTree);
               const metaForOld = (parent?.old ?? null) === null ? null : getDatastoreInfoOfGivenDatastoreType(parent!.old!, "meta");
               const metaForNew = (parent?.new ?? null) === null ? null : getDatastoreInfoOfGivenDatastoreType(parent!.new!, "meta");
+
               const { mergeFrom: mergeFromDatastoreInfoForMeta, mergeTo: mergeToDatastoreInfoForMeta } = getMergeFromAndMergeTo(editable, metaForOld, metaForNew);
               await extraRenderNodeProps.updateModelData(
                 parentTreePath,
@@ -555,11 +559,7 @@ function StyledNode({
                 mergeFromDatastoreInfoForMeta, mergeToDatastoreInfoForMeta,
                 true, true, false);
             }
-            setTimeout(() => {
-              // Small hack. Since if we swap often, the monaco diff editor logic can not handle the updates correctly it updates the wrong models with incorrect values
-              // ... So possible TODO RadStr PR: ... but I think that this solution is fine. That being said 400ms is kinda long
-              extraRenderNodeProps.setIsCurrentlyAllowedChangeOfModels(true);
-            }, 400);
+            extraRenderNodeProps.setIsCurrentlyAllowedChangeOfModels(true);
           }}
           onMouseOver={(_e) => {
             handleMouseHoverHighlightingForNode(node, true);
