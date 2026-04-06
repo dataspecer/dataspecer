@@ -40,6 +40,11 @@ export const CREATE_MERGE_STATE_WAIT_TIME: Readonly<GitWaitTime> = {
   upperBound: 10
 };
 
+export const SAVING_DIFF_EDITOR_STATE_TO_BACKEND: Readonly<GitWaitTime> = {
+  lowerBound: 1,
+  upperBound: 15
+};
+
 export function createTranslationForWaitTime(t: TFunction<"translation", undefined>, waitTime: GitWaitTime) {
   const waitText = `${t("git.wait-prefix-text")} ${waitTime.lowerBound}-${waitTime.upperBound} ${t("git.wait-seconds")}`;
   return waitText;

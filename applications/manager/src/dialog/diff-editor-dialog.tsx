@@ -6,7 +6,7 @@ import { useOnBeforeUnload } from "@/hooks/use-on-before-unload";
 import { useOnKeyDown } from "@/hooks/use-on-key-down";
 import { DiffTreeVisualization } from "@/components/directory-diff";
 import { ArrowDownIcon, ArrowUpIcon, Loader, RotateCw } from "lucide-react";
-import SvgVisualDiff from "@/components/images-conflict-resolver";
+import SvgVisualDiffDialog from "@/dialog/show-svgs-diff-dialog";
 import { goToNextDiff, goToPreviousDiff, MonacoDiffEditor } from "@/components/monaco-diff-editor";
 import { MergeStrategyComponent } from "@/components/merge-strategy-component";
 import { useDiffEditorDialogProps } from "@/hooks/use-diff-editor-dialog-props";
@@ -182,7 +182,7 @@ return (
                         <MergeStrategyComponent handleMergeStateResolving={applyAutomaticMergeStateResolver}/>
                         {
                           activeDatastoreType === "svg" ?
-                            <Button variant="default" onClick={() => {openModel(SvgVisualDiff, {editableType: editable, mergeFromSvg, mergeToSvg})}}>Show as images</Button>
+                            <Button variant="default" onClick={() => {openModel(SvgVisualDiffDialog, {editableType: editable, mergeFromSvg, mergeToSvg})}}>Show as images</Button>
                             : null
                         }
                         <label className="flex! items-center">
