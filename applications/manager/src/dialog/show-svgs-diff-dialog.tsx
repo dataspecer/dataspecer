@@ -1,7 +1,7 @@
 import { BetterModalProps } from "@/lib/better-modal";
 import { EditableType, getEditableAndNonEditableValue } from "@dataspecer/git";
-import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "./modal";
-import { Button } from "./ui/button";
+import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "../components/modal";
+import { Button } from "../components/ui/button";
 
 type SvgVisualDiffDialogProps = {
   mergeFromSvg: string;
