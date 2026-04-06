@@ -236,10 +236,14 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
   }
 
 
+  /**
+   * @param format is passed in separately, because it may differ from the metadata format
+   */
   public static async updateDatastoreContentDirectly(
     mergeStateUuid: string,
     datastoreParentIri: string | null,
     datastoreInfo: DatastoreInfo | null,
+    format: string,
     newContent: string,
     backendFilesystem: AvailableFilesystems | null,
     backendApiPath: string,
@@ -264,7 +268,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
       body: JSON.stringify({
         pathToDatastore: datastoreInfo.fullPath,
         filesystem: backendFilesystem,
-        format: datastoreInfo.format,
+        format: format,
         type: datastoreInfo.type,
         newContent,
         datastoreParentIri,
@@ -282,7 +286,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     const datastoreInfo: DatastoreInfo | null = getDatastoreInfoOfGivenDatastoreType(filesystemNode, datastoreType);
     // The "" will throw error on backend, so for it to work it should be allowed to have missing merge state id in the request,
     // but since we are currently (and probably always will be) using just the static methods, there is no need to implement it
-    return ClientFilesystem.updateDatastoreContentDirectly("", filesystemNode.metadata.iri, datastoreInfo, content, this.backendFilesystem, this.backendApiPath);
+    return ClientFilesystem.updateDatastoreContentDirectly("", filesystemNode.metadata.iri, datastoreInfo, datastoreInfo.format, content, this.backendFilesystem, this.backendApiPath);
   }
 
 
@@ -321,6 +325,9 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
   }
 
 
+  /**
+   * @param format is passed in separately, because it may differ from the metadata format
+   */
   public static async createDatastoreDirectlyWithParents(
     mergeStateUuid: string,
     createdFilesystemNodesInTreePath: ExportShareableMetadataType[],
@@ -328,6 +335,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     content: string,
     backendFilesystem: AvailableFilesystems | null,
     datastoreInfo: DatastoreInfo | null,
+    format: string,       // TODO RadStr: Could be probably of better type - ExportFormatType
     backendApiPath: string,
   ): Promise<boolean> {
     if (datastoreInfo === null) {
@@ -349,7 +357,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
         parentIri,
         createdFilesystemNodesInTreePath,
         type: datastoreInfo.type,
-        format: datastoreInfo.format,
+        format: format,
         filesystem: backendFilesystem,
         content,
       }),
@@ -365,6 +373,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     content: string,
     backendFilesystem: AvailableFilesystems | null,
     datastoreInfo: DatastoreInfo | null,
+    format: string,
     backendApiPath: string,
   ): Promise<boolean> {
     if (parentIri === null) {
@@ -391,7 +400,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
         createdFilesystemNodesInTreePath: [],
         parentIri,
         type: datastoreInfo.type,
-        format: datastoreInfo.format,
+        format: format,
         filesystem: backendFilesystem,
         content,
       }),
@@ -417,6 +426,6 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     ClientFilesystem.createDatastoreDirectlyWithParents("",
       filesystemNodesInTreePath.reverse(),
       parentIriInToBeChangedFilesystem, content,
-      this.backendFilesystem, changedDatastore, this.backendApiPath);
+      this.backendFilesystem, changedDatastore, changedDatastore.format, this.backendApiPath);
   }
 }

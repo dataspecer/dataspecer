@@ -1168,8 +1168,12 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
           await updateMergeState(examinedMergeState, conflictsToBeResolvedOnSave);
         }
         await reloadMergeState(true, true);
-        await requestLoadPackage(mergeFromRootIri, true);
-        await requestLoadPackage(mergeToRootIri, true);
+        if (examinedMergeState.filesystemTypeMergeFrom === AvailableFilesystems.DS_Filesystem) {
+          await requestLoadPackage(mergeFromRootIri, true);
+        }
+        if (examinedMergeState.filesystemTypeMergeTo === AvailableFilesystems.DS_Filesystem) {
+          await requestLoadPackage(mergeToRootIri, true);
+        }
       }
       else if (saveResult === DiffEditorOutsideChangeChosenAction.Reload) {
         await reloadMergeState(true, true);
@@ -1328,11 +1332,13 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         // console.info({localProjectIriToIriMap});
         if (datastoreInfoForEditable !== null) {
           // Just update, it does exist
-          await ClientFilesystem.updateDatastoreContentDirectly(fetchedMergeState!.uuid, filesystemNodeParentIri, datastoreInfoForEditable, stringifiedNewValue, editableFilesystem, import.meta.env.VITE_BACKEND);
+          const datastoreFormat = pickFormat(fetchedMergeState?.filesystemTypeMergeFrom, mergeFromDatastoreInfo, mergeToDatastoreInfo);
+          await ClientFilesystem.updateDatastoreContentDirectly(fetchedMergeState!.uuid, filesystemNodeParentIri, datastoreInfoForEditable, datastoreFormat, stringifiedNewValue, editableFilesystem, import.meta.env.VITE_BACKEND);
         }
         else {
           // Create new one.
-          await ClientFilesystem.createDatastoreDirectly(fetchedMergeState!.uuid, filesystemNodeParentIri, stringifiedNewValue, editableFilesystem, datastoreInfoForNonEditable, import.meta.env.VITE_BACKEND);
+          const datastoreFormat = pickFormat(fetchedMergeState?.filesystemTypeMergeFrom, mergeFromDatastoreInfo, mergeToDatastoreInfo);
+          await ClientFilesystem.createDatastoreDirectly(fetchedMergeState!.uuid, filesystemNodeParentIri, stringifiedNewValue, editableFilesystem, datastoreInfoForNonEditable, datastoreFormat, import.meta.env.VITE_BACKEND);
           continue;
         }
         if (shouldReloadFromBackendAfterFinish) {
