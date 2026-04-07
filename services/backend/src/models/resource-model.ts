@@ -183,6 +183,7 @@ export class ResourceModel implements ResourceModelForPull {
         const prismaResource = await this.prismaClient.resource.findFirst({where: {
             linkedGitRepositoryURL: gitRepositoryUrl,
             branch: branch,
+            representsBranchHead: true,
          }});
         if (prismaResource === null) {
             return null;
@@ -251,7 +252,15 @@ export class ResourceModel implements ResourceModelForPull {
         if (shouldSetProjectIris) {
             // We have to set Project iri. If not present, just use the iri of this resource.
             const sourceForProjectResource = await this.getResourceForGitUrl(linkedGit, iri);
-            const projectIri = sourceForProjectResource?.resource.projectIri ?? iri;
+            let projectIri = sourceForProjectResource?.resource.projectIri;
+            if (projectIri === undefined) {
+                if (iri.includes("/")) {
+                    projectIri = uuidv4();
+                }
+                else {
+                    projectIri = iri;
+                }
+            }
 
             await this.prismaClient.resource.update({
                 where: {iri},
