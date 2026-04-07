@@ -27,12 +27,13 @@ import {
   CatalogEntity,
   CatalogTracker,
   getEntityLabel,
-  SemanticModelEntry,
 } from "./catalog-tracker";
-import { useDependencyTrackers } from "./dependency-tracker-react";
+import {
+  useDependencyTrackers,
+  SemanticModelEntry,
+} from "../dependency-tracker/";
 import { selectDomainAndRange } from "../dataspecer/semantic-model";
 import { useActions } from "../action/actions-react-binding";
-
 import * as Actions from "./catalog-action";
 
 export const Catalog = () => {
@@ -921,7 +922,6 @@ function asModel(
   entity: SemanticModelEntry,
 ): CatalogItem {
   const label = entity.label[""] ?? entity.model;
-  const model = tracker.semanticModels.get(entity.model);
   return {
     level: 0,
     model: entity.model,

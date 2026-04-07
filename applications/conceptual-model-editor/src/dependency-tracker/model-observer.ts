@@ -38,9 +38,7 @@ export interface ModelObserver {
  * When a model is removed all entities and the model entity
  * are send as deleted to the observer.
  *
- * This is a temporary hook it will be removed with new operation interface.
- *
- * @deprecated
+ * @deprecated This is a temporary hook it will be removed with new operation interface.
  */
 export function useModelObserver(
   entityModels: Map<ModelIdentifier, EntityModel>,

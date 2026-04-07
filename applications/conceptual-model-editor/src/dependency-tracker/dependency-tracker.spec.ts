@@ -2,15 +2,15 @@ import { it, describe, expect } from "vitest";
 
 import { Entity } from "@dataspecer/entity-model";
 
-import { DependencyTracker } from "./dependency-tracker";
+import { createDependencyTracker } from "./dependency-tracker";
 
-describe("DependencyTracker", () => {
+describe("createDependencyTracker", () => {
 
   it("Derive sum of numbers.", () => {
 
     const values: Record<string, number> = {};
 
-    const dependencyTracker = new DependencyTracker([{
+    const dependencyTracker = createDependencyTracker([{
       dependencies(entity) {
         return (entity as TestEntity).dependencies;
       },
@@ -87,7 +87,7 @@ describe("DependencyTracker", () => {
 
     const updateCounter: Record<string, number> = {};
 
-    const dependencyTracker = new DependencyTracker([{
+    const dependencyTracker = createDependencyTracker([{
       dependencies(entity) {
         return (entity as TestEntity).dependencies;
       },
@@ -117,7 +117,7 @@ describe("DependencyTracker", () => {
 
     const updateCounter: Record<string, number> = {};
 
-    const dependencyTracker = new DependencyTracker([{
+    const dependencyTracker = createDependencyTracker([{
       dependencies(entity) {
         return (entity as TestEntity).dependencies;
       },
@@ -167,7 +167,7 @@ describe("DependencyTracker", () => {
 
     const values: Record<string, Entity> = {};
 
-    const dependencyTracker = new DependencyTracker([{
+    const dependencyTracker = createDependencyTracker([{
       onEntityDidCreate(_, entity) {
         values[entity!.id] = entity;
       },
@@ -206,7 +206,7 @@ describe("DependencyTracker", () => {
 
     const values: Record<string, Entity> = {};
 
-    const dependencyTracker = new DependencyTracker([{
+    const dependencyTracker = createDependencyTracker([{
       onEntityDidCreate(_, entity) {
         values[entity!.id] = entity;
       },
@@ -228,7 +228,7 @@ describe("DependencyTracker", () => {
 
     const values: Record<string, number> = {};
 
-    const dependencyTracker = new DependencyTracker([{
+    const dependencyTracker = createDependencyTracker([{
       dependencies(entity) {
         return (entity as TestEntity).dependencies;
       },
@@ -281,7 +281,6 @@ describe("DependencyTracker", () => {
     expect(values["1"]).toBe(1);
 
   });
-
 
 });
 

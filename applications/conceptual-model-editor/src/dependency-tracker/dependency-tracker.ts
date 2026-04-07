@@ -3,50 +3,8 @@ import {
 } from "@dataspecer/entity-model";
 import { ModelObserver } from "./model-observer";
 
-/**
- * Higher level interface to track entity changes.
- */
-export interface Tracker {
-
-  /**
-   * @returns All dependencies for given entity.
-   */
-  dependencies?: (entity: Entity) => string[];
-
-  /**
-   * Called on start of an change event handling.
-   */
-  onWillUpdate?: () => void;
-
-  /**
-   * Called once all changes from a change event have been processed.
-   */
-  onDidUpdate?: () => void;
-
-  /**
-   * Called when the entity was created.
-   */
-  onEntityDidCreate?: (
-    model: ModelIdentifier, next: Entity) => void;
-
-  /**
-   * Called when the entity was changed.
-   */
-  onEntityDidChange?: (
-    model: ModelIdentifier, previous: Entity, next: Entity) => void;
-
-  /**
-   * Called when the entity was removed.
-   */
-  onEntityDidRemove?: (
-    model: ModelIdentifier, previous: Entity) => void;
-
-  /**
-   * Call when an entity's dependency has changed.
-   * Argument is the last version of the entity.
-   */
-  onDependenciesDidChange?: (next: Entity) => void;
-
+export function createDependencyTracker(trackers: Tracker[]) : ModelObserver {
+  return new DependencyTracker(trackers);
 }
 
 /**
@@ -272,4 +230,50 @@ export class DependencyTracker implements ModelObserver {
 function areArraysEqual<T>(left: T[], right: T[]): boolean {
   return left.length === right.length &&
     left.every((element, index) => element === right[index]);
+}
+
+/**
+ * Higher level interface to track entity changes.
+ */
+export interface Tracker {
+
+  /**
+   * @returns All dependencies for given entity, can contain duplicities.
+   */
+  dependencies?: (entity: Entity) => string[];
+
+  /**
+   * Called on start of an change event handling.
+   */
+  onWillUpdate?: () => void;
+
+  /**
+   * Called once all changes from a change event have been processed.
+   */
+  onDidUpdate?: () => void;
+
+  /**
+   * Called when the entity was created.
+   */
+  onEntityDidCreate?: (
+    model: ModelIdentifier, next: Entity) => void;
+
+  /**
+   * Called when the entity was changed.
+   */
+  onEntityDidChange?: (
+    model: ModelIdentifier, previous: Entity, next: Entity) => void;
+
+  /**
+   * Called when the entity was removed.
+   */
+  onEntityDidRemove?: (
+    model: ModelIdentifier, previous: Entity) => void;
+
+  /**
+   * Call when an entity's dependency has changed.
+   * Argument is the last version of the entity.
+   */
+  onDependenciesDidChange?: (next: Entity) => void;
+
 }
