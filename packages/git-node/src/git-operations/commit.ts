@@ -432,6 +432,7 @@ export class GitCommit {
     const isClassicCommit = mergeFromBranch === null;
     const { git, gitDirectoryToRemoveAfterWork } = createSimpleGitResult;
     const { commitMessage, gitCredentials, shouldAppendAfterDefaultMergeCommitMessage } = commitInfo;
+    await GitCommit.setUserConfigForGitInstance(git, gitCredentials.name, gitCredentials.email);
 
     try {
       if (shouldSkipCommitting) {
@@ -784,7 +785,6 @@ export class GitCommit {
     committerEmail: string,
   ) {
     await git.add(files);
-    await GitCommit.setUserConfigForGitInstance(git, committerName, committerEmail);
 
     // We should already be on the correct branch
     const commitResult = await git.commit(commitMessage);
@@ -824,7 +824,6 @@ export class GitCommit {
     await git.add(files);
     console.info("Status after add:");
     console.info(await git.status());
-    await GitCommit.setUserConfigForGitInstance(git, committerName, committerEmail);
     await git.commit(mergeDefaultCommitMessage);
     const lastCommitMessage = (await getLastCommit(git))?.message ?? "";
     const commitMessages: string[] = [];
