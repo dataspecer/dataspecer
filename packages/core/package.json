@@ -692,8 +692,6 @@
     "./structure-model/transformation/propagate-regex.js": "./lib/structure-model/transformation/propagate-regex.js",
     "./structure-model/transformation/propagate-reverse": "./lib/structure-model/transformation/propagate-reverse.js",
     "./structure-model/transformation/propagate-reverse.js": "./lib/structure-model/transformation/propagate-reverse.js",
-    "./structure-model/transformation/transform-codelists": "./lib/structure-model/transformation/transform-codelists.js",
-    "./structure-model/transformation/transform-codelists.js": "./lib/structure-model/transformation/transform-codelists.js",
     "./well-known/README.md": "./lib/well-known/README.md",
     "./well-known/README.md.js": "./lib/well-known/README.md",
     "./well-known/index": "./lib/well-known/index.js",

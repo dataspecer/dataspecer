@@ -8,4 +8,4 @@ export * from "./propagate-cardinality.ts";
 export * from "./propagate-example.ts";
 export * from "./propagate-label.ts";
 export * from "./propagate-regex.ts";
-export * from "./transform-codelists.ts";
+export * from "./transform-primitive-types.ts";

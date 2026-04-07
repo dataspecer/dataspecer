@@ -10,6 +10,11 @@ export interface StructureModelType {
 export class StructureModelPrimitiveType implements StructureModelType {
   dataType: string | null = null;
 
+  /**
+   * If the dataType is iri and this primitive type represent a complex type, then this is the iri of the complex type.
+   */
+  typeOfIds: string[] | null = null;
+
   languageStringRequiredLanguages: string[] = [];
 
   regex: string | null = null;

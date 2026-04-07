@@ -21,6 +21,13 @@ console.log(`<sparql xmlns="http://www.w3.org/2005/sparql-results#" xmlns:xsi="h
   </head>
   <results distinct="false" ordered="true">`);
 store.statementsMatching(null, null, null).forEach(item => {
+  const objectValue = item.object.termType === 'Literal'
+    ? (() => {
+        const langAttribute = item.object.lang ? ` xml:lang="${item.object.lang}"` : "";
+        return `<literal${langAttribute}>${item.object.value}</literal>`;
+      })()
+    : `<uri>${item.object.value}</uri>`;
+
   console.log(`    <result>
       <binding name="s">
         <uri>${item.subject.value}</uri>
@@ -29,9 +36,7 @@ store.statementsMatching(null, null, null).forEach(item => {
         <uri>${item.predicate.value}</uri>
       </binding>
       <binding name="o">
-        ` +
-          (item.object.termType === 'Literal' ? `<literal>${item.object.value}</literal>` : `<uri>${item.object.value}</uri>`)
-        + `
+        ` + objectValue + `
       </binding>
     </result>`);
 });

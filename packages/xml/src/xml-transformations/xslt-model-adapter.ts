@@ -12,7 +12,6 @@ import { XmlStructureModel as StructureModel } from "../xml-structure-model/mode
 import {
   XmlClassMatch,
   XmlClassTargetTemplate,
-  XmlCodelistMatch,
   XmlContainerMatch,
   XmlLiteralMatch,
   XmlMatch,
@@ -20,6 +19,7 @@ import {
   XmlTemplate,
   XmlTransformation,
   XmlTransformationImport,
+  type XmlIriMatch,
 } from "./xslt-model.ts";
 
 import { DataSpecification, DataSpecificationArtefact, DataSpecificationSchema } from "@dataspecer/core/data-specification/model";
@@ -33,6 +33,7 @@ import { buildEntityOriginMap, type EntityOriginMap } from "../xml-schema/utils/
 import { collectProfilingChain } from "../xml-schema/xml-schema-model-adapter.ts";
 import { structureModelAddXmlProperties } from "../xml-structure-model/add-xml-properties.ts";
 import { XSLT_LIFTING, XSLT_LOWERING } from "./xslt-vocabulary.ts";
+import { DataSpecificationConfigurator, DefaultDataSpecificationConfiguration, type DataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
 
 /**
  * Converts a {@link StructureModel} to an {@link XmlTransformation}.
@@ -66,6 +67,7 @@ class XsltAdapter {
   private profilingChainModels: StructureModel[];
   private entityOriginMap: EntityOriginMap;
   private options: XmlConfiguration;
+  private generalOptions: DataSpecificationConfiguration;
 
   /**
    *
@@ -82,6 +84,7 @@ class XsltAdapter {
     this.profilingChainModels = profilingChainModels;
     this.entityOriginMap = buildEntityOriginMap(profilingChainModels);
     this.options = XmlConfigurator.merge(DefaultXmlConfiguration, XmlConfigurator.getFromObject(artifact.configuration)) as XmlConfiguration;
+    this.generalOptions = DataSpecificationConfigurator.merge(DefaultDataSpecificationConfiguration, DataSpecificationConfigurator.getFromObject(artifact.configuration)) as DataSpecificationConfiguration;
   }
 
   private getNamespacePrefixForSchema(structureSchema: string | null): string | null {
@@ -356,21 +359,19 @@ class XsltAdapter {
   }
 
   /**
-   * Create a named template from a class (null for codelists and empty classes).
+   * Create a named template from a class.
    */
   classToTemplate(classData: StructureModelClass): XmlTemplate | null {
-    if (classData.isCodelist) {
-      return null;
-    }
     const [imported] = this.resolveImportedClassName(classData);
     if (imported) {
       return null;
     }
+    const identityPolicy = classData.instancesHaveIdentity ?? this.generalOptions.instancesHaveIdentity;
     return {
       name: this.classTemplateName(classData),
       classIris: classData.iris ?? [],
       propertyMatches: classData.properties.map((propertyData) => this.propertyToMatch(propertyData, classData)),
-      iriElementName: [this.getNamespacePrefixForSchema(this.getOriginSchemaForEntity(classData)), iriElementName[1]],
+      iriElementName: identityPolicy === "NEVER" ? null : [this.getNamespacePrefixForSchema(this.getOriginSchemaForEntity(classData)), iriElementName[1]],
     };
   }
 
@@ -391,8 +392,8 @@ class XsltAdapter {
     // Enforce the same type (class or datatype)
     // for all types in the property range.
     const result =
-      this.propertyToMatchCheckType(propertyData, (type) => type.isAssociation() && type.dataType.isCodelist, this.classPropertyToCodelistMatch, ownerClass) ??
       this.propertyToMatchCheckType(propertyData, (type) => type.isAssociation(), this.classPropertyToClassMatch, ownerClass) ??
+      this.propertyToMatchCheckType(propertyData, (type) => type.isAttribute() && type.typeOfIds !== null, this.datatypePropertyToIriMatch, ownerClass) ??
       this.propertyToMatchCheckType(propertyData, (type) => type.isAttribute(), this.datatypePropertyToLiteralMatch, ownerClass);
     if (result == null) {
       throw new Error(`Property ${propertyData.psmIri} must use either only ` + "class types or only primitive types.");
@@ -413,9 +414,6 @@ class XsltAdapter {
     }
 
     const containerClass = (dataTypes[0] as StructureModelComplexType).dataType;
-    if (containerClass.isCodelist) {
-      throw new Error(`Container property ${propertyData.psmIri} cannot be a codelist.`);
-    }
 
     // The container class only contributes structure, not direct RDF triples.
     const innerMatches = containerClass.properties.map((containerProperty) => this.propertyToMatch(containerProperty, containerClass));
@@ -425,6 +423,7 @@ class XsltAdapter {
       propertyName: this.propertyToQName(propertyData, ownerClass),
       isReverse: propertyData.isReverse,
       isAttribute: false,
+      minCardinality: propertyData.cardinalityMin ?? 1,
       containerType: propertyData.propertyAsContainer,
       innerMatches,
     };
@@ -483,6 +482,7 @@ class XsltAdapter {
       propertyName: propertyName,
       isReverse: propertyData.isReverse,
       isAttribute: propertyData.xmlIsAttribute,
+      minCardinality: propertyData.cardinalityMin ?? 1,
       isDematerialized: propertyData.dematerialize,
       targetTemplates: dataTypes.map(this.classTargetTypeTemplate, this),
     };
@@ -500,6 +500,21 @@ class XsltAdapter {
     };
   }
 
+  datatypePropertyToIriMatch(propertyData: StructureModelProperty, interpretations: QName[], propertyName: QName, dataTypes: StructureModelPrimitiveType[]): XmlIriMatch {
+    if (dataTypes.length > 1) {
+      throw new Error(`Multiple datatypes on a property ${propertyData.psmIri} are ` + "not supported.");
+    }
+    return {
+      interpretations: interpretations,
+      propertyIris: propertyData.iris ?? [],
+      propertyName: propertyName,
+      isReverse: propertyData.isReverse,
+      isAttribute: propertyData.xmlIsAttribute,
+      minCardinality: propertyData.cardinalityMin ?? 1,
+      isXmlIriMatch: true,
+    };
+  }
+
   /**
    * Construct a literal match from a class property.
    */
@@ -513,21 +528,8 @@ class XsltAdapter {
       propertyName: propertyName,
       isReverse: propertyData.isReverse,
       isAttribute: propertyData.xmlIsAttribute,
+      minCardinality: propertyData.cardinalityMin ?? 1,
       dataTypeIri: this.primitiveToIri(dataTypes[0]),
-    };
-  }
-
-  /**
-   * Construct a codelist match from a class property.
-   */
-  classPropertyToCodelistMatch(propertyData: StructureModelProperty, interpretations: QName[], propertyName: QName): XmlCodelistMatch {
-    return {
-      interpretations: interpretations,
-      propertyIris: propertyData.iris ?? [],
-      propertyName: propertyName,
-      isReverse: propertyData.isReverse,
-      isAttribute: propertyData.xmlIsAttribute,
-      isCodelist: true,
     };
   }
 

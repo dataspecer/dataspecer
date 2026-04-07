@@ -79,9 +79,11 @@ export class XmlTemplate {
 
   /**
    * QName of the <iri> element/attribute for this class template.
-   * It follows the namespace of the class element that owns it.
+   * If null, then the IRI is not used.
+   *
+   * Attribute is set globally for the whole transformation.
    */
-  iriElementName: QName;
+  iriElementName: QName | null;
 }
 
 /**
@@ -139,6 +141,11 @@ export class XmlMatch {
    * The RDF/XML name of the property, based on its IRI, for lifting.
    */
   interpretations: QName[];
+
+  /**
+   * Minimum XML cardinality of the matched property.
+   */
+  minCardinality: number;
 }
 
 /**
@@ -149,6 +156,13 @@ export class XmlLiteralMatch extends XmlMatch {
    * The IRI of the datatype.
    */
   dataTypeIri: string;
+}
+
+/**
+ * Represents a match created from a property whose range is an IRI.
+ */
+export class XmlIriMatch extends XmlMatch {
+  isXmlIriMatch: true;
 }
 
 /**
@@ -187,13 +201,6 @@ export class XmlClassTargetTemplate {
 }
 
 /**
- * Represents a match created from a class property.
- */
-export class XmlCodelistMatch extends XmlMatch {
-  isCodelist: true;
-}
-
-/**
  * Represents a match created from a container property.
  * Containers are used to group related elements (e.g., xs:sequence, xs:choice).
  */
@@ -215,16 +222,16 @@ export function xmlMatchIsLiteral(
   return (match as XmlLiteralMatch).dataTypeIri !== undefined;
 }
 
+export function xmlMatchIsIri(
+  match: XmlMatch
+): match is XmlIriMatch {
+  return (match as XmlIriMatch).isXmlIriMatch === true;
+}
+
 export function xmlMatchIsClass(
   match: XmlMatch
 ): match is XmlClassMatch {
   return (match as XmlClassMatch).targetTemplates !== undefined;
-}
-
-export function xmlMatchIsCodelist(
-  match: XmlMatch
-): match is XmlCodelistMatch {
-  return (match as XmlCodelistMatch).isCodelist === true;
 }
 
 export function xmlMatchIsContainer(

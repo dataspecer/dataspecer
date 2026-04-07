@@ -4,23 +4,38 @@ import {
   XmlContainerMatch,
   XmlMatch,
   xmlMatchIsClass,
-  xmlMatchIsCodelist,
   xmlMatchIsContainer,
+  xmlMatchIsIri,
   xmlMatchIsLiteral,
   XmlRootTemplate,
   XmlTemplate,
   XmlTransformation,
 } from "./xslt-model.ts";
 import { XmlStreamWriter, XmlWriter } from "../xml/xml-writer.ts";
-import { commonXmlNamespace, commonXmlPrefix, iriElementName, QName } from "../conventions.ts";
+import { commonXmlNamespace, commonXmlPrefix, QName } from "../conventions.ts";
 import { XSLT_LIFTING } from "./xslt-vocabulary.ts";
 
 const xslNamespace = "http://www.w3.org/1999/XSL/Transform";
 
 /**
+ * @todo use class to avoid passing the model around everywhere.
+ */
+
+/**
  * This element will be generated from templates to denote content that should
- * be placed at the top level. This process takes place after
- * the normal templates.
+ * be placed at the top level. This process takes place after the normal
+ * templates.
+ *
+ * The reason are reverse associations. It is not possible in a simple way to
+ * generate the reverse property in rdf.xml. Therefore, for each reverse
+ * property range we need to generate new root element and link the domain from
+ * it. This element, top-level, is our temporary wrapper for such cases which
+ * marks XML subtree to be moved to the root. First we generate almost final
+ * rdf.xml with these top-level wrappers and then we process it again to move
+ * the content of these wrappers to the root and remove the wrappers.
+ *
+ * @todo this can be handled directly by generating the root xslt transformation
+ * without the need for a top-level wrapper.
  */
 const inverseContainer: QName = [null, "top-level"];
 
@@ -283,6 +298,10 @@ async function writeRootTemplate(model: XmlTransformation, rootTemplate: XmlRoot
  * Writes out the named templates in a transformation.
  */
 async function writeTemplates(model: XmlTransformation, writer: XmlWriter): Promise<void> {
+  const templateIndex = new Map<string, XmlTemplate>(
+    model.templates.map((template) => [template.name, template]),
+  );
+
   for (const template of model.templates) {
     await writer.writeElementFull(
       "xsl",
@@ -308,7 +327,7 @@ async function writeTemplates(model: XmlTransformation, writer: XmlWriter): Prom
         await writer.writeLocalAttributeValue("select", "false()");
       });
 
-      await writeTemplateContents(template, model, writer);
+      await writeTemplateContents(template, model, templateIndex, writer);
     });
   }
 }
@@ -316,9 +335,19 @@ async function writeTemplates(model: XmlTransformation, writer: XmlWriter): Prom
 /**
  * Writes out the contents of a named template.
  */
-async function writeTemplateContents(template: XmlTemplate, model: XmlTransformation, writer: XmlWriter): Promise<void> {
-  const iriElementQName: QName = template.iriElementName ?? [model.targetNamespacePrefix ?? iriElementName[0], iriElementName[1]];
+async function writeTemplateContents(
+  template: XmlTemplate,
+  model: XmlTransformation,
+  templateIndex: Map<string, XmlTemplate>,
+  writer: XmlWriter,
+): Promise<void> {
+  const iriElementQName = template.iriElementName;
   const isInterpreted = template.classIris.length > 0;
+  /**
+   * If emitIdentity is false, it means that the entity is still interpreted,
+   * but we want it as a blank node. It still has some blank node IRI!
+   */
+  const emitIdentity = iriElementQName != null;
 
   const contents = async (writer: XmlWriter) => {
     await writer.writeElementFull(
@@ -344,33 +373,37 @@ async function writeTemplateContents(template: XmlTemplate, model: XmlTransforma
           await writer.writeElementFull(
             "xsl",
             "choose",
+            emitIdentity,
           )(async (writer) => {
-            await writer.writeElementFull(
-              "xsl",
-              "when",
-            )(async (writer) => {
-              const iri = writer.getQName(...iriElementQName);
-              const iriPath = model.elementIriAsAttribute ? `@${iri}` : iri;
-              const condition = `${iriPath} and not($no_iri)`;
-              await writer.writeLocalAttributeValue("test", condition);
+            if (emitIdentity) {
               await writer.writeElementFull(
                 "xsl",
-                "attribute",
+                "when",
               )(async (writer) => {
-                // If <iri> is found, use it in rdf:about
-                await writer.writeLocalAttributeValue("name", "rdf:about");
+                const iri = writer.getQName(...iriElementQName);
+                const iriPath = model.elementIriAsAttribute ? `@${iri}` : iri;
+                const condition = `${iriPath} and not($no_iri)`;
+                await writer.writeLocalAttributeValue("test", condition);
                 await writer.writeElementFull(
                   "xsl",
-                  "value-of",
+                  "attribute",
                 )(async (writer) => {
-                  await writer.writeLocalAttributeValue("select", iriPath);
+                  // If <iri> is found, use it in rdf:about
+                  await writer.writeLocalAttributeValue("name", "rdf:about");
+                  await writer.writeElementFull(
+                    "xsl",
+                    "value-of",
+                  )(async (writer) => {
+                    await writer.writeLocalAttributeValue("select", iriPath);
+                  });
                 });
               });
-            });
+            }
 
             await writer.writeElementFull(
               "xsl",
               "otherwise",
+              emitIdentity,
             )(async (writer) => {
               await writer.writeElementFull(
                 "xsl",
@@ -419,7 +452,7 @@ async function writeTemplateContents(template: XmlTemplate, model: XmlTransforma
     });
 
     for (const match of template.propertyMatches) {
-      await writeTemplateMatch(match, writer);
+      await writeTemplateMatch(match, templateIndex, writer);
     }
   };
 
@@ -434,9 +467,81 @@ async function writeTemplateContents(template: XmlTemplate, model: XmlTransforma
 }
 
 /**
+ * Builds an XPath condition that indicates if a match is present in the current
+ * XML context. Used for dematerialized classes because we do not want to
+ * generate statements for them if they are really not present in the XML. And
+ * we cannot check their presence simply because they have no single wrapping
+ * element we can target.
+ */
+function matchPresenceCondition(
+  match: XmlMatch,
+  templateIndex: Map<string, XmlTemplate>,
+  writer: XmlWriter,
+  visitedTemplates: Set<string> = new Set<string>(),
+): string | null {
+  const qNameElementSelector = (name: QName): string => {
+    const [prefix, localName] = name;
+    if (prefix == null) {
+      return localName;
+    }
+    return writer.getQName(prefix, localName);
+  };
+
+  const unique = (items: string[]): string[] => {
+    return Array.from(new Set(items));
+  };
+
+  if (xmlMatchIsContainer(match)) {
+    const innerConditions = unique(
+      match.innerMatches
+        .map((innerMatch) => matchPresenceCondition(innerMatch, templateIndex, writer, visitedTemplates))
+        .filter((condition): condition is string => condition != null && condition.length > 0),
+    );
+    if (innerConditions.length === 0) {
+      return null;
+    }
+    return innerConditions.length === 1 ? innerConditions[0] : `(${innerConditions.join(" or ")})`;
+  }
+
+  if (xmlMatchIsClass(match) && match.isDematerialized && !match.isAttribute) {
+    const branchSignals: string[] = [];
+    for (const targetTemplate of match.targetTemplates) {
+      const nestedTemplate = templateIndex.get(targetTemplate.templateName);
+      if (nestedTemplate == null || visitedTemplates.has(nestedTemplate.name)) {
+        continue;
+      }
+
+      visitedTemplates.add(nestedTemplate.name);
+      for (const propertyMatch of nestedTemplate.propertyMatches) {
+        const condition = matchPresenceCondition(propertyMatch, templateIndex, writer, visitedTemplates);
+        if (condition != null && condition.length > 0) {
+          branchSignals.push(condition);
+        }
+      }
+      visitedTemplates.delete(nestedTemplate.name);
+    }
+
+    const conditions = unique(branchSignals);
+    if (conditions.length === 0) {
+      return null;
+    }
+    return conditions.length === 1 ? conditions[0] : `(${conditions.join(" or ")})`;
+  }
+
+  const name = writer.getQName(...match.propertyName);
+  const selector = match.isAttribute ? `@${name}` : qNameElementSelector(match.propertyName);
+  return `exists(${selector})`;
+}
+
+/**
  * Writes out a property match from a template.
  */
-async function writeTemplateMatch(match: XmlMatch, writer: XmlWriter): Promise<void> {
+async function writeTemplateMatch(
+  match: XmlMatch,
+  templateIndex: Map<string, XmlTemplate>,
+  writer: XmlWriter,
+  isInsideChoice: boolean = false,
+): Promise<void> {
   const qNameElementSelector = (name: QName): string => {
     const [prefix, localName] = name;
     if (prefix == null) {
@@ -447,10 +552,35 @@ async function writeTemplateMatch(match: XmlMatch, writer: XmlWriter): Promise<v
 
   if (xmlMatchIsContainer(match)) {
     // For containers, match the container element and process inner properties
-    await writeContainerMatch(match, writer);
+    await writeContainerMatch(match, templateIndex, writer, isInsideChoice);
   } else if (xmlMatchIsClass(match) && match.isDematerialized && !match.isAttribute) {
-    // Identifying the range of corresponding elements might be useful here.
-    await writeProperty(match, writer);
+    // For dematerialized classes, we need to check whether the contents of such
+    // class is really present in the XML. The reason is that if the CLASS is
+    // present, we will generate a blank node for it and we need to know when we
+    // can generate the blank node.
+    //
+    // This is not a problem for other types of structures such as optional
+    // containers, because we are simply matching each property individually and
+    // generating only one RDF triple.
+
+    const minCardinality = match.minCardinality ?? 1;
+    const shouldGuardDematerialized = isInsideChoice || minCardinality === 0;
+    if (shouldGuardDematerialized) {
+      const condition = matchPresenceCondition(match, templateIndex, writer);
+      if (condition != null) {
+        await writer.writeElementFull(
+          "xsl",
+          "if",
+        )(async (writer) => {
+          await writer.writeLocalAttributeValue("test", condition);
+          await writeProperty(match, writer);
+        });
+      } else {
+        await writeProperty(match, writer);
+      }
+    } else {
+      await writeProperty(match, writer);
+    }
   } else {
     await writer.writeElementFull(
       "xsl",
@@ -469,10 +599,20 @@ async function writeTemplateMatch(match: XmlMatch, writer: XmlWriter): Promise<v
  * Writes out a container match from a template.
  * Containers group related elements (e.g., xs:sequence, xs:choice).
  */
-async function writeContainerMatch(containerMatch: XmlContainerMatch, writer: XmlWriter): Promise<void> {
-  // Containers are structural-only for lifting and should not add iteration.
+async function writeContainerMatch(
+  containerMatch: XmlContainerMatch,
+  templateIndex: Map<string, XmlTemplate>,
+  writer: XmlWriter,
+  isInsideChoice: boolean,
+): Promise<void> {
+  if (containerMatch.containerType === "choice") {
+    // We need to track recursively if we are inside a choice because it affects
+    // whether we generate guards for dematerialized classes.
+    isInsideChoice = true;
+  }
+
   for (const innerMatch of containerMatch.innerMatches) {
-    await writeTemplateMatch(innerMatch, writer);
+    await writeTemplateMatch(innerMatch, templateIndex, writer, isInsideChoice);
   }
 }
 
@@ -481,8 +621,8 @@ async function writeContainerMatch(containerMatch: XmlContainerMatch, writer: Xm
  */
 async function writeProperty(match: XmlMatch, writer: XmlWriter) {
   if (match.isReverse) {
-    if (!xmlMatchIsClass(match)) {
-      throw new Error(`Reverse property ${match.propertyName} must be of a class type.`);
+    if (!xmlMatchIsClass(match) && !xmlMatchIsIri(match)) {
+      throw new Error(`Reverse property ${match.propertyName} must have a class or IRI range.`);
     }
 
     // Stores the property arc.
@@ -511,7 +651,34 @@ async function writeProperty(match: XmlMatch, writer: XmlWriter) {
     // Generates a temporary inverseContainer with the rdf:Description created
     // from the object instance.
     await writer.writeElementFull(...inverseContainer)(async (writer) => {
-      await writeClassTemplateCall(match, writer);
+      if (xmlMatchIsIri(match)) {
+        await writer.writeElementFull(
+          "rdf",
+          "Description",
+        )(async (writer) => {
+          await writer.writeElementFull(
+            "xsl",
+            "attribute",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("name", "rdf:about");
+            await writer.writeElementFull(
+              "xsl",
+              "value-of",
+            )(async (writer) => {
+              await writer.writeLocalAttributeValue("select", ".");
+            });
+          });
+
+          await writer.writeElementFull(
+            "xsl",
+            "copy-of",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("select", "$arc/*");
+          });
+        });
+      } else {
+        await writeClassTemplateCall(match, writer);
+      }
     });
   } else {
     await writeForwardProperty(match, writer);
@@ -541,7 +708,7 @@ async function writeForwardProperty(match: XmlMatch, writer: XmlWriter) {
         )(async (writer) => {
           await writer.writeLocalAttributeValue("select", ".");
         });
-      } else if (xmlMatchIsCodelist(match)) {
+      } else if (xmlMatchIsIri(match)) {
         await writer.writeElementFull(
           "xsl",
           "attribute",

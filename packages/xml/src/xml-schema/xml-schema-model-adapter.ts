@@ -601,7 +601,7 @@ class XmlSchemaAdapter {
    */
   private async rootToElement(root: StructureModelSchemaRoot): Promise<XmlSchemaElement> {
     const minCardinality = root.cardinalityMin ?? 1;
-    const maxCardinality = root.cardinalityMax ?? 1;
+    const maxCardinality = root.cardinalityMax;
     const hasWrappingElement = root.enforceCollection || minCardinality !== 1 || maxCardinality !== 1;
     const isInOr = root.isInOr || root.classes.length > 1;
     const wrappingElementName = root.collectionTechnicalLabel ?? "root";

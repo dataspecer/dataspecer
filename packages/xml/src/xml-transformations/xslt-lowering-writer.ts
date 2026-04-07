@@ -2,15 +2,15 @@ import { OutputStream } from "@dataspecer/core/io/stream/output-stream";
 import {
   XmlMatch,
   xmlMatchIsClass,
-  xmlMatchIsCodelist,
   xmlMatchIsContainer,
+  xmlMatchIsIri,
   xmlMatchIsLiteral,
   XmlRootTemplate,
   XmlTemplate,
   XmlTransformation,
 } from "./xslt-model.ts";
 import { XmlStreamWriter, XmlWriter } from "../xml/xml-writer.ts";
-import { commonXmlNamespace, commonXmlPrefix, iriElementName, QName } from "../conventions.ts";
+import { commonXmlNamespace, commonXmlPrefix, QName } from "../conventions.ts";
 import { XSLT_LOWERING } from "./xslt-vocabulary.ts";
 
 const xslNamespace = "http://www.w3.org/1999/XSL/Transform";
@@ -343,6 +343,10 @@ async function writeRootTemplate(rootTemplate: XmlRootTemplate, writer: XmlWrite
  * Writes out the named templates in a transformation.
  */
 async function writeTemplates(model: XmlTransformation, writer: XmlWriter): Promise<void> {
+  const templateIndex = new Map<string, XmlTemplate>(
+    model.templates.map((template) => [template.name, template]),
+  );
+
   for (const template of model.templates) {
     await writer.writeElementFull(
       "xsl",
@@ -350,7 +354,7 @@ async function writeTemplates(model: XmlTransformation, writer: XmlWriter): Prom
     )(async (writer) => {
       await writer.writeLocalAttributeValue("name", template.name);
 
-      await writeTemplateContents(template, model, writer);
+      await writeTemplateContents(template, model, templateIndex, writer);
     });
   }
 }
@@ -358,10 +362,16 @@ async function writeTemplates(model: XmlTransformation, writer: XmlWriter): Prom
 /**
  * Writes out the contents of a named template.
  */
-async function writeTemplateContents(template: XmlTemplate, model: XmlTransformation, writer: XmlWriter): Promise<void> {
-  const iriElementQName: QName = template.iriElementName ?? [model.targetNamespacePrefix ?? iriElementName[0], iriElementName[1]];
+async function writeTemplateContents(
+  template: XmlTemplate,
+  model: XmlTransformation,
+  templateIndex: Map<string, XmlTemplate>,
+  writer: XmlWriter,
+): Promise<void> {
+  const iriElementQName = template.iriElementName;
   // Whether the class has interpretation or it is just a structural wrapper having no type, no iri.
   const interpreted = template.classIris.length > 0;
+  const emitIdentity = iriElementQName != null;
 
   // The SPARQL binding content containing the identifier of the resource.
   await writer.writeElementFull(
@@ -428,13 +438,13 @@ async function writeTemplateContents(template: XmlTemplate, model: XmlTransforma
   // Write all property attributes first, then elements (attributes must come before elements in XML)
   for (const match of template.propertyMatches) {
     if (!xmlMatchIsContainer(match) && match.isAttribute) {
-      await writeTemplateMatch(match, writer);
+      await writeTemplateMatch(match, templateIndex, writer);
     }
   }
 
   // Write out <iri> if the identifier is sp:uri.
   // Keep this after attributes, so no attribute is added after child nodes.
-  if (interpreted) {
+  if (interpreted && emitIdentity) {
     await writer.writeElementFull(
       "xsl",
       "if",
@@ -451,7 +461,7 @@ async function writeTemplateContents(template: XmlTemplate, model: XmlTransforma
             "xsl",
             "attribute",
           )(async (writer) => {
-            await writer.writeLocalAttributeValue("name", iriElementName[1]);
+            await writer.writeLocalAttributeValue("name", iriElementQName[1]);
             await writer.writeElementFull(
               "xsl",
               "value-of",
@@ -476,9 +486,69 @@ async function writeTemplateContents(template: XmlTemplate, model: XmlTransforma
   // Then write all property elements
   for (const match of template.propertyMatches) {
     if (xmlMatchIsContainer(match) || !match.isAttribute) {
-      await writeTemplateMatch(match, writer);
+      await writeTemplateMatch(match, templateIndex, writer);
     }
   }
+}
+
+function unique(items: string[]): string[] {
+  return Array.from(new Set(items));
+}
+
+/**
+ * Builds a condition that is true when at least one RDF triple backing
+ * the given match is present for the current $id.
+ */
+function matchHasRdfContentCondition(
+  match: XmlMatch,
+  templateIndex: Map<string, XmlTemplate>,
+  writer: XmlWriter,
+  visitedTemplates: Set<string> = new Set<string>(),
+): string | null {
+  if (xmlMatchIsContainer(match)) {
+    const innerConditions = unique(
+      match.innerMatches
+        .map((inner) => matchHasRdfContentCondition(inner, templateIndex, writer, visitedTemplates))
+        .filter((condition): condition is string => condition != null && condition.length > 0),
+    );
+    if (innerConditions.length === 0) {
+      return null;
+    }
+    return innerConditions.length === 1 ? innerConditions[0] : `(${innerConditions.join(" or ")})`;
+  }
+
+  if (xmlMatchIsClass(match) && match.propertyIris.length === 0) {
+    const nestedConditions: string[] = [];
+    for (const targetTemplate of match.targetTemplates) {
+      const nestedTemplate = templateIndex.get(targetTemplate.templateName);
+      if (nestedTemplate == null || visitedTemplates.has(nestedTemplate.name)) {
+        continue;
+      }
+
+      visitedTemplates.add(nestedTemplate.name);
+      for (const propertyMatch of nestedTemplate.propertyMatches) {
+        const condition = matchHasRdfContentCondition(propertyMatch, templateIndex, writer, visitedTemplates);
+        if (condition != null && condition.length > 0) {
+          nestedConditions.push(condition);
+        }
+      }
+      visitedTemplates.delete(nestedTemplate.name);
+    }
+
+    const conditions = unique(nestedConditions);
+    if (conditions.length === 0) {
+      return null;
+    }
+    return conditions.length === 1 ? conditions[0] : `(${conditions.join(" or ")})`;
+  }
+
+  if (match.propertyIris.length === 0) {
+    return null;
+  }
+
+  const [subj] = resolveBindings(match.isReverse);
+  const path = propertyResultPath(subj, match.propertyIris, writer);
+  return `exists(${path})`;
 }
 
 /**
@@ -488,15 +558,51 @@ async function writeTemplateContents(template: XmlTemplate, model: XmlTransforma
  * are converted to templates, this will effectively either ends with primitive
  * type or call another template.
  */
-async function writeTemplateMatch(match: XmlMatch, writer: XmlWriter): Promise<void> {
+async function writeTemplateMatch(
+  match: XmlMatch,
+  templateIndex: Map<string, XmlTemplate>,
+  writer: XmlWriter,
+  isOptionalContext: boolean = false,
+): Promise<void> {
   if (xmlMatchIsContainer(match)) {
-    // We simply iterate the contents of the container
-    // For max cardinality of 1, this is OK
+    const minCardinality = match.minCardinality;
+    const nestedOptionalContext = isOptionalContext || minCardinality === 0 || match.containerType === "choice";
+
+    // Containers are structural, optionality is propagated to inner matches.
     for (const inner of match.innerMatches) {
-      await writeTemplateMatch(inner, writer);
+      await writeTemplateMatch(inner, templateIndex, writer, nestedOptionalContext);
     }
   } else {
     const isInterpreted = match.propertyIris.length > 0;
+    const minCardinality = match.minCardinality;
+    const isOptional = isOptionalContext || minCardinality === 0;
+    const isOptionalNonInterpretedAssociation = xmlMatchIsClass(match) && !isInterpreted && isOptional;
+
+    if (isOptionalNonInterpretedAssociation) {
+      // For non-interpreted associations with optional cardinality, we need to
+      // decide whether to generate the wrapper element for the property. We
+      // want to do it iff there is at least one RDF triple for the property,
+      // otherwise we would generate empty elements for non-present optional
+      // associations.
+      //
+      // This is case only for non-interpreted associations as nothing else
+      // requires a wrapper element we directly know nothing about.
+
+      const condition = matchHasRdfContentCondition(match, templateIndex, writer);
+      if (condition == null) {
+        return;
+      }
+
+      await writer.writeElementFull(
+        "xsl",
+        "if",
+      )(async (writer) => {
+        await writer.writeLocalAttributeValue("test", condition);
+        await writeMatchedProperty(match, null, writer);
+      });
+      return;
+    }
+
     const [subj, obj] = resolveBindings(match.isReverse);
     if (isInterpreted) {
       // This is for each that iterates all triples
@@ -557,7 +663,7 @@ async function writePropertyContents(match: XmlMatch, obj: string | null, writer
     )(async (writer) => {
       await writer.writeLocalAttributeValue("select", `sp:binding[@name=${obj}]/sp:literal`);
     });
-  } else if (xmlMatchIsCodelist(match)) {
+  } else if (xmlMatchIsIri(match)) {
     await writer.writeElementFull(
       "xsl",
       "apply-templates",
