@@ -141,6 +141,11 @@ export class XmlMatch {
    * The RDF/XML name of the property, based on its IRI, for lifting.
    */
   interpretations: QName[];
+
+  /**
+   * Minimum XML cardinality of the matched property.
+   */
+  minCardinality: number;
 }
 
 /**

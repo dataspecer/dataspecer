@@ -423,6 +423,7 @@ class XsltAdapter {
       propertyName: this.propertyToQName(propertyData, ownerClass),
       isReverse: propertyData.isReverse,
       isAttribute: false,
+      minCardinality: propertyData.cardinalityMin ?? 1,
       containerType: propertyData.propertyAsContainer,
       innerMatches,
     };
@@ -481,6 +482,7 @@ class XsltAdapter {
       propertyName: propertyName,
       isReverse: propertyData.isReverse,
       isAttribute: propertyData.xmlIsAttribute,
+      minCardinality: propertyData.cardinalityMin ?? 1,
       isDematerialized: propertyData.dematerialize,
       targetTemplates: dataTypes.map(this.classTargetTypeTemplate, this),
     };
@@ -508,6 +510,7 @@ class XsltAdapter {
       propertyName: propertyName,
       isReverse: propertyData.isReverse,
       isAttribute: propertyData.xmlIsAttribute,
+      minCardinality: propertyData.cardinalityMin ?? 1,
       isXmlIriMatch: true,
     };
   }
@@ -525,6 +528,7 @@ class XsltAdapter {
       propertyName: propertyName,
       isReverse: propertyData.isReverse,
       isAttribute: propertyData.xmlIsAttribute,
+      minCardinality: propertyData.cardinalityMin ?? 1,
       dataTypeIri: this.primitiveToIri(dataTypes[0]),
     };
   }
