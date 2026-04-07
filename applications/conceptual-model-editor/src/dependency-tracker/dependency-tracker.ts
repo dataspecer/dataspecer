@@ -121,7 +121,7 @@ export class DependencyTracker implements ModelObserver {
     const previousDependencies = this.dependencies.get(previous.id) ?? new Set();
     const removed = previousDependencies.difference(nextDependencies);
     this.removeFromRecomputeOnChange(next.id, removed);
-    const created = nextDependencies.difference(removed);
+    const created = nextDependencies.difference(previousDependencies);
     this.addToRecomputeOnChange(next.id, created);
     this.dependencies.set(next.id, nextDependencies);
     this.entityMap.set(next.id, next);
@@ -162,74 +162,66 @@ export class DependencyTracker implements ModelObserver {
 
   propagateChanges(changed: EntityIdentifier[]): void {
     const visited = new Set<EntityIdentifier>();
-    // Prepare queue from changes.
-    let queue: EntityIdentifier[] = [];
+    // Prepare initial queue from changes.
+    let queue = new Set<EntityIdentifier>();
     for (const identifier of changed) {
       const toRecompute = this.recomputeOnChange.get(identifier);
-      if (toRecompute === undefined) {
-        continue;
+      if (toRecompute !== undefined) {
+        toRecompute.forEach(id => queue.add(id));
       }
-      queue.push(...toRecompute);
     }
-    // We do updates in iterations, in iteration we update entities in queue.
-    // If entity has dependencies in queue its update is postponed to
-    // next iteration.
-    while (true) {
-      const nextQueue: EntityIdentifier[] = [];
+    // We do updates in iterations.
+    // In each iteration we update entities whose dependencies are not pending.
+    // Others are postponed to the next iteration.
+    // Newly discovered dependents are also added to the next iteration.
+    while (queue.size > 0) {
+      const nextQueue = new Set<EntityIdentifier>();
+      let doNextIteration = false;
       for (const identifier of queue) {
         // Do not revisit already updated entity.
         if (visited.has(identifier)) {
           continue;
         }
-        // We can continue only if none of dependencies is in queue for update.
+        // We can continue only if none of the dependencies is pending.
         const dependencies = this.dependencies.get(identifier);
-        if (dependencies === undefined) {
-          // There are none, so we can just test.
-        } else {
-          const pending = dependencies.values()
-            .some(item => queue.includes(item));
+        if (dependencies !== undefined) {
+          const pending = dependencies.values().some(item => queue.has(item));
           if (pending) {
-            // We add the entity to the next iteration.
-            nextQueue.push(identifier);
+            nextQueue.add(identifier);
             continue;
           }
         }
         // We update the entity.
+        doNextIteration = true;
         visited.add(identifier);
-        // Get the entity or skip is if it is missing.
+        // Get the entity or skip if it is missing.
         const entity = this.entityMap.get(identifier);
-        if (entity === undefined) {
-          continue;
+        if (entity !== undefined) {
+          // Propagate changes.
+          for (const tracker of this.trackers) {
+            tracker.onDependenciesDidChange?.(entity);
+          }
         }
-        // Propagate changes.
-        for (const tracker of this.trackers) {
-          tracker.onDependenciesDidChange?.(entity);
+        // Queue dependents for the next iteration.
+        const toRecompute = this.recomputeOnChange.get(identifier);
+        if (toRecompute !== undefined) {
+          toRecompute.forEach(id => {
+            if (!visited.has(id)) {
+              nextQueue.add(id);
+            }
+          });
         }
-        // Queue for recomputation.
-        queue.push(...(this.recomputeOnChange.get(identifier) ?? []));
       }
-      // We terminate once there is nothing to update.
-      if (nextQueue.length === 0) {
-        break;
-      }
-      // We terminate if the previous and current queue are the same.
-      if (areArraysEqual(queue, nextQueue)) {
+      // No progress means unresolvable cycle — terminate to avoid infinite loop.
+      if (!doNextIteration) {
         console.error(
           "DependencyTracker was unable to resolve all queued items.",
-          { queue });
+          { queue: [...queue] });
         break;
       }
       queue = nextQueue;
     }
   }
-}
-
-/**
- * @returns True when arrays contain same items.
- */
-function areArraysEqual<T>(left: T[], right: T[]): boolean {
-  return left.length === right.length &&
-    left.every((element, index) => element === right[index]);
 }
 
 /**

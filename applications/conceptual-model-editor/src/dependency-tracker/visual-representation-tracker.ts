@@ -4,6 +4,7 @@ import {
 import {
   isVisualNode,
   isVisualRelationship,
+  VisualEntity,
   VisualNode,
   VisualRelationship,
 } from "@dataspecer/visual-model";
@@ -30,16 +31,16 @@ class VisualRepresentationTracker implements Tracker {
   }
 
   onEntityDidCreate(model: ModelIdentifier, next: Entity) {
-    // We need to cast to any here as VisualEntity is using identifier not id.
-    if (isVisualNode(next as any)) {
-      const typed = next as unknown as VisualNode;
-      const entity = this.getEntityWeak(typed.representedEntity);
-      this.addVisualRepresentation(entity, model, typed.identifier);
+    // VisualEntity uses 'identifier' while entity-model Entity uses 'id',
+    // so we cast through the visual-model's own Entity type.
+    const visual = next as unknown as VisualEntity;
+    if (isVisualNode(visual)) {
+      const entity = this.getEntityWeak(visual.representedEntity);
+      this.addVisualRepresentation(entity, model, visual.identifier);
     }
-    if (isVisualRelationship(next as any)) {
-      const typed = next as unknown as VisualRelationship;
-      const entity = this.getEntityWeak(typed.representedRelationship);
-      this.addVisualRepresentation(entity, model, typed.identifier);
+    if (isVisualRelationship(visual)) {
+      const entity = this.getEntityWeak(visual.representedRelationship);
+      this.addVisualRepresentation(entity, model, visual.identifier);
     }
   }
 
@@ -64,14 +65,13 @@ class VisualRepresentationTracker implements Tracker {
   }
 
   onEntityDidRemove(model: ModelIdentifier, previous: Entity): void {
-    if (isVisualNode(previous as any)) {
-      const typed = previous as unknown as VisualNode;
-      const entity = this.getEntityWeak(typed.representedEntity);
-      this.removeVisualRepresentation(entity, model, typed.identifier);
-    } else if (isVisualRelationship(previous as any)) {
-      const typed = previous as unknown as VisualRelationship;
-      const entity = this.getEntityWeak(typed.representedRelationship);
-      this.removeVisualRepresentation(entity, model, typed.identifier);
+    const visual = previous as unknown as VisualEntity;
+    if (isVisualNode(visual)) {
+      const entity = this.getEntityWeak(visual.representedEntity);
+      this.removeVisualRepresentation(entity, model, visual.identifier);
+    } else if (isVisualRelationship(visual)) {
+      const entity = this.getEntityWeak(visual.representedRelationship);
+      this.removeVisualRepresentation(entity, model, visual.identifier);
     }
   }
 
