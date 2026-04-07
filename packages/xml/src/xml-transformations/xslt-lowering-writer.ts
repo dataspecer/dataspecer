@@ -3,6 +3,7 @@ import {
   XmlMatch,
   xmlMatchIsClass,
   xmlMatchIsContainer,
+  xmlMatchIsIri,
   xmlMatchIsLiteral,
   XmlRootTemplate,
   XmlTemplate,
@@ -556,6 +557,13 @@ async function writePropertyContents(match: XmlMatch, obj: string | null, writer
       "apply-templates",
     )(async (writer) => {
       await writer.writeLocalAttributeValue("select", `sp:binding[@name=${obj}]/sp:literal`);
+    });
+  } else if (xmlMatchIsIri(match)) {
+    await writer.writeElementFull(
+      "xsl",
+      "apply-templates",
+    )(async (writer) => {
+      await writer.writeLocalAttributeValue("select", `sp:binding[@name=${obj}]/sp:uri`);
     });
   } else if (xmlMatchIsClass(match)) {
     if (match.isAttribute) {

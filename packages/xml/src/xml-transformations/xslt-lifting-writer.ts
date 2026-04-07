@@ -5,6 +5,7 @@ import {
   XmlMatch,
   xmlMatchIsClass,
   xmlMatchIsContainer,
+  xmlMatchIsIri,
   xmlMatchIsLiteral,
   XmlRootTemplate,
   XmlTemplate,
@@ -18,8 +19,19 @@ const xslNamespace = "http://www.w3.org/1999/XSL/Transform";
 
 /**
  * This element will be generated from templates to denote content that should
- * be placed at the top level. This process takes place after
- * the normal templates.
+ * be placed at the top level. This process takes place after the normal
+ * templates.
+ *
+ * The reason are reverse associations. It is not possible in a simple way to
+ * generate the reverse property in rdf.xml. Therefore, for each reverse
+ * property range we need to generate new root element and link the domain from
+ * it. This element, top-level, is our temporary wrapper for such cases which
+ * marks XML subtree to be moved to the root. First we generate almost final
+ * rdf.xml with these top-level wrappers and then we process it again to move
+ * the content of these wrappers to the root and remove the wrappers.
+ *
+ * @todo this can be handled directly by generating the root xslt transformation
+ * without the need for a top-level wrapper.
  */
 const inverseContainer: QName = [null, "top-level"];
 
@@ -489,8 +501,8 @@ async function writeContainerMatch(containerMatch: XmlContainerMatch, writer: Xm
  */
 async function writeProperty(match: XmlMatch, writer: XmlWriter) {
   if (match.isReverse) {
-    if (!xmlMatchIsClass(match)) {
-      throw new Error(`Reverse property ${match.propertyName} must be of a class type.`);
+    if (!xmlMatchIsClass(match) && !xmlMatchIsIri(match)) {
+      throw new Error(`Reverse property ${match.propertyName} must have a class or IRI range.`);
     }
 
     // Stores the property arc.
@@ -519,7 +531,34 @@ async function writeProperty(match: XmlMatch, writer: XmlWriter) {
     // Generates a temporary inverseContainer with the rdf:Description created
     // from the object instance.
     await writer.writeElementFull(...inverseContainer)(async (writer) => {
-      await writeClassTemplateCall(match, writer);
+      if (xmlMatchIsIri(match)) {
+        await writer.writeElementFull(
+          "rdf",
+          "Description",
+        )(async (writer) => {
+          await writer.writeElementFull(
+            "xsl",
+            "attribute",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("name", "rdf:about");
+            await writer.writeElementFull(
+              "xsl",
+              "value-of",
+            )(async (writer) => {
+              await writer.writeLocalAttributeValue("select", ".");
+            });
+          });
+
+          await writer.writeElementFull(
+            "xsl",
+            "copy-of",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("select", "$arc/*");
+          });
+        });
+      } else {
+        await writeClassTemplateCall(match, writer);
+      }
     });
   } else {
     await writeForwardProperty(match, writer);
@@ -548,6 +587,19 @@ async function writeForwardProperty(match: XmlMatch, writer: XmlWriter) {
           "value-of",
         )(async (writer) => {
           await writer.writeLocalAttributeValue("select", ".");
+        });
+      } else if (xmlMatchIsIri(match)) {
+        await writer.writeElementFull(
+          "xsl",
+          "attribute",
+        )(async (writer) => {
+          await writer.writeLocalAttributeValue("name", "rdf:resource");
+          await writer.writeElementFull(
+            "xsl",
+            "value-of",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("select", ".");
+          });
         });
       } else if (xmlMatchIsClass(match)) {
         if (match.isAttribute) {

@@ -19,6 +19,7 @@ import {
   XmlTemplate,
   XmlTransformation,
   XmlTransformationImport,
+  type XmlIriMatch,
 } from "./xslt-model.ts";
 
 import { DataSpecification, DataSpecificationArtefact, DataSpecificationSchema } from "@dataspecer/core/data-specification/model";
@@ -392,6 +393,7 @@ class XsltAdapter {
     // for all types in the property range.
     const result =
       this.propertyToMatchCheckType(propertyData, (type) => type.isAssociation(), this.classPropertyToClassMatch, ownerClass) ??
+      this.propertyToMatchCheckType(propertyData, (type) => type.isAttribute() && type.typeOfIds !== null, this.datatypePropertyToIriMatch, ownerClass) ??
       this.propertyToMatchCheckType(propertyData, (type) => type.isAttribute(), this.datatypePropertyToLiteralMatch, ownerClass);
     if (result == null) {
       throw new Error(`Property ${propertyData.psmIri} must use either only ` + "class types or only primitive types.");
@@ -493,6 +495,20 @@ class XsltAdapter {
       templateName: this.classTemplateName(type.dataType),
       typeName: name,
       classIris: type.dataType.iris ?? [],
+    };
+  }
+
+  datatypePropertyToIriMatch(propertyData: StructureModelProperty, interpretations: QName[], propertyName: QName, dataTypes: StructureModelPrimitiveType[]): XmlIriMatch {
+    if (dataTypes.length > 1) {
+      throw new Error(`Multiple datatypes on a property ${propertyData.psmIri} are ` + "not supported.");
+    }
+    return {
+      interpretations: interpretations,
+      propertyIris: propertyData.iris ?? [],
+      propertyName: propertyName,
+      isReverse: propertyData.isReverse,
+      isAttribute: propertyData.xmlIsAttribute,
+      isXmlIriMatch: true,
     };
   }
 

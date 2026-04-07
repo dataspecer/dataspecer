@@ -154,6 +154,13 @@ export class XmlLiteralMatch extends XmlMatch {
 }
 
 /**
+ * Represents a match created from a property whose range is an IRI.
+ */
+export class XmlIriMatch extends XmlMatch {
+  isXmlIriMatch: true;
+}
+
+/**
  * Represents a match created from a class property.
  */
 export class XmlClassMatch extends XmlMatch {
@@ -208,6 +215,12 @@ export function xmlMatchIsLiteral(
   match: XmlMatch
 ): match is XmlLiteralMatch {
   return (match as XmlLiteralMatch).dataTypeIri !== undefined;
+}
+
+export function xmlMatchIsIri(
+  match: XmlMatch
+): match is XmlIriMatch {
+  return (match as XmlIriMatch).isXmlIriMatch === true;
 }
 
 export function xmlMatchIsClass(
