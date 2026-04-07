@@ -51,6 +51,10 @@ export const MonacoDiffEditor: FC<{
       // Get the current content of the editor
       const original = props.editorRef.current?.editor.getOriginalEditor().getValue() ?? null;
       const modified = props.editorRef.current?.editor.getModifiedEditor().getValue() ?? null;
+      if (previousDatastoreType !== null && original === editorsContent.nonEditable && modified === editorsContent.editable &&
+          props.datastoreType === previousDatastoreType && previousProjectIrisTreePathToFilesystemNode === props.projectIrisTreePathToFilesystemNode) {
+        return;
+      }
       setPreviousNonEditableContent(original);
       setPreviousEditableContent(modified);
       setPreviousDatastoreType(props.datastoreType);
@@ -97,11 +101,10 @@ export const MonacoDiffEditor: FC<{
 
   // Update the diff tree on model change
   useEffect(() => {
-    if (previousNonEditableContent === null || previousProjectIrisTreePathToFilesystemNode === null ||
-       (previousProjectIrisTreePathToFilesystemNode === props.projectIrisTreePathToFilesystemNode && previousDatastoreType === props.datastoreType)
-    ) {
+    if (previousNonEditableContent === null || previousProjectIrisTreePathToFilesystemNode === null) {
       return;
     }
+
     const hasLineChanges: boolean = previousEditableContent !== previousNonEditableContent;
     // Call it explicitly again when user changes model
     updateDiffNodeOnChange(
@@ -159,7 +162,7 @@ export const MonacoDiffEditor: FC<{
           // );
 
 
-          const hasLineChanges = originalEditorContent.current === modifiedEditorContent.current;
+          const hasLineChanges = originalEditorContent.current !== modifiedEditorContent.current;
           updateDiffNodeOnChange(
             editor ?? null, props.setMergeState, hasLineChanges,
             projectIrisTreePathToFilesystemNodeRef.current, datastoreTypeRef.current
