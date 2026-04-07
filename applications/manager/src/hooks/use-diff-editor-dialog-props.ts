@@ -1244,7 +1244,13 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
 
     for (const [nodeTreePath, datastoreInfoMap] of Object.entries(datastoreInfosForCacheEntries)) {
       if (removedTreePaths.includes(nodeTreePath)) {
-        await ClientFilesystem.removeFilesystemNodeDirectly(fetchedMergeState!.uuid, nodeTreePath, import.meta.env.VITE_BACKEND, editableFilesystem);
+        const projectIriToIriForEditable: Record<string, string | null> = {};
+        for (const [key, value] of Object.entries(localProjectIriToIriMap)) {
+          projectIriToIriForEditable[key] = value[editable];
+        }
+        // The actual iris not the project iris
+        const nodeTreePathWithIris = nodeTreePath.split("/").map(projectIri => projectIriToIriForEditable[projectIri]).join("/");
+        await ClientFilesystem.removeFilesystemNodeDirectly(fetchedMergeState!.uuid, nodeTreePathWithIris, import.meta.env.VITE_BACKEND, editableFilesystem);
         continue;
       }
 
