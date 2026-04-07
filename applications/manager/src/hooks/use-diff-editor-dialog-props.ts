@@ -594,7 +594,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         const strippedResult = convertDatastoreContentToOutputFormat(activeMergeFromContentConverted, activeFormat, activeFormat, true, resourceStripHandlerMethod);
         if (!strippedResult.ok) {
           // TODO RadStr Critical: Do not know now, but probably the correct solution is to just keep the old value.
-          strippedMergeFromContent = activeMergeFromContentConverted
+          strippedMergeFromContent = activeMergeFromContentConverted;
         }
         else {
           strippedMergeFromContent = strippedResult.value;
@@ -608,7 +608,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         const strippedResult = convertDatastoreContentToOutputFormat(activeMergeToContentConverted, activeFormat, activeFormat, true, resourceStripHandlerMethod);
         if (!strippedResult.ok) {
           // TODO RadStr Critical: Do not know now, but probably the correct solution is to just keep the old value.
-          strippedMergeToContent = activeMergeToContentConverted
+          strippedMergeToContent = activeMergeToContentConverted;
         }
         else {
           strippedMergeToContent = strippedResult.value;
@@ -782,9 +782,11 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
   ) => {
     // Create meta first
     if (metadataDatastoreInfoToCreate !== null && datastoreInfoToCreate.type != "meta") {
-      await updateModelDataOnCreate(projectIrisTreePathForDatastoreParent, metadataDatastoreInfoToCreate, null);
+      const { mergeFrom, mergeTo } = getMergeFromAndMergeTo(editable, metadataDatastoreInfoToCreate, null);
+      await updateModelDataOnCreate(projectIrisTreePathForDatastoreParent, mergeFrom, mergeTo);
     }
-    await updateModelDataOnCreate(projectIrisTreePathForDatastoreParent, datastoreInfoToCreate, null);
+    const { mergeFrom, mergeTo } = getMergeFromAndMergeTo(editable, datastoreInfoToCreate, null);
+    await updateModelDataOnCreate(projectIrisTreePathForDatastoreParent, mergeFrom, mergeTo);
     setCreatedDatastores(prev => {
       const newDatastores = [...prev, datastoreInfoToCreate];
       if (metadataDatastoreInfoToCreate !== null &&
@@ -809,9 +811,11 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
   ) => {
     // Create meta first
     if (metadataDatastoreInfoToRemove !== null && datastoreInfoToRemove.type != "meta") {
-      await updateModelDataInternal(projectIrisTreePathForDatastoreParent, null, metadataDatastoreInfoToRemove, false, false, true);
+      const { mergeFrom, mergeTo } = getMergeFromAndMergeTo(editable, null, metadataDatastoreInfoToRemove);
+      await updateModelDataInternal(projectIrisTreePathForDatastoreParent, mergeFrom, mergeTo, false, false, true);
     }
-    await updateModelDataInternal(projectIrisTreePathForDatastoreParent, null, datastoreInfoToRemove, false, false, true);
+    const { mergeFrom, mergeTo } = getMergeFromAndMergeTo(editable, null, datastoreInfoToRemove);
+    await updateModelDataInternal(projectIrisTreePathForDatastoreParent, mergeFrom, mergeTo, false, false, true);
     if (shouldAddToRemovedDatastores) {
       setRemovedDatastores(prev => {
         const newDatastores = [...prev, datastoreInfoToRemove];
@@ -837,12 +841,12 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
   ): Promise<void> => {
     if (newMergeFromDatastoreInfo?.fullPath !== mergeFromRelevantMetaDatastoreInfo?.fullPath && newMergeToDatastoreInfo?.fullPath !== mergeToRelevantMetaDatastoreInfo?.fullPath) {
       // If both the values are not meta
-      await updateModelDataInternal (
+      await updateModelDataInternal(
         treePathToNodeContainingDatastore,
         mergeFromRelevantMetaDatastoreInfo, mergeToRelevantMetaDatastoreInfo,
         true, false, false);      // TODO RadStr Critical: Maybe shouldCopyIfMissing should be true here?
     }
-    await updateModelDataInternal (
+    await updateModelDataInternal(
       treePathToNodeContainingDatastore,
       newMergeFromDatastoreInfo, newMergeToDatastoreInfo,
       useCache, shouldChangeActiveModel, shouldCopyIfMissing);
