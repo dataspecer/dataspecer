@@ -54,14 +54,16 @@ export class StructureModelSchemaRoot {
   enforceCollection: boolean = false;
 
   /**
-   * Cardinality of the root element
+   * Cardinality of the root element.
    */
-  cardinalityMin: number | null = null;
+  cardinalityMin: number = 1;
 
   /**
-   * Cardinality of the root element
+   * Cardinality of the root element.
+   *
+   * null means unbounded.
    */
-  cardinalityMax: number | null = null;
+  cardinalityMax: number | null = 1;
 
   /**
    * Whether to enforce @context property in JSON Schema.
