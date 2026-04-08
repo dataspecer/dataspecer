@@ -281,7 +281,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
 
     if (shouldRemoveFileWhenNoDatastores) {
       if (filesystemNode.datastores.length === 0) {
-        fs.rmSync(filesystemNode.irisTreePath);
+        fs.rmSync(filesystemNode.irisTreePath);     // Should be the same as projectIrisTreePath ... if not then TODO RadStr:
         this.removeValueInFilesystemMapping(filesystemNode.name, this.getParentForNode(filesystemNode)!.content);
       }
     }

@@ -166,6 +166,9 @@ export function convertMergeStateCauseToEditable(mergeStateCause: MergeStateCaus
   }
 }
 
+/**
+ * The projectIri to the Resoruce comparison map.
+ */
 export type DiffTree = Record<string, ResourceComparison>;
 
 export type ResourceComparisonResult = "exists-in-both" | "exists-in-new" | "exists-in-old";

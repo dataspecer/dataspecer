@@ -23,22 +23,23 @@ async function main() {
 
   const files = fs.readdirSync(directory);
 
-  const metaFile = files.find(file =>
+  const modelFile = files.find(file =>
     file.startsWith(".model") &&
     (file.endsWith(".json") || file.endsWith(".yaml") || file.endsWith(".yml"))
   );
 
-  if (!metaFile) {
-    console.error("No .meta file found");
+  if (!modelFile) {
+    console.error("No .model file found");
+    // process.stdout.write(String(PUBLICATION_BRANCH_DEFAULT_NAME) + "\n");
     process.exit(1);
   }
 
-  const fullPath = path.join(directory, metaFile);
+  const fullPath = path.join(directory, modelFile);
   const fileContent = fs.readFileSync(fullPath, "utf8");
 
   let parsed: any;
 
-  if (metaFile.endsWith(".json")) {
+  if (modelFile.endsWith(".json")) {
     parsed = JSON.parse(fileContent);
   } else {
     parsed = YAML.parse(fileContent);

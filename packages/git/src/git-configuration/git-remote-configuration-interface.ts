@@ -1,6 +1,6 @@
 import { PUBLICATION_BRANCH_DEFAULT_NAME } from "../git-provider-api.ts";
 
-
+// TODO RadStr: There are probably some places where we use string instead of ExportFormatType, so it would be better to use this instead
 export type ExportFormatType = "json" | "yaml";
 
 export function isExportFormatType(what?: string): what is ExportFormatType {

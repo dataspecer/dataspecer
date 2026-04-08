@@ -1,4 +1,4 @@
-import { AvailableFilesystems, ComparisonFullResult, DatastoreInfo, DirectoryNode, dsPathJoin, FilesystemAbstraction, FilesystemNode, getMergeFromMergeToForGitAndDS, getMergeFromMergeToMappingForGitAndDS, GitIgnore, GitIgnoreBase, GitProvider, isDatastoreForMetadata, MergeEndInfoWithRootNode, MergeStateCause } from "@dataspecer/git";
+import { AvailableFilesystems, ComparisonFullResult, DatastoreInfo, DiffTree, DirectoryNode, dsPathJoin, FilesystemAbstraction, FilesystemNode, getMergeFromMergeToForGitAndDS, getMergeFromMergeToMappingForGitAndDS, GitIgnore, GitIgnoreBase, GitProvider, isDatastoreForMetadata, MergeEndInfoWithRootNode, MergeStateCause } from "@dataspecer/git";
 import { compareGitAndDSFilesystems } from "../filesystem-abstractions/backend-filesystem-comparison.ts";
 import { AllowedPrefixes, createSimpleGitUsingPredefinedGitRoot } from "../git-store-info.ts";
 import { SimpleGit } from "simple-git";
@@ -118,15 +118,9 @@ export class GitPull {
   ): Promise<GitChangesToDSPackageStoreResult> {
     const { iri, projectIri, dsLastCommitHash, alwaysCreateMergeState, branch, mergeStateModel, filesystemConstructorParams } = this.fields;
 
-    // Merge from is DS
-    // TODO RadStr Critical: Why am I doing the comparison twice? I think that there was a reason for that, but maybe we just wanted the fakeRoot data, etc.
-    //              If that is the case, then we should just extract the part of the compareGitAndDSFilesystems method, which does it (respective from the method which calls it)
-    //    ......... Well in one case I am comparing to the current head and in after that I checkout to the last commit and do it again
-    //              The issue is - why do i need to do it to the not last commit ever?
-    //    ......... This whole flow feels wrong - why can I in the canPullWithoutCreatingMergeState - updateLastCommit hash to the gitLastCommitHash??? I am not checking against it
-    //              Well I do right in this first compare but i do not check the result anywhere here. I just pass it to the next method.
-    //              I should check also in the "if canPullWithoutCreatingMergeState" that there are also no conflicts
+    // Merge from is Git, merge to is DS
 
+    // This comparison against the pull we are pulling from
     const {
       diffTreeComparison,
       mergeFromFilesystemInformation,
@@ -146,6 +140,7 @@ export class GitPull {
         await git.checkout(dsLastCommitHash);
         // Basically check against the commit the package is supposed to represent, if we did not change anything, we can always pull without conflict.
         // Otherwise we changed something and even though we could handle it automatically. We let the user resolve everything manually, it is his responsibility.
+        // In other words, we check if we performed any change from the last pull, if not we can just put in the changes and move the head.
         const currentDSPackageAndGitCommitComparison = await compareGitAndDSFilesystems(
           gitIgnore, iri, projectIri, gitInitialDirectoryParent, mergeStateCause, filesystemConstructorParams);
         const canPullWithoutCreatingMergeState = currentDSPackageAndGitCommitComparison.diffTreeComparison.conflicts.length === 0;
@@ -153,6 +148,9 @@ export class GitPull {
         if (canPullWithoutCreatingMergeState) {
           // TODO RadStr Critical: Rename ... and update based on the conflicts resolution, like we do not want to update when there is conflict
           await git.checkout(gitLastCommitHash);
+          // This is important !!! Take the old comparisosn
+          const diffTree = diffTreeComparison.diffTree;
+          await this.removeRemoved(diffTree, filesystemMergeTo);
           await this.storeGitChangesToDataspecerInternal(gitRootDirectory, gitInitialDirectoryParent, filesystemMergeTo);
           await filesystemConstructorParams.resourceModel.updateLastCommitHash(iri, gitLastCommitHash, "pull");
 
@@ -198,6 +196,30 @@ export class GitPull {
       createdMergeState: true,
       conflictCount: diffTreeComparison.conflicts.length,
     };
+  }
+
+  private async removeRemoved(
+    diffTree: DiffTree,
+    filesystem: FilesystemAbstraction,
+  ): Promise<void> {
+    for (const [name, value] of Object.entries(diffTree)) {
+      if (value.resourceComparisonResult === "exists-in-new") {
+        // If removed
+        await filesystem.removeFile(value.resources.new);
+        // WE continue and do not go recursively for the children since those will be handled recursively within the removeFile
+        continue;
+      }
+      if (Object.keys(value.childrenDiffTree).length > 0) {
+        await this.removeRemoved(value.childrenDiffTree, filesystem);
+      }
+      else {
+        for (const datastoreComparison of value.datastoreComparisons) {
+          if (datastoreComparison.datastoreComparisonResult === "created-in-new") {
+            await filesystem.removeDatastore(datastoreComparison.new, datastoreComparison.affectedDataStore.type, true);
+          }
+        }
+      }
+    }
   }
 
   private async storeGitChangesToDataspecerInternal(

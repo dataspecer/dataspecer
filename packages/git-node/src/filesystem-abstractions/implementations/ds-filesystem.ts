@@ -182,8 +182,8 @@ export class DSFilesystem extends FilesystemAbstractionBase {
       throw new Error("Should not happen for projectIri");
     }
     if (localProjectIriNameCandidate.includes("/") || localProjectIriNameCandidate.length === 0) {
-      localProjectIriNameCandidate = uuidv4();
       console.info({localProjectIriNameCandidate});
+      localProjectIriNameCandidate = uuidv4();
       throw new Error("Should not happen for projectIri");
     }
     let fullProjectIriName = projectIrisTreePath + localProjectIriNameCandidate;
@@ -320,10 +320,13 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     // We have to perform 2 actions:
     // 1) remove the datastore, that is remove the blob with datastore and update the resource to no longer contain the datastore
     // 2) If the resource will become empty, we also have to remove the datastore
-    await this.deleteBlob(filesystemNode.metadata.iri, datastoreType);
+    if (datastoreType !== "meta") {
+      await this.deleteBlob(filesystemNode.metadata.iri, datastoreType);
+    }
     removeDatastoreFromNode(filesystemNode, datastoreType);
     if (shouldRemoveFileWhenNoDatastores) {
       if (filesystemNode.datastores.length === 0) {       // TODO RadStr Critical: Not sure about this, we will always have metadata, right? or no?
+        // Handles the removal of children
         await this.deleteResource(filesystemNode.metadata.iri);
         // TODO RadStr: Just put fullPath inside the FilesystemNode and be done with it
         this.removeValueInFilesystemMapping(filesystemNode.name, this.getParentForNode(filesystemNode)?.content ?? this.root.content);
@@ -331,9 +334,10 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     }
   }
 
+  // TODO RadStr Critical:  rename - removeFilesystemNode or something
   async removeFile(filesystemNode: FilesystemNode): Promise<void> {
     for (const datastore of filesystemNode.datastores) {
-      const datastoreType = datastore.fullName;
+      const datastoreType = datastore.type;
       this.removeDatastore(filesystemNode, datastoreType, true);
     }
   }

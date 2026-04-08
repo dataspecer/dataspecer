@@ -83,7 +83,12 @@ export async function trySetPackageAsUpToDate(iri: string) {
     }
   }
   else {
-    toast.error("Unknown error when comparing package with the Git remote to check for changes.", { "richColors": true });
+    if (response.status === 404) {
+      toast.error("The remote already moved. Pull changes first", { "richColors": true });
+    }
+    else {
+      toast.error("Unknown error when comparing package with the Git remote to check for changes.", { "richColors": true });
+    }
   }
 
   requestLoadPackage(iri, true);
