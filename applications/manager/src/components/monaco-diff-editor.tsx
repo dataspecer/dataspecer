@@ -49,8 +49,8 @@ export const MonacoDiffEditor: FC<{
   useEffect(() => {
     return () => {
       // Get the current content of the editor
-      const original = props.editorRef.current?.editor.getOriginalEditor().getValue() ?? null;
-      const modified = props.editorRef.current?.editor.getModifiedEditor().getValue() ?? null;
+      const original = props.editorRef.current?.editor.getOriginalEditor().getValue({ lineEnding: "lf", preserveBOM: false }) ?? null;
+      const modified = props.editorRef.current?.editor.getModifiedEditor().getValue({ lineEnding: "lf", preserveBOM: false }) ?? null;
       if (previousDatastoreType !== null && original === editorsContent.nonEditable && modified === editorsContent.editable &&
           props.datastoreType === previousDatastoreType && previousProjectIrisTreePathToFilesystemNode === props.projectIrisTreePathToFilesystemNode) {
         return;
@@ -68,7 +68,7 @@ export const MonacoDiffEditor: FC<{
     //    otherwise we can move between windows by ctrl + z - since it contains the previous contents of the editor from different files
     const model = props.editorRef.current?.editor?.getModel()?.modified;
     if (model !== undefined) {
-      model.setValue(model.getValue());
+      model.setValue(model.getValue(monaco.editor.EndOfLinePreference.LF));
     }
   }, [props.projectIrisTreePathToFilesystemNode, props.datastoreType]);
 
@@ -107,6 +107,14 @@ export const MonacoDiffEditor: FC<{
 
     const hasLineChanges: boolean = previousEditableContent !== previousNonEditableContent;
     // Call it explicitly again when user changes model
+
+    // if (hasLineChanges) {
+    //   console.info("NOT DISPOSE");
+    //   console.info({hasLineChanges, previousEditableContent, previousNonEditableContent,
+    //     "props-projectIrisTreePathToFilesystemNode": props.projectIrisTreePathToFilesystemNode, "props.datastoreType": props.datastoreType,
+    //     "projectIrisTreePathToFilesystemNodeRef.current": projectIrisTreePathToFilesystemNodeRef.current, "datastoreTypeRef.current": datastoreTypeRef.current});
+    //   alert("NOT DISPOSE");
+    // }
     updateDiffNodeOnChange(
       props.editorRef.current?.editor ?? null, props.setMergeState, hasLineChanges,
       previousProjectIrisTreePathToFilesystemNode, previousDatastoreType
@@ -130,13 +138,13 @@ export const MonacoDiffEditor: FC<{
           model.modified.setValue(editorsContent.editable);
         }
 
-        originalEditorContent.current = editor.getModel().original.getValue();
-        modifiedEditorContent.current = editor.getModel().modified.getValue();
+        originalEditorContent.current = editor.getModel().original.getValue(monaco.editor.EndOfLinePreference.LF);
+        modifiedEditorContent.current = editor.getModel().modified.getValue(monaco.editor.EndOfLinePreference.LF);
 
         editor.getModifiedEditor().onDidChangeModel(() => {
           // This is called before dispose
-          originalEditorContent.current = editor.getModel().original.getValue();
-          modifiedEditorContent.current = editor.getModel().modified.getValue();
+          originalEditorContent.current = editor.getModel().original.getValue(monaco.editor.EndOfLinePreference.LF);
+          modifiedEditorContent.current = editor.getModel().modified.getValue(monaco.editor.EndOfLinePreference.LF);
         });
 
         props.editorRef.current.editor.getOriginalEditor().onDidDispose(() => {
@@ -163,6 +171,13 @@ export const MonacoDiffEditor: FC<{
 
 
           const hasLineChanges = originalEditorContent.current !== modifiedEditorContent.current;
+          // if (hasLineChanges) {
+          //   console.info("DISPOSE");
+          //   console.info({hasLineChanges, "originalEditorContent.current": originalEditorContent.current, "modifiedEditorContent.current": modifiedEditorContent.current,
+          //     "props-projectIrisTreePathToFilesystemNode": props.projectIrisTreePathToFilesystemNode, "props.datastoreType": props.datastoreType, editor,
+          //     "projectIrisTreePathToFilesystemNodeRef.current": projectIrisTreePathToFilesystemNodeRef.current, "datastoreTypeRef.current": datastoreTypeRef.current});
+          //   alert("DISPOSE");
+          // }
           updateDiffNodeOnChange(
             editor ?? null, props.setMergeState, hasLineChanges,
             projectIrisTreePathToFilesystemNodeRef.current, datastoreTypeRef.current
