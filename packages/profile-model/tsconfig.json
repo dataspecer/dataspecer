@@ -16,7 +16,7 @@
     "sourceMap": true,
     "strict": true,
     "target": "ESNext",
-    "types": ["vitest/globals"],
+    "types": ["vitest/globals", "@types/node"],
     "useDefineForClassFields": true,
     "resolveJsonModule": true,
   },
