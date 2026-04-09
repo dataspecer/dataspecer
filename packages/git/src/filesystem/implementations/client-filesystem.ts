@@ -16,13 +16,13 @@ export type GetMetasDatastoreInfo = {
 };
 
 
-export type FullTreePath = string;
+export type FullProjectIriTreePath = string;
 export type ModelName = string;
 export type DatastoreInfosForModel = {
   mergeFrom: DatastoreInfo | null,
   mergeTo: DatastoreInfo | null
 };
-export type DatastoreInfosCache = Record<FullTreePath, Record<ModelName, DatastoreInfosForModel>>;
+export type DatastoreInfosCache = Record<FullProjectIriTreePath, Record<ModelName, DatastoreInfosForModel>>;
 
 type MergeFromMergeTo = "mergeFrom" | "mergeTo";
 

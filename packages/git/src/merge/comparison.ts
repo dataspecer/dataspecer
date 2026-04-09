@@ -119,7 +119,7 @@ async function compareTreesInternal(
       if (datastoreInNew !== undefined && datastoreInNew !== null) {
         processedDatastoresInNew.add(datastoreInNew);
 
-        if (await compareDatastoresContents(oldFilesystem, nodeInOld, newFilesystem, nodeInNew as FileNode, datastoreInOld, iriToProjectIriMap)) {
+        if (await getDatastoresAndCompare(oldFilesystem, nodeInOld, newFilesystem, nodeInNew as FileNode, datastoreInOld, iriToProjectIriMap)) {
           const same: DatastoreComparisonWithChangeTypeInfo = {
             old: nodeInOld,
             new: nodeInNew ?? null,
@@ -222,7 +222,7 @@ async function compareTreesInternal(
 /**
  * @returns True if the datastores contents are equal. False otherwise
  */
-export async function compareDatastoresContents(
+export async function getDatastoresAndCompare(
   filesystem1: FilesystemAbstraction,
   entry1: FilesystemNode,
   filesystem2: FilesystemAbstraction,
@@ -230,9 +230,28 @@ export async function compareDatastoresContents(
   datastore: DatastoreInfo,
   iriToProjectIriMap: Record<string, string>,
 ): Promise<boolean> {
-  const stripMethod = new ResourceDatastoreStripHandlerBase(entry1.metadata.types[0] ?? entry2.metadata.types[0]).createHandlerMethodForDatastoreType(datastore.type);
   const content1 = await filesystem1.getDatastoreContent(entry1.irisTreePath, datastore.type, true);
   const content2 = await filesystem2.getDatastoreContent(entry2.irisTreePath, datastore.type, true);
+  return compareDatastoresContents(
+    content1, content2,
+    entry1.metadata.types ?? entry2.metadata.types,
+    datastore.type, iriToProjectIriMap);
+}
+
+/**
+ *
+ * @param content1 has to be an object
+ * @param content2 has to be an object
+ */
+export function compareDatastoresContents(
+  content1: any,
+  content2: any,
+  modelTypes: string[],
+  datastoreType: string,
+  iriToProjectIriMap: Record<string, string>,
+): boolean {
+  const stripMethod = new ResourceDatastoreStripHandlerBase(modelTypes[0]).createHandlerMethodForDatastoreType(datastoreType);
+
   const strippedContent1 = stripMethod(content1);
   const strippedContent2 = stripMethod(content2);
   const datastoreToCompare1 = createDatastoreWithReplacedIris(strippedContent1, iriToProjectIriMap);
@@ -240,7 +259,7 @@ export async function compareDatastoresContents(
 
   console.info({content1, strippedContent1, content2, strippedContent2});    // TODO RadStr DEBUG: DEBUG Print
 
-  return _.isEqual(datastoreToCompare1, datastoreToCompare2);
+  return _.isEqual(datastoreToCompare1.datastoreWithReplacedIris, datastoreToCompare2.datastoreWithReplacedIris);
 }
 
 
