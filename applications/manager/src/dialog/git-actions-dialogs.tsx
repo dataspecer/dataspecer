@@ -22,7 +22,7 @@ import {
 } from "@dataspecer/git";
 import { CommitRedirectForMergeStatesDialog } from "./commit-confirm-dialog-caused-by-merge-state";
 import { commitToGitBackendRequest, createNewRemoteRepositoryRequest, GitCommitData, GitMergeCommitData, linkToExistingGitRepositoryRequest, mergeCommitToGitBackendRequest } from "@/utils/git-backend-requests";
-import { createCloseDialogObject, LoadingDialog } from "@/dialog/loading-dialog";
+import { createCloseLoadingDialogObject, LoadingDialog } from "@/dialog/loading-dialog";
 import { ComboBox, createGitProviderComboBoxOptions } from "@/components/combo-box";
 import { removeMergeState } from "@/utils/merge-state-backend-requests";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
@@ -624,7 +624,7 @@ export const createNewRemoteRepositoryHandler = async (t: TFunction<"translation
   // that is why we implement it like this and not like react component
   const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage: null, type: "create-new-repository-and-commit", shouldShowAlwaysCreateMergeStateOption: null });
   if (result) {
-    const closeDialogObject = createCloseDialogObject();
+    const closeDialogObject = createCloseLoadingDialogObject();
     setTimeout(() => {
       openModal(LoadingDialog, {
         dialogTitle: "git.loading.create-repository.title",
@@ -680,7 +680,7 @@ export const mergeCommitToGitHandler = async (
   gitMergeCommitData: GitMergeCommitData,
   shouldAppendAfterDefaultMergeCommitMessage: boolean,
 ) => {
-  const closeDialogObject = createCloseDialogObject();
+  const closeDialogObject = createCloseLoadingDialogObject();
   openModal(LoadingDialog, {
     dialogTitle: "git.loading.merge.title",
     waitingText: "git.loading.commit.wait-text",
@@ -770,8 +770,7 @@ export const commitToGitHandler = async (
   shouldRedirectWithExistenceOfMergeStates: boolean,
   onSuccessCallback: (() => void) | null,
 ) => {
-  const closeDialogObject = createCloseDialogObject();
-  // TODO RadStr: Localization
+  const closeDialogObject = createCloseLoadingDialogObject();
   openModal(LoadingDialog, {
     dialogTitle: "git.loading.commit.title",
     waitingText: "git.loading.commit.wait-text",

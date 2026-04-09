@@ -1,6 +1,6 @@
 import { UpdateModelDataMethod } from "@/dialog/diff-editor-dialog";
 import _ from "lodash";
-import { Check, Loader, Minus, MoveLeft, MoveRight, Plus, X } from "lucide-react";
+import { Check, Loader, Minus, Plus, X } from "lucide-react";
 import React, { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NodeApi, NodeRendererProps, Tree, TreeApi, } from "react-arborist";
 import { DatastoreComparison, DatastoreComparisonWithChangeTypeInfo, DatastoreInfo, DiffTree, FilesystemNode, getDatastoreInfoOfGivenDatastoreType, MergeState, OldNewFilesystemNode, ResourceComparison, MergeStateCause, getMergeFromAndMergeTo, convertMergeStateCauseToEditable, DatastoreInfosForModel, DatastoreInfosCache } from "@dataspecer/git";
@@ -385,10 +385,11 @@ const onClickRemoveDatastore = (
       .filter(node => (node.children ?? []).length === 0)
       .map(datastore => datastore.data.fullDatastoreInfoInNewTree!);
 
-    console.info({filesystemNodeTreePathsInSubTree, datastoresInSubTree});
+    console.info({filesystemNodeTreePathsInSubTree, datastoresInSubTree});        // TODO RadStr Debug: Debug print
 
     extraMethods.setRemovedDatastores(prev => [...prev, ...datastoresInSubTree]);
     const resourceToRemoveDatastoreFrom = filesystemNodeContainingDatastoreToRemove?.resourceComparison?.resources?.new ?? null;
+    console.info({resourceToRemoveDatastoreFrom, newTree: nodeToResolve.data.fullDatastoreInfoInNewTree});    // TODO RadStr Debug: Debug print
     extraMethods.setRemovedDatastoresAndLoadIntoCache(resourceToRemoveDatastoreFrom?.projectIrisTreePath!, nodeToResolve.data.fullDatastoreInfoInNewTree!, null, false);
     if (parent !== null) {
       extraMethods.setRemovedTreePaths(prev => {
@@ -404,7 +405,9 @@ const onClickRemoveDatastore = (
   else {
     const resourceToRemoveDatastoreFrom = filesystemNodeContainingDatastoreToRemove?.resourceComparison?.resources?.new ?? null;
     const metaFromResourceToRemoveFrom = resourceToRemoveDatastoreFrom === null ? null : getDatastoreInfoOfGivenDatastoreType(resourceToRemoveDatastoreFrom, "meta");
-    extraMethods.setRemovedDatastoresAndLoadIntoCache(resourceToRemoveDatastoreFrom?.projectIrisTreePath!, nodeToResolve.data.fullDatastoreInfoInNewTree!, metaFromResourceToRemoveFrom, true);
+    extraMethods.setRemovedDatastoresAndLoadIntoCache(
+      resourceToRemoveDatastoreFrom?.projectIrisTreePath!, nodeToResolve.data.fullDatastoreInfoInNewTree!,
+      metaFromResourceToRemoveFrom, true);
   }
   alert(`Remove datastore for ${nodeToResolve.data.name}`);
 }
@@ -607,13 +610,14 @@ function StyledNode({
                     </button> :
                     null
                   }
-                  {
+                  {/* {
+                  TODO RadStr PR: Implement later, I do not have time for it. It just to make it faster for user. Since currently we can perform the same action through merge resolver.
                   node.data.status === "modified" ?
-                    <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => {e.stopPropagation(); alert("move")}}>
+                    <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => {e.stopPropagation();}}>
                       { node.data.treeType === "new" ? <MoveRight className="h-6 w-6"/> : <MoveLeft className="h-6 w-6"/> }
                     </button> :
                     null
-                  }
+                  } */}
                   {
                   (node.data.status === "same") ?
                     <div className="h-6 w-6"/> :    // Not null because we want to keep the button positioning
@@ -1040,12 +1044,8 @@ export const DiffTreeVisualization = (props: {
     };
 
     return createStyledNode(nodeProps, extraProps);
-  }, [
-      baseObjectForNodeRenderer,
-      createdFilesystemNodesAsArray,
-      removedTreePaths,
-    ]
-  );
+  },
+  [baseObjectForNodeRenderer, createdFilesystemNodesAsArray, removedTreePaths, props.datastoreInfosForCacheEntries]);
 
   return (
     <div className="h-full">

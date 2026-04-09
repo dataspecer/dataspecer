@@ -28,6 +28,8 @@ import {
   ResourceDatastoreStripHandlerBase,
   getMergeFromAndMergeTo,
   DatastoreInfosCache,
+  mergeResolverStrategies,
+  compareDatastoresContents,
 } from "@dataspecer/git";
 import { updateMergeState } from "@/utils/merge-state-backend-requests";
 import { fetchMergeState } from "@/dialog/open-merge-state";
@@ -36,8 +38,10 @@ import { MergeStateFinalizerDialog } from "@/dialog/merge-state-finalizer-dialog
 import { useBetterModal } from "@/lib/better-modal";
 import { requestLoadPackage } from "@/package";
 import { ChooseActionForDiffEditorUnplannedChange, DiffEditorOutsideChangeChosenAction } from "@/dialog/outside-changes-to-diff-editor-action-dialog";
-import { createCloseDialogObject, LoadingDialog } from "@/dialog/loading-dialog";
+import { createCloseLoadingDialogObject, LoadingDialog } from "@/dialog/loading-dialog";
 import { SAVING_DIFF_EDITOR_STATE_TO_BACKEND } from "@/utils/git-wait-times";
+import { ModelsToResolve } from "@/components/merge-strategy-component";
+import _ from "lodash";
 
 
 type FullTreePath = string;
@@ -443,6 +447,33 @@ function pickFormat(
   return format;
 }
 
+const applyAutomaticMergeStateResolverToSingleModel = (
+  mergeStrategy: MergeResolverStrategy,
+  editable: EditableType,
+  mergeFromDatastoreInfo: DatastoreInfo | null,
+  mergeToDatastoreInfo: DatastoreInfo | null,
+  setConvertedCacheContentForMergeFrom: (value: SetStateAction<CacheContentMap>) => void,
+  setConvertedCacheContentForMergeTo: (value: SetStateAction<CacheContentMap>) => void,
+  mergeFromContentConverted: string,
+  mergeToContentConverted: string,
+  datastoreType: string | null,
+  format: string,
+  projectIriTreePathToNodeContainingDatstore: string,
+): string | null => {
+  const datastoreInfoForEditable = getEditableValue(editable, mergeFromDatastoreInfo, mergeToDatastoreInfo);
+  if (datastoreInfoForEditable === null) {
+    return null;
+  }
+
+  const setCacheToTextContentForEditable = getEditableValue(editable, setConvertedCacheContentForMergeFrom, setConvertedCacheContentForMergeTo);
+  const mergeContents = getEditableAndNonEditableValue(editable, mergeFromContentConverted, mergeToContentConverted);
+
+  const mergeResolveResult = mergeStrategy.resolve(mergeContents.nonEditable, mergeContents.editable, datastoreType, format);
+  updateCacheContentEntryByGivenString(setCacheToTextContentForEditable, projectIriTreePathToNodeContainingDatstore, datastoreInfoForEditable.type, mergeResolveResult);
+  return mergeResolveResult;
+}
+
+
 // Note that the hook is not useful for anything else than the diff editor dialog, but since it is quite large I put it into separate file
 export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath, initialMergeToRootMetaPath, resolve}: TextDiffEditorHookProps) => {
   const monacoEditor = useRef<{editor: monaco.editor.IStandaloneDiffEditor}>(null);
@@ -471,6 +502,14 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
   const [mergeToDatastoreInfo, setMergeToDatastoreInfo] = useState<DatastoreInfo | null>(null);
   const [mergeFromSvg, setMergeFromSvg] = useState<any | "">("");
   const [mergeToSvg, setMergeToSvg] = useState<any | "">("");
+
+  // We first put the data into cache, then set this value to true and in useEffect react to this and update all the data by the reolving.
+  const [shouldUpdateMultipleModelsThroughMergeResolver, setShouldUpdateMultipleModelsThroughMergeResolver] = useState<boolean>(false);
+  // We omit the ModelsToResolve.OpenedModel model, since that one is solved separately, it does not need the react update since it affects only the currently opened model
+  //  which is aleady in cache and we have all the data that we need to perform the resolving.
+  const [modelsAffectByMergeResolver, setModelsAffectByMergeResolver] = useState<Omit<ModelsToResolve, ModelsToResolve.OpenedModel>>(ModelsToResolve.AllModels);
+  const [currentMergeResolverStrategy, setCurrentMergeResolverStrategy] = useState<MergeResolverStrategy>(mergeResolverStrategies[0]);
+  const [resolvingMergeStateLoadDialogCloser, setResolvingMergeStateLoadDialogCloser] = useState<(() => void) | null>(null)
 
   // Internal state used to track that cache was explictly updated
   const [cacheExplicitUpdateTracker, setCacheExplicitUpdateTracker] = useState<number>(0);
@@ -746,8 +785,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
       const createdFilesystemNodesAsArray = Object.values(createdFilesystemNodes).map(filesystemNode => filesystemNode.createdFilesystemNodes).flat();
 
       for (const [nodeTreePath, datastoreInfoMap] of Object.entries(datastoreInfosForCacheEntries)) {
-        for (const [modelName, datastoreInfo] of Object.entries(datastoreInfoMap)) {
-          if (modelName !== "meta") {
+        for (const [datastoreName, datastoreInfo] of Object.entries(datastoreInfoMap)) {
+          if (datastoreName !== "meta") {
             continue;
           }
 
@@ -916,7 +955,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
 
       // The editors should be always defined, however if for some unknown reason they are undefined we just skip the setting of the caches
       const editors = getEditorsInOriginalOrder(monacoEditor, editable);
-      let currentMergeFromContentInEditor = editors.mergeFromEditor?.getValue();
+      let currentMergeFromContentInEditor = editors.mergeFromEditor?.getValue({ lineEnding: "lf", preserveBOM: false });
       if (currentMergeFromContentInEditor !== undefined) {
         if (currentMergeFromContentInEditor === "") {
           currentMergeFromContentInEditor = getDefaultValueForMissingDatastoreInDiffEditor();
@@ -927,7 +966,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
           currentMergeFromContentInEditor, oldDatastoreFormat);
       }
 
-      let currentMergeToContentInEditor = editors.mergeToEditor?.getValue();
+      let currentMergeToContentInEditor = editors.mergeToEditor?.getValue({ lineEnding: "lf", preserveBOM: false });
       if (currentMergeToContentInEditor !== undefined) {
         if (currentMergeToContentInEditor === "") {
           currentMergeToContentInEditor = getDefaultValueForMissingDatastoreInDiffEditor();
@@ -1101,22 +1140,167 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     await updateModelDataInternal(projectIriTreePathToNodeContainingDatastore, givenMergeFromDatastoreInfo, givenMergeToDatastoreInfo, false, false, true);
   }
 
+  const fetchAllDataIntoCache = async (diffTree: DiffTree, projectIriTreePath: string) => {
+    // TODO RadStr PR: Again no time, but this could be optimized to just update everything in one backend request, instead of filling the cache one by one.
+    for (const [diffNodeProjectIri, resourceComparison] of Object.entries(diffTree)) {
+      let currentProjectIriTreePathInFor = projectIriTreePath + diffNodeProjectIri
+      for (const datastoreComparison of resourceComparison.datastoreComparisons) {
+        const {
+          mergeFrom: mergeFromFilesystemNode,
+          mergeTo: mergeToFilesystemNode
+        } = getMergeFromAndMergeTo(editable, datastoreComparison.old, datastoreComparison.new);
+        const mergeFromDatastore = mergeFromFilesystemNode === null ?
+          null :
+          getDatastoreInfoOfGivenDatastoreType(mergeFromFilesystemNode, datastoreComparison.affectedDataStore.type);
+        const mergeToDatastore = mergeToFilesystemNode === null ?
+          null :
+          getDatastoreInfoOfGivenDatastoreType(mergeToFilesystemNode, datastoreComparison.affectedDataStore.type);
+        await updateModelDataInternal(
+          currentProjectIriTreePathInFor, mergeFromDatastore, mergeToDatastore, true, false, false);
+      }
 
-  const applyAutomaticMergeStateResolver = (mergeStrategy: MergeResolverStrategy) => {
-    const datastoreInfoForEditable = getEditableValue(editable, mergeFromDatastoreInfo, mergeToDatastoreInfo);
-    if (datastoreInfoForEditable === null) {
-      return;
+      currentProjectIriTreePathInFor += "/";
+      await fetchAllDataIntoCache(resourceComparison.childrenDiffTree, currentProjectIriTreePathInFor);
     }
-
-    const setCacheToTextContentForEditable = getEditableValue(editable, setConvertedCacheContentForMergeFrom, setConvertedCacheContentForMergeTo);
-    const activeMergeContents = getEditableAndNonEditableValue(editable, activeMergeFromContentConverted, activeMergeToContentConverted);
-
-    const mergeResolveResult = mergeStrategy.resolve(activeMergeContents.nonEditable, activeMergeContents.editable, activeDatastoreType, activeFormat);
-    updateCacheContentEntryByGivenString(setCacheToTextContentForEditable, activeTreePathToNodeContainingDatastore, datastoreInfoForEditable.type, mergeResolveResult);
   };
 
+
+  const applyAutomaticMergeStateResolver = async (mergeStrategy: MergeResolverStrategy, modelsToResolve: ModelsToResolve) => {
+    if (modelsToResolve === ModelsToResolve.OpenedModel) {
+      if (activeDatastoreType === null) {
+        throw new Error("Not a known datastore type. It is null.");
+      }
+
+
+      const leftEditor = monacoEditor.current?.editor.getOriginalEditor();
+      const nonEditableContentFromEditor = leftEditor?.getValue({ lineEnding: "lf", preserveBOM: false }) ?? null;
+      const rightEditor = monacoEditor.current?.editor.getModifiedEditor();
+      const editableContentFromEditor = rightEditor?.getValue({ lineEnding: "lf", preserveBOM: false }) ?? null;
+      if (nonEditableContentFromEditor === null) {
+        throw new Error(`The content of the left editor is null`);
+      }
+      if (editableContentFromEditor === null) {
+        throw new Error(`The content of the right editor is null`);
+      }
+      const { mergeFrom: mergeFromNewContent, mergeTo: mergeToNewContent } = getMergeFromAndMergeTo(editable, nonEditableContentFromEditor, editableContentFromEditor);
+
+      const newContent = applyAutomaticMergeStateResolverToSingleModel(
+        mergeStrategy, editable, mergeFromDatastoreInfo, mergeToDatastoreInfo, setConvertedCacheContentForMergeFrom, setConvertedCacheContentForMergeTo,
+        mergeFromNewContent, mergeToNewContent, activeDatastoreType, activeFormat, activeTreePathToNodeContainingDatastore);
+      if (newContent === null) {
+        return;     // We just skip it.
+      }
+      rightEditor?.setValue(newContent);
+    }
+    else if (modelsToResolve === ModelsToResolve.AllModels) {
+      const closeDialogObject = createCloseLoadingDialogObject();
+      openModal(LoadingDialog, {
+        dialogTitle: "git.loading.merge-resolver.title",
+        waitingText: "git.loading.merge-resolver.wait-text",
+        waitTime: null,
+        setCloseDialogAction: closeDialogObject.setCloseDialogAction,
+        shouldShowTimer: true,
+        shouldDisableClosing: true
+      });
+
+      await applyAutomaticMergeStateResolver(mergeStrategy, ModelsToResolve.OpenedModel);   // First we call it for the current model, since that needs specific treatment
+      await fetchAllDataIntoCache(examinedMergeState?.diffTreeData?.diffTree ?? {}, "");
+
+      setResolvingMergeStateLoadDialogCloser(closeDialogObject.closeDialogAction);
+      setModelsAffectByMergeResolver(ModelsToResolve.AllModels);
+      setShouldUpdateMultipleModelsThroughMergeResolver(true);
+    }
+    setCurrentMergeResolverStrategy(mergeStrategy);
+  };
+
+  useEffect(() => {
+    if (!shouldUpdateMultipleModelsThroughMergeResolver) {
+      return;
+    }
+    setShouldUpdateMultipleModelsThroughMergeResolver(false);
+
+    setExaminedMergeState((prev) => {
+      const newMergeState = _.cloneDeep(prev);
+
+      if (modelsAffectByMergeResolver === ModelsToResolve.AllModels) {
+        for (const [treePath, datastoreInfos] of Object.entries(datastoreInfosForCacheEntries)) {
+          const diffNode = getDiffNodeFromDiffTree(newMergeState?.diffTreeData?.diffTree ?? {}, treePath);
+          if (diffNode?.resourceComparisonResult === "exists-in-new" || diffNode?.resourceComparisonResult === "exists-in-old") {
+            // TODO RadStr PR: For now just skip them. Ideally we would act accordingly by creating/deleting
+            continue;
+          }
+          const modelTypes = (diffNode?.resources.new ?? diffNode?.resources.old)?.metadata.types ?? [];
+          const resourceType = modelTypes[0];
+          const resourceStripHandler = new ResourceDatastoreStripHandlerBase(resourceType);
+
+          for (const [datastoreType, datastoreInfoForMergeActors] of Object.entries(datastoreInfos)) {
+            if (datastoreInfoForMergeActors.mergeFrom === null || datastoreInfoForMergeActors.mergeTo === null) {
+              // Skip datatores which are only in one merge actor - either in merge from or merge to
+              // TODO RadStr PR: For now just skip them. Ideally we would act accordingly by creating/deleting
+              continue;
+            }
+            const format = pickFormat(examinedMergeState?.filesystemTypeMergeFrom, datastoreInfoForMergeActors.mergeFrom, datastoreInfoForMergeActors.mergeTo);
+
+            const newContent = applyAutomaticMergeStateResolverToSingleModel(
+              currentMergeResolverStrategy, editable, datastoreInfoForMergeActors.mergeFrom, datastoreInfoForMergeActors.mergeTo,
+              setConvertedCacheContentForMergeFrom, setConvertedCacheContentForMergeTo,
+              convertedCacheContentForMergeFrom[treePath][datastoreType], convertedCacheContentForMergeTo[treePath][datastoreType],
+              datastoreType, format, treePath);
+            if (newContent === null) {
+              throw new Error("The new content after applying the merge resolver is null, which should not happen");
+            }
+
+            const resourceStripHandlerMethod = resourceStripHandler.createHandlerMethodForDatastoreType(datastoreType);
+            const newContentAsObject = convertDatastoreContentBasedOnFormat(newContent, format, true, resourceStripHandlerMethod);
+            if (!newContentAsObject.ok) {
+              console.error(`Could not convert the new content of merge resolve: ${newContent}`);
+              throw new Error(newContentAsObject.error);
+            }
+
+            let datastoreForComparison1: any;
+            let datastoreForComparison2: any;
+            if (editable === "mergeTo") {
+              const mergeFromContentAsObject = convertDatastoreContentBasedOnFormat(convertedCacheContentForMergeFrom[treePath][datastoreType], format, true, resourceStripHandlerMethod);
+              if (!mergeFromContentAsObject.ok) {
+                console.error(`Could not convert mergeFrom content in merge resolve: ${convertedCacheContentForMergeFrom[treePath][datastoreType]}`);
+                throw new Error(mergeFromContentAsObject.error);
+              }
+              datastoreForComparison1 = mergeFromContentAsObject.value;
+              datastoreForComparison2 = newContentAsObject.value;
+            }
+            else {
+              const mergeToContentAsObject = convertDatastoreContentBasedOnFormat(convertedCacheContentForMergeTo[treePath][datastoreType], format, true, resourceStripHandlerMethod);
+              if (!mergeToContentAsObject.ok) {
+                console.error(`Could not convert mergeTo content in merge resolve: ${convertedCacheContentForMergeTo[treePath][datastoreType]}`);
+                throw new Error(mergeToContentAsObject.error);
+              }
+              datastoreForComparison1 = mergeToContentAsObject.value;
+              datastoreForComparison2 = newContentAsObject.value;
+            }
+
+            const areDatastoresSame = compareDatastoresContents(datastoreForComparison1, datastoreForComparison2, modelTypes, datastoreType, iriToProjectIriMap);
+            diffNode?.datastoreComparisons.forEach((datastoreComparison) => {
+              if (datastoreComparison.affectedDataStore.type === datastoreType) {
+                if (areDatastoresSame) {
+                  datastoreComparison.datastoreComparisonResult = "same";
+                }
+                else {
+                  datastoreComparison.datastoreComparisonResult = "modified";
+                }
+              }
+            });
+          }
+        }
+      }
+
+      resolvingMergeStateLoadDialogCloser?.();
+      setResolvingMergeStateLoadDialogCloser(null);
+      return newMergeState;
+    });
+  }, [shouldUpdateMultipleModelsThroughMergeResolver, resolvingMergeStateLoadDialogCloser]);
+
   const closeWithSuccess = () => {
-    const editedNewVersion = monacoEditor.current?.editor.getModifiedEditor()?.getValue();
+    const editedNewVersion = monacoEditor.current?.editor.getModifiedEditor()?.getValue({ lineEnding: "lf", preserveBOM: false });
     resolve({ newResourceContent: editedNewVersion });
   };
 
@@ -1145,7 +1329,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     }
 
     const saveToBackend = async () => {
-      const closeDialogObject = createCloseDialogObject();
+      const closeDialogObject = createCloseLoadingDialogObject();
       openModal(LoadingDialog, {
         dialogTitle: "git.diff-editor.storing-to-backend.title",
         waitingText: "",
@@ -1266,13 +1450,13 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         console.info({datastoreInfoMap, datastoreInfosForCacheEntries, diffTreeNode, metaMergeTo, diffTree: fetchedMergeState!.diffTreeData!.diffTree});    // TODO RadStr DEBUG: Debug
       }
 
-      for (const [modelName, datastoreInfo] of Object.entries(datastoreInfoMap)) {
+      for (const [datastoreName, datastoreInfo] of Object.entries(datastoreInfoMap)) {
         const {
           editable: datastoreInfoForEditable,
           nonEditable: datastoreInfoForNonEditable
         } = getEditableAndNonEditableValue(editable, datastoreInfo.mergeFrom, datastoreInfo.mergeTo);
 
-        if (modelName === "meta") {
+        if (datastoreType === "meta") {
           // Metas are already created by the filesystem nodes. Unless it has iri, which needs replacing, then we replace it (that is the if fails)
           if (datastoreInfoForNonEditable !== null &&
               createdDatastores.includes(datastoreInfoForNonEditable) &&
@@ -1295,9 +1479,9 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
           continue;
         }
 
-        const format = formatsForCacheEntries[nodeTreePath][modelName];
+        const format = formatsForCacheEntries[nodeTreePath][datastoreType];
         // TODO RadStr Critical: Can it even ever be default? Better question is what if it is default - should we throw error or shouldnt we just stop??
-        const newValue = editableCacheContents?.[nodeTreePath]?.[modelName] ?? getDefaultValueForMissingDatastoreInDiffEditor();
+        const newValue = editableCacheContents?.[nodeTreePath]?.[datastoreType] ?? getDefaultValueForMissingDatastoreInDiffEditor();
         const newValueConvertedResult = convertDatastoreContentBasedOnFormat(newValue, format, true, null);
         if (!newValueConvertedResult.ok) {
           console.error("Should never happen. If value is in the cache of the diff editor, then it already should be in the valid format");
@@ -1396,14 +1580,9 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         throw new Error("We can not (at least currently) have 2 roots. That is both packages have to have one common root.");
       }
 
-      alert("Before CREATED IRIS");
-
       const createdIris = await ClientFilesystem.createFilesystemNodesDirectly(
         examinedMergeState!.uuid, filesystemNodesBatchMetadata, filesystemNodesBatchToCreate.firstExistingParentIri,
         editableFilesystem, import.meta.env.VITE_BACKEND);
-
-      alert("CREATED IRIS");
-      console.info({createdIris});
 
 
       for (let i = 0; i < createdIris.length; i++) {

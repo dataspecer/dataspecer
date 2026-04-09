@@ -10,7 +10,7 @@ import { importFromGit } from "@/utils/git-backend-requests";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
 import { toast } from "sonner";
-import { createCloseDialogObject, LoadingDialog } from "./loading-dialog";
+import { createCloseLoadingDialogObject, LoadingDialog } from "./loading-dialog";
 import { usePaginationComponent } from "@/components/pagination-component";
 import { Button } from "@/components/ui/button";
 import { redirectToPage } from "@/components/login-card";
@@ -227,7 +227,7 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
   }, []);
 
   const actionButton = async () => {
-    const closeLoadingDialogObject = createCloseDialogObject();
+    const closeLoadingDialogObject = createCloseLoadingDialogObject();
 
     let mergeFromIri: string | null = null;
     let mergeToIri: string | null = null;

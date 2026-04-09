@@ -9,14 +9,19 @@ import { useTranslation } from "react-i18next";
 
 type LoadingDialogProps = {
   dialogTitle: string;
-  waitTime: GitWaitTime;
+  waitTime: GitWaitTime | null;
   waitingText: string | null;
   setCloseDialogAction: (newAction: () => void) => void;
   shouldShowTimer: boolean;
   shouldDisableClosing: boolean;
 } & BetterModalProps;
 
-export const createCloseDialogObject = () => {
+export type CloseLoadingDialogObjectType = {
+  closeDialogAction: () => void;
+  setCloseDialogAction: (newAction: () => void) => void;
+}
+
+export const createCloseLoadingDialogObject = (): CloseLoadingDialogObjectType => {
   const closeDialogObject = {
     closeDialogAction: () => {},
     setCloseDialogAction: (newAction: () => void) => { closeDialogObject.closeDialogAction = newAction },
@@ -61,7 +66,7 @@ export const LoadingDialog = ({ isOpen, resolve, waitTime, waitingText, dialogTi
           <ModalDescription>
             <p className="whitespace-pre-line">{translatedWaitingText}</p>
             {waitingText === null ? null : <br/>}
-            {createTranslationForWaitTime(t, waitTime)}
+            {waitTime === null ? null : createTranslationForWaitTime(t, waitTime)}
             <div className="flex">
               <Loader className="mr-2 mt-1 h-4 w-4 animate-spin" />
               { shouldShowTimer ? `${secondsPassed} ${t("git.loading-dialog-seconds-passed")}` : null }

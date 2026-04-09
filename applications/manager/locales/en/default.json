@@ -143,6 +143,10 @@
       "commit": {
         "title": "Committing",
         "wait-text": "⚠️ Do not modify the committed package during the commit process."
+      },
+      "merge-resolver": {
+        "title": "Performing merge resolving",
+        "wait-text": ""
       }
     },
     "toast": {
@@ -151,7 +155,7 @@
       "link-failed": "Failed updating link to remote Git repository"
     },
     "error": {
-      "merge-already-merged": "The merge from branch was already merged. We cannot merge again.",
+      "merge-already-merged": "Already up to date - The merge from branch was already merged. We cannot merge again.",
       "merge-state-removal-failed": "Removal of merge state failed"
     },
     "configuration": {

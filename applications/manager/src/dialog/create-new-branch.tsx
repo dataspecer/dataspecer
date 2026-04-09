@@ -8,7 +8,7 @@ import { createIdentifierForHTMLElement, InputComponent } from "@/components/inp
 import { toast } from "sonner";
 import { createSetterWithGitValidation, PACKAGE_ROOT } from "@dataspecer/git";
 import { resolveWithRequiredCheck } from "./git-actions-dialogs";
-import { createCloseDialogObject, LoadingDialog } from "./loading-dialog";
+import { createCloseLoadingDialogObject, LoadingDialog } from "./loading-dialog";
 import { CREATE_NEW_BRANCH_WAIT_TIME } from "@/utils/git-wait-times";
 
 
@@ -68,7 +68,7 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
 
     let response: any;
     if (actionOnConfirm === BranchAction.CreateNewBranch) {
-      const closeDialogObject = createCloseDialogObject();
+      const closeDialogObject = createCloseLoadingDialogObject();
       setShouldHideDialog(true);
       openModal(LoadingDialog, {
         dialogTitle: "Creating new branch in Dataspecer. Do not forget to push it to the remote after you are done.",

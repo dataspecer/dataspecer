@@ -1,15 +1,31 @@
 import { mergeResolverStrategies, MergeResolverStrategy } from "@dataspecer/git";
 import { Button } from "./ui/button";
 import { useState } from "react";
+import { BetterModalProps, useBetterModal } from "@/lib/better-modal";
+import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "./modal";
+import { ComboBox } from "./combo-box";
+
+
+export enum ModelsToResolve {
+  OpenedModel,
+  AllModels,
+}
 
 
 // Improve the styling (margins and size) using Microsoft Copilot, that is why it is set in a "weird" way using join
 export const MergeStrategyComponent = (props: {
-  handleMergeStateResolving: (mergeStrategy: MergeResolverStrategy) => void;
+  handleMergeStateResolving: (mergeStrategy: MergeResolverStrategy, modelsToResolve: ModelsToResolve) => void;
 }) => {
-  const [mergeStrategy, setMergeStrategy] = useState<MergeResolverStrategy>(
-    mergeResolverStrategies[0]
-  );
+  const [mergeStrategy, setMergeStrategy] = useState<MergeResolverStrategy>(mergeResolverStrategies[0]);
+  const openModal = useBetterModal();
+
+  const resolveUsingMergeStrategy = async () => {
+    const modelsToResolve = await openModal(ChooseAffectedModels, {});
+    if (modelsToResolve === null) {
+      return;
+    }
+    props.handleMergeStateResolving(mergeStrategy, modelsToResolve);
+  };
 
   return (
     <div className="flex flex-row items-center gap-x-3 pt-0.75 pb-1.5">
@@ -45,7 +61,7 @@ export const MergeStrategyComponent = (props: {
       </select>
 
       <Button
-        onClick={() => props.handleMergeStateResolving(mergeStrategy)}
+        onClick={resolveUsingMergeStrategy}
         className="h-9 px-3 bg-blue-500 hover:bg-blue-600 text-white rounded"
       >
         Resolve using merge strategy
@@ -53,3 +69,32 @@ export const MergeStrategyComponent = (props: {
     </div>
   );
 };
+
+
+type ChooseAffectedModelsProps = BetterModalProps<ModelsToResolve | null>;
+
+export const ChooseAffectedModels = ({ isOpen, resolve }: ChooseAffectedModelsProps) => {
+  const [affectedModels, setAffectedModels] = useState<ModelsToResolve>(ModelsToResolve.OpenedModel);
+  const comboBoxOptions = [
+    { key: "Only the currently opened model", value: ModelsToResolve.OpenedModel },
+    { key: "All models", value: ModelsToResolve.AllModels },
+  ];
+
+  return (
+    <Modal open={isOpen} onClose={() => resolve(null)}>
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>Apply chosen merge resolver</ModalTitle>
+            <ModalDescription>Choose the affected models</ModalDescription>
+          </ModalHeader>
+
+          <ComboBox options={comboBoxOptions} onChange={(selected: ModelsToResolve) => setAffectedModels(selected)}/>
+
+          <ModalFooter>
+            <Button variant="outline" onClick={() => resolve(null)}>Close</Button>
+            <Button className="hover:bg-purple-700" onClick={() => resolve(affectedModels)}>Confirm</Button>
+          </ModalFooter>
+        </ModalContent>
+    </Modal>
+  );
+}

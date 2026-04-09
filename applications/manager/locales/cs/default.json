@@ -143,6 +143,10 @@
       "commit": {
         "title": "Commituji",
         "wait-text": "⚠️ Během commitování neupravujte commitovanou package."
+      },
+      "merge-resolver": {
+        "title": "Performing merge resolving",
+        "wait-text": ""
       }
     },
     "toast": {
