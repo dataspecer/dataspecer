@@ -1450,7 +1450,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         console.info({datastoreInfoMap, datastoreInfosForCacheEntries, diffTreeNode, metaMergeTo, diffTree: fetchedMergeState!.diffTreeData!.diffTree});    // TODO RadStr DEBUG: Debug
       }
 
-      for (const [datastoreName, datastoreInfo] of Object.entries(datastoreInfoMap)) {
+      for (const [datastoreType, datastoreInfo] of Object.entries(datastoreInfoMap)) {
         const {
           editable: datastoreInfoForEditable,
           nonEditable: datastoreInfoForNonEditable
@@ -1488,6 +1488,9 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
           throw new Error(newValueConvertedResult.error);
         }
         let newValueAsJSON: object = newValueConvertedResult.value;
+        if (newValueAsJSON === null) {
+          continue;   // When having datastore present in the nonEditable and not in the editable we just skip it.
+        }
         const projectIriToIriForEditable: Record<string, string | null> = {};
         for (const [key, value] of Object.entries(localProjectIriToIriMap)) {
           projectIriToIriForEditable[key] = value[editable];
