@@ -6,6 +6,7 @@ import { NodeApi, NodeRendererProps, Tree, TreeApi, } from "react-arborist";
 import { DatastoreComparison, DatastoreComparisonWithChangeTypeInfo, DatastoreInfo, DiffTree, FilesystemNode, getDatastoreInfoOfGivenDatastoreType, MergeState, OldNewFilesystemNode, ResourceComparison, MergeStateCause, getMergeFromAndMergeTo, convertMergeStateCauseToEditable, DatastoreInfosForModel, DatastoreInfosCache } from "@dataspecer/git";
 import { DiffEditorEditIcon } from "./crossed-out-icon";
 import { AddToCreatedDatastoresAndAddToCacheMethodType, AddToRemovedDatastoresAndAddToCacheMethodType, EntriesAffectedByCreateType } from "@/hooks/use-diff-editor-dialog-props";
+import { ModelIcon } from "@/known-models";
 
 
 type DataSourceRenderType = "datastore" | "directory" | "file";
@@ -471,24 +472,11 @@ function StyledNode({
   const isExpandable = node.data.dataSourceType !== "datastore";
   const textClassName = resourceExists ? "" : "line-through";
 
-  let icon: string = "";
+  let resolveIcon: string = "";
 
   const isCurrentlyInConflict = node.data.nowInConflictCount > 0;
-  icon = isCurrentlyInConflict ? "⚠️" : "";   // Always show the conflict mark
-  icon = (node.data.isInEditableTree && extraRenderNodeProps.conflictsToBeResolvedOnSaveInThisComponent.find(resolvedConflict => node.data.id === createIdForDatastoreRenderNode(resolvedConflict, node.data.treeType))) ? "✅" : icon;
-  // icon = "✅⚠️✅"     // TODO RadStr: Just debug to know tht we show the right tree
-  if (node.data.dataSourceType == "datastore") {
-    icon += "📄";
-  }
-  else if (node.data.dataSourceType === "directory") {
-    icon += "📂";
-  }
-  else if (node.data.dataSourceType === "file") {
-    icon += "📚";
-  }
-  else {
-    throw new Error(`Programmer error, using unknown data source type: ${node.data.dataSourceType}`);
-  }
+  resolveIcon = isCurrentlyInConflict ? "⚠️" : "";   // Always show the conflict mark
+  resolveIcon = (node.data.isInEditableTree && extraRenderNodeProps.conflictsToBeResolvedOnSaveInThisComponent.find(resolvedConflict => node.data.id === createIdForDatastoreRenderNode(resolvedConflict, node.data.treeType))) ? "✅" : resolveIcon;
 
   let backgroundColor: string | undefined = undefined;
   if (node.isSelected) {
@@ -497,6 +485,8 @@ function StyledNode({
   else if (node.data.shouldBeHighlighted) {
     backgroundColor = "#d3d9ecff";
   }
+
+  const type = (node.data.resourceComparison?.resources.old ?? node.data.resourceComparison?.resources.new)?.metadata.types;
 
   const styledNode = (
     <>
@@ -580,7 +570,8 @@ function StyledNode({
           {<p className={`font-bold pt-1 pr-1 text-xs ${color === "green" ? "visible": "invisible w-0 h-0"}`} style={{color}}>C</p>}
           {<p className={`font-bold pt-1 pr-1 text-xs ${color === "blue" ? "visible" : "invisible w-0 h-0"}`} style={{color}}>M</p>}
           {<p className={`font-bold pt-1 pr-1 text-xs ${color === "red" ? "visible" : "invisible w-0 h-0"}`} style={{color}}>D</p>}
-          {icon}
+          {resolveIcon}
+          {type !== undefined && <ModelIcon className="mt-1" type={type}/>}
           <span className={textClassName}>{node.data.name}</span>
             {/* The buttons on hover */}
             <div
