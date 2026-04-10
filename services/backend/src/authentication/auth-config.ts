@@ -82,6 +82,7 @@ function createAuthConfig(scopeGroup: ScopeGroup | null, dsBackendURL: string, c
     trustHost: true,      // In local build it is not needed, when deployed through Cloudflare it seems to be needed
     providers: [
       GitHub({
+        issuer: "https://github.com/login/oauth",
         clientId: configuration.authConfiguration?.gitHubAuthClientId,
         clientSecret: configuration.authConfiguration?.gitHubAuthClientSecret,
         authorization: { params: { scope: scope.map(genericScopeValue => GitHubProvider.convertGenericScopeToProviderScopeStatic(genericScopeValue)).flat().join(" "), redirect_uri: githubRedirectUri } },
