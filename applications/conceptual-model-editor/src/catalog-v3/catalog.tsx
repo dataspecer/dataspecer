@@ -1025,7 +1025,7 @@ function asModelSection(
     filterText: label.toLocaleLowerCase(),
     renderItem: renderModelSection,
     folded: false,
-    addAction,
+    addAction: entity.isReadOnly ? null : addAction,
   }
 }
 
