@@ -99,23 +99,25 @@ export const GitPrsListDialog = ({ resources, branch, gitUrl, gitProviderSpecifi
               </>
 
             }
-            You can click on the {gitProviderSpecificNameForPRShortcut} to get redirected to the {gitProviderSpecificNameForPRShortcut}.
+            ⚠️ Note that you have to close in {gitProviderSpecificNameForPRShortcut} in Dataspecer.
+            Closing {gitProviderSpecificNameForPRShortcut} in Git breaks IRIs.
             <br/>
-            <p className="flex flex-1 flex-row">Resolving {gitProviderSpecificNameForPRShortcut} in Dataspecer means performing reverse merge.
+            <p className="flex flex-1 flex-row">You can either close the {gitProviderSpecificNameForPRShortcut}, or merge the changes from the 'merge to' branch to the 'merge from' branch.
               <PRMergeTooltip gitProviderSpecificNameForPRShortcut={gitProviderSpecificNameForPRShortcut} isSpecificBranchPRsList={branch !== null} />
             </p>
           </ModalDescription>
           {
             cannotUseOpenedPrs ? <Loader className="mr-2 mt-1 h-4 w-4 animate-spin" /> :
             <div className=" w-full max-h-[95%]">
-              <div className="grid grid-cols-[4fr_2fr_2fr_3fr_3fr_2fr_1.5fr] divide-x divide-y border-gray-300 divide-gray-300 ml-4 pt-6 w-full">
+              <div className="grid grid-cols-[4fr_2fr_2fr_3fr_3fr_2fr_1.5fr_1.5fr] divide-x divide-y border-gray-300 divide-gray-300 ml-4 pt-6 w-full">
                 <div className="flex items-center justify-center border-gray-300">Title</div>
                 <div className="flex items-center justify-center">Created at</div>
                 <div className="flex items-center justify-center">Modified at</div>
                 <div className="flex items-center justify-center">Merge from</div>
                 <div className="flex items-center justify-center">Merge to</div>
                 <div className="flex items-center justify-center border-gray-300 border-b border-r">Add/Del</div>
-                <div className="flex items-center justify-center border-gray-300"></div>
+                <div className="flex items-center justify-center border-gray-300">Reverse merge</div>
+                <div className="flex items-center justify-center border-gray-300">Close {gitProviderSpecificNameForPRShortcut}</div>
               </div>
               <div className="w-full">
                 {openedPrs?.map(pr => <PullRequestComponent pullRequestInfo={pr} resources={resources} resourceGitUrl={gitUrl} resolve={resolve}/>) ?? null}
@@ -144,13 +146,12 @@ type PRMergeTooltipProps = {
 function PRMergeTooltip({ gitProviderSpecificNameForPRShortcut, isSpecificBranchPRsList }: PRMergeTooltipProps) {
   return <div>
     <PopOverGitGeneralComponent>
-      <div>That is, in Dataspecer we will create merge state where the {gitProviderSpecificNameForPRShortcut}'s "merge from" actor will be the "merge to" actor.</div>
-      <div>This is the expected flow when working with Git. That is:</div>
-         <div>&nbsp;&nbsp;&nbsp; - Merge the changes from the branch to which you are merging into your branch.</div>
-         <div>&nbsp;&nbsp;&nbsp; - Close the {gitProviderSpecificNameForPRShortcut} in Git provider.</div>
+      <div>The reverse merge represents the classic workflow, where you first merge the 'merge to' branch</div>
+      <div>&nbsp;into your branch to make sure that everything works and finish the {gitProviderSpecificNameForPRShortcut} after that.</div>
+      <div>The 'Close {gitProviderSpecificNameForPRShortcut}' simply merges the 'merge from' branch into the 'merge to' branch.</div>
       <div>The buttons do the following:</div>
       <div><p className="text-blue-600 inline">Open Merge state</p> - opens the already existing merge state</div>
-      <div><p className="text-green-600 inline">Merge</p> - Creates new (reverse) merge state, since it does not exist.</div>
+      <div><p className="text-green-600 inline">Merge</p> - Creates new merge state, since it does not exist.</div>
       <div><p className="text-purple-600 inline">Import + Merge</p> - Imports the missing package and creates merge state between them</div>
       {isSpecificBranchPRsList ? null : <div><p className="text-orange-600 inline">Import both + Merge</p> - Imports both packages and creates merge state between them.</div>}
     </PopOverGitGeneralComponent>
@@ -168,6 +169,7 @@ type PullRequestComponentProps = {
 function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, resolve }: PullRequestComponentProps) {
   const openModal = useBetterModal();
   const [fetchedMergeState, setFetchedMergeState] = useState<MergeState | null>(null);
+  const [fetchedReverseMergeState, setFetchedReverseMergeState] = useState<MergeState | null>(null);
   const [hoveredOnActionButton, setHoveredOnActionButton] = useState<boolean>(false);
   const [hoveredOnNotActionButton, setHoveredOnNotActionButton] = useState<boolean>(false);
 
@@ -182,12 +184,22 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
                       resource.branch === pullRequestInfo.mergeToBranch && resource.representsBranchHead) ?? null;
   const isMergeToInDS = mergeToInDataspecer !== null;
 
+  // They way you should read the code is in this functions is to look at the "closePR", that is the non reversed values.
+  const createActionButtonRenderData = (isReverseMerge: boolean) => async () => {
+    const isMergeFromForActionButtonInDS = isReverseMerge ? isMergeToInDS : isMergeFromInDS;
+    const isMergeToForActionButtonInDS = isReverseMerge ? isMergeFromInDS : isMergeToInDS;
 
-  const [actionButtonData, isActionButtonNotReady] = useAsyncMemo(async () => {
     if (isMergeFromInDS && isMergeToInDS) {
-      // Note that it is swapped - if we are resolving PR in Git we always first import the changes from the merge to branch to the merge from and then finish the PR outside of DS.
-      const mergeStateFromBackend = await fetchMergeState(mergeToInDataspecer.iri, mergeFromInDataspecer.iri, false, false, false);
-      setFetchedMergeState(mergeStateFromBackend);
+      const mergeFromForActionButtonIri = isReverseMerge ? mergeToInDataspecer.iri : mergeFromInDataspecer.iri;
+      const mergeToForActionButtonIri = isReverseMerge ? mergeFromInDataspecer.iri : mergeToInDataspecer.iri;
+      const mergeStateFromBackend = await fetchMergeState(mergeFromForActionButtonIri, mergeToForActionButtonIri, false, false, false);
+      if (isReverseMerge) {
+        setFetchedReverseMergeState(mergeStateFromBackend)
+      }
+      else {
+        setFetchedMergeState(mergeStateFromBackend);
+      }
+
       if (mergeStateFromBackend !== null) {
         return {
           actionButtonText: "Open merge state",
@@ -203,14 +215,14 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
         };
       }
     }
-    else if (isMergeFromInDS) {
+    else if (isMergeToForActionButtonInDS) {
       return {
         actionButtonText: "Import + Merge",
         actionButtonClassname: "border-1 bg-purple-100 border-purple-600 hover:bg-purple-600 hover:text-white text-sm font-semibold rounded-md transition cursor-pointer",
         actionButtonTooltip: "Imports the merge to branch of the PR and creates a new merge state between the two branches tracked in Dataspecer",
       };
     }
-    else if (isMergeToInDS) {
+    else if (isMergeFromForActionButtonInDS) {
       return {
         actionButtonText: "Import + Merge",
         actionButtonClassname: "border-1 bg-purple-100 border-purple-600 hover:bg-purple-600 hover:text-white text-sm font-semibold rounded-md transition cursor-pointer",
@@ -224,13 +236,18 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
         actionButtonTooltip: "Imports both the merge from and merge to branches into Dataspecer and creates a new merge state between them.",
       };
     }
-  }, []);
+  };
 
-  const actionButton = async () => {
+  const [closePrButtonData, isClosePrButtonNotReady] = useAsyncMemo(createActionButtonRenderData(false), []);
+  const [reverseMergeButtonData, isReverseMergeButtonNotReady] = useAsyncMemo(createActionButtonRenderData(true), []);
+
+  const createActionButtonOnClickHandler = (isReverseMerge: boolean) => async () => {
     const closeLoadingDialogObject = createCloseLoadingDialogObject();
+    const isMergeFromForActionInDS = isReverseMerge ? isMergeToInDS : isMergeFromInDS;
+    const isMergeToForActionInDS = isReverseMerge ? isMergeFromInDS : isMergeToInDS;
 
-    let mergeFromIri: string | null = null;
-    let mergeToIri: string | null = null;
+    let mergeFromIriForAction: string;
+    let mergeToIriForAction: string;
 
     const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(resourceGitUrl, fetch, {});
     const repositoryOwner = gitProvider.extractPartOfRepositoryURL(resourceGitUrl, "repository-owner");
@@ -241,61 +258,71 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
 
     const mergeFromBranchUrl = gitProvider.createGitRepositoryURL(repositoryOwner, repositoryName, {type: "branch", name: pullRequestInfo.mergeFromBranch});
     const mergeToBranchUrl = gitProvider.createGitRepositoryURL(repositoryOwner, repositoryName, {type: "branch", name: pullRequestInfo.mergeToBranch});
+    const mergeFromBranchUrlForAction = isReverseMerge ? mergeToBranchUrl : mergeFromBranchUrl;
+    const mergeToBranchUrlForAction = isReverseMerge ? mergeFromBranchUrl : mergeToBranchUrl;
+
+    const mergeFromBranchForAction = isReverseMerge ? pullRequestInfo.mergeToBranch : pullRequestInfo.mergeFromBranch;
+    const mergeToBranchForAction = isReverseMerge ? pullRequestInfo.mergeFromBranch : pullRequestInfo.mergeToBranch;
+
     let performedImport: boolean = true;
 
     resolve(null);
     try {
       if (isMergeFromInDS && isMergeToInDS) {
+        mergeFromIriForAction = isReverseMerge ? mergeToInDataspecer.iri : mergeFromInDataspecer.iri;
+        mergeToIriForAction = isReverseMerge ? mergeFromInDataspecer.iri : mergeToInDataspecer.iri;
+
+        const mergeState = isReverseMerge ? fetchedReverseMergeState : fetchedMergeState;
+
         performedImport = false;
-        if (fetchedMergeState !== null) {
+        if (mergeState !== null) {
           openModal(
             TextDiffEditorDialog,
             {
-              initialMergeFromRootMetaPath: mergeToInDataspecer.iri,
-              initialMergeToRootMetaPath: mergeFromInDataspecer.iri,
-              editable: fetchedMergeState.editable,
+              initialMergeFromRootMetaPath: mergeFromIriForAction,
+              initialMergeToRootMetaPath: mergeToIriForAction,
+              editable: mergeState.editable,
             }
           );
           return;
         }
-
-        mergeFromIri = mergeFromInDataspecer.iri;
-        mergeToIri = mergeToInDataspecer.iri;
       }
       else {
-        if (isMergeFromInDS) {
-          setTimeout(() => {
+        if (isMergeFromForActionInDS) {
           // Add small delay so the second dialog appears after the first one is closed
-            openModal(LoadingDialog, {
-              dialogTitle: "Importing the 'merge to' branch from the PR",
-              waitingText: `Branch name: ${pullRequestInfo.mergeToBranch}`,
-              waitTime: GIT_IMPORT_WAIT_TIME,
-              setCloseDialogAction: closeLoadingDialogObject.setCloseDialogAction,
-              shouldShowTimer: true,
-              shouldDisableClosing: true,
-            });
-          }, 40);
-          const response = await importFromGit(PACKAGE_ROOT, mergeToBranchUrl, "branch");
-          const importedIris = await response.json();
-          mergeFromIri = mergeFromInDataspecer.iri;
-          mergeToIri = importedIris[0];
-        }
-        else if (isMergeToInDS) {
           setTimeout(() => {
-            // Add small delay so the second dialog appears after the first one is closed
+            const importedBranchType = isReverseMerge ? "merge from" : "merge to";
             openModal(LoadingDialog, {
-              dialogTitle: "Importing the 'merge from' branch from the PR",
-              waitingText: `Branch name: ${pullRequestInfo.mergeFromBranch}`,
+              dialogTitle: `Importing the '${importedBranchType}' branch from the PR`,
+              waitingText: `Branch name: ${mergeToBranchForAction}`,
               waitTime: GIT_IMPORT_WAIT_TIME,
               setCloseDialogAction: closeLoadingDialogObject.setCloseDialogAction,
               shouldShowTimer: true,
               shouldDisableClosing: true,
             });
           }, 40);
-          const response = await importFromGit(PACKAGE_ROOT, mergeFromBranchUrl, "branch");
+          const response = await importFromGit(PACKAGE_ROOT, mergeToBranchUrlForAction, "branch");
           const importedIris = await response.json();
-          mergeFromIri = importedIris[0];
-          mergeToIri = mergeToInDataspecer.iri;
+          mergeFromIriForAction = isReverseMerge ? mergeToInDataspecer!.iri : mergeFromInDataspecer!.iri;
+          mergeToIriForAction = importedIris[0];
+        }
+        else if (isMergeToForActionInDS) {
+          // Add small delay so the second dialog appears after the first one is closed
+          setTimeout(() => {
+            const importedBranchType = isReverseMerge ? "merge to" : "merge from";
+            openModal(LoadingDialog, {
+              dialogTitle: `Importing the '${importedBranchType}' branch from the PR`,
+              waitingText: `Branch name: ${mergeFromBranchForAction}`,
+              waitTime: GIT_IMPORT_WAIT_TIME,
+              setCloseDialogAction: closeLoadingDialogObject.setCloseDialogAction,
+              shouldShowTimer: true,
+              shouldDisableClosing: true,
+            });
+          }, 40);
+          const response = await importFromGit(PACKAGE_ROOT, mergeFromBranchUrlForAction, "branch");
+          const importedIris = await response.json();
+          mergeFromIriForAction = importedIris[0];
+          mergeToIriForAction = isReverseMerge ? mergeFromInDataspecer!.iri : mergeToInDataspecer!.iri;
         }
         else {
           setTimeout(() => {
@@ -311,7 +338,13 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
           }, 40);
           const mergeFromFetchResponse = await importFromGit(PACKAGE_ROOT, mergeFromBranchUrl, "branch");
           const importedMergeFromIris = await mergeFromFetchResponse.json();
-          mergeFromIri = importedMergeFromIris[0];
+
+          if (isReverseMerge) {
+            mergeToIriForAction = importedMergeFromIris[0];
+          }
+          else {
+            mergeFromIriForAction = importedMergeFromIris[0];
+          }
 
           closeLoadingDialogObject.closeDialogAction();
           setTimeout(() => {
@@ -327,7 +360,12 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
           }, 40);
           const mergeToFetchResponse = await importFromGit(PACKAGE_ROOT, mergeToBranchUrl, "branch");
           const importedMergeToIris = await mergeToFetchResponse.json();
-          mergeToIri = importedMergeToIris[0];
+          if (isReverseMerge) {
+            mergeFromIriForAction = importedMergeToIris[0];
+          }
+          else {
+            mergeToIriForAction = importedMergeToIris[0];
+          }
         }
       }
 
@@ -336,7 +374,7 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
         // Add small delay so the second dialog appears after the first one is closed
         openModal(LoadingDialog, {
           dialogTitle: "Creating merge state",
-          waitingText: `"${pullRequestInfo.mergeToBranch}" -> "${pullRequestInfo.mergeFromBranch}"`,
+          waitingText: `"${mergeFromBranchForAction}" -> "${mergeToBranchForAction}"`,
           waitTime: CREATE_MERGE_STATE_WAIT_TIME,
           setCloseDialogAction: closeLoadingDialogObject.setCloseDialogAction,
           shouldShowTimer: true,
@@ -344,9 +382,9 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
         });
       }, 40);
 
-      const { error: createMergeStateError } = await createMergeStateOnBackend(mergeToIri!, mergeFromIri!);   // Again it is swapped
-      requestLoadPackage(mergeToIri!, true);
-      requestLoadPackage(mergeFromIri!, true);
+      const { error: createMergeStateError } = await createMergeStateOnBackend(mergeFromIriForAction!, mergeToIriForAction!);
+      requestLoadPackage(mergeFromIriForAction!, true);
+      requestLoadPackage(mergeToIriForAction!, true);
       if (performedImport) {
         requestLoadPackage(PACKAGE_ROOT, true);
       }
@@ -356,8 +394,8 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
         openModal(
           TextDiffEditorDialog,
           {
-            initialMergeFromRootMetaPath: mergeToIri!,      // Again merge to and merge from swapped
-            initialMergeToRootMetaPath: mergeFromIri!,
+            initialMergeFromRootMetaPath: mergeFromIriForAction!,
+            initialMergeToRootMetaPath: mergeToIriForAction!,
             editable: "mergeTo",
           }
         );
@@ -372,11 +410,15 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
     finally {
       closeLoadingDialogObject.closeDialogAction();
     }
-  }
+  };
+
+  // The close PR does not have the actors swapped why the merge into the merge from branch does.
+  const closePrOnClickAction = createActionButtonOnClickHandler(false);
+  const reverseMergeOnClickAction = createActionButtonOnClickHandler(true);
 
 
   // We have to use the hoveredOn, because otherwise if we hover on the action button, we highlight the whole line since the hover on also works on the whole div, which we do not want.
-  return <div className={"grid grid-cols-[4fr_2fr_2fr_3fr_3fr_2fr_1.5fr] divide-x divide-y divide-gray-300 ml-4 w-full cursor-pointer" + ((!hoveredOnActionButton && hoveredOnNotActionButton) ? " hover:bg-gray-200" : "")}>
+  return <div className={"grid grid-cols-[4fr_2fr_2fr_3fr_3fr_2fr_1.5fr_1.5fr] divide-x divide-y divide-gray-300 ml-4 w-full cursor-pointer" + ((!hoveredOnActionButton && hoveredOnNotActionButton) ? " hover:bg-gray-200" : "")}>
     <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center border-gray-300">{pullRequestInfo.title}</a>
     <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{new Date(pullRequestInfo.createdAt).toLocaleString()}</a>
     <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{new Date(pullRequestInfo.modifiedAt).toLocaleString()}</a>
@@ -386,14 +428,24 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
       <div className="flex justify-center items-center text-green-600">+{pullRequestInfo.additions}</div>
       <div className="flex justify-center items-center text-red-600">-{pullRequestInfo.deletions}</div>
     </a>
-    {!isActionButtonNotReady && actionButtonData !== undefined &&
+    {!isReverseMergeButtonNotReady && reverseMergeButtonData !== undefined &&
       <button
-        className={"flex justify-center items-center cursor-pointer " + actionButtonData.actionButtonClassname}
-        onClick={actionButton}
+        className={"flex justify-center items-center cursor-pointer " + reverseMergeButtonData.actionButtonClassname}
+        onClick={reverseMergeOnClickAction}
         onMouseEnter={() => setHoveredOnActionButton(true)}
         onMouseLeave={() => setHoveredOnActionButton(false)}
       >
-        {actionButtonData.actionButtonText}
+        {reverseMergeButtonData.actionButtonText}
+      </button>
+    }
+    {!isClosePrButtonNotReady && closePrButtonData !== undefined &&
+      <button
+        className={"flex justify-center items-center cursor-pointer " + closePrButtonData.actionButtonClassname}
+        onClick={closePrOnClickAction}
+        onMouseEnter={() => setHoveredOnActionButton(true)}
+        onMouseLeave={() => setHoveredOnActionButton(false)}
+      >
+        {closePrButtonData.actionButtonText}
       </button>
     }
   </div>;
