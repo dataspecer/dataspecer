@@ -10,6 +10,7 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
   protected exportActions!: ExportActions<AllowedExportResults>;
   protected importFilesystem!: FilesystemAbstraction;
   protected exportFormat!: string;
+  protected iriMapping: Record<string, string> | null;
 
   public static setExportVersion(metaObject: any, exportVersion: number) {
     metaObject._exportVersion = exportVersion;
@@ -38,7 +39,9 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
     importFilesystem: AvailableFilesystems,
     exportType: AvailableExports,
     exportFormat: string,
+    iriMapping?: Record<string, string>,
   ): Promise<AllowedExportResults> {
+    this.iriMapping = iriMapping ?? null;
     const filesystem = await FilesystemFactory.createFileSystem(importFilesystem, filesystemFactoryParams);
     const fakeRoot = filesystem.getRoot();
 

@@ -1,4 +1,4 @@
-import { DirectoryNode, FilesystemNode, isDatastoreForMetadata } from "@dataspecer/git";
+import { createDatastoreWithReplacedIris, DirectoryNode, FilesystemNode, isDatastoreForMetadata } from "@dataspecer/git";
 import { PackageExporterBase } from "../export-api/export-base.ts";
 
 
@@ -28,10 +28,19 @@ export class PackageExporterNew extends PackageExporterBase {
       let data;
       if (isDatastoreForMetadata(datastore.type)) {
         data = filesystemNode.metadata;
+        if (this.iriMapping !== null) {
+          const { datastoreWithReplacedIris } = createDatastoreWithReplacedIris(data, this.iriMapping);
+          data = datastoreWithReplacedIris;
+        }
         this.setExportVersionInternal(data);
       }
       else {
         data = await this.importFilesystem.getDatastoreContent(filesystemNode.irisTreePath, datastore.type, true);
+        if (this.iriMapping !== null) {
+          // Note that if therr are some missing iris it is ok, those iris exist because there are some new resources.
+          const { datastoreWithReplacedIris } = createDatastoreWithReplacedIris(data, this.iriMapping);
+          data = datastoreWithReplacedIris;
+        }
       }
 
       await this.exportActions.exportDatastoreAction(exportFullName, datastore, data, this.exportFormat);

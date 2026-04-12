@@ -1,6 +1,6 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import path from "path";
-import { DirectoryNode, ExportVersionType, FilesystemNode, isDatastoreForMetadata, ResourceTypes, resourceTypeToTypeDirectoryMapping } from "@dataspecer/git";
+import { createDatastoreWithReplacedIris, DirectoryNode, ExportVersionType, FilesystemNode, isDatastoreForMetadata, ResourceTypes, resourceTypeToTypeDirectoryMapping } from "@dataspecer/git";
 import { PackageExporterNew } from "./export-new.ts";
 import { PackageExporterBase } from "../export-api/export-base.ts";
 
@@ -68,10 +68,19 @@ export class PackageExporterByResourceType extends PackageExporterBase {
       let data;
       if (isDatastoreForMetadata(datastore.type)) {
         data = filesystemNode.metadata;
+        if (this.iriMapping !== null) {
+          const { datastoreWithReplacedIris } = createDatastoreWithReplacedIris(data, this.iriMapping);
+          data = datastoreWithReplacedIris;
+        }
         this.setExportVersionInternal(data);
       }
       else {
         data = await this.importFilesystem.getDatastoreContent(filesystemNode.irisTreePath, datastore.type, true);
+        if (this.iriMapping !== null) {
+          // Note that if there are some missing iris it is ok, those iris exist because there are some new resources.
+          const { datastoreWithReplacedIris } = createDatastoreWithReplacedIris(data, this.iriMapping);
+          data = datastoreWithReplacedIris;
+        }
       }
 
       await this.exportActions.exportDatastoreAction(exportFullName, datastore, data, this.exportFormat);
