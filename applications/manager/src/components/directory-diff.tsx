@@ -3,7 +3,7 @@ import _ from "lodash";
 import { Check, Loader, Minus, Plus, X } from "lucide-react";
 import React, { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NodeApi, NodeRendererProps, Tree, TreeApi, } from "react-arborist";
-import { DatastoreComparison, DatastoreComparisonWithChangeTypeInfo, DatastoreInfo, DiffTree, FilesystemNode, getDatastoreInfoOfGivenDatastoreType, MergeState, OldNewFilesystemNode, ResourceComparison, MergeStateCause, getMergeFromAndMergeTo, convertMergeStateCauseToEditable, DatastoreInfosForModel, DatastoreInfosCache } from "@dataspecer/git";
+import { DatastoreComparison, DatastoreComparisonWithChangeTypeInfo, DatastoreInfo, DiffTree, getDatastoreInfoOfGivenDatastoreType, MergeState, ResourceComparison, MergeStateCause, getMergeFromAndMergeTo, convertMergeStateCauseToEditable, DatastoreInfosForModel, DatastoreInfosCache, extractFirstNonEmptyFieldFromComparison } from "@dataspecer/git";
 import { DiffEditorEditIcon } from "./crossed-out-icon";
 import { AddToCreatedDatastoresAndAddToCacheMethodType, AddToRemovedDatastoresAndAddToCacheMethodType, EntriesAffectedByCreateType } from "@/hooks/use-diff-editor-dialog-props";
 import { ModelIcon } from "@/known-models";
@@ -85,13 +85,6 @@ type DatastoreRenderRepresentationsData = {
 
 function checkIfIsInEditableTree(treeToExtract: TreeType) {
   return treeToExtract === "new";
-}
-
-function extractFirstNonEmptyFieldFromComparison(comparison: OldNewFilesystemNode | null, comparisonFieldToExtract: keyof FilesystemNode) {
-  if (comparison === null) {
-    return null;
-  }
-  return (comparison.old?.[comparisonFieldToExtract] ?? comparison.new?.[comparisonFieldToExtract]);
 }
 
 function createIdForDatastoreRenderNode(datastoreComparison: DatastoreComparison, treeToExtract: TreeType) {

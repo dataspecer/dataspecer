@@ -1,7 +1,7 @@
 import _ from "lodash";
-import { DatastoreInfo, DirectoryNode, FileNode, FilesystemNode } from "../export-import-data-api.ts";
+import { DatastoreInfo, DirectoryNode, ExportMetadataType, FileNode, FilesystemNode } from "../export-import-data-api.ts";
 import { FilesystemAbstraction, getDatastoreInfoOfGivenDatastoreType } from "../filesystem/abstractions/filesystem-abstraction.ts";
-import { DatastoreComparison, DatastoreComparisonWithChangeTypeInfo, DiffTree, ResourceComparison, ResourceComparisonResult } from "./merge-state.ts";
+import { DatastoreComparison, DatastoreComparisonWithChangeTypeInfo, DiffTree, OldNewFilesystemNode, ResourceComparison, ResourceComparisonResult } from "./merge-state.ts";
 import { ResourceDatastoreStripHandlerBase } from "./comparison/resource-datastore-strip-handler-base.ts";
 import { createDatastoreWithReplacedIris } from "../datastore-manipulation/iri-replacement.ts";
 
@@ -252,8 +252,8 @@ export function compareDatastoresContents(
 ): boolean {
   const stripMethod = new ResourceDatastoreStripHandlerBase(modelTypes[0]).createHandlerMethodForDatastoreType(datastoreType);
 
-  const strippedContent1 = stripMethod(content1);
-  const strippedContent2 = stripMethod(content2);
+  const { strippedDatastore: strippedContent1} = stripMethod(content1, true);
+  const { strippedDatastore: strippedContent2 } = stripMethod(content2, true);
   const datastoreToCompare1 = createDatastoreWithReplacedIris(strippedContent1, iriToProjectIriMap);
   const datastoreToCompare2 = createDatastoreWithReplacedIris(strippedContent2, iriToProjectIriMap);
 
@@ -262,6 +262,18 @@ export function compareDatastoresContents(
   return _.isEqual(datastoreToCompare1.datastoreWithReplacedIris, datastoreToCompare2.datastoreWithReplacedIris);
 }
 
+
+export function extractMetadataFromDiffTree(diffTree: DiffTree, projectIrisTreePath: string): ExportMetadataType {
+  const diffNode = getDiffNodeFromDiffTree(diffTree, projectIrisTreePath);
+  return extractFirstNonEmptyFieldFromComparison(diffNode!.resources, "metadata") as ExportMetadataType;
+}
+
+export function extractFirstNonEmptyFieldFromComparison(comparison: OldNewFilesystemNode | null, comparisonFieldToExtract: keyof FilesystemNode) {
+  if (comparison === null) {
+    return null;
+  }
+  return (comparison.old?.[comparisonFieldToExtract] ?? comparison.new?.[comparisonFieldToExtract]);
+}
 
 export function getDiffNodeFromDiffTree(
   diffTree: DiffTree,

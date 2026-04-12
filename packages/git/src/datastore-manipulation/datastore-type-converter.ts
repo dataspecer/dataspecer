@@ -53,7 +53,8 @@ export function convertDatastoreContentBasedOnFormat(
     }
 
     if (resourceDatastoreStripHandler !== null) {
-      convertedDatastore = resourceDatastoreStripHandler(convertedDatastore);
+      const { strippedDatastore } = resourceDatastoreStripHandler(convertedDatastore, true);
+      convertedDatastore = strippedDatastore;
     }
 
     return {

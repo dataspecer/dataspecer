@@ -25,6 +25,7 @@ export const MonacoDiffEditor: FC<{
   datastoreType: string | null,
   format: string,
   editable: EditableType,
+  mergeState: MergeState | null,
   setMergeState: Dispatch<SetStateAction<MergeState | null>>,
 } & React.ComponentProps<typeof RawMonacoEditor>> = (props) => {
   const { resolvedTheme } = useTheme();
@@ -60,7 +61,7 @@ export const MonacoDiffEditor: FC<{
       setPreviousDatastoreType(props.datastoreType);
       setPreviousProjectIrisTreePathToFilesystemNode(props.projectIrisTreePathToFilesystemNode);
     };
-  }, [editorsContent.nonEditable, editorsContent.editable, props.projectIrisTreePathToFilesystemNode, props.datastoreType]);
+  }, [editorsContent.nonEditable, editorsContent.editable, props.projectIrisTreePathToFilesystemNode, props.datastoreType, props.mergeState]);
 
 
   useEffect(() => {
@@ -70,12 +71,13 @@ export const MonacoDiffEditor: FC<{
     if (model !== undefined) {
       model.setValue(model.getValue(monaco.editor.EndOfLinePreference.LF));
     }
-  }, [props.projectIrisTreePathToFilesystemNode, props.datastoreType]);
+  }, [props.projectIrisTreePathToFilesystemNode, props.datastoreType, props.mergeState]);
 
 
   // // TODO RadStr PR: The change from "same" to "modified" causes lose of focus of the text editor I do not know how to fix that currently.
   // //                 ... Therefore, if we want to periodically update the diff editor uncomment this and fix the lose of focus. However, note that the code works.
   // //                 ..... Only the lose of focus is annoying
+  //                    .... so we just do it on model change instead periodically
   // const currentIntervalId = useRef<NodeJS.Timeout | null>(null);
   // useEffect(() => {
   //   const intervalId = setInterval(() => {

@@ -85,7 +85,7 @@ export const ChooseAffectedModels = ({ isOpen, resolve }: ChooseAffectedModelsPr
         <ModalContent>
           <ModalHeader>
             <ModalTitle>Apply chosen merge resolver</ModalTitle>
-            <ModalDescription>Choose the affected models</ModalDescription>
+            <ModalDescription>Choose the affected models. Note that the addition/deletion of datastores has to be done manually.</ModalDescription>
           </ModalHeader>
 
           <ComboBox options={comboBoxOptions} onChange={(selected: ModelsToResolve) => setAffectedModels(selected)}/>

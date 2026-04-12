@@ -1,17 +1,18 @@
 import { ResourceTypesOrString } from "../../resource-types.ts";
-import { ResourceDatastoreStripHandler } from "./resource-datastore-strip-handler.ts";
+import { ResourceDatastoreStripHandler, StripResult } from "./resource-datastore-strip-handler.ts";
+
 
 /**
  * Returns the object stripped by the values - Note that the given parameter ({@link datastoreContent}) is modified.
  */
-export type DatastoreStripHandlerMethod = (datastoreContent: any) => any;
+export type DatastoreStripHandlerMethod = (datastoreContent: any, shouldStrip: boolean) => StripResult;
 
 export class ResourceDatastoreStripHandlerBase implements ResourceDatastoreStripHandler {
   /**
    * This creates method which handles stripping of specific datastore type
    */
   public createHandlerMethodForDatastoreType(datastoreType: string): DatastoreStripHandlerMethod {
-    return (datastoreContent: any) => {return this.stripDatastoreContent(datastoreContent, datastoreType)};
+    return (datastoreContent: any, shouldStrip: boolean) => {return this.stripDatastoreContent(datastoreContent, datastoreType, shouldStrip)};
   }
 
   protected resourceType: ResourceTypesOrString;
@@ -24,28 +25,42 @@ export class ResourceDatastoreStripHandlerBase implements ResourceDatastoreStrip
     return this.resourceType;
   }
 
-  stripDatastoreContent(datastoreContent: any, type: string): any {
+  stripDatastoreContent(datastoreContent: any, type: string, shouldStrip: boolean): StripResult {
+    const strippedValues: any = {};
+
+    // For every type (including meta) strip iri
+    extendAndDelete(strippedValues, datastoreContent, "iri", shouldStrip);
+
     if (type === "meta") {
       // Strip Export data
+      extendAndDelete(strippedValues, datastoreContent, "metadata", shouldStrip);
+
       for (const [key, value] of Object.entries(datastoreContent)) {
         if (key.startsWith("_")) {
-          delete datastoreContent[key];
+          extendAndDelete(strippedValues, datastoreContent, key, shouldStrip);
         }
       }
-      delete datastoreContent["metadata"];
     }
     else {
       if (this.resourceType === "http://dataspecer.com/resources/local/visual-model") {
-        delete datastoreContent["modelId"];
+        extendAndDelete(strippedValues, datastoreContent, "modelId", shouldStrip);
       }
       else if(this.resourceType === "http://dataspecer.com/resources/local/semantic-model") {
-        delete datastoreContent["modelId"];
-        delete datastoreContent["baseIri"];
+        extendAndDelete(strippedValues, datastoreContent, "modelId", shouldStrip);
+        extendAndDelete(strippedValues, datastoreContent, "baseIri", shouldStrip);
       }
     }
 
-    // For every type (including meta) strip iri
-    delete datastoreContent["iri"];
-    return datastoreContent;
+    return {
+      strippedValues,
+      strippedDatastore: datastoreContent,
+    };
+  }
+}
+
+function extendAndDelete(objectToExtend: any, objectToDeleteFrom: any, key: string, shouldRemoveField: boolean) {
+  objectToExtend[key] = objectToDeleteFrom[key];
+  if (shouldRemoveField) {
+    delete objectToDeleteFrom[key];
   }
 }

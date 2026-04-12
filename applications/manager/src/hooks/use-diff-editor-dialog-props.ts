@@ -30,6 +30,7 @@ import {
   DatastoreInfosCache,
   mergeResolverStrategies,
   compareDatastoresContents,
+  extractMetadataFromDiffTree,
 } from "@dataspecer/git";
 import { updateMergeState } from "@/utils/merge-state-backend-requests";
 import { fetchMergeState } from "@/dialog/open-merge-state";
@@ -112,6 +113,7 @@ function getDatastoreInCacheAsObject(
 const convertDataAndUpdateCacheContentEntryAsCombination = (
   convertedCacheSetter: (value: SetStateAction<CacheContentMap>) => void,
   treePathToNodeContainingDatastore: string,
+  resourceType: string,
   datastoreType: string,
   newValue: string,
   format: string,
@@ -123,7 +125,7 @@ const convertDataAndUpdateCacheContentEntryAsCombination = (
     // We just return. This is the reason why we implemented this whole ConversionResult.
     return;
   }
-  updateCacheContentEntryAsCombination(convertedCacheSetter, treePathToNodeContainingDatastore, datastoreType, convertedNewValue.value, format);
+  updateCacheContentEntryAsCombination(convertedCacheSetter, treePathToNodeContainingDatastore, resourceType, datastoreType, convertedNewValue.value, format);
 }
 
 /**
@@ -132,6 +134,7 @@ const convertDataAndUpdateCacheContentEntryAsCombination = (
 const updateCacheContentEntryAsCombination = (
   cacheSetter: (value: SetStateAction<CacheContentMap>) => void,
   treePathToNodeContainingDatastore: string,
+  resourceType: string,
   datastoreType: string,
   newValueAsJSON: any,
   outputFormat: string,
@@ -447,19 +450,29 @@ function pickFormat(
   return format;
 }
 
-const applyAutomaticMergeStateResolverToSingleModel = (
-  mergeStrategy: MergeResolverStrategy,
-  editable: EditableType,
-  mergeFromDatastoreInfo: DatastoreInfo | null,
-  mergeToDatastoreInfo: DatastoreInfo | null,
-  setConvertedCacheContentForMergeFrom: (value: SetStateAction<CacheContentMap>) => void,
-  setConvertedCacheContentForMergeTo: (value: SetStateAction<CacheContentMap>) => void,
-  mergeFromContentConverted: string,
-  mergeToContentConverted: string,
-  datastoreType: string | null,
-  format: string,
-  projectIriTreePathToNodeContainingDatstore: string,
-): string | null => {
+type ApplyMergeStateResolverParams = {
+  mergeStrategy: MergeResolverStrategy;
+  editable: EditableType;
+  mergeFromDatastoreInfo: DatastoreInfo | null;
+  mergeToDatastoreInfo: DatastoreInfo | null;
+  setConvertedCacheContentForMergeFrom: (value: SetStateAction<CacheContentMap>) => void;
+  setConvertedCacheContentForMergeTo: (value: SetStateAction<CacheContentMap>) => void;
+  mergeFromContentConverted: string;
+  mergeToContentConverted: string;
+  resourceType: string;
+  datastoreType: string;
+  format: string;
+  projectIriTreePathToNodeContainingDatastore: string;
+}
+
+function applyAutomaticMergeStateResolverToSingleModel(params: ApplyMergeStateResolverParams): string | null {
+  const {
+    datastoreType, editable, format, mergeFromContentConverted,
+    mergeFromDatastoreInfo, mergeStrategy, mergeToContentConverted,
+    mergeToDatastoreInfo, projectIriTreePathToNodeContainingDatastore, resourceType,
+    setConvertedCacheContentForMergeFrom, setConvertedCacheContentForMergeTo
+  } = params;
+
   const datastoreInfoForEditable = getEditableValue(editable, mergeFromDatastoreInfo, mergeToDatastoreInfo);
   if (datastoreInfoForEditable === null) {
     return null;
@@ -469,7 +482,12 @@ const applyAutomaticMergeStateResolverToSingleModel = (
   const mergeContents = getEditableAndNonEditableValue(editable, mergeFromContentConverted, mergeToContentConverted);
 
   const mergeResolveResult = mergeStrategy.resolve(mergeContents.nonEditable, mergeContents.editable, datastoreType, format);
-  updateCacheContentEntryByGivenString(setCacheToTextContentForEditable, projectIriTreePathToNodeContainingDatstore, datastoreInfoForEditable.type, mergeResolveResult);
+  const resourceStripHandlerMethod = new ResourceDatastoreStripHandlerBase(resourceType).createHandlerMethodForDatastoreType(datastoreType);
+  const newContentAsObject = convertDatastoreContentBasedOnFormat(mergeResolveResult, format, true, resourceStripHandlerMethod);
+  if (!newContentAsObject.ok) {
+    throw new Error(newContentAsObject.error);
+  }
+  updateCacheContentEntryAsCombination(setCacheToTextContentForEditable, projectIriTreePathToNodeContainingDatastore, resourceType, datastoreInfoForEditable.type, newContentAsObject.value, format);
   return mergeResolveResult;
 }
 
@@ -586,7 +604,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         strippedMergeFromContent = activeMergeFromContentConverted;
         strippedMergeToContent = activeMergeToContentConverted;
 
-        // TODO RadStr Critical:  ... this is copy paste ... it is here 4 times, therefore refactor.
+        // TODO RadStr: ... this is copy paste ... it is here 4 times, therefore refactor later.
         if (strippedMergeFromContent !== "null") {
           const strippedMergeFromContentAsObject = convertDatastoreContentBasedOnFormat(strippedMergeFromContent, activeFormat, true, null);
           if (!strippedMergeFromContentAsObject.ok) {
@@ -665,7 +683,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
       strippedMergeToContent = activeMergeToContentConverted;
     }
 
-
+    // When stripped convert the IRIs to project IRIs
     // TODO RadStr Critical: Looking at it from "code review", it might be unnecessary conversion, since we perform similar on before
     if (strippedMergeFromContent !== "null") {
       const strippedMergeFromContentAsObject = convertDatastoreContentBasedOnFormat(strippedMergeFromContent, activeFormat, true, null);
@@ -954,15 +972,20 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
       //  (meaning it was removed), that is because we want to store the changes. We are doing that only locally and only send them if the user actually adds them explicitly
 
       // The editors should be always defined, however if for some unknown reason they are undefined we just skip the setting of the caches
+      // TODO: Refactor - it is the same code for the from and for the to
       const editors = getEditorsInOriginalOrder(monacoEditor, editable);
       let currentMergeFromContentInEditor = editors.mergeFromEditor?.getValue({ lineEnding: "lf", preserveBOM: false });
       if (currentMergeFromContentInEditor !== undefined) {
         if (currentMergeFromContentInEditor === "") {
           currentMergeFromContentInEditor = getDefaultValueForMissingDatastoreInDiffEditor();
         }
+
+        const metadata = extractMetadataFromDiffTree(examinedMergeState!.diffTreeData!.diffTree, activeTreePathBeforeUpdate);
+        const resourceType = metadata.types[0];
+
         convertDataAndUpdateCacheContentEntryAsCombination(
           setConvertedCacheContentForMergeFrom,
-          activeTreePathBeforeUpdate, oldDatastoreType,
+          activeTreePathBeforeUpdate, resourceType, oldDatastoreType,
           currentMergeFromContentInEditor, oldDatastoreFormat);
       }
 
@@ -971,9 +994,11 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         if (currentMergeToContentInEditor === "") {
           currentMergeToContentInEditor = getDefaultValueForMissingDatastoreInDiffEditor();
         }
+        const metadata = extractMetadataFromDiffTree(examinedMergeState!.diffTreeData!.diffTree, activeTreePathBeforeUpdate);
+        const resourceType = metadata.types[0];
         convertDataAndUpdateCacheContentEntryAsCombination(
           setConvertedCacheContentForMergeTo,
-          activeTreePathBeforeUpdate, oldDatastoreType,
+          activeTreePathBeforeUpdate, resourceType, oldDatastoreType,
           currentMergeToContentInEditor, oldDatastoreFormat);
       }
     }
@@ -1013,6 +1038,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
 
   /**
    * TODO RadStr Critical:  not really crtiical but this method gets all parameters on input. Only the called methods may need the react values
+   * If the entry exists, we simply just update the cache with the provided value, otherwise we copy it based on the other one, if {@link shouldCopyIfMissing} is true
    */
   const updateBothCacheEntries = async (
     newMergeFromDatastoreInfo: DatastoreInfo | null,
@@ -1082,8 +1108,10 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
       }
       valueToStoreToCacheAsObject = convertedDataToInsert.value;
       const stringifiedCacheValue = stringifyDatastoreContentBasedOnFormat(valueToStoreToCacheAsObject, newFormat, true);
-      convertDataAndUpdateCacheContentEntryAsCombination(setConvertedCacheContent,
-        treePathToNodeContainingDatastore, newDatastoreType, stringifiedCacheValue, newFormat);
+      const metadata = extractMetadataFromDiffTree(examinedMergeState!.diffTreeData!.diffTree, treePathToNodeContainingDatastore);
+      const resourceType = metadata.types[0];
+      convertDataAndUpdateCacheContentEntryAsCombination(
+        setConvertedCacheContent, treePathToNodeContainingDatastore, resourceType, newDatastoreType, stringifiedCacheValue, newFormat);
     }
     else {
       if (datastoreInfo === null && otherDatastoreInfo !== null && shouldCopyIfMissing && createdDatastoresToIrisNeedingReplacementMap.current[otherDatastoreInfo.fullPath] === undefined) {
@@ -1092,7 +1120,9 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         const { datastoreWithReplacedIris, missingIrisInNew } = createDatastoreWithReplacedIris(otherDatastoreEntry, iriMappingFromNonEditableToEditable);
         valueToStoreToCacheAsObject = datastoreWithReplacedIris;
         createdDatastoresToIrisNeedingReplacementMap.current[otherDatastoreInfo.fullPath] = missingIrisInNew;
-        updateCacheContentEntryAsCombination(setConvertedCacheContent, treePathToNodeContainingDatastore, newDatastoreType, valueToStoreToCacheAsObject, newFormat);
+        const metadata = extractMetadataFromDiffTree(examinedMergeState!.diffTreeData!.diffTree, treePathToNodeContainingDatastore);
+        const resourceType = metadata.types[0];
+        updateCacheContentEntryAsCombination(setConvertedCacheContent, treePathToNodeContainingDatastore, resourceType, newDatastoreType, valueToStoreToCacheAsObject, newFormat);
 
         for (const missingIriInNew of missingIrisInNew) {
           const missingProjectIri = iriToProjectIriMap[missingIriInNew];
@@ -1184,9 +1214,19 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
       }
       const { mergeFrom: mergeFromNewContent, mergeTo: mergeToNewContent } = getMergeFromAndMergeTo(editable, nonEditableContentFromEditor, editableContentFromEditor);
 
-      const newContent = applyAutomaticMergeStateResolverToSingleModel(
-        mergeStrategy, editable, mergeFromDatastoreInfo, mergeToDatastoreInfo, setConvertedCacheContentForMergeFrom, setConvertedCacheContentForMergeTo,
-        mergeFromNewContent, mergeToNewContent, activeDatastoreType, activeFormat, activeTreePathToNodeContainingDatastore);
+      const metadata = extractMetadataFromDiffTree(examinedMergeState!.diffTreeData!.diffTree, activeTreePathToNodeContainingDatastore);
+      const resourceType = metadata.types[0];
+      const resolverMethodParams: ApplyMergeStateResolverParams = {
+        mergeStrategy, editable, mergeFromDatastoreInfo, mergeToDatastoreInfo,
+        setConvertedCacheContentForMergeFrom, setConvertedCacheContentForMergeTo,
+        mergeFromContentConverted: mergeFromNewContent,
+        mergeToContentConverted: mergeToNewContent,
+        datastoreType: activeDatastoreType,
+        format: activeFormat,
+        projectIriTreePathToNodeContainingDatastore: activeTreePathToNodeContainingDatastore,
+        resourceType
+      };
+      const newContent = applyAutomaticMergeStateResolverToSingleModel(resolverMethodParams);
       if (newContent === null) {
         return;     // We just skip it.
       }
@@ -1241,16 +1281,39 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
             }
             const format = pickFormat(examinedMergeState?.filesystemTypeMergeFrom, datastoreInfoForMergeActors.mergeFrom, datastoreInfoForMergeActors.mergeTo);
 
-            const newContent = applyAutomaticMergeStateResolverToSingleModel(
-              currentMergeResolverStrategy, editable, datastoreInfoForMergeActors.mergeFrom, datastoreInfoForMergeActors.mergeTo,
+            const resourceStripHandlerMethod = resourceStripHandler.createHandlerMethodForDatastoreType(datastoreType);
+            const mergeFromContentAsObject = convertDatastoreContentBasedOnFormat(convertedCacheContentForMergeFrom[treePath][datastoreType], format, true, null);
+            if (!mergeFromContentAsObject.ok) {
+              console.error(`Could not convert mergeFrom content in merge resolve: ${convertedCacheContentForMergeFrom[treePath][datastoreType]}`);
+              throw new Error(mergeFromContentAsObject.error);
+            }
+            const mergeToContentAsObject = convertDatastoreContentBasedOnFormat(convertedCacheContentForMergeTo[treePath][datastoreType], format, true, null);
+            if (!mergeToContentAsObject.ok) {
+              console.error(`Could not convert mergeTo content in merge resolve: ${convertedCacheContentForMergeTo[treePath][datastoreType]}`);
+              throw new Error(mergeToContentAsObject.error);
+            }
+            const { datastoreWithReplacedIris: mergeFromWithProjectIris} = createDatastoreWithReplacedIris(mergeFromContentAsObject.value, iriToProjectIriMap);
+            const { datastoreWithReplacedIris: mergeToWithProjectIris } = createDatastoreWithReplacedIris(mergeToContentAsObject.value, iriToProjectIriMap);
+            const stringifiedMergeFromWithProjectIris = stringifyDatastoreContentBasedOnFormat(mergeFromWithProjectIris, format, true);
+            const stringifiedMergeToWithProjectIris = stringifyDatastoreContentBasedOnFormat(mergeToWithProjectIris, format, true);
+
+            const resolverParams: ApplyMergeStateResolverParams = {
+              mergeStrategy: currentMergeResolverStrategy,
+              editable,
+              mergeFromDatastoreInfo: datastoreInfoForMergeActors.mergeFrom,
+              mergeToDatastoreInfo: datastoreInfoForMergeActors.mergeTo,
               setConvertedCacheContentForMergeFrom, setConvertedCacheContentForMergeTo,
-              convertedCacheContentForMergeFrom[treePath][datastoreType], convertedCacheContentForMergeTo[treePath][datastoreType],
-              datastoreType, format, treePath);
+              mergeFromContentConverted: stringifiedMergeFromWithProjectIris,
+              mergeToContentConverted: stringifiedMergeToWithProjectIris,
+              datastoreType, format,
+              projectIriTreePathToNodeContainingDatastore: treePath,
+              resourceType,
+            };
+            const newContent = applyAutomaticMergeStateResolverToSingleModel(resolverParams);
             if (newContent === null) {
               throw new Error("The new content after applying the merge resolver is null, which should not happen");
             }
 
-            const resourceStripHandlerMethod = resourceStripHandler.createHandlerMethodForDatastoreType(datastoreType);
             const newContentAsObject = convertDatastoreContentBasedOnFormat(newContent, format, true, resourceStripHandlerMethod);
             if (!newContentAsObject.ok) {
               console.error(`Could not convert the new content of merge resolve: ${newContent}`);
@@ -1260,21 +1323,13 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
             let datastoreForComparison1: any;
             let datastoreForComparison2: any;
             if (editable === "mergeTo") {
-              const mergeFromContentAsObject = convertDatastoreContentBasedOnFormat(convertedCacheContentForMergeFrom[treePath][datastoreType], format, true, resourceStripHandlerMethod);
-              if (!mergeFromContentAsObject.ok) {
-                console.error(`Could not convert mergeFrom content in merge resolve: ${convertedCacheContentForMergeFrom[treePath][datastoreType]}`);
-                throw new Error(mergeFromContentAsObject.error);
-              }
-              datastoreForComparison1 = mergeFromContentAsObject.value;
+              const { strippedDatastore: strippedMergeFromWithProjectIris } = resourceStripHandlerMethod(mergeFromWithProjectIris, true);
+              datastoreForComparison1 = strippedMergeFromWithProjectIris;
               datastoreForComparison2 = newContentAsObject.value;
             }
             else {
-              const mergeToContentAsObject = convertDatastoreContentBasedOnFormat(convertedCacheContentForMergeTo[treePath][datastoreType], format, true, resourceStripHandlerMethod);
-              if (!mergeToContentAsObject.ok) {
-                console.error(`Could not convert mergeTo content in merge resolve: ${convertedCacheContentForMergeTo[treePath][datastoreType]}`);
-                throw new Error(mergeToContentAsObject.error);
-              }
-              datastoreForComparison1 = mergeToContentAsObject.value;
+              const { strippedDatastore: strippedMergeToWithProjectIris } = resourceStripHandlerMethod(mergeToWithProjectIris, true);
+              datastoreForComparison1 = strippedMergeToWithProjectIris;
               datastoreForComparison2 = newContentAsObject.value;
             }
 
@@ -1412,7 +1467,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         return modalResult;
       }
       else {
-        throw new Error(`Unknown modalResult: ${modalResult}`)
+        throw new Error(`Unknown modalResult: ${modalResult}`);
       }
     }
     const fetchedMergeState = await fetchMergeState(initialMergeFromRootMetaPath, initialMergeToRootMetaPath, true, true, true);

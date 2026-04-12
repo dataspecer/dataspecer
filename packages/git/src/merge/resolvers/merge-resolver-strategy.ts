@@ -6,6 +6,7 @@ export interface MergeResolverStrategy {
   key: string;
 
   /**
+   * The inputs should probably have projectIris instead of iris and not be stripped.
    * @param otherInput is the input which is not supposed to be modified.
    * @param editableInput is the input which is supposed to be modified (edited).
    * @returns How should the {@link editableInput} look after performing the implemented merge resolver strategy.

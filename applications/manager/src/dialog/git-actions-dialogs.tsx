@@ -152,7 +152,8 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
 
   const { accountProvider, username, genericScope, isSignedIn, isLoginDataReady } = useLogin();
 
-  const [repositoryName, setRepositoryName] = useState<string>(inputPackage.iri);
+  const [repositoryName, setRepositoryName] = useState<string>("");
+  // const [repositoryName, setRepositoryName] = useState<string>(inputPackage.iri);    // TODO RadStr: Debugging - default unique value
   const defaultRemoteRepositoryUrl = inputPackage.linkedGitRepositoryURL.length === 0 ? "https://github.com/userName/repositoryName" : inputPackage.linkedGitRepositoryURL;
   const [remoteRepositoryUrl, setRemoteRepositoryUrl] = useState<string>(defaultRemoteRepositoryUrl);
   const [organization, setOrganization] = useState<string>("");

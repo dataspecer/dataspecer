@@ -214,6 +214,7 @@ return (
                                         datastoreType={activeDatastoreType}
                                         format={activeFormat}
                                         projectIrisTreePathToFilesystemNode={activeTreePathToNodeContainingDatastore}
+                                        mergeState={examinedMergeState}
                                         setMergeState={setExaminedMergeState}
                     />
                   </div>
