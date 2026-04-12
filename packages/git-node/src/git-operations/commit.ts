@@ -3,7 +3,7 @@ import { getLastCommit, getLastCommitHash, isDefaultBranch, removeEverythingExce
 import { createGitReadMeFile } from "../git-readme/git-readme-generator.ts";
 import { AvailableFilesystems, CommitConflictInfo, CommitType, createRootFilesystemNodeLocation, createTransitiveMapFromFilesystems, ExportFormatType, ExportVersionType, FilesystemAbstraction, getAuthorizationURL, getMergeFromMergeToForGitAndDS, GitCredentials, GitIgnoreBase, GitProviderNode, MergeEndInfoWithRootNode, MergeFromDataType } from "@dataspecer/git";
 import { AvailableExports } from "../resource-model-api/export/export-api/export-actions.ts";
-import { DsFsConstructorParams, DsFsConstructorParamsWithStrongerResourceModel, FilesystemFactoryMethodParams } from "../filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
+import { DsFsConstructorParams, DsFsConstructorParamsWithStrongerResourceModel, FilesystemFactory, FilesystemFactoryMethodParams } from "../filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 import { PackageExporterFactory } from "../resource-model-api/export/implementation/export-by-resource-type.ts";
 import fs from "fs";
 import { compareBackendFilesystems, compareGitAndDSFilesystems, MergeEndpointForComparison } from "../filesystem-abstractions/backend-filesystem-comparison.ts";
@@ -279,7 +279,7 @@ export class GitCommit {
 
       const isMergingToDefaultBranch = await isDefaultBranch(git, cloneResult!.mergeToBranchExplicitName);
       const pushResult = await GitCommit.exportAndPushToGit(
-        createSimpleGitResult, iri, repoURLWithAuthorization, commitInfo, hasSetLastCommit,
+        createSimpleGitResult, iri, projectIri, repoURLWithAuthorization, commitInfo, hasSetLastCommit,
         mergeFromBranch, isLastAccessToken, hashOfPerformedCommit, isMergingToDefaultBranch,
         cloneResult!.mergeToBranchExists, filesystemFactoryParams);
 
@@ -390,7 +390,7 @@ export class GitCommit {
 
       const isCommittingToDefaultBranch = await isDefaultBranch(git, branchExplicit);
       const pushResult = await GitCommit.exportAndPushToGit(
-        createSimpleGitResult, iri, repoURLWithAuthorization, commitInfo, hasSetLastCommit,
+        createSimpleGitResult, iri, projectIri, repoURLWithAuthorization, commitInfo, hasSetLastCommit,
         null, isLastAccessToken, hashOfPerformedCommit, isCommittingToDefaultBranch,
         !isNewlyCreatedBranchPresentOnlyInDS, filesystemFactoryParams);
 
@@ -416,6 +416,7 @@ export class GitCommit {
   private static async exportAndPushToGit(
     createSimpleGitResult: CreateSimpleGitResult,
     iri: string,
+    projectIri: string,
     repoURLWithAuthorization: string,
     commitInfo: GitCommitToCreateInfoExplicitWithCredentials,
     hasSetLastCommit: boolean,
@@ -449,6 +450,17 @@ export class GitCommit {
         };    // We are done
       }
 
+      let gitFilesystem: FilesystemAbstraction | null = null;
+      if (hasSetLastCommit) {     // If it is not the first commit.
+        // We have to create the Git filesystem before we create conflicts in the Git directory
+        const gitFilesystemParams: FilesystemFactoryMethodParams = {
+          roots: [createRootFilesystemNodeLocation(projectIri, createSimpleGitResult.gitInitialDirectoryParent)],
+          gitIgnore: new GitIgnoreBase(commitInfo.gitProvider),
+          ...dataspecerFilesystemFactoryParams,
+        };
+        gitFilesystem = await FilesystemFactory.createFileSystem(AvailableFilesystems.ClassicFilesystem, gitFilesystemParams);
+      }
+
       let mergeMessage: string = "";
       if (isMergeCommit) {
         // We create the merge commit but actually do not commit, we will do that later.
@@ -479,7 +491,7 @@ export class GitCommit {
 
       await GitCommit.fillGitDirectoryWithExport(
         iri, createSimpleGitResult, commitInfo.gitProvider, commitInfo.exportFormat, commitInfo.exportVersion,
-        hasSetLastCommit, shouldContainWorkflowFiles, isBranchAlreadyTrackedOnRemote, dataspecerFilesystemFactoryParams);
+        hasSetLastCommit, shouldContainWorkflowFiles, isBranchAlreadyTrackedOnRemote, dataspecerFilesystemFactoryParams, gitFilesystem);
 
       // TODO RadStr Debug: Debug print to remove
       for (let i = 0; i < 10; i++) {
@@ -609,6 +621,7 @@ export class GitCommit {
     shouldContainWorkflowFiles: boolean,
     isBranchAlreadyTrackedOnRemote: boolean,
     dataspecerFilesystemFactoryParams: DsFsConstructorParams,
+    gitFilesystem: FilesystemAbstraction | null,
   ): Promise<void> {
     const { gitDirectoryToRemoveAfterWork, gitInitialDirectory, gitInitialDirectoryParent } = gitPaths;
 
@@ -622,13 +635,23 @@ export class GitCommit {
       }
 
       const exporter = PackageExporterFactory.createPackageExporter(exportVersion);
-      const filesystemFactoryParams: FilesystemFactoryMethodParams = {
+      const dsFilesystemFactoryParams: FilesystemFactoryMethodParams = {
         roots: [createRootFilesystemNodeLocation(iri, "")],
         gitIgnore: null,
         ...dataspecerFilesystemFactoryParams,
       };
+
+      let dsIriToGitIriMap: Record<string, string> | undefined = undefined;
+      if (gitFilesystem !== null) {
+      // TODO RadStr PR: Optimization ... the filesystem is created again, we already created it during the comparison. Unless we skipped it because it is the first commit.
+      //                              ... The Git filesystem also often already exists
+        const dsFilesystem = await FilesystemFactory.createFileSystem(AvailableFilesystems.DS_Filesystem, dsFilesystemFactoryParams);
+        dsIriToGitIriMap = createTransitiveMapFromFilesystems(gitFilesystem, dsFilesystem);
+      }
+      removeEverythingExcept(gitInitialDirectory, exceptionsForDirectoryRemoval);
+
       await exporter.doExportFromIRI(
-        filesystemFactoryParams, gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem, exportFormat);
+        dsFilesystemFactoryParams, gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem, exportFormat, dsIriToGitIriMap);
 
       if (shouldContainWorkflowFiles && !hasSetLastCommit) {
         createGitReadMeFile(gitInitialDirectory);
