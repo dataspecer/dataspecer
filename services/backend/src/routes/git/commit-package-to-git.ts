@@ -2,7 +2,7 @@ import { z } from "zod";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { mergeStateModel, resourceModel } from "../../main.ts";
-import { ExportVersionType, extractPartOfRepositoryURL, convertStringToExportVersion, MergeState, stringToBoolean, ExportFormatType, convertStringToExportFormat } from "@dataspecer/git";
+import { ExportVersionType, extractPartOfRepositoryURL, convertStringToExportVersion, MergeState, stringToBoolean, ExportFormatType, convertStringToExportFormat, SingleBranchCommitType, CommitType } from "@dataspecer/git";
 import { ScopeGroup, GitCredentials, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase, createUniqueCommitMessage } from "@dataspecer/git";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import { PrismaMergeStateWithData } from "../../models/merge-state-model.ts";
@@ -56,7 +56,7 @@ export const mergeCommitPackageToGitHandler = asyncHandler(async (request: expre
   const exportFormat = convertStringToExportFormat(query.exportFormat);
 
   const returnedStatus = await commitHandlerInternal(
-    request, response, iri, mergeFromData, commitMessage, exportFormat, exportVersion,
+    request, response, iri, "merge-commit", mergeFromData, commitMessage, exportFormat, exportVersion,
     shouldRedirectWithExistenceOfMergeStates, false, shouldAppendAfterDefaultMergeCommitMessage);
 });
 
@@ -71,6 +71,7 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
     exportVersion: z.string().min(1).optional(),
     shouldAlwaysCreateMergeState: z.string().min(1),
     shouldRedirectWithExistenceOfMergeStates: z.string().min(1),
+    commitType: z.enum(["classic-commit", "rebase-commit"]),
   });
 
   const query = querySchema.parse(request.query);
@@ -79,7 +80,10 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
   const { iri, commitMessage } = query;
   const exportVersion = convertStringToExportVersion(query.exportVersion);
   const exportFormat = convertStringToExportFormat(query.exportFormat);
-  await commitHandlerInternal(request, response, iri, null, commitMessage, exportFormat, exportVersion, shouldRedirectWithExistenceOfMergeStates, shouldAlwaysCreateMergeState, null);
+  const commitType: SingleBranchCommitType = query.commitType;
+  await commitHandlerInternal(
+    request, response, iri, commitType, null, commitMessage, exportFormat, exportVersion,
+    shouldRedirectWithExistenceOfMergeStates, shouldAlwaysCreateMergeState, null);
 });
 
 /**
@@ -92,6 +96,7 @@ const commitHandlerInternal = async (
   request: express.Request,
   response: express.Response,
   iri: string,
+  commitType: CommitType,
   mergeFromData: MergeFromDataType | null,
   originalCommitMessage: string,
   exportFormat: ExportFormatType,
@@ -184,6 +189,7 @@ const commitHandlerInternal = async (
     shouldAlwaysCreateMergeState,
     shouldAppendAfterDefaultMergeCommitMessage,
     remoteRepositoryUrl,
+    commitType,
   };
   const commitConflictInfo: CommitConflictInfo = await commitPackageToGitUsingAuthSession(commitParams);
 
@@ -216,7 +222,7 @@ export const commitPackageToGitUsingAuthSession = async (
 ): Promise<CommitConflictInfo> => {
   const {
     branchAndLastCommit, gitCommitInfoBasic, iri, projectIri, remoteRepositoryUrl, repositoryIdentificationInfo,
-    request, response, shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage,
+    request, response, shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage, commitType
    } = commitParams;
   const commitInfo: GitCommitToCreateInfoExplicitWithCredentials = prepareCommitDataForCommit(
     request, response, remoteRepositoryUrl, gitCommitInfoBasic, shouldAppendAfterDefaultMergeCommitMessage);
@@ -224,6 +230,7 @@ export const commitPackageToGitUsingAuthSession = async (
     iri,
     projectIri,
     branchAndLastCommit,
+    commitType,
     commitInfo,
     filesystemFactoryParams: createFilesystemFactoryParams(true),
     mergeStateModel: mergeStateModel,

@@ -93,6 +93,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
         shouldAlwaysCreateMergeState: false,
         shouldAppendAfterDefaultMergeCommitMessage: null,
         remoteRepositoryUrl: fullLinkedGitRepositoryURL,
+        commitType: "classic-commit",
       };
       // Just provide empty merge from values, since we are newly creating the link we can not perform merge right away anyways
       const commitConflictInfo = await commitPackageToGitUsingAuthSession(commitParams);
@@ -185,6 +186,7 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
     shouldAlwaysCreateMergeState: false,
     shouldAppendAfterDefaultMergeCommitMessage: null,
     remoteRepositoryUrl: query.gitRepositoryURL,
+    commitType: "classic-commit",
   };
   // Just provide empty merge from values, since we are newly creating the link we can not perform merge right away anyways
   await commitPackageToGitUsingAuthSession(commitParams);

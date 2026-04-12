@@ -1,7 +1,7 @@
 import { BranchSummary, CommitResult, SimpleGit } from "simple-git";
 import { getLastCommit, getLastCommitHash, isDefaultBranch, removeEverythingExcept, removePathRecursively } from "../git-utils-node.ts";
 import { createGitReadMeFile } from "../git-readme/git-readme-generator.ts";
-import { AvailableFilesystems, CommitConflictInfo, createRootFilesystemNodeLocation, ExportFormatType, ExportVersionType, getAuthorizationURL, getMergeFromMergeToForGitAndDS, GitCredentials, GitIgnoreBase, GitProviderNode, MergeEndInfoWithRootNode, MergeFromDataType } from "@dataspecer/git";
+import { AvailableFilesystems, CommitConflictInfo, CommitType, createRootFilesystemNodeLocation, createTransitiveMapFromFilesystems, ExportFormatType, ExportVersionType, FilesystemAbstraction, getAuthorizationURL, getMergeFromMergeToForGitAndDS, GitCredentials, GitIgnoreBase, GitProviderNode, MergeEndInfoWithRootNode, MergeFromDataType } from "@dataspecer/git";
 import { AvailableExports } from "../resource-model-api/export/export-api/export-actions.ts";
 import { DsFsConstructorParams, DsFsConstructorParamsWithStrongerResourceModel, FilesystemFactoryMethodParams } from "../filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 import { PackageExporterFactory } from "../resource-model-api/export/implementation/export-by-resource-type.ts";
@@ -84,6 +84,7 @@ export type GitCommitBaseType = {
   branchAndLastCommit: CommitBranchAndHashInfo;
   repositoryIdentificationInfo: GitRepositoryIdentification;
   shouldAlwaysCreateMergeState: boolean;
+  commitType: CommitType;
 };
 
 export type GitCommitConstructorParams = {
@@ -475,6 +476,7 @@ export class GitCommit {
           throw new Error("The merge from branch was already merged. We can not merge again.");
         }
       }
+
       await GitCommit.fillGitDirectoryWithExport(
         iri, createSimpleGitResult, commitInfo.gitProvider, commitInfo.exportFormat, commitInfo.exportVersion,
         hasSetLastCommit, shouldContainWorkflowFiles, isBranchAlreadyTrackedOnRemote, dataspecerFilesystemFactoryParams);

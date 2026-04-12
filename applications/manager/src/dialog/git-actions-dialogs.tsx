@@ -751,8 +751,12 @@ export const commitToGitDialogOnClickHandler = async (
 ) => {
   const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage, type: "commit", shouldShowAlwaysCreateMergeStateOption });
   if (result) {
+    const gitCommitData = {
+      ...result,
+      commitType
+    };
     await commitToGitHandler(
-      t, openModal, iri, commitType, shouldShowAlwaysCreateMergeStateOption, result, true, onSuccessCallback);
+      t, openModal, iri, shouldShowAlwaysCreateMergeStateOption, gitCommitData, true, onSuccessCallback);
   }
 };
 
@@ -764,7 +768,6 @@ export const commitToGitHandler = async (
   t: TFunction<"translation", undefined>,
   openModal: OpenBetterModal,
   iri: string,
-  commitType: SingleBranchCommitType,
   canCreateMergeStateIfNecessary: boolean,
   gitCommitData: GitCommitData,
   shouldRedirectWithExistenceOfMergeStates: boolean,
@@ -780,7 +783,7 @@ export const commitToGitHandler = async (
     shouldDisableClosing: true,
   });
 
-  if (commitType === "rebase-commit") {
+  if (gitCommitData.commitType === "rebase-commit") {
     // In rebase case we just commit. Otherwise, the LoadingDialog runs twice, which we do not want,
     //  since for rebase the default action is committing again without any other invervention
     // TODO RadStr PR: I feel like this is the correct decision - when we are rebasing from diff editor, and we passed the validation, then we want to commit
@@ -794,7 +797,7 @@ export const commitToGitHandler = async (
         const jsonResponse: CommitRedirectResponseJson = await response.json();
         const extendedResponse: CommitRedirectExtendedResponseJson = {
           ...jsonResponse,
-          commitType,
+          commitType: gitCommitData.commitType,
           shouldAppendAfterDefaultMergeCommitMessage: null,
           shouldAlwaysCreateMergeState: gitCommitData.shouldAlwaysCreateMergeState,
           onSuccessCallback,

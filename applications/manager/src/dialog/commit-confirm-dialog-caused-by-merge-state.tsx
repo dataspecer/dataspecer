@@ -66,22 +66,26 @@ const getDataForMergeStateDialog = (
   let secondaryActionButtonText: string;
   let secondaryActionButtonOnClick;
 
-  const gitCommitData: GitCommitData = {
-    commitMessage: commitRedirectResponse.commitMessage,
-    exportFormat: commitRedirectResponse.exportFormat,
-    exportVersion: commitRedirectResponse.exportVersion,
-    shouldAlwaysCreateMergeState: commitRedirectResponse.shouldAlwaysCreateMergeState,
-  };
+  const commitType = commitRedirectResponse.commitType;
+  let gitCommitData: GitCommitData | null = null;     // null if merge commit
+  if (isSingleBranchCommitType(commitType)) {
+    gitCommitData = {
+      commitMessage: commitRedirectResponse.commitMessage,
+      exportFormat: commitRedirectResponse.exportFormat,
+      exportVersion: commitRedirectResponse.exportVersion,
+      shouldAlwaysCreateMergeState: commitRedirectResponse.shouldAlwaysCreateMergeState,
+      commitType: commitType,
+    };
+  }
 
   if (commitRedirectResponse.commitHttpRedirectionCause === CommitHttpRedirectionCause.HasAtLeastOneMergeStateActive) {
-    const commitType = commitRedirectResponse.commitType;
-    if (!isSingleBranchCommitType(commitType)) {
+    if (gitCommitData === null) {
       throw new Error(`Expected ${commitRedirectResponse.commitType} to be a not merge commit.`);
     }
     firstActionButtonText = "Commit anyways";
     firstActionButtonOnClick = async () => {
       await commitToGitHandler(
-        t, openModal, commitRedirectResponse.iri, commitType, true, gitCommitData, false, commitRedirectResponse.onSuccessCallback);
+        t, openModal, commitRedirectResponse.iri, true, gitCommitData, false, commitRedirectResponse.onSuccessCallback);
       resolve();
     };
     secondaryActionButtonText = "Open merge states list";
@@ -113,7 +117,7 @@ const getDataForMergeStateDialog = (
     if (commitRedirectResponse.commitType === "rebase-commit") {
       firstActionButtonText = "Commit anyways";
       commitToGitHandler(
-        t, openModal, commitRedirectResponse.iri, commitRedirectResponse.commitType, true, gitCommitData, false, commitRedirectResponse.onSuccessCallback);
+        t, openModal, commitRedirectResponse.iri, true, gitCommitData!, false, commitRedirectResponse.onSuccessCallback);
       resolve();
       return null;
     }
@@ -140,14 +144,13 @@ const getDataForMergeStateDialog = (
       }).finally(() => resolve())
     };
 
-    const commitType = commitRedirectResponse.commitType;
-    if (!isSingleBranchCommitType(commitType)) {
+    if (gitCommitData === null) {
       throw new Error(`Expected ${commitRedirectResponse.commitType} to be a not merge commit.`);
     }
     secondaryActionButtonText = "Commit anyways";
     secondaryActionButtonOnClick = async () => {
       await commitToGitHandler(
-        t, openModal, commitRedirectResponse.iri, commitType, true, gitCommitData, false, commitRedirectResponse.onSuccessCallback);
+        t, openModal, commitRedirectResponse.iri, true, gitCommitData, false, commitRedirectResponse.onSuccessCallback);
       resolve();
     };
     dialogText = <p>

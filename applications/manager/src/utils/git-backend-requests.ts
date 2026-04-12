@@ -1,4 +1,4 @@
-import { ExportFormatType, ExportVersionType, MergeFromDataType } from "@dataspecer/git";
+import { ExportFormatType, ExportVersionType, MergeFromDataType, SingleBranchCommitType } from "@dataspecer/git";
 
 
 export type GitMergeCommitData = {
@@ -9,6 +9,7 @@ export type GitMergeCommitData = {
 
 export type GitCommitData = {
   shouldAlwaysCreateMergeState: boolean;
+  commitType: SingleBranchCommitType;
 } & GitMergeCommitData;
 
 export async function commitToGitBackendRequest(
@@ -16,13 +17,14 @@ export async function commitToGitBackendRequest(
   gitCommitData: GitCommitData,
   shouldRedirectWithExistenceOfMergeStates: boolean,
 ) {
-  const { commitMessage, exportFormat, exportVersion, shouldAlwaysCreateMergeState } = gitCommitData;
+  const { commitMessage, exportFormat, exportVersion, shouldAlwaysCreateMergeState, commitType } = gitCommitData;
   const url = import.meta.env.VITE_BACKEND + "/git/commit-package-to-git?iri=" + encodeURIComponent(iri) +
                                               "&commitMessage=" + encodeURIComponent(commitMessage ?? "") +
                                               "&exportFormat=" + exportFormat +
                                               "&exportVersion=" + exportVersion +
                                               "&shouldAlwaysCreateMergeState=" + shouldAlwaysCreateMergeState +
-                                              "&shouldRedirectWithExistenceOfMergeStates=" + shouldRedirectWithExistenceOfMergeStates;
+                                              "&shouldRedirectWithExistenceOfMergeStates=" + shouldRedirectWithExistenceOfMergeStates +
+                                              "&commitType=" + commitType;
   const response = await fetch(
     url,
     {
