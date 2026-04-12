@@ -429,7 +429,9 @@ export class GitCommit {
     const shouldSkipCommitting = hashOfCommitToUse !== null;
     let hashOfPeformedCommit: string | null = hashOfCommitToUse;
 
+    // We could also extrapolate the commitType from the "commitType",
     const isClassicCommit = mergeFromBranch === null;
+    const isMergeCommit = !isClassicCommit;
     const { git, gitDirectoryToRemoveAfterWork } = createSimpleGitResult;
     const { commitMessage, gitCredentials, shouldAppendAfterDefaultMergeCommitMessage } = commitInfo;
     await GitCommit.setUserConfigForGitInstance(git, gitCredentials.name, gitCredentials.email);
@@ -447,7 +449,7 @@ export class GitCommit {
       }
 
       let mergeMessage: string = "";
-      if (mergeFromBranch !== null) {
+      if (isMergeCommit) {
         // We create the merge commit but actually do not commit, we will do that later.
         try {
           const mergeResult = await git.merge(["--no-commit", "--no-ff", mergeFromBranch]);
@@ -613,10 +615,10 @@ export class GitCommit {
       // Alternatively we could keep the content and run await git.rm(['-r', '.']) ... however that would to know exactly
       //  what files were exported. So we can add them explicitly instead of running git add .
       const exceptionsForDirectoryRemoval = [".git", "README.md"];
-      if (isBranchAlreadyTrackedOnRemote) {
+      if (isBranchAlreadyTrackedOnRemote && shouldContainWorkflowFiles) {
         exceptionsForDirectoryRemoval.push(gitProvider.getWorkflowFilesDirectoryName());
       }
-      removeEverythingExcept(gitInitialDirectory, exceptionsForDirectoryRemoval);
+
       const exporter = PackageExporterFactory.createPackageExporter(exportVersion);
       const filesystemFactoryParams: FilesystemFactoryMethodParams = {
         roots: [createRootFilesystemNodeLocation(iri, "")],
