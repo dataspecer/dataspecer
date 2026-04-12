@@ -1,4 +1,5 @@
-// TODO RadStr: Critical file
+import { DirectoryNode } from "../export-import-data-api.ts";
+import { FilesystemAbstraction } from "../filesystem/abstractions/filesystem-abstraction.ts";
 
 /**
  * We have to replace each iri inside the {@link datastoreToSearchInForIris} object, which we copy by the iris which exists in the new resources/packages
@@ -33,7 +34,7 @@ function replaceIrisInDatastoreAndCollectMissingOnes(
   let containedIriToReplace: boolean = false;
 
   for (const [key, value] of Object.entries(originalDatastore)) {
-    if (key === "projectIri") {
+    if (key === "projectIri") {     // Project IRIs are kept as they are
       datastoreWithReplacedIris[key] = value;
       continue;
     }
@@ -68,9 +69,14 @@ function replaceIrisInDatastoreAndCollectMissingOnes(
       });
     }
     else if (typeof value === "object" && value !== null) {
-      datastoreWithReplacedIris[newKey] = {};
-      const containedIriToReplaceInRecursion = replaceIrisInDatastoreAndCollectMissingOnes(value, allIrisToCheckFor, irisMap, missingIrisInNew, datastoreWithReplacedIris[newKey]);
-      containedIriToReplace ||= containedIriToReplaceInRecursion;
+      if (Object.entries(value).length === 0) {   // For example date has to be handled like this
+        datastoreWithReplacedIris[newKey] = value;
+      }
+      else {
+        datastoreWithReplacedIris[newKey] = {};
+        const containedIriToReplaceInRecursion = replaceIrisInDatastoreAndCollectMissingOnes(value, allIrisToCheckFor, irisMap, missingIrisInNew, datastoreWithReplacedIris[newKey]);
+        containedIriToReplace ||= containedIriToReplaceInRecursion;
+      }
     }
     else {
       const replacementResult = getReplacementForNonComposite(value, allIrisToCheckFor, irisMap, missingIrisInNew);
@@ -88,6 +94,8 @@ type ReplacementForNonCompositeResult = {
    * If no change then it is equal to the input.
    */
   replacementIri: string;
+
+  isReplacementMissing: boolean;
 }
 
 
@@ -100,11 +108,13 @@ function getReplacementForNonComposite(
   irisMap: Record<string, string | null>,
   missingIrisInNew: string[],     // Output to extend
 ): ReplacementForNonCompositeResult {
+  let isReplacementMissing: boolean = false;
   let containedIriToReplace: boolean = false;
   if (typeof originalIri !== "string") {
     return {
       containedIriToReplace: false,
       replacementIri: originalIri,
+      isReplacementMissing: false,
     };
   }
 
@@ -113,6 +123,7 @@ function getReplacementForNonComposite(
     containedIriToReplace = true;
     replacementIri = irisMap[originalIri] ?? null;
     if (replacementIri === null) {
+      isReplacementMissing = true;
       missingIrisInNew.push(originalIri);
       // replacementIri = PLACEHOLDER_REPLACEMENT_IRI;    // TODO RadStr: the placeholder either has to at least hold the old iri as suffix, otherwise we can not perform the replacing
       // TODO RadStr: Using the old iri is fine, we just have to make sure to replace it if it happens
@@ -124,7 +135,64 @@ function getReplacementForNonComposite(
   }
 
   return {
-    containedIriToReplace: containedIriToReplace,
-    replacementIri: replacementIri
+    containedIriToReplace,
+    replacementIri,
+    isReplacementMissing,
   };
+}
+
+/**
+ * The use case is that the {@link filesystemWithIrisToKeep} is the filesystem to which we are committing and want to keep its IRIs.
+ *  {@link theReplacingFilesystem} is the filesystem that will "replace" the {@link filesystemWithIrisToKeep}.
+ * @param filesystemWithIrisToKeep A -> B
+ * @param theReplacingFilesystem B -> C
+ * @returns A -> C
+ */
+export function createTransitiveMapFromFilesystems(filesystemWithIrisToKeep: FilesystemAbstraction, theReplacingFilesystem: FilesystemAbstraction): Record<string, string> {
+  const left = createIriMapping(theReplacingFilesystem, "iri", "projectIri");
+  const right = createIriMapping(filesystemWithIrisToKeep, "projectIri", "iri");
+  return createTransitiveMap(left, right);
+}
+
+export type IriType = "iri" | "projectIri";
+
+export function createIriMapping(
+  filesystem: FilesystemAbstraction,
+  fromIri: IriType,
+  toIri: IriType
+): Record<string, string> {
+  const mapping: Record<string, string> = {};
+  createIriMappingInternal(filesystem.getRoot(), fromIri, toIri, mapping);
+  return mapping;
+}
+
+export function createIriMappingInternal(
+  directoryNode: DirectoryNode,
+  fromIri: IriType,
+  toIri: IriType,
+  mapping: Record<string, string>
+): void {
+  mapping[directoryNode.metadata[fromIri]] = directoryNode.metadata[toIri];
+  for (const childNode of Object.values(directoryNode.content)) {
+    mapping[childNode.metadata[fromIri]] = childNode.metadata[toIri];
+    if (childNode.type === "directory") {
+      createIriMappingInternal(childNode, fromIri, toIri, mapping);
+    }
+  }
+}
+
+/**
+ * @param leftMap A -> B
+ * @param rightMap B -> C
+ * @returns A -> C
+ */
+function createTransitiveMap(leftMap: Record<string, string>, rightMap: Record<string, string>): Record<string, string> {
+  const transitiveMap: Record<string, string> = {};
+  for (const [a, b] of Object.entries(leftMap)) {
+    if (a === "fake-root") {
+      continue;
+    }
+    transitiveMap[a] = rightMap[b];
+  }
+  return transitiveMap;
 }
