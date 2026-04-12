@@ -157,23 +157,21 @@ const updateCacheContentEntryAsCombination = (
       }
       previousValueAsJSON = previousValueConverted.value;
     }
+
+    const stripMethod = new ResourceDatastoreStripHandlerBase(resourceType).createHandlerMethodForDatastoreType(datastoreType);
+    const { strippedValues: previousStrippedValues } = stripMethod(previousValueAsJSON, false);
+    for (const [key, val] of Object.entries(previousStrippedValues)) {
+      if (val === undefined) {
+        delete previousStrippedValues[key];
+      }
+    }
     const combinedValue = {
-      ...previousValueAsJSON,
       ...newValueAsJSON,
+      ...previousStrippedValues,
     };
+
     const stringifiedConvertedCombinedValue = stringifyDatastoreContentBasedOnFormat(combinedValue, outputFormat, true);
     return createNewContentCache(prevState, treePathToNodeContainingDatastore, datastoreType, stringifiedConvertedCombinedValue);
-  });
-}
-
-const updateCacheContentEntryByGivenString = (
-  cacheSetter: (value: SetStateAction<CacheContentMap>) => void,
-  treePathToNodeContainingDatastore: string,
-  datastoreType: string,
-  newValue: string,
-) => {
-  cacheSetter(prevState => {
-    return createNewContentCache(prevState, treePathToNodeContainingDatastore, datastoreType, newValue);
   });
 }
 
