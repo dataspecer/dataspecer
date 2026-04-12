@@ -640,12 +640,14 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         throw new Error(activeMetaAsObject.error);
       }
 
+      // First we strip the resources of unique values
       const activeResourceType = activeMetaAsObject.value.types[0];
       const resourceStripHandler = new ResourceDatastoreStripHandlerBase(activeResourceType);
       const resourceStripHandlerMethod = resourceStripHandler.createHandlerMethodForDatastoreType(activeDatastoreType);
 
       const activeDatastoreInfo = datastoreInfosForCacheEntries[activeTreePathToNodeContainingDatastore][activeDatastoreType];
-      if (activeDatastoreInfo.mergeFrom !== null && activeMergeFromContentConverted != null) {
+      console.info({activeDatastoreInfo, activeMergeFromContentConverted});
+      if (activeMergeFromContentConverted != null) {
         const strippedResult = convertDatastoreContentToOutputFormat(activeMergeFromContentConverted, activeFormat, activeFormat, true, resourceStripHandlerMethod);
         if (!strippedResult.ok) {
           // TODO RadStr Critical: Do not know now, but probably the correct solution is to just keep the old value.
@@ -659,7 +661,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         strippedMergeFromContent = activeMergeFromContentConverted;
       }
 
-      if (activeDatastoreInfo.mergeTo !== null && activeMergeToContentConverted != null) {
+      if (activeMergeToContentConverted != null) {
         const strippedResult = convertDatastoreContentToOutputFormat(activeMergeToContentConverted, activeFormat, activeFormat, true, resourceStripHandlerMethod);
         if (!strippedResult.ok) {
           // TODO RadStr Critical: Do not know now, but probably the correct solution is to just keep the old value.
