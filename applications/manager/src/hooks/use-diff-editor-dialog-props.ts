@@ -1523,13 +1523,13 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         // Handle Remove
         let removedDatastore: DatastoreInfo | undefined;
         if ((removedDatastore = removedDatastores.find(datastore => datastore.fullPath === datastoreInfoForEditable?.fullPath)) !== undefined) {
-          alert("Handling remove");     // TODO RadStr Debug: Debug alert
+          // alert("Handling remove");     // TODO RadStr Debug: Debug alert
           const diffNode = getDiffNodeFromDiffTree(fetchedMergeState!.diffTreeData!.diffTree, nodeTreePath);
           if (diffNode === null) {
             throw new Error(`The node (${nodeTreePath}) to remove does not exist inside diffTree`);
           }
           const datastoreParentIri = diffNode.resources.new!.metadata.iri;
-          alert("Handling remove2");      // TODO RadStr Debug: Debug alert
+          // alert("Handling remove2");      // TODO RadStr Debug: Debug alert
           await ClientFilesystem.removeDatastoreDirectly(fetchedMergeState!.uuid, datastoreParentIri, removedDatastore, import.meta.env.VITE_BACKEND, editableFilesystem, false);
           continue;
         }

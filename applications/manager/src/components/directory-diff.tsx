@@ -409,7 +409,7 @@ const onClickRemoveDatastore = (
       resourceToRemoveDatastoreFrom?.projectIrisTreePath!, nodeToResolve.data.fullDatastoreInfoInNewTree!,
       metaFromResourceToRemoveFrom, true);
   }
-  alert(`Remove datastore for ${nodeToResolve.data.name}`);
+  // alert(`Remove datastore for ${nodeToResolve.data.name}`);   // TODO RadStr Debug: Debug alert
 }
 
 const onClickCreateDatastore = (
@@ -426,7 +426,7 @@ const onClickCreateDatastore = (
   // If the new one already exists, then do not add it.
   const metadataDatastoreToAddToCreatedDatastores = newMetaDatastoreInfo !== null ? null : oldMetaDatastoreInfo;
   addToCreatedDatastores(oldResource?.projectIrisTreePath!, datastoreToCreate.fullDatastoreInfoInOldTree!, metadataDatastoreToAddToCreatedDatastores);
-  alert(`Create datastore for ${datastoreToCreate.name}`);
+  // alert(`Create datastore for ${datastoreToCreate.name}`);     // TODO RadStr Debug: Debug alert
 }
 
 const handleMouseHoverHighlightingForNode = (node: NodeApi<RenderNodeWithHighlighting>, shouldSetHighlightingOn: boolean) => {
