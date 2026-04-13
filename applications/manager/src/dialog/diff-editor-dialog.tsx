@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useOnBeforeUnload } from "@/hooks/use-on-before-unload";
 import { useOnKeyDown } from "@/hooks/use-on-key-down";
 import { DiffTreeVisualization } from "@/components/directory-diff";
-import { ArrowDownIcon, ArrowUpIcon, Loader, RotateCw } from "lucide-react";
+import { ArrowDownIcon, ArrowUpIcon, Loader } from "lucide-react";
 import SvgVisualDiffDialog from "@/dialog/show-svgs-diff-dialog";
 import { goToNextDiff, goToPreviousDiff, MonacoDiffEditor } from "@/components/monaco-diff-editor";
 import { MergeStrategyComponent } from "@/components/merge-strategy-component";
@@ -68,7 +68,6 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
     datastoreInfosForCacheEntries,
 
     updateModelData,
-    reloadModelsDataFromBackend,
     closeWithSuccess,
     applyAutomaticMergeStateResolver,
     saveEverything,
@@ -117,7 +116,7 @@ return (
               </ModalHeader>
                 {/* The overflow-y is needed however it adds a bit horizontal space between the vertical splitter and the Tree structure */}
                 <div className="h-full">
-                  <div className="flex! flex-1 flex-col grow pr-2 -mr-2 -ml-2 pl-2 h-[80%]! w-full!">
+                  <div className="flex! flex-1 flex-col grow pr-2 -mr-2 -ml-2 pl-2 max-2xl:h-[70%]! 2xl:h-[80%]! w-full!">
                     <DiffTreeVisualization updateModelData={updateModelData}
                                             datastoreInfosForCacheEntries={datastoreInfosForCacheEntries}
                                             isLoadingTreeStructure={isLoadingTreeStructure}
@@ -172,7 +171,8 @@ return (
                       {
                         activeDatastoreType === "svg" ?
                           <div className="flex! mt-3 ml-1 h-4 w-4" /> :
-                          <RotateCw className="flex! mt-3 ml-1 h-4 w-4 cursor-pointer" onClick={reloadModelsDataFromBackend} />
+                          <div className="flex! mt-3 ml-1 h-4 w-4" />
+                          // <RotateCw className="flex! mt-3 ml-1 h-4 w-4 cursor-pointer" onClick={reloadModelsDataFromBackend} />    // TODO RadStr: ... we do not want to deal with more debugging
                       }
                       <div className="flex! items-center justify-center space-x-4 -ml-32">    { /* TODO RadStr PR: ... the ml mr is a bit hacky, it does not scale well, but I do not have time to do it perfectly now */ }
                         <div className="flex flex-row mr-24">
