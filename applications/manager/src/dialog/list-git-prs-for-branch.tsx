@@ -87,7 +87,7 @@ export const GitPrsListDialog = ({ resources, branch, gitUrl, gitProviderSpecifi
           <ModalTitle>
             {
               branch === null ?
-                `List of all opened ${gitProviderSpecificNameForPR}s (${gitProviderSpecificNameForPRShortcut}) for given Git` :
+                `List of all opened ${gitProviderSpecificNameForPR}s (${gitProviderSpecificNameForPRShortcut}) for given Git repository` :
                 `List of opened ${gitProviderSpecificNameForPR}s (${gitProviderSpecificNameForPRShortcut}) for given package and branch`
             }
           </ModalTitle>
@@ -99,10 +99,10 @@ export const GitPrsListDialog = ({ resources, branch, gitUrl, gitProviderSpecifi
               </>
 
             }
-            ⚠️ Note that you have to close in {gitProviderSpecificNameForPRShortcut} in Dataspecer.
+            ⚠️ Note that you have to close in {gitProviderSpecificNameForPRShortcut} in Dataspecer with merge commit.
             Closing {gitProviderSpecificNameForPRShortcut} in Git breaks IRIs.
             <br/>
-            <p className="flex flex-1 flex-row">You can either close the {gitProviderSpecificNameForPRShortcut}, or merge the changes from the 'merge to' branch to the 'merge from' branch.
+            <p className="flex flex-1 flex-row">You can either close the {gitProviderSpecificNameForPRShortcut}, or merge the changes from the 'merge to' branch to the 'merge from' branch (reverse merge).
               <PRMergeTooltip gitProviderSpecificNameForPRShortcut={gitProviderSpecificNameForPRShortcut} isSpecificBranchPRsList={branch !== null} />
             </p>
           </ModalDescription>
