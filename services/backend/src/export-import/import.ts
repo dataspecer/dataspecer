@@ -98,6 +98,11 @@ export class PackageImporter {
     };
   }
 
+  /**
+   * Maps the given import to the IRIs as they were in the first version of import (that is when was all in one directory).
+   *  This was done as a nice hack to keep compatibility with old code. The old code is almost the same, we just do mapping of paths
+   *  from the import to the canonical before we do anything.
+   */
   private createImportMappingToCanonical(exportVariant: number, inputMapping: Record<string, JSZip.JSZipObject>): ImportMapping {
     switch(exportVariant) {
       case 1:
@@ -129,9 +134,13 @@ export class PackageImporter {
     });
 
     let rootPackagesMeta: string[] = [];
-    console.info({files});
+    console.info({files});      // TODO RadStr Debug: Debug print
     for (let rootDirectoryDepth = 2; rootDirectoryDepth <= maxDepth; rootDirectoryDepth++) {
-      rootPackagesMeta = files.filter((file) => extractTypeAndFormat(file, ".").type === "meta" && file.split("/").length === rootDirectoryDepth); // It is a directory with one level
+      rootPackagesMeta = files.filter((file) => {
+        const { basename, type } = extractTypeAndFormat(file, ".");
+        const isRootPackageMeta = type === "meta" && basename.endsWith("/") && file.split("/").length === rootDirectoryDepth;
+        return isRootPackageMeta;
+      }); // It is a directory with one level
       if (rootPackagesMeta.length > 0) {
         break;
       }
