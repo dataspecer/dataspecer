@@ -1,10 +1,16 @@
+// Back then we allowed showing of directory diff as the two trees next to each other, but we have removed it.
+// We do keep the code here, since it may be used in future if somebody will want to implement it as a option of showing directory diff.
+// The code is marked with  TODO RadStr PR: Two Trees
+// Note that the code is not fully functional now, since it is long time since we used it
+//  but it should be fairly straightforward to make it work
+
+
 import { UpdateModelDataMethod } from "@/dialog/diff-editor-dialog";
 import _ from "lodash";
 import { Check, Loader, Minus, Plus, X } from "lucide-react";
 import React, { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NodeApi, NodeRendererProps, Tree, TreeApi, } from "react-arborist";
 import { DatastoreComparison, DatastoreComparisonWithChangeTypeInfo, DatastoreInfo, DiffTree, getDatastoreInfoOfGivenDatastoreType, MergeState, ResourceComparison, MergeStateCause, getMergeFromAndMergeTo, convertMergeStateCauseToEditable, DatastoreInfosForModel, DatastoreInfosCache, extractFirstNonEmptyFieldFromComparison } from "@dataspecer/git";
-import { DiffEditorEditIcon } from "./crossed-out-icon";
 import { AddToCreatedDatastoresAndAddToCacheMethodType, AddToRemovedDatastoresAndAddToCacheMethodType, EntriesAffectedByCreateType } from "@/hooks/use-diff-editor-dialog-props";
 import { ModelIcon } from "@/known-models";
 
@@ -469,6 +475,7 @@ function StyledNode({
 
   const isCurrentlyInConflict = node.data.nowInConflictCount > 0;
   resolveIcon = isCurrentlyInConflict ? "⚠️" : "";   // Always show the conflict mark
+  // TODO RadStr PR: Two Trees - The isInEditableTree is useless if we render only the one directory diff tree
   resolveIcon = (node.data.isInEditableTree && extraRenderNodeProps.conflictsToBeResolvedOnSaveInThisComponent.find(resolvedConflict => node.data.id === createIdForDatastoreRenderNode(resolvedConflict, node.data.treeType))) ? "✅" : resolveIcon;
 
   let backgroundColor: string | undefined = undefined;
@@ -829,6 +836,9 @@ export const DiffTreeVisualization = (props: {
   };
 
 
+  /**
+   * TODO RadStr PR: Two Trees - Again the rendering of 2 diff trees - can be technically removed now without any change on functionality
+   */
   const onNodeToggle = useCallback((id: string, treeType: TreeType) => {
     let tree: TreeApi<RenderNode> | null;
     let otherTree: TreeApi<RenderNode> | null;
@@ -856,6 +866,7 @@ export const DiffTreeVisualization = (props: {
 
   /**
    * Handles the selects/focuses
+   * TODO RadStr PR: Two Trees - Again the rendering of 2 diff trees - can be technically removed now without any change on functionality
    */
   const onNodeFocus = useCallback((node: NodeApi<RenderNode>, treeType: TreeType) => {
     if (!node.isSelected) {
@@ -897,7 +908,8 @@ export const DiffTreeVisualization = (props: {
 
 
   /**
-   * Handles the unselects/unfocuses (when user does not click on any node)
+   * Handles the unselects/unfocuses (when user does not click on any node).
+   * TODO RadStr PR: Two Trees - Again the rendering of 2 diff trees - can be technically removed now without any change on functionality
    */
   const onNodesSelect = useCallback((nodes: NodeApi<RenderNode>[], treeType: TreeType) => {
     if (nodes.length !== 0) {
@@ -942,7 +954,7 @@ export const DiffTreeVisualization = (props: {
 
       const { oldRenderTree: computedOldRenderTree, newRenderTree: computedNewRenderTree } = createTreeRepresentationsForRendering(fetchedConflicts, fetchedUnresolvedConflicts, fetchedDiffTree);
       console.info({ computedOldRenderTree, computedNewRenderTree } );     // TODO RadStr DEBUG: Debug print
-      setOldRenderTree(computedOldRenderTree);
+      setOldRenderTree(computedOldRenderTree);      // TODO RadStr PR: Two Trees - This is the other tree ... if we wanted to show the two trees next to each other
       setNewRenderTree(computedNewRenderTree);
 
       props.setIsLoadingTreeStructure(false);
@@ -1046,6 +1058,9 @@ export const DiffTreeVisualization = (props: {
         </label>
       </div>
       <div className="flex gap-1 overflow-x-auto overflow-y-auto h-full">
+        {/* TODO RadStr PR: Two Trees - Back then we allowed showing of directory diff as the two trees next to each other, but we have removed it.
+                            We do keep the code here, since it may be used in future if somebody will want to implement it as a option of showing directory diff.
+        */}
         {/* <div className="flex-1 border border-stone-200 h-full" style={{height: treeRowHeight*treeRowHeightMultiplier}}>
           <h3><DiffEditorCrossedOutEditIcon/></h3>
           {
@@ -1060,7 +1075,6 @@ export const DiffTreeVisualization = (props: {
           }
         </div> */}
         <div className="flex-1 border border-stone-200 bg-gray-50 h-full" style={{height: treeRowHeight*treeRowHeightMultiplier}}>
-          <h3><DiffEditorEditIcon/></h3>
           {
             renderTreeWithLoading(props.isLoadingTreeStructure,
               <Tree children={(nodeProps) => nodeRenderer(nodeProps)}
@@ -1088,14 +1102,3 @@ function renderTreeWithLoading(
       {treeComponent}
     </div>;
 };
-
-
-// TODO: Not used anymore
-// function actOnDiffTree(diffTree: DiffTree, action: (node: FilesystemNode | null) => void) {
-//   for (const [_projectIri, diffNode] of Object.entries(diffTree)) {
-//     for (const resource of Object.entries(diffNode.resources)) {
-//       action(resource[1]);
-//     }
-//     actOnDiffTree(diffNode.childrenDiffTree, action);
-//   }
-// }
