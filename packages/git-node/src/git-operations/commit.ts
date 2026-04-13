@@ -451,7 +451,8 @@ export class GitCommit {
       }
 
       let gitFilesystem: FilesystemAbstraction | null = null;
-      if (hasSetLastCommit) {     // If it is not the first commit.
+      // TODO RadStr PR: isBranchAlreadyTrackedOnRemote Or not? If not the nthe iris from main are everywhere
+      if (hasSetLastCommit && isBranchAlreadyTrackedOnRemote) {     // If it is not the first commit.
         // We have to create the Git filesystem before we create conflicts in the Git directory
         const gitFilesystemParams: FilesystemFactoryMethodParams = {
           roots: [createRootFilesystemNodeLocation(projectIri, createSimpleGitResult.gitInitialDirectoryParent)],
