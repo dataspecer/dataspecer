@@ -42,6 +42,7 @@ function replaceIrisInDatastoreAndCollectMissingOnes(
 
     // We have to also replace the keys
     let newKey = key;
+    // TODO RadStr PR: Do it through includes?
     if (allIrisToCheckFor.includes(key)) {
       const keyReplacementResult = getReplacementForNonComposite(key, allIrisToCheckFor, irisMap, missingIrisInNew);
       if (keyReplacementResult.containedIriToReplace) {
@@ -100,6 +101,7 @@ type ReplacementForNonCompositeResult = {
 
 
 /**
+ * @todo TODO RadStr PR: Actually does not work if we have a string that contains more IRIs or the string contains IRI + something else - then we lose the something else after replacement
  * @param originalIri it is named iri but it does not necessary have to be iri it is just to value which can be iri and can be possibly replaced
  */
 function getReplacementForNonComposite(
@@ -119,6 +121,7 @@ function getReplacementForNonComposite(
   }
 
   let replacementIri: string;
+  // TODO RadStr PR: Again includes? Or look for substrings? like {my-iri}#some-other-part or even {my-iri2}#some-other-part{my-iri2}
   if (allIrisToCheckFor.includes(originalIri)) {
     containedIriToReplace = true;
     replacementIri = irisMap[originalIri] ?? null;
