@@ -29,9 +29,9 @@ export class ResourceDatastoreStripHandlerBase implements ResourceDatastoreStrip
     const strippedValues: any = {};
 
     // For every type (including meta) strip iri
-    extendAndDelete(strippedValues, datastoreContent, "iri", shouldStrip);
 
     if (type === "meta") {
+      extendAndDelete(strippedValues, datastoreContent, "iri", shouldStrip);
       // Strip Export data
       extendAndDelete(strippedValues, datastoreContent, "metadata", shouldStrip);
 
@@ -41,21 +41,48 @@ export class ResourceDatastoreStripHandlerBase implements ResourceDatastoreStrip
         }
       }
     }
-    else {
-      if (this.resourceType === "http://dataspecer.com/resources/local/visual-model") {
-        extendAndDelete(strippedValues, datastoreContent, "modelId", shouldStrip);
-      }
-      else if(this.resourceType === "http://dataspecer.com/resources/local/semantic-model") {
-        extendAndDelete(strippedValues, datastoreContent, "modelId", shouldStrip);
-        extendAndDelete(strippedValues, datastoreContent, "baseIri", shouldStrip);
-      }
-    }
 
     return {
       strippedValues,
       strippedDatastore: datastoreContent,
     };
   }
+
+  // /**
+  //  * @todo TODO RadStr PR: ... we were stripping based on datastore type, but i nthe end we probably just need to strip the meta file.
+  //  *                           Because the iri replacement handles the unnecessary diffs
+  //  */
+  // stripDatastoreContent(datastoreContent: any, type: string, shouldStrip: boolean): StripResult {
+  //   const strippedValues: any = {};
+
+  //   // For every type (including meta) strip iri
+  //   extendAndDelete(strippedValues, datastoreContent, "iri", shouldStrip);
+
+  //   if (type === "meta") {
+  //     // Strip Export data
+  //     extendAndDelete(strippedValues, datastoreContent, "metadata", shouldStrip);
+
+  //     for (const [key, value] of Object.entries(datastoreContent)) {
+  //       if (key.startsWith("_")) {
+  //         extendAndDelete(strippedValues, datastoreContent, key, shouldStrip);
+  //       }
+  //     }
+  //   }
+  //   else {
+  //     if (this.resourceType === "http://dataspecer.com/resources/local/visual-model") {
+  //       extendAndDelete(strippedValues, datastoreContent, "modelId", shouldStrip);
+  //     }
+  //     else if(this.resourceType === "http://dataspecer.com/resources/local/semantic-model") {
+  //       extendAndDelete(strippedValues, datastoreContent, "modelId", shouldStrip);
+  //       extendAndDelete(strippedValues, datastoreContent, "baseIri", shouldStrip);
+  //     }
+  //   }
+
+  //   return {
+  //     strippedValues,
+  //     strippedDatastore: datastoreContent,
+  //   };
+  // }
 }
 
 function extendAndDelete(objectToExtend: any, objectToDeleteFrom: any, key: string, shouldRemoveField: boolean) {

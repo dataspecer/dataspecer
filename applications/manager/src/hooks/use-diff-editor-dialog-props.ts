@@ -165,9 +165,20 @@ const updateCacheContentEntryAsCombination = (
         delete previousStrippedValues[key];
       }
     }
-    const combinedValue = {
+
+    let combinedValue: any = {};
+    if (previousStrippedValues["iri"] !== undefined) {
+      combinedValue["iri"] = previousStrippedValues["iri"];
+    }
+    const previousStrippedValuesWithoutIri = {
+      ...previousStrippedValues
+    };
+    delete previousStrippedValuesWithoutIri["iri"];
+
+    combinedValue = {
+      ...combinedValue,
       ...newValueAsJSON,
-      ...previousStrippedValues,
+      ...previousStrippedValuesWithoutIri,
     };
 
     const stringifiedConvertedCombinedValue = stringifyDatastoreContentBasedOnFormat(combinedValue, outputFormat, true);
