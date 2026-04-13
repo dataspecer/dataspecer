@@ -5,6 +5,6 @@ import { MergeResolverStrategy } from "./merge-resolver-strategy.ts";
 
 export const mergeResolverStrategies: MergeResolverStrategy[] = [
   new UseOtherMergeResolverStrategy(),
-  new OperationMergeResolverStrategy(),
-  new DoNothingMergeResolverStrategy(),
+  // new OperationMergeResolverStrategy(),
+  // new DoNothingMergeResolverStrategy(),
 ];
