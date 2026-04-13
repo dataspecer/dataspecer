@@ -706,6 +706,10 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         datastoreWithReplacedIris: strippedMergeFromContentAsObjectWithReplacements,
         missingIrisInNew: _missingIrisInMergeFrom
       } = createDatastoreWithReplacedIris(strippedMergeFromContentAsObject.value, iriToProjectIriMap);
+      if (activeDatastoreType === "meta") {
+        // Either it is not present (Because it was stripped) then it will be undefined or it is present then it will contain the IRI.
+        (strippedMergeFromContentAsObjectWithReplacements as any)["iri"] = strippedMergeFromContentAsObject.value["iri"];
+      }
       strippedMergeFromContent = stringifyDatastoreContentBasedOnFormat(strippedMergeFromContentAsObjectWithReplacements, activeFormat, true);
     }
 
@@ -719,6 +723,10 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         datastoreWithReplacedIris: strippedMergeToContentAsObjectWithReplacements,
         missingIrisInNew: _missingIrisInMergeTo
       } = createDatastoreWithReplacedIris(strippedMergeToContentAsObject.value, iriToProjectIriMap);
+      if (activeDatastoreType === "meta") {
+        // Either it is not present (Because it was stripped) then it will be undefined or it is present then it will contain the IRI.
+        (strippedMergeToContentAsObjectWithReplacements as any)["iri"] = strippedMergeToContentAsObject.value["iri"];
+      }
       strippedMergeToContent = stringifyDatastoreContentBasedOnFormat(strippedMergeToContentAsObjectWithReplacements, activeFormat, true);
     }
 
