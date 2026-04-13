@@ -92,6 +92,9 @@ export async function createNewRemoteRepositoryRequest(
   return response;
 }
 
+/**
+ * @todo TODO RadStr PR: For now unused. As explained in the 'Dir.tsx'.
+ */
 export async function linkToExistingGitRepositoryRequest(iri: string, remoteRepositoryURL: string) {
   const url = import.meta.env.VITE_BACKEND + "/git/link-to-existing-git-repository?iri=" + encodeURIComponent(iri) +
                                               "&repositoryURL=" + encodeURIComponent(remoteRepositoryURL);
