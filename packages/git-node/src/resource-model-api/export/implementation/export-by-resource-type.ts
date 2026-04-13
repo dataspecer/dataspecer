@@ -72,7 +72,10 @@ export class PackageExporterByResourceType extends PackageExporterBase {
           const { datastoreWithReplacedIris } = createDatastoreWithReplacedIris(data, this.iriMapping);
           data = datastoreWithReplacedIris;
         }
-        delete data["_exportedAt"];       // TODO RadStr PR: Not sure ... but it is annoying when using - each meta has it even when not changed
+        if (this.shouldRemoveExportedAt) {
+          // TODO RadStr PR: Not sure ... but it is annoying when using with git commit - each meta has it changed for every commit it even when not changed
+          delete data["_exportedAt"];
+        }
         this.setExportVersionInternal(data);
       }
       else {

@@ -17,6 +17,7 @@ export interface PackageExporterInterface {
     importFilesystem: AvailableFilesystems,
     exportType: AvailableExports,
     exportFormat: string,
+    shouldRemoveExportedAt: boolean,
     iriMapping?: Record<string, string>,
   ): Promise<AllowedExportResults>;
 
