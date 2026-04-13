@@ -12,6 +12,7 @@ import {
 import { XmlStreamWriter, XmlWriter } from "../xml/xml-writer.ts";
 import { commonXmlNamespace, commonXmlPrefix, QName } from "../conventions.ts";
 import { XSLT_LOWERING } from "./xslt-vocabulary.ts";
+import { writePrefixesFromImports } from "./utils.ts";
 
 const xslNamespace = "http://www.w3.org/1999/XSL/Transform";
 
@@ -51,20 +52,7 @@ async function writeTransformationBegin(model: XmlTransformation, writer: XmlWri
     await writer.writeAndRegisterNamespaceDeclaration(commonXmlPrefix, commonXmlNamespace);
   }
 
-  const registered: Record<string, string> = {};
-
-  for (const importDeclaration of model.imports) {
-    const namespace = await importDeclaration.namespace;
-    const prefix = await importDeclaration.prefix;
-    if (namespace != null && prefix != null) {
-      if (registered[prefix] == null) {
-        await writer.writeAndRegisterNamespaceDeclaration(prefix, namespace);
-        registered[prefix] = namespace;
-      } else if (registered[prefix] !== namespace) {
-        throw new Error(`Imported namespace prefix "${prefix}:" is used for two ` + `different namespaces, "${registered[prefix]}" and "${namespace}".`);
-      }
-    }
-  }
+  await writePrefixesFromImports(model.imports, writer);
 }
 
 /**
@@ -152,7 +140,8 @@ function iriMatchCondition(bindingExpression: string, iris: string[]): string {
   if (iris.length === 0) {
     return "false()";
   }
-  return iris.map((iri) => `${bindingExpression}="${iri}"`).join(" or ");
+  const condition = iris.map((iri) => `${bindingExpression}="${iri}"`).join(" or ");
+  return iris.length === 1 ? condition : `(${condition})`;
 }
 
 function rootResultSelection(rootTemplate: XmlRootTemplate): string {

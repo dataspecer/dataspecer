@@ -176,14 +176,23 @@ class XmlSimpleNamespaceMap implements XmlNamespaceMap {
     return this.prefixToUri[prefix];
   }
 
-  registerNamespace(prefix: string, uri: string): void {
+  /**
+   * @returns whether the prefix was not known before.
+   */
+  registerNamespace(prefix: string, uri: string): boolean {
     if (prefix == null || prefix === "") {
       throw new Error("Prefix must be defined.");
     }
-    if (uri == null || uri === "") {
-      delete this.prefixToUri[prefix];
+    if (this.prefixToUri[prefix]) {
+      if (this.prefixToUri[prefix] !== uri) {
+        throw new Error(`Prefix "${prefix}" is already registered for a different URI, ` + `("${this.prefixToUri[prefix]}" vs "${uri}").`);
+      } else {
+        return false;
+      }
     }
+
     this.prefixToUri[prefix] = uri;
+    return true;
   }
 
   getQName(
@@ -331,8 +340,10 @@ export abstract class XmlIndentingTextWriter
     prefix: string,
     uri: string
   ): Promise<void> {
-    this.registerNamespace(prefix, uri);
-    await this.writeAttributeValue("xmlns", prefix, uri);
+    const newlyRegistered = this.registerNamespace(prefix, uri);
+    if (newlyRegistered) {
+      await this.writeAttributeValue("xmlns", prefix, uri);
+    }
   }
 
   async writeComment(comment: string): Promise<void> {

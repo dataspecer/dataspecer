@@ -43,6 +43,8 @@ export class XmlTransformation {
 
 /**
  * Stores the locations of included templates for each generator.
+ *
+ * There might be multiple imports with the same prefix and namespace!
  */
 export class XmlTransformationImport {
   /**
