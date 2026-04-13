@@ -32,6 +32,7 @@ export class PackageExporterNew extends PackageExporterBase {
           const { datastoreWithReplacedIris } = createDatastoreWithReplacedIris(data, this.iriMapping);
           data = datastoreWithReplacedIris;
         }
+        delete data["_exportedAt"];       // TODO RadStr PR: Not sure ... but it is annoying when using - each meta has it even when not changed
         this.setExportVersionInternal(data);
       }
       else {
