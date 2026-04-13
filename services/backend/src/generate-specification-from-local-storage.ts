@@ -123,8 +123,7 @@ async function generateDocumentationFromFileSystem() {
   //   path = "../".concat(path);
   // }
 
-  // const packageIri = uuidv4();
-  const packageIri = "db2ad74f-ec45-4d46-84f8-24d36fbb4200";
+  const packageIri = uuidv4();
   const zipDictionaryForFilesystemData = new ZipStreamDictionary();
   const homeDirectory = "../../..";
   await createImportZipFromFilesystem(homeDirectory, packageIri, true, zipDictionaryForFilesystemData);
