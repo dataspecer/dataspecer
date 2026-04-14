@@ -218,6 +218,7 @@ export class GitHubProvider extends GitProviderBase {
       headers: {
         "Content-Type": "application/vnd.github+json",
         "Authorization": `Bearer ${authToken}`,
+        // The new REST API version has required default_branch field unlike the old one.
         "X-GitHub-Api-Version": "2026-03-10",
         "Accept": "application/vnd.github+json",
         "User-Agent": GITHUB_USER_AGENT,
@@ -246,7 +247,7 @@ export class GitHubProvider extends GitProviderBase {
       let initialCommitHash: string | null = null;
       let waitTime = 500;
       let latestCommitResult: GetLatestCommitResult;
-      for (let i = 0; i < 2; i++) {
+      for (let i = 0; i < 10; i++) {
         latestCommitResult = await this.getLatestCommit(repositoryOwner, repoName, defaultBranchExplicit, authToken);
         if (latestCommitResult.type === "ok") {
           initialCommitHash = latestCommitResult.sha;
@@ -261,7 +262,7 @@ export class GitHubProvider extends GitProviderBase {
         // We got 404
         await new Promise(res => setTimeout(res, waitTime));  // Sleep for waitTime ms
         waitTime *= 2;
-        waitTime = Math.max(waitTime, 10000);     // TODO RadStr PR: Maybe have better wait times or just try it 2 times or something, idk what is the best solution
+        waitTime = Math.min(waitTime, 10000);     // TODO RadStr PR: Maybe have better wait times or just try it 2 times or something, idk what is the best solution
         console.info(`... WAiting: ${waitTime}`);     // TODO RadStr Debug: Debug print
       }
 
@@ -289,49 +290,76 @@ export class GitHubProvider extends GitProviderBase {
 
 
   private async getLatestCommit(repositoryOwner: string, repoName: string, branch: string, authToken: string): Promise<GetLatestCommitResult> {
-    const mainRefUrl = `https://api.github.com/repos/${repositoryOwner}/${repoName}/git/ref/heads/${branch}`;
+    const url = `https://api.github.com/repos/${repositoryOwner}/${repoName}/branches/${branch}`;
 
-    const fetchResponse1 = await this.httpFetch(mainRefUrl, {
+    const fetchResponse = await this.httpFetch(url, {
       headers: {
         Authorization: `Bearer ${authToken}`,
         "X-GitHub-Api-Version": "2026-03-10",
         Accept: "application/vnd.github+json",
         "User-Agent": GITHUB_USER_AGENT,
-      },
+      }
     });
 
-    const fetchResponse2 = await this.httpFetch(mainRefUrl, {
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-        "X-GitHub-Api-Version": "2022-11-28",
-        Accept: "application/vnd.github+json",
-        "User-Agent": GITHUB_USER_AGENT,
-      },
-    });
+    if (fetchResponse.status < 200 || fetchResponse.status >= 300) {
+      const textResponse = await fetchResponse.text();
+      return {
+        type: "error",
+        fetchResponse,
+        error: new GitRestApiOperationError(`Error when getting the latest commit of GitHub repository: ${repositoryOwner};${repoName};${branch} ${fetchResponse.status} ${textResponse}`),
+      }
+    }
 
-
+    const responseAsJSON = (await fetchResponse.json()) as any;
+    const latestCommitHash = responseAsJSON.commit.sha;
     return {
-      type: "error",
-      fetchResponse: fetchResponse1,
-      error: new GitRestApiOperationError(`${fetchResponse1.status} ${fetchResponse2.status} ${await fetchResponse1.text()} ${await fetchResponse2.text()}`),
+      type: "ok",
+      sha: latestCommitHash
     };
 
-    throw new Error(`${fetchResponse1.status} ${fetchResponse2.status}`)
-    // if (fetchResponse.status < 200 || fetchResponse.status >= 300) {
-    //   const textResponse = await fetchResponse.text();
-    //   return {
-    //     type: "error",
-    //     fetchResponse,
-    //     error: new GitRestApiOperationError(`Error when getting the latest commit of GitHub repository: ${repositoryOwner};${repoName};${branch} ${fetchResponse.status} ${textResponse}`),
-    //   }
-    // }
+    // const mainRefUrl = `https://api.github.com/repos/${repositoryOwner}/${repoName}/git/ref/heads/${branch}`;
 
-    // const responseAsJSON = (await fetchResponse.json()) as any;
-    // const latestCommitHash = responseAsJSON.object.sha;
+    // const fetchResponse1 = await this.httpFetch(mainRefUrl, {
+    //   headers: {
+    //     Authorization: `Bearer ${authToken}`,
+    //     "X-GitHub-Api-Version": "2026-03-10",
+    //     Accept: "application/vnd.github+json",
+    //     "User-Agent": GITHUB_USER_AGENT,
+    //   },
+    // });
+
+    // const fetchResponse2 = await this.httpFetch(mainRefUrl, {
+    //   headers: {
+    //     Authorization: `Bearer ${authToken}`,
+    //     "X-GitHub-Api-Version": "2022-11-28",
+    //     Accept: "application/vnd.github+json",
+    //     "User-Agent": GITHUB_USER_AGENT,
+    //   },
+    // });
+
+
     // return {
-    //   type: "ok",
-    //   sha: latestCommitHash
+    //   type: "error",
+    //   fetchResponse: fetchResponse1,
+    //   error: new GitRestApiOperationError(`${fetchResponse1.status} ${fetchResponse2.status} ${await fetchResponse1.text()} ${await fetchResponse2.text()}`),
     // };
+
+    // throw new Error(`${fetchResponse1.status} ${fetchResponse2.status}`)
+    // // if (fetchResponse.status < 200 || fetchResponse.status >= 300) {
+    // //   const textResponse = await fetchResponse.text();
+    // //   return {
+    // //     type: "error",
+    // //     fetchResponse,
+    // //     error: new GitRestApiOperationError(`Error when getting the latest commit of GitHub repository: ${repositoryOwner};${repoName};${branch} ${fetchResponse.status} ${textResponse}`),
+    // //   }
+    // // }
+
+    // // const responseAsJSON = (await fetchResponse.json()) as any;
+    // // const latestCommitHash = responseAsJSON.object.sha;
+    // // return {
+    // //   type: "ok",
+    // //   sha: latestCommitHash
+    // // };
   }
 
   private async createBranch(repositoryOwner: string, repoName: string, branch: string, latestCommitHash: string, authToken: string) {
