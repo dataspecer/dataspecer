@@ -20,7 +20,7 @@ export const getOpenedPullRequestsInvolvingUser = asyncHandler(async (request: e
   }
 
   const gitProvider: GitProvider = GitProviderFactory.createGitProvider(gitProviderEnum, httpFetch, configuration);
-  const credentials = getGitCredentialsFromSession(request, response, [ScopeGroup.LoginInfo, ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
-  const openedPullRequests = await gitProvider.getOpenedPullRequestsInvolvingUser(credentials.committerAccessToken);
+  const { committerAccessToken } = getGitCredentialsFromSession(request, response, [ScopeGroup.LoginInfo, ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
+  const openedPullRequests = await gitProvider.getOpenedPullRequestsInvolvingUser(committerAccessToken);
   response.status(200).json(openedPullRequests);
 });

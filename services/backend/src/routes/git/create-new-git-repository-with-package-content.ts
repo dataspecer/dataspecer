@@ -13,7 +13,7 @@ import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 
 /**
  * Creates Git provider repository with content equal to the package with given iri inside the query part of express http request.
- * The organization field is used only if isUserRepo is false
+ * The organization field is used only if isUserRepo is false or organization eqals to bot name. If organization is empty we use bot name (TODO RadStr: Api hacking because of OAuth no time for cleaner implemetantion)
  */
 export const createNewGitRepositoryWithPackageContent = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
@@ -31,36 +31,45 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
   const query = querySchema.parse(request.query);
   query.publicationBranch ??= PUBLICATION_BRANCH_DEFAULT_NAME;
   const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(query.gitProviderURL, httpFetch, configuration);
-  const { name: sessionUserName, accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
+  const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
   const isUserRepo = stringToBoolean(query.isUserRepo);
   const organization = isUserRepo ? null : convertToValidGitName(query.organization);
   const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
   const repositoryName = convertToValidGitName(query.givenRepositoryName);
   const patAccessTokens = findPatAccessTokens(accessTokens);
+  let repositoryOwner: string;      // .... OAuth is being funny, since the name you get may be your actual name if you have it set and not the login name which is used in the url
+  if (isUserRepo) {
+    // TODO RadStr: I love OAuth api hack
+    if (query.organization !== "" && gitProvider.getBotCredentials()?.name !== query.organization) {
+      const repositoryOwnerCandidate = await gitProvider.getUserLoginForAuthToken(patAccessTokens[0].value);
+      if (repositoryOwnerCandidate === null) {
+        throw new Error("OWNER CANDIDATE IS NULL");
+      }
+      repositoryOwner = repositoryOwnerCandidate;
+    }
+    else {
+      const botName = gitProvider.getBotCredentials()?.name;
+      if (botName === undefined) {
+        throw new Error("Creating bot repository, but there is no bot set")
+      }
+      repositoryOwner = botName;
+    }
+  }
+  else {
+    repositoryOwner = organization!;
+  }
+
   // Either the user has create repo access AND it has access to the "user", then we are good
   // Or it has create repo access, but does not have access to the "user". Then we have two possibilities
   //  either we fail, or we will try the bot token to create the repositories. To me the second one makes more sense. So that is the implemented variant.
   for (const patAccessToken of patAccessTokens) {
-    if (patAccessToken.type === AccessTokenType.SSH) {
-      continue;
-    }
     try {
-      let repositoryOwner: string;      // .... OAuth is being funny, since the name you get may be your actual name if you have it set and not the login name which is used in the url
-      if (isUserRepo) {
-        const repositoryOwnerCandidate = await gitProvider.getUserLoginForAuthToken(patAccessToken.value);
-        if (repositoryOwnerCandidate === null) {
-          continue;
-        }
-        repositoryOwner = repositoryOwnerCandidate;
-      }
-      else {
-        repositoryOwner = organization!;
-      }
       const fullLinkedGitRepositoryURL = gitProvider.createGitRepositoryURL(repositoryOwner, repositoryName);
       if (isUserRepo) {
         // If it is user repo then the owner of the pat access token have to be the user of the user part of repository url
-        // In other words if it is bot token then the repositoryOwner has to be bot name
-        if (patAccessToken.isBotAccessToken && repositoryOwner !== gitProvider.getBotCredentials()?.name) {
+        // In other words if it is user repo for bot, the token has to be for bot and if it is not for bot it can not be bot token.
+        if ((!patAccessToken.isBotAccessToken && repositoryOwner === gitProvider.getBotCredentials()?.name) ||
+            (patAccessToken.isBotAccessToken && repositoryOwner !== gitProvider.getBotCredentials()?.name)) {
           continue;
         }
       }

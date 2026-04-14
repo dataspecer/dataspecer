@@ -114,6 +114,7 @@ export const getGitCredentialsFromSession = (request: express.Request, response:
   const currentSession = getStoredSession(response);
   if (currentSession !== null) {
     committerName = currentSession.user?.name ?? null;
+    // TODO RadStr Critical: Put it here, the committerName fetching
     committerEmail = currentSession.user?.email ?? null;
     const [, scopeGroup] = createAuthConfigBasedOnAccountScope((currentSession.user as any)?.genericScope ?? null, dsBackendURL);      // The express request won't be used so just set it to null
 

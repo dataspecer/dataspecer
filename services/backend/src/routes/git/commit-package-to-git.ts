@@ -2,7 +2,7 @@ import { z } from "zod";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { mergeStateModel, resourceModel } from "../../main.ts";
-import { ExportVersionType, extractPartOfRepositoryURL, convertStringToExportVersion, MergeState, stringToBoolean, ExportFormatType, convertStringToExportFormat, SingleBranchCommitType, CommitType } from "@dataspecer/git";
+import { ExportVersionType, extractPartOfRepositoryURL, convertStringToExportVersion, MergeState, stringToBoolean, ExportFormatType, convertStringToExportFormat, SingleBranchCommitType, CommitType, AccessTokenType } from "@dataspecer/git";
 import { ScopeGroup, GitCredentials, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase, createUniqueCommitMessage } from "@dataspecer/git";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import { PrismaMergeStateWithData } from "../../models/merge-state-model.ts";
@@ -224,7 +224,7 @@ export const commitPackageToGitUsingAuthSession = async (
     branchAndLastCommit, gitCommitInfoBasic, iri, projectIri, remoteRepositoryUrl, repositoryIdentificationInfo,
     request, response, shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage, commitType
    } = commitParams;
-  const commitInfo: GitCommitToCreateInfoExplicitWithCredentials = prepareCommitDataForCommit(
+  const commitInfo: GitCommitToCreateInfoExplicitWithCredentials = await prepareCommitDataForCommit(
     request, response, remoteRepositoryUrl, gitCommitInfoBasic, shouldAppendAfterDefaultMergeCommitMessage);
   const commitObjectParams: GitCommitConstructorParams = {
     iri,
@@ -248,16 +248,27 @@ export const commitPackageToGitUsingAuthSession = async (
  *  Note that Git credentials are described in the {@link GitCredentials} type.
  * @param commitMessage if null then default message is used.
  */
-function prepareCommitDataForCommit(
+async function prepareCommitDataForCommit(
   request: express.Request,
   response: express.Response,
   remoteRepositoryUrl: string,
   gitCommitInfoBasic: GitCommitToCreateInfoBasic,
   shouldAppendAfterDefaultMergeCommitMessage: boolean | null,
-): GitCommitToCreateInfoExplicitWithCredentials {
+): Promise<GitCommitToCreateInfoExplicitWithCredentials> {
   // If gitProvider not given - extract it from url
   const gitProvider = gitCommitInfoBasic.gitProvider ?? GitProviderNodeFactory.createGitProviderFromRepositoryURL(remoteRepositoryUrl, httpFetch, configuration);
   const committer = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
+
+  // TODO RadStr: I love OAuth
+  if (!committer.isBotName) {
+    const nameCandidate = await gitProvider.getUserLoginForAuthToken(committer.accessTokens.find(accessToken => !accessToken.isBotAccessToken && accessToken.type === AccessTokenType.PAT)!.value)
+    console.info({nameCandidate});
+    if (nameCandidate === null) {
+      throw new Error(`The user ${committer.name} does not exist on GitHub`);
+    }
+
+    committer.name = nameCandidate;
+  }
   const commitInfo: GitCommitToCreateInfoExplicitWithCredentials = {
     gitCredentials: committer,
     commitMessage: gitCommitInfoBasic.commitMessage ?? createUniqueCommitMessage(),

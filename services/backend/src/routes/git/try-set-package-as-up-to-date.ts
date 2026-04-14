@@ -3,7 +3,7 @@ import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { resourceModel } from "../../main.ts";
 import { compareBackendFilesystems, createSimpleGitUsingPredefinedGitRoot, gitCloneBasic, MergeEndpointForComparison, removePathRecursively, TMP_CLONE_PATH_PREFIX } from "@dataspecer/git-node";
-import { AvailableFilesystems, ScopeGroup, extractPartOfRepositoryURL, getAuthorizationURL, GitIgnoreBase, GitProvider } from "@dataspecer/git";
+import { AvailableFilesystems, ScopeGroup, extractPartOfRepositoryURL, getAuthorizationURL, GitIgnoreBase, GitProvider, AccessTokenType } from "@dataspecer/git";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
@@ -34,6 +34,15 @@ export const trySetPackageAsUpToDateHandler = asyncHandler(async (request: expre
   if (repositoryOwner === null || repositoryName === null) {
     response.status(400).json({error: `The repository URL ${resource.linkedGitRepositoryURL} could not be parsed to get the owner and name; owner: ${repositoryOwner}; name: ${repositoryName}`});
     return;
+  }
+
+  // TODO RadStr: I love OAuth
+  if (!gitCredentials.isBotName) {
+    const nameCandidate = await gitProvider.getUserLoginForAuthToken(gitCredentials.accessTokens.find(accessToken => !accessToken.isBotAccessToken && accessToken.type === AccessTokenType.PAT)!.value)
+    if (nameCandidate === null) {
+      throw new Error(`The user ${gitCredentials.name} does not exist on GitHub`);
+    }
+    gitCredentials.name = nameCandidate;
   }
 
   try {

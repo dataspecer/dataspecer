@@ -35,7 +35,7 @@ export const getAuthenticatedUserOrganizations = asyncHandler(async (request: ex
   }
 
   const gitProvider: GitProvider = GitProviderFactory.createGitProvider(gitProviderEnum, httpFetch, configuration);
-  const credentials = getGitCredentialsFromSession(request, response, [ScopeGroup.LoginInfo, ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
-  const organizations = await gitProvider.getOrganizationsForAuthenticatedUser(credentials.committerAccessToken);
+  const { committerAccessToken } = getGitCredentialsFromSession(request, response, [ScopeGroup.LoginInfo, ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
+  const organizations = await gitProvider.getOrganizationsForAuthenticatedUser(committerAccessToken);
   response.status(200).json(organizations);
 });

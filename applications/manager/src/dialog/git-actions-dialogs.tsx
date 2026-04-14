@@ -356,7 +356,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
 
       let owner: string;
       if (isUserRepo) {
-        owner = isOwnerSignedInUser ? "" : (isSignedIn ? username : "");      // The value no longer matters, because of OAuth not returning login
+        owner = isOwnerSignedInUser ? (isSignedIn ? username : "") : "";
       }
       else {
         owner = organization;
