@@ -299,10 +299,11 @@ export class GitHubProvider extends GitProviderBase {
     });
 
     if (fetchResponse.status < 200 || fetchResponse.status >= 300) {
+      const textResponse = await fetchResponse.text();
       return {
         type: "error",
         fetchResponse,
-        error: new GitRestApiOperationError(`Error when getting the latest commit of GitHub repository: ${fetchResponse.status} ${JSON.stringify(await fetchResponse.json())}`),
+        error: new GitRestApiOperationError(`Error when getting the latest commit of GitHub repository: ${repositoryOwner};${repoName};${branch} ${fetchResponse.status} ${textResponse}`),
       }
     }
 
