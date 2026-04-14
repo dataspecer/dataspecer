@@ -302,7 +302,7 @@ export class GitHubProvider extends GitProviderBase {
       return {
         type: "error",
         fetchResponse,
-        error: new GitRestApiOperationError(`Error when getting the latest commit of GitHub repository: ${fetchResponse.status} ${fetchResponse}`),
+        error: new GitRestApiOperationError(`Error when getting the latest commit of GitHub repository: ${fetchResponse.status} ${JSON.stringify(await fetchResponse.json())}`),
       }
     }
 
