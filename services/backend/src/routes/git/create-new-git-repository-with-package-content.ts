@@ -2,7 +2,7 @@ import { z } from "zod";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { resourceModel, webhookUrl } from "../../main.ts";
-import { ScopeGroup, convertToValidGitName, extractPartOfRepositoryURL, findPatAccessToken, findPatAccessTokens, convertStringToExportVersion, PUBLICATION_BRANCH_DEFAULT_NAME, stringToBoolean, transformCommitMessageIfEmpty, getDefaultExportVersion, getDefaultExportFormat, isExportFormatType, convertStringToExportFormat } from "@dataspecer/git";
+import { ScopeGroup, convertToValidGitName, extractPartOfRepositoryURL, findPatAccessToken, findPatAccessTokens, convertStringToExportVersion, PUBLICATION_BRANCH_DEFAULT_NAME, stringToBoolean, transformCommitMessageIfEmpty, getDefaultExportVersion, getDefaultExportFormat, isExportFormatType, convertStringToExportFormat, AccessTokenType } from "@dataspecer/git";
 import { commitPackageToGitUsingAuthSession, CommitUsingAuthSessionParams } from "./commit-package-to-git.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import { checkErrorBoundaryForCommitAction, CommitBranchAndHashInfo, GitCommitToCreateInfoBasic, GitRepositoryIdentification } from "@dataspecer/git-node";
@@ -13,11 +13,12 @@ import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 
 /**
  * Creates Git provider repository with content equal to the package with given iri inside the query part of express http request.
+ * The organization field is used only if isUserRepo is false
  */
 export const createNewGitRepositoryWithPackageContent = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
     iri: z.string().min(1),
-    givenRepositoryOwner: z.string(),
+    organization: z.string(),
     givenRepositoryName: z.string().min(1),
     gitProviderURL: z.string().min(1),
     commitMessage: z.string(),
@@ -31,17 +32,31 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
   query.publicationBranch ??= PUBLICATION_BRANCH_DEFAULT_NAME;
   const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(query.gitProviderURL, httpFetch, configuration);
   const { name: sessionUserName, accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
-  const repositoryOwner = convertToValidGitName(query.givenRepositoryOwner.length === 0 ? sessionUserName : query.givenRepositoryOwner);
+  const isUserRepo = stringToBoolean(query.isUserRepo);
+  const organization = isUserRepo ? null : convertToValidGitName(query.organization);
   const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
   const repositoryName = convertToValidGitName(query.givenRepositoryName);
-  const fullLinkedGitRepositoryURL = gitProvider.createGitRepositoryURL(repositoryOwner, repositoryName);
-  const isUserRepo = stringToBoolean(query.isUserRepo);
   const patAccessTokens = findPatAccessTokens(accessTokens);
   // Either the user has create repo access AND it has access to the "user", then we are good
   // Or it has create repo access, but does not have access to the "user". Then we have two possibilities
   //  either we fail, or we will try the bot token to create the repositories. To me the second one makes more sense. So that is the implemented variant.
   for (const patAccessToken of patAccessTokens) {
+    if (patAccessToken.type === AccessTokenType.SSH) {
+      continue;
+    }
     try {
+      let repositoryOwner: string;      // .... OAuth is being funny, since the name you get may be your actual name if you have it set and not the login name which is used in the url
+      if (isUserRepo) {
+        const repositoryOwnerCandidate = await gitProvider.getUserLoginForAuthToken(patAccessToken.value);
+        if (repositoryOwnerCandidate === null) {
+          continue;
+        }
+        repositoryOwner = repositoryOwnerCandidate;
+      }
+      else {
+        repositoryOwner = organization!;
+      }
+      const fullLinkedGitRepositoryURL = gitProvider.createGitRepositoryURL(repositoryOwner, repositoryName);
       if (isUserRepo) {
         // If it is user repo then the owner of the pat access token have to be the user of the user part of repository url
         // In other words if it is bot token then the repositoryOwner has to be bot name
@@ -50,7 +65,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
         }
       }
 
-      const { defaultBranch } = await gitProvider.createRemoteRepository(patAccessToken.value, repositoryOwner, repositoryName, isUserRepo, true, query.publicationBranch);
+      const { defaultBranch } = await gitProvider.createRemoteRepository(patAccessToken.value, organization, repositoryName, true, query.publicationBranch);
 
 
       await gitProvider.createWebhook(patAccessToken.value, repositoryOwner, repositoryName, webhookUrl, ["push"]);

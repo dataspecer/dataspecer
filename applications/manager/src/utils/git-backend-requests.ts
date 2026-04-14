@@ -59,9 +59,9 @@ export async function mergeCommitToGitBackendRequest(
   return response;
 }
 
-type CreanteNewRepoBackendRequestData = {
+type CreateNewRepoBackendRequestData = {
   repositoryName: string;
-  user: string;
+  organization: string;
   gitProviderDomain: string;
   commitMessage: string;
   isUserRepo: boolean;
@@ -72,17 +72,17 @@ type CreanteNewRepoBackendRequestData = {
 
 export async function createNewRemoteRepositoryRequest(
   iri: string,
-  commitBackendRequestData: CreanteNewRepoBackendRequestData,
+  createRepoBackendRequestData: CreateNewRepoBackendRequestData,
 ) {
   const url = import.meta.env.VITE_BACKEND + "/git/create-new-git-repository-with-package-content?iri=" + encodeURIComponent(iri) +
-                                            "&givenRepositoryName=" + encodeURIComponent(commitBackendRequestData.repositoryName) +
-                                            "&givenRepositoryOwner=" + encodeURIComponent(commitBackendRequestData.user ?? "") +
-                                            "&gitProviderURL=" + encodeURIComponent(commitBackendRequestData.gitProviderDomain ?? "") +
-                                            "&commitMessage=" + encodeURIComponent(commitBackendRequestData.commitMessage ?? "") +
-                                            "&isUserRepo=" + encodeURIComponent(commitBackendRequestData.isUserRepo ?? true) +
-                                            "&publicationBranch=" + encodeURIComponent(commitBackendRequestData.publicationBranch) +
-                                            "&exportFormat=" + commitBackendRequestData.exportFormat +
-                                            "&exportVersion=" + commitBackendRequestData.exportVersion;
+                                            "&givenRepositoryName=" + encodeURIComponent(createRepoBackendRequestData.repositoryName) +
+                                            "&organization=" + encodeURIComponent(createRepoBackendRequestData.organization ?? "") +
+                                            "&gitProviderURL=" + encodeURIComponent(createRepoBackendRequestData.gitProviderDomain ?? "") +
+                                            "&commitMessage=" + encodeURIComponent(createRepoBackendRequestData.commitMessage ?? "") +
+                                            "&isUserRepo=" + encodeURIComponent(createRepoBackendRequestData.isUserRepo ?? true) +
+                                            "&publicationBranch=" + encodeURIComponent(createRepoBackendRequestData.publicationBranch) +
+                                            "&exportFormat=" + createRepoBackendRequestData.exportFormat +
+                                            "&exportVersion=" + createRepoBackendRequestData.exportVersion;
   const response = await fetch(
     url,
     {

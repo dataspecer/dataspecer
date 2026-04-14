@@ -148,9 +148,8 @@ export class GitLabProvider extends GitProviderBase {
   }
   async createRemoteRepository(
     authToken: string,
-    repositoryOwner: string,
+    organization: string | null,
     repoName: string,
-    isUserRepo: boolean,
     shouldEnablePublicationBranch: boolean,
     publicationBranchName: string | null,
   ): Promise<CreateRemoteRepositoryReturnType> {
@@ -201,6 +200,10 @@ export class GitLabProvider extends GitProviderBase {
   }
 
   async setRepositorySecret(repositoryOwner: string, repoName: string, accessToken: string, secretKey: string, secretValue: string): Promise<FetchResponse> {
+    throw new Error("Method not implemented.");
+  }
+
+  async getUserLoginForAuthToken(authToken: string): Promise<string | null> {
     throw new Error("Method not implemented.");
   }
 

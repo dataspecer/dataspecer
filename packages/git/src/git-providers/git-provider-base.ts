@@ -39,11 +39,12 @@ export abstract class GitProviderBase implements GitProvider {
   abstract extractDataForWebhookProcessing(webhookPayload: any, getResourceForGitUrlAndBranch: GetResourceForGitUrlAndBranchType): Promise<GitProviderIndependentWebhookRequestData | null>;
   abstract extractHashFromWebhookCommitObject(commit: object): string;
   abstract isPushWebhook(requestHeader: Record<string, any>): boolean;
-  abstract createRemoteRepository(authToken: string, repositoryOwner: string, repoName: string, isUserRepo: boolean, shouldEnablePublicationBranch: boolean, publicationBranchName: string | null,): Promise<CreateRemoteRepositoryReturnType>;
+  abstract createRemoteRepository(authToken: string, organization: string | null, repoName: string, shouldEnablePublicationBranch: boolean, publicationBranchName: string | null,): Promise<CreateRemoteRepositoryReturnType>;
   abstract removeRemoteRepository(authToken: string, repositoryOwner: string, repoName: string): Promise<FetchResponse>;
   abstract createWebhook(authToken: string, repositoryOwner: string, repositoryName: string, webhookHandlerURL: string, webhookEvents: string[]): Promise<FetchResponse>;
   abstract getBotCredentials(): GitCredentials | null;
   abstract setBotAsCollaborator(repositoryOwner: string, repoName: string, accessToken: string): Promise<FetchResponse>;
+  abstract getUserLoginForAuthToken(authToken: string): Promise<string | null>;
   abstract setRepositorySecret(repositoryOwner: string, repoName: string, accessToken: string, secretKey: string, secretValue: string): Promise<FetchResponse>;
   /**
    * @deprecated We put the GitHub pages on the same repository instead of onto separate publication repository

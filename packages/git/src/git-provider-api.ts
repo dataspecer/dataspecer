@@ -282,16 +282,15 @@ export interface GitProvider {
    * Creates remote git repository with following URL .../{@link repositoryOwner}/{@link repoName}.
    *
    * @param authToken has to contain right to create (public) repository
-   * @param isUserRepo if true then we create repository under user of name {@link repositoryOwner},
-   *  if false then we are creating repository under organization of name {@link repositoryOwner}.
+   * @param organization if null then it is user repo, if not null then it is organization. Important note regarding the user name.
+   *  The thing we get from GitHub OAuth is not always login name (that is the thing you find in URL), it can also be your name, for example John Doe.
    * @param shouldEnablePublicationBranch If set to true should also enable the GitHub pages (or its equivalent) in the {@link publicationBranchName} or the default {@link PUBLICATION_DEFAULT_BRANCH_NAME} code constant, if not defined.
    * (but in future it might change if we start using the publication repos again, possible TODO:)
    */
   createRemoteRepository(
     authToken: string,
-    repositoryOwner: string,
+    organization: string | null,
     repoName: string,
-    isUserRepo: boolean,
     shouldEnablePublicationBranch: boolean,
     publicationBranchName: string | null,
   ): Promise<CreateRemoteRepositoryReturnType>;
@@ -336,6 +335,13 @@ export interface GitProvider {
    * @param repoName is the name of the repository.
    */
   setBotAsCollaborator(repositoryOwner: string, repoName: string, accessToken: string): Promise<FetchResponse>;
+
+  /**
+   * @returns The user's login name for given {@link authToken}. Returns null if some error happened.
+   * Note that the name which you get from the auth is not login name.
+   *  At least not always, it can be the actual name, if it is set. For this reason we need this method. We have to do an extra request when creating repo.
+   */
+  getUserLoginForAuthToken(authToken: string): Promise<string | null>;
 
   /**
    * Sets the repository secret for URL defined as urlRepoHost/{@link repositoryOwner}/{@link repoName}. Where urlRepoHost is for example github.com

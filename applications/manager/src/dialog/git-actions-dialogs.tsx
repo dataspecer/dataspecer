@@ -96,7 +96,7 @@ type GitActionsDialogProps = {
 } & BetterModalProps<{
   repositoryName: string;
   remoteRepositoryURL: string;
-  user: string;
+  organization: string;
   gitProviderDomain: string;
   commitMessage: string;
   isUserRepo: boolean;
@@ -356,7 +356,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
 
       let owner: string;
       if (isUserRepo) {
-        owner = isOwnerSignedInUser ? "" : (isSignedIn ? username : "");
+        owner = isOwnerSignedInUser ? "" : (isSignedIn ? username : "");      // The value no longer matters, because of OAuth not returning login
       }
       else {
         owner = organization;
@@ -364,7 +364,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
 
       const gitProviderDomain = getGitProviderDomain(gitProvider, true, true);
       resolve({
-        user: owner, repositoryName, remoteRepositoryURL: remoteRepositoryUrl, gitProviderDomain, commitMessage, isUserRepo,
+        organization: owner, repositoryName, remoteRepositoryURL: remoteRepositoryUrl, gitProviderDomain, commitMessage, isUserRepo,
         shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage,
         publicationBranch: gitRemoteConfiguration?.publicationBranch ?? PUBLICATION_BRANCH_DEFAULT_NAME,
         exportFormat: gitRemoteConfiguration?.exportFormat ?? getDefaultExportFormat(),

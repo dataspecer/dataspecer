@@ -189,9 +189,8 @@ export class GitHubProvider extends GitProviderBase {
 
   async createRemoteRepository(
     authToken: string,
-    repositoryOwner: string,
+    organization: string | null,
     repoName: string,
-    isUserRepo: boolean,
     shouldEnablePublicationBranch: boolean,
     publicationBranchName: string | null,
   ): Promise<CreateRemoteRepositoryReturnType> {
@@ -211,7 +210,7 @@ export class GitHubProvider extends GitProviderBase {
                             // TODO RadStr: Maybe we need it only for the publication repository though
     };
 
-    const restEndpoint = isUserRepo ? "https://api.github.com/user/repos" : `https://api.github.com/orgs/${repositoryOwner}/repos`;
+    const restEndpoint = organization === null ? "https://api.github.com/user/repos" : `https://api.github.com/orgs/${organization}/repos`;
 
     const fetchResponse = await this.httpFetch(restEndpoint, {
       method: "POST",
@@ -227,11 +226,13 @@ export class GitHubProvider extends GitProviderBase {
     });
 
     if (fetchResponse.status < 200 || fetchResponse.status >= 300) {
-      throw new GitRestApiOperationError(`Error when creating new remote GitHub repository: ${fetchResponse.status} ${fetchResponse}`);
+      const content = JSON.stringify(await fetchResponse.json());
+      throw new GitRestApiOperationError(`Error when creating new remote GitHub repository: ${fetchResponse.status} ${fetchResponse} ${content}`);
     }
 
     const responseAsJSON = (await fetchResponse.json()) as any;
     const defaultBranch: string | null = responseAsJSON?.default_branch ?? null;
+    const repositoryOwner = responseAsJSON?.owner.login;
     console.info({defaultBranch});
     console.info({responseAsJSON});
     if (defaultBranch === null) {
@@ -477,6 +478,28 @@ export class GitHubProvider extends GitProviderBase {
     return acceptInvitationFetchResponse;
   }
 
+  async getUserLoginForAuthToken(authToken: string): Promise<string | null> {
+    const restEndpointForPublicKey = "https://api.github.com/user";
+
+    const response = await this.httpFetch(restEndpointForPublicKey, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${authToken}`,
+        "X-GitHub-Api-Version": "2026-03-10",
+        "Accept": "application/vnd.github+json",
+        "User-Agent": GITHUB_USER_AGENT,
+      },
+    });
+
+    if (response.status < 200 || response.status > 299) {
+      console.error(`Error ${response.status}: ${JSON.stringify(await response.json())}`);
+      return null;
+    }
+
+    const responseAsJSON: any = await response.json();
+    return responseAsJSON?.login ?? null;
+  }
+
   async setRepositorySecret(repositoryOwner: string, repoName: string, accessToken: string, secretKey: string, secretValue: string): Promise<FetchResponse> {
     // Get public key for encryption - https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#get-a-repository-public-key
     const restEndpointForPublicKey = `https://api.github.com/repos/${repositoryOwner}/${repoName}/actions/secrets/public-key`;
@@ -551,23 +574,25 @@ export class GitHubProvider extends GitProviderBase {
 
   /**
    * @deprecated We put the GitHub pages on the same repository instead of onto separate publication repository
+   * ..... it is deprecated I will no longer bother with fixing the implemetnation. Because of the repository owner and its relation to Auth (It returns The username not login name)
    */
   async createPublicationRepository(repoName: string, isUserRepo: boolean, repositoryOwner?: string, accessToken?: string): Promise<FetchResponse> {
-    const botCredentials = this.getBotCredentials();
-    if (botCredentials === null) {
-      throw new Error("Can not create publication repository, since there are no bot credentials");
-    }
-    const botAccessToken = findPatAccessToken(botCredentials.accessTokens)?.value;
+    throw new Error("Not implemented")
+    // const botCredentials = this.getBotCredentials();
+    // if (botCredentials === null) {
+    //   throw new Error("Can not create publication repository, since there are no bot credentials");
+    // }
+    // const botAccessToken = findPatAccessToken(botCredentials.accessTokens)?.value;
 
-    repositoryOwner = repositoryOwner ?? botCredentials.name;
-    accessToken = accessToken ?? (botAccessToken ?? undefined);
-    if (accessToken === undefined) {
-      throw new Error("Can not create publication repository, since there is no access token - neiter from user and from bot");
-    }
+    // repositoryOwner = repositoryOwner ?? botCredentials.name;
+    // accessToken = accessToken ?? (botAccessToken ?? undefined);
+    // if (accessToken === undefined) {
+    //   throw new Error("Can not create publication repository, since there is no access token - neiter from user and from bot");
+    // }
 
-    await this.createRemoteRepository(accessToken, repositoryOwner, repoName, isUserRepo, false, null);
-    await this.setBotAsCollaborator(repositoryOwner, repoName, accessToken);
-    return this.enableGitHubPages(repoName, repositoryOwner, "main", accessToken);
+    // await this.createRemoteRepository(accessToken, repositoryOwner, repoName, isUserRepo, false, null);
+    // await this.setBotAsCollaborator(repositoryOwner, repoName, accessToken);
+    // return this.enableGitHubPages(repoName, repositoryOwner, "main", accessToken);
   }
 
   getWorkflowFilesDirectoryName(): string {
