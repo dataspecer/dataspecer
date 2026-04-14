@@ -296,6 +296,7 @@ export class GitHubProvider extends GitProviderBase {
         Authorization: `Bearer ${authToken}`,
         "X-GitHub-Api-Version": "2026-03-10",
         Accept: "application/vnd.github+json",
+        "User-Agent": GITHUB_USER_AGENT,
       },
     });
 
@@ -304,6 +305,7 @@ export class GitHubProvider extends GitProviderBase {
         Authorization: `Bearer ${authToken}`,
         "X-GitHub-Api-Version": "2022-11-28",
         Accept: "application/vnd.github+json",
+        "User-Agent": GITHUB_USER_AGENT,
       },
     });
 
