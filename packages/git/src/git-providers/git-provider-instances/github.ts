@@ -245,8 +245,9 @@ export class GitHubProvider extends GitProviderBase {
       //  Therefore, the request to get latest commit failed right after creation
       let initialCommitHash: string | null = null;
       let waitTime = 500;
+      let latestCommitResult: GetLatestCommitResult;
       for (let i = 0; i < 2; i++) {
-        const latestCommitResult = await this.getLatestCommit(repositoryOwner, repoName, defaultBranchExplicit, authToken);
+        latestCommitResult = await this.getLatestCommit(repositoryOwner, repoName, defaultBranchExplicit, authToken);
         if (latestCommitResult.type === "ok") {
           initialCommitHash = latestCommitResult.sha;
           break;
@@ -265,6 +266,9 @@ export class GitHubProvider extends GitProviderBase {
       }
 
       if (initialCommitHash === null) {
+        if (latestCommitResult.type === "error") {
+          throw latestCommitResult.error;
+        }
         throw new Error("Created the remote repository, but it is not available for some reason. We cannot create the publication branch on the remote repository.");
       }
       await this.createBranch(repositoryOwner, repoName, publicationBranchName, initialCommitHash, authToken);
