@@ -116,7 +116,7 @@ return (
               </ModalHeader>
                 {/* The overflow-y is needed however it adds a bit horizontal space between the vertical splitter and the Tree structure */}
                 <div className="h-full">
-                  <div className="flex! flex-1 flex-col grow pr-2 -mr-2 -ml-2 pl-2 max-2xl:h-[70%]! 2xl:h-[80%]! w-full!">
+                  <div className="flex! flex-1 flex-col grow pr-2 -mr-2 -ml-2 pl-2 h-[70%]! w-full!">
                     <DiffTreeVisualization updateModelData={updateModelData}
                                             datastoreInfosForCacheEntries={datastoreInfosForCacheEntries}
                                             isLoadingTreeStructure={isLoadingTreeStructure}
