@@ -291,28 +291,45 @@ export class GitHubProvider extends GitProviderBase {
   private async getLatestCommit(repositoryOwner: string, repoName: string, branch: string, authToken: string): Promise<GetLatestCommitResult> {
     const mainRefUrl = `https://api.github.com/repos/${repositoryOwner}/${repoName}/git/ref/heads/${branch}`;
 
-    const fetchResponse = await this.httpFetch(mainRefUrl, {
+    const fetchResponse1 = await this.httpFetch(mainRefUrl, {
       headers: {
         Authorization: `Bearer ${authToken}`,
+        "X-GitHub-Api-Version": "2026-03-10",
         Accept: "application/vnd.github+json",
       },
     });
 
-    if (fetchResponse.status < 200 || fetchResponse.status >= 300) {
-      const textResponse = await fetchResponse.text();
-      return {
-        type: "error",
-        fetchResponse,
-        error: new GitRestApiOperationError(`Error when getting the latest commit of GitHub repository: ${repositoryOwner};${repoName};${branch} ${fetchResponse.status} ${textResponse}`),
-      }
-    }
+    const fetchResponse2 = await this.httpFetch(mainRefUrl, {
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+        Accept: "application/vnd.github+json",
+      },
+    });
 
-    const responseAsJSON = (await fetchResponse.json()) as any;
-    const latestCommitHash = responseAsJSON.object.sha;
+
     return {
-      type: "ok",
-      sha: latestCommitHash
+      type: "error",
+      fetchResponse: fetchResponse1,
+      error: new GitRestApiOperationError(`${fetchResponse1.status} ${fetchResponse2.status} ${await fetchResponse1.text()} ${await fetchResponse2.text()}`),
     };
+
+    throw new Error(`${fetchResponse1.status} ${fetchResponse2.status}`)
+    // if (fetchResponse.status < 200 || fetchResponse.status >= 300) {
+    //   const textResponse = await fetchResponse.text();
+    //   return {
+    //     type: "error",
+    //     fetchResponse,
+    //     error: new GitRestApiOperationError(`Error when getting the latest commit of GitHub repository: ${repositoryOwner};${repoName};${branch} ${fetchResponse.status} ${textResponse}`),
+    //   }
+    // }
+
+    // const responseAsJSON = (await fetchResponse.json()) as any;
+    // const latestCommitHash = responseAsJSON.object.sha;
+    // return {
+    //   type: "ok",
+    //   sha: latestCommitHash
+    // };
   }
 
   private async createBranch(repositoryOwner: string, repoName: string, branch: string, latestCommitHash: string, authToken: string) {
