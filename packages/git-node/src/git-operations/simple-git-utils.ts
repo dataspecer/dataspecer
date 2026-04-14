@@ -7,12 +7,38 @@ import { v4 as uuidv4 } from "uuid";
  * @returns The last common git commit's hash
  */
 export async function getCommonCommitInHistory(git: SimpleGit, commit1: string, commit2: string): Promise<string> {
-    const result = await git.raw([
-        "merge-base",
-        commit1,
-        commit2
-    ]);
-    return result.trim(); // merge-base hash
+    try {
+        const result = await git.raw([
+            "merge-base",
+            commit1,
+            commit2
+        ]);
+        return result.trim(); // merge-base hash
+    }
+    catch(e) {
+        // TODO RadStr Debug: Debug prints
+        console.info(e);
+        console.info(e?.message);
+        try {
+        // Get list of all branches (local + remote)
+        const branches = await git.branch(['-a']);
+
+        for (const branchName of Object.keys(branches.branches)) {
+          console.log(`\n=== History for branch: ${branchName} ===`);
+
+          // Get commit history of each branch
+          const log = await git.log([branchName]);
+
+          log.all.forEach(commit => {
+            console.log(`${commit.date} | ${commit.hash} | ${commit.message} | ${commit.author_name}`);
+          });
+        }
+      }
+      catch (err) {
+        console.error('Error fetching history:', err);
+      }
+        throw e;
+    }
 }
 
 /**
