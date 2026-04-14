@@ -218,7 +218,7 @@ export class GitHubProvider extends GitProviderBase {
       headers: {
         "Content-Type": "application/vnd.github+json",
         "Authorization": `Bearer ${authToken}`,
-        "X-GitHub-Api-Version": "2022-11-28",
+        "X-GitHub-Api-Version": "2026-03-10",
         "Accept": "application/vnd.github+json",
         "User-Agent": GITHUB_USER_AGENT,
       },
