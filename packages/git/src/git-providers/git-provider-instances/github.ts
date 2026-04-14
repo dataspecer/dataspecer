@@ -231,6 +231,12 @@ export class GitHubProvider extends GitProviderBase {
 
     const responseAsJSON = (await fetchResponse.json()) as any;
     const defaultBranch: string | null = responseAsJSON?.default_branch ?? null;
+    console.info({defaultBranch});
+    console.info({responseAsJSON});
+    if (defaultBranch === null) {
+      throw new Error("DEFAULT BRANCH IS NULL")
+    }
+
 
     if (shouldEnablePublicationBranch) {
       // We have to create the branch first, we can not enable GH pages on not existing branch
@@ -239,7 +245,7 @@ export class GitHubProvider extends GitProviderBase {
       //  Therefore, the request to get latest commit failed right after creation
       let initialCommitHash: string | null = null;
       let waitTime = 500;
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 2; i++) {
         const latestCommitResult = await this.getLatestCommit(repositoryOwner, repoName, defaultBranchExplicit, authToken);
         if (latestCommitResult.type === "ok") {
           initialCommitHash = latestCommitResult.sha;
@@ -250,10 +256,11 @@ export class GitHubProvider extends GitProviderBase {
             throw latestCommitResult.error;
           }
         }
+        console.info({latestCommitResult});
         // We got 404
         await new Promise(res => setTimeout(res, waitTime));  // Sleep for waitTime ms
         waitTime *= 2;
-        waitTime = Math.min(waitTime, 10000);     // TODO RadStr PR: Maybe have better wait times or just try it 2 times or something, idk what is the best solution
+        waitTime = Math.max(waitTime, 10000);     // TODO RadStr PR: Maybe have better wait times or just try it 2 times or something, idk what is the best solution
         console.info(`... WAiting: ${waitTime}`);     // TODO RadStr Debug: Debug print
       }
 
