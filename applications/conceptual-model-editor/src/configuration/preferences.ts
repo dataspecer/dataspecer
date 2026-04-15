@@ -27,7 +27,7 @@ const PREFERENCES_KEY = "dataspecer-cme-preferences";
 
 const DEFAULT_PREFERENCES: Preferences = Object.freeze({
   pageSplitterValue: 25,
-  catalogComponent: "v3",
+  catalogComponent: "v2",
 });
 
 let activePreferences: Preferences = (() => {
