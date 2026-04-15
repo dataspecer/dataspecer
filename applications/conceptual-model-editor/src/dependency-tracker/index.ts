@@ -23,3 +23,6 @@ export {
   type VisualRepresentationEntry,
   createVisualRepresentationTracker
 } from "./visual-representation-tracker";
+export {
+  effectiveLabel,
+} from "./dependency-tracker-utilities";

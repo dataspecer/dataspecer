@@ -18,16 +18,19 @@ import {
 } from "@dataspecer/visual-model";
 
 import { selectDomainAndRange } from "../dataspecer/semantic-model";
-import { languageStringToStringNext } from "../utilities/string";
 import {
   createSemanticLabelTracker,
   createSemanticModelTracker,
   createVisualModelTracker,
   createVisualRepresentationTracker,
+  effectiveLabel,
   SemanticModelEntry,
   Tracker,
   VisualModelEntry,
 } from "../dependency-tracker";
+import { createLogger } from "../application";
+
+const logger = createLogger(import.meta.url);
 
 export class CatalogTracker implements Tracker {
 
@@ -181,7 +184,7 @@ export class CatalogTracker implements Tracker {
       return partial;
     }
     // Create a new one.
-    const created : PartialCatalogEntity = {
+    const created: PartialCatalogEntity = {
       identifier: identifier,
       iri: null,
       label: {},
@@ -280,15 +283,20 @@ export class CatalogTracker implements Tracker {
   getEntityLabel(
     languages: string[],
     identifier: EntityIdentifier | undefined,
-  ): string | undefined {
+  ): string {
     if (identifier === undefined) {
-      return undefined;
+      return "";
     }
-    const entity = this.entities.get(identifier);
-    if (entity === undefined) {
-      return undefined;
+    const entity = this.entities.get(identifier)
+    if (entity !== undefined) {
+      return effectiveLabel(languages, entity);
     }
-    return getEntityLabel(languages, entity);
+    logger.missingEntity(identifier);
+    const partial = this.partialEntities.get(identifier);
+    if (partial !== undefined) {
+      return effectiveLabel(languages, partial);
+    }
+    return identifier;
   }
 
   getModelColor(
@@ -379,17 +387,3 @@ export interface CatalogEntity extends PartialCatalogEntity {
 }
 
 type LanguageString = { [key: string]: string };
-
-export function getEntityLabel(
-  languages: string[],
-  { label, iri, identifier }: CatalogEntity,
-): string {
-  if (label === null) {
-    return iri ?? identifier;
-  }
-  const result = languageStringToStringNext(languages, label);
-  if (result === "") {
-    return iri ?? identifier;
-  }
-  return result;
-}

@@ -26,7 +26,6 @@ import { useOptions } from "../configuration";
 import {
   CatalogEntity,
   CatalogTracker,
-  getEntityLabel,
 } from "./catalog-tracker";
 import {
   useDependencyTrackers,
@@ -35,6 +34,7 @@ import {
 import { selectDomainAndRange } from "../dataspecer/semantic-model";
 import { useActions } from "../action/actions-react-binding";
 import * as Actions from "./catalog-action";
+import { effectiveLabel } from "../dependency-tracker/";
 
 export const Catalog = () => {
 
@@ -1079,7 +1079,7 @@ function asSemanticClass(
   catalogEntity: CatalogEntity,
   level: number,
 ): CatalogEntityItem {
-  const label = getEntityLabel(languages, catalogEntity);
+  const label = effectiveLabel(languages, catalogEntity);
   const model = tracker.semanticModels.get(catalogEntity.model);
   return {
     level,
@@ -1191,7 +1191,7 @@ function asSemanticClassProfile(
   catalogEntity: CatalogEntity,
   level: number,
 ): CatalogEntityItem {
-  const label = getEntityLabel(languages, catalogEntity);
+  const label = effectiveLabel(languages, catalogEntity);
   const model = tracker.semanticModels.get(catalogEntity.model);
   return {
     level,
@@ -1287,7 +1287,7 @@ function asSemanticRelationship(
   catalogEntity: CatalogEntity,
   level: number,
 ): CatalogEntityItem {
-  const label = getEntityLabel(languages, catalogEntity);
+  const label = effectiveLabel(languages, catalogEntity);
   const model = tracker.semanticModels.get(catalogEntity.model);
   return {
     level,
@@ -1389,14 +1389,14 @@ function asSemanticRelationshipProfile(
   {
     let domainLabel = "";
 
-    let associationLabel = getEntityLabel(languages, catalogEntity);
+    let associationLabel = effectiveLabel(languages, catalogEntity);
     const entity = tracker.entities.get(catalogEntity.identifier);
 
     if (entity !== undefined && isProfileRelationship(entity.entity)) {
       const [domain, _] = selectDomainAndRange(entity.entity.ends);
       const domainEntity = tracker.entities.get(domain.concept ?? "");
       if (domainEntity !== undefined) {
-        domainLabel = getEntityLabel(languages, domainEntity);;
+        domainLabel = effectiveLabel(languages, domainEntity);;
       }
     }
 
@@ -1507,8 +1507,8 @@ function asSemanticGeneralization(
 
     const entity = tracker.entities.get(catalogEntity.identifier);
     if (entity !== undefined && isSemanticGeneralization(entity.entity)) {
-      childName = tracker.getEntityLabel(languages, entity.entity.child) ?? "";
-      parentName = tracker.getEntityLabel(languages, entity.entity.parent) ?? "";
+      childName = tracker.getEntityLabel(languages, entity.entity.child);
+      parentName = tracker.getEntityLabel(languages, entity.entity.parent);
     }
     label = `${parentName} -> ${childName}`;
   }
