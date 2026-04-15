@@ -2,13 +2,14 @@ import { QName } from "../conventions.ts";
 
 /**
  * Represents an XSL transformation, used for lifting or lowering.
+ * This is the main data structure used for generating XSLT stylesheets.
  */
 export class XmlTransformation {
   /**
    * The target namespace IRI, if used.
    */
   targetNamespace: string | null;
-  
+
   /**
    * The target namespace prefix, if used.
    */
@@ -33,22 +34,29 @@ export class XmlTransformation {
    * The array of imports of other stylesheets.
    */
   imports: XmlTransformationImport[];
+
+  /**
+   * True if resource IRI is represented as an attribute instead of an element.
+   */
+  elementIriAsAttribute: boolean;
 }
 
 /**
  * Stores the locations of included templates for each generator.
+ *
+ * There might be multiple imports with the same prefix and namespace!
  */
 export class XmlTransformationImport {
   /**
    * The locations of included templates, identified by the generator IRI.
    */
   locations: Record<string, string>;
-  
+
   /**
    * The namespace prefix used by the schema.
    */
   prefix: Promise<string | null>;
-  
+
   /**
    * The namespace IRI used by the schema.
    */
@@ -64,12 +72,20 @@ export class XmlTemplate {
   /**
    * The IRI of the RDF class represented by this template.
    */
-  classIri: string;
+  classIris: string[];
 
   /**
    * The array of matches for each used property of the class.
    */
   propertyMatches: XmlMatch[];
+
+  /**
+   * QName of the <iri> element/attribute for this class template.
+   * If null, then the IRI is not used.
+   *
+   * Attribute is set globally for the whole transformation.
+   */
+  iriElementName: QName | null;
 }
 
 /**
@@ -80,7 +96,7 @@ export class XmlRootTemplate {
   /**
    * The IRI of the RDF class represented by this template.
    */
-  classIri: string;
+  classIris: string[];
 
   /**
    * The name of the element in XML.
@@ -91,6 +107,12 @@ export class XmlRootTemplate {
    * The target template name to call on match.
    */
   targetTemplate: string;
+
+  /**
+   * Optional wrapping root element used when root cardinality requires
+   * a collection wrapper.
+   */
+  collectionElementName: QName | null;
 }
 
 /**
@@ -105,7 +127,7 @@ export class XmlMatch {
   /**
    * The IRI of the RDF property.
    */
-  propertyIri: string;
+  propertyIris: string[];
 
   /**
    * True if the property is reverse, i.e. from object to subject.
@@ -113,9 +135,19 @@ export class XmlMatch {
   isReverse: boolean;
 
   /**
+   * True if the XML property is represented as an attribute.
+   */
+  isAttribute: boolean;
+
+  /**
    * The RDF/XML name of the property, based on its IRI, for lifting.
    */
-  interpretation: QName;
+  interpretations: QName[];
+
+  /**
+   * Minimum XML cardinality of the matched property.
+   */
+  minCardinality: number;
 }
 
 /**
@@ -126,6 +158,13 @@ export class XmlLiteralMatch extends XmlMatch {
    * The IRI of the datatype.
    */
   dataTypeIri: string;
+}
+
+/**
+ * Represents a match created from a property whose range is an IRI.
+ */
+export class XmlIriMatch extends XmlMatch {
+  isXmlIriMatch: true;
 }
 
 /**
@@ -156,18 +195,27 @@ export class XmlClassTargetTemplate {
    * The name of the template corresponding to this class.
    */
   templateName: string;
-  
+
   /**
    * The IRI of the RDF class.
    */
-  classIri: string;
+  classIris: string[];
 }
 
 /**
- * Represents a match created from a class property.
+ * Represents a match created from a container property.
+ * Containers are used to group related elements (e.g., xs:sequence, xs:choice).
  */
-export class XmlCodelistMatch extends XmlMatch {
-  isCodelist: true;
+export class XmlContainerMatch extends XmlMatch {
+  /**
+   * The type of the container (e.g., "sequence", "choice").
+   */
+  containerType: string;
+
+  /**
+   * The array of matches for properties within the container.
+   */
+  innerMatches: XmlMatch[];
 }
 
 export function xmlMatchIsLiteral(
@@ -176,14 +224,20 @@ export function xmlMatchIsLiteral(
   return (match as XmlLiteralMatch).dataTypeIri !== undefined;
 }
 
+export function xmlMatchIsIri(
+  match: XmlMatch
+): match is XmlIriMatch {
+  return (match as XmlIriMatch).isXmlIriMatch === true;
+}
+
 export function xmlMatchIsClass(
   match: XmlMatch
 ): match is XmlClassMatch {
   return (match as XmlClassMatch).targetTemplates !== undefined;
 }
 
-export function xmlMatchIsCodelist(
+export function xmlMatchIsContainer(
   match: XmlMatch
-): match is XmlCodelistMatch {
-  return (match as XmlCodelistMatch).isCodelist === true;
+): match is XmlContainerMatch {
+  return (match as XmlContainerMatch).containerType !== undefined;
 }

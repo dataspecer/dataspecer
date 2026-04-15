@@ -12,13 +12,13 @@ The common XSLT model is produced by the `XsltAdapter` class in `xslt-model-adap
 
 Individual schema root classes are converted in `rootToTemplate`, producing an instance of `XmlRootTemplate`. The purpose of this template is to match the node that identifies the root class, and call its respective specific template.
 
-All classes (except codelists) in the model are converted in `classToTemplate` to named templates (`XmlTemplate`). Each template consists of a collection of matches (`XmlMatch`) for its individual properties, produced in `propertyToMatch`.
+All classes in the model are converted in `classToTemplate` to named templates (`XmlTemplate`). Each template consists of a collection of matches (`XmlMatch`) for its individual properties, produced in `propertyToMatch`.
 
-The type of the match differs based on the type of the datatypes (associations, attributes, codelists), checked and selected by `propertyToMatchCheckType`.
+The type of the match differs based on the type of the datatypes (associations, attributes, containers), checked and selected by `propertyToMatchCheckType`.
 
 Attributes are turned into an `XmlLiteralMatch` in `datatypePropertyToLiteralMatch`. This match corresponds to an RDF literal with a specific datatype.
 
-Codelist properties are turned into an `XmlCodelistMatch` in `classPropertyToCodelistMatch`. This match corresponds to an IRI node in RDF.
+Container properties are turned into an `XmlContainerMatch` in `propertyToContainerMatch`. These represent grouping elements (e.g., `xs:sequence`, `xs:choice`) that wrap multiple inner properties. Each property within the container is converted to its appropriate match type.
 
 Associations are turned into an `XmlClassMatch`, matching an IRI node with a particular class. Each class in the range of the property is turned into an `XmlClassTargetTemplate` in `classTargetTypeTemplate`, necessary to select the appropriate template if there are multiple classes.
 
@@ -34,6 +34,8 @@ The lifting transformation matches the root element based on `XmlRootTemplate.el
 
 Named templates work by matching properties (via `<xsl:for-each>`) based on the QName in `XmlMatch.propertyName`, producing an RDF/XML property arc element (with name taken from `XmlMatch.interpretation`) and calling the appropriate class's template inside.
 
+Container matches (of type `XmlContainerMatch`) are handled by iterating over each container element and processing its inner properties within that context. This allows the transformation to correctly handle grouped elements.
+
 If there are multiple classes in the range of a property, an `<xsl:choose>` is performed on the `xsi:type` attribute to determine the specific class.
 
 Reverse properties require special handling in the transformation. A reverse property produces a temporary `<top-level>` element storing an `<rdf:Description>` of its object that points back to the subject. When the main part of the transformation is done, the results are processed again, removing all `<top-level>` elements and moving their contents to the top-level `<rdf:RDF>` element.
@@ -46,4 +48,5 @@ Each root template matches an `<sp:result>` element that is effectively the seri
 
 Each match in a named template looks for an `<sp:result>` storing a triple where the predicate part is the `XmlMatch.propertyIri`, and the subject matches the `$id` parameter. The XML element based on `XmlMatch.propertyName` is produced from the match, with its value taken from the object node (for reverse properties, the role of subject and object is reversed here). For class matches, this becomes the new `$id` parameter when calling the respective template.
 
+Container matches (of type `XmlContainerMatch`) create a container element that wraps multiple inner properties. Each inner property is matched separately within the SPARQL results and placed inside the container element. This allows reconstruction of the original XML structure with proper grouping of elements.
 Multiple classes in the range of a property are turned into an `<xsl:choose>`, deciding based on the presence of the appropriate `?object rdf:type ?type` triple serialized in the results, similarly to how the root template is produced.

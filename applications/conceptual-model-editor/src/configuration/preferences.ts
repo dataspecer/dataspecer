@@ -19,7 +19,7 @@ export interface Preferences {
   /**
    * Catalog component.
    */
-  catalogComponent: "v1" | "v2";
+  catalogComponent: "v1" | "v2" | "v3";
 
 }
 

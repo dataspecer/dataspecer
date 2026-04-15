@@ -69,8 +69,9 @@ class StructureModelAdapter {
     root.technicalLabel = schema.dataPsmTechnicalLabel ?? null;
     root.collectionTechnicalLabel = schema.dataPsmCollectionTechnicalLabel ?? null;
     root.enforceCollection = schema.dataPsmEnforceCollection ?? false;
-    root.cardinalityMin = schema.dataPsmCardinality?.[0] ?? null;
-    root.cardinalityMax = schema.dataPsmCardinality ? schema.dataPsmCardinality[1] : null;
+    // Default cardinality is 1..1
+    root.cardinalityMin = schema.dataPsmCardinality ? schema.dataPsmCardinality[0] : 1;
+    root.cardinalityMax = schema.dataPsmCardinality ? schema.dataPsmCardinality[1] : 1;
     root.enforceJsonLdContext = schema.jsonEnforceContext ?? "no";
     if (DataPsmOr.is(entity)) {
       for (const choiceIri of entity.dataPsmChoices) {

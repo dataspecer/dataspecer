@@ -47,7 +47,7 @@ function useArtifactPreviewState() {
           params.set("artifacts", artifacts.join(","));
         }
         return params;
-      });
+      }, {replace: true});
     },
     [set],
   );

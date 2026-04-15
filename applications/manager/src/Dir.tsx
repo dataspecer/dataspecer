@@ -239,8 +239,6 @@ export default function Component() {
   return (
     <div>
       <RootPackage iri={"http://dataspecer.com/packages/local-root"} />
-      <RootPackage iri={"http://dataspecer.com/packages/v1"} />
-      <RootPackage iri={"https://dataspecer.com/resources/import/lod"} defaultToggle={false} />
     </div>
   )
 }

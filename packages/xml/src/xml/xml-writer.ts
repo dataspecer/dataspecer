@@ -89,12 +89,15 @@ export interface XmlWriter extends XmlNamespaceMap {
    * Produces a function used for writing the full content of an element.
    * @param namespacePrefix The namespaces prefix of the element, or null.
    * @param elementName The local name of the element.
-   * @returns A function which, when called, calls its argument to produce
-   * the content, and automatically wraps it in the element's tags.
+   * @param condition If false, the wrapping element is not written at all, only
+   * the content is called.
+   * @returns A function which, when called, calls its argument to produce the
+   * content, and automatically wraps it in the element's tags.
    */
   writeElementFull(
     namespacePrefix: string | null,
-    elementName: string
+    elementName: string,
+    condition?: boolean,
   ): (content: (writer: XmlWriter) => Promise<void>) => Promise<void>;
 
   /**
@@ -173,14 +176,23 @@ class XmlSimpleNamespaceMap implements XmlNamespaceMap {
     return this.prefixToUri[prefix];
   }
 
-  registerNamespace(prefix: string, uri: string): void {
+  /**
+   * @returns whether the prefix was not known before.
+   */
+  registerNamespace(prefix: string, uri: string): boolean {
     if (prefix == null || prefix === "") {
       throw new Error("Prefix must be defined.");
     }
-    if (uri == null || uri === "") {
-      delete this.prefixToUri[prefix];
+    if (this.prefixToUri[prefix]) {
+      if (this.prefixToUri[prefix] !== uri) {
+        throw new Error(`Prefix "${prefix}" is already registered for a different URI, ` + `("${this.prefixToUri[prefix]}" vs "${uri}").`);
+      } else {
+        return false;
+      }
     }
+
     this.prefixToUri[prefix] = uri;
+    return true;
   }
 
   getQName(
@@ -283,13 +295,18 @@ export abstract class XmlIndentingTextWriter
 
   writeElementFull(
     namespacePrefix: string | null,
-    elementName: string
+    elementName: string,
+    condition: boolean = true
   ): (content: (writer: XmlWriter) => Promise<void>) => Promise<void> {
-    return async content => {
-      await this.writeElementBegin(namespacePrefix, elementName);
-      await content(this);
-      await this.writeElementEnd(namespacePrefix, elementName);
-    };
+    if (condition) {
+      return async content => {
+        await this.writeElementBegin(namespacePrefix, elementName);
+        await content(this);
+        await this.writeElementEnd(namespacePrefix, elementName);
+      };
+    } else {
+      return content => content(this);
+    }
   }
 
   async writeAttributeValue(
@@ -323,8 +340,10 @@ export abstract class XmlIndentingTextWriter
     prefix: string,
     uri: string
   ): Promise<void> {
-    this.registerNamespace(prefix, uri);
-    await this.writeAttributeValue("xmlns", prefix, uri);
+    const newlyRegistered = this.registerNamespace(prefix, uri);
+    if (newlyRegistered) {
+      await this.writeAttributeValue("xmlns", prefix, uri);
+    }
   }
 
   async writeComment(comment: string): Promise<void> {

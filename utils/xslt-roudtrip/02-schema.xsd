@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning" vc:minVersion="1.1" elementFormDefault="qualified" targetNamespace="http://base/" xmlns:base="http://base/" xmlns:sawsdl="http://www.w3.org/ns/sawsdl" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+  <xs:complexType name="person" sawsdl:modelReference="https://example.com/person-vocabulary#Person">
+    <xs:annotation>
+      <xs:documentation xml:lang="en">
+        Person - Human being
+      </xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="iri" type="xs:anyURI"/>
+      <xs:element name="name" type="xs:string" sawsdl:modelReference="https://example.com/person-vocabulary#personName">
+        <xs:annotation>
+          <xs:documentation xml:lang="en">
+            name
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="has_pet" sawsdl:modelReference="https://example.com/person-vocabulary#hasPet">
+        <xs:annotation>
+          <xs:documentation xml:lang="en">
+            has pet
+          </xs:documentation>
+        </xs:annotation>
+        <xs:complexType sawsdl:modelReference="https://example.com/person-vocabulary#Pet">
+          <xs:annotation>
+            <xs:documentation xml:lang="en">
+              Pet
+            </xs:documentation>
+          </xs:annotation>
+          <xs:sequence>
+            <xs:element name="iri" type="xs:anyURI"/>
+            <xs:element name="name" type="xs:anySimpleType" sawsdl:modelReference="https://example.com/person-vocabulary#name">
+              <xs:annotation>
+                <xs:documentation xml:lang="en">
+                  name
+                </xs:documentation>
+              </xs:annotation>
+            </xs:element>
+            <xs:element name="kind" type="xs:string" sawsdl:modelReference="https://example.com/person-vocabulary#kind"/>
+            <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" namespace="##other"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" namespace="##other"/>
+    </xs:sequence>
+    <xs:attribute use="required" name="id" type="xs:string" sawsdl:modelReference="https://example.com/person-vocabulary#id">
+      <xs:annotation>
+        <xs:documentation xml:lang="en">
+          ID
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+  <xs:element name="person" type="base:person"/>
+</xs:schema>
