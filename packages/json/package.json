@@ -20,6 +20,7 @@
     "@dataspecer/core-v2": "*"
   },
   "devDependencies": {
+    "@types/node": "^25.5.2",
     "typescript": "^5.9.3",
     "vitest": "^4.1.2"
   }

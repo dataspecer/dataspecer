@@ -14,6 +14,7 @@ import {
 import { XmlStreamWriter, XmlWriter } from "../xml/xml-writer.ts";
 import { commonXmlNamespace, commonXmlPrefix, QName } from "../conventions.ts";
 import { XSLT_LIFTING } from "./xslt-vocabulary.ts";
+import { writePrefixesFromImports } from "./utils.ts";
 
 const xslNamespace = "http://www.w3.org/1999/XSL/Transform";
 
@@ -75,20 +76,7 @@ async function writeTransformationBegin(model: XmlTransformation, writer: XmlWri
     await writer.writeAndRegisterNamespaceDeclaration(commonXmlPrefix, commonXmlNamespace);
   }
 
-  const registered: Record<string, string> = {};
-
-  for (const importDeclaration of model.imports) {
-    const namespace = await importDeclaration.namespace;
-    const prefix = await importDeclaration.prefix;
-    if (namespace != null && prefix != null) {
-      if (registered[prefix] == null) {
-        await writer.writeAndRegisterNamespaceDeclaration(prefix, namespace);
-        registered[prefix] = namespace;
-      } else if (registered[prefix] !== namespace) {
-        throw new Error(`Imported namespace prefix "${prefix}:" is used for two ` + `different namespaces, "${registered[prefix]}" and "${namespace}".`);
-      }
-    }
-  }
+  await writePrefixesFromImports(model.imports, writer);
 
   for (const prefix of Object.keys(model.rdfNamespaces)) {
     await writer.writeAndRegisterNamespaceDeclaration(prefix, model.rdfNamespaces[prefix]);
@@ -780,29 +768,31 @@ async function writeClassTemplateCall(match: XmlClassMatch, writer: XmlWriter) {
       for (let templateIndex = 0; templateIndex < templates.length; templateIndex++) {
         const typeIndex = templateIndex + 1;
         const targetTemplate = templates[templateIndex];
-        const typeSelector = `*[node-name() = node-name($types/*[${typeIndex}])]`;
 
+        // 1. This branch handles the case when the type is specified on the element via @xsi:type
         await writer.writeElementFull(
           "xsl",
           "when",
         )(async (writer) => {
           // Find the QName of the type and compare.
-          const condition = `$type=node-name($types/*[${typeIndex}])`;
+          const condition = `$type=node-name($types[${typeIndex}])`;
           await writer.writeLocalAttributeValue("test", condition);
           await writeTemplateCall(targetTemplate.templateName, hasArc, false, writer);
         });
 
+        // 2. This branch handles the case when the type is specified on a wrapper element via
         await writer.writeElementFull(
           "xsl",
           "when",
         )(async (writer) => {
+          const condition = `*[node-name(.) = node-name($types[${typeIndex}])]`;
           // Support wrapper elements where xsi:type is on the nested object.
-          await writer.writeLocalAttributeValue("test", typeSelector);
+          await writer.writeLocalAttributeValue("test", condition);
           await writer.writeElementFull(
             "xsl",
             "for-each",
           )(async (writer) => {
-            await writer.writeLocalAttributeValue("select", typeSelector);
+            await writer.writeLocalAttributeValue("select", condition);
             await writeTemplateCall(targetTemplate.templateName, hasArc, false, writer);
           });
         });
