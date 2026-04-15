@@ -1603,12 +1603,12 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         // console.info({localProjectIriToIriMap});
         if (datastoreInfoForEditable !== null) {
           // Just update, it does exist
-          const datastoreFormat = pickFormat(fetchedMergeState?.filesystemTypeMergeFrom, mergeFromDatastoreInfo, mergeToDatastoreInfo);
+          const datastoreFormat = pickFormat(fetchedMergeState?.filesystemTypeMergeFrom, datastoreInfo.mergeFrom, datastoreInfo.mergeTo);
           await ClientFilesystem.updateDatastoreContentDirectly(fetchedMergeState!.uuid, filesystemNodeParentIri, datastoreInfoForEditable, datastoreFormat, stringifiedNewValue, editableFilesystem, import.meta.env.VITE_BACKEND);
         }
         else {
           // Create new one.
-          const datastoreFormat = pickFormat(fetchedMergeState?.filesystemTypeMergeFrom, mergeFromDatastoreInfo, mergeToDatastoreInfo);
+          const datastoreFormat = pickFormat(fetchedMergeState?.filesystemTypeMergeFrom, datastoreInfo.mergeFrom, datastoreInfo.mergeTo);
           await ClientFilesystem.createDatastoreDirectly(fetchedMergeState!.uuid, filesystemNodeParentIri, stringifiedNewValue, editableFilesystem, datastoreInfoForNonEditable, datastoreFormat, import.meta.env.VITE_BACKEND);
           continue;
         }
