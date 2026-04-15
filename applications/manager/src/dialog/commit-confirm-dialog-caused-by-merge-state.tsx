@@ -24,7 +24,7 @@ export const CommitRedirectForMergeStatesDialog = ({ commitRedirectResponse, isO
     if (didRun.current) {
       // We need this because of the strict react mode. Otherwise for example if we ran rebase for the case when we have 1 merge state that is caused by merge
       // We would commit twice.
-      // ... Well technically, for the redirect we decided to never perform the redirect. Therefore, we never call it with the rabase value.
+      // ... Well technically, for the redirect we decided to never perform the redirect. Therefore, we never call it with the rebase value.
       // ... However, if we decided to bring it back one day, then this is needed.
       return null;
     }
@@ -40,7 +40,7 @@ export const CommitRedirectForMergeStatesDialog = ({ commitRedirectResponse, isO
     <Modal open={isOpen} onClose={() => resolve()}>
       <ModalContent>
         <ModalHeader>
-          <ModalTitle>Handle commit redirect due to existence of merge state</ModalTitle>
+          <ModalTitle>Are you sure that you want to commit?</ModalTitle>
           <ModalDescription>{commitRedirectResponse.redirectMessage}</ModalDescription>
         </ModalHeader>
         {dialogData.dialogText}
@@ -94,10 +94,10 @@ const getDataForMergeStateDialog = (
     };
     dialogText = <div>
         <p>
-          There are currently <span><strong>{commitRedirectResponse.openedMergeStatesCount}</strong></span> opened merge state{commitRedirectResponse.openedMergeStatesCount === 1 ? "" : "s"} for current package.
+          There {commitRedirectResponse.openedMergeStatesCount === 1 ? "is" : "are"} currently <span><strong>{commitRedirectResponse.openedMergeStatesCount}</strong></span> opened merge state{commitRedirectResponse.openedMergeStatesCount === 1 ? "" : "s"} for current package.
         </p>
         <br/>
-        You can:
+        <strong>Available actions:</strong>
         <br/>
 
         - Perform the commit
@@ -109,6 +109,9 @@ const getDataForMergeStateDialog = (
       </div>;
   }
   else if (commitRedirectResponse.commitHttpRedirectionCause === CommitHttpRedirectionCause.HasExactlyOneMergeStateAndItIsResolvedAndCausedByMerge) {
+    // !!!!!!!!!!!! Note that neither the rebase-commit and merge-commit branches cannot be reached, since we have decided that we redirect only for the classic commit
+    //              (That is pass in the shouldRedirect paramemter set to true only for classic commits)
+
     // Ok this is special case, which is "obvious" to solve - that is we wanted to commit and the type of commit is obvious by the fact that we have single merge state.
     // Either it was rebase commit - then we just perform it
     // Or it was merge commit, then we just perform it - though we no longer perform the redirect for merge or rebase commits (so these 2 are dead code ... for now)
@@ -156,7 +159,7 @@ const getDataForMergeStateDialog = (
     dialogText = <p>
         <strong>Available actions:</strong>
         <br/>
-        - Commit
+        - Perform the commit
         <br/>
         - Open the diff editor for the merge state, and finalize it
         <br/>
