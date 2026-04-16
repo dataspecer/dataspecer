@@ -17,6 +17,10 @@ export type DatastoreComparisonWithChangeTypeInfo = {
   datastoreComparisonResult: CreatedRemovedModified;
 } & DatastoreComparison;
 
+/**
+ * The old is the non-editable merge actor - for merge and pull that is the "merge from" actor, for push it is the "merge to" actor.
+ * The new is the editable merge actor     - for merge and pull that is the "merge to" actor, for push it is the "merge from" actor.
+ */
 export type OldNewFilesystemNode = {
   old: FilesystemNode | null;
   new: FilesystemNode | null;

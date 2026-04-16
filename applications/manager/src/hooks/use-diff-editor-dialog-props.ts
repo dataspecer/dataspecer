@@ -129,7 +129,8 @@ const convertDataAndUpdateCacheContentEntryAsCombination = (
 }
 
 /**
- * Combines the given object {@link newValueAsJSON} with the previous value and stores it into cache
+ * Combines the given object {@link newValueAsJSON} with the previous value and stores it into cache.
+ *  The combination is with the stripped values. The other values come from the new object.
  */
 const updateCacheContentEntryAsCombination = (
   cacheSetter: (value: SetStateAction<CacheContentMap>) => void,
@@ -521,8 +522,15 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
   const [removedTreePaths, setRemovedTreePaths] = useState<string[]>([]);
 
   const [activeTreePathToNodeContainingDatastore, setActiveTreePathToNodeContainingDatastore] = useState<string>("");
+  // Contains the original formats of the things put into the cache.
   const [formatsForCacheEntries, setFormatsForCacheEntries] = useState<FormatsCache>({});
   const [datastoreInfosForCacheEntries, setDatastoreInfosForCacheEntries] = useState<DatastoreInfosCache>({});
+  // The format of data stored in the cache is currently decided by the pickFormat method, which is fine since it is static.
+  //  But with the addition of possibly swapping formats through buttons it would have to be slightly changed
+  //  ... Maybe always store it in JSON and just convert any time before we show the contents to user
+  //        (when implementing the option to change formats in editor), the datastore swap will jsut take a bit longer because of conversion. - TODO RadStr:
+  // .... Similarly on the backend in the update create datastores directly - we do not provide output format, since
+  //       we allow only updating of Dataspecer filesystem, and there the output format is decided by default, it is JSON.
   const [convertedCacheContentForMergeFrom, setConvertedCacheContentForMergeFrom] = useState<CacheContentMap>({});
   const [convertedCacheContentForMergeTo, setConvertedCacheContentForMergeTo] = useState<CacheContentMap>({});
   const [mergeFromDatastoreInfo, setMergeFromDatastoreInfo] = useState<DatastoreInfo | null>(null);
