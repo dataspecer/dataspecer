@@ -44,18 +44,18 @@ export const MergeStrategyComponent = (props: {
           // native arrow retained (safer cross-browser)
           "appearance-auto"
         ].join(" ")}
-        value={mergeStrategy.key}
+        value={mergeStrategy.getKey()}
         onChange={(event) =>
           setMergeStrategy(
             mergeResolverStrategies.find(
-              (strategy) => strategy.key === event.target.value
+              (strategy) => strategy.getKey() === event.target.value
             )!
           )
         }
       >
         {mergeResolverStrategies.map((strategy) => (
-          <option key={strategy.key} value={strategy.key}>
-            {strategy.label}
+          <option key={strategy.getKey()} value={strategy.getKey()}>
+            {strategy.getLabel()}
           </option>
         ))}
       </select>

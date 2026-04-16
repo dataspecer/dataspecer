@@ -2,8 +2,8 @@
  * This interface contains methods, which are used in case of merge conflict resolving.
  */
 export interface MergeResolverStrategy {
-  label: string;
-  key: string;
+  getLabel(): string;
+  getKey(): string;
 
   /**
    * The inputs should probably have projectIris instead of iris and not be stripped.
