@@ -4,8 +4,8 @@ import { LockKeyholeIcon, LogIn, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { SshMenu } from '@/dialog/ssh-menu';
-import { ScopeGroup } from '@dataspecer/git';
 import { goToPage, SignInDialog } from '@/dialog/sign-in';
+import { ScopeGroup } from '@dataspecer/auth';
 
 /**
  * Visualizes the sign in/out buttons and user's profile picture with tooltip if signed in.

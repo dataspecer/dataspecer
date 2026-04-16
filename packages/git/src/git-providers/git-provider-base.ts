@@ -8,8 +8,7 @@ import {
   UserOrganizationsFetchResponse,
   GitHubLabel,
 } from "../git-provider-api.ts";
-import { GenericScope } from "../auth.ts";
-import { type GitBotConfiguration, type OAuthConfiguration } from "@dataspecer/auth";
+import { GenericScope, type GitBotConfiguration, type OAuthConfiguration } from "@dataspecer/auth";
 import { GitIssuesFetchResponse, IssueState } from "../git-issues/git-issue-types.ts";
 
 export type AuthenticationGitProviderData = {

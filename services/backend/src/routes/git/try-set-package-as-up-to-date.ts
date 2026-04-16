@@ -3,12 +3,13 @@ import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { resourceModel } from "../../main.ts";
 import { compareBackendFilesystems, createSimpleGitUsingPredefinedGitRoot, gitCloneBasic, MergeEndpointForComparison, removePathRecursively, TMP_CLONE_PATH_PREFIX } from "@dataspecer/git-node";
-import { AvailableFilesystems, ScopeGroup, extractPartOfRepositoryURL, getAuthorizationURL, GitIgnoreBase, GitProvider, AccessTokenType } from "@dataspecer/git";
+import { AvailableFilesystems, extractPartOfRepositoryURL, getAuthorizationURL, GitIgnoreBase, GitProvider, AccessTokenType } from "@dataspecer/git";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import configuration from "../../configuration.ts";
 import { createFilesystemFactoryParams } from "../../utils/filesystem-helpers.ts";
+import { ScopeGroup } from "@dataspecer/auth";
 
 
 /**

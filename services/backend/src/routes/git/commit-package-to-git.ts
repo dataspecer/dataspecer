@@ -3,7 +3,7 @@ import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { mergeStateModel, resourceModel } from "../../main.ts";
 import { ExportVersionType, extractPartOfRepositoryURL, convertStringToExportVersion, MergeState, stringToBoolean, ExportFormatType, convertStringToExportFormat, SingleBranchCommitType, CommitType, AccessTokenType } from "@dataspecer/git";
-import { ScopeGroup, GitCredentials, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase, createUniqueCommitMessage } from "@dataspecer/git";
+import { GitCredentials, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase, createUniqueCommitMessage } from "@dataspecer/git";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import { PrismaMergeStateWithData } from "../../models/merge-state-model.ts";
 import {
@@ -20,6 +20,7 @@ import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 import { createFilesystemFactoryParams } from "../../utils/filesystem-helpers.ts";
+import { ScopeGroup } from "@dataspecer/auth";
 
 /**
  * Commit to the repository for package identifier by given iri inside the query part of express http request.

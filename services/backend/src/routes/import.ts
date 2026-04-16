@@ -27,7 +27,7 @@ import { PackageImporter } from "../export-import/import.ts";
 import { Readable } from "stream";
 import { ReadableStream } from "stream/web";
 import { buffer } from "stream/consumers";
-import { AccessToken, AccessTokenType, CommitReferenceType, ScopeGroup, getDefaultCommitReferenceTypeForZipDownload, GitProviderNode, isCommitReferenceType } from "@dataspecer/git";
+import { AccessToken, AccessTokenType, CommitReferenceType, getDefaultCommitReferenceTypeForZipDownload, GitProviderNode, isCommitReferenceType } from "@dataspecer/git";
 import { BaseResource, createSimpleGitUsingPredefinedGitRoot, gitCloneBasic, INTERNAL_COMPUTATION_FOR_IMPORT, removePathRecursively } from "@dataspecer/git-node";
 import configuration from "../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
@@ -39,6 +39,7 @@ import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { canonicalizeIds } from "@dataspecer/structure-model";
 import { DataSpecificationConfigurator, type DataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
 import { turtleStringToGeneratorConfiguration } from "@dataspecer/data-specification-vocabulary/generator-configuration";
+import { ScopeGroup } from "@dataspecer/auth";
 
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
@@ -745,9 +746,9 @@ export const importPackageFromGit = asyncHandler(async (request: express.Request
 
   const gitProvider: GitProviderNode = GitProviderNodeFactory.createGitProviderFromRepositoryURL(gitURL, httpFetch, configuration);
   // TODO: Can have better scope
-  const gitCredentials = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.FullPublicRepoControl]);
+  const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.FullPublicRepoControl]);
   const prismaClientApi: StorageApiForIriReplacement = new PrismaClientStorageApiForIriReplacement(prismaClient);
-  const result = await importFromGitUrl(gitProvider, gitCredentials.accessTokens, gitURL, storeModel, prismaClientApi, commitReferenceType);
+  const result = await importFromGitUrl(gitProvider, accessTokens, gitURL, storeModel, prismaClientApi, commitReferenceType);
   if (result.length === 0) {
     response.status(409).json({ message: "The import failed, because it is pointing to branch, which already exists inside DS" });
     return;

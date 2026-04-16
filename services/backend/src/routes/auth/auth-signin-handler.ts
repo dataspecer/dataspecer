@@ -5,9 +5,9 @@ import express, { NextFunction } from "express";
 import { createAuthConfigWithCorrectPermissions, createBasicAuthConfig } from "../../authentication/auth-config.ts";
 import { getRedirectLink } from "./auth-handler.ts";
 import { z } from "zod";
-import { ScopeGroup } from "@dataspecer/git";
 import { getBaseBackendUrl } from "../../utils/express-url-utils.ts";
 import { stripApiPrefixFromUrl } from "@dataspecer/git-node";
+import { ScopeGroup } from "@dataspecer/auth";
 
 /**
  * Handles the signin request by calling the {@link ExpressAuth} with correct configuration based on request.

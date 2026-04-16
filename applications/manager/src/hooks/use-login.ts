@@ -1,4 +1,5 @@
-import { GitProviderNamesAsType, GenericScope } from "@dataspecer/git";
+import { GenericScope } from "@dataspecer/auth";
+import { GitProviderNamesAsType } from "@dataspecer/git";
 import { useEffect, useState } from "react";
 
 export interface UseLoginType {

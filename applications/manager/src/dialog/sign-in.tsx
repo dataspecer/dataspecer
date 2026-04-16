@@ -2,7 +2,7 @@ import { Modal, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 import { Button } from "@/components/ui/button";
 import { BetterModalProps } from "@/lib/better-modal";
-import { ScopeGroup } from "@dataspecer/git";
+import { ScopeGroup } from "@dataspecer/auth";
 import { EyeIcon, LogIn } from "lucide-react";
 
 function SignInInfoTooltipAdvanced() {
