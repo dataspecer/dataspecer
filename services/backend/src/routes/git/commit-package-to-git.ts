@@ -4,7 +4,7 @@ import express from "express";
 import { mergeStateModel, resourceModel } from "../../main.ts";
 import { ExportVersionType, extractPartOfRepositoryURL, convertStringToExportVersion, MergeState, stringToBoolean, ExportFormatType, convertStringToExportFormat, SingleBranchCommitType, CommitType, AccessTokenType } from "@dataspecer/git";
 import { GitCredentials, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase, createUniqueCommitMessage } from "@dataspecer/git";
-import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
+import { getGitCredentialsFromSession, getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import { PrismaMergeStateWithData } from "../../models/merge-state-model.ts";
 import {
   checkErrorBoundaryForCommitAction,
@@ -262,8 +262,17 @@ async function prepareCommitDataForCommit(
 
   // TODO RadStr: I love OAuth
   if (!committer.isBotName) {
-    const nameCandidate = await gitProvider.getUserLoginForAuthToken(committer.accessTokens.find(accessToken => !accessToken.isBotAccessToken && accessToken.type === AccessTokenType.PAT)!.value)
-    console.info({nameCandidate});
+    let userAccessToken = committer.accessTokens.find(accessToken => !accessToken.isBotAccessToken && accessToken.type === AccessTokenType.PAT);
+    if (userAccessToken === undefined) {
+      // Then it is the login info scope, because otherwise we would not use bot name.
+      const credentials = getGitCredentialsFromSession(request, response, [ScopeGroup.LoginInfo])!;
+      userAccessToken = {
+        isBotAccessToken: false,
+        type: AccessTokenType.PAT,
+        value: credentials.committerAccessToken!,
+      };
+    }
+    const nameCandidate = await gitProvider.getUserLoginForAuthToken(userAccessToken!.value);
     if (nameCandidate === null) {
       throw new Error(`The user ${committer.name} does not exist on GitHub`);
     }
