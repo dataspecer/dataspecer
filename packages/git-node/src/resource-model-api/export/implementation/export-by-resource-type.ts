@@ -29,39 +29,44 @@ export class PackageExporterByResourceType extends PackageExporterBase {
 
   protected async exportDirectory(
     directory: DirectoryNode,
-    pathToDirectory: string,
     pathToExportDirectory: string,
   ) {
-    await this.exportDatastores(directory, pathToDirectory, pathToExportDirectory);
+    await this.exportDatastores(directory, pathToExportDirectory);
     for (const [name, filesystemNode] of Object.entries(directory.content)) {
       if (filesystemNode.type === "directory") {
-        const fullPath = this.createPathBasedOnResourceType(pathToDirectory, filesystemNode.name, filesystemNode.metadata.types[0]);
-        // const exportFullPath = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.name, filesystemNode.metadata.types[0]);
-        const exportFullPath = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.metadata.projectIri, filesystemNode.metadata.types[0]);
-        await this.exportDirectory(filesystemNode, fullPath, exportFullPath);
+        let exportFullPath: string;
+        if (this.shouldUseIrisForNames) {
+          const iri = filesystemNode.metadata.iri.substring(filesystemNode.metadata.iri.lastIndexOf("/") + 1);
+          exportFullPath = this.createPathBasedOnResourceType(pathToExportDirectory, iri, filesystemNode.metadata.types[0]);
+        }
+        else {
+          exportFullPath = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.metadata.projectIri, filesystemNode.metadata.types[0]);
+        }
+        await this.exportDirectory(filesystemNode, exportFullPath);
       }
       else {
-        await this.exportDatastores(filesystemNode, pathToDirectory, pathToExportDirectory);
+        await this.exportDatastores(filesystemNode, pathToExportDirectory);
       }
     }
   }
 
   private async exportDatastores(
     filesystemNode: FilesystemNode,
-    pathToDirectory: string,
     pathToExportDirectory: string,
   ) {
     // The fullName and exportFullName are the path to datastore without the suffix (that is the type and format - for example .meta.json). And in case of directories it ends with /
-    let fullName: string;
     let exportFullName: string;
     if (filesystemNode.type === "directory") {
-      fullName = pathToDirectory;
       exportFullName = pathToExportDirectory;
     }
     else {
-      fullName = this.createPathBasedOnResourceType(pathToDirectory, filesystemNode.name, filesystemNode.metadata.types[0]);
-      // exportFullName = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.name, filesystemNode.metadata.types[0]);
-      exportFullName = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.metadata.projectIri, filesystemNode.metadata.types[0]);
+      if (this.shouldUseIrisForNames) {
+        const iri = filesystemNode.metadata.iri.substring(filesystemNode.metadata.iri.lastIndexOf("/") + 1);
+        exportFullName = this.createPathBasedOnResourceType(pathToExportDirectory, iri, filesystemNode.metadata.types[0]);
+      }
+      else {
+        exportFullName = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.metadata.projectIri, filesystemNode.metadata.types[0]);
+      }
     }
 
     for(const datastore of filesystemNode.datastores) {

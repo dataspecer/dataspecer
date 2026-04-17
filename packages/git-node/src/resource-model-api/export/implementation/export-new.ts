@@ -7,23 +7,37 @@ export class PackageExporterNew extends PackageExporterBase {
     return 1;
   }
 
-  protected async exportDirectory(directory: DirectoryNode, pathToDirectory: string, pathToExportDirectory: string) {
-    await this.exportDatastores(directory, pathToDirectory, pathToExportDirectory);
+  protected async exportDirectory(directory: DirectoryNode, pathToExportDirectory: string) {
+    await this.exportDatastores(directory, pathToExportDirectory);
     for (const [name, filesystemNode] of Object.entries(directory.content)) {
       if (filesystemNode.type === "directory") {
-        const fullPath = `${pathToDirectory}${name}/`;
-        const exportFullPath = `${pathToExportDirectory}${directory.metadata.projectIri}/`;
-        await this.exportDirectory(filesystemNode, fullPath, exportFullPath)
+        let exportFullPath: string;
+        if (this.shouldUseIrisForNames) {
+          const iri = filesystemNode.metadata.iri.substring(filesystemNode.metadata.iri.lastIndexOf("/") + 1);
+          exportFullPath = `${pathToExportDirectory}${iri}/`;
+        }
+        else {
+          exportFullPath = `${pathToExportDirectory}${filesystemNode.metadata.projectIri}/`;
+        }
+        await this.exportDirectory(filesystemNode, exportFullPath)
       }
       else {
-        await this.exportDatastores(filesystemNode, pathToDirectory, pathToExportDirectory);
+        await this.exportDatastores(filesystemNode, pathToExportDirectory);
       }
     }
   }
 
-  private async exportDatastores(filesystemNode: FilesystemNode, pathToDirectory: string, pathToExportDirectory: string) {
-    const fullname: string = pathToDirectory + filesystemNode.name;
-    const exportFullName: string = pathToExportDirectory + (filesystemNode.type === "directory" ? "" : filesystemNode.metadata.projectIri);
+  private async exportDatastores(filesystemNode: FilesystemNode, pathToExportDirectory: string) {
+    let exportFullName: string;
+    if (this.shouldUseIrisForNames) {
+      const iri = filesystemNode.metadata.iri.substring(filesystemNode.metadata.iri.lastIndexOf("/") + 1);
+      // exportFullName = pathToExportDirectory + (filesystemNode.type === "directory" ? "" : filesystemNode.metadata.iri);
+      exportFullName = pathToExportDirectory + (filesystemNode.type === "directory" ? "" : iri);
+    }
+    else {
+      exportFullName = pathToExportDirectory + (filesystemNode.type === "directory" ? "" : filesystemNode.metadata.projectIri);
+    }
+
     for(const datastore of filesystemNode.datastores) {
       let data;
       if (isDatastoreForMetadata(datastore.type)) {

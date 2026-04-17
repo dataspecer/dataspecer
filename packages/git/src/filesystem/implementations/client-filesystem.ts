@@ -129,7 +129,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     shouldConvertToDatastoreFormat: boolean,
     backendApiPath: string,
     backendFilesystem: AvailableFilesystems | null,
-  ): Promise<string | any> {
+  ): Promise<string> {
     if (datastoreInfo === null) {
       return null;
     }
