@@ -25,7 +25,7 @@ export const LoginCard = (props: {login: UseLoginType}) => {
                 onClick={(_) => redirectToPage(`${import.meta.env.VITE_BACKEND}/auth/signout?redirectURL=${encodeURI(window.location.href)}`)}
                 title="Note that if you provide Git permissions. The token with permissions should be revoked after, unless some error happened, if so then for safety reasons you should remove the permissions provided to this page inside GitHub (or the used Git provider)">
             <LogOut className="pl-2" />
-            <p className="pt-0.5 pl-1.5">Sign Out</p>
+            <p className="pb-0.5 pl-1.5 pr-1.5">Sign Out</p>
           </Button> : <>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
