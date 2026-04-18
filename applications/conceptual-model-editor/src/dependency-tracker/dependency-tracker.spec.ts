@@ -24,7 +24,7 @@ describe("createDependencyTracker", () => {
           .dependencies.map(item => values[item] ?? 0)
           .reduce((prev, next) => prev + next, (next as TestEntity).value);
       },
-      onDependenciesDidChange(entity) {
+      onDependencyDidChange(entity) {
         // We need to recompute.
         values[entity.id] = (entity as TestEntity)
           .dependencies.map(item => values[item] ?? 0)
@@ -91,7 +91,7 @@ describe("createDependencyTracker", () => {
       dependencies(entity) {
         return (entity as TestEntity).dependencies;
       },
-      onDependenciesDidChange(entity) {
+      onDependencyDidChange(entity) {
         updateCounter[entity.id] = (updateCounter[entity.id] ?? 0) + 1;
       },
     }]);
@@ -121,7 +121,7 @@ describe("createDependencyTracker", () => {
       dependencies(entity) {
         return (entity as TestEntity).dependencies;
       },
-      onDependenciesDidChange(entity) {
+      onDependencyDidChange(entity) {
         updateCounter[entity.id] = (updateCounter[entity.id] ?? 0) + 1;
       },
     }]);
@@ -242,7 +242,7 @@ describe("createDependencyTracker", () => {
           .dependencies.map(item => values[item] ?? 0)
           .reduce((prev, next) => prev + next, (next as TestEntity).value);
       },
-      onDependenciesDidChange(entity) {
+      onDependencyDidChange(entity) {
         // We need to recompute.
         values[entity.id] = (entity as TestEntity)
           .dependencies.map(item => values[item] ?? 0)

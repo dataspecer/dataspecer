@@ -2,7 +2,7 @@ import { useMemo } from "react";
 
 import { useModelObserver } from "./model-observer";
 import { useModelGraphContext } from "../context/model-context";
-import { DependencyTracker, Tracker } from "./dependency-tracker";
+import { createDependencyTracker, Tracker } from "./dependency-tracker";
 
 /**
  * Track changes of entities using given trackers.
@@ -13,7 +13,7 @@ export function useDependencyTrackers(trackers: Tracker[]) {
   const visualModels = modelGraphContext.visualModels;
 
   const dependencyTracker = useMemo(
-    () => new DependencyTracker(trackers),
+    () => createDependencyTracker(trackers),
     [trackers]);
 
   useModelObserver(entityModels, visualModels, dependencyTracker);

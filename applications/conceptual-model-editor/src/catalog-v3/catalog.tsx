@@ -275,6 +275,7 @@ export const Catalog = () => {
   const trackers = useMemo(() => {
     const onTrackerDidChanged = (tracker: CatalogTracker) => {
       // TODO This cause full reload instead of fine grained update.
+      console.log("[debug] onTrackerDidChanged", tracker);
       setState(previous => ({
         ...previous,
         views: previous.views

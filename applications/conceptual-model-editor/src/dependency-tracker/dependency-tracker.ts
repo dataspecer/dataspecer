@@ -3,14 +3,14 @@ import {
 } from "@dataspecer/entity-model";
 import { ModelObserver } from "./model-observer";
 
+/**
+ * Allow sourcing {@link Tracker} with events from {@link ModelObserver}.
+ */
 export function createDependencyTracker(trackers: Tracker[]) : ModelObserver {
   return new DependencyTracker(trackers);
 }
 
-/**
- * Allow sourcing {@link Tracker} with {@link ModelObserver}.
- */
-export class DependencyTracker implements ModelObserver {
+class DependencyTracker implements ModelObserver {
 
   /**
    * Map of raw entities.
@@ -199,7 +199,7 @@ export class DependencyTracker implements ModelObserver {
         if (entity !== undefined) {
           // Propagate changes.
           for (const tracker of this.trackers) {
-            tracker.onDependenciesDidChange?.(entity);
+            tracker.onDependencyDidChange?.(entity);
           }
         }
         // Queue dependents for the next iteration.
@@ -230,7 +230,7 @@ export class DependencyTracker implements ModelObserver {
 export interface Tracker {
 
   /**
-   * @returns All dependencies for given entity, can contain duplicities.
+   * @returns Dependencies of the given entity, can contain duplicities.
    */
   dependencies?: (entity: Entity) => string[];
 
@@ -264,8 +264,8 @@ export interface Tracker {
 
   /**
    * Call when an entity's dependency has changed.
-   * Argument is the last version of the entity.
+   * Argument is the last version of the entity not the dependency.
    */
-  onDependenciesDidChange?: (next: Entity) => void;
+  onDependencyDidChange?: (next: Entity) => void;
 
 }
