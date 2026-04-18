@@ -203,14 +203,14 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
       if (mergeStateFromBackend !== null) {
         return {
           actionButtonText: "Open merge state",
-          actionButtonClassname: "border-1 bg-blue-100 border-blue-600 hover:bg-blue-600 hover:text-white text-sm font-semibold rounded-md transition cursor-pointer",
+          actionButtonClassname: "border-1 bg-blue-100 border-blue-600 hover:bg-blue-600 hover:text-white text-sm font-semibold transition cursor-pointer dark:bg-blue-900 dark:border-blue-400 dark:hover:bg-blue-500 dark:hover:text-white",
           actionButtonTooltip: "The merge state already exists in Dataspecer. The button opens it.",
         };
       }
       else {
         return {
           actionButtonText: "Merge",
-          actionButtonClassname: "border-1 bg-green-100 border-green-600 hover:bg-green-600 hover:text-white text-sm font-semibold rounded-md transition cursor-pointer",
+          actionButtonClassname: "border-1 bg-green-100 border-green-600 hover:bg-green-600 hover:text-white text-sm font-semibold transition cursor-pointer dark:bg-green-900 dark:border-green-400 dark:hover:bg-green-500 dark:hover:text-white",
           actionButtonTooltip: "Both branches are already tracked inside Dataspecer. This button will create new merge state between them",
         };
       }
@@ -218,21 +218,21 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
     else if (isMergeToForActionButtonInDS) {
       return {
         actionButtonText: "Import + Merge",
-        actionButtonClassname: "border-1 bg-purple-100 border-purple-600 hover:bg-purple-600 hover:text-white text-sm font-semibold rounded-md transition cursor-pointer",
+        actionButtonClassname: "border-1 bg-purple-100 border-purple-600 hover:bg-purple-600 hover:text-white text-sm font-semibold transition cursor-pointer dark:bg-purple-900 dark:border-purple-400 dark:hover:bg-purple-500 dark:hover:text-white",
         actionButtonTooltip: "Imports the merge to branch of the PR and creates a new merge state between the two branches tracked in Dataspecer",
       };
     }
     else if (isMergeFromForActionButtonInDS) {
       return {
         actionButtonText: "Import + Merge",
-        actionButtonClassname: "border-1 bg-purple-100 border-purple-600 hover:bg-purple-600 hover:text-white text-sm font-semibold rounded-md transition cursor-pointer",
+        actionButtonClassname: "border-1 bg-purple-100 border-purple-600 hover:bg-purple-600 hover:text-white text-sm font-semibold transition cursor-pointer dark:bg-purple-900 dark:border-purple-400 dark:hover:bg-purple-500 dark:hover:text-white",
         actionButtonTooltip: "Imports the merge from branch of the PR and creates a new merge state between the two branches tracked in Dataspecer",
       };
     }
     else {
       return {
         actionButtonText: "Import both + Merge",
-        actionButtonClassname: "border-1 bg-orange-100 border-orange-600 hover:bg-orange-600 hover:text-white text-sm font-semibold rounded-md transition cursor-pointer",
+        actionButtonClassname: "border-1 bg-orange-100 border-orange-600 hover:bg-orange-600 hover:text-white text-sm font-semibold transition cursor-pointer dark:bg-orange-900 dark:border-orange-400 dark:hover:bg-orange-500 dark:hover:text-white",
         actionButtonTooltip: "Imports both the merge from and merge to branches into Dataspecer and creates a new merge state between them.",
       };
     }
@@ -418,7 +418,7 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
 
 
   // We have to use the hoveredOn, because otherwise if we hover on the action button, we highlight the whole line since the hover on also works on the whole div, which we do not want.
-  return <div className={"grid grid-cols-[4fr_2fr_2fr_3fr_3fr_2fr_1.5fr_1.5fr] divide-x divide-y divide-gray-300 ml-4 w-full cursor-pointer" + ((!hoveredOnActionButton && hoveredOnNotActionButton) ? " hover:bg-gray-200" : "")}>
+  return <div className={"grid grid-cols-[4fr_2fr_2fr_3fr_3fr_2fr_1.5fr_1.5fr] divide-x divide-y divide-gray-300 ml-4 w-full cursor-pointer" + ((!hoveredOnActionButton && hoveredOnNotActionButton) ? " hover:bg-gray-200 dark:hover:bg-gray-700 dark:hover:text-white-400" : "")}>
     <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center border-gray-300">{pullRequestInfo.title}</a>
     <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{new Date(pullRequestInfo.createdAt).toLocaleString()}</a>
     <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{new Date(pullRequestInfo.modifiedAt).toLocaleString()}</a>

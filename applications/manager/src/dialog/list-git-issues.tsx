@@ -125,7 +125,7 @@ type GitIssueComponentProps = {
 }
 
 function GitIssueComponent({ gitIssueInfo }: GitIssueComponentProps) {
-  return <a href={gitIssueInfo.urlToIssue} className={"grid grid-cols-[4fr_2fr_2fr_2fr_4fr] divide-x divide-y divide-gray-300 pt-1 ml-4 w-full cursor-pointer hover:bg-gray-200"}>
+  return <a href={gitIssueInfo.urlToIssue} className={"grid grid-cols-[4fr_2fr_2fr_2fr_4fr] divide-x divide-y divide-gray-300 pt-1 ml-4 w-full cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 dark:hover:text-white-400"}>
     <div className="flex justify-center items-center border-gray-300">{gitIssueInfo.title}</div>
     <div className="flex justify-center items-center">{new Date(gitIssueInfo.createdAt).toLocaleString()}</div>
     <div className="flex justify-center items-center">{new Date(gitIssueInfo.lastActivityAt).toLocaleString()}</div>
