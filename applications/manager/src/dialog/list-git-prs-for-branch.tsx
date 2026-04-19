@@ -13,9 +13,9 @@ import { toast } from "sonner";
 import { createCloseLoadingDialogObject, LoadingDialog } from "./loading-dialog";
 import { usePaginationComponent } from "@/components/pagination-component";
 import { Button } from "@/components/ui/button";
-import { redirectToPage } from "@/components/login-card";
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 import { CREATE_MERGE_STATE_WAIT_TIME, GIT_IMPORT_WAIT_TIME } from "@/utils/git-wait-times";
+import { createNewTabAndOpen } from "./sign-in";
 
 
 type GitPrsListDialogProps = {
@@ -131,7 +131,7 @@ export const GitPrsListDialog = ({ resources, branch, gitUrl, gitProviderSpecifi
         </ModalHeader>
         <ModalFooter>
           <Button variant="outline" onClick={() => resolve(null)}>Close</Button>
-          <Button variant="default" onClick={() => redirectToPage(gitProvider.getUrlToPRs(gitUrl))}>Visit page with PRs</Button>
+          <Button variant="default" onClick={() => createNewTabAndOpen(gitProvider.getUrlToPRs(gitUrl))}>Visit page with PRs</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
@@ -419,15 +419,15 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
 
   // We have to use the hoveredOn, because otherwise if we hover on the action button, we highlight the whole line since the hover on also works on the whole div, which we do not want.
   return <div className={"grid grid-cols-[4fr_2fr_2fr_3fr_3fr_2fr_1.5fr_1.5fr] divide-x divide-y divide-gray-300 ml-4 w-full cursor-pointer" + ((!hoveredOnActionButton && hoveredOnNotActionButton) ? " hover:bg-gray-200 dark:hover:bg-gray-700 dark:hover:text-white-400" : "")}>
-    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center border-gray-300">{pullRequestInfo.title}</a>
-    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{new Date(pullRequestInfo.createdAt).toLocaleString()}</a>
-    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{new Date(pullRequestInfo.modifiedAt).toLocaleString()}</a>
-    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{pullRequestInfo.mergeFromBranch}</a>
-    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{pullRequestInfo.mergeToBranch}</a>
-    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="border-r border-b border-gray-300">
+    <div onClick={() => createNewTabAndOpen(pullRequestInfo.urlToPR)} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center border-gray-300">{pullRequestInfo.title}</div>
+    <div onClick={() => createNewTabAndOpen(pullRequestInfo.urlToPR)} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{new Date(pullRequestInfo.createdAt).toLocaleString()}</div>
+    <div onClick={() => createNewTabAndOpen(pullRequestInfo.urlToPR)} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{new Date(pullRequestInfo.modifiedAt).toLocaleString()}</div>
+    <div onClick={() => createNewTabAndOpen(pullRequestInfo.urlToPR)} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{pullRequestInfo.mergeFromBranch}</div>
+    <div onClick={() => createNewTabAndOpen(pullRequestInfo.urlToPR)} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{pullRequestInfo.mergeToBranch}</div>
+    <div onClick={() => createNewTabAndOpen(pullRequestInfo.urlToPR)} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="border-r border-b border-gray-300">
       <div className="flex justify-center items-center text-green-600">+{pullRequestInfo.additions}</div>
       <div className="flex justify-center items-center text-red-600">-{pullRequestInfo.deletions}</div>
-    </a>
+    </div>
     {!isReverseMergeButtonNotReady && reverseMergeButtonData !== undefined &&
       <button
         className={"flex justify-center items-center cursor-pointer " + reverseMergeButtonData.actionButtonClassname}

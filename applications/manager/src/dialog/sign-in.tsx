@@ -89,3 +89,7 @@ export const SignInDialog = ({ isOpen, resolve }: BetterModalProps) => {
 export function goToPage(url: string) {
   window.location.href = url;
 }
+
+export function createNewTabAndOpen(url: string) {
+  window.open(url, '_blank');
+}

@@ -1,4 +1,3 @@
-import { redirectToPage } from "@/components/login-card";
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { usePaginationComponent } from "@/components/pagination-component";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { GitProviderFactory } from "@dataspecer/git/git-providers";
 import { Loader } from "lucide-react";
 import { useMemo } from "react";
 import { toast } from "sonner";
+import { createNewTabAndOpen } from "./sign-in";
 
 
 type GitIssuesListDialogProps = {
@@ -112,7 +112,7 @@ export function GitIssuesListDialog({ gitUrl, isOpen, resolve }: GitIssuesListDi
         </ModalHeader>
         <ModalFooter>
           <Button variant="outline" onClick={() => resolve(null)}>Close</Button>
-          <Button variant="default" onClick={() => { redirectToPage(gitProvider.getCreateNewIssueUrl(gitUrl)); resolve(null); }}>Create new issue</Button>
+          <Button variant="default" onClick={() => { createNewTabAndOpen(gitProvider.getCreateNewIssueUrl(gitUrl)); resolve(null); }}>Create new issue</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
@@ -125,7 +125,7 @@ type GitIssueComponentProps = {
 }
 
 function GitIssueComponent({ gitIssueInfo }: GitIssueComponentProps) {
-  return <a href={gitIssueInfo.urlToIssue} className={"grid grid-cols-[4fr_2fr_2fr_2fr_4fr] divide-x divide-y divide-gray-300 pt-1 ml-4 w-full cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 dark:hover:text-white-400"}>
+  return <div onClick={() => createNewTabAndOpen(gitIssueInfo.urlToIssue)} className={"grid grid-cols-[4fr_2fr_2fr_2fr_4fr] divide-x divide-y divide-gray-300 pt-1 ml-4 w-full cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 dark:hover:text-white-400"}>
     <div className="flex justify-center items-center border-gray-300">{gitIssueInfo.title}</div>
     <div className="flex justify-center items-center">{new Date(gitIssueInfo.createdAt).toLocaleString()}</div>
     <div className="flex justify-center items-center">{new Date(gitIssueInfo.lastActivityAt).toLocaleString()}</div>
@@ -137,5 +137,5 @@ function GitIssueComponent({ gitIssueInfo }: GitIssueComponentProps) {
         })
       }
       </div>
-  </a>;
+  </div>;
 }

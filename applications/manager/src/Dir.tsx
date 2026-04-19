@@ -43,6 +43,7 @@ import { DeleteGitRepoDialog } from "./dialog/remove-git-repo-dialog";
 import { SetGitRemoteConfigurationDialog } from "./dialog/set-git-remote-configuration-dialog";
 import { GitPrsListDialog } from "./dialog/list-git-prs-for-branch";
 import { GitIssuesListDialog } from "./dialog/list-git-issues";
+import { createNewTabAndOpen } from "./dialog/sign-in";
 
 
 export function lng(text: LanguageString | undefined): string | undefined {
@@ -157,20 +158,20 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
 
   let gitPart: React.ReactNode;
   if (resource.activeMergeStateCount !== 0) {
-    gitPart = <a href={resource.linkedGitRepositoryURL} className="text-red-500 pt-1 flex flex-1 flex-row">GIT<AlertTriangleIcon className="w-4 h-4 ml-0.75 mt-1"/>
+    gitPart = <div onClick={() => createNewTabAndOpen(resource.linkedGitRepositoryURL)} className="text-red-500 pt-1 flex flex-1 flex-row cursor-pointer">GIT<AlertTriangleIcon className="w-4 h-4 ml-0.75 mt-1"/>
       <sup className="pt-2">{prInfo}</sup>
-    </a>;
+    </div>;
   }
   else {
     if (resource.hasUncommittedChanges) {
-      gitPart = <a href={resource.linkedGitRepositoryURL} className="text-yellow-400 pt-1 flex flex-1 flex-row">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/>
+      gitPart = <div onClick={() => createNewTabAndOpen(resource.linkedGitRepositoryURL)} className="text-yellow-400 pt-1 flex flex-1 flex-row cursor-pointer">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/>
         <sup className="pt-2">{prInfo}</sup>
-      </a>;
+      </div>;
     }
     else {
-      gitPart = <a href={resource.linkedGitRepositoryURL} className="text-green-400 pt-1 flex flex-1 flex-row">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/>
+      gitPart = <div onClick={() => createNewTabAndOpen(resource.linkedGitRepositoryURL)} className="text-green-400 pt-1 flex flex-1 flex-row cursor-pointer">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/>
         <sup className="pt-2">{prInfo}</sup>
-      </a>;
+      </div>;
     }
   }
 
@@ -341,8 +342,8 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
                 </DropdownMenuSubTrigger>
 
                 <DropdownMenuSubContent className="data-[side=top]">
-                  {hasSetRemoteRepository && <DropdownMenuItem asChild><a href={gitProvider === null ? "" : gitProvider.createGitRepositoryURL(repositoryOwner!, repositoryName!, gitRef!)}><Eye className="mr-2 h-4 w-4" />Show {resource.representsBranchHead ? "branch" : "commit"} on GitHub</a></DropdownMenuItem>}
-                  {hasSetRemoteRepository && <DropdownMenuItem asChild><a href={gitProvider === null ? "" : gitProvider.getGitPagesURL(resource.linkedGitRepositoryURL)}><Eye className="mr-2 h-4 w-4" />Show {gitProvider?.getProviderSpecificLabel("GitHub Pages")}</a></DropdownMenuItem>}
+                  {hasSetRemoteRepository && <DropdownMenuItem onClick={() => createNewTabAndOpen(gitProvider === null ? "" : gitProvider.createGitRepositoryURL(repositoryOwner!, repositoryName!, gitRef!))}><Eye className="mr-2 h-4 w-4" />Show {resource.representsBranchHead ? "branch" : "commit"} on GitHub</DropdownMenuItem>}
+                  {hasSetRemoteRepository && <DropdownMenuItem onClick={() => createNewTabAndOpen(gitProvider === null ? "" : gitProvider.getGitPagesURL(resource.linkedGitRepositoryURL))}><Eye className="mr-2 h-4 w-4" />Show {gitProvider?.getProviderSpecificLabel("GitHub Pages")}</DropdownMenuItem>}
                   {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>}
                   {hasSetRemoteRepository && <hr className="border-gray-300" />}
                   {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialog, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: null, gitProviderSpecificNameForPR, gitProviderSpecificNameForPRShortcut})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Active {gitProviderSpecificNameForPR}s</DropdownMenuItem>}
