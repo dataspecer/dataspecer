@@ -57,7 +57,6 @@ export default function Stepper({ currentStep }: StepperProps) {
               <span
                 className={`
                   mt-1 text-xs font-medium
-                  ${isCompleted || isActive ? "text-gray-900" : "text-gray-400"}
                 `}
               >
                 {step}

@@ -144,7 +144,7 @@ return (
                     <Button title="This does save both the changes to files and updates the merge state"
                             variant={"outline"}
                             onClick={() => saveEverything()}
-                            className="m-1 border bg-blue-100 border-blue-500 hover:bg-blue-500 hover:text-white transition">
+                            className="m-1 border bg-blue-100 border-blue-500 hover:bg-blue-500 hover:text-white dark:bg-blue-900 dark:border-blue-400 dark:hover:bg-blue-500 dark:hover:text-white transition">
                       Save All (Ctrl + S)
                     </Button>
                     {
@@ -152,7 +152,7 @@ return (
                       <Button title="First saves all the unsaved changes and then it performs the operation, which triggered the merge state. Can be pull/push/merge"
                               variant={"outline"}
                               onClick={finalizeMergeStateHandler}
-                              className="m-1 border bg-green-100 border-green-500 hover:bg-green-500 hover:text-white transition">
+                              className="m-1 border bg-green-100 border-green-500 hover:bg-green-500 hover:text-white dark:bg-green-900 dark:border-green-400 dark:hover:bg-green-500 dark:hover:text-white transition">
                         Save and Finalize
                       </Button>
                     }
