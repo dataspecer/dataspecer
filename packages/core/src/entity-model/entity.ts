@@ -30,19 +30,6 @@ export interface Entity {
   type: string[];
 }
 
-export function isValidEntity(thing: unknown): thing is Entity {
-  return (
-    typeof thing === "object" &&
-    thing !== null &&
-    "id" in thing &&
-    typeof thing.id === "string" &&
-    thing.id.length > 0 &&
-    "type" in thing &&
-    Array.isArray(thing.type) &&
-    thing.type.every((t) => typeof t === "string")
-  )
-}
-
 /**
  * Can be used to represent a serialized entity model. As this interface is
  * simplest, it should be used in places where we want to pass the whole entity
@@ -56,7 +43,7 @@ export function isValidEntity(thing: unknown): thing is Entity {
  *
  * @todo maybe consider separating the main entity
  */
-export type EntityList<T extends Entity = Entity> = T[];
+export type EntityArray<T extends Entity = Entity> = T[];
 
 export type EntityRecord<T extends Entity = Entity> = Record<string, T>;
 

@@ -1,5 +1,5 @@
 import type { Model } from "../model/model.ts";
-import type { Entity, EntityIdentifier, EntityList } from "./entity.ts";
+import type { Entity, EntityIdentifier, EntityArray } from "./entity.ts";
 
 /**
  * Entity model is a capability of a model to provide entities. This does not
@@ -20,24 +20,25 @@ import type { Entity, EntityIdentifier, EntityList } from "./entity.ts";
  * entity model, thus providing a main entity. Most models are pure entity
  * models, but some models may have additional capabilities.
  */
-export interface EntityModel<T extends Entity = Entity, MainEntity extends Entity = Entity> extends Model {
+export interface EntityModel<EntityType extends Entity = Entity, MainEntityType extends EntityType = EntityType> extends Model {
   /**
    * The main entity is the entity that describes the model itself.
    *
    * Its ID is the ID of the model.
    */
-  getMainEntity(): MainEntity;
+  getMainEntity(): MainEntityType;
 
   /**
    * This must include the main entity.
+   * @todo is this always the same object, can I cahnge it, etc.
    */
-  getEntities(): EntityList<T | MainEntity>;
+  getEntities(): EntityArray<EntityType | MainEntityType>;
 
   /**
    * Returns single entity from the model or null, if the entity does not exists
    * or if the id is null or undefined.
    */
-  getEntity(id: EntityIdentifier | null | undefined): T | MainEntity | null;
+  getEntity(id: EntityIdentifier | null | undefined): EntityType | MainEntityType | null;
 }
 
 export function isEntityModel(thing: unknown): thing is EntityModel {

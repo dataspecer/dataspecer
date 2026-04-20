@@ -1,5 +1,5 @@
 {
-  "name": "@dataspecer/model-store",
+  "name": "@dataspecer/project-model",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -8,14 +8,11 @@
     "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\""
   },
   "exports": {
-    ".": "./lib/index.js",
-    "./entity-model": "./lib/entity-model/index.js"
+    ".": "./lib/index.js"
   },
   "dependencies": {
     "@dataspecer/core": "*",
-    "@dataspecer/core-v2": "*",
-    "@dataspecer/project-model": "*",
-    "uuid": "^13.0.0"
+    "@dataspecer/core-v2": "*"
   },
   "devDependencies": {
     "typescript": "^5.9.3"

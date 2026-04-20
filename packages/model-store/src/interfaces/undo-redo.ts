@@ -1,5 +1,8 @@
 import type { TransactionResult, WritableModelStore } from "./writable.ts";
 
+/**
+ * @todo list of operations that can be undone and redone for better UX.
+ */
 export interface UndoRedoState {
   canUndo: boolean;
   canRedo: boolean;

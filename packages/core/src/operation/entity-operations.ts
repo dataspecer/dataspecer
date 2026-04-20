@@ -1,4 +1,4 @@
-import { isValidEntity, type Entity, type EntityIdentifier } from "../entity-model/entity.ts";
+import { type Entity, type EntityIdentifier } from "../entity-model/entity.ts";
 import { generateOperationId, type Operation } from "./operation.ts";
 
 /**
@@ -53,9 +53,6 @@ export interface SetEntityOperation extends Operation {
 }
 
 export function createSetEntityOperation(entity: Entity): SetEntityOperation {
-  if (!isValidEntity(entity)) {
-    throw new Error("Invalid entity");
-  }
   return {
     id: generateOperationId(),
     type: SetEntityOperationType,

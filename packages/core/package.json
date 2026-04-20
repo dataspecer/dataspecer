@@ -432,6 +432,7 @@
     "./data-specification/model/index.js": "./lib/data-specification/model/index.js",
     "./data-specification/model": "./lib/data-specification/model/index.js",
     "./entity-model": "./lib/entity-model/index.js",
+    "./entity-model/implementation": "./lib/entity-model/implementation/index.js",
     "./generator/artefact-generator-context": "./lib/generator/artefact-generator-context.js",
     "./generator/artefact-generator-context.js": "./lib/generator/artefact-generator-context.js",
     "./generator/artefact-generator": "./lib/generator/artefact-generator.js",

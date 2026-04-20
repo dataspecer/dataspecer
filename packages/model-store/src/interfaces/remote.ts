@@ -1,7 +1,6 @@
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
-import type { EntityObservableModelStore } from "../interfaces/entity.ts";
-import type { UndoRedoModelStore } from "../interfaces/undo-redo.ts";
-import type { WritableModelStore } from "../interfaces/writable.ts";
+import type { EntityObservableModelStore } from "./observable.ts";
+import type { WritableModelStore } from "./writable.ts";
 
 /**
  * The purpose of the remote model store is to provide a unified interface for
@@ -9,7 +8,7 @@ import type { WritableModelStore } from "../interfaces/writable.ts";
  * applications need transactions, change observation, undo/redo,
  * synchronization, etc.
  */
-export interface RemoteModelStore extends WritableModelStore, EntityObservableModelStore, UndoRedoModelStore, SimpleSyncRemoteModelStore {
+export interface RemoteModelStore extends WritableModelStore, EntityObservableModelStore, SimpleSyncRemoteModelStore {
   /**
    * Returns a materialized model for remote use.
    *

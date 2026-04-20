@@ -1,11 +1,20 @@
 import { EntityModel } from "../../entity-model/index.ts";
 import { VisualModel } from "@dataspecer/visual-model";
-import { Package, ResourceEditable } from "../resource/resource.ts";
+import { Package, ResourceEditable, type BaseResource } from "../resource/resource.ts";
+
+/**
+ * Provides basic operations with resources.
+ */
+export interface ResourceService {
+    getResource(resourceId: string): Promise<BaseResource>;
+    getResourceJsonData(resourceId: string, name?: string): Promise<unknown>;
+    setResourceJsonData(resourceId: string, data: unknown, name?: string): Promise<void>;
+}
 
 /**
  * Provides basic operations with packages.
  */
-export interface PackageService {
+export interface PackageService extends ResourceService {
     /**
      * Returns package with all sub-packages.
      */

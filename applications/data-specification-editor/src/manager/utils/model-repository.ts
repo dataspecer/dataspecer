@@ -1,10 +1,9 @@
-import { StructureEditorBackendService } from "@dataspecer/backend-utils/connectors/specification";
-import { BaseResource } from "@dataspecer/core-v2/project";
+import { BaseResource, type PackageService } from "@dataspecer/core-v2/project";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { BaseModel, BlobModel, ModelRepository, PackageModel, WritableBlobModel } from "@dataspecer/specification/model-repository";
 
 export class FrontendModelRepository implements ModelRepository {
-  constructor(protected backendService: StructureEditorBackendService) { }
+  constructor(protected backendService: PackageService) { }
 
   async getModelById(modelId: string): Promise<BaseModel | null> {
     const resource = await this.backendService.getResource(modelId);
@@ -20,7 +19,7 @@ export class FrontendBaseModel implements BaseModel {
   readonly id: string;
   readonly types: string[];
 
-  constructor(protected baseModel: BaseResource, protected modelRepository: StructureEditorBackendService) {
+  constructor(protected baseModel: BaseResource, protected modelRepository: PackageService) {
     this.id = baseModel.iri;
     this.types = baseModel.types;
   }
@@ -39,7 +38,7 @@ export class FrontendBaseModel implements BaseModel {
 }
 
 export class FrontendBlobModel extends FrontendBaseModel implements BlobModel, WritableBlobModel {
-  constructor(baseModel: BaseResource, modelRepository: StructureEditorBackendService) {
+  constructor(baseModel: BaseResource, modelRepository: PackageService) {
     super(baseModel, modelRepository);
   }
 
@@ -53,7 +52,7 @@ export class FrontendBlobModel extends FrontendBaseModel implements BlobModel, W
 }
 
 export class FrontendPackageModel extends FrontendBlobModel implements PackageModel {
-  constructor(baseModel: BaseResource, modelRepository: StructureEditorBackendService) {
+  constructor(baseModel: BaseResource, modelRepository: PackageService) {
     super(baseModel, modelRepository);
   }
 
