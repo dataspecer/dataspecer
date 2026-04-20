@@ -46,9 +46,13 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
     <Modal open={!isInfoDialogShown && isOpen} onClose={() => resolve(null)}>
       <ModalContent className="md:min-w-[1300px]">
         <ModalHeader>
-          <ModalTitle>List of currently opened merge states for chosen data specification</ModalTitle>
+          <ModalTitle>List of currently opened merge states for chosen data specification <PopOverGitGeneralComponent><MergeStateListTooltip/></PopOverGitGeneralComponent></ModalTitle>
           <ModalDescription>
-            <p className="flex flex-1 flex-row">Diff editor is opened on click<PopOverGitGeneralComponent><MergeStateListTooltip/></PopOverGitGeneralComponent></p>
+            <p className="flex flex-1 flex-row">The entries are sorted by creation date (newest first).</p>
+            <p className="flex flex-1 flex-row">Do not be afraid to remove merge states and create new ones of the same type.</p>
+            <p className="flex flex-1 flex-row">Merge states caused by pull, that were created automatically can be resolved by removing the merge state and</p>
+            <p className="flex flex-1 flex-row">&nbsp;&nbsp;&nbsp;&nbsp;performing manual pull again if you did not do any action between the the pull and last Git operation.</p>
+            <p className="flex flex-1 flex-row">You can resolve merge states in any order. For guidance, see this hint.<PopOverGitGeneralComponent><MergeStateResolveOrderTooltip/></PopOverGitGeneralComponent></p>
           </ModalDescription>
           {isLoading && <Loader className="mr-2 h-4 w-4 animate-spin" /> }
           {
@@ -65,7 +69,9 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
               </div>
             </div>
 
-            { mergeStates.map(mergeState => renderMergeState(mergeState, removeFromMergeStatesInDialog, setIsInfoDialogShown, openModal, resolve)) }
+            { mergeStates
+              .sort((a: MergeState, b: MergeState) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+              .map(mergeState => renderMergeState(mergeState, removeFromMergeStatesInDialog, setIsInfoDialogShown, openModal, resolve)) }
           </>
           }
         </ModalHeader>
@@ -159,15 +165,41 @@ function mergeStateSourceText(mergeState: MergeState, side: "MergeFrom" | "Merge
 }
 
 
-
 function MergeStateListTooltip() {
   return <div>
-    - If an entry is <p className="text-destructive inline">red</p>, then it means that it was modified from somewhere else than the diff editor.
+    - If an entry is <p className="text-destructive inline">red</p>, then it means that it was modified from somewhere else than the diff editor of the corresponding merge state.
     <br/>
     - From user perspective it means, that the user should double check the changes were performed by them and not somebody else.
     <br/>
     - Note that user should double check the modification time even if it is not red, to be sure that somebody else did not modify the entry from the diff editor.
     <br/>
     - When entry is <p className="text-destructive inline">red</p> it means, on a technical level, that the diff tree will be recomputed when fetched.
+  </div>;
+}
+
+function MergeStateResolveOrderTooltip() {
+  return <div>
+    - If you are completely stuck then remove all of the created merge states and do the following:
+    <br/>
+    <ul>
+      <li>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - If you are sure that you want to commit some changes. Simply commit.</li>
+      <li>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - If you just want to be up to date with the remote then pull.</li>
+      <li>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - If you want to merge, then make the two branches up to date (either by pulling or commiting) and create merge state for merge.</li>
+    </ul>
+    <br/>
+    If you have in mind some actions and their order, then you can use the following hints:
+    <br/>
+    - In case of more merge states caused by pull. You can remove all the older ones and resolve only the newest one.
+    <br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;You want to have the data specfication up to date with latest commit. Therefore, you can remove all "pulls" and create a new one.
+    <br/>
+
+    - If there is push conflict, once again you can only resolve the newest one and again remove all the others.
+    <br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;Push conflicts should have higher priority then pull, since resolving push resolves pull internally (only internally).
+    <br/>
+    - Merge conflicts should be resolved last. After the Dataspecer state matches the expected remote state.
+    <br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;Again do not be afraid to remove the merge state and create a new one.
   </div>;
 }
