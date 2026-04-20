@@ -84,6 +84,8 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
     }
   });
 
+  const cantFinalize = (activeConflicts?.length ?? 1) !== 0;
+
 
   const mergeFromBranchDataToRender: BranchDataToRender = {
     branch: examinedMergeState?.branchMergeFrom,
@@ -148,14 +150,18 @@ return (
                       Save All (Ctrl + S)
                     </Button>
                     {
-                    ((activeConflicts?.length ?? 1) !== 0) ? null :
-                      <Button title="First saves all the unsaved changes and then it performs the operation, which triggered the merge state. Can be pull/push/merge"
-                              variant={"outline"}
+                    isLoadingTreeStructure ? null :
+                    <span title={cantFinalize ?
+                                "Resolve all conflicts to enable the button and with that get the option to finalize the merge state. The conflicts are marked as resolved by clicking on checkmarks in the directory diff. This tooltip changes after the button gets enabled." :
+                                "First saves all the unsaved changes and then it performs the operation, which triggered the merge state. Can be pull/push/merge."}>
+                      <Button variant={"outline"}
                               onClick={finalizeMergeStateHandler}
+                              disabled={cantFinalize}
                               className="m-1 border bg-green-100 border-green-500 hover:bg-green-500 hover:text-white dark:bg-green-900 dark:border-green-400 dark:hover:bg-green-500 dark:hover:text-white transition">
-                        Save and Finalize
+                        {cantFinalize ? "⚠️Resolve conflicts to finalize" : "Save and Finalize"}
                       </Button>
-                    }
+                    </span>
+                  }
                   </div>
                 </div>
             </ResizablePanel>
