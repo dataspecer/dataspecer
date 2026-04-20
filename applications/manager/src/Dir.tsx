@@ -157,21 +157,22 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
   const prInfo = signedInUserPullRequests.findIndex(url => url === resource.linkedGitRepositoryURL) === -1 ? null : <div className="pl-0.5 text-red-600">{gitProviderSpecificNameForPRShortcut}</div>;
 
   let gitPart: React.ReactNode;
+  // We put all of the Git stuff in <a> to show that the url at the bottom left
   if (resource.activeMergeStateCount !== 0) {
-    gitPart = <div onClick={() => createNewTabAndOpen(resource.linkedGitRepositoryURL)} className="text-red-500 pt-1 flex flex-1 flex-row cursor-pointer">GIT<AlertTriangleIcon className="w-4 h-4 ml-0.75 mt-1"/>
+    gitPart = <a onClick={(e) => {e.preventDefault(); createNewTabAndOpen(resource.linkedGitRepositoryURL)}} href={resource.linkedGitRepositoryURL} className="text-red-500 pt-1 flex flex-1 flex-row cursor-pointer">GIT<AlertTriangleIcon className="w-4 h-4 ml-0.75 mt-1"/>
       <sup className="pt-2">{prInfo}</sup>
-    </div>;
+    </a>;
   }
   else {
     if (resource.hasUncommittedChanges) {
-      gitPart = <div onClick={() => createNewTabAndOpen(resource.linkedGitRepositoryURL)} className="text-yellow-400 pt-1 flex flex-1 flex-row cursor-pointer">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/>
+      gitPart = <a onClick={(e) => {e.preventDefault(); createNewTabAndOpen(resource.linkedGitRepositoryURL)}} href={resource.linkedGitRepositoryURL} className="text-yellow-400 pt-1 flex flex-1 flex-row cursor-pointer">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/>
         <sup className="pt-2">{prInfo}</sup>
-      </div>;
+      </a>;
     }
     else {
-      gitPart = <div onClick={() => createNewTabAndOpen(resource.linkedGitRepositoryURL)} className="text-green-400 pt-1 flex flex-1 flex-row cursor-pointer">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/>
+      gitPart = <a onClick={(e) => {e.preventDefault(); createNewTabAndOpen(resource.linkedGitRepositoryURL)}} href={resource.linkedGitRepositoryURL} className="text-green-400 pt-1 flex flex-1 flex-row cursor-pointer">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/>
         <sup className="pt-2">{prInfo}</sup>
-      </div>;
+      </a>;
     }
   }
 
@@ -196,7 +197,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
           <span className="truncate w-[6cm]">
             {getValidTime(resource.metadata?.modificationDate) && t("changed", {val: new Date(resource.metadata?.modificationDate!)})}
           </span>
-          <span className="truncate w-[5cm]" title={resource.iri}>
+          <span className="truncate w-[5cm]" title={"IRI: " + resource.iri}>
             {resource.iri}
           </span>
           {
@@ -215,14 +216,14 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
           }
           {
             !isGitUrlSet(resource.linkedGitRepositoryURL) ?
-              <span className="truncate px-2 w-[2.5cm]" title={resource.projectIri}>
+              <span className="truncate px-2 w-[2.5cm]" title={"Project IRI: " + resource.projectIri}>
                 {resource.projectIri}
               </span> :
               <>
-                <span className="truncate px-2 w-[2.5cm]" title={resource.projectIri}>
+                <span className="truncate px-2 w-[2.5cm]" title={"Project IRI: " + resource.projectIri}>
                   {resource.projectIri}
                 </span>
-                <span className="truncate px-2 w-[4cm]" title={resource.branch}>
+                <span className="truncate px-2 w-[4cm]" title={"Branch name: " + resource.branch}>
                   {resource.branch}
                 </span>
               </>

@@ -113,13 +113,13 @@ const renderMergeState = (
           {mergeStateRowText(mergeState)}
         </div>
         <div className="flex flex-row relative top-[10%] ml-8 gap-x-8">
-          <button onClick={openDiffEditor} className="cursor-pointer relative">
+          <button title="Open merge state in diff editor" onClick={openDiffEditor} className="cursor-pointer relative">
             <BookOpenTextIcon className="hover:bg-gray-400 dark:hover:bg-gray-700 hover:text-white dark:text-gray-200"/>
           </button>
-          <button onClick={() => openModal(ShowMergeStateInfoDialog, {mergeState, setIsInfoDialogShown})} className="cursor-pointer hover:bg-blue-500 relative">
+          <button title="Show info about merge state" onClick={() => openModal(ShowMergeStateInfoDialog, {mergeState, setIsInfoDialogShown})} className="cursor-pointer hover:bg-blue-500 relative">
             <InfoIcon className="text-blue-400 hover:bg-blue-400 hover:text-white dark:hover:bg-blue-700"/>
           </button>
-          <button onClick={removeMergeStateOnClickHandler} className="cursor-pointer hover:bg-red-600 relative">
+          <button title="Remove merge state" onClick={removeMergeStateOnClickHandler} className="cursor-pointer hover:bg-red-600 relative">
             <Trash2 className="text-destructive hover:bg-destructive hover:text-black dark:hover:text-white"/>
           </button>
         </div>
@@ -183,7 +183,7 @@ function MergeStateResolveOrderTooltip() {
     <br/>
     <ul>
       <li>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - If you are sure that you want to commit some changes. Simply commit.</li>
-      <li>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - If you just want to be up to date with the remote then pull.</li>
+      <li>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - If you just want to be up to date with the remote, then pull.</li>
       <li>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - If you want to merge, then make the two branches up to date (either by pulling or commiting) and create merge state for merge.</li>
     </ul>
     <br/>
@@ -196,7 +196,7 @@ function MergeStateResolveOrderTooltip() {
 
     - If there is push conflict, once again you can only resolve the newest one and again remove all the others.
     <br/>
-    &nbsp;&nbsp;&nbsp;&nbsp;Push conflicts should have higher priority then pull, since resolving push resolves pull internally (only internally).
+    &nbsp;&nbsp;&nbsp;&nbsp;Push conflicts should have higher priority than pull, since resolving push resolves pull internally (only internally).
     <br/>
     - Merge conflicts should be resolved last. After the Dataspecer state matches the expected remote state.
     <br/>

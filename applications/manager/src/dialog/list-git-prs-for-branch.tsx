@@ -99,10 +99,10 @@ export const GitPrsListDialog = ({ resources, branch, gitUrl, gitProviderSpecifi
               </>
 
             }
-            ⚠️ Note that you have to close in {gitProviderSpecificNameForPRShortcut} in Dataspecer with merge commit.
-            Closing {gitProviderSpecificNameForPRShortcut} in Git breaks IRIs.
+            ⚠️ Note that you have to close {gitProviderSpecificNameForPRShortcut} in Dataspecer with merge commit.
+            Merging (or rebasing) {gitProviderSpecificNameForPRShortcut} in Git breaks IRIs.
             <br/>
-            <p className="flex flex-1 flex-row">You can either close the {gitProviderSpecificNameForPRShortcut}, or merge the changes from the 'merge to' branch to the 'merge from' branch (reverse merge).
+            <p className="flex flex-1 flex-row">You can either close the {gitProviderSpecificNameForPRShortcut} with merge, or merge the changes from the 'merge to' branch to the 'merge from' branch (reverse merge).
               <PRMergeTooltip gitProviderSpecificNameForPRShortcut={gitProviderSpecificNameForPRShortcut} isSpecificBranchPRsList={branch !== null} />
             </p>
           </ModalDescription>
@@ -117,7 +117,7 @@ export const GitPrsListDialog = ({ resources, branch, gitUrl, gitProviderSpecifi
                 <div className="flex items-center justify-center">Merge to</div>
                 <div className="flex items-center justify-center border-gray-300 border-b border-r">Add/Del</div>
                 <div className="flex items-center justify-center border-gray-300">Reverse merge</div>
-                <div className="flex items-center justify-center border-gray-300">Close {gitProviderSpecificNameForPRShortcut}</div>
+                <div className="flex items-center justify-center border-gray-300">Merge {gitProviderSpecificNameForPRShortcut}</div>
               </div>
               <div className="w-full">
                 {openedPrs?.map(pr => <PullRequestComponent pullRequestInfo={pr} resources={resources} resourceGitUrl={gitUrl} resolve={resolve}/>) ?? null}
@@ -148,7 +148,7 @@ function PRMergeTooltip({ gitProviderSpecificNameForPRShortcut, isSpecificBranch
     <PopOverGitGeneralComponent>
       <div>The reverse merge represents the classic workflow, where you first merge the 'merge to' branch</div>
       <div>&nbsp;into your branch to make sure that everything works and finish the {gitProviderSpecificNameForPRShortcut} after that.</div>
-      <div>The 'Close {gitProviderSpecificNameForPRShortcut}' simply merges the 'merge from' branch into the 'merge to' branch.</div>
+      <div>The 'Merge {gitProviderSpecificNameForPRShortcut}' simply merges the 'merge from' branch into the 'merge to' branch.</div>
       <div>The buttons do the following:</div>
       <div><p className="text-blue-600 inline">Open Merge state</p> - opens the already existing merge state</div>
       <div><p className="text-green-600 inline">Merge</p> - Creates new merge state, since it does not exist.</div>

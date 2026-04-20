@@ -118,11 +118,11 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
   const titleTooltip = actionOnConfirm === BranchAction.CreateNewBranch ? `Setting the branch name for the following projectIri: ${sourcePackage.projectIri}` : "";
 
   const modalTitle = actionOnConfirm === BranchAction.CreateNewBranch ?
-    "Create new branch in project" :
+    "Create new branch in Dataspecer for project" :
     "Set name for branch to be created from static commit";
 
   const modalDescription = actionOnConfirm === BranchAction.CreateNewBranch ?
-    `On confirm creates new package, which is copy of the source package and has branch set to given name` :
+    `On confirm creates new package, which is copy of the source package and has branch set to given name.\n⚠️Do not forget to commit (push) the branch to Git repository.` :
     `On confirm sets branch of chosen package`;
 
 
@@ -131,7 +131,7 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
         <ModalContent className={(shouldHideDialog ? "hidden" : "")}>
           <ModalHeader>
             <ModalTitle>{modalTitle}</ModalTitle>
-            <ModalDescription>{modalDescription}</ModalDescription>
+            <ModalDescription><p className="whitespace-pre-line">{modalDescription}</p></ModalDescription>
           </ModalHeader>
 
           <InputComponent requiredRefObject={inputRef} idPrefix={idPrefix} idSuffix={0} label="Branch name" input={branch} setInput={createSetterWithGitValidation(setBranch)} tooltip={titleTooltip}/>
