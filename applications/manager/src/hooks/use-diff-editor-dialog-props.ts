@@ -1130,8 +1130,13 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     if (dataToInsertAsText !== null && datastoreInfo !== null) {
       const convertedDataToInsert = convertDatastoreContentBasedOnFormat(dataToInsertAsText, datastoreInfo.format, true, null);
       if (!convertedDataToInsert.ok) {
-        // TODO RadStr PR: Just throw error? Probably, since this means that the data on the backend are invalid.
-        throw new Error(convertedDataToInsert.error);
+        resolve({newResourceContent: undefined});
+        openModal(InfoDialog, {
+          title: "Invalid file content",
+          description: "The given content is not in format: ." + datastoreInfo.format,
+          content: "File name: " + datastoreInfo.fullName
+        });
+        return;
       }
       valueToStoreToCacheAsObject = convertedDataToInsert.value;
       const stringifiedCacheValue = stringifyDatastoreContentBasedOnFormat(valueToStoreToCacheAsObject, newFormat, true);
