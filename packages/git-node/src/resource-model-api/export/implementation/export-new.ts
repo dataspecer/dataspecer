@@ -31,7 +31,6 @@ export class PackageExporterNew extends PackageExporterBase {
     let exportFullName: string;
     if (this.shouldUseIrisForNames) {
       const iri = filesystemNode.metadata.iri.substring(filesystemNode.metadata.iri.lastIndexOf("/") + 1);
-      // exportFullName = pathToExportDirectory + (filesystemNode.type === "directory" ? "" : filesystemNode.metadata.iri);
       exportFullName = pathToExportDirectory + (filesystemNode.type === "directory" ? "" : iri);
     }
     else {
@@ -43,7 +42,7 @@ export class PackageExporterNew extends PackageExporterBase {
       if (isDatastoreForMetadata(datastore.type)) {
         data = filesystemNode.metadata;
         if (this.iriMapping !== null) {
-          const { datastoreWithReplacedIris } = createDatastoreWithReplacedIris(data, this.iriMapping);
+          const { datastoreWithReplacedIris } = createDatastoreWithReplacedIris(data, this.iriMapping, this.shouldRunTestVariantForIriReplacement);
           data = datastoreWithReplacedIris;
         }
         if (this.shouldRemoveExportedAt) {
@@ -56,7 +55,7 @@ export class PackageExporterNew extends PackageExporterBase {
         data = await this.importFilesystem.getDatastoreContent(filesystemNode.irisTreePath, datastore.type, true);
         if (this.iriMapping !== null) {
           // Note that if therr are some missing iris it is ok, those iris exist because there are some new resources.
-          const { datastoreWithReplacedIris } = createDatastoreWithReplacedIris(data, this.iriMapping);
+          const { datastoreWithReplacedIris } = createDatastoreWithReplacedIris(data, this.iriMapping, this.shouldRunTestVariantForIriReplacement);
           data = datastoreWithReplacedIris;
         }
       }

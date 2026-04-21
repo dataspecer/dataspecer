@@ -74,7 +74,7 @@ export class PackageExporterByResourceType extends PackageExporterBase {
       if (isDatastoreForMetadata(datastore.type)) {
         data = filesystemNode.metadata;
         if (this.iriMapping !== null) {
-          const { datastoreWithReplacedIris } = createDatastoreWithReplacedIris(data, this.iriMapping);
+          const { datastoreWithReplacedIris } = createDatastoreWithReplacedIris(data, this.iriMapping, this.shouldRunTestVariantForIriReplacement);
           data = datastoreWithReplacedIris;
         }
         if (this.shouldRemoveExportedAt) {
@@ -87,7 +87,7 @@ export class PackageExporterByResourceType extends PackageExporterBase {
         data = await this.importFilesystem.getDatastoreContent(filesystemNode.irisTreePath, datastore.type, true);
         if (this.iriMapping !== null) {
           // Note that if there are some missing iris it is ok, those iris exist because there are some new resources.
-          const { datastoreWithReplacedIris } = createDatastoreWithReplacedIris(data, this.iriMapping);
+          const { datastoreWithReplacedIris } = createDatastoreWithReplacedIris(data, this.iriMapping, this.shouldRunTestVariantForIriReplacement);
           data = datastoreWithReplacedIris;
         }
       }

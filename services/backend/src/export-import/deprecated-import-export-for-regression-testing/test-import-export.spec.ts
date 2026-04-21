@@ -277,29 +277,29 @@ test("Test import of 2023 Sb., o dlouhodobem řizeni informačnich systemů veř
 });
 
 test("simple-vocab-no-subpackages.zip - test import/export", async () => {
-    await handleImportExportTest("./test-data/simple-vocab-no-subpackages.zip", true);
+    await handleImportExportTest("./test-data/simple-vocab-no-subpackages.zip", true, IriMappingToRun.None);
 }, 500000);
 
 test("simple-vocab-no-subpackages.zip - test import/export/import/export - old export", async () => {
-    await handleImportExportImportTest("./test-data/simple-vocab-no-subpackages.zip", new PackageExporterNew(), true);
+    await handleImportExportImportTest("./test-data/simple-vocab-no-subpackages.zip", new PackageExporterNew(), true, IriMappingToRun.None);
 }, 500000);
 
 test("simple-vocab-no-subpackages.zip - test import/export/import/export - new export", async () => {
-    await handleImportExportImportTest("./test-data/simple-vocab-no-subpackages.zip", new PackageExporterByResourceType(), true);
+    await handleImportExportImportTest("./test-data/simple-vocab-no-subpackages.zip", new PackageExporterByResourceType(), true, IriMappingToRun.None);
 }, 500000);
 
 ///////////
 
 test("Test import of 2023 Sb., o dlouhodobem řizeni informačnich systemů veřejne spravy-backup(7).zip - test import/export", async () => {
-    await handleImportExportTest("./test-data/2023 Sb., o dlouhodobem řizeni informačnich systemů veřejne spravy-backup(7).zip", true)
+    await handleImportExportTest("./test-data/2023 Sb., o dlouhodobem řizeni informačnich systemů veřejne spravy-backup(7).zip", true, IriMappingToRun.None)
 }, 500000);
 
 test("Test import of 2023 Sb., o dlouhodobem řizeni informačnich systemů veřejne spravy-backup(7).zip - test import/export/import/export - old export", async () => {
-    await handleImportExportImportTest("./test-data/2023 Sb., o dlouhodobem řizeni informačnich systemů veřejne spravy-backup(7).zip", new PackageExporterNew(), true)
+    await handleImportExportImportTest("./test-data/2023 Sb., o dlouhodobem řizeni informačnich systemů veřejne spravy-backup(7).zip", new PackageExporterNew(), true, IriMappingToRun.None)
 }, 500000);
 
 test("Test import of 2023 Sb., o dlouhodobem řizeni informačnich systemů veřejne spravy-backup(7).zip - test import/export/import/export - new export", async () => {
-    await handleImportExportImportTest("./test-data/2023 Sb., o dlouhodobem řizeni informačnich systemů veřejne spravy-backup(7).zip", new PackageExporterByResourceType(), true)
+    await handleImportExportImportTest("./test-data/2023 Sb., o dlouhodobem řizeni informačnich systemů veřejne spravy-backup(7).zip", new PackageExporterByResourceType(), true, IriMappingToRun.None)
 }, 500000);
 
 ////////////
@@ -308,54 +308,198 @@ test("Test import of 2023 Sb., o dlouhodobem řizeni informačnich systemů veř
 // independent comparison
 
 test("JAKL_CCMM_AP-backup.zip - test import/export", async () => {
-    await handleImportExportTest("./test-data/JAKL_CCMM_AP-backup.zip", false)
+    await handleImportExportTest("./test-data/JAKL_CCMM_AP-backup.zip", false, IriMappingToRun.None)
 }, 500000);
 
 test("JAKL_CCMM_AP-backup.zip - test import/export/import/export - old export", async () => {
-    await handleImportExportImportTest("./test-data/JAKL_CCMM_AP-backup.zip", new PackageExporterNew(), false)
+    await handleImportExportImportTest("./test-data/JAKL_CCMM_AP-backup.zip", new PackageExporterNew(), false, IriMappingToRun.None)
 }, 500000);
 
 test("JAKL_CCMM_AP-backup.zip - test import/export/import/export - new export", async () => {
-    await handleImportExportImportTest("./test-data/JAKL_CCMM_AP-backup.zip", new PackageExporterByResourceType(), false)
+    await handleImportExportImportTest("./test-data/JAKL_CCMM_AP-backup.zip", new PackageExporterByResourceType(), false, IriMappingToRun.None)
 }, 500000);
 
 /////////////
 
 test("Czech Core Metadata Model-backup.zip - test import/export", async () => {
-    await handleImportExportTest("./test-data/Czech Core Metadata Model-backup.zip", true)
+    await handleImportExportTest("./test-data/Czech Core Metadata Model-backup.zip", true, IriMappingToRun.None)
 }, 500000);
 
 test("Czech Core Metadata Model-backup.zip - test import/export/import/export - old export", async () => {
-    await handleImportExportImportTest("./test-data/Czech Core Metadata Model-backup.zip", new PackageExporterNew(), true)
+    await handleImportExportImportTest("./test-data/Czech Core Metadata Model-backup.zip", new PackageExporterNew(), true, IriMappingToRun.None)
 }, 500000);
 
 test("Czech Core Metadata Model-backup.zip - test import/export/import/export - new export", async () => {
-    await handleImportExportImportTest("./test-data/Czech Core Metadata Model-backup.zip", new PackageExporterByResourceType(), true)
+    await handleImportExportImportTest("./test-data/Czech Core Metadata Model-backup.zip", new PackageExporterByResourceType(), true, IriMappingToRun.None)
 }, 500000);
 
 /////////////
 
 
 test("Data Specification Vocabulary - Default Application Profile (DSV-DAP)-backup.zip - test import/export", async () => {
-    await handleImportExportTest("./test-data/Data Specification Vocabulary - Default Application Profile (DSV-DAP)-backup.zip", true)
+    await handleImportExportTest("./test-data/Data Specification Vocabulary - Default Application Profile (DSV-DAP)-backup.zip", true, IriMappingToRun.None)
 }, 500000);
 
 test("Data Specification Vocabulary - Default Application Profile (DSV-DAP)-backup.zip - test import/export/import/export - old export", async () => {
-    await handleImportExportImportTest("./test-data/Data Specification Vocabulary - Default Application Profile (DSV-DAP)-backup.zip", new PackageExporterNew(), true)
+    await handleImportExportImportTest("./test-data/Data Specification Vocabulary - Default Application Profile (DSV-DAP)-backup.zip", new PackageExporterNew(), true, IriMappingToRun.None)
 }, 500000);
 
 test("Data Specification Vocabulary - Default Application Profile (DSV-DAP)-backup.zip - test import/export/import/export - new export", async () => {
-    await handleImportExportImportTest("./test-data/Data Specification Vocabulary - Default Application Profile (DSV-DAP)-backup.zip", new PackageExporterByResourceType(), true)
+    await handleImportExportImportTest("./test-data/Data Specification Vocabulary - Default Application Profile (DSV-DAP)-backup.zip", new PackageExporterByResourceType(), true, IriMappingToRun.None)
+}, 500000);
+
+/////////////////
+/////////////////
+// Also test the iri to iri mapping - it tests the assumption that we find all iris that we should find
+
+test("simple-vocab-no-subpackages.zip - test import/export - with IriToIri mapping during export test", async () => {
+    await handleImportExportTest("./test-data/simple-vocab-no-subpackages.zip", true, IriMappingToRun.IriToIri);
+}, 500000);
+
+test("simple-vocab-no-subpackages.zip - test import/export/import/export - old export - with IriToIri mapping during export test", async () => {
+    await handleImportExportImportTest("./test-data/simple-vocab-no-subpackages.zip", new PackageExporterNew(), true, IriMappingToRun.IriToIri);
+}, 500000);
+
+test("simple-vocab-no-subpackages.zip - test import/export/import/export - new export - with IriToIri mapping during export test", async () => {
+    await handleImportExportImportTest("./test-data/simple-vocab-no-subpackages.zip", new PackageExporterByResourceType(), true, IriMappingToRun.IriToIri);
+}, 500000);
+
+///////////
+
+test("Test import of 2023 Sb., o dlouhodobem řizeni informačnich systemů veřejne spravy-backup(7).zip - test import/export - with IriToIri mapping during export test", async () => {
+    await handleImportExportTest("./test-data/2023 Sb., o dlouhodobem řizeni informačnich systemů veřejne spravy-backup(7).zip", true, IriMappingToRun.IriToIri)
+}, 500000);
+
+test("Test import of 2023 Sb., o dlouhodobem řizeni informačnich systemů veřejne spravy-backup(7).zip - test import/export/import/export - old export - with IriToIri mapping during export test", async () => {
+    await handleImportExportImportTest("./test-data/2023 Sb., o dlouhodobem řizeni informačnich systemů veřejne spravy-backup(7).zip", new PackageExporterNew(), true, IriMappingToRun.IriToIri)
+}, 500000);
+
+test("Test import of 2023 Sb., o dlouhodobem řizeni informačnich systemů veřejne spravy-backup(7).zip - test import/export/import/export - new export - with IriToIri mapping during export test", async () => {
+    await handleImportExportImportTest("./test-data/2023 Sb., o dlouhodobem řizeni informačnich systemů veřejne spravy-backup(7).zip", new PackageExporterByResourceType(), true, IriMappingToRun.IriToIri)
+}, 500000);
+
+// ////////////
+// // These are specific, because they contain https://..local-root..., which results in new iri, due to existence of /
+// // For this reason we cannot simple compare them side by side (when sorted by filename) but we had to implement the
+// // independent comparison ... this also means that we can test the iri to project iri mappings, sicne they differ
+
+test("JAKL_CCMM_AP-backup.zip - test import/export - with IriToIri mapping during export test", async () => {
+    await handleImportExportTest("./test-data/JAKL_CCMM_AP-backup.zip", false, IriMappingToRun.IriToIri)
+}, 500000);
+
+test("JAKL_CCMM_AP-backup.zip - test import/export/import/export - old export - with IriToIri mapping during export test", async () => {
+    await handleImportExportImportTest("./test-data/JAKL_CCMM_AP-backup.zip", new PackageExporterNew(), false, IriMappingToRun.IriToIri)
+}, 500000);
+
+test("JAKL_CCMM_AP-backup.zip - test import/export/import/export - new export - with IriToIri mapping during export test", async () => {
+    await handleImportExportImportTest("./test-data/JAKL_CCMM_AP-backup.zip", new PackageExporterByResourceType(), false, IriMappingToRun.IriToIri)
+}, 500000);
+
+test("JAKL_CCMM_AP-backup.zip - test import/export/import/export - old export - with IriToProjectIri mapping during export test", async () => {
+    await handleImportExportImportTest("./test-data/JAKL_CCMM_AP-backup.zip", new PackageExporterNew(), false, IriMappingToRun.IriToProjectIri)
+}, 500000);
+
+test("JAKL_CCMM_AP-backup.zip - test import/export/import/export - new export - with IriToProjectIri mapping during export test", async () => {
+    await handleImportExportImportTest("./test-data/JAKL_CCMM_AP-backup.zip", new PackageExporterByResourceType(), false, IriMappingToRun.IriToProjectIri)
+}, 500000);
+
+/////////////
+
+test("Czech Core Metadata Model-backup.zip - test import/export - with IriToIri mapping during export test", async () => {
+    await handleImportExportTest("./test-data/Czech Core Metadata Model-backup.zip", true, IriMappingToRun.IriToIri)
+}, 500000);
+
+test("Czech Core Metadata Model-backup.zip - test import/export/import/export - old export - with IriToIri mapping during export test", async () => {
+    await handleImportExportImportTest("./test-data/Czech Core Metadata Model-backup.zip", new PackageExporterNew(), true, IriMappingToRun.IriToIri)
+}, 500000);
+
+test("Czech Core Metadata Model-backup.zip - test import/export/import/export - new export - with IriToIri mapping during export test", async () => {
+    await handleImportExportImportTest("./test-data/Czech Core Metadata Model-backup.zip", new PackageExporterByResourceType(), true, IriMappingToRun.IriToIri)
+}, 500000);
+
+// /////////////
+
+
+test("Data Specification Vocabulary - Default Application Profile (DSV-DAP)-backup.zip - test import/export - with IriToIri mapping during export test", async () => {
+    await handleImportExportTest("./test-data/Data Specification Vocabulary - Default Application Profile (DSV-DAP)-backup.zip", true, IriMappingToRun.IriToIri)
+}, 500000);
+
+test("Data Specification Vocabulary - Default Application Profile (DSV-DAP)-backup.zip - test import/export/import/export - old export - with IriToIri mapping during export test", async () => {
+    await handleImportExportImportTest("./test-data/Data Specification Vocabulary - Default Application Profile (DSV-DAP)-backup.zip", new PackageExporterNew(), true, IriMappingToRun.IriToIri)
+}, 500000);
+
+test("Data Specification Vocabulary - Default Application Profile (DSV-DAP)-backup.zip - test import/export/import/export - new export - with IriToIri mapping during export test", async () => {
+    await handleImportExportImportTest("./test-data/Data Specification Vocabulary - Default Application Profile (DSV-DAP)-backup.zip", new PackageExporterByResourceType(), true, IriMappingToRun.IriToIri)
 }, 500000);
 
 
-async function importAndReturnExport(pathToZip: string, newExportHandler: PackageExporterBase) {
-    const readStream = fs.createReadStream(pathToZip);
-    const buffer: Buffer = await streamBuffer(readStream);
-    return importAndReturnExportFromBuffer(buffer, buffer, newExportHandler);
+enum IriMappingToRun {
+    None,
+    IriToIri,
+    IriToProjectIri,
+    ProjectIriToIri,
+};
+
+function getReverseIriMappingToRun(iriMappingToRun: IriMappingToRun): IriMappingToRun {
+    switch(iriMappingToRun) {
+        case IriMappingToRun.None: return IriMappingToRun.None;
+        case IriMappingToRun.IriToIri: return IriMappingToRun.IriToIri;
+        case IriMappingToRun.IriToProjectIri: return IriMappingToRun.ProjectIriToIri;
+        case IriMappingToRun.ProjectIriToIri: return IriMappingToRun.IriToProjectIri;
+    }
 }
 
-async function importAndReturnExportFromBuffer(buffer1: Buffer<ArrayBufferLike>, buffer2: Buffer<ArrayBufferLike>, newExportHandler: PackageExporterBase) {
+function getIriMapForIriMappingToRun(iriMaps: IriMaps, iriMappingToRun: IriMappingToRun): Record<string, string> | undefined {
+    switch(iriMappingToRun) {
+        case IriMappingToRun.None: return undefined
+        case IriMappingToRun.IriToIri: return iriMaps.iriToIriMap;
+        case IriMappingToRun.IriToProjectIri: return iriMaps.iriToProjectIriMap;
+        case IriMappingToRun.ProjectIriToIri: return iriMaps.projectIriToIriMap;
+    }
+}
+
+
+type IriMaps = {
+    iriToProjectIriMap: Record<string, string>;
+    projectIriToIriMap: Record<string, string>;
+    iriToIriMap: Record<string, string>;
+}
+
+function createIriMaps(resourceModelForTest: ResourceModelForTest): IriMaps {
+    const iriToProjectIriMap: Record<string, string> = {};
+    const projectIriToIriMap: Record<string, string> = {};
+    const iriToIriMap: Record<string, string> = {};
+    const inMemoryFs = resourceModelForTest.getInMemoryFilesystem();
+    for (const [iri, filesystemNode] of Object.entries(inMemoryFs)) {
+        iriToIriMap[iri] = iri;
+        iriToProjectIriMap[iri] = filesystemNode.projectIri!;
+        projectIriToIriMap[filesystemNode.projectIri!] = iri;
+    }
+    return {
+        iriToIriMap,
+        iriToProjectIriMap,
+        projectIriToIriMap,
+    };
+}
+
+
+async function importAndExportWithoutExportComparison(
+    pathToZip: string,
+    newExportHandler: PackageExporterBase,
+    iriMappingToRun: IriMappingToRun
+) {
+    const readStream = fs.createReadStream(pathToZip);
+    const buffer: Buffer = await streamBuffer(readStream);
+    return importAndExportWithoutExportComparisonFromBuffer(buffer, buffer, newExportHandler, iriMappingToRun);
+}
+
+async function importAndExportWithoutExportComparisonFromBuffer(
+    buffer1: Buffer<ArrayBufferLike>,
+    buffer2: Buffer<ArrayBufferLike>,
+    newExportHandler: PackageExporterBase,
+    iriMappingToRun: IriMappingToRun,
+    iriMaps?: IriMaps,
+) {
     const resourceModelForTestingOld = createResourceModelForTesting();
     const oldImportHandler = new PackageImporterDeprecated(resourceModelForTestingOld);
     const importResultFromOld = await oldImportHandler.doImport(buffer1);
@@ -366,8 +510,14 @@ async function importAndReturnExportFromBuffer(buffer1: Buffer<ArrayBufferLike>,
 
     const oldResourceModelToCompare = deepOmit(resourceModelForTestingOld, "projectIri");
     const newResourceModelToCompare = deepOmit(resourceModelForTestingNew, "projectIri");
-    expect(oldResourceModelToCompare).toStrictEqual(newResourceModelToCompare);
-    expect(importResultFromOld).toStrictEqual(importResultFromNew);
+    if (iriMappingToRun === IriMappingToRun.None || iriMappingToRun === IriMappingToRun.IriToIri) {
+        expect(oldResourceModelToCompare).toStrictEqual(newResourceModelToCompare);
+        expect(importResultFromOld).toStrictEqual(importResultFromNew);
+    }
+
+    if (iriMaps === undefined) {
+        iriMaps = createIriMaps(resourceModelForTestingNew);
+    }
 
 
     const oldExportHandler = new PackageExporterDeprecated(resourceModelForTestingOld);
@@ -379,18 +529,27 @@ async function importAndReturnExportFromBuffer(buffer1: Buffer<ArrayBufferLike>,
         roots: [createRootFilesystemNodeLocation(importResultFromNew[0], "")],
         gitIgnore: null,
     };
+
+    const testIriMapToRun = getIriMapForIriMappingToRun(iriMaps, iriMappingToRun);
+    const shouldRunTestVariant = iriMappingToRun !== IriMappingToRun.None;
+
     const newExportResult = await newExportHandler.doExportFromIRI(
         filesystemExportParams, "", AvailableFilesystems.DS_Filesystem, AvailableExports.Zip,
-        "json", false, true);
+        "json", false, true, testIriMapToRun, shouldRunTestVariant);
 
     return {
+        iriMaps,
         oldExportResult,
         newExportResult,
     };
 }
 
-async function handleImportExportTest(pathToZip: string, shouldDoStrictComparison: boolean) {
-    const { oldExportResult, newExportResult } = await importAndReturnExport(pathToZip, new PackageExporterNew());
+async function handleImportExportTest(pathToZip: string, shouldDoStrictComparison: boolean, iriMappingToRun: IriMappingToRun) {
+    const {
+        oldExportResult,
+        newExportResult
+    } = await importAndExportWithoutExportComparison(pathToZip, new PackageExporterNew(), iriMappingToRun);
+
     const oldZip = await JSZip.loadAsync(oldExportResult);
     const newZip = await JSZip.loadAsync(newExportResult!);
     if (shouldDoStrictComparison) {
@@ -402,12 +561,18 @@ async function handleImportExportTest(pathToZip: string, shouldDoStrictCompariso
 }
 
 
-async function handleImportExportImportTest(pathToZip: string, newExporterToUseInFirstExport: PackageExporterBase, shouldDoStrictComparison: boolean) {
-    const { oldExportResult, newExportResult } = await importAndReturnExport(pathToZip, newExporterToUseInFirstExport);
+async function handleImportExportImportTest(
+    pathToZip: string,
+    newExporterToUseInFirstExport: PackageExporterBase,
+    shouldDoStrictComparison: boolean,
+    iriMappingToRun: IriMappingToRun,
+) {
+    const { oldExportResult, newExportResult, iriMaps } = await importAndExportWithoutExportComparison(pathToZip, newExporterToUseInFirstExport, iriMappingToRun);
+    const reverseIriMappingToRun = getReverseIriMappingToRun(iriMappingToRun);
     const {
         oldExportResult: oldExportResultRoundTwo,
-        newExportResult: newExportResultRoundTwo
-    } = await importAndReturnExportFromBuffer(oldExportResult, newExportResult!, new PackageExporterNew());
+        newExportResult: newExportResultRoundTwo,
+    } = await importAndExportWithoutExportComparisonFromBuffer(oldExportResult, newExportResult!, new PackageExporterNew(), reverseIriMappingToRun, iriMaps);
     const oldZip = await JSZip.loadAsync(oldExportResultRoundTwo);
     const newZip = await JSZip.loadAsync(newExportResultRoundTwo!);
     if (shouldDoStrictComparison) {

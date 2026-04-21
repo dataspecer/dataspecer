@@ -13,6 +13,7 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
   protected iriMapping: Record<string, string> | null;
   protected shouldRemoveExportedAt: boolean = false;
   protected shouldUseIrisForNames: boolean = false;
+  protected shouldRunTestVariantForIriReplacement: boolean = false;
 
   public static setExportVersion(metaObject: any, exportVersion: number) {
     metaObject._exportVersion = exportVersion;
@@ -44,7 +45,14 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
     shouldRemoveExportedAt: boolean,
     shouldUseIrisForNames: boolean,
     iriMapping?: Record<string, string>,
+    shouldRunTestVariantForIriReplacement?: boolean,
   ): Promise<AllowedExportResults> {
+    if (shouldRunTestVariantForIriReplacement) {
+      this.shouldRunTestVariantForIriReplacement = shouldRunTestVariantForIriReplacement;
+    }
+    else {
+      this.shouldRunTestVariantForIriReplacement = false;
+    }
     this.iriMapping = iriMapping ?? null;
     this.shouldUseIrisForNames = shouldUseIrisForNames;
     this.shouldRemoveExportedAt = shouldRemoveExportedAt;
