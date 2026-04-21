@@ -90,7 +90,7 @@ export const trySetPackageAsUpToDateHandler = asyncHandler(async (request: expre
       // 3) Set the result
       const hasUncommittedChanges = diffTreeComparison.conflicts.length !== 0 || diffTreeComparison.created.length !== 0 ||
                                     diffTreeComparison.changed.length !== 0 || diffTreeComparison.removed.length !== 0;
-      resourceModel.setHasUncommittedChanges(iri, hasUncommittedChanges);
+      await resourceModel.setHasUncommittedChanges(iri, hasUncommittedChanges);
       if (hasUncommittedChanges) {
         response.sendStatus(204);
       }
