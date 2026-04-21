@@ -29,9 +29,13 @@ type GitChangesToDSPackageStoreResult = {
 
 export interface MergeStateCreator {
   createMergeState(
-    rootResourceIri: string, commitMessage: string, mergeStateCause: MergeStateCause,
-    diffTreeComparison: ComparisonFullResult, commonCommitHash: string,
-    mergeFromInfo: MergeEndInfoWithRootNode, mergeToInfo: MergeEndInfoWithRootNode
+    rootResourceIri: string,
+    commitMessage: string,
+    mergeStateCause: MergeStateCause,
+    diffTreeComparison: ComparisonFullResult,
+    commonCommitHash: string,
+    mergeFromInfo: MergeEndInfoWithRootNode,
+    mergeToInfo: MergeEndInfoWithRootNode
   ): Promise<string>;
 }
 type UpdateBlobMethod = (iri: string, datastoreType: string, newBlobContent: any, mergeStateUUIDsToIgnoreInUpdating?: string[] | undefined) => Promise<void>;

@@ -13,6 +13,9 @@ export type MergeFromDataType = {
   iri: string;
 }
 
+/**
+ * Response returned when the backend finds out during committing that there exists certain commits. So user will be presented with new dialog.
+ */
 export type CommitRedirectResponseJson = {
   iri: string,
   redirectMessage: string;

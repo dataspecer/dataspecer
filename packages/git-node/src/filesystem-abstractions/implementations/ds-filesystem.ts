@@ -15,7 +15,8 @@ import { BaseResource } from "@dataspecer/core-v2/project";
 
 // Note that DS always works with jsons as formats for datastores, it is too much work to make to make it work for everything.
 // Since we would need to change every component (including cme) to support multiple formats.
-// So we just convert it to js object and store it. and similiarly when creating mapping we just use json as format to the datastore info
+// So we just convert it to JSON object and store it. and similiarly when creating mapping we just use json as format to the datastore info
+// That being said we do not lose anything. DS filesystem is only for storing of data not looking at it.
 
 export class DSFilesystem extends FilesystemAbstractionBase {
   /////////////////////////////////////

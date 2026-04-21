@@ -2,6 +2,9 @@ import { createDatastoreWithReplacedIris, DirectoryNode, FilesystemNode, isDatas
 import { PackageExporterBase } from "../export-api/export-base.ts";
 
 
+/**
+ * Reimplementation of the old export using new API. It simply puts the content of package in the directory and packages, while subpackages are new directories (recursively).
+ */
 export class PackageExporterNew extends PackageExporterBase {
   getExportVersion(): number {
     return 1;

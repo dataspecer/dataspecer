@@ -22,6 +22,9 @@ export class PackageExporterFactory {
 }
 
 
+/**
+ * The new version of export. More structured than the old one. It puts the models into specific directories, which are decided by the type of the model.
+ */
 export class PackageExporterByResourceType extends PackageExporterBase {
   getExportVersion(): number {
     return 2;

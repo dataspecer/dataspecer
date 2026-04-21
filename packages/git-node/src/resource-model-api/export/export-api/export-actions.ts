@@ -8,6 +8,9 @@ import { ZipStreamDictionary } from "../../utils/zip-stream-dictionary.ts";
 
 export type AllowedExportResults = void | Buffer<ArrayBufferLike>;
 
+/**
+ * This interface contains the methods that perform the exporting itself based on given data.
+ */
 export interface ExportActions<T extends AllowedExportResults> {
   /**
    * @param exportPath The path is in format the/path/to/resource/with/nameWithoutSuffix

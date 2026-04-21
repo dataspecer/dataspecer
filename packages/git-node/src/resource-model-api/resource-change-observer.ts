@@ -28,7 +28,7 @@ export interface ResourceChangeListener {
 
 /**
  * Interface which should be implemented by the "subject" of the observer pattern.
- * It's purpose is to notify the listeners ({@link ResourceChangeListener}).
+ * It's purpose is to notify the listeners ({@link ResourceChangeListener}). Respectively, it lets you add/remove and notify listeners
  */
 export interface ResourceChangePublisher {
   /**
@@ -58,6 +58,9 @@ export interface ResourceChangePublisher {
   notifyListenersAboutGitLinkRemovalFromModel(gitLink: string): Promise<void>;
 }
 
+/**
+ * The base implementation of observer, which lets you add/remove and notify listeners.
+ */
 export class ResourceChangeObserverBase implements ResourceChangePublisher {
   private listeners: ResourceChangeListener[] = [];
 
