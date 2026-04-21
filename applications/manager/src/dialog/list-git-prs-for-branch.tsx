@@ -15,7 +15,7 @@ import { usePaginationComponent } from "@/components/pagination-component";
 import { Button } from "@/components/ui/button";
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 import { CREATE_MERGE_STATE_WAIT_TIME, GIT_IMPORT_WAIT_TIME } from "@/utils/git-wait-times";
-import { createNewTabAndOpen } from "./sign-in";
+import { createNewTabAndOpen } from "./advanced-sign-in";
 
 
 type GitPrsListDialogProps = {
@@ -28,6 +28,7 @@ type GitPrsListDialogProps = {
 
 
 /**
+ * Shows the pull requests (or whatever the name is for the specific Git provider) for the given gitUrl.
  * If the provided branch is null then it lists all PRs for resource.
  */
 export const GitPrsListDialog = ({ resources, branch, gitUrl, gitProviderSpecificNameForPR, gitProviderSpecificNameForPRShortcut, isOpen, resolve }: GitPrsListDialogProps) => {
@@ -166,6 +167,14 @@ type PullRequestComponentProps = {
   resolve: (value: null) => void;
 }
 
+/**
+ * Handles rendering of a single pull request. The main logic is in deciding what actions buttons to show and what they do.
+ *  The action buttons are:
+ *   - Open merge state
+ *   - Create merge state
+ *   - Import one missing data specification and create merge state
+ *   - Import both missing data specifications and create merge state
+ */
 function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, resolve }: PullRequestComponentProps) {
   const openModal = useBetterModal();
   const [fetchedMergeState, setFetchedMergeState] = useState<MergeState | null>(null);

@@ -43,7 +43,7 @@ import { DeleteGitRepoDialog } from "./dialog/remove-git-repo-dialog";
 import { SetGitRemoteConfigurationDialog } from "./dialog/set-git-remote-configuration-dialog";
 import { GitPrsListDialog } from "./dialog/list-git-prs-for-branch";
 import { GitIssuesListDialog } from "./dialog/list-git-issues";
-import { createNewTabAndOpen } from "./dialog/sign-in";
+import { createNewTabAndOpen } from "./dialog/advanced-sign-in";
 
 
 export function lng(text: LanguageString | undefined): string | undefined {

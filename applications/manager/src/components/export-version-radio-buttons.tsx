@@ -8,6 +8,10 @@ type ExportVersionRadioButtonsProps = {
   setExportVersion: (newExportVersion: ExportVersionType) => void,
 }
 
+/**
+ * Radio buttons that lets user choose between (currently two) export version.
+ * The original one and more structured, that puts models into directories based on their type.
+ */
 export const ExportVersionRadioButtons = (props: ExportVersionRadioButtonsProps) => {
   const { t } = useTranslation();
   const oldVersionValue: ExportVersionType = 1;

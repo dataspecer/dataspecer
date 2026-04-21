@@ -26,6 +26,10 @@ type CreateBranchDialogProps = {
 
 const idPrefix = "createNewbranch";
 
+/**
+ * React component representing dialog for creating of new branches. Respectively, it has two purposes.
+ *  One is to create a new branch with given name from given sourcePackage. Second is turning commit into a branch.
+ */
 export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, resolve }: CreateBranchDialogProps) => {
   const openModal = useBetterModal();
 

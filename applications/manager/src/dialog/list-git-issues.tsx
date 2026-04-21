@@ -8,7 +8,7 @@ import { GitProviderFactory } from "@dataspecer/git/git-providers";
 import { Loader } from "lucide-react";
 import { useMemo } from "react";
 import { toast } from "sonner";
-import { createNewTabAndOpen } from "./sign-in";
+import { createNewTabAndOpen } from "./advanced-sign-in";
 
 
 type GitIssuesListDialogProps = {
@@ -17,6 +17,7 @@ type GitIssuesListDialogProps = {
 
 
 /**
+ * Shows the dialog with paginated view present on the given gitUrl
  * @todo Lists only the opened issues - see IssueState.Open in the backend request
  * @todo In some things similar to the PR component, there could be probably be one generic component which builds it.
  *  But 1) It is extra work 2) The end result general component may be hard to read/modify.

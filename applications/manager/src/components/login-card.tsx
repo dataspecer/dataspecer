@@ -4,7 +4,7 @@ import { LockKeyholeIcon, LogIn, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { SshMenu } from '@/dialog/ssh-menu';
-import { goToPage, SignInDialog } from '@/dialog/sign-in';
+import { goToPage, SignInDialog } from '@/dialog/advanced-sign-in';
 import { ScopeGroup } from '@dataspecer/auth';
 
 /**

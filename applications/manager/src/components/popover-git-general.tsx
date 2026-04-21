@@ -13,6 +13,9 @@ type PopOverGitGeneralComponentProps = {
   children: React.ReactNode;
 }
 
+/**
+ * The general component that is used for the popovers (the info "buttons" with hints).
+ */
 export function PopOverGitGeneralComponent({ children }: PopOverGitGeneralComponentProps) {
   const [isOpen, setIsOpen] = useState(false);
 

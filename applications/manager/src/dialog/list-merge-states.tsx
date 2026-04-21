@@ -14,6 +14,10 @@ type MergeStateDialogProps = {
   iri: string,
 } & BetterModalProps<null>;
 
+
+/**
+ * Lists the merge states for data specification with the given IRI.
+ */
 export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialogProps) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [mergeStates, setMergeStates] = useState<any[]>([]);
@@ -83,6 +87,9 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
   );
 }
 
+/**
+ * Renders a single merge state.
+ */
 const renderMergeState = (
   mergeState: MergeState,
   removeFromMergeStatesInDialog: (uuid: string) => void,

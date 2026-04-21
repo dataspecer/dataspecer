@@ -11,6 +11,9 @@ type InfoDialogProps = {
 } & BetterModalProps;
 
 
+/**
+ * Simple info dialog with close button, that gets the {@link InfoDialogProps}
+ */
 export const InfoDialog = ({ isOpen, resolve, title, description, content }: InfoDialogProps) => {
   const { t } = useTranslation();
 

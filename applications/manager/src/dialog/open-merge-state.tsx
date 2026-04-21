@@ -10,6 +10,12 @@ import { removeMergeState } from "@/utils/merge-state-backend-requests";
 import { MergeActor } from "@/hooks/use-merge-actors";
 
 
+/**
+ * Simply fetches merge state.
+ * @param shouldIncludeDiffData if true returns the full diff tree. Otherwise just the metadata.
+ * @param shouldForceDiffTreeReload Forces the diff tree to recompute again. Otherwise it is recomputed only if there are changes
+ *  (it is not up to date, that is it was modified from somewhere else than a diff editor)
+ */
 export async function fetchMergeState(
   rootPathMergeFrom: string,
   rootPathMergeTo: string,
@@ -98,6 +104,9 @@ type OpenMergeStateProps = {
  * Gets 2 DS packages - mergeFrom and mergeTo.
  * If the merge state does not exists between them, then it creates one.
  * The diff editor is opened right after.
+ * @todo Note that now it issues the mergeFrom, mergeTo iris to find the resource on the backend. We can afford that since,
+ *  the IRIs are paths to the root resources of the merge states. But if we decide in future to make the merge state "static".
+ *  Then the merge from resource will be stored in Git and its path will not be IRI, so the searching for the merge state would have to be properly handled.
  */
 export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editable, isOpen, resolve }: OpenMergeStateProps) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);

@@ -5,6 +5,10 @@ import { BetterModalProps } from "@/lib/better-modal";
 import { ScopeGroup } from "@dataspecer/auth";
 import { EyeIcon, LogIn } from "lucide-react";
 
+
+/**
+ * Handles the advanced shigned in. Lot of tooltips and lets the user choose the scopes (rights) to provide to Dataspecer within the OAuth.
+ */
 function SignInInfoTooltipAdvanced() {
   return <PopOverGitGeneralComponent>
       <div>
