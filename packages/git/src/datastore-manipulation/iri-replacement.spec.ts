@@ -23,7 +23,7 @@ test("Basic test for iri replacement 1", () => {
   };
 
 
-  const replacedInput = createDatastoreWithReplacedIris(inputForIriReplacement, irisToReplaceMap);
+  const replacedInput = createDatastoreWithReplacedIris(inputForIriReplacement, irisToReplaceMap, true);
 
   expect(replacedInput.missingIrisInNew).toEqual(["replace4-without-known-replacement"]);
   expect(replacedInput.containedIriToReplace).toBe(true);
@@ -46,7 +46,7 @@ test("Basic test for iri replacement real example", () => {
   const irisToReplaceMap = {
     "48192f17-b300-4eb3-8c46-b3ed63bab12f": "replacement-iri",
   };
-  const replacedInput = createDatastoreWithReplacedIris(psmResourceFromDcatInputForTesting, irisToReplaceMap);
+  const replacedInput = createDatastoreWithReplacedIris(psmResourceFromDcatInputForTesting, irisToReplaceMap, true);
 
   expect(replacedInput.missingIrisInNew).toEqual([]);
   expect(replacedInput.containedIriToReplace).toBe(true);

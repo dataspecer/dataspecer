@@ -3,14 +3,23 @@ import { FilesystemAbstraction } from "../filesystem/abstractions/filesystem-abs
 
 /**
  * We have to replace each iri inside the {@link datastoreToSearchInForIris} object, which we copy by the iris which exists in the new resources/packages
+ * @param shouldRunTestVariant Should be true if we are running tests. This variant contains additional checks that we matched all IRIs that we expected to match
  * @returns The iris, which could not be replaced, because the resources, which have them do not exist (we have to create them first and get the created iris).
  *  and the copy of {@link datastoreToSearchInForIris} with replaced every iri we could.
  */
-export function createDatastoreWithReplacedIris(datastoreToSearchInForIris: object, irisMap: Record<string, string | null>) {
-  const allIrisToCheckFor: string[] = Object.keys(irisMap);
+export function createDatastoreWithReplacedIris(
+  datastoreToSearchInForIris: object,
+  irisMap: Record<string, string | null>,
+  shouldRunTestVariant?: boolean,
+) {
+  shouldRunTestVariant ??= false;
+  // The keys have to be sorted from longest to shortest, since we first want to match longer IRIs, since sometimes the IRIs are subparts of other IRIs:
+  //  for example - LONG_IRI = {IRI1}/{IRI2}
+  const allIrisToCheckFor: string[] = Object.keys(irisMap).sort((a, b) => b.length - a.length);
   const missingIrisInNew: string[] = [];
   const datastoreWithReplacedIris: object = {};
-  const containedIriToReplace = replaceIrisInDatastoreAndCollectMissingOnes(datastoreToSearchInForIris, allIrisToCheckFor, irisMap, missingIrisInNew, datastoreWithReplacedIris);
+  const containedIriToReplace = replaceIrisInDatastoreAndCollectMissingOnes(
+    datastoreToSearchInForIris, allIrisToCheckFor, irisMap, missingIrisInNew, datastoreWithReplacedIris, shouldRunTestVariant);
 
   return {
     missingIrisInNew: Array.from(new Set(missingIrisInNew)),
@@ -26,7 +35,11 @@ export function createDatastoreWithReplacedIris(datastoreToSearchInForIris: obje
 /**
  * Note that there are even identifiers like this: d19697d9-b1fe-427a-874b-0a537119a6e7-model-metadata-entity. However, those are not top level,
  *  so the question is if we need to replace them or not. However, we will replace them, since some part of code simply may look for id, which has
- *  "-model-metadata-entity" as a suffix
+ *  "-model-metadata-entity" as a suffix. Post-note - we need to replace them, there is a code that looks for derivated IRI.
+ * @todo The real question is if there are more such hidden dependencies, that is derivated IRIs. If not, we can simply just look specifically for
+ *  "-model-metadata-entity" suffix, if there is more we need to do what we do currently and that is to look for IRIs prefixed/suffixed with special character.
+ *  Also note that we do the replacement since it may be part of URL, but we have not found any such case except for the documentation template
+ *  Which we skip anyways, since there the IRIs are used for examples and not as an actual path.
  */
 function replaceIrisInDatastoreAndCollectMissingOnes(
   originalDatastore: Record<string, any>,
@@ -35,11 +48,17 @@ function replaceIrisInDatastoreAndCollectMissingOnes(
   // Outputs to extend
   missingIrisInNew: string[],
   datastoreWithReplacedIris: Record<string, any>,
+  shouldRunTestVariant: boolean,
 ): boolean {
   let containedIriToReplace: boolean = false;
 
   for (const [key, value] of Object.entries(originalDatastore)) {
     if (key === "projectIri") {     // Project IRIs are kept as they are
+      datastoreWithReplacedIris[key] = value;
+      continue;
+    }
+    else if (key === "https://schemas.dataspecer.com/documentation-generator-config/") {
+      // We skip the replacement in documentation template
       datastoreWithReplacedIris[key] = value;
       continue;
     }
@@ -50,7 +69,8 @@ function replaceIrisInDatastoreAndCollectMissingOnes(
     // Trying to replace the key. {} is just for scoping of variables
     {
       // TODO RadStr PR: Do it through includes?
-      const keyReplacementResult = getReplacementForNonComposite(key, allIrisToCheckFor, irisMap, missingIrisInNew);
+      const keyReplacementResult = getReplacementForNonComposite(
+        key, allIrisToCheckFor, irisMap, missingIrisInNew, shouldRunTestVariant);
       if (keyReplacementResult.containedIriToReplace) {
         newKey = keyReplacementResult.replacementIri;
       }
@@ -65,11 +85,12 @@ function replaceIrisInDatastoreAndCollectMissingOnes(
           const objectToPutIntoArray = {};
           datastoreWithReplacedIris[newKey].push(objectToPutIntoArray);
           // It is actually important to do it separately and not use ||= since if the containedIriToReplace is true, we won't run the recursion.
-          const containedIriToReplaceInRecursion = replaceIrisInDatastoreAndCollectMissingOnes(item, allIrisToCheckFor, irisMap, missingIrisInNew, objectToPutIntoArray);
+          const containedIriToReplaceInRecursion = replaceIrisInDatastoreAndCollectMissingOnes(
+            item, allIrisToCheckFor, irisMap, missingIrisInNew, objectToPutIntoArray, shouldRunTestVariant);
           containedIriToReplace ||= containedIriToReplaceInRecursion;
         }
         else {
-          const replacementResult = getReplacementForNonComposite(item, allIrisToCheckFor, irisMap, missingIrisInNew);
+          const replacementResult = getReplacementForNonComposite(item, allIrisToCheckFor, irisMap, missingIrisInNew, shouldRunTestVariant);
           datastoreWithReplacedIris[newKey].push(replacementResult.replacementIri);
           containedIriToReplace ||= replacementResult.containedIriToReplace;
         }
@@ -81,12 +102,13 @@ function replaceIrisInDatastoreAndCollectMissingOnes(
       }
       else {
         datastoreWithReplacedIris[newKey] = {};
-        const containedIriToReplaceInRecursion = replaceIrisInDatastoreAndCollectMissingOnes(value, allIrisToCheckFor, irisMap, missingIrisInNew, datastoreWithReplacedIris[newKey]);
+        const containedIriToReplaceInRecursion = replaceIrisInDatastoreAndCollectMissingOnes(
+          value, allIrisToCheckFor, irisMap, missingIrisInNew, datastoreWithReplacedIris[newKey], shouldRunTestVariant);
         containedIriToReplace ||= containedIriToReplaceInRecursion;
       }
     }
     else {
-      const replacementResult = getReplacementForNonComposite(value, allIrisToCheckFor, irisMap, missingIrisInNew);
+      const replacementResult = getReplacementForNonComposite(value, allIrisToCheckFor, irisMap, missingIrisInNew, shouldRunTestVariant);
       datastoreWithReplacedIris[newKey] = replacementResult.replacementIri;
       containedIriToReplace ||= replacementResult.containedIriToReplace;
     }
@@ -115,6 +137,7 @@ function getReplacementForNonComposite(
   allIrisToCheckFor: string[],
   irisMap: Record<string, string | null>,
   missingIrisInNew: string[],     // Output to extend
+  shouldRunTestVariant: boolean,
 ): ReplacementForNonCompositeResult {
   let isReplacementMissing: boolean = false;
   let containedIriToReplace: boolean = false;
@@ -126,19 +149,34 @@ function getReplacementForNonComposite(
     };
   }
 
-  // const exactMatch = iriIndex(allIrisToCheckFor, originalIri).position >= 0;
-  // let notExactMatchButStillMatch: boolean = false;
-  // for (const iriToCheckFor of allIrisToCheckFor) {
-  //   if (originalIri.indexOf(iriToCheckFor) >= 0) {
-  //     notExactMatchButStillMatch = true;
-  //     break;
-  //   }
-  // }
 
-  // if (exactMatch !== notExactMatchButStillMatch) {
-  //   console.error({exactMatch, notExactMatchButStillMatch, originalIri, allIrisToCheckFor});
-  //   throw new Error("Not exact match");
-  // }
+  if (shouldRunTestVariant) {
+    const exactMatch = iriIndex(allIrisToCheckFor, originalIri).position >= 0;
+    const notExactMatches: { iri: string, position: number }[] = [];
+    for (const iriToCheckFor of allIrisToCheckFor) {
+      const indexOf = originalIri.indexOf(iriToCheckFor);
+      if (indexOf >= 0) {
+        if ((indexOf - 1 >= 0 && originalIri.charAt(indexOf + 1) === "/" || indexOf + iriToCheckFor.length < originalIri.length && originalIri.charAt(indexOf + iriToCheckFor.length) === "/")) {
+          // This is very special case, when there is a referenced model (for example for visual model), that does not exist in Dataspecer.
+          continue;
+        }
+        else if (notExactMatches.length === 0) {
+          notExactMatches.push({iri: iriToCheckFor, position: originalIri.indexOf(iriToCheckFor)});
+        }
+        else if (notExactMatches.length > 0 && !notExactMatches[0].iri.includes(iriToCheckFor)) {
+          notExactMatches.push({iri: iriToCheckFor, position: originalIri.indexOf(iriToCheckFor)});
+        }
+        if (notExactMatches.length > 1) {
+        }
+      }
+    }
+
+    const notExactMatchButStillMatch = notExactMatches.length > 0;
+    if (exactMatch !== notExactMatchButStillMatch || notExactMatches.length > 1) {
+      console.error({exactMatch, notExactMatchButStillMatch, originalIri, allIrisToCheckFor});
+      throw new Error("Not exact match");
+    }
+  }
 
   let replacementIri: string;
   // TODO RadStr PR: Does not work for {my-iri2}#some-other-part{my-iri2}. However, it works for each example where is exactly one iri at the start/end (which should all of them hopefully).
@@ -180,7 +218,7 @@ function iriIndex(iris: string[], text: string): { iri: string, position: number
       else {
         if (position === 0) {
           const charAtTheEnd = text.charAt(iri.length);
-          if (charAtTheEnd === "#" || charAtTheEnd === "?" || charAtTheEnd === "-" || charAtTheEnd === "_") {   // It is some sort of location or part of some extended iri
+          if (isCharValidSurrounding(charAtTheEnd)) {   // It is some sort of location or part of some extended iri
             isMismatch = false;
           }
         }
@@ -188,7 +226,7 @@ function iriIndex(iris: string[], text: string): { iri: string, position: number
           if (position === text.length - iri.length) {      // It is at the end
             // Same as above, but we check for the character before
             const charBefore = text.charAt(position - 1);
-            if (charBefore === "#" || charBefore === "?" || charBefore === "-" || charBefore === "_") {
+            if (isCharValidSurrounding(charBefore)) {
               isMismatch = false;
             }
           }
@@ -207,6 +245,11 @@ function iriIndex(iris: string[], text: string): { iri: string, position: number
     iri: text,
     position: -1,
   };
+}
+
+function isCharValidSurrounding(char: string) {
+  // Note that we do not look for /, since then we could do partial replacement of IRI (the one with /)
+  return char === "#" || char === "?" || char === "-" || char === "_" || char === "&";
 }
 
 /**
