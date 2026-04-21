@@ -812,13 +812,13 @@ export const commitToGitHandler = async (
         const jsonResponse: NonNullable<CommitConflictInfo> = await response.json();
         openModal(TextDiffEditorDialog, { initialMergeFromRootMetaPath: jsonResponse.conflictMergeFromRootPath, initialMergeToRootMetaPath: jsonResponse.conflictMergeToRootPath, editable: convertMergeStateCauseToEditable("push")});
         toast.success(t("git.toast.merge-state-created"));
-        requestLoadPackage(iri, true);
+        await requestLoadPackage(iri, true);
         return;
       }
       else {
         closeDialogObject.closeDialogAction();
         gitOperationResultToast(t, response);
-        requestLoadPackage(iri, true);
+        await requestLoadPackage(iri, true);
         if (response.ok) {
           onSuccessCallback?.();
         }
