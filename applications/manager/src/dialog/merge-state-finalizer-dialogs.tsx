@@ -33,13 +33,6 @@ type MergeStateFinalizerAnswerDialogProps = {
   httpResponse: FinalizerResponse;
 } & Omit<MergeStateFinalizerProps, "isOpen" | "openModal">;
 
-
-/**
- * The main dialog for the merge state finalizer. Its content is decided based on the type of merge state.
- *  All of the finalizers are kind of similiar. They consists of some steps. Each merge state has a another component which is called within this main dialog.
- *  The purpose of this dialog is to simply show that something is loading or show the children merge state component.
- * All of the children dialogs are similar - they have the main dialog and on failure show another one, where user chooses the action with which should the error be handled.
- */
 export const MergeStateFinalizerDialog = ({ mergeState, openModal, isOpen, resolve }: MergeStateFinalizerProps) => {
   const [isWaitingForAnswer, setIsWaitingForAnswer] = useState<boolean>(false);
   const [shouldRenderAnswerDialog, setShouldRenderAnswerDialog] = useState<boolean>(false);
@@ -110,9 +103,7 @@ export const MergeStateFinalizerDialog = ({ mergeState, openModal, isOpen, resol
   );
 }
 
-/**
- * The component shown for finalizer of merge state caused by pulling.
- */
+
 const MergeStateFinalizerForPull = ({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, setIsWaitingForAnswer, resolve }: MergeStateFinalizerSpecificCauseProps) => {
   const [httpResponse, setHttpResponse] = useState<FinalizerResponse>(null);
 
@@ -152,7 +143,7 @@ const MergeStateFinalizerForPull = ({ mergeState, shouldRenderAnswerDialog, setS
 
   return (
     shouldRenderAnswerDialog ?
-      <MergeStateFinalizerForPullErrorDialog mergeState={mergeState} resolve={resolve} httpResponse={httpResponse} /> :
+      <MergeStateFinalizerForPullAnswerDialog mergeState={mergeState} resolve={resolve} httpResponse={httpResponse} /> :
       <>
         <ModalHeader>
           <ModalTitle>Finish merge state caused by pulling</ModalTitle>
@@ -170,10 +161,7 @@ const MergeStateFinalizerForPull = ({ mergeState, shouldRenderAnswerDialog, setS
   );
 }
 
-/**
- * Second dialog for pull finalizer. It is dialog that handles some sort of error when the parent pull dialog was finalizing the merge state.
- */
-const MergeStateFinalizerForPullErrorDialog = ({ mergeState, resolve }: MergeStateFinalizerAnswerDialogProps) => {
+const MergeStateFinalizerForPullAnswerDialog = ({ mergeState, resolve }: MergeStateFinalizerAnswerDialogProps) => {
   const finalizerHandler = async (finalizerVariant: FinalizerVariantsForPullOnFailure) => {
     const response = await finalizePullMergeStateOnFailure(mergeState, finalizerVariant);
     if (response) {
@@ -203,10 +191,6 @@ const MergeStateFinalizerForPullErrorDialog = ({ mergeState, resolve }: MergeSta
     </>;
 };
 
-
-/**
- * Dialog for merge finalizer. Handles the decision between choosing merge/rebase.
- */
 const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, secondsPassed, setSecondsAtStartofMerge, setIsWaitingForAnswer, resolve, openModal }: MergeStateFinalizerMergeCauseProps) => {
   const { t } = useTranslation();
   const [httpResponse, setHttpResponse] = useState<FinalizerResponse>(null);
@@ -287,10 +271,10 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
 
   if (shouldRenderAnswerDialog) {
     if (chosenCommitType === "rebase-commit") {
-      return <MergeStateFinalizerForPushErrorDialog mergeState={mergeState} resolve={resolve} httpResponse={httpResponse} />;
+      return <MergeStateFinalizerForPushAnswerDialog mergeState={mergeState} resolve={resolve} httpResponse={httpResponse} />;
     }
     else {
-      return <MergeStateFinalizerForMergeErrorDialog mergeState={mergeState} resolve={resolve} httpResponse={httpResponse} />;
+      return <MergeStateFinalizerForMergeAnswerDialog mergeState={mergeState} resolve={resolve} httpResponse={httpResponse} />;
     }
   }
 
@@ -324,25 +308,21 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
         </ModalDescription>
       </ModalHeader>
       <ModalFooter>
-        <Button variant="outline" className="border bg-blue-100 border-blue-500 hover:bg-blue-500 hover:text-white dark:bg-blue-900 dark:border-blue-400 dark:hover:bg-blue-500 dark:hover:text-white transition" title={rebaseCommitTooltip} onClick={() => handleRebaseAction()}>Rebase</Button>
-        {mergeState.isMergeFromBranch && <Button variant="outline" className="border bg-green-100 border-green-500 hover:bg-green-500 hover:text-white dark:bg-green-900 dark:border-green-400 dark:hover:bg-green-500 dark:hover:text-white transition" title={mergeCommitTooltip} onClick={() => handleMergeAction()}>Merge</Button>}
+        <Button variant="outline" className="border bg-blue-100 border-blue-500 hover:bg-blue-500 hover:text-white transition" title={rebaseCommitTooltip} onClick={() => handleRebaseAction()}>Rebase</Button>
+        {mergeState.isMergeFromBranch && <Button variant="outline" className="border bg-green-100 border-green-500 hover:bg-green-500 hover:text-white transition" title={mergeCommitTooltip} onClick={() => handleMergeAction()}>Merge</Button>}
       </ModalFooter>
     </>
   );
 }
 
-
-/**
- * Second dialog for merge finalizer. It is dialog that handles some sort of error when the parent pull dialog was finalizing the merge state.
- */
-const MergeStateFinalizerForMergeErrorDialog = ({ mergeState, httpResponse, resolve }: MergeStateFinalizerAnswerDialogProps) => {
+const MergeStateFinalizerForMergeAnswerDialog = ({ mergeState, httpResponse, resolve }: MergeStateFinalizerAnswerDialogProps) => {
   const removeMergeStateAction = async () => {
     const response = await finalizeMergeMergeStateOnFailure(mergeState.uuid, "remove-merge-state");
     if (response) {
-      toast.success("Successfully removed merge state");
+      toast.success("Finalizing was successful");
     }
     else {
-      toast.error("Removal of merge state failed", { "richColors": true });
+      toast.error("Finalizing ended in failure", { "richColors": true });
     }
     if (mergeState.filesystemTypeMergeFrom === AvailableFilesystems.DS_Filesystem) {
       await requestLoadPackage(mergeState.rootIriMergeFrom, true);
@@ -389,9 +369,6 @@ const MergeStateFinalizerForMergeErrorDialog = ({ mergeState, httpResponse, reso
 };
 
 
-/**
- * Dialog for push finalizer. Similarly to others it is the first one which handles the push and once again can trigger an error one.
- */
 const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, resolve, openModal }: MergeStateFinalizerSpecificCauseProps) => {
   const { t } = useTranslation();
   const [httpReponse, setHttpResponse] = useState<FinalizerResponse>(null);
@@ -433,7 +410,7 @@ const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldR
 
   return (
     shouldRenderAnswerDialog ?
-      <MergeStateFinalizerForPushErrorDialog mergeState={mergeState} resolve={resolve} httpResponse={httpReponse} /> :
+      <MergeStateFinalizerForPushAnswerDialog mergeState={mergeState} resolve={resolve} httpResponse={httpReponse} /> :
       <>
         <ModalHeader>
           <ModalTitle>Finish merge state caused by pushing to remote repository</ModalTitle>
@@ -453,17 +430,14 @@ const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldR
 }
 
 
-/**
- * Second dialog for pull finalizer. It is dialog that handles some sort of error when the parent pull dialog was finalizing the merge state.
- */
-const MergeStateFinalizerForPushErrorDialog = ({ mergeState, httpResponse, resolve }: MergeStateFinalizerAnswerDialogProps) => {
+const MergeStateFinalizerForPushAnswerDialog = ({ mergeState, httpResponse, resolve }: MergeStateFinalizerAnswerDialogProps) => {
   const finalizerHandler = async () => {
     const response = await finalizePushMergeStateOnFailure(mergeState.uuid, "remove-merge-state");
     if (response) {
-      toast.success("Removal of merge state was successful");
+      toast.success("Finalizing was successful");
     }
     else {
-      toast.error("Removal of merge state failed", { "richColors": true });
+      toast.error("Finalizing ended in failure", { "richColors": true });
     }
     if (mergeState.filesystemTypeMergeFrom === AvailableFilesystems.DS_Filesystem) {
       await requestLoadPackage(mergeState.rootIriMergeFrom, true);

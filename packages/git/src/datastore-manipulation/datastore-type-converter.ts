@@ -22,8 +22,7 @@ export type ConversionResult<T> = Result<T, string>;
  * Inverse to {@link stringifyDatastoreContentBasedOnFormat}
  * @param shouldConvert if false then returns the given {@link datastoreContent} without performing any converting action.
  * @param resourceDatastoreStripHandler If provided then this method returns the json object stripped of values based on the given strip handler.
- * @returns Returns the given string {@link datastoreContent}, which is in the given {@link format} converted into JSON object
- *  (the format usually comes from the file name extension, for example .json).
+ * @returns Returns {@link datastoreContent} in format of string to the format in which is the string content (that is what we got from the name extension, for example .json).
  */
 export function convertDatastoreContentBasedOnFormat(
   datastoreContent: string,

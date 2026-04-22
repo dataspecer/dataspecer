@@ -3,11 +3,10 @@ import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/a
 import { resourceModel } from "../../main.ts";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
-import { extractPartOfRepositoryURL, findPatAccessTokens } from "@dataspecer/git";
+import { ScopeGroup, extractPartOfRepositoryURL, findPatAccessTokens } from "@dataspecer/git";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
-import { ScopeGroup } from "@dataspecer/auth";
 
 /**
  * Removes Git repository with iri given in query part of request.

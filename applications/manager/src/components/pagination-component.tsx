@@ -11,9 +11,6 @@ type PaginationComponentProps<T> = {
 };
 
 
-/**
- * Pagination component used for the dialog that lists Pull Requests and the other one that shows issues.
- */
 export function usePaginationComponent<T>() {
   const { t } = useTranslation();
 

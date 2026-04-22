@@ -23,10 +23,6 @@ type GitHistoryCommitActionsDialogProps = {
   closeMainGitGraphDialog: () => void;
 } & BetterModalProps<null>;
 
-
-/**
- * The dialog that is shown the user clicks on commit "bubble" from the Git graph dialog.
- */
 export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitHash, branchAlreadyExistsInDS, commitAlreadyExistsInDS, isOpen, resolve, closeMainGitGraphDialog }: GitHistoryCommitActionsDialogProps) => {
   const { t } = useTranslation();
   const [isPerformingAction, setIsPerformingAction] = useState<boolean>(false);

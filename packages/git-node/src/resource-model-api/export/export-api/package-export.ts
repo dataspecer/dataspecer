@@ -9,9 +9,7 @@ import { FilesystemFactoryMethodParams } from "../../../filesystem-abstractions/
  */
 export interface PackageExporterInterface {
   /**
-   * @param iriMapping If not undefined then each datastores (only the content) gets iri replacement using the given {@link iriMapping}.
-   * @param gitIgnore in the {@link filesystemFactoryParams} can be null for DS-filesystem
-   * @param shouldUseIrisAsNames if false then it uses projectIris as filenames instead.
+   * @param gitIgnore can be null for DS-filesystem
    */
   doExportFromIRI(
     filesystemFactoryParams: FilesystemFactoryMethodParams,
@@ -20,7 +18,6 @@ export interface PackageExporterInterface {
     exportType: AvailableExports,
     exportFormat: string,
     shouldRemoveExportedAt: boolean,
-    shouldUseIrisAsNames: boolean,
     iriMapping?: Record<string, string>,
   ): Promise<AllowedExportResults>;
 

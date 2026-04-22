@@ -33,17 +33,9 @@ export function getHumanReadableFilesystemShortName(filesystem: AvailableFilesys
  *  unify these 2 different representations into one data structure {@link FilesystemMappingType} and together with that create interface with basic functionality over the "filesystem" representations.
  *  Also Note that each implmentation should have exactly one root. And it should be "fake" root,
  *   that is so we don't have any edge cases if we have more root directories in the first filesystem level.
- *
- * Often times the methods have irisTreePath as the path to look for the resource.
- *  For the DS filesystem those consists of actual IRIs, for classic filesystem it is the projectIris, since those are the path to the resource.
- *  We call it irisTreePath since it has to be unique in the filesystem and it should be the path which we could follow within the abstraction
- *   (really the abstraction, where we go through the map) that can be used to access the resource.
  */
 export interface FilesystemAbstraction {
 
-  /**
-   * Returns the type of the filesystem.
-   */
   getFilesystemType(): AvailableFilesystems;
 
   /**
@@ -54,25 +46,52 @@ export interface FilesystemAbstraction {
   initializeFilesystem(filesystemRoots: FilesystemNodeLocation[]): Promise<void>;
 
   /**
-   * @returns Returns the content of {@link iriTreePath}.
+   * @deprecated Deprecated variant, we return the nodes instead ... just remove it once I finish the API. or maybe remove the other variant?
+   * @returns Returns the content of {@link directory}. In case of filesystem it is names of files and directories, in case of DS filesystem it is the IRIs of resources inside.
    */
-  readDirectory(iriTreePath: string): FilesystemNode[];
+  readDirectoryOldVariant(directory: string): string[];
 
   /**
+   * @returns Returns the content of {@link directory}.
+   */
+  readDirectory(directory: string): FilesystemNode[];
+
+  /**
+   * @param name is the name of the resource. It is either IRI or full path depending on filesystem.
    * @returns True if the given resource is directory, false otherwise
    */
-  isDirectory(iriTreePath: string): boolean;
+  isDirectory(name: string): boolean;
 
   /**
-   * @deprecated Probably deprecated, because we will use {@link getDatastoreContent} instead. or we can just call the getDatastore here instead and be done with it.
-   * @param irisTreePath is the path the resource (filesystem node).
-   * @returns The metadata for given {@link irisTreePath}
+   * Extends the {@link filesystemAbstractionObject} by content inside {@link directory} (with last part explicitly copied in {@link basename} - path/to/dir/basename) and if
+   *  {@link shouldExtendWithMetadata} is true, then also extends the object by metadata (if we are in filesystem, it means that the .meta file has to be loaded).
    */
-  getMetadataObject(irisTreePath: string): Promise<ExportMetadataType>;
+  extendFilesystemAbstractionObjectByDirectory(filesystemAbstractionObject: FilesystemMappingType, directory: string, basename: string, shouldExtendWithMetadata: boolean): void;
+
+  /**
+   * Converts given {@link filesystemAbstractionObject} in such a way that the keys, which may have been possibly uuids when working with filesystem, will be IRIs.
+   *  This expects that the structure {@link filesystemAbstractionObject} already contains IRIs.
+   * TODO RadStr Critical: Not sure if it should be with or without argument.
+   */
+  convertFilesystemAbstractionObjectNamesToIris(filesystemAbstractionObject: FilesystemMappingType): FilesystemMappingType;
+
+  // TODO RadStr Critical TOP: Let just use treePath ... it makes the most sense
+  // TODO RadStr Critical: still not sure if I should use treePath or fullPath from the DatastoreInfo
+  /**
+   * TODO RadStr Critical: I am not sure what is the input for this even - maybe it even isn't part of interface, since this maybe won't be FS speicfic
+   *              ... yeah it probably should be here, I have the names inside the data structure but here I want to get the data from filesystem based on the paths stored in the DataStructure
+   * TODO RadStr Critical: Not sure about using the "treePath" ... maybe use resourceName instead? or something nad the same for others
+   * TODO RadStr Critical: Not sure abotu the returned type.
+   * @deprecated Probably deprecated, because we will use {@link getDatastoreContent} instead. or we can just call the getDatastore here instead and be done with it.
+   * @param treePath is the path the resource. However the name contains the basis in case of filesystem (it does not contain the .meta suffix). In case of DS filesystem it is the IRI of resource.
+   * @returns The metadata for given {@link treePath}
+   */
+  getMetadataObject(treePath: string): Promise<ExportMetadataType>;
 
   /**
    *
-   * @param irisTreePath is path to the filesystem node where we can look for the type.
+   * @param irisTreePath is path to the directory in which we can find the {@link file}. In case of filesystem it is actual path, in case of DS FileSystem it is the resource IRI.
+   *  It is the full path to the file, but without the possible suffix (for example .model.json if we are on filesystem)
    * @param type is the type of the datastore to get
    * @returns Returns the content of datastore (file) as string if {@link shouldConvertToDatastoreFormat} is false,
    *  otherwise it tries to return object (for example if the datastore has .json or .yaml extension).
@@ -81,11 +100,15 @@ export interface FilesystemAbstraction {
   getDatastoreContent(irisTreePath: string, type: string, shouldConvertToDatastoreFormat: boolean): Promise<any>;
 
   /**
-   * @param irisTreePath is the path the resource. It is the path to the corresponding filesystem node.
-   * @returns The datastores for given {@link irisTreePath}. To get the actual content of the datastores use the {@link getDatastoreContent}.
+   * TODO RadStr Critical: Similar TODOs as in {@link getMetadataObject}
+   * TODO RadStr Critical: Return the content or the names? Probably content - I have the names isnide the object ... so yeah it probably should be inisde this IFace
+   * @param treePath is the path the resource. However the name contains the basis in case of filesystem (it does not contain the .meta suffix). In case of DS filesystem it is the IRI of resource.
+   * @returns The datastores for given {@link treePath}. To get the actual content of the datastores use the {@link getDatastoreContent}.
    */
-  getDatastoreTypes(irisTreePath: string): DatastoreInfo[];
+  getDatastoreTypes(treePath: string): DatastoreInfo[];
 
+  // TODO RadStr Critical: After I am done with the implementation fix the docs here - for example I newly added datastoreType: string, but I'm not sure if it will stay.
+  // TODO RadStr Critical: I don't know - the api could also be oldFileSystemNode, newFileSystemNode (and its abstraction). and it just replaces stuff
   /**
    * Changes content of the given version of datastore inside {@link changed} to the new version inside the filesystem.
    *  {@link otherFilesystem} is the other filesystem containing the data of the new version.
@@ -96,6 +119,7 @@ export interface FilesystemAbstraction {
   /**
    * Removes datastore from the {@link filesystemNode}, if it was the last {@link datastoreType} inside the node, also removes the whole node.
    *  Removes all the datastores and the resource itself.
+   * TODO RadStr Critical: Maybe write example what exactly it means for each filesystem
    * @param shouldRemoveFileWhenNoDatastores if true, then if after removal no datastore is present, then also the file holding the datastores is deleted.
    */
   removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<void>;
@@ -111,6 +135,21 @@ export interface FilesystemAbstraction {
    */
   updateDatastore(fileNode: FileNode, datastoreType: string, content: string): Promise<boolean>;
 
+
+  // TODO RadStr Critical: ... just remove - createFile and createDirectory replaced by createDatastore
+  // /**
+  //  * Creates new {@link fileNode} inside the abstraction and in the underlying filesystem with given {@link metadata}. and the file will be of given {@link fileNodeType}.
+  //  * The file will be stored inside {@link parent} node, if the {@link parent} is null, it means that it is at root level.
+  //  * @returns True if the file was sucessfully created, false on failure.
+  //  */
+  // createFile(parent: DirectoryNode | null, fileNode: FileNode, fileNodeType: string, metadata: object): Promise<boolean>;
+
+  // /**
+  //  * Creates new {@link directoryNode} inside the abstraction and in the underlying filesystem with given {@link content}.
+  //  *  Note that all the given filesystem nodes inside {@link content} are created also.
+  //  * @returns True if the directory (and its content) was sucessfully created, false on failure.
+  //  */
+  // createDirectory(directoryNode: DirectoryNode, content: FilesystemNode): Promise<boolean>;
 
   /**
    * Creates new {@link changedDatastore} inside the abstraction and in the underlying filesystem.
@@ -137,7 +176,7 @@ export interface FilesystemAbstraction {
   getGlobalFilesystemMapForProjectIris(): FilesystemMappingType;
 
   /**
-   * The global mapping. It contains the whole filesystem, keys are absolute paths created from "iris" (See class comment) joined by "/".
+   * The global mapping. It contains the whole filesystem, keys are absolute paths created from iris (not project iris) joined by "/".
    */
   getGlobalFilesystemMapForIris(): FilesystemMappingType;
 
@@ -172,9 +211,6 @@ export interface GitIgnore {
 }
 
 
-/**
- * Creates GitIgnore for given GitProvider.
- */
 export class GitIgnoreBase implements GitIgnore {
   private gitProvider: GitProvider;
 
@@ -237,23 +273,14 @@ export function getMetaPrefixType(): string {
   return "meta";
 }
 
-/**
- * Removes {@link datastoreType} from the array of datastores present in the {@link node}.
- */
 export function removeDatastoreFromNode(node: FilesystemNode, datastoreType: string) {
   node.datastores = node.datastores.filter(datastore => datastore.type !== datastoreType);
 }
 
-/**
- * @returns Returns true if the {@link datastoreType} represents meta file.
- */
 export function isDatastoreForMetadata(datastoreType: string): boolean {
   return datastoreType === getMetaPrefixType();
 }
 
-/**
- * @returns Returns the DatastoreInfo that represents meta file or undefined. It is searched for in the given {@link datastores}.
- */
 export function getMetadataDatastoreFile(datastores: DatastoreInfo[]): DatastoreInfo | undefined {
   return datastores.find(datastore => isDatastoreForMetadata(datastore.type));
 }
@@ -276,9 +303,6 @@ export function createMetaDatastoreInfo(basename: string, format: string): Datas
 }
 
 
-/**
- * @returns Returns Datastore of the given {@link type} present in the datastores of the given {@link filesystemNode}. Returns null if not present.
- */
 export function getDatastoreInfoOfGivenDatastoreType(filesystemNode: FilesystemNode, type: string): DatastoreInfo | null {
   return findDatastoreInfoOfGivenDatastoreType(filesystemNode.datastores, type);
 }

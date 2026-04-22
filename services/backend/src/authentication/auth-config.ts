@@ -4,11 +4,10 @@ import GitHub from "@auth/express/providers/github"
 import GitLab from "@auth/express/providers/gitlab"
 import Google from "@auth/express/providers/google"
 import Keycloak from "@auth/express/providers/keycloak"
-import { GitProviderEnum } from "@dataspecer/git";
+import { ScopeGroup, GitProviderEnum, GenericScope, getScopesForScopeGroup } from "@dataspecer/git";
 import configuration from "../configuration.ts";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import { GitHubScope, GitHubProvider, GitProviderFactory } from "@dataspecer/git/git-providers"
-import { GenericScope, getScopesForScopeGroup, ScopeGroup } from "@dataspecer/auth";
 
 // Possible inspiration for implementation of custom provider (if needed in future) - https://github.com/nextauthjs/next-auth/discussions/9480
 // or take a look at some of the officially implemented ones - https://github.com/nextauthjs/next-auth/blob/main/packages/core/src/providers/github.ts

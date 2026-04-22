@@ -2,13 +2,9 @@ import { Modal, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 import { Button } from "@/components/ui/button";
 import { BetterModalProps } from "@/lib/better-modal";
-import { ScopeGroup } from "@dataspecer/auth";
+import { ScopeGroup } from "@dataspecer/git";
 import { EyeIcon, LogIn } from "lucide-react";
 
-
-/**
- * Handles the advanced shigned in. Lot of tooltips and lets the user choose the scopes (rights) to provide to Dataspecer within the OAuth.
- */
 function SignInInfoTooltipAdvanced() {
   return <PopOverGitGeneralComponent>
       <div>
@@ -92,8 +88,4 @@ export const SignInDialog = ({ isOpen, resolve }: BetterModalProps) => {
 
 export function goToPage(url: string) {
   window.location.href = url;
-}
-
-export function createNewTabAndOpen(url: string) {
-  window.open(url, '_blank');
 }

@@ -3,8 +3,8 @@ import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { mergeStateModel, resourceModel } from "../../main.ts";
 import { ExportVersionType, extractPartOfRepositoryURL, convertStringToExportVersion, MergeState, stringToBoolean, ExportFormatType, convertStringToExportFormat, SingleBranchCommitType, CommitType, AccessTokenType } from "@dataspecer/git";
-import { GitCredentials, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase, createUniqueCommitMessage } from "@dataspecer/git";
-import { getGitCredentialsFromSession, getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
+import { ScopeGroup, GitCredentials, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase, createUniqueCommitMessage } from "@dataspecer/git";
+import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import { PrismaMergeStateWithData } from "../../models/merge-state-model.ts";
 import {
   checkErrorBoundaryForCommitAction,
@@ -20,7 +20,6 @@ import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 import { createFilesystemFactoryParams } from "../../utils/filesystem-helpers.ts";
-import { ScopeGroup } from "@dataspecer/auth";
 
 /**
  * Commit to the repository for package identifier by given iri inside the query part of express http request.
@@ -262,17 +261,8 @@ async function prepareCommitDataForCommit(
 
   // TODO RadStr: I love OAuth
   if (!committer.isBotName) {
-    let userAccessToken = committer.accessTokens.find(accessToken => !accessToken.isBotAccessToken && accessToken.type === AccessTokenType.PAT);
-    if (userAccessToken === undefined) {
-      // Then it is the login info scope, because otherwise we would not use bot name.
-      const credentials = getGitCredentialsFromSession(request, response, [ScopeGroup.LoginInfo])!;
-      userAccessToken = {
-        isBotAccessToken: false,
-        type: AccessTokenType.PAT,
-        value: credentials.committerAccessToken!,
-      };
-    }
-    const nameCandidate = await gitProvider.getUserLoginForAuthToken(userAccessToken!.value);
+    const nameCandidate = await gitProvider.getUserLoginForAuthToken(committer.accessTokens.find(accessToken => !accessToken.isBotAccessToken && accessToken.type === AccessTokenType.PAT)!.value)
+    console.info({nameCandidate});
     if (nameCandidate === null) {
       throw new Error(`The user ${committer.name} does not exist on GitHub`);
     }

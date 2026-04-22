@@ -17,12 +17,6 @@ import { useTheme } from "next-themes";
 import { handleEditorWillMount } from "./monaco-editor";
 import _ from "lodash";
 
-
-/**
- * Shows the diff of the mergeFrom and mergeTo. What is on left/right is decided based on editable.
- *  When the editor changes content by click on directory diff. The current state is propagated to the diff tree (through setMergeState).
- *  So it reflects the changes made in the editor.
- */
 export const MonacoDiffEditor: FC<{
   editorRef: React.RefObject<{ editor: monaco.editor.IStandaloneDiffEditor } | null>,
   mergeFromContent: string,

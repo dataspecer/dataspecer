@@ -42,7 +42,7 @@ export const finalizePullMergeState = asyncHandler(async (request: express.Reque
       response.status(200);
       const hasUncommittedChanges = diffTreeComparison.conflicts.length !== 0 || diffTreeComparison.created.length !== 0 ||
                                     diffTreeComparison.changed.length !== 0 || diffTreeComparison.removed.length !== 0;
-      await resourceModel.setHasUncommittedChanges(dataForComparison.resource.iri, hasUncommittedChanges);
+      resourceModel.setHasUncommittedChanges(dataForComparison.resource.iri, hasUncommittedChanges);
       response.json({ uuid, mergeStateCause: result.mergeStateCause });
       return;
     }

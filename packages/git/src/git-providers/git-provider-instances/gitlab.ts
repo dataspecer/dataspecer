@@ -10,8 +10,8 @@ import {
   GitHubLabel,
   gitProviderDomains
 } from "../../git-provider-api.ts";
+import { GenericScope } from "../../auth.ts";
 import { GitIssuesFetchResponse, IssueState } from "../../git-issues/git-issue-types.ts";
-import { GenericScope } from "@dataspecer/auth";
 
 // Note that students for some reason there have max 10 repositories limit on school mff gitlab (idk if it is for creations a day or something)
 

@@ -42,7 +42,7 @@ export const exportPackageResource = asyncHandler(async (request: express.Reques
     ...createFilesystemFactoryParams(true),
   };
   const buffer = await exporter.doExportFromIRI(
-    filesystemFactoryParams, "", AvailableFilesystems.DS_Filesystem, AvailableExports.Zip, query.exportFormat ?? getDefaultExportFormat(), false, true);
+    filesystemFactoryParams, "", AvailableFilesystems.DS_Filesystem, AvailableExports.Zip, query.exportFormat ?? getDefaultExportFormat(), false);
 
   // const exporter = new PackageExporterByResourceType();
   // const buffer = await exporter.doExportFromIRI(query.iri, "", `radstr/export/directory`, AvailableFilesystems.DS_Filesystem, AvailableExports.Zip, query.exportFormat ?? "json", null);

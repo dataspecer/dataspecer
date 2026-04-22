@@ -1,17 +1,8 @@
 import { MergeResolverStrategy } from "../merge-resolver-strategy.ts";
 
-/**
- * The resolver that copies the non-editable input to the editable.
- */
 export class UseOtherMergeResolverStrategy implements MergeResolverStrategy {
-  private label: string = "Copy left to right";
-  getLabel(): string {
-    return this.label;
-  }
-  private key: string = "use-other-resolver";
-  getKey(): string {
-    return this.key;
-  }
+  label: string = "Copy left to right";
+  key: string = "use-other-resolver";
 
   resolve(otherInput: string, editableInput: string, type: string | null, format: string): string {
     return otherInput;

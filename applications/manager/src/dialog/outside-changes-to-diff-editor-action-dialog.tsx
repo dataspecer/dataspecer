@@ -18,10 +18,6 @@ type ChooseActionForDiffEditorUnplannedChangeProps = {
 }>;
 
 
-/**
- * Dialog that handles the special case when we try to store our work in the diff editor, but somebody else modified the data specification from either
- *  different instance of diff editor or other component of Dataspecer
- */
 export const ChooseActionForDiffEditorUnplannedChange = ({ oldMergeState, newMergeState, isOpen, resolve }: ChooseActionForDiffEditorUnplannedChangeProps) => {
   const handleReturn = (chosenResult: DiffEditorOutsideChangeChosenAction) => {
     resolve({ result: chosenResult });

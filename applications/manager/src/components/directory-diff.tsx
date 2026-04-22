@@ -455,23 +455,15 @@ function StyledNode({
   const { node, style, dragHandle } = renderNodeProps;
 
   let color: "black" | "blue" | "green" | "red" = "black";
-  let colorClassNames: string = "text-black dark:text-white";
-  let modificationTagColor: string = "";
   let resourceExists: boolean = true;
 
   if (node.data.status === "modified") {
-    colorClassNames = "text-blue-700 dark:text-blue-400";
-    modificationTagColor = "text-blue-700 dark:text-blue-400";
     color = "blue";
   }
   else if (node.data.status === "created") {
-    colorClassNames = "text-green-700";
-    modificationTagColor = "text-green-700";
     color = "green";
   }
   else if (node.data.status === "removed") {
-    colorClassNames = "text-red-500 dark:text-red-600";
-    modificationTagColor = "text-red-500 dark:text-red-650";
     color = "red";
     resourceExists = false;
   }
@@ -486,14 +478,12 @@ function StyledNode({
   // TODO RadStr PR: Two Trees - The isInEditableTree is useless if we render only the one directory diff tree
   resolveIcon = (node.data.isInEditableTree && extraRenderNodeProps.conflictsToBeResolvedOnSaveInThisComponent.find(resolvedConflict => node.data.id === createIdForDatastoreRenderNode(resolvedConflict, node.data.treeType))) ? "✅" : resolveIcon;
 
-  let highlightColorClassName: string = "";
+  let backgroundColor: string | undefined = undefined;
   if (node.isSelected) {
-    highlightColorClassName = "bg-[#c9c2f3] dark:bg-gray-600";
-    colorClassNames += " " + highlightColorClassName;
+    backgroundColor = "#c9c2f3ff";
   }
   else if (node.data.shouldBeHighlighted) {
-    highlightColorClassName = "bg-[#d3d9ec] dark:bg-gray-700";
-    colorClassNames += " " + highlightColorClassName;
+    backgroundColor = "#d3d9ecff";
   }
 
   const type = (node.data.resourceComparison?.resources.old ?? node.data.resourceComparison?.resources.new)?.metadata.types;
@@ -502,7 +492,7 @@ function StyledNode({
     <>
       <div
         key={node.data.id}
-        className={"relative group whitespace-nowrap " + colorClassNames}
+        className="relative group bg-gray-50 whitespace-nowrap"
       >
         <div
           style={{
@@ -514,7 +504,9 @@ function StyledNode({
             // the upper node is selected - which can be non-leaf and we do not want that
             height: `${treeRowHeight}px`,
             width: 1900,   // Hack to not have text over multiple lines (can't think of any other EASY fix - non-easy fix would be set the width based on longest element or set rowHeight based on over how many lines it goes over)
+            color,
             cursor: isExpandable ? "pointer" : "default",
+            background: backgroundColor,
           }}
           ref={dragHandle}
           // TODO RadStr: Remove- Probably no longer needed. It was fixed by explicitly setting node height to the row height.
@@ -575,16 +567,16 @@ function StyledNode({
           {<p className={`font-bold pt-1 pr-1 text-xs ${extraRenderNodeProps.isNewlyCreated ? "visible": "invisible w-0 h-0"}`} style={{color: "green"}}>Newly C</p>}
           {<p className={`font-bold pt-1 pr-1 text-xs ${extraRenderNodeProps.isNewlyRemoved ? "visible" : "invisible w-0 h-0"}`} style={{color: "red"}}>Newly D</p>}
           {<p className={`font-bold pt-1 pr-1 text-xs ${extraRenderNodeProps.datastoreInfoInCache !== null ? "visible": "invisible w-0 h-0"}`}>📥</p>}
-          {<p className={`font-bold pt-1 pr-1 text-xs ${color === "green" ? "visible": "invisible w-0 h-0"} ${modificationTagColor}`}>C</p>}
-          {<p className={`font-bold pt-1 pr-1 text-xs ${color === "blue" ? "visible" : "invisible w-0 h-0"} ${modificationTagColor}`}>M</p>}
-          {<p className={`font-bold pt-1 pr-1 text-xs ${color === "red" ? "visible" : "invisible w-0 h-0"} ${modificationTagColor}`}>D</p>}
+          {<p className={`font-bold pt-1 pr-1 text-xs ${color === "green" ? "visible": "invisible w-0 h-0"}`} style={{color}}>C</p>}
+          {<p className={`font-bold pt-1 pr-1 text-xs ${color === "blue" ? "visible" : "invisible w-0 h-0"}`} style={{color}}>M</p>}
+          {<p className={`font-bold pt-1 pr-1 text-xs ${color === "red" ? "visible" : "invisible w-0 h-0"}`} style={{color}}>D</p>}
           {resolveIcon}
           {type !== undefined && <ModelIcon className="mt-1" type={type}/>}
           <span className={textClassName}>{node.data.name}</span>
             {/* The buttons on hover */}
             <div
-              style={{ right: "0px" }}
-              className={highlightColorClassName + " absolute text-black top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto"}
+              style={{ right: "0px", background: backgroundColor }}
+              className="absolute text-black top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto"
               >
 
               {
@@ -1082,11 +1074,11 @@ export const DiffTreeVisualization = (props: {
               </Tree>)
           }
         </div> */}
-        <div className="flex-1 border border-stone-200 bg-gray-50 dark:bg-[#1e1e1e] h-full" style={{height: treeRowHeight*treeRowHeightMultiplier}}>
+        <div className="flex-1 border border-stone-200 bg-gray-50 h-full" style={{height: treeRowHeight*treeRowHeightMultiplier}}>
           {
             renderTreeWithLoading(props.isLoadingTreeStructure,
               <Tree children={(nodeProps) => nodeRenderer(nodeProps)}
-                className="overflow-x-hidden! bg-gray-50 dark:bg-[#1e1e1e] relative"
+                className="overflow-x-hidden! relative"
                 ref={newTreeRef} data={newRenderTreeDataToRender} width={"100%"}
                 onSelect={(nodes) => onNodesSelect(nodes, "new")}
                 onFocus={(node) => onNodeFocus(node, "new")}

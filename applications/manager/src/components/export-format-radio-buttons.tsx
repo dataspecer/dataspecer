@@ -10,10 +10,6 @@ type ExportFormatRadioButtonsProps = {
   setExportFormat: (newExportFormat: ExportFormatType) => void,
 }
 
-
-/**
- * Similiar to {@link ExportVersionRadioButtons}, but here we let user choose the export version (currently JSON/YAML)
- */
 export const ExportFormatRadioButtons = (props: ExportFormatRadioButtonsProps) => {
   const { t } = useTranslation();
 

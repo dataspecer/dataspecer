@@ -62,21 +62,35 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
     return this.globalFilesystemMappingForIris;
   }
 
-  isDirectory(iriTreePath: string): boolean {
-    return this.globalFilesystemMappingForIris[iriTreePath].type === "directory";
+  isDirectory(treePath: string): boolean {
+    return this.globalFilesystemMappingForIris[treePath].type === "directory";
   }
 
   getDatastoreTypes(treePath: string): DatastoreInfo[] {
     return this.globalFilesystemMappingForIris[treePath].datastores;
   }
 
-  readDirectory(iriTreePath: string): FilesystemNode[] {
-    const directoryNode = this.globalFilesystemMappingForIris[iriTreePath];
+  readDirectory(directory: string): FilesystemNode[] {
+    const directoryNode = this.globalFilesystemMappingForIris[directory];
     if (directoryNode.type !== "directory") {
       throw new Error("the read directory is not a directory");
     }
 
     return Object.values(directoryNode.content);
+  }
+
+  extendFilesystemAbstractionObjectByDirectory(filesystemAbstractionObject: FilesystemMappingType, directory: string, basename: string, shouldExtendWithMetadata: boolean): void {
+    throw new Error("Method not implemented.");
+  }
+  convertFilesystemAbstractionObjectNamesToIris(filesystemAbstractionObject: FilesystemMappingType): FilesystemMappingType {
+    throw new Error("Method not implemented.");
+  }
+
+  /**
+   * @deprecated ... just remove it once I finish the API
+   */
+  readDirectoryOldVariant(directory: string): string[] {
+    throw new Error("Method not implemented.");
   }
 
   getNodeToParentMap(): Record<string, DirectoryNode | null> {
@@ -124,8 +138,8 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
     delete this.nodeToParentMap[irisTreePath];
   }
 
-  async getMetadataObject(irisTreePath: string): Promise<ExportMetadataType> {
-    const metaContent = await this.getDatastoreContent(irisTreePath, getMetaPrefixType(), true);
+  async getMetadataObject(treePath: string): Promise<ExportMetadataType> {
+    const metaContent = await this.getDatastoreContent(treePath, getMetaPrefixType(), true);
     return metaContent as ExportMetadataType;
   }
 

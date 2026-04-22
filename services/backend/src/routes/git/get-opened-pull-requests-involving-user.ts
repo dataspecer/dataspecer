@@ -1,11 +1,10 @@
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
-import { GitProvider, GitProviderEnum } from "@dataspecer/git";
+import { ScopeGroup, GitProvider, GitProviderEnum } from "@dataspecer/git";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
 import { getGitCredentialsFromSession, getGitProviderEnumFromSession } from "../../authentication/auth-session.ts";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
-import { ScopeGroup } from "@dataspecer/auth";
 
 /**
  * Returns the opened pull requests which are in any way involving the signed in user.

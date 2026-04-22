@@ -99,17 +99,7 @@ function getUniqueCommits(commitToBranchesMap: Record<string, string[]>, hashToC
 }
 
 
-type GitToPackageMap = {
-  dsPackagesInProjectForBranches: Record<string, DSPackageInProjectVisualizationData>;          // Maps the branch name to the package in the project
-  dsPackagesInProjectForNonBranches: Record<string, DSPackageInProjectVisualizationData[]>;     // Maps the last commit hash to all ds packages, which are non-branches and have that last commit hash
-  dsPackagesInProjectForAll: Record<string, DSPackageInProjectVisualizationData[]>;             // Maps the last commit hash to all ds packages, which have that last commit hash
-}
-
-
-/**
- * See the return type
- */
-function createGitToPackagesForProjectMapping(rootPackages: BaseResource[] | undefined): GitToPackageMap {
+function createGitToPackagesForProjectMapping(rootPackages: BaseResource[] | undefined) {
   // Create all the ds package for the current project, so we can visualize them on the client compared to the git ones
   // Allow only one branch? I mean to me it makes sense, why would you want to have the same branch multiple times in DS, just create new one going from the head, if you want it
   const dsPackagesInProjectForBranches: Record<string, DSPackageInProjectVisualizationData> = {};          // Maps the branch name to the package in the project
@@ -153,18 +143,6 @@ function createGitToPackagesForProjectMapping(rootPackages: BaseResource[] | und
 const commitTextFont = "oblique small-caps bold 12pt Trebuchet MS";
 const commitTextSmallerFont = "oblique small-caps bold 8pt Trebuchet MS";
 
-
-export const gitHistoryVisualizationOnClickHandler = async (
-  openModal: OpenBetterModal,
-  examinedPackage: Package,
-  allResources: Record<string, ResourceWithIris>
-) => {
-  await openModal(GitHistoryVisualization, { examinedPackage, allResources });
-}
-
-/**
- * The main component that handles the visualization of the Git history graph.
- */
 export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allResources }: GitHistoryVisualizationProps) => {
   // For some reason I have to put the gitgraph component into component stored in variable,
   // if I put it inside the JSX tree in this component, it does not update on react change
@@ -297,12 +275,6 @@ const defaultDSCommitTextTag = "DS";
 const defaultDSBranchTextAdditionalTag = "HEAD";
 const defaultDSBranchTextTag = defaultDSCommitTextTag + " " + defaultDSBranchTextAdditionalTag;
 
-
-/**
- * The component that creates the GitGraph.js graph to render.
- * It builds it based on the given data and put in the relevant onClick events.
- * It also slightly changes the rendering format based on if the data is in DS or not.
- */
 const createGitGraph = (
   openModal: OpenBetterModal,
   examinedPackage: Package,
@@ -396,7 +368,8 @@ const createGitGraph = (
   </div>;
 }
 
-// Copy-paste of https://github.com/nicoespeon/gitgraph.js/blob/master/packages/gitgraph-react/src/Dot.tsx with modifications to fit our use case.
+// Copy-paste of https://github.com/nicoespeon/gitgraph.js/blob/master/packages/gitgraph-react/src/Dot.tsx
+//  with modifications
 // We want to keep the default style, but change the cursor to pointer and this is the simplest way
 function defaultCommitRenderDot(commit: any) {
   return (
@@ -420,8 +393,6 @@ function defaultCommitRenderDot(commit: any) {
     but it's still a W3C Draft ¯\_(ツ)_/¯
     https://svgwg.org/specs/strokes/#SpecifyingStrokeAlignment
   */
-
-
 
   // ... New additions the - branch commits are rectangles and containing extra "HEAD" text
   <>
@@ -503,9 +474,6 @@ function defaultCommitRenderDot(commit: any) {
 }
 
 
-/**
- * Renders "(in DS)"" next to the branch name.
- */
 function renderLabel(branch: any) {
   // Based on playing with ChatGPT
   return <svg>
@@ -534,9 +502,6 @@ function renderLabel(branch: any) {
   </svg>;
 }
 
-/**
- * Handles clicking on the bubble that represents commit.
- */
 const gitVisualizationCommitDotOnClickHandler = (
   openModal: OpenBetterModal,
   examinedPackage: Package,
@@ -583,6 +548,14 @@ function findBranchToPutIntoGitGraph(currentBranchProcessingState: Record<string
   return branchToPutIntoGitGraph;
 }
 
+
+export const gitHistoryVisualizationOnClickHandler = async (
+  openModal: OpenBetterModal,
+  examinedPackage: Package,
+  allResources: Record<string, ResourceWithIris>
+) => {
+  await openModal(GitHistoryVisualization, { examinedPackage, allResources });
+}
 
 function convertFetchedCommitsFormat(rawCommits: RawCommit[]) {
   const convertedCommits = rawCommits.map(convertRawCommitToCommit);

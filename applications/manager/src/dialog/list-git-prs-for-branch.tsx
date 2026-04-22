@@ -13,9 +13,9 @@ import { toast } from "sonner";
 import { createCloseLoadingDialogObject, LoadingDialog } from "./loading-dialog";
 import { usePaginationComponent } from "@/components/pagination-component";
 import { Button } from "@/components/ui/button";
+import { redirectToPage } from "@/components/login-card";
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 import { CREATE_MERGE_STATE_WAIT_TIME, GIT_IMPORT_WAIT_TIME } from "@/utils/git-wait-times";
-import { createNewTabAndOpen } from "./advanced-sign-in";
 
 
 type GitPrsListDialogProps = {
@@ -28,7 +28,6 @@ type GitPrsListDialogProps = {
 
 
 /**
- * Shows the pull requests (or whatever the name is for the specific Git provider) for the given gitUrl.
  * If the provided branch is null then it lists all PRs for resource.
  */
 export const GitPrsListDialog = ({ resources, branch, gitUrl, gitProviderSpecificNameForPR, gitProviderSpecificNameForPRShortcut, isOpen, resolve }: GitPrsListDialogProps) => {
@@ -100,10 +99,10 @@ export const GitPrsListDialog = ({ resources, branch, gitUrl, gitProviderSpecifi
               </>
 
             }
-            ⚠️ Note that you have to close {gitProviderSpecificNameForPRShortcut} in Dataspecer with merge commit.
-            Merging (or rebasing) {gitProviderSpecificNameForPRShortcut} in Git breaks IRIs.
+            ⚠️ Note that you have to close in {gitProviderSpecificNameForPRShortcut} in Dataspecer with merge commit.
+            Closing {gitProviderSpecificNameForPRShortcut} in Git breaks IRIs.
             <br/>
-            <p className="flex flex-1 flex-row">You can either close the {gitProviderSpecificNameForPRShortcut} with merge, or merge the changes from the 'merge to' branch to the 'merge from' branch (reverse merge).
+            <p className="flex flex-1 flex-row">You can either close the {gitProviderSpecificNameForPRShortcut}, or merge the changes from the 'merge to' branch to the 'merge from' branch (reverse merge).
               <PRMergeTooltip gitProviderSpecificNameForPRShortcut={gitProviderSpecificNameForPRShortcut} isSpecificBranchPRsList={branch !== null} />
             </p>
           </ModalDescription>
@@ -118,7 +117,7 @@ export const GitPrsListDialog = ({ resources, branch, gitUrl, gitProviderSpecifi
                 <div className="flex items-center justify-center">Merge to</div>
                 <div className="flex items-center justify-center border-gray-300 border-b border-r">Add/Del</div>
                 <div className="flex items-center justify-center border-gray-300">Reverse merge</div>
-                <div className="flex items-center justify-center border-gray-300">Merge {gitProviderSpecificNameForPRShortcut}</div>
+                <div className="flex items-center justify-center border-gray-300">Close {gitProviderSpecificNameForPRShortcut}</div>
               </div>
               <div className="w-full">
                 {openedPrs?.map(pr => <PullRequestComponent pullRequestInfo={pr} resources={resources} resourceGitUrl={gitUrl} resolve={resolve}/>) ?? null}
@@ -132,7 +131,7 @@ export const GitPrsListDialog = ({ resources, branch, gitUrl, gitProviderSpecifi
         </ModalHeader>
         <ModalFooter>
           <Button variant="outline" onClick={() => resolve(null)}>Close</Button>
-          <Button variant="default" onClick={() => createNewTabAndOpen(gitProvider.getUrlToPRs(gitUrl))}>Visit page with PRs</Button>
+          <Button variant="default" onClick={() => redirectToPage(gitProvider.getUrlToPRs(gitUrl))}>Visit page with PRs</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
@@ -149,7 +148,7 @@ function PRMergeTooltip({ gitProviderSpecificNameForPRShortcut, isSpecificBranch
     <PopOverGitGeneralComponent>
       <div>The reverse merge represents the classic workflow, where you first merge the 'merge to' branch</div>
       <div>&nbsp;into your branch to make sure that everything works and finish the {gitProviderSpecificNameForPRShortcut} after that.</div>
-      <div>The 'Merge {gitProviderSpecificNameForPRShortcut}' simply merges the 'merge from' branch into the 'merge to' branch.</div>
+      <div>The 'Close {gitProviderSpecificNameForPRShortcut}' simply merges the 'merge from' branch into the 'merge to' branch.</div>
       <div>The buttons do the following:</div>
       <div><p className="text-blue-600 inline">Open Merge state</p> - opens the already existing merge state</div>
       <div><p className="text-green-600 inline">Merge</p> - Creates new merge state, since it does not exist.</div>
@@ -167,14 +166,6 @@ type PullRequestComponentProps = {
   resolve: (value: null) => void;
 }
 
-/**
- * Handles rendering of a single pull request. The main logic is in deciding what actions buttons to show and what they do.
- *  The action buttons are:
- *   - Open merge state
- *   - Create merge state
- *   - Import one missing data specification and create merge state
- *   - Import both missing data specifications and create merge state
- */
 function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, resolve }: PullRequestComponentProps) {
   const openModal = useBetterModal();
   const [fetchedMergeState, setFetchedMergeState] = useState<MergeState | null>(null);
@@ -212,14 +203,14 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
       if (mergeStateFromBackend !== null) {
         return {
           actionButtonText: "Open merge state",
-          actionButtonClassname: "border-1 bg-blue-100 border-blue-600 hover:bg-blue-600 hover:text-white text-sm font-semibold transition cursor-pointer dark:bg-blue-900 dark:border-blue-400 dark:hover:bg-blue-500 dark:hover:text-white",
+          actionButtonClassname: "border-1 bg-blue-100 border-blue-600 hover:bg-blue-600 hover:text-white text-sm font-semibold rounded-md transition cursor-pointer",
           actionButtonTooltip: "The merge state already exists in Dataspecer. The button opens it.",
         };
       }
       else {
         return {
           actionButtonText: "Merge",
-          actionButtonClassname: "border-1 bg-green-100 border-green-600 hover:bg-green-600 hover:text-white text-sm font-semibold transition cursor-pointer dark:bg-green-900 dark:border-green-400 dark:hover:bg-green-500 dark:hover:text-white",
+          actionButtonClassname: "border-1 bg-green-100 border-green-600 hover:bg-green-600 hover:text-white text-sm font-semibold rounded-md transition cursor-pointer",
           actionButtonTooltip: "Both branches are already tracked inside Dataspecer. This button will create new merge state between them",
         };
       }
@@ -227,21 +218,21 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
     else if (isMergeToForActionButtonInDS) {
       return {
         actionButtonText: "Import + Merge",
-        actionButtonClassname: "border-1 bg-purple-100 border-purple-600 hover:bg-purple-600 hover:text-white text-sm font-semibold transition cursor-pointer dark:bg-purple-900 dark:border-purple-400 dark:hover:bg-purple-500 dark:hover:text-white",
+        actionButtonClassname: "border-1 bg-purple-100 border-purple-600 hover:bg-purple-600 hover:text-white text-sm font-semibold rounded-md transition cursor-pointer",
         actionButtonTooltip: "Imports the merge to branch of the PR and creates a new merge state between the two branches tracked in Dataspecer",
       };
     }
     else if (isMergeFromForActionButtonInDS) {
       return {
         actionButtonText: "Import + Merge",
-        actionButtonClassname: "border-1 bg-purple-100 border-purple-600 hover:bg-purple-600 hover:text-white text-sm font-semibold transition cursor-pointer dark:bg-purple-900 dark:border-purple-400 dark:hover:bg-purple-500 dark:hover:text-white",
+        actionButtonClassname: "border-1 bg-purple-100 border-purple-600 hover:bg-purple-600 hover:text-white text-sm font-semibold rounded-md transition cursor-pointer",
         actionButtonTooltip: "Imports the merge from branch of the PR and creates a new merge state between the two branches tracked in Dataspecer",
       };
     }
     else {
       return {
         actionButtonText: "Import both + Merge",
-        actionButtonClassname: "border-1 bg-orange-100 border-orange-600 hover:bg-orange-600 hover:text-white text-sm font-semibold transition cursor-pointer dark:bg-orange-900 dark:border-orange-400 dark:hover:bg-orange-500 dark:hover:text-white",
+        actionButtonClassname: "border-1 bg-orange-100 border-orange-600 hover:bg-orange-600 hover:text-white text-sm font-semibold rounded-md transition cursor-pointer",
         actionButtonTooltip: "Imports both the merge from and merge to branches into Dataspecer and creates a new merge state between them.",
       };
     }
@@ -427,16 +418,16 @@ function PullRequestComponent({ pullRequestInfo, resources, resourceGitUrl, reso
 
 
   // We have to use the hoveredOn, because otherwise if we hover on the action button, we highlight the whole line since the hover on also works on the whole div, which we do not want.
-  return <div className={"grid grid-cols-[4fr_2fr_2fr_3fr_3fr_2fr_1.5fr_1.5fr] divide-x divide-y divide-gray-300 ml-4 w-full cursor-pointer" + ((!hoveredOnActionButton && hoveredOnNotActionButton) ? " hover:bg-gray-200 dark:hover:bg-gray-700 dark:hover:text-white-400" : "")}>
-    <div onClick={() => createNewTabAndOpen(pullRequestInfo.urlToPR)} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center border-gray-300">{pullRequestInfo.title}</div>
-    <div onClick={() => createNewTabAndOpen(pullRequestInfo.urlToPR)} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{new Date(pullRequestInfo.createdAt).toLocaleString()}</div>
-    <div onClick={() => createNewTabAndOpen(pullRequestInfo.urlToPR)} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{new Date(pullRequestInfo.modifiedAt).toLocaleString()}</div>
-    <div onClick={() => createNewTabAndOpen(pullRequestInfo.urlToPR)} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{pullRequestInfo.mergeFromBranch}</div>
-    <div onClick={() => createNewTabAndOpen(pullRequestInfo.urlToPR)} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{pullRequestInfo.mergeToBranch}</div>
-    <div onClick={() => createNewTabAndOpen(pullRequestInfo.urlToPR)} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="border-r border-b border-gray-300">
+  return <div className={"grid grid-cols-[4fr_2fr_2fr_3fr_3fr_2fr_1.5fr_1.5fr] divide-x divide-y divide-gray-300 ml-4 w-full cursor-pointer" + ((!hoveredOnActionButton && hoveredOnNotActionButton) ? " hover:bg-gray-200" : "")}>
+    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center border-gray-300">{pullRequestInfo.title}</a>
+    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{new Date(pullRequestInfo.createdAt).toLocaleString()}</a>
+    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{new Date(pullRequestInfo.modifiedAt).toLocaleString()}</a>
+    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{pullRequestInfo.mergeFromBranch}</a>
+    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="flex justify-center items-center">{pullRequestInfo.mergeToBranch}</a>
+    <a href={pullRequestInfo.urlToPR} onMouseEnter={() => setHoveredOnNotActionButton(true)} onMouseLeave={() => setHoveredOnNotActionButton(false)} className="border-r border-b border-gray-300">
       <div className="flex justify-center items-center text-green-600">+{pullRequestInfo.additions}</div>
       <div className="flex justify-center items-center text-red-600">-{pullRequestInfo.deletions}</div>
-    </div>
+    </a>
     {!isReverseMergeButtonNotReady && reverseMergeButtonData !== undefined &&
       <button
         className={"flex justify-center items-center cursor-pointer " + reverseMergeButtonData.actionButtonClassname}

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useOnBeforeUnload } from "@/hooks/use-on-before-unload";
 import { useOnKeyDown } from "@/hooks/use-on-key-down";
 import { DiffTreeVisualization } from "@/components/directory-diff";
-import { ArrowDownIcon, ArrowUpIcon, Loader, Minus, Plus } from "lucide-react";
+import { ArrowDownIcon, ArrowUpIcon, Loader } from "lucide-react";
 import SvgVisualDiffDialog from "@/dialog/show-svgs-diff-dialog";
 import { goToNextDiff, goToPreviousDiff, MonacoDiffEditor } from "@/components/monaco-diff-editor";
 import { MergeStrategyComponent } from "@/components/merge-strategy-component";
@@ -84,8 +84,6 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
     }
   });
 
-  const cantFinalize = (activeConflicts?.length ?? 1) !== 0;
-
 
   const mergeFromBranchDataToRender: BranchDataToRender = {
     branch: examinedMergeState?.branchMergeFrom,
@@ -146,22 +144,18 @@ return (
                     <Button title="This does save both the changes to files and updates the merge state"
                             variant={"outline"}
                             onClick={() => saveEverything()}
-                            className="m-1 border bg-blue-100 border-blue-500 hover:bg-blue-500 hover:text-white dark:bg-blue-900 dark:border-blue-400 dark:hover:bg-blue-500 dark:hover:text-white transition">
+                            className="m-1 border bg-blue-100 border-blue-500 hover:bg-blue-500 hover:text-white transition">
                       Save All (Ctrl + S)
                     </Button>
                     {
-                    isLoadingTreeStructure ? null :
-                    <span title={cantFinalize ?
-                                "Resolve all conflicts to enable the button and with that get the option to finalize the merge state. The conflicts are marked as resolved by clicking on checkmarks in the directory diff. This tooltip changes after the button gets enabled." :
-                                "First saves all the unsaved changes and then it performs the operation, which triggered the merge state. Can be pull/push/merge."}>
-                      <Button variant={"outline"}
+                    ((activeConflicts?.length ?? 1) !== 0) ? null :
+                      <Button title="First saves all the unsaved changes and then it performs the operation, which triggered the merge state. Can be pull/push/merge"
+                              variant={"outline"}
                               onClick={finalizeMergeStateHandler}
-                              disabled={cantFinalize}
-                              className="m-1 border bg-green-100 border-green-500 hover:bg-green-500 hover:text-white dark:bg-green-900 dark:border-green-400 dark:hover:bg-green-500 dark:hover:text-white transition">
-                        {cantFinalize ? "⚠️Resolve conflicts to finalize" : "Save and Finalize"}
+                              className="m-1 border bg-green-100 border-green-500 hover:bg-green-500 hover:text-white transition">
+                        Save and Finalize
                       </Button>
-                    </span>
-                  }
+                    }
                   </div>
                 </div>
             </ResizablePanel>
@@ -247,7 +241,6 @@ function DiffEditorInfoPopOver() {
       <p>&nbsp;&nbsp; - Otherwise - Same text in both.</p>
       <p>- The merge actors are not changed in any way. This means that you have to manually do all the changes if needed.</p>
       <p className="pl-5">You can also use merge strategy at the top to do the changes automatically. The changes are applied to the currently opened file.</p>
-      <div className="flex flex-row">- <Plus className="mt-1 h-4 w-4"/> adds datastore to the editable window. <Minus className="mt-1 h-4 w-4"/> removes it. The backend is affected only after clicking on one of the Save buttons.</div>
       <p>- The editable window is always on the right.</p>
       <p>- For pull and merge the editable windows are the "merge to" actors.</p>
       <p>- The push is reversed, that is the editable window is the "merge from" actor. This is same as in Git, since the "merge to" is the remote.</p>

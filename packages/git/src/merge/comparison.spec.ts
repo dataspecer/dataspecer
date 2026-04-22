@@ -279,7 +279,7 @@ function createIriWithCopy(input: string, repetitionCount: number, valueToRepeat
 }
 
 /**
- * Generated with the help of ChatGPT to save some work with a lot of manual rewrites.
+ * Generated with the help of ChatGPT to save some work.
  * @returns Two roots which can be used for testing. Not that the second root is nothing else than deepClone of the first root.
  *  The changes themselves depend on the test.
  */

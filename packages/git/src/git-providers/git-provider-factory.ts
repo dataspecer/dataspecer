@@ -5,11 +5,6 @@ import { GitProvider, GitProviderEnum, GitProviderNamesAsType } from "../git-pro
 import { extractPartOfRepositoryURL } from "../git-utils.ts";
 import { type GitBotConfiguration, type OAuthConfiguration } from "@dataspecer/auth";
 
-/**
- * The authentication related data that should be passed to the constructor of the Git provider.
- *  The bot data typically come directly from the configuration.
- *  The authConfiguration represents the OAuth configuration for the Git provider.
- */
 export type AuthenticationGitProvidersData = {
   gitBotConfigurations?: Record<GitProviderNamesAsType, GitBotConfiguration>;
   authConfiguration?: OAuthConfiguration;
@@ -26,9 +21,6 @@ export type ExpressRequestForGitProviderFactory = {
   };
 };
 
-/**
- * Factory class with static method that lets you create GitProvider from different input data.
- */
 export abstract class GitProviderFactory {
   static createGitProviderFromWebhookRequest(
     request: ExpressRequestForGitProviderFactory,

@@ -2,13 +2,12 @@ import { getSession, Session } from "@auth/express"
 import express, { NextFunction } from "express"
 import { createBasicAuthConfig, createAuthConfigBasedOnAccountScope } from "./auth-config.ts"
 import { asyncHandler } from "../utils/async-handler.ts";
-import { AccessToken, AccessTokenType, GitProvider, GitCredentials, convertGitProviderNameToEnum, GitProviderEnum } from "@dataspecer/git";
+import { AccessToken, AccessTokenType, ScopeGroup, GitProvider, GitCredentials, convertGitProviderNameToEnum, GitProviderEnum } from "@dataspecer/git";
 import { getToken } from "@auth/core/jwt"
 import configuration from "../configuration.ts";
 import { convertExpressRequestToNormalRequest, getBaseBackendUrl } from "../utils/express-url-utils.ts";
 import { createUserSSHIdentifier } from "@dataspecer/git-node";
 import { checkExistenceOfSshKeyFileForUser } from "../routes/git/ssh/check-ssh-key-existence.ts";
-import { ScopeGroup } from "@dataspecer/auth";
 
 
 /**

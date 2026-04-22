@@ -1,12 +1,11 @@
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
-import {  convertGitProviderNameToEnum, GitProvider, GitProviderEnum, isGitProviderName, UserOrganizationsFetchResponse } from "@dataspecer/git";
+import { ScopeGroup, convertGitProviderNameToEnum, GitProvider, GitProviderEnum, isGitProviderName, UserOrganizationsFetchResponse } from "@dataspecer/git";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
 import { getGitCredentialsFromSession, getGitProviderEnumFromSession } from "../../authentication/auth-session.ts";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
 import { z } from "zod";
-import { ScopeGroup } from "@dataspecer/auth";
 
 /**
  * Returns the for which is the user member of. If the user is not signed in returns error, if they are signed in, but with different git provider, then returns empty array

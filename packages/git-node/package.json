@@ -19,7 +19,6 @@
     "vitest": "^3.0.9"
   },
   "dependencies": {
-    "@dataspecer/auth": "*",
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
     "@dataspecer/git": "*",

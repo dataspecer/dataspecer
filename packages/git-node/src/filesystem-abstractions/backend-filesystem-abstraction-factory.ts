@@ -3,15 +3,7 @@ import { DSFilesystem } from "./implementations/ds-filesystem.ts";
 import { ResourceModelForFilesystemRepresentation, ResourceModelForPull } from "../resource-model-api/export/export-api/export.ts";
 import { ClassicFilesystem } from "./implementations/classic-filesystem.ts";
 
-/**
- * Factory with static method to create filesystem of given type.
- */
 export class FilesystemFactory {
-  /**
-   * @param filesystem the filesystem type to create.
-   * @param factoryMethodParameters gitIgnore can be null for DSFilesystem. For Classic (Git) filesystem only the roots and the gitIgnore are needed.
-   * @returns the filesystem of the given type ({@link filesystem}) created from the given parameters ({@link factoryMethodParameters}).
-   */
   public static async createFileSystem(
     filesystem: AvailableFilesystems,
     factoryMethodParameters: FilesystemFactoryMethodParams,
@@ -29,6 +21,7 @@ export class FilesystemFactory {
 
 
 export type FilesystemFactoryMethodParams = {
+  // projectIri: string;    // TODO RadStr Critical: Just for now have it like this ... but think about how to do it better
   roots: FilesystemNodeLocation[];
   gitIgnore: GitIgnore | null;
 } & DsFsConstructorParams;

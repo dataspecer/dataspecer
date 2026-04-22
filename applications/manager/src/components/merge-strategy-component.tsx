@@ -13,11 +13,6 @@ export enum ModelsToResolve {
 
 
 // Improve the styling (margins and size) using Microsoft Copilot, that is why it is set in a "weird" way using join
-/**
- * The thing seen at the top of the diff editor. It lets user to choose the merge strategy through combo box and click button that applies it.
- *  Respectively, the button opens another dialog where user chooses further conditions which should be used within the resolving.
- *  Currently, it lets user choose whether they want to apply it only to the currently opened model or all of them.
- */
 export const MergeStrategyComponent = (props: {
   handleMergeStateResolving: (mergeStrategy: MergeResolverStrategy, modelsToResolve: ModelsToResolve) => void;
 }) => {
@@ -49,18 +44,18 @@ export const MergeStrategyComponent = (props: {
           // native arrow retained (safer cross-browser)
           "appearance-auto"
         ].join(" ")}
-        value={mergeStrategy.getKey()}
+        value={mergeStrategy.key}
         onChange={(event) =>
           setMergeStrategy(
             mergeResolverStrategies.find(
-              (strategy) => strategy.getKey() === event.target.value
+              (strategy) => strategy.key === event.target.value
             )!
           )
         }
       >
         {mergeResolverStrategies.map((strategy) => (
-          <option key={strategy.getKey()} value={strategy.getKey()}>
-            {strategy.getLabel()}
+          <option key={strategy.key} value={strategy.key}>
+            {strategy.label}
           </option>
         ))}
       </select>

@@ -1,7 +1,5 @@
 import { TFunction } from "i18next";
 
-// This file contains wait times for the loading dialog. (Mainly used for Git actions to show expected time and how much time passed)
-
 export type GitWaitTime = {
   lowerBound: number;
   upperBound: number;

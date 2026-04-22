@@ -27,9 +27,6 @@ type SetGitRemoteConfigurationDialogProps = {
 } & BetterModalProps<null>;
 
 
-/**
- * Separate dialog that lets user set Git configuration.
- */
 export function SetGitRemoteConfigurationDialog({ inputPackage, isOpen, resolve }: SetGitRemoteConfigurationDialogProps) {
   const [rootPackageContent, setRootPackageContent] = useState<any>();
   const [gitRemoteConfiguration, setGitRemoteConfiguration] = useState<GitRemoteConfigurations | null>(null);
@@ -109,7 +106,6 @@ export function SetGitRemoteConfigurationDialog({ inputPackage, isOpen, resolve 
 const gitRemoteConfigurationIdPrefix = "sgrcc"
 
 /**
- * Note that the component is called both from the create repository dialog and from the separate set config dialog. Since the contents of those are the same.
  * @todo This component can be much more general in future - basically define the names of fields and their values and then just generate.
  *  Therefore, we would not need to touch this component at all when introducing new types.
  * But since we have currently only 3 values and we have no idea what might be the future ones, we will just keep it "hardcoded".

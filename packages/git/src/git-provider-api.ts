@@ -1,6 +1,6 @@
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
+import { GenericScope } from "./auth.ts";
 import { GitIssuesFetchResponse, IssueState } from "./git-issues/git-issue-types.ts";
-import { GenericScope } from "@dataspecer/auth";
 
 export const PUBLICATION_BRANCH_DEFAULT_NAME: string = "publication-branch";
 

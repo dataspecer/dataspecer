@@ -4,11 +4,11 @@ import sodium from "libsodium-wrappers-sumo";
 import { AuthenticationGitProviderData, GitProviderBase } from "../git-provider-base.ts";
 import { AuthenticationGitProvidersData } from "../git-provider-factory.ts";
 import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, PUBLICATION_BRANCH_DEFAULT_NAME, GitProviderIndependentWebhookRequestData, PullRequestFetchResponse, PullRequestInfo, PullRequestInvolvingUserFetchResponse, UserOrganizationsFetchResponse, GitHubLabel, getGitProviderDomain } from "../../git-provider-api.ts";
+import { GenericScope } from "../../auth.ts";
 import { GitRestApiOperationError } from "../../error-definitions.ts";
 import { findPatAccessToken, GITHUB_USER_AGENT } from "../../git-utils.ts";
 import { GitIssueInfo, GitIssuesFetchResponse, IssueState } from "../../git-issues/git-issue-types.ts";
 import { dataspecerGitIssueLabels } from "../../git-issues/git-issue-labels.ts";
-import { GenericScope } from "@dataspecer/auth";
 
 
 const scopes = ["read:user", "read:org", "user:email", "public_repo", "workflow", "delete_repo"] as const;

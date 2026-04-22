@@ -28,8 +28,7 @@ type MergeFromMergeTo = "mergeFrom" | "mergeTo";
 
 
 /**
- * Very lightweight filesystem, which just serves as component to to work with datastore content from backend.
- *  It could be probably implemented better. Currently, we use it mainly through the static methods and it is the expected use (at least for now).
+ * Very lightweight filesystem, which just serves as component to to work with datastore content from backend
  */
 export class ClientFilesystem extends FilesystemAbstractionBase {
   private backendFilesystem: AvailableFilesystems;
@@ -130,7 +129,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     shouldConvertToDatastoreFormat: boolean,
     backendApiPath: string,
     backendFilesystem: AvailableFilesystems | null,
-  ): Promise<string> {
+  ): Promise<string | any> {
     if (datastoreInfo === null) {
       return null;
     }

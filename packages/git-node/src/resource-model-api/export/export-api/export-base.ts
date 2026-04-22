@@ -12,8 +12,6 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
   protected exportFormat!: string;
   protected iriMapping: Record<string, string> | null;
   protected shouldRemoveExportedAt: boolean = false;
-  protected shouldUseIrisForNames: boolean = false;
-  protected shouldRunTestVariantForIriReplacement: boolean = false;
 
   public static setExportVersion(metaObject: any, exportVersion: number) {
     metaObject._exportVersion = exportVersion;
@@ -43,18 +41,9 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
     exportType: AvailableExports,
     exportFormat: string,
     shouldRemoveExportedAt: boolean,
-    shouldUseIrisForNames: boolean,
     iriMapping?: Record<string, string>,
-    shouldRunTestVariantForIriReplacement?: boolean,
   ): Promise<AllowedExportResults> {
-    if (shouldRunTestVariantForIriReplacement) {
-      this.shouldRunTestVariantForIriReplacement = shouldRunTestVariantForIriReplacement;
-    }
-    else {
-      this.shouldRunTestVariantForIriReplacement = false;
-    }
     this.iriMapping = iriMapping ?? null;
-    this.shouldUseIrisForNames = shouldUseIrisForNames;
     this.shouldRemoveExportedAt = shouldRemoveExportedAt;
     const filesystem = await FilesystemFactory.createFileSystem(importFilesystem, filesystemFactoryParams);
     const fakeRoot = filesystem.getRoot();
@@ -69,19 +58,20 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
     this.exportFormat = exportFormat;
 
 
-    pathToExportStartDirectory = pathToExportStartDirectory.length === 0 ? rootDirectoryName : `${pathToExportStartDirectory}/${rootDirectoryName}`;
-    return await this.doExportFromRootDirectory(rootDirectory, pathToExportStartDirectory);
+    pathToExportStartDirectory = pathToExportStartDirectory.length === 0 ? rootDirectoryName : `${pathToExportStartDirectory}/${rootDirectoryName}`
+    return await this.doExportFromRootDirectory(rootDirectoryName, rootDirectory, pathToExportStartDirectory);
   }
 
   abstract getExportVersion(): number;
 
   private async doExportFromRootDirectory(
+    rootDirectoryName: string,
     rootDirectory: DirectoryNode,
     pathToExportStartDirectory: string,
   ): Promise<AllowedExportResults> {
-    await this.exportDirectory(rootDirectory, pathToExportStartDirectory + "/");
+    await this.exportDirectory(rootDirectory, rootDirectoryName + "/", pathToExportStartDirectory + "/");
     return await this.exportActions.finishExport();
   }
 
-  protected abstract exportDirectory(directory: DirectoryNode, pathToExportDirectory: string): Promise<void>;
+  protected abstract exportDirectory(directory: DirectoryNode, pathToDirectory: string, pathToExportDirectory: string): Promise<void>;
 }

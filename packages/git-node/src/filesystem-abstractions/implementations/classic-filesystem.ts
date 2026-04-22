@@ -54,11 +54,6 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     filesystemMapping: FilesystemMappingType,
     parentDirectoryNode: DirectoryNode | null,
   ) {
-    // Note that this method expects the export to be performed using projectIris.
-    //  Which is fine since we are working in Git and there we want to minimize the number of conflicts
-    //   so each file uses project IRI as filename, otherwise we would get file renames on commits.
-
-
     const projectIri = mappedNodeLocation.iri;      // Not a mistake! iri is the same as projectIri in case of git (classic filesystem)
                                                     // So also the tree path for iris and projectIris will be the same.
     let fullPath: string;   // Ok 1) zase ten mappedNodeLocation a za druhe to ma byt iri asi ... ne az to opravim tak to bude dobre, ted to je spatne protoze to bere iricka jako jmena v tom git adresari
