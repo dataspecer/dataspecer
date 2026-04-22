@@ -8,22 +8,22 @@ export type GitWaitTime = {
 }
 
 export const CREATE_REPOSITORY_WAIT_TIME: Readonly<GitWaitTime> = {
-  lowerBound: 10,
-  upperBound: 20
+  lowerBound: 6,
+  upperBound: 15
 };
 
 export const CREATE_NEW_BRANCH_WAIT_TIME: Readonly<GitWaitTime> = {
-  lowerBound: 10,
-  upperBound: 20
+  lowerBound: 1,
+  upperBound: 10
 };
 
 export const GIT_COMMIT_WAIT_TIME: Readonly<GitWaitTime> = {
-  lowerBound: 5,
+  lowerBound: 2,
   upperBound: 15
 };
 
 export const MERGE_COMMIT_WAIT_TIME: Readonly<GitWaitTime> = {
-  lowerBound: 5,
+  lowerBound: 3,
   upperBound: 15
 };
 
@@ -33,12 +33,12 @@ export const GIT_IMPORT_WAIT_TIME: Readonly<GitWaitTime> = {
 };
 
 export const GIT_MERGE_VALIDATION_WAIT_TIME: Readonly<GitWaitTime> = {
-  lowerBound: 5,
+  lowerBound: 3,
   upperBound: 15
 };
 
 export const CREATE_MERGE_STATE_WAIT_TIME: Readonly<GitWaitTime> = {
-  lowerBound: 5,
+  lowerBound: 3,
   upperBound: 10
 };
 

@@ -165,7 +165,12 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   const [isLoadingOrganizationSuggestions, setIsLoadingOrganizationSuggestions] = useState<boolean>(false);
   const [isOwnerSignedInUser, setIsOwnerSignedInUser] = useState<boolean>(true);
   const [gitProvider, setGitProvider] = useState<GitProviderEnum>(gitProvidersComboboxOptions[0].value);
-  const [commitMessage, setCommitMessage] = useState<string>(defaultCommitMessage ?? "");
+  const defaultCommitMessageExplicit = defaultCommitMessage ??
+    (type === "create-new-repository-and-commit" ?
+      "Initial commit with data specification" :
+      "Default commit message"
+    );
+  const [commitMessage, setCommitMessage] = useState<string>(defaultCommitMessageExplicit);
   const [isUserRepo, setIsUserRepo] = useState<boolean>(true);
   // We want the shouldAlwaysCreateMergeState option on, except when we are not showing it, then it can cause recursion
   const [shouldAlwaysCreateMergeState, setShouldAlwaysCreateMergeState] = useState<boolean>(defaultShouldAlwaysCreateMergeStateValue);
@@ -195,7 +200,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   }, [isLoginDataReady, isSignedIn, accountProvider]);
 
   // Fetching organizations so they show in input box when writing
-  // TODO RadStr PR: The suggestion (both user and bot) should be a Record, so we do not keep fetching data of Git provider we already have.
+  // TODO RadStr: The suggestion (both user and bot) should be a Record, so we do not keep fetching data of Git provider we already have.
   //                 But it is just optimization user usually does not keep changing between Git providers.
   //                 They just pick one and create repository
   const [userOrganizationSuggestions, userOrganizationSuggestionsNotReady] = useAsyncMemo(async () => {
@@ -213,7 +218,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
         }
 
         if (!userOrganizations.isLastPage) {
-          // TODO RadStr PR: For now just report error to console
+          // TODO RadStr: For now just report error to console
           console.error("The user is member of more than limit number of organizations (first implmementation had hardcoded limit of 1000)")
         }
         return userOrganizations.organizations.map(org => {
@@ -321,6 +326,12 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
     }
     return requiredFieldsInternal;
   }, []);
+
+  useEffect(() => {
+    if (type === "create-new-repository-and-commit") {
+      repositoryNameInputFieldRef.current?.focus();
+    }
+  }, [isLoginDataReady]);
 
   useEffect(() => {
     if (isLoginDataReady) {
