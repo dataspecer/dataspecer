@@ -521,8 +521,11 @@ export class GitCommit {
 
       let commitResult: CommitResult;
       if (mergeFromBranch === null) {
-        commitResult = await GitCommit.createClassicGitCommit(git, ["."], commitMessage, gitCredentials.name, gitCredentials.email);
+        commitResult = await GitCommit.createClassicGitCommit(git, ["."], commitMessage);
         hashOfPeformedCommit = commitResult.commit;
+        if (!commitResult.root && commitResult.commit === "" && commitResult.branch === "") {
+          throw new Error("There are no changes to commit");
+        }
       }
       else {
         if (shouldAppendAfterDefaultMergeCommitMessage === null) {
@@ -572,6 +575,9 @@ export class GitCommit {
     }
     catch(error: any) {
       if (error?.message?.includes("The merge from branch was already merged.")) {
+        throw error;
+      }
+      else if (error?.message?.includes("There are no changes to commit")) {
         throw error;
       }
       // Error can be caused by Not sufficient rights for the pushing - then we have to try all and fail on last
@@ -809,13 +815,10 @@ export class GitCommit {
     git: SimpleGit,
     files: string[],
     commitMessage: string,
-    committerName: string,
-    committerEmail: string,
   ) {
     await git.add(files);
 
-    // We should already be on the correct branch
-    const commitResult = await git.commit(commitMessage);
+    let commitResult: CommitResult = await git.commit(commitMessage);
     return commitResult;
   }
 

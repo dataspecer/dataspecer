@@ -168,7 +168,11 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   const defaultCommitMessageExplicit = defaultCommitMessage ??
     (type === "create-new-repository-and-commit" ?
       "Initial commit with data specification" :
-      "Default commit message"
+      type === "commit" ?
+        "Default commit message" :
+        type === "merge-commit" ?
+          "Custom merge commit message" :
+          ""
     );
   const [commitMessage, setCommitMessage] = useState<string>(defaultCommitMessageExplicit);
   const [isUserRepo, setIsUserRepo] = useState<boolean>(true);
@@ -679,9 +683,17 @@ export const mergeCommitToGitDialogOnClickHandler = async (
   inputPackage: Package,
   mergeState: MergeState,
 ) => {
+  let defaultCommitMessage: string;
+  if (mergeState.commitMessage === "") {
+    defaultCommitMessage = "Merge commit message";
+  }
+  else {
+    defaultCommitMessage = mergeState.commitMessage;
+  }
+
   const result = await openModal(GitActionsDialog, {
     inputPackage,
-    defaultCommitMessage: mergeState.commitMessage,
+    defaultCommitMessage,
     type: "merge-commit",
     shouldShowAlwaysCreateMergeStateOption: false,
     defaultShouldAlwaysCreateMergeStateValue: false,
@@ -737,6 +749,12 @@ export const mergeCommitToGitHandler = async (
             }, 1000);
           }
         }
+        // TODO RadStr: Once again not really nice, it should be probably defined in some common package?
+        else if (jsonResponse?.error === "Error: There are no changes to commit") {
+          closeDialogObject.closeDialogAction();
+          toast.error("There are no changes to commit", {richColors: true});
+          return;
+        }
         else {
           gitOperationResultToast(t, response);
         }
@@ -773,6 +791,10 @@ export const commitToGitDialogOnClickHandler = async (
   defaultCommitMessage: string | null,
   onSuccessCallback: (() => void) | null,
 ) => {
+  if (defaultCommitMessage === "" && commitType === "rebase-commit") {
+    defaultCommitMessage = "Rebase commit message";
+  }
+
   const result = await openModal(GitActionsDialog, {
     inputPackage,
     defaultCommitMessage,
@@ -824,9 +846,9 @@ export const commitToGitHandler = async (
   commitToGitBackendRequest(iri, gitCommitData, shouldRedirectWithExistenceOfMergeStates)
     .then(async (response) => {
       if (response.status === 300) {
-        const jsonResponse: CommitRedirectResponseJson = await response.json();
+        const jsonResponseTyped: CommitRedirectResponseJson = await response.json() as CommitRedirectResponseJson;
         const extendedResponse: CommitRedirectExtendedResponseJson = {
-          ...jsonResponse,
+          ...jsonResponseTyped,
           commitType: gitCommitData.commitType,
           shouldAppendAfterDefaultMergeCommitMessage: null,
           shouldAlwaysCreateMergeState: gitCommitData.shouldAlwaysCreateMergeState,
@@ -834,12 +856,20 @@ export const commitToGitHandler = async (
         };
         openModal(CommitRedirectForMergeStatesDialog, {commitRedirectResponse: extendedResponse});
         closeDialogObject.closeDialogAction();
-        console.info({jsonResponse});     // TODO RadStr Debug: Debug print
+        console.info({jsonResponseTyped});     // TODO RadStr Debug: Debug print
+      }
+      else if (response.status === 500) {
+        const jsonResponse: any = await response.json();
+        if (jsonResponse?.error === "Error: There are no changes to commit") {
+          closeDialogObject.closeDialogAction();
+          toast.error("There are no changes to commit", {richColors: true});
+          return;
+        }
       }
       else if (response.status === 409 && canCreateMergeStateIfNecessary) {
         closeDialogObject.closeDialogAction();
-        const jsonResponse: NonNullable<CommitConflictInfo> = await response.json();
-        openModal(TextDiffEditorDialog, { initialMergeFromRootMetaPath: jsonResponse.conflictMergeFromRootPath, initialMergeToRootMetaPath: jsonResponse.conflictMergeToRootPath, editable: convertMergeStateCauseToEditable("push")});
+        const jsonResponseTyped: NonNullable<CommitConflictInfo> = await response.json() as NonNullable<CommitConflictInfo>;
+        openModal(TextDiffEditorDialog, { initialMergeFromRootMetaPath: jsonResponseTyped.conflictMergeFromRootPath, initialMergeToRootMetaPath: jsonResponseTyped.conflictMergeToRootPath, editable: convertMergeStateCauseToEditable("push")});
         toast.success(t("git.toast.merge-state-created"));
         await requestLoadPackage(iri, true);
         return;
