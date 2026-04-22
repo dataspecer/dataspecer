@@ -90,6 +90,7 @@ export function setGitRemoteConfigurationStatePart(
 
 type GitActionsDialogProps = {
   inputPackage: Package;
+  defaultShouldAlwaysCreateMergeStateValue: boolean;
   shouldShowAlwaysCreateMergeStateOption: boolean | null;
   defaultCommitMessage: string | null;
   type?: "create-new-repository-and-commit" | "commit" | "merge-commit" | "link-to-existing-repository";
@@ -121,7 +122,7 @@ const gitDialogInputIdPrefix = "git-dialog-prefix";
  *  This dialog is usually called by handler methods, for example {@link commitToGitHandler}.
  * Before resolving check for mandatory fields is performed, where the fields depend on the type of dialog.
  */
-export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, resolve, type, shouldShowAlwaysCreateMergeStateOption }: GitActionsDialogProps) => {
+export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, resolve, type, shouldShowAlwaysCreateMergeStateOption, defaultShouldAlwaysCreateMergeStateValue }: GitActionsDialogProps) => {
   const { t } = useTranslation();
   type = type ?? "create-new-repository-and-commit";
   const [showMore, setShowMore] = useState<boolean>(false);
@@ -167,7 +168,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   const [commitMessage, setCommitMessage] = useState<string>(defaultCommitMessage ?? "");
   const [isUserRepo, setIsUserRepo] = useState<boolean>(true);
   // We want the shouldAlwaysCreateMergeState option on, except when we are not showing it, then it can cause recursion
-  const [shouldAlwaysCreateMergeState, setShouldAlwaysCreateMergeState] = useState<boolean>(shouldShowAlwaysCreateMergeStateOption !== false);
+  const [shouldAlwaysCreateMergeState, setShouldAlwaysCreateMergeState] = useState<boolean>(defaultShouldAlwaysCreateMergeStateValue);
   const [shouldAppendAfterDefaultMergeCommitMessage, setShouldAppendAfterDefaultMergeCommitMessage] = useState<boolean>(true);
 
   useEffect(() => {
@@ -545,7 +546,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
               input={commitMessage}
               requiredRefObject={commitMessageInputFieldRef}
             />
-            {!shouldShowAlwaysCreateMergeStateOption ?
+            {(shouldShowAlwaysCreateMergeStateOption ?? false) === false ?
               null :
               <label className="flex items-center gap-2">
                 <input
@@ -627,7 +628,13 @@ function RepositoryOwnerTooltip() {
 export const createNewRemoteRepositoryHandler = async (t: TFunction<"translation", undefined>, openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
   // {@link DropdownMenuItem} has to be used in the tree, when it is part of another component, it is rendered incorrectly,
   // that is why we implement it like this and not like react component
-  const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage: null, type: "create-new-repository-and-commit", shouldShowAlwaysCreateMergeStateOption: null });
+  const result = await openModal(GitActionsDialog, {
+    inputPackage,
+    defaultCommitMessage: null,
+    type: "create-new-repository-and-commit",
+    shouldShowAlwaysCreateMergeStateOption: null,
+    defaultShouldAlwaysCreateMergeStateValue: true,
+  });
   if (result) {
     const closeDialogObject = createCloseLoadingDialogObject();
     setTimeout(() => {
@@ -666,6 +673,7 @@ export const mergeCommitToGitDialogOnClickHandler = async (
     defaultCommitMessage: mergeState.commitMessage,
     type: "merge-commit",
     shouldShowAlwaysCreateMergeStateOption: false,
+    defaultShouldAlwaysCreateMergeStateValue: false,
   });
   if (result) {
     const gitMergeCommitData: GitMergeCommitData = {
@@ -754,7 +762,13 @@ export const commitToGitDialogOnClickHandler = async (
   defaultCommitMessage: string | null,
   onSuccessCallback: (() => void) | null,
 ) => {
-  const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage, type: "commit", shouldShowAlwaysCreateMergeStateOption });
+  const result = await openModal(GitActionsDialog, {
+    inputPackage,
+    defaultCommitMessage,
+    type: "commit",
+    shouldShowAlwaysCreateMergeStateOption,
+    defaultShouldAlwaysCreateMergeStateValue: false,
+   });
   if (result) {
     const gitCommitData = {
       ...result,
@@ -835,7 +849,13 @@ export const commitToGitHandler = async (
 
 
 export const linkToExistingGitRepositoryHandler = async (t: TFunction<"translation", undefined>, openModal: OpenBetterModal, iri: string, inputPackage: Package) => {
-  const result = await openModal(GitActionsDialog, { inputPackage, defaultCommitMessage: null, type: "link-to-existing-repository", shouldShowAlwaysCreateMergeStateOption: null });
+  const result = await openModal(GitActionsDialog, {
+    inputPackage,
+    defaultCommitMessage: null,
+    type: "link-to-existing-repository",
+    shouldShowAlwaysCreateMergeStateOption: null,
+    defaultShouldAlwaysCreateMergeStateValue: true,     // The value does not matter
+  });
   if (result) {
     const response = await linkToExistingGitRepositoryRequest(iri, result.remoteRepositoryURL);
     if (response.ok) {
