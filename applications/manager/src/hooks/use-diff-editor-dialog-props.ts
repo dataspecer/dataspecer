@@ -41,6 +41,7 @@ import { requestLoadPackage } from "@/package";
 import { ChooseActionForDiffEditorUnplannedChange, DiffEditorOutsideChangeChosenAction } from "@/dialog/outside-changes-to-diff-editor-action-dialog";
 import { createCloseLoadingDialogObject, LoadingDialog } from "@/dialog/loading-dialog";
 import { SAVING_DIFF_EDITOR_STATE_TO_BACKEND } from "@/utils/git-wait-times";
+import { InfoDialog } from "@/dialog/info-dialog";
 import { ModelsToResolve } from "@/components/merge-strategy-component";
 import _ from "lodash";
 
