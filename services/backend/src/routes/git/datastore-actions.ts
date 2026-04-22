@@ -70,7 +70,11 @@ export const getDatastoreContentDirectly = asyncHandler(async (request: express.
   response.send(datastoreContent);
 });
 
-
+/**
+ * @param format is the format in which is the given {@link newContent}.
+ * @todo It works for DS, because there the output format is always JSON. But for classic filesystem it would not work.
+ *  We would also have to provide the output format to which we should convert the data before storing.
+ */
 export async function updateDatastoreContent(
   datastoreParentIri: string,
   pathToDatastore: string,
@@ -82,16 +86,20 @@ export async function updateDatastoreContent(
 ): Promise<{ success: boolean, accessDenied: boolean}> {
   // TODO RadStr Critical: Run conversion on client?
   if (filesystem === AvailableFilesystems.ClassicFilesystem) {
-    const { isAccessible, normalizedGitPath } = isAccessibleGitRepository(pathToDatastore);
-    // This is very very important, if we didn't do this, we would user allow to esentially query any file stored on server
-    if (!isAccessible) {
-      return { success: false, accessDenied: true };
-    }
-    const newContentConverted = convertDatastoreContentBasedOnFormat(newContent, format ?? null, true, null);
-    if (!newContentConverted.ok) {
-      return { success: false, accessDenied: false };
-    }
-    fs.writeFileSync(normalizedGitPath, newContentConverted.value, "utf-8");
+    // TODO RadStr: Do not do anything for classic filesystem - it is not tested properly, so if somebody decides to implement the updating
+    //               of the Git project, handle it all properly. It is not probably not correct, since there is missing the output format
+    //               the given, see the TOOD of the method
+
+    // const { isAccessible, normalizedGitPath } = isAccessibleGitRepository(pathToDatastore);
+    // // This is very very important, if we didn't do this, we would user allow to esentially query any file stored on server
+    // if (!isAccessible) {
+    //   return { success: false, accessDenied: true };
+    // }
+    // const newContentConverted = convertDatastoreContentBasedOnFormat(newContent, format ?? null, true, null);
+    // if (!newContentConverted.ok) {
+    //   return { success: false, accessDenied: false };
+    // }
+    // fs.writeFileSync(normalizedGitPath, newContentConverted.value, "utf-8");
   }
   else {
     DSFilesystem.setDatastoreContentForPath(datastoreParentIri, resourceModel, pathToDatastore, format ?? null, type, newContent, [mergeStateUuid]);
@@ -133,6 +141,8 @@ export async function removeDatastoreContent(
 
 /**
  * @param parentIri This is the actual iri of the first parent (not project iri), under which we will connect the chain of new
+ * * @todo Similarly to {@link updateDatastoreContent} It works for DS, because there the output format is always JSON. But for classic filesystem it would not work.
+ *  We would also have to provide the output format to which we should convert the data before storing.
  */
 export async function createDatastoreContent(
   filesystemNodesInTreePath: ExportShareableMetadataType[],

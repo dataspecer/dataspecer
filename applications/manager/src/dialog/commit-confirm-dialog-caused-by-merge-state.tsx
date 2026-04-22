@@ -15,6 +15,10 @@ type CommitRedirectForMergeStatesProps = {
   commitRedirectResponse: CommitRedirectExtendedResponseJson;
 } & BetterModalProps;
 
+/**
+ * This dialog handles the redirects during committing. The redirects are caused by existence of merge states.
+ *  For example, if merge state already exists during commit we inform user if they do not want ot resolve it first.
+ */
 export const CommitRedirectForMergeStatesDialog = ({ commitRedirectResponse, isOpen, resolve }: CommitRedirectForMergeStatesProps) => {
   const didRun = useRef<boolean>(false);
   const openModal = useBetterModal();

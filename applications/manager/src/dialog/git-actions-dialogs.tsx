@@ -111,11 +111,15 @@ const gitDialogInputIdPrefix = "git-dialog-prefix";
 
 /**
  * This dialog represents the dialog used for manipulation of git.
- * It is multipurpose in a sense that. It has the following 2 use-cases
- * 1) We want to create only commit for linked repo
- * 2) We want to create link to existing repo and commit current content to it.
- *
- * The type of shown dialog depends on the "type" property.
+ * The purpose depends on the given type, which can be seen in {@link GitActionsDialogProps}.
+ *  It is one of the following:
+ *  - Create new repo and commit current content to it
+ *  - Commit current content
+ *  - Perform merge-commit
+ *  - link to existing repository - which is disabled for now due to huge issues regarding IRIs
+ * It is all part of one dialog since some functionality is shared.
+ *  This dialog is usually called by handler methods, for example {@link commitToGitHandler}.
+ * Before resolving check for mandatory fields is performed, where the fields depend on the type of dialog.
  */
 export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, resolve, type, shouldShowAlwaysCreateMergeStateOption }: GitActionsDialogProps) => {
   const { t } = useTranslation();
@@ -812,13 +816,13 @@ export const commitToGitHandler = async (
         const jsonResponse: NonNullable<CommitConflictInfo> = await response.json();
         openModal(TextDiffEditorDialog, { initialMergeFromRootMetaPath: jsonResponse.conflictMergeFromRootPath, initialMergeToRootMetaPath: jsonResponse.conflictMergeToRootPath, editable: convertMergeStateCauseToEditable("push")});
         toast.success(t("git.toast.merge-state-created"));
-        requestLoadPackage(iri, true);
+        await requestLoadPackage(iri, true);
         return;
       }
       else {
         closeDialogObject.closeDialogAction();
         gitOperationResultToast(t, response);
-        requestLoadPackage(iri, true);
+        await requestLoadPackage(iri, true);
         if (response.ok) {
           onSuccessCallback?.();
         }

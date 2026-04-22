@@ -1,11 +1,12 @@
 import { z } from "zod";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
-import { ScopeGroup, GitProvider } from "@dataspecer/git";
+import { GitProvider } from "@dataspecer/git";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
 import { getGitCredentialsFromSession } from "../../authentication/auth-session.ts";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
+import { ScopeGroup } from "@dataspecer/auth";
 
 /**
  * Returns the opened pull requests. The implementation sends queries to the Git provider and returns the response in changed format.

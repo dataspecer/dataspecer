@@ -1,3 +1,4 @@
+// Types used for the Git graph history visualization.
 
 export type GitRawHistoryToSendToClient = {
     rawCommits: readonly RawCommitData[],

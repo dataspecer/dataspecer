@@ -1,11 +1,12 @@
 import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
-import { CommitReferenceType, CreateRemoteRepositoryReturnType, GitProvider, GitProviderEnum, GenericScope, GitProviderIndependentWebhookRequestData, GitCredentials, GetResourceForGitUrlAndBranchType, GitProviderNode, GitProviderInternalCompositeNode, GitRef } from "@dataspecer/git";
+import { CommitReferenceType, CreateRemoteRepositoryReturnType, GitProvider, GitProviderEnum, GitProviderIndependentWebhookRequestData, GitCredentials, GetResourceForGitUrlAndBranchType, GitProviderNode, GitProviderInternalCompositeNode, GitRef } from "@dataspecer/git";
 import { simpleGit } from "simple-git";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 import { removePathRecursively } from "../git-utils-node.ts";
 import { ROOT_DIRECTORY_FOR_PRIVATE_GITS } from "../git-store-info.ts";
 import { AuthenticationGitProviderData, GitProviderBase } from "@dataspecer/git/git-providers";
+import { GenericScope } from "@dataspecer/auth";
 
 
 /**

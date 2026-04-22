@@ -14,6 +14,10 @@ type ShowMergeStateInfoDialogProps = {
   setIsInfoDialogShown: (isShown: boolean) => void,
 } & BetterModalProps<null>;
 
+
+/**
+ * Dialog that shows information about merge state.
+ */
 export const ShowMergeStateInfoDialog = ({ mergeState, setIsInfoDialogShown, isOpen, resolve }: ShowMergeStateInfoDialogProps) => {
   useEffect(() => {
     setIsInfoDialogShown(true);

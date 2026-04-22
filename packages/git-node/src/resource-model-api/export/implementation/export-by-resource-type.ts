@@ -22,6 +22,9 @@ export class PackageExporterFactory {
 }
 
 
+/**
+ * The new version of export. More structured than the old one. It puts the models into specific directories, which are decided by the type of the model.
+ */
 export class PackageExporterByResourceType extends PackageExporterBase {
   getExportVersion(): number {
     return 2;
@@ -29,39 +32,44 @@ export class PackageExporterByResourceType extends PackageExporterBase {
 
   protected async exportDirectory(
     directory: DirectoryNode,
-    pathToDirectory: string,
     pathToExportDirectory: string,
   ) {
-    await this.exportDatastores(directory, pathToDirectory, pathToExportDirectory);
+    await this.exportDatastores(directory, pathToExportDirectory);
     for (const [name, filesystemNode] of Object.entries(directory.content)) {
       if (filesystemNode.type === "directory") {
-        const fullPath = this.createPathBasedOnResourceType(pathToDirectory, filesystemNode.name, filesystemNode.metadata.types[0]);
-        // const exportFullPath = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.name, filesystemNode.metadata.types[0]);
-        const exportFullPath = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.metadata.projectIri, filesystemNode.metadata.types[0]);
-        await this.exportDirectory(filesystemNode, fullPath, exportFullPath);
+        let exportFullPath: string;
+        if (this.shouldUseIrisForNames) {
+          const iri = filesystemNode.metadata.iri.substring(filesystemNode.metadata.iri.lastIndexOf("/") + 1);
+          exportFullPath = this.createPathBasedOnResourceType(pathToExportDirectory, iri, filesystemNode.metadata.types[0]);
+        }
+        else {
+          exportFullPath = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.metadata.projectIri, filesystemNode.metadata.types[0]);
+        }
+        await this.exportDirectory(filesystemNode, exportFullPath);
       }
       else {
-        await this.exportDatastores(filesystemNode, pathToDirectory, pathToExportDirectory);
+        await this.exportDatastores(filesystemNode, pathToExportDirectory);
       }
     }
   }
 
   private async exportDatastores(
     filesystemNode: FilesystemNode,
-    pathToDirectory: string,
     pathToExportDirectory: string,
   ) {
     // The fullName and exportFullName are the path to datastore without the suffix (that is the type and format - for example .meta.json). And in case of directories it ends with /
-    let fullName: string;
     let exportFullName: string;
     if (filesystemNode.type === "directory") {
-      fullName = pathToDirectory;
       exportFullName = pathToExportDirectory;
     }
     else {
-      fullName = this.createPathBasedOnResourceType(pathToDirectory, filesystemNode.name, filesystemNode.metadata.types[0]);
-      // exportFullName = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.name, filesystemNode.metadata.types[0]);
-      exportFullName = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.metadata.projectIri, filesystemNode.metadata.types[0]);
+      if (this.shouldUseIrisForNames) {
+        const iri = filesystemNode.metadata.iri.substring(filesystemNode.metadata.iri.lastIndexOf("/") + 1);
+        exportFullName = this.createPathBasedOnResourceType(pathToExportDirectory, iri, filesystemNode.metadata.types[0]);
+      }
+      else {
+        exportFullName = this.createPathBasedOnResourceType(pathToExportDirectory, filesystemNode.metadata.projectIri, filesystemNode.metadata.types[0]);
+      }
     }
 
     for(const datastore of filesystemNode.datastores) {
@@ -69,7 +77,7 @@ export class PackageExporterByResourceType extends PackageExporterBase {
       if (isDatastoreForMetadata(datastore.type)) {
         data = filesystemNode.metadata;
         if (this.iriMapping !== null) {
-          const { datastoreWithReplacedIris } = createDatastoreWithReplacedIris(data, this.iriMapping);
+          const { datastoreWithReplacedIris } = createDatastoreWithReplacedIris(data, this.iriMapping, this.shouldRunTestVariantForIriReplacement);
           data = datastoreWithReplacedIris;
         }
         if (this.shouldRemoveExportedAt) {
@@ -82,7 +90,7 @@ export class PackageExporterByResourceType extends PackageExporterBase {
         data = await this.importFilesystem.getDatastoreContent(filesystemNode.irisTreePath, datastore.type, true);
         if (this.iriMapping !== null) {
           // Note that if there are some missing iris it is ok, those iris exist because there are some new resources.
-          const { datastoreWithReplacedIris } = createDatastoreWithReplacedIris(data, this.iriMapping);
+          const { datastoreWithReplacedIris } = createDatastoreWithReplacedIris(data, this.iriMapping, this.shouldRunTestVariantForIriReplacement);
           data = datastoreWithReplacedIris;
         }
       }

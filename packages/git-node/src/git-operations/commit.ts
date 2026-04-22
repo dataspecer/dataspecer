@@ -652,7 +652,7 @@ export class GitCommit {
       removeEverythingExcept(gitInitialDirectory, exceptionsForDirectoryRemoval);
 
       await exporter.doExportFromIRI(
-        dsFilesystemFactoryParams, gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem, exportFormat, true, dsIriToGitIriMap);
+        dsFilesystemFactoryParams, gitInitialDirectoryParent + "/", AvailableFilesystems.DS_Filesystem, AvailableExports.Filesystem, exportFormat, true, false, dsIriToGitIriMap);
 
       if (shouldContainWorkflowFiles && !hasSetLastCommit) {
         createGitReadMeFile(gitInitialDirectory);

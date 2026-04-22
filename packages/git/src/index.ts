@@ -8,7 +8,6 @@ export * from "./git-utils.ts";
 export * from "./merge/merge-state.ts";
 export * from "./merge/merge-state-types.ts";
 export * from "./merge/comparison.ts";
-export * from "./auth.ts";
 export * from "./merge/resolvers/merge-resolver-strategy.ts";
 export * from "./merge/resolvers/available-merge-resolvers.ts";
 export * from "./merge/resolvers/implementations/do-nothing-resolver.ts";

@@ -97,7 +97,13 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
     changeType: ResourceChangeType,
     mergeStateUUIDsToIgnoreInUpdating: string[],
   ): Promise<void> {
-    if (changedModel === null && changeType === ResourceChangeType.Removed) {
+    const rootResource = await this.resourceModel.getRootResourceForIri(resourceIri);
+    if (rootResource === null) {
+      throw new Error(`Resource for iri ${resourceIri} actually does not exist`);
+    }
+
+    // When we remove root
+    if (rootResource.iri === resourceIri && changedModel === null && changeType === ResourceChangeType.Removed) {
       // Remove all the merge states related to the iri since, we removed it. The resoruceIri has to be root for the merge state to be removed. Otherwise it is not reason for removal.
       const mergeStates = await this.getMergeStates(resourceIri, false);
       for (const mergeState of mergeStates) {
@@ -107,11 +113,6 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
         this.removeMergeState(mergeState);
       }
       return;
-    }
-
-    const rootResource = await this.resourceModel.getRootResourceForIri(resourceIri);
-    if (rootResource === null) {
-      throw new Error(`Resource for iri ${resourceIri} actually does not exist`);
     }
 
     const mergeStates = await this.getMergeStates(rootResource.iri, false);

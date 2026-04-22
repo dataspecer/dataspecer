@@ -11,8 +11,10 @@ import { PUBLICATION_BRANCH_DEFAULT_NAME } from "../../git-provider-api.ts";
 /**
  * Usage:
  *   ts-node config-reader.ts <directory>
+ * It reads the publication branch name from Git configuration in the given directory and returns it.
+ *  It is used in the GitHub Action, since the data specification can be in yaml/json,
+ *  so it would be difficult to do the parsing purely in Shell.
  */
-
 async function main() {
   const directory = process.argv[2];
 

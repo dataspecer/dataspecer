@@ -9,6 +9,10 @@ type BooleanRadioButtonsProps = {
   setValue: (value: boolean) => void
 }
 
+
+/**
+ * Very general component that handles the fact when we choose between true/false values.
+ */
 export function BooleanRadioButtons({ value, setValue, falseText, trueText, isFalseDisabled, isTrueDisabled }: BooleanRadioButtonsProps) {
   const { t } = useTranslation();
 

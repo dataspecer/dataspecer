@@ -4,8 +4,8 @@ import { LockKeyholeIcon, LogIn, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { SshMenu } from '@/dialog/ssh-menu';
-import { ScopeGroup } from '@dataspecer/git';
-import { goToPage, SignInDialog } from '@/dialog/sign-in';
+import { goToPage, SignInDialog } from '@/dialog/advanced-sign-in';
+import { ScopeGroup } from '@dataspecer/auth';
 
 /**
  * Visualizes the sign in/out buttons and user's profile picture with tooltip if signed in.
@@ -22,10 +22,10 @@ export const LoginCard = (props: {login: UseLoginType}) => {
       <div className="flex login-card">
         {isSignedIn ?
           <Button variant="ghost" className="flex focus:outline-none hover:bg-red-300 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-2 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900"
-                onClick={(_) => redirectToPage(`${import.meta.env.VITE_BACKEND}/auth/signout?redirectURL=${encodeURI(window.location.href)}`)}
+                onClick={(_) => goToPage(`${import.meta.env.VITE_BACKEND}/auth/signout?redirectURL=${encodeURI(window.location.href)}`)}
                 title="Note that if you provide Git permissions. The token with permissions should be revoked after, unless some error happened, if so then for safety reasons you should remove the permissions provided to this page inside GitHub (or the used Git provider)">
             <LogOut className="pl-2" />
-            <p className="pt-0.5 pl-1.5">Sign Out</p>
+            <p className="pb-0.5 pl-1.5 pr-1.5">Sign Out</p>
           </Button> : <>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -51,10 +51,6 @@ export const LoginCard = (props: {login: UseLoginType}) => {
     }
     </div>);
 };
-
-export function redirectToPage(url: string) {
-  window.location.href = url;
-}
 
 type UserMenuProps = {
   login: UseLoginType;

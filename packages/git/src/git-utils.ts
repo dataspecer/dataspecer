@@ -169,7 +169,7 @@ type DeepOmit<T, K extends PropertyKey> = {
 
 /**
  * Also ChatGPT
- * @deprecated No longer used, but it may be useful in future, so I keep it here
+ * @deprecated But it is useful for testing, so I keep it here
  */
 export function deepOmit<T extends object>(obj: T, keyToRemove: string): any {
   if (Array.isArray(obj)) {

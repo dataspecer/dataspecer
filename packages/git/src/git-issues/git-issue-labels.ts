@@ -1,9 +1,15 @@
+/**
+ * The type that represents a Git (respectively GitHub) issue.
+ */
 type GitIssueLabel = {
   name: string;
   description: string;
   color: string;
 };
 
+/**
+ * Simply add a new entry if there is some Git issue label that you think is missing.
+ */
 export const dataspecerGitIssueLabels: Readonly<Record<string, GitIssueLabel>> = {
   "cs": {
     name: "cs",

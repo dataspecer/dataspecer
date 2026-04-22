@@ -43,6 +43,7 @@ import { DeleteGitRepoDialog } from "./dialog/remove-git-repo-dialog";
 import { SetGitRemoteConfigurationDialog } from "./dialog/set-git-remote-configuration-dialog";
 import { GitPrsListDialog } from "./dialog/list-git-prs-for-branch";
 import { GitIssuesListDialog } from "./dialog/list-git-issues";
+import { createNewTabAndOpen } from "./dialog/advanced-sign-in";
 
 
 export function lng(text: LanguageString | undefined): string | undefined {
@@ -156,19 +157,20 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
   const prInfo = signedInUserPullRequests.findIndex(url => url === resource.linkedGitRepositoryURL) === -1 ? null : <div className="pl-0.5 text-red-600">{gitProviderSpecificNameForPRShortcut}</div>;
 
   let gitPart: React.ReactNode;
+  // We put all of the Git stuff in <a> to show that the url at the bottom left
   if (resource.activeMergeStateCount !== 0) {
-    gitPart = <a href={resource.linkedGitRepositoryURL} className="text-red-500 pt-1 flex flex-1 flex-row">GIT<AlertTriangleIcon className="w-4 h-4 ml-0.75 mt-1"/>
+    gitPart = <a onClick={(e) => {e.preventDefault(); createNewTabAndOpen(resource.linkedGitRepositoryURL)}} href={resource.linkedGitRepositoryURL} className="text-red-500 pt-1 flex flex-1 flex-row cursor-pointer">GIT<AlertTriangleIcon className="w-4 h-4 ml-0.75 mt-1"/>
       <sup className="pt-2">{prInfo}</sup>
     </a>;
   }
   else {
     if (resource.hasUncommittedChanges) {
-      gitPart = <a href={resource.linkedGitRepositoryURL} className="text-yellow-400 pt-1 flex flex-1 flex-row">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/>
+      gitPart = <a onClick={(e) => {e.preventDefault(); createNewTabAndOpen(resource.linkedGitRepositoryURL)}} href={resource.linkedGitRepositoryURL} className="text-yellow-400 pt-1 flex flex-1 flex-row cursor-pointer">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/>
         <sup className="pt-2">{prInfo}</sup>
       </a>;
     }
     else {
-      gitPart = <a href={resource.linkedGitRepositoryURL} className="text-green-400 pt-1 flex flex-1 flex-row">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/>
+      gitPart = <a onClick={(e) => {e.preventDefault(); createNewTabAndOpen(resource.linkedGitRepositoryURL)}} href={resource.linkedGitRepositoryURL} className="text-green-400 pt-1 flex flex-1 flex-row cursor-pointer">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/>
         <sup className="pt-2">{prInfo}</sup>
       </a>;
     }
@@ -195,7 +197,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
           <span className="truncate w-[6cm]">
             {getValidTime(resource.metadata?.modificationDate) && t("changed", {val: new Date(resource.metadata?.modificationDate!)})}
           </span>
-          <span className="truncate w-[5cm]" title={resource.iri}>
+          <span className="truncate w-[5cm]" title={"IRI: " + resource.iri}>
             {resource.iri}
           </span>
           {
@@ -214,14 +216,14 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
           }
           {
             !isGitUrlSet(resource.linkedGitRepositoryURL) ?
-              <span className="truncate px-2 w-[2.5cm]" title={resource.projectIri}>
+              <span className="truncate px-2 w-[2.5cm]" title={"Project IRI: " + resource.projectIri}>
                 {resource.projectIri}
               </span> :
               <>
-                <span className="truncate px-2 w-[2.5cm]" title={resource.projectIri}>
+                <span className="truncate px-2 w-[2.5cm]" title={"Project IRI: " + resource.projectIri}>
                   {resource.projectIri}
                 </span>
-                <span className="truncate px-2 w-[4cm]" title={resource.branch}>
+                <span className="truncate px-2 w-[4cm]" title={"Branch name: " + resource.branch}>
                   {resource.branch}
                 </span>
               </>
@@ -341,8 +343,8 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
                 </DropdownMenuSubTrigger>
 
                 <DropdownMenuSubContent className="data-[side=top]">
-                  {hasSetRemoteRepository && <DropdownMenuItem asChild><a href={gitProvider === null ? "" : gitProvider.createGitRepositoryURL(repositoryOwner!, repositoryName!, gitRef!)}><Eye className="mr-2 h-4 w-4" />Show {resource.representsBranchHead ? "branch" : "commit"} on GitHub</a></DropdownMenuItem>}
-                  {hasSetRemoteRepository && <DropdownMenuItem asChild><a href={gitProvider === null ? "" : gitProvider.getGitPagesURL(resource.linkedGitRepositoryURL)}><Eye className="mr-2 h-4 w-4" />Show {gitProvider?.getProviderSpecificLabel("GitHub Pages")}</a></DropdownMenuItem>}
+                  {hasSetRemoteRepository && <DropdownMenuItem onClick={() => createNewTabAndOpen(gitProvider === null ? "" : gitProvider.createGitRepositoryURL(repositoryOwner!, repositoryName!, gitRef!))}><Eye className="mr-2 h-4 w-4" />Show {resource.representsBranchHead ? "branch" : "commit"} on GitHub</DropdownMenuItem>}
+                  {hasSetRemoteRepository && <DropdownMenuItem onClick={() => createNewTabAndOpen(gitProvider === null ? "" : gitProvider.getGitPagesURL(resource.linkedGitRepositoryURL))}><Eye className="mr-2 h-4 w-4" />Show {gitProvider?.getProviderSpecificLabel("GitHub Pages")}</DropdownMenuItem>}
                   {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>}
                   {hasSetRemoteRepository && <hr className="border-gray-300" />}
                   {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialog, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: null, gitProviderSpecificNameForPR, gitProviderSpecificNameForPRShortcut})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Active {gitProviderSpecificNameForPR}s</DropdownMenuItem>}

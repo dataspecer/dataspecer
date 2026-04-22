@@ -9,6 +9,10 @@ type SvgVisualDiffDialogProps = {
   editableType: EditableType;
 } & BetterModalProps<null>
 
+
+/**
+ * Dialog that gets two svgs and the order (given by editableType). Shows the two svgs in the correct order next to each other (horizontally - left/right).
+ */
 const SvgVisualDiffDialog = ({ mergeFromSvg, mergeToSvg, editableType, isOpen, resolve }: SvgVisualDiffDialogProps) => {
   const { nonEditable: leftSvg, editable: rightSvg } = getEditableAndNonEditableValue(editableType, mergeFromSvg, mergeToSvg);
 

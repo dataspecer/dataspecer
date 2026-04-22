@@ -4,6 +4,7 @@ import {
 } from "@dataspecer/core-v2/configuration-model";
 import { getGitRemoteConfigurationsDefaults, GitRemoteConfigurations } from "./git-remote-configuration-interface.ts";
 
+// Standard implementation of Dataspecer configuration put into the root package of the data specification.
 
 export function createGitRemoteConfiguration(configuration: ReadableConfigurationModel): GitRemoteConfigurations {
   return interpretConfigurationModelSimple<GitRemoteConfigurations>(configuration, GIT_REMOTE_CONFIGURATION_IRI, getGitRemoteConfigurationsDefaults());

@@ -3,12 +3,13 @@ import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { resourceModel } from "../../main.ts";
 import { compareBackendFilesystems, createSimpleGitUsingPredefinedGitRoot, gitCloneBasic, MergeEndpointForComparison, removePathRecursively, TMP_CLONE_PATH_PREFIX } from "@dataspecer/git-node";
-import { AvailableFilesystems, ScopeGroup, extractPartOfRepositoryURL, getAuthorizationURL, GitIgnoreBase, GitProvider, AccessTokenType } from "@dataspecer/git";
+import { AvailableFilesystems, extractPartOfRepositoryURL, getAuthorizationURL, GitIgnoreBase, GitProvider, AccessTokenType } from "@dataspecer/git";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import configuration from "../../configuration.ts";
 import { createFilesystemFactoryParams } from "../../utils/filesystem-helpers.ts";
+import { ScopeGroup } from "@dataspecer/auth";
 
 
 /**
@@ -89,7 +90,7 @@ export const trySetPackageAsUpToDateHandler = asyncHandler(async (request: expre
       // 3) Set the result
       const hasUncommittedChanges = diffTreeComparison.conflicts.length !== 0 || diffTreeComparison.created.length !== 0 ||
                                     diffTreeComparison.changed.length !== 0 || diffTreeComparison.removed.length !== 0;
-      resourceModel.setHasUncommittedChanges(iri, hasUncommittedChanges);
+      await resourceModel.setHasUncommittedChanges(iri, hasUncommittedChanges);
       if (hasUncommittedChanges) {
         response.sendStatus(204);
       }
