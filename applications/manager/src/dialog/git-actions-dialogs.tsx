@@ -865,6 +865,11 @@ export const commitToGitHandler = async (
           toast.error("There are no changes to commit", {richColors: true});
           return;
         }
+        else {
+          closeDialogObject.closeDialogAction();
+          gitOperationResultToast(t, response);
+          await requestLoadPackage(iri, true);
+        }
       }
       else if (response.status === 409 && canCreateMergeStateIfNecessary) {
         closeDialogObject.closeDialogAction();
