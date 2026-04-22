@@ -8,17 +8,17 @@ import {
 } from "../../core/index.ts";
 import { loadPimSchema, PimExecutorResultFactory } from "./pim-executor-utils.ts";
 
-export async function executePimCreateAttribute(
+export function executePimCreateAttribute(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: PimCreateAttribute
-): Promise<CoreExecutorResult> {
-  const schema = await loadPimSchema(reader);
+): CoreExecutorResult {
+  const schema = loadPimSchema(reader);
   if (schema === null) {
     return PimExecutorResultFactory.missingSchema();
   }
 
-  const owner = await reader.readResource(operation.pimOwnerClass);
+  const owner = reader.readResource(operation.pimOwnerClass);
   if (!PimClass.is(owner)) {
     return PimExecutorResultFactory.invalidType(owner, "pim:class");
   }

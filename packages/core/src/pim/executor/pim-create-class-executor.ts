@@ -7,12 +7,12 @@ import {
 import { PimExecutorResultFactory, loadPimSchema } from "./pim-executor-utils.ts";
 import { PimClass } from "../model/index.ts";
 
-export async function executePimCreateClass(
+export function executePimCreateClass(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: PimCreateClass
-): Promise<CoreExecutorResult> {
-  const schema = await loadPimSchema(reader);
+): CoreExecutorResult {
+  const schema = loadPimSchema(reader);
   if (schema === null) {
     return PimExecutorResultFactory.missingSchema();
   }

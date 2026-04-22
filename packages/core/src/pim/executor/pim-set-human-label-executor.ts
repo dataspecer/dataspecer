@@ -7,12 +7,12 @@ import {
 import { PimSetHumanLabel } from "../operation/index.ts";
 import { PimAssociation, PimAttribute, PimClass, PimResource, PimSchema } from "../model/index.ts";
 
-export async function executePimSetHumanLabel(
+export function executePimSetHumanLabel(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: PimSetHumanLabel
-): Promise<CoreExecutorResult> {
-  const resource = await reader.readResource(operation.pimResource);
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.pimResource);
   if (resource == null) {
     return CoreExecutorResult.createError(
       `Missing data-psm resource '${operation.pimResource}'.`

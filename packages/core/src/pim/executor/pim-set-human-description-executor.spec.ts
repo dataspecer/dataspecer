@@ -30,7 +30,7 @@ test("Update resource human description.", async () => {
     },
   };
 
-  const actual = await executePimSetHumanDescription(
+  const actual = executePimSetHumanDescription(
     wrapResourcesWithReader(before),
     undefined,
     operation

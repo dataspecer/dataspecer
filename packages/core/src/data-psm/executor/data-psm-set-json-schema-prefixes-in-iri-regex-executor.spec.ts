@@ -22,7 +22,7 @@ test("Update jsonSchemaPrefixesInIriRegex property.", async () => {
     },
   };
 
-  const actual = await executeDataPsmSetJsonSchemaPrefixesInIriRegex(
+  const actual = executeDataPsmSetJsonSchemaPrefixesInIriRegex(
     wrapResourcesWithReader(before),
     undefined,
     operation

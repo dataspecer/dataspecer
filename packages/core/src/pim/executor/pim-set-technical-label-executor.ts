@@ -7,12 +7,12 @@ import {
 import { PimSetTechnicalLabel } from "../operation/index.ts";
 import { PimAssociation, PimAttribute, PimClass, PimResource } from "../model/index.ts";
 
-export async function executePimSetTechnicalLabel(
+export function executePimSetTechnicalLabel(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: PimSetTechnicalLabel
-): Promise<CoreExecutorResult> {
-  const resource = await reader.readResource(operation.pimResource);
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.pimResource);
   if (resource == null) {
     return CoreExecutorResult.createError(
       `Missing data-psm resource '${operation.pimResource}'.`

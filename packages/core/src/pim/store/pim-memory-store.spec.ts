@@ -13,7 +13,7 @@ test("Create PIM schema with class and attribute.", async () => {
 
   const pimSchema = new Operations.PimCreateSchema();
   pimSchema.pimHumanLabel = { en: "Test schema." };
-  const pimSchemaChange = await store.applyOperation(pimSchema);
+  const pimSchemaChange = store.applyOperation(pimSchema);
   expect(pimSchemaChange.operation.iri).toBeDefined();
   expect(pimSchemaChange.created).toEqual(["http://localhost/schema/1"]);
   expect(pimSchemaChange.changed).toEqual([]);
@@ -21,7 +21,7 @@ test("Create PIM schema with class and attribute.", async () => {
 
   const pimClass = new Operations.PimCreateClass();
   pimClass.pimInterpretation = "http://localhost/cim/TheClass";
-  const pimClassChange = await store.applyOperation(pimClass);
+  const pimClassChange = store.applyOperation(pimClass);
   expect(pimClassChange.operation.iri).toBeDefined();
   expect(pimClassChange.created).toEqual(["http://localhost/class/3"]);
   expect(pimClassChange.changed.sort()).toEqual(
@@ -33,7 +33,7 @@ test("Create PIM schema with class and attribute.", async () => {
   pimAttribute.pimDatatype = "xsd:string";
   pimAttribute.pimInterpretation = "http://localhost/cim/TheProperty";
   pimAttribute.pimOwnerClass = "http://localhost/class/3";
-  const pimAttributeChange = await store.applyOperation(pimAttribute);
+  const pimAttributeChange = store.applyOperation(pimAttribute);
   expect(pimAttributeChange.operation.iri).toBeDefined();
   expect(pimAttributeChange.created).toEqual(["http://localhost/attribute/5"]);
   expect(pimAttributeChange.changed.sort()).toEqual(
@@ -43,7 +43,7 @@ test("Create PIM schema with class and attribute.", async () => {
 
   //
 
-  expect((await store.listResources()).sort()).toEqual(
+  expect(store.listResources().sort()).toEqual(
     [
       "http://localhost/schema/1",
       "http://localhost/class/3",
@@ -51,7 +51,7 @@ test("Create PIM schema with class and attribute.", async () => {
     ].sort()
   );
 
-  expect(await store.readResource("http://localhost/schema/1")).toMatchObject({
+  expect(store.readResource("http://localhost/schema/1")).toMatchObject({
     iri: "http://localhost/schema/1",
     types: [PIM.SCHEMA],
     pimHumanLabel: pimSchema.pimHumanLabel,
@@ -59,7 +59,7 @@ test("Create PIM schema with class and attribute.", async () => {
     pimParts: ["http://localhost/class/3", "http://localhost/attribute/5"],
   });
 
-  expect(await store.readResource("http://localhost/class/3")).toMatchObject({
+  expect(store.readResource("http://localhost/class/3")).toMatchObject({
     iri: "http://localhost/class/3",
     types: [PIM.CLASS],
     pimInterpretation: pimClass.pimInterpretation,
@@ -71,7 +71,7 @@ test("Create PIM schema with class and attribute.", async () => {
     pimIsCodelist: false,
   });
 
-  expect(await store.readResource("http://localhost/attribute/5")).toMatchObject({
+  expect(store.readResource("http://localhost/attribute/5")).toMatchObject({
     iri: "http://localhost/attribute/5",
     types: [PIM.ATTRIBUTE],
     pimInterpretation: pimAttribute.pimInterpretation,
@@ -94,14 +94,14 @@ test("Create and delete PIM class", async () => {
   );
 
   const pimSchema = new Operations.PimCreateSchema();
-  const pimSchemaChange = await store.applyOperation(pimSchema);
+  const pimSchemaChange = store.applyOperation(pimSchema);
   expect(pimSchemaChange.operation.iri).toBeDefined();
   expect(pimSchemaChange.created).toEqual(["http://localhost/schema/1"]);
   expect(pimSchemaChange.changed).toEqual([]);
   expect(pimSchemaChange.deleted).toEqual([]);
 
   const pimCreate = new Operations.PimCreateClass();
-  const pimCreateChange = await store.applyOperation(pimCreate);
+  const pimCreateChange = store.applyOperation(pimCreate);
   expect(pimCreateChange.operation.iri).toBeDefined();
   expect(pimCreateChange.created).toEqual(["http://localhost/class/3"]);
   expect(pimCreateChange.changed.sort()).toEqual(
@@ -111,12 +111,12 @@ test("Create and delete PIM class", async () => {
 
   const pimDelete = new Operations.PimDeleteClass();
   pimDelete.pimClass = "http://localhost/class/3";
-  const pimDeleteChange = await store.applyOperation(pimDelete);
+  const pimDeleteChange = store.applyOperation(pimDelete);
   expect(pimDeleteChange.operation.iri).toBeDefined();
   expect(pimDeleteChange.changed).toEqual(["http://localhost/schema/1"]);
   expect(pimDeleteChange.deleted).toEqual(["http://localhost/class/3"]);
 
-  expect((await store.listResources()).sort()).toEqual(
+  expect(store.listResources().sort()).toEqual(
     ["http://localhost/schema/1"].sort()
   );
 });

@@ -23,7 +23,7 @@ test("Delete class.", async () => {
     },
   };
 
-  const actual = await executePimDeleteClass(
+  const actual = executePimDeleteClass(
     wrapResourcesWithReader(before),
     undefined,
     operation

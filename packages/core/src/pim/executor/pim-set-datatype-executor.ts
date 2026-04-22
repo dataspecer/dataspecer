@@ -8,12 +8,12 @@ import { PimAttribute } from "../model/index.ts";
 import { PimSetDatatype } from "../operation/index.ts";
 import { PimExecutorResultFactory } from "./pim-executor-utils.ts";
 
-export async function executePimSetDataType(
+export function executePimSetDataType(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: PimSetDatatype
-): Promise<CoreExecutorResult> {
-  const resource = await reader.readResource(operation.pimAttribute);
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.pimAttribute);
   if (!PimAttribute.is(resource)) {
     return PimExecutorResultFactory.invalidType(resource, "pim:attribute");
   }

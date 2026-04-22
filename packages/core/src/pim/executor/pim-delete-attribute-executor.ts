@@ -7,12 +7,12 @@ import {
 import { PimExecutorResultFactory, loadPimSchema } from "./pim-executor-utils.ts";
 import { PimDeleteAttribute } from "../operation/index.ts";
 
-export async function executePimDeleteAttribute(
+export function executePimDeleteAttribute(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: PimDeleteAttribute
-): Promise<CoreExecutorResult> {
-  const schema = await loadPimSchema(reader);
+): CoreExecutorResult {
+  const schema = loadPimSchema(reader);
   if (schema === null) {
     return PimExecutorResultFactory.missingSchema();
   }

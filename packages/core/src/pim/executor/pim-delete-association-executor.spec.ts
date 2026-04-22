@@ -41,7 +41,7 @@ test("Delete association.", async () => {
     },
   };
 
-  const actual = await executePimDeleteAssociation(
+  const actual = executePimDeleteAssociation(
     wrapResourcesWithReader(before),
     undefined,
     operation

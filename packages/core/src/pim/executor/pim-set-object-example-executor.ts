@@ -7,12 +7,12 @@ import { PimClass } from "../model/index.ts";
 import { PimSetObjectExample } from "../operation/index.ts";
 import { PimExecutorResultFactory } from "./pim-executor-utils.ts";
 
-export async function executePimSetObjectExample(
+export function executePimSetObjectExample(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: PimSetObjectExample
-): Promise<CoreExecutorResult> {
-  const resource = await reader.readResource(operation.pimResource);
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.pimResource);
   if (!PimClass.is(resource)) {
     return PimExecutorResultFactory.invalidType(resource, "pim:class");
   }

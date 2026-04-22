@@ -15,25 +15,25 @@ export class ReadOnlyMemoryStore implements CoreResourceReader {
     return new ReadOnlyMemoryStore(resources);
   }
 
-  listResources(): Promise<string[]> {
-    return Promise.resolve(Object.keys(this.resources));
+  listResources(): string[] {
+    return Object.keys(this.resources);
   }
 
-  listResourcesOfType(typeIri: string): Promise<string[]> {
+  listResourcesOfType(typeIri: string): string[] {
     const result: string[] = [];
     for (const [iri, resource] of Object.entries(this.resources)) {
       if (resource.types.includes(typeIri)) {
         result.push(iri);
       }
     }
-    return Promise.resolve(result);
+    return result;
   }
 
-  readResource(iri: string): Promise<CoreResource | null> {
+  readResource(iri: string): CoreResource | null {
     const resource = this.resources[iri];
     if (resource === undefined) {
-      return Promise.resolve(null);
+      return null;
     }
-    return Promise.resolve(clone(this.resources[iri]) as CoreResource);
+    return clone(this.resources[iri]) as CoreResource;
   }
 }

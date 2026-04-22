@@ -2,12 +2,12 @@ import {CoreExecutorResult, CoreResourceReader, CreateNewIdentifier,} from "../.
 import {DataPsmDeleteOr} from "../operation/index.ts";
 import {DataPsmExecutorResultFactory, loadDataPsmSchema, removeValue} from "./data-psm-executor-utils.ts";
 
-export async function executeDataPsmDeleteOr(
+export function executeDataPsmDeleteOr(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmDeleteOr
-): Promise<CoreExecutorResult> {
-  const schema = await loadDataPsmSchema(reader);
+): CoreExecutorResult {
+  const schema = loadDataPsmSchema(reader);
   if (schema === null) {
     return DataPsmExecutorResultFactory.missingSchema();
   }

@@ -4,13 +4,13 @@ import {DataPsmAssociationEnd, DataPsmInclude, DataPsmOr, DataPsmSchema} from ".
 /**
  * Todo introduce as operation
  */
-export async function replaceObjectInSchema(
+export function replaceObjectInSchema(
   schemaIri: string,
   searchIri: string,
   replacementIri: string,
   reader: CoreResourceReader,
-): Promise<CoreResource[]> {
-  const schema = await reader.readResource(schemaIri) as DataPsmSchema;
+): CoreResource[] {
+  const schema = reader.readResource(schemaIri) as DataPsmSchema;
   const changedResources = [] as CoreResource[];
 
   // Check roots
@@ -20,7 +20,7 @@ export async function replaceObjectInSchema(
 
   // Check all resources in schema
   for (const resourceIri of schema.dataPsmParts) {
-    const resource = await reader.readResource(resourceIri) as CoreResource;
+    const resource = reader.readResource(resourceIri) as CoreResource;
     if (resource === null) {
       continue;
     }

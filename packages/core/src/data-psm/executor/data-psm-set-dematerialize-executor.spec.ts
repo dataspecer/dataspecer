@@ -25,7 +25,7 @@ test("Update data PSM association materialized.", async () => {
     } as DataPsmClassReference,
   };
 
-  const actual = await executeDataPsmSetDematerialize(
+  const actual = executeDataPsmSetDematerialize(
     wrapResourcesWithReader(before),
     undefined,
     operation

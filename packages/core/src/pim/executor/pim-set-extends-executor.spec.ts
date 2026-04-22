@@ -28,7 +28,7 @@ test("Update resource extends.", async () => {
     },
   };
 
-  const actual = await executePimSetExtends(
+  const actual = executePimSetExtends(
     wrapResourcesWithReader(before),
     undefined,
     operation

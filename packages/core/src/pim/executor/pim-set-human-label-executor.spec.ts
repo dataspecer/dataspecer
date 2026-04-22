@@ -30,7 +30,7 @@ test("Update resource human label.", async () => {
     },
   };
 
-  const actual = await executePimSetHumanLabel(
+  const actual = executePimSetHumanLabel(
     wrapResourcesWithReader(before),
     undefined,
     operation

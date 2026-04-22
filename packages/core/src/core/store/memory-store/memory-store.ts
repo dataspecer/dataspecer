@@ -44,7 +44,7 @@ export class MemoryStore implements CoreResourceReader, CoreResourceWriter, Imme
     return new MemoryStore(baseIri, executorForTypes, createNewIdentifier);
   }
 
-  async listResources(): Promise<string[]> {
+  listResources(): string[] {
     return Object.keys(this.resources);
   }
 
@@ -52,14 +52,14 @@ export class MemoryStore implements CoreResourceReader, CoreResourceWriter, Imme
     return Object.keys(this.resources);
   }
 
-  listResourcesOfType(typeIri: string): Promise<string[]> {
+  listResourcesOfType(typeIri: string): string[] {
     const result: string[] = [];
     for (const [iri, resource] of Object.entries(this.resources)) {
       if (resource.types.includes(typeIri)) {
         result.push(iri);
       }
     }
-    return Promise.resolve(result);
+    return result;
   }
 
   listResourcesOfTypeImmediate(typeIri: string): string[] {
@@ -72,7 +72,7 @@ export class MemoryStore implements CoreResourceReader, CoreResourceWriter, Imme
     return result;
   }
 
-  async readResource(iri: string): Promise<CoreResource> {
+  readResource(iri: string): CoreResource {
     // TODO: We may need to create a deep copy here.
     return this.resources[iri];
   }
@@ -81,10 +81,10 @@ export class MemoryStore implements CoreResourceReader, CoreResourceWriter, Imme
     return this.resources[iri] || null;
   }
 
-  async applyOperation(operation: CoreOperation): Promise<CoreOperationResult> {
+  applyOperation(operation: CoreOperation): CoreOperationResult {
     const executor = this.findCoreExecutor(operation);
 
-    const executorResult = await executor.execute(
+    const executorResult = executor.execute(
       this,
       this.createNewIdentifier,
       operation

@@ -11,17 +11,17 @@ import {
 } from "./data-psm-executor-utils.ts";
 import { DataPsmClassReference, DataPsmSchema } from "../model/index.ts";
 
-export async function executeDataPsmDeleteClassReference(
+export function executeDataPsmDeleteClassReference(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmDeleteClassReference
-): Promise<CoreExecutorResult> {
-  const schema: DataPsmSchema | null = await loadDataPsmSchema(reader);
+): CoreExecutorResult {
+  const schema: DataPsmSchema | null = loadDataPsmSchema(reader);
   if (schema === null) {
     return DataPsmExecutorResultFactory.missingSchema();
   }
 
-  const resourceToDelete = await reader.readResource(
+  const resourceToDelete = reader.readResource(
     operation.dataPsmClassReference
   );
   if (!DataPsmClassReference.is(resourceToDelete)) {

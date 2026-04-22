@@ -16,7 +16,7 @@ test("Create schema.", async () => {
     (type) => `http://localhost/${type}/${++counter}`
   );
 
-  const actual = await executePimCreateSchema(
+  const actual = executePimCreateSchema(
     store,
     (type) => `http://localhost/${type}/${++counter}`,
     operation
@@ -52,7 +52,7 @@ test("Create schema with given IRI.", async () => {
     (type) => `http://localhost/${type}/${++counter}`
   );
 
-  const actual = await executePimCreateSchema(
+  const actual = executePimCreateSchema(
     store,
     (type) => `http://localhost/${type}/${++counter}`,
     operation

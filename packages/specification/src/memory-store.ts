@@ -34,8 +34,8 @@ export class MemoryStoreFromBlob extends MemoryStore {
 
   protected hasUnsavedChanges: boolean = false;
 
-  async applyOperation(operation: CoreOperation): Promise<CoreOperationResult> {
-    const result = await super.applyOperation(operation);
+  applyOperation(operation: CoreOperation): CoreOperationResult {
+    const result = super.applyOperation(operation);
     this.hasUnsavedChanges = true;
     return result;
   }

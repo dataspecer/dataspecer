@@ -19,7 +19,7 @@ test("Update data PSM attribute datatype.", async () => {
     },
   };
 
-  const actual = await executeDataPsmSetDatatype(
+  const actual = executeDataPsmSetDatatype(
     wrapResourcesWithReader(before),
     undefined,
     operation

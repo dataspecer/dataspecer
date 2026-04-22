@@ -7,12 +7,12 @@ import {
 import { PimSetClassCodelist } from "../operation/index.ts";
 import { PimClass } from "../model/index.ts";
 
-export async function executePimSetClassCodelist(
+export function executePimSetClassCodelist(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: PimSetClassCodelist
-): Promise<CoreExecutorResult> {
-  const resource = await reader.readResource(operation.pimClass);
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.pimClass);
   if (!PimClass.is(resource)) {
     return CoreExecutorResult.createError(
       `Invalid pim class resource '${operation.pimClass}'.`

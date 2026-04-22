@@ -256,7 +256,7 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
         }
 
         for (const resourceIri of schema.resources) {
-            const resource = await this.readResource(resourceIri) as CoreResource;
+            const resource = this.readResource(resourceIri) as CoreResource;
             // Ducktyping for PimResource
             if ((resource as PimResource).pimInterpretation === cimIri && resource.types.includes(resourceType)) {
                 return resourceIri;
@@ -271,7 +271,7 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
      * @param schemaIri Schema IRI under which the operation is applied
      * @param operation The operation to be applied
      */
-    async applyOperation(schemaIri: string, operation: CoreOperation): Promise<CoreOperationResult> {
+    applyOperation(schemaIri: string, operation: CoreOperation): CoreOperationResult {
         const storeWrapper = this.modelSchemas.get(schemaIri)?.belongsToStore;
         // todo: this checks only the local schemas
 
@@ -289,7 +289,7 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
             result.created = op.type.startsWith("create") ? [result.id] : []; // todo: hotfix
             result.deleted = op.type.startsWith("delete") ? [result.id] : []; // todo: hotfix
         } else {
-            result = await (storeWrapper.store as unknown as CoreResourceWriter).applyOperation(operation);
+            result = (storeWrapper.store as unknown as CoreResourceWriter).applyOperation(operation);
         }
 
 
@@ -326,7 +326,7 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
         this.eventListeners.get("afterOperationExecuted")?.forEach(l => l());
     }
 
-    async listResources(): Promise<string[]> {
+    listResources(): string[] {
         // todo: this method shall be optimized
         const resources = new Set<string>();
         for (const store of this.models) {
@@ -334,34 +334,31 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
                 Object.values(store.store.getEntities()).forEach(entity => resources.add(entity.id));
                 resources.add(store.store.getId());
             } else {
-                (await store.store.listResources()).forEach(resource => resources.add(resource));
+                store.store.listResources().forEach(resource => resources.add(resource));
             }
         }
         return [...resources];
     }
 
-    async listResourcesOfType(typeIri: string): Promise<string[]> {
+    listResourcesOfType(typeIri: string): string[] {
         const resources = new Set<string>();
         for (const store of this.models) {
             if (isModelWrapperCoreResourceReader(store)) {
-                (await store.store.listResourcesOfType(typeIri))
+                store.store.listResourcesOfType(typeIri)
                     .forEach(resource => resources.add(resource));
             }
         }
         return [...resources];
     }
 
-    readResource(iri: string): Promise<CoreResource|Entity|null> {
-        return new Promise(resolve => {
-            const subscriber: Subscriber = (_, resource) => {
-                if (!resource.isLoading) {
-                    this.removeSubscriber(iri, subscriber);
-                    resolve(resource.resource);
-                }
-            }
-            this.addSubscriber(iri, subscriber);
-        });
-    };
+    readResource(iri: string): CoreResource|Entity|null {
+        if (!this.subscriptions.has(iri)) {
+            this.createSubscriptionForNewResource(iri);
+        }
+
+        const subscription = this.subscriptions.get(iri) as Subscription;
+        return subscription.currentValue.resource;
+    }
 
     async forceReload(iri: string) {
         const schemaIri = [...this.modelSchemas.values()].find(schema => schema.resources.includes(iri) || schema.iri === iri)?.iri;
@@ -523,8 +520,8 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
      */
     private async getSchemas(wrappedStore: ModelWrapper, updateAll: boolean = false): Promise<void> {
         if (isModelWrapperCoreResourceReader(wrappedStore)) {
-            const pimSchemas = await wrappedStore.store.listResourcesOfType(PIM.SCHEMA);
-            const dataPsmSchemas = await wrappedStore.store.listResourcesOfType(DataPSM.SCHEMA);
+            const pimSchemas = wrappedStore.store.listResourcesOfType(PIM.SCHEMA);
+            const dataPsmSchemas = wrappedStore.store.listResourcesOfType(DataPSM.SCHEMA);
 
             // Check if still relevant
             if (!this.models.includes(wrappedStore)) {

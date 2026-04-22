@@ -7,12 +7,12 @@ import { PimSetExtends } from "../operation/index.ts";
 import { PimClass } from "../model/index.ts";
 import { PimExecutorResultFactory } from "./pim-executor-utils.ts";
 
-export async function executePimSetExtends(
+export function executePimSetExtends(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: PimSetExtends
-): Promise<CoreExecutorResult> {
-  const resource = await reader.readResource(operation.pimResource);
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.pimResource);
   if (resource == null) {
     return CoreExecutorResult.createError(
       `Missing pim resource '${operation.pimResource}'.`
@@ -24,7 +24,7 @@ export async function executePimSetExtends(
   }
 
   for (const extendsClass of operation.pimExtends) {
-    const cls = await reader.readResource(extendsClass);
+    const cls = reader.readResource(extendsClass);
     if (!PimClass.is(cls)) {
       return PimExecutorResultFactory.invalidType(cls, "pim:class");
     }

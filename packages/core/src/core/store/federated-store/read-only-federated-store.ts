@@ -16,10 +16,10 @@ export class ReadOnlyFederatedStore implements CoreResourceReader {
     return new ReadOnlyFederatedStore(readers);
   }
 
-  async listResources(): Promise<string[]> {
+  listResources(): string[] {
     const resources = new Set<string>();
     for (const model of this.readers) {
-      (await model.listResources()).forEach((resource) =>
+      model.listResources().forEach((resource) =>
         resources.add(resource)
       );
     }
@@ -29,19 +29,20 @@ export class ReadOnlyFederatedStore implements CoreResourceReader {
   /**
    * Returns the resource from the first reader that has it.
    */
-  async readResource(iri: string): Promise<CoreResource> {
+  readResource(iri: string): CoreResource | null {
     for (const model of this.readers) {
-      const resource = await model.readResource(iri);
+      const resource = model.readResource(iri);
       if (resource) {
         return resource;
       }
     }
+    return null;
   }
 
-  async listResourcesOfType(typeIri: string): Promise<string[]> {
+  listResourcesOfType(typeIri: string): string[] {
     const resources = new Set<string>();
     for (const model of this.readers) {
-      (await model.listResourcesOfType(typeIri)).forEach((resource) =>
+      model.listResourcesOfType(typeIri).forEach((resource) =>
         resources.add(resource)
       );
     }

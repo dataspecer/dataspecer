@@ -18,17 +18,17 @@ export class ReadOnlyMemoryStoreWithDummyPimSchema implements CoreResourceReader
         this.schema = new PimSchema(schemaIri);
     }
 
-    async listResources(): Promise<string[]> {
+    listResources(): string[] {
         return [
-            ...await this.store.listResources(),
+            ...this.store.listResources(),
             this.schema.iri as string,
         ]
     }
 
-    async listResourcesOfType(typeIri: string): Promise<string[]> {
+    listResourcesOfType(typeIri: string): string[] {
         if (this.schema.types.includes(typeIri)) {
             return [
-                ...await this.store.listResourcesOfType(typeIri),
+                ...this.store.listResourcesOfType(typeIri),
                 this.schema.iri as string,
             ]
         } else {
@@ -36,11 +36,11 @@ export class ReadOnlyMemoryStoreWithDummyPimSchema implements CoreResourceReader
         }
     }
 
-    async readResource(iri: string): Promise<CoreResource | null> {
+    readResource(iri: string): CoreResource | null {
         if (iri === this.schema.iri) {
             return {
                 ...this.schema,
-                pimParts: await this.store.listResources(),
+                pimParts:  this.store.listResources(),
             } as PimSchema
         } else {
             return this.store.readResource(iri);

@@ -11,12 +11,12 @@ import {
 } from "./data-psm-executor-utils.ts";
 import { DataPsmClass, DataPsmContainer } from "../model/index.ts";
 
-export async function executeDataPsmSetOrder(
+export function executeDataPsmSetOrder(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetOrder
-): Promise<CoreExecutorResult> {
-  const resourceToMove = await reader.readResource(
+): CoreExecutorResult {
+  const resourceToMove = reader.readResource(
     operation.dataPsmResourceToMove
   );
   if (resourceToMove === null) {
@@ -25,7 +25,7 @@ export async function executeDataPsmSetOrder(
     );
   }
 
-  const owner = await loadDataPsmClass(reader, operation.dataPsmOwnerClass);
+  const owner = loadDataPsmClass(reader, operation.dataPsmOwnerClass);
   if (owner === null) {
     return DataPsmExecutorResultFactory.missingOwner(
       operation.dataPsmOwnerClass

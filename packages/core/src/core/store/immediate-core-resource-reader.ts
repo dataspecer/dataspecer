@@ -7,16 +7,16 @@ export interface ImmediateCoreResourceReader {
     /**
      * Return IRIs of all resources.
      */
-    listResourcesImmediate(): Promise<string[]> | string[];
+    listResourcesImmediate(): string[];
 
     /**
      * Return IRIs of all resources with given resource type, this may not
      * correspond to RDF IRI.
      */
-    listResourcesOfTypeImmediate(typeIri: string): Promise<string[]> | string[];
+    listResourcesOfTypeImmediate(typeIri: string): string[];
 
     /**
      * Return representation of a particular resources.
      */
-    readResourceImmediate(iri: string): Promise<CoreResource | null> | CoreResource | null;
+    readResourceImmediate(iri: string): CoreResource | null;
 }

@@ -5,12 +5,12 @@ import {DataPsmSetNamespaceXmlExtension} from "../operation/index.ts";
 import {DataPsmSchemaXmlExtension} from "../model/index.ts";
 import {XML_EXTENSION} from "../vocabulary.ts";
 
-export async function executeDataPsmSetNamespaceXmlExtension(
+export function executeDataPsmSetNamespaceXmlExtension(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetNamespaceXmlExtension
-): Promise<CoreExecutorResult> {
-  const resource = await reader.readResource(operation.dataPsmSchema);
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.dataPsmSchema);
   if (resource == null || !DataPsmSchema.is(resource)) {
     return DataPsmExecutorResultFactory.invalidType(
       resource,

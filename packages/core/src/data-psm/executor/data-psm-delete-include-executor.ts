@@ -10,7 +10,7 @@ export function executeDataPsmDeleteInclude(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmDeleteInclude
-): Promise<CoreExecutorResult> {
+): CoreExecutorResult {
   return removeFromClass(
     reader,
     operation.dataPsmOwner,

@@ -33,7 +33,7 @@ test("Create association.", async () => {
   };
 
   let counter = 0;
-  const actual = await executesPimCreateAssociation(
+  const actual = executesPimCreateAssociation(
     wrapResourcesWithReader(before),
     () => "http://localhost/" + ++counter,
     operation

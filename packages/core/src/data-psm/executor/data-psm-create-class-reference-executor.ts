@@ -11,12 +11,12 @@ import {
 } from "./data-psm-executor-utils.ts";
 import { DataPsmClassReference } from "../model/index.ts";
 
-export async function executeDataPsmCreateClassReference(
+export function executeDataPsmCreateClassReference(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmCreateClassReference
-): Promise<CoreExecutorResult> {
-  const schema = await loadDataPsmSchema(reader);
+): CoreExecutorResult {
+  const schema = loadDataPsmSchema(reader);
   if (schema === null) {
     return DataPsmExecutorResultFactory.missingSchema();
   }

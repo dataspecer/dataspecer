@@ -9,18 +9,18 @@ import { PimCreateAssociation, PimCreateAssociationResult } from "../operation/i
 import { PimAssociation, PimAssociationEnd, PimClass } from "../model/index.ts";
 import { loadPimSchema, PimExecutorResultFactory } from "./pim-executor-utils.ts";
 
-export async function executesPimCreateAssociation(
+export function executesPimCreateAssociation(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: CoreOperation
-): Promise<CoreExecutorResult> {
+): CoreExecutorResult {
   if (!PimCreateAssociation.is(operation)) {
     return PimExecutorResultFactory.invalidOperation();
   }
 
   const left = new PimAssociationEnd(createNewIdentifier("association-end"));
   left.pimPart = operation.pimAssociationEnds[0];
-  const leftResult = await verityAssociationEnd(
+  const leftResult = verityAssociationEnd(
     reader,
     operation,
     left.pimPart
@@ -31,7 +31,7 @@ export async function executesPimCreateAssociation(
 
   const right = new PimAssociationEnd(createNewIdentifier("association-end"));
   right.pimPart = operation.pimAssociationEnds[1];
-  const rightResult = await verityAssociationEnd(
+  const rightResult = verityAssociationEnd(
     reader,
     operation,
     right.pimPart
@@ -58,7 +58,7 @@ export async function executesPimCreateAssociation(
     );
   }
 
-  const schema = await loadPimSchema(reader);
+  const schema = loadPimSchema(reader);
   if (schema === null) {
     return PimExecutorResultFactory.missingSchema();
   }
@@ -76,12 +76,12 @@ export async function executesPimCreateAssociation(
   );
 }
 
-async function verityAssociationEnd(
+function verityAssociationEnd(
   reader: CoreResourceReader,
   operation: PimCreateAssociation,
   iri: string
-): Promise<CoreExecutorResult | null> {
-  const resource = await reader.readResource(iri);
+): CoreExecutorResult | null {
+  const resource = reader.readResource(iri);
   if (resource === null) {
     return PimExecutorResultFactory.missing(iri);
   }

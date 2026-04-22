@@ -25,7 +25,7 @@ test("Update class codelist.", async () => {
     },
   };
 
-  const actual = await executePimSetClassCodelist(
+  const actual = executePimSetClassCodelist(
     wrapResourcesWithReader(before),
     undefined,
     operation

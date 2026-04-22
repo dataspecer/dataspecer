@@ -8,12 +8,12 @@ import { DataPsmSetDatatype } from "../operation/index.ts";
 import { DataPsmExecutorResultFactory } from "./data-psm-executor-utils.ts";
 import { DataPsmAttribute } from "../model/index.ts";
 
-export async function executeDataPsmSetDatatype(
+export function executeDataPsmSetDatatype(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetDatatype
-): Promise<CoreExecutorResult> {
-  const resource = await reader.readResource(operation.dataPsmAttribute);
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.dataPsmAttribute);
   if (!DataPsmAttribute.is(resource)) {
     return DataPsmExecutorResultFactory.invalidType(
       resource,

@@ -30,7 +30,7 @@ test("Update resource technical label.", async () => {
     },
   };
 
-  const actual = await executePimSetTechnicalLabel(
+  const actual = executePimSetTechnicalLabel(
     wrapResourcesWithReader(before),
     undefined,
     operation

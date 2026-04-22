@@ -31,7 +31,7 @@ test("Update cardinality.", async () => {
     },
   };
 
-  const actual = await executePimSetCardinality(
+  const actual = executePimSetCardinality(
     wrapResourcesWithReader(before),
     undefined,
     operation

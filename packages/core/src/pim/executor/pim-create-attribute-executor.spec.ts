@@ -29,7 +29,7 @@ test("Create attribute.", async () => {
   };
 
   let counter = 0;
-  const actual = await executePimCreateAttribute(
+  const actual = executePimCreateAttribute(
     wrapResourcesWithReader(before),
     () => "http://localhost/" + ++counter,
     operation

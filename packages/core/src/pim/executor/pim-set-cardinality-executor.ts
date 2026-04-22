@@ -7,12 +7,12 @@ import { PimAssociationEnd, PimAttribute } from "../model/index.ts";
 import { PimExecutorResultFactory } from "./pim-executor-utils.ts";
 import { PimSetCardinality } from "../operation/index.ts";
 
-export async function executePimSetCardinality(
+export function executePimSetCardinality(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: PimSetCardinality
-): Promise<CoreExecutorResult> {
-  const resource = await reader.readResource(operation.pimResource);
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.pimResource);
   if (!PimAttribute.is(resource) && !PimAssociationEnd.is(resource)) {
     return PimExecutorResultFactory.invalidType(
       resource,

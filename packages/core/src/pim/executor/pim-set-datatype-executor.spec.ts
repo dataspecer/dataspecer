@@ -30,7 +30,7 @@ test("Update attribute datatype.", async () => {
     },
   };
 
-  const actual = await executePimSetDataType(
+  const actual = executePimSetDataType(
     wrapResourcesWithReader(before),
     undefined,
     operation

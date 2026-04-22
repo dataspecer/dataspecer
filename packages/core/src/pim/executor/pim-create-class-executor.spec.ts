@@ -23,7 +23,7 @@ test("Create class.", async () => {
   };
 
   let counter = 0;
-  const actual = await executePimCreateClass(
+  const actual = executePimCreateClass(
     wrapResourcesWithReader(before),
     () => "http://localhost/" + ++counter,
     operation

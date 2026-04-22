@@ -23,7 +23,7 @@ test("Delete attribute.", async () => {
     },
   };
 
-  const actual = await executePimDeleteAttribute(
+  const actual = executePimDeleteAttribute(
     wrapResourcesWithReader(before),
     undefined,
     operation

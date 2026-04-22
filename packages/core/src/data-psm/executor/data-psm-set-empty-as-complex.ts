@@ -8,12 +8,12 @@ import {
   DataPsmClass,
 } from "../model/index.ts";
 
-export async function executeDataPsmSetEmptyAsComplex(
+export function executeDataPsmSetEmptyAsComplex(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetEmptyAsComplex
-): Promise<CoreExecutorResult> {
-  const resource = await reader.readResource(operation.dataPsmClass);
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.dataPsmClass);
   if (resource == null) {
     return CoreExecutorResult.createError(
       `Missing data-psm resource '${operation.dataPsmClass}'.`

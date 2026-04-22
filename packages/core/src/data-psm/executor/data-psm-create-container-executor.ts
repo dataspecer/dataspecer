@@ -15,17 +15,17 @@ import {
 } from "./data-psm-executor-utils.ts";
 import { DataPsmClass, DataPsmContainer } from "../model/index.ts";
 
-export async function executeDataPsmCreateContainer(
+export function executeDataPsmCreateContainer(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmCreateContainer
-): Promise<CoreExecutorResult> {
-  const schema = await loadDataPsmSchema(reader);
+): CoreExecutorResult {
+  const schema = loadDataPsmSchema(reader);
   if (schema === null) {
     return DataPsmExecutorResultFactory.missingSchema();
   }
 
-  const owner = await loadDataPsmClass(reader, operation.dataPsmOwner);
+  const owner = loadDataPsmClass(reader, operation.dataPsmOwner);
   if (owner === null) {
     return DataPsmExecutorResultFactory.missingOwner(operation.dataPsmOwner);
   }

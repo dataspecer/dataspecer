@@ -7,12 +7,12 @@ import {
 import { PimSetHumanDescription } from "../operation/index.ts";
 import { PimAssociation, PimAttribute, PimClass, PimResource, PimSchema } from "../model/index.ts";
 
-export async function executePimSetHumanDescription(
+export function executePimSetHumanDescription(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: PimSetHumanDescription
-): Promise<CoreExecutorResult> {
-  const resource = await reader.readResource(operation.pimResource);
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.pimResource);
   if (resource == null) {
     return CoreExecutorResult.createError(
       `Missing data-psm resource '${operation.pimResource}'.`

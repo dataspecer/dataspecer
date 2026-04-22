@@ -19,16 +19,16 @@ export class LocalStore implements CoreResourceReader, CoreResourceWriter {
     this.memoryStore = MemoryStore.create("https://ofn.gov.cz", [...dataPsmExecutors, ...pimExecutors], null);
   }
 
-  listResources(): Promise<string[]> {
+  listResources(): string[] {
     return this.memoryStore.listResources();
   }
-  listResourcesOfType(typeIri: string): Promise<string[]> {
+  listResourcesOfType(typeIri: string): string[] {
     return this.memoryStore.listResourcesOfType(typeIri);
   }
-  readResource(iri: string): Promise<CoreResource> {
+  readResource(iri: string): CoreResource {
     return this.memoryStore.readResource(iri);
   }
-  applyOperation(operation: CoreOperation): Promise<CoreOperationResult> {
+  applyOperation(operation: CoreOperation): CoreOperationResult {
     return this.memoryStore.applyOperation(operation);
   }
 

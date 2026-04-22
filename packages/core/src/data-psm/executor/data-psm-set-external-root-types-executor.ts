@@ -2,12 +2,12 @@ import {CoreExecutorResult, CoreResourceReader, CreateNewIdentifier,} from "../.
 import {DataPsmSetExternalRootTypes} from "../operation/index.ts";
 import {DataPsmExternalRoot,} from "../model/index.ts";
 
-export async function executeDataPsmSetExternalRootTypes(
+export function executeDataPsmSetExternalRootTypes(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetExternalRootTypes
-): Promise<CoreExecutorResult> {
-  const resource = await reader.readResource(operation.dataPsmExternalRoot);
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.dataPsmExternalRoot);
   if (resource == null) {
     return CoreExecutorResult.createError(
       `Missing data-psm resource '${operation.dataPsmExternalRoot}'.`

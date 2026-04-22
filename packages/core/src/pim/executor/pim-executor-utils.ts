@@ -5,11 +5,11 @@ import {
 } from "../../core/index.ts";
 import { PimSchema } from "../model/index.ts";
 
-export async function loadPimSchema(
+export function loadPimSchema(
   modelReader: CoreResourceReader
-): Promise<PimSchema | null> {
-  for (const iri of await modelReader.listResources()) {
-    const resource = await modelReader.readResource(iri);
+): PimSchema | null {
+  for (const iri of modelReader.listResources()) {
+    const resource = modelReader.readResource(iri);
     if (PimSchema.is(resource)) {
       return resource;
     }

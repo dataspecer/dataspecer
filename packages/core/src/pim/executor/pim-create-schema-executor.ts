@@ -7,12 +7,12 @@ import {
 import { loadPimSchema } from "./pim-executor-utils.ts";
 import { PimSchema } from "../model/index.ts";
 
-export async function executePimCreateSchema(
+export function executePimCreateSchema(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: PimCreateSchema
-): Promise<CoreExecutorResult> {
-  const schema = await loadPimSchema(reader);
+): CoreExecutorResult {
+  const schema = loadPimSchema(reader);
   if (schema !== null) {
     return CoreExecutorResult.createError(
       `Schema already exists '${schema.iri}'.`

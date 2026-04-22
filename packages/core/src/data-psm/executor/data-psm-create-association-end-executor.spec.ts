@@ -30,7 +30,7 @@ test("Create data PSM association-end.", async () => {
   };
 
   let counter = 0;
-  const actual = await executeDataPsmCreateAssociationEnd(
+  const actual = executeDataPsmCreateAssociationEnd(
     wrapResourcesWithReader(before),
     () => "http://localhost/" + ++counter,
     operation

@@ -11,15 +11,15 @@ import {
 } from "./data-psm-executor-utils.ts";
 import { DataPsmClass, DataPsmSchema } from "../model/index.ts";
 
-export async function executeDataPsmDeleteClass(
+export function executeDataPsmDeleteClass(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmDeleteClass
-): Promise<CoreExecutorResult> {
+): CoreExecutorResult {
   let schema: DataPsmSchema | null = null;
   const classes: DataPsmClass[] = [];
-  for (const iri of await reader.listResources()) {
-    const resource = await reader.readResource(iri);
+  for (const iri of reader.listResources()) {
+    const resource = reader.readResource(iri);
     if (DataPsmSchema.is(resource)) {
       schema = resource;
     }
@@ -32,7 +32,7 @@ export async function executeDataPsmDeleteClass(
     return DataPsmExecutorResultFactory.missingSchema();
   }
 
-  const classToDelete = await loadDataPsmClass(reader, operation.dataPsmClass);
+  const classToDelete = loadDataPsmClass(reader, operation.dataPsmClass);
   if (classToDelete === null) {
     return CoreExecutorResult.createError(
       `Missing class '${operation.dataPsmClass}' to delete.`

@@ -7,12 +7,12 @@ import { DataPsmSetDematerialized } from "../operation/index.ts";
 import { DataPsmAssociationEnd } from "../model/index.ts";
 import { DataPsmExecutorResultFactory } from "./data-psm-executor-utils.ts";
 
-export async function executeDataPsmSetDematerialize(
+export function executeDataPsmSetDematerialize(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetDematerialized
-): Promise<CoreExecutorResult> {
-  const resource = await reader.readResource(operation.dataPsmAssociationEnd);
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.dataPsmAssociationEnd);
   if (resource == null || !DataPsmAssociationEnd.is(resource)) {
     return DataPsmExecutorResultFactory.invalidType(
       resource,

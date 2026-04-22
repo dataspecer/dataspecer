@@ -2,12 +2,12 @@ import {CoreExecutorResult, CoreResourceReader, CreateNewIdentifier,} from "../.
 import {DataPsmSetIdType} from "../operation/index.ts";
 import {DataPsmClass,} from "../model/index.ts";
 
-export async function executeDataPsmSetIdType(
+export function executeDataPsmSetIdType(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetIdType
-): Promise<CoreExecutorResult> {
-  const resource = await reader.readResource(operation.dataPsmResource);
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.dataPsmResource);
   if (resource == null) {
     return CoreExecutorResult.createError(
       `Missing data-psm resource '${operation.dataPsmResource}'.`

@@ -8,12 +8,12 @@ import {
 import { PimExecutorResultFactory, loadPimSchema } from "./pim-executor-utils.ts";
 import { PimAssociation } from "../model/index.ts";
 
-export async function executePimDeleteAssociation(
+export function executePimDeleteAssociation(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: PimDeleteAssociation
-): Promise<CoreExecutorResult> {
-  const resource = await reader.readResource(operation.pimAssociation);
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.pimAssociation);
   if (resource === null) {
     return PimExecutorResultFactory.missing(operation.pimAssociation);
   }
@@ -26,7 +26,7 @@ export async function executePimDeleteAssociation(
   // also used to delete invalid association. We just delete all of it.
   const iriToRemove = [resource.iri, ...resource.pimEnd];
 
-  const schema = await loadPimSchema(reader);
+  const schema = loadPimSchema(reader);
   if (schema === null) {
     return PimExecutorResultFactory.missingSchema();
   }
