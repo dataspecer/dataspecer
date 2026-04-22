@@ -11,8 +11,8 @@ import { Check, Loader, Minus, Plus, X } from "lucide-react";
 import React, { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NodeApi, NodeRendererProps, Tree, TreeApi, } from "react-arborist";
 import { DatastoreComparison, DatastoreComparisonWithChangeTypeInfo, DatastoreInfo, DiffTree, getDatastoreInfoOfGivenDatastoreType, MergeState, ResourceComparison, MergeStateCause, getMergeFromAndMergeTo, convertMergeStateCauseToEditable, DatastoreInfosForModel, DatastoreInfosCache, extractFirstNonEmptyFieldFromComparison } from "@dataspecer/git";
-import { AddToCreatedDatastoresAndAddToCacheMethodType, AddToRemovedDatastoresAndAddToCacheMethodType, EntriesAffectedByCreateType } from "@/hooks/use-diff-editor-dialog-props";
 import { ModelIcon } from "@/known-models";
+import { AddToCreatedDatastoresAndAddToCacheMethodType, AddToRemovedDatastoresAndAddToCacheMethodType, EntriesAffectedByCreateType } from "@/utils/use-diff-editor-dialog-props-utils";
 
 
 type DataSourceRenderType = "datastore" | "directory" | "file";
@@ -295,17 +295,18 @@ const findConflictForNode = (nodeToResolve: RenderNode, allConflicts: DatastoreC
 }
 
 const onClickResolveConflict = (
-  event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+  event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null,
   nodeToResolve: NodeApi<RenderNodeWithHighlighting>,
   extraMethods: ExtraRenderNodeProps,
+  shouldUpdateConflictsToBeResolvedOnSave: boolean,
 ) => {
-  event.stopPropagation();
+  event?.stopPropagation();
 
   if (nodeToResolve.data.dataSourceType === "directory" || nodeToResolve.data.dataSourceType === "file") {
     nodeToResolve.children?.forEach(child => {
       const isInConflict = child.data.nowInConflictCount > 0;
       if (isInConflict) {
-        onClickResolveConflict(event, child, extraMethods);
+        onClickResolveConflict(event, child, extraMethods, shouldUpdateConflictsToBeResolvedOnSave);
       }
     });
     return;
@@ -317,10 +318,17 @@ const onClickResolveConflict = (
     console.error("This is most-likely programmer error or corrupted data, the conflict to be resolved, could not be found.");
     return;
   }
-  updateConflictsToBeResolvedOnSave(extraMethods.setConflictsToBeResolvedOnSave, conflictToBeResolved);
+  if (shouldUpdateConflictsToBeResolvedOnSave) {
+    updateConflictsToBeResolvedOnSave(extraMethods.setConflictsToBeResolvedOnSave, conflictToBeResolved);
+  }
   let recursiveNode: NodeApi<RenderNodeWithHighlighting> | null = nodeToResolve;
   while (recursiveNode?.parent !== null) {
-    recursiveNode.data.nowInConflictCount--;
+    if (recursiveNode.data.nowInConflictCount === 0) {
+      console.error("Programmer error - tried lowering the number of conflicts below zero. The program is unaffected, it still works correctly.");
+    }
+    else {
+      recursiveNode.data.nowInConflictCount--;
+    }
     recursiveNode = recursiveNode.parent;
   }
 }
@@ -414,19 +422,21 @@ const onClickRemoveDatastore = (
 
 const onClickCreateDatastore = (
   event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-  filesystemNodeContainingDatastoreToCreate: RenderNode | undefined,
-  datastoreToCreate: RenderNode,
-  addToCreatedDatastores: (projectIrisTreePathForDatastoreParent: string, datastoreInfoToCreate: DatastoreInfo, metadataDatastoreInfoToCreate: DatastoreInfo | null) => Promise<void>,
+  datastoreToCreate: NodeApi<RenderNodeWithHighlighting>,
+  extraRenderNodeProps: ExtraRenderNodeProps,
 ) => {
   event.stopPropagation();
+  const filesystemNodeContainingDatastoreToCreate = datastoreToCreate.parent?.data;
   const oldResource = filesystemNodeContainingDatastoreToCreate?.resourceComparison?.resources?.old ?? null;
   const oldMetaDatastoreInfo = oldResource === null ? null : getDatastoreInfoOfGivenDatastoreType(oldResource, "meta");
   const newResource = filesystemNodeContainingDatastoreToCreate?.resourceComparison?.resources?.new ?? null;
   const newMetaDatastoreInfo = newResource === null ? null : getDatastoreInfoOfGivenDatastoreType(newResource, "meta");
   // If the new one already exists, then do not add it.
   const metadataDatastoreToAddToCreatedDatastores = newMetaDatastoreInfo !== null ? null : oldMetaDatastoreInfo;
-  addToCreatedDatastores(oldResource?.projectIrisTreePath!, datastoreToCreate.fullDatastoreInfoInOldTree!, metadataDatastoreToAddToCreatedDatastores);
-  // alert(`Create datastore for ${datastoreToCreate.name}`);     // TODO RadStr Debug: Debug alert
+  extraRenderNodeProps.addToCreatedDatastores(oldResource?.projectIrisTreePath!, datastoreToCreate.data.fullDatastoreInfoInOldTree!, metadataDatastoreToAddToCreatedDatastores);
+  if (datastoreToCreate.data.nowInConflictCount > 0) {
+    onClickResolveConflict(event, datastoreToCreate, extraRenderNodeProps, true);
+  }
 }
 
 const handleMouseHoverHighlightingForNode = (node: NodeApi<RenderNodeWithHighlighting>, shouldSetHighlightingOn: boolean) => {
@@ -484,7 +494,13 @@ function StyledNode({
   const isCurrentlyInConflict = node.data.nowInConflictCount > 0;
   resolveIcon = isCurrentlyInConflict ? "⚠️" : "";   // Always show the conflict mark
   // TODO RadStr PR: Two Trees - The isInEditableTree is useless if we render only the one directory diff tree
+  // console.info({"extraRenderNodeProps.conflictsToBeResolvedOnSaveInThisComponent": extraRenderNodeProps.conflictsToBeResolvedOnSaveInThisComponent})
   resolveIcon = (node.data.isInEditableTree && extraRenderNodeProps.conflictsToBeResolvedOnSaveInThisComponent.find(resolvedConflict => node.data.id === createIdForDatastoreRenderNode(resolvedConflict, node.data.treeType))) ? "✅" : resolveIcon;
+  if (resolveIcon === "✅" && isCurrentlyInConflict) {
+    // ... Small hack ... if the update was caused by adding parent nodes in the use-diff-editor props, then we have to do this.
+    // Otherwise it keeps showing that you can click check instead of cross (that is the component does not properly register that there are no longer conflicts)
+    onClickResolveConflict(null, node, extraRenderNodeProps, false);
+  }
 
   let highlightColorClassName: string = "";
   if (node.isSelected) {
@@ -591,14 +607,14 @@ function StyledNode({
               isExpandable ?
                 !isCurrentlyInConflict ?
                   null :
-                  <button title="Mark as resolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickResolveConflict(e, node, extraRenderNodeProps)}>
+                  <button title="Mark as resolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickResolveConflict(e, node, extraRenderNodeProps, true)}>
                     <Check className="h-6 w-6"/>
                   </button> :
                 <>
                   {
                   !isCurrentlyInConflict ?
                     null :
-                    <button title="Mark as resolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickResolveConflict(e, node, extraRenderNodeProps)}>
+                    <button title="Mark as resolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickResolveConflict(e, node, extraRenderNodeProps, true)}>
                       <Check className="h-6 w-6"/>
                     </button>
                   }
@@ -624,7 +640,7 @@ function StyledNode({
                   }
                   {
                   node.data.status === "removed" ?
-                    <button title="Create datastore" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickCreateDatastore(e, node.parent?.data, node.data, extraRenderNodeProps.addToCreatedDatastores)}>
+                    <button title="Create datastore" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickCreateDatastore(e, node, extraRenderNodeProps)}>
                       <Plus className="h-6 w-6"/>
                     </button> :
                     null
@@ -666,10 +682,16 @@ const updateConflictsToBeResolvedOnSave = (
   ...newlyAdded: DatastoreComparison[]
 ) => {
   setConflictsToBeResolvedOnSave(oldValues => {
-    return [
-      ...oldValues,
-      ...newlyAdded,
-    ];
+    const newResult = [...oldValues];
+    for (const newlyAddedEntry of newlyAdded) {
+      if (newResult.findIndex(val => val.affectedDataStore.fullPath === newlyAddedEntry.affectedDataStore.fullPath) !== -1) {
+        continue;
+      }
+      else {
+        newResult.push(newlyAddedEntry);
+      }
+    }
+    return newResult;
   });
 };
 
@@ -810,7 +832,7 @@ export const DiffTreeVisualization = (props: {
         }
       }
     }
-    setConflictsToBeResolvedOnSaveInThisComponent(props.conflictsToBeResolvedOnSaveFromParent);
+    setConfictsToBeResolvedForBoth()(props.conflictsToBeResolvedOnSaveFromParent);
   }, [props.conflictsToBeResolvedOnSaveFromParent]);
 
 
