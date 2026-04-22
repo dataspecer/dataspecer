@@ -128,7 +128,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   const [showMore, setShowMore] = useState<boolean>(false);
 
   const gitProvidersComboboxOptions = useMemo(() => {
-    // TODO RadStr PR: In future this should be ideally set based on the Git provider the user logged in as.
+    // TODO RadStr: In future this should be ideally set based on the Git provider the user logged in as.
     return createGitProviderComboBoxOptions();
   }, []);
 
@@ -569,8 +569,9 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
                   checked={shouldAlwaysCreateMergeState}
                   onChange={(e) => setShouldAlwaysCreateMergeState(e.target.checked)}
                   className="w-5 h-5 accent-blue-600"
+                  title="If checked then merge state is always created. If unchecked it is created only on conflicts (when we do not match the head of remote branch)"
                 />
-                <span>{shouldAlwaysCreateMergeState ? t("git.dialog.merge-state.always") : t("git.dialog.merge-state.on-conflict")}</span>
+                <span>{t("git.dialog.merge-state.always")}</span>
               </label>}
           </div>;
       }
@@ -593,9 +594,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
               onChange={(e) => setShouldAppendAfterDefaultMergeCommitMessage(e.target.checked)}
               className="w-5 h-5 accent-blue-600"
             />
-            <span>{shouldAppendAfterDefaultMergeCommitMessage ?
-              t("git.dialog.label.merge-commit-message.append") :
-              t("git.dialog.label.merge-commit-message.exact")}</span>
+            <span>{t("git.dialog.label.merge-commit-message.append")}</span>
           </label>
         </div>;
       break;

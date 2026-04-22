@@ -225,7 +225,7 @@ function createTreeRepresentationForRendering(
 
     let status: RenderStatus;
     if (node.resourceComparisonResult === "exists-in-both") {
-      status = "same";      // TODO RadStr: Should be decided based on content
+      status = "same";
     }
     else {
       if (treeToExtract === "old") {
@@ -1024,6 +1024,7 @@ export const DiffTreeVisualization = (props: {
         return filesystemNode.projectIrisTreePath === currentNodeTreePath;
       }) !== undefined;
 
+
     let isNewlyRemoved = removedDatastores.find(removedDatastore => removedDatastore.fullPath === nodeProps.node.data.fullDatastoreInfoInNewTree?.fullPath) !== undefined;
     isNewlyRemoved ||= removedTreePaths
       .find(treePath => {
@@ -1061,8 +1062,7 @@ export const DiffTreeVisualization = (props: {
             onChange={handleShowConflictsCheckboxChange}
             className="w-4 h-4"
           />
-          {/* TODO RadStr Later: Localization */}
-          <span>{shouldOnlyShowConflicts ? "Showing only conflicts" : "Showing all"}</span>
+          <span>Show only conflicts</span>
         </label>
       </div>
       <div className="flex gap-1 overflow-x-auto overflow-y-auto h-full">

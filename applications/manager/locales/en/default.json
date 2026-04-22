@@ -118,8 +118,7 @@
         "commit-message": "Commit message",
         "merge-commit-message": {
           "input-title": "Merge commit message",
-          "append": "The given message will be appended after the default merge message automatically created by Git (current option)",
-          "exact": "The merge message will look exactly as given (current option)"
+          "append": "The given message will be appended after the default merge message automatically created by Git"
         },
         "remote-url": "Git remote repository URL",
         "advanced-settings": "Advanced settings"
@@ -129,8 +128,7 @@
         "organization-repository": "Organization repository"
       },
       "merge-state": {
-        "always": "Always create merge state (current option)",
-        "on-conflict": "Create merge state only on conflict (current option)"
+        "always": "Always create merge state"
       }
     },
     "loading": {

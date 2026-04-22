@@ -118,8 +118,7 @@
         "commit-message": "Commit zpráva",
         "merge-commit-message": {
           "input-title": "Merge commit zpráva",
-          "append": "Zadaná zpráva bude připojena za výchozí merge zprávu automaticky vytvořenou Gitem (aktuální volba)",
-          "exact": "Merge zpráva bude přesně odpovídat zadanému textu (aktuální volba)"
+          "append": "Zadaná zpráva bude připojena za výchozí merge zprávu automaticky vytvořenou Gitem"
         },
         "remote-url": "URL vzdáleného Git repozitáře",
         "advanced-settings": "Pokročilé nastavení"
@@ -129,8 +128,7 @@
         "organization-repository": "Repozitář organizace"
       },
       "merge-state": {
-        "always": "Vždy vytvořit merge stav (aktuální volba)",
-        "on-conflict": "Vytvořit merge stav pouze při konfliktu (aktuální volba)"
+        "always": "Vždy vytvořit merge stav"
       }
     },
     "loading": {

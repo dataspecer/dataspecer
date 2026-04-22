@@ -197,8 +197,9 @@ return (
                             checked={showStrippedVersion}
                             onChange={(e) => setShowStrippedVersion(e.target.checked)}
                             className="w-5 h-5 accent-blue-600 ml-28"
+                            title="If checked then strips the datastore of unique fields. If unchecked then it shows the full datastore. Currently only meta files are stripped."
                           />
-                          &nbsp;<span>{showStrippedVersion ? "Showing stripped version" : "Showing raw version"}</span>
+                          &nbsp;<span>Show stripped version</span>
                         </label>
                       </div>
                     </div>
