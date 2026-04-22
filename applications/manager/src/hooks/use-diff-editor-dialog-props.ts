@@ -1458,6 +1458,9 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
       if (finalizing) {
         openModal(MergeStateFinalizerDialog, { mergeState: examinedMergeState, openModal }).finally(() => closeWithSuccess());
       }
+      else {
+        await reloadMergeState(true, true);
+      }
 
       closeDialogObject.closeDialogAction();
     };
@@ -1592,15 +1595,12 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         if (missingIrisInNew.length > 0) {
           throw new Error(`${missingIrisInNew} - these iris could not be replaced back from projectIris to iris`);
         }
-        // const newValueAsJSONWithIris = newValueAsJSON;   // TODO RadStr Debug: debug set
 
         if (datastoreInfoForNonEditable !== null && createdDatastoresToIrisNeedingReplacementMap.current[datastoreInfoForNonEditable.fullPath] !== undefined) {
           // Repair the iris ... The relevant meta files to which we will replace iris should be already created on backend and we got them by fetching the diff state again,
           // so now just replace with the mapping from non-editable iris to the newly created editable ones
           // We need to replace only those in cache. Since, the new modified values has to be set by user, they do not appear out of nowhere
-          // TODO RadStr Critical: Does this work correctly with the projectIris or not???????????!!?!? ... I swapped the order so it should be fine now
-          //                       First we map projectIri to iri and then iri to iri
-
+          //  First we map projectIri to iri and then iri to iri
           // Replace the iris of newly created datastores with their newly created iris
           const { datastoreWithReplacedIris, missingIrisInNew } = createDatastoreWithReplacedIris(newValueAsJSONWithIris, newIriMappingFromNonEditableToEditableStorage);
           if (missingIrisInNew.length > 0) {
