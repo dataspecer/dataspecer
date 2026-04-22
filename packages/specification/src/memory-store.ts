@@ -1,6 +1,5 @@
 import { CoreOperation, CoreResource, createExecutorMap, CreateNewIdentifier, ExecutorMap, MemoryStore, type CoreOperationResult } from "@dataspecer/core/core";
 import { dataPsmExecutors } from "@dataspecer/core/data-psm/data-psm-executors";
-import { pimExecutors } from "@dataspecer/core/pim/executor";
 import { WritableBlobModel } from "./model-repository/blob-model.ts";
 
 type StoreData = {
@@ -57,7 +56,7 @@ export class MemoryStoreFromBlob extends MemoryStore {
   static createFromConnector(connector: Connector): MemoryStoreFromBlob {
     return new MemoryStoreFromBlob(
       "https://ofn.gov.cz",
-      createExecutorMap([...dataPsmExecutors, ...pimExecutors]),
+      createExecutorMap([...dataPsmExecutors]),
       null,
       connector
     );
