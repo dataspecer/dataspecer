@@ -21,6 +21,7 @@ import configuration from "../../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 import { createFilesystemFactoryParams } from "../../utils/filesystem-helpers.ts";
 import { ScopeGroup } from "@dataspecer/auth";
+import { trySetPackageIriAsUpToDate } from "./try-set-package-as-up-to-date.ts";
 
 /**
  * Commit to the repository for package identifier by given iri inside the query part of express http request.
@@ -202,6 +203,9 @@ const commitHandlerInternal = async (
 
   const status = 200;
   await resourceModel.setHasUncommittedChanges(iri, false); // TODO RadStr PR: Just hardcode it instead of perfoming comparison, that being said it should be correct
+  if (mergeFromData !== null) {
+    await trySetPackageIriAsUpToDate(mergeFromData.iri, request, response, false);
+  }
   response.sendStatus(status);
   return status;
 }

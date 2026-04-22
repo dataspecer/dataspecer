@@ -20,10 +20,22 @@ export const trySetPackageAsUpToDateHandler = asyncHandler(async (request: expre
     iri: z.string().min(1),
   });
   const { iri } = querySchema.parse(request.query);
+  await trySetPackageIriAsUpToDate(iri, request, response, true);
+});
+
+
+export async function trySetPackageIriAsUpToDate(
+  iri: string,
+  request: express.Request,
+  response: express.Response,
+  shouldSendResponse: boolean
+): Promise<boolean> {
   const resource = await resourceModel.getResource(iri);
   if (resource === null) {
-    response.status(404).json({error: `The provided iri ${iri} has no resource in database`});
-    return;
+    if (shouldSendResponse) {
+      response.status(404).json({error: `The provided iri ${iri} has no resource in database`});
+    }
+    return false;
   }
   const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(resource.linkedGitRepositoryURL, httpFetch, configuration);
 
@@ -33,15 +45,17 @@ export const trySetPackageAsUpToDateHandler = asyncHandler(async (request: expre
   const repositoryOwner = extractPartOfRepositoryURL(resource.linkedGitRepositoryURL, "repository-owner");
   const repositoryName = extractPartOfRepositoryURL(resource.linkedGitRepositoryURL, "repository-name");
   if (repositoryOwner === null || repositoryName === null) {
-    response.status(400).json({error: `The repository URL ${resource.linkedGitRepositoryURL} could not be parsed to get the owner and name; owner: ${repositoryOwner}; name: ${repositoryName}`});
-    return;
+    if (shouldSendResponse) {
+      response.status(400).json({error: `The repository URL ${resource.linkedGitRepositoryURL} could not be parsed to get the owner and name; owner: ${repositoryOwner}; name: ${repositoryName}`});
+    }
+    return false;
   }
 
-  // TODO RadStr: I love OAuth
+  // OAuth returns actual name instead of login name ...
   if (!gitCredentials.isBotName) {
     const nameCandidate = await gitProvider.getUserLoginForAuthToken(gitCredentials.accessTokens.find(accessToken => !accessToken.isBotAccessToken && accessToken.type === AccessTokenType.PAT)!.value)
     if (nameCandidate === null) {
-      throw new Error(`The user ${gitCredentials.name} does not exist on GitHub`);
+      throw new Error(`The user ${gitCredentials.name} does not exist on Git provider`);
     }
     gitCredentials.name = nameCandidate;
   }
@@ -57,8 +71,10 @@ export const trySetPackageAsUpToDateHandler = asyncHandler(async (request: expre
       }
       catch {
         if (isLastAccessToken) {
-          response.status(403).json({error: "The remote repository cannot be cloned. Therefore, we can not perform the comparison between current DS state and the Git remote state"});
-          return;
+          if (shouldSendResponse) {
+            response.status(403).json({error: "The remote repository cannot be cloned. Therefore, we can not perform the comparison between current DS state and the Git remote state"});
+          }
+          return false;
         }
         else {
           continue;
@@ -66,8 +82,10 @@ export const trySetPackageAsUpToDateHandler = asyncHandler(async (request: expre
       }
       const hash = await git.revparse(['HEAD']);
       if (hash !== resource.lastCommitHash) {
-        response.status(404).json({error: `The provided hashes do not match - fetched hash (${hash}). The last commit hash (${resource.lastCommitHash})`});
-        return;
+        if (shouldSendResponse) {
+          response.status(404).json({error: `The provided hashes do not match - fetched hash (${hash}). The last commit hash (${resource.lastCommitHash})`});
+        }
+        return false;
       }
 
       // 2) Compare
@@ -91,13 +109,15 @@ export const trySetPackageAsUpToDateHandler = asyncHandler(async (request: expre
       const hasUncommittedChanges = diffTreeComparison.conflicts.length !== 0 || diffTreeComparison.created.length !== 0 ||
                                     diffTreeComparison.changed.length !== 0 || diffTreeComparison.removed.length !== 0;
       await resourceModel.setHasUncommittedChanges(iri, hasUncommittedChanges);
-      if (hasUncommittedChanges) {
-        response.sendStatus(204);
+      if (shouldSendResponse) {
+        if (hasUncommittedChanges) {
+          response.sendStatus(204);
+        }
+        else {
+          response.sendStatus(200);
+        }
       }
-      else {
-        response.sendStatus(200);
-      }
-      return;
+      return true;
     }
   }
   catch(error) {
@@ -106,4 +126,6 @@ export const trySetPackageAsUpToDateHandler = asyncHandler(async (request: expre
   finally {
     removePathRecursively(gitDirectoryToRemoveAfterWork);
   }
-});
+
+  return false;
+}
