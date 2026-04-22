@@ -1,7 +1,7 @@
 import { BranchSummary, CommitResult, SimpleGit } from "simple-git";
 import { getLastCommit, getLastCommitHash, isDefaultBranch, removeEverythingExcept, removePathRecursively } from "../git-utils-node.ts";
 import { createGitReadMeFile } from "../git-readme/git-readme-generator.ts";
-import { AvailableFilesystems, CommitConflictInfo, CommitType, createRootFilesystemNodeLocation, createTransitiveMapFromFilesystems, ExportFormatType, ExportVersionType, FilesystemAbstraction, getAuthorizationURL, getMergeFromMergeToForGitAndDS, GitCredentials, GitIgnoreBase, GitProviderNode, MergeEndInfoWithRootNode, MergeFromDataType } from "@dataspecer/git";
+import { AvailableFilesystems, CommitConflictInfo, CommitType, createRootFilesystemNodeLocation, CreateRootFilesystemNodeParams, createTransitiveMapFromFilesystems, ExportFormatType, ExportVersionType, FilesystemAbstraction, getAuthorizationURL, getMergeFromMergeToForGitAndDS, GitCredentials, GitIgnoreBase, GitProviderNode, MergeEndInfoWithRootNode, MergeFromDataType } from "@dataspecer/git";
 import { AvailableExports } from "../resource-model-api/export/export-api/export-actions.ts";
 import { DsFsConstructorParams, DsFsConstructorParamsWithStrongerResourceModel, FilesystemFactory, FilesystemFactoryMethodParams } from "../filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 import { PackageExporterFactory } from "../resource-model-api/export/implementation/export-by-resource-type.ts";
@@ -454,8 +454,12 @@ export class GitCommit {
       // TODO RadStr PR: isBranchAlreadyTrackedOnRemote Or not? If not the nthe iris from main are everywhere
       if (hasSetLastCommit && isBranchAlreadyTrackedOnRemote) {     // If it is not the first commit.
         // We have to create the Git filesystem before we create conflicts in the Git directory
+        const rootParams: CreateRootFilesystemNodeParams = {
+          projectIri,
+          fullPathToParent: createSimpleGitResult.gitInitialDirectoryParent,
+        };
         const gitFilesystemParams: FilesystemFactoryMethodParams = {
-          roots: [createRootFilesystemNodeLocation(projectIri, createSimpleGitResult.gitInitialDirectoryParent)],
+          roots: [createRootFilesystemNodeLocation(AvailableFilesystems.ClassicFilesystem, rootParams)],
           gitIgnore: new GitIgnoreBase(commitInfo.gitProvider),
           ...dataspecerFilesystemFactoryParams,
         };
@@ -642,8 +646,12 @@ export class GitCommit {
       }
 
       const exporter = PackageExporterFactory.createPackageExporter(exportVersion);
+      const rootParams: CreateRootFilesystemNodeParams = {
+        iri,
+      };
+      // .... Ugly naming we have dsFilesystemFactoryParams and dataspecer...
       const dsFilesystemFactoryParams: FilesystemFactoryMethodParams = {
-        roots: [createRootFilesystemNodeLocation(iri, "")],
+        roots: [createRootFilesystemNodeLocation(AvailableFilesystems.DS_Filesystem, rootParams)],
         gitIgnore: null,
         ...dataspecerFilesystemFactoryParams,
       };

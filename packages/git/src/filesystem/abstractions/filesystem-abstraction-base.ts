@@ -129,9 +129,10 @@ export abstract class FilesystemAbstractionBase implements FilesystemAbstraction
     return metaContent as ExportMetadataType;
   }
 
-  // TODO RadStr: This is no longer the case - iri is not the last part of the path - it is the name after the path
   /**
-   * The internal mapping to set the {@link filesystemMapping} recursively with the provided {@link iri} and the {@link path}, where the iri is the last part of the path.
+   * @param mappedNodeLocation - for Git filesystem, the fullPath is path to parent and iri is projectIri,
+   *  for DS filesystem it is the IRI and the fullpath is also iri. ... This is really kind of unfortunate API.
+   *  ... so DS filesystem does not really uses the full path.
    * @param parentDirectoryNode is the last directory node on the path. That is the parent in the fileystem.
    */
   protected abstract createFilesystemMapping(

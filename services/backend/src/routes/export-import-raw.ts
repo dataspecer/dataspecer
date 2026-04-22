@@ -4,7 +4,7 @@ import { prismaClient, resourceModel, storeModel } from "../main.ts";
 import z from "zod";
 import { PackageImporter } from "../export-import/import.ts";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { AvailableFilesystems, createRootFilesystemNodeLocation, getDefaultExportFormat } from "@dataspecer/git";
+import { AvailableFilesystems, createRootFilesystemNodeLocation, CreateRootFilesystemNodeParams, getDefaultExportFormat } from "@dataspecer/git";
 import { bunHotfixHttpFileName } from "./generate.ts";
 import JSZip from "jszip";
 import { PrismaClientStorageApiForIriReplacement, StorageApiForIriReplacement } from "../utils/iri-replace-util.ts";
@@ -36,8 +36,11 @@ export const exportPackageResource = asyncHandler(async (request: express.Reques
   // const buffer = await exporter.doExport(query.iri);
   // const exporter = new PackageExporterNew();
   const exporter = new PackageExporterByResourceType();
+  const rootParams: CreateRootFilesystemNodeParams = {
+      iri: query.iri,
+  };
   const filesystemFactoryParams: FilesystemFactoryMethodParams = {
-    roots: [createRootFilesystemNodeLocation(query.iri, "")],
+    roots: [createRootFilesystemNodeLocation(AvailableFilesystems.DS_Filesystem, rootParams)],
     gitIgnore: null,
     ...createFilesystemFactoryParams(true),
   };

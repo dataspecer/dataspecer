@@ -17,7 +17,7 @@ test("Empty test", () => {
 // import { PackageExporterDeprecated } from "./deprecated-export-for-regression-testing.ts";
 // import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 // import { LocalStoreDescriptor } from "../../models/local-store-descriptor.ts";
-// import { AvailableFilesystems, createRootFilesystemNodeLocation, deepOmit } from "@dataspecer/git";
+// import { AvailableFilesystems, createRootFilesystemNodeLocation, CreateRootFilesystemNodeParams, deepOmit } from "@dataspecer/git";
 // import JSZip from "jszip";
 // import { ResourceToFindWhenReplacingIri, StorageApiForIriReplacement } from "../../utils/iri-replace-util.ts";
 // import { AvailableExports, BaseResource, DsFsConstructorParams, FilesystemFactoryMethodParams, LoadedPackage, LocalStoreModelGetter, ModelStore, Package, PackageExporterBase, PackageExporterByResourceType, PackageExporterNew, ResourceChangeType, ResourceModelForFilesystemRepresentation } from "@dataspecer/git-node";
@@ -532,9 +532,12 @@ test("Empty test", () => {
 //     const oldExportResult = await oldExportHandler.doExport(importResultFromOld[0]);
 
 //     const dsFsConstructorParams: DsFsConstructorParams = createFilesystemFactoryParamsObject(resourceModelForTestingNew);
+//     const rootParams: CreateRootFilesystemNodeParams = {
+//         iri: importResultFromNew[0],
+//     };
 //     const filesystemExportParams: FilesystemFactoryMethodParams = {
 //         ...dsFsConstructorParams,
-//         roots: [createRootFilesystemNodeLocation(importResultFromNew[0], "")],
+//         roots: [createRootFilesystemNodeLocation(AvailableFilesystems.DS_Filesystem, rootParams)],
 //         gitIgnore: null,
 //     };
 
