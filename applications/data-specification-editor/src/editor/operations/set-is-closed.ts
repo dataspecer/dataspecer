@@ -16,13 +16,13 @@ export class SetIsClosed implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.forDataPsmClass) as string;
 
 
     const psmSetIsClosed = new DataPsmSetIsClosed();
     psmSetIsClosed.dataPsmClass = this.forDataPsmClass;
     psmSetIsClosed.dataPsmIsClosed = this.isClosed;
-    await this.store.applyOperation(schema, psmSetIsClosed);
+    this.store.applyOperation(schema, psmSetIsClosed);
   }
 }

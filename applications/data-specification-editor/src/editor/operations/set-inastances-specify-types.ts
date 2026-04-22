@@ -16,13 +16,13 @@ export class SetInstancesSpecifyTypes implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.forDataPsmClass) as string;
 
 
     const psmSetInstancesSpecifyTypes = new DataPsmSetInstancesSpecifyTypes();
     psmSetInstancesSpecifyTypes.dataPsmClass = this.forDataPsmClass;
     psmSetInstancesSpecifyTypes.instancesSpecifyTypes = this.instancesSpecifyTypes;
-    await this.store.applyOperation(schema, psmSetInstancesSpecifyTypes);
+    this.store.applyOperation(schema, psmSetInstancesSpecifyTypes);
   }
 }

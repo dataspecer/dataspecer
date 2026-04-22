@@ -23,7 +23,7 @@ export class SetClassCodelist implements ComplexOperation {
         this.store = store;
     }
 
-    async execute(): Promise<void> {
+    execute(): void {
         const schema = this.store.getSchemaForResource(this.forPimClassIri) as string;
 
         const operation = modifyClass(this.forPimClassIri, {
@@ -33,6 +33,6 @@ export class SetClassCodelist implements ComplexOperation {
         });
 
         // @ts-ignore
-        await this.store.applyOperation(schema, operation);
+        this.store.applyOperation(schema, operation);
     }
 }

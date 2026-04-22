@@ -10,5 +10,5 @@ import {FederatedObservableStore} from "./federated-observable-store.ts";
  */
 export interface ComplexOperation {
     setStore(store: FederatedObservableStore): void;
-    execute(): Promise<void>;
+    execute(): void;
 }

@@ -20,33 +20,33 @@ export class DeleteProperty implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.ownerClassIri) as string;
-    const property = await this.store.readResource(this.propertyIri);
+    const property = this.store.readResource(this.propertyIri);
 
     // Decide based on property type
     if (DataPsmAttribute.is(property)) {
       const operation = new DataPsmDeleteAttribute();
       operation.dataPsmAttribute = this.propertyIri;
       operation.dataPsmOwner = this.ownerClassIri;
-      await this.store.applyOperation(schema, operation);
+      this.store.applyOperation(schema, operation);
     } else if (DataPsmAssociationEnd.is(property)) {
       const operation = new DataPsmDeleteAssociationEnd();
       operation.dataPsmAssociationEnd = this.propertyIri;
       operation.dataPsmOwner = this.ownerClassIri;
-      await this.store.applyOperation(schema, operation);
+      this.store.applyOperation(schema, operation);
       // todo garbage collect associated object
     } else if (DataPsmInclude.is(property)) {
       const dataPsmDeleteInclude = new DataPsmDeleteInclude();
       dataPsmDeleteInclude.dataPsmInclude = this.propertyIri;
       dataPsmDeleteInclude.dataPsmOwner = this.ownerClassIri;
-      await this.store.applyOperation(schema, dataPsmDeleteInclude);
+      this.store.applyOperation(schema, dataPsmDeleteInclude);
       // todo garbage collect associated object
     } else if (DataPsmContainer.is(property)) {
       const dataPsmDeleteContainer = new DataPsmDeleteContainer();
       dataPsmDeleteContainer.dataPsmContainer = this.propertyIri;
       dataPsmDeleteContainer.dataPsmOwner = this.ownerClassIri;
-      await this.store.applyOperation(schema, dataPsmDeleteContainer);
+      this.store.applyOperation(schema, dataPsmDeleteContainer);
     } else {
       throw new Error("Unknown class property to delete.")
     }

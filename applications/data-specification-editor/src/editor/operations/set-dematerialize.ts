@@ -16,12 +16,12 @@ export class SetDematerialize implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.dataPsmAssociationEnd) as string;
 
     const operation = new DataPsmSetDematerialized();
     operation.dataPsmAssociationEnd = this.dataPsmAssociationEnd;
     operation.dataPsmIsDematerialized = this.dematerialize;
-    await this.store.applyOperation(schema, operation);
+    this.store.applyOperation(schema, operation);
   }
 }

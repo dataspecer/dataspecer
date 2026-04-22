@@ -18,9 +18,9 @@ export class SetExample implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.semanticEntityId) as string;
-    const entity = await this.store.readResource(this.semanticEntityId) as Entity | null;
+    const entity = this.store.readResource(this.semanticEntityId) as Entity | null;
 
     let examples = this.examples;
     if (examples && examples.length === 0) {
@@ -43,14 +43,14 @@ export class SetExample implements ComplexOperation {
         ],
       });
       // @ts-ignore
-      await this.store.applyOperation(schema, operation);
+      this.store.applyOperation(schema, operation);
     } else {
       // We are modifying class
       const operation = modifyClass(this.semanticEntityId, {
         example: examples,
       } as ExtendedSemanticModelClass);
       // @ts-ignore
-      await this.store.applyOperation(schema, operation);
+      this.store.applyOperation(schema, operation);
     }
   }
 }

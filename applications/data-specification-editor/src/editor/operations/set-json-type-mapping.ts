@@ -18,9 +18,9 @@ export class SetJsonTypeMapping implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.entityId) as string;
-    const entity = await this.store.readResource(this.entityId);
+    const entity = this.store.readResource(this.entityId);
 
     if (!entity || !(DataPsmSchema.is(entity) || DataPsmClass.is(entity))) {
       throw new Error(`Entity with id ${this.entityId} not found or is not a class or schema`);
@@ -29,6 +29,6 @@ export class SetJsonTypeMapping implements ComplexOperation {
     const operation = new DataPsmSetJsonLdDefinedTypeMapping();
     operation.dataPsmEntity = this.entityId;
     operation.jsonLdDefinedTypeMapping = this.mapping;
-    await this.store.applyOperation(schema, operation);
+    this.store.applyOperation(schema, operation);
   }
 }

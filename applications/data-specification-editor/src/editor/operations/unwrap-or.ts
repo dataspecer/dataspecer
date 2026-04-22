@@ -14,11 +14,11 @@ export class UnwrapOr implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.or) as string;
 
     const dataPsmUnwrapOr = new DataPsmUnwrapOr();
     dataPsmUnwrapOr.dataPsmOr = this.or;
-    await this.store.applyOperation(schema, dataPsmUnwrapOr);
+    this.store.applyOperation(schema, dataPsmUnwrapOr);
   }
 }

@@ -16,7 +16,7 @@ export class SetJsonType implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.iri) as string;
 
     const pimSetExample = new DataPsmSetIdType();
@@ -35,6 +35,6 @@ export class SetJsonType implements ComplexOperation {
         pimSetExample.jsonTypeRequired = undefined;
         break;
     }
-    await this.store.applyOperation(schema, pimSetExample);
+    this.store.applyOperation(schema, pimSetExample);
   }
 }

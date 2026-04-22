@@ -39,7 +39,7 @@ export class AddSpecialization implements ComplexOperation {
     this.context = context;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const targetSemanticClass = this.semanticStore.getLocalEntity(this.semanticClassId).aggregatedEntity as SemanticModelClass;
     const dataPsmSchema = this.store.getSchemaForResource(this.forDataPsmClassId) as string;
 
@@ -49,7 +49,7 @@ export class AddSpecialization implements ComplexOperation {
     if (wrapOr === undefined) {
       const wrapWithOrOperation = new DataPsmWrapWithOr();
       wrapWithOrOperation.dataPsmChild = this.forDataPsmClassId;
-      const result = await this.store.applyOperation(dataPsmSchema, wrapWithOrOperation);
+      const result = this.store.applyOperation(dataPsmSchema, wrapWithOrOperation);
       wrapOr = result.created[0];
     }
 
@@ -58,7 +58,7 @@ export class AddSpecialization implements ComplexOperation {
     const dataPsmCreateClass = new DataPsmCreateClass();
     dataPsmCreateClass.dataPsmInterpretation = targetSemanticClass.id;
     dataPsmCreateClass.dataPsmTechnicalLabel = this.context?.getTechnicalLabelFromPim(targetSemanticClass.name) ?? null;
-    const dataPsmCreateClassResult = await this.store.applyOperation(dataPsmSchema, dataPsmCreateClass);
+    const dataPsmCreateClassResult = this.store.applyOperation(dataPsmSchema, dataPsmCreateClass);
     const createdPsmClass = dataPsmCreateClassResult.created[0];
 
     // FOURTH: Add to OR
@@ -66,13 +66,13 @@ export class AddSpecialization implements ComplexOperation {
     const addToOr = new DataPsmSetChoice();
     addToOr.dataPsmOr = wrapOr;
     addToOr.dataPsmChoice = createdPsmClass;
-    await this.store.applyOperation(dataPsmSchema, addToOr);
+    this.store.applyOperation(dataPsmSchema, addToOr);
 
     // FIFTH: Add include
 
     const addInclude = new DataPsmCreateInclude();
     addInclude.dataPsmOwner = createdPsmClass;
     addInclude.dataPsmIncludes = this.forDataPsmClassId;
-    await this.store.applyOperation(dataPsmSchema, addInclude);
+    this.store.applyOperation(dataPsmSchema, addInclude);
   }
 }

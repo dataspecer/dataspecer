@@ -16,12 +16,12 @@ export class SetEmptyAsComplex implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.forDataPsmClass) as string;
 
     const psmSetEmptyAsComplex = new DataPsmSetEmptyAsComplex();
     psmSetEmptyAsComplex.dataPsmClass = this.forDataPsmClass;
     psmSetEmptyAsComplex.dataPsmEmptyAsComplex = this.emptyAsComplex;
-    await this.store.applyOperation(schema, psmSetEmptyAsComplex);
+    this.store.applyOperation(schema, psmSetEmptyAsComplex);
   }
 }

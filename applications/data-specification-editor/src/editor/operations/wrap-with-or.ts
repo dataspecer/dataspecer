@@ -14,11 +14,11 @@ export class WrapWithOr implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.child) as string;
 
     const dataPsmWrapWithOr = new DataPsmWrapWithOr();
     dataPsmWrapWithOr.dataPsmChild = this.child;
-    await this.store.applyOperation(schema, dataPsmWrapWithOr);
+    this.store.applyOperation(schema, dataPsmWrapWithOr);
   }
 }
