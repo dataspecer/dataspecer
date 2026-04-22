@@ -373,25 +373,16 @@ class TestFilesystemAbstraction implements FilesystemAbstraction {
   initializeFilesystem(filesystemRoots: FilesystemNodeLocation[]): Promise<void> {
     throw new Error("Method not implemented.");
   }
-  readDirectoryOldVariant(directory: string): string[] {
+  readDirectory(iriTreePath: string): FilesystemNode[] {
     throw new Error("Method not implemented.");
   }
-  readDirectory(directory: string): FilesystemNode[] {
+  isDirectory(iriTreePath: string): boolean {
     throw new Error("Method not implemented.");
   }
-  isDirectory(name: string): boolean {
+  getMetadataObject(irisTreePath: string): Promise<ExportMetadataType> {
     throw new Error("Method not implemented.");
   }
-  extendFilesystemAbstractionObjectByDirectory(filesystemAbstractionObject: FilesystemMappingType, directory: string, basename: string, shouldExtendWithMetadata: boolean): void {
-    throw new Error("Method not implemented.");
-  }
-  convertFilesystemAbstractionObjectNamesToIris(filesystemAbstractionObject: FilesystemMappingType): FilesystemMappingType {
-    throw new Error("Method not implemented.");
-  }
-  getMetadataObject(treePath: string): Promise<ExportMetadataType> {
-    throw new Error("Method not implemented.");
-  }
-  getDatastoreTypes(treePath: string): DatastoreInfo[] {
+  getDatastoreTypes(irisTreePath: string): DatastoreInfo[] {
     throw new Error("Method not implemented.");
   }
 
