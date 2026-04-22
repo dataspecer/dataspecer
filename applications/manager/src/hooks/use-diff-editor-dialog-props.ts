@@ -538,6 +538,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
   const [mergeToDatastoreInfo, setMergeToDatastoreInfo] = useState<DatastoreInfo | null>(null);
   const [mergeFromSvg, setMergeFromSvg] = useState<any | "">("");
   const [mergeToSvg, setMergeToSvg] = useState<any | "">("");
+  const [initialCacheDataMergeFrom, setInitialCacheDataMergeFrom] = useState<CacheContentMap>({});
+  const [initialCacheDataMergeTo, setInitialCacheDataMergeTo] = useState<CacheContentMap>({});
 
   // We first put the data into cache, then set this value to true and in useEffect react to this and update all the data by the reolving.
   const [shouldUpdateMultipleModelsThroughMergeResolver, setShouldUpdateMultipleModelsThroughMergeResolver] = useState<boolean>(false);
@@ -628,7 +630,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
           if (!strippedMergeFromContentAsObject.ok) {
             throw new Error(strippedMergeFromContentAsObject.error);
           }
-          // TODO RadStr Critical: What about the missing iris
+          // TODO RadStr: What about the missing iris. It should be fine to skip them.
           const {
             datastoreWithReplacedIris: strippedMergeFromContentAsObjectWithReplacements,
             missingIrisInNew: _missingIrisInMergeFrom
@@ -665,12 +667,10 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
       const resourceStripHandler = new ResourceDatastoreStripHandlerBase(activeResourceType);
       const resourceStripHandlerMethod = resourceStripHandler.createHandlerMethodForDatastoreType(activeDatastoreType);
 
-      const activeDatastoreInfo = datastoreInfosForCacheEntries[activeTreePathToNodeContainingDatastore][activeDatastoreType];
-      console.info({activeDatastoreInfo, activeMergeFromContentConverted});
       if (activeMergeFromContentConverted != null) {
         const strippedResult = convertDatastoreContentToOutputFormat(activeMergeFromContentConverted, activeFormat, activeFormat, true, resourceStripHandlerMethod);
         if (!strippedResult.ok) {
-          // TODO RadStr Critical: Do not know now, but probably the correct solution is to just keep the old value.
+          // The correct solution is to just keep the old value.
           strippedMergeFromContent = activeMergeFromContentConverted;
         }
         else {
@@ -684,7 +684,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
       if (activeMergeToContentConverted != null) {
         const strippedResult = convertDatastoreContentToOutputFormat(activeMergeToContentConverted, activeFormat, activeFormat, true, resourceStripHandlerMethod);
         if (!strippedResult.ok) {
-          // TODO RadStr Critical: Do not know now, but probably the correct solution is to just keep the old value.
+          // The correct solution is to just keep the old value.
           strippedMergeToContent = activeMergeToContentConverted;
         }
         else {
@@ -820,8 +820,6 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         createdDatastoresInPreviousIteration.current
           .find(previouslyCreatedDatastore => previouslyCreatedDatastore.fullPath === createdDatastore.fullPath) === undefined);
 
-    console.info({newlyCreatedDatastores, createdDatastores, createdDatastoresInPreviousIteration});
-
     // Define async function, since useCallback does not support it
     const handleCreatedFilesystemNodesUpdate = async () => {
       if (currentlyInAsyncUpdateOfCreatedFilesystemNodes.current) {
@@ -837,7 +835,6 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
           }
 
           const { nonEditable: datastoreCausingTheUpdate } = getEditableAndNonEditableValue(editable, datastoreInfo.mergeFrom, datastoreInfo.mergeTo);
-          console.info({newlyCreatedDatastores, datastoreCausingTheUpdate});
 
           // Skip if it is not newly created
           if (newlyCreatedDatastores.find(createdDatastore => createdDatastore.fullPath === datastoreCausingTheUpdate?.fullPath) === undefined) {
@@ -1095,21 +1092,25 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
       let currentDatastoreInfo: DatastoreInfo | null;
       let otherDatastoreInfo: DatastoreInfo | null;
       let cacheContentSetter;
+      let initialCacheSetter;
       if (cacheToSet === "mergeFrom") {
         currentDatastoreInfo = newMergeFromDatastoreInfo;
         otherDatastoreInfo = index === 0 ? null : newMergeToDatastoreInfo;
         dataAsText = newMergeFromDataAsText;
         cacheContentSetter = setConvertedCacheContentForMergeFrom;
+        initialCacheSetter = setInitialCacheDataMergeFrom;
       }
       else {
         currentDatastoreInfo = newMergeToDatastoreInfo;
         otherDatastoreInfo = index === 0 ? null : newMergeFromDatastoreInfo;
         dataAsText = newMergeToDataAsText;
         cacheContentSetter = setConvertedCacheContentForMergeTo;
+        initialCacheSetter = setInitialCacheDataMergeTo;
       }
       otherDatastoreEntry = await updateCacheEntryBasedOnFetchedData(
         dataAsText, currentDatastoreInfo, otherDatastoreInfo, otherDatastoreEntry,
-        projectIriTreePathToNodeContainingDatastore, newFormat, newDatastoreType, shouldCopyIfMissing, cacheContentSetter);
+        projectIriTreePathToNodeContainingDatastore, newFormat, newDatastoreType, shouldCopyIfMissing,
+        cacheContentSetter, initialCacheSetter);
     }
   };
 
@@ -1126,6 +1127,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     newDatastoreType: string,
     shouldCopyIfMissing: boolean,
     setConvertedCacheContent: (value: SetStateAction<CacheContentMap>) => void,
+    setInitialCache: (value: SetStateAction<CacheContentMap>) => void,
   ) => {
     let valueToStoreToCacheAsObject: any;
     if (dataToInsertAsText !== null && datastoreInfo !== null) {
@@ -1145,6 +1147,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
       const resourceType = metadata.types[0];
       convertDataAndUpdateCacheContentEntryAsCombination(
         setConvertedCacheContent, treePathToNodeContainingDatastore, resourceType, newDatastoreType, stringifiedCacheValue, newFormat);
+      convertDataAndUpdateCacheContentEntryAsCombination(
+        setInitialCache, treePathToNodeContainingDatastore, resourceType, newDatastoreType, stringifiedCacheValue, newFormat);
     }
     else {
       if (datastoreInfo === null && otherDatastoreInfo !== null && shouldCopyIfMissing && createdDatastoresToIrisNeedingReplacementMap.current[otherDatastoreInfo.fullPath] === undefined) {
@@ -1156,6 +1160,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         const metadata = extractMetadataFromDiffTree(examinedMergeState!.diffTreeData!.diffTree, treePathToNodeContainingDatastore);
         const resourceType = metadata.types[0];
         updateCacheContentEntryAsCombination(setConvertedCacheContent, treePathToNodeContainingDatastore, resourceType, newDatastoreType, valueToStoreToCacheAsObject, newFormat);
+        updateCacheContentEntryAsCombination(setInitialCache, treePathToNodeContainingDatastore, resourceType, newDatastoreType, valueToStoreToCacheAsObject, newFormat);
 
         for (const missingIriInNew of missingIrisInNew) {
           const missingProjectIri = iriToProjectIriMap[missingIriInNew];
@@ -1410,7 +1415,6 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     setCacheExplicitUpdateTracker(prev => prev + 1);
   };
   useEffect(() => {
-    // TODO RadStr Critical: WARNING, I probably broke something here – or was it always like this? Anyway, when I open the diff editor, it gets counted as a modification
     if (cacheExplicitUpdateTracker === 0) {
       // Skip initial load
       return;
@@ -1474,23 +1478,21 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     });
   };
 
-  console.info({convertedCacheContentForMergeFrom, convertedCacheContentForMergeTo});   // TODO RadStr Debug: DEBUG print
-
   const saveFileChanges = async (shouldReloadFromBackendAfterFinish: boolean): Promise<DiffEditorOutsideChangeChosenAction> => {
     const { editable: editableCacheContents, nonEditable: nonEditableCacheContents } = getEditableAndNonEditableValue(editable, convertedCacheContentForMergeFrom, convertedCacheContentForMergeTo);
     const editableFilesystem = getEditableValue(editable, examinedMergeState?.filesystemTypeMergeFrom, examinedMergeState?.filesystemTypeMergeTo) ?? null;
+    // We can create stuff, that is non breaking - at worst there will be some new datastores/nodes if there will be conflict
     await saveCreatedFilesystemNodesToBackend(editableCacheContents, nonEditableCacheContents, editableFilesystem);
 
-    // TODO RadStr PR: Alternatively we could update directly the diff tree instead of letting the backend recompute it again.
+    // TODO RadStr PR: Optimization - Alternatively we could update directly the diff tree instead of letting the backend recompute it again.
     //              ... But it is quite non-trival implementation-wise - Future work
-    // TODO RadStr Critical: Also we should do only one fetcheMergeState request, otherwise there might be concurrency issues
     const fetchedMergeStateToCheckForUpToDate = await fetchMergeState(initialMergeFromRootMetaPath, initialMergeToRootMetaPath, true, false, false);
     if (examinedMergeState === null || fetchedMergeStateToCheckForUpToDate === null) {
       throw new Error(`Either the old merge state (${examinedMergeState}) or the new merge state (${fetchedMergeStateToCheckForUpToDate}) are null.`);
     }
 
     if (!fetchedMergeStateToCheckForUpToDate?.isUpToDate || examinedMergeState.modifiedDiffTreeAt !== fetchedMergeStateToCheckForUpToDate.modifiedDiffTreeAt) {
-      // TODO RadStr PR: Ideally also have what files changed on the backend - it should not be hard just have new field in database which will contain iris of the changed resources
+      // TODO RadStr PR: Ideally also have what files changed on the backend - and show it here, it should not be hard just have new field in database which will contain iris of the changed resources
       //                 It will be set in the observer, but yeah that is Future work
       const { result: modalResult } = await openModal(ChooseActionForDiffEditorUnplannedChange, {oldMergeState: examinedMergeState, newMergeState: fetchedMergeStateToCheckForUpToDate});
       if (modalResult === DiffEditorOutsideChangeChosenAction.Nothing) {
@@ -1513,6 +1515,16 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     const newProjectIriToDiffNodeMap = {};
     const localProjectIriToIriMap: Record<string, MergeFromMergeToStrings> = {};
     createIriMappings(fetchedMergeState?.diffTreeData?.diffTree!, editable, {}, localProjectIriToIriMap, newIriMappingFromNonEditableToEditableStorage, newProjectIriToDiffNodeMap);
+    const projectIriToIriForEditable: Record<string, string | null> = {};
+    for (const [key, value] of Object.entries(localProjectIriToIriMap)) {
+      projectIriToIriForEditable[key] = value[editable];
+    }
+    const projectIriToIriForEditableWithoutNulls: Record<string, string> = {};
+    for (const [key, value] of Object.entries(projectIriToIriForEditable)) {
+      if (value !== null) {
+        projectIriToIriForEditableWithoutNulls[key] = value;
+      }
+    }
 
 
     let filesystemNodeParentIri: string | null = null;
@@ -1582,10 +1594,27 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         if (newValueAsJSON === null) {
           continue;   // When having datastore present in the nonEditable and not in the editable we just skip it.
         }
-        const projectIriToIriForEditable: Record<string, string | null> = {};
-        for (const [key, value] of Object.entries(localProjectIriToIriMap)) {
-          projectIriToIriForEditable[key] = value[editable];
+
+        if (datastoreInfoForEditable !== null) {
+          // Compare if there was some change for real, if not lets just skip it with continue
+          const editableInitialCacheData = getEditableValue(editable, initialCacheDataMergeFrom, initialCacheDataMergeTo);
+          const initialCacheContent = editableInitialCacheData[nodeTreePath][datastoreType];
+          if (initialCacheContent !== undefined) {
+            const initialCacheValueConverted = convertDatastoreContentBasedOnFormat(initialCacheContent, format, true, null);
+            if (initialCacheValueConverted.ok) {
+              const diffNode = getDiffNodeFromDiffTree(fetchedMergeState!.diffTreeData!.diffTree, nodeTreePath);
+              if (diffNode !== null) {
+                const modelTypes = (diffNode?.resources.new ?? diffNode?.resources.old)?.metadata.types ?? [];
+                const comparisonResult = compareDatastoresContents(
+                  initialCacheValueConverted.value, newValueAsJSON, modelTypes, datastoreType, projectIriToIriForEditableWithoutNulls);
+                if (comparisonResult) {
+                  continue;
+                }
+              }
+            }
+          }
         }
+
 
         // First replace the project iris to iris. After we are done, we will replace the newly created iris by their correct values.
         const iriToProjectIriResult = createDatastoreWithReplacedIris(newValueAsJSON, projectIriToIriForEditable);
@@ -1601,6 +1630,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
           // so now just replace with the mapping from non-editable iris to the newly created editable ones
           // We need to replace only those in cache. Since, the new modified values has to be set by user, they do not appear out of nowhere
           //  First we map projectIri to iri and then iri to iri
+
           // Replace the iris of newly created datastores with their newly created iris
           const { datastoreWithReplacedIris, missingIrisInNew } = createDatastoreWithReplacedIris(newValueAsJSONWithIris, newIriMappingFromNonEditableToEditableStorage);
           if (missingIrisInNew.length > 0) {
