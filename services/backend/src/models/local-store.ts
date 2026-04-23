@@ -24,7 +24,7 @@ export class LocalStore implements CoreResourceReader, CoreResourceWriter {
   listResourcesOfType(typeIri: string): string[] {
     return this.memoryStore.listResourcesOfType(typeIri);
   }
-  readResource(iri: string): CoreResource {
+  readResource(iri: string): CoreResource | null {
     return this.memoryStore.readResource(iri);
   }
   applyOperation(operation: CoreOperation): CoreOperationResult {
