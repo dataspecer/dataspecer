@@ -66,7 +66,7 @@ export const ReplaceClassWithReference: FC<ReplaceClassWithReferenceProps> = (pr
 
   const execute = (dataPsmSchemaIri: string) => {
     const op = new ReplaceStructuralClassWithReference(props.structuralClassId, props.owningStructuralEntityId, dataPsmSchemaIri);
-    store.executeComplexOperation(op).then();
+    store.executeComplexOperation(op);
   };
 
   const ReplaceDialog = useDialog(ReplaceWithReferenceDialog);

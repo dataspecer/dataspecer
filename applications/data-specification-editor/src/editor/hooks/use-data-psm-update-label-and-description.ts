@@ -15,7 +15,7 @@ export const useDataPsmUpdateLabelAndDescription = (dataPsmResource: DataPsmReso
         description: dataPsmResource.dataPsmHumanDescription ?? {},
       },
       update: data => {
-        store.executeComplexOperation(new SetDataPsmLabelAndDescription(dataPsmResource.iri as string, data.label, data.description)).then();
+        store.executeComplexOperation(new SetDataPsmLabelAndDescription(dataPsmResource.iri as string, data.label, data.description));
       },
     });
   }, [dataPsmResource.dataPsmHumanLabel, dataPsmResource.dataPsmHumanDescription]);

@@ -71,14 +71,14 @@ const ButtonSetRoot: React.FC = () => {
       const op = new CreateRootClass(cls, dataPsmSchemaIri, newSchemaLabel, newSchemaDescription);
       op.setContext(operationContext);
       op.setSemanticStore(semanticModelAggregator);
-      store.executeComplexOperation(op).then();
+      store.executeComplexOperation(op);
     }
   }, [dataSpecificationIri, dataPsmSchemaIri, dataSpecifications, i18n, operationContext, store, semanticModelAggregator]);
 
   const setStructuredClass = useCallback(() => {
     const operation = new CreateRootClass(null, dataPsmSchemaIri);
     operation.setContext(operationContext);
-    store.executeComplexOperation(operation).then();
+    store.executeComplexOperation(operation);
   }, [dataPsmSchemaIri, operationContext, store]);
 
   const setRootOr = useCallback(() => {

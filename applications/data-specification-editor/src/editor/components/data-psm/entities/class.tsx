@@ -74,7 +74,7 @@ export const DataPsmClassItem: React.FC<{
     const op = new CreateNonInterpretedAssociationToClass(props.iri, semanticClassId);
     op.setContext(operationContext);
     op.setSemanticStore(semanticModelAggregator);
-    store.executeComplexOperation(op).then();
+    store.executeComplexOperation(op);
   }, [store, props, operationContext, dataSpecifications, dataSpecificationIri, semanticModelAggregator]);
 
   const addNonInterpretedAttribute = () => store.executeComplexOperation(
@@ -120,7 +120,7 @@ export const DataPsmClassItem: React.FC<{
     const addClassSurroundings = new AddClassSurroundings(operation.forDataPsmClass, operation.resourcesToAdd);
     addClassSurroundings.setContext(operationContext);
     addClassSurroundings.setSemanticStore(semanticModelAggregator);
-    store.executeComplexOperation(addClassSurroundings).then();
+    store.executeComplexOperation(addClassSurroundings);
   };
 
   const thisMenu = <>

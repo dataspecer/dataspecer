@@ -15,7 +15,7 @@ export const usePimUpdateLabelAndDescription = (pimResource: SemanticModelEntity
         description: pimResource.description ?? {},
       },
       update: data => {
-        store.executeComplexOperation(new SetPimLabelAndDescription(pimResource.iri as string, data.label, data.description)).then();
+        store.executeComplexOperation(new SetPimLabelAndDescription(pimResource.iri as string, data.label, data.description));
       },
     });
   }, [pimResource.name, pimResource.description]);

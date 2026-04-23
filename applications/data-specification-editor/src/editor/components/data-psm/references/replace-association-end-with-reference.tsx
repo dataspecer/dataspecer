@@ -94,7 +94,7 @@ export const ReplaceAssociationEndWithReference: React.FC<{dataPsmAssociationEnd
 
     const selected = useCallback((dataPsmSchemaIri: string) => {
         const op = new ReplaceDataPsmAssociationEndWithReference(dataPsmAssociationEnd, dataPsmSchemaIri);
-        store.executeComplexOperation(op).then();
+        store.executeComplexOperation(op);
     }, [dataPsmAssociationEnd, store]);
 
     return <>
