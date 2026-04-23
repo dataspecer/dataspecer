@@ -13,9 +13,6 @@
 
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
-import { DatastoreComparison, dsPathJoin, isDatastoreForMetadata, DatastoreInfo, FilesystemAbstraction } from "@dataspecer/git";
-import fs from "fs";
-import path from "path";
 import { updateBlob, updateResourceMetadata } from "../resource.ts";
 import _ from "lodash";
 import { mergeStateModel, resourceModel } from "../../main.ts";

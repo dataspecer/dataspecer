@@ -28,9 +28,6 @@ export function createDatastoreWithReplacedIris(
   };
 }
 
-// TODO RadStr: the placeholder either has to at least hold the old iri as suffix, otherwise we can not perform the replacing
-// export const PLACEHOLDER_REPLACEMENT_IRI = "PLACEHOLDER-IRI-WHICH-WILL-BE-REPLACED-ON-BACKEND-STORE";
-
 
 /**
  * Note that there are even identifiers like this: d19697d9-b1fe-427a-874b-0a537119a6e7-model-metadata-entity. However, those are not top level,
@@ -68,7 +65,6 @@ function replaceIrisInDatastoreAndCollectMissingOnes(
     let newKey = key;
     // Trying to replace the key. {} is just for scoping of variables
     {
-      // TODO RadStr PR: Do it through includes?
       const keyReplacementResult = getReplacementForNonComposite(
         key, allIrisToCheckFor, irisMap, missingIrisInNew, shouldRunTestVariant);
       if (keyReplacementResult.containedIriToReplace) {
@@ -129,7 +125,10 @@ type ReplacementForNonCompositeResult = {
 
 
 /**
- * @todo TODO RadStr PR: Actually does not work if we have a string that contains more IRIs or the string contains IRI + something else - then we lose the something else after replacement
+ * @todo TODO RadStr PR: Actually does not work if we have a string that contains more IRIs or the the iri is in the middle of value
+ *        ... to be more exact we replace only in cases where it matches the whole {@link originalIri} or
+ *              it is at the start/end of the string some special characters around it (for example #)
+ *        That being said there seem not be such cases, so I am 99% sure that it is correct
  * @param originalIri it is named iri but it does not necessary have to be iri it is just to value which can be iri and can be possibly replaced
  */
 function getReplacementForNonComposite(
@@ -189,8 +188,9 @@ function getReplacementForNonComposite(
     else {
       isReplacementMissing = true;
       missingIrisInNew.push(originalIri);
-      // replacementIri = PLACEHOLDER_REPLACEMENT_IRI;    // TODO RadStr: the placeholder either has to at least hold the old iri as suffix, otherwise we can not perform the replacing
-      // TODO RadStr: Using the old iri is fine, we just have to make sure to replace it if it happens
+      // TODO RadStr: ... not really TODO but we want to mark this fact since it is important:
+      //                   Using the old iri is fine, we just have to make sure to replace it (or look into missingIris) if it happens
+      //                   Alternatively we could replace it with {originalIri}-some-constant-suffix, since we need the originalIri, without it we cannot replace it
       replacementIri = originalIri;
     }
   }
@@ -361,7 +361,7 @@ function createTransitiveMap(leftMap: Record<string, string>, rightMap: Record<s
 // //                 1) It is not so easy
 // //                 2) It might be wasted effort, since I do not know what sort of real data can it break on.
 // //                 3) The look of IRIs needs to be specified first, before that there is no reason to implement this, only after that we can be sure
-// //                       what is the correct solution and if it is not wasted effort
+// //                       what is the correct solution and if it is not wasted effort. The simple variant is with 99% certainity enough, this is overkill/useless.
 
 
 

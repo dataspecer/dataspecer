@@ -83,14 +83,12 @@ export const ComboBox = <T extends any>({
   );
 };
 
-type ProviderComboBoxType = { key: ReactNode, value: GitProviderEnum }[];
-
 /**
  *
- * @returns The key which is how it is rendered in the combobox and the value which is the URL to the Git Provider.
- *  The value is the provider, which can be converted to the url using {@link getGitProviderDomain}.
+ * @returns Array with keys saying how it is rendered in the combobox and the value beinh the provider,
+ *  which can be converted to the url using {@link getGitProviderDomain}.
  */
-export function createGitProviderComboBoxOptions(): ProviderComboBoxType {
+export function createGitProviderComboBoxOptions(): { key: ReactNode, value: GitProviderEnum }[] {
   const gitProvidersComboBoxOptions = [
     {
       key: (

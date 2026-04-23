@@ -14,7 +14,8 @@ import { ScopeGroup } from "@dataspecer/auth";
 
 /**
  * Creates Git provider repository with content equal to the package with given iri inside the query part of express http request.
- * The organization field is used only if isUserRepo is false or organization eqals to bot name. If organization is empty we use bot name (TODO RadStr: Api hacking because of OAuth no time for cleaner implemetantion)
+ * The organization field is used only if isUserRepo is false or organization equals to bot name. If organization is empty we use bot name
+ * (TODO RadStr: Api hacking because of OAuth and there is no time for cleaner implementation)
  */
 export const createNewGitRepositoryWithPackageContent = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
@@ -40,7 +41,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
   const patAccessTokens = findPatAccessTokens(accessTokens);
   let repositoryOwner: string;      // .... OAuth is being funny, since the name you get may be your actual name if you have it set and not the login name which is used in the url
   if (isUserRepo) {
-    // TODO RadStr: I love OAuth api hack
+    // Hack because of the the OAuth, see the method comment
     if (query.organization !== "" && gitProvider.getBotCredentials()?.name !== query.organization) {
       const repositoryOwnerCandidate = await gitProvider.getUserLoginForAuthToken(patAccessTokens[0].value);
       if (repositoryOwnerCandidate === null) {
@@ -216,15 +217,3 @@ export const createPackageFromExistingGitRepository = asyncHandler(async (reques
   // Just provide empty merge from values, since we are newly creating the link we can not perform merge right away anyways
   await commitPackageToGitUsingAuthSession(commitParams);
 });
-
-/**
- * TODO RadStr After: Not used
- */
-async function getRepositoryNameFromDatabase(linkedPackageIri: string): Promise<string | null> {
-  const resource = await resourceModel.getResource(linkedPackageIri);
-  if (resource === null) {
-    throw new Error(`Package with given iri: ${linkedPackageIri} does not exist.`);
-  }
-
-  return extractPartOfRepositoryURL(resource.linkedGitRepositoryURL, "repository-name");
-}

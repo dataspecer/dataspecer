@@ -80,7 +80,7 @@ export const MonacoDiffEditor: FC<{
   }, [props.projectIrisTreePathToFilesystemNode, props.datastoreType, props.mergeState]);
 
 
-  // // TODO RadStr PR: The change from "same" to "modified" causes lose of focus of the text editor I do not know how to fix that currently.
+  // // TODO RadStr: The change from "same" to "modified" causes lose of focus of the text editor I do not know how to fix that currently.
   // //                 ... Therefore, if we want to periodically update the diff editor uncomment this and fix the lose of focus. However, note that the code works.
   // //                 ..... Only the lose of focus is annoying
   //                    .... so we just do it on model change instead periodically
@@ -244,7 +244,7 @@ const updateDiffNodeOnChange = (
     if (hasLineChanges) {
       if (datastoreComparisonToChangeNonCopy?.datastoreComparisonResult === "same") {
         // We went from no changes to changes
-        // TODO RadStr PR: ... deep clone is not the fastest, it could be faster by copying only the needed stuff, but note that {...prev} is not enough
+        // TODO RadStr: ... deep clone is not the fastest, it could be faster by copying only the needed stuff, but note that {...prev} is not enough
         const mergeStateCopy = _.cloneDeep(prev);
         const diffNodeToChange = getDiffNodeFromDiffTree(mergeStateCopy.diffTreeData?.diffTree!, projectIrisTreePathToFilesystemNode);
         const datastoreComparisonToChange = diffNodeToChange?.datastoreComparisons
@@ -260,7 +260,7 @@ const updateDiffNodeOnChange = (
       if (datastoreComparisonToChangeNonCopy?.datastoreComparisonResult === "modified") {
         // TODO: Copy-pasted from the above
         // We went from changes to no changes
-        // TODO RadStr PR: ... deep clone is not the fastest, it could be faster by copying only the needed stuff, but note that {...prev} is not enough
+        // TODO RadStr: ... deep clone is not the fastest, it could be faster by copying only the needed stuff, but note that {...prev} is not enough
         const mergeStateCopy = _.cloneDeep(prev);
         const diffNodeToChange = getDiffNodeFromDiffTree(mergeStateCopy.diffTreeData?.diffTree!, projectIrisTreePathToFilesystemNode);
         const datastoreComparisonToChange = diffNodeToChange?.datastoreComparisons

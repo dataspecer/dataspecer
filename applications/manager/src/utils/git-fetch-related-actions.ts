@@ -15,7 +15,6 @@ export async function manualPull(t: TFunction<"translation", undefined>, iri: st
     method: "GET",
   });
 
-  // TODO RadStr: Fix localization if needed
   if (response.status === 200) {
     toast.success(t("git pull went ok, there were no conflicts"));
   }

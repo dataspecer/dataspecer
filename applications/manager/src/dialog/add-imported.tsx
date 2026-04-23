@@ -77,7 +77,6 @@ export const AddImported = ({ iri, isOpen, resolve }: AddImportedProps & BetterM
         toast.success(t("add-imported.success"));
       } else {
         if (importType === URLImportType.Git) {
-          // TODO RadStr: Localization
           const hasTooManyImportedAtOnceResult = importResults.find(result => result.status === 500) !== undefined;
           if (hasTooManyImportedAtOnceResult) {
             toast.error("On some of the imports more than one root was imported", { "richColors": true });

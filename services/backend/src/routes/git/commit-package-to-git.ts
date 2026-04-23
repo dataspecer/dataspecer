@@ -202,7 +202,7 @@ const commitHandlerInternal = async (
   }
 
   const status = 200;
-  await resourceModel.setHasUncommittedChanges(iri, false); // TODO RadStr PR: Just hardcode it instead of perfoming comparison, that being said it should be correct
+  await resourceModel.setHasUncommittedChanges(iri, false); // Just hardcode it instead of perfoming comparison. It should be correct conceptual-wise.
   if (mergeFromData !== null) {
     await trySetPackageIriAsUpToDate(mergeFromData.iri, request, response, false);
   }
@@ -264,7 +264,7 @@ async function prepareCommitDataForCommit(
   const gitProvider = gitCommitInfoBasic.gitProvider ?? GitProviderNodeFactory.createGitProviderFromRepositoryURL(remoteRepositoryUrl, httpFetch, configuration);
   const committer = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
 
-  // TODO RadStr: I love OAuth
+  // Have to get the user login name separately. It is not part of OAuth - OAuth contains actual name (For example John Doe).
   if (!committer.isBotName) {
     let userAccessToken = committer.accessTokens.find(accessToken => !accessToken.isBotAccessToken && accessToken.type === AccessTokenType.PAT);
     if (userAccessToken === undefined) {

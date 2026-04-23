@@ -34,7 +34,7 @@ type GitHistoryVisualizationProps = {
 /**
  * @returns The hash of commit mapped to branches, which it is part of. And the commit hash mapped to the commit
  */
-// TODO RadStr checked: Unused - Ignore for now, Might be useful in future for better implementation of import git log to gitGraph
+// TODO RadStr: Unused - Ignore for now, Might be useful in future for better implementation of import git log to gitGraph
 // @ts-ignore
 function mapCommitsToBranches(gitHistory: GitHistory): {
   commitToBranchesMap: Record<string, string[]>,
@@ -65,7 +65,7 @@ function mapCommitsToBranches(gitHistory: GitHistory): {
 /**
  * @returns The unique commits mapped to relevant branches (keys = branches, values = unique commits).
  */
-// TODO RadStr checked: Unused - Ignore for now, Might be useful in future for better implementation of import git log to gitGraph
+// TODO RadStr: Unused - Ignore for now, Might be useful in future for better implementation of import git log to gitGraph
 // @ts-ignore
 function getUniqueCommits(commitToBranchesMap: Record<string, string[]>, hashToCommitMap: Record<string, CommitInfo>): {
   branchToUniqueCommitsMap: Record<string, CommitInfo[]>,
@@ -180,7 +180,7 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
       console.info("useLayoutEffect for git-history-vis");      // TODO RadStr Debug: Debug print
       setIsLoading(true);
 
-      // TODO RadStr PR: It would be probably more readable if it was rewritten using async/await, instead of .then
+      // TODO RadStr: It would be probably more readable if it was rewritten using async/await, instead of .then
       //                 That being said I am not doing it - since this can probably be handled by just using AI.
       //                 (https://chatgpt.com/share/69b8478b-c380-8011-bf87-e2e2c73c7641)
 

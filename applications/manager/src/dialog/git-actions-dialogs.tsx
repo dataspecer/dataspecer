@@ -67,7 +67,7 @@ type NullableGitRemoteConfigurations = GitRemoteConfigurations | null;
 export type SetGitRemoteConfigurationStatePartMethod = (gitRemoteConfigurationSetter: SetGitConfigurationReactStateType, key: keyof GitRemoteConfigurations, newValue: any) => void;
 
 /**
- * TODO RadStr PR: Could be probably typed better
+ * TODO RadStr: Could be probably typed better
  */
 export type SetGitConfigurationReactStateType = (value: NullableGitRemoteConfigurations | ((prevState: NullableGitRemoteConfigurations) => NullableGitRemoteConfigurations)) => void;
 
@@ -128,7 +128,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
   const [showMore, setShowMore] = useState<boolean>(false);
 
   const gitProvidersComboboxOptions = useMemo(() => {
-    // TODO RadStr: In future this should be ideally set based on the Git provider the user logged in as.
+    // TODO RadStr: In future the Git provider would be ideally set based on the Git provider the user logged in as.
     return createGitProviderComboBoxOptions();
   }, []);
 
@@ -222,8 +222,8 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
         }
 
         if (!userOrganizations.isLastPage) {
-          // TODO RadStr: For now just report error to console
-          console.error("The user is member of more than limit number of organizations (first implmementation had hardcoded limit of 1000)")
+          // We should not really alert in production, but this is such a hardcore case that we will.
+          alert("The user is member of more than limit number of organizations (first implmementation had hardcoded limit of 1000)");
         }
         return userOrganizations.organizations.map(org => {
           const suggestion: InputSuggestionsType = {
@@ -254,8 +254,8 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
         }
 
         if (!botOrganizations.isLastPage) {
-          // TODO RadStr PR: For now just report error to console
-          console.error("The user is member of more than limit number of organizations (first implmementation had hardcoded limit of 1000)")
+          // We should not really alert in production, but this is such a hardcore case that we will.
+          alert("The bot is member of more than limit number of organizations (first implmementation had hardcoded limit of 1000)");
         }
         return botOrganizations.organizations.map(org => {
           const suggestion: InputSuggestionsType = {
@@ -357,7 +357,10 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
         // We store the new configuration only when creating new repository,
         const storeModelToBackend = async (iri: string, newPackageContent: object) => {
           try {
-            // TODO RadStr PR: This probably should be in some interface, maybe the BackendPackageService
+            // TODO RadStr: This probably should be in some interface, maybe the BackendPackageService.
+            //               We do it like this, since there is no existing method,
+            //                where is this implemented and we do not what to introduce one,
+            //                since similar code exists on multiple places not implemented by me.
             await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(iri), {
               method: "PUT",
               headers: {
@@ -837,9 +840,9 @@ export const commitToGitHandler = async (
   if (gitCommitData.commitType === "rebase-commit") {
     // In rebase case we just commit. Otherwise, the LoadingDialog runs twice, which we do not want,
     //  since for rebase the default action is committing again without any other invervention
-    // TODO RadStr PR: I feel like this is the correct decision - when we are rebasing from diff editor, and we passed the validation, then we want to commit
-    //                 even if other merge states exist - this is equivalent to merging - there we also do not care that merge states exist.
-    //                 Technically, it could be rewritten to rebase exactly if the one commit exist, but we will keep it like this.
+    //   I feel like this is the correct decision - when we are rebasing from diff editor, and we passed the validation, then we want to commit
+    //    even if other merge states exist - this is equivalent to merging - there we also do not care that merge states exist.
+    //    Technically, it could be rewritten to rebase exactly if the one commit exist, but we will keep it like this.
     shouldRedirectWithExistenceOfMergeStates = false;
   }
   commitToGitBackendRequest(iri, gitCommitData, shouldRedirectWithExistenceOfMergeStates)
@@ -904,11 +907,9 @@ export const linkToExistingGitRepositoryHandler = async (t: TFunction<"translati
   if (result) {
     const response = await linkToExistingGitRepositoryRequest(iri, result.remoteRepositoryURL);
     if (response.ok) {
-      // TODO RadStr later: Localization
       toast.success(t("git.toast.link-success"));
     }
     else {
-      // TODO RadStr later: Localization
       toast.error(t("git.toast.link-failed"), { "richColors": true });
     }
     requestLoadPackage(iri, true);

@@ -32,7 +32,7 @@ type RenderNode = {
   nowInConflictCount: number;
   canBeInCoflictCount: number;
   treeType: TreeType;
-  isInEditableTree: boolean;    // TODO RadStr: We actually probably do not need the isInEditableTree any longer, since we render only the new tree
+  isInEditableTree: boolean;    // TODO RadStr PR: Two Trees - We actually probably do not need the isInEditableTree any longer, since we render only the new tree
   /**
    * Is null for the datastores
    */
@@ -533,17 +533,6 @@ function StyledNode({
             cursor: isExpandable ? "pointer" : "default",
           }}
           ref={dragHandle}
-          // TODO RadStr: Remove- Probably no longer needed. It was fixed by explicitly setting node height to the row height.
-          // onFocusCapture={(e) => {
-          //   if (isExpandable) {
-          //     e.stopPropagation();
-          //   }
-          // }}
-          // onFocus={(e) => {
-          //   if (isExpandable) {
-          //     e.stopPropagation();
-          //   }
-          // }}
           onClick={async (e) => {
             e.stopPropagation();
             if (node.isFocused) {
@@ -585,8 +574,11 @@ function StyledNode({
             handleMouseHoverHighlightingForNode(node, false);
           }}
         >
-          {/* TODO RadStr: No the current editing does not matter. We want user to care about the final result and not about the fact the currently edited some stuff in the session */}
-          {/* TODO RadStr: Well we kinda does, but it is difficult to show */}
+          {
+          // Note that we do not show the current editing, since does not matter.
+          // We want user to care about the final result and not about the fact the currently edited some stuff in the session
+          // Well we kinda does, but it is difficult to show
+          }
 
           {<p className={`font-bold pt-1 pr-1 text-xs ${extraRenderNodeProps.isNewlyCreated ? "visible": "invisible w-0 h-0"}`} style={{color: "green"}}>Newly C</p>}
           {<p className={`font-bold pt-1 pr-1 text-xs ${extraRenderNodeProps.isNewlyRemoved ? "visible" : "invisible w-0 h-0"}`} style={{color: "red"}}>Newly D</p>}
@@ -626,7 +618,8 @@ function StyledNode({
                     null
                   }
                   {/* {
-                  TODO RadStr PR: Implement later, I do not have time for it. It just to make it faster for user. Since currently we can perform the same action through merge resolver.
+                  TODO RadStr: Nice to have, could be implemented later. It just to make it faster for user.
+                                Since currently they can perform the same action through merge resolver.
                   node.data.status === "modified" ?
                     <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => {e.stopPropagation();}}>
                       { node.data.treeType === "new" ? <MoveRight className="h-6 w-6"/> : <MoveLeft className="h-6 w-6"/> }
@@ -662,9 +655,6 @@ function StyledNode({
   return styledNode;
 }
 
-
-// @ts-ignore TODO RadStr Checked: Not used currently, but it was useful at one point
-const getOtherTreeType = (tree: TreeType) => tree === "old" ? "new" : "old";
 
 const createStyledNode = (
   props: NodeRendererProps<RenderNode>,
@@ -975,7 +965,6 @@ export const DiffTreeVisualization = (props: {
       }
       const fetchedDiffTree = mergeStateFromBackend.diffTreeData!.diffTree;
       const fetchedDiffTreeSize = mergeStateFromBackend.diffTreeData!.diffTreeSize;
-      // TODO RadStr: Probably also add the option to make resource again in conflict ... but will it anyone ever use though?
       const fetchedUnresolvedConflicts = mergeStateFromBackend.unresolvedConflicts ?? [];
       const fetchedConflicts = mergeStateFromBackend.conflicts ?? [];
       setDiffTree(fetchedDiffTree);

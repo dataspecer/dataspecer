@@ -218,7 +218,7 @@ export type GetResourceForGitUrlAndBranchType = (gitRepositoryUrl: string, branc
  * We meda a certain design decision and that is, that we do not store the url of the provider to the object.
  *  Therefore, the class is stateless and all the methods get the url of the repository.
  *  In future it might be better idea to maybe make it have state, where the state is the url of the repository.
- *  Thus, there would be no need to pass the url to each method - so this is possible TODO RadStr PR:
+ *  Thus, there would be no need to pass the url to each method - so this is possible TODO RadStr:
  */
 export interface GitProvider {
   /**

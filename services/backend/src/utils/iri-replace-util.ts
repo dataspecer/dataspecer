@@ -65,7 +65,7 @@ export async function replaceIris(
   localStoreModel: LocalStoreModelGetter,
   storageApi: StorageApiForIriReplacement,
 ) {
-  // TODO RadStr PR: I think that it is better to fail absolutely before changing anything than changing only some.
+  // TODO RadStr PR: I think that it would be better to fail absolutely before changing anything than changing only some.
   const allReplacements: Record<string, string> = {};
 
   for (const newIri of Object.values(resourceReplacementIrisMap)) {

@@ -178,9 +178,8 @@ return (
                         activeDatastoreType === "svg" ?
                           <div className="flex! mt-3 ml-1 h-4 w-4" /> :
                           <div className="flex! mt-3 ml-1 h-4 w-4" />
-                          // <RotateCw className="flex! mt-3 ml-1 h-4 w-4 cursor-pointer" onClick={reloadModelsDataFromBackend} />    // TODO RadStr: ... we do not want to deal with more debugging
                       }
-                      <div className="flex! items-center justify-center space-x-4 -ml-32">    { /* TODO RadStr PR: ... the ml mr is a bit hacky, it does not scale well, but I do not have time to do it perfectly now */ }
+                      <div className="flex! items-center justify-center space-x-4 -ml-32">    { /* TODO RadStr: ... the ml mr is a bit hacky, it does not scale well */ }
                         <div className="flex flex-row mr-24">
                           <Button className="flex! cursor-pointer" variant="outline" onClick={() => goToPreviousDiff(monacoEditor.current?.editor)}><ArrowUpIcon/>Prev diff</Button>
                           <Button className="flex! ml-1 cursor-pointer" variant="outline" onClick={() => goToNextDiff(monacoEditor.current?.editor)}><ArrowDownIcon/>Next diff</Button>

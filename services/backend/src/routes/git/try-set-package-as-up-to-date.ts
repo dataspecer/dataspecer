@@ -100,7 +100,7 @@ export async function trySetPackageIriAsUpToDate(
         rootIri: iri,
         filesystemFactoryParams: createFilesystemFactoryParams(true),
         gitIgnore: null,
-        fullPathToRootParent: gitInitialDirectoryParent,      // TODO RadStr: The value probably should not matter
+        fullPathToRootParent: gitInitialDirectoryParent,      // The value should not matter
         filesystemType: AvailableFilesystems.DS_Filesystem,
       };
       const { diffTreeComparison } = await compareBackendFilesystems(gitEndpoint, dsEndpoint, resource.projectIri, "pull");

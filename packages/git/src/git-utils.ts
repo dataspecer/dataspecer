@@ -119,7 +119,6 @@ export function transformCommitMessageIfEmpty(commitMessage: string): string | n
 }
 
 
-// TODO RadStr: Maybe make this function return array/map instead of just the one value (that is it will get parts instead of part in the parameters)
 /**
  * If you want to extract something more then use the same method on Git Provider.
  * @param repositoryURL is the URL of the repository
@@ -128,6 +127,7 @@ export function transformCommitMessageIfEmpty(commitMessage: string): string | n
  *  Should also work for gitlab or any other git providers following similar URL structure.
  *  In the example mff-uk is "repository-owner" and dataspecer is "repository-name".
  *  For "branch" returns null, if it not explicitly provided in the {@link repositoryURL}.
+ * @todo Maybe make this function return array/map instead of just the one value (that is it will get parts instead of part in the parameters)
  */
 export function extractPartOfRepositoryURL(repositoryURL: string, part: RepositoryURLPartBase): string | null {
   try {

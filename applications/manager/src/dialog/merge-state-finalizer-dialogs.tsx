@@ -354,7 +354,7 @@ const MergeStateFinalizerForMergeErrorDialog = ({ mergeState, httpResponse, reso
   }
 
 
-  // TODO RadStr PR: Almost copy-pasted from the Answer dialog for push - if somebody will have time, they can refactor it
+  // TODO RadStr: Almost copy-pasted from the Answer dialog for push - if somebody will have time, they can refactor it
   if (httpResponse === null || httpResponse.status >= 300 || httpResponse?.status < 0) {
     let text = "⚠️ Unknown error when finalizing merge state caused by merging. You can check console for more information.\n\nUsually it is caused by one branch not matching the remote state (or not being pushed in the remote repository).";
     if (httpResponse?.status === 409) {

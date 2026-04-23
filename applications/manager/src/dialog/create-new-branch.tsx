@@ -58,13 +58,11 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
 
     if (branch === "") {
       // Should be covered by the resolve check.
-      // TODO RadStr Later: Localization
       toast.error("Given branch name is empty", { "richColors": true });
       resolve(null);
       return;
     }
     else if (branchAlreadyExists) {
-      // TODO RadStr Later: Localization
       toast.error("Branch already exists", { "richColors": true });
       resolve(null);
       return;
