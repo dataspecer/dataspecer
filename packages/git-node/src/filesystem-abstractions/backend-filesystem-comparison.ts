@@ -55,9 +55,6 @@ export async function compareGitAndDSFilesystems(
   let mergeFromFactoryMethodParams: DsFsConstructorParams;
   let mergeToFactoryMethodParams: DsFsConstructorParams;
 
-  // let mergeFromRootIri: string;     // TODO RadStr Critical: ... maybe we will rewrite, but for now it is fine, we just pass in the projectIri to all
-  // let mergeToRootIri: string;
-
   const editable = convertMergeStateCauseToEditable(mergeStateCause as MergeStateCause);
   if (editable == "mergeFrom") {
     mergeFromFilesystemType = AvailableFilesystems.DS_Filesystem;
@@ -111,6 +108,8 @@ export async function compareGitAndDSFilesystems(
 }
 
 /**
+ * @todo TODO RadStr PR projectIRI ... now the rootProjectIri comes explictly like this, but maybe it should be in mergeFrom and mergeTo
+ *           and other issues is that it does not come from the merge state database entry
  * @param rootProjectIri can be null if neither the merge from and merge to are classic filesystems
  * @returns
  */
@@ -164,8 +163,6 @@ export async function compareBackendFilesystems(
     roots: [mergeToRoot],
   };
 
-  // TODO RadStr PR projectIRI: Ok here - once again - it does not work because we are expecting the path to be projectIri and not an IRI !!!
-  //   It needs the projectIri so it knows what ID the root has, but at the same time it needs the rootIri so it can find the path to the root.
   const filesystemMergeFrom = await FilesystemFactory.createFileSystem(mergeFrom.filesystemType, mergeFromFactoryParams);
   const filesystemMergeTo = await FilesystemFactory.createFileSystem(mergeTo.filesystemType, mergeToFactoryParams);
 

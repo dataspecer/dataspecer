@@ -264,18 +264,6 @@ export class GitCommit {
       }
 
 
-      // If the merge from branch does not exist in git - push it
-      // TODO RadStr Critical: ... I would just crash it (throw error) and let user handle it themselves, I am kinda tired of writing perfect user flows
-      // TODO RadStr: For now ... I guess that I will just force the user to create it otherwise he can not merge
-      // TODO RadStr: Also sideways note ... I want to always perform merge on DS and GIT, since if I have perform merge on 2 DS branches, there is "small" issue -
-      //              - The user can modify the merge from package, that is problem since then we are not actually performing merge in git (That is from fixed point in time),
-      //                 but some weird semi-state merge
-      // if (!cloneResult.mergeFromBranchExists) {
-      //   await git.checkout(mergeFromBranch);
-      //   await git.push(repoURLWithAuthorization);
-      //   await git.checkout(mergeToBranchExplicit);
-      // }
-
 
       const isMergingToDefaultBranch = await isDefaultBranch(git, cloneResult!.mergeToBranchExplicitName);
       const pushResult = await GitCommit.exportAndPushToGit(
@@ -451,7 +439,8 @@ export class GitCommit {
       }
 
       let gitFilesystem: FilesystemAbstraction | null = null;
-      // TODO RadStr PR: isBranchAlreadyTrackedOnRemote Or not? If not the nthe iris from main are everywhere
+      // TODO RadStr PR: should isBranchAlreadyTrackedOnRemote be here or not? If it is not here then the iris from main are everywhere
+      //                  If it is here, then each branch has unique IRIs.
       if (hasSetLastCommit && isBranchAlreadyTrackedOnRemote) {     // If it is not the first commit.
         // We have to create the Git filesystem before we create conflicts in the Git directory
         const rootParams: CreateRootFilesystemNodeParams = {
@@ -693,8 +682,11 @@ export class GitCommit {
       await git.checkout(branch);
     }
     else {
-      // TODO RadStr Critical: Yeah I should either take it from the other Git in DS (but merges do not have other Git) or just throw error or force the Git to be up to date with the merge branches
-      throw new Error("TODO RadStr: This is wrong. We have to create new branch from the other package content. If we ran just the git.branch([mergeFromBranch]), then we create branch with the same exact content as mergeTo. Which we do not want. We want mergeFrom");
+      // We just throw error, if the branch does not exist in Git.
+      throw new Error(`The branch ${branch} does not exist in Git, throwing error`);
+      // If we wanted to make it work, we have to create new branch from the other package content.
+      //  If we ran just the git.branch([mergeFromBranch]), then we create branch with the same exact content as mergeTo.
+      //  Which we do not want. We want mergeFrom
       await git.checkoutLocalBranch(branch);
     }
 
@@ -845,18 +837,11 @@ export class GitCommit {
     mergeFromBranchName: string,
     shouldAppendAfterDefaultMergeCommitMessage: boolean,
   ) {
-    // TODO RadStr: Trying the following idea:
-    // 1) Create merge state in git using git merge --no-ff
+    // 1) Sometime before in the flow we create merge state in git using git merge --no-ff
     //   - This tries merging, but never creates the actual merge commit
     // 2) Only reason why we did that is the get the default merge commit message, we get that from ".git/MERGE_MSG"
-    // 3) Then we abort using --abort option
-    // 4) Now to actally create the merge:
-    //  a) Create normal commit
-    //  b) Turn that commit into merge commit
-    //  c) Modify the commit message
-    // ... At first I thought that it is enough to use merge -s ours, however that does not consider staged file
-    // ... Other alternative would be to Run "git merge --no-ff", remove the content of repository as we do. Then put in the new exported content and run git commit.
-    // First we commit the current content of the repository
+    // 3) Now we can actally create the merge:
+    //  a) We simply run normal commit with --amend, it changes the created merge commit messages
 
     console.info("Status before:");
     console.info(await git.status());

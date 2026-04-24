@@ -115,7 +115,7 @@ export type DirectoryNode = {
 export type FilesystemNode = FileNode | DirectoryNode;
 
 /**
- * The key is the name of the filesystem node.
+ * The key is the name of the filesystem node, which is the projectIri.
  */
 export type FilesystemMappingType = Record<string, FilesystemNode>;
 

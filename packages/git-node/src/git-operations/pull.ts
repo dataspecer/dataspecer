@@ -65,7 +65,7 @@ export class GitPull {
     const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGitUsingPredefinedGitRoot(iri, cloneDirectoryNamePrefix, true);
     let storeResult: GitChangesToDSPackageStoreResult | null = null;
     try {
-      // TODO RadStr turn into TODO later: Not sure if it is better to pull only commits or everything -- I think that only commits is better
+      // TODO RadStr Not sure if it is better to pull only commits or everything -- I think that only commits is better
       await gitCloneBasic(git, gitInitialDirectory, cloneURL, true, true, branch, depth);
       const gitLastCommitHash = await getLastCommitHash(git);
       const commonCommit = await getCommonCommitInHistory(git, dsLastCommitHash, gitLastCommitHash);
@@ -150,12 +150,11 @@ export class GitPull {
         const canPullWithoutCreatingMergeState = currentDSPackageAndGitCommitComparison.diffTreeComparison.conflicts.length === 0;
 
         if (canPullWithoutCreatingMergeState) {
-          // TODO RadStr Critical: Rename ... and update based on the conflicts resolution, like we do not want to update when there is conflict
           await git.checkout(gitLastCommitHash);
           // This is important !!! Take the old comparisosn
           const diffTree = diffTreeComparison.diffTree;
           await this.removeRemoved(diffTree, filesystemMergeTo);
-          await this.storeGitChangesToDataspecerInternal(gitRootDirectory, gitInitialDirectoryParent, filesystemMergeTo);
+          await this.storeGitChangesToDataspecerInternal(gitRootDirectory, filesystemMergeTo);
           await filesystemConstructorParams.resourceModel.updateLastCommitHash(iri, gitLastCommitHash, "pull");
 
           return {
@@ -228,7 +227,6 @@ export class GitPull {
 
   private async storeGitChangesToDataspecerInternal(
     currentlyProcessedDirectoryNode: DirectoryNode,
-    treePath: string,
     filesystem: FilesystemAbstraction,
   ): Promise<void> {
     console.info("RECURSIVE MAPPING", currentlyProcessedDirectoryNode);       // TODO RadStr: Debug
@@ -237,8 +235,7 @@ export class GitPull {
     for (const [name, value] of Object.entries(currentlyProcessedDirectoryNode.content)) {
       // TODO RadStr: Name vs IRI
       if(value.type === "directory") {
-        const newDirectory = dsPathJoin(treePath, name);
-        await this.storeGitChangesToDataspecerInternal(value, newDirectory, filesystem);
+        await this.storeGitChangesToDataspecerInternal(value, filesystem);
       }
       else {
         await this.handleResourceUpdate(value);
@@ -255,28 +252,27 @@ export class GitPull {
     for (const datastore of filesystemNode.datastores) {
       datastoreTypesToDatastores[datastore.type] = datastore;
 
-      // TODO RadStr: This If exists just for debug
+      // TODO RadStr Debug: This If exists just for debug
       if(filesystemNode.type === "directory") {
         console.info("Directroy");
       }
 
-      // TODO RadStr:  - since the iri may differ from name for example in the case of imported DCAT-AP
-      // TODO RadStr: .... Well could it really?
-      // TODO RadStr Critical: Yes it will differ, since we we will use the projectIri for name ... therefore we should probably throw error
-      const nodeIri = filesystemNode.metadata.iri ?? filesystemNode.name;
+      const nodeIri: string = filesystemNode.metadata.iri;
+      // Note that the JSON.parse here are correct, since the fielsystem ndoe is DS filesystem, but yeah it could be probably written in more general manner.
 
-      // TODO RadStr: Should check if it already exists, or if not it should be created
       if (isDatastoreForMetadata(datastore.type)) {
-        // TODO: Just for now - I don't know about used encodings, etc. - but this is just detail
         // TODO RadStr PR: If we check for existence here, we can allow to create new models from Git. However, there is more work then just checking for existence.
         //                 There is validation, ...
-        const metaFileContent = JSON.parse(fs.readFileSync(datastore.fullPath, "utf-8"));
+        const metaFileContent = JSON.parse(fs.readFileSync(datastore.fullPath, "utf-8"));   // TODO: utf-8 Just for now - I don't know about used encodings, etc. - but this is just detail
         // TODO RadStr Critical: (Same as above) - since the iri may differ from name for example in the case of imported DCAT-AP
-        await this.fields.updateResourceMetadata(nodeIri, metaFileContent!.userMetadata);
+        if (metaFileContent?.userMetadata === undefined) {
+          throw new Error("The meta file content in the filesystem is not defined");
+        }
+        await this.fields.updateResourceMetadata(nodeIri, metaFileContent.userMetadata);
         continue;
       }
       else {
-          // TODO: Just for now - I don't know about used encodings, etc. - but this is just detail
+        // TODO: utf-8 Just for now - I don't know about used encodings, etc. - but this is just detail
         const packageModelFileContent = JSON.parse(fs.readFileSync(datastore.fullPath, "utf-8"));
         await this.fields.updateBlob(nodeIri, datastore.type, packageModelFileContent);
       }

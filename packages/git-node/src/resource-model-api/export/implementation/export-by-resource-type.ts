@@ -81,7 +81,7 @@ export class PackageExporterByResourceType extends PackageExporterBase {
           data = datastoreWithReplacedIris;
         }
         if (this.shouldRemoveExportedAt) {
-          // TODO RadStr PR: Not sure ... but it is annoying when using with git commit - each meta has it changed for every commit it even when not changed
+          // It is annoying when using with git commit - each meta has it changed for every commit it even when not changed
           delete data["_exportedAt"];
           // Remove modificationDate based on Stepan's feedback.
           delete data["metadata"]["modificationDate"];

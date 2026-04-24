@@ -49,7 +49,7 @@ export class ResourceDatastoreStripHandlerBase implements ResourceDatastoreStrip
   }
 
   // /**
-  //  * @todo TODO RadStr PR: ... we were stripping based on datastore type, but i nthe end we probably just need to strip the meta file.
+  //  * @todo TODO RadStr: ... we were stripping based on datastore type, but i nthe end we probably just need to strip the meta file.
   //  *                           Because the iri replacement handles the unnecessary diffs
   //  */
   // stripDatastoreContent(datastoreContent: any, type: string, shouldStrip: boolean): StripResult {

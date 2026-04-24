@@ -84,7 +84,7 @@ export class GitHubProvider extends GitProviderBase {
     const iri = resourceToUpdateInWebhook?.iri;
     if (iri === undefined) {
       // This means that new branch was added to git, but the branch does not have equivalent in the DS
-      // TODO RadStr Idea: We could create new package automatically, but I am not sure if we want that
+      // TODO RadStr PR: We could create new package automatically, but I am not sure if we want that
       return null;
     }
 
@@ -262,7 +262,7 @@ export class GitHubProvider extends GitProviderBase {
         console.info({latestCommitResult});
         // We got 404
         await new Promise(res => setTimeout(res, waitTime));  // Sleep for waitTime ms
-        waitTime *= 2;
+        waitTime *= 2;                            // Double the wait time
         waitTime = Math.min(waitTime, 10000);     // TODO RadStr PR: Maybe have better wait times or just try it 2 times or something, idk what is the best solution
         console.info(`... WAiting: ${waitTime}`);     // TODO RadStr Debug: Debug print
       }
@@ -1142,7 +1142,7 @@ export class GitHubProvider extends GitProviderBase {
 
     const organizations: string[] = [];
     let page = 1;
-    // TODO RadStr PR: Hardcoded limit - expect that user is not a member of more than 1000 organizations
+    // Hardcoded limit - expect that user is not a member of more than 1000 organizations, which is reasonable expectation
     for (; page <= 10; page++) {    // Hardcoded limit - the REST API allows at most 10 pages of size 100
       const response = await this.httpFetch(`https://api.github.com/user/orgs?page=${page}&per_page=${100}`, {
         headers: {

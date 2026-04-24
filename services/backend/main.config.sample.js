@@ -53,9 +53,9 @@ export default ({
     // },
 
     /**
-     * TODO RadStr: For local development. It will probably not be needed once we are in production. In production we will just use the basename/api
-     *              Can be undefined. If it is undefined then uses the basename/api
-     *              Must not end with slash
+     * For local development. It will probably not be needed once we are in production. In production we will just use the basename/api
+     *  Can be undefined. If it is undefined then uses the basename/api
+     *  Must not end with slash
      */
     gitWebhookBaseUrl: undefined,
 

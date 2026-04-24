@@ -122,7 +122,7 @@ export const createUniqueDirectory = (
     if (index !== -1) {
         const pathStringToReplace = iri.substring(index);
         // TODO RadStr PR PathIRI: Maybe this should be called on the whole iri just to be sure
-        iri = iri.substring(0, index) + toSafePath(pathStringToReplace);      // TODO RadStr Critical TOP: Not completely sure about this
+        iri = iri.substring(0, index) + toSafePath(pathStringToReplace);
     }
     while (true) {
         const uuidBase = uuidv4();
