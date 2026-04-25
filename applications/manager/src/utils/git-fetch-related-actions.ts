@@ -21,6 +21,11 @@ export async function manualPull(t: TFunction<"translation", undefined>, iri: st
   else if (response.status === 204) {
     toast.success(t("The DS last commit hash already matched the Git one"))
   }
+  else if (response.status >= 500) {
+    console.error("Check if the remote follows the [.name.type.format] naming and each resource has .meta file.");
+    toast.error(t("There was an error during the git pull. Check console", { "richColors": true }));
+    console.error(await response.json());
+  }
   else {
     toast.error(t("There were conflicts in the git pull, resolve them in DS", { "richColors": true }));
   }

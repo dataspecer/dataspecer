@@ -61,7 +61,7 @@ export class GitPull {
    * @returns Return true if merge state was created
    */
   public async updateDSRepositoryByGitPull(depth?: number): Promise<GitPullUpdateResult> {
-    const { iri, gitProvider, branch, cloneURL, cloneDirectoryNamePrefix, dsLastCommitHash, filesystemConstructorParams } = this.fields;
+    const { iri, gitProvider, branch, cloneURL, cloneDirectoryNamePrefix, dsLastCommitHash } = this.fields;
     const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGitUsingPredefinedGitRoot(iri, cloneDirectoryNamePrefix, true);
     let storeResult: GitChangesToDSPackageStoreResult | null = null;
     try {
@@ -164,7 +164,7 @@ export class GitPull {
         }
       }
       catch (err) {
-        // EMPTY
+        throw err;
       }
       finally {
         await git.checkout(gitLastCommitHash);
@@ -257,7 +257,11 @@ export class GitPull {
         console.info("Directroy");
       }
 
-      const nodeIri: string = filesystemNode.metadata.iri;
+      const nodeIri: string | undefined = filesystemNode.metadata.iri;
+      if (nodeIri === undefined) {
+        throw new Error("Not a valid type of filesystem node");     // TODO RadStr: Ideally do fail first approach - go over all datastores and check if they can be created
+                                                                    //                Instead of setting only part and then failing
+      }
       // Note that the JSON.parse here are correct, since the fielsystem ndoe is DS filesystem, but yeah it could be probably written in more general manner.
 
       if (isDatastoreForMetadata(datastore.type)) {
