@@ -915,7 +915,7 @@ export const DiffTreeVisualization = (props: {
 
 
 
-    console.info("NODE INFO, isFocused and then isSelected: ", node.isFocused, node.isSelectedStart, node.isSelected, node.isSelectedEnd);    // TODO RadStr: Debug
+    console.info("NODE INFO, isFocused and then isSelected: ", node.isFocused, node.isSelectedStart, node.isSelected, node.isSelectedEnd);    // TODO RadStr Debug: Debug
     if (node.isSelected) {
       isProgrammaticFocus.current = true;
       node.focus();

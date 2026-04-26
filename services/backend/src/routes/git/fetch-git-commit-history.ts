@@ -32,7 +32,7 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
     // const gitURL = "https://github.com/RadStr-bot/example-merge-repo";
 
     const { git, gitInitialDirectory, gitDirectoryToRemoveAfterWork } = createSimpleGitUsingPredefinedGitRoot(query.iri, FETCH_GIT_HISTORY_PREFIX, false);
-
+nevim no asi bych to maznul, kdo to ma cist
     try {
         await gitCloneBasic(git, gitInitialDirectory, gitURL, false, true, undefined, query.historyDepth);
 

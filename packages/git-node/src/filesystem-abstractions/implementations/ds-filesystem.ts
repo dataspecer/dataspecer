@@ -325,10 +325,9 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     }
     removeDatastoreFromNode(filesystemNode, datastoreType);
     if (shouldRemoveFileWhenNoDatastores) {
-      if (filesystemNode.datastores.length === 0) {       // TODO RadStr Critical: Not sure about this, we will always have metadata, right? or no?
+      if (filesystemNode.datastores.length === 0) {
         // Handles the removal of children
         await this.deleteResource(filesystemNode.metadata.iri);
-        // TODO RadStr: Just put fullPath inside the FilesystemNode and be done with it
         this.removeValueInFilesystemMapping(filesystemNode.name, this.getParentForNode(filesystemNode)?.content ?? this.root.content);
       }
     }

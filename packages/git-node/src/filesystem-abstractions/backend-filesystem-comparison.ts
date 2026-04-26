@@ -35,7 +35,6 @@ export type MergeEndpointForStateUpdate = {
   gitProvider: GitProvider | null;
   git: SimpleGit | null;
   lastCommitHash: string;
-  // TODO RadStr PR: Future work ... If we rewrite the update to only update the things which are usually changing on update, then we do not need to pass in the isBranch, since it does not change.
   isBranch: boolean;
   branch: string;
 } & MergeEndpointBase
