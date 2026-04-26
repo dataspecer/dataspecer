@@ -128,7 +128,6 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
       parentDirectoryNodeForRecursion = directoryNode;
       directoryContentContainer = parentDirectoryNodeForRecursion.content;
 
-      // TODO RadStr: It was not here previously however I think that it should be. Because it is missing in the global mapping otherwise
       this.setValueInFilesystemMapping(projectIri, directoryNodeFilesystemLocation, filesystemMapping, directoryNode, parentDirectoryNode);
     }
     else {
@@ -141,9 +140,9 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     }
 
 
-    // TODO RadStr Critical: ... wait do I still do this? - if so I need to put it into the text of thesis
     if (invalidNames.length > 0) {
-      // We need to process them anyways, since they might be valid files from Git
+      throw new Error(`Invalid files coming from Git: ${JSON.stringify(invalidNames)}`);
+      // We should process them though, since they might be valid files from Git, but due to current limitation, it is forbidden now
       for (const invalidName of invalidNames) {
         const newFileSystemNodeLocation: FilesystemNodeLocation = {
           iri: invalidName,
@@ -229,6 +228,9 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
       if (getMetadataDatastoreFile(fileNode.datastores) !== undefined) {
         setMetadata(fileNode, fileNodeLocation.fullPath);
       }
+      else {
+        throw new Error("Has no .meta file which is for now forbidden: " + fileNode.name);
+      }
     }
 
 
@@ -310,6 +312,9 @@ function setMetadata(node: FilesystemNode, directory: string) {
   }
   const fullPath = `${directory}${metadataDatastore.afterPrefix}`;
   node.metadata = constructMetadata(fullPath, metadataDatastore.format, node.metadata);
+  if (node?.metadata?.iri === undefined) {
+    throw new Error("There is no IRI in metadata for" + node?.name);
+  }
 }
 
 function constructMetadata(metadataFilePath: string, format: string | null, oldCache?: object) {

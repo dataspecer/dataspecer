@@ -259,8 +259,11 @@ export class GitPull {
 
       const nodeIri: string | undefined = filesystemNode.metadata.iri;
       if (nodeIri === undefined) {
-        throw new Error("Not a valid type of filesystem node");     // TODO RadStr: Ideally do fail first approach - go over all datastores and check if they can be created
-                                                                    //                Instead of setting only part and then failing
+        // We should never reach this, since we should already fail when creating the filesystem. However, if it is not the case and after future changes
+        //  we can reach this if, then implement the following TODO -
+        // TODO RadStr: Ideally do fail first approach - go over all datastores and check if they can be created
+        //                Instead of setting only part and then failing
+        throw new Error("Not a valid type of filesystem node");
       }
       // Note that the JSON.parse here are correct, since the fielsystem ndoe is DS filesystem, but yeah it could be probably written in more general manner.
 
