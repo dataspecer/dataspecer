@@ -392,7 +392,7 @@ class TestFilesystemAbstraction implements FilesystemAbstraction {
   removeDatastore(filesystemNode: FilesystemNode, datastoreType: string, shouldRemoveFileWhenNoDatastores: boolean): Promise<void> {
     throw new Error("Method not implemented.");
   }
-  removeFile(filesystemNode: FilesystemNode): Promise<void> {
+  removeFilesystemNode(filesystemNode: FilesystemNode): Promise<void> {
     throw new Error("Method not implemented.");
   }
   updateDatastore(fileNode: FileNode, datastoreType: string, content: string): Promise<boolean> {

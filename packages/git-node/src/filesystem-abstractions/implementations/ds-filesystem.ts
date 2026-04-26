@@ -269,7 +269,6 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     const metadata = DSFilesystem.constructMetadataFromResource(resource, this.exportedBy, this.databaseMigrationVersion);
     filesystemNode.metadata = metadata;
 
-    // TODO RadStr Critical: Once again using the iri, otherwise we crash ... so yeah it is no longer cache.
     // For Dataspecer fileystem hardcode JSONs as format. Check top of file for more info.
     const metaDatastoreInfo: DatastoreInfo = createMetaDatastoreInfo(filesystemNode.metadata.iri , "json");
     filesystemNode.datastores.push(metaDatastoreInfo);
@@ -335,8 +334,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     }
   }
 
-  // TODO RadStr Critical:  rename - removeFilesystemNode or something
-  async removeFile(filesystemNode: FilesystemNode): Promise<void> {
+  async removeFilesystemNode(filesystemNode: FilesystemNode): Promise<void> {
     for (const datastore of filesystemNode.datastores) {
       const datastoreType = datastore.type;
       this.removeDatastore(filesystemNode, datastoreType, true);

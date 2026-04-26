@@ -23,6 +23,7 @@ export type DatastoreInfo = {
 
   /**
    * Is the name of the datastore. It does not contain the format or the type. It is simply the name.
+   * The name that comes from filesystem abstractions is projectIri!!!! So maybe rename it to projectIri (possible TODO RadStr:)
    */
   name: string;
 
@@ -86,7 +87,9 @@ type FilesystemNodeCommonData = {
    */
   metadata: ExportMetadataType,
   /**
-   * TODO RadStr Idea: Could be Record<DatastoreType, string>. Note that the record variant would expect to have at most 1 datastore of given type
+   * TODO RadStr: Alternatively could be Record<DatastoreType, string>.
+   * Note that the record variant would expect to have at most 1 datastore of given type, which is not a issue.
+   * ... but yeah just minor todo
    */
   datastores: DatastoreInfo[],
   /**
@@ -128,14 +131,15 @@ export type FilesystemNodeLocation = {
    * !!! Very important note related to iris. We do not need projectIri, because:
    *  1) For DS - we need the iri to find the resource, after we have the resource we can extract the projectIri. The iri is unique identifier to find the package.
    *  2) For Git (ClassicFilesystem) - The resources are identified by projectIri (which is in their case same as iri) and the fullPath for their meta file.
-   *     That is in this case the uniqueness is given by projectIri and system path (where is the git repository located).
+   *     That is in this case the uniqueness is given by projectIri and system path (where is the git repository located), so it is projectIri for Git FS.
    */
   iri: string;
 
-  // TODO RadStr Critical TOP: I don't like this, maybe just rename it in the methods and pass as parametr or idk. This usage on context is weird.
   /**
    * Is the full path to the node within filesystem, which can be used to access the node.
-   * This value is kind of weird. It depends on used context. It is either the full path, which can be accessed the resource,
+   *
+   * This value is kind of weird. It depends on used context. It is always path in the corresponding filesystem.
+   *  But it is either the full path, which can be accessed the resource,
    * or it is path which should be used for export. Sometimes it is also just path to parent (that is without the iri).
    */
   fullPath: string;

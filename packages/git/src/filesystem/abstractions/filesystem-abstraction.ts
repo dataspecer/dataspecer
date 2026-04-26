@@ -104,7 +104,7 @@ export interface FilesystemAbstraction {
    * Removes given {@link filesystemNode} from both the abstraction of filesystem and the filesystem itself.
    *  Removes all the datastores and the resource itself.
    */
-  removeFile(filesystemNode: FilesystemNode): Promise<void>;
+  removeFilesystemNode(filesystemNode: FilesystemNode): Promise<void>;
 
   /**
    * Updates datastore (if it does not exist, creates one) of {@link datastoreType} inside {@link fileNode} in the underlying filesystem with given {@link content}.

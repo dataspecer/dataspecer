@@ -232,7 +232,7 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
       filesystemNode.metadata.iri, datastoreInfo, this.backendApiPath,
       this.backendFilesystem, shouldRemoveFileWhenNoDatastores);
   }
-  removeFile(filesystemNode: FilesystemNode): Promise<void> {
+  removeFilesystemNode(filesystemNode: FilesystemNode): Promise<void> {
     throw new Error("Method not implemented.");
   }
 

@@ -208,7 +208,7 @@ export class GitPull {
     for (const [name, value] of Object.entries(diffTree)) {
       if (value.resourceComparisonResult === "exists-in-new") {
         // If removed
-        await filesystem.removeFile(value.resources.new);
+        await filesystem.removeFilesystemNode(value.resources.new);
         // WE continue and do not go recursively for the children since those will be handled recursively within the removeFile
         continue;
       }

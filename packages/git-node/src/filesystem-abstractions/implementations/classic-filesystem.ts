@@ -291,7 +291,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
       }
     }
   }
-  async removeFile(filesystemNode: FilesystemNode): Promise<void> {
+  async removeFilesystemNode(filesystemNode: FilesystemNode): Promise<void> {
     for (const datastore of filesystemNode.datastores) {
       await this.removeDatastore(filesystemNode, datastore.type, true);
     }
