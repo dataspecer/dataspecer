@@ -11,8 +11,24 @@ import { DSFilesystem, isAccessibleGitRepository } from "@dataspecer/git-node";
 import { currentVersion } from "../../tools/migrations/index.ts";
 import configuration from "../../configuration.ts";
 
-// TODO RadStr Critical: Add document comments after I decide if I should run the conversion on client or not.
+// All of the methods here can return accessDenied set to true if the user tries to access a filesystem path outside of the allowed ones.
+// .... Otherwise, some bad actor could send in nice request that they want to access a path in Git project, but instead it will be some file completely outside.
+//      For example, configuration with SSH keys.
 
+/**
+ *
+ * @param pathToDatastore the path to the datastore. For Classic filesystem it is filesystem path, for DS it is the location on the Local model store.
+ * @param filesystem the filesystem where we should look for the datastore
+ * @param type the type of the datastore ("meta", "model", "svg" and so on).
+ * @param shouldConvertToDatastoreFormat if true then converts the format to JSON and sends back JSON. Otherwise, sends back the data unchanged.
+ * @param exportedBy used only for DS filesystem (and even that not really useful)
+ * @param databaseMigrationVersion used only for DS filesystem and also not really useful it is jsut inserted to the metadata in case of "meta" datastore
+ * @param format is the format in which is the datastore.
+ * @returns Either the datastore or accessDenied if user tries to access something out of the directory that contains Git projects.
+ * @todo TODO RadStr: We technically do not need the format, the conversion could be done on frontend (which is actually what we do currently) -
+ *       this would be equivalent to having {@link shouldConvertToDatastoreFormat} set to true
+ *
+ */
 export async function getDatastoreContent(
   pathToDatastore: string,
   filesystem: AvailableFilesystems,
@@ -22,7 +38,6 @@ export async function getDatastoreContent(
   databaseMigrationVersion: number,
   format?: string
 ): Promise<any | {accessDenied: true}> {
-  // TODO RadStr Critical: Run conversion on client?
   if (filesystem === AvailableFilesystems.ClassicFilesystem) {
     const { isAccessible, normalizedGitPath } = isAccessibleGitRepository(pathToDatastore);
     // This is very very important, if we didn't do this, we would allow user to esentially query any file stored on server
@@ -71,6 +86,8 @@ export const getDatastoreContentDirectly = asyncHandler(async (request: express.
 });
 
 /**
+ * @param datastoreParentIri is the IRI of the parent filesystem node of the given datastore located
+ *  on {@link pathToDatastore}, in given {@link filesystem} and of given {@link type}
  * @param format is the format in which is the given {@link newContent}.
  * @todo It works for DS, because there the output format is always JSON. But for classic filesystem it would not work.
  *  We would also have to provide the output format to which we should convert the data before storing.
@@ -84,11 +101,11 @@ export async function updateDatastoreContent(
   mergeStateUuid: string,
   format?: string,
 ): Promise<{ success: boolean, accessDenied: boolean}> {
-  // TODO RadStr Critical: Run conversion on client?
   if (filesystem === AvailableFilesystems.ClassicFilesystem) {
     // TODO RadStr: Do not do anything for classic filesystem - it is not tested properly, so if somebody decides to implement the updating
-    //               of the Git project, handle it all properly. It is not probably not correct, since there is missing the output format
-    //               the given, see the TOOD of the method
+    //               of the Git project, handle it all properly. It is probably not correct, since there is missing the output format
+    //               the given, see the TODO of the method
+    // ................... also do we ever want to even update the Git project?
 
     // const { isAccessible, normalizedGitPath } = isAccessibleGitRepository(pathToDatastore);
     // // This is very very important, if we didn't do this, we would user allow to esentially query any file stored on server
@@ -140,6 +157,11 @@ export async function removeDatastoreContent(
 }
 
 /**
+ * @param filesystemNodesInTreePath are all the filesystem nodes on the path to the datastore to create.
+ *  Note that all of the filesysetm nodes on that path are created in the corresponding {@link filesystem}.
+ *   They have new IRI. And only after that the datastore is created with given {@link content} that was in given {@link format} and put
+ *   under the "last" filesystem node as a datastore.
+ *
  * @param parentIri This is the actual iri of the first parent (not project iri), under which we will connect the chain of new
  * * @todo Similarly to {@link updateDatastoreContent} It works for DS, because there the output format is always JSON. But for classic filesystem it would not work.
  *  We would also have to provide the output format to which we should convert the data before storing.
@@ -153,7 +175,6 @@ export async function createDatastoreContent(
   mergeStateUuid: string,
   format?: string,
 ): Promise<{ success: boolean, accessDenied: boolean}> {
-  // TODO RadStr Critical: Run conversion on client?
   if (filesystem === AvailableFilesystems.ClassicFilesystem) {
     throw new Error("Not implemented, we would have to pass it filesystem path, which we do not need for DS");
     // const { isAccessible, normalizedGitPath } = isAccessibleGitRepository(pathToDatastore);
@@ -197,7 +218,8 @@ export async function createFilesystemNodes(
 ): Promise<{ success: boolean, accessDenied: boolean, createdIris: string[]}> {
   const createdIris: string[] = [];
   if (filesystem === AvailableFilesystems.ClassicFilesystem) {
-    // TODO RadStr: Also note that here you would have to use the format inside the CreateDatastoreFilesystemNodesData, to convert since we pass the data as JSON object
+    // TODO RadStr: Also note that here you would have to use the output format, and similarly inside the CreateDatastoreFilesystemNodesData.
+    //               Otherwise it would not know what format should have the files in the system.
     throw new Error("Not implemented, we would have to pass it filesystem path, which we do not need for DS");
   }
   else {
@@ -221,7 +243,7 @@ const removeFilesystemNode = async (
   mergeStateUuid: string,
 ): Promise<{accessDenied: boolean}> => {
   if (filesystem === AvailableFilesystems.ClassicFilesystem) {
-    // TODO RadStr PR: It is unnecessary now to have implementation for Git, but maybe in future? NOw implementation for DS only
+    // TODO RadStr: It is unnecessary now to have implementation for Git, but maybe in future? NOw implementation for DS only
     throw new Error("Not implemented, we would have to pass it filesystem path, which we do not need for DS");
   }
   else {
@@ -232,6 +254,7 @@ const removeFilesystemNode = async (
 
   return {accessDenied: false};
 }
+
 
 export const removeFilesystemNodeDirectly = asyncHandler(async (request: express.Request, response: express.Response) => {
   const availableFilesystems = Object.values(AvailableFilesystems);

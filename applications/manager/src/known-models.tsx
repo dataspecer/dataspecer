@@ -43,7 +43,7 @@ function getHookForStandardModel(type: string, initialContent: (iri: string, con
         }
       }),
     });
-    // TODO RadStr PR: Not code by me, This probably should be in some interface, maybe the BackendPackageService
+    // TODO RadStr Improvement to existing code: This probably should be in some interface, maybe the BackendPackageService
     await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(iri), {
       method: "PUT",
       headers: {

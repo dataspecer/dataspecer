@@ -357,7 +357,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
         // We store the new configuration only when creating new repository,
         const storeModelToBackend = async (iri: string, newPackageContent: object) => {
           try {
-            // TODO RadStr: This probably should be in some interface, maybe the BackendPackageService.
+            // TODO RadStr Improvement to existing code: This probably should be in some interface, maybe the BackendPackageService
             //               We do it like this, since there is no existing method,
             //                where is this implemented and we do not what to introduce one,
             //                since similar code exists on multiple places not implemented by me.

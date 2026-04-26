@@ -58,7 +58,7 @@ export const pullRemoteRepository = asyncHandler(async (request: express.Request
     return;
   }
   else {
-    await resourceModel.setHasUncommittedChanges(query.iri, false);     // TODO RadStr PR: Just hardcode it instead of perfoming comparison, that being said it should be correct
+    await resourceModel.setHasUncommittedChanges(query.iri, false);     // TODO RadStr: 99% Correct - Just hardcode it instead of perfoming comparison, that being said it should be correct
     //                                                                  //                  Technically, this happens only when there are no changes, so we just confirm it
     response.sendStatus(200);
     return;

@@ -1,12 +1,12 @@
-// TODO RadStr Write somewhere else also, since it is important observation:
+// TODO RadStr PR: Important observation, should be put mentioned also somewhere else, then be in code comment, but thesis text is too full already:
 //  We currently do not support the fact to have 2 same project iris within one package
-//  (that would happen if somebody imported the same git repo under package UNDER the same level - the same level since in the filesystems we identify using the tree path and not the iri)
+//  (that would happen if somebody imported the same git repo under package like we do for the other import)
 //  Possible future solutions would be to generate new iri as project iri on import inside resource (or only if there is conflict)
+//  ... but that is and not really clean and hard to implement. Technical consultant said that disabling importing into other package using Git is fine.
 
 import { FilesystemNode, FilesystemMappingType, DirectoryNode, FilesystemNodeLocation, DatastoreInfo, ExportMetadataType } from "../../export-import-data-api.ts";
 import { AvailableFilesystems, createEmptyFilesystemMapping, createFilesystemMappingFakeRoot, createInitialNodeToParentMap, FilesystemAbstraction, getMetaPrefixType } from "./filesystem-abstraction.ts";
 
-import path from "path";
 import { DatastoreComparison } from "../../merge/merge-state.ts";
 
 export abstract class FilesystemAbstractionBase implements FilesystemAbstraction {

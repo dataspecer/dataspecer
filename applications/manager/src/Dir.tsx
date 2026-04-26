@@ -363,7 +363,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
               </DropdownMenuSubTrigger>
 
               <DropdownMenuSubContent className="data-[side=top]">
-                {/* TODO RadStr: Debug */}
+                {/* TODO RadStr: For debug/migration */}
                 {/* {hasSetRemoteRepository && <DropdownMenuItem onClick={() => debugClearMergeStateDBTable()}><ShieldQuestion className="mr-2 h-4 w-4" />DEBUG - Clear merge db state table</DropdownMenuItem>} */}
                 {hasSetRemoteRepository && <DropdownMenuItem title={tooltipForSetUpToDateMenuItem} onClick={() => trySetPackageAsUpToDate(resource.iri)}><TimerResetIcon className="mr-2 h-4 w-4" />Verify status of local changes</DropdownMenuItem>}
                 {hasSetRemoteRepository && <hr className="border-gray-300" />}

@@ -29,7 +29,7 @@ export const finalizePullMergeState = asyncHandler(async (request: express.Reque
       response.json({ error: dataForComparison.responseText });
       return;
     }
-    // TODO RadStr PR: ... It would be better to have the projectIri stored in the merge state ... we already fetch it in two places for no reason.
+    // TODO RadStr PR projectIri: ... It would be better to have the projectIri stored in the merge state ... we already fetch it in two places for no reason.
     const { diffTreeComparison } = await compareBackendFilesystems(dataForComparison.gitEndpoint, dataForComparison.dsEndpoint, dataForComparison.resource.projectIri, "pull");
 
     const result = await mergeStateModel.mergeStateFinalizer(uuid);

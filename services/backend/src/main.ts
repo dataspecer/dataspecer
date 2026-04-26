@@ -161,8 +161,8 @@ application.post(apiBasename + "/git/finalize-merge-merge-state", finalizeMergeM
 application.post(apiBasename + "/git/finalize-merge-merge-state-on-failure", finalizeMergeMergeStateOnFailure);
 application.delete(apiBasename + "/git/remove-merge-state", removeMergeState);
 
-// TODO RadStr: Just for debugging !
-application.post(apiBasename + "/git/debug-clear-merge-state-table", clearMergeStateTableDebug);
+// TODO RadStr: debug/migration, commented for now, but may be useful in future
+// application.post(apiBasename + "/git/debug-clear-merge-state-table", clearMergeStateTableDebug);
 
 application.get(apiBasename + "/git/try-set-package-as-up-to-date", currentSession, trySetPackageAsUpToDateHandler);
 application.post(apiBasename + "/git/webhook-test", currentSession, handleWebhook);

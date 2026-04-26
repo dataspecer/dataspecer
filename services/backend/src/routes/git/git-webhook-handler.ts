@@ -1,11 +1,11 @@
 //  How to handle resources coming from Git:
 // Chosen variant:
-//   We expect the git file to be named as a datastoreType.format
+//   We expect the git file to be named as a name.datastoreType.format
 //   We store it as a datastore under the directory (pacakge) with the given name chosen as datastore type
 
 // !Not! chosen alternative
 //   We expect the resource to not have any meta file.
-//   We expect that the given name contains no "/" and the name is unique and as such can be used as a project iri (If we wanted to be more strict about this we would have to not use the names but the projectIris/iris from the meta file - TODO RadStr: Maybe we will?)
+//   We expect that the given name contains no "/" and the name is unique and as such can be used as a project iri
 //   We create meta file with the relevant data - iri, projectIri and type to be "git-resource" (Maybe change type)
 //   With next commit we all store it back.
 //  ... However some cons - why it was not chosen - we can not expect the user to porvide projectIri, all we can expect from him is to provide unique iri, but at most on the current directory level.

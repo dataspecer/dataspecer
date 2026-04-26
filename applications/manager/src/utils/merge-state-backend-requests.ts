@@ -214,8 +214,9 @@ export const removeMergeState = async (mergeStateUUID: string | undefined): Prom
   }
 }
 
+
 /**
- * @todo TODO RadStr: Just for debug
+ * @todo TODO RadStr: Just for debug/migration
  */
 export async function debugClearMergeStateDBTable() {
   const response = await fetch(import.meta.env.VITE_BACKEND + "/git/debug-clear-merge-state-table", {
