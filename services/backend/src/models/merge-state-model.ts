@@ -190,7 +190,7 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
       removedInEditable: removed,
       createdInEditable: created,
       allConflicts: conflicts,
-      unresolvedConflicts: conflicts,     // TODO RadStr Critical: I don't know, I should probably keep the existing ones
+      unresolvedConflicts: conflicts,     // TODO RadStr PR: Either like this or keep the existing ones. After usage it will be clear what is more user friendly.
       diffTree,
       diffTreeSize,
     };
@@ -214,9 +214,8 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
     mergeToInfo: MergeEndInfoWithRootNode,
   ): Promise<string> {
     // If there are no conflicts. Create it anyway. It is up to user if he really wants to finalize the merge operation.
-    // TODO RadStr Idea: We could finalize right away and save creating database entry. But it is rare case and another place to prone to error.
-    //                   So it can be done in future by somebody else
-
+    //  TODO Radstr: We could finalize right away for 0 conflicts and save creating database entry. But it is rare case and another place to prone to error.
+    //                 So it can be done in future by somebody else
     const {
       changed, conflicts, created, removed,
       diffTree, diffTreeSize
@@ -284,7 +283,6 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
       pathToGitToRootMetaOfTheStatic = mergeState.rootFullPathToMetaMergeTo;
     }
     else {
-      // TODO RadStr: Thinking about it, when I am pulling maybe I don't want to have mergeTo
       filesystemToUpdate = mergeState.filesystemTypeMergeTo;
       rootIriToUpdate = mergeState.rootIriMergeTo;
       filesystemOfTheStatic = mergeState.filesystemTypeMergeFrom;
@@ -330,8 +328,8 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
   async handlePushFinalizer(mergeState: MergeState) {
     // Same as pull, but we want the user to push, that is to insert the commit message back,
     //  but that is handled in the request handler, not here
+    //  Technically, we could implement it simarly to merge and perform the finalization together with the commit action, but it is fine like this.
     await this.handlePullFinalizer(mergeState);
-    // TODO RadStr: Or just for now don't do anything about it ... make the user commit again
   }
 
 
@@ -362,6 +360,7 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
     const createdSimpleGitData = createSimpleGitUsingPredefinedGitRoot(mergeState.rootIriMergeTo, MERGE_DS_CONFLICTS_PREFIX, false);
     try {
       const git = createdSimpleGitData.git;
+      // Maybe should be --filter=blob:none ?
       await git.clone(mergeState.gitUrlMergeTo, ".", ["--filter=tree:0"]);    // And we fetch only commits
       try {
         // This fails if the branch exists only inside DS. And if it fails we just checkout the merge from branch.
@@ -395,6 +394,7 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
     const mergeFromGitData = createSimpleGitUsingPredefinedGitRoot(mergeState.rootIriMergeFrom, MERGE_DS_CONFLICTS_PREFIX, false);
     try {
       const git = mergeFromGitData.git;
+      // Maybe should be --filter=blob:none ?
       await git.clone(mergeState.gitUrlMergeFrom, ".", ["--filter=tree:0"]);    // And we fetch only commits
 
       // Unlike in merge with rebase, the branch has to exist on remote. It does not make sense to create merge commit from branch, which does not exist on the remote.
@@ -444,7 +444,7 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
     }
     else if (mergeState.mergeStateCause === "merge") {
       // In case of merge it is removed on successful merge commit by user
-      // TODO RadStr: But when to finalize?
+      //  The finalization happens with merge/rebase
       await this.handleMergeFinalizer(mergeState, mergeCommitType);
       return true;
     }
@@ -644,6 +644,7 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
   async updateMergeState(uuid: string, inputData: UpdateMergeStateInput) {
     const convertedMergeStateData = this.convertMergeStateDataToString(inputData);
 
+    // TODO RadStr: I feel like that we should update only certain things (and we are - a lot of the values are just copies, which are already present in the store)
     await this.prismaClient.mergeState.update({
       where: {
         uuid
@@ -758,46 +759,6 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
           mergeStateData: {
             update: {
               unresolvedConflicts: JSON.stringify(newUnresolvedConflicts),
-            }
-          }
-        },
-    });
-  }
-
-
-  /**
-   * @todo TODO RadStr: Probably remove, I am not using it from anywhere
-   * @deprecated Again no longer used. it is similar to the {@link updateMergeStateWithStrings} but gets the data as objects array rather than strings.
-   */
-  async updateMergeStateWithObjects(
-    uuid: string,
-    diffTree: DiffTree,
-    changedInEditable: DatastoreComparison[],
-    removedInEditable: DatastoreComparison[],
-    createdInEditable: DatastoreComparison[],
-    unresolvedConflicts: DatastoreComparison[],
-  ) {
-    const mergeState = await this.prismaClient.mergeState.findFirst({where: {uuid}});
-    if (mergeState === null) {
-      throw new Error(`There is no such MergeState with uuid: ${uuid}`);
-    }
-
-    const inputToConvert: InputForConvertMergeDataToStringMethod = {
-      allConflicts: null,
-      changedInEditable,
-      removedInEditable,
-      diffTree,
-      unresolvedConflicts,
-      createdInEditable
-    }
-    const convertedMergeStateData = this.convertMergeStateDataToString(inputToConvert);
-
-    await this.prismaClient.mergeState.update({
-        where: { uuid: uuid },
-        data: {
-          mergeStateData: {
-            update: {
-              ...convertedMergeStateData,
             }
           }
         },
@@ -928,11 +889,12 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
           createFilesystemFactoryParams(false),
       };
 
-      // TODO RadStr Critical: Might be unnecessary, I think that the only reason why we do this is
-      //              because we want to also have the data if they are not present in the given prismaMergeState
-      //              I do not think that we do this to get some new updated data, but maybe I am wrong now
+      // TODO RadStr: Might be unnecessary, I think that the only reason why we do this is
+      //              because we want to also have the data part if it is not present in the given prismaMergeState
+      //              I do not think that we do this to get some new updated data, but maybe I had a very good reason to do this
       const previousMergeState = await this.getMergeStateFromUUID(prismaMergeState.uuid, true, false, false);
-      // TODO RadStr PR: Hack for now ... should be in the database probably, instead of fetching it ... the hack is once again because of the createFilesystemMapping method
+      // TODO RadStr PR projectIRI: Hack for now ... should be in the database probably, instead of fetching it ... we need for the createFilesystemMapping method
+      //                                         ... Alternatively when we are buidling the tree we could fetch the projectIris from the Git filesystem instead of trying getting it from the names
       let rootProjectIri: string | null;
       if (mergeFrom.filesystemType === AvailableFilesystems.DS_Filesystem) {
         const resource = await this.resourceModel.getResource(mergeFrom.rootIri);

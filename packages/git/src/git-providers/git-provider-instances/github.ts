@@ -91,7 +91,7 @@ export class GitHubProvider extends GitProviderBase {
     const gitURL = webhookPayload.repository.git_url;
     const cloneURL = webhookPayload.repository.clone_url;
     const commits = webhookPayload.commits;
-    // Head commit
+    // Head commit could be useful
     // const beforeCommit = webhookPayload.before;
     // const afterCommit = webhookPayload.after;
     // const lastCommit = webhookPayload.head_commit;
@@ -263,8 +263,7 @@ export class GitHubProvider extends GitProviderBase {
         // We got 404
         await new Promise(res => setTimeout(res, waitTime));  // Sleep for waitTime ms
         waitTime *= 2;                            // Double the wait time
-        waitTime = Math.min(waitTime, 10000);     // TODO RadStr PR: Maybe have better wait times or just try it 2 times or something, idk what is the best solution
-        console.info(`... WAiting: ${waitTime}`);     // TODO RadStr Debug: Debug print
+        waitTime = Math.min(waitTime, 10000);
       }
 
       if (initialCommitHash === null) {
@@ -275,9 +274,6 @@ export class GitHubProvider extends GitProviderBase {
       }
       await this.createBranch(repositoryOwner, repoName, publicationBranchName, initialCommitHash, authToken);
       const pagesResponse = await this.enableGitHubPages(repoName, repositoryOwner, publicationBranchName, authToken);
-      // TODO RadStr Debug: Debug prints
-      // console.info({pagesResponse});
-      // console.info({json: await pagesResponse.json()});
     }
 
     await this.createDataspecerIssueLabels(repositoryOwner, repoName, authToken);
@@ -318,6 +314,8 @@ export class GitHubProvider extends GitProviderBase {
       sha: latestCommitHash
     };
 
+
+    // ... Another possible implementation, should be also working.
     // const mainRefUrl = `https://api.github.com/repos/${repositoryOwner}/${repoName}/git/ref/heads/${branch}`;
 
     // const fetchResponse1 = await this.httpFetch(mainRefUrl, {

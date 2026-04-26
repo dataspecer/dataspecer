@@ -80,14 +80,6 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
       fullPath = dsPathJoin(mappedNodeLocation.fullPath, projectIri);
     }
 
-    // TODO RadStr: THe previous implementation where we passed in the full path directly for the root
-    // if (parentDirectoryNode.metadata.iri.startsWith("fake-root")) {
-    //   fullPath = mappedNodeLocation.fullPath;
-    // }
-    // else {
-    //   fullPath = dsPathJoin(mappedNodeLocation.fullPath, projectIri);
-    // }
-
 
     let irisTreePath: string;
     let projectIrisTreePath: string;
@@ -141,7 +133,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
     }
     else {
       if (parentDirectoryNode === null) {
-        throw new Error("Expected parent to be directory node, however it is null"); // TODO RadStr: It could be parentDirectoryNode!
+        throw new Error("Expected parent to be directory node, however it is null");
       }
 
       parentDirectoryNodeForRecursion = parentDirectoryNode;
@@ -229,7 +221,8 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
         this.setValueInFilesystemMapping(sharedProjectIri, fileNodeLocation, directoryContentContainer, fileNode, parentDirectoryNodeForRecursion);
       }
       else {
-        // TODO RadStr: There should be no duplicate - I don't think that there is a need for check
+        // There should be no duplicate - I don't think that there is a need for check
+        //  .... In ds it is also not possible to have more datastores of datastoreType
         fileNode.datastores = fileNode.datastores.concat(datastoresForSharedName);
       }
 
@@ -286,7 +279,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
 
     if (shouldRemoveFileWhenNoDatastores) {
       if (filesystemNode.datastores.length === 0) {
-        fs.rmSync(filesystemNode.irisTreePath);     // Should be the same as projectIrisTreePath ... if not then TODO RadStr:
+        fs.rmSync(filesystemNode.irisTreePath);     // Should be the same as projectIrisTreePath
         this.removeValueInFilesystemMapping(filesystemNode.name, this.getParentForNode(filesystemNode)!.content);
       }
     }
@@ -424,8 +417,6 @@ export function extractTypeAndFormat(value: string, separator: string): SplitDat
  *  where dataStoreId is for example "model" or "meta" and format is usually "json" (but in future may be "yaml" or "rdf") and name is currently the iri of resource.
  *  The "." is the {@link prefixSeparator}.
  *
- * TODO RadStr: Maybe should be in some utils.ts file instead, same for the other prefix methods.
- *
  * @param pathToDirectory is the path to directory which contain given {@link names}
  *
  * @returns Groups the {@link names} by same prefix. and invalid values, that is those which don't have at least {@link postfixCount} {@link prefixSeparator}s
@@ -440,8 +431,8 @@ export function extractTypeAndFormat(value: string, separator: string): SplitDat
  * }
  */
 function groupDatastoreInfosByName(pathToDirectory: string, prefixSeparator: string, postfixCount: number, ...names: string[]): DatastoreInfosBySharedName {
-  // TODO RadStr: Once we will have different layouts of the directories (for example group by type - for each type 1 directory)
-  //              We no longer need the grouping - we will just extract the basename and based on that find correct file in filesystem and then insert the datastore info into it
+  // Once we will have different layouts of the directories (for example group by type - for each type 1 directory)
+  //  We no longer need the grouping - we will just extract the basename and based on that find correct file in filesystem and then insert the datastore info into it
   const invalidNames: string[] = [];
   const datastoreInfoGroupings: Record<string, DatastoreInfo[]> = {};
   names

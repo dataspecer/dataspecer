@@ -486,7 +486,7 @@ export interface GitProvider {
    */
   getOpenedPullRequestsInvolvingUser(authToken: string | null): Promise<PullRequestInvolvingUserFetchResponse | null>;
 
-  // TODO RadStr PR: Implement later, fow now we will just close the PRs it by performing merge, the solution described here is only one of the possible ones
+  // TODO RadStr: Implement later, fow now we will just close the PRs it by performing merge, the solution described here is only one of the possible ones
   // /**
   //  * Closes the pull request with the given {@link mergeMethod}. What this does is that it creates another commit in the "merge from" branch.
   //  *  This commit contains the iris of the "merge to" branch and then closes the pull request. This has to be done to get around the fact that
