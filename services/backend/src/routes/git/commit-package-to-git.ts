@@ -125,7 +125,6 @@ const commitHandlerInternal = async (
   };
 
   if (shouldRedirectWithExistenceOfMergeStates) {
-    // TODO RadStr: Not entirely sure about this ... I guess that I should just call merge commit explictly when finalizing instead of doing this, it will be easier to implement
     const mergeStatesForResource = await mergeStateModel.getMergeStatesForMergeTo(resource.iri, false);
     const resolvedMergeStatesCausedByMerge = mergeStatesForResource
       .filter(mergeState => mergeState.conflictCount === 0 && mergeState.mergeStateCause as MergeStateCause === "merge");

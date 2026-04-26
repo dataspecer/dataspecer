@@ -105,7 +105,7 @@ jobs:
         run: npm run update-database
       - name: Run the backend
         working-directory: dataspecer-source-code/services/backend
-        run: npm run generate-specification "https://github.com/${{ github.repository }}/archive/${{ github.sha }}.zip"   # TODO RadStr: The .zip argument is no longer needed, we create it from the filesystem
+        run: npm run generate-specification
       - name: Move the generated artifacts to correct directory
         run: |
           rm -rf ${DIRECTORY_WITH_GENERATED_CONTENT}/artifacts/*   # We remove the content of the directory and then replace it with the newly generated content

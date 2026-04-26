@@ -279,17 +279,11 @@ if (configuration.staticFilesPath) {
 }
 
 
-// TODO RadStr PR: Have to await, because of the generate-specification
+// TODO RadStr PR: Have to await, because of the generate-specification ...
+//                  TODO just to mark the change, I think that it is fine, since it runs both locally and on the web
 await (async () => {
   // Run migrations or throw
   await migration.tryUp();
-
-  // TODO RadStr: The endsWith is just current patch - the generate specification script should not probably call main
-  //              - It should start the database and all that, however it should not start the express server
-  //              ... That being said - it needs the initialization in the else branch + in the initialization of the database at the start of main
-  //                  (as seen here https://github.com/RadStr-bot/private-copy-of-dataspecer/commit/8ccb225b248091fc54de7fa4211783bd98e2957f)
-  // TODO RadStr: ... Actually we won't have the 3rd argument once we use the data inside the filesystem of gh action
-
 
   // Command-line arguments
   if (process.argv.length > 2 && !process.argv[1]?.endsWith("generate-specification-from-local-storage.js")) {
