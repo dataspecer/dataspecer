@@ -44,6 +44,15 @@ import _ from "lodash";
 import { applyAutomaticMergeStateResolverToSingleModel, CacheContentMap, convertDataAndUpdateCacheContentEntryAsCombination, createIriMappings, EntriesAffectedByCreateType, findValueInCache, FormatsCache, getDatastoreInCacheAsObject, getEditorsInOriginalOrder, IriMappings, isDatastorePresentInCache, MergeFromMergeToStrings, onCascadeUpdateForCreatedDatastores, ParamsForApplyMergeStateResolver, pickFormat, TextDiffEditorHookProps, updateCacheContentEntryAsCombination } from "@/utils/use-diff-editor-dialog-props-utils";
 
 
+// Unfortunately quite large component, it would be better to try to refactor it. That being said it does not have that many methods/stuff:
+//  - The react states
+//  - The states/values that represent the current values shown in editor
+//  - updateModelData that handles the changing of model and with that update cache methods
+//  - applyMergeResolver method
+//  - Create/remove datastore methods
+//  - save to backend methods
+// .... and thats probably all
+
 // Note that the hook is not useful for anything else than the diff editor dialog, but since it is quite large I put it into separate file
 export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath, initialMergeToRootMetaPath, resolve}: TextDiffEditorHookProps) => {
   const monacoEditor = useRef<{editor: monaco.editor.IStandaloneDiffEditor}>(null);
@@ -834,6 +843,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
   };
 
   useEffect(() => {
+    // This effect handles the updating of multiple models through merge resolver. It is triggered by the applyAutomaticMergeStateResolver
     if (!shouldUpdateMultipleModelsThroughMergeResolver) {
       return;
     }
@@ -846,7 +856,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         for (const [treePath, datastoreInfos] of Object.entries(datastoreInfosForCacheEntries)) {
           const diffNode = getDiffNodeFromDiffTree(newMergeState?.diffTreeData?.diffTree ?? {}, treePath);
           if (diffNode?.resourceComparisonResult === "exists-in-new" || diffNode?.resourceComparisonResult === "exists-in-old") {
-            // TODO RadStr PR: For now just skip them. Ideally we would act accordingly by creating/deleting
+            // TODO RadStr PR: For now just skip them. Ideally we would act accordingly by creating/deleting the resource
             continue;
           }
           const modelTypes = (diffNode?.resources.new ?? diffNode?.resources.old)?.metadata.types ?? [];
@@ -856,7 +866,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
           for (const [datastoreType, datastoreInfoForMergeActors] of Object.entries(datastoreInfos)) {
             if (datastoreInfoForMergeActors.mergeFrom === null || datastoreInfoForMergeActors.mergeTo === null) {
               // Skip datatores which are only in one merge actor - either in merge from or merge to
-              // TODO RadStr PR: For now just skip them. Ideally we would act accordingly by creating/deleting
+              // TODO RadStr PR: For now just skip them. Ideally we would act accordingly by creating/deleting the datastore
               continue;
             }
             const format = pickFormat(examinedMergeState?.filesystemTypeMergeFrom, datastoreInfoForMergeActors.mergeFrom, datastoreInfoForMergeActors.mergeTo);
@@ -939,6 +949,11 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     resolve({ newResourceContent: editedNewVersion });
   };
 
+
+
+  ////////////////////////////////////////
+  //// Save to backend methods from here down
+  ////////////////////////////////////////
 
   const finalizeMergeStateHandler = async () => {
     if (examinedMergeState === null) {

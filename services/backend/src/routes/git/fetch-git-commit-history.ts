@@ -32,19 +32,9 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
     // const gitURL = "https://github.com/RadStr-bot/example-merge-repo";
 
     const { git, gitInitialDirectory, gitDirectoryToRemoveAfterWork } = createSimpleGitUsingPredefinedGitRoot(query.iri, FETCH_GIT_HISTORY_PREFIX, false);
-nevim no asi bych to maznul, kdo to ma cist
     try {
         await gitCloneBasic(git, gitInitialDirectory, gitURL, false, true, undefined, query.historyDepth);
 
-        // const defaultbranchGit = await git.branch(["-vv"]);
-        // const defaultBranchLabel = defaultbranchGit.branches[defaultbranchGit.current].label;
-        // const defaultBranchName = defaultBranchLabel.substring(1, defaultBranchLabel.indexOf("]"));     // Inside the [] there is tracked branch - that is the remote to use
-        // console.info({defaultBranchLabel, defaultBranch: defaultBranchName});
-
-        // const gitHistory: GitHistory = {
-        //     branches: [],
-        //     defaultBranch: defaultBranchName,
-        // };
 
         // Note: We can not have composite formats - so for example have object author - and for it have name: "%an", email ... etc.
         const logFormat = {
@@ -59,80 +49,6 @@ nevim no asi bych to maznul, kdo to ma cist
             authorTimestamp: "%at",
             subject: "%s",
         };
-        // let firstCommit: any | null = null;
-
-        // const remoteBranches = await git.branch(["--remotes"]);
-        // for (const remoteBranch of remoteBranches.all) {
-        //     // const branchLog = await git.log([remoteBranch]);
-        //     const firstCommitHash = await git.firstCommit();
-        //     const branchLog = await git.log({
-        //         // from: "^",      // This throws error for some reason
-        //         from: firstCommitHash,      // As in https://www.npmjs.com/package/simple-git git log part ... however the first commit is not included
-        //         to: remoteBranch,
-        //         format: logFormat,
-        //     });
-
-        //     // We have to solve the first commit explicitly by hack
-        //     if (firstCommit === null) {
-        //         const rawFirstCommitFromLog = await git.log([firstCommitHash]);
-        //         if (rawFirstCommitFromLog.latest?.hash === undefined) {
-        //             // There is not even a first commit in the repo
-        //             throw new Error("Not a single commit in the repo");
-        //         }
-
-        //         firstCommit = {
-        //             hash: rawFirstCommitFromLog.latest?.hash,
-        //             authorName: rawFirstCommitFromLog.latest?.author_name,
-        //             authorEmail: rawFirstCommitFromLog.latest?.author_email,
-        //             commitMessage: rawFirstCommitFromLog.latest?.message,
-        //             date: rawFirstCommitFromLog.latest?.date,
-        //             parents: "",
-        //         };
-        //     }
-
-        //     console.info({branchLog});
-        //     // TODO RadStr checked: Now it is just debug, the transforamtion itself is identity, we can jsut use branchLog.all
-        //     const commits = branchLog.all.map(commit => {
-        //         console.info({commit});
-        //         return {
-        //             hash: commit.hash,
-        //             authorName: commit.authorName,
-        //             authorEmail: commit.authorEmail,
-        //             authorTimestamp: commit.authorTimestamp,
-        //             commitMessage: commit.commitMessage,
-        //             date: commit.date,
-        //             parents: commit.parents,
-        //             refs: commit.refs,
-        //         }
-        //     });
-
-        //     gitHistory.branches.push({
-        //         name: remoteBranch,
-        //         commits: commits.concat(firstCommit),
-        //     })
-        // }
-
-        // // const commits = log.all.map(commit => ({
-        // //   hash: commit.hash,
-        // //   authorName: commit.author_name,
-        // //   authorEmail: commit.author_email,
-        // //   commitMessage: commit.message,
-        // // }));
-
-        // const logGraph = await git.raw(["log", "--graph", "--oneline", "--all", "--format=%H"]);
-        // console.info("logGraph", logGraph);
-
-        // const mapBranchToHeadCommitRaw = await git.raw([
-        //     "for-each-ref",
-        //     "--format=%(refname:short) %(objectname)",
-        //     "refs/remotes/"
-        // ]);
-        // const mapBranchToHeadCommitAsArray: string[] = mapBranchToHeadCommitRaw.split("\n");
-        // const mapBranchToHeadCommit: Record<string, string> = {};
-        // mapBranchToHeadCommitAsArray.forEach(keyAndvalue => {
-        //     const [branch, commitHash] = keyAndvalue.split(" ");
-        //     mapBranchToHeadCommit[branch] = commitHash;
-        // });
 
         const customLogResult = await git.log({
             format: logFormat,
