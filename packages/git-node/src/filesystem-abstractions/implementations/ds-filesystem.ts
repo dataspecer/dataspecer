@@ -2,9 +2,9 @@ import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import { v4 as uuidv4 } from 'uuid';
 import {
   FilesystemAbstractionBase, DatastoreComparison, DatastoreInfo, DirectoryNode, FilesystemMappingType, FilesystemNode,
-  FilesystemNodeLocation, createEmptyFilesystemMapping, createMetaDatastoreInfo, FilesystemAbstraction,
+  FilesystemNodeLocation, createEmptyFilesystemMapping, FilesystemAbstraction,
   removeDatastoreFromNode, isDatastoreForMetadata, getDatastoreInfoOfGivenDatastoreType, AvailableFilesystems, convertDatastoreContentBasedOnFormat,
-  ExportMetadataType
+  ExportMetadataType, getMetaPrefixType
 } from "@dataspecer/git";
 import { FileSystemAbstractionFactoryMethod, DsFsConstructorParams, FilesystemFactoryMethodParams } from "../backend-filesystem-abstraction-factory.ts";
 import crypto from 'node:crypto';
@@ -176,7 +176,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
 
     let localProjectIriNameCandidate = projectIri;
     // Unless we made a mistake we take care of it on import (we do it on import and not here because of the create branch inside DS)
-    // TODO RadStr I don't know: Keep it or not?
+    // TODO RadStr I don't know: Keep it or not? ... it really should never happen. The question is whether we should keep it as "assert" or not
     if (projectIri.startsWith(projectIrisTreePath) && projectIrisTreePath.length > 0) {
       console.info({projectIri, projectIrisTreePath});
       localProjectIriNameCandidate = projectIri.slice(projectIrisTreePath.length);
@@ -237,7 +237,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
       for (const subResource of pckg.subResources) {
         const newDirectoryNodeLocation: FilesystemNodeLocation = {
           iri: subResource.iri,
-          fullPath: subResource.iri,      // TODO RadStr Critical TOP done: Either that or the fullName, I think it should be the iri ... YEAH IRI SEEMS RIGHT IT SHOULD BE THE PATH THAT CAN BE USED TO ACCESS THE RESOURCE
+          fullPath: subResource.iri,
           irisTreePath: fullIriName,
           projectIrisTreePath: fullProjectIriName,
         };
@@ -270,7 +270,7 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     filesystemNode.metadata = metadata;
 
     // For Dataspecer fileystem hardcode JSONs as format. Check top of file for more info.
-    const metaDatastoreInfo: DatastoreInfo = createMetaDatastoreInfo(filesystemNode.metadata.iri , "json");
+    const metaDatastoreInfo: DatastoreInfo = this.createMetaDatastoreInfo(filesystemNode.metadata.iri , "json");
     filesystemNode.datastores.push(metaDatastoreInfo);
 
     for (const [blobName, storeId] of Object.entries(resource.dataStores)) {
@@ -357,5 +357,21 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     // this.resourceModel.createPackage(parentIri, directoryNode, metadata);
     // this.createFilesystemNode
     throw new Error("Method not implemented.");
+  }
+
+/**
+ * Creates the {@link DatastoreInfo} with given {@link basename}, which describes metadata file.
+ */
+  private createMetaDatastoreInfo(basename: string, format: string): DatastoreInfo {
+    const afterPrefix = `.meta.${format}`;
+
+    return {
+      fullName: `${basename}${afterPrefix}`,
+      afterPrefix,
+      type: getMetaPrefixType(),
+      name: basename,
+      format,
+      fullPath: basename,
+    };
   }
 }

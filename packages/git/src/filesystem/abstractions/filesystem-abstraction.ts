@@ -258,23 +258,6 @@ export function getMetadataDatastoreFile(datastores: DatastoreInfo[]): Datastore
   return datastores.find(datastore => isDatastoreForMetadata(datastore.type));
 }
 
-/**
- * Creates the {@link DatastoreInfo} with given {@link basename}, which describes metadata file.
- */
-export function createMetaDatastoreInfo(basename: string, format: string): DatastoreInfo {
-  const afterPrefix = `.meta.${format}`;
-
-  return {
-    fullName: `${basename}${afterPrefix}`,
-    afterPrefix,
-    type: getMetaPrefixType(),
-    name: basename,
-    format,
-    fullPath: basename,     // TODO RadStr Critical TOP: ??? For DS filesystem ok, for classic fileystem not
-                            // TODO RadStr Critical TOP done: It is kind of done, since we do not call this from classic fs ... so just put it into ds fs as private function
-  };
-}
-
 
 /**
  * @returns Returns Datastore of the given {@link type} present in the datastores of the given {@link filesystemNode}. Returns null if not present.
