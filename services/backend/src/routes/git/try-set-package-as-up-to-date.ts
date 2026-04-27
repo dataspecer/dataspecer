@@ -41,7 +41,7 @@ export async function trySetPackageIriAsUpToDate(
 
   const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGitUsingPredefinedGitRoot(iri, TMP_CLONE_PATH_PREFIX, true);
   let isLastAccessToken = false;
-  const gitCredentials = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.FullPublicRepoControl]);
+  const gitCredentials = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.LoginInfo, ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
   const repositoryOwner = extractPartOfRepositoryURL(resource.linkedGitRepositoryURL, "repository-owner");
   const repositoryName = extractPartOfRepositoryURL(resource.linkedGitRepositoryURL, "repository-name");
   if (repositoryOwner === null || repositoryName === null) {
