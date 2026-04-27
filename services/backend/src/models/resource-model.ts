@@ -123,15 +123,9 @@ export class ResourceModel implements ResourceModelForPull {
         await this.resourceChangeObserver.notifyListenersAboutGitLinkRemovalFromModel(gitURL);
 
         for (const affectedResource of affectedResources) {
-            // TODO RadStr Critical: This is mainly related to the update link
-            // TODO RadStr: Commented code - at first we were resetting all the projectIris and branches, but because of possible moving to different repository we don't do anything.
-            // TODO RadStr Don't know by myself, but probably shouldnt reset the project iris and branch: Well should we really?
-            //  I don't know on one side - yeah we removed the repo so the packages are no longer connected. On other side what if we somehow want to move them to different repository?
-            // ... Yeah I will not remove it then because of the moving to different repository !!!
-            // They are no longer part of the same project.
-
-            // TODO RadStr: Actually nevermind the above. If we want to migrate, then just use the existing git repository import it all back to ds.
-            await this.updateResourceProjectIriAndBranch(affectedResource, affectedResource, defaultBranchForPackageInDatabase);
+            // Just keep the old value. We will bank on the fact that projectIri uniqueness matters only within a data specification
+            //  ... also note that this updates only the roots
+            await this.updateResourceProjectIriAndBranch(affectedResource, undefined, defaultBranchForPackageInDatabase);
             await this.updateModificationTime(affectedResource, "meta", ResourceChangeType.Modified, false, true);
         }
 
@@ -404,7 +398,6 @@ export class ResourceModel implements ResourceModelForPull {
             throw new Error("Resource not found.");
         }
 
-        // TODO RadStr: ? Again don't know what iri to provide
         await this.updateModificationTime(iri, null, ResourceChangeType.Removed, false, false, mergeStateUUIDsToIgnoreInUpdating);
         await this.prismaClient.resource.delete({where: {id: prismaResource.id}});
 
@@ -514,8 +507,9 @@ export class ResourceModel implements ResourceModelForPull {
             if (prismaResource.representationType === LOCAL_PACKAGE) {
                 const subResources = await this.prismaClient.resource.findMany({where: {parentResourceId: prismaResource.id}});
                 for (const subResource of subResources) {
-                    // TODO RadStr Critical TOP done: Old code - Why the "/", the iris are new? ... since they are new we do not need to append it
-                    //                          .... so the uncommented version is without, lets try it
+                    // TODO RadStr PR: Previously it had the "/", as seen in the commented code.
+                    //                 But since the iris are new, it should not be needed, we can just create a new uuidv4
+                    //                 .... so we impelemnented the version without "/"
                     // await copyOnlyResourcesInternal(subResource.iri, newIri, newIri + "/" + uuidv4(), existingIriToCreatedIriForResourceMap);
                     await copyOnlyResourcesInternal(subResource.iri, newIri, uuidv4(), existingIriToCreatedIriForResourceMap);
                 }
@@ -596,7 +590,9 @@ export class ResourceModel implements ResourceModelForPull {
         });
 
         if (parentResourceId !== null) {
-            // TODO RadStr: ? Again don't know what iri to provide
+            // ... should be fine like this.
+            //  We do not have to modify the modification time of the new resource since it cannot be root and if it is then does not have merge state
+            //  so updating the parent is fine
             await this.updateModificationTime(parentIri ?? iri, null, ResourceChangeType.Created, true, true, mergeStateUUIDsToIgnoreInUpdating);
             await this.updateModificationTimeById(parentResourceId, true);
         }
@@ -640,6 +636,7 @@ export class ResourceModel implements ResourceModelForPull {
                     dataStoreId: JSON.stringify(dataStoreId)
                 }
             });
+            // Maybe should be Modified, but the value actually does not matter for our listener
             await this.updateModificationTime(iri, storeName, ResourceChangeType.Created, true, true);
             return this.storeModel.getModelStore(store.uuid, [onUpdate]);
         }
@@ -689,7 +686,7 @@ export class ResourceModel implements ResourceModelForPull {
             }
         });
 
-        // TODO RadStr Critical: Or modified? does it even matter? ... it does not at least in our listener
+        // Maybe should be Modified, but the value actually does not matter for our listener
         await this.updateModificationTime(iri, storeName, ResourceChangeType.Created, true, true, mergeStateUUIDsToIgnoreInUpdating);
     }
 
@@ -712,7 +709,7 @@ export class ResourceModel implements ResourceModelForPull {
         let id: number | null = prismaResource.id;
         if (shouldNotifyListeners) {
             // TODO RadStr PR: ... Explore optimization - We should notify only if the ROOT resource has activeMergeStateCount > 0
-            //                     since it prvoides information if there are merge states to change
+            //                     since it provides information if there are merge states to change
             await this.resourceChangeObserver.notifyListenersAboutResourceChange(iri, updatedModel, updateReason, mergeStateUUIDsToIgnoreInUpdating ?? []);
         }
         await this.updateModificationTimeById(id, shouldModifyHasUncommittedChanges);
@@ -724,7 +721,8 @@ export class ResourceModel implements ResourceModelForPull {
                 where: {id},
                 data: {
                     modifiedAt: new Date(),
-                    hasUncommittedChanges: shouldModifyHasUncommittedChanges ? true : undefined,            // TODO RadStr: Note that only the root should be updated
+                    // TODO RadStr: Unnecessary change of hasUncommittedChanges, it is useful only for root, but we have to set modifiedAt anyways
+                    hasUncommittedChanges: shouldModifyHasUncommittedChanges ? true : undefined,
                 }
             });
 

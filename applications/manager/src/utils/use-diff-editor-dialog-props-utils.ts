@@ -475,7 +475,8 @@ export function applyAutomaticMergeStateResolverToSingleModel(params: ParamsForA
   const setCacheToTextContentForEditable = getEditableValue(editable, setConvertedCacheContentForMergeFrom, setConvertedCacheContentForMergeTo);
   const mergeContents = getEditableAndNonEditableValue(editable, mergeFromContentConverted, mergeToContentConverted);
 
-  // TODO RadStr Critical: Probably does not work correctly for YAML/JSON, because of the format
+  // TODO RadStr: Looking at I think that it should not work correctly for YAML/JSON, because of the format
+  // ................ However, by testing everything seems to work well
   const mergeResolveResult = mergeStrategy.resolve(mergeContents.nonEditable, mergeContents.editable, datastoreType, format);
   const resourceStripHandlerMethod = new ResourceDatastoreStripHandlerBase(resourceType).createHandlerMethodForDatastoreType(datastoreType);
   const newContentAsObject = convertDatastoreContentBasedOnFormat(mergeResolveResult, format, true, resourceStripHandlerMethod);
