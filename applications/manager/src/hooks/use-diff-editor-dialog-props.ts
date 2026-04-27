@@ -157,7 +157,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     let strippedMergeFromContent: string;
     let strippedMergeToContent: string;
     const activeMetaFormat = formatsForCacheEntries[activeTreePathToNodeContainingDatastore]?.["meta"] ?? null;
-    console.info({activeTreePathToNodeContainingDatastore, activeFormat, activeMetaFormat, formatsForCacheEntries});      // TODO RadStr Debug: Debug print
+    // console.info({activeTreePathToNodeContainingDatastore, activeFormat, activeMetaFormat, formatsForCacheEntries});      // TODO RadStr Debug: Debug print ... keeping it in code, it is useful
     if (showStrippedVersion && activeMetaFormat !== null && activeDatastoreType !== null) {
       const datastoresForMeta = datastoreInfosForCacheEntries[activeTreePathToNodeContainingDatastore]["meta"];
       const activeMeta = findValueInCache(
@@ -244,9 +244,6 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
       else {
         strippedMergeToContent = activeMergeToContentConverted;
       }
-
-      // TODO RadStr Debug: Debug print
-      console.info({strippedMergeFromContent, strippedMergeToContent, activeMergeFromContentConverted, activeMergeToContentConverted, activeResourceType, activeMetaFormat});
     }
     else {
       strippedMergeFromContent = activeMergeFromContentConverted;
@@ -291,9 +288,6 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     return { strippedMergeFromContent, strippedMergeToContent };
   }, [activeMergeFromContentConverted, activeMergeToContentConverted, showStrippedVersion]);
 
-
-  // TODO RadStr Debug: Debug print
-  // console.info({strippedMergeFromContent, strippedMergeToContent, activeMergeFromContentConverted, activeMergeToContentConverted});
 
 
   const resetUseStates = (shouldResetExaminedMergeState: boolean) => {
@@ -580,18 +574,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     const isMergeToDataResourceInCache = isDatastorePresentInCache(convertedCacheContentForMergeTo, projectIriTreePathToNodeContainingDatastore, newDatastoreType);
     if (!(useCache && (isMergeFromDataResourceInCache || isMergeToDataResourceInCache))) {
       // Update cache values
-
-      // TODO RadStr Debug: Debug print and alert
-      console.info({ newMergeFromDatastoreInfo, newMergeToDatastoreInfo, examinedMergeState });
       const newMergeFromDataAsText = await ClientFilesystem.getDatastoreContentDirectly(newMergeFromDatastoreInfo, false, import.meta.env.VITE_BACKEND, examinedMergeState?.filesystemTypeMergeFrom ?? null);
       const newMergeToDataAsText = await ClientFilesystem.getDatastoreContentDirectly(newMergeToDatastoreInfo, false, import.meta.env.VITE_BACKEND, examinedMergeState?.filesystemTypeMergeTo ?? null);
-
-
-      // TODO RadStr Debug: Debug print
-      console.info({newMergeFromDataResourceNameInfo: newMergeFromDatastoreInfo, newMergeToDataResourceNameInfo: newMergeToDatastoreInfo});
-      console.info({newMergeFromDataAsText, newMergeToDataAsText});
-
-
       await updateBothCacheEntries(
         newMergeFromDatastoreInfo, newMergeFromDataAsText, newMergeToDatastoreInfo, newMergeToDataAsText,
         projectIriTreePathToNodeContainingDatastore, newFormat, newDatastoreType, shouldCopyIfMissing);
@@ -1062,7 +1046,6 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
       }
     }
     const fetchedMergeState = await fetchMergeState(initialMergeFromRootMetaPath, initialMergeToRootMetaPath, true, true, true);
-    console.info({fetchedMergeState});      // TODO RadStr Debug: Debug
     setExaminedMergeState(fetchedMergeState);
     const newIriMappingFromNonEditableToEditableStorage = {};
     const newProjectIriToDiffNodeMap = {};
@@ -1103,7 +1086,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
       else {
         const metaMergeTo = getDatastoreInfoOfGivenDatastoreType(filesystemNodeWithMetaMergeTo, "meta");
         filesystemNodeParentIri = metaMergeTo === null ? null : filesystemNodeWithMetaMergeTo.metadata.iri;
-        console.info({datastoreInfoMap, datastoreInfosForCacheEntries, diffTreeNode, metaMergeTo, diffTree: fetchedMergeState!.diffTreeData!.diffTree});    // TODO RadStr DEBUG: Debug
+        // TODO RadStr DEBUG: Debug ... keeping the debug print again could be useful during debugging
+        // console.info({datastoreInfoMap, datastoreInfosForCacheEntries, diffTreeNode, metaMergeTo, diffTree: fetchedMergeState!.diffTreeData!.diffTree});
       }
 
       for (const [datastoreType, datastoreInfo] of Object.entries(datastoreInfoMap)) {
@@ -1124,13 +1108,11 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         // Handle Remove
         let removedDatastore: DatastoreInfo | undefined;
         if ((removedDatastore = removedDatastores.find(datastore => datastore.fullPath === datastoreInfoForEditable?.fullPath)) !== undefined) {
-          // alert("Handling remove");     // TODO RadStr Debug: Debug alert
           const diffNode = getDiffNodeFromDiffTree(fetchedMergeState!.diffTreeData!.diffTree, nodeTreePath);
           if (diffNode === null) {
             throw new Error(`The node (${nodeTreePath}) to remove does not exist inside diffTree`);
           }
           const datastoreParentIri = diffNode.resources.new!.metadata.iri;
-          // alert("Handling remove2");      // TODO RadStr Debug: Debug alert
           await ClientFilesystem.removeDatastoreDirectly(fetchedMergeState!.uuid, datastoreParentIri, removedDatastore, import.meta.env.VITE_BACKEND, editableFilesystem, false);
           continue;
         }
@@ -1195,7 +1177,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         }
 
         const stringifiedNewValue: string = stringifyDatastoreContentBasedOnFormat(newValueAsJSONWithIris, format, true);
-        console.info({newValueAsJSON, newValueAsJSONWithIris, localProjectIriToIriMap});  // TODO RadStr Debug: Debug print
+        // console.info({newValueAsJSON, newValueAsJSONWithIris, localProjectIriToIriMap});  // TODO RadStr Debug: Debug print ... Again could be useful
         if (datastoreInfoForEditable !== null) {
           // Just update, it does exist
           const datastoreFormat = pickFormat(fetchedMergeState?.filesystemTypeMergeFrom, datastoreInfo.mergeFrom, datastoreInfo.mergeTo);
@@ -1268,14 +1250,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
           fullPath: currentIri,
         };
 
-        // TODO RadStr Debug: debug prints
-        console.info("Before");
-        console.info({datastoreInfosForCacheEntries, currentIri});
         const projectIrisTreePathForCreatedNode = filesystemNodesBatchToCreate.createdFilesystemNodes[i].projectIrisTreePath;
-        console.info(datastoreInfosForCacheEntries[projectIrisTreePathForCreatedNode][type]);
         setEditableValue(editable, datastoreInfosForCacheEntries[projectIrisTreePathForCreatedNode][type], createdDatastoreInfo);
-        console.info("After");
-        console.info(datastoreInfosForCacheEntries[projectIrisTreePathForCreatedNode][type]);
       }
     }
   };

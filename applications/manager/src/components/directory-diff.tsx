@@ -393,11 +393,8 @@ const onClickRemoveDatastore = (
       .filter(node => (node.children ?? []).length === 0)
       .map(datastore => datastore.data.fullDatastoreInfoInNewTree!);
 
-    console.info({filesystemNodeTreePathsInSubTree, datastoresInSubTree});        // TODO RadStr Debug: Debug print
-
     extraMethods.setRemovedDatastores(prev => [...prev, ...datastoresInSubTree]);
     const resourceToRemoveDatastoreFrom = filesystemNodeContainingDatastoreToRemove?.resourceComparison?.resources?.new ?? null;
-    console.info({resourceToRemoveDatastoreFrom, newTree: nodeToResolve.data.fullDatastoreInfoInNewTree});    // TODO RadStr Debug: Debug print
     extraMethods.setRemovedDatastoresAndLoadIntoCache(resourceToRemoveDatastoreFrom?.projectIrisTreePath!, nodeToResolve.data.fullDatastoreInfoInNewTree!, null, false);
     if (parent !== null) {
       extraMethods.setRemovedTreePaths(prev => {
@@ -417,7 +414,6 @@ const onClickRemoveDatastore = (
       resourceToRemoveDatastoreFrom?.projectIrisTreePath!, nodeToResolve.data.fullDatastoreInfoInNewTree!,
       metaFromResourceToRemoveFrom, true);
   }
-  // alert(`Remove datastore for ${nodeToResolve.data.name}`);   // TODO RadStr Debug: Debug alert
 }
 
 const onClickCreateDatastore = (

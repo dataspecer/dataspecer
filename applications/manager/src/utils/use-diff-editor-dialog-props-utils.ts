@@ -77,8 +77,6 @@ export const convertDataAndUpdateCacheContentEntryAsCombination = (
   newValue: string,
   format: string,
 ) => {
-  console.info("RadStr Debug: Debug");      // TODO RadStr Debug: Debug
-  console.info({newValue});                 // TODO RadStr Debug: Debug
   const convertedNewValue = convertDatastoreContentBasedOnFormat(newValue, format, true, null);
   if (!convertedNewValue.ok) {
     // We just return. This is the reason why we implemented this whole ConversionResult.
@@ -347,10 +345,6 @@ export async function onCascadeUpdateForCreatedDatastores(
       const existingResource = currentDiffNode?.resources.old;
       const metadataInfo = getDatastoreInfoOfGivenDatastoreType(existingResource!, "meta")!;
 
-      // TODO RadStr DEBUG: Debug prints
-      console.info({ lastTreePathSeparatorIndex: treePathSeparatorIndex, len: currentNodeTreePath.length, currentIri, currentNodeTreePath, nodeTreePath, currentNode: currentDiffNode, difftree: examinedMergeState?.diffTreeData?.diffTree }); // TODO RadStr DEBUG: Debug print
-      console.info({ metadataAsJSON: metadataInfo, PATH_FOR_METADATA: existingResource!.irisTreePath! }); // TODO RadStr DEBUG: Debug print
-
       const isFilesystemNodeNotYetAdded = createdFilesystemNodesAsArray.find(alreadyCreated => alreadyCreated.projectIrisTreePath === existingResource!.irisTreePath) === undefined;
       if (isFilesystemNodeNotYetAdded) {
         visitedFirstNodeToCreate = true;
@@ -362,7 +356,6 @@ export async function onCascadeUpdateForCreatedDatastores(
         const { mergeFrom: mergeFromFilesystemNode, mergeTo: mergeToFilesystemNode } = getMergeFromAndMergeTo(editable, currentDiffNode?.resources.old, currentDiffNode?.resources.new);
         const mergeFromMetadataInfo = (mergeFromFilesystemNode === undefined || mergeFromFilesystemNode === null) ? null : getDatastoreInfoOfGivenDatastoreType(mergeFromFilesystemNode, "meta");
         const mergeToMetadataInfo = (mergeToFilesystemNode === undefined || mergeToFilesystemNode === null) ? null : getDatastoreInfoOfGivenDatastoreType(mergeToFilesystemNode, "meta");
-        console.info({mergeFromMetadataInfo, mergeToMetadataInfo});     // TODO RadStr DEBUG: Debug print
         await updateModelDataOnCreate(existingResource!.projectIrisTreePath, mergeFromMetadataInfo, mergeToMetadataInfo);
         setCreatedDatastores(prev => [...prev, metadataInfo]);
         const datastoreComparison = currentDiffNode.datastoreComparisons.find(comparison => comparison.affectedDataStore.fullPath === metadataInfo.fullPath);
