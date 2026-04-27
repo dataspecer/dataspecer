@@ -64,7 +64,8 @@ export interface FilesystemAbstraction {
   isDirectory(iriTreePath: string): boolean;
 
   /**
-   * @deprecated Probably deprecated, because we will use {@link getDatastoreContent} instead. or we can just call the getDatastore here instead and be done with it.
+   * @deprecated Probably deprecated, because we will use {@link getDatastoreContent} instead,
+   *  or we can just call the getDatastore here instead and be done with it.
    * @param irisTreePath is the path the resource (filesystem node).
    * @returns The metadata for given {@link irisTreePath}
    */

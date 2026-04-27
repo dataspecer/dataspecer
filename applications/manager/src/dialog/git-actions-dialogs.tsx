@@ -857,7 +857,6 @@ export const commitToGitHandler = async (
         };
         openModal(CommitRedirectForMergeStatesDialog, {commitRedirectResponse: extendedResponse});
         closeDialogObject.closeDialogAction();
-        console.info({jsonResponseTyped});     // TODO RadStr Debug: Debug print
       }
       else if (response.status === 500) {
         const jsonResponse: any = await response.json();

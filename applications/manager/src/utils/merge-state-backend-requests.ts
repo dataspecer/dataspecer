@@ -33,9 +33,8 @@ export const updateMergeState = async (
           uuid: fetchedMergeState.uuid,
           conflictPathsToResolve: pathsForConflictsToBeResolvedOnSave,
         }),
-      });
-
-    console.info("update merge state response", fetchResult);   // TODO RadStr Debug:
+      }
+    );
 
 
     return await createFinalizerResponseFromResponse(fetchResult);
@@ -53,7 +52,6 @@ export const finalizePullMergeState = async (mergeStateUuid: string): Promise<Fi
         method: "POST",
       }
     );
-    console.info("Finalize merge state response", fetchResult);   // TODO RadStr Debug:
 
     return await createFinalizerResponseFromResponse(fetchResult);
   }
@@ -78,7 +76,6 @@ export const finalizePullMergeStateOnFailure = async (
         method: "POST",
       }
     );
-    console.info("Finalize merge state response", fetchResult);   // TODO RadStr Debug:
 
     return await createFinalizerResponseFromResponse(fetchResult);
   }
@@ -96,7 +93,6 @@ export const finalizePushMergeState = async (mergeStateUuid: string): Promise<Fi
         method: "POST",
       }
     );
-    console.info("Finalize merge state response", fetchResult);   // TODO RadStr Debug:
 
     return await createFinalizerResponseFromResponse(fetchResult);
   }
@@ -119,7 +115,6 @@ export const finalizePushMergeStateOnFailure = async (
         method: "POST",
       }
     );
-    console.info("Finalize merge state response", fetchResult);   // TODO RadStr Debug:
 
     return await createFinalizerResponseFromResponse(fetchResult);
   }
@@ -136,7 +131,6 @@ export const finalizeMergeMergeState = async (mergeStateUuid: string, mergeCommi
         method: "POST",
       }
     );
-    console.info("Finalize merge state response", fetchResult);   // TODO RadStr Debug:
 
     return await createFinalizerResponseFromResponse(fetchResult);
   }
@@ -159,7 +153,6 @@ export const finalizeMergeMergeStateOnFailure = async (
         method: "POST",
       }
     );
-    console.info("Finalize merge state response", fetchResult);   // TODO RadStr Debug:
 
     return await createFinalizerResponseFromResponse(fetchResult);
   }
@@ -182,7 +175,6 @@ export const finalizeMergeState = async (mergeStateUUID: string | undefined): Pr
         method: "POST",
       }
     );
-    console.info("Finalize merge state response", fetchResult);   // TODO RadStr Debug:
 
     return fetchResult.ok;
   }
@@ -204,7 +196,6 @@ export const removeMergeState = async (mergeStateUUID: string | undefined): Prom
       `${import.meta.env.VITE_BACKEND}/git/remove-merge-state?uuid=${mergeStateUUID}`, {
         method: "DELETE",
       });
-    console.info("Removed merge state response", fetchResult);   // TODO RadStr Debug:
 
     return fetchResult.ok;
   }

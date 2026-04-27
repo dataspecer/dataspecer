@@ -1,5 +1,4 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
-import path from "path";
 import { createDatastoreWithReplacedIris, DirectoryNode, ExportVersionType, FilesystemNode, isDatastoreForMetadata, ResourceTypes, resourceTypeToTypeDirectoryMapping } from "@dataspecer/git";
 import { PackageExporterNew } from "./export-new.ts";
 import { PackageExporterBase } from "../export-api/export-base.ts";
@@ -112,11 +111,6 @@ export class PackageExporterByResourceType extends PackageExporterBase {
 
     // Notice that there is not / between the first two variables - the path already ends with "/", because local_packages ends with "/" as seen in return of this method
     const result = `${pathToResource}${resourceDirectory}/${filesystemNodeName}`;
-    // TODO RadStr DEBUG: Debug prints
-    console.info("result");
-    console.info(result);
-    console.info(path.join(pathToResource, resourceDirectory, filesystemNodeName));
-
     return resourceType === LOCAL_PACKAGE ? (result + "/") : result;
   }
 }

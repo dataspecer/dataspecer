@@ -28,9 +28,7 @@ export async function fetchMergeState(
     const fetchResult = await fetch(`${import.meta.env.VITE_BACKEND}/git/get-merge-state?${queryParams}`, {
       method: "GET",
     });
-    console.info("fetched data", fetchResult);   // TODO RadStr Debug:
     const fetchResultAsJson = await fetchResult.json();
-    console.info("fetched data as json", fetchResultAsJson);   // TODO RadStr Debug:
     if (fetchResultAsJson?.error !== undefined) {
       if (shouldPrintMissingStateToConsole) {
         console.error(fetchResultAsJson.error);
@@ -57,9 +55,7 @@ export async function createMergeStateOnBackend(
       method: "POST",
       headers: { "Content-Type": "application/json" },
     });
-    console.info("fetched data for create merge state", fetchResult);   // TODO RadStr Debug:
     const fetchResultAsJson = await fetchResult.json();
-    console.info("fetched data for create merge state as json", fetchResultAsJson);   // TODO RadStr Debug:
     if (fetchResultAsJson.error !== undefined) {
       console.error(fetchResultAsJson.error);
       return {
@@ -216,7 +212,6 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
       throw new Error("Not equal iri to path when merging");
     }
     setMergeState(fetchedMergeState);
-    console.info({fetchedMergeState, editable});    // TODO RadStr Debug:
     setAlreadyExisted(alreadyExists);
     setIsLoading(false);
   }
@@ -305,7 +300,6 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
       </Modal>);
   }
 
-  console.info({isLoading, mergeStateCreationFailure, alreadyExisted});     // TODO RadStr Debug: Debug print
 
   return (
     <Modal open={isOpen} onClose={() => resolve(null)}>

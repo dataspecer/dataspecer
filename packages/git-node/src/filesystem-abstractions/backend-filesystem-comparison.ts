@@ -58,7 +58,6 @@ export async function compareGitAndDSFilesystems(
   if (editable == "mergeFrom") {
     mergeFromFilesystemType = AvailableFilesystems.DS_Filesystem;
     mergeFromFactoryMethodParams = dataspecerFilesystemFactoryMethodParams;
-    // mergeFromRootIri = rootIri;
 
     mergeToFilesystemType = AvailableFilesystems.ClassicFilesystem;
     mergeToFactoryMethodParams = {
@@ -68,7 +67,6 @@ export async function compareGitAndDSFilesystems(
       exportedBy: "unknown",
       resourceModel: null,
     };
-    // mergeToRootIri = rootProjectIri;
   }
   else {
     mergeFromFilesystemType = AvailableFilesystems.ClassicFilesystem;
@@ -79,11 +77,9 @@ export async function compareGitAndDSFilesystems(
       exportedBy: "unknown",
       resourceModel: null,
     };
-    // mergeFromRootIri = rootProjectIri;
 
     mergeToFilesystemType = AvailableFilesystems.DS_Filesystem;
     mergeToFactoryMethodParams = dataspecerFilesystemFactoryMethodParams;
-    // mergeToRootIri = rootIri;
   }
 
   const mergeFrom: MergeEndpointForComparison = {

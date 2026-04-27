@@ -115,7 +115,7 @@ export const getGitCredentialsFromSession = (request: express.Request, response:
   const currentSession = getStoredSession(response);
   if (currentSession !== null) {
     committerName = currentSession.user?.name ?? null;
-    // TODO RadStr Critical: Put it here, the committerName fetching
+    // TODO RadStr: Maybe the committer name fetching should be here instead? We mean the fetching of the actual loginName and not the stuff OAuth sometimes returns
     committerEmail = currentSession.user?.email ?? null;
     const [, scopeGroup] = createAuthConfigBasedOnAccountScope((currentSession.user as any)?.genericScope ?? null, dsBackendURL);      // The express request won't be used so just set it to null
 

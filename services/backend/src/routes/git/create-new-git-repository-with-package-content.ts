@@ -2,10 +2,10 @@ import { z } from "zod";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { resourceModel, webhookUrl } from "../../main.ts";
-import { convertToValidGitName, extractPartOfRepositoryURL, findPatAccessToken, findPatAccessTokens, convertStringToExportVersion, PUBLICATION_BRANCH_DEFAULT_NAME, stringToBoolean, transformCommitMessageIfEmpty, getDefaultExportVersion, getDefaultExportFormat, isExportFormatType, convertStringToExportFormat, AccessTokenType } from "@dataspecer/git";
+import { convertToValidGitName, findPatAccessTokens, convertStringToExportVersion, PUBLICATION_BRANCH_DEFAULT_NAME, stringToBoolean, transformCommitMessageIfEmpty, convertStringToExportFormat } from "@dataspecer/git";
 import { commitPackageToGitUsingAuthSession, CommitUsingAuthSessionParams } from "./commit-package-to-git.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
-import { checkErrorBoundaryForCommitAction, CommitBranchAndHashInfo, GitCommitToCreateInfoBasic, GitRepositoryIdentification } from "@dataspecer/git-node";
+import { CommitBranchAndHashInfo, GitCommitToCreateInfoBasic, GitRepositoryIdentification } from "@dataspecer/git-node";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
@@ -140,80 +140,4 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
   }
 
   throw new Error("There is neither user or bot pat token to perform operations needed to create the link. For example creating remote repo");
-});
-
-
-// TODO: This one I am not sure if it is working yet - also I should create new thing in database or at least set the gitRepositoryLink on it
-//       ... Honestly I don't know:
-//                                  - I should create new one since what do I gain by having two of same packages in DS, but we are linked to git repo, so the updates will cause insane conflicts (unless of course we will be in different branches)
-//                                  - I link it to the old one - sure I wont get conflicts, but what is the point? I have two same packages in DS - I feel like this is only useful once we use branch swapping
-/**
- * Creates new Dataspecer package, which is linked to already existing Git repository.
- *  Which technically means that new webhook is added to the repository
- * @deprecated Maybe deprecated? I don't call the endpoint from frontend
- */
-export const createPackageFromExistingGitRepository = asyncHandler(async (request: express.Request, response: express.Response) => {
-  const querySchema = z.object({
-    iri: z.string().min(1),
-    gitRepositoryURL: z.string().min(1),
-    commitMessage: z.string(),
-    exportFormat: z.string().min(1).optional(),
-    exportVersion: z.string().min(1).optional(),
-  });
-
-  const query = querySchema.parse(request.query);
-
-  const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
-  const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(query.gitRepositoryURL, httpFetch, configuration);
-  const repositoryName = gitProvider.extractPartOfRepositoryURL(query.gitRepositoryURL, "repository-name");
-  const repositoryOwner = gitProvider.extractPartOfRepositoryURL(query.gitRepositoryURL, "repository-owner");
-  const branchName = gitProvider.extractPartOfRepositoryURL(query.gitRepositoryURL, "branch");
-
-  checkErrorBoundaryForCommitAction(query.gitRepositoryURL, repositoryName, repositoryOwner);
-
-  const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
-  const accessToken = findPatAccessToken(accessTokens);
-  if (accessToken === null) {
-    throw new Error("There is neither user or bot pat token to perform operations needed to create the link. For example creating remote repo");
-  }
-  await gitProvider.createWebhook(accessToken.value, repositoryOwner!, repositoryName!, webhookUrl, ["push"]);
-
-  const repositoryIdentificationInfo: GitRepositoryIdentification = {
-    repositoryOwner: repositoryOwner!,
-    repositoryName: repositoryName!,
-  };
-
-  const exportFormat = convertStringToExportFormat(query.exportFormat);
-  const commitInfo: GitCommitToCreateInfoBasic = {
-    commitMessage,
-    exportFormat: exportFormat,
-    exportVersion: convertStringToExportVersion(query.exportVersion),
-  };
-
-  const commitBranchAndHashInfo: CommitBranchAndHashInfo = {
-    localBranch: branchName,
-    localLastCommitHash: "",
-    mergeFromData: null,
-  };
-
-  const resource = await resourceModel.getResource(query.iri);
-  if (resource === null) {
-    throw new Error(`Can not commit to git since the resource (iri: ${query.iri}) does not exist`);
-  }
-
-  const commitParams: CommitUsingAuthSessionParams = {
-    iri: query.iri,
-    projectIri: resource.projectIri,
-    request,
-    response,
-    branchAndLastCommit: commitBranchAndHashInfo,
-    repositoryIdentificationInfo,
-    gitCommitInfoBasic: commitInfo,
-    shouldAlwaysCreateMergeState: false,
-    shouldAppendAfterDefaultMergeCommitMessage: null,
-    remoteRepositoryUrl: query.gitRepositoryURL,
-    commitType: "classic-commit",
-  };
-  // Just provide empty merge from values, since we are newly creating the link we can not perform merge right away anyways
-  await commitPackageToGitUsingAuthSession(commitParams);
 });

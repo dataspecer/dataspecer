@@ -16,27 +16,27 @@ export async function getCommonCommitInHistory(git: SimpleGit, commit1: string, 
         return result.trim(); // merge-base hash
     }
     catch(e) {
-        // TODO RadStr Debug: Debug prints
-        console.info(e);
-        console.info(e?.message);
-        try {
-        // Get list of all branches (local + remote)
-        const branches = await git.branch(['-a']);
+    // TODO RadStr Debug: Debug prints ... keeping it since it might be useful if there will be some error.
+    //     console.info(e);
+    //     console.info(e?.message);
+    //     try {
+    //     // Get list of all branches (local + remote)
+    //     const branches = await git.branch(['-a']);
 
-        for (const branchName of Object.keys(branches.branches)) {
-          console.log(`\n=== History for branch: ${branchName} ===`);
+    //     for (const branchName of Object.keys(branches.branches)) {
+    //       console.log(`\n=== History for branch: ${branchName} ===`);
 
-          // Get commit history of each branch
-          const log = await git.log([branchName]);
+    //       // Get commit history of each branch
+    //       const log = await git.log([branchName]);
 
-          log.all.forEach(commit => {
-            console.log(`${commit.date} | ${commit.hash} | ${commit.message} | ${commit.author_name}`);
-          });
-        }
-      }
-      catch (err) {
-        console.error('Error fetching history:', err);
-      }
+    //       log.all.forEach(commit => {
+    //         console.log(`${commit.date} | ${commit.hash} | ${commit.message} | ${commit.author_name}`);
+    //       });
+    //     }
+    //   }
+    //   catch (err) {
+    //     console.error('Error fetching history:', err);
+    //   }
         throw e;
     }
 }
@@ -60,8 +60,6 @@ export async function gitCloneBasic(
     branch?: string,
     depth?: number
 ) {
-    // TODO: Compare SHAs (and maybe behave differently based on number of commits)
-    console.info("Before cloning repo");
     // https://github.blog/open-source/git/get-up-to-speed-with-partial-clone-and-shallow-clone/ - The second one from quick summary - Treeless clone
     // Fetches just the commit history, all the other git objects are on-demand
     const gitCloneOptions = [];
@@ -111,11 +109,6 @@ export const createUniqueDirectory = (
     cloneDirectoryNamePrefix: string,
     rootDirectoryForGit: string,
 ): UniqueDirectory => {
-    // iri = encodeURIComponent(iri);
-    console.info(iri.indexOf("http://"));           // TODO RadStr Debug: debug prints
-    console.info(iri.indexOf("data"));
-    console.info(iri.indexOf("dataspecer"));
-    console.info(iri.indexOf("http"));
     let index = iri.indexOf("http://");
     if (index === -1) {
         index = iri.indexOf("https://");

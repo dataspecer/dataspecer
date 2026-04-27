@@ -70,7 +70,6 @@ export function SetGitRemoteConfigurationDialog({ inputPackage, isOpen, resolve 
       // For the commits (and creating of repo) we will pass in the exportFormat directly, instead of retrieving it again on server when the requests is processed.
       const rootPackageFetchResponse = await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(inputPackage.iri));
       const rootPackageFetchedContent = await rootPackageFetchResponse.json();
-      // const fetchedGitRemoteConfiguration = isGitDialogSettingGitConfiguration ? await getGitRemoteConfigurationModelFromPackage(rootPackageFetchedContent) : null;
       const fetchedGitRemoteConfiguration = await getGitRemoteConfigurationModelFromPackage(rootPackageFetchedContent);
       setRootPackageContent(rootPackageFetchedContent);
       setGitRemoteConfiguration(fetchedGitRemoteConfiguration);

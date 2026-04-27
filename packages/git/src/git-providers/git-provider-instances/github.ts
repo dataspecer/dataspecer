@@ -233,8 +233,6 @@ export class GitHubProvider extends GitProviderBase {
     const responseAsJSON = (await fetchResponse.json()) as any;
     const defaultBranch: string | null = responseAsJSON?.default_branch ?? null;
     const repositoryOwner = responseAsJSON?.owner.login;
-    console.info({defaultBranch});
-    console.info({responseAsJSON});
     if (defaultBranch === null) {
       throw new Error("DEFAULT BRANCH IS NULL")
     }
@@ -259,7 +257,6 @@ export class GitHubProvider extends GitProviderBase {
             throw latestCommitResult.error;
           }
         }
-        console.info({latestCommitResult});
         // We got 404
         await new Promise(res => setTimeout(res, waitTime));  // Sleep for waitTime ms
         waitTime *= 2;                            // Double the wait time
@@ -571,7 +568,7 @@ export class GitHubProvider extends GitProviderBase {
   }
 
   /**
-   * @deprecated We put the GitHub pages on the same repository instead of onto separate publication repository
+   * @deprecated We put the GitHub Pages on the same repository instead of onto separate publication repository
    * ..... it is deprecated I will no longer bother with fixing the implemetnation. Because of the repository owner and its relation to Auth (It returns The username not login name)
    */
   async createPublicationRepository(repoName: string, isUserRepo: boolean, repositoryOwner?: string, accessToken?: string): Promise<FetchResponse> {

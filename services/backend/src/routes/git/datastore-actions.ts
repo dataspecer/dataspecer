@@ -183,7 +183,8 @@ export async function createDatastoreContent(
     //   return { success: false, accessDenied: true };
     // }
     // const newContentConverted = convertDatastoreContentBasedOnFormat(newContent, format ?? null, true);
-    // // Note that here do not create the metafiles .... however we don't actually really need to modify the git directory in the current implementation.
+    // // Note that here we do not create the metafiles and that is issue ....
+    //       however we don't actually really need to modify the git directory in the current implementation.
     // // So that is future work if someones decides to create files in git path
     // fs.mkdirSync(path.dirname(normalizedGitPath), { recursive: true });
     // fs.writeFileSync(normalizedGitPath, newContentConverted, {encoding: "utf-8"});

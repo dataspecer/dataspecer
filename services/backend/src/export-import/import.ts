@@ -134,7 +134,6 @@ export class PackageImporter {
     });
 
     let rootPackagesMeta: string[] = [];
-    console.info({files});      // TODO RadStr Debug: Debug print
     for (let rootDirectoryDepth = 2; rootDirectoryDepth <= maxDepth; rootDirectoryDepth++) {
       rootPackagesMeta = files.filter((file) => {
         const { basename, type } = extractTypeAndFormat(file, ".");
@@ -145,7 +144,6 @@ export class PackageImporter {
         break;
       }
     }
-    console.info("rootPackagesMeta", rootPackagesMeta);		// TODO RadStr DEBUG: Debug print
     const rootPackagesIds = rootPackagesMeta.map((file) => {
       const splitBetweenIdAndType = file.lastIndexOf("/");
       return file.substring(0, splitBetweenIdAndType);
@@ -157,14 +155,11 @@ export class PackageImporter {
     this.canonicalPathsToInputMapping = mappings.canonicalToImported;
     this.inputPathsToCanonicalMapping = mappings.importedToCanonical;
 
-    // TODO RadStr DEBUG: Debug print
-    console.info("exportVariant", {exportVariant, inputPathsToCanonicalMapping: this.inputPathsToCanonicalMapping});
 
     const createdPackages = [];
     for (const rootPackageId of rootPackagesIds) {
       const importedRootPackageId: string = rootPackageId + "/";
       const canonicalRootPackageId = this.inputPathsToCanonicalMapping[importedRootPackageId];
-      console.info({rootPackageId, canonicalRootPackageId});		// TODO RadStr DEBUG: Debug print
 
       const iri = await this.importPackage(canonicalRootPackageId, this.rootToWrite);
       createdPackages.push(iri);
@@ -182,7 +177,6 @@ export class PackageImporter {
       const metaFileNameYAML = canonicalDirPath + ".meta.yaml";
       metaFileNameOnInput = this.canonicalPathsToInputMapping[metaFileNameYAML];
     }
-    console.info({metaFileNameJSON, metaFileNameOnInput, canonicalDirPath});		// TODO RadStr DEBUG: Debug print
     const meta = await this.convertAndParseZipEntry(metaFileNameOnInput);
 
     const thisPackageIri: string = this.createNewIdForResource(meta.iri);
@@ -316,7 +310,6 @@ export class PackageImporter {
   }
 
   private async convertAndParseZipEntry(file: string): Promise<any> {
-    console.info(`TODO RadStr Debug: ${file}`)
     const blob = await this.zip.file(file)!.async("text");
     const parsedFileName = extractTypeAndFormat(file, ".");
     const conversionResult = convertDatastoreContentBasedOnFormat(blob, parsedFileName.format, true, null);

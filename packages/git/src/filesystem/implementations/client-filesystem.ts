@@ -81,7 +81,6 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
       method: "DELETE",
     });
 
-    console.info("removeFilesystemNodeDirectly", { response, filesystemNodeTreePath });       // TODO RadStr Debug:
     return response.ok;
   }
 
@@ -121,7 +120,6 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
       body: JSON.stringify(body),
     });
     const jsonResponse = await response.json();
-    console.info("getDatastoreContentDirectly", {jsonResponse});       // TODO RadStr Debug:
     return jsonResponse;
   }
 
@@ -160,7 +158,6 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
     });
 
     const textResponse = await response.text();
-    console.info("getDatastoreContentDirectly", {textResponse, datastoreInfo});       // TODO RadStr Debug:
     return textResponse;
   }
 
@@ -220,7 +217,6 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
       method: "DELETE",
     });
 
-    console.info("removeDatastoreDirectly", { response, datastoreInfo });       // TODO RadStr Debug:
     return response.ok;
   }
 
@@ -277,8 +273,6 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
       }),
     });
 
-    console.info("updateDatastoreContentDirectly", {datastoreInfo, response, newContent});       // TODO RadStr Debug:
-
     return response.ok;
   }
 
@@ -316,7 +310,6 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
       }),
     });
 
-    console.info("createFilesystemNodesDirectly", {response});       // TODO RadStr Debug:
     if (!response.ok) {
       console.error(response);
       throw new Error("Failed to create filesystem nodes directly");
@@ -364,7 +357,6 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
       }),
     });
 
-    console.info("createDatastoreDirectlyWithParents", {datastoreInfo, response, content});       // TODO RadStr Debug:
     return response.ok;
   }
 
@@ -407,7 +399,6 @@ export class ClientFilesystem extends FilesystemAbstractionBase {
       }),
     });
 
-    console.info("createDatastoreDirectly", {datastoreInfo, response, content});       // TODO RadStr Debug:
     return response.ok;
   }
 

@@ -3,7 +3,7 @@
  */
 export const createGitReadMeContent = (): string => {
   // Be careful with the tabs between the start of lines - if they are there, the README is rendered as code block
-  return `# This repository was created using [Dataspecer online tool](https://dataspecer.com/)
+  return `# This repository was created using [Dataspecer tool](https://dataspecer.com/)
 
 Every commit to main generates documentation from the committed data specification. The documentation is generated into the "publication-branch" branch.
 

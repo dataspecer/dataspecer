@@ -205,7 +205,6 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
    * @returns Id of the created merge state, if the state was created (there was more than one conflict). otherwise returns null.
    */
   async createMergeState(
-    rootResourceIri: string,
     commitMessage: string,
     mergeStateCause: MergeStateCause,
     diffTreeComparison: ComparisonFullResult,
@@ -238,12 +237,6 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
     };
 
     const mergeStateId = await this.createMergeStateInternal(mergeStateInput);
-    // TODO RadStr Debug: Just debug
-    const mergeStateDebug = await this.getMergeStateFromUUID(mergeStateId, true, false, false);   // TODO RadStr Debug: debug
-    console.info({mergeStateDebug})
-    console.info("Current merge state with data:", await this.getMergeStateFromUUID(mergeStateId, true, false, false));
-    console.info("Current merge state without:", await this.getMergeStateFromUUID(mergeStateId, false, false, false));
-
     return mergeStateId;
   }
 

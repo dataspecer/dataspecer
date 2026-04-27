@@ -1,9 +1,8 @@
 import {
   AvailableFilesystems, convertDatastoreContentBasedOnFormat, getDatastoreInfoOfGivenDatastoreType,
   isDatastoreForMetadata, ExportMetadataType, DatastoreComparison, GitIgnore, dsPathJoin,
-  DirectoryNode, FileNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, DatastoreInfo,
+  DirectoryNode, FilesystemMappingType, FilesystemNode, FilesystemNodeLocation, DatastoreInfo,
   FilesystemAbstractionBase, FilesystemAbstraction, removeDatastoreFromNode,
-  ConversionResult,
  } from "@dataspecer/git";
 
 import fs from "fs";
@@ -61,8 +60,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
 
     const projectIri = mappedNodeLocation.iri;      // Not a mistake! iri is the same as projectIri in case of git (classic filesystem)
                                                     // So also the tree path for iris and projectIris will be the same.
-    let fullPath: string;   // Ok 1) zase ten mappedNodeLocation a za druhe to ma byt iri asi ... ne az to opravim tak to bude dobre, ted to je spatne protoze to bere iricka jako jmena v tom git adresari
-                                                                                    // Ta unikatnost je dana tim prefixem takze to muzou byt porjectIri pak
+    let fullPath: string;
 
 
     // The root has to get IRI, however, everything else are projectIRI, which we can get from the name of files
@@ -142,37 +140,37 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
 
     if (invalidNames.length > 0) {
       throw new Error(`Invalid files coming from Git: ${JSON.stringify(invalidNames)}`);
-      // We should process them though, since they might be valid files from Git, but due to current limitation, it is forbidden now
-      for (const invalidName of invalidNames) {
-        const newFileSystemNodeLocation: FilesystemNodeLocation = {
-          iri: invalidName,
-          fullPath: dsPathJoin(fullPath, invalidName),
-          irisTreePath: dsPathJoin(irisTreePath, invalidName),
-          projectIrisTreePath: dsPathJoin(projectIrisTreePath, invalidName),
-        };
+      // // We should process them though, since they might be valid files from Git, but due to current limitation, it is forbidden now
+      // for (const invalidName of invalidNames) {
+      //   const newFileSystemNodeLocation: FilesystemNodeLocation = {
+      //     iri: invalidName,
+      //     fullPath: dsPathJoin(fullPath, invalidName),
+      //     irisTreePath: dsPathJoin(irisTreePath, invalidName),
+      //     projectIrisTreePath: dsPathJoin(projectIrisTreePath, invalidName),
+      //   };
 
-        const datastoreInfo: DatastoreInfo = {
-          fullName: invalidName,
-          afterPrefix: invalidName,
-          type: invalidName,
-          name: invalidName,
-          format: null,
-          fullPath: newFileSystemNodeLocation.fullPath
-        };
-        const newSingleNode: FileNode = {
-          name: invalidName,
-          type: "file",
-          // TODO RadStr: Here I don't know if iri should equal the projectIri
-          metadata: { iri: invalidName, types: ["from-git-unknown"], projectIri: invalidName, userMetadata: {} },      // TODO RadStr: I don't know about this.
-          // TODO RadStr: the old way
-          // datastores: { model: path.join(directory, invalidName) },
-          datastores: [datastoreInfo],
-          irisTreePath: newFileSystemNodeLocation.irisTreePath,
-          projectIrisTreePath: newFileSystemNodeLocation.projectIrisTreePath,
-        };
+      //   const datastoreInfo: DatastoreInfo = {
+      //     fullName: invalidName,
+      //     afterPrefix: invalidName,
+      //     type: invalidName,
+      //     name: invalidName,
+      //     format: null,
+      //     fullPath: newFileSystemNodeLocation.fullPath
+      //   };
+      //   const newSingleNode: FileNode = {
+      //     name: invalidName,
+      //     type: "file",
+      //     // TODO RadStr: Here I don't know if iri should equal the projectIri
+      //     metadata: { iri: invalidName, types: ["from-git-unknown"], projectIri: invalidName, userMetadata: {} },      // TODO RadStr: I don't know about this.
+      //     // TODO RadStr: the old way
+      //     // datastores: { model: path.join(directory, invalidName) },
+      //     datastores: [datastoreInfo],
+      //     irisTreePath: newFileSystemNodeLocation.irisTreePath,
+      //     projectIrisTreePath: newFileSystemNodeLocation.projectIrisTreePath,
+      //   };
 
-        this.setValueInFilesystemMapping(invalidName, newFileSystemNodeLocation, directoryContentContainer, newSingleNode, parentDirectoryNodeForRecursion);
-      }
+      //   this.setValueInFilesystemMapping(invalidName, newFileSystemNodeLocation, directoryContentContainer, newSingleNode, parentDirectoryNodeForRecursion);
+      // }
     }
 
     // Shared name here is the name without the postfix (that is the format and type)
@@ -307,6 +305,7 @@ export class ClassicFilesystem extends FilesystemAbstractionBase {
 function setMetadata(node: FilesystemNode, directory: string) {
   const metadataDatastore = getMetadataDatastoreFile(node.datastores);
   if (metadataDatastore === undefined) {
+    // TODO RadStr: ... I will keep it since I have left one day left, but either throw error or just return
     console.error("Metadata datastore is missing, that is there is no .meta file or its equivalent (depending on filesystem)");
     return;
   }

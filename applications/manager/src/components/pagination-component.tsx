@@ -59,7 +59,7 @@ export function usePaginationComponent<T>() {
         </Button>
       </div>
       <div className="flex justify-center items-center text-sm">
-        {/* Per page: {itemCountPerPage * itemsOnPageScalingFactor} */}
+        {/* Per page: {itemCountPerPage * itemsOnPageScalingFactor} */}  { /* Alternative label */ }
         {t(itemCountOnPageText)}: {itemsOnPageScalingFactor * (items?.length ?? 0)}
       </div>
     </div>;

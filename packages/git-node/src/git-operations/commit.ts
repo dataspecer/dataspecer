@@ -252,7 +252,7 @@ export class GitCommit {
         };
 
         const createdMergeStateId = await mergeStateModel.createMergeState(
-          iri, commitInfo.commitMessage, "merge", diffTreeComparison, commonCommitHash, mergeFromInfo, mergeToInfo);
+          commitInfo.commitMessage, "merge", diffTreeComparison, commonCommitHash, mergeFromInfo, mergeToInfo);
         if (diffTreeComparison.conflicts.length > 0) {
           return {
             conflictMergeFromRootPath: mergeFromInfo.rootFullPathToMeta,
@@ -360,7 +360,7 @@ export class GitCommit {
 
 
             const createdMergeStateId = await mergeStateModel.createMergeState(
-              iri, commitInfo.commitMessage, "push", diffTreeComparison, commonCommitHash, mergeFromInfo, mergeToInfo);
+              commitInfo.commitMessage, "push", diffTreeComparison, commonCommitHash, mergeFromInfo, mergeToInfo);
             if (diffTreeComparison.conflicts.length > 0 || shouldAlwaysCreateMergeState) {
               return {
                 conflictMergeFromRootPath: mergeFromInfo.rootFullPathToMeta,
@@ -460,11 +460,12 @@ export class GitCommit {
         // We create the merge commit but actually do not commit, we will do that later.
         try {
           const mergeResult = await git.merge(["--no-commit", "--no-ff", mergeFromBranch]);
-          console.info({mergeResult});    // TODO RadStr Debug: Debug print
         }
         catch(mergeError) {
-          // Errors for example for conflicts, do not matter, we will override it anyways by just exporting the current content of the data specfication's merge to branch.
-          console.info({mergeError});       // TODO RadStr Debug: Debug print
+          // Empty
+          // Errors for example for conflicts, do not matter,
+          //  we will override it anyways by just exporting the current content of the data specfication's merge to branch.
+          // ... But maybe there are some errors we should check for
         }
         finally {
           if (shouldContainWorkflowFiles) {
@@ -487,31 +488,6 @@ export class GitCommit {
         iri, createSimpleGitResult, commitInfo.gitProvider, commitInfo.exportFormat, commitInfo.exportVersion,
         hasSetLastCommit, shouldContainWorkflowFiles, isBranchAlreadyTrackedOnRemote, dataspecerFilesystemFactoryParams, gitFilesystem);
 
-      // TODO RadStr Debug: Debug print to remove
-      for (let i = 0; i < 10; i++) {
-        console.info("*****************************************************");
-      }
-
-      // TODO RadStr Debug: Debug print to remove
-      try {
-        // Get list of all branches (local + remote)
-        const branches = await git.branch(['-a']);
-
-        for (const branchName of Object.keys(branches.branches)) {
-          console.log(`\n=== History for branch: ${branchName} ===`);
-
-          // Get commit history of each branch
-          const log = await git.log([branchName]);
-
-          log.all.forEach(commit => {
-            console.log(`${commit.date} | ${commit.hash} | ${commit.message} | ${commit.author_name}`);
-          });
-        }
-      }
-      catch (err) {
-        console.error('Error fetching history:', err);
-      }
-
       let commitResult: CommitResult;
       if (mergeFromBranch === null) {
         commitResult = await GitCommit.createClassicGitCommit(git, ["."], commitMessage);
@@ -531,30 +507,6 @@ export class GitCommit {
           shouldAppendAfterDefaultMergeCommitMessage);
         hashOfPeformedCommit = commitResult.commit;
       }
-
-      // TODO RadStr Debug: Debug print to remove
-      for (let i = 0; i < 10; i++) {
-        console.info("-----------------------------------------------");
-      }
-      try {
-        // Get list of all branches (local + remote)
-        const branches = await git.branch(['-a']);
-
-        for (const branchName of Object.keys(branches.branches)) {
-          console.log(`\n=== History for branch: ${branchName} ===`);
-
-          // Get commit history of each branch
-          const log = await git.log([branchName]);
-
-          log.all.forEach(commit => {
-            console.log(`${commit.date} | ${commit.hash} | ${commit.message} | ${commit.author_name}`);
-          });
-        }
-      }
-      catch (err) {
-        console.error('Error fetching history:', err);
-      }
-
 
       const isPushSuccessful = await GitCommit.pushToRemoteAndUpdateResourceGitMetadata(
         dataspecerFilesystemFactoryParams.resourceModel, git, iri, repoURLWithAuthorization, hashOfPeformedCommit, isClassicCommit);
@@ -582,8 +534,6 @@ export class GitCommit {
         throw error;
       }
       else {
-        // TODO RadStr Debug: Print the error for now, however it really should be only issue with rights
-        console.error({error});
         return {
           isPushSuccessful: false,
           hashOfPeformedCommit,
@@ -839,17 +789,12 @@ export class GitCommit {
   ) {
     // 1) Sometime before in the flow we create merge state in git using git merge --no-ff
     //   - This tries merging, but never creates the actual merge commit
-    // 2) Only reason why we did that is the get the default merge commit message, we get that from ".git/MERGE_MSG"
+    // 2) One reason why we did that is the get the default merge commit message, we get that from ".git/MERGE_MSG"
     // 3) Now we can actally create the merge:
     //  a) We simply run normal commit with --amend, it changes the created merge commit messages
 
-    console.info("Status before:");
-    console.info(await git.status());
     await git.add(files);
-    console.info("Status after add:");
-    console.info(await git.status());
     await git.commit(mergeDefaultCommitMessage);
-    const lastCommitMessage = (await getLastCommit(git))?.message ?? "";
     const commitMessages: string[] = [];
     if (shouldAppendAfterDefaultMergeCommitMessage) {
       commitMessages.push(mergeDefaultCommitMessage);

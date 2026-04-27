@@ -114,15 +114,6 @@ async function createImportZipFromFilesystem(fullPath: string, writeToRelativePa
  * So the flow is that we import it into Dataspecer and following that, generate the documentation
  */
 async function generateDocumentationFromFileSystem() {
-  // TODO RadStr Debug: Commented DEBUG - can safely remove later
-  // let path: string;
-  // path = ".";
-  // for (let i = 0; i < 10; i++) {
-  //   console.info("--------------------------------------------------------------");
-  //   debugPrintDirectoryContent(path);
-  //   path = "../".concat(path);
-  // }
-
   const packageIri = uuidv4();
   const zipDictionaryForFilesystemData = new ZipStreamDictionary();
   const homeDirectory = "../../..";
@@ -133,15 +124,9 @@ async function generateDocumentationFromFileSystem() {
   const importer = new PackageImporter(resourceModel, storeModel, prismaClientApi);
   const imported = await importer.doImport(zipDataFromFilesystem, false);
   const rootPackage = await resourceModel.getPackage(imported[0]);
-  console.info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");     // TODO RadStr Debug: Debug print
   console.info({rootPackage});
-  console.info("rootroot:");
   const absoluteRoots = await resourceModel.getRootResources();
   absoluteRoots.forEach(absoluteRoot => console.info({ar: absoluteRoot}));
-  const absoluteRootAsPckg = await resourceModel.getPackage(absoluteRoots[0].iri);
-  console.info({absoluteRootAsPckg});
-  console.info({absoluteRootAsPckgSubRes: absoluteRootAsPckg?.subResources[0]});
-
 
   await generateArtifactsFromImported(imported);
   process.exit(0);

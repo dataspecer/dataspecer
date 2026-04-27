@@ -257,8 +257,6 @@ export function compareDatastoresContents(
   const datastoreToCompare1 = createDatastoreWithReplacedIris(strippedContent1, iriToProjectIriMap);
   const datastoreToCompare2 = createDatastoreWithReplacedIris(strippedContent2, iriToProjectIriMap);
 
-  console.info({content1, strippedContent1, content2, strippedContent2});    // TODO RadStr DEBUG: DEBUG Print
-
   return _.isEqual(datastoreToCompare1.datastoreWithReplacedIris, datastoreToCompare2.datastoreWithReplacedIris);
 }
 

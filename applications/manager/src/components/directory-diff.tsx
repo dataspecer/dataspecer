@@ -748,7 +748,6 @@ function findGivenConflictInTreeInternal(conflict: DatastoreComparison, tree: Re
 
 const treeRowHeight = 30;
 
-// TODO RadStr: Probably put into separate file from the diff tree creation
 /**
  * Handles the rendering and actions of the diff tree. That is 2 trees. On left there is the "original" version, on right the "modified".
  * Unfortunately I think that the performance is not the best. And it is related to number of nodes. For small number of nodes the
@@ -831,14 +830,6 @@ export const DiffTreeVisualization = (props: {
 
   const [shouldOnlyShowConflicts, setShouldShowOnlyConflicts] = useState<boolean>(false);
 
-  // useEffect(() => {
-  //   for (const conflict of props.conflictRemovalsFromParentComponent) {
-  //     oldRenderTree?.find(node => node.id === conflict.oldVersion)
-  //   }
-  //     conflict
-  //   }
-  // }, [props.conflictRemovalsFromParentComponent]);
-
   const [_oldRenderTreeDataToRender, setOldRenderTreeDataToRender] = useState<RenderTree>();
   useEffect(() => {
     const treeToRender = !shouldOnlyShowConflicts ? oldRenderTree : filterOutNonConflicts(oldRenderTree);
@@ -915,7 +906,6 @@ export const DiffTreeVisualization = (props: {
 
 
 
-    console.info("NODE INFO, isFocused and then isSelected: ", node.isFocused, node.isSelectedStart, node.isSelected, node.isSelectedEnd);    // TODO RadStr Debug: Debug
     if (node.isSelected) {
       isProgrammaticFocus.current = true;
       node.focus();
@@ -969,10 +959,8 @@ export const DiffTreeVisualization = (props: {
       const fetchedConflicts = mergeStateFromBackend.conflicts ?? [];
       setDiffTree(fetchedDiffTree);
       setDiffTreeNodeCount(fetchedDiffTreeSize);
-      console.info({ fetchedDiffTree });      // TODO RadStr Debug: Debug print
 
       const { oldRenderTree: computedOldRenderTree, newRenderTree: computedNewRenderTree } = createTreeRepresentationsForRendering(fetchedConflicts, fetchedUnresolvedConflicts, fetchedDiffTree);
-      console.info({ computedOldRenderTree, computedNewRenderTree } );     // TODO RadStr DEBUG: Debug print
       setOldRenderTree(computedOldRenderTree);      // TODO RadStr PR: Two Trees - This is the other tree ... if we wanted to show the two trees next to each other
       setNewRenderTree(computedNewRenderTree);
 
@@ -987,8 +975,6 @@ export const DiffTreeVisualization = (props: {
     // (Disabling outline in css/tailwind did not work)
     activeElement?.blur();
   }, [diffTree]);
-
-  // console.info({ diffTree, oldRenderTree, newRenderTree });     // TODO RadStr Debug: Debug print
 
   const treeRowHeightMultiplier = diffTreeNodeCount + 2;    // We have to add a little because there is some padding
 
@@ -1043,8 +1029,6 @@ export const DiffTreeVisualization = (props: {
       }) !== undefined;
 
     const datastoreType = nodeProps.node.data.fullDatastoreInfoInNewTree?.type ?? nodeProps.node.data.fullDatastoreInfoInOldTree?.type ?? null;
-    // TODO RadStr Debug: Debug print
-    // console.info({ds: extendedProps.node.data.datastores, comp: extendedProps.node.data.resourceComparison, id: extendedProps.node.data.id})
 
     const pathToResource: string = extractFirstNonEmptyFieldFromComparison(nodeProps.node.parent?.data.resourceComparison?.resources ?? null, "projectIrisTreePath") as string;
     const datastoreInfoInCache = datastoreType === null ?

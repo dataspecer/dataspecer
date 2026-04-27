@@ -12,9 +12,6 @@ import { getBaseBackendUrl } from "../../utils/express-url-utils.ts";
  * Handles all the authentication requests and calls relevant methods based on the handled url
  */
 export const authHandler = asyncHandler(async (request: express.Request, response: express.Response, next: NextFunction) => {
-  // TODO RadStr Debug: Debug print
-  // console.info({origianlUrl: request.originalUrl, baseUrl: request.baseUrl, hostname: request.hostname, params: request.params, query: request.query, route: request.route, url: request.url, body: {...request.body}});
-
   const strippedOriginalUrl = stripApiPrefixFromUrl(request.originalUrl);
   if (strippedOriginalUrl.startsWith("/auth/callback/")) {
     return authCallbackHandler(request, response, next);

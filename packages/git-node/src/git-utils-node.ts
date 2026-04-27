@@ -109,7 +109,7 @@ github.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+V
         }
       }
       else {
-        // TODO RadStr Debug: Debug print
+        // TODO RadStr Debug: Debug print ... keeping this one though
         console.error("ssh-keyscan failed:", error);
       }
       return;

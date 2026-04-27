@@ -116,13 +116,6 @@ export const MonacoDiffEditor: FC<{
     const hasLineChanges: boolean = previousEditableContent !== previousNonEditableContent;
     // Call it explicitly again when user changes model
 
-    // if (hasLineChanges) {
-    //   console.info("NOT DISPOSE");
-    //   console.info({hasLineChanges, previousEditableContent, previousNonEditableContent,
-    //     "props-projectIrisTreePathToFilesystemNode": props.projectIrisTreePathToFilesystemNode, "props.datastoreType": props.datastoreType,
-    //     "projectIrisTreePathToFilesystemNodeRef.current": projectIrisTreePathToFilesystemNodeRef.current, "datastoreTypeRef.current": datastoreTypeRef.current});
-    //   alert("NOT DISPOSE");
-    // }
     updateDiffNodeOnChange(
       props.editorRef.current?.editor ?? null, props.setMergeState, hasLineChanges,
       previousProjectIrisTreePathToFilesystemNode, previousDatastoreType
@@ -159,33 +152,8 @@ export const MonacoDiffEditor: FC<{
           if (projectIrisTreePathToFilesystemNodeRef.current === null) {
             return;
           }
-          // TODO RadStr Debug: Debug prints
-          // const hasLineChanges = (editor.getLineChanges()?.length ?? 0) > 0;
-          // const hashLineChanges2 = (props.editorRef.current?.editor.getLineChanges()?.length ?? 0) > 0;
-          // const origoValue = props.editorRef.current?.editor.getOriginalEditor().getValue();
-          // const modValue = props.editorRef.current?.editor.getModifiedEditor().getValue();
-          // const origoEqualMod = origoValue === modValue;
-          // const origoValue2 = originalEditorContent.current;
-          // const modValue2 = modifiedEditorContent.current;
-          // const origoEqualMod2 = origoValue2 === modValue2;
-          // console.info("ORIGO");
-          // console.info({hasLineChanges, hashLineChanges2, origoValue, modValue, origoEqualMod, origoValue2, modValue2, origoEqualMod2,
-          //   "props-projectIrisTreePathToFilesystemNode": props.projectIrisTreePathToFilesystemNode, "props.datastoreType": props.datastoreType, editor,
-          // "projectIrisTreePathToFilesystemNodeRef.current": projectIrisTreePathToFilesystemNodeRef.current, "datastoreTypeRef.current": datastoreTypeRef.current});
-          // updateDiffNodeOnChange(
-          //   editor ?? null, props.setMergeState, !origoEqualMod2,
-          //   projectIrisTreePathToFilesystemNodeRef.current, datastoreTypeRef.current
-          // );
-
 
           const hasLineChanges = originalEditorContent.current !== modifiedEditorContent.current;
-          // if (hasLineChanges) {
-          //   console.info("DISPOSE");
-          //   console.info({hasLineChanges, "originalEditorContent.current": originalEditorContent.current, "modifiedEditorContent.current": modifiedEditorContent.current,
-          //     "props-projectIrisTreePathToFilesystemNode": props.projectIrisTreePathToFilesystemNode, "props.datastoreType": props.datastoreType, editor,
-          //     "projectIrisTreePathToFilesystemNodeRef.current": projectIrisTreePathToFilesystemNodeRef.current, "datastoreTypeRef.current": datastoreTypeRef.current});
-          //   alert("DISPOSE");
-          // }
           updateDiffNodeOnChange(
             editor ?? null, props.setMergeState, hasLineChanges,
             projectIrisTreePathToFilesystemNodeRef.current, datastoreTypeRef.current

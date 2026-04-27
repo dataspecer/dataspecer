@@ -178,12 +178,12 @@ export class DSFilesystem extends FilesystemAbstractionBase {
     // Unless we made a mistake we take care of it on import (we do it on import and not here because of the create branch inside DS)
     // TODO RadStr I don't know: Keep it or not? ... it really should never happen. The question is whether we should keep it as "assert" or not
     if (projectIri.startsWith(projectIrisTreePath) && projectIrisTreePath.length > 0) {
-      console.info({projectIri, projectIrisTreePath});
+      console.error({projectIri, projectIrisTreePath});
       localProjectIriNameCandidate = projectIri.slice(projectIrisTreePath.length);
       throw new Error("Should not happen for projectIri");
     }
     if (localProjectIriNameCandidate.includes("/") || localProjectIriNameCandidate.length === 0) {
-      console.info({localProjectIriNameCandidate});
+      console.error({localProjectIriNameCandidate});
       localProjectIriNameCandidate = uuidv4();
       throw new Error("Should not happen for projectIri");
     }

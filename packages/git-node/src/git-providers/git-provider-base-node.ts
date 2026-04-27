@@ -93,7 +93,7 @@ export class GitProviderInternalCompositeNodeBase implements GitProviderInternal
       fs.mkdirSync(gitTmpDirectory, { recursive: true });
       const git = simpleGit(gitTmpDirectory);
 
-      // TODO: Note that this not work for non-public repositories
+      // TODO RadStr: Note that this not work for non-public repositories
       // Not providing in the branch, we just want the base url with repositoryOwner and repoName
       const repositoryUrl = this.gitProvider.createGitRepositoryURL(repositoryOwner, repoName);
       await git.clone(repositoryUrl, ".", options);

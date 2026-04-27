@@ -177,7 +177,6 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
   const [shouldHideDialog, setShouldHideDialog] = useState<boolean>(false);
   useLayoutEffect(() => {
     if (isOpen) {
-      console.info("useLayoutEffect for git-history-vis");      // TODO RadStr Debug: Debug print
       setIsLoading(true);
 
       // TODO RadStr: It would be probably more readable if it was rewritten using async/await, instead of .then
@@ -334,6 +333,8 @@ const createGitGraph = (
           // delete commit["parents"];
           // delete commit["author"];
           // delete commit["subject"];
+
+          // Note that onMessageClick can be added if you want to have the text next to commit clickable
           commit.onClick = (gitGraphCommit: any) => {                        // Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-dot-click
             setShouldHideDialog(true);
             // Small delay because the closing of the top dialog takes a moment
@@ -345,10 +346,6 @@ const createGitGraph = (
             }, 50);
           };
 
-          // We have commented it out, we will keep the action just on the dot instead of also on the text
-          // commit.onMessageClick = (gitGraphCommit: any) => {                 // Based on https://www.nicoespeon.com/gitgraph.js/stories/?path=/story/gitgraph-react-3-events--on-commit-message-click
-            // commitOnClickHandler(openModal, examinedPackage, gitGraphCommit, dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches[gitGraphCommit.hash]);
-          // };
           if (dsPackagesInProjectForAll[commit.hash] !== undefined) {
             const branchesWithTheCommit = Object.entries(dsPackagesInProjectForBranches)
               .filter(entry => entry[1].lastCommitHash === commit.hash);
@@ -545,7 +542,6 @@ const gitVisualizationCommitDotOnClickHandler = (
   closeGitGraphDialog: () => void,
   packagesRelatedToCommit?: DSPackageInProjectVisualizationData[],
 ) => {
-  console.info({gitGraphCommit});       // TODO RadStr Debug: DEbug
   let renderBranchName: string | null;
   if (gitGraphCommit.branches[0] === "") {
     renderBranchName = null;
@@ -627,6 +623,7 @@ function convertAuthorDataToAuthorObject(authorName: string, authorEmail: string
 }
 
 
+// Just an attempt for better git graph drawing
 // /**
 //  * @returns The mapping of branch to the last commit on the branch
 //  */

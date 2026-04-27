@@ -55,8 +55,6 @@ export const fetchGitCommitHistory = asyncHandler(async (request: express.Reques
             "--all": null,
         });
 
-        console.info("customLogResult", customLogResult);
-
         const jsonResponse: GitRawHistoryToSendToClient = {
             rawCommits: customLogResult.all,
         };

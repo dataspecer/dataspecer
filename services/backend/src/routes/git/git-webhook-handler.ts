@@ -24,11 +24,6 @@ import { createFilesystemFactoryParams } from "../../utils/filesystem-helpers.ts
 
 
 export const handleWebhook = asyncHandler(async (request: express.Request, response: express.Response) => {
-  // TODO RadStr Debug: DEBUG prints
-  // console.info("Requested URL: ", request.originalUrl);
-  // console.info("Webhook - Body: ", request.body);
-  // console.info("Webhook - Body payload: ", request.body.payload);
-
   const { gitProvider, webhookPayload } = GitProviderNodeFactory.createGitProviderFromWebhookRequest(request, httpFetch, configuration);
   const isPushWebhook = gitProvider.isPushWebhook(request.headers);
   if(!isPushWebhook) {
@@ -42,8 +37,6 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
     return;
   }
   const { commits, cloneURL, iri, branch } = dataForWebhookProcessing;
-
-  console.info("dataForWebhookProcessing", dataForWebhookProcessing);   // TODO RadStr Debug: Debug
 
   const resource = await resourceModel.getPackage(iri);
   if (resource === null) {
@@ -83,7 +76,8 @@ export const handleWebhook = asyncHandler(async (request: express.Request, respo
   const pullContainer = new GitPull(pullUpdateParams);
   const { createdMergeState } = await pullContainer.updateDSRepositoryByGitPull(commits.length);
 
-  // Actually we don't need to answer based on response, since this comes from git provider, only think we might need is to notify users that there was update, which we do by setting the isInSyncWithRemote
+  // Actually we don't need to answer based on response, since this comes from git provider,
+  //  only think we might need is to notify users that there was update, which we do by setting the isInSyncWithRemote
   response.sendStatus(200);
   return;
 });

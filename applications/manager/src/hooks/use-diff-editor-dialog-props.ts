@@ -260,7 +260,6 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
       const strippedMergeFromContentAsObject = convertDatastoreContentBasedOnFormat(strippedMergeFromContent, activeFormat, true, null);
       if (!strippedMergeFromContentAsObject.ok) {
         return { strippedMergeFromContent, strippedMergeToContent };
-        // throw new Error(strippedMergeFromContentAsObject.error);
       }
       const {
         datastoreWithReplacedIris: strippedMergeFromContentAsObjectWithReplacements,
@@ -277,7 +276,6 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
       const strippedMergeToContentAsObject = convertDatastoreContentBasedOnFormat(strippedMergeToContent, activeFormat, true, null);
       if (!strippedMergeToContentAsObject.ok) {
         return { strippedMergeFromContent, strippedMergeToContent };
-        // throw new Error(strippedMergeToContentAsObject.error);
       }
       const {
         datastoreWithReplacedIris: strippedMergeToContentAsObjectWithReplacements,
@@ -585,7 +583,6 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
 
       // TODO RadStr Debug: Debug print and alert
       console.info({ newMergeFromDatastoreInfo, newMergeToDatastoreInfo, examinedMergeState });
-      // alert("Getting values:")
       const newMergeFromDataAsText = await ClientFilesystem.getDatastoreContentDirectly(newMergeFromDatastoreInfo, false, import.meta.env.VITE_BACKEND, examinedMergeState?.filesystemTypeMergeFrom ?? null);
       const newMergeToDataAsText = await ClientFilesystem.getDatastoreContentDirectly(newMergeToDatastoreInfo, false, import.meta.env.VITE_BACKEND, examinedMergeState?.filesystemTypeMergeTo ?? null);
 
@@ -1271,6 +1268,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
           fullPath: currentIri,
         };
 
+        // TODO RadStr Debug: debug prints
         console.info("Before");
         console.info({datastoreInfosForCacheEntries, currentIri});
         const projectIrisTreePathForCreatedNode = filesystemNodesBatchToCreate.createdFilesystemNodes[i].projectIrisTreePath;

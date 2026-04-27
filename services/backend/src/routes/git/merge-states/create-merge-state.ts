@@ -140,7 +140,7 @@ async function createMergeStateBetweenDSPackages(
     };
 
     const createdMergeStateId = await mergeStateModel.createMergeState(
-      mergeFrom.rootIri, commitMessage, "merge", diffTreeComparison,
+      commitMessage, "merge", diffTreeComparison,
       commonCommitHash, mergeFromInfo, mergeToInfo);
     return {
       createdMergeStateId,

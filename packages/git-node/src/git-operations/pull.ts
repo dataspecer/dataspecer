@@ -29,7 +29,6 @@ type GitChangesToDSPackageStoreResult = {
 
 export interface MergeStateCreator {
   createMergeState(
-    rootResourceIri: string,
     commitMessage: string,
     mergeStateCause: MergeStateCause,
     diffTreeComparison: ComparisonFullResult,
@@ -194,7 +193,7 @@ export class GitPull {
     };
 
     const createdMergeStateId = await mergeStateModel.createMergeState(
-      iri, "", "pull", diffTreeComparison, commonCommitHash, mergeFromInfo, mergeToInfo);
+      "", "pull", diffTreeComparison, commonCommitHash, mergeFromInfo, mergeToInfo);
     return {
       createdMergeState: true,
       conflictCount: diffTreeComparison.conflicts.length,
@@ -229,11 +228,9 @@ export class GitPull {
     currentlyProcessedDirectoryNode: DirectoryNode,
     filesystem: FilesystemAbstraction,
   ): Promise<void> {
-    console.info("RECURSIVE MAPPING", currentlyProcessedDirectoryNode);       // TODO RadStr: Debug
     await this.handleResourceUpdate(currentlyProcessedDirectoryNode);
 
     for (const [name, value] of Object.entries(currentlyProcessedDirectoryNode.content)) {
-      // TODO RadStr: Name vs IRI
       if(value.type === "directory") {
         await this.storeGitChangesToDataspecerInternal(value, filesystem);
       }
@@ -252,11 +249,6 @@ export class GitPull {
     for (const datastore of filesystemNode.datastores) {
       datastoreTypesToDatastores[datastore.type] = datastore;
 
-      // TODO RadStr Debug: This If exists just for debug
-      if(filesystemNode.type === "directory") {
-        console.info("Directroy");
-      }
-
       const nodeIri: string | undefined = filesystemNode.metadata.iri;
       if (nodeIri === undefined) {
         // We should never reach this, since we should already fail when creating the filesystem. However, if it is not the case and after future changes
@@ -271,7 +263,6 @@ export class GitPull {
         // TODO RadStr PR: If we check for existence here, we can allow to create new models from Git. However, there is more work then just checking for existence.
         //                 There is validation, ...
         const metaFileContent = JSON.parse(fs.readFileSync(datastore.fullPath, "utf-8"));   // TODO: utf-8 Just for now - I don't know about used encodings, etc. - but this is just detail
-        // TODO RadStr Critical: (Same as above) - since the iri may differ from name for example in the case of imported DCAT-AP
         if (metaFileContent?.userMetadata === undefined) {
           throw new Error("The meta file content in the filesystem is not defined");
         }
