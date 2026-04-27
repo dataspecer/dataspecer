@@ -1,7 +1,7 @@
 import { BranchSummary, CommitResult, SimpleGit } from "simple-git";
 import { getLastCommit, getLastCommitHash, isDefaultBranch, removeEverythingExcept, removePathRecursively } from "../git-utils-node.ts";
 import { createGitReadMeFile } from "../git-readme/git-readme-generator.ts";
-import { AvailableFilesystems, CommitConflictInfo, CommitType, createRootFilesystemNodeLocation, CreateRootFilesystemNodeParams, createTransitiveMapFromFilesystems, ExportFormatType, ExportVersionType, FilesystemAbstraction, getAuthorizationURL, getMergeFromMergeToForGitAndDS, GitCredentials, GitIgnoreBase, GitProviderNode, MergeEndInfoWithRootNode, MergeFromDataType } from "@dataspecer/git";
+import { AvailableFilesystems, CommitConflictInfo, CommitType, createRootFilesystemNodeLocation, CreateRootFilesystemNodeParams, createTransitiveMapFromFilesystems, ErrorDefinitionConstantsClass, ExportFormatType, ExportVersionType, FilesystemAbstraction, getAuthorizationURL, getMergeFromMergeToForGitAndDS, GitCredentials, GitIgnoreBase, GitProviderNode, MergeEndInfoWithRootNode, MergeFromDataType } from "@dataspecer/git";
 import { AvailableExports } from "../resource-model-api/export/export-api/export-actions.ts";
 import { DsFsConstructorParams, DsFsConstructorParamsWithStrongerResourceModel, FilesystemFactory, FilesystemFactoryMethodParams } from "../filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 import { PackageExporterFactory } from "../resource-model-api/export/implementation/export-by-resource-type.ts";
@@ -479,7 +479,7 @@ export class GitCommit {
           mergeMessage = fullMergeMessage.substring(0, fullMergeMessage.indexOf("\n"));
         }
         catch(error) {
-          throw new Error("The merge from branch was already merged. We can not merge again.");
+          throw new Error(ErrorDefinitionConstantsClass.BRANCH_ALREADY_MERGE_ERROR_MSG);
         }
       }
 
@@ -517,7 +517,7 @@ export class GitCommit {
         commitResult = await GitCommit.createClassicGitCommit(git, ["."], commitMessage);
         hashOfPeformedCommit = commitResult.commit;
         if (!commitResult.root && commitResult.commit === "" && commitResult.branch === "") {
-          throw new Error("There are no changes to commit");
+          throw new Error(ErrorDefinitionConstantsClass.NO_CHANGES_TO_COMMIT_ERROR_MSG);
         }
       }
       else {
@@ -567,10 +567,10 @@ export class GitCommit {
       };    // We are done
     }
     catch(error: any) {
-      if (error?.message?.includes("The merge from branch was already merged.")) {
+      if (error?.message?.includes(ErrorDefinitionConstantsClass.BRANCH_ALREADY_MERGE_ERROR_MSG)) {
         throw error;
       }
-      else if (error?.message?.includes("There are no changes to commit")) {
+      else if (error?.message?.includes(ErrorDefinitionConstantsClass.NO_CHANGES_TO_COMMIT_ERROR_MSG)) {
         throw error;
       }
       // Error can be caused by Not sufficient rights for the pushing - then we have to try all and fail on last

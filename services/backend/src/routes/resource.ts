@@ -265,7 +265,7 @@ export const updateGitRelatedDataForPackage = async (
 ) => {
   const defaultRepositoryUrl = gitProvider.extractDefaultRepositoryUrl(repositoryURL);
   console.info("defaultRepositoryUrl", defaultRepositoryUrl);     // TODO RadStr Debug: Debug print
-  // TODO RadStr PR: Optimization - Ideally we should update all at once so we do not call the merge state isUpToDate setter unnecesarily
+  // TODO RadStr: Optimization - Ideally we should update all at once so we do not call the merge state isUpToDate setter unnecesarily
 
   // The true here is important - it sets the projectIri to the existing resources if they exist. That being said in case of import those should be already set from the meta file
   //  (so possible TODO: Remove the linkToExistingGitRepository and then we can call this with false)

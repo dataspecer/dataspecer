@@ -30,7 +30,7 @@ export const exportPackageResource = asyncHandler(async (request: express.Reques
     throw new Error(`The resource (${query.iri}) does not exist.`);
   }
 
-  // TODO RadStr After: ... maybe keep the old one?
+  // TODO RadStr PR: ... maybe keep the old one?
   // The old exporter:
   // const exporter = new PackageExporterDeprecated(resourceModel);
   // const buffer = await exporter.doExport(query.iri);
@@ -47,13 +47,8 @@ export const exportPackageResource = asyncHandler(async (request: express.Reques
   const buffer = await exporter.doExportFromIRI(
     filesystemFactoryParams, "", AvailableFilesystems.DS_Filesystem, AvailableExports.Zip, query.exportFormat ?? getDefaultExportFormat(), false, true);
 
-  // const exporter = new PackageExporterByResourceType();
-  // const buffer = await exporter.doExportFromIRI(query.iri, "", `radstr/export/directory`, AvailableFilesystems.DS_Filesystem, AvailableExports.Zip, query.exportFormat ?? "json", null);
-  // TODO RadStr: Debug exporters ... maybe can use in tests (with non-local paths of course).
-  // const buffer = await exporter.doExportFromIRI(query.iri);
-  // const buffer = await exporter.doExportFromIRI(query.iri, "", `radstr/export/directory`, AvailableFilesystems.DS_Filesystem, AvailableExports.Zip);
-  // const buffer = await exporter.doExportFromIRI("aa99f378-0ba2-46a2-8642-f7683e778d6d", "C:\\Users\\Radek\\dcat-test-export-from-filesystem\\test2\\radstr\\export\\directory", "radstr\\export\\directory", AvailableFilesystems.ClassicFilesystem, AvailableExports.Zip);
-  // const buffer = await exporter.doExportFromIRI("aa99f378-0ba2-46a2-8642-f7683e778d6d", "C:\\Users\\Radek\\dcat-test-export-from-filesystem\\test2\\radstr\\export\\directory", "C:\\Users\\Radek\\dcat-test-export-from-filesystem\\test2\\filesystem-output-from-radstr", AvailableFilesystems.ClassicFilesystem, AvailableExports.Filesystem);
+  // Kept just to show example how to use it for filesystem export (that being said the code is pretty old, so maybe it does not work)
+  // const buffer = await exporter.doExportFromIRI("aa99f378-0ba2-46a2-8642-f7683e778d6d", "C:\\Users\\export\\directory", "C:\\Users\\filesystem-output", AvailableFilesystems.ClassicFilesystem, AvailableExports.Filesystem);
 
   const filename = getName(resource?.userMetadata?.label, "package") + "-backup.zip";
   response.type("application/zip").attachment(bunHotfixHttpFileName(filename)).send(buffer);

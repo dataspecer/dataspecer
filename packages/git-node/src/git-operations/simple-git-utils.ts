@@ -66,6 +66,7 @@ export async function gitCloneBasic(
     // Fetches just the commit history, all the other git objects are on-demand
     const gitCloneOptions = [];
     if (shouldFetchOnlyCommits) {
+        // Maybe should be --filter=blob:none ?
         gitCloneOptions.push("--filter=tree:0");
     }
     if (depth !== undefined) {

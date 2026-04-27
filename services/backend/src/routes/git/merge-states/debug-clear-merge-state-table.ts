@@ -4,7 +4,7 @@ import express from "express";
 
 
 /**
- * TODO RadStr: Just for debugging
+ * TODO RadStr: Just for debugging/migration
  */
 export const clearMergeStateTableDebug = asyncHandler(async (request: express.Request, response: express.Response) => {
   await mergeStateModel.clearTable();

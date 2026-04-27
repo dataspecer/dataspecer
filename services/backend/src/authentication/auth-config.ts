@@ -112,7 +112,7 @@ function createAuthConfig(scopeGroup: ScopeGroup | null, dsBackendURL: string, c
       async signOut(message) {
         // Revoke the PAT since the AuthJS does not do it automatically
 
-        // TODO RadStr Future: Has to be changed for database one. Just hover on the method to see what I mean
+        // TODO RadStr PR: Has to be changed for the database session, since the message object changes based on that. Just hover on the method to see what I mean
         if ((message as any)?.token === undefined) {
           return;
         }
@@ -163,7 +163,7 @@ function createAuthConfig(scopeGroup: ScopeGroup | null, dsBackendURL: string, c
       // !!!! SESSION IS EXPOSED THROUGH AUTHJS API - DON'T EVER EXPOSE ANYTHING IMPORTANT (LIKE OAUTH tokens with full repository access)
       session({ session, token }) {
         // Based on https://authjs.dev/guides/extending-the-session
-        // TODO RadStr Idea: Isn't there a better way with the typing?
+        // TODO RadStr: Isn't there a better way with the typing?
         const user: any = session.user;
         user.id = token.id;
         // Get the scope from the JWT
@@ -202,6 +202,7 @@ export function createAuthConfigWithCorrectPermissions(authPermissions: string, 
 }
 
 // TODO RadStr Idea: For performance reasons try later create one basic auth config, which will be used everywhere where we don't need redirect or scope.
+//                   .... If performance of Dataspecer ever gets bad, this could be one of the places to start looking at
 
 /**
  * Creates {@link ExpressAuthConfig} with auth permissions containing only the login info (name and email).

@@ -133,7 +133,7 @@ async function generateDocumentationFromFileSystem() {
   const importer = new PackageImporter(resourceModel, storeModel, prismaClientApi);
   const imported = await importer.doImport(zipDataFromFilesystem, false);
   const rootPackage = await resourceModel.getPackage(imported[0]);
-  console.info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+  console.info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");     // TODO RadStr Debug: Debug print
   console.info({rootPackage});
   console.info("rootroot:");
   const absoluteRoots = await resourceModel.getRootResources();

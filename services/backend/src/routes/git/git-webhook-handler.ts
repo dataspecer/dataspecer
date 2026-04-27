@@ -5,7 +5,7 @@
 
 // !Not! chosen alternative
 //   We expect the resource to not have any meta file.
-//   We expect that the given name contains no "/" and the name is unique and as such can be used as a project iri
+//   We expect that the given name contains no "/" and the name is unique and as such can be used as a project ir
 //   We create meta file with the relevant data - iri, projectIri and type to be "git-resource" (Maybe change type)
 //   With next commit we all store it back.
 //  ... However some cons - why it was not chosen - we can not expect the user to porvide projectIri, all we can expect from him is to provide unique iri, but at most on the current directory level.

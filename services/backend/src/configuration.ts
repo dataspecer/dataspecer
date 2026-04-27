@@ -45,7 +45,8 @@ export interface Configuration {
     authConfiguration?: OAuthConfiguration;
     /**
      * Must not end with slash
-     * TODO RadStr: For local development. It will probably not be needed once we are in production. In production we will just use the basename/api
+     *  For local development. It will probably not be needed once we are in production.
+     *  In production we will just use the basename/api, which is the value used if the value is undefined
      */
     gitWebhookBaseUrl?: string;
 

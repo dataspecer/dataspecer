@@ -371,6 +371,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
                 {/*
                   TODO RadStr PR: We have commented it - we do not have time for debugging and it is only for convenience anyways. The purpose was to link it to already existing repository.
                                   However, after implementation we have realized that the existing repository has to be empty. Otherwise, it gets too difficult to implement it.
+                                  .... just have reset link instead, that is sufficient
                 */}
                 {/* {<DropdownMenuItem onClick={async () => linkToExistingGitRepositoryHandler(t, openModal, iri, resource)}><Link className="mr-2 h-4 w-4" />Link to remote repository</DropdownMenuItem>} */}
                 {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => commitToGitDialogOnClickHandler(t, openModal, iri, resource, "classic-commit", true, null, null)}><GitCommit className="mr-2 h-4 w-4" />Commit</DropdownMenuItem>}

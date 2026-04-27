@@ -94,6 +94,8 @@ export async function createNewRemoteRepositoryRequest(
 
 /**
  * @todo TODO RadStr PR: For now unused. As explained in the 'Dir.tsx'.
+ *                        Personally, I would just allow unlinking -
+ *                         that is choose to remove the link to the remote repo.
  */
 export async function linkToExistingGitRepositoryRequest(iri: string, remoteRepositoryURL: string) {
   const url = import.meta.env.VITE_BACKEND + "/git/link-to-existing-git-repository?iri=" + encodeURIComponent(iri) +

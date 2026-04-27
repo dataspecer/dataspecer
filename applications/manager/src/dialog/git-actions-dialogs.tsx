@@ -18,7 +18,8 @@ import {
   convertEnumToGitProviderName,
   UserOrganizationsFetchResponseFrontend,
   isGitProviderName,
-  getGitProviderDomain
+  getGitProviderDomain,
+  ErrorDefinitionConstantsClass
 } from "@dataspecer/git";
 import { CommitRedirectForMergeStatesDialog } from "./commit-confirm-dialog-caused-by-merge-state";
 import { commitToGitBackendRequest, createNewRemoteRepositoryRequest, GitCommitData, GitMergeCommitData, linkToExistingGitRepositoryRequest, mergeCommitToGitBackendRequest } from "@/utils/git-backend-requests";
@@ -739,8 +740,7 @@ export const mergeCommitToGitHandler = async (
       closeDialogObject.closeDialogAction();
       if (response.status === 500) {
         const jsonResponse: any = await response.json();
-        // TODO: ..... Not really clean: The check for the equality of strings of error. But can't really think of anything much better now
-        if (jsonResponse.error === "Error: The merge from branch was already merged. We can not merge again.") {
+        if (jsonResponse.error === ErrorDefinitionConstantsClass.convertToFrontendResponseMessage(ErrorDefinitionConstantsClass.BRANCH_ALREADY_MERGE_ERROR_MSG)) {
           // In this case we want to always remove the merge state. User has to move heads by committing and then he can create new merge state.
           toast.error(t("git.error.merge-already-merged"), { "richColors": true });
           console.error(jsonResponse.error + " Removing the merge state.");
@@ -751,10 +751,9 @@ export const mergeCommitToGitHandler = async (
             }, 1000);
           }
         }
-        // TODO RadStr: Once again not really nice, it should be probably defined in some common package?
-        else if (jsonResponse?.error === "Error: There are no changes to commit") {
+        else if (jsonResponse?.error === ErrorDefinitionConstantsClass.convertToFrontendResponseMessage(ErrorDefinitionConstantsClass.NO_CHANGES_TO_COMMIT_ERROR_MSG)) {
           closeDialogObject.closeDialogAction();
-          toast.error("There are no changes to commit", {richColors: true});
+          toast.error(ErrorDefinitionConstantsClass.NO_CHANGES_TO_COMMIT_ERROR_MSG, {richColors: true});
           return;
         }
         else {
@@ -862,9 +861,9 @@ export const commitToGitHandler = async (
       }
       else if (response.status === 500) {
         const jsonResponse: any = await response.json();
-        if (jsonResponse?.error === "Error: There are no changes to commit") {
+        if (jsonResponse?.error ===  ErrorDefinitionConstantsClass.convertToFrontendResponseMessage(ErrorDefinitionConstantsClass.NO_CHANGES_TO_COMMIT_ERROR_MSG)) {
           closeDialogObject.closeDialogAction();
-          toast.error("There are no changes to commit", {richColors: true});
+          toast.error(ErrorDefinitionConstantsClass.NO_CHANGES_TO_COMMIT_ERROR_MSG, {richColors: true});
           return;
         }
         else {
