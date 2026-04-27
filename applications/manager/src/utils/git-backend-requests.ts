@@ -61,7 +61,7 @@ export async function mergeCommitToGitBackendRequest(
 
 type CreateNewRepoBackendRequestData = {
   repositoryName: string;
-  organization: string;
+  signedInUserOrOrganization: string | null;    // If null then it is bot
   gitProviderDomain: string;
   commitMessage: string;
   isUserRepo: boolean;
@@ -74,9 +74,13 @@ export async function createNewRemoteRepositoryRequest(
   iri: string,
   createRepoBackendRequestData: CreateNewRepoBackendRequestData,
 ) {
+  const signedInUserOrOrganizationUrlPart = createRepoBackendRequestData.signedInUserOrOrganization === null ?
+    "" :
+    "&signedInUserOrOrganization=" + encodeURIComponent(createRepoBackendRequestData.signedInUserOrOrganization);
+
   const url = import.meta.env.VITE_BACKEND + "/git/create-new-git-repository-with-package-content?iri=" + encodeURIComponent(iri) +
                                             "&givenRepositoryName=" + encodeURIComponent(createRepoBackendRequestData.repositoryName) +
-                                            "&organization=" + encodeURIComponent(createRepoBackendRequestData.organization ?? "") +
+                                            signedInUserOrOrganizationUrlPart +
                                             "&gitProviderURL=" + encodeURIComponent(createRepoBackendRequestData.gitProviderDomain ?? "") +
                                             "&commitMessage=" + encodeURIComponent(createRepoBackendRequestData.commitMessage ?? "") +
                                             "&isUserRepo=" + encodeURIComponent(createRepoBackendRequestData.isUserRepo ?? true) +

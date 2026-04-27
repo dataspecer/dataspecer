@@ -98,9 +98,9 @@ type GitActionsDialogProps = {
 } & BetterModalProps<{
   repositoryName: string;
   remoteRepositoryURL: string;
-  organization: string;
   gitProviderDomain: string;
   commitMessage: string;
+  signedInUserOrOrganization: string | null;
   isUserRepo: boolean;
   shouldAlwaysCreateMergeState: boolean;
   shouldAppendAfterDefaultMergeCommitMessage: boolean;
@@ -378,9 +378,9 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
         await saveGitRemoteConfiguration(inputPackage.iri, rootPackageContent, gitRemoteConfiguration, storeModelToBackend);
       }
 
-      let owner: string;
+      let owner: string | null;
       if (isUserRepo) {
-        owner = isOwnerSignedInUser ? (isSignedIn ? username : "") : "";
+        owner = isOwnerSignedInUser ? (isSignedIn ? username : null) : null;
       }
       else {
         owner = organization;
@@ -388,7 +388,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
 
       const gitProviderDomain = getGitProviderDomain(gitProvider, true, true);
       resolve({
-        organization: owner, repositoryName, remoteRepositoryURL: remoteRepositoryUrl, gitProviderDomain, commitMessage, isUserRepo,
+        signedInUserOrOrganization: owner, repositoryName, remoteRepositoryURL: remoteRepositoryUrl, gitProviderDomain, commitMessage, isUserRepo,
         shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage,
         publicationBranch: gitRemoteConfiguration?.publicationBranch ?? PUBLICATION_BRANCH_DEFAULT_NAME,
         exportFormat: gitRemoteConfiguration?.exportFormat ?? getDefaultExportFormat(),

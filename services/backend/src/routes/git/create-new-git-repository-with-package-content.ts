@@ -11,16 +11,15 @@ import configuration from "../../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 import { ScopeGroup } from "@dataspecer/auth";
 
-
 /**
  * Creates Git provider repository with content equal to the package with given iri inside the query part of express http request.
- * The organization field is used only if isUserRepo is false or organization equals to bot name. If organization is empty we use bot name
- * (TODO RadStr: Api hacking because of OAuth and there is no time for cleaner implementation)
+ * The signedInUserOrOrganization is not defined if the user wants to create repo under bot name.
+ *  Otherwise, it is either the org or the user name from OAuth (not the login name).
  */
 export const createNewGitRepositoryWithPackageContent = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
     iri: z.string().min(1),
-    organization: z.string(),
+    signedInUserOrOrganization: z.string().optional(),
     givenRepositoryName: z.string().min(1),
     gitProviderURL: z.string().min(1),
     commitMessage: z.string(),
@@ -35,14 +34,15 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
   const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(query.gitProviderURL, httpFetch, configuration);
   const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
   const isUserRepo = stringToBoolean(query.isUserRepo);
-  const organization = isUserRepo ? null : convertToValidGitName(query.organization);
+  const signedInUserOrOrganization = query.signedInUserOrOrganization === undefined ? null : convertToValidGitName(query.signedInUserOrOrganization);
+  const organization = isUserRepo ? null : signedInUserOrOrganization;
   const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
   const repositoryName = convertToValidGitName(query.givenRepositoryName);
   const patAccessTokens = findPatAccessTokens(accessTokens);
   let repositoryOwner: string;      // .... OAuth is being funny, since the name you get may be your actual name if you have it set and not the login name which is used in the url
   if (isUserRepo) {
-    // Hack because of the the OAuth, see the method comment
-    if (query.organization !== "" && gitProvider.getBotCredentials()?.name !== query.organization) {
+    // The name is defined, but the name is not equal to the bot name, then we can just use bot
+    if (signedInUserOrOrganization !== null && gitProvider.getBotCredentials()?.name !== signedInUserOrOrganization) {
       const repositoryOwnerCandidate = await gitProvider.getUserLoginForAuthToken(patAccessTokens[0].value);
       if (repositoryOwnerCandidate === null) {
         throw new Error("OWNER CANDIDATE IS NULL");
