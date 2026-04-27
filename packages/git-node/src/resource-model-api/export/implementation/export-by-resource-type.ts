@@ -80,11 +80,12 @@ export class PackageExporterByResourceType extends PackageExporterBase {
           const { datastoreWithReplacedIris } = createDatastoreWithReplacedIris(data, this.iriMapping, this.shouldRunTestVariantForIriReplacement);
           data = datastoreWithReplacedIris;
         }
-        if (this.shouldRemoveExportedAt) {
+        if (this.shouldRemoveTimeMetadata) {
           // It is annoying when using with git commit - each meta has it changed for every commit it even when not changed
           delete data["_exportedAt"];
           // Remove modificationDate based on Stepan's feedback.
           delete data["metadata"]["modificationDate"];
+          delete data["metadata"]["creationDate"];
         }
         this.setExportVersionInternal(data);
       }

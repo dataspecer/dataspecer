@@ -4,7 +4,6 @@ import { BaseResource, LoadedPackage } from "../../resource-model-api.ts";
 import { LocalStoreModelGetter, ModelStore } from "../../model-store-api.ts";
 
 
-// TODO RadStr PR: This file probably does not use node specifics, it can be in some "non-node" package
 const typeExportArtificialDirectories = Object.values(resourceTypeToTypeDirectoryMapping);
 
 export function isArtificialExportDirectory(directoryName: string): boolean {

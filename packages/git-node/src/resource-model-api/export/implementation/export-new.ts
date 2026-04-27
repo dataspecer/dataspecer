@@ -48,13 +48,14 @@ export class PackageExporterNew extends PackageExporterBase {
           const { datastoreWithReplacedIris } = createDatastoreWithReplacedIris(data, this.iriMapping, this.shouldRunTestVariantForIriReplacement);
           data = datastoreWithReplacedIris;
         }
-        if (this.shouldRemoveExportedAt) {
+        if (this.shouldRemoveTimeMetadata) {
           // TODO RadStr PR: Maybe there is more stuff to remove, what about the exportedBy or createdAt????
           //                   Note that you also have to change the other exporter if you introduce it here.
           //                    .... Now that I say it, it can be refactored as a method in the base class, that is this if will be the code of that method.
           delete data["_exportedAt"];
           // Remove modificationDate based on Stepan's feedback.
           delete data["metadata"]["modificationDate"];
+          delete data["metadata"]["creationDate"];
         }
         this.setExportVersionInternal(data);
       }

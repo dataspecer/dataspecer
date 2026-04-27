@@ -19,7 +19,7 @@ export interface PackageExporterInterface {
     importFilesystem: AvailableFilesystems,
     exportType: AvailableExports,
     exportFormat: string,
-    shouldRemoveExportedAt: boolean,
+    shouldRemoveTimeMetadata: boolean,
     shouldUseIrisAsNames: boolean,
     iriMapping?: Record<string, string>,
   ): Promise<AllowedExportResults>;

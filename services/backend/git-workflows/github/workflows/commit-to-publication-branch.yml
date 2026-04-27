@@ -105,6 +105,8 @@ jobs:
         run: npm run update-database
       - name: Run the backend
         working-directory: dataspecer-source-code/services/backend
+        # Just a note on a previous implementation, since it might be useful in future.
+        #  Previously we run the generation on GitHub zip file with the repo: https://github.com/dataspecer/dataspecer/commit/ae5c188da22eea5336c7592388977a36631c9d49
         run: npm run generate-specification
       - name: Move the generated artifacts to correct directory
         run: |

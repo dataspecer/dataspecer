@@ -11,7 +11,7 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
   protected importFilesystem!: FilesystemAbstraction;
   protected exportFormat!: string;
   protected iriMapping: Record<string, string> | null;
-  protected shouldRemoveExportedAt: boolean = false;
+  protected shouldRemoveTimeMetadata: boolean = false;
   protected shouldUseIrisForNames: boolean = false;
   protected shouldRunTestVariantForIriReplacement: boolean = false;
 
@@ -42,7 +42,7 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
     importFilesystem: AvailableFilesystems,
     exportType: AvailableExports,
     exportFormat: string,
-    shouldRemoveExportedAt: boolean,
+    shouldRemoveTimeMetadata: boolean,
     shouldUseIrisForNames: boolean,
     iriMapping?: Record<string, string>,
     shouldRunTestVariantForIriReplacement?: boolean,
@@ -55,7 +55,7 @@ export abstract class PackageExporterBase implements PackageExporterInterface {
     }
     this.iriMapping = iriMapping ?? null;
     this.shouldUseIrisForNames = shouldUseIrisForNames;
-    this.shouldRemoveExportedAt = shouldRemoveExportedAt;
+    this.shouldRemoveTimeMetadata = shouldRemoveTimeMetadata;
     const filesystem = await FilesystemFactory.createFileSystem(importFilesystem, filesystemFactoryParams);
     const fakeRoot = filesystem.getRoot();
 

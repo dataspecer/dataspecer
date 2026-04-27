@@ -180,7 +180,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
           if (!strippedMergeFromContentAsObject.ok) {
             throw new Error(strippedMergeFromContentAsObject.error);
           }
-          // TODO RadStr: What about the missing iris. It should be fine to skip them.
+          // What about the missing iris? It should be fine to skip them.
           const {
             datastoreWithReplacedIris: strippedMergeFromContentAsObjectWithReplacements,
             missingIrisInNew: _missingIrisInMergeFrom
@@ -254,7 +254,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     }
 
     // When stripped convert the IRIs to project IRIs
-    // TODO RadStr Critical: Looking at it from "code review", it might be unnecessary conversion, since we perform similar on before
+    // TODO RadStr: Looking at it from "code review", it might be unnecessary conversion,
+    //               since we perform similar one before, so a possiblity for a small performance boost.
     if (strippedMergeFromContent !== "null") {
       const strippedMergeFromContentAsObject = convertDatastoreContentBasedOnFormat(strippedMergeFromContent, activeFormat, true, null);
       if (!strippedMergeFromContentAsObject.ok) {
@@ -425,8 +426,6 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
       if (metadataDatastoreInfoToCreate !== null &&
         newDatastores.find(datastore => datastore.fullPath === metadataDatastoreInfoToCreate.fullPath) === undefined &&
         (datastoreInfosForCacheEntries[metadataDatastoreInfoToCreate.fullPath]?.mergeTo ?? null) === null) {
-        // TODO RadStr Critical: The mergeTo is not right I think - I will have to fix this everywhere where it occurs. Use only the editable/non-editable
-        // If It is not null and not present in the datastores to be and also it was not yet created.
         newDatastores.push(metadataDatastoreInfoToCreate);
       }
       return newDatastores;
@@ -459,7 +458,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
 
 
   /**
-   * @todo TODO Radstr: I would rename the model in the name of method (note that there are more than 2 methods containing the word model) - probably omit it, or use some different word (note that if I do it I have to also fix it in the thesis text )
+   * @todo I would rename the model in the name of method (note that there are more than 2 methods containing the word model) - probably omit it, or use some different word.
+   *  But cannot think of anything much better.
    * Calls the {@link updateModelDataInternal} for the meta and for the datastore. In this order!, check the {@link updateModelDataInternal} method for more info if necessary.
    */
   const updateModelData: UpdateModelDataMethod = async (
@@ -477,7 +477,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
       await updateModelDataInternal(
         treePathToNodeContainingDatastore,
         mergeFromRelevantMetaDatastoreInfo, mergeToRelevantMetaDatastoreInfo,
-        true, false, false);      // TODO RadStr Critical: Maybe shouldCopyIfMissing should be true here?
+        true, false, false);
     }
     await updateModelDataInternal(
       treePathToNodeContainingDatastore,
@@ -520,8 +520,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     // Note that it must be always string because of the if guard for both nulls at the start of method
     const newDatastoreType = (newMergeFromDatastoreInfo?.type ?? newMergeToDatastoreInfo?.type) as string;
     const oldDatastoreType: string | null = activeDatastoreType;
-    const oldDatastoreFormat: string | null = activeFormat;     // TODO RadStr: Honestly I think that the code is fine, the main issue are the names
-                                                                //              - it is not clear why I use old for active - like active and old does not come together name-wise
+    const oldDatastoreFormat: string | null = activeFormat;
 
     // Pick the format in the classic filesystem. If the datastore does not exist (it was deleted datastore), then pick format from the other one. If none present pick text
 
@@ -613,8 +612,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
   }
 
   /**
-   * TODO RadStr Critical:  not really crtiical but this method gets all parameters on input. Only the called methods may need the react values
-   * If the entry exists, we simply just update the cache with the provided value, otherwise we copy it based on the other one, if {@link shouldCopyIfMissing} is true
+   * If the entry exists, we simply just update the cache with the provided value,
+   *  otherwise we copy it based on the other one, if {@link shouldCopyIfMissing} is true.
    */
   const updateBothCacheEntries = async (
     newMergeFromDatastoreInfo: DatastoreInfo | null,
@@ -760,7 +759,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
   }
 
   const fetchAllDataIntoCache = async (diffTree: DiffTree, projectIriTreePath: string) => {
-    // TODO RadStr PR: Again no time, but this could be optimized to just update everything in one backend request, instead of filling the cache one by one.
+    // TODO RadStr: This could be optimized to just update everything in one backend request,
+    //               instead of filling the cache one by one.
     for (const [diffNodeProjectIri, resourceComparison] of Object.entries(diffTree)) {
       let currentProjectIriTreePathInFor = projectIriTreePath + diffNodeProjectIri
       for (const datastoreComparison of resourceComparison.datastoreComparisons) {
@@ -856,7 +856,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         for (const [treePath, datastoreInfos] of Object.entries(datastoreInfosForCacheEntries)) {
           const diffNode = getDiffNodeFromDiffTree(newMergeState?.diffTreeData?.diffTree ?? {}, treePath);
           if (diffNode?.resourceComparisonResult === "exists-in-new" || diffNode?.resourceComparisonResult === "exists-in-old") {
-            // TODO RadStr PR: For now just skip them. Ideally we would act accordingly by creating/deleting the resource
+            // TODO RadStr: For now just skip them. Ideally we would act accordingly by creating/deleting the resource
             continue;
           }
           const modelTypes = (diffNode?.resources.new ?? diffNode?.resources.old)?.metadata.types ?? [];
@@ -866,7 +866,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
           for (const [datastoreType, datastoreInfoForMergeActors] of Object.entries(datastoreInfos)) {
             if (datastoreInfoForMergeActors.mergeFrom === null || datastoreInfoForMergeActors.mergeTo === null) {
               // Skip datatores which are only in one merge actor - either in merge from or merge to
-              // TODO RadStr PR: For now just skip them. Ideally we would act accordingly by creating/deleting the datastore
+              // TODO RadStr: For now just skip them. Ideally we would act accordingly by creating/deleting the datastore
               continue;
             }
             const format = pickFormat(examinedMergeState?.filesystemTypeMergeFrom, datastoreInfoForMergeActors.mergeFrom, datastoreInfoForMergeActors.mergeTo);
@@ -1041,15 +1041,14 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     // We can create stuff, that is non breaking - at worst there will be some new datastores/nodes if there will be conflict
     await saveCreatedFilesystemNodesToBackend(editableCacheContents, nonEditableCacheContents, editableFilesystem);
 
-    // TODO RadStr PR: Optimization - Alternatively we could update directly the diff tree instead of letting the backend recompute it again.
-    //              ... But it is quite non-trival implementation-wise - Future work
     const fetchedMergeStateToCheckForUpToDate = await fetchMergeState(initialMergeFromRootMetaPath, initialMergeToRootMetaPath, true, false, false);
     if (examinedMergeState === null || fetchedMergeStateToCheckForUpToDate === null) {
       throw new Error(`Either the old merge state (${examinedMergeState}) or the new merge state (${fetchedMergeStateToCheckForUpToDate}) are null.`);
     }
 
     if (!fetchedMergeStateToCheckForUpToDate?.isUpToDate || examinedMergeState.modifiedDiffTreeAt !== fetchedMergeStateToCheckForUpToDate.modifiedDiffTreeAt) {
-      // TODO RadStr PR: Ideally also have what files changed on the backend - and show it here, it should not be hard just have new field in database which will contain iris of the changed resources
+      // TODO RadStr: Ideally also have what files changed on the backend -
+      //                 and show it here, it should not be hard just have new field in database which will contain iris of the changed resources
       //                 It will be set in the observer, but yeah that is Future work
       const { result: modalResult } = await openModal(ChooseActionForDiffEditorUnplannedChange, {oldMergeState: examinedMergeState, newMergeState: fetchedMergeStateToCheckForUpToDate});
       if (modalResult === DiffEditorOutsideChangeChosenAction.Nothing) {
@@ -1140,7 +1139,8 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
         }
 
         const format = formatsForCacheEntries[nodeTreePath][datastoreType];
-        // TODO RadStr Critical: Can it even ever be default? Better question is what if it is default - should we throw error or shouldnt we just stop??
+        // Can it even ever be default? Better question is what if it is default. I think that this should never be the case, since hat should happen only
+        //  for removed datastore  ... so maybe throw error as an assert? - TODO RS
         const newValue = editableCacheContents?.[nodeTreePath]?.[datastoreType] ?? getDefaultValueForMissingDatastoreInDiffEditor();
         const newValueConvertedResult = convertDatastoreContentBasedOnFormat(newValue, format, true, null);
         if (!newValueConvertedResult.ok) {
@@ -1199,9 +1199,6 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
 
         const stringifiedNewValue: string = stringifyDatastoreContentBasedOnFormat(newValueAsJSONWithIris, format, true);
         console.info({newValueAsJSON, newValueAsJSONWithIris, localProjectIriToIriMap});  // TODO RadStr Debug: Debug print
-        // console.info(newValueAsJSON);                    // TODO RadStr Debug: Debug print
-        // console.info({newValueAsJSONWithIris});
-        // console.info({localProjectIriToIriMap});
         if (datastoreInfoForEditable !== null) {
           // Just update, it does exist
           const datastoreFormat = pickFormat(fetchedMergeState?.filesystemTypeMergeFrom, datastoreInfo.mergeFrom, datastoreInfo.mergeTo);
@@ -1236,16 +1233,11 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     nonEditableCacheContents: CacheContentMap,
     editableFilesystem: AvailableFilesystems | null,
   ): Promise<void> => {
-    // TODO RadStr Critical: Set Not used ... I have to think about it a bit - when exactly I need to (not) update the metas in the code after this
-    const createdMetas: Set<string> = new Set();
 
     for (const [_, filesystemNodesBatchToCreate] of Object.entries(createdFilesystemNodes)) {
       const filesystemNodesBatchMetadata: ExportShareableMetadataType[] = [];
 
       for (const filesystemNodeToCreate of filesystemNodesBatchToCreate.createdFilesystemNodes) {
-        createdMetas.add(filesystemNodeToCreate.projectIrisTreePath);
-        // TODO RadStr Debug: Debug
-        console.info({editableCacheContents, "treePath": filesystemNodeToCreate.projectIrisTreePath, "userMetadataDatastoreInfo": filesystemNodeToCreate.userMetadataDatastoreInfo});
         // Throws error on failure since that should not happen in that method ever
         const filesystemNodeMetadata = getDatastoreInCacheAsObject(
           editableCacheContents, nonEditableCacheContents, filesystemNodeToCreate.projectIrisTreePath,
