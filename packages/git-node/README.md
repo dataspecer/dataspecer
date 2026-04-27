@@ -1,6 +1,8 @@
 @dataspecer/git-node
 =========================
 
+You can build this package using `npm run build` and run tests using `npm run test`.
+
 This library provides a set of methods, which are related to the git-integration project and are node specific, therefore it is separate package, from the git one.
 
 The package has the following content:
