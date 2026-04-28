@@ -58,14 +58,14 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
               mergeStateCount === 1 ?
                 <>
                   <p className="flex flex-1 flex-row">- <p className="text-red-600">&nbsp;Removing&nbsp;</p> merge state and creating new one of the same type helps if you get stuck or not up to date with remote.</p>
-                  <strong className="flex flex-1 flex-row">Hint for resolving PULL merge states <PopOverGitGeneralComponent><MergeStatePullResolvingHintTooltip/></PopOverGitGeneralComponent></strong>
-                  <strong className="flex flex-1 flex-row -mt-2">Hint when you have more than one merge state, but it may help you anyways.<PopOverGitGeneralComponent><MergeStateResolveOrderTooltip/></PopOverGitGeneralComponent></strong>
+                  <strong className="flex flex-1 flex-row pt-0.5">Hint for resolving PULL merge states <PopOverGitGeneralComponent><MergeStatePullResolvingHintTooltip/></PopOverGitGeneralComponent></strong>
+                  <strong className="flex flex-1 flex-row -mt-4">Hint when you have more than one merge state, but it may help you anyways.<PopOverGitGeneralComponent><MergeStateResolveOrderTooltip/></PopOverGitGeneralComponent></strong>
                 </> :
                 <>
                   <p className="flex flex-1 flex-row">- Sorted by creation date (newest first).</p>
                   <p className="flex flex-1 flex-row">- <p className="text-red-600">&nbsp;Removing&nbsp;</p> merge state and creating new one of the same type helps if you get stuck or not up to date with remote.</p>
-                  <strong className="flex flex-1 flex-row">Hint for resolving PULL merge states <PopOverGitGeneralComponent><MergeStatePullResolvingHintTooltip/></PopOverGitGeneralComponent></strong>
-                  <strong className="flex flex-1 flex-row -mt-2">Overhelmed by too many merge states? Check this hint.<PopOverGitGeneralComponent><MergeStateResolveOrderTooltip/></PopOverGitGeneralComponent></strong>
+                  <strong className="flex flex-1 flex-row pt-0.5">Hint for resolving PULL merge states <PopOverGitGeneralComponent><MergeStatePullResolvingHintTooltip/></PopOverGitGeneralComponent></strong>
+                  <strong className="flex flex-1 flex-row -mt-4">Overhelmed by too many merge states? Check this hint.<PopOverGitGeneralComponent><MergeStateResolveOrderTooltip/></PopOverGitGeneralComponent></strong>
                 </> :
               <p>There are currently no merge states open.</p>
             }

@@ -5,23 +5,44 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 
 
 type PopOverGitGeneralComponentProps = {
   children: React.ReactNode;
+  moreDetailChildren?: React.ReactNode;
+  timeForMoreDetailChildren?: number;   // In ms
 }
 
 /**
  * The general component that is used for the popovers (the info "buttons" with hints).
  */
-export function PopOverGitGeneralComponent({ children }: PopOverGitGeneralComponentProps) {
+export function PopOverGitGeneralComponent({ children, moreDetailChildren, timeForMoreDetailChildren }: PopOverGitGeneralComponentProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [shouldShowMoreDetailedChildren, setShouldShowMoreDetailedChildren] = useState<boolean>(false);
 
   const handleMouseEnter = () => setIsOpen(true);
   const handleMouseLeave = () => setIsOpen(false);
   const handleClick = () => setIsOpen((prev) => !prev);
+
+    useEffect(() => {
+      if (timeForMoreDetailChildren === undefined) {
+        return;
+      }
+      if (!isOpen) {
+        return;
+      }
+
+      const timer = setTimeout(() => {
+        setShouldShowMoreDetailedChildren(true);
+      }, timeForMoreDetailChildren);
+
+      return () => {
+        clearTimeout(timer);
+        setShouldShowMoreDetailedChildren(false);
+      };
+    }, [isOpen]);
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -42,6 +63,10 @@ export function PopOverGitGeneralComponent({ children }: PopOverGitGeneralCompon
         onMouseLeave={handleMouseLeave}
       >
         {children}
+        {(shouldShowMoreDetailedChildren || timeForMoreDetailChildren === undefined) ?
+          null : <p><br/>More detail will be shown in {Math.ceil(timeForMoreDetailChildren / 1000)} seconds</p>
+        }
+        {shouldShowMoreDetailedChildren ? moreDetailChildren : null}
       </PopoverContent>
     </Popover>
   );

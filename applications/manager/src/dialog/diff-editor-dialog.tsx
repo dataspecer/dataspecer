@@ -10,10 +10,11 @@ import SvgVisualDiffDialog from "@/dialog/show-svgs-diff-dialog";
 import { goToNextDiff, goToPreviousDiff, MonacoDiffEditor } from "@/components/monaco-diff-editor";
 import { MergeStrategyComponent } from "@/components/merge-strategy-component";
 import { useDiffEditorDialogProps } from "@/hooks/use-diff-editor-dialog-props";
-import { AvailableFilesystems, DatastoreInfo, EditableType, getEditableAndNonEditableValue } from "@dataspecer/git";
+import { AvailableFilesystems, DatastoreInfo, EditableType, getEditableAndNonEditableValue, MergeStateCause } from "@dataspecer/git";
 import { BetterModalProps, useBetterModal } from "@/lib/better-modal";
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 import { saveChangesTooltipText } from "./outside-changes-to-diff-editor-action-dialog";
+import { useEffect, useState } from "react";
 
 export type UpdateModelDataMethod = (
   treePathToNodeContainingDatastore: string,
@@ -113,7 +114,7 @@ return (
               <ModalHeader>
                 <ModalTitle className="flex flex-1 flex-row font-bold text-lg pt-1.25 border-b">
                   <p>Diff editor to resolve {examinedMergeState?.mergeStateCause} conflict</p>
-                  <DiffEditorInfoPopOver/>
+                  {examinedMergeState?.mergeStateCause === undefined ? null : <DiffEditorInfoGeneralPopOver mergeStateCause={examinedMergeState?.mergeStateCause}/>}
                 </ModalTitle>
               </ModalHeader>
                 {/* The overflow-y is needed however it adds a bit horizontal space between the vertical splitter and the Tree structure */}
@@ -233,26 +234,74 @@ return (
   );
 }
 
-function DiffEditorInfoPopOver() {
-  return <div className="pt-1">
-    <PopOverGitGeneralComponent>
-      <p>- Diff Editor's purpose is to resolve the merge state by performing changes to models and marking conflicts (⚠️) as resolved (✅).</p>
-      <p>- {saveChangesTooltipText}</p>
-      <p>- The stripped version of file hides content, which is expected to be changed automatically, such as export time.</p>
-      <p>- The left component of this dialog contains directory diff. The directory diff is visualized with regards to the editable window of the text editor.</p>
-      <p>- This means that:</p>
-      <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;<p className="text-red-600">Red</p>&nbsp;node - It is NOT present in the editable window.</div>
-      <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;<p className="text-green-600">Green</p>&nbsp;node - It is present in the editable window. And not in the other one.</div>
-      <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;<p className="text-blue-600">Blue</p>&nbsp;node - Present in both, but they differ.</div>
-      <p>&nbsp;&nbsp; - Otherwise - Same text in both.</p>
-      <p>- The merge actors are not changed in any way. This means that you have to manually do all the changes if needed.</p>
-      <p className="pl-5">You can also use merge strategy at the top to do the changes automatically. The changes are applied to the currently opened file.</p>
-      <div className="flex flex-row">- <Plus className="mt-1 h-4 w-4"/> adds datastore to the editable window. <Minus className="mt-1 h-4 w-4"/> removes it. The backend is affected only after clicking on one of the Save buttons.</div>
-      <p>- The editable window is always on the right.</p>
-      <p>- For pull and merge the editable windows are the "merge to" actors.</p>
-      <p>- The push is reversed, that is the editable window is the "merge from" actor. This is same as in Git, since the "merge to" is the remote.</p>
-      <p>&nbsp;&nbsp; Therefore, we have to update the local (the "merge from") to contain the changes from remote and then we can perform the push.</p>
-      <p>&nbsp;&nbsp; You can move between diffs within the "file" using the buttons at the top or ctrl + 'arrow up', respectively ctrl + 'arrow down'</p>
+
+function DiffEditorInfoGeneralPopOver(props: {mergeStateCause: MergeStateCause}) {
+  const [shouldAnimate, setShouldAnimate] = useState<boolean>(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShouldAnimate(false);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  return <div onMouseEnter={() => setShouldAnimate(false)} className={`${shouldAnimate ? "motion-safe:animate-ping pt-2.5" : "pt-1"}`}>
+    <PopOverGitGeneralComponent moreDetailChildren={moreDetailChildrenForTooltip} timeForMoreDetailChildren={5000}>
+      <BasicTutorialTooltipForMergeState mergeStateCause={props.mergeStateCause}/>
     </PopOverGitGeneralComponent>
   </div>;
 }
+
+
+const BasicTutorialTooltipForMergeState = (props: {mergeStateCause: MergeStateCause}): React.ReactNode => {
+  switch(props.mergeStateCause) {
+    case "pull":
+      return <div>
+        <p><strong>BOTH WINDOWS are unchanged</strong>! You have to <strong>move all changes from left window to right</strong> until it has all the changes you want.</p>
+        <p><strong>Left window</strong> = The <strong>latest commit on Git</strong> at the time of creating merge state.</p>
+        <p><strong>Right window</strong> = Current content of the <strong>Dataspecer data specification.</strong></p>
+        <p>When finalized the tracked hash in Dataspecer will track the Git one.</p>
+        <br/>
+      </div>;
+    case "push":
+      return <div>
+        <p><strong>BOTH WINDOWS are unchanged</strong>! You have to <strong>move all changes from left window to right</strong> until it has all the changes you want.</p>
+        <p><strong>Left window</strong> = The <strong>latest commit on Git</strong> at the time of creating merge state.</p>
+        <p><strong>Right window</strong> = Current content of the <strong>Dataspecer data specification to be pushed.</strong></p>
+        <br/>
+      </div>;
+    case "merge":
+      return <div>
+        <p><strong>BOTH WINDOWS are unchanged</strong>! You have to <strong>move all changes from left window to right</strong> until it has all the changes you want.</p>
+        <p><strong>Left window</strong> = Merge from.</p>
+        <p><strong>Right window</strong> = Merge to - This will be pushed to Git.</p>
+        <p>Both left and right contain current contents of data specification stored in Dataspecer.</p>
+        <br/>
+      </div>;
+    default:
+      throw new Error("Programmer error unknown merge state cause: " + props.mergeStateCause)
+  }
+};
+
+const moreDetailChildrenForTooltip = <>
+  <h2 className="text-base font-bold">Diff editor in huge detail:</h2>
+  <p>- Note that the short description changes based on the merge state cause</p>
+  <p>- Diff Editor's purpose is to resolve the merge state by performing changes to models and marking conflicts (⚠️) as resolved (✅).</p>
+  <p>- {saveChangesTooltipText}</p>
+  <p>- The stripped version of file hides content, which is expected to be changed automatically, such as export time.</p>
+  <p>- The left component of this dialog contains directory diff. The directory diff is visualized with regards to the editable window of the text editor.</p>
+  <p>- This means that:</p>
+  <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;<p className="text-red-600">Red</p>&nbsp;node - It is NOT present in the editable window.</div>
+  <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;<p className="text-green-600">Green</p>&nbsp;node - It is present in the editable window. And not in the other one.</div>
+  <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;<p className="text-blue-600">Blue</p>&nbsp;node - Present in both, but they differ.</div>
+  <p>&nbsp;&nbsp; - Otherwise - Same text in both.</p>
+  <p>- The merge actors are not changed in any way. This means that you have to manually do all the changes if needed.</p>
+  <p className="pl-5">You can also use merge strategy at the top to do the changes automatically. The changes are applied to the currently opened file.</p>
+  <div className="flex flex-row">- <Plus className="mt-1 h-4 w-4"/> adds datastore to the editable window. <Minus className="mt-1 h-4 w-4"/> removes it. The backend is affected only after clicking on one of the Save buttons.</div>
+  <p>- The editable window is always on the right.</p>
+  <p>- For pull and merge the editable windows are the "merge to" actors.</p>
+  <p>- The push is reversed, that is the editable window is the "merge from" actor. This is same as in Git, since the "merge to" is the remote.</p>
+  <p>&nbsp;&nbsp; Therefore, we have to update the local (the "merge from") to contain the changes from remote and then we can perform the push.</p>
+  <p>&nbsp;&nbsp; You can move between diffs within the "file" using the buttons at the top or ctrl + 'arrow up', respectively ctrl + 'arrow down'</p>
+</>;
