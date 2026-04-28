@@ -63,6 +63,7 @@ export const resolveWithRequiredCheck = (resolve: () => void, ...requiredFieldsR
   return areRefsValid;
 }
 
+
 type NullableGitRemoteConfigurations = GitRemoteConfigurations | null;
 
 export type SetGitRemoteConfigurationStatePartMethod = (gitRemoteConfigurationSetter: SetGitConfigurationReactStateType, key: keyof GitRemoteConfigurations, newValue: any) => void;
