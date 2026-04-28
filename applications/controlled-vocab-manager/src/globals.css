@@ -6,10 +6,12 @@
 @utility container {
   margin-inline: auto;
   padding-inline: 2rem;
-  @media (width >= --theme(--breakpoint-sm)) {
+
+  @media (width >=--theme(--breakpoint-sm)) {
     max-width: none;
   }
-  @media (width >= 1400px) {
+
+  @media (width >=1400px) {
     max-width: 1400px;
   }
 }
@@ -46,6 +48,22 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 
+  /* Semantic text sizes */
+  --font-size-page-title: 1.125rem;
+  /* page headings */
+  --font-size-body: 0.875rem;
+  /* default body text */
+  --font-size-caption: 0.75rem;
+  /* breadcrumbs, labels, badges, descriptions */
+
+  /* Semantic colors for source badges */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+
+  /* Semantic colors for warning banners */
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
 
@@ -53,14 +71,17 @@
     from {
       height: 0;
     }
+
     to {
       height: var(--radix-accordion-content-height);
     }
   }
+
   @keyframes accordion-up {
     from {
       height: var(--radix-accordion-content-height);
     }
+
     to {
       height: 0;
     }
@@ -76,6 +97,7 @@
   color utility to any element that depends on these defaults.
 */
 @layer base {
+
   *,
   ::after,
   ::before,
@@ -108,6 +130,10 @@
     --input: hsl(0 0% 89.8%);
     --ring: hsl(0 0% 3.9%);
     --radius: 0.5rem;
+    --success: hsl(142 71% 95%);
+    --success-foreground: hsl(143 64% 34%);
+    --warning: hsl(48 96% 95%);
+    --warning-foreground: hsl(32 95% 34%);
   }
 
   .dark {
@@ -132,6 +158,10 @@
     --border: hsl(0 0% 14.9%);
     --input: hsl(0 0% 14.9%);
     --ring: hsl(0 0% 83.1%);
+    --success: hsl(149 61% 14%);
+    --success-foreground: hsl(143 64% 60%);
+    --warning: hsl(32 60% 12%);
+    --warning-foreground: hsl(43 96% 70%);
   }
 }
 
@@ -139,6 +169,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }

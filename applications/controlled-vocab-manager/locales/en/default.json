@@ -1,1 +1,17 @@
-{}
+{
+  "breadcrumb.packageManager": "Package Manager",
+  "breadcrumb.controlledVocabularies": "Controlled Vocabularies",
+  "breadcrumb.addFromSource": "Add from source",
+  "breadcrumb.addFromSourceEdit": "Add from source — Edit metadata",
+  "breadcrumb.addByUrl": "Add by URL",
+  "breadcrumb.search": "Search",
+
+  "list.title": "Controlled Vocabularies Manager",
+  "list.addFromSource": "Add from source",
+  "list.addByUrl": "Add by URL",
+  "list.empty.message": "No controlled vocabularies identified yet.",
+  "list.empty.hint": "Use the buttons above to add vocabularies to this project.",
+
+  "actions.edit": "Edit",
+  "actions.remove": "Remove"
+}

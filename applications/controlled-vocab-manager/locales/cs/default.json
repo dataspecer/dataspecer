@@ -1,1 +1,17 @@
-{}
+{
+  "breadcrumb.packageManager": "Správce balíčků",
+  "breadcrumb.controlledVocabularies": "Řízené slovníky",
+  "breadcrumb.addFromSource": "Přidat ze zdroje",
+  "breadcrumb.addFromSourceEdit": "Přidat ze zdroje — Upravit metadata",
+  "breadcrumb.addByUrl": "Přidat podle URL",
+  "breadcrumb.search": "Hledat",
+
+  "list.title": "Správce řízených slovníků",
+  "list.addFromSource": "Přidat ze zdroje",
+  "list.addByUrl": "Přidat podle URL",
+  "list.empty.message": "Zatím nebyly identifikovány žádné řízené slovníky.",
+  "list.empty.hint": "Pomocí tlačítek výše přidejte slovníky do tohoto projektu.",
+
+  "actions.edit": "Upravit",
+  "actions.remove": "Odstranit"
+}
