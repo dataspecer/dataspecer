@@ -1,8 +1,8 @@
-// import { expect, test } from "vitest";
+import { expect, test } from "vitest";
 
-// test("Empty test", () => {
-//     expect(true).toStrictEqual(true);
-// });
+test("Empty test", () => {
+    expect(true).toStrictEqual(true);
+});
 
 
 
