@@ -4,6 +4,7 @@
   "breadcrumb.addFromSource": "Přidat ze zdroje",
   "breadcrumb.addFromSourceEdit": "Přidat ze zdroje — Upravit metadata",
   "breadcrumb.addByUrl": "Přidat podle URL",
+  "breadcrumb.edit": "Upravit",
   "breadcrumb.search": "Hledat",
 
   "list.title": "Správce řízených slovníků",
@@ -13,5 +14,23 @@
   "list.empty.hint": "Pomocí tlačítek výše přidejte slovníky do tohoto projektu.",
 
   "actions.edit": "Upravit",
-  "actions.remove": "Odstranit"
+  "actions.remove": "Odstranit",
+
+  "form.edit.title": "Upravit slovník",
+  "form.edit.subtitle": "Aktualizujte metadata slovníku. Pole označená <asterisk>*</asterisk> jsou povinná.",
+  "form.empty.title": "Identifikovat slovník pomocí URL",
+  "form.empty.subtitle": "Vyplňte metadata slovníku ručně. Pole označená <asterisk>*</asterisk> jsou povinná.",
+  "form.field.name": "Název slovníku",
+  "form.field.iri": "IRI skos:ConceptScheme",
+  "form.field.regex": "Regex formátu IRI (instance skos:Concept)",
+  "form.field.downloadUrl": "URL ke stažení souboru",
+  "form.field.docsUrl": "URL dokumentace",
+  "form.placeholder.name": "např. Země",
+  "form.placeholder.iri": "např. http://example.org/vocabulary/countries",
+  "form.placeholder.regex": "např. ^http://example\\.org/vocabulary/countries/.*$",
+  "form.placeholder.downloadUrl": "např. https://example.org/vocabulary/countries.rdf",
+  "form.placeholder.docsUrl": "např. https://example.org/vocabulary/countries/docs",
+  "form.validation.required": "Povinné: Název slovníku, IRI skos:ConceptScheme a URL ke stažení souboru.",
+  "form.cancel": "Zrušit",
+  "form.confirm": "Potvrdit"
 }
