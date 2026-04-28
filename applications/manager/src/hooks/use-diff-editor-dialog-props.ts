@@ -44,7 +44,10 @@ import _ from "lodash";
 import { applyAutomaticMergeStateResolverToSingleModel, CacheContentMap, convertDataAndUpdateCacheContentEntryAsCombination, createIriMappings, EntriesAffectedByCreateType, findValueInCache, FormatsCache, getDatastoreInCacheAsObject, getEditorsInOriginalOrder, IriMappings, isDatastorePresentInCache, MergeFromMergeToStrings, onCascadeUpdateForCreatedDatastores, ParamsForApplyMergeStateResolver, pickFormat, TextDiffEditorHookProps, updateCacheContentEntryAsCombination } from "@/utils/use-diff-editor-dialog-props-utils";
 
 
-// Unfortunately quite large component, it would be better to try to refactor it. That being said it does not have that many methods/stuff:
+
+// Unfortunately quite large component, it would be better to try to refactor it and make it cleaner.
+//  it is the most complex part of the whole solution implementation-wise. It was caused by the fact
+//  That being said it does not have that many methods/stuff:
 //  - The react states
 //  - The states/values that represent the current values shown in editor
 //  - updateModelData that handles the changing of model and with that update cache methods

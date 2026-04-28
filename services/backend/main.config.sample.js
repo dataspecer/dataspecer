@@ -8,6 +8,11 @@ export default ({
 
     // Important note: Either provide all the required fields in the authConfigration (and same for gitConfiguration) or do not provide the configuration at all,
     //                 otherwise server crashes on certain requests
+    // /**
+    //  * In the GitHub settings or (whatever the provider is) set the
+    //  *  urlToDataspecerBackend/auth/callback/github as the
+    //  *  Authorization callback URL.
+    //  */
     // authConfiguration: {
     //     /**
     //      * Is any random string, it will be used as a secret for authJS
@@ -20,7 +25,7 @@ export default ({
     //     // gitHubAuthClientId: "xxxxxxx",
 
     //     /**
-    //      * Same as id
+    //      * Similarly to the Id, you can also find in the OAuth settings
     //      */
     //     // gitHubAuthClientSecret: "xxxxxxxxxxxxxxxxxxxxxxxxxxx",
     // },

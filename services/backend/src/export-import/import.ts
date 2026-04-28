@@ -232,27 +232,30 @@ export class PackageImporter {
       projectIri = meta.projectIri;
     }
     else if (meta.iri !== newlyCreatedNormalIri) {
-      projectIri = newlyCreatedNormalIri;
+      projectIri = newlyCreatedNormalIri;     // It is already uuidv4
+      // projectIri = uuidv4();    // Always set it to projectIri due to the 5 char-long IRIs
     }
     else {
-      // We check if the iri starts with the path (this probably happens when we perform duplicate).
-      let candidateForProjectIri = meta.iri;
-      if (candidateForProjectIri.startsWith(canonicalDirPath)) {
-        candidateForProjectIri = candidateForProjectIri.slice(canonicalDirPath);
-        // If it is empty after that use the original Iri - in the export this resulted into new uuid
-        if (candidateForProjectIri.length === 0) {
-          candidateForProjectIri = meta.iri;
-        }
-      }
+      projectIri = uuidv4();    // Always set it to projectIri due to the 5 char-long IRIs
 
-      if (meta.iri.includes("/")) {
-        // / clashes with paths, so we create new projectIri for this
-        projectIri = uuidv4();
-      }
-      else {
-        // Just use the candidate - it is either the meta.iri or the sliced
-        projectIri = candidateForProjectIri;
-      }
+      // // We check if the iri starts with the path (this probably happens when we perform duplicate).
+      // let candidateForProjectIri = meta.iri;
+      // if (candidateForProjectIri.startsWith(canonicalDirPath)) {
+      //   candidateForProjectIri = candidateForProjectIri.slice(canonicalDirPath);
+      //   // If it is empty after that use the original Iri - in the export this resulted into new uuid
+      //   if (candidateForProjectIri.length === 0) {
+      //     candidateForProjectIri = meta.iri;
+      //   }
+      // }
+
+      // if (meta.iri.includes("/")) {
+      //   // / clashes with paths, so we create new projectIri for this
+      //   projectIri = uuidv4();
+      // }
+      // else {
+      //   // Just use the candidate - it is either the meta.iri or the sliced
+      //   projectIri = candidateForProjectIri;
+      // }
     }
 
     return projectIri;

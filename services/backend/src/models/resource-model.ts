@@ -87,6 +87,7 @@ export class ResourceModel implements ResourceModelForPull {
     }
 
     /**
+     * @deprecated Unused ... also this might break the assumption that projectIris have to be only unique within a repository
      * @returns Returns resources with the given {@link projectIri}.
      */
     async getProjectResources(projectIri: string): Promise<BaseResource[]> {
@@ -248,12 +249,13 @@ export class ResourceModel implements ResourceModelForPull {
             const sourceForProjectResource = await this.getResourceForGitUrl(linkedGit, iri);
             let projectIri = sourceForProjectResource?.resource.projectIri;
             if (projectIri === undefined) {
-                if (iri.includes("/")) {
-                    projectIri = uuidv4();
-                }
-                else {
-                    projectIri = iri;
-                }
+                projectIri = uuidv4();          // !!! Do not use the old IRI, since it may be only 5 characters long
+                // if (iri.includes("/")) {
+                //     projectIri = uuidv4();
+                // }
+                // else {
+                //     projectIri = iri;
+                // }
             }
 
             await this.prismaClient.resource.update({
@@ -298,7 +300,8 @@ export class ResourceModel implements ResourceModelForPull {
             this.prismaClient.resource.update({
                 where: {iri: resourceToUpdate.iri},
                 data: {
-                    projectIri: resourceToUpdate.projectIri ?? resourceToUpdate.iri,
+                    // projectIri: resourceToUpdate.projectIri ?? resourceToUpdate.iri,
+                    projectIri: resourceToUpdate.projectIri ?? uuidv4(),            // Again ... do not pick iri, it might be only 5 chars long
                 }
             });
             await this.updateModificationTime(resourceToUpdate.iri, "meta", ResourceChangeType.Modified, true, true);
@@ -581,7 +584,7 @@ export class ResourceModel implements ResourceModelForPull {
         await this.prismaClient.resource.create({
             data: {
                 iri: iri,
-                // TODO RadStr PR: It used to be projectIri ?? iri, but the iri may contain /, which we do not want. Ideally, it would be iri and if it has '/', then uuidv4
+                // It used to be projectIri ?? iri, but the iri may contain /, which we do not want. It also can be the 5 long char IRI !!!.
                 projectIri: projectIri ?? uuidv4(),
                 parentResourceId: parentResourceId,
                 representationType: type,
