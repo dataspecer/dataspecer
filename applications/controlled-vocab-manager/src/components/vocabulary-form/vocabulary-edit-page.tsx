@@ -35,7 +35,7 @@ export function VocabularyEditPage({
     <>
       <Breadcrumb
         items={[
-          { label: t("breadcrumb.packageManager") },
+          { label: t("breadcrumb.packageManager"), href: import.meta.env.VITE_MANAGER },
           { label: t("breadcrumb.controlledVocabularies"), onClick: onCancel },
           { label: t("breadcrumb.edit") },
         ]}
