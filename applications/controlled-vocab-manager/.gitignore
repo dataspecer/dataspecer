@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Override root .gitignore blanket lib/ exclusion for source files
+!src/lib/
