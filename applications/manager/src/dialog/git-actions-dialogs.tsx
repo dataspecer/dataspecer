@@ -36,7 +36,7 @@ import { CREATE_REPOSITORY_WAIT_TIME, GIT_COMMIT_WAIT_TIME, MERGE_COMMIT_WAIT_TI
 import { ArrowDownNarrowWide, ArrowUpNarrowWide, Loader } from "lucide-react";
 import { BooleanRadioButtons } from "@/components/boolean-radio-buttons";
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
-import { useAsyncMemo } from "@/hooks/use-async-memo";;
+import { useAsyncMemo } from "@/hooks/use-async-memo";
 
 
 /**

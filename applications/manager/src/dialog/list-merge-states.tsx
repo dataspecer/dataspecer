@@ -46,17 +46,29 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
     setMergeStates(prev => prev.filter(mergeState => uuid !== mergeState.uuid));
   };
 
+  const mergeStateCount = (mergeStates?.length ?? 0);
+
   return (
     <Modal open={!isInfoDialogShown && isOpen} onClose={() => resolve(null)}>
       <ModalContent className="md:min-w-[1300px]">
         <ModalHeader>
           <ModalTitle>List of currently opened merge states for chosen data specification <PopOverGitGeneralComponent><MergeStateListTooltip/></PopOverGitGeneralComponent></ModalTitle>
           <ModalDescription>
-            <p className="flex flex-1 flex-row">The entries are sorted by creation date (newest first).</p>
-            <p className="flex flex-1 flex-row">Do not be afraid to remove merge states and create new ones of the same type.</p>
-            <p className="flex flex-1 flex-row">Merge states caused by pull, that were created automatically can be resolved by removing the merge state and</p>
-            <p className="flex flex-1 flex-row">&nbsp;&nbsp;&nbsp;&nbsp;performing manual pull again if you did not do any action between the the pull and last Git operation.</p>
-            <p className="flex flex-1 flex-row">You can resolve merge states in any order. For guidance, see this hint.<PopOverGitGeneralComponent><MergeStateResolveOrderTooltip/></PopOverGitGeneralComponent></p>
+            {mergeStateCount > 0 ?
+              mergeStateCount === 1 ?
+                <>
+                  <p className="flex flex-1 flex-row">- <p className="text-red-600">&nbsp;Removing&nbsp;</p> merge state and creating new one of the same type helps if you get stuck or not up to date with remote.</p>
+                  <strong className="flex flex-1 flex-row">Hint for resolving PULL merge states <PopOverGitGeneralComponent><MergeStatePullResolvingHintTooltip/></PopOverGitGeneralComponent></strong>
+                  <strong className="flex flex-1 flex-row -mt-2">Hint when you have more than one merge state, but it may help you anyways.<PopOverGitGeneralComponent><MergeStateResolveOrderTooltip/></PopOverGitGeneralComponent></strong>
+                </> :
+                <>
+                  <p className="flex flex-1 flex-row">- Sorted by creation date (newest first).</p>
+                  <p className="flex flex-1 flex-row">- <p className="text-red-600">&nbsp;Removing&nbsp;</p> merge state and creating new one of the same type helps if you get stuck or not up to date with remote.</p>
+                  <strong className="flex flex-1 flex-row">Hint for resolving PULL merge states <PopOverGitGeneralComponent><MergeStatePullResolvingHintTooltip/></PopOverGitGeneralComponent></strong>
+                  <strong className="flex flex-1 flex-row -mt-2">Overhelmed by too many merge states? Check this hint.<PopOverGitGeneralComponent><MergeStateResolveOrderTooltip/></PopOverGitGeneralComponent></strong>
+                </> :
+              <p>There are currently no merge states open.</p>
+            }
           </ModalDescription>
           {isLoading && <Loader className="mr-2 h-4 w-4 animate-spin" /> }
           {
@@ -174,6 +186,8 @@ function mergeStateSourceText(mergeState: MergeState, side: "MergeFrom" | "Merge
 
 function MergeStateListTooltip() {
   return <div>
+    <p>- Merge state signalizes the fact that Git operation has conflicts that need to be resolved in the diff editor.</p>
+    <br/>
     - If an entry is <p className="text-destructive inline">red</p>, then it means that it was modified from somewhere else than the diff editor of the corresponding merge state.
     <br/>
     - From user perspective it means, that the user should double check the changes were performed by them and not somebody else.
@@ -186,27 +200,37 @@ function MergeStateListTooltip() {
 
 function MergeStateResolveOrderTooltip() {
   return <div>
-    - If you are completely stuck then remove all of the created merge states and do the following:
+    - You can resolve merge states in any order.
+    <h2 className="text-base font-bold">- If you are completely stuck then <span className="text-red-600">remove</span> all of the created merge states and do the following:</h2>
     <br/>
     <ul>
-      <li>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - If you are sure that you want to commit some changes. Simply commit.</li>
-      <li>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - If you just want to be up to date with the remote, then pull.</li>
-      <li>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - If you want to merge, then make the two branches up to date (either by pulling or commiting) and create merge state for merge.</li>
+      <li>&nbsp; - If you are sure that you want to commit some changes. Simply commit.</li>
+      <li>&nbsp; - If you just want to be up to date with the remote, then pull.</li>
+      <li>&nbsp; - If you want to merge, then make the two branches up to date (either by pulling or commiting) and create merge state for merge.</li>
     </ul>
     <br/>
-    If you have in mind some actions and their order, then you can use the following hints:
+    <h2 className="text-base font-bold">- If you have some actions in mind and their order, then you can use the following hints:</h2>
     <br/>
-    - In case of more merge states caused by pull. You can remove all the older ones and resolve only the newest one.
+    - In case of more merge states caused by pull. You can remove all of them. Manually pull again and resolve that.
     <br/>
-    &nbsp;&nbsp;&nbsp;&nbsp;You want to have the data specfication up to date with latest commit. Therefore, you can remove all "pulls" and create a new one.
+    &nbsp;&nbsp;&nbsp;&nbsp;Because you want to have the data specification up to date with latest commit anyways.
     <br/>
 
     - If there is push conflict, once again you can only resolve the newest one and again remove all the others.
     <br/>
-    &nbsp;&nbsp;&nbsp;&nbsp;Push conflicts should have higher priority than pull, since resolving push resolves pull internally (only internally).
+    &nbsp;&nbsp;&nbsp;&nbsp;Push conflicts should have higher priority than pull, since resolving push updates also does update the tracked commit hash.
     <br/>
     - Merge conflicts should be resolved last. After the Dataspecer state matches the expected remote state.
     <br/>
     &nbsp;&nbsp;&nbsp;&nbsp;Again do not be afraid to remove the merge state and create a new one.
+  </div>;
+}
+
+
+function MergeStatePullResolvingHintTooltip() {
+  return <div>
+    <p className="flex flex-1 flex-row">-&nbsp;<span className="text-red-600">Remove&nbsp;</span> all merge states caused by pull and pull again. You want to be up to date with latest commit.</p>
+    <p className="flex flex-1 flex-row">-&nbsp;Performing manual pull again succeeds if you did not do any action between now and the last Git operation, pull will finish without creating merge state.</p>
+    <p className="flex flex-1 flex-row">&nbsp;&nbsp;&nbsp;This is useful when you want to resolve automatically created pull.</p>
   </div>;
 }
