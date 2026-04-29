@@ -1,6 +1,6 @@
 import type { PackageService } from "@dataspecer/core-v2/project";
 import { createVisualModel } from "@dataspecer/core-v2/semantic-model/simplified";
-import type { Entity, EntityChange } from "@dataspecer/core/entity-model";
+import type { Entity, EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
 import { v7 as uuidv7 } from "uuid";
@@ -29,6 +29,10 @@ export class VisualModelInModelStore implements Model, ModelInDefaultFrontendMod
 
     this.model = createVisualModel(this.id);
     this.unsubscribeAsyncFromModel = this.internalSubscribeToModelChangesAsAsync();
+  }
+
+  getAllEntities(): EntityRecord {
+    throw new Error("Method not implemented.");
   }
 
   protected internalToStoreEntity(entity: unknown): Entity {
@@ -203,7 +207,7 @@ export class VisualModelInModelStore implements Model, ModelInDefaultFrontendMod
   }
 }
 
-export function createVisualModel(modelId: ModelIdentifier, context: {
+export function createVisualModelInModelStore(modelId: ModelIdentifier, context: {
   service: PackageService;
 }): Model & ModelInDefaultFrontendModelStore {
   return new VisualModelInModelStore(modelId, context.service);

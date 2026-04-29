@@ -1,180 +1,171 @@
-import { AggregatorAsEntityModel, SemanticModelAggregator } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
+import { AggregatorAsEntityModel } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
 import { LOCAL_PACKAGE, V1 } from "@dataspecer/core-v2/model/known-models";
 import { BaseResource, Package } from "@dataspecer/core-v2/project";
-import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
-import { CoreResourceReader } from "@dataspecer/core/core/index";
 import { DataSpecification as LegacyDataSpecification } from "@dataspecer/core/data-specification/model";
+import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
+import type { ModelIdentifier } from "@dataspecer/core/model";
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
+import type { ModelEntity, PackageEntity } from "@dataspecer/project-model";
 import { MemoryStoreFromBlob } from "../memory-store.ts";
-import { ModelCompositionConfiguration, ModelCompositionConfigurationMerge } from "../model-hierarchy/composition-configuration.ts";
-import { SemanticModelAggregatorBuilder } from "../model-hierarchy/semantic-model-aggregator-builder.ts";
-import { loadAsStructureModel } from "../model-loader.ts";
-import { WritableBlobModel } from "../model-repository/blob-model.ts";
-import { CachedModelRepository } from "../model-repository/cached-model-repository.ts";
-import { ModelRepository } from "../model-repository/model-repository.ts";
-import { PackageModel } from "../model-repository/package-model.ts";
+import { build } from "../model-hierarchy/semantic-model-aggregator-builder.ts";
 import { DataSpecification } from "./model.ts";
 import { loadDataSpecifications } from "./utils.ts";
 
-export async function getDataSpecification(packageAsSpecification: PackageModel): Promise<DataSpecification> {
-  const subResources = await packageAsSpecification.getSubResources();
+export function getDataSpecification(dataSpecificationId: string, projectModel: EntityRecord<ModelEntity>, model: EntityRecord | null): DataSpecification & Package {
+  const mainPackage = projectModel[dataSpecificationId] as PackageEntity;
+  const subResourceIds = mainPackage.subModels ?? [];
+  const rawModelData: any = model?.[dataSpecificationId] ?? {};
+
+  // Resolve actual resources from project model
+  const subResources = subResourceIds.map((id) => projectModel[id]).filter((r) => r !== undefined);
 
   const dataStructures = subResources
-    .filter((r) => r.types.includes(V1.PSM))
+    .filter((r) => r.modelType === V1.PSM)
     .map((ds) => ({
       id: ds.id,
-      label: ds.getUserMetadata()?.label || {},
+      label: ds.label || {},
     }));
 
   const artifactConfigurations = subResources
-    .filter((r) => r.types.includes(V1.GENERATOR_CONFIGURATION))
+    .filter((r) => r.modelType === V1.GENERATOR_CONFIGURATION)
     .map((ds) => ({
       id: ds.id,
-      label: ds.getUserMetadata()?.label || {},
+      label: ds.label || {},
     }));
 
-  const model = ((await packageAsSpecification.getJsonBlob()) as any) ?? {};
-
   return {
-    ...(await serializePackageModel(packageAsSpecification)),
-    id: packageAsSpecification.id,
+    ...serializePackageModel(dataSpecificationId, projectModel),
+
+    id: dataSpecificationId,
     type: LegacyDataSpecification.TYPE_DOCUMENTATION,
 
-    label: packageAsSpecification.getUserMetadata()?.label || {},
+    label: mainPackage.label || {},
     tags: [], // todo
 
-    sourceSemanticModelIds: model.sourceSemanticModelIds ?? ["https://dataspecer.com/adapters/sgov"], // SGOV is default model if none is selected
-    localSemanticModelIds: model.localSemanticModelIds ?? [],
-    modelCompositionConfiguration: model.modelCompositionConfiguration ?? null,
+    sourceSemanticModelIds: rawModelData.sourceSemanticModelIds ?? ["https://dataspecer.com/adapters/sgov"], // SGOV is default model if none is selected
+    localSemanticModelIds: rawModelData.localSemanticModelIds ?? [],
+    modelCompositionConfiguration: rawModelData.modelCompositionConfiguration ?? null,
     dataStructures,
-    importsDataSpecificationIds: model.dataStructuresImportPackages ?? [],
+    importsDataSpecificationIds: rawModelData.dataStructuresImportPackages ?? [],
 
     artifactConfigurations,
 
-    userPreferences: model.userPreferences ?? {},
+    userPreferences: rawModelData.userPreferences ?? {},
   };
 }
 
-async function serializePackageModel(packageModel: PackageModel): Promise<Package> {
-  const subResources = [];
-  for (const subResource of await packageModel.getSubResources()) {
-    if (subResource.types.includes(LOCAL_PACKAGE)) {
-      subResources.push(await serializePackageModel(await subResource.asPackageModel()));
-    } else {
-      subResources.push({
-        iri: subResource.id,
-        types: subResource.types,
-        userMetadata: subResource.getUserMetadata() || {},
-        metadata: null as any, // Metadata is not serialized in this context
-      } as BaseResource);
+function serializePackageModel(packageId: string, projectModel: EntityRecord<ModelEntity>): Package {
+  const packageEntity = projectModel[packageId] as PackageEntity;
+  const subResourceIds = packageEntity.subModels ?? [];
+  const subResources: BaseResource[] = [];
+
+  for (const subResourceId of subResourceIds) {
+    const subResource = projectModel[subResourceId];
+    if (subResource) {
+      if (subResource.modelType === LOCAL_PACKAGE) {
+        subResources.push(serializePackageModel(subResourceId, projectModel));
+      } else {
+        subResources.push({
+          iri: subResource.id,
+          types: [subResource.modelType],
+          userMetadata: {
+            label: subResource.label || {},
+          },
+          metadata: null as any,
+        } as BaseResource);
+      }
     }
   }
 
   return {
-    iri: packageModel.id,
-    types: packageModel.types,
-    userMetadata: packageModel.getUserMetadata() || {},
+    iri: packageEntity.id,
+    types: [packageEntity.modelType],
+    userMetadata: {
+      label: packageEntity.label || {},
+    },
     metadata: null as any,
-
     subResources,
   };
 }
 
 /**
- * Returns the full data specification with all dependent specifications and models.
+ *
+ * @param projectId The ID of the package that is being worked on
+ * @param models All models needed to build the specification.
+ * @param onChange
+ * @param executeOperation
  */
-export async function getDataSpecificationWithModels(dataSpecificationIri: string, dataPsmSchemaIri: string, modelRepository: ModelRepository) {
-  const cachedModelRepository = new CachedModelRepository(modelRepository);
-  const store = new FederatedObservableStore();
+export function getDataSpecificationWithModels(
+  projectId: ModelIdentifier,
+  models: Record<ModelIdentifier, EntityRecord>,
+  onChange?: (changeListener: (changes: Record<ModelIdentifier, EntityChange[]>) => void) => () => void,
+  executeOperation?: (modelId: ModelIdentifier, operation: any) => void,
+) {
+  if (!executeOperation) {
+    executeOperation = () => console.error("Model is in a read only mode, you cannot execute operations on it.");
+  }
+  const store = new FederatedObservableStore(executeOperation);
+  const dataStructureIds: string[] = [];
 
-  let specifications: Record<string, DataSpecification>;
-  let semanticModelAggregator!: SemanticModelAggregator;
-
-  // All structure models are in FederatedObservableStore, but you can also access them directly
-  const structureModels: Record<string, MemoryStoreFromBlob> = {};
-
-  // Loads information about all projects/packages because they can reference each other
-  specifications = await loadDataSpecifications(dataSpecificationIri, cachedModelRepository);
-  await Promise.all(
-    Object.values(specifications).map(async (specification) => {
-      const model = (await cachedModelRepository.getModelById(specification.id))!;
-      const pckg = await model.asPackageModel();
-
-      const psmStores: MemoryStoreFromBlob[] = [];
-      const subResources = await pckg.getSubResources();
-
-      await Promise.all(subResources.map(async subResource => {
-        const model = await loadAsStructureModel(subResource);
-        if (model) {
-          psmStores.push(model);
-          structureModels[subResource.id] = model;
-        }
-      }));
-
-      // Handle autosave
-      for (const model of psmStores) {
-        await store.addStore(model);
-        store.addEventListener("afterOperationExecuted", () => model.saveIfNewChanges());
+  onChange?.((change) => {
+    console.warn("Applying changes to the store", change, dataStructureIds);
+    for (const [modelId, changesForModel] of Object.entries(change)) {
+      if (dataStructureIds.includes(modelId)) {
+        store.updateModel(modelId, changesForModel);
       }
+    }
+  });
 
-      let semanticModel: SemanticModelAggregator;
-      let usedSemanticModels: InMemorySemanticModel[] = [];
-      let compositionConfiguration = specification.modelCompositionConfiguration as ModelCompositionConfiguration | null;
-      const builder = new SemanticModelAggregatorBuilder(pckg, fetch);
-      if (compositionConfiguration) {
-        semanticModel = await builder.build(compositionConfiguration);
-      } else {
-        semanticModel = await builder.build({
-          modelType: "merge",
-          models: null,
-        } as ModelCompositionConfigurationMerge);
-      }
-      usedSemanticModels = builder.getUsedEntityModels();
-      if (specification.id === dataSpecificationIri) {
-        semanticModelAggregator = semanticModel;
-      }
+  const semanticModelAggregator = build(projectId, models, onChange, executeOperation);
 
-      const storeForFBS = new AggregatorAsEntityModel(semanticModel, specification.id) as unknown as CoreResourceReader;
-      await store.addStore(storeForFBS); // todo typings
+  const dataSpecifications = loadDataSpecifications(projectId, models);
 
-      // This loop updates every semantic model
-      // ! semantic model is updated twice!!
-      for (const model of usedSemanticModels) {
-        const id = model.getId();
-        let hasUnsavedChanges = false;
-        model.subscribeToChanges(() => {
-          hasUnsavedChanges = true;
-        });
-        store.addEventListener("afterOperationExecuted", async () => {
-          if (hasUnsavedChanges) {
-            hasUnsavedChanges = false;
+  for (const specification of Object.values(dataSpecifications)) {
+    for (const structures of specification.dataStructures) {
+      store.addModel(structures.id, models[structures.id]!);
+      dataStructureIds.push(structures.id);
+    }
 
-            const remoteModel = await cachedModelRepository.getModelById(id);
-            const blobModel = (await remoteModel?.asBlobModel()) as WritableBlobModel | undefined;
-            if (blobModel) {
-              await blobModel.setJsonBlob(model.serializeModel());
-            }
-          }
-        });
-      }
+    // hack
 
-      // @ts-ignore Each specification should have its own semantic model, not merged with other specifications
-      specification.semanticModel = semanticModel;
+    // @ts-ignore This inserts the configuration into the specification
+    specification.artefactConfiguration = {}; // todo configuration
+  }
 
-      // Each specification may have multiple configurations, but in reality we use only the first one.
-      const configurationStore = specification.artifactConfigurations?.[0]?.id ?? null;
-      const configurationModel = configurationStore ? await (await cachedModelRepository.getModelById(configurationStore))?.asBlobModel() : undefined;
-      const configuration = configurationModel ? ((await configurationModel.getJsonBlob()) as Record<string, object>) : {};
-      // @ts-ignore This inserts the configuration into the specification
-      specification.artefactConfiguration = configuration;
-    }),
-  );
+  const semanticAsEntity = new AggregatorAsEntityModel(semanticModelAggregator, projectId);
+
+  const previousModel = { ...semanticAsEntity.getEntities() };
+  store.addModel(projectId, { ...previousModel });
+  semanticAsEntity.subscribeToChanges((updated, removed) => {
+    console.log("Semantic model aggregator emitted changes", { updated, removed });
+
+    const changes: EntityChange[] = [];
+    for (const [id, entity] of Object.entries(updated)) {
+      changes.push({
+        previous: previousModel[id] ?? null,
+        next: entity as any,
+      });
+      previousModel[id] = entity as any;
+    }
+    for (const id of removed) {
+      changes.push({
+        previous: previousModel[id]!,
+        next: null,
+      });
+      delete previousModel[id];
+    }
+
+    store.updateModel(projectId, changes);
+  });
+
+  // @ts-ignore
+  dataSpecifications[projectId]!.semanticModel = semanticModelAggregator;
 
   return {
-    dataSpecifications: specifications,
+    dataSpecifications,
     semanticModelAggregator,
-    store: store as FederatedObservableStore,
+    store,
 
-    structureModels,
+    structureModels: {} as Record<string, MemoryStoreFromBlob>,
   };
 }

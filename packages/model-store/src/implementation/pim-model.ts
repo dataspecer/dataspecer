@@ -1,5 +1,5 @@
 import type { PackageService } from "@dataspecer/core-v2/project";
-import type { EntityChange } from "@dataspecer/core/entity-model";
+import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
 import { v7 as uuidv7 } from "uuid";
@@ -19,6 +19,10 @@ export class PimModelInModelStore implements Model, ModelInDefaultFrontendModelS
     this.service = service;
   }
 
+  getAllEntities(): EntityRecord {
+    throw new Error("Method not implemented.");
+  }
+
   /**
    * This loads model data from the backend, this is not FETCH of remote model.
    */
@@ -30,11 +34,9 @@ export class PimModelInModelStore implements Model, ModelInDefaultFrontendModelS
     };
   }
 
-  subscribeForAsyncChanges(listener: (changeEvent: EntityChange[]) => void): () => void {
-    this.externalChangesSubscribers.push(listener);
-    return () => {
-      this.externalChangesSubscribers = this.externalChangesSubscribers.filter((l) => l !== listener);
-    }
+  subscribeForAsyncChanges(_: (changeEvent: EntityChange[]) => void): () => void {
+    // This model has no external changes
+    return () => void 0;
   }
 
   async load(): Promise<void> {
@@ -45,9 +47,7 @@ export class PimModelInModelStore implements Model, ModelInDefaultFrontendModelS
     // Todo add main entity
   }
 
-  private async refetch(): Promise<void> {
-    // todo i do not know how to refetch
-  }
+  // todo add refetch?
 
   async save(): Promise<void> {
 

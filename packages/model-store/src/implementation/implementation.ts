@@ -1,17 +1,20 @@
+import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { type PackageService } from "@dataspecer/core-v2/project";
-import type { EntityChange } from "@dataspecer/core/entity-model";
+import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
+import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Operation, OperationInModel } from "@dataspecer/core/operation";
+import type { ModelEntity } from "@dataspecer/project-model";
 import type { ObservableEntityModelStoreChangeEvent } from "../interfaces/observable.ts";
 import type { ConnectionStatus, RemoteModelStore } from "../interfaces/remote.ts";
 import type { TransactionMetadata, TransactionResult } from "../interfaces/writable.ts";
-import { createProjectModel } from "./project-model.ts";
-import { LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
-import { createSemanticModel } from "./semantic-model.ts";
-import { createVisualModel } from "./visual-model.ts";
-import { createPimModel } from "./pim-model.ts";
 import { createAsyncQueryableModel } from "./async-queryable-model.ts";
-import type { ModelEntity } from "@dataspecer/project-model";
+import { createPimModel } from "./pim-model.ts";
+import { createProjectModel } from "./project-model.ts";
+import { createSemanticModel } from "./semantic-model.ts";
+import { createVisualModelInModelStore } from "./visual-model.ts";
+import { createStructureModel } from "./structure-model.ts";
+import { createBlobModel } from "./blob-model.ts";
 
 export interface ApplyOperationResult {
   entityChanges: EntityChange[];
@@ -37,10 +40,19 @@ export interface ModelInDefaultFrontendModelStore {
   load(): Promise<void>;
 
   save(): Promise<void>;
+
+  /**
+   * Immutable object (record) containing entities.
+   */
+  getAllEntities(): EntityRecord;
+
+  //subscribeForReadinessChange(): () => void;
 }
 
 type ModelInModelStoreBuilder = (modelId: ModelIdentifier, context: {
   service: PackageService;
+  httpFetch: HttpFetch;
+  rootProjectId: ModelIdentifier;
 }) => Model & ModelInDefaultFrontendModelStore;
 
 export interface DefaultFrontendModelStoreParams {
@@ -59,6 +71,8 @@ export interface DefaultFrontendModelStoreParams {
   modelBuilders: Record<string, ModelInModelStoreBuilder>;
 
   packageService: PackageService;
+
+  httpFetch: HttpFetch;
 }
 
 /**
@@ -68,9 +82,18 @@ export interface DefaultFrontendModelStoreParams {
  */
 export class DefaultFrontendModelStore implements RemoteModelStore {
   /**
+   * As all models, also the project model has to have some id. Unfortunately,
+   * the ID of the project model cannot be set to the projectId because the
+   * project is model itself and thus it would conflict. In some sense, the
+   * project model must have some fixed id because this, together with the
+   * project ID, are the only two information you need to get the rest of data.
+   */
+  public readonly projectModelId: ModelIdentifier = "_project_model";
+
+  /**
    * Main project id (root package id) that this model store is connected to.
    */
-  protected projectId: ModelIdentifier;
+  protected rootProjectId: ModelIdentifier;
 
   protected service: PackageService;
 
@@ -84,6 +107,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
    * that this model store is subscribed to and create other models.
    */
   protected models: Record<string, ModelInDefaultFrontendModelStore> = {};
+  protected httpFetch: HttpFetch;
 
   /**
    * Creates a model store that is connected to the backend to the specific
@@ -91,9 +115,22 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
    */
   constructor(params: DefaultFrontendModelStoreParams) {
     this.service = params.packageService;
-    this.projectId = params.projectId;
+    this.rootProjectId = params.projectId;
     this.projectModelBuilder = params.projectModelBuilder;
     this.modelBuilders = params.modelBuilders;
+    this.httpFetch = params.httpFetch;
+  }
+  loadByOverride(): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+
+  getAllEntities(): Record<ModelIdentifier, EntityRecord> {
+    const allEntities: Record<ModelIdentifier, EntityRecord> = {};
+    for (const modelId in this.models) {
+      const model = this.models[modelId]!;
+      allEntities[modelId] = model.getAllEntities();
+    }
+    return allEntities;
   }
 
   /**
@@ -104,6 +141,8 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
   protected buildModel(modelId: ModelIdentifier, modelType: string | null) {
     const context = {
       service: this.service,
+      httpFetch: this.httpFetch,
+      rootProjectId: this.rootProjectId,
     };
     const builder = modelType === null
       ? this.projectModelBuilder
@@ -120,9 +159,15 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
    * Loads everything
    */
   async initialize(): Promise<void> {
-    const projectModel = this.buildModel(this.projectId, null)!;
+    const projectModel = this.buildModel(this.projectModelId, null)!;
     projectModel.subscribeForAsyncChanges((changes) => this.onProjectModelEntityChange(changes));
     await projectModel.load();
+  }
+
+  protected modelPromises: Promise<void>[] = [];
+
+  async waitForModelsToLoad(): Promise<void> {
+    await Promise.all(this.modelPromises);
   }
 
   /**
@@ -142,6 +187,12 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
           // This model is not meant to be subscribed to, ignore it.
           continue;
         }
+
+        createdModel.subscribeForAsyncChanges(modelChanges => {
+          this.internalNotifyEntityChange({ entityChanges: {[modelEntity.id]: modelChanges} });
+        });
+
+        this.modelPromises.push(createdModel.load());
       } else if (change.next === null) {
         // Model was deleted
         // todo
@@ -166,7 +217,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
    */
   transaction(operations: OperationInModel[], metadata: TransactionMetadata): TransactionResult {
     // Changes made in this transaction
-    const entityChanges: Map<ModelIdentifier, EntityChange[]> = new Map();
+    const entityChanges: Record<ModelIdentifier, EntityChange[]> = {};
 
     // Todo maybe group by is not ideal because in one transaction, we might need to create new model or delete model after/before applying some operations.
     const groupedOperations = Object.groupBy(operations, (operation) => operation.modelId);
@@ -182,8 +233,8 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
       }
 
       const changes = model.applyOperations(pureOperations);
-      if (changes.entityChanges.length === 0) {
-        entityChanges.set(modelId, changes.entityChanges);
+      if (changes.entityChanges.length !== 0) {
+        entityChanges[modelId] = changes.entityChanges;
       }
     }
 
@@ -221,16 +272,39 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
 export function createCMEModelStore(params: {
   projectId: ModelIdentifier,
   packageService: PackageService,
+  httpFetch: HttpFetch,
 }): RemoteModelStore {
   return new DefaultFrontendModelStore({
     projectId: params.projectId,
     projectModelBuilder: createProjectModel,
     modelBuilders: {
       [LOCAL_SEMANTIC_MODEL]: createSemanticModel,
-      [LOCAL_VISUAL_MODEL]: createVisualModel,
-      [V1.PIM]: createPimModel,
+      [LOCAL_VISUAL_MODEL]: createVisualModelInModelStore,
       [V1.CIM]: createAsyncQueryableModel,
+      [V1.PIM]: createPimModel,
     },
     packageService: params.packageService,
+    httpFetch: params.httpFetch,
+  });
+}
+
+export function createDSEModelStore(params: {
+  projectId: ModelIdentifier,
+  packageService: PackageService,
+  httpFetch: HttpFetch,
+}): DefaultFrontendModelStore {
+  return new DefaultFrontendModelStore({
+    projectId: params.projectId,
+    projectModelBuilder: createProjectModel,
+    modelBuilders: {
+      [LOCAL_SEMANTIC_MODEL]: createSemanticModel,
+      [LOCAL_VISUAL_MODEL]: createVisualModelInModelStore,
+      [LOCAL_PACKAGE]: createBlobModel,
+      [V1.CIM]: createAsyncQueryableModel,
+      [V1.PIM]: createPimModel,
+      [V1.PSM]: createStructureModel,
+    },
+    packageService: params.packageService,
+    httpFetch: params.httpFetch,
   });
 }

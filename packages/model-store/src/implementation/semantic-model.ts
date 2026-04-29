@@ -6,12 +6,13 @@ import type { Operation } from "@dataspecer/core/operation";
 import { v7 as uuidv7 } from "uuid";
 import { diffEntities } from "../utilities.ts";
 import type { ApplyOperationResult, ModelInDefaultFrontendModelStore } from "./implementation.ts";
+import { BaseModelInModelStore } from "./base.ts";
+import type { EntityList } from "../../../entity-model/lib/index.js";
 
 /**
  * This class implements support for semantic model for DefaultFrontendModelStore.
  */
-export class SemanticModelInModelStore implements Model, ModelInDefaultFrontendModelStore {
-  id: string;
+export class SemanticModelInModelStore extends BaseModelInModelStore implements Model, ModelInDefaultFrontendModelStore {
   protected service: PackageService;
 
   protected externalChangesSubscribers: ((changes: EntityChange[]) => void)[] = [];
@@ -33,7 +34,7 @@ export class SemanticModelInModelStore implements Model, ModelInDefaultFrontendM
   /**
    * Returns immutable entities of the model.
    */
-  protected internalGetImmutableEntities() {
+  getAllEntities() {
     // @ts-ignore: Property 'entityModel' is protected and only accessible within class 'WritableSemanticModelAdapter' and its subclasses.
     return this.model.entityModel.entities;
   }
@@ -44,7 +45,7 @@ export class SemanticModelInModelStore implements Model, ModelInDefaultFrontendM
   }
 
   constructor(id: string, service: PackageService) {
-    this.id = id;
+    super(id);
     this.service = service;
 
     this.model = new InMemorySemanticModel();
@@ -56,7 +57,7 @@ export class SemanticModelInModelStore implements Model, ModelInDefaultFrontendM
   applyOperations(operations: Operation[]): ApplyOperationResult {
     let changes: EntityChange[] = [];
     const transactionId = uuidv7();
-    const oldEntities = this.internalGetImmutableEntities();
+    const oldEntities = this.getAllEntities();
 
     if (operations.length === 1 && ["undo", "redo"].includes(operations[0].type)) {
       const isUndo = operations[0].type === "undo";
@@ -99,29 +100,13 @@ export class SemanticModelInModelStore implements Model, ModelInDefaultFrontendM
 
     this.history[transactionId] = {
       previous: oldEntities,
-      current: this.internalGetImmutableEntities(),
+      current: this.getAllEntities(),
     };
 
     return {
       entityChanges: changes,
       transactionId,
     };
-  }
-
-  /**
-   * Subscribes to entity changes that are not caused by applying operations in this model.
-   */
-  subscribeForAsyncChanges(listener: (changes: EntityChange[]) => void): () => void {
-    this.externalChangesSubscribers.push(listener);
-    return () => {
-      this.externalChangesSubscribers = this.externalChangesSubscribers.filter((l) => l !== listener);
-    };
-  }
-
-  protected internalNotifyExternalChanges(changes: EntityChange[]): void {
-    for (const listener of this.externalChangesSubscribers) {
-      listener(changes);
-    }
   }
 
   /**

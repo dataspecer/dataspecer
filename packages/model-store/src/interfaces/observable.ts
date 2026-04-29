@@ -5,7 +5,7 @@ export interface ObservableEntityModelStoreChangeEvent {
   /**
    * Entities cannot transfer between models, so the changes are grouped by model.
    */
-  entityChanges: Map<ModelIdentifier, EntityChange[]>;
+  entityChanges: Record<ModelIdentifier, EntityChange[]>;
 }
 
 /**

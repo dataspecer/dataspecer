@@ -18,8 +18,7 @@ export const useSingleGeneratedFileArtifact = (generatorId: string) => {
     const store = useFederatedObservableStore();
     useEffect(() => {
         const listener = () => setStoreChangeTrigger({});
-        store.addEventListener("afterOperationExecuted", listener);
-        return () => store.removeEventListener("afterOperationExecuted", listener);
+        return store.subscribeToChanges(listener);
     }, [store]);
 
     // Run artifacts if something changes

@@ -5,7 +5,7 @@
     "declaration": true,
     "declarationMap": true,
     "isolatedModules": true,
-    "lib": ["ESNext"],
+    "lib": ["ESNext", "DOM"],
     "module": "NodeNext",
     "moduleDetection": "force",
     "moduleResolution": "nodenext",

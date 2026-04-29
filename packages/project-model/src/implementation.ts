@@ -10,38 +10,41 @@ export async function loadProjectStructure(
   service: PackageService,
   projectId: ModelIdentifier,
 ): Promise<ModelEntity[]> {
-  const [_, allModels] = await recursivelyLoadPackage(service, projectId);
+  const allModels: ModelEntity[] = [];
+  await recursivelyLoadResource(service, projectId, allModels);
   return allModels;
 }
 
-async function recursivelyLoadPackage(
+async function recursivelyLoadResource(
   service: PackageService,
-  packageId: ModelIdentifier,
-): Promise<[PackageEntity, ModelEntity[]]> {
-  const pckg = await service.getPackage(packageId);
-  const subResources = pckg.subResources ?? [];
+  resourceId: ModelIdentifier,
+  modelsToCollect: ModelEntity[],
+): Promise<void> {
+  let resource = await service.getPackage(resourceId);
 
-  const allModels: ModelEntity[] = [];
-  const subModels: ModelEntity[] = [];
+  for (const subResource of resource.subResources || []) {
+    const isPackage = subResource.types.includes(LOCAL_PACKAGE);
 
-  for (const subResource of subResources) {
-    if (!subResource.types.includes(LOCAL_PACKAGE)) {
-      continue;
+    if (isPackage) {
+      await recursivelyLoadResource(service, subResource.iri, modelsToCollect);
+    } else {
+      modelsToCollect.push({
+        id: subResource.iri,
+        type: [],
+        label: subResource.userMetadata?.label || {},
+        description: subResource.userMetadata?.description || {},
+        modelType: subResource.types[0]!,
+      } as ModelEntity);
     }
-
-    const [subPackage, nestedModels] = await recursivelyLoadPackage(service, subResource.iri);
-    allModels.push(...nestedModels);
-    subModels.push(subPackage);
   }
 
   const packageEntity: PackageEntity = {
-    id: pckg.iri,
+    id: resource.iri,
     type: [],
-    label: pckg.userMetadata?.label || {},
-    description: pckg.userMetadata?.description || {},
+    label: resource.userMetadata?.label || {},
+    description: resource.userMetadata?.description || {},
     modelType: LOCAL_PACKAGE,
-    subModels: subModels.map(model => model.id),
+    subModels: resource.subResources?.map(model => model.iri) ?? [],
   };
-  allModels.push(packageEntity);
-  return [packageEntity, allModels];
+  modelsToCollect.push(packageEntity);
 }

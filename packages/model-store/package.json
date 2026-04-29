@@ -9,7 +9,8 @@
   },
   "exports": {
     ".": "./lib/index.js",
-    "./entity-model": "./lib/entity-model/index.js"
+    "./implementation": "./lib/implementation/index.js",
+    "./interfaces": "./lib/interfaces/index.js"
   },
   "dependencies": {
     "@dataspecer/core": "*",

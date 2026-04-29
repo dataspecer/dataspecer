@@ -1,6 +1,6 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import type { PackageService } from "@dataspecer/core-v2/project";
-import type { EntityChange } from "@dataspecer/core/entity-model";
+import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
 import { isCreateModelOperation, isRemoveModelOperation, loadProjectStructure, type ModelEntity, type PackageEntity } from "@dataspecer/project-model";
@@ -15,12 +15,18 @@ import type { ApplyOperationResult, ModelInDefaultFrontendModelStore } from "./i
  */
 export class ProjectModelInModelStore implements Model, ModelInDefaultFrontendModelStore {
   id: string;
+  rootProjectId: ModelIdentifier;
   protected service: PackageService;
   protected entities: Record<string, ModelEntity> = {};
 
-  constructor(id: string, service: PackageService) {
+  constructor(id: string, service: PackageService, rootProjectId: ModelIdentifier) {
     this.id = id;
     this.service = service;
+    this.rootProjectId = rootProjectId;
+  }
+
+  getAllEntities(): EntityRecord {
+    return this.entities;
   }
 
   applyOperations(operations: Operation[]): ApplyOperationResult {
@@ -101,7 +107,7 @@ export class ProjectModelInModelStore implements Model, ModelInDefaultFrontendMo
   }
 
   async load(): Promise<void> {
-    const entities = await loadProjectStructure(this.service, this.id);
+    const entities = await loadProjectStructure(this.service, this.rootProjectId);
     const diff = diffEntities(this.entities, Object.fromEntries(entities.map((e) => [e.id, e])));
     this.entities = Object.fromEntries(entities.map((e) => [e.id, e]));
     this.internalNotifyExternalChanges(diff);
@@ -114,6 +120,7 @@ export class ProjectModelInModelStore implements Model, ModelInDefaultFrontendMo
 
 export function createProjectModel(projectId: ModelIdentifier, context: {
   service: PackageService;
+  rootProjectId: ModelIdentifier;
 }): Model & ModelInDefaultFrontendModelStore {
-  return new ProjectModelInModelStore(projectId, context.service);
+  return new ProjectModelInModelStore(projectId, context.service, context.rootProjectId);
 }
