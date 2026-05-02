@@ -3,7 +3,7 @@ import { Operation } from '@dataspecer/core-v2/semantic-model/operations';
 import { CoreOperation, CoreOperationResult, CoreResource, CoreResourceReader, CoreResourceWriter } from "@dataspecer/core/core";
 import * as DataPSM from "@dataspecer/core/data-psm/data-psm-vocabulary";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model";
-import { cloneDeep } from "lodash";
+import _ from "lodash";
 import { ComplexOperation } from "./complex-operation.ts";
 import { FederatedCoreResourceWriter } from "./federated-core-resource-writer.ts";
 import { Resource } from "./resource.ts";
@@ -369,7 +369,7 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
 
         this.updateSubscriptionTo(resourceIri, {
             isLoading: false,
-            resource: doNotClone ? resource : cloneDeep(resource),
+            resource: doNotClone ? resource : _.cloneDeep(resource),
         });
     }
 
