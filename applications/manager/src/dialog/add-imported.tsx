@@ -137,7 +137,7 @@ export const AddImported = ({ iri, urlOnly, isOpen, resolve }: AddImportedProps 
         </ModalHeader>
         <ModalBody className="mt-auto flex flex-col gap-2 p-4">
           {urlOnly ? (
-            <form className="grid gap-4" onSubmit={formSubmit}>
+            <form className="grid gap-4" onSubmit={urlsSubmit}>
               <div className="grid gap-2">
                 <Label htmlFor="url">
                   {t("form.url.name")}

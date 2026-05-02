@@ -5,7 +5,6 @@ import z from "zod";
 import { PackageImporter } from "../export-import/import.ts";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { AvailableFilesystems, createRootFilesystemNodeLocation, CreateRootFilesystemNodeParams, getDefaultExportFormat } from "@dataspecer/git";
-import { bunHotfixHttpFileName } from "./generate.ts";
 import JSZip from "jszip";
 import { PrismaClientStorageApiForIriReplacement, StorageApiForIriReplacement } from "../utils/iri-replace-util.ts";
 import { AvailableExports, FilesystemFactoryMethodParams, PackageExporterByResourceType } from "@dataspecer/git-node";

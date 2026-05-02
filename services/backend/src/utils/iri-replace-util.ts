@@ -1,9 +1,8 @@
 import { convertDatastoreContentBasedOnFormat, createDatastoreWithReplacedIris, stringifyDatastoreContentBasedOnFormat } from "@dataspecer/git";
 import { LocalStoreModelGetter } from "@dataspecer/git-node";
-import { Prisma, PrismaClient } from "@prisma/client";
-import { DefaultArgs } from "@prisma/client/runtime/index.js";
+import { PrismaClient } from "@prisma/client";
 
-type PrismaClientType = PrismaClient<Prisma.PrismaClientOptions, never, Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined, DefaultArgs>;
+type PrismaClientType = PrismaClient;
 
 export type ResourceToFindWhenReplacingIri = {
   iri: string;
