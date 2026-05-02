@@ -1,6 +1,6 @@
 import { describe, test } from "vitest";
 
-import { createDataSpecificationVocabulary, RequirementLevel } from "@dataspecer/data-specification-vocabulary";
+import { createDataSpecificationVocabulary, RequirementLevel } from "@dataspecer/data-specification-vocabulary/semantic-model";
 import { createDefaultProfileModelBuilder } from "@dataspecer/profile-model";
 import { createDefaultSemanticModelBuilder } from "@dataspecer/semantic-model";
 import { semanticModelToLightweightOwl } from "@dataspecer/lightweight-owl";

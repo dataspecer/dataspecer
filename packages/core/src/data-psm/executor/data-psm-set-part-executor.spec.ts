@@ -25,7 +25,7 @@ test("Update data PSM association end resource part.", async () => {
     } as DataPsmClassReference,
   };
 
-  const actual = await executeDataPsmSetPart(
+  const actual = executeDataPsmSetPart(
     wrapResourcesWithReader(before),
     undefined,
     operation

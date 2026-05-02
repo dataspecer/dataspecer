@@ -15,7 +15,7 @@ import { ProjectWizard } from "./dialog/project-wizard/project-wizard";
 import { RenameResourceDialog } from "./dialog/rename-resource";
 import { ResourceDetail } from "./dialog/resource-detail";
 import { useToggle } from "./hooks/use-toggle";
-import { ModelIcon, createModelInstructions, modelTypeToName } from "./known-models";
+import { ModelIcon, modelTypeToName } from "./known-models";
 import { useBetterModal } from "./lib/better-modal";
 import { ResourceWithIris, ResourcesContext, ensurePackageWorksForDSE, modifyUserMetadata, requestLoadPackage } from "./package";
 import { ModifyDocumentationTemplate } from "./dialog/modify-documentation-template";
@@ -183,10 +183,14 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
       </button><Folder className="text-gray-400 ml-1" /></div> : <div><ModelIcon type={resource.types} /></div>}
 
       <div className="grow min-w-0">
-        <div className="flex font-medium">
+        <div className="font-medium">
           <Translate
             text={resource.userMetadata?.label}
-            match={t => <>{t} <span className="ml-5 text-gray-500 font-normal">{modelTypeToName[resource.types[0]]}</span></>}
+            match={(t, isMatch, language) => <>
+              <span className={isMatch ? "" : "text-muted-foreground"}>{t}</span>
+              {!isMatch && <span className="ml-1 ">@{language}</span>}
+              <span className="ml-5 text-gray-500 font-normal">{modelTypeToName[resource.types[0]]}</span>
+            </>}
             fallback={modelTypeToName[resource.types[0]]}
           />
         </div>
@@ -268,7 +272,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
       {resource.types.includes("https://dataspecer.com/core/model-descriptor/pim-store-wrapper") &&
         <Tooltip>
           <TooltipTrigger>
-            <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(ReloadPimWrapper, {id: iri}))}>
+            <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(ReloadPimWrapper, {id: iri, parentId: parentIri ?? ""}))}>
               <span>
                 <RotateCw className="h-4 w-4" />
               </span>
@@ -394,7 +398,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="shrink-0">
-            <Menu className="h-4 w-4" />
+            <EllipsisVertical className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
@@ -402,7 +406,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a target="_blank" href={import.meta.env.VITE_BACKEND + `/preview/${i18n.language}/index.html?iri=` + encodeURIComponent(iri)}><FileText className="mr-2 h-4 w-4" /> {t("show-documentation")} ({i18n.language})</a></DropdownMenuItem>}
           {i18n.language !== "en" && resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a target="_blank" href={import.meta.env.VITE_BACKEND + `/preview/en/index.html?iri=` + encodeURIComponent(iri)}><FileText className="mr-2 h-4 w-4" /> {t("show-documentation")} (en)</a></DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(ModifyDocumentationTemplate, {iri})}><NotepadTextDashed className="mr-2 h-4 w-4" /> {t("modify-documentation-template")}</DropdownMenuItem>}
-          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(AddImported, {iri})}><Import className="mr-2 h-4 w-4" /> {t("import specification from url")}</DropdownMenuItem>}
+          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(AddImported, {id: iri, urlOnly: true})}><Import className="mr-2 h-4 w-4" /> {t("import specification from url")}</DropdownMenuItem>}
           <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/resources/export.zip?iri=" + encodeURIComponent(iri) + "&exportFormat=json"}><CloudDownload className="mr-2 h-4 w-4" /> {t("export") + " as json"}</a></DropdownMenuItem>
           <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/resources/export.zip?iri=" + encodeURIComponent(iri) + "&exportFormat=yaml"}><CloudDownload className="mr-2 h-4 w-4" /> {t("export") + " as yaml"}</a></DropdownMenuItem>
           <DropdownMenuItem onClick={async () => {
@@ -451,8 +455,6 @@ export default function Component() {
   return (
     <div>
       <RootPackage iri={PACKAGE_ROOT} login={login} signedInUserPullRequests={signedInUserPullRequests} />
-      <RootPackage iri={"http://dataspecer.com/packages/v1"} login={login} signedInUserPullRequests={signedInUserPullRequests} />
-      <RootPackage iri={"https://dataspecer.com/resources/import/lod"} defaultToggle={false} login={login} signedInUserPullRequests={signedInUserPullRequests} />
     </div>
   )
 }
@@ -493,7 +495,15 @@ function RootPackage({iri, defaultToggle, login, signedInUserPullRequests}: {iri
       <button onClick={() => setIsOpen(!isOpen)} className="cursor-pointer">
         {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
       </button>
-      <h2 className="font-heading ml-3 scroll-m-20 pb-2 text-2xl font-semibold tracking-tight first:mt-0 grow"><Translate text={pckg.userMetadata?.label} /></h2>
+      <h2 className="font-heading ml-3 scroll-m-20 pb-2 text-2xl font-semibold tracking-tight first:mt-0 grow">
+        <Translate
+          text={pckg.userMetadata?.label}
+          match={(t, isMatch, language) => <>
+            <span className={isMatch ? "" : "text-muted-foreground"}>{t}</span>
+            {!isMatch && <span className="ml-1 ">@{language}</span>}
+          </>}
+        />
+      </h2>
       {
         packageGitFilter === null ?
           null :
@@ -503,21 +513,10 @@ function RootPackage({iri, defaultToggle, login, signedInUserPullRequests}: {iri
               Remove same repository filter
           </Button>
       }
-      <Button variant="ghost" size="sm" className="shrink=0 ml-4"
-        onClick={() => openModal(AddImported, {iri})}>
+      <Button variant="ghost" size="sm" className="shrink-0 ml-4"
+        onClick={() => openModal(AddImported, {id: iri})}>
         <Import className="mr-2 h-4 w-4" /> {t("import")}
       </Button>
-      <Button variant="ghost" size={"sm"} className="shrink-0 ml-4" onClick={async () => {
-        const names = await openModal(RenameResourceDialog, {type: "create"});
-        if (!names) return;
-        await createModelInstructions[LOCAL_PACKAGE].createHook({
-          iri: "",
-          parentIri: iri,
-          modelType: LOCAL_PACKAGE,
-          label: names?.name,
-          description: names?.description,
-        });
-      }}><Folder className="mr-2 h-4 w-4" /> {t("new-package")}</Button>
       <Button variant="default" size={"sm"} className="shrink-0 ml-4" onClick={() => openModal(ProjectWizard, {iri})}><WandSparkles className="mr-2 h-4 w-4" /> {t("project-wizard")}</Button>
     </div>
     {isOpen &&

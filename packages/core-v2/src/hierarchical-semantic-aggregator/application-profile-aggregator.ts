@@ -2,7 +2,7 @@ import { Entity } from "../entity-model/index.ts";
 import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationPrimitive, isSemanticModelRelationship, SemanticModelClass, SemanticModelEntity, SemanticModelGeneralization, SemanticModelRelationship } from "../semantic-model/concepts/index.ts";
 import { InMemorySemanticModel } from "../semantic-model/in-memory/index.ts";
 import { CreatedEntityOperationResult } from "../semantic-model/operations/index.ts";
-import { createDefaultProfileEntityAggregator, ProfileAggregator } from "../semantic-model/profile/aggregator/index.ts";
+import { createSemanticProfileAggregator, ProfileAggregator } from "../semantic-model/profile/aggregator/index.ts";
 import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile, SemanticModelClassProfile, SemanticModelRelationshipProfile } from "../semantic-model/profile/concepts/index.ts";
 import { createDefaultSemanticModelProfileOperationFactory, SemanticModelProfileOperationFactory } from "../semantic-model/profile/operations/index.ts";
 import { ExternalEntityWrapped, SemanticModelAggregator, LocalEntityWrapped } from "./interfaces.ts";
@@ -99,7 +99,7 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
     this.profile = profile;
     this.profileBaseIri = profile.getBaseIri();
     this.source = source;
-    this.profileEntityAggregator = profileEntityAggregator ?? createDefaultProfileEntityAggregator();
+    this.profileEntityAggregator = profileEntityAggregator ?? createSemanticProfileAggregator();
     this.allowOnlyProfiledEntities = allowOnlyProfiledEntities;
 
     this.updateSourceEntities(source.getAggregatedEntities());

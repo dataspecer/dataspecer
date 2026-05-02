@@ -19,10 +19,35 @@ export interface SemanticModelEntity extends Entity {
     iri: string | null;
 }
 
+/**
+ * Represents something that can be named and described.
+ *
+ * Because there are multiple ways how to represent name and description, we
+ * have `*Property` to denote which RDF property is used for the name and
+ * description. This is friendly for the users of the model, but it cannot
+ * support advanced cases where, for example, both rdfs:label and skos:prefLabel
+ * are used together. We should switch to more general model where entity can
+ * have any metadata properties.
+ */
 export interface NamedThing {
     name: LanguageString;
-    //alias: LanguageString[];
     description: LanguageString;
+
+    /**
+     * RDF property that is used for the {@link name} of the entity.
+     * Typical values are rdfs:label or skos:prefLabel (but in their IRI form).
+     *
+     * If not set, then the value is unknown.
+     */
+    nameProperty?: string | null;
+
+    /**
+     * RDF property that is used for the {@link description}.
+     * Typical values are rdfs:comment or skos:definition (but in their IRI form).
+     *
+     * If not set, then the value is unknown.
+     */
+    descriptionProperty?: string | null;
 }
 
 /**

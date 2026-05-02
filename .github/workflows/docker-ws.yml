@@ -1,13 +1,23 @@
 name: Docker image
 
+# Since almost all branches need to be built, we trigger on all pushes.
+# Before we had a pull_request trigger for PRs with a "build-image" label, but it did not work as expected, see https://github.com/orgs/community/discussions/26304
 on:
   push:
+<<<<<<< HEAD
     branches:
       - main
       - stable**
       - git-integration
   pull_request:
     types: [synchronize, labeled]
+=======
+  #   branches:
+  #     - main
+  #     - stable**
+  # pull_request:
+  #   types: [synchronize, labeled]
+>>>>>>> main
 
 env:
   REGISTRY: ghcr.io

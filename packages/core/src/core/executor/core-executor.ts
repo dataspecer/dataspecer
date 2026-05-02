@@ -16,7 +16,7 @@ export type CoreOperationSpecificExecutor<T extends CoreOperation> = (
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: T
-) => Promise<CoreExecutorResult>;
+) => CoreExecutorResult;
 
 /**
  * Given resource type return new unique IRI.
@@ -56,14 +56,14 @@ export class CoreOperationExecutor<T extends CoreOperation> {
   /**
    * Type agnostic operation execution function.
    */
-  async execute(
+  execute(
     reader: CoreResourceReader,
     createNewIdentifier: CreateNewIdentifier,
     operation: CoreOperation
-  ): Promise<CoreExecutorResult> {
+  ): CoreExecutorResult {
     if (!this.typeChek(operation)) {
       return CoreExecutorResult.createError("Invalid operation type.");
     }
-    return await this.executor(reader, createNewIdentifier, operation);
+    return this.executor(reader, createNewIdentifier, operation);
   }
 }

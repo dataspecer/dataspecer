@@ -66,10 +66,11 @@ if [ -n "$BASE_PATH" ]; then
 fi
 
 if [ -n "$DO_BUILD_BACKEND" ]; then
-  npx turbo run build --concurrency 100% --filter=data-specification-editor --filter=conceptual-model-editor --filter=manager --filter=api-specification --filter=backend^...
+  # Do not cache (-> local:) to make build faster (cache is not preserved between builds, so it would not help anyway)
+  npx turbo run build  --cache=local: --concurrency 100% --filter=data-specification-editor --filter=conceptual-model-editor --filter=manager --filter=api-specification --filter=backend^...
   (cd services/backend && npx npm run build-pack)
 else
-  npx turbo run build --concurrency 100% --filter=data-specification-editor --filter=conceptual-model-editor --filter=manager --filter=api-specification
+  npx turbo run build  --cache=local: --concurrency 100% --filter=data-specification-editor --filter=conceptual-model-editor --filter=manager --filter=api-specification
 fi
 
 rm -rf .dist

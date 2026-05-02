@@ -14,6 +14,7 @@ import { toast } from "sonner";
 
 export interface AddImportedProps {
   iri: string;
+  urlOnly?: boolean;
 }
 
 enum URLImportType {
@@ -21,7 +22,7 @@ enum URLImportType {
   Git,
 };
 
-export const AddImported = ({ iri, isOpen, resolve }: AddImportedProps & BetterModalProps<boolean>) => {
+export const AddImported = ({ iri, urlOnly, isOpen, resolve }: AddImportedProps & BetterModalProps<boolean>) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
@@ -135,6 +136,21 @@ export const AddImported = ({ iri, isOpen, resolve }: AddImportedProps & BetterM
           <ModalTitle>{t("add-imported.title")}</ModalTitle>
         </ModalHeader>
         <ModalBody className="mt-auto flex flex-col gap-2 p-4">
+          {urlOnly ? (
+            <form className="grid gap-4" onSubmit={formSubmit}>
+              <div className="grid gap-2">
+                <Label htmlFor="url">
+                  {t("form.url.name")}
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Textarea id="url" placeholder={t("form.url.instruction")} required />
+              </div>
+
+              <LoadingButton type="submit" loading={loading}>
+                {t("add-imported.import")}
+              </LoadingButton>
+            </form>
+          ) : (
           <Tabs defaultValue="URL">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="URL">URL</TabsTrigger>
@@ -185,6 +201,7 @@ export const AddImported = ({ iri, isOpen, resolve }: AddImportedProps & BetterM
               />
             </TabsContent>
           </Tabs>
+          )}
         </ModalBody>
       </ModalContent>
     </Modal>

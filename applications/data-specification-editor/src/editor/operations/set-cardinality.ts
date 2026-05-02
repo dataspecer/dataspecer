@@ -22,9 +22,9 @@ export class SetCardinality implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.semanticModelRelationshipId) as string;
-    const relation = await this.store.readResource(this.semanticModelRelationshipId) as SemanticModelRelationship;
+    const relation = this.store.readResource(this.semanticModelRelationshipId) as SemanticModelRelationship;
 
     const operation = modifyRelation(this.semanticModelRelationshipId, {
       // @ts-ignore
@@ -40,7 +40,7 @@ export class SetCardinality implements ComplexOperation {
     });
 
     // @ts-ignore
-    await this.store.applyOperation(schema, operation);
+    this.store.applyOperation(schema, operation);
   }
 }
 
@@ -68,13 +68,13 @@ export class SetCardinalityPsm implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.entityId) as string;
 
     const operation = new DataPsmSetCardinality();
     operation.entityId = this.entityId;
     operation.dataPsmCardinality = this.cardinality ? [this.cardinality.cardinalityMin, this.cardinality.cardinalityMax] : null;
 
-    await this.store.applyOperation(schema, operation);
+    this.store.applyOperation(schema, operation);
   }
 }

@@ -29,15 +29,15 @@ class StructureModelAdapter {
     this.psmSchemaIri = psmSchemaIri;
   }
 
-  async load(psmSchemaIri: string): Promise<StructureModel | null> {
+  load(psmSchemaIri: string): StructureModel | null {
     this.psmSchemaIri = psmSchemaIri;
-    const psmSchema = await this.reader.readResource(psmSchemaIri);
+    const psmSchema = this.reader.readResource(psmSchemaIri);
     if (!DataPsmSchema.is(psmSchema)) {
       return null;
     }
     const roots: StructureModelSchemaRoot[] = [];
     for (const iri of psmSchema.dataPsmRoots) {
-      roots.push(await this.loadRoot(iri, psmSchemaIri));
+      roots.push(this.loadRoot(iri, psmSchemaIri));
     }
 
     const model = new StructureModel();
@@ -53,9 +53,9 @@ class StructureModelAdapter {
     return model;
   }
 
-  async loadRoot(iri: string, schemaIri: string): Promise<StructureModelSchemaRoot> {
-    const schema = await this.reader.readResource(schemaIri) as DataPsmSchema;
-    const entity = await this.reader.readResource(iri);
+  loadRoot(iri: string, schemaIri: string): StructureModelSchemaRoot {
+    const schema = this.reader.readResource(schemaIri) as DataPsmSchema;
+    const entity = this.reader.readResource(iri);
     const root = new StructureModelSchemaRoot();
     root.psmIri = entity.iri;
     /**
@@ -69,18 +69,19 @@ class StructureModelAdapter {
     root.technicalLabel = schema.dataPsmTechnicalLabel ?? null;
     root.collectionTechnicalLabel = schema.dataPsmCollectionTechnicalLabel ?? null;
     root.enforceCollection = schema.dataPsmEnforceCollection ?? false;
-    root.cardinalityMin = schema.dataPsmCardinality?.[0] ?? null;
-    root.cardinalityMax = schema.dataPsmCardinality ? schema.dataPsmCardinality[1] : null;
+    // Default cardinality is 1..1
+    root.cardinalityMin = schema.dataPsmCardinality ? schema.dataPsmCardinality[0] : 1;
+    root.cardinalityMax = schema.dataPsmCardinality ? schema.dataPsmCardinality[1] : 1;
     root.enforceJsonLdContext = schema.jsonEnforceContext ?? "no";
     if (DataPsmOr.is(entity)) {
       for (const choiceIri of entity.dataPsmChoices) {
-        const choice = await this.reader.readResource(choiceIri);
+        const choice = this.reader.readResource(choiceIri);
         if (DataPsmClass.is(choice)) {
-          root.classes.push(await this.loadClass(choice));
+          root.classes.push(this.loadClass(choice));
           root.orTechnicalLabel = entity.dataPsmTechnicalLabel ?? root.technicalLabel;
           root.isInOr = true;
         } else if (DataPsmClassReference.is(choice)) {
-          root.classes.push((await this.loadClassReference(choice))[0][0]);
+          root.classes.push(this.loadClassReference(choice)[0][0]);
           root.orTechnicalLabel = entity.dataPsmTechnicalLabel ?? root.technicalLabel;
           root.isInOr = true;
         } else {
@@ -88,9 +89,9 @@ class StructureModelAdapter {
         }
       }
     } else if (DataPsmClass.is(entity)) {
-      root.classes.push(await this.loadClass(entity));
+      root.classes.push(this.loadClass(entity));
     } else if (DataPsmExternalRoot.is(entity)) {
-      root.classes.push(await this.loadExternalRoot(entity));
+      root.classes.push(this.loadExternalRoot(entity));
     } else {
       throw new Error(`Unsupported PSM root entity '${iri}'.`);
     }
@@ -98,9 +99,9 @@ class StructureModelAdapter {
     return root;
   }
 
-  private async loadClass(
+  private loadClass(
     classData: DataPsmClass | DataPsmContainer
-  ): Promise<StructureModelClass> {
+  ): StructureModelClass {
     // There can be a cycle in extends or properties, so we keep track
     // of what has already been loaded.
     let model = this.classes[classData.iri];
@@ -124,11 +125,11 @@ class StructureModelAdapter {
     // to deal with that we may need to change here.
     if (DataPsmClass.is(classData)) {
       for (const iri of classData?.dataPsmExtends) {
-        const part = await this.reader.readResource(iri);
+        const part = this.reader.readResource(iri);
         if (DataPsmClass.is(part)) {
-          model.extends.push(await this.loadClass(part));
+          model.extends.push(this.loadClass(part));
         } else if (DataPsmClassReference.is(part)) {
-          const [types] = await this.loadClassReference(part);
+          const [types] = this.loadClassReference(part);
           model.extends.push(...types);
         } else {
           throw new Error(`Unsupported PSM class extends entity '${iri}'.`);
@@ -136,23 +137,23 @@ class StructureModelAdapter {
       }
     }
     for (const iri of classData.dataPsmParts) {
-      const part = await this.reader.readResource(iri);
+      const part = this.reader.readResource(iri);
       if (DataPsmAssociationEnd.is(part)) {
-        model.properties.push(await this.loadAssociationEnd(part));
+        model.properties.push(this.loadAssociationEnd(part));
       } else if (DataPsmAttribute.is(part)) {
-        model.properties.push(await this.loadAttribute(part));
+        model.properties.push(this.loadAttribute(part));
       } else if (DataPsmInclude.is(part)) {
         // Include is represented as extension
-        const includedClass = await this.reader.readResource(part.dataPsmIncludes);
+        const includedClass = this.reader.readResource(part.dataPsmIncludes);
         if (DataPsmClass.is(includedClass)) {
-          model.extends.push(await this.loadClass(includedClass));
+          model.extends.push(this.loadClass(includedClass));
         } else if (DataPsmClassReference.is(includedClass)) {
-          model.extends.push(...await this.loadClassReference(includedClass)[0]);
+          model.extends.push(...this.loadClassReference(includedClass)[0]);
         } else {
           throw new Error(`Unsupported PSM included entity '${iri}'.`);
         }
       } else if (DataPsmContainer.is(part)) {
-        model.properties.push(await this.loadContainer(part));
+        model.properties.push(this.loadContainer(part));
       } else {
         throw new Error(`Unsupported PSM class member entity '${iri}'.`);
       }
@@ -180,10 +181,10 @@ class StructureModelAdapter {
     }
   }
 
-  private async loadClassReference(
+  private loadClassReference(
     classReferenceData: DataPsmClassReference
-  ): Promise<[StructureModelClass[], string | null | undefined]> {
-    const part = await this.reader.readResource(
+  ): [StructureModelClass[], string | null | undefined] {
+    const part = this.reader.readResource(
       classReferenceData.dataPsmClass
     );
     // We are going to load another schema.
@@ -193,22 +194,22 @@ class StructureModelAdapter {
       classReferenceData.dataPsmSpecification
     );
     // This has side effect of correctly loading full specification
-    const specification = await adapter.load(classReferenceData.dataPsmSpecification);
+    const specification = adapter.load(classReferenceData.dataPsmSpecification);
     if (DataPsmClass.is(part)) {
-      const model = await adapter.loadClass(part);
+      const model = adapter.loadClass(part);
       const copiedModel = Object.assign(Object.create(Object.getPrototypeOf(model)), model);
       copiedModel.isReferenced = true;
       return [[copiedModel], undefined];
     } else if (DataPsmExternalRoot.is(part)) {
-      const model = await adapter.loadExternalRoot(part);
+      const model = adapter.loadExternalRoot(part);
       const copiedModel = Object.assign(Object.create(Object.getPrototypeOf(model)), model);
       copiedModel.isReferenced = true;
       return [[copiedModel], undefined];
     } else if (DataPsmOr.is(part)) { // todo this needs to be fixed
       const references = [];
       for (const p of part.dataPsmChoices) {
-        const orPart = await this.reader.readResource(p) as DataPsmClass | DataPsmClassReference;
-        const model = DataPsmClass.is(orPart) ? await adapter.loadClass(orPart) : (await adapter.loadClassReference(orPart))[0][0];
+        const orPart = this.reader.readResource(p) as DataPsmClass | DataPsmClassReference;
+        const model = DataPsmClass.is(orPart) ? adapter.loadClass(orPart) : adapter.loadClassReference(orPart)[0][0];
         const copiedModel = Object.assign(Object.create(Object.getPrototypeOf(model)), model);
         copiedModel.isReferenced = true;
         references.push(copiedModel);
@@ -226,15 +227,15 @@ class StructureModelAdapter {
    * contains technical label of the OR. If there is no OR, the value is undefined.
    * If the OR is unnamed, the value is null.
    */
-  private async loadComplexType(
+  private loadComplexType(
     complexTypeData: DataPsmClass | DataPsmClassReference | DataPsmContainer
-  ): Promise<[StructureModelComplexType[], string | null | undefined]> {
+  ): [StructureModelComplexType[], string | null | undefined] {
     let loadedClass: StructureModelClass[] = [];
     let label: string = undefined;
     if (DataPsmClass.is(complexTypeData) || DataPsmContainer.is(complexTypeData)) {
-      loadedClass = [await this.loadClass(complexTypeData)];
+      loadedClass = [this.loadClass(complexTypeData)];
     } else if (DataPsmClassReference.is(complexTypeData)) {
-      [loadedClass, label] = await this.loadClassReference(complexTypeData);
+      [loadedClass, label] = this.loadClassReference(complexTypeData);
     }
 
     return [loadedClass.map(cls => {
@@ -251,9 +252,9 @@ class StructureModelAdapter {
    * @param associationEndData
    * @private
    */
-  private async loadAssociationEnd(
+  private loadAssociationEnd(
     associationEndData: DataPsmAssociationEnd
-  ): Promise<StructureModelProperty> {
+  ): StructureModelProperty {
     const model = new StructureModelProperty();
     model.psmIri = associationEndData.iri;
     model.pimIri = associationEndData.dataPsmInterpretation;
@@ -268,7 +269,7 @@ class StructureModelAdapter {
     const data = DataPsmXmlPropertyExtension.getExtensionData(associationEndData);
     model.xmlIsAttribute = data.isAttribute;
 
-    const semanticRelationship = await this.reader.readResource(
+    const semanticRelationship = this.reader.readResource(
       associationEndData.dataPsmInterpretation
     ) as unknown as ExtendedSemanticModelRelationship | null;
     const isReverse = associationEndData.dataPsmIsReverse === true;
@@ -292,15 +293,15 @@ class StructureModelAdapter {
     }
 
     // The association end may point to class, class reference or "OR".
-    const part = await this.reader.readResource(associationEndData.dataPsmPart);
+    const part = this.reader.readResource(associationEndData.dataPsmPart);
 
     if (DataPsmOr.is(part)) {
       for (const choice of part.dataPsmChoices) {
-        const cls = await this.reader.readResource(choice);
+        const cls = this.reader.readResource(choice);
         if (!DataPsmClass.is(cls) && !DataPsmClassReference.is(cls)) {
           throw new Error(`Unsupported entity in OR ${choice}.`);
         }
-        model.dataTypes.push(...(await this.loadComplexType(cls))[0]);
+        model.dataTypes.push(...this.loadComplexType(cls)[0]);
         model.orTechnicalLabel = part.dataPsmTechnicalLabel ?? associationEndData.dataPsmTechnicalLabel;
         model.isInOr = true;
       }
@@ -309,7 +310,7 @@ class StructureModelAdapter {
         model.isReferencing = true;
         model.referencingStructureSchema = part.dataPsmSpecification;
       }
-      const [types, label] = await this.loadComplexType(part); // It might be a class or it might be a reference (to or for example)
+      const [types, label] = this.loadComplexType(part); // It might be a class or it might be a reference (to or for example)
       model.dataTypes.push(...types);
       model.orTechnicalLabel = label ?? (DataPsmClassReference.is(part) ? null : associationEndData.dataPsmTechnicalLabel);
       model.isInOr = label !== undefined;
@@ -320,9 +321,9 @@ class StructureModelAdapter {
     return model;
   }
 
-  private async loadAttribute(
+  private loadAttribute(
     attributeData: DataPsmAttribute
-  ): Promise<StructureModelProperty> {
+  ): StructureModelProperty {
     const model = new StructureModelProperty();
     model.psmIri = attributeData.iri;
     model.pimIri = attributeData.dataPsmInterpretation;
@@ -335,7 +336,7 @@ class StructureModelAdapter {
     const data = DataPsmXmlPropertyExtension.getExtensionData(attributeData);
     model.xmlIsAttribute = data.isAttribute;
 
-    const pimAttributeData = await this.reader.readResource(
+    const pimAttributeData = this.reader.readResource(
       attributeData.dataPsmInterpretation
     ) as unknown as Entity;
     if (pimAttributeData === null) {
@@ -367,9 +368,9 @@ class StructureModelAdapter {
     return model;
   }
 
-  private async loadContainer(
+  private loadContainer(
     containerData: DataPsmContainer
-  ): Promise<StructureModelProperty> {
+  ): StructureModelProperty {
     const property = new StructureModelProperty();
     property.psmIri = containerData.iri;
     property.profiling = containerData.profiling ?? [];
@@ -380,7 +381,7 @@ class StructureModelAdapter {
     property.cardinalityMin = containerData.dataPsmCardinality?.[0] ?? 1;
     property.cardinalityMax = containerData.dataPsmCardinality ? containerData.dataPsmCardinality[1] : 1;
 
-    const [part] = await this.loadComplexType(containerData);
+    const [part] = this.loadComplexType(containerData);
     property.dataTypes = part;
 
     return property;
@@ -392,7 +393,7 @@ class StructureModelAdapter {
    * it is useful to ignore the concept of external root and treat it as a
    * regular class.
    */
-  private async loadExternalRoot(root: DataPsmExternalRoot): Promise<StructureModelClass> {
+  private loadExternalRoot(root: DataPsmExternalRoot): StructureModelClass {
     const model = new StructureModelClass();
 
     model.psmIri = root.iri;
@@ -405,10 +406,10 @@ class StructureModelAdapter {
   }
 }
 
-export async function coreResourcesToStructuralModel(
+export function coreResourcesToStructuralModel(
   reader: CoreResourceReader,
   psmSchemaIri: string
-): Promise<StructureModel | null> {
+): StructureModel | null {
   const adapter = new StructureModelAdapter(reader, null);
-  return await adapter.load(psmSchemaIri);
+  return adapter.load(psmSchemaIri);
 }

@@ -16,10 +16,10 @@ export class XmlSetSkipRootElement implements ComplexOperation {
         this.store = store;
     }
 
-    async execute(): Promise<void> {
+    execute(): void {
         const operation = new DataPsmSetXmlSkipRootElement();
         operation.dataPsmSchema = this.forDataPsmSchemaIri;
         operation.skipRootElement = this.skipRootElement;
-        await this.store.applyOperation(this.forDataPsmSchemaIri, operation);
+        this.store.applyOperation(this.forDataPsmSchemaIri, operation);
     }
 }

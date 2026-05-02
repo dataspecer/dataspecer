@@ -12,7 +12,7 @@ import { isSemanticModelRelationshipUsage } from "@dataspecer/core-v2/semantic-m
 import { PimStoreWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
-import { conceptualModelToEntityListContainer, rdfToConceptualModel } from "@dataspecer/data-specification-vocabulary";
+import { conceptualModelToEntityListContainer, rdfToConceptualModel } from "@dataspecer/data-specification-vocabulary/semantic-model";
 import { dsvMetadataWellKnown, rdfToDSVMetadata } from "@dataspecer/data-specification-vocabulary/specification-description";
 import { turtleStringToStructureModel } from "@dataspecer/data-specification-vocabulary/structure-model";
 import express from "express";
@@ -118,12 +118,12 @@ async function getExistingChildrenByUrl(packageIri: string): Promise<Map<string,
  * wrapper should be deprecated.
  */
 async function importRdfsModel(parentIri: string, url: string, newIri: string, userMetadata: any): Promise<SemanticModelEntity[]> {
-  await ensureResource(parentIri, newIri, "https://dataspecer.com/core/model-descriptor/pim-store-wrapper", userMetadata);
-  const store = await resourceModel.getOrCreateResourceModelStore(newIri);
   const wrapper = await createRdfsModel([url], httpFetch);
   const serialization = wrapper.serializeModel();
   serialization.id = newIri;
   serialization.alias = userMetadata?.label?.en ?? userMetadata?.label?.cs;
+  await ensureResource(parentIri, newIri, "https://dataspecer.com/core/model-descriptor/pim-store-wrapper", userMetadata);
+  const store = await resourceModel.getOrCreateResourceModelStore(newIri);
   await store.setJson(serialization);
   return Object.values(wrapper.getEntities()) as SemanticModelEntity[];
 }
@@ -421,7 +421,7 @@ async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIr
     if (gcResource) {
       const queryResponse = await fetch(gcResource.url);
       const data = await queryResponse.text();
-      configurationModel = await turtleStringToGeneratorConfiguration(gcResource.iri, data);
+      configurationModel = await turtleStringToGeneratorConfiguration(null, data); // todo: iri of resource descriptor is not iri of the configuration IMO
     }
 
     let rootHref = new URL(".", url).href;
@@ -589,6 +589,20 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
   const existingResource = await resourceModel.getResource(query.iri);
   if (!existingResource) {
     response.status(404).send({ error: "Resource not found" });
+    return;
+  }
+
+  // Check if it is a PIM wrapper and if so, we can reload it directly
+  if (existingResource.types.includes("https://dataspecer.com/core/model-descriptor/pim-store-wrapper")) {
+    const store = await resourceModel.getOrCreateResourceModelStore(existingResource.iri);
+    const data = await store.getJson()  as {urls: string[]};
+    const urls = data.urls;
+    const newModel = await createRdfsModel(urls, httpFetch);
+    // We need to override its id
+    newModel.id = existingResource.iri;
+    await store.setJson(newModel.serializeModel());
+
+    response.send(await resourceModel.getResource(existingResource.iri));
     return;
   }
 

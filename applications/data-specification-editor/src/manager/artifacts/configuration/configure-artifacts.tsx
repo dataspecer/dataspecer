@@ -1,8 +1,7 @@
 import { Button } from "@mui/material";
-import { FC, useCallback, useContext } from "react";
+import { FC, useCallback, useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BackendConnectorContext } from "../../../application";
-import { useAsyncMemo } from "../../../editor/hooks/use-async-memo";
 import { useToggle } from "../../use-toggle";
 import { ConfigureArtifactsDialog } from "./configure-artifacts-dialog";
 
@@ -17,9 +16,15 @@ export const ConfigureArtifacts: FC<{
   const {t} = useTranslation("ui");
   const backendConnector = useContext(BackendConnectorContext);
 
-  const [configuration] = useAsyncMemo(() => backendConnector.getArtifactConfiguration(configurationId), [backendConnector, configurationId], {});
+  const [configuration, setConfiguration] = useState<object>(null);
+
+  useEffect(() => {
+    setConfiguration(null);
+    backendConnector.getArtifactConfiguration(configurationId).then(setConfiguration);
+  }, [backendConnector, configurationId]);
 
   const update = useCallback(async (configuration: object) => {
+    setConfiguration(configuration);
     await backendConnector.updateArtifactConfiguration(configurationId, configuration);
   }, [backendConnector, configurationId]);
 
@@ -27,7 +32,9 @@ export const ConfigureArtifacts: FC<{
 
   return <>
     <Button
-      onClick={configureArtifactsDialogOpen.open}>
+      onClick={configureArtifactsDialogOpen.open}
+      disabled={!configuration}
+    >
       {t("configure artifacts")}
     </Button>
 
@@ -35,7 +42,7 @@ export const ConfigureArtifacts: FC<{
       isOpen={configureArtifactsDialogOpen.isOpen}
       close={configureArtifactsDialogOpen.close}
       onChange={update}
-      configuration={configuration}
+      configuration={configuration ?? {}}
     />
   </>
 }

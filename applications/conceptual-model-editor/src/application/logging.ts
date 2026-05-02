@@ -20,17 +20,20 @@ interface Logger {
 
   missingTranslation(name: string): void;
 
+  missingEntity(identifier: string): void;
+
   invalidEntity(identifier: string, message: string, ...args: unknown[]): void;
 
 }
 
 /**
  * Usage `const logger = createLogger(import.meta.url);`
- * @param url
  */
-export const createLogger = (url: string | undefined): Logger => {
+export const createLogger = (moduleUrl: string): Logger => {
 
-  const name = url === undefined ? "" : `[${url}]`;
+  const { pathname } = new URL(moduleUrl);
+  const path = pathname.replace("/src/", "");
+  const name = "[" + path.substring(0, path.length - 3) + "]";
 
   const logger: Logger = {
     trace: (operation: string, ...optionalParams: any[]) => {
@@ -48,6 +51,9 @@ export const createLogger = (url: string | undefined): Logger => {
     missingTranslation: (name: string) => {
       console.error(name, `Missing translation for "${name}"`);
     },
+    missingEntity: (identifier: string) => {
+      console.warn(name, `Missing entity with identifier "${identifier}".`);
+    },
     invalidEntity: (identifier: string, message: string, ...args: unknown[]) => {
       console.error(name, `Entity '${identifier}' is not valid: ${message}`, ...args);
     },
@@ -64,4 +70,4 @@ export const createLogger = (url: string | undefined): Logger => {
  *
  * @deprecated Create custom logger instead.
  */
-export const logger = createLogger(undefined);
+export const logger = createLogger("http://src/");

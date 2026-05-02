@@ -2,7 +2,7 @@ import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import type { NamedNode } from "@rdfjs/types";
 import { DataFactory, Writer } from "n3";
-import { RDF } from "../vocabulary.ts";
+import { RDF } from "../semantic-model/vocabulary.ts";
 import { DUMP_BASE_IRI, STRUCTURE_MODEL_DSV } from "./vocabulary.ts";
 
 const IRI = DataFactory.namedNode;

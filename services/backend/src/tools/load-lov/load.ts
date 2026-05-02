@@ -1,5 +1,4 @@
 import { LOCAL_SEMANTIC_MODEL } from '@dataspecer/core-v2/model/known-models';
-import { RdfsAdapter } from '@dataspecer/core-v2/rdfs-adapter';
 import { PrismaClient } from '@prisma/client';
 import cliProgress from 'cli-progress';
 import { readFileSync } from 'fs';
@@ -7,6 +6,7 @@ import { Parser, Store } from 'n3';
 import { LocalStoreModelBase } from '../../models/local-store-model.ts';
 import { ResourceModel } from '../../models/resource-model.ts';
 import { objectsToLanguageString } from './better-n3-store.ts';
+import type { SemanticModelEntity } from '@dataspecer/core-v2/semantic-model/concepts';
 
 const TYPE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
 const LOV = "https://lov.linkeddata.es/dataset/lov";
@@ -82,9 +82,10 @@ const filename = "./lov.nq";
         const entityStore = new Store();
         entityStore.addQuads(store.getQuads(null, null, null, subject.value));
 
-        const adapter = new RdfsAdapter();
-        adapter.load(entityStore);
-        const entities = adapter.getEntities();
+        // const adapter = new RdfsAdapter();
+        // adapter.load(entityStore);
+        // const entities = adapter.getEntities();
+        const entities = [] as SemanticModelEntity[]; // todo
 
         const vocabulary =  {
             id: subject.value,

@@ -19,12 +19,12 @@ export class MakeAbstract implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const dataPsmSchema = this.store.getSchemaForResource(this.dataPsmOrIri) as string;
 
     const op = new DataPsmUnsetChoice();
     op.dataPsmOr = this.dataPsmOrIri;
     op.dataPsmChoice = this.classId;
-    await this.store.applyOperation(dataPsmSchema, op);
+    this.store.applyOperation(dataPsmSchema, op);
   }
 }

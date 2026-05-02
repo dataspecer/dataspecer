@@ -10,6 +10,7 @@ import JSZip from "jszip";
 import { PrismaClientStorageApiForIriReplacement, StorageApiForIriReplacement } from "../utils/iri-replace-util.ts";
 import { AvailableExports, FilesystemFactoryMethodParams, PackageExporterByResourceType } from "@dataspecer/git-node";
 import { createFilesystemFactoryParams } from "../utils/filesystem-helpers.ts";
+import { getContentDispositionAttachmentHeaderValue, safeAsciiFileName, safeUnicodeFileName } from "../utils/safe-file-name.ts";
 
 function getName(name: LanguageString | undefined, defaultName: string) {
   return name?.["cs"] || name?.["en"] || defaultName;
@@ -50,8 +51,14 @@ export const exportPackageResource = asyncHandler(async (request: express.Reques
   // Kept just to show example how to use it for filesystem export (that being said the code is pretty old, so maybe it does not work)
   // const buffer = await exporter.doExportFromIRI("aa99f378-0ba2-46a2-8642-f7683e778d6d", "C:\\Users\\export\\directory", "C:\\Users\\filesystem-output", AvailableFilesystems.ClassicFilesystem, AvailableExports.Filesystem);
 
-  const filename = getName(resource?.userMetadata?.label, "package") + "-backup.zip";
-  response.type("application/zip").attachment(bunHotfixHttpFileName(filename)).send(buffer);
+  const filename = getName(resource?.userMetadata?.label, "package");
+
+  const ascii = safeAsciiFileName(filename, "dataspecer-project") + "-backup.zip";
+  const unicode = safeUnicodeFileName(filename, "dataspecer-project") + "-backup.zip";
+  response.header("Content-Disposition", getContentDispositionAttachmentHeaderValue(ascii, unicode));
+  // Express's res.attachment() method does not work with Unicode names properly
+
+  response.type("application/zip").send(buffer);
 });
 
 export const importPackageResource = asyncHandler(async (request: express.Request, response: express.Response) => {

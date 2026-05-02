@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<base:person xmlns:base="http://base/" xmlns:c="https://schemas.dataspecer.com/xsd/core/" xmlns:sp="http://www.w3.org/2005/sparql-results#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="PERSON123">
+   <base:iri>https://example.org/person/jane-doe</base:iri>
+   <base:name>Jane Doe</base:name>
+   <base:has_pet>
+      <base:iri>https://example.org/pet/fluffy</base:iri>
+      <base:name>Fluffy</base:name>
+      <base:kind>Dog</base:kind>
+   </base:has_pet>
+   <base:has_pet>
+      <base:iri>https://example.org/pet/spot</base:iri>
+      <base:name>Spot</base:name>
+      <base:kind>Cat</base:kind>
+   </base:has_pet>
+</base:person>

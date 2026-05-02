@@ -11,7 +11,7 @@
     "test:watch": "vitest"
   },
   "exports": {
-    ".": "./lib/index.js",
+    "./semantic-model": "./lib/semantic-model/index.js",
     "./generator-configuration": "./lib/generator-configuration/index.js",
     "./specification-description": "./lib/specification-description/index.js",
     "./structure-model": "./lib/structure-model/index.js"
@@ -21,6 +21,7 @@
     "@dataspecer/core-v2": "*",
     "@dataspecer/profile-model": "*",
     "@dataspecer/semantic-model": "*",
+    "@rdfjs/types": "^2.0.1",
     "jsonld": "^8.3.3",
     "n3": "^1.25.1"
   },
@@ -28,6 +29,6 @@
     "@types/jsonld": "^1.5.15",
     "@types/n3": "~1.24.2",
     "typescript": "^5.9.3",
-    "vitest": "^3.1.1"
+    "vitest": "^4.1.2"
   }
 }

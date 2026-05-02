@@ -11,12 +11,12 @@ import {
 } from "./data-psm-executor-utils.ts";
 import { DataPsmExternalRoot } from "../model/index.ts";
 
-export async function executeDataPsmCreateExternalRoot(
+export function executeDataPsmCreateExternalRoot(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmCreateExternalRoot
-): Promise<CoreExecutorResult> {
-  const schema = await loadDataPsmSchema(reader);
+): CoreExecutorResult {
+  const schema = loadDataPsmSchema(reader);
   if (schema === null) {
     return DataPsmExecutorResultFactory.missingSchema();
   }

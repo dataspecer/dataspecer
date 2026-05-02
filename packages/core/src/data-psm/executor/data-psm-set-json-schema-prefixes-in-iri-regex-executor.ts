@@ -3,12 +3,12 @@ import { DataPsmClass } from "../model/index.ts";
 import { DataPsmSetJsonSchemaPrefixesInIriRegex } from "../operation/index.ts";
 import { DataPsmExecutorResultFactory } from "./data-psm-executor-utils.ts";
 
-export async function executeDataPsmSetJsonSchemaPrefixesInIriRegex(
+export function executeDataPsmSetJsonSchemaPrefixesInIriRegex(
   reader: CoreResourceReader,
   _: any,
   operation: DataPsmSetJsonSchemaPrefixesInIriRegex
-): Promise<CoreExecutorResult> {
-  const resource = await reader.readResource(operation.dataPsmResource);
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.dataPsmResource);
   if (resource === null || !DataPsmClass.is(resource)) {
     return DataPsmExecutorResultFactory.invalidType(resource, "data-psm class");
   }

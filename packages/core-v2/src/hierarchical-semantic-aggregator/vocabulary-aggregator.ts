@@ -5,7 +5,7 @@ import { ExternalEntityWrapped, LocalEntityWrapped, SemanticModelAggregator } fr
 import { getSearchRelevance } from "./utils/get-search-relevance.ts";
 import { withAbsoluteIri } from "../semantic-model/utils/index.ts";
 import { createDefaultNoProfileAggregator, NoProfileAggregator } from "./utils/no-profile-aggregator.ts";
-import { AggregatedProfiledSemanticModelRelationship } from "../semantic-model/profile/aggregator/aggregator.ts";
+import { AggregatedProfiledSemanticModelRelationship } from "../semantic-model/profile/aggregator/index.ts";
 
 const VOCABULARY_AGGREGATOR_TYPE = "vocabulary-aggregator";
 

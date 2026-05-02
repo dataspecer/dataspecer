@@ -80,7 +80,7 @@ export const ReplaceAlongInheritanceDialog = dialog<{
         );
         replaceOperation.setContext(operationContext);
         replaceOperation.setSemanticStore(semanticModelAggregator);
-        store.executeComplexOperation(replaceOperation).then();
+        store.executeComplexOperation(replaceOperation);
         close();
     };
 

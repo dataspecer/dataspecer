@@ -3,7 +3,7 @@ import { SemanticModel } from "@dataspecer/semantic-model";
 import { semanticModelToLightweightOwl } from "@dataspecer/lightweight-owl";
 import {
   createDataSpecificationVocabulary,
-} from "@dataspecer/data-specification-vocabulary";
+} from "@dataspecer/data-specification-vocabulary/semantic-model";
 import {
   isComplexType,
   isPrimitiveType,

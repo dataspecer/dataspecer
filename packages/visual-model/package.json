@@ -13,11 +13,11 @@
     ".": "./lib/index.js"
   },
   "dependencies": {
-    "@dataspecer/entity-model": "*",
     "@dataspecer/utilities": "*"
   },
   "devDependencies": {
+    "@types/node": "^25.5.2",
     "typescript": "^5.9.3",
-    "vitest": "^3.1.1"
+    "vitest": "^4.1.2"
   }
 }

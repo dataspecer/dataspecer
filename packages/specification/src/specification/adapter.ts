@@ -121,7 +121,7 @@ export async function getDataSpecificationWithModels(dataSpecificationIri: strin
 
       // Handle autosave
       for (const model of psmStores) {
-        await store.addStore(model, {hasImmediateInterface: true});
+        await store.addStore(model);
         store.addEventListener("afterOperationExecuted", () => model.saveIfNewChanges());
       }
 

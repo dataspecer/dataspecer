@@ -18,11 +18,11 @@ export class XmlSetSchemaNamespace implements ComplexOperation {
         this.store = store;
     }
 
-    async execute(): Promise<void> {
+    execute(): void {
         const operation = new DataPsmSetNamespaceXmlExtension();
         operation.dataPsmSchema = this.forDataPsmSchemaIri;
         operation.namespace = this.namespace;
         operation.namespacePrefix = this.namespacePrefix;
-        await this.store.applyOperation(this.forDataPsmSchemaIri, operation);
+        this.store.applyOperation(this.forDataPsmSchemaIri, operation);
     }
 }

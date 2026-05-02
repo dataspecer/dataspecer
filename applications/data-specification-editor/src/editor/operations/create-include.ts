@@ -16,12 +16,12 @@ export class CreateInclude implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.include) as string;
 
     const dataPsmCreateInclude = new DataPsmCreateInclude();
     dataPsmCreateInclude.dataPsmIncludes = this.include;
     dataPsmCreateInclude.dataPsmOwner = this.ownerClass;
-    await this.store.applyOperation(schema, dataPsmCreateInclude);
+    this.store.applyOperation(schema, dataPsmCreateInclude);
   }
 }

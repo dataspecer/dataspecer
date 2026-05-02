@@ -52,6 +52,6 @@ export const defaultConfiguration: Configuration = Object.freeze({
   ySnapGrid: 10,
   alignmentXSnapGrid: 20,
   alignmentYSnapGrid: 20,
-  defaultModelColor: "#000069",
+  defaultModelColor: "#9fbdffff",
   prefixes: PREFIXES,
 });

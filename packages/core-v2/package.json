@@ -17,7 +17,6 @@
     "./hierarchical-semantic-aggregator": "./lib/hierarchical-semantic-aggregator/index.js",
     "./model/known-models": "./lib/model/known-models.js",
     "./project": "./lib/project/index.js",
-    "./rdfs-adapter": "./lib/rdfs-adapter/index.js",
     "./semantic-model/aggregator": "./lib/semantic-model/aggregator/index.js",
     "./semantic-model/concepts": "./lib/semantic-model/concepts/index.js",
     "./semantic-model/simplified": "./lib/semantic-model/simplified/index.js",
@@ -42,11 +41,13 @@
     "@dataspecer/rdfs-adapter": "*",
     "@dataspecer/sgov-adapter": "*",
     "@dataspecer/visual-model": "*",
-    "n3": "~1.25.1"
+    "n3": "~1.25.1",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@types/n3": "~1.24.2",
+    "@types/node": "^25.5.2",
     "typescript": "^5.9.3",
-    "vitest": "^3.1.1"
+    "vitest": "^4.1.2"
   }
 }

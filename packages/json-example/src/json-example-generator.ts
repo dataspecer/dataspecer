@@ -37,7 +37,7 @@ export class JsonExampleGenerator implements ArtefactGenerator {
       ): Promise<JsonExampleGeneratorObject | null> {
         var jsonld;
         const schemaArtefact = artefact as DataSpecificationSchema;
-        var jsonConfiguration = DefaultJsonConfiguration;
+        var jsonConfiguration = {...DefaultJsonConfiguration};
         jsonConfiguration.dereferenceContext = true;
         const configuration = JsonConfigurator.merge(
             jsonConfiguration,

@@ -35,7 +35,7 @@ export class CreateNonInterpretedAssociationToClass implements ComplexOperation 
     this.context = context;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.ownerClass) as string;
 
     // Whether we have a semantic source or not
@@ -54,7 +54,7 @@ export class CreateNonInterpretedAssociationToClass implements ComplexOperation 
       dataPsmCreateClass.dataPsmTechnicalLabel = "class";
     }
 
-    const dataPsmCreateClassResult = await this.store.applyOperation(schema, dataPsmCreateClass);
+    const dataPsmCreateClassResult = this.store.applyOperation(schema, dataPsmCreateClass);
     const psmClassIri = dataPsmCreateClassResult.created[0];
 
     const association = new DataPsmCreateAssociationEnd();
@@ -62,6 +62,6 @@ export class CreateNonInterpretedAssociationToClass implements ComplexOperation 
     association.dataPsmTechnicalLabel = "association";
     association.dataPsmOwner = this.ownerClass;
     association.dataPsmPart = psmClassIri;
-    await this.store.applyOperation(schema, association);
+    this.store.applyOperation(schema, association);
   }
 }

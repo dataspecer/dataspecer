@@ -1,4 +1,4 @@
-import React, {FormEvent, memo} from "react";
+import React, {memo, type ChangeEvent, type ChangeEventHandler} from "react";
 import {Autocomplete, Box, Chip, IconButton, TextField, Typography} from "@mui/material";
 import {KnownDatatype} from "../../utils/known-datatypes";
 import InfoTwoToneIcon from "@mui/icons-material/InfoTwoTone";
@@ -88,9 +88,9 @@ export const DatatypeSelector: React.FC<DatatypeSelectorParameters> = memo(({val
                     ...params.inputProps,
                     autoComplete: 'new-password',
                     value: valueIsKnown ? "" : value,
-                    onChange: (event: FormEvent<HTMLInputElement>) => {
+                    onChange: (event: ChangeEvent<HTMLInputElement>) => {
                         onChange((event.target as HTMLInputElement).value);
-                        (params.inputProps.onChange as React.FormEventHandler<HTMLInputElement>)(event);
+                        (params.inputProps.onChange as ChangeEventHandler<HTMLInputElement>)(event);
                     },
                     onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => {
                         if (event.key === "Backspace" && valueIsKnown) {

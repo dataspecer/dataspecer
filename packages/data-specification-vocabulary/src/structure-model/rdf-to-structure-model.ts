@@ -1,7 +1,7 @@
 import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import type { Quad } from "@rdfjs/types";
 import { Parser, Store } from "n3";
-import { RDF } from "../vocabulary.ts";
+import { RDF } from "../semantic-model/vocabulary.ts";
 import { DUMP_BASE_IRI, STRUCTURE_MODEL_DSV } from "./vocabulary.ts";
 
 export async function rdfToStructureModel(rdf: Quad[]): Promise<CoreResource[]> {

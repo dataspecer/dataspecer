@@ -9,7 +9,7 @@ export interface DSVMetadataSchemaRoot extends DSVMetadataResourceDescriptor {
 }
 
 export interface DSVMetadataSpecification {
-  [DSV_METADATA_SCHEMA_ID]: string;
+  [DSV_METADATA_SCHEMA_ID]?: string;
   [DSV_METADATA_SCHEMA_TYPE]: string[];
 
   title?: LanguageString;
@@ -48,7 +48,7 @@ export interface DSVMetadataExternalSpecification {
 }
 
 export interface DSVMetadataResourceDescriptor {
-  [DSV_METADATA_SCHEMA_ID]: string;
+  [DSV_METADATA_SCHEMA_ID]?: string;
   [DSV_METADATA_SCHEMA_TYPE]: string[];
 
   hasArtifact: string | string[];

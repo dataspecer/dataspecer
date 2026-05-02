@@ -22,7 +22,7 @@ test("Update data PSM namespace and namespace prefix.", async () => {
     },
   };
 
-  const actual = await executeDataPsmSetNamespaceXmlExtension(
+  const actual = executeDataPsmSetNamespaceXmlExtension(
     wrapResourcesWithReader(before),
     undefined,
     operation

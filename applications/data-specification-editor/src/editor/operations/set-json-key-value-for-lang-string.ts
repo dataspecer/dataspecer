@@ -16,12 +16,12 @@ export class SetJsonKeyValueForLangString implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.forDataPsmResourceIri) as string;
 
     const op = new DataPsmSetUseKeyValueForLangString();
     op.dataPsmProperty = this.forDataPsmResourceIri;
     op.useKeyValueForLangString = this.useKeyValueForLangString;
-    await this.store.applyOperation(schema, op);
+    this.store.applyOperation(schema, op);
   }
 }

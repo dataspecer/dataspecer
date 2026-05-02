@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rdf:RDF xmlns:base="http://base/" xmlns:c="https://schemas.dataspecer.com/xsd/core/" xmlns:ns0="https://example.com/person-vocabulary#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+   <rdf:Description rdf:about="https://example.org/person/jane-doe">
+      <rdf:type rdf:resource="https://example.com/person-vocabulary#Person"/>
+      <ns0:id rdf:datatype="http://www.w3.org/2001/XMLSchema#string">PERSON123</ns0:id>
+      <ns0:personName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Jane Doe</ns0:personName>
+      <ns0:hasPet>
+         <rdf:Description rdf:about="https://example.org/pet/fluffy">
+            <rdf:type rdf:resource="https://example.com/person-vocabulary#Pet"/>
+            <ns0:name rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Fluffy</ns0:name>
+            <ns0:hasKind>
+               <rdf:Description rdf:nodeID="d13aAf">
+                  <rdf:type rdf:resource="https://example.com/person-vocabulary#PetKind"/>
+                  <ns0:kind rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Dog</ns0:kind>
+               </rdf:Description>
+            </ns0:hasKind>
+         </rdf:Description>
+      </ns0:hasPet>
+      <ns0:hasPet>
+         <rdf:Description rdf:about="https://example.org/pet/spot">
+            <rdf:type rdf:resource="https://example.com/person-vocabulary#Pet"/>
+            <ns0:name rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Spot</ns0:name>
+            <ns0:hasKind>
+               <rdf:Description rdf:nodeID="d13aAh">
+                  <rdf:type rdf:resource="https://example.com/person-vocabulary#PetKind"/>
+                  <ns0:kind rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Cat</ns0:kind>
+               </rdf:Description>
+            </ns0:hasKind>
+         </rdf:Description>
+      </ns0:hasPet>
+   </rdf:Description>
+</rdf:RDF>

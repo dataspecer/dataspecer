@@ -3,15 +3,15 @@ import {DataPsmDeleteExternalRoot} from "../operation/index.ts";
 import {DataPsmExecutorResultFactory} from "./data-psm-executor-utils.ts";
 import {DataPsmExternalRoot, DataPsmSchema} from "../model/index.ts";
 
-export async function executeDataPsmDeleteExternalRoot(
+export function executeDataPsmDeleteExternalRoot(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmDeleteExternalRoot
-): Promise<CoreExecutorResult> {
+): CoreExecutorResult {
   let schema: DataPsmSchema | null = null;
   const classes: DataPsmExternalRoot[] = [];
-  for (const iri of await reader.listResources()) {
-    const resource = await reader.readResource(iri);
+  for (const iri of reader.listResources()) {
+    const resource = reader.readResource(iri);
     if (DataPsmSchema.is(resource)) {
       schema = resource;
     }
@@ -25,7 +25,7 @@ export async function executeDataPsmDeleteExternalRoot(
   }
 
 
-  const classToDelete = await reader.readResource(operation.dataPsmExternalRoot);
+  const classToDelete = reader.readResource(operation.dataPsmExternalRoot);
   if (!DataPsmExternalRoot.is(classToDelete)) {
     return CoreExecutorResult.createError(
       `Missing class '${operation.dataPsmExternalRoot}' to delete.`

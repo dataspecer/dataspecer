@@ -16,17 +16,17 @@ export class CreateContainer implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.ownerClass) as string;
 
     const op = new DataPsmCreateContainer();
     op.dataPsmOwner = this.ownerClass;
     op.dataPsmContainerType = this.type;
-    const container = (await this.store.applyOperation(schema, op)).created[0];
+    const container = (this.store.applyOperation(schema, op)).created[0];
 
     const cardinality = new DataPsmSetCardinality();
     cardinality.dataPsmCardinality = [1, 1];
     cardinality.entityId = container;
-    await this.store.applyOperation(schema, cardinality);
+    this.store.applyOperation(schema, cardinality);
   }
 }

@@ -51,7 +51,7 @@ describe("Replace class along its hierarchy.", () => {
     operation.dataPsmOriginalClass = "http://class/1";
     operation.dataPsmReplacingClass = "http://class/2";
 
-    const actual = await executeDataPsmReplaceAlongInheritance(
+    const actual = executeDataPsmReplaceAlongInheritance(
       wrapResourcesWithReader(resources),
       undefined,
       operation

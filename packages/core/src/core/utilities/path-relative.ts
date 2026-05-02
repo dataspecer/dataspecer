@@ -1,13 +1,17 @@
 /**
  * Returns the relative path between files from {@param from} to {@param to}.
- * Works for both file system paths starting with / and URLs starting with
- * http(s)://. Supports query strings and fragments.
+ * Works for both file system paths starting with / and IRIs (rfc3987) starting
+ * with http(s)://.
  *
- * @param useAbsoluteIfHttp If true and the path is a URL, it will return the
+ * One notable difference between IRI and URI (rfc3986) is that IRIs can contain
+ * Unicode characters, thus wont be percent-encoded.
+ *
+ * @param useAbsoluteIfHttp If true and the path is an IRI, it will return the
  * absolute path, effectively ignoring the from parameter. Otherwise, it will
- * try to create relative paths for same origin URLs.
+ * try to create relative paths for same origin IRIs.
  *
- * ! Directories must end with a slash (/). If they don't, they are treated as files.
+ * ! Directories must end with a slash (/). If they don't, they are treated as
+ * files.
  *
  * Note: Most webservers are kind and if the link points to a directory
  * (.../dir) they redirect first to slash version of that.
@@ -17,12 +21,11 @@ export function pathRelative(from: string, to: string, useAbsoluteIfHttp: boolea
     const isHttp = /^https?:\/\//i.test(to);
     if (isHttp && useAbsoluteIfHttp) return to;
 
-    const base = "http://domain.internal";
-    const fromUrl = new URL(from, base);
-    const toUrl = new URL(to, base);
+    const fromUrl = parseIRI(from);
+    const toUrl = parseIRI(to);
 
-    // Handle cross-origin or cross-protocol
-    if (fromUrl.origin !== toUrl.origin) {
+    // Handle cross-origin or cross-protocol or parse fallback
+    if (!fromUrl || !toUrl || fromUrl.origin !== toUrl.origin) {
       return to;
     }
 
@@ -83,4 +86,24 @@ export function pathRelative(from: string, to: string, useAbsoluteIfHttp: boolea
   } catch (e) {
     return to;
   }
+}
+
+
+/**
+ * Helper naive function to parse Unicode IRIs
+ */
+function parseIRI(iri: string) {
+  const result = /^(https?:\/\/[^\/*]*)?([^?#]*)?(\?[^#]*)?(#.*)?$/.exec(iri);
+
+  if (!result) {
+    console.warn(`Failed to parse IRI: ${iri}`);
+    return null;
+  }
+
+  return {
+    origin: result[1] || "",
+    pathname: result[2] || "",
+    search: result[3] || "",
+    hash: result[4] || "",
+  };
 }

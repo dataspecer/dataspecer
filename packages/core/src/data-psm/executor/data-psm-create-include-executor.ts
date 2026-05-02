@@ -15,22 +15,22 @@ import {
 } from "./data-psm-executor-utils.ts";
 import { DataPsmClass, DataPsmInclude } from "../model/index.ts";
 
-export async function executeDataPsmCreateInclude(
+export function executeDataPsmCreateInclude(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmCreateInclude
-): Promise<CoreExecutorResult> {
-  const schema = await loadDataPsmSchema(reader);
+): CoreExecutorResult {
+  const schema = loadDataPsmSchema(reader);
   if (schema === null) {
     return DataPsmExecutorResultFactory.missingSchema();
   }
 
-  const owner = await loadDataPsmClass(reader, operation.dataPsmOwner);
+  const owner = loadDataPsmClass(reader, operation.dataPsmOwner);
   if (owner === null) {
     return DataPsmExecutorResultFactory.missingOwner(operation.dataPsmOwner);
   }
 
-  const includes = await loadDataPsmClass(reader, operation.dataPsmIncludes);
+  const includes = loadDataPsmClass(reader, operation.dataPsmIncludes);
   if (includes === null) {
     return CoreExecutorResult.createError(
         `Missing data-psm included class: '${operation.dataPsmIncludes}'.`

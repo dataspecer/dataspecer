@@ -11,12 +11,12 @@ import {
 } from "../model/index.ts";
 import { DataPsmExecutorResultFactory } from "./data-psm-executor-utils.ts";
 
-export async function executeDataPsmSetPart(
+export function executeDataPsmSetPart(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetPart
-): Promise<CoreExecutorResult> {
-  const resource = await reader.readResource(operation.dataPsmAssociationEnd);
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.dataPsmAssociationEnd);
   if (resource == null || !DataPsmAssociationEnd.is(resource)) {
     return DataPsmExecutorResultFactory.invalidType(
       resource,
@@ -24,7 +24,7 @@ export async function executeDataPsmSetPart(
     );
   }
 
-  const newPart = await reader.readResource(operation.dataPsmPart);
+  const newPart = reader.readResource(operation.dataPsmPart);
   if (
     newPart == null ||
     (!DataPsmClass.is(newPart) && !DataPsmClassReference.is(newPart))

@@ -13,12 +13,12 @@ import {
   DataPsmSchema,
 } from "../model/index.ts";
 
-export async function executeDataPsmSetHumanLabel(
+export function executeDataPsmSetHumanLabel(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetHumanLabel
-): Promise<CoreExecutorResult> {
-  const resource = await reader.readResource(operation.dataPsmResource);
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.dataPsmResource);
   if (resource == null) {
     return CoreExecutorResult.createError(
       `Missing data-psm resource '${operation.dataPsmResource}'.`

@@ -1,25 +1,29 @@
 {
   "projects": {
     "application-profile": {
-      "description": "Vytvořte a publikujte aplikační profil ke stávajícímu slovníku na internetu tím, že určíte použití jednotlivých pojmů.",
+      "description": "Vytvořte aplikační profil přepoužitím existujících slovníků a jiných aplikačních profilů.",
       "title": "Aplikační profil"
     },
     "data-schema": {
-      "description": "Vytvořte a publikujte sadu technických schémat a dokumentaci k popisu vašich dat ve formátech JSON, XML nebo CSV.",
+      "description": "Přímo vytvořte sadu technických schémat a dokumentaci k popisu vašich dat ve formátech JSON, XML nebo CSV.",
       "title": "Datové schéma"
     },
     "profile": {
+      "auto-profile-description": "Automaticky vytvořit výchozí profil všech konceptů z profilovaných specifikací včetně všech struktur, pokud existují.",
+      "auto-profile-title": "Autoprofil",
       "create-title": "Vytvořit aplikační profil",
-      "help": "Zadejte URL adresu specifikace na internetu ze které bude vytvořen nový aplikační profil. Specifikace se importuje do nově vytvořeného package."
+      "help": "Zadejte URL adresu DSV specifikací, které budou profilovány."
     },
     "schema": {
-      "create-title": "Vytvořit datové schéma"
+      "create-title": "Vytvořit datové schéma",
+      "sgov-description": "Používá SSP jako zdrojovou ontologii a lokální sémantický model pro uložení aplikovaných změn.",
+      "sgov-title": "Český sémantický slovník veřejné správy"
     },
     "vocabulary": {
       "create-title": "Vytvořit nový slovník",
-      "description": "Vytvořte a publikujte nový RDF slovník nebo jakýkoli konceptuální model s možností využití stávajících slovníků na internetu.",
+      "description": "Vytvořte a publikujte nový RDFS/OWL slovník s možností využití stávajících slovníků.",
       "title": "Slovník"
     }
   },
-  "start-new-project": "Vytvořit nový projekt"
+  "start-new-project": "Vytvořit novou datovou specifikaci"
 }

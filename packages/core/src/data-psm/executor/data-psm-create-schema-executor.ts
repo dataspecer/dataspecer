@@ -7,12 +7,12 @@ import { DataPsmCreateSchema } from "../operation/index.ts";
 import { DataPsmSchema } from "../model/index.ts";
 import { loadDataPsmSchema } from "./data-psm-executor-utils.ts";
 
-export async function executeDataPsmCreateSchema(
+export function executeDataPsmCreateSchema(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmCreateSchema
-): Promise<CoreExecutorResult> {
-  const schema = await loadDataPsmSchema(reader);
+): CoreExecutorResult {
+  const schema = loadDataPsmSchema(reader);
   if (schema !== null) {
     return CoreExecutorResult.createError(
       `Schema already exists '${schema.iri}'.`

@@ -5,12 +5,12 @@ import { DataPsmExecutorResultFactory } from "./data-psm-executor-utils.ts";
 
 type CardinalityType = DataPsmSchema | DataPsmAttribute | DataPsmAssociationEnd | DataPsmContainer;
 
-export async function executeDataPsmSetCardinality(
+export function executeDataPsmSetCardinality(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetCardinality
-): Promise<CoreExecutorResult> {
-  const resource = (await reader.readResource(operation.entityId)) as CardinalityType;
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.entityId) as CardinalityType;
   if (!DataPsmSchema.is(resource) && !DataPsmAttribute.is(resource) && !DataPsmAssociationEnd.is(resource) && !DataPsmContainer.is(resource)) {
     return DataPsmExecutorResultFactory.invalidType(resource, "data-psm schema, attribute, container, or association end");
   }

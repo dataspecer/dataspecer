@@ -183,6 +183,8 @@ export class RdfsFileAdapter implements CimAdapter {
             resource.pimHumanLabel = Object.fromEntries(Object.entries(property.pimHumanLabel ?? {})
                 .map(([lang, text]) => [lang, `[A] ${isDomain ? "Domain" : "Range"} of ${text}`]));
             resource.pimHumanDescription = property.pimHumanDescription;
+            (resource as any).pimHumanLabelProperty = (property as any).pimHumanLabelProperty ?? null;
+            (resource as any).pimHumanDescriptionProperty = (property as any).pimHumanDescriptionProperty ?? null;
         } else { // Existing class in CIM
             const entity = RdfMemorySourceWrap.forIri(cimIri, source);
             loadRdfsEntityToResource(entity, this.iriProvider, resource);

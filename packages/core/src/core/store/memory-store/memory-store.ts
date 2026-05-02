@@ -6,9 +6,8 @@ import {clone} from "../../utilities/clone.ts";
 import {CoreResourceReader} from "../../core-reader.ts";
 import {CoreResourceWriter} from "../../core-writer.ts";
 import {createExecutorMap, ExecutorMap} from "../executor-map.ts";
-import type { ImmediateCoreResourceReader } from "../immediate-core-resource-reader.ts";
 
-export class MemoryStore implements CoreResourceReader, CoreResourceWriter, ImmediateCoreResourceReader {
+export class MemoryStore implements CoreResourceReader, CoreResourceWriter {
   protected readonly executors: ExecutorMap;
 
   protected readonly createNewIdentifier: CreateNewIdentifier;
@@ -44,25 +43,11 @@ export class MemoryStore implements CoreResourceReader, CoreResourceWriter, Imme
     return new MemoryStore(baseIri, executorForTypes, createNewIdentifier);
   }
 
-  async listResources(): Promise<string[]> {
+  listResources(): string[] {
     return Object.keys(this.resources);
   }
 
-  listResourcesImmediate(): string[] {
-    return Object.keys(this.resources);
-  }
-
-  listResourcesOfType(typeIri: string): Promise<string[]> {
-    const result: string[] = [];
-    for (const [iri, resource] of Object.entries(this.resources)) {
-      if (resource.types.includes(typeIri)) {
-        result.push(iri);
-      }
-    }
-    return Promise.resolve(result);
-  }
-
-  listResourcesOfTypeImmediate(typeIri: string): string[] {
+  listResourcesOfType(typeIri: string): string[] {
     const result: string[] = [];
     for (const [iri, resource] of Object.entries(this.resources)) {
       if (resource.types.includes(typeIri)) {
@@ -72,19 +57,15 @@ export class MemoryStore implements CoreResourceReader, CoreResourceWriter, Imme
     return result;
   }
 
-  async readResource(iri: string): Promise<CoreResource> {
+  readResource(iri: string): CoreResource | null {
     // TODO: We may need to create a deep copy here.
-    return this.resources[iri];
-  }
-
-  readResourceImmediate(iri: string): CoreResource | null {
     return this.resources[iri] || null;
   }
 
-  async applyOperation(operation: CoreOperation): Promise<CoreOperationResult> {
+  applyOperation(operation: CoreOperation): CoreOperationResult {
     const executor = this.findCoreExecutor(operation);
 
-    const executorResult = await executor.execute(
+    const executorResult = executor.execute(
       this,
       this.createNewIdentifier,
       operation

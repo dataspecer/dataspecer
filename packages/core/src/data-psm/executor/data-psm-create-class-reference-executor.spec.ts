@@ -21,7 +21,7 @@ test("Create data PSM class reference.", async () => {
   };
 
   let counter = 0;
-  const actual = await executeDataPsmCreateClassReference(
+  const actual = executeDataPsmCreateClassReference(
     wrapResourcesWithReader(before),
     () => "http://localhost/" + ++counter,
     operation

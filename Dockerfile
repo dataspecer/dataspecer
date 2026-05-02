@@ -30,8 +30,8 @@ RUN BASE_PATH=/_BASE_PATH_DOCKER_REPLACE__ \
   GIT_COMMIT_NUMBER=$GIT_COMMIT_NUMBER \
     sh ./docker-configure.sh
 
-# Build frontend and backend dependencies
-RUN bunx turbo run build --concurrency 100% --filter=data-specification-editor --filter=conceptual-model-editor --filter=manager --filter=backend^...
+# Build frontend and backend dependencies, do not cache (-> local:) to make build faster
+RUN bunx turbo run build --cache=local: --concurrency 100% --filter=data-specification-editor --filter=conceptual-model-editor --filter=manager --filter=backend^...
 
 # Move frontend
 RUN sh ./docker-copy.sh

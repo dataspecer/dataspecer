@@ -16,7 +16,7 @@ export class SetDataPsmDatatype implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.forDataPsmAttributeIri) as string;
 
 
@@ -29,6 +29,6 @@ export class SetDataPsmDatatype implements ComplexOperation {
     const dataPsmSetDatatype = new DataPsmSetDatatype();
     dataPsmSetDatatype.dataPsmAttribute = this.forDataPsmAttributeIri;
     dataPsmSetDatatype.dataPsmDatatype = datatype;
-    await this.store.applyOperation(schema, dataPsmSetDatatype);
+    this.store.applyOperation(schema, dataPsmSetDatatype);
   }
 }

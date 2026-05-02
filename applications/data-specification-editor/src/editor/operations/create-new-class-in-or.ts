@@ -32,7 +32,7 @@ export class CreateNewClassInOr implements ComplexOperation {
     this.context = context;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const dataPsmSchema = this.store.getSchemaForResource(this.dataPsmOrIri) as string;
     const semanticClass = this.semanticStore.getLocalEntity(this.semanticClassId).aggregatedEntity as SemanticModelClass;
 
@@ -41,12 +41,12 @@ export class CreateNewClassInOr implements ComplexOperation {
     const dataPsmCreateClass = new DataPsmCreateClass();
     dataPsmCreateClass.dataPsmInterpretation = semanticClass.id;
     dataPsmCreateClass.dataPsmTechnicalLabel = this.context?.getTechnicalLabelFromPim(semanticClass.name) ?? null;
-    const dataPsmCreateClassResult = await this.store.applyOperation(dataPsmSchema, dataPsmCreateClass);
+    const dataPsmCreateClassResult = this.store.applyOperation(dataPsmSchema, dataPsmCreateClass);
     const psmClass = dataPsmCreateClassResult.created[0];
 
     const dataPsmSetChoice = new DataPsmSetChoice();
     dataPsmSetChoice.dataPsmOr = this.dataPsmOrIri;
     dataPsmSetChoice.dataPsmChoice = psmClass;
-    await this.store.applyOperation(dataPsmSchema, dataPsmSetChoice);
+    this.store.applyOperation(dataPsmSchema, dataPsmSetChoice);
   }
 }

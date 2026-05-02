@@ -50,7 +50,7 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
 
   try {
     // Create package
-    const packageIri = query.parentIri + "/" + uuidv4();
+    const packageIri = uuidv4();
     await resourceModel.createPackage(query.parentIri, packageIri, {
       label: body.label ? { en: body.label } : {},
       description: body.description ? { en: body.description } : {},
@@ -100,16 +100,21 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
     if (body.autoProfile) {
       // We need to inspect all sub-packages and read semantic models from them
       const entitiesToProfile: Entity[] = [];
+      const thisSpecificationEntities: Entity[] = [];
       for (const importedPackage of importResults) {
-        const pckg = await resourceModel.getPackage(importedPackage.importedResource!.iri);
-        const thisSpecificationEntities: Entity[] = [];
-        for (const subResource of pckg!.subResources) {
-          if (!subResource.types.includes(LOCAL_SEMANTIC_MODEL)) continue; // todo so far we expect that semantic models are "local" and not imported
-          const subModel = await resourceModel.getOrCreateResourceModelStore(subResource.iri);
-          const subModelJson = await subModel.getJson();
-          if (subModelJson.entities) {
-            thisSpecificationEntities.push(...Object.values(subModelJson.entities as Record<string, Entity>));
+        if (importedPackage.importedResource) {
+          const pckg = await resourceModel.getPackage(importedPackage.importedResource!.iri);
+          for (const subResource of pckg!.subResources) {
+            if (!subResource.types.includes(LOCAL_SEMANTIC_MODEL)) continue; // todo so far we expect that semantic models are "local" and not imported
+            const subModel = await resourceModel.getOrCreateResourceModelStore(subResource.iri);
+            const subModelJson = await subModel.getJson();
+            if (subModelJson.entities) {
+              thisSpecificationEntities.push(...Object.values(subModelJson.entities as Record<string, Entity>));
+            }
           }
+        } else {
+          // We imported single model
+          thisSpecificationEntities.push(...importedPackage.entities!);
         }
 
         // Since there might be specifications that mix vocabulary and profiles,
@@ -199,6 +204,7 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
       const collectedStructureModels: CoreResource[][] = [];
 
       for (const importedPackage of importResults) {
+        if (!importedPackage.importedResource) continue;
         const pckg = await resourceModel.getPackage(importedPackage.importedResource!.iri);
         for (const subResource of pckg!.subResources) {
           if (!subResource.types.includes(V1.PSM)) continue;

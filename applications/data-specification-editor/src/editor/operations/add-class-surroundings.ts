@@ -50,7 +50,7 @@ export class AddClassSurroundings implements ComplexOperation {
     this.context = context;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const dataPsmSchema = this.store.getSchemaForResource(this.forDataPsmClass.iri as string) as string;
 
     // true means that the second end (with index 1) is used - true is more "natural" in the sense of the association
@@ -59,23 +59,23 @@ export class AddClassSurroundings implements ComplexOperation {
       const relationship = this.semanticStore.getLocalEntity(semanticRelationshipId).aggregatedEntity as SemanticModelRelationship;
       if (isSemanticModelRelationPrimitive(relationship)) {
         console.assert(orientation, `Attribute ${semanticRelationshipId} should not have a reverse orientation.`);
-        await this.processAttribute(relationship, dataPsmSchema);
+        this.processAttribute(relationship, dataPsmSchema);
       } else {
-        await this.processAssociation(relationship, orientation, dataPsmSchema);
+        this.processAssociation(relationship, orientation, dataPsmSchema);
       }
     }
   }
 
-  private async processAttribute(attribute: SemanticModelRelationship, dataPsmSchema: string) {
+  private processAttribute(attribute: SemanticModelRelationship, dataPsmSchema: string) {
     const dataPsmCreateAttribute = new DataPsmCreateAttribute();
     dataPsmCreateAttribute.dataPsmInterpretation = attribute.id;
     dataPsmCreateAttribute.dataPsmOwner = this.forDataPsmClass.iri ?? null;
     dataPsmCreateAttribute.dataPsmTechnicalLabel = this.context?.getTechnicalLabelFromPim(attribute.ends[1].name) ?? null;
     dataPsmCreateAttribute.dataPsmDatatype = attribute.ends[1].concept ?? null;
-    await this.store.applyOperation(dataPsmSchema, dataPsmCreateAttribute);
+    this.store.applyOperation(dataPsmSchema, dataPsmCreateAttribute);
   }
 
-  private async processAssociation(
+  private processAssociation(
     association: SemanticModelRelationship,
     orientation: AssociationOrientation, // true if outgoing
     dataPsmSchema: string
@@ -87,7 +87,7 @@ export class AddClassSurroundings implements ComplexOperation {
     const dataPsmCreateClass = new DataPsmCreateClass();
     dataPsmCreateClass.dataPsmInterpretation = targetClass.id;
     dataPsmCreateClass.dataPsmTechnicalLabel = this.context?.getTechnicalLabelFromPim(targetClass.name) ?? null;
-    const dataPsmCreateClassResult = await this.store.applyOperation(dataPsmSchema, dataPsmCreateClass);
+    const dataPsmCreateClassResult = this.store.applyOperation(dataPsmSchema, dataPsmCreateClass);
     const psmEndRefersToIri = dataPsmCreateClassResult.created[0];
 
     // Data PSM association end
@@ -98,6 +98,6 @@ export class AddClassSurroundings implements ComplexOperation {
     dataPsmCreateAssociationEnd.dataPsmIsReverse = !orientation;
     dataPsmCreateAssociationEnd.dataPsmOwner = this.forDataPsmClass.iri ?? null;
     dataPsmCreateAssociationEnd.dataPsmTechnicalLabel = this.context?.getTechnicalLabelFromPim(association.ends[1].name) ?? null;
-    await this.store.applyOperation(dataPsmSchema, dataPsmCreateAssociationEnd);
+    this.store.applyOperation(dataPsmSchema, dataPsmCreateAssociationEnd);
   }
 }

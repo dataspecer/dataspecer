@@ -3,7 +3,7 @@ import { EntityModel } from "../../entity-model/entity-model.ts";
 import { VisualEntity, VisualModel, isVisualModel } from "@dataspecer/visual-model";
 import { SEMANTIC_MODEL_CLASS, SEMANTIC_MODEL_GENERALIZATION, SEMANTIC_MODEL_RELATIONSHIP, SemanticModelClass, SemanticModelRelationship, isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, type SemanticModelEntity } from "../concepts/index.ts";
 import { SemanticEntityIdMerger, StrongerWinsSemanticEntityIdMerger } from "../merge/merger/index.ts";
-import { createDefaultProfileEntityAggregator, ProfileEntityAggregator } from "../profile/aggregator/aggregator.ts";
+import { createSemanticProfileAggregator, ProfileEntityAggregator } from "../profile/aggregator/aggregator.ts";
 import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "../profile/concepts/index.ts";
 import { SemanticModelClassUsage, SemanticModelRelationshipUsage, isSemanticModelClassUsage, isSemanticModelRelationshipUsage } from "../usage/concepts/index.ts";
 
@@ -112,7 +112,7 @@ class SemanticModelAggregatorInternal implements SemanticModelAggregator {
      * Profile aggregator.
      */
     profileEntityAggregator: ProfileEntityAggregator =
-        createDefaultProfileEntityAggregator();
+        createSemanticProfileAggregator();
 
     entityMerger: SemanticEntityIdMerger = new StrongerWinsSemanticEntityIdMerger();
 

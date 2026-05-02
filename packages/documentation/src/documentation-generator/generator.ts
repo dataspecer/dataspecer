@@ -279,24 +279,7 @@ export async function generateDocumentation(
     return null;
   }
 
-  function getHashPart(url: string | null): string | null {
-    if (!url) {
-      return null;
-    }
-    const hashIndex = url.indexOf("#");
-    if (hashIndex === -1) {
-      return null;
-    }
-    return url.substring(hashIndex + 1) || null;
-  }
-
   function getAnchorForLocalEntity(entity: SemanticModelEntity): string | null {
-    const externalDocumentationUrl = getExternalDocumentationUrl(entity);
-    const hashPart = getHashPart(externalDocumentationUrl);
-    if (hashPart) {
-      return hashPart;
-    }
-
     if (isSemanticModelRelationship(entity) || isSemanticModelRelationshipProfile(entity)) {
       // @ts-ignore
       const {ok, translation} = getTranslation(entity.aggregation.ends[1].name, [configuration.language]);

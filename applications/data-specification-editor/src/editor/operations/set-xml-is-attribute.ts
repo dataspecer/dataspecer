@@ -16,12 +16,12 @@ export class SetXmlIsAttribute implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.forDataPsmResourceIri) as string;
 
     const op = new DataPsmSetIsXmlAttribute();
     op.dataPsmProperty = this.forDataPsmResourceIri;
     op.isAttribute = this.isAttribute;
-    await this.store.applyOperation(schema, op);
+    this.store.applyOperation(schema, op);
   }
 }

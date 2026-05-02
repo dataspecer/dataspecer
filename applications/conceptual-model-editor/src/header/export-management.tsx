@@ -6,7 +6,7 @@ import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { type Entities, type Entity, type EntityModel } from "@dataspecer/core-v2/entity-model";
 import type { VisualModel, WritableVisualModel } from "@dataspecer/visual-model";
-import * as DataSpecificationVocabulary from "@dataspecer/data-specification-vocabulary";
+import * as DataSpecificationVocabulary from "@dataspecer/data-specification-vocabulary/semantic-model";
 import { shaclToRdf, semanticModelsToShacl } from "@dataspecer/shacl-v2";
 
 import {

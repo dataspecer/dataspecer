@@ -14,12 +14,12 @@ import {
 } from "./data-psm-executor-utils.ts";
 import { DataPsmOr } from "../model/index.ts";
 
-export async function executeDataPsmCreateOr(
+export function executeDataPsmCreateOr(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmCreateOr
-): Promise<CoreExecutorResult> {
-  const schema = await loadDataPsmSchema(reader);
+): CoreExecutorResult {
+  const schema = loadDataPsmSchema(reader);
   if (schema === null) {
     return DataPsmExecutorResultFactory.missingSchema();
   }

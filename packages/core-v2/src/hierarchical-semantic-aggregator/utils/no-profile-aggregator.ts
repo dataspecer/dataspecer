@@ -1,5 +1,5 @@
 import { SemanticModelClass, SemanticModelRelationship } from "../../semantic-model/concepts/concepts.ts";
-import { AggregatedProfiledSemanticModelClass, AggregatedProfiledSemanticModelRelationship } from "../../semantic-model/profile/aggregator/aggregator.ts";
+import { AggregatedProfiledSemanticModelClass, AggregatedProfiledSemanticModelRelationship } from "../../semantic-model/profile/aggregator/index.ts";
 
 export interface NoProfileAggregator {
   aggregateSemanticModelClass(

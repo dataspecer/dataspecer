@@ -6,11 +6,11 @@ import {
 import { DataPsmDeleteAssociationEnd } from "../operation/index.ts";
 import { removeFromClass } from "./data-psm-executor-utils.ts";
 
-export async function executeDataPsmDeleteAssociationEnd(
+export function executeDataPsmDeleteAssociationEnd(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmDeleteAssociationEnd
-): Promise<CoreExecutorResult> {
+): CoreExecutorResult {
   return removeFromClass(
     reader,
     operation.dataPsmOwner,

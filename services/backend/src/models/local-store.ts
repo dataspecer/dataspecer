@@ -2,7 +2,6 @@ import {CoreOperation, CoreOperationResult, CoreResource, CoreResourceReader, Co
 import {LocalStoreModel} from "./local-store-model.ts";
 import {LocalStoreDescriptor} from "./local-store-descriptor.ts";
 import {dataPsmExecutors} from "@dataspecer/core/data-psm/data-psm-executors";
-import {pimExecutors} from "@dataspecer/core/pim/executor";
 
 export class LocalStore implements CoreResourceReader, CoreResourceWriter {
   protected storeDescriptor: LocalStoreDescriptor;
@@ -16,19 +15,19 @@ export class LocalStore implements CoreResourceReader, CoreResourceWriter {
     this.storeDescriptor = storeDescriptor;
     this.localStoreModel = localStoreModel;
     // @ts-ignore
-    this.memoryStore = MemoryStore.create("https://ofn.gov.cz", [...dataPsmExecutors, ...pimExecutors], null);
+    this.memoryStore = MemoryStore.create("https://ofn.gov.cz", [...dataPsmExecutors], null);
   }
 
-  listResources(): Promise<string[]> {
+  listResources(): string[] {
     return this.memoryStore.listResources();
   }
-  listResourcesOfType(typeIri: string): Promise<string[]> {
+  listResourcesOfType(typeIri: string): string[] {
     return this.memoryStore.listResourcesOfType(typeIri);
   }
-  readResource(iri: string): Promise<CoreResource> {
+  readResource(iri: string): CoreResource | null {
     return this.memoryStore.readResource(iri);
   }
-  applyOperation(operation: CoreOperation): Promise<CoreOperationResult> {
+  applyOperation(operation: CoreOperation): CoreOperationResult {
     return this.memoryStore.applyOperation(operation);
   }
 

@@ -17,7 +17,7 @@ export class SetObjectExample implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.semanticEntityId) as string;
 
     let examples = this.examples;
@@ -30,6 +30,6 @@ export class SetObjectExample implements ComplexOperation {
       example: examples,
     } as ExtendedSemanticModelClass);
     // @ts-ignore
-    await this.store.applyOperation(schema, operation);
+    this.store.applyOperation(schema, operation);
   }
 }

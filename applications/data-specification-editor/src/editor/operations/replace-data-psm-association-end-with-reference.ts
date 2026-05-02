@@ -18,9 +18,9 @@ export class ReplaceDataPsmAssociationEndWithReference implements ComplexOperati
         this.store = store;
     }
 
-    async execute(): Promise<void> {
-        const schema = await this.store.readResource(this.referencedDataPsmSchema) as CoreResource | null;
-        const associationEnd = await this.store.readResource(this.dataPsmAssociationEnd) as CoreResource | null;
+    execute(): void {
+        const schema = this.store.readResource(this.referencedDataPsmSchema) as CoreResource | null;
+        const associationEnd = this.store.readResource(this.dataPsmAssociationEnd) as CoreResource | null;
 
         if (!schema || !DataPsmSchema.is(schema)) {
             throw new Error(`Schema '${this.referencedDataPsmSchema}' is not a schema.`);
@@ -39,7 +39,7 @@ export class ReplaceDataPsmAssociationEndWithReference implements ComplexOperati
         const dataPsmCreateClassReference = new DataPsmCreateClassReference();
         dataPsmCreateClassReference.dataPsmClass = replacingClass;
         dataPsmCreateClassReference.dataPsmSpecification = schema.iri;
-        const dataPsmCreateClassReferenceResult = await this.store.applyOperation(dataPsmSchema, dataPsmCreateClassReference);
+        const dataPsmCreateClassReferenceResult = this.store.applyOperation(dataPsmSchema, dataPsmCreateClassReference);
         const reference = dataPsmCreateClassReferenceResult.created[0];
 
         // Replace the association end with the reference
@@ -47,7 +47,7 @@ export class ReplaceDataPsmAssociationEndWithReference implements ComplexOperati
         const dataPsmSetPart = new DataPsmSetPart();
         dataPsmSetPart.dataPsmAssociationEnd = this.dataPsmAssociationEnd;
         dataPsmSetPart.dataPsmPart = reference;
-        await this.store.applyOperation(dataPsmSchema, dataPsmSetPart);
+        this.store.applyOperation(dataPsmSchema, dataPsmSetPart);
 
         // Remove the old class
 
@@ -56,7 +56,7 @@ export class ReplaceDataPsmAssociationEndWithReference implements ComplexOperati
 
             const dataPsmDeleteClass = new DataPsmDeleteClass();
             dataPsmDeleteClass.dataPsmClass = oldClass;
-            await this.store.applyOperation(oldClassSchema, dataPsmDeleteClass);
+            this.store.applyOperation(oldClassSchema, dataPsmDeleteClass);
         }
     }
 }

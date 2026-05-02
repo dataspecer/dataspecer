@@ -11,15 +11,15 @@ export class EntityModelAsCoreResourceReader implements CoreResourceReader {
     this.id = entityModel.getId();
   }
 
-  async listResources(): Promise<string[]> {
+  listResources(): string[] {
     return [this.id, ...Object.keys(this.entityModel.getEntities())];
   }
 
-  listResourcesOfType(typeIri: string): Promise<string[]> {
+  listResourcesOfType(typeIri: string): string[] {
     throw new Error('Method not implemented.');
   }
 
-  async readResource(iri: string): Promise<CoreResource | null> {
+  readResource(iri: string): CoreResource | null {
     if (iri === this.id) {
       return this.entityModel as unknown as CoreResource;
     }

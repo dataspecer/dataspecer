@@ -40,8 +40,8 @@ export class ReplaceAlongInheritance implements ComplexOperation {
     this.context = context;
   }
 
-  async execute(): Promise<void> {
-    const fromDataPsmClass = await this.store.readResource(this.fromDataPsmClassId) as DataPsmClass;
+  execute(): void {
+    const fromDataPsmClass = this.store.readResource(this.fromDataPsmClassId) as DataPsmClass;
     const dataPsmSchemaIri = this.store.getSchemaForResource(fromDataPsmClass.iri as string) as string;
     const newSemanticClass = this.semanticStore.getLocalEntity(this.toSemanticClassId).aggregatedEntity as SemanticModelClass;
 
@@ -50,7 +50,7 @@ export class ReplaceAlongInheritance implements ComplexOperation {
     const dataPsmCreateClass = new DataPsmCreateClass();
     dataPsmCreateClass.dataPsmInterpretation = newSemanticClass.id;
     dataPsmCreateClass.dataPsmTechnicalLabel = this.context?.getTechnicalLabelFromPim(newSemanticClass.name) ?? null;
-    const dataPsmCreateClassResult = await this.store.applyOperation(dataPsmSchemaIri, dataPsmCreateClass);
+    const dataPsmCreateClassResult = this.store.applyOperation(dataPsmSchemaIri, dataPsmCreateClass);
     const toPsmClassIri = dataPsmCreateClassResult.created[0];
 
     // Replace data psm classes
@@ -58,12 +58,12 @@ export class ReplaceAlongInheritance implements ComplexOperation {
     const dataPsmReplaceAlongInheritance = new DataPsmReplaceAlongInheritance();
     dataPsmReplaceAlongInheritance.dataPsmOriginalClass = fromDataPsmClass.iri;
     dataPsmReplaceAlongInheritance.dataPsmReplacingClass = toPsmClassIri;
-    await this.store.applyOperation(dataPsmSchemaIri, dataPsmReplaceAlongInheritance);
+    this.store.applyOperation(dataPsmSchemaIri, dataPsmReplaceAlongInheritance);
 
     // Remove the old class
 
     const dataPsmDeleteClass = new DataPsmDeleteClass();
     dataPsmDeleteClass.dataPsmClass = fromDataPsmClass.iri;
-    await this.store.applyOperation(dataPsmSchemaIri, dataPsmDeleteClass);
+    this.store.applyOperation(dataPsmSchemaIri, dataPsmDeleteClass);
   }
 }

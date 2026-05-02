@@ -19,7 +19,7 @@ test("Update data PSM resource human label.", async () => {
     },
   };
 
-  const actual = await executeDataPsmSetHumanLabel(
+  const actual = executeDataPsmSetHumanLabel(
     wrapResourcesWithReader(before),
     undefined,
     operation

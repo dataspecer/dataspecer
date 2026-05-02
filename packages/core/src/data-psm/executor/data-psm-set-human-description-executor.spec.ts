@@ -19,7 +19,7 @@ test("Update data PSM resource human description.", async () => {
     },
   };
 
-  const actual = await executeDataPsmSetHumanDescription(
+  const actual = executeDataPsmSetHumanDescription(
     wrapResourcesWithReader(before),
     undefined,
     operation

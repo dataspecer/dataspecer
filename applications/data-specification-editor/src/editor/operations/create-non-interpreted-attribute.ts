@@ -14,7 +14,7 @@ export class CreateNonInterpretedAttribute implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.ownerClass) as string;
 
     const operation = new DataPsmCreateAttribute();
@@ -24,12 +24,12 @@ export class CreateNonInterpretedAttribute implements ComplexOperation {
     operation.dataPsmDatatype = "http://www.w3.org/2001/XMLSchema#string";
     operation.dataPsmOwner = this.ownerClass;
 
-    const result = await this.store.applyOperation(schema, operation);
+    const result = this.store.applyOperation(schema, operation);
     const attributeId = result.created[0];
 
     const cardinality = new DataPsmSetCardinality();
     cardinality.dataPsmCardinality = [1, 1];
     cardinality.entityId = attributeId;
-    await this.store.applyOperation(schema, cardinality);
+    this.store.applyOperation(schema, cardinality);
   }
 }

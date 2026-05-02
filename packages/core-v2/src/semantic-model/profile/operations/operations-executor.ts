@@ -129,8 +129,14 @@ function executeModifySemanticModelClassProfile(
     type: [SEMANTIC_MODEL_CLASS_PROFILE],
     description: entity.description ?? previous.description,
     descriptionFromProfiled: mergeFromProfiled(entity.descriptionFromProfiled, previous.descriptionFromProfiled),
+    ...(entity.descriptionProperty !== undefined
+      ? { descriptionProperty: entity.descriptionProperty }
+      : {}),
     name: entity.name ?? previous.name,
     nameFromProfiled: mergeFromProfiled(entity.nameFromProfiled, previous.nameFromProfiled),
+    ...(entity.nameProperty !== undefined
+      ? { nameProperty: entity.nameProperty }
+      : {}),
     iri: entity.iri ?? previous.iri,
     usageNote: entity.usageNote ?? previous.usageNote,
     usageNoteFromProfiled: mergeFromProfiled(entity.usageNoteFromProfiled, previous.usageNoteFromProfiled),

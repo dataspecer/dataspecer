@@ -19,7 +19,7 @@ export const DataPsmSchemaItem: React.FC<{dataPsmSchemaIri: string}> = ({dataPsm
   const readOnly = false;
   const store = useFederatedObservableStore();
   const theme = useTheme();
-  
+
   // Use TwoTone icons in light mode, regular icons in dark mode
   const iconSet = theme.palette.mode === 'dark' ? Icons : IconsTwoTone;
 
@@ -33,23 +33,7 @@ export const DataPsmSchemaItem: React.FC<{dataPsmSchemaIri: string}> = ({dataPsm
     if (destination) {
       const parent = destination.droppableId.split(" ")[0];
       const property = draggableId.split(" ")[0];
-      store.executeComplexOperation(new SetOrder(parent, property, destination.index)).then();
-
-      // ! We need to create an optimistic update to avoid flickering.
-      const resource = store.readSync(parent) as DataPsmClass;
-      const dataPsmParts: string[] = [];
-      for (let i = 0; i < resource.dataPsmParts.length; i++) {
-        if (dataPsmParts.length === destination.index) {
-          dataPsmParts.push(property);
-        }
-        if (resource.dataPsmParts[i] !== property) {
-          dataPsmParts.push(resource.dataPsmParts[i]);
-        }
-      }
-      if (dataPsmParts.length === destination.index) {
-        dataPsmParts.push(property);
-      }
-      store.doOptimisticUpdate(parent, {...resource, dataPsmParts} as DataPsmClass)
+      store.executeComplexOperation(new SetOrder(parent, property, destination.index));
     }
   }, [store]);
 

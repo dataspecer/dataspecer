@@ -20,12 +20,12 @@ export class DeleteChoice implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.OrIri) as string;
 
     const dataPsmUnsetChoice = new DataPsmUnsetChoice();
     dataPsmUnsetChoice.dataPsmOr = this.OrIri;
     dataPsmUnsetChoice.dataPsmChoice = this.choiceIri;
-    await this.store.applyOperation(schema, dataPsmUnsetChoice);
+    this.store.applyOperation(schema, dataPsmUnsetChoice);
   }
 }

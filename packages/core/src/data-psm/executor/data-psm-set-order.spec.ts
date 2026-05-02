@@ -44,7 +44,7 @@ describe("Change order in data PSM class.", () => {
     operation.dataPsmResourceToMove = "http://attribute/1";
     operation.dataPsmMoveAfter = "http://attribute/2";
 
-    const actual = await executeDataPsmSetOrder(
+    const actual = executeDataPsmSetOrder(
       wrapResourcesWithReader(resources),
       undefined,
       operation
@@ -73,7 +73,7 @@ describe("Change order in data PSM class.", () => {
     operation.dataPsmResourceToMove = "http://attribute/1";
     operation.dataPsmMoveAfter = null;
 
-    const actual = await executeDataPsmSetOrder(
+    const actual = executeDataPsmSetOrder(
       wrapResourcesWithReader(resources),
       undefined,
       operation
