@@ -89,10 +89,12 @@ export function VocabularyForm({
           />
         </CardContent>
       </Card>
-      <Alert variant="warning" className="mt-4">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertDescription>{t("form.validation.required")}</AlertDescription>
-      </Alert>
+      {!isValid && (
+        <Alert variant="warning" className="mt-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{t("form.validation.required")}</AlertDescription>
+        </Alert>
+      )}
       <div className="mt-6 flex gap-2">
         <Button variant="outline" size="sm" onClick={onCancel}>
           {t("form.cancel")}
