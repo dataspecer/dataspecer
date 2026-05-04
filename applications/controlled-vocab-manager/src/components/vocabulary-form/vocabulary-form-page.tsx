@@ -44,7 +44,7 @@ export function VocabularyFormPage({
         <Trans
           i18nKey="form.empty.subtitle"
           components={{
-            asterisk: <span className="text-destructive" />,
+            asterisk: <span key="asterisk" className="text-destructive" />,
           }}
         />
       </p>
