@@ -24,7 +24,10 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-i18next": "^14.1.2",
-    "tailwind-merge": "^2.2.1"
+    "tailwind-merge": "^2.2.1",
+    "react-hook-form": "^7.51.3",
+    "@hookform/resolvers": "^3.3.4",
+    "zod": "^3.25.23"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

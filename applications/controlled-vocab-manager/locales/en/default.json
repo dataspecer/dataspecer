@@ -31,6 +31,9 @@
   "form.placeholder.downloadUrl": "e.g. https://example.org/vocabulary/countries.rdf",
   "form.placeholder.docsUrl": "e.g. https://example.org/vocabulary/countries/docs",
   "form.validation.required": "Required: Vocabulary name, IRI of skos:ConceptScheme, and Downloadable file URL.",
+  "form.validation.requiredField": "This field is required.",
+  "form.validation.invalidUrl": "Please enter a valid URL.",
+  "form.validation.invalidRegex": "Please enter a valid regular expression.",
   "form.cancel": "Cancel",
   "form.confirm": "Confirm"
 }

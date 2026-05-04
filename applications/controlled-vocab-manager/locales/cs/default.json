@@ -31,6 +31,9 @@
   "form.placeholder.downloadUrl": "např. https://example.org/vocabulary/countries.rdf",
   "form.placeholder.docsUrl": "např. https://example.org/vocabulary/countries/docs",
   "form.validation.required": "Povinné: Název slovníku, IRI skos:ConceptScheme a URL ke stažení souboru.",
+  "form.validation.requiredField": "Toto pole je povinné.",
+  "form.validation.invalidUrl": "Zadejte prosím platnou URL adresu.",
+  "form.validation.invalidRegex": "Zadejte prosím platný regulární výraz.",
   "form.cancel": "Zrušit",
   "form.confirm": "Potvrdit"
 }
