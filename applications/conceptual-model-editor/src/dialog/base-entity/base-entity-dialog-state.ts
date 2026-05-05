@@ -111,7 +111,7 @@ export function createNewBaseEntityDialogState(
 
   const availableSpecializations = sanitizeDuplicitiesInRepresentativeLabels(
     allModels, allSpecializations);
-  sortRepresentatives(language, availableSpecializations);
+  sortRepresentatives(availableSpecializations);
 
   return {
     language,
@@ -191,7 +191,7 @@ export function createEditBaseEntityDialogState(
   // We remove current entity from the specialization list.
   const availableSpecializations = sanitizeDuplicitiesInRepresentativeLabels(
     allModels, allSpecializations.filter(item => item.identifier !== entity.identifier));
-  sortRepresentatives(language, availableSpecializations);
+  sortRepresentatives(availableSpecializations);
 
   return {
     language,

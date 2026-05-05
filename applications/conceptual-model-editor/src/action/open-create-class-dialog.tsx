@@ -10,10 +10,12 @@ import { firstInMemorySemanticModel } from "../utilities/model";
 import { addSemanticClassToVisualModelAction } from "./add-class-to-visual-model";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { ClassDialogState, createNewClassDialogState } from "../dialog/class/edit-class-dialog-state";
+import { DialogSemanticTracker } from "../dialog/dialog-semantic-tracker";
 import { createNewClassDialog } from "../dialog/class/edit-class-dialog";
 import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
 import { classDialogStateToNewCmeClass } from "../dialog/class/edit-class-dialog-state-adapter";
 import { CmeReference } from "../dataspecer/cme-model/model";
+import { LabelResolver } from "../dependency-tracker";
 
 /**
  * Open and handle create class dialog.
@@ -30,6 +32,8 @@ export function openCreateClassDialogAction(
   defaultModel: InMemorySemanticModel | null,
   position: { x: number, y: number } | null,
   onConfirmCallback: ((created: CmeReference, state: ClassDialogState) => void) | null,
+  tracker: DialogSemanticTracker,
+  labelResolver: LabelResolver,
 ) {
 
   const model = defaultModel ?? firstInMemorySemanticModel(graph.models);
@@ -39,7 +43,7 @@ export function openCreateClassDialogAction(
   }
 
   const initialState = createNewClassDialogState(
-    classes, graph, visualModel, options.language, model.getId());
+    visualModel, options.language, model.getId(), tracker, labelResolver);
 
   const onConfirm = (state: ClassDialogState) => {
 

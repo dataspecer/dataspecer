@@ -1,8 +1,7 @@
 import { useState } from "react";
 
 import { EntityRepresentative } from "../utilities/dialog-utilities";
-import { configuration, t } from "../../application";
-import { languageStringToString } from "../../utilities/string";
+import { t } from "../../application";
 import { SelectEntity } from "./select-entity";
 import { CmeReference, CmeSpecialization, NewCmeSpecialization } from "../../dataspecer/cme-model/model";
 
@@ -103,16 +102,13 @@ const RemovableSpecialization = (props: {
   specialization: Specialization,
   removeSpecialization: (value: Specialization) => void,
 }) => {
-  const languagePreferences = configuration().languagePreferences;
   return (
     <div>
       <button onClick={() => props.removeSpecialization(props.specialization)}>
         🗑
       </button>
       &nbsp;
-      {languageStringToString(
-        languagePreferences,
-        props.language, props.item.label)}
+      {props.item.displayLabel}
     </div>
   )
 }

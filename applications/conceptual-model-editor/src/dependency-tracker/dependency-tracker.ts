@@ -1,12 +1,13 @@
 import {
   Entity, EntityIdentifier, ModelIdentifier,
 } from "@dataspecer/entity-model";
+
 import { ModelObserver } from "./model-observer";
 
 /**
  * Allow sourcing {@link Tracker} with events from {@link ModelObserver}.
  */
-export function createDependencyTracker(trackers: Tracker[]) : ModelObserver {
+export function createDependencyTracker(trackers: Tracker[]): ModelObserver {
   return new DependencyTracker(trackers);
 }
 
@@ -222,10 +223,11 @@ class DependencyTracker implements ModelObserver {
       queue = nextQueue;
     }
   }
+
 }
 
 /**
- * Higher level interface to track entity changes.
+ * Enable tracking of entity changes.
  */
 export interface Tracker {
 
@@ -264,6 +266,7 @@ export interface Tracker {
 
   /**
    * Call when an entity's dependency has changed.
+   * This is not call when entity itself change.
    * Argument is the last version of the entity not the dependency.
    */
   onDependencyDidChange?: (next: Entity) => void;

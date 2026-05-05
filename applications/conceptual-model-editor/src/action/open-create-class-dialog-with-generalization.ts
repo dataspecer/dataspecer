@@ -10,6 +10,8 @@ import { Position } from "../diagram";
 import { addSemanticGeneralizationToVisualModelAction } from "./add-generalization-to-visual-model";
 import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
 import { CmeReference } from "../dataspecer/cme-model/model";
+import { DialogSemanticTracker } from "../dialog/dialog-semantic-tracker";
+import { LabelResolver } from "../dependency-tracker";
 
 /**
  * Opens dialog which on confirm creates class,
@@ -28,6 +30,8 @@ export function openCreateClassDialogAndCreateGeneralizationAction(
   nodeIdentifier: string,
   isCreatedClassParent: boolean,
   positionToPlaceClassOn: Position,
+  tracker: DialogSemanticTracker,
+  labelResolver: LabelResolver,
 ) {
   const onConfirm = (createdClassData: CmeReference) => {
     createGeneralizationToCreatedClass(
@@ -37,7 +41,8 @@ export function openCreateClassDialogAndCreateGeneralizationAction(
 
   openCreateClassDialogWithModelDerivedFromClassAction(
     cmeExecutor, notifications, graph, dialogs, classes, options,
-    diagram, visualModel, nodeIdentifier, positionToPlaceClassOn, onConfirm);
+    diagram, visualModel, nodeIdentifier, positionToPlaceClassOn, onConfirm,
+    tracker, labelResolver);
 }
 
 function createGeneralizationToCreatedClass(

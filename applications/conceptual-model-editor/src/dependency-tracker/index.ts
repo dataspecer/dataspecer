@@ -34,5 +34,6 @@ export {
   createVisualRepresentationTracker
 } from "./visual-representation-tracker";
 export {
-  effectiveLabel,
-} from "./dependency-tracker-utilities";
+  type LabelResolver,
+  createLabelResolver,
+} from "./label-resolver";

@@ -1,6 +1,5 @@
+import { EntityModel } from "@dataspecer/core-v2";
 import { VisualModel } from "@dataspecer/visual-model";
-import { ClassesContextType } from "../../context/classes-context";
-import { ModelGraphContextType } from "../../context/model-context";
 import {
   type BaseEntityDialogState,
   createEditBaseEntityDialogState,
@@ -8,27 +7,29 @@ import {
 } from "../base-entity/base-entity-dialog-state";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { SemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
-import { semanticModelMapToCmeSemanticModel } from "../../dataspecer/cme-model/adapter";
-import { representClasses } from "../utilities/dialog-utilities";
-import { configuration, t } from "../../application";
+import { semanticModelTrackerToCmeSemanticModel } from "../../dataspecer/cme-model/adapter";
+import {
+  representClassesFromTracker,
+} from "../utilities/dialog-utilities";
+import { configuration } from "../../application";
+import { LabelResolver } from "../../dependency-tracker";
+import { DialogSemanticTracker } from "../dialog-semantic-tracker";
 
 export type ClassDialogState = BaseEntityDialogState;
 
 export function createNewClassDialogState(
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
   defaultModelIdentifier: string | null,
+  tracker: DialogSemanticTracker,
+  labelResolver: LabelResolver,
 ): ClassDialogState {
 
-  const allModels = semanticModelMapToCmeSemanticModel(
-    graphContext.models, visualModel,
-    configuration().defaultModelColor,
-    identifier => t("model-service.model-label-from-id", identifier));
+  const allModels = semanticModelTrackerToCmeSemanticModel(
+    tracker.semanticModels, visualModel,
+    configuration().defaultModelColor);
 
-  const allSpecializations = representClasses(
-    graphContext.models, allModels, classesContext.classes);
+  const allSpecializations = representClassesFromTracker(tracker, labelResolver);
 
   // BaseEntity
 
@@ -44,26 +45,25 @@ export function createNewClassDialogState(
 }
 
 export function createEditClassDialogState(
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
   model: InMemorySemanticModel,
   entity: SemanticModelClass,
+  entityModels: Map<string, EntityModel>,
+  tracker: DialogSemanticTracker,
+  labelResolver: LabelResolver,
 ): ClassDialogState {
 
-  const allModels = semanticModelMapToCmeSemanticModel(
-    graphContext.models, visualModel,
-    configuration().defaultModelColor,
-    identifier => t("model-service.model-label-from-id", identifier));
+  const allModels = semanticModelTrackerToCmeSemanticModel(
+    tracker.semanticModels, visualModel,
+    configuration().defaultModelColor);
 
-  const allSpecializations = representClasses(
-    graphContext.models, allModels, classesContext.classes);
+  const allSpecializations = representClassesFromTracker(tracker, labelResolver);
 
   // BaseEntity
 
   const entityState = createEditBaseEntityDialogState(
-    language, graphContext.models, allModels,
+    language, entityModels, allModels,
     { identifier: entity.id, model: model.getId() },
     entity.iri ?? "", entity.name, entity.description,
     entity.externalDocumentationUrl ?? "",

@@ -22,14 +22,10 @@ import {
   createSemanticProfiledByTracker,
   createVisualModelTracker,
   createVisualRepresentationTracker,
-  effectiveLabel,
   SemanticModelEntry,
   Tracker,
   VisualModelEntry,
 } from "../dependency-tracker";
-import { createLogger } from "../application";
-
-const logger = createLogger(import.meta.url);
 
 export class CatalogTracker implements Tracker {
 
@@ -195,23 +191,15 @@ export class CatalogTracker implements Tracker {
   // API methods.
   //
 
-  getEntityLabel(
-    languages: string[],
+  getEntityOrPartial(
     identifier: EntityIdentifier | undefined,
-  ): string {
+  ): PartialCatalogEntity | null {
     if (identifier === undefined) {
-      return "";
+      return null;
     }
-    const entity = this.entities.get(identifier)
-    if (entity !== undefined) {
-      return effectiveLabel(languages, entity);
-    }
-    logger.missingEntity(identifier);
-    const partial = this.partialEntities.get(identifier);
-    if (partial !== undefined) {
-      return effectiveLabel(languages, partial);
-    }
-    return identifier;
+    return this.entities.get(identifier)
+      ?? this.partialEntities.get(identifier)
+      ?? null;
   }
 
   getModelColor(
@@ -227,7 +215,7 @@ export class CatalogTracker implements Tracker {
   }
 
   hasVisualEntity(
-    entity: CatalogEntity,
+    entity: PartialCatalogEntity,
     visualModelIdentifier: string | null,
   ): boolean {
     if (visualModelIdentifier === null) {

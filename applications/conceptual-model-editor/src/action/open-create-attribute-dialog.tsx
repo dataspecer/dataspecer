@@ -12,6 +12,7 @@ import { AttributeDialogState, createNewAttributeDialogState } from "../dialog/a
 import { createNewAttributeDialog } from "../dialog/attribute/edit-attribute-dialog";
 import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
 import { attributeDialogStateToNewCmeRelationship } from "../dialog/attribute/edit-attribute-dialog-state-adapter";
+import { LabelResolver } from "../dependency-tracker";
 
 /**
  * Open and handle create attribute dialog.
@@ -25,6 +26,7 @@ export function openCreateAttributeDialogAction(
   notifications: UseNotificationServiceWriterType,
   visualModel: VisualModel | null,
   defaultModel: InMemorySemanticModel | null,
+  labelResolver: LabelResolver,
 ) {
 
   const model = defaultModel ?? firstInMemorySemanticModel(graph.models);
@@ -34,7 +36,8 @@ export function openCreateAttributeDialogAction(
   }
 
   const initialState = createNewAttributeDialogState(
-    classes, graph, visualModel, options.language, model.getId());
+    classes, graph, visualModel, options.language, model.getId(),
+    labelResolver);
 
   const onConfirm = (state: AttributeDialogState) => {
 

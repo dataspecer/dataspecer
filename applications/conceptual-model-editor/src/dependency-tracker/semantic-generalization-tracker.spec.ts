@@ -5,7 +5,9 @@ import {
   createSemanticGeneralizationOfTracker,
   createSemanticSpecializationOfTracker,
 } from "./semantic-generalization-tracker";
-import { createSemanticEntityTestFactory } from "./semantic-entity-test-factory";
+import {
+  createSemanticEntityTestFactory,
+} from "./semantic-entity-test-factory";
 
 describe("createSemanticGeneralizationOfTracker", () => {
 

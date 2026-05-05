@@ -159,7 +159,7 @@ export function createNewBaseEntityProfileDialogState<
   const availableSpecializations = sanitizeDuplicitiesInRepresentativeLabels(
     allModels,
     allSpecializations.filter(item => item.model === model.identifier));
-  sortRepresentatives(language, availableSpecializations);
+  sortRepresentatives(availableSpecializations);
 
   const source = profiles[0];
   const usageNoteSource = availableUsageNoteSources[0];
@@ -339,13 +339,11 @@ export function createEditBaseEntityProfileDialogState
     allModels, allSpecializations
       .filter(item => item.model === model.identifier)
       .filter(item => item.identifier !== entity.identifier));
-  sortRepresentatives(language, availableSpecializations);
+  sortRepresentatives(availableSpecializations);
 
   const availableProfiles = sanitizeDuplicitiesInRepresentativeLabels(
     allModels, allProfiles);
-  sortRepresentatives(language, availableProfiles);
-
-  console.log("createEditBaseEntityProfileDialogState", { description, descriptionSourceValue: descriptionSource.description });
+  sortRepresentatives(availableProfiles);
 
   return {
     language,

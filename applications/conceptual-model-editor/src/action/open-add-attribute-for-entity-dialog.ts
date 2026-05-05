@@ -23,6 +23,7 @@ import { attributeDialogStateToNewCmeRelationship } from "../dialog/attribute/ed
 import {
   attributeProfileDialogStateToNewCmeRelationshipProfile,
 } from "../dialog/attribute-profile/edit-attribute-profile-dialog-state-adapter";
+import { LabelResolver } from "../dependency-tracker";
 
 const LOG = createLogger(import.meta.url);
 
@@ -43,6 +44,7 @@ export function openCreateAttributeForEntityDialogAction(
   visualModel: VisualModel | null,
   identifier: string,
   onConfirmCallback: ConfirmationCallback,
+  labelResolver: LabelResolver,
 ) {
   const aggregate = graph.aggregatorView.getEntities()?.[identifier];
 
@@ -54,10 +56,12 @@ export function openCreateAttributeForEntityDialogAction(
 
   if (isSemanticModelClass(entity)) {
     handleCreateClassAttribute(cmeExecutor, options, dialogs,
-      classes, graph, notifications, visualModel, entity, onConfirmCallback);
+      classes, graph, notifications, visualModel, entity, onConfirmCallback,
+    labelResolver);
   } else if (isSemanticModelClassProfile(entity)) {
     handleCreateClassProfileAttribute(cmeExecutor, options, dialogs,
-      classes, graph, notifications, visualModel, entity, onConfirmCallback);
+      classes, graph, notifications, visualModel, entity, onConfirmCallback,
+      labelResolver);
   } else {
     LOG.error("Unknown entity type.", { entity });
     notifications.error("Unknown entity type.");
@@ -74,9 +78,11 @@ function handleCreateClassAttribute(
   visualModel: VisualModel | null,
   aggregate: SemanticModelClass,
   onConfirmCallback: ConfirmationCallback,
+  labelResolver: LabelResolver,
 ) {
   const initialState = createAddAttributeDialogState(
-    classes, graph, visualModel, options.language, aggregate);
+    classes, graph, visualModel, options.language, aggregate,
+    labelResolver);
 
   const onConfirm = (state: AttributeDialogState) => {
 
@@ -108,9 +114,11 @@ function handleCreateClassProfileAttribute(
   visualModel: VisualModel | null,
   aggregate: SemanticModelClassProfile,
   onConfirmCallback: ConfirmationCallback,
+  labelResolver: LabelResolver,
 ) {
   const initialState = createAddAttributeProfileDialogState(
-    classes, graph, visualModel, options.language, aggregate.id);
+    classes, graph, visualModel, options.language, aggregate.id,
+    labelResolver);
 
   const onConfirm = (state: AttributeProfileDialogState) => {
 
