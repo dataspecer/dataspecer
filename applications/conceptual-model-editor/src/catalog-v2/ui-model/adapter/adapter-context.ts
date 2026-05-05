@@ -1,7 +1,7 @@
 import { HexColor, VisualModel } from "@dataspecer/visual-model";
-import { EntityDsIdentifier, LanguageString, ModelDsIdentifier } from "../../entity-model";
+import { EntityDsIdentifier, LanguageString, ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import { languageStringToString } from "../../../utilities/string";
-import { SemanticModel } from "../../semantic-model";
+import { SemanticModel } from "../../../dataspecer/semantic-model";
 
 export type SelectSemanticModelColor =
   (identifier: ModelDsIdentifier) => HexColor;

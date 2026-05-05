@@ -8,7 +8,7 @@ import {
   UiRelationship,
   UiRelationshipProfile,
   wrapUiModelStateToUiModelApi
-} from "../../../dataspecer/ui-model";
+} from "../../../catalog-v2/ui-model";
 
 const LOG = createLogger(import.meta.url);
 

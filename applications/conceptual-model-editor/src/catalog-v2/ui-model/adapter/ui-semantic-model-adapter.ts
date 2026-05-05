@@ -1,4 +1,4 @@
-import { CmeSemanticModel } from "../../cme-model";
+import { CmeSemanticModel } from "../../../dataspecer/cme-model";
 import { UiSemanticModel } from "../model";
 import { SelectLanguageString, SelectSemanticModelColor } from "./adapter-context";
 

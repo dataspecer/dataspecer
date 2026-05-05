@@ -20,7 +20,7 @@ import {
   cmeSemanticModelToUiSemanticModel,
 } from "./adapter";
 import { HexColor, VisualModel } from "@dataspecer/visual-model";
-import { SemanticModel } from "../semantic-model";
+import { SemanticModel } from "../../dataspecer/semantic-model";
 import { createLogger } from "../../application";
 import { createUiAdapterContext, UiAdapterContext } from "./adapter/adapter-context";
 import {
@@ -37,11 +37,11 @@ import {
   semanticClassToCmeClass,
   semanticGeneralizationToCmeGeneralization,
   semanticRelationshipToCmeRelationship,
-} from "../cme-model/adapter";
-import { semanticClassProfileToCmeClassAggregate } from "../cme-model/adapter/cme-class-profile-aggregate";
+} from "../../dataspecer/cme-model/adapter";
+import { semanticClassProfileToCmeClassAggregate } from "../../dataspecer/cme-model/adapter/cme-class-profile-aggregate";
 import {
   semanticRelationshipProfileToCmeRelationshipAggregate,
-} from "../cme-model/adapter/cme-relationship-aggregate-adapter";
+} from "../../dataspecer/cme-model/adapter/cme-relationship-aggregate-adapter";
 import {
   OwlCmeSemanticModel,
   OwlThingCmeEntity,
@@ -49,9 +49,9 @@ import {
   UnknownCmeSemanticModel,
   UnspecifiedCmeEntity,
   semanticModelToCmeSemanticModel,
-} from "../cme-model";
+} from "../../dataspecer/cme-model";
 import { languageStringToString } from "../../utilities/string";
-import { EntityDsIdentifier } from "../entity-model";
+import { EntityDsIdentifier } from "../../dataspecer/entity-model";
 import { Entity } from "@dataspecer/core-v2";
 
 const LOG = createLogger(import.meta.url);

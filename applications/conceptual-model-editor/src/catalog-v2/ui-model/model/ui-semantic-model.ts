@@ -1,5 +1,5 @@
-import { CmeSemanticModelType } from "../../cme-model";
-import { ModelDsIdentifier } from "../../entity-model";
+import { CmeSemanticModelType } from "../../../dataspecer/cme-model";
+import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 
 export interface UiSemanticModel {
 

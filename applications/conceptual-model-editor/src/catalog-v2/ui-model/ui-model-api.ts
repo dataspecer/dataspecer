@@ -1,4 +1,4 @@
-import { EntityDsIdentifier, ModelDsIdentifier } from "../entity-model";
+import { EntityDsIdentifier, ModelDsIdentifier } from "../../dataspecer/entity-model";
 import { UiEntity, UiReference, UiSemanticModel } from "./model";
 import { UiModelState } from "./ui-model-state";
 

@@ -1,6 +1,6 @@
 import { UI_CLASS_TYPE, UiClass, UiSemanticModel } from "../model";
 import { SelectLabel, SelectLanguageString } from "./adapter-context";
-import { CmeClass } from "../../cme-model";
+import { CmeClass } from "../../../dataspecer/cme-model";
 
 export const cmeClassToUiClass = (
   context: {

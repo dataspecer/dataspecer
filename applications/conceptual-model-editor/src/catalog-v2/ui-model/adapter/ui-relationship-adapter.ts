@@ -1,6 +1,6 @@
 import { SelectLabel } from "./adapter-context";
 import { UI_RELATIONSHIP_TYPE, UiEntity, UiRelationship, UiSemanticModel } from "../model";
-import { CmeRelationship } from "../../cme-model";
+import { CmeRelationship } from "../../../dataspecer/cme-model";
 
 export const cmeRelationshipToUiRelationship = (
   context: {

@@ -1,4 +1,4 @@
-import { CmeGeneralization } from "../../cme-model";
+import { CmeGeneralization } from "../../../dataspecer/cme-model";
 import { UI_GENERALIZATION_TYPE, UiEntity, UiGeneralization, UiSemanticModel } from "../model";
 
 export const cmeGeneralizationToCmeGeneralization = (

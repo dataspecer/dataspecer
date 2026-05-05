@@ -1,18 +1,16 @@
+import { UI_CLASS_PROFILE_TYPE, UiClassProfile, UiReference, UiSemanticModel } from "../model";
 import { SelectLabel, SelectLanguageString, SelectModelsWithEntity } from "./adapter-context";
-import { UI_RELATIONSHIP_PROFILE_TYPE, UiEntity, UiReference, UiRelationshipProfile, UiSemanticModel } from "../model";
-import { CmeRelationshipAggregate } from "../../cme-model";
+import { CmeClassAggregate } from "../../../dataspecer/cme-model/model";
 
-export const cmeRelationshipAggregateToUiRelationshipProfile = (
+export const cmeClassAggregateToUiClassProfile = (
   context: {
     selectLabel: SelectLabel,
     selectLanguageString: SelectLanguageString,
     selectModelsWithEntity: SelectModelsWithEntity,
   },
   model: UiSemanticModel,
-  entity: CmeRelationshipAggregate,
-  domain: UiEntity,
-  range: UiEntity,
-): UiRelationshipProfile => {
+  entity: CmeClassAggregate,
+): UiClassProfile => {
 
   const profiling: UiReference[] = [];
   for (const profileOf of entity.profileOf) {
@@ -23,17 +21,15 @@ export const cmeRelationshipAggregateToUiRelationshipProfile = (
       });
     }
   }
+
   return {
-    type: UI_RELATIONSHIP_PROFILE_TYPE,
+    type: UI_CLASS_PROFILE_TYPE,
     model,
     identifier: entity.identifier,
+    iri: entity.iri ?? "",
     label: context.selectLabel(entity.name, entity.iri, entity.identifier),
-    domain,
-    domainCardinality: entity.domainCardinality,
-    range,
-    rangeCardinality: entity.rangeCardinality,
+    description: context.selectLanguageString(entity.description),
     usageNote: context.selectLanguageString(entity.usageNote),
     profiling,
-    mandatoryLevel: entity.mandatoryLevel,
   };
 };

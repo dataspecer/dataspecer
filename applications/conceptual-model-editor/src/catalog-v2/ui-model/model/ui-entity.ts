@@ -1,4 +1,4 @@
-import { EntityDsIdentifier } from "../../entity-model";
+import { EntityDsIdentifier } from "../../../dataspecer/entity-model";
 import { UiSemanticModel } from "./ui-semantic-model";
 
 export const UI_UNKNOWN_ENTITY_TYPE = "ui-unknown-entity-type";
