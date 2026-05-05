@@ -309,8 +309,7 @@ export class XmlSchemaDocumentationGenerator {
 
     const imports = [];
     for (const imp of this.xmlSchema.imports) {
-      const model = imp.model;
-      const schema = model?.roots[0].classes[0].structureSchema;
+      const schema = imp.schemaId;
       imports.push({
         prefix: this.xmlSchema.namespaces.find(ns => ns.namespace === imp.namespace)?.prefix,
         namespace: imp.namespace,

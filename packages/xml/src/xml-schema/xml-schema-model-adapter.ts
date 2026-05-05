@@ -1,6 +1,6 @@
 import { pathRelative } from "@dataspecer/core/core/utilities/path-relative";
 import { DataSpecificationConfiguration, DataSpecificationConfigurator, DefaultDataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
-import { DataSpecification, DataSpecificationArtefact, DataSpecificationSchema } from "@dataspecer/core/data-specification/model";
+import { DataSpecificationArtefact, DataSpecificationSchema } from "@dataspecer/core/data-specification/model";
 import { ArtefactGeneratorContext } from "@dataspecer/core/generator";
 import {
   StructureModelClass,
@@ -19,6 +19,7 @@ import { XmlStructureModel } from "../xml-structure-model/model/xml-structure-mo
 import { multiplyMaxCardinality, multiplyMinCardinality } from "./utils/cardinality.ts";
 import { buildEntityOriginMap, type EntityOriginMap } from "./utils/entity-origin-map.ts";
 import { getExtensionSchemaPath } from "./xml-schema-generator.ts";
+import { GetReferencedSchemaForGml } from "./gml-support.ts";
 import {
   XmlSchema,
   XmlSchemaAnnotation,
@@ -71,9 +72,9 @@ interface ProfilingLevelInfo {
  * Performs necessary transformations and prepares all the data.
  * todo: We need to do full transformation here including from the conceptual model.
  */
-async function prepareStructureModel(rawModel: StructureModel, context: ArtefactGeneratorContext, configuration: DataSpecificationConfiguration): Promise<XmlStructureModel> {
+function prepareStructureModel(rawModel: StructureModel, context: ArtefactGeneratorContext, configuration: DataSpecificationConfiguration): XmlStructureModel {
   rawModel = structureModelAddDefaultValues(rawModel, configuration);
-  const xmlModel = await structureModelAddXmlProperties(rawModel, context.reader);
+  const xmlModel = structureModelAddXmlProperties(rawModel, context.reader);
 
   return xmlModel;
 }
@@ -81,7 +82,7 @@ async function prepareStructureModel(rawModel: StructureModel, context: Artefact
 const XML_IMPORT = {
   namespace: "http://www.w3.org/XML/1998/namespace",
   schemaLocation: "http://www.w3.org/2001/xml.xsd",
-  model: null,
+  schemaId: null, // There is no schema that is being imported
 } satisfies XmlSchemaImportDeclaration;
 
 /**
@@ -91,7 +92,7 @@ const XML_IMPORT = {
  *
  * Example: If C profiles B which profiles A, returns [A, B, C]
  */
-export async function collectProfilingChain(model: StructureModel, context: ArtefactGeneratorContext, mainArtifact: DataSpecificationArtefact): Promise<XmlStructureModel[]> {
+export function collectProfilingChain(model: StructureModel, context: ArtefactGeneratorContext, mainArtifact: DataSpecificationArtefact): XmlStructureModel[] {
   const chain: XmlStructureModel[] = [];
 
   let currentModelId: string | null = model.psmIri;
@@ -103,7 +104,7 @@ export async function collectProfilingChain(model: StructureModel, context: Arte
       DataSpecificationConfigurator.getFromObject(mainArtifact.configuration), // todo
     ) as DataSpecificationConfiguration;
 
-    const profiledModel = (await prepareStructureModel(structureModel, context, configuration)) as XmlStructureModel;
+    const profiledModel = prepareStructureModel(structureModel, context, configuration) as XmlStructureModel;
     chain.push(profiledModel);
 
     // Go to the next profiled model (the one this model profiles)
@@ -127,7 +128,6 @@ export async function collectProfilingChain(model: StructureModel, context: Arte
  */
 export async function structureModelToXmlSchema(
   context: ArtefactGeneratorContext,
-  specification: DataSpecification,
   artifact: DataSpecificationSchema,
   model: StructureModel,
   generateForDocumentation: boolean = false,
@@ -182,8 +182,46 @@ export async function structureModelToXmlSchema(
 
   for (const ns of uniqueNamespaces) {
     const { model: namespaceModel } = namespaceToFirstModel.get(ns)!;
+
+    const getReferencedSchema: GetReferencedSchema = (structureId: string, specificationId: string) => {
+      {
+        const match = GetReferencedSchemaForGml(structureId, specificationId);
+        if (match) {
+          return match;
+        }
+      }
+
+      const specification = context.specifications[specificationId];
+      if (!specification) {
+        throw new Error(`Missing specification ${specificationId}`);
+      }
+
+      for (const candidate of specification.artefacts) {
+        if (candidate.generator !== XML_SCHEMA.Generator) {
+          continue;
+        }
+        const candidateSchema = candidate as DataSpecificationSchema;
+        if (structureId !== candidateSchema.psm) {
+          continue;
+        }
+        // TODO We should check that the class is root here.
+
+        // ! schema we need namespace
+
+        const structureModel = context.structureModels[structureId];
+        const xmlStructureModel = structureModelAddXmlProperties(structureModel, context.reader);
+
+        return {
+          namespace: xmlStructureModel.namespace,
+          namespacePrefix: xmlStructureModel.namespacePrefix,
+          publicUrl: candidateSchema.publicUrl,
+        };
+      }
+      throw new Error(`No artifact found matching structure ${structureId}.`);
+    };
+
     const adapter = new XmlSchemaAdapter(
-      context,
+      getReferencedSchema,
       artifact,
       sourceOfTruthModel, // Always use source of truth model for data
       namespaceModel, // todo not sure whether we need whole namespace model here
@@ -274,6 +312,21 @@ export async function structureModelToXmlSchema(
 }
 
 /**
+ * For given structureId (PSM IRI) and specificationId (Data Specification IRI),
+ * returns the namespace and prefix of the schema where this entity is defined.
+ */
+export type GetReferencedSchema = (structureId: string, specificationId: string) => {
+  /**
+   * Name of the root type of the given structure that is being referenced. Use
+   * this name with namespace to reference the type in XSD.
+   */
+  typeName?: string, // todo
+  namespace: string | null;
+  namespacePrefix: string | null;
+  publicUrl: string | null;
+} | null;
+
+/**
  * This class contains functions to process all parts of a {@link XmlStructureModel}
  * and create an instance of {@link XmlSchema}.
  *
@@ -282,8 +335,10 @@ export async function structureModelToXmlSchema(
  * but generates elements in its own namespace based on where entities originate.
  */
 class XmlSchemaAdapter {
-  private context: ArtefactGeneratorContext;
-  private specifications: { [iri: string]: DataSpecification };
+  // private context: ArtefactGeneratorContext;
+  // private specifications: { [iri: string]: DataSpecification };
+  private getReferencedSchema: GetReferencedSchema;
+
   private artifact: DataSpecificationSchema;
   /**
    * The source of truth model - contains the actual data (properties, cardinality, etc.)
@@ -328,7 +383,7 @@ class XmlSchemaAdapter {
    * @param originalNamespaces Map of original namespaces before consolidation (for documentation mode).
    */
   constructor(
-    context: ArtefactGeneratorContext,
+    getReferencedSchema: GetReferencedSchema,
     artifact: DataSpecificationSchema,
     sourceOfTruthModel: XmlStructureModel,
     namespaceModel: XmlStructureModel,
@@ -337,8 +392,7 @@ class XmlSchemaAdapter {
     private isDocumentationMode: boolean = false,
     private originalNamespaces: Map<XmlStructureModel, { namespace: string | null; prefix: string | null }> = new Map(),
   ) {
-    this.context = context;
-    this.specifications = context.specifications;
+    this.getReferencedSchema = getReferencedSchema;
     this.artifact = artifact;
     this.model = sourceOfTruthModel;
     this.namespaceModel = namespaceModel;
@@ -445,7 +499,7 @@ class XmlSchemaAdapter {
         this.imports[commonXmlNamespace] = {
           namespace: commonXmlNamespace,
           schemaLocation: this.commonXmlSchemaLocation,
-          model: null,
+          schemaId: null, // Common XML schema does not have a structure model
         };
       }
       return commonXmlPrefix;
@@ -689,7 +743,7 @@ class XmlSchemaAdapter {
       if (property.isReferencing) {
         // We are in property, not root
 
-        const referencedClass = await this.getImportedTypeForEntity(property as StructureModelProperty);
+        const referencedClass = this.getImportedTypeForEntity(property as StructureModelProperty);
         referencedClass[1] = property.orTechnicalLabel ?? "type";
 
         return {
@@ -710,7 +764,7 @@ class XmlSchemaAdapter {
 
         if (cls.isReferenced) {
           // For referenced classes, create an element with the imported type
-          const importedTypeName = await this.getImportedTypeForEntity(cls);
+          const importedTypeName = this.getImportedTypeForEntity(cls);
           element = {
             entityType: "element",
             name: [namespacePrefix, cls.technicalLabel],
@@ -776,7 +830,7 @@ class XmlSchemaAdapter {
     if (cls.isReferenced) {
       return {
         entityType: "type",
-        name: await this.getImportedTypeForEntity(cls),
+        name: this.getImportedTypeForEntity(cls),
         annotation: this.getAnnotation(cls),
       } satisfies XmlSchemaType;
     } else {
@@ -829,7 +883,7 @@ class XmlSchemaAdapter {
   /**
    * Helper function that returns {@link QName} for a class that is referenced.
    */
-  private async getImportedTypeForEntity(entity: StructureModelClass | StructureModelProperty): Promise<QName> {
+  private getImportedTypeForEntity(entity: StructureModelClass | StructureModelProperty): QName {
     const structureSchema = (entity as StructureModelClass).structureSchema || (entity as StructureModelProperty).referencingStructureSchema;
     const specification = (entity as StructureModelClass).specification || (entity as StructureModelProperty).referencingSpecification;
     const importDeclaration = this.imports[structureSchema];
@@ -840,20 +894,19 @@ class XmlSchemaAdapter {
     }
 
     // Find the artefact and import
-    const artefact = this.findArtefactForImport(structureSchema, specification);
-    if (artefact) {
-      const model = await this.getImportedModel(structureSchema);
-      const prefix = model?.namespacePrefix ?? null;
-      const namespace = model?.namespace ?? null;
+    const imported = this.getReferencedSchema(structureSchema, specification);
+    if (imported) {
+      const prefix = imported.namespacePrefix ?? null;
+      const namespace = imported.namespace ?? null;
       this.imports[structureSchema] = {
         namespace: namespace,
-        schemaLocation: pathRelative(this.currentPath(), artefact.publicUrl, specification !== this.model.specification),
-        model,
+        schemaLocation: pathRelative(this.currentPath(), imported.publicUrl, specification !== this.model.specification),
+        schemaId: structureSchema,
       };
       if (namespace && prefix) {
         this.namespaces[namespace] = prefix;
       }
-      return [prefix, entity.technicalLabel];
+      return [prefix, entity.technicalLabel ?? imported.typeName]; // todo this should be only type name
     }
 
     // Fallback with error
@@ -1010,7 +1063,7 @@ class XmlSchemaAdapter {
       this.imports[otherModel.namespace] = {
         namespace: otherModel.namespace,
         schemaLocation: extensionSchemaLocation,
-        model: otherModel,
+        schemaId: otherModel.psmIri,
       };
     }
   }
@@ -1065,41 +1118,11 @@ class XmlSchemaAdapter {
     };
   }
 
-  private findArtefactForImport(structureSchema: string, specification: string): DataSpecificationArtefact | null {
-    const targetSpecification = this.specifications[specification];
-    if (targetSpecification == null) {
-      throw new Error(`Missing specification ${specification}`);
-    }
-    for (const candidate of targetSpecification.artefacts) {
-      if (candidate.generator !== XML_SCHEMA.Generator) {
-        continue;
-      }
-      const candidateSchema = candidate as DataSpecificationSchema;
-      if (structureSchema !== candidateSchema.psm) {
-        continue;
-      }
-      // TODO We should check that the class is root here.
-      return candidate;
-    }
-    return null;
-  }
-
   /**
    * Returns the path of the current artifact.
    */
   private currentPath(): string {
     return this.artifact.publicUrl;
-  }
-
-  /**
-   * Returns the structure model from an imported schema.
-   */
-  private async getImportedModel(iri: string): Promise<XmlStructureModel> {
-    const model = this.context.structureModels[iri];
-    if (model != null) {
-      return await structureModelAddXmlProperties(model, this.context.reader);
-    }
-    return null;
   }
 
   /**

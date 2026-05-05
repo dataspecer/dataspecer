@@ -74,7 +74,12 @@ export class XmlSchema {
 export class XmlSchemaImportDeclaration {
   namespace: string | null;
   schemaLocation: string;
-  model: StructureModel | null;
+
+  /**
+   * ID of structure schema this imports. If null, the schema is external and
+   * does not exist in Dataspecer.
+   */
+  schemaId: string | null;
 }
 
 /**

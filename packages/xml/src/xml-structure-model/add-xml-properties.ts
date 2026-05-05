@@ -10,12 +10,12 @@ import {DataPsmSchemaXmlExtension} from "@dataspecer/core/data-psm/xml-extension
  * @param structure
  * @param reader
  */
-export async function structureModelAddXmlProperties(
+export function structureModelAddXmlProperties(
   structure: StructureModel,
   reader: CoreResourceReader,
-): Promise<XmlStructureModel> {
+): XmlStructureModel {
   const result = Object.assign(new XmlStructureModel(), structure);
-  const schema = await reader.readResource(structure.psmIri);
+  const schema = reader.readResource(structure.psmIri);
 
   if (!schema || !DataPsmSchema.is(schema)) {
     throw new Error(`Entity is not a PSM schema '${structure.psmIri}'.`);
