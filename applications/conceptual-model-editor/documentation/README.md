@@ -18,9 +18,11 @@ The main components are:
   For example, 'show/hide' action can be executed from dialog, toolbar or in reaction to user prompt.
 
 ### Directories / Packages
+
 This section contains comments relevant for developing code in certain packages.
 
 ### Package `action`
+
 CME utilizes concept of actions to handle changes in the persistent and global state.
 Actions can be called from different places of the CME providing us easy way improve user-experience.
 Notes on action implementation:
@@ -29,9 +31,11 @@ Notes on action implementation:
 - Actions must act as error boundaries and handle possible errors in called code.
 
 ## Features
+
 This section describe implementation detail, or plans, for selected features.
 
 # Dialogs
+
 Dialogs are one of the main architecture units.
 
 Each dialog should consists of following files:
