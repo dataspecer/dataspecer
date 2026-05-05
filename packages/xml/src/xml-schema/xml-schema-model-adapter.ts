@@ -42,8 +42,11 @@ import {
   XmlSchemaType,
   xmlSchemaTypeIsComplex,
   xmlSchemaTypeIsSimple,
+  type XmlSchemaComplexSimpleContent,
 } from "./xml-schema-model.ts";
 import { XML_SCHEMA } from "./xml-schema-vocabulary.ts";
+
+export const GEO_SPARQL_WKT_LITERAL = "http://www.opengis.net/ont/geosparql#wktLiteral";
 
 /**
  * Information about a level in the profiling chain, linking
@@ -1124,6 +1127,12 @@ class XmlSchemaAdapter {
    */
   private datatypePropertyToType(propertyData: StructureModelProperty, dataTypes: StructureModelPrimitiveType[]): XmlSchemaType {
     if (dataTypes.length === 1 && !propertyData.isInOr) {
+      // Handle specific cases
+
+      if (dataTypes[0].dataType === GEO_SPARQL_WKT_LITERAL) {
+        return this.wktLiteralToType();
+      }
+
       if ([OFN.text, "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString"].includes(dataTypes[0].dataType)) {
         // This is language string
         const langStringType: XmlSchemaLangStringType = {
@@ -1168,6 +1177,33 @@ class XmlSchemaAdapter {
       },
     };
     return simpleType;
+  }
+
+  private wktLiteralToType(): XmlSchemaComplexType {
+    return {
+      entityType: "type",
+      name: null,
+      annotation: null,
+      complexDefinition: {
+        xsType: "simpleContent",
+        base: [this.getAndImportHelperNamespace("xsd", true), "string"],
+        attributes: [
+          {
+            name: [null, "srsName"],
+            type: {
+              entityType: "type",
+              name: [this.getAndImportHelperNamespace("xsd", true), "anyURI"],
+              annotation: null,
+            },
+            annotation: null,
+            isRequired: false,
+          },
+        ],
+      } satisfies XmlSchemaComplexSimpleContent as XmlSchemaComplexSimpleContent,
+      mixed: false,
+      abstract: null,
+      attributes: [],
+    } satisfies XmlSchemaComplexType;
   }
 
   /**

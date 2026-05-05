@@ -2,11 +2,13 @@ import { OutputStream } from "@dataspecer/core/io/stream/output-stream";
 import {
   XmlClassMatch,
   XmlContainerMatch,
+  xmlMatchIsGmlLiteral,
   XmlMatch,
   xmlMatchIsClass,
   xmlMatchIsContainer,
   xmlMatchIsIri,
   xmlMatchIsLiteral,
+  xmlMatchIsWktLiteral,
   XmlRootTemplate,
   XmlTemplate,
   XmlTransformation,
@@ -17,6 +19,11 @@ import { XSLT_LIFTING } from "./xslt-vocabulary.ts";
 import { writePrefixesFromImports } from "./utils.ts";
 
 const xslNamespace = "http://www.w3.org/1999/XSL/Transform";
+
+/**
+ * Name of the template that takes contents of a GML literal and emits RDF serialized literal.
+ */
+const gmlTransformLiftingTemplateName = "gml-transform-lifting";
 
 /**
  * @todo use class to avoid passing the model around everywhere.
@@ -49,7 +56,7 @@ export async function writeXsltLifting(model: XmlTransformation, stream: OutputS
   await writeImports(model, writer);
   await writeSettings(writer);
   await writeRootTemplates(model, writer);
-  await writeCommonTemplates(writer);
+  await writeCommonTemplates(model, writer);
   await writeTemplates(model, writer);
   await writeFinalTemplates(writer);
   await writeTransformationEnd(writer);
@@ -60,13 +67,22 @@ export async function writeXsltLifting(model: XmlTransformation, stream: OutputS
  * transformation definition and options, and declares used namespaces.
  */
 async function writeTransformationBegin(model: XmlTransformation, writer: XmlWriter): Promise<void> {
+  /**
+   * Default is off and individual features may turn this on if they require XSLT 3.0 features.
+   */
+  let usesVersion3 = false;
+  usesVersion3 ||= model.usesGmlLiterals;
+
   await writer.writeXmlDeclaration("1.0", "utf-8");
   writer.registerNamespace("xsl", xslNamespace);
   await writer.writeElementBegin("xsl", "stylesheet");
   await writer.writeNamespaceDeclaration("xsl", xslNamespace);
   await writer.writeAndRegisterNamespaceDeclaration("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
   await writer.writeAndRegisterNamespaceDeclaration("xsi", "http://www.w3.org/2001/XMLSchema-instance");
-  await writer.writeLocalAttributeValue("version", "2.0");
+  if (model.usesWktLiterals || model.usesGmlLiterals) {
+    await writer.writeAndRegisterNamespaceDeclaration("gsp", "http://www.opengis.net/ont/geosparql#");
+  }
+  await writer.writeLocalAttributeValue("version", usesVersion3 ? "3.0" : "2.0");
 
   if (model.targetNamespacePrefix != null) {
     await writer.writeAndRegisterNamespaceDeclaration(model.targetNamespacePrefix, model.targetNamespace);
@@ -109,7 +125,7 @@ async function writeTransformationEnd(writer: XmlWriter): Promise<void> {
 /**
  * Writes common templates used from other places.
  */
-async function writeCommonTemplates(writer: XmlWriter): Promise<void> {
+async function writeCommonTemplates(model: XmlTransformation, writer: XmlWriter): Promise<void> {
   // todo only for lang properties
   await writer.writeElementFull(
     "xsl",
@@ -165,6 +181,66 @@ async function writeCommonTemplates(writer: XmlWriter): Promise<void> {
       });
     });
   });
+
+  if (model.usesWktLiterals) {
+    // Template for WKT literal transformation
+    // Converts an element with @srsName and WKT content to a single literal
+    // in the form "<srsurl> WKT_CONTENT" (datatype gsp:wktLiteral).
+    await writer.writeElementFull(
+      "xsl",
+      "template",
+    )(async (writer) => {
+      await writer.writeLocalAttributeValue("name", "wkt-transform");
+      await writer.writeElementFull(
+        "xsl",
+        "choose",
+      )(async (writer) => {
+        await writer.writeElementFull(
+          "xsl",
+          "when",
+        )(async (writer) => {
+          // Only treat the first token as srs when srsName attribute is present
+          await writer.writeLocalAttributeValue("test", "@srsName");
+          await writer.writeElementFull(
+            "xsl",
+            "value-of",
+          )(async (writer) => {
+            // Trim only leading/trailing whitespace from both parts (do not collapse internal spaces)
+            // < and > will be properly escaped
+            const select = "concat('<', replace(@srsName, '^\\s+|\\s+$',''), '>', ' ', replace(string(.), '^\\s+|\\s+$',''))";
+            await writer.writeLocalAttributeValue("select", select);
+          });
+        });
+        await writer.writeElementFull(
+          "xsl",
+          "otherwise",
+        )(async (writer) => {
+          // If no srsName attribute, just output the trimmed content
+          await writer.writeElementFull(
+            "xsl",
+            "value-of",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("select", "replace(string(.), '^\\s+|\\s+$','')");
+          });
+        });
+      });
+    });
+  }
+
+  if (model.usesGmlLiterals) {
+    await writer.writeElementFull(
+      "xsl",
+      "template",
+    )(async (writer) => {
+      await writer.writeLocalAttributeValue("name", gmlTransformLiftingTemplateName);
+      await writer.writeElementFull(
+        "xsl",
+        "value-of",
+      )(async (writer) => {
+        await writer.writeLocalAttributeValue("select", "serialize(node(), map{'method':'xml','omit-xml-declaration':true(),'indent':false()})");
+      });
+    });
+  }
 }
 
 /**
@@ -682,20 +758,38 @@ async function writeForwardProperty(match: XmlMatch, writer: XmlWriter) {
       if (xmlMatchIsLiteral(match)) {
         await writer.writeAttributeValue("rdf", "datatype", match.dataTypeIri);
 
-        // Copy xml:lang and the value.
-        await writer.writeElementFull(
-          "xsl",
-          "apply-templates",
-        )(async (writer) => {
-          await writer.writeLocalAttributeValue("select", "@*");
-        });
+        if (xmlMatchIsWktLiteral(match)) {
+          // For WKT literals, use the wkt-transform template
+          await writer.writeElementFull(
+            "xsl",
+            "call-template",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("name", "wkt-transform");
+          });
+        } else if (xmlMatchIsGmlLiteral(match)) {
+          // For GML literals, serialize the current XML node as lexical XML.
+          await writer.writeElementFull(
+            "xsl",
+            "call-template",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("name", gmlTransformLiftingTemplateName);
+          });
+        } else {
+          // Copy xml:lang and the value for regular literals.
+          await writer.writeElementFull(
+            "xsl",
+            "apply-templates",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("select", "@*");
+          });
 
-        await writer.writeElementFull(
-          "xsl",
-          "value-of",
-        )(async (writer) => {
-          await writer.writeLocalAttributeValue("select", ".");
-        });
+          await writer.writeElementFull(
+            "xsl",
+            "value-of",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("select", ".");
+          });
+        }
       } else if (xmlMatchIsIri(match)) {
         await writer.writeElementFull(
           "xsl",

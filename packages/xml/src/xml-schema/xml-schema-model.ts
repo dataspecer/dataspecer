@@ -283,6 +283,23 @@ export class XmlSchemaComplexExtension extends XmlSchemaComplexContainer {
   base: QName;
 }
 
+/**
+ * Represents an xs:simpleContent element in an xs:complexType.
+ */
+export class XmlSchemaComplexSimpleContent extends XmlSchemaComplexItem {
+  declare xsType: "simpleContent";
+
+  /**
+   * The base type of the extension.
+   */
+  base: QName;
+
+  /**
+   * The attributes on the simpleContent extension.
+   */
+  attributes: XmlSchemaAttribute[];
+}
+
 export function xmlSchemaComplexTypeDefinitionIsSequence(
   typeDefinition: XmlSchemaComplexItem
 ): typeDefinition is XmlSchemaComplexSequence {
@@ -305,6 +322,12 @@ export function xmlSchemaComplexTypeDefinitionIsExtension(
   typeDefinition: XmlSchemaComplexItem
 ): typeDefinition is XmlSchemaComplexExtension {
   return typeDefinition.xsType === "extension";
+}
+
+export function xmlSchemaComplexTypeDefinitionIsSimpleContent(
+  typeDefinition: XmlSchemaComplexItem
+): typeDefinition is XmlSchemaComplexSimpleContent {
+  return typeDefinition.xsType === "simpleContent";
 }
 
 /**
