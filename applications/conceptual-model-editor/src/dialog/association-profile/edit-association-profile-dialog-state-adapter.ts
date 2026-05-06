@@ -1,5 +1,6 @@
 import { NewCmeRelationshipProfile } from "../../dataspecer/cme-model/model";
 import { AssociationProfileDialogState } from "./edit-association-profile-dialog-state";
+import { emptyAsNull } from "../../utilities/string";
 
 export function associationProfileDialogStateToNewCmeRelationshipProfile(
   state: AssociationProfileDialogState
@@ -39,5 +40,6 @@ export function associationProfileDialogStateToNewCmeRelationshipProfileWithOver
     externalDocumentationUrl: state.externalDocumentationUrl,
     mandatoryLevel: state.availableMandatoryLevels.find(
       item => item.value === state.mandatoryLevel)?.cme ?? null,
+    order: emptyAsNull(state.order),
   }
 }

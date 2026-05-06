@@ -120,7 +120,8 @@ export function createEditClassProfileDialogState(
     entity.description, entity.descriptionFromProfiled,
     entity.externalDocumentationUrl ?? "",
     entity.usageNote, entity.usageNoteFromProfiled,
-    allSpecializations);
+    allSpecializations,
+    entity.order ?? "");
 
   return {
     ...entityProfileState,

@@ -67,7 +67,8 @@ export function createEditClassDialogState(
     { identifier: entity.id, model: model.getId() },
     entity.iri ?? "", entity.name, entity.description,
     entity.externalDocumentationUrl ?? "",
-    allSpecializations);
+    allSpecializations,
+    entity.order ?? "");
 
   return {
     ...entityState,

@@ -35,6 +35,8 @@ export interface NewCmeRelationshipProfile {
 
   mandatoryLevel: CmeRelationshipProfileMandatoryLevel | null;
 
+  order?: string | null;
+
 }
 
 export interface CmeRelationshipProfile extends CmeEntity, NewCmeRelationshipProfile {

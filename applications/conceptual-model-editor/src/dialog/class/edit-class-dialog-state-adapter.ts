@@ -10,5 +10,6 @@ export function classDialogStateToNewCmeClass(
     description: state.description,
     iri: state.iri,
     externalDocumentationUrl: emptyAsNull(state.externalDocumentationUrl),
+    order: emptyAsNull(state.order),
   }
 }

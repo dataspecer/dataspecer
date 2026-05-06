@@ -171,7 +171,8 @@ export function createEditAttributeProfileDialogState(
     range.description, range.descriptionFromProfiled,
     range.externalDocumentationUrl ?? "",
     range.usageNote, range.usageNoteFromProfiled,
-    allSpecializations);
+    allSpecializations,
+    range.order ?? "");
 
   // RelationshipState<EntityRepresentative>
 
