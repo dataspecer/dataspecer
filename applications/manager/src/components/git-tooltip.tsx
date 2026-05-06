@@ -3,6 +3,7 @@
 import { ResourceWithIris } from "@/package";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import { TooltipArrow } from "@radix-ui/react-tooltip";
+import { useTranslation } from "react-i18next";
 
 interface ResourceTooltipProps {
   resource: ResourceWithIris; // <-- replace this with your actual type
@@ -12,6 +13,8 @@ interface ResourceTooltipProps {
 
 
 export default function ResourceTooltip({ resource, side, children }: ResourceTooltipProps) {
+  const { t } = useTranslation();
+
   return (
     <TooltipProvider delayDuration={80}>
       <Tooltip>
@@ -22,16 +25,29 @@ export default function ResourceTooltip({ resource, side, children }: ResourceTo
         <TooltipContent
           side={side}
         >
-          <div><strong>Has uncommited changes:</strong> {resource.hasUncommittedChanges ? "Yes" : "No" }</div>
-          <div><strong>Active merge state count:</strong> {resource.activeMergeStateCount}</div>
-          <div><strong>Project IRI:</strong> {resource.projectIri}</div>
-          <div><strong>{resource.representsBranchHead ? "Branch" : "Commit"}:</strong> {resource.branch}</div>
           <div>
-            <strong>Type:</strong>{" "}
-            {resource.representsBranchHead ? "Branch" : "Commit"}
+            <strong>{t("git-tooltip.has-uncommitted-changes")}</strong>{" "}
+            {resource.hasUncommittedChanges ? t("git-tooltip.yes") : t("git-tooltip.no")}
           </div>
           <div>
-            <strong>Tracked commit inside Dataspecer:</strong> {resource.lastCommitHash.substring(0, 10)}
+            <strong>{t("git-tooltip.active-merge-state-count")}</strong>{" "}
+            {resource.activeMergeStateCount}
+          </div>
+          <div>
+            <strong>{t("git-tooltip.project-iri")}</strong>{" "}
+            {resource.projectIri}
+          </div>
+          <div>
+            <strong>{resource.representsBranchHead ? t("git-tooltip.branch") : t("git-tooltip.commit")}</strong>
+            : {resource.branch}
+          </div>
+          <div>
+            <strong>{t("git-tooltip.type")}</strong>{" "}
+            {resource.representsBranchHead ? t("git-tooltip.branch") : t("git-tooltip.commit")}
+          </div>
+          <div>
+            <strong>{t("git-tooltip.tracked-commit-inside-dataspecer")}</strong>{" "}
+            {resource.lastCommitHash.substring(0, 10)}
           </div>
 
           <TooltipArrow className="fill-black" />

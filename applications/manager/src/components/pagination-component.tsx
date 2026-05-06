@@ -39,11 +39,13 @@ export function usePaginationComponent<T>() {
           disabled={pageOnFrontend === 1 || totalItemCount === 0}
           className=""
         >
-          Previous
+          {t("pagination.previous")}
         </Button>
 
         <span className="flex justify-center items-center text-sm">
-          Page {pageOnFrontend} {isPageNumberingExact ? `of ${totalItemCount === 0 ? 1 : totalPageCount}` : ""}
+          {isPageNumberingExact
+            ? t("pagination.page-of", { page: pageOnFrontend, total: totalItemCount === 0 ? 1 : totalPageCount })
+            : t("pagination.page", { page: pageOnFrontend })}
         </span>
 
         <Button
@@ -55,7 +57,7 @@ export function usePaginationComponent<T>() {
           disabled={(isPageNumberingExact && pageOnFrontend === totalPageCount) || totalItemCount === 0 || isLastPageBasedOnServerResponse}
           className=""
         >
-          Next
+          {t("pagination.next")}
         </Button>
       </div>
       <div className="flex justify-center items-center text-sm">

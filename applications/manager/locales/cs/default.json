@@ -138,7 +138,54 @@
     "name-za": "Obráceně abecedně"
   },
   "successfully saved": "Úspěšně uloženo.",
-
+  "git-tooltip": {
+    "has-uncommitted-changes": "Má necommitnuté změny:",
+    "yes": "Ano",
+    "no": "Ne",
+    "active-merge-state-count": "Počet aktivních merge stavů:",
+    "project-iri": "Project IRI:",
+    "branch": "Větev",
+    "commit": "Commit",
+    "type": "Typ:",
+    "tracked-commit-inside-dataspecer": "Trackovaný commit v rámci Dataspeceru:"
+  },
+  "login-card": {
+    "sign-out-tooltip": "Poznámka: Práva spojená s Gitem (například právo pushovat) by měla automaticky odstraněna po odhlášení. Kdyby ale došlo k chybě, tak pro jistotu odstraňte oprávnění v rámci GitHub nastavení.",
+    "sign-out": "Odhlásit se",
+    "sign-in": "Přihlásit se",
+    "standard-sign-in": "Standardní přihlášení",
+    "recommended": "(Doporučeno)",
+    "advanced-sign-in": "Pokročilé přihlášení",
+    "user-avatar-alt": "Uživatelský avatar",
+    "user-avatar-title": "Uživatelské jméno: {{username}}\nEmail: {{email}}\nScope: {{scope}}",
+    "add-private-ssh-key": "Přidat private SSH klíč"
+  },
+  "merge-state-finalizer-stepper": {
+    "steps": {
+      "pick-commit-type": "Vybírání typu commitu",
+      "validation": "Validace",
+      "commit": "Commit"
+    }
+  },
+  "merge-strategy-component": {
+    "resolve-button": "Vyřešit pomocí merge strategie",
+    "modal-title": "Použít vybraný merge resolver",
+    "modal-description": "Vyberte ovlivněné modely.",
+    "modal-warning": "⚠️ Poznámka: Přidání / smazání datastores musí být provedeno ručně.",
+    "options": {
+      "only-current-datastore": "Pouze aktuálně otevřený datastore",
+      "all-datastores": "Všechny datastores"
+    }
+  },
+  "pagination": {
+    "previous": "Předchozí",
+    "next": "Další",
+    "page": "Stránka {{page}}",
+    "page-of": "Stránka {{page}} z {{total}}"
+  },
+  "popover-git-general": {
+    "more-detail": "Podrobnější informace budou zobrazeny za {{seconds}} sekund"
+  },
 
   "git": {
     "wait-seconds": "sekund",
@@ -218,6 +265,22 @@
         "title": "Ukládání změn na backend",
         "waiting-text": "Ukládání změn na backend"
       }
+    },
+    "export-format-tooltip": {
+      "intro": "Formát, ve kterém budou modely exportovány do Gitu. Diff editor také zobrazuje modely v tomto formátu.",
+      "json": "- JSON je pečlivě otestovaný a výchozí pro zbytek Dataspeceru. Proto ho doporučujeme.",
+      "yaml": "- YAML může být trochu přívětivější pro textové prohlížení. Implementace je však experimentální a není zaručeno, že je bez chyb.",
+      "note": "(Z implementačního hlediska stále pracujeme s JSONy v rámci Dataspeceru, tento formát ovlivňuje pouze Git export a diff editor)"
+    },
+    "export-version": {
+      "old": "Starý",
+      "new": "Nový (strukturovanější)"
+    },
+    "export-version-tooltip": {
+      "old": "- Stará verze mapuje balíčky na adresáře a modely jsou umístěny jako soubory v rámci konkrétního balíčku.",
+      "new": "- Nová verze je strukturovanější. Stále platí, že modely jsou soubory, které jsou uvnitř adresářů mapujících balíčky.",
+      "structure": "- Struktura je daná tím, že modely jsou umístěny do adresáře na základě typu modelu.",
+      "example": "- Například balíčky jsou uvnitř adresáře \"directories\" a vizuální modely v adresáři \"visual-models\"."
     }
   }
 }

@@ -1,6 +1,7 @@
 import { mergeResolverStrategies, MergeResolverStrategy } from "@dataspecer/git";
 import { Button } from "./ui/button";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { BetterModalProps, useBetterModal } from "@/lib/better-modal";
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "./modal";
 import { ComboBox } from "./combo-box";
@@ -21,6 +22,7 @@ export enum ModelsToResolve {
 export const MergeStrategyComponent = (props: {
   handleMergeStateResolving: (mergeStrategy: MergeResolverStrategy, modelsToResolve: ModelsToResolve) => void;
 }) => {
+  const { t } = useTranslation();
   const [mergeStrategy, setMergeStrategy] = useState<MergeResolverStrategy>(mergeResolverStrategies[0]);
   const openModal = useBetterModal();
 
@@ -69,7 +71,7 @@ export const MergeStrategyComponent = (props: {
         onClick={resolveUsingMergeStrategy}
         className="h-9 px-3 bg-blue-500 hover:bg-blue-600 text-white rounded"
       >
-        Resolve using merge strategy
+        {t("merge-strategy-component.resolve-button")}
       </Button>
     </div>
   );
@@ -79,25 +81,30 @@ export const MergeStrategyComponent = (props: {
 type ChooseAffectedModelsProps = BetterModalProps<ModelsToResolve | null>;
 
 export const ChooseAffectedModels = ({ isOpen, resolve }: ChooseAffectedModelsProps) => {
+  const { t } = useTranslation();
   const [affectedModels, setAffectedModels] = useState<ModelsToResolve>(ModelsToResolve.OpenedModel);
   const comboBoxOptions = [
-    { key: "Only the currently opened model", value: ModelsToResolve.OpenedModel },
-    { key: "All models", value: ModelsToResolve.AllModels },
+    { key: t("merge-strategy-component.options.only-current-datastore"), value: ModelsToResolve.OpenedModel },
+    { key: t("merge-strategy-component.options.all-datastores"), value: ModelsToResolve.AllModels },
   ];
 
   return (
     <Modal open={isOpen} onClose={() => resolve(null)}>
         <ModalContent>
           <ModalHeader>
-            <ModalTitle>Apply chosen merge resolver</ModalTitle>
-            <ModalDescription>Choose the affected models.<br/>⚠️Note that the addition/deletion of datastores has to be done manually.</ModalDescription>
+            <ModalTitle>{t("merge-strategy-component.modal-title")}</ModalTitle>
+            <ModalDescription>
+              {t("merge-strategy-component.modal-description")}
+              <br />
+              {t("merge-strategy-component.modal-warning")}
+            </ModalDescription>
           </ModalHeader>
 
           <ComboBox options={comboBoxOptions} onChange={(selected: ModelsToResolve) => setAffectedModels(selected)}/>
 
           <ModalFooter>
-            <Button variant="outline" onClick={() => resolve(null)}>Close</Button>
-            <Button className="hover:bg-purple-700" onClick={() => resolve(affectedModels)}>Confirm</Button>
+            <Button variant="outline" onClick={() => resolve(null)}>{t("close")}</Button>
+            <Button className="hover:bg-purple-700" onClick={() => resolve(affectedModels)}>{t("confirm")}</Button>
           </ModalFooter>
         </ModalContent>
     </Modal>

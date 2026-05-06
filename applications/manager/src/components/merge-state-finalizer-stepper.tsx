@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 type StepperProps = {
   currentStep: number;
 };
@@ -8,7 +10,12 @@ type StepperProps = {
  * https://chatgpt.com/share/69a8118a-2974-8011-8d2a-1511d0cb7eb3
  */
 export default function Stepper({ currentStep }: StepperProps) {
-  const steps = ["Pick commit type", "Validation", "Commit"];
+  const { t } = useTranslation();
+  const steps = [
+    t("merge-state-finalizer-stepper.steps.pick-commit-type"),
+    t("merge-state-finalizer-stepper.steps.validation"),
+    t("merge-state-finalizer-stepper.steps.commit"),
+  ];
 
   return (
     <div className="w-full py-6">

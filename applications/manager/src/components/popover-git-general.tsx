@@ -6,6 +6,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "./ui/button";
 
 
@@ -19,6 +20,7 @@ type PopOverGitGeneralComponentProps = {
  * The general component that is used for the popovers (the info "buttons" with hints).
  */
 export function PopOverGitGeneralComponent({ children, moreDetailChildren, timeForMoreDetailChildren }: PopOverGitGeneralComponentProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [shouldShowMoreDetailedChildren, setShouldShowMoreDetailedChildren] = useState<boolean>(false);
 
@@ -64,7 +66,7 @@ export function PopOverGitGeneralComponent({ children, moreDetailChildren, timeF
       >
         {children}
         {(shouldShowMoreDetailedChildren || timeForMoreDetailChildren === undefined) ?
-          null : <p><br/>More detail will be shown in {Math.ceil(timeForMoreDetailChildren / 1000)} seconds</p>
+          null : <p><br/>{t("popover-git-general.more-detail", { seconds: Math.ceil(timeForMoreDetailChildren / 1000) })}</p>
         }
         {shouldShowMoreDetailedChildren ? moreDetailChildren : null}
       </PopoverContent>

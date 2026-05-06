@@ -138,7 +138,56 @@
     "name-za": "Reverse alphabetically"
   },
   "successfully saved": "Successfully saved.",
-
+  "git-tooltip": {
+    "has-uncommitted-changes": "Has uncommitted changes:",
+    "yes": "Yes",
+    "no": "No",
+    "active-merge-state-count": "Active merge state count:",
+    "project-iri": "Project IRI:",
+    "branch": "Branch",
+    "commit": "Commit",
+    "type": "Type:",
+    "tracked-commit-inside-dataspecer": "Tracked commit inside Dataspecer:"
+  },
+  "login-card": {
+    "sign-out-tooltip": "Note that if you provide Git permissions. The token with permissions should be revoked automatically, unless some error happened, if so then for safety reasons you should remove the permissions provided to this page in GitHub settings.",
+    "sign-out": "Sign Out",
+    "sign-in": "Sign In",
+    "standard-sign-in": "Standard sign-in",
+    "recommended": "(Recommended)",
+    "advanced-sign-in": "Advanced sign-in",
+    "user-avatar-alt": "User Avatar",
+    "user-avatar-title": "Username: {{username}}\nEmail: {{email}}\nScope: {{scope}}",
+    "add-private-ssh-key": "Add private SSH key"
+  },
+  "merge-state-finalizer-stepper": {
+    "steps": {
+      "pick-commit-type": "Pick commit type",
+      "validation": "Validation",
+      "commit": "Commit"
+    }
+  },
+  "merge-strategy-component": {
+    "resolve-button": "Resolve using merge strategy",
+    "modal-title": "Apply chosen merge resolver",
+    "modal-description": "Choose the affected models.",
+    "modal-warning": "⚠️ Note that the addition/deletion of datastores has to be done manually.",
+    "options": {
+      "only-current-datastore": "Only the currently opened datastore",
+      "all-datastores": "All datastores"
+    },
+    "close": "Close",
+    "confirm": "Confirm"
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {{page}}",
+    "page-of": "Page {{page}} of {{total}}"
+  },
+  "popover-git-general": {
+    "more-detail": "More detail will be shown in {{seconds}} seconds"
+  },
 
   "git": {
     "wait-seconds": "seconds",
@@ -218,6 +267,22 @@
         "title": "Storing changes to backend",
         "wait-text": "Storing changes to backend"
       }
+    },
+    "export-format-tooltip": {
+      "intro": "The format in which will be the models exported to Git. The diff editor also shows the models in this format.",
+      "json": "- JSON is well-tested and the default for the rest of Dataspecer. Therefore, it is recommended.",
+      "yaml": "- YAML may be slightly more friendly for diff/text viewing experience. However, the implementation is experimental with no guarantee of being bug-free.",
+      "note": "(From a software perspective we are still working with JSON within Dataspecer, this format only affects the Git export and the diff editor)"
+    },
+    "export-version": {
+      "old": "Old",
+      "new": "New (more structured)"
+    },
+    "export-version-tooltip": {
+      "old": "- The old version maps packages to directories and the models are put as files within the specific package.",
+      "new": "- The new version is more structured. It still holds true that models are files, which are inside directories that map to packages.",
+      "structure": "- The structure comes from the fact the models are put to a directory based on a type of the model.",
+      "example": "- For example, packages are inside \"directories\" directory, and visual models are in \"visual-models\" directory."
     }
   }
 }

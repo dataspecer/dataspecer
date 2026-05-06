@@ -54,13 +54,15 @@ export const ExportFormatRadioButtons = (props: ExportFormatRadioButtonsProps) =
 
 
 function RepositoryExportFormatTooltip() {
+  const { t } = useTranslation();
+
   return <div>
-    The format in which will be the models exported to Git. Also the diff editor shows the models in this format.
+    {t("git.export-format-tooltip.intro")}
     <br/>
-    &nbsp;- JSON is well-tested and the default for the rest of Dataspecer. Therefore, it is recommended.
+    {t("git.export-format-tooltip.json")}
     <br/>
-    &nbsp;- YAML may be slightly more friendly for diff viewing experience. However, the implementation is experimental with no guarantee of being bug-free.
+    {t("git.export-format-tooltip.yaml")}
     <br/>
-    (From a software perspective we are still working with JSON within Dataspecer, this format only affects the Git export and the diff editor)
+    {t("git.export-format-tooltip.note")}
   </div>;
 }

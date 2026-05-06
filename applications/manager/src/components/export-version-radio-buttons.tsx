@@ -36,7 +36,7 @@ export const ExportVersionRadioButtons = (props: ExportVersionRadioButtonsProps)
             onChange={(e) => props.setExportVersion(Number(e.target.value) as ExportVersionType)}
             className="form-radio text-blue-600"
           />
-          <span>Old</span>
+          <span>{t("git.export-version-old")}</span>
         </label>
         <label className="flex items-center space-x-2 pl-7">
           <input
@@ -46,7 +46,7 @@ export const ExportVersionRadioButtons = (props: ExportVersionRadioButtonsProps)
             onChange={(e) => props.setExportVersion(Number(e.target.value) as ExportVersionType)}
             className="form-radio text-blue-600"
           />
-          <span>New (more structured)</span>
+          <span>{t("git.export-version-new")}</span>
         </label>
       </div>
     </div>
@@ -55,13 +55,15 @@ export const ExportVersionRadioButtons = (props: ExportVersionRadioButtonsProps)
 
 
 function RepositoryExportVersionTooltip() {
+  const { t } = useTranslation();
+
   return <div>
-    &nbsp; - The old version maps packages to directories and the models are put as files within the specific package.
+    {t("git.export-version-tooltip.old")}
     <br/>
-    &nbsp; - The new version is more structured. It still holds true that models are files, which are inside directories that map to packages.
+    {t("git.export-version-tooltip.new")}
     <br/>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - The structure comes from the fact the models are put to a directory based on a type of the model.
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {t("git.export-version-tooltip.structure")}
     <br/>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - For example, packages are inside "directories" directory, and visual models are in "visual-models" directory.
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {t("git.export-version-tooltip.example")}
   </div>;
 }
