@@ -10,6 +10,7 @@ import { createSetterWithGitValidation, PACKAGE_ROOT } from "@dataspecer/git";
 import { resolveWithRequiredCheck } from "./git-actions-dialogs";
 import { createCloseLoadingDialogObject, LoadingDialog } from "./loading-dialog";
 import { CREATE_NEW_BRANCH_WAIT_TIME } from "@/utils/git-wait-times";
+import { useTranslation } from "react-i18next";
 
 
 export enum BranchAction {
@@ -32,6 +33,7 @@ const idPrefix = "createNewbranch";
  */
 export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, resolve }: CreateBranchDialogProps) => {
   const openModal = useBetterModal();
+  const { t } = useTranslation();
 
   const [shouldHideDialog, setShouldHideDialog] = useState<boolean>(false);
   const [branch, setBranch] = useState<string>(sourcePackage.branch);
@@ -58,12 +60,12 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
 
     if (branch === "") {
       // Should be covered by the resolve check.
-      toast.error("Given branch name is empty", { "richColors": true });
+      toast.error(t("create-new-branch-dialog.toast.branch-empty"), { "richColors": true });
       resolve(null);
       return;
     }
     else if (branchAlreadyExists) {
-      toast.error("Branch already exists", { "richColors": true });
+      toast.error(t("create-new-branch-dialog.toast.branch-already-exists"), { "richColors": true });
       resolve(null);
       return;
     }
@@ -73,8 +75,8 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
       const closeDialogObject = createCloseLoadingDialogObject();
       setShouldHideDialog(true);
       openModal(LoadingDialog, {
-        dialogTitle: "Creating new branch in Dataspecer. Do not forget to push it to the remote after you are done.",
-        waitingText: "Do not modify the package while branch is being created",
+        dialogTitle: t("create-new-branch-dialog.loading.dialogTitle"),
+        waitingText: t("create-new-branch-dialog.loading.waitingText"),
         waitTime: CREATE_NEW_BRANCH_WAIT_TIME,
         setCloseDialogAction: closeDialogObject.setCloseDialogAction,
         shouldShowTimer: true,
@@ -84,15 +86,15 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
         response = await packageService.copyRecursively(sourcePackage.iri, PACKAGE_ROOT);
         const newRootIri: string | undefined = response?.newRootIri;
         if (newRootIri === undefined) {
-          toast.error("Failed to create the new branch", { "richColors": true });
+          toast.error(t("create-new-branch-dialog.toast.failed-create-branch"), { "richColors": true });
           resolve(null);
           return;
         }
         await modifyPackageProjectData(newRootIri, sourcePackage.projectIri, branch);
-        toast.success("Successfully created new branch in Dataspecer. Don't forget to push it.");
+        toast.success(t("create-new-branch-dialog.toast.success-create-branch"));
       }
       catch (error) {
-        toast.error("Unknown failure when creating new branch", { "richColors": true });
+        toast.error(t("create-new-branch-dialog.toast.unknown-failure-create-branch"), { "richColors": true });
         throw error;
       }
       finally {
@@ -117,30 +119,39 @@ export const CreateNewBranchDialog = ({ sourcePackage, actionOnConfirm, isOpen, 
     resolve(null);
   };
 
-  const titleTooltip = actionOnConfirm === BranchAction.CreateNewBranch ? `Setting the branch name for the following projectIri: ${sourcePackage.projectIri}` : "";
+  const titleTooltip = actionOnConfirm === BranchAction.CreateNewBranch ? t("create-new-branch-dialog.tooltip.branch-name", { projectIri: sourcePackage.projectIri }) : "";
 
   const modalTitle = actionOnConfirm === BranchAction.CreateNewBranch ?
-    "Create new branch in Dataspecer for project" :
-    "Set name for branch to be created from static commit";
+    t("create-new-branch-dialog.title.create-new-branch") :
+    t("create-new-branch-dialog.title.turn-existing-into-branch");
 
-  const modalDescription = actionOnConfirm === BranchAction.CreateNewBranch ?
-    `On confirm creates new package, which is copy of the source package and has branch set to given name.\n⚠️Do not forget to commit (push) the branch to Git repository.` :
-    `On confirm sets branch of chosen package`;
-
+  const modalDescriptionCreateNewBranch = t("create-new-branch-dialog.description.create-new-branch");
+  const modalDescriptionCreateNewBranchWarning = t("create-new-branch-dialog.description.create-new-branch-warning");
+  const modalDescriptionTurnExisting = t("create-new-branch-dialog.description.turn-existing-into-branch");
 
   return (
     <Modal open={!shouldHideDialog && isOpen} onClose={() => resolve(null)}>
         <ModalContent className={(shouldHideDialog ? "hidden" : "")}>
           <ModalHeader>
             <ModalTitle>{modalTitle}</ModalTitle>
-            <ModalDescription><p className="whitespace-pre-line">{modalDescription}</p></ModalDescription>
+            <ModalDescription>
+              {actionOnConfirm === BranchAction.CreateNewBranch ? (
+                <>
+                  <p>{modalDescriptionCreateNewBranch}</p>
+                  <br />
+                  <p>{modalDescriptionCreateNewBranchWarning}</p>
+                </>
+              ) : (
+                <p>{modalDescriptionTurnExisting}</p>
+              )}
+            </ModalDescription>
           </ModalHeader>
 
-          <InputComponent requiredRefObject={inputRef} idPrefix={idPrefix} idSuffix={0} label="Branch name" input={branch} setInput={createSetterWithGitValidation(setBranch)} tooltip={titleTooltip}/>
+          <InputComponent requiredRefObject={inputRef} idPrefix={idPrefix} idSuffix={0} label={t("create-new-branch-dialog.label.branch-name")} input={branch} setInput={createSetterWithGitValidation(setBranch)} tooltip={titleTooltip}/>
 
           <ModalFooter>
-            <Button variant="outline" onClick={handleDialogCloseWithoutSave}>Close</Button>
-            <Button className="hover:bg-purple-700" onClick={handleDialogSave}>Confirm</Button>
+            <Button variant="outline" onClick={handleDialogCloseWithoutSave}>{t("close")}</Button>
+            <Button className="hover:bg-purple-700" onClick={handleDialogSave}>{t("confirm")}</Button>
           </ModalFooter>
         </ModalContent>
     </Modal>

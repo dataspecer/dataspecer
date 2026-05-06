@@ -284,5 +284,134 @@
       "structure": "- The structure comes from the fact the models are put to a directory based on a type of the model.",
       "example": "- For example, packages are inside \"directories\" directory, and visual models are in \"visual-models\" directory."
     }
+  },
+  "sign-in-dialog": {
+    "title": "Sign in options",
+    "description": {
+      "line-one": {
+        "part-one": "Choose",
+        "part-two": "how much information",
+        "part-three": "should be provided",
+        "part-four": "to Dataspecer"
+      },
+      "line-two": {
+        "part-one": "Sign-in with the",
+        "part-two": "default option",
+        "part-three": "to give Dataspecer Git permissions so you can sync up your Dataspecer package with a Git repository."
+      },
+      "line-three": "Next dialog lets you choose authentication provider.",
+      "line-four": "Hover on the info icon for more info."
+    },
+    "buttons": {
+      "login-info": "Name + E-mail",
+      "full-public-repo-control": "Name + E-mail + Git Push scope (Default sign-in option)",
+      "delete-repo-control": "Name + E-mail + Git Push and Delete scope"
+    },
+    "tooltip": {
+      "line-one": {
+        "part-one": "The provided rights, which you are asked further in the sign-in process, are for",
+        "part-two": "each repository you have access to"
+      },
+      "line-two": "The access token, which comes with the sign-in, should be automatically revoked after you sign out.",
+      "short-title": "In short:",
+      "short-line-one": {
+        "part-one": "Choose the option with",
+        "part-two": "Name + E-mail",
+        "part-three": "to access all",
+        "part-four": "Git features and nothing else."
+      },
+      "short-line-two": {
+        "part-one": "Choose the option with",
+        "part-two": "Name + E-mail + Git push scope",
+        "part-three": "to access all of the important Git features -",
+        "part-four": "Recommended"
+      },
+      "short-line-three": {
+        "part-one": "Choose the option with",
+        "part-two": "Name + E-mail + Git push + Delete scope",
+        "part-three": "to get the ability to remove any owned repository"
+      },
+      "long-title": "In long:",
+      "long-line-one": {
+        "part-one": "Choose the",
+        "part-two": "Name + E-mail + Git push scope",
+        "part-three": "if you want to",
+        "part-four": "create new repositories",
+        "part-five": "or",
+        "part-six": "commit",
+        "part-seven": "to repositories to which you have access."
+      },
+      "long-line-two": {
+        "part-one": "Choose the",
+        "part-two": "Delete",
+        "part-three": "rights if you are developer who is debugging Dataspecer's Git integration."
+      },
+      "long-line-three": "It is, of course, accessible to non-developers, but it is discouraged.",
+      "long-line-four": {
+        "part-one": "Choose the",
+        "part-two": "Name + E-mail",
+        "part-three": "option to either"
+      },
+      "long-line-five": "The access tokens for Git operations are tried out until one succeeds in this order. Your SSH, your PAT, bot SSH, bot PAT",
+      "long-line-six": "where PAT = Personal Access Token, that is the thing you get from the Git provider on sign in.",
+      "long-subline-one": "Fetch issues, pull requests, Git history or similar stuff from the Git provider.",
+      "long-subline-two": "Commit under your name to repositories accessible by the Dataspecer bot.",
+      "long-subline-three": "You can think of a Dataspecer bot as a fallback Git user.",
+      "long-subline-four": "Commit and pull to repositories using your private SSH key, which you can set up once you sign in."
+    }
+  },
+  "commit-redirect-dialog": {
+    "title": "Are you sure that you want to commit?",
+    "merge-state-count": {
+      "prefix": {
+        "one": "There is currently",
+        "other": "There are currently"
+      },
+      "suffix": {
+        "one": "opened merge state for current package.",
+        "other": "opened merge states for current package."
+      }
+    },
+    "available-actions-title": "Available actions:",
+    "actions": {
+      "perform-commit": "Perform the commit",
+      "open-merge-states-list": "Open the list of existing merge states",
+      "cancel-commit": "Cancel the action of committing by closing dialog",
+      "open-diff-editor": "Open the diff editor for the merge state, and finalize it",
+      "close-and-handle-later": "Close this dialog and handle it later"
+    },
+    "button": {
+      "commit-anyways": "Commit anyways",
+      "open-merge-states-list": "Open merge states list",
+      "open-diff-editor": "Open diff editor for merge state"
+    }
+  },
+  "create-new-branch-dialog": {
+    "title": {
+      "create-new-branch": "Create new branch in Dataspecer for project",
+      "turn-existing-into-branch": "Set name for branch to be created from static commit"
+    },
+    "description": {
+      "create-new-branch": "On confirm creates new package, which is copy of the source package and has branch set to given name.",
+      "create-new-branch-warning": "⚠️ Do not forget to commit (push) the branch to Git repository.",
+      "turn-existing-into-branch": "On confirm sets branch of the chosen data specification."
+    },
+    "label": {
+      "branch-name": "Branch name"
+    },
+    "tooltip": {
+      "branch-name": "Setting the branch name for the following projectIri: {{projectIri}}"
+    },
+    "loading": {
+      "dialogTitle": "Creating new branch in Dataspecer. Do not forget to push it to the remote after you are done.",
+      "waitingText": "Do not modify the package while branch is being created"
+    },
+    "toast": {
+      "branch-empty": "Given branch name is empty.",
+      "branch-already-exists": "Branch already exists.",
+      "failed-create-branch": "Failed to create the new branch.",
+      "success-create-branch": "Successfully created new branch in Dataspecer. Don't forget to push it.",
+      "unknown-failure-create-branch": "Unknown failure when creating new branch."
+    }
   }
 }

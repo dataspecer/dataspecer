@@ -44,7 +44,7 @@ export const CommitRedirectForMergeStatesDialog = ({ commitRedirectResponse, isO
     <Modal open={isOpen} onClose={() => resolve()}>
       <ModalContent>
         <ModalHeader>
-          <ModalTitle>Are you sure that you want to commit?</ModalTitle>
+          <ModalTitle>{t("commit-redirect-dialog.title")}</ModalTitle>
           <ModalDescription>{commitRedirectResponse.redirectMessage}</ModalDescription>
         </ModalHeader>
         {dialogData.dialogText}
@@ -86,29 +86,35 @@ const getDataForMergeStateDialog = (
     if (gitCommitData === null) {
       throw new Error(`Expected ${commitRedirectResponse.commitType} to be a not merge commit.`);
     }
-    firstActionButtonText = "Commit anyways";
+    firstActionButtonText = t("commit-redirect-dialog.button.commit-anyways");
     firstActionButtonOnClick = async () => {
       await commitToGitHandler(
         t, openModal, commitRedirectResponse.iri, true, gitCommitData, false, commitRedirectResponse.onSuccessCallback);
       resolve();
     };
-    secondaryActionButtonText = "Open merge states list";
+    secondaryActionButtonText = t("commit-redirect-dialog.button.open-merge-states-list");
     secondaryActionButtonOnClick = () => {
       openModal(ListMergeStatesDialog, { iri: commitRedirectResponse.iri }).finally(() => resolve());
     };
+    const mergeStateCountPrefix = commitRedirectResponse.openedMergeStatesCount === 1
+      ? t("commit-redirect-dialog.merge-state-count.prefix.one")
+      : t("commit-redirect-dialog.merge-state-count.prefix.other");
+    const mergeStateCountSuffix = commitRedirectResponse.openedMergeStatesCount === 1
+      ? t("commit-redirect-dialog.merge-state-count.suffix.one")
+      : t("commit-redirect-dialog.merge-state-count.suffix.other");
     dialogText = <div>
         <p>
-          There {commitRedirectResponse.openedMergeStatesCount === 1 ? "is" : "are"} currently <span><strong>{commitRedirectResponse.openedMergeStatesCount}</strong></span> opened merge state{commitRedirectResponse.openedMergeStatesCount === 1 ? "" : "s"} for current package.
+          {mergeStateCountPrefix} <strong>{commitRedirectResponse.openedMergeStatesCount}</strong> {mergeStateCountSuffix}
         </p>
         <br/>
-        <strong>Available actions:</strong>
+        <strong>{t("commit-redirect-dialog.available-actions-title")}</strong>
         <br/>
 
-        - Perform the commit
+        - {t("commit-redirect-dialog.actions.perform-commit")}
         <br/>
-        - Open the list of existing merge states
+        - {t("commit-redirect-dialog.actions.open-merge-states-list")}
         <br/>
-        - Cancel the action of committing by closing dialog
+        - {t("commit-redirect-dialog.actions.cancel-commit")}
         <br/>
       </div>;
   }
@@ -122,7 +128,7 @@ const getDataForMergeStateDialog = (
     //   the allowed types are either "rebase-commit" or "classic-commit"
     // Or it was just classic commit, then the user can either choose to do rebase commit or open the diff editor
     if (commitRedirectResponse.commitType === "rebase-commit") {
-      firstActionButtonText = "Commit anyways";
+      firstActionButtonText = t("commit-redirect-dialog.button.commit-anyways");
       commitToGitHandler(
         t, openModal, commitRedirectResponse.iri, true, gitCommitData!, false, commitRedirectResponse.onSuccessCallback);
       resolve();
@@ -142,7 +148,7 @@ const getDataForMergeStateDialog = (
       return null;
     }
 
-    firstActionButtonText = "Open diff editor for merge state";
+    firstActionButtonText = t("commit-redirect-dialog.button.open-diff-editor");
     firstActionButtonOnClick = () => {
       openModal(TextDiffEditorDialog, {
         initialMergeFromRootMetaPath: commitRedirectResponse.mergeStateCausedByMerge!.rootFullPathToMetaMergeFrom,
@@ -154,20 +160,20 @@ const getDataForMergeStateDialog = (
     if (gitCommitData === null) {
       throw new Error(`Expected ${commitRedirectResponse.commitType} to be a not merge commit.`);
     }
-    secondaryActionButtonText = "Commit anyways";
+    secondaryActionButtonText = t("commit-redirect-dialog.button.commit-anyways");
     secondaryActionButtonOnClick = async () => {
       await commitToGitHandler(
         t, openModal, commitRedirectResponse.iri, true, gitCommitData, false, commitRedirectResponse.onSuccessCallback);
       resolve();
     };
     dialogText = <p>
-        <strong>Available actions:</strong>
+        <strong>{t("commit-redirect-dialog.available-actions-title")}</strong>
         <br/>
-        - Perform the commit
+        - {t("commit-redirect-dialog.actions.perform-commit")}
         <br/>
-        - Open the diff editor for the merge state, and finalize it
+        - {t("commit-redirect-dialog.actions.open-diff-editor")}
         <br/>
-        - Close this dialog and handle it later
+        - {t("commit-redirect-dialog.actions.close-and-handle-later")}
       </p>;
 
   }

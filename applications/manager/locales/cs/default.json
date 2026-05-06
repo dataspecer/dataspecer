@@ -282,5 +282,129 @@
       "structure": "- Struktura je daná tím, že modely jsou umístěny do adresáře na základě typu modelu.",
       "example": "- Například balíčky jsou uvnitř adresáře \"directories\" a vizuální modely v adresáři \"visual-models\"."
     }
+  },
+  "sign-in-dialog": {
+    "title": "Přihlášení",
+    "description": {
+      "line-one": {
+        "part-one": "Vyberte",
+        "part-two": "kolik informací",
+        "part-three": "má být poskytnuto",
+        "part-four": "Dataspeceru"
+      },
+      "line-two": {
+        "part-one": "Přihlášení pomocí",
+        "part-two": "výchozí možnosti",
+        "part-three": "abyste Dataspeceru poskytli Git práva a mohli synchronizovat svůj Dataspecer balíček s Git repozitářem."
+      },
+      "line-three": "V dalším dialogu si vyberete poskytovatele autentifikace.",
+      "line-four": "Pro více informací najeďte myší na info ikonku."
+    },
+    "buttons": {
+      "login-info": "Jméno + E-mail",
+      "full-public-repo-control": "Jméno + E-mail + Git Push scope (výchozí přihlášení)",
+      "delete-repo-control": "Jméno + E-mail + Git Push a Delete scope"
+    },
+    "tooltip": {
+      "line-one": {
+        "part-one": "Poskytnutá práva, na která se vás přihlášení dále ptá, se vztahuje na",
+        "part-two": "každý repozitář, ke kterému máte přístup"
+      },
+      "line-two": "Přístupový token získaný při přihlášení by měl být automaticky odvolán po odhlášení.",
+      "short-title": "Krátce:",
+      "short-line-one": {
+        "part-one": "Zvolte možnost",
+        "part-two": "Jméno + E-mail",
+        "part-three": "pro přístup ke všem",
+        "part-four": "Git funkcím a ničemu jinému."
+      },
+      "short-line-two": {
+        "part-one": "Zvolte možnost",
+        "part-two": "Jméno + E-mail + Git push scope",
+        "part-three": "pro přístup ke všem důležitým Git funkcím -",
+        "part-four": "Doporučeno"
+      },
+      "short-line-three": {
+        "part-one": "Zvolte možnost",
+        "part-two": "Jméno + E-mail + Git push + Delete scope",
+        "part-three": "pro možnost odstranit vlastněný repozitář."
+      },
+      "long-title": "Podrobněji:",
+      "long-line-one": {
+        "part-one": "Zvolte",
+        "part-two": "Jméno + E-mail + Git push scope",
+        "part-three": "pokud chcete",
+        "part-four": "vytvářet nové repozitáře",
+        "part-five": "nebo",
+        "part-six": "provádět commity",
+        "part-seven": "do repozitářů, ke kterým máte přístup."
+      },
+      "long-line-two": {
+        "part-one": "Zvolte",
+        "part-two": "Delete",
+        "part-three": "práva, pokud jste vývojář, který debugguje Git integraci Dataspeceru."
+      },
+      "long-line-three": "Je to samozřejmě dostupné i pro nevyvojáře, ale nedoporučuje se.",
+      "long-line-four": "Přístupové tokeny pro Git operace jsou zkoušeny, dokud jeden z nich neuspěje: vaše SSH, váš PAT, bot SSH, bot PAT",
+      "long-line-five": "kde PAT = Personal Access Token, tedy věc, kterou získáte od Git poskytovatele při přihlášení.",
+      "long-subline-one": "Získávání issues, pull requestů, historie Git nebo podobných informací od poskytovatele Gitu.",
+      "long-subline-two": "Commitování vaším jménem do repozitářů přístupných Dataspecer botovi.",
+      "long-subline-three": "Dataspecer bot je v podstatě fallback uživatel.",
+      "long-subline-four": "Commit a pull pomocí vašeho soukromého SSH klíče, který si můžete nastavit po přihlášení."
+    }
+  },
+  "commit-redirect-dialog": {
+    "title": "Opravdu chcete commitovat?",
+    "merge-state-count": {
+      "prefix": {
+        "one": "Aktuálně je",
+        "other": "Aktuálně jsou"
+      },
+      "suffix": {
+        "one": "otevřený merge stav pro aktuální package.",
+        "other": "otevřené merge stavy pro aktuální package."
+      }
+    },
+    "available-actions-title": "Dostupné akce:",
+    "actions": {
+      "perform-commit": "Proveďte commit",
+      "open-merge-states-list": "Otevřete seznam existujících merge stavů",
+      "cancel-commit": "Zrušte akci commitu zavřením dialogu",
+      "open-diff-editor": "Otevřete diff editor pro merge stav a finalizujte ho",
+      "close-and-handle-later": "Zavřete tento dialog a vyřešte to později"
+    },
+    "button": {
+      "commit-anyways": "Commitnout stejně",
+      "open-merge-states-list": "Otevřít seznam merge stavů",
+      "open-diff-editor": "Otevřít diff editor pro merge stav"
+    }
+  },
+  "create-new-branch-dialog": {
+    "title": {
+      "create-new-branch": "Vytvořit novou branch v Dataspeceru pro projekt",
+      "turn-existing-into-branch": "Nastavit jméno větve pro vytvoření ze statického commitu"
+    },
+    "description": {
+      "create-new-branch": "Po potvrzení se vytvoří nová datová specifikace, která je kopií zdrojového balíčku a má nastavenou zadanou větev.",
+      "create-new-branch-warning": "⚠️ Nezapomeňte branch commitnout (pushnout) do Git repozitáře.",
+      "turn-existing-into-branch": "Po potvrzení se nastaví větev datové specifikace na tu zadanou"
+    },
+    "label": {
+      "branch-name": "Název větve"
+    },
+    "tooltip": {
+      "branch-name": "Nastavujete název větve pro následující projectIri: {{projectIri}}"
+    },
+    "loading": {
+      "dialogTitle": "Vytváří se nová větev v Dataspeceru. Nezapomeňte ji po dokončení pushnout do vzdáleného repozitáře.",
+      "waitingText": "Neměňtě datovou specficikaci, zatímco se vytváří větev"
+    },
+    "toast": {
+      "branch-empty": "Zadaný název větve je prázdný.",
+      "branch-already-exists": "Větev již existuje.",
+      "failed-create-branch": "Nepodařilo se vytvořit novou větev.",
+      "success-create-branch": "Nová větev byla úspěšně vytvořena v Dataspeceru. Nezapomeňte ji pushnout.",
+      "unknown-failure-create-branch": "Neznámá chyba při vytváření nové větve."
+    }
   }
 }
