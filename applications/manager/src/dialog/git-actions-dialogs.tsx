@@ -461,13 +461,13 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
     case "create-new-repository-and-commit":
       modalBody = <div>
         <div className="pt-2 flex flex-1 flex-row">
-          <p className="text-sm pt-2.5">Git provider</p>
+          <p className="text-sm pt-2.5">{t("git.dialog.label.git-provider")}</p>
           <div className="pl-23">
             <ComboBox options={gitProvidersComboboxOptions} onChange={(value: GitProviderEnum) => setGitProvider(value)}/>
           </div>
         </div>
         <div className="pt-6 flex flex-1 flex-row">
-          <p className="text-sm">Repository type</p> <PopOverGitGeneralComponent><RepositoryOwnerTooltip/></PopOverGitGeneralComponent>
+          <p className="text-sm">{t("git.dialog.label.repository-type")}</p> <PopOverGitGeneralComponent><RepositoryOwnerTooltip/></PopOverGitGeneralComponent>
           <div className="pt-2 pl-8 flex flex-1 flex-row">
             <BooleanRadioButtons value={isUserRepo}
                                   setValue={setIsUserRepo}
@@ -488,13 +488,13 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
                   setValue={setIsOwnerSignedInUser}
                   isFalseDisabled={false}
                   isTrueDisabled={!isSignedIn}
-                  trueText="Signed-In User"
-                  falseText="Bot (fallback user)"
+                  trueText="git.dialog.radio.signed-in-user"
+                  falseText="git.dialog.radio.bot-fallback-user"
                 />
               </div>
             </div> :
             isLoadingOrganizationSuggestions ?
-              <div className="flex flex-1 flex-row"><Loader className="mr-2 mt-1.5 h-4 w-4 animate-spin" />Fetching organizations names</div> :
+              <div className="flex flex-1 flex-row"><Loader className="mr-2 mt-1.5 h-4 w-4 animate-spin" />{t("git.dialog.text.fetching-organizations")}</div> :
               <div>
                 <InputComponent
                   idPrefix={gitDialogInputIdPrefix}
@@ -533,12 +533,12 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
               className="mt-2 mb-2 p-0 text-sm"
               onClick={() => setShowMore(!showMore)}
             >
-              {showMore ? <ArrowUpNarrowWide /> : <ArrowDownNarrowWide />} Advanced settings (Keeping the defaults is fine):
+              {showMore ? <ArrowUpNarrowWide /> : <ArrowDownNarrowWide />} {t("git.dialog.button.advanced-settings")}
             </Button>
             { (!showMore || gitRemoteConfiguration === null) ?
                 null :
                 <div>
-                  <div className="mt-3 font-semibold">Git configuration:</div>
+                  <div className="mt-3 font-semibold">{t("git.dialog.text.git-configuration")}</div>
                   <SetGitRemoteConfigurationComponent
                     configuration={gitRemoteConfiguration!}
                     setGitConfigurationReactState={setGitRemoteConfiguration}
@@ -574,7 +574,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
                   checked={shouldAlwaysCreateMergeState}
                   onChange={(e) => setShouldAlwaysCreateMergeState(e.target.checked)}
                   className="w-5 h-5 accent-blue-600"
-                  title="If checked then merge state is always created. If unchecked it is created only on conflicts (when we do not match the head of remote branch)"
+                  title={t("git.dialog.checkbox.merge-state-tooltip")}
                 />
                 <span>{t("git.dialog.merge-state.always")}</span>
               </label>}
@@ -633,12 +633,13 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
 };
 
 function RepositoryOwnerTooltip() {
+  const { t } = useTranslation();
   return <div>
-    For Example: https://github.com/torvalds/linux
+    {t("git.dialog.repository-owner-tooltip.example")}
     <br/>
-     &nbsp; - "torvalds" is the <strong>Owner</strong>, while "linux" is the <strong>Name</strong> of the repository.
+     &nbsp; - "torvalds" {t("git.dialog.repository-owner-tooltip.is-the")} <strong>{t("git.dialog.repository-owner-tooltip.owner")}</strong>, {t("git.dialog.repository-owner-tooltip.while")} "linux" {t("git.dialog.repository-owner-tooltip.is-the")} <strong>{t("git.dialog.repository-owner-tooltip.name")}</strong> {t("git.dialog.repository-owner-tooltip.of-the-repository")}.
     <br/>
-     &nbsp; - <strong>Owner</strong> can be either Organization or User (that is it will be equal user's name)
+     &nbsp; - <strong>{t("git.dialog.repository-owner-tooltip.owner")}</strong> {t("git.dialog.repository-owner-tooltip.can-be")}
   </div>;
 }
 

@@ -219,14 +219,37 @@
           "append": "Zadaná zpráva bude připojena za výchozí merge zprávu automaticky vytvořenou Gitem"
         },
         "remote-url": "URL vzdáleného Git repozitáře",
+        "git-provider": "Git poskytovatel",
+        "repository-type": "Typ repozitáře",
         "advanced-settings": "Pokročilé nastavení"
       },
       "radio": {
         "user-repository": "Uživatelský repozitář",
-        "organization-repository": "Repozitář organizace"
+        "organization-repository": "Repozitář organizace",
+        "signed-in-user": "Přihlášený uživatel",
+        "bot-fallback-user": "Bot (fallback uživatel)"
       },
       "merge-state": {
         "always": "Vždy vytvořit merge stav"
+      },
+      "text": {
+        "fetching-organizations": "Načítají se názvy organizací",
+        "git-configuration": "Git konfigurace:"
+      },
+      "button": {
+        "advanced-settings": "Pokročilé nastavení (Lze ponechat výchozí hodnoty):"
+      },
+      "checkbox": {
+        "merge-state-tooltip": "Pokud je zaškrtnuto, vždy se vytvoří merge stav. Pokud není zaškrtnuto, vytvoří se pouze při konfliktech (když DS netrackuje stejný commit jako vzdálená větev)."
+      },
+      "repository-owner-tooltip": {
+        "example": "Například: https://github.com/torvalds/linux",
+        "owner": "Vlastník",
+        "is-the": "je",
+        "while": "zatímco",
+        "name": "název",
+        "of-the-repository": "repozitáře",
+        "can-be": "může být buď organizace, nebo uživatel (to znamená, že bude shodné s uživatelským jménem)"
       }
     },
     "loading": {
@@ -256,11 +279,11 @@
     },
     "configuration": {
       "publication-branch": {
-        "title": "Jméno publikační větve (branch)",
+        "title": "Jméno publikační větve",
         "tooltip": "Publikační Git větev, která bude obsahovat vygenerovanou dokumentaci v Gitovém repozitáři."
       }
     },
-    "diff-editor": {
+    "diff-editor-props": {
       "storing-to-backend": {
         "title": "Ukládání změn na backend",
         "waiting-text": "Ukládání změn na backend"
@@ -281,6 +304,119 @@
       "new": "- Nová verze je strukturovanější. Stále platí, že modely jsou soubory, které jsou uvnitř adresářů mapujících balíčky.",
       "structure": "- Struktura je daná tím, že modely jsou umístěny do adresáře na základě typu modelu.",
       "example": "- Například balíčky jsou uvnitř adresáře \"directories\" a vizuální modely v adresáři \"visual-models\"."
+    },
+    "diff-editor": {
+      "title": "Diff editor pro vyřešení konfliktu {{cause}}",
+      "merge-state-cause": {
+        "pull": "pull",
+        "push": "push",
+        "merge": "merge"
+      },
+      "toast": {
+        "saved-cache-to-backend": "Soubory z cache uloženy na backend"
+      },
+      "button": {
+        "close-tooltip": "Zavře diff editor bez uložení změn",
+        "save-all": "Uložit vše (Ctrl + S)",
+        "save-all-tooltip": "Tímto se uloží jak změny do souborů, tak aktualizuje merge stav",
+        "save-finalize-warning": "⚠️Vyřešte konflikty pro finalizaci",
+        "save-finalize": "Uložit a finalizovat",
+        "prev-diff": "Předchozí diff",
+        "next-diff": "Další diff",
+        "show-as-images": "Zobrazit jako obrázky"
+      },
+      "tooltip": {
+        "resolve-conflicts": "Vyřešte všechny konflikty, aby bylo možné tlačítko použít a tím získat možnost finalizovat merge stav. Konflikty jsou označeny jako vyřešené kliknutím na zaškrtávátka v directory diff. Tento tooltip se změní po aktivaci tlačítka.",
+        "save-and-finalize": "Nejprve uloží všechny neuložené změny a poté provede operaci, která spustila merge stav. Může to být pull/push/merge.",
+        "pull": {
+          "line.one": {
+            "part-one": "OBĚ OKNA jsou nezměněna",
+            "part-two": "Musíte",
+            "part-three": "přesunout všechny změny z levého okna doprava",
+            "part-four": "dokud nebude obsahovat všechny požadované změny."
+          },
+          "left-window": {
+            "part-one": "Levé okno",
+            "part-two": "Nejnovější ",
+            "part-three": "commit v Gitu",
+            "part-four": " v době vytvoření merge stavu."
+          },
+          "right-window": {
+            "part-one": "Pravé okno",
+            "part-two": "Aktuální obsah ",
+            "part-three": "Dataspecer datové specifikace."
+          },
+          "line.two": "Po finalizaci bude sledovaný hash v Dataspeceru sledovat Git hash."
+        },
+        "push": {
+          "line.one": {
+            "part-one": "OBĚ OKNA jsou nezměněna",
+            "part-two": "Musíte",
+            "part-three": "přesunout všechny změny z levého okna do pravého",
+            "part-four": "dokud nebude obsahovat všechny požadované změny."
+          },
+          "left-window": {
+            "part-one": "Levé okno",
+            "part-two": "Poslední ",
+            "part-three": "commit v Gitu",
+            "part-four": " v době vytvoření merge stavu."
+          },
+          "right-window": {
+            "part-one": "Pravé okno",
+            "part-two": "Aktuální obsah ",
+            "part-three": "Dataspecer datové specifikace ke commitnutí."
+          }
+        },
+        "merge": {
+          "line.one": {
+            "part-one": "OBĚ OKNA jsou nezměněna",
+            "part-two": "Musíte",
+            "part-three": "přesunout všechny změny z levého okna do pravého",
+            "part-four": "dokud nebude obsahovat všechny požadované změny."
+          },
+          "left-window": {
+            "part-one": "Levé okno",
+            "part-two": "Merge zdroj."
+          },
+          "right-window": {
+            "part-one": "Pravé okno",
+            "part-two": "Merge cíl - Toto bude commitnuto do Gitu."
+          },
+          "line.two": "Jak levé, tak pravé okno obsahují aktuální obsah datové specifikace uložené v Dataspeceru."
+        }
+      },
+      "checkbox": {
+        "show-stripped-version": "Zobrazit zestručněnou verzi",
+        "show-stripped-version-tooltip": "Pokud je zaškrtnuto, datastore se zbaví unikátních polí. Pokud není, zobrazí se plná verze. V současnosti jsou zestručněné pouze meta soubory."
+      },
+      "more-detail": {
+        "title": "Diff editor ve velkém detailu:",
+        "line.one": "Krátký popis výše se mění podle příčiny merge stavu",
+        "line.two": "Účel Diff editoru je vyřešit merge stav provedením změn v modelech a označit konflikty (⚠️) jako vyřešené (✅).",
+        "line.four": "Stripped verze souboru skrývá obsah, který se očekává, že bude změněn automaticky, například čas exportu.",
+        "line.five": "Levá část tohoto dialogu obsahuje directory diff. Directory diff je vizualizován vzhledem k editovatelnému oknu textového editoru.",
+        "line.six": "To znamená:",
+        "color": {
+          "red": "Červená",
+          "red.description": "položka - NENÍ přítomna v editovatelném okně.",
+          "green": "Zelená",
+          "green.description": "položka - Je přítomna v editovatelném okně. A není v druhém.",
+          "blue": "Modrá",
+          "blue.description": "položka - Je přítomna v obou, ale liší se."
+        },
+        "line.seven": "Jinak - Stejný obsah v obou.",
+        "line.eight": "Merge aktéři jsou nezměněni. To znamená, že musíte všechny změny provést ručně, pokud je potřebujete.",
+        "merge-strategy": "Také můžete použít strategii sloučení nahoře k automatickému provedení změn.",
+        "line.nine": {
+          "part-one": "přidá datastore do editovatelného okna.",
+          "part-two": "odstraní ho. Backend je ovlivněn až po kliknutí na jedno z tlačítek Uložit."
+        },
+        "line.ten": "Editovatelné okno je vždy napravo.",
+        "line.eleven": "Pro pull a merge jsou editovatelná okna aktéři \"merge to\".",
+        "line.twelve": "Push je obrácený, tedy editovatelné okno je aktér \"merge from\". To je stejné jako v Gitu, protože \"merge to\" je remote.",
+        "line.thirteen": "Proto musíme aktualizovat lokální (\"merge from\") tak, aby obsahoval změny z remote a teprve pak můžeme provést push.",
+        "line.fourteen": "Mezi diffy ve souboru se můžete přesouvat pomocí tlačítek nahoře nebo ctrl + šipka nahoru / dolů."
+      }
     }
   },
   "sign-in-dialog": {

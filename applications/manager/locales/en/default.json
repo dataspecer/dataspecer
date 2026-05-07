@@ -221,14 +221,37 @@
           "append": "The given message will be appended after the default merge message automatically created by Git"
         },
         "remote-url": "Git remote repository URL",
+        "git-provider": "Git provider",
+        "repository-type": "Repository type",
         "advanced-settings": "Advanced settings"
       },
       "radio": {
         "user-repository": "User repository",
-        "organization-repository": "Organization repository"
+        "organization-repository": "Organization repository",
+        "signed-in-user": "Signed-In User",
+        "bot-fallback-user": "Bot (fallback user)"
       },
       "merge-state": {
         "always": "Always create merge state"
+      },
+      "text": {
+        "fetching-organizations": "Fetching organization names",
+        "git-configuration": "Git configuration:"
+      },
+      "button": {
+        "advanced-settings": "Advanced settings (Keeping the defaults is fine):"
+      },
+      "checkbox": {
+        "merge-state-tooltip": "If checked then merge state is always created. If unchecked it is created only on conflicts (when we do not match the head of remote branch)"
+      },
+      "repository-owner-tooltip": {
+        "example": "For Example: https://github.com/torvalds/linux",
+        "owner": "Owner",
+        "is-the": "is the",
+        "while": "while",
+        "name": "name",
+        "of-the-repository": "of the repository",
+        "can-be": "can be either Organization or User (that is it will be equal user's name)"
       }
     },
     "loading": {
@@ -262,7 +285,7 @@
         "tooltip": "The publication Git branch, which will contain the generated documentation in the Git repository."
       }
     },
-    "diff-editor": {
+    "diff-editor-props": {
       "storing-to-backend": {
         "title": "Storing changes to backend",
         "wait-text": "Storing changes to backend"
@@ -283,6 +306,119 @@
       "new": "- The new version is more structured. It still holds true that models are files, which are inside directories that map to packages.",
       "structure": "- The structure comes from the fact the models are put to a directory based on a type of the model.",
       "example": "- For example, packages are inside \"directories\" directory, and visual models are in \"visual-models\" directory."
+    },
+    "diff-editor": {
+      "title": "Diff editor to resolve {{cause}} conflict",
+      "merge-state-cause": {
+        "pull": "pull",
+        "push": "push",
+        "merge": "merge"
+      },
+      "toast": {
+        "saved-cache-to-backend": "Saved files loaded in cache to backend"
+      },
+      "button": {
+        "close-tooltip": "Closes the diff editor without saving changes",
+        "save-all": "Save All (Ctrl + S)",
+        "save-all-tooltip": "This does save both the changes to files and updates the merge state",
+        "save-finalize-warning": "⚠️Resolve conflicts to finalize",
+        "save-finalize": "Save and Finalize",
+        "prev-diff": "Prev diff",
+        "next-diff": "Next diff",
+        "show-as-images": "Show as images"
+      },
+      "tooltip": {
+        "resolve-conflicts": "Resolve all conflicts to enable the button and with that get the option to finalize the merge state. The conflicts are marked as resolved by clicking on checkmarks in the directory diff. This tooltip changes after the button gets enabled.",
+        "save-and-finalize": "First saves all the unsaved changes and then it performs the operation, which triggered the merge state. Can be pull/push/merge.",
+        "pull": {
+          "line.one": {
+            "part-one": "BOTH WINDOWS are unchanged",
+            "part-two": "You have to",
+            "part-three": "move all changes from left window to right",
+            "part-four": "until it has all the changes you want."
+          },
+          "left-window": {
+            "part-one": "Left window",
+            "part-two": "The ",
+            "part-three": "latest commit on Git",
+            "part-four": " at the time of creating merge state."
+          },
+          "right-window": {
+            "part-one": "Right window",
+            "part-two": "Current content of the ",
+            "part-three": "Dataspecer data specification."
+          },
+          "line.two": "When finalized the tracked hash in Dataspecer will track the Git one."
+        },
+        "push": {
+          "line.one": {
+            "part-one": "BOTH WINDOWS are unchanged",
+            "part-two": "You have to",
+            "part-three": "move all changes from left window to right",
+            "part-four": "until it has all the changes you want."
+          },
+          "left-window": {
+            "part-one": "Left window",
+            "part-two": "The ",
+            "part-three": "latest commit on Git",
+            "part-four": " at the time of creating merge state."
+          },
+          "right-window": {
+            "part-one": "Right window",
+            "part-two": "Current content of the ",
+            "part-three": "Dataspecer data specification to be pushed."
+          }
+        },
+        "merge": {
+          "line.one": {
+            "part-one": "BOTH WINDOWS are unchanged",
+            "part-two": "You have to",
+            "part-three": "move all changes from left window to right",
+            "part-four": "until it has all the changes you want."
+          },
+          "left-window": {
+            "part-one": "Left window",
+            "part-two": "Merge from."
+          },
+          "right-window": {
+            "part-one": "Right window",
+            "part-two": "Merge to - This will be pushed to Git."
+          },
+          "line.two": "Both left and right contain current contents of data specification stored in Dataspecer."
+        }
+      },
+      "checkbox": {
+        "show-stripped-version": "Show stripped version",
+        "show-stripped-version-tooltip": "If checked then strips the datastore of unique fields. If unchecked then it shows the full datastore. Currently only meta files are stripped."
+      },
+      "more-detail": {
+        "title": "Diff editor in huge detail:",
+        "line.one": "Note that the short description changes based on the merge state cause",
+        "line.two": "Diff Editor's purpose is to resolve the merge state by performing changes to models and marking conflicts (⚠️) as resolved (✅).",
+        "line.four": "The stripped version of file hides content, which is expected to be changed automatically, such as export time.",
+        "line.five": "The left component of this dialog contains directory diff. The directory diff is visualized with regards to the editable window of the text editor.",
+        "line.six": "This means that:",
+        "color": {
+          "red": "Red",
+          "red.description": "node - It is NOT present in the editable window.",
+          "green": "Green",
+          "green.description": "node - It is present in the editable window. And not in the other one.",
+          "blue": "Blue",
+          "blue.description": "node - Present in both, but they differ."
+        },
+        "line.seven": "Otherwise - Same text in both.",
+        "line.eight": "The merge actors are not changed in any way. This means that you have to manually do all the changes if needed.",
+        "merge-strategy": "You can also use merge strategy at the top to do the changes automatically.",
+        "line.nine": {
+          "part-one": "adds datastore to the editable window.",
+          "part-two": "removes it. The backend is affected only after clicking on one of the Save buttons."
+        },
+        "line.ten": "The editable window is always on the right.",
+        "line.eleven": "For pull and merge the editable windows are the \"merge to\" actors.",
+        "line.twelve": "The push is reversed, that is the editable window is the \"merge from\" actor. This is same as in Git, since the \"merge to\" is the remote.",
+        "line.thirteen": "Therefore, we have to update the local (the \"merge from\") to contain the changes from remote and then we can perform the push.",
+        "line.fourteen": "You can move between diffs within the \"file\" using the buttons at the top or ctrl + 'arrow up', respectively ctrl + 'arrow down'"
+      }
     }
   },
   "sign-in-dialog": {

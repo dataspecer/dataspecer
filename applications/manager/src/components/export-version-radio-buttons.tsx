@@ -36,7 +36,7 @@ export const ExportVersionRadioButtons = (props: ExportVersionRadioButtonsProps)
             onChange={(e) => props.setExportVersion(Number(e.target.value) as ExportVersionType)}
             className="form-radio text-blue-600"
           />
-          <span>{t("git.export-version-old")}</span>
+          <span>{t("git.export-version.old")}</span>
         </label>
         <label className="flex items-center space-x-2 pl-7">
           <input
@@ -46,7 +46,7 @@ export const ExportVersionRadioButtons = (props: ExportVersionRadioButtonsProps)
             onChange={(e) => props.setExportVersion(Number(e.target.value) as ExportVersionType)}
             className="form-radio text-blue-600"
           />
-          <span>{t("git.export-version-new")}</span>
+          <span>{t("git.export-version.new")}</span>
         </label>
       </div>
     </div>

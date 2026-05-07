@@ -15,6 +15,7 @@ import { BetterModalProps, useBetterModal } from "@/lib/better-modal";
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 import { saveChangesTooltipText } from "./outside-changes-to-diff-editor-action-dialog";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export type UpdateModelDataMethod = (
   treePathToNodeContainingDatastore: string,
@@ -47,6 +48,7 @@ export const DIFF_EDITOR_EDIT_ICON_TAILWIND_HEIGHT = "h-6";
 
 export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMergeToRootMetaPath, editable, isOpen, resolve, }: TextDiffEditorBetterModalProps) => {
   const openModel = useBetterModal();
+  const { t } = useTranslation();
 
   const {
     monacoEditor,
@@ -81,11 +83,12 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
     if (e.key === "s" && e.ctrlKey) {
       e.preventDefault();
       saveEverything();
-      toast.success("Saved currently opened file to backend");
+      toast.success("git.diff-editor.toast.saved-cache-to-backend");
     }
   });
 
   const cantFinalize = (activeConflicts?.length ?? 1) !== 0;
+  const mergeStateCauseText = examinedMergeState?.mergeStateCause ? t(`git.diff-editor.merge-state-cause.${examinedMergeState.mergeStateCause}`) : "";
 
 
   const mergeFromBranchDataToRender: BranchDataToRender = {
@@ -113,7 +116,7 @@ return (
             <ResizablePanel defaultSize={20} className="flex! flex-col pr-16">
               <ModalHeader>
                 <ModalTitle className="flex flex-1 flex-row font-bold text-lg pt-1.25 border-b">
-                  <p>Diff editor to resolve {examinedMergeState?.mergeStateCause} conflict</p>
+                  <p>{t("git.diff-editor.title", { cause: mergeStateCauseText })}</p>
                   {examinedMergeState?.mergeStateCause === undefined ? null : <DiffEditorInfoGeneralPopOver mergeStateCause={examinedMergeState?.mergeStateCause}/>}
                 </ModalTitle>
               </ModalHeader>
@@ -138,28 +141,28 @@ return (
                     />
                   </div>
                   <div className="gap-2 mt-7 justify-start -pl-8">
-                    <Button title="Closes the diff editor without saving changes"
+                    <Button title={t("git.diff-editor.button.close-tooltip")}
                             variant={"outline"}
                             onClick={() => closeWithSuccess()}
                             className="m-1">
-                      Close
+                      {t("close")}
                     </Button>
-                    <Button title="This does save both the changes to files and updates the merge state"
+                    <Button title={t("git.diff-editor.button.save-all-tooltip")}
                             variant={"outline"}
                             onClick={() => saveEverything()}
                             className="m-1 border bg-blue-100 border-blue-500 hover:bg-blue-500 hover:text-white dark:bg-blue-900 dark:border-blue-400 dark:hover:bg-blue-500 dark:hover:text-white transition">
-                      Save All (Ctrl + S)
+                      {t("git.diff-editor.button.save-all")}
                     </Button>
                     {
                     isLoadingTreeStructure ? null :
                     <span title={cantFinalize ?
-                                "Resolve all conflicts to enable the button and with that get the option to finalize the merge state. The conflicts are marked as resolved by clicking on checkmarks in the directory diff. This tooltip changes after the button gets enabled." :
-                                "First saves all the unsaved changes and then it performs the operation, which triggered the merge state. Can be pull/push/merge."}>
+                                t("git.diff-editor.tooltip.resolve-conflicts") :
+                                t("git.diff-editor.tooltip.save-and-finalize") }>
                       <Button variant={"outline"}
                               onClick={finalizeMergeStateHandler}
                               disabled={cantFinalize}
                               className="m-1 border bg-green-100 border-green-500 hover:bg-green-500 hover:text-white dark:bg-green-900 dark:border-green-400 dark:hover:bg-green-500 dark:hover:text-white transition">
-                        {cantFinalize ? "⚠️Resolve conflicts to finalize" : "Save and Finalize"}
+                        {cantFinalize ? t("git.diff-editor.button.save-finalize-warning") : t("git.diff-editor.button.save-finalize")}
                       </Button>
                     </span>
                   }
@@ -182,13 +185,13 @@ return (
                       }
                       <div className="flex! items-center justify-center space-x-4 -ml-32">    { /* TODO RadStr: ... the ml mr is a bit hacky, it does not scale well */ }
                         <div className="flex flex-row mr-24">
-                          <Button className="flex! cursor-pointer" variant="outline" onClick={() => goToPreviousDiff(monacoEditor.current?.editor)}><ArrowUpIcon/>Prev diff</Button>
-                          <Button className="flex! ml-1 cursor-pointer" variant="outline" onClick={() => goToNextDiff(monacoEditor.current?.editor)}><ArrowDownIcon/>Next diff</Button>
+                          <Button className="flex! cursor-pointer" variant="outline" onClick={() => goToPreviousDiff(monacoEditor.current?.editor)}><ArrowUpIcon/>{t("git.diff-editor.button.prev-diff")}</Button>
+                          <Button className="flex! ml-1 cursor-pointer" variant="outline" onClick={() => goToNextDiff(monacoEditor.current?.editor)}><ArrowDownIcon/>{t("git.diff-editor.button.next-diff")}</Button>
                         </div>
                         <MergeStrategyComponent handleMergeStateResolving={applyAutomaticMergeStateResolver}/>
                         {
                           activeDatastoreType === "svg" ?
-                            <Button variant="default" onClick={() => {openModel(SvgVisualDiffDialog, {editableType: editable, mergeFromSvg, mergeToSvg})}}>Show as images</Button>
+                            <Button variant="default" onClick={() => {openModel(SvgVisualDiffDialog, {editableType: editable, mergeFromSvg, mergeToSvg})}}>{t("git.diff-editor.button.show-as-images")}</Button>
                             : null
                         }
                         <label className="flex! items-center">
@@ -197,9 +200,9 @@ return (
                             checked={showStrippedVersion}
                             onChange={(e) => setShowStrippedVersion(e.target.checked)}
                             className="w-5 h-5 accent-blue-600 ml-28"
-                            title="If checked then strips the datastore of unique fields. If unchecked then it shows the full datastore. Currently only meta files are stripped."
+                            title={t("git.diff-editor.checkbox.show-stripped-version-tooltip")}
                           />
-                          &nbsp;<span>Show stripped version</span>
+                          &nbsp;<span>{t("git.diff-editor.checkbox.show-stripped-version")}</span>
                         </label>
                       </div>
                     </div>
@@ -247,7 +250,7 @@ function DiffEditorInfoGeneralPopOver(props: {mergeStateCause: MergeStateCause})
   }, []);
 
   return <div onMouseEnter={() => setShouldAnimate(false)} className={`${shouldAnimate ? "motion-safe:animate-ping pt-2.5" : "pt-1"}`}>
-    <PopOverGitGeneralComponent moreDetailChildren={moreDetailChildrenForTooltip} timeForMoreDetailChildren={5000}>
+    <PopOverGitGeneralComponent moreDetailChildren={<MoreDetailChildrenForTooltip />} timeForMoreDetailChildren={3000}>
       <BasicTutorialTooltipForMergeState mergeStateCause={props.mergeStateCause}/>
     </PopOverGitGeneralComponent>
   </div>;
@@ -255,28 +258,29 @@ function DiffEditorInfoGeneralPopOver(props: {mergeStateCause: MergeStateCause})
 
 
 const BasicTutorialTooltipForMergeState = (props: {mergeStateCause: MergeStateCause}): React.ReactNode => {
+  const { t } = useTranslation();
   switch(props.mergeStateCause) {
     case "pull":
       return <div>
-        <p><strong>BOTH WINDOWS are unchanged</strong>! You have to <strong>move all changes from left window to right</strong> until it has all the changes you want.</p>
-        <p><strong>Left window</strong> = The <strong>latest commit on Git</strong> at the time of creating merge state.</p>
-        <p><strong>Right window</strong> = Current content of the <strong>Dataspecer data specification.</strong></p>
-        <p>When finalized the tracked hash in Dataspecer will track the Git one.</p>
+        <p><strong>{t("git.diff-editor.tooltip.pull.line.one.part-one")}</strong>! {t("git.diff-editor.tooltip.pull.line.one.part-two")} <strong>{t("git.diff-editor.tooltip.pull.line.one.part-three")}</strong> {t("git.diff-editor.tooltip.pull.line.one.part-four")}</p>
+        <p><strong>{t("git.diff-editor.tooltip.pull.left-window.part-one")}</strong> = {t("git.diff-editor.tooltip.pull.left-window.part-two")}<strong>{t("git.diff-editor.tooltip.pull.left-window.part-three")}</strong>{t("git.diff-editor.tooltip.pull.left-window.part-four")}</p>
+        <p><strong>{t("git.diff-editor.tooltip.pull.right-window.part-one")}</strong> = {t("git.diff-editor.tooltip.pull.right-window.part-two")}<strong>{t("git.diff-editor.tooltip.pull.right-window.part-three")}</strong></p>
+        <p>{t("git.diff-editor.tooltip.pull.line.two")}</p>
         <br/>
       </div>;
     case "push":
       return <div>
-        <p><strong>BOTH WINDOWS are unchanged</strong>! You have to <strong>move all changes from left window to right</strong> until it has all the changes you want.</p>
-        <p><strong>Left window</strong> = The <strong>latest commit on Git</strong> at the time of creating merge state.</p>
-        <p><strong>Right window</strong> = Current content of the <strong>Dataspecer data specification to be pushed.</strong></p>
+        <p><strong>{t("git.diff-editor.tooltip.push.line.one.part-one")}</strong>! {t("git.diff-editor.tooltip.push.line.one.part-two")} <strong>{t("git.diff-editor.tooltip.push.line.one.part-three")}</strong> {t("git.diff-editor.tooltip.push.line.one.part-four")}</p>
+        <p><strong>{t("git.diff-editor.tooltip.push.left-window.part-one")}</strong> = {t("git.diff-editor.tooltip.push.left-window.part-two")}<strong>{t("git.diff-editor.tooltip.push.left-window.part-three")}</strong>{t("git.diff-editor.tooltip.push.left-window.part-four")}</p>
+        <p><strong>{t("git.diff-editor.tooltip.push.right-window.part-one")}</strong> = {t("git.diff-editor.tooltip.push.right-window.part-two")}<strong>{t("git.diff-editor.tooltip.push.right-window.part-three")}</strong></p>
         <br/>
       </div>;
     case "merge":
       return <div>
-        <p><strong>BOTH WINDOWS are unchanged</strong>! You have to <strong>move all changes from left window to right</strong> until it has all the changes you want.</p>
-        <p><strong>Left window</strong> = Merge from.</p>
-        <p><strong>Right window</strong> = Merge to - This will be pushed to Git.</p>
-        <p>Both left and right contain current contents of data specification stored in Dataspecer.</p>
+        <p><strong>{t("git.diff-editor.tooltip.merge.line.one.part-one")}</strong>! {t("git.diff-editor.tooltip.merge.line.one.part-two")} <strong>{t("git.diff-editor.tooltip.merge.line.one.part-three")}</strong> {t("git.diff-editor.tooltip.merge.line.one.part-four")}</p>
+        <p><strong>{t("git.diff-editor.tooltip.merge.left-window.part-one")}</strong> = {t("git.diff-editor.tooltip.merge.left-window.part-two")}</p>
+        <p><strong>{t("git.diff-editor.tooltip.merge.right-window.part-one")}</strong> = {t("git.diff-editor.tooltip.merge.right-window.part-two")}</p>
+        <p>{t("git.diff-editor.tooltip.merge.line.two")}</p>
         <br/>
       </div>;
     default:
@@ -284,24 +288,28 @@ const BasicTutorialTooltipForMergeState = (props: {mergeStateCause: MergeStateCa
   }
 };
 
-const moreDetailChildrenForTooltip = <>
-  <h2 className="text-base font-bold">Diff editor in huge detail:</h2>
-  <p>- Note that the short description changes based on the merge state cause</p>
-  <p>- Diff Editor's purpose is to resolve the merge state by performing changes to models and marking conflicts (⚠️) as resolved (✅).</p>
-  <p>- {saveChangesTooltipText}</p>
-  <p>- The stripped version of file hides content, which is expected to be changed automatically, such as export time.</p>
-  <p>- The left component of this dialog contains directory diff. The directory diff is visualized with regards to the editable window of the text editor.</p>
-  <p>- This means that:</p>
-  <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;<p className="text-red-600">Red</p>&nbsp;node - It is NOT present in the editable window.</div>
-  <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;<p className="text-green-600">Green</p>&nbsp;node - It is present in the editable window. And not in the other one.</div>
-  <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;<p className="text-blue-600">Blue</p>&nbsp;node - Present in both, but they differ.</div>
-  <p>&nbsp;&nbsp; - Otherwise - Same text in both.</p>
-  <p>- The merge actors are not changed in any way. This means that you have to manually do all the changes if needed.</p>
-  <p className="pl-5">You can also use merge strategy at the top to do the changes automatically. The changes are applied to the currently opened file.</p>
-  <div className="flex flex-row">- <Plus className="mt-1 h-4 w-4"/> adds datastore to the editable window. <Minus className="mt-1 h-4 w-4"/> removes it. The backend is affected only after clicking on one of the Save buttons.</div>
-  <p>- The editable window is always on the right.</p>
-  <p>- For pull and merge the editable windows are the "merge to" actors.</p>
-  <p>- The push is reversed, that is the editable window is the "merge from" actor. This is same as in Git, since the "merge to" is the remote.</p>
-  <p>&nbsp;&nbsp; Therefore, we have to update the local (the "merge from") to contain the changes from remote and then we can perform the push.</p>
-  <p>&nbsp;&nbsp; You can move between diffs within the "file" using the buttons at the top or ctrl + 'arrow up', respectively ctrl + 'arrow down'</p>
-</>;
+function MoreDetailChildrenForTooltip() {
+  const { t } = useTranslation();
+
+  return <>
+    <h2 className="text-base font-bold">{t("git.diff-editor.more-detail.title")}</h2>
+    <p>- {t("git.diff-editor.more-detail.line.one")}</p>
+    <p>- {t("git.diff-editor.more-detail.line.two")}</p>
+    <p>- {saveChangesTooltipText}</p>
+    <p>- {t("git.diff-editor.more-detail.line.four")}</p>
+    <p>- {t("git.diff-editor.more-detail.line.five")}</p>
+    <p>- {t("git.diff-editor.more-detail.line.six")}</p>
+    <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;<p className="text-red-600">{t("git.diff-editor.more-detail.color.red")}</p>&nbsp;{t("git.diff-editor.more-detail.color.red.description")}</div>
+    <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;<p className="text-green-600">{t("git.diff-editor.more-detail.color.green")}</p>&nbsp;{t("git.diff-editor.more-detail.color.green.description")}</div>
+    <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;<p className="text-blue-600">{t("git.diff-editor.more-detail.color.blue")}</p>&nbsp;{t("git.diff-editor.more-detail.color.blue.description")}</div>
+    <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;{t("git.diff-editor.more-detail.line.seven")}</div>
+    <p>- {t("git.diff-editor.more-detail.line.eight")}</p>
+    <p className="pl-5">{t("git.diff-editor.more-detail.merge-strategy")}</p>
+    <div className="flex flex-row">- <Plus className="mt-1 h-4 w-4"/> {t("git.diff-editor.more-detail.line.nine.part-one")} <Minus className="mt-1 h-4 w-4"/> {t("git.diff-editor.more-detail.line.nine.part-two")}</div>
+    <p>- {t("git.diff-editor.more-detail.line.ten")}</p>
+    <p>- {t("git.diff-editor.more-detail.line.eleven")}</p>
+    <p>- {t("git.diff-editor.more-detail.line.twelve")}</p>
+    <p>&nbsp;&nbsp; {t("git.diff-editor.more-detail.line.thirteen")}</p>
+    <p>&nbsp;&nbsp; {t("git.diff-editor.more-detail.line.fourteen")}</p>
+  </>;
+}
