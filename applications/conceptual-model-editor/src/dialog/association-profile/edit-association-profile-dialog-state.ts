@@ -21,7 +21,7 @@ import {
   representUndefinedClassProfile,
   sortRepresentatives,
 } from "../utilities/dialog-utilities";
-import { DialogSemanticTracker } from "../dialog-semantic-tracker";
+import { DialogSemanticTracker } from "../../dialog-v2/dialog-semantic-tracker";
 import { VisualModel } from "@dataspecer/visual-model";
 import { EntityDsIdentifier } from "../../dataspecer/entity-model";
 import { semanticModelTrackerToCmeSemanticModel } from "../../dataspecer/cme-model/adapter";

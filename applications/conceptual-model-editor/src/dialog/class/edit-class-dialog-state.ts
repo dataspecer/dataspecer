@@ -13,7 +13,7 @@ import {
 } from "../utilities/dialog-utilities";
 import { configuration } from "../../application";
 import { LabelResolver } from "../../dependency-tracker";
-import { DialogSemanticTracker } from "../dialog-semantic-tracker";
+import { DialogSemanticTracker } from "../../dialog-v2/dialog-semantic-tracker";
 
 export type ClassDialogState = BaseEntityDialogState;
 

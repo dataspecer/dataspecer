@@ -11,7 +11,7 @@ import {
   listClassToSpecializeFromTracker,
   representUndefinedClass,
 } from "../utilities/dialog-utilities";
-import { DialogSemanticTracker } from "../dialog-semantic-tracker";
+import { DialogSemanticTracker } from "../../dialog-v2/dialog-semantic-tracker";
 import { EntityDsIdentifier } from "../../dataspecer/entity-model";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { semanticModelTrackerToCmeSemanticModel } from "../../dataspecer/cme-model/adapter";

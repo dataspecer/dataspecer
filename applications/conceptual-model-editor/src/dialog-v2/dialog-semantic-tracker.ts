@@ -48,10 +48,6 @@ export class DialogSemanticTracker implements Tracker {
   }
 
   onEntityDidCreate(model: ModelIdentifier, next: Entity): void {
-    if (next.id === "http://iflastandards.info/ns/fr/frbr/frbroo/F10_Person") {
-      console.log("debug", {model, next});
-    }
-
     this.trackers.forEach(t => t.onEntityDidCreate?.(model, next));
     if (isSemanticRelationship(next)) {
       const entry = this.getOrCreateRelationshipEntry(next.id, model);

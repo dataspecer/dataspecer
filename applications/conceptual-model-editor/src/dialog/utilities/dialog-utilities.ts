@@ -1,5 +1,5 @@
 import { EntityModel } from "@dataspecer/core-v2";
-import { DialogSemanticTracker } from "../dialog-semantic-tracker";
+import { DialogSemanticTracker } from "../../dialog-v2/dialog-semantic-tracker";
 import {
   LanguageString,
   SemanticModelClass,

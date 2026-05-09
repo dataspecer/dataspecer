@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useModelGraphContext } from "../context/model-context";
-import { DropDownCatalog } from "../components/management/dropdown-catalog";
+import { DropDownCatalog } from "../components/dropdown-catalog";
 import { useQueryParamsContext } from "../context/query-params-context";
 import { languageStringToString } from "../utilities/string";
 import { configuration } from "../application";

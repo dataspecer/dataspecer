@@ -1,5 +1,10 @@
+import {
+  type FetchOptions,
+  type FetchResponse,
+  type HttpFetch
+} from "@dataspecer/core/io/fetch/fetch-api";
 import { BackendPackageService, type Package } from "@dataspecer/core-v2/project";
-import { fetchService } from "../service/fetch-service";
+import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 
 export interface PackageService {
   /**
@@ -20,6 +25,19 @@ export interface PackageService {
    * Saves package configuration given in parameter to the backend.
    */
   savePackageConfiguration: (packageIdentifier: string, newPackageConfiguration: object) => void;
+}
+
+const fetchService: FetchService = {
+  fetch: (url: string, options?: FetchOptions): Promise<FetchResponse> => {
+    return httpFetch(url, options);
+  },
+};
+
+export interface FetchService {
+  /**
+   * Execute HTTP request.
+   */
+  fetch: HttpFetch;
 }
 
 const backendService = new BackendPackageService(import.meta.env.VITE_PUBLIC_APP_BACKEND!, fetchService.fetch);

@@ -10,7 +10,7 @@ import {
   AssociationDialogState,
   createNewAssociationDialogState,
 } from "../dialog/association/edit-association-dialog-state";
-import { DialogSemanticTracker } from "../dialog/dialog-semantic-tracker";
+import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import {
   addVisualRelationshipsWithSpecifiedVisualEnds,
 } from "../dataspecer/visual-model/operation/add-visual-relationships";

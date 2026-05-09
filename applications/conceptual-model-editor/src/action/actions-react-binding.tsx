@@ -1,5 +1,5 @@
 import React, { useContext, useMemo } from "react";
-import { DialogSemanticTracker } from "../dialog/dialog-semantic-tracker";
+import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { createLabelResolver, useDependencyTrackers } from "../dependency-tracker";
 
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";

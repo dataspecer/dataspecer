@@ -1,28 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { ColorPalette, tailwindColorToHex } from "../util/color-utils";
+import { ColorPalette, tailwindColorToHex } from "../../util/color-utils";
 
 const GRID_COLS = "grid-cols-5";
-
-export const ColorField = (props: {
-  tailwindColor: string;
-  color: string;
-  isSelected?: boolean;
-  onClick: (e: React.MouseEvent) => void;
-}) => {
-  const { tailwindColor, color, isSelected, onClick } = props;
-  return (
-    <button
-      id={`button-color-picker-${tailwindColor}`}
-      key={`color-${tailwindColor}`}
-      className={"h-6 w-6"}
-      style={{
-        backgroundColor: color,
-        border: isSelected ? "solid white 2px" : undefined,
-      }}
-      onClick={onClick}
-    ></button>
-  );
-};
 
 export const ColorPicker = (props: { currentColor: string; saveColor: (color: string) => void }) => {
   const { currentColor, saveColor } = props;
@@ -81,5 +60,26 @@ export const ColorPicker = (props: { currentColor: string; saveColor: (color: st
         })}
       </div>
     </div>
+  );
+};
+
+const ColorField = (props: {
+  tailwindColor: string;
+  color: string;
+  isSelected?: boolean;
+  onClick: (e: React.MouseEvent) => void;
+}) => {
+  const { tailwindColor, color, isSelected, onClick } = props;
+  return (
+    <button
+      id={`button-color-picker-${tailwindColor}`}
+      key={`color-${tailwindColor}`}
+      className={"h-6 w-6"}
+      style={{
+        backgroundColor: color,
+        border: isSelected ? "solid white 2px" : undefined,
+      }}
+      onClick={onClick}
+    ></button>
   );
 };

@@ -10,7 +10,7 @@ import { Position } from "../diagram";
 import { addSemanticGeneralizationToVisualModelAction } from "./add-generalization-to-visual-model";
 import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
 import { CmeReference } from "../dataspecer/cme-model/model";
-import { DialogSemanticTracker } from "../dialog/dialog-semantic-tracker";
+import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { LabelResolver } from "../dependency-tracker";
 
 /**
