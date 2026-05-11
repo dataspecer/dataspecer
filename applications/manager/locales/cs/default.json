@@ -542,5 +542,73 @@
       "success-create-branch": "Nová větev byla úspěšně vytvořena v Dataspeceru. Nezapomeňte ji pushnout.",
       "unknown-failure-create-branch": "Neznámá chyba při vytváření nové větve."
     }
+  },
+  "ssh-menu": {
+    "title": "Správa SSH klíče",
+    "description": {
+      "line-1": "SSH klíče v Dataspeceru jsou užitečné především pro dva typy uživatelů:",
+      "line-2": "1) Přihlásili jste se pomocí poskytovatele, který není spjatý s Gitem (např. Keycloak).",
+      "line-3": "2) Máte bezpečnostní obavy.",
+      "line-4": "- Jednoduše nevěříte Dataspeceru, aby měl přístup k čemukoliv jinému než k informacím o profilu (jméno + e-mail).",
+      "line-5": "- SSH klíč dává Dataspeceru slabší oprávnění ve srovnání s přihlášením pomocí \"push\" scope.",
+      "line-6": "- Můžete také použít takzvaný \"deploy\" SSH klíč přidružený k jednomu repozitáři.",
+      "line-7": "Omezení:",
+      "line-8": "- Maximálně jeden SSH klíč na poskytovatele ověřování.",
+      "line-9": "- Privátní SSH klíč je uložen v systému Dataspecer bez šifrování."
+    },
+    "future-use-tooltip": "Nyní není možné. Však v budoucnosti by to mohlo být.",
+    "security-tooltip": {
+        "line-1": "Tak funguje SSH - Klíče bez hesla jsou uloženy bez šifrování. Klíče s heslem jsou uloženy zašifrované.",
+        "line-2": "Klíč se nikdy neposílá zpět klientovi.",
+        "line-3": "Možný útočník by musel získat přístup k serveru a souboru, aby ho mohl ukrást."
+    },
+    "add-button-title": "Experimentální. Přidává privátní SSH klíč do Dataspeceru.",
+    "add-button": "Přidat privátní SSH klíč",
+    "remove-button": "Odebrat privátní SSH klíč"
+  },
+  "show-svgs-diff-dialog": {
+    "title": "Vizuální porovnání SVG",
+    "close-button": "Zavřít"
+  },
+  "show-merge-state-info-dialog": {
+    "title": "Informace o merge stavu",
+    "conflict-count": "Počet konfliktů:",
+    "merge-state-cause": "Důvod merge stavu:",
+    "branch-label": "Větev:",
+    "merge-from-branch": "Merge from větev:",
+    "merge-to-branch": "Merge to větve:",
+    "created-at": "DiffTree vytvořen:",
+    "modified-at": "DiffTree modifikován:",
+    "iri-label": "IRI:",
+    "merge-from-iri": "Merge from IRI:",
+    "merge-to-iri": "Merge to IRI:",
+    "commit-hash": "Hash commitu:",
+    "merge-from-commit-hash": "Merge from hash commitu:",
+    "merge-to-commit-hash": "Merge to hash commitu:",
+    "location-label": "Umístění:",
+    "merge-from-location": "Merge from umístění:",
+    "merge-to-location": "Merge to umístění:",
+    "git-url": "Git URL:",
+    "close-button": "Zavřít"
+  },
+  "set-projectIRI-and-branch-dialog": {
+    "title": "Nastavit projektové IRI a jméno větve pro balíček",
+    "branch-label": "Nastavit větev",
+    "projectIri-label": "Nastavit projektové IRI"
+  },
+  "set-private-ssh-dialog": {
+    "title": "Uložit privátní SSH klíč pro GitHub do Dataspeceru",
+    "description": {
+      "line-1": "Po potvrzení se daný SSH klíč pro dané přihlašovací údaje (v současné době pouze GitHub) uloží na serveru.",
+      "line-2": "SSH klíč by měl splňovat tato pravidla:"
+    },
+    "rules": {
+      "rule-1": "Být na jednom řádku (bez \\n)",
+      "rule-2": "Bez hesla",
+      "rule-3": "Být typu ed25519"
+    },
+    "input-placeholder": "Privátní SSH klíč",
+    "success-toast": "SSH klíč byl úspěšně uložen na server",
+    "error-toast": "Nepodařilo se nastavit privátní SSH klíč, více informací najdete v konzoli."
   }
 }

@@ -549,5 +549,71 @@
       "success-create-branch": "Successfully created new branch in Dataspecer. Don't forget to push it.",
       "unknown-failure-create-branch": "Unknown failure when creating new branch."
     }
+  },
+  "ssh-menu": {
+    "title": "Manage SSH key",
+    "description": {
+      "line-1": "SSH keys in Dataspecer are useful mainly for two types of users:",
+      "line-2": "1) You signed in using a non-Git authentication provider (e.g., Keycloak).",
+      "line-3": "2) You have security concerns.",
+      "line-4": "- You simply do not trust Dataspecer to have access to anything except the profile info (name + email).",
+      "line-5": "- SSH key gives Dataspecer weaker permissions compared to the sign-in using \"push\" scope.",
+      "line-6": "- Also you can use so-called \"deploy\" SSH key associated with a single repository.",
+      "line-7": "Limitations:",
+      "line-8": "- At most one SSH key per authentication provider.",
+      "line-9": "- The private SSH key is stored in Dataspecer filesystem unencrypted."
+    },
+    "future-use-tooltip": "Currently not possible. However, in future it might be.",
+    "security-tooltip": {
+        "line-1": "This is how SSH works - Keys not protected by password are stored unencrypted. Those with password are stored encrypted.",
+        "line-2": "The key is never sent back to client.",
+        "line-3": "Possible attacker would have to get possession of the server and the file to steal it."
+    },
+    "add-button-title": "Experimental. Adds private SSH key to the Dataspecer.",
+    "add-button": "Add private SSH key",
+    "remove-button": "Remove private SSH key"
+  },
+  "show-svgs-diff-dialog": {
+    "title": "The visual diff of SVGs"
+  },
+  "show-merge-state-info-dialog": {
+    "title": "Info about merge state",
+    "conflict-count": "Conflict count:",
+    "merge-state-cause": "Merge state cause:",
+    "branch-label": "Branch:",
+    "merge-from-branch": "Merge from branch:",
+    "merge-to-branch": "Merge to branch:",
+    "created-at": "DiffTree created at:",
+    "modified-at": "DiffTree modified at:",
+    "iri-label": "IRI:",
+    "merge-from-iri": "Merge from IRI:",
+    "merge-to-iri": "Merge to IRI:",
+    "commit-hash": "Commit hash:",
+    "merge-from-commit-hash": "Merge from commit hash:",
+    "merge-to-commit-hash": "Merge to commit hash:",
+    "location-label": "Location:",
+    "merge-from-location": "Merge from location:",
+    "merge-to-location": "Merge to location:",
+    "git-url": "Git URL:"
+  },
+  "set-projectIRI-and-branch-dialog": {
+    "title": "Set project IRI and branch name for package",
+    "branch-label": "Set branch",
+    "projectIri-label": "Set project IRI"
+  },
+  "set-private-ssh-dialog": {
+    "title": "Store private SSH key for GitHub in Dataspecer",
+    "description": {
+      "line-1": "After submitting stores the given SSH key on server for the given login info (currently GitHub only).",
+      "line-2": "The SSH key should follow these rules:"
+    },
+    "rules": {
+      "rule-1": "Be on one line (no \\n)",
+      "rule-2": "Have no password",
+      "rule-3": "Be of type ed25519"
+    },
+    "input-placeholder": "Private SSH key",
+    "success-toast": "SSH key is successfully stored on server",
+    "error-toast": "Failed to set private SSH key, check console for more info."
   }
 }

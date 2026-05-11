@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Modal, ModalBody, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@/components/modal";
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 import { MinusIcon, PlusIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type SshMenuProps = {
   login: UseLoginType;
@@ -21,6 +22,7 @@ type SshMenuProps = {
  * That is the reason why it is hardcoded now, since we can not tell how it should exactly work in future and where to store the SSH keys due to security concerns.
  */
 export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
+  const { t } = useTranslation();
   const openModal = useBetterModal();
   const [hasSsh, setHasSsh] = useState<boolean>(false);
 
@@ -101,40 +103,40 @@ export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
     <Modal open={isOpen} onClose={() => resolve(null)}>
       <ModalContent className="sm:max-w-[700px]!">
         <ModalHeader>
-          <ModalTitle>Manage SSH key</ModalTitle>
+          <ModalTitle>{t("ssh-menu.title")}</ModalTitle>
           <ModalDescription>
-            SSH keys in Dataspecer are useful mainly for two types of users:
+            {t("ssh-menu.description.line-1")}
             <br/>
             <br/>
 
-            <div className="flex flex-1 flex-row">1) You signed in using a non-Git authentication provider (e.g., Keycloak). <PopOverGitGeneralComponent><FutureUseCaseTooltip/></PopOverGitGeneralComponent>.</div>
+            <div className="flex flex-1 flex-row">{t("ssh-menu.description.line-2")} <PopOverGitGeneralComponent><FutureUseCaseTooltip/></PopOverGitGeneralComponent></div>
 
-            2) You have security concerns.
+            {t("ssh-menu.description.line-3")}
             <br/>
-            &nbsp;&nbsp;&nbsp; - You simply do not trust Dataspecer to have access to anything except the profile info (name + email).
+            &nbsp;&nbsp;&nbsp; {t("ssh-menu.description.line-4")}
             <br/>
-            &nbsp;&nbsp;&nbsp; - SSH key gives Dataspecer weaker permissions compared to the sign-in using "push" scope.
+            &nbsp;&nbsp;&nbsp; {t("ssh-menu.description.line-5")}
             <br/>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Also you can use so-called "deploy" SSH key associated with a single repository.
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {t("ssh-menu.description.line-6")}
             <br/>
             <br/>
-            Limitations:
+            {t("ssh-menu.description.line-7")}
             <br/>
-            &nbsp;&nbsp;- At most one SSH key per authentication provider.
+            &nbsp;&nbsp;{t("ssh-menu.description.line-8")}
             <br/>
-            <p className="flex flex-1 flex-row">&nbsp;&nbsp;- The private SSH key is stored in Dataspecer filesystem unencrypted.<PopOverGitGeneralComponent><SecurityTooltip/></PopOverGitGeneralComponent></p>
+            <p className="flex flex-1 flex-row">&nbsp;&nbsp;{t("ssh-menu.description.line-9")}<PopOverGitGeneralComponent><SecurityTooltip/></PopOverGitGeneralComponent></p>
           </ModalDescription>
         </ModalHeader>
       <ModalBody>
           <div className="flex flex-col gap-4">
             <Button
-              title="Experimental. Adds private SSH key to the Dataspecer."
+              title={t("ssh-menu.add-button-title")}
               variant="ghost" className="px-0 border hover:bg-green-100"
               onClick={handleAddSSH}
             >
               <div className="flex">
                 <PlusIcon className="w-4 h-4 mt-1 mr-1" />
-                <p>Add private SSH key</p>
+                <p>{t("ssh-menu.add-button")}</p>
               </div>
             </Button>
 
@@ -142,7 +144,7 @@ export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
               null :
               <Button variant="ghost" className="border hover:bg-red-100" onClick={handleRemoveSSH}>
                 <MinusIcon className="w-4 h-4 mt-1 mr-1" />
-                Remove private SSH key
+                {t("ssh-menu.remove-button")}
               </Button>
             }
           </div>
@@ -155,17 +157,19 @@ export function SshMenu({ login, resolve, isOpen } : SshMenuProps) {
 
 
 function SecurityTooltip() {
+  const { t } = useTranslation();
   return <div>
-    This how SSH works - Keys not protected by password are stored unecrypted. Those with password are stored encrypted.
+    {t("ssh-menu.security-tooltip.line-1")}
     <br/>
-    The key is never sent back to client.
+    {t("ssh-menu.security-tooltip.line-2")}
     <br/>
-    Possible attacker would have to get possession of the server and the file to steal it.
+    {t("ssh-menu.security-tooltip.line-3")}
   </div>;
 }
 
 function FutureUseCaseTooltip() {
+  const { t } = useTranslation();
   return <div>
-    Currently not possible. However, in future it might be.
+    {t("ssh-menu.future-use-tooltip")}
   </div>;
 }

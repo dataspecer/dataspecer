@@ -5,6 +5,7 @@ import { BetterModalProps } from "@/lib/better-modal";
 import { GitProviderNamesAsType } from "@dataspecer/git";
 import { FormEventHandler, useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 type SetPrivateSSHKeyDialogProps = BetterModalProps<null>;
 
@@ -15,6 +16,7 @@ type SetPrivateSSHKeyDialogProps = BetterModalProps<null>;
  * That is the reason why it is hardcoded now, since we can not tell how it should exactly work in future and where to store the SSH keys due to security concerns.
  */
 export default function SetPrivateSSHKeyDialog({ isOpen, resolve }: SetPrivateSSHKeyDialogProps) {
+  const { t } = useTranslation();
   const [privateSSHKey, setPrivateSSHKey] = useState<string>("");
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
@@ -39,11 +41,11 @@ export default function SetPrivateSSHKeyDialog({ isOpen, resolve }: SetPrivateSS
         throw new Error("Server error" + response);
       }
 
-      toast.success("SSH key is successfully stored on server");
+      toast.success(t("set-private-ssh-dialog.success-toast"));
     }
     catch (error) {
       console.error(error);
-      toast.error("Failed to set private SSH key, check console for more info", { "richColors": true });
+      toast.error(t("set-private-ssh-dialog.error-toast"), { "richColors": true });
     }
     finally {
       resolve(null);
@@ -54,19 +56,20 @@ export default function SetPrivateSSHKeyDialog({ isOpen, resolve }: SetPrivateSS
     <Modal open={isOpen} onClose={() => resolve(null)}>
       <ModalContent className="sm:max-w-[700px]!">
         <ModalHeader>
-          <ModalTitle>Store private SSH key for GitHub in Dataspecer</ModalTitle>
+          <ModalTitle>{t("set-private-ssh-dialog.title")}</ModalTitle>
           <ModalDescription>
-            After submitting stores the given SSH key on server for the given login info (currently GitHub only).
+            {t("set-private-ssh-dialog.description.line-1")}
             <br/>
-            The SSH key should follow these rules:
+            <br/>
+            {t("set-private-ssh-dialog.description.line-2")}
             <ul>
-              <li>- Be on one line (no \n)</li>
+              <li>- {t("set-private-ssh-dialog.rules.rule-1")}</li>
             </ul>
             <ul>
-              <li>- Have no password</li>
+              <li>- {t("set-private-ssh-dialog.rules.rule-2")}</li>
             </ul>
             <ul>
-              <li>- Be of type ed25519</li>
+              <li>- {t("set-private-ssh-dialog.rules.rule-3")}</li>
             </ul>
           </ModalDescription>
         </ModalHeader>
@@ -77,13 +80,13 @@ export default function SetPrivateSSHKeyDialog({ isOpen, resolve }: SetPrivateSS
               className="w-full grow"
               value={privateSSHKey}
               onChange={(e) => setPrivateSSHKey(e.target.value)}
-              placeholder="Private SSH key"
+              placeholder={t("set-private-ssh-dialog.input-placeholder")}
               required />
           </form>
         </ModalBody>
         <ModalFooter className="flex flex-row">
-          <Button variant="outline" onClick={() => resolve(null)}>Cancel</Button>
-          <Button type="submit" className="hover:bg-purple-700" form="send-private-ssh-key-form" disabled={privateSSHKey === ""}>Confirm</Button>
+          <Button variant="outline" onClick={() => resolve(null)}>{t("close")}</Button>
+          <Button type="submit" className="hover:bg-purple-700" form="send-private-ssh-key-form" disabled={privateSSHKey === ""}>{t("confirm")}</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>

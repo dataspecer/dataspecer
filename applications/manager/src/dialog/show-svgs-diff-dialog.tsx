@@ -2,6 +2,7 @@ import { BetterModalProps } from "@/lib/better-modal";
 import { EditableType, getEditableAndNonEditableValue } from "@dataspecer/git";
 import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "../components/modal";
 import { Button } from "../components/ui/button";
+import { useTranslation } from "react-i18next";
 
 type SvgVisualDiffDialogProps = {
   mergeFromSvg: string;
@@ -14,6 +15,7 @@ type SvgVisualDiffDialogProps = {
  * Dialog that gets two svgs and the order (given by editableType). Shows the two svgs in the correct order next to each other (horizontally - left/right).
  */
 const SvgVisualDiffDialog = ({ mergeFromSvg, mergeToSvg, editableType, isOpen, resolve }: SvgVisualDiffDialogProps) => {
+  const { t } = useTranslation();
   const { nonEditable: leftSvg, editable: rightSvg } = getEditableAndNonEditableValue(editableType, mergeFromSvg, mergeToSvg);
 
 
@@ -21,7 +23,7 @@ const SvgVisualDiffDialog = ({ mergeFromSvg, mergeToSvg, editableType, isOpen, r
     <Modal open={isOpen} onClose={() => resolve(null)}>
         <ModalContent className="max-w-[90%]!">
           <ModalHeader>
-            <ModalTitle>The visual diff of SVGs</ModalTitle>
+            <ModalTitle>{t("show-svgs-diff-dialog.title")}</ModalTitle>
           </ModalHeader>
 
           <div className="flex flex-1 flex-row">
@@ -31,7 +33,7 @@ const SvgVisualDiffDialog = ({ mergeFromSvg, mergeToSvg, editableType, isOpen, r
           </div>
 
           <ModalFooter>
-            <Button variant="outline" onClick={() => resolve(null)}>Close</Button>
+            <Button variant="outline" onClick={() => resolve(null)}>{t("close")}</Button>
           </ModalFooter>
         </ModalContent>
     </Modal>

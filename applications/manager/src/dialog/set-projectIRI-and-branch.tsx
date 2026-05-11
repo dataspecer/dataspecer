@@ -5,6 +5,7 @@ import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { modifyPackageProjectData, requestLoadPackage } from "@/package";
 import { createIdentifierForHTMLElement, InputComponent } from "@/components/input-component";
+import { useTranslation } from "react-i18next";
 
 type SetProjectIriAndBranchDialogProps = {
   examinedPackage: Package;
@@ -19,6 +20,7 @@ const idPrefix = "setProjectIriAndBranchDialog";
  * @deprecated Works, however we no longer use it. Since it gives too much power to user. It was more of a debug dialog
  */
 export const setProjectIriAndBranchDialog = ({ examinedPackage, isOpen, resolve }: SetProjectIriAndBranchDialogProps) => {
+  const { t } = useTranslation();
   const [branch, setBranch] = useState<string>(examinedPackage.branch);
   const [projectIri, setProjectIri] = useState<string>(examinedPackage.projectIri);
 
@@ -43,13 +45,13 @@ export const setProjectIriAndBranchDialog = ({ examinedPackage, isOpen, resolve 
     <Modal open={isOpen} onClose={() => resolve(null)}>
         <ModalContent>
           <ModalHeader>
-            <ModalTitle>Set project iri and branch name for package</ModalTitle>
+            <ModalTitle>{t("set-projectIRI-and-branch-dialog.title")}</ModalTitle>
           </ModalHeader>
-          <InputComponent idPrefix={idPrefix} idSuffix={0} label="Set branch" input={branch} setInput={setBranch} />
-          <InputComponent idPrefix={idPrefix} idSuffix={1} label="Set project iri" input={projectIri} setInput={setProjectIri} />
+          <InputComponent idPrefix={idPrefix} idSuffix={0} label={t("set-projectIRI-and-branch-dialog.branch-label")} input={branch} setInput={setBranch} />
+          <InputComponent idPrefix={idPrefix} idSuffix={1} label={t("set-projectIRI-and-branch-dialog.projectIri-label")} input={projectIri} setInput={setProjectIri} />
           <ModalFooter>
-            <Button variant="outline" onClick={handleDialogCloseWithoutSave}>Close</Button>
-            <Button className="hover:bg-purple-700" onClick={handleDialogSave}>Confirm</Button>
+            <Button variant="outline" onClick={handleDialogCloseWithoutSave}>{t("close")}</Button>
+            <Button className="hover:bg-purple-700" onClick={handleDialogSave}>{t("confirm")}</Button>
           </ModalFooter>
         </ModalContent>
     </Modal>
