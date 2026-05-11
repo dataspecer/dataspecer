@@ -5,6 +5,7 @@ import { BetterModalProps } from "@/lib/better-modal";
 import { ResourceWithIris } from "@/package";
 import { MANAGER_PACKAGE_ROOTS } from "@dataspecer/git";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 
 type PackageListDialogProps = {
@@ -23,6 +24,7 @@ type PackageListDialogProps = {
  * General component, the rendering depends on the arguments. It is currently used to create the dialog for merge, where user chooses the merge from packages.
  */
 export const PackageListDialog = ({ modalTitle, modalDescription, resources, comboboxEntryTextGetter, noEntriesDialogText, resourcesFilter, isOpen, resolve }: PackageListDialogProps) => {
+  const { t } = useTranslation();
   const [chosenPackage, setChosenPackage] = useState<ResourceWithIris | null>(null);
 
   const comboBoxEntries = useMemo(() => {
@@ -77,8 +79,8 @@ export const PackageListDialog = ({ modalTitle, modalDescription, resources, com
           }
 
           <ModalFooter>
-            <Button variant="outline" onClick={() => resolve(null)}>Close</Button>
-            {comboBoxEntries.length > 0 && <Button className="hover:bg-purple-700" onClick={closeWithChosen}>Confirm</Button>}
+            <Button variant="outline" onClick={() => resolve(null)}>{t("close")}</Button>
+            {comboBoxEntries.length > 0 && <Button className="hover:bg-purple-700" onClick={closeWithChosen}>{t("confirm")}</Button>}
           </ModalFooter>
         </ModalContent>
     </Modal>

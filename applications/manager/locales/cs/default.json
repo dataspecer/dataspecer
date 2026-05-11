@@ -610,5 +610,61 @@
     "input-placeholder": "Privátní SSH klíč",
     "success-toast": "SSH klíč byl úspěšně uložen na server",
     "error-toast": "Nepodařilo se nastavit privátní SSH klíč, více informací najdete v konzoli."
+  },
+  "set-git-remote-configuration-dialog": {
+    "title": "Nastavit novou Git konfiguraci",
+    "description": "Uvedené hodnoty jsou převzaty z Git konfigurace.",
+    "tooltip": {
+      "set-config-separately": {
+        "line.one": "Změna těchto hodnot po vytvoření repozitáře může způsobit problémy. Tato Git integrace není řádně otestovaná.",
+        "line.two": "Změna publikační větve také očekává, že upravíte nastavení GitHubu (resp. poskytovatele Git) tak, aby sledoval správnou větev."
+      }
+    },
+    "error": {
+      "save-failed": "Nepodařilo se uložit novou Git konfiguraci na backend"
+    }
+  },
+  "delete-git-repo-dialog": {
+    "title": "Smazat Git repozitář",
+    "description": {
+      "line.one": {
+        "part-one": "Chystáte se ",
+        "part-two": "SMAZAT",
+        "part-three": " vzdálený Git repozitář. Jste si jistý?"
+      },
+      "line.two": "URL Git repozitáře:"
+    },
+    "button": {
+      "delete": "Smazat"
+    }
+  },
+  "outside-changes-to-diff-editor-action-dialog": {
+    "title": "Zjištěny změny mimo editor",
+    "description": {
+      "up-to-date": "Úpravy byly provedeny v jiné instanci diff editoru.",
+      "not-up-to-date": "Úpravy byly provedeny v jiné komponentě Dataspeceru a nikoli jiné instance diff editoru."
+    },
+    "working-version-modified-at": "Pracovní verze upravena v čase",
+    "new-version-modified-at": "Nová verze upravena v čase",
+    "info": {
+      "line.one": {
+        "part-one": "Zrušit",
+        "part-two": " zavře dialog, ale ponechá diff editor beze změn."
+      },
+      "line.two": {
+        "part-one": "Zahodit změny",
+        "part-two": " zahodí vaše změny a resetuje editor."
+      },
+      "line.three": {
+        "part-one": "Uložit změny",
+        "part-two": " uloží vaše změny na backend."
+      }
+    },
+    "button": {
+      "cancel": "Zrušit",
+      "discard-changes": "Zahodit změny",
+      "save-changes": "Uložit změny"
+    },
+    "save-changes-tooltip-text": "Uloženy jsou pouze soubory načtené v diff editoru. To jsou ty, kterých jste se dotkl při práci v diff editoru. Lze je identifikovat podle ikony 📥."
   }
 }

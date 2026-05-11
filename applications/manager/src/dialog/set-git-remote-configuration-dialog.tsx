@@ -54,7 +54,7 @@ export function SetGitRemoteConfigurationDialog({ inputPackage, isOpen, resolve 
           toast.success(t("successfully saved"));
         }
         catch (error) {
-          toast.error("Failed storing the new Git configuration to backend", { "richColors": true });
+          toast.error(t("set-git-remote-configuration-dialog.error.save-failed"), { "richColors": true });
           throw error;
         }
       };
@@ -86,19 +86,19 @@ export function SetGitRemoteConfigurationDialog({ inputPackage, isOpen, resolve 
       <ModalContent className="sm:max-w-[700px]!">
         <ModalHeader>
           <ModalTitle>
-            Set new Git configuration
+            {t("set-git-remote-configuration-dialog.title")}
             <PopOverGitGeneralComponent><SetConfigSeparatelyTooltip/></PopOverGitGeneralComponent>
           </ModalTitle>
           <ModalDescription>
-            The listed values are taken from the Git configuration.
+            {t("set-git-remote-configuration-dialog.description")}
           </ModalDescription>
         </ModalHeader>
         <ModalBody>
           <SetGitRemoteConfigurationComponent configuration={gitRemoteConfiguration} setGitConfigurationReactState={setGitRemoteConfiguration} requiredFieldsMap={requiredGitConfigFieldsMap}/>
         </ModalBody>
         <ModalFooter className="flex flex-row">
-          <Button variant="outline" onClick={() => resolve(null)}>Cancel</Button>
-          <Button variant="default" className="hover:bg-purple-700" onClick={tryCloseWithSuccess}>Confirm</Button>
+          <Button variant="outline" onClick={() => resolve(null)}>{t("cancel")}</Button>
+          <Button variant="default" className="hover:bg-purple-700" onClick={tryCloseWithSuccess}>{t("confirm")}</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
@@ -150,9 +150,10 @@ function PublicationBranchTooltip() {
 }
 
 function SetConfigSeparatelyTooltip() {
+  const { t } = useTranslation();
   return <div>
-    Currently changing these values after the repository was already created may cause issues. It is not tested properly.
+    {t("set-git-remote-configuration-dialog.tooltip.set-config-separately.line.one")}
     <br/>
-    Also changing the publication branch expects to you to change the GitHub (respectively Git provider) settings to track the correct branch.
+    {t("set-git-remote-configuration-dialog.tooltip.set-config-separately.line.two")}
   </div>;
 }

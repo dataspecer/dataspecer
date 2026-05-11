@@ -22,16 +22,16 @@ export const DeleteGitRepoDialog = ({ iri, gitUrl, isOpen, resolve }: DeleteGitR
     <Modal open={isOpen} onClose={() => resolve(null)}>
         <ModalContent>
           <ModalHeader>
-            <ModalTitle>Delete Git repository</ModalTitle>
+            <ModalTitle>{t("delete-git-repo-dialog.title")}</ModalTitle>
             <ModalDescription>
-              <p>You are about to <strong>DELETE</strong> remote Git repository. Are you sure?</p>
+              <p>{t("delete-git-repo-dialog.description.line.one.part-one")}<strong>{t("delete-git-repo-dialog.description.line.one.part-two")}</strong>{t("delete-git-repo-dialog.description.line.one.part-three")}</p>
               <br/>
-              <p>The Git repository URL: <a className="underline text-blue-600 hover:text-blue-800 visited:text-purple-600" href={gitUrl}>{gitUrl}</a></p>
+              <p>{t("delete-git-repo-dialog.description.line.two")} <a className="underline text-blue-600 hover:text-blue-800 visited:text-purple-600" href={gitUrl}>{gitUrl}</a></p>
             </ModalDescription>
           </ModalHeader>
           <ModalFooter>
-            <Button variant="outline" onClick={() => resolve(null)}>Close</Button>
-            <Button variant="destructive" onClick={() => removeAndClose()}>Delete</Button>
+            <Button variant="outline" onClick={() => resolve(null)}>{t("close")}</Button>
+            <Button variant="destructive" onClick={() => removeAndClose()}>{t("delete-git-repo-dialog.button.delete")}</Button>
           </ModalFooter>
         </ModalContent>
     </Modal>

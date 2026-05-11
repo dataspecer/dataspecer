@@ -3,6 +3,7 @@ import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalT
 import { Button } from "@/components/ui/button";
 import { MergeState } from "@dataspecer/git";
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
+import { useTranslation } from "react-i18next";
 
 export enum DiffEditorOutsideChangeChosenAction {
   Nothing,
@@ -23,6 +24,7 @@ type ChooseActionForDiffEditorUnplannedChangeProps = {
  *  different instance of diff editor or other component of Dataspecer
  */
 export const ChooseActionForDiffEditorUnplannedChange = ({ oldMergeState, newMergeState, isOpen, resolve }: ChooseActionForDiffEditorUnplannedChangeProps) => {
+  const { t } = useTranslation();
   const handleReturn = (chosenResult: DiffEditorOutsideChangeChosenAction) => {
     resolve({ result: chosenResult });
   };
@@ -31,38 +33,39 @@ export const ChooseActionForDiffEditorUnplannedChange = ({ oldMergeState, newMer
     <Modal open={isOpen} onClose={() => resolve({ result: DiffEditorOutsideChangeChosenAction.Nothing })}>
         <ModalContent>
           <ModalHeader>
-            <ModalTitle>Changes detected outside the editor</ModalTitle>
-            <ModalDescription>{newMergeState.isUpToDate ? <p>The modification came from another diff editor instance.</p> : <p>The modification came from another component of Dataspecer and not another instance of diff editor.</p>}</ModalDescription>
+            <ModalTitle>{t("outside-changes-to-diff-editor-action-dialog.title")}</ModalTitle>
+            <ModalDescription>{newMergeState.isUpToDate ? <p>{t("outside-changes-to-diff-editor-action-dialog.description.up-to-date")}</p> : <p>{t("outside-changes-to-diff-editor-action-dialog.description.not-up-to-date")}</p>}</ModalDescription>
           </ModalHeader>
           <div>
-            Working version modified at <strong>{new Date(oldMergeState.modifiedDiffTreeAt).toLocaleString()}</strong>
+            {t("outside-changes-to-diff-editor-action-dialog.working-version-modified-at")} <strong>{new Date(oldMergeState.modifiedDiffTreeAt).toLocaleString()}</strong>
             <br/>
-            New version modified at <strong>{new Date(newMergeState.modifiedDiffTreeAt).toLocaleString()}</strong>
+            {t("outside-changes-to-diff-editor-action-dialog.new-version-modified-at")} <strong>{new Date(newMergeState.modifiedDiffTreeAt).toLocaleString()}</strong>
             <br/>
             <br/>
-            <strong>Cancel</strong> closes the dialog, but keeps the diff editor unchanged.
+            <strong>{t("outside-changes-to-diff-editor-action-dialog.info.line.one.part-one")}</strong>{t("outside-changes-to-diff-editor-action-dialog.info.line.one.part-two")}
             <br/>
-            <strong>Discard changes</strong> discards your changes and resets the editor.
+            <strong>{t("outside-changes-to-diff-editor-action-dialog.info.line.two.part-one")}</strong>{t("outside-changes-to-diff-editor-action-dialog.info.line.two.part-two")}
             <br/>
-            <div className="flex flex-1 flex-row"><strong>Save changes</strong>&nbsp;saves your changes to backend.<SaveChangesTooltip/></div>
+            <div className="flex flex-1 flex-row"><strong>{t("outside-changes-to-diff-editor-action-dialog.info.line.three.part-one")}</strong>&nbsp;{t("outside-changes-to-diff-editor-action-dialog.info.line.three.part-two")}<SaveChangesTooltip/></div>
           </div>
 
           <ModalFooter>
-            <Button variant="outline" onClick={() => handleReturn(DiffEditorOutsideChangeChosenAction.Nothing)}>Cancel</Button>
-            <Button variant="destructive" onClick={() => handleReturn(DiffEditorOutsideChangeChosenAction.Reload)}>Discard changes</Button>
-            <Button variant="destructive" onClick={() => handleReturn(DiffEditorOutsideChangeChosenAction.Continue)}>Save changes</Button>
+            <Button variant="outline" onClick={() => handleReturn(DiffEditorOutsideChangeChosenAction.Nothing)}>{t("outside-changes-to-diff-editor-action-dialog.button.cancel")}</Button>
+            <Button variant="destructive" onClick={() => handleReturn(DiffEditorOutsideChangeChosenAction.Reload)}>{t("outside-changes-to-diff-editor-action-dialog.button.discard-changes")}</Button>
+            <Button variant="destructive" onClick={() => handleReturn(DiffEditorOutsideChangeChosenAction.Continue)}>{t("outside-changes-to-diff-editor-action-dialog.button.save-changes")}</Button>
           </ModalFooter>
         </ModalContent>
     </Modal>
   );
 }
 
-export const saveChangesTooltipText: string = "Only the files loaded in diff editor are saved. That is those which you touched while working in diff editor. They can be identified by the 📥 icon next to them.";
+export const saveChangesTooltipText: string = "outside-changes-to-diff-editor-action-dialog.save-changes-tooltip-text";
 
 function SaveChangesTooltip() {
+  const { t } = useTranslation();
   return <div>
     <PopOverGitGeneralComponent>
-      <div>{saveChangesTooltipText}</div>
+      <div>{t(saveChangesTooltipText)}</div>
     </PopOverGitGeneralComponent>
   </div>
 }

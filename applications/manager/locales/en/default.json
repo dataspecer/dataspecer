@@ -615,5 +615,61 @@
     "input-placeholder": "Private SSH key",
     "success-toast": "SSH key is successfully stored on server",
     "error-toast": "Failed to set private SSH key, check console for more info."
+  },
+  "set-git-remote-configuration-dialog": {
+    "title": "Set new Git configuration",
+    "description": "The listed values are taken from the Git configuration.",
+    "tooltip": {
+      "set-config-separately": {
+        "line.one": "Currently changing these values after the repository was already created may cause issues. This part of Git integration is not tested properly.",
+        "line.two": "Also changing the publication branch expects you to change the GitHub (respectively Git provider) settings to track the correct branch."
+      }
+    },
+    "error": {
+      "save-failed": "Failed storing the new Git configuration to backend"
+    }
+  },
+  "delete-git-repo-dialog": {
+    "title": "Delete Git repository",
+    "description": {
+      "line.one": {
+        "part-one": "You are about to ",
+        "part-two": "DELETE",
+        "part-three": " remote Git repository. Are you sure?"
+      },
+      "line.two": "The Git repository URL:"
+    },
+    "button": {
+      "delete": "Delete"
+    }
+  },
+  "outside-changes-to-diff-editor-action-dialog": {
+    "title": "Changes detected outside the editor",
+    "description": {
+      "up-to-date": "The modification came from another diff editor instance.",
+      "not-up-to-date": "The modification came from another component of Dataspecer and not another instance of diff editor."
+    },
+    "working-version-modified-at": "Working version modified at",
+    "new-version-modified-at": "New version modified at",
+    "info": {
+      "line.one": {
+        "part-one": "Cancel",
+        "part-two": " closes the dialog, but keeps the diff editor unchanged."
+      },
+      "line.two": {
+        "part-one": "Discard changes",
+        "part-two": " discards your changes and resets the editor."
+      },
+      "line.three": {
+        "part-one": "Save changes",
+        "part-two": " saves your changes to backend."
+      }
+    },
+    "button": {
+      "cancel": "Cancel",
+      "discard-changes": "Discard changes",
+      "save-changes": "Save changes"
+    },
+    "save-changes-tooltip-text": "Only the files loaded in diff editor are saved. That is those which you touched while working in diff editor. They can be identified by the 📥 icon next to them."
   }
 }
