@@ -93,39 +93,39 @@ export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitH
       <ModalContent className="md:min-w-[650px]">
         <ModalHeader>
           <ModalTitle>
-            <div className="flex flex-1 flex-row">Perform action on Git commit</div>
+            <div className="flex flex-1 flex-row">{t("git-history-visualization-commit-actions.title")}</div>
           </ModalTitle>
           {isPerformingAction && <Loader className="mr-2 h-4 w-4 animate-spin" /> }
           <ModalDescription className="overflow-x-auto">
             <br/>
             <div>
-              <strong>IRI:</strong> {examinedPackage.iri}
+              <strong>{t("git-history-visualization-commit-actions.description.iri")}:</strong> {examinedPackage.iri}
             </div>
-            {lng(examinedPackage.userMetadata.label) === undefined ? null : <div><strong>Label:</strong> {lng(examinedPackage.userMetadata.label)}</div>}
+            {lng(examinedPackage.userMetadata.label) === undefined ? null : <div><strong>{t("git-history-visualization-commit-actions.description.label")}:</strong> {lng(examinedPackage.userMetadata.label)}</div>}
             <div>
-              <strong>Commit Hash:</strong> {commitHash.substring(0, 10)}
+              <strong>{t("git-history-visualization-commit-actions.description.commit-hash")}:</strong> {commitHash.substring(0, 10)}
             </div>
             {branch === null ? null :
               <div>
-                <strong>Branch:</strong> {branch}
+                <strong>{t("git-history-visualization-commit-actions.description.branch")}:</strong> {branch}
               </div>
             }
             <br/>
             {branchAlreadyExistsInDS ?
               <div className="flex flex-1 flex-row">
-                <p><strong>The Branch is already tracked in Dataspecer</strong></p>
+                <p><strong>{t("git-history-visualization-commit-actions.description.branch-already-tracked")}</strong></p>
                   <PopOverGitGeneralComponent><GitHistoryDialogInfoTooltip/></PopOverGitGeneralComponent>
               </div> :
               null
             }
-            {commitAlreadyExistsInDS ? "The commit already exists inside DS. However, you can import it again." : null}
-            Closing the dialog brings back the Git graph.
+            {commitAlreadyExistsInDS ? t("git-history-visualization-commit-actions.description.commit-already-exists") : null}
+            {t("git-history-visualization-commit-actions.description.closing")}
           </ModalDescription>
         </ModalHeader>
         <ModalFooter>
-          <Button variant="outline" className="border bg-blue-100 border-blue-500 hover:bg-blue-500 hover:text-white transition" onClick={handleImportGitCommitToDS} disabled={isPerformingAction}>Import commit as new Dataspec</Button>
-          {branch !== null && !branchAlreadyExistsInDS && <Button className="border bg-green-100 border-green-500 hover:bg-green-500 hover:text-white transition" variant="outline" onClick={handleImportGitBranchToDS} disabled={isPerformingAction}>Import branch as new Dataspec</Button>}
-          <Button variant="outline" onClick={handleRedirect} disabled={isPerformingAction}>View in {gitProvider.getProviderName()}</Button>
+          <Button variant="outline" className="border bg-blue-100 border-blue-500 hover:bg-blue-500 hover:text-white transition" onClick={handleImportGitCommitToDS} disabled={isPerformingAction}>{t("git-history-visualization-commit-actions.import-commit")}</Button>
+          {branch !== null && !branchAlreadyExistsInDS && <Button className="border bg-green-100 border-green-500 hover:bg-green-500 hover:text-white transition" variant="outline" onClick={handleImportGitBranchToDS} disabled={isPerformingAction}>{t("git-history-visualization-commit-actions.import-branch")}</Button>}
+          <Button variant="outline" onClick={handleRedirect} disabled={isPerformingAction}>{t("git-history-visualization-commit-actions.view-in", { provider: gitProvider.getProviderName() })}</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
@@ -133,10 +133,11 @@ export const GitHistoryCommitActionsDialog = ({ examinedPackage, branch, commitH
 }
 
 
-function GitHistoryDialogInfoTooltip() {
+const GitHistoryDialogInfoTooltip = () => {
+  const { t } = useTranslation();
   return <div>
-    <p>If the <strong>branch already exists</strong> inside Dataspecer, it is forbidden (for your own good) to have two packages tracking the same remote branch in Dataspecer.
+    <p>{t("git-history-visualization-commit-actions.tooltip.branch-exists.line.1.part.1")}<strong>{t("git-history-visualization-commit-actions.tooltip.branch-exists.line.1.part.2")}</strong>{t("git-history-visualization-commit-actions.tooltip.branch-exists.line.1.part.3")}
     <br/>
-    You can <strong>import static commit</strong> and then turn the commit into branch with <strong>new</strong> name. Or just click on <strong>Create branch</strong> in the Git menu.</p>
+    {t("git-history-visualization-commit-actions.tooltip.branch-exists.line.2.part.1")}<strong>{t("git-history-visualization-commit-actions.tooltip.branch-exists.line.2.part.2")}</strong>{t("git-history-visualization-commit-actions.tooltip.branch-exists.line.2.part.3")}<strong>{t("git-history-visualization-commit-actions.tooltip.branch-exists.line.2.part.4")}</strong>{t("git-history-visualization-commit-actions.tooltip.branch-exists.line.2.part.5")}<strong>{t("git-history-visualization-commit-actions.tooltip.branch-exists.line.2.part.6")}</strong>{t("git-history-visualization-commit-actions.tooltip.branch-exists.line.2.part.7")}</p>
   </div>;
-}
+};

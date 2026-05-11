@@ -671,5 +671,69 @@
       "save-changes": "Save changes"
     },
     "save-changes-tooltip-text": "Only the files loaded in diff editor are saved. That is those which you touched while working in diff editor. They can be identified by the 📥 icon next to them."
+  },
+  "git-history-visualization": {
+    "title": "Project history in Git",
+    "description": {
+      "branch-tracked": " = Branch is tracked in DS.",
+      "branch-not-tracked": " = Branch not tracked in DS.",
+      "commit": {
+        "part.1": " = The commit exists in DS and it tracks commit, similarly ",
+        "part.2": "tracks head of branch. Click on the ⚪/⬜ to perform further actions. "
+      }
+    },
+    "error": "Fetch error, check console for more info"
+  },
+  "git-history-visualization-commit-actions": {
+    "title": "Perform action on Git commit",
+    "description": {
+      "closing": "Closing the dialog brings back the Git graph.",
+      "iri": "IRI:",
+      "label": "Label:",
+      "commit-hash": "Commit Hash:",
+      "branch": "Branch:",
+      "branch-already-tracked": "The Branch is already tracked in Dataspecer",
+      "commit-already-exists": "The commit already exists inside DS. However, you can import it again."
+    },
+    "import-commit": "Import commit as new Dataspec",
+    "import-branch": "Import branch as new Dataspec",
+    "view-in": "View in {{provider}}",
+    "tooltip": {
+      "branch-exists": {
+        "line.1": {
+          "part.1": "If the ",
+          "part.2": "branch already exists",
+          "part.3": " inside Dataspecer, it is forbidden (for your own good) to have two packages tracking the same remote branch in Dataspecer."
+        },
+        "line.2": {
+          "part.1": "You can ",
+          "part.2": "import static commit",
+          "part.3": " and then turn the commit into branch with ",
+          "part.4": "new",
+          "part.5": " name. Or just click on ",
+          "part.6": "Create branch",
+          "part.7": " in the Git menu."
+        }
+      }
+    }
+  },
+  "list-git-issues": {
+    "title": "List of opened issues",
+    "description": {
+      "line.1": "You can click on the issues and get redirected to them.",
+      "line.2": "You can also click on the 'Create new issue' to get redirected on the corresponding page."
+    },
+    "headers": {
+      "title": "Title",
+      "created-at": "Created at",
+      "last-activity-at": "Last activity at",
+      "author": "Author",
+      "labels": "labels"
+    },
+    "pagination": {
+      "issues-on-page": "Issues on page",
+      "total-issue-count": "Total issue count"
+    },
+    "create-new-issue": "Create new issue"
   }
 }

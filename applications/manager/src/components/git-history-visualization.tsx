@@ -17,6 +17,7 @@ import branchTextImage from "../graphics/git-visualization-branch-text.png";
 import notTrackedBranchTextImage from "../graphics/git-visualization-branch-text-not-tracked.png";
 import branchBubbleImage from "../graphics/git-visualization-branch-bubble.png";
 import commitBubbleImage from "../graphics/git-visualization-commit-bubble.png";
+import { useTranslation } from "react-i18next";
 
 type DSPackageInProjectVisualizationData = {
   iri: string;
@@ -166,6 +167,7 @@ export const gitHistoryVisualizationOnClickHandler = async (
  * The main component that handles the visualization of the Git history graph.
  */
 export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allResources }: GitHistoryVisualizationProps) => {
+  const { t } = useTranslation();
   // For some reason I have to put the gitgraph component into component stored in variable,
   // if I put it inside the JSX tree in this component, it does not update on react change
   const [gitGraphElement, setGitGraphElement] = useState<React.ReactNode | null>(null);
@@ -226,7 +228,7 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
                     getGitRemoteConfigurationModelFromPackage(rootPackageFetchedContent)
                       .then(fetchedGitRemoteConfiguration => {
                         const gitGraphElement = createGitGraph(
-                          openModal, examinedPackage, gitGraphTemplate, fetchedGitRemoteConfiguration?.publicationBranch, convertedCommits,
+                         openModal, examinedPackage, gitGraphTemplate, fetchedGitRemoteConfiguration?.publicationBranch, convertedCommits,
                           dsPackagesInProjectForBranches, dsPackagesInProjectForNonBranches,
                           dsPackagesInProjectForAll, setShouldHideDialog, () => resolve(null));
                         setGitGraphElement(gitGraphElement);
@@ -237,7 +239,7 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
         })
         .catch((error) => {
           setIsLoading(false);
-          alert("Fetch error, check console for more info");
+          alert(t("git-history-visualization.error"));
           console.error(`Error when fetching Git history for ${examinedPackage.iri}. The error: ${error}`);
         });
     }
@@ -264,14 +266,14 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
     <Modal open={!shouldHideDialog && isOpen} onClose={() => resolve(null)}>
       <ModalContent className={(shouldHideDialog ? "hidden" : "max-w-[90%]!") + classNameSizeBasedOnCommitCount}>
         <ModalHeader>
-          <ModalTitle>Project history in Git</ModalTitle>
+          <ModalTitle>{t("git-history-visualization.title")}</ModalTitle>
           <ModalDescription>
             {
               isLoadingImages ? null :
                 <ul>
-                  <li className="flex flex-1 flex-row"><img src={branchTextImage} alt="Branch text image" loading="eager"/> <p className="pt-2"> = Branch is tracked in DS.</p></li>
-                  <li className="flex flex-1 flex-row"><img src={notTrackedBranchTextImage} alt="Branch text image" loading="eager"/> <p className="pt-2"> = Branch not tracked in DS.</p></li>
-                  <li className="flex flex-1 flex-row"><img src={commitBubbleImage} alt="Commit bubble image" loading="eager"/> <p className="pt-2"> = The commit exists in DS and it tracks commit, similarly </p><img src={branchBubbleImage} alt="Branch bubble image" loading="eager"/> <p className="pt-2">tracks head of branch. Click on the ⚪/⬜ to perform further actions. </p></li>
+                  <li className="flex flex-1 flex-row"><img src={branchTextImage} alt="Branch text image" loading="eager"/> <p className="pt-2">{t("git-history-visualization.description.branch-tracked")}</p></li>
+                  <li className="flex flex-1 flex-row"><img src={notTrackedBranchTextImage} alt="Branch text image" loading="eager"/> <p className="pt-2">{t("git-history-visualization.description.branch-not-tracked")}</p></li>
+                  <li className="flex flex-1 flex-row"><img src={commitBubbleImage} alt="Commit bubble image" loading="eager"/> <p className="pt-2">{t("git-history-visualization.description.commit.part.1")}</p><img src={branchBubbleImage} alt="Branch bubble image" loading="eager"/> <p className="pt-2">{t("git-history-visualization.description.commit.part.2")}</p></li>
                 </ul>
             }
           <hr className="border-t-3 p-2 border-black"/>
@@ -284,7 +286,7 @@ export const GitHistoryVisualization = ({ isOpen, resolve, examinedPackage, allR
           }
         </ModalBody>
         <ModalFooter className="flex flex-row">
-          <Button variant="outline" onClick={() => resolve(null)}>Close</Button>
+          <Button variant="outline" onClick={() => resolve(null)}>{t("close")}</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>

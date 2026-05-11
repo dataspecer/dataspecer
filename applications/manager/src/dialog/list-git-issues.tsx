@@ -8,6 +8,7 @@ import { GitProviderFactory } from "@dataspecer/git/git-providers";
 import { Loader } from "lucide-react";
 import { useMemo } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { createNewTabAndOpen } from "./advanced-sign-in";
 
 
@@ -24,6 +25,7 @@ type GitIssuesListDialogProps = {
  *   Thereofre, the code duplication is fine. Well it is not that much of a code duplicaiton but rather sharing structure.
  */
 export function GitIssuesListDialog({ gitUrl, isOpen, resolve }: GitIssuesListDialogProps) {
+  const { t } = useTranslation();
   // Uses the PaginationComponent from the hook to render the pagination.
   const {
     pageOnFrontend, trackedPageOnBackend, setIsLastPageBasedOnServerResponse, setTrackedPageOnBackend,
@@ -87,33 +89,33 @@ export function GitIssuesListDialog({ gitUrl, isOpen, resolve }: GitIssuesListDi
     <Modal open={isOpen} onClose={() => resolve(null)}>
       <ModalContent className={"min-w-[80%] overflow-x-auto overflow-y-auto max-h-[90%]"}>
         <ModalHeader>
-          <ModalTitle>List of opened issues</ModalTitle>
+          <ModalTitle>{t("list-git-issues.title")}</ModalTitle>
           <ModalDescription>
-            You can click on the issues and get redirected to them.
+            {t("list-git-issues.description.line.1")}
             <br/>
-            You can also click on the 'Create new issue' to get redirected on the corresponding page.
+            {t("list-git-issues.description.line.2")}
           </ModalDescription>
           {
             cannotUseGitIssues ? <Loader className="mr-2 mt-1 h-4 w-4 animate-spin" /> :
             <div className=" w-full">
               <div className="grid grid-cols-[4fr_2fr_2fr_2fr_4fr] divide-x divide-y border-gray-300 divide-gray-300 ml-4 pt-6 w-full">
-                <div className="flex items-center justify-center border-gray-300">Title</div>
-                <div className="flex items-center justify-center">Created at</div>
-                <div className="flex items-center justify-center">Last activity at</div>
-                <div className="flex items-center justify-center">Author</div>
-                <div className="flex items-center justify-center border-gray-300 border-b">labels</div>
+                <div className="flex items-center justify-center border-gray-300">{t("list-git-issues.headers.title")}</div>
+                <div className="flex items-center justify-center">{t("list-git-issues.headers.created-at")}</div>
+                <div className="flex items-center justify-center">{t("list-git-issues.headers.last-activity-at")}</div>
+                <div className="flex items-center justify-center">{t("list-git-issues.headers.author")}</div>
+                <div className="flex items-center justify-center border-gray-300 border-b">{t("list-git-issues.headers.labels")}</div>
               </div>
               {gitIssues?.map(gitIssue => <GitIssueComponent gitIssueInfo={gitIssue}/>) ?? null}
             </div>
           }
           {
             cannotUseGitIssues ? null : <PaginationComponent items={gitIssues!} itemsOnPageScalingFactor={1} isPageNumberingExact={false}
-                                                             itemCountOnPageText="Issues on page" totalItemCountText="Total issue count"/>
+                                                             itemCountOnPageText={t("list-git-issues.pagination.issues-on-page")} totalItemCountText={t("list-git-issues.pagination.total-issue-count")}/>
           }
         </ModalHeader>
         <ModalFooter>
-          <Button variant="outline" onClick={() => resolve(null)}>Close</Button>
-          <Button variant="default" onClick={() => { createNewTabAndOpen(gitProvider.getCreateNewIssueUrl(gitUrl)); resolve(null); }}>Create new issue</Button>
+          <Button variant="outline" onClick={() => resolve(null)}>{t("close")}</Button>
+          <Button variant="default" onClick={() => { createNewTabAndOpen(gitProvider.getCreateNewIssueUrl(gitUrl)); resolve(null); }}>{t("list-git-issues.create-new-issue")}</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>

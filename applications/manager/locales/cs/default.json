@@ -666,5 +666,69 @@
       "save-changes": "Uložit změny"
     },
     "save-changes-tooltip-text": "Uloženy jsou pouze soubory načtené v diff editoru. To jsou ty, kterých jste se dotkl při práci v diff editoru. Lze je identifikovat podle ikony 📥."
+  },
+  "git-history-visualization": {
+    "title": "Historie projektu v Gitu",
+    "description": {
+      "branch-tracked": " = Větev je sledována v DS.",
+      "branch-not-tracked": " = Větev není sledována v DS.",
+      "commit": {
+        "part.1": " = Commit existuje v DS a sleduje commit, podobně ",
+        "part.2": "sleduje hlavu větve. Klikněte na ⚪/⬜ pro provedení dalších akcí. "
+      }
+    },
+    "error": "Chyba načítání, podívejte se do konzole pro více informací"
+  },
+  "git-history-visualization-commit-actions": {
+    "title": "Provést akci na Git commitu",
+    "description": {
+      "closing": "Zavření dialogu vrátí Git graf.",
+      "iri": "IRI:",
+      "label": "Štítek:",
+      "commit-hash": "Hash commitu:",
+      "branch": "Větev:",
+      "branch-already-tracked": "Větev je již sledována v Dataspeceru",
+      "commit-already-exists": "Commit již existuje v DS. Můžete jej však importovat znovu."
+    },
+    "import-commit": "Importovat commit jako nový Dataspec",
+    "import-branch": "Importovat větev jako nový Dataspec",
+    "view-in": "Zobrazit v {{provider}}",
+    "tooltip": {
+      "branch-exists": {
+        "line.1": {
+          "part.1": "Pokud ",
+          "part.2": "větev již existuje",
+          "part.3": " v Dataspeceru, tak nelze importovat. V Dataspeceru je zakázáno (pro vaše dobro) mít dva balíčky sledující stejnou vzdálenou větev v Dataspeceru."
+        },
+        "line.2": {
+          "part.1": "Můžete ",
+          "part.2": "importovat statický commit",
+          "part.3": " a poté změnit commit na větev s ",
+          "part.4": "novým",
+          "part.5": " názvem. Nebo klikněte na ",
+          "part.6": "Vytvořit větev",
+          "part.7": " v Git menu."
+        }
+      }
+    }
+  },
+  "list-git-issues": {
+    "title": "Seznam otevřených issues",
+    "description": {
+      "line.1": "Kliknutím na issue na něho budete přesměrování.",
+      "line.2": "Můžete také kliknout na 'Vytvořit nové issue' pro přesměrování na odpovídající stránku."
+    },
+    "headers": {
+      "title": "Název",
+      "created-at": "Vytvořeno",
+      "last-activity-at": "Poslední aktivita",
+      "author": "Autor",
+      "labels": "štítky"
+    },
+    "pagination": {
+      "issues-on-page": "Počet issues na stránce",
+      "total-issue-count": "Celkový počet issues"
+    },
+    "create-new-issue": "Vytvořit nové issue"
   }
 }
