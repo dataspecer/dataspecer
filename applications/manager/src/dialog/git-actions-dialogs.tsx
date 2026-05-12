@@ -173,7 +173,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
       type === "commit" ?
         "Default commit message" :
         type === "merge-commit" ?
-          "Custom merge commit message" :
+          "Default merge commit message" :
           ""
     );
   const [commitMessage, setCommitMessage] = useState<string>(defaultCommitMessageExplicit);
@@ -225,7 +225,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
 
         if (!userOrganizations.isLastPage) {
           // We should not really alert in production, but this is such a hardcore case that we will.
-          alert("The user is member of more than limit number of organizations (first implmementation had hardcoded limit of 1000)");
+          alert(t("git.dialog.alert.too-many-user-organizations"));
         }
         return userOrganizations.organizations.map(org => {
           const suggestion: InputSuggestionsType = {
@@ -257,7 +257,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
 
         if (!botOrganizations.isLastPage) {
           // We should not really alert in production, but this is such a hardcore case that we will.
-          alert("The bot is member of more than limit number of organizations (first implmementation had hardcoded limit of 1000)");
+          alert(t("git.dialog.alert.too-many-bot-organizations"));
         }
         return botOrganizations.organizations.map(org => {
           const suggestion: InputSuggestionsType = {
@@ -372,7 +372,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
             });
           }
           catch (error) {
-            toast.error("Failed saving the new Git configuration to Dataspecer backend", { "richColors": true });
+            toast.error(t("git.dialog.error.failed-saving-configuration"), { "richColors": true });
             throw error;
           }
         };
@@ -690,7 +690,7 @@ export const mergeCommitToGitDialogOnClickHandler = async (
 ) => {
   let defaultCommitMessage: string;
   if (mergeState.commitMessage === "") {
-    defaultCommitMessage = "Merge commit message";
+    defaultCommitMessage = "Default merge commit message";
   }
   else {
     defaultCommitMessage = mergeState.commitMessage;

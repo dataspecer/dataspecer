@@ -41,6 +41,7 @@ type MergeStateFinalizerAnswerDialogProps = {
  * All of the children dialogs are similar - they have the main dialog and on failure show another one, where user chooses the action with which should the error be handled.
  */
 export const MergeStateFinalizerDialog = ({ mergeState, openModal, isOpen, resolve }: MergeStateFinalizerProps) => {
+  const { t } = useTranslation();
   const [isWaitingForAnswer, setIsWaitingForAnswer] = useState<boolean>(false);
   const [shouldRenderAnswerDialog, setShouldRenderAnswerDialog] = useState<boolean>(false);
   const [secondsPassed, setSecondsPassed] = useState<number>(0);
@@ -69,11 +70,11 @@ export const MergeStateFinalizerDialog = ({ mergeState, openModal, isOpen, resol
     content = MergeStateFinalizerForMerge({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, setIsWaitingForAnswer, secondsPassed, setSecondsAtStartofMerge, openModal, resolve });
     waitingContent = <div>
       <Stepper currentStep={1}/>
-      <p>Validating merge state against Git remote.</p>
+      <p>{t("merge-state.finalizer.waiting.validation")}</p>
       <br/>
-      <p>Usually takes around {GIT_MERGE_VALIDATION_WAIT_TIME.lowerBound}-{GIT_MERGE_VALIDATION_WAIT_TIME.upperBound} seconds.</p>
+      <p>{t("merge-state.finalizer.waiting.validation-duration", { lower: GIT_MERGE_VALIDATION_WAIT_TIME.lowerBound, upper: GIT_MERGE_VALIDATION_WAIT_TIME.upperBound })}</p>
       <div className="flex">
-        <Loader className="mr-2 h-4 w-4 mt-1 animate-spin" /> {secondsPassed - secondsAtStartOfMerge} seconds passed
+        <Loader className="mr-2 h-4 w-4 mt-1 animate-spin" /> {t("merge-state.finalizer.waiting.seconds-passed", { seconds: secondsPassed - secondsAtStartOfMerge })}
       </div>
     </div>;
   }
@@ -81,14 +82,14 @@ export const MergeStateFinalizerDialog = ({ mergeState, openModal, isOpen, resol
     content = MergeStateFinalizerForPush({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, setIsWaitingForAnswer, openModal, resolve });
     waitingContent = <div className="flex">
       <Loader className="mr-2 h-4 w-4 animate-spin" />
-      Updating last commit hash metadata and removing merge state.
+      {t("merge-state.finalizer.waiting.updating-merge-state")}
     </div>;
   }
   else if (mergeState.mergeStateCause === "pull") {
     content = MergeStateFinalizerForPull({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, setIsWaitingForAnswer, openModal, resolve });
     waitingContent = <div className="flex">
       <Loader className="mr-2 h-4 w-4 animate-spin" />
-      Updating last commit hash metadata and removing merge state.
+      {t("merge-state.finalizer.waiting.updating-merge-state")}
     </div>;
   }
   else {
@@ -114,6 +115,7 @@ export const MergeStateFinalizerDialog = ({ mergeState, openModal, isOpen, resol
  * The component shown for finalizer of merge state caused by pulling.
  */
 const MergeStateFinalizerForPull = ({ mergeState, shouldRenderAnswerDialog, setShouldRenderAnswerDialog, setIsWaitingForAnswer, resolve }: MergeStateFinalizerSpecificCauseProps) => {
+  const { t } = useTranslation();
   const [httpResponse, setHttpResponse] = useState<FinalizerResponse>(null);
 
   const handlePullAction = async () => {
@@ -124,11 +126,11 @@ const MergeStateFinalizerForPull = ({ mergeState, shouldRenderAnswerDialog, setS
     setHttpResponse(response);
     if (response !== null) {
       if (response.status === 409) {
-        toast.error("There are still unresolved conflicts", { "richColors": true });
+        toast.error(t("merge-state.finalizer.toast.unresolved-conflicts"), { "richColors": true });
         resolve();
       }
       else if (response.status < 300) {
-        toast.success("Finalizer succcessfully finished");
+        toast.success(t("merge-state.finalizer.toast.finalizer-finished"));
         resolve();
       }
       else if (response.status < 400) {
@@ -137,13 +139,13 @@ const MergeStateFinalizerForPull = ({ mergeState, shouldRenderAnswerDialog, setS
         setShouldRenderAnswerDialog(true);
       }
       else {
-        toast.error("There was error when finalizing, check console for more info", { "richColors": true });
+        toast.error(t("merge-state.finalizer.toast.error-finalizer"), { "richColors": true });
         setIsWaitingForAnswer(false);
         setShouldRenderAnswerDialog(true);
       }
     }
     else {
-      toast.error("There was error when finalizing, check console for more info", { "richColors": true });
+      toast.error(t("merge-state.finalizer.toast.error-finalizer"), { "richColors": true });
       setIsWaitingForAnswer(false);
       setShouldRenderAnswerDialog(true);
     }
@@ -155,16 +157,16 @@ const MergeStateFinalizerForPull = ({ mergeState, shouldRenderAnswerDialog, setS
       <MergeStateFinalizerForPullErrorDialog mergeState={mergeState} resolve={resolve} httpResponse={httpResponse} /> :
       <>
         <ModalHeader>
-          <ModalTitle>Finish merge state caused by pulling</ModalTitle>
+          <ModalTitle>{t("merge-state.finalizer.pull.title")}</ModalTitle>
           <ModalDescription>
-            Clicking on finish pull will close the merge state and update last commit hash to reflect the pulled remote.
+            {t("merge-state.finalizer.pull.description.line.one")}
             <br/><br/>
-            Note that after pulling second dialog may appear if the package in DS is already ahead of the commit.
+            {t("merge-state.finalizer.pull.description.line.two")}
           </ModalDescription>
         </ModalHeader>
         <ModalFooter>
-        <Button variant="outline" onClick={() => resolve()}>Close</Button>
-        <Button variant="default" onClick={() => handlePullAction()}>Finish pull</Button>
+        <Button variant="outline" onClick={() => resolve()}>{t("close")}</Button>
+        <Button variant="default" onClick={() => handlePullAction()}>{t("merge-state.finalizer.pull.button.finish")}</Button>
         </ModalFooter>
       </>
   );
@@ -174,31 +176,32 @@ const MergeStateFinalizerForPull = ({ mergeState, shouldRenderAnswerDialog, setS
  * Second dialog for pull finalizer. It is dialog that handles some sort of error when the parent pull dialog was finalizing the merge state.
  */
 const MergeStateFinalizerForPullErrorDialog = ({ mergeState, resolve }: MergeStateFinalizerAnswerDialogProps) => {
+  const { t } = useTranslation();
   const finalizerHandler = async (finalizerVariant: FinalizerVariantsForPullOnFailure) => {
     const response = await finalizePullMergeStateOnFailure(mergeState, finalizerVariant);
     if (response) {
-      toast.success("Finalizing was successful");
+      toast.success(t("merge-state.finalizer.toast.finalizing-successful"));
     }
     else {
-      toast.error("Finalizing ended in failure", { "richColors": true });
+      toast.error(t("merge-state.finalizer.toast.finalizing-failed"), { "richColors": true });
     }
     resolve();
   }
 
   return <>
       <ModalHeader>
-        <ModalTitle>Finish merge state caused by pulling</ModalTitle>
+        <ModalTitle>{t("merge-state.finalizer.pull.title")}</ModalTitle>
         <ModalDescription>
-          It appears that the commit, which is being pulled is already behind current commit inside DS.
+          {t("merge-state.finalizer.pull.error.description.line.one")}
           <br/>
-          You can either remove the merge state and don't update the last commit for the package. Or update the last commit hash in DS (and remove the merge state).
+          {t("merge-state.finalizer.pull.error.description.line.two")}
           <br/>
-          Or you can just close the dialog and decide later.
+          {t("merge-state.finalizer.pull.error.description.line.three")}
         </ModalDescription>
       </ModalHeader>
       <ModalFooter>
-        <Button variant="destructive" onClick={() => finalizerHandler("remove-merge-state")}>Remove merge state</Button>
-        <Button variant="default" onClick={() => finalizerHandler("pull-anyways")}>Update the last commit hash in DS</Button>
+        <Button variant="destructive" onClick={() => finalizerHandler("remove-merge-state")}>{t("merge-state.finalizer.pull.error.button.remove")}</Button>
+        <Button variant="default" onClick={() => finalizerHandler("pull-anyways")}>{t("merge-state.finalizer.pull.error.button.update")}</Button>
       </ModalFooter>
     </>;
 };
@@ -223,12 +226,12 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
     const response = await finalizeMergeMergeState(mergeState.uuid, "merge-commit");
     if (response !== null) {
       if (response.status === 409) {
-        toast.error("There are still unresolved conflicts", { "richColors": true });
+        toast.error(t("merge-state.finalizer.toast.unresolved-conflicts"), { "richColors": true });
         resolve();
       }
       else if (response.status < 300) {
         resolve();
-        toast.success("Everything seems to be ok. Proceed with merging.");
+        toast.success(t("merge-state.finalizer.toast.merge-proceed"));
         setTimeout(() => {
           mergeCommitToGitDialogOnClickHandler(t, openModal, iri, sourceDSPackage, mergeState);
         }, 10);     // Small delay to keep the background of same color (that is we wait until the resolve which closes the currently opened dialog is done)
@@ -237,11 +240,11 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
         // Probably do nothing - we will just show the another dialog.
       }
       else {
-        toast.error("There was error when finalizing, check console for more info", { "richColors": true });
+        toast.error(t("merge-state.finalizer.toast.error-finalizer"), { "richColors": true });
       }
     }
     else {
-      toast.error("There was error when finalizing, check console for more info", { "richColors": true });
+      toast.error(t("merge-state.finalizer.toast.error-finalizer"), { "richColors": true });
     }
     setHttpResponse(response);
     setIsWaitingForAnswer(false);
@@ -255,12 +258,12 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
     const response = await finalizeMergeMergeState(mergeState.uuid, "rebase-commit");
     if (response !== null) {
       if (response.status === 409) {
-        toast.error("There are still unresolved conflicts", { "richColors": true });
+        toast.error(t("merge-state.finalizer.toast.unresolved-conflicts"), { "richColors": true });
         resolve();
       }
       else if (response.status < 300) {
         resolve();
-        toast.success("Everything seems to be ok. Proceed with rebasing.");
+        toast.success(t("merge-state.finalizer.toast.rebase-proceed"));
         const onSuccessCallback = async () => {
           await removeMergeState(mergeState.uuid);
           requestLoadPackage(mergeState.rootIriMergeFrom, true);
@@ -274,11 +277,11 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
         // Probably do nothing - we will just show the another dialog.
       }
       else {
-        toast.error("There was error when finalizing, check console for more info", { "richColors": true });
+        toast.error(t("merge-state.finalizer.toast.error-finalizer"), { "richColors": true });
       }
     }
     else {
-      toast.error("There was error when finalizing, check console for more info", { "richColors": true });
+      toast.error(t("merge-state.finalizer.toast.error-finalizer"), { "richColors": true });
     }
     setHttpResponse(response);
     setIsWaitingForAnswer(false);
@@ -299,33 +302,33 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
     return (
       <>
         <ModalHeader>
-          <ModalTitle>Finishing merging to non-branch</ModalTitle>
+          <ModalTitle>{t("merge-state.finalizer.no-branch.title")}</ModalTitle>
           <ModalDescription>
-            There is no action to perform. Merge state was removed.
+            {t("merge-state.finalizer.no-branch.description")}
           </ModalDescription>
         </ModalHeader>
         <ModalFooter>
-          <Button variant="outline" onClick={() => resolve()}>Close</Button>
+          <Button variant="outline" onClick={() => resolve()}>{t("close")}</Button>
         </ModalFooter>
       </>
     );
   }
 
-  const rebaseCommitTooltip = "Creates new commit with the changes on top. Basically the same thing as fast-forward.";
-  const mergeCommitTooltip = "Creates classic merge commit.";
+  const rebaseCommitTooltip = t("merge-state.finalizer.button.rebase-tooltip");
+  const mergeCommitTooltip = t("merge-state.finalizer.button.merge-tooltip");
 
   return (
     <>
       <ModalHeader>
-        <ModalTitle>Finish merge state caused by merging</ModalTitle>
+        <ModalTitle>{t("merge-state.finalizer.merge.title")}</ModalTitle>
         <ModalDescription>
           <Stepper currentStep={0}/>
-          <p>Check tooltips on button{mergeState.isMergeFromBranch ? "s" : ""} for more info.</p>
+          <p>{t("merge-state.finalizer.merge.description.buttons-info", { suffix: mergeState.isMergeFromBranch ? "s" : "" })}</p>
         </ModalDescription>
       </ModalHeader>
       <ModalFooter>
-        <Button variant="outline" className="border bg-blue-100 border-blue-500 hover:bg-blue-500 hover:text-white dark:bg-blue-900 dark:border-blue-400 dark:hover:bg-blue-500 dark:hover:text-white transition" title={rebaseCommitTooltip} onClick={() => handleRebaseAction()}>Rebase</Button>
-        {mergeState.isMergeFromBranch && <Button variant="outline" className="border bg-green-100 border-green-500 hover:bg-green-500 hover:text-white dark:bg-green-900 dark:border-green-400 dark:hover:bg-green-500 dark:hover:text-white transition" title={mergeCommitTooltip} onClick={() => handleMergeAction()}>Merge</Button>}
+        <Button variant="outline" className="border bg-blue-100 border-blue-500 hover:bg-blue-500 hover:text-white dark:bg-blue-900 dark:border-blue-400 dark:hover:bg-blue-500 dark:hover:text-white transition" title={rebaseCommitTooltip} onClick={() => handleRebaseAction()}>{t("merge-state.finalizer.button.rebase")}</Button>
+        {mergeState.isMergeFromBranch && <Button variant="outline" className="border bg-green-100 border-green-500 hover:bg-green-500 hover:text-white dark:bg-green-900 dark:border-green-400 dark:hover:bg-green-500 dark:hover:text-white transition" title={mergeCommitTooltip} onClick={() => handleMergeAction()}>{t("merge-state.finalizer.button.merge")}</Button>}
       </ModalFooter>
     </>
   );
@@ -336,13 +339,14 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
  * Second dialog for merge finalizer. It is dialog that handles some sort of error when the parent pull dialog was finalizing the merge state.
  */
 const MergeStateFinalizerForMergeErrorDialog = ({ mergeState, httpResponse, resolve }: MergeStateFinalizerAnswerDialogProps) => {
+  const { t } = useTranslation();
   const removeMergeStateAction = async () => {
     const response = await finalizeMergeMergeStateOnFailure(mergeState.uuid, "remove-merge-state");
     if (response) {
-      toast.success("Successfully removed merge state");
+      toast.success(t("merge-state.finalizer.toast.removed-merge-state"));
     }
     else {
-      toast.error("Removal of merge state failed", { "richColors": true });
+      toast.error(t("merge-state.finalizer.toast.remove-merge-state-failed"), { "richColors": true });
     }
     if (mergeState.filesystemTypeMergeFrom === AvailableFilesystems.DS_Filesystem) {
       await requestLoadPackage(mergeState.rootIriMergeFrom, true);
@@ -356,13 +360,12 @@ const MergeStateFinalizerForMergeErrorDialog = ({ mergeState, httpResponse, reso
 
   // TODO RadStr: Almost copy-pasted from the Answer dialog for push - if somebody will have time, they can refactor it
   if (httpResponse === null || httpResponse.status >= 300 || httpResponse?.status < 0) {
-    let text = "⚠️ Unknown error when finalizing merge state caused by merging. You can check console for more information.\n\nUsually it is caused by one branch not matching the remote state (or not being pushed in the remote repository).";
+    let text = t("merge-state.finalizer.merge.error.unknown");
     if (httpResponse?.status === 409) {
-      text = "There are still unresolved conflicts";
+      text = t("merge-state.finalizer.toast.unresolved-conflicts");
     }
     else if (httpResponse !== null && httpResponse.status >= 300 && httpResponse.status < 400) {
-      text = `It appears that the remote head moved, therefore you are no longer pushing on top of the latest commit.
-          You can either remove the merge state (and run push again, which will create new merge state) or close dialog.`;
+      text = t("merge-state.finalizer.merge.error.remote-head-moved");
     }
     else {
       if (httpResponse?.content?.error !== undefined && httpResponse?.content?.error !== null &&
@@ -374,14 +377,14 @@ const MergeStateFinalizerForMergeErrorDialog = ({ mergeState, httpResponse, reso
     }
     return <>
       <ModalHeader>
-        <ModalTitle>Finish merge state caused by merging</ModalTitle>
+        <ModalTitle>{t("merge-state.finalizer.merge.title")}</ModalTitle>
         <ModalDescription>
           <p className="whitespace-pre-line">{text}</p>
         </ModalDescription>
       </ModalHeader>
       <ModalFooter>
-        <Button variant="destructive" onClick={() => removeMergeStateAction()}>Remove merge state</Button>
-        <Button variant="outline" onClick={() => resolve()}>Close dialog</Button>
+        <Button variant="destructive" onClick={() => removeMergeStateAction()}>{t("merge-state.finalizer.merge.error.button.remove")}</Button>
+        <Button variant="outline" onClick={() => resolve()}>{t("merge-state.finalizer.merge.error.button.close")}</Button>
       </ModalFooter>
     </>;
   }
@@ -407,11 +410,11 @@ const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldR
 
     if (response !== null) {
       if (response.status === 409) {
-        toast.error("There are still unresolved conflicts", { "richColors": true });
+        toast.error(t("merge-state.finalizer.toast.unresolved-conflicts"), { "richColors": true });
         resolve();
       }
       else if (response.status < 300) {
-        toast.success("Finalizer succcessfully finished");
+        toast.success(t("merge-state.finalizer.toast.finalizer-finished"));
         resolve();
         commitToGitDialogOnClickHandler(t, openModal, iri, sourceDSPackage, "classic-commit", false, mergeState.commitMessage, null);
       }
@@ -419,11 +422,11 @@ const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldR
         // Probably do nothing - we will just show the another dialog.
       }
       else {
-        toast.error("There was error when finalizing, check console for more info", { "richColors": true });
+        toast.error(t("merge-state.finalizer.toast.error-finalizer"), { "richColors": true });
       }
     }
     else {
-      toast.error("There was error when finalizing, check console for more info", { "richColors": true });
+      toast.error(t("merge-state.finalizer.toast.error-finalizer"), { "richColors": true });
     }
 
     setHttpResponse(response);
@@ -436,17 +439,17 @@ const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldR
       <MergeStateFinalizerForPushErrorDialog mergeState={mergeState} resolve={resolve} httpResponse={httpReponse} /> :
       <>
         <ModalHeader>
-          <ModalTitle>Finish merge state caused by pushing to remote repository</ModalTitle>
+          <ModalTitle>{t("merge-state.finalizer.push.title")}</ModalTitle>
           <ModalDescription>
-            You can either push the current content of package to Git remote or close the dialog and finish later.
+            {t("merge-state.finalizer.push.description.line.one")}
             <br/>
             <br/>
-            If the remote moved, you will be informed that the push failed.
+            {t("merge-state.finalizer.push.description.line.two")}
           </ModalDescription>
         </ModalHeader>
         <ModalFooter>
-          <Button variant="outline" onClick={() => resolve()}>Close dialog</Button>
-          <Button variant="default" onClick={() => finalizePush()}>Push</Button>
+          <Button variant="outline" onClick={() => resolve()}>{t("close")}</Button>
+          <Button variant="default" onClick={() => finalizePush()}>{t("merge-state.finalizer.push.button.push")}</Button>
         </ModalFooter>
       </>
   );
@@ -457,13 +460,14 @@ const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldR
  * Second dialog for pull finalizer. It is dialog that handles some sort of error when the parent pull dialog was finalizing the merge state.
  */
 const MergeStateFinalizerForPushErrorDialog = ({ mergeState, httpResponse, resolve }: MergeStateFinalizerAnswerDialogProps) => {
+  const { t } = useTranslation();
   const finalizerHandler = async () => {
     const response = await finalizePushMergeStateOnFailure(mergeState.uuid, "remove-merge-state");
     if (response) {
-      toast.success("Removal of merge state was successful");
+      toast.success(t("merge-state.finalizer.toast.remove-merge-state-successful"));
     }
     else {
-      toast.error("Removal of merge state failed", { "richColors": true });
+      toast.error(t("merge-state.finalizer.toast.remove-merge-state-failed"), { "richColors": true });
     }
     if (mergeState.filesystemTypeMergeFrom === AvailableFilesystems.DS_Filesystem) {
       await requestLoadPackage(mergeState.rootIriMergeFrom, true);
@@ -477,13 +481,12 @@ const MergeStateFinalizerForPushErrorDialog = ({ mergeState, httpResponse, resol
 
 
   if (httpResponse === null || httpResponse.status >= 300 || httpResponse.status < 0) {
-    let text = "⚠️ Unknown error when finalizing merge state caused by pushing. You can check console for more information.\n\nUsually it is caused by the branch not matching the remote state";
+    let text = t("merge-state.finalizer.push.error.unknown");
     if (httpResponse?.status === 409) {
-      text = "There are still unresolved conflicts";
+      text = t("merge-state.finalizer.toast.unresolved-conflicts");
     }
     else if (httpResponse !== null && httpResponse.status >= 300 && httpResponse.status < 400) {
-      text = `It appears that the remote head moved, therefore you are no longer pushing on top of the latest commit.
-          You can either remove the merge state (and run push again, which will create new merge state) or close dialog.`;
+      text = t("merge-state.finalizer.push.error.remote-head-moved");
     }
     else {
       if (httpResponse?.content?.error !== undefined && httpResponse?.content?.error !== null &&
@@ -494,14 +497,14 @@ const MergeStateFinalizerForPushErrorDialog = ({ mergeState, httpResponse, resol
     }
     return <>
       <ModalHeader>
-        <ModalTitle>Finish merge state caused by pushing</ModalTitle>
+        <ModalTitle>{t("merge-state.finalizer.push.error.title")}</ModalTitle>
         <ModalDescription>
           {text}
         </ModalDescription>
       </ModalHeader>
       <ModalFooter>
-        <Button variant="destructive" onClick={() => finalizerHandler()}>Remove merge state</Button>
-        <Button variant="outline" onClick={() => resolve()}>Close dialog</Button>
+        <Button variant="destructive" onClick={() => finalizerHandler()}>{t("merge-state.finalizer.push.error.button.remove")}</Button>
+        <Button variant="outline" onClick={() => resolve()}>{t("merge-state.finalizer.push.error.button.close")}</Button>
       </ModalFooter>
     </>;
   }

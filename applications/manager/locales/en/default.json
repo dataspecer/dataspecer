@@ -175,9 +175,7 @@
     "options": {
       "only-current-datastore": "Only the currently opened datastore",
       "all-datastores": "All datastores"
-    },
-    "close": "Close",
-    "confirm": "Confirm"
+    }
   },
   "pagination": {
     "previous": "Previous",
@@ -252,6 +250,13 @@
         "name": "name",
         "of-the-repository": "of the repository",
         "can-be": "can be either Organization or User (that is it will be equal user's name)"
+      },
+      "alert": {
+        "too-many-user-organizations": "The user is member of more than the supported number of organizations (first implementation had a hardcoded limit of 1000).",
+        "too-many-bot-organizations": "The bot is member of more than the supported number of organizations (first implementation had a hardcoded limit of 1000)."
+      },
+      "error": {
+        "failed-saving-configuration": "Failed saving the new Git configuration to Dataspecer backend"
       }
     },
     "loading": {
@@ -418,6 +423,59 @@
         "line.twelve": "The push is reversed, that is the editable window is the \"merge from\" actor. This is same as in Git, since the \"merge to\" is the remote.",
         "line.thirteen": "Therefore, we have to update the local (the \"merge from\") to contain the changes from remote and then we can perform the push.",
         "line.fourteen": "You can move between diffs within the \"file\" using the buttons at the top or ctrl + 'arrow up', respectively ctrl + 'arrow down'"
+      }
+    },
+    "merge-state-dialog": {
+      "title": "Create merge state between Dataspecer packages",
+      "warning": {
+        "non-branch": {
+          "title": "⚠️ Merging into non-branch.",
+          "description": {
+            "line-one": "You can not perform any Git action after finishing.",
+            "line-two": "This is only useful if you want to move data from one package to another within Dataspecer."
+          },
+          "close-button": "Close dialog",
+          "close-button-title": "Closes the dialog",
+          "create-button": "Create merge state",
+          "create-button-title": "Creates the merge state, user can do normal actions, but when finalizing nothing happens and the state is removed"
+        },
+        "from-non-branch": {
+          "title": "⚠️ Merging from non-branch into branch",
+          "description": "This kind of merge state can be finalized only through rebase commit.",
+          "create-button-title": "Creates the merge state. Finalizing through merge commit is not available, only the rebase commit."
+        }
+      },
+      "created": {
+        "no-conflicts": {
+          "title": "Created merge state for DS packages and there were no conflicts."
+        },
+        "with-conflicts": {
+          "title": "Created merge state for DS packages and there were conflicts."
+        },
+        "close-button": "Close dialog",
+        "close-button-title": "Closes the dialog. Note that the merge state still exists. You can resolve it later",
+        "preview-button": "Open diff editor preview",
+        "preview-button-title": "Opens the diff editor with the preview of the merge commit. Finalize the merging inside the editor."
+      },
+      "status": {
+        "creating": {
+          "title": "Merge state did not exist. Creating a new one.",
+          "subtitle": "Usually takes around 5-10 seconds."
+        },
+        "replacing": {
+          "title": "Replacing merge state.",
+          "subtitle": "Usually takes around 5-10 seconds."
+        },
+        "seconds-passed": "{{seconds}} seconds passed"
+      },
+      "error": {
+        "fetch-failure": "There was some failure when fetching/creating merge state, check console for more info."
+      },
+      "already-exists": "The merge state already exists. Do you wish to replace it with new one?",
+      "button": {
+        "leave": "Leave",
+        "replace": "Replace",
+        "keep-old": "Keep old"
       }
     }
   },
@@ -735,5 +793,164 @@
       "total-issue-count": "Total issue count"
     },
     "create-new-issue": "Create new issue"
+  },
+  "merge-state": {
+    "list": {
+      "title": "List of currently opened merge states for chosen data specification",
+      "empty": "There are currently no merge states open for selected data specification.",
+      "sorted-by-date": "- Sorted by creation date (newest first).",
+      "single-state": {
+        "line.one": {
+          "part.one": "Removing",
+          "part.two": " merge state and creating new one of the same type helps if you get stuck or not up to date with remote."
+        }
+      },
+      "hint": {
+        "pull": "Hint for resolving PULL merge states",
+        "single": "Hint when you have more than one merge state, but it may help you anyways.",
+        "many": "Overhelmed by too many merge states? Check this hint."
+      },
+      "columns": {
+        "created-at": "Created at",
+        "last-modified-at": "Last modified at",
+        "cause": "Cause",
+        "merge-from": "Merge from",
+        "merge-to": "Merge to"
+      },
+      "button": {
+        "open-diff-editor": "Open merge state in diff editor",
+        "show-info": "Show info about merge state",
+        "remove": "Remove merge state"
+      }
+    },
+    "list-tooltip": {
+      "main": {
+        "line.one": "Merge state signalizes the fact that Git operation has conflicts that need to be resolved in the diff editor.",
+        "line.two": {
+          "part.one": "If an entry is ",
+          "part.two": "red",
+          "part.three": ", then it means that it was modified from somewhere else than the diff editor of the corresponding merge state."
+        },
+        "line.three": "From user perspective it means, that the user should double check the changes were performed by them and not somebody else.",
+        "line.four": "Note that user should double check the modification time even if it is not red.",
+        "line.five": {
+          "part.one": "When entry is ",
+          "part.two": "red",
+          "part.three": " it means, on a technical level, that the diff tree will be recomputed when fetched."
+        }
+      }
+    },
+    "resolve-order-tooltip": {
+      "line.one": "You can resolve merge states in any order.",
+      "line.two": {
+        "part.one": "If you are completely stuck then ",
+        "part.two": "remove",
+        "part.three": " all of the created merge states and do the following:"
+      },
+      "list": {
+        "one": "If you are sure that you want to commit some changes. Simply commit.",
+        "two": "If you just want to be up to date with the remote, then pull.",
+        "three": "If you want to merge, then make the two branches up to date (either by pulling or commiting) and create merge state for merge."
+      },
+      "line.four": "If you have some actions in mind and their order, then you can use the following hints:",
+      "line.five": "In case of more merge states caused by pull. You can remove all of them. Manually pull again and resolve that.",
+      "line.six": "Because you want to have the data specification up to date with latest commit anyways.",
+      "line.seven": "If there is push conflict, once again you can only resolve the newest one and again remove all the others.",
+      "line.eight": "Push conflicts should have higher priority than pull, since resolving push updates also does update the tracked commit hash.",
+      "line.nine": "Merge conflicts should be resolved last. After the Dataspecer state matches the expected remote state.",
+      "line.ten": "Again do not be afraid to remove the merge state and create a new one."
+    },
+    "pull-resolving-hint-tooltip": {
+      "line.one": {
+        "part.one": "Remove",
+        "part.two": " all merge states caused by pull and pull again. You want to be up to date with latest commit."
+      },
+      "line.two": "Performing manual pull succeeds if you did not do any action between now and the last Git operation, pull will finish without creating merge state.",
+      "line.three": "This is useful when you want to resolve automatically created pull."
+    },
+    "finalizer": {
+      "waiting": {
+        "validation": "Validating merge state against Git remote.",
+        "validation-duration": "Usually takes around {{lower}}-{{upper}} seconds.",
+        "seconds-passed": "{{seconds}} seconds passed",
+        "updating-merge-state": "Updating last commit hash metadata and removing merge state."
+      },
+      "toast": {
+        "unresolved-conflicts": "There are still unresolved conflicts",
+        "finalizer-finished": "Finalizer successfully finished",
+        "error-finalizer": "There was error when finalizing, check console for more info",
+        "finalizing-successful": "Finalizing was successful",
+        "finalizing-failed": "Finalizing ended in failure",
+        "merge-proceed": "Everything seems to be ok. Proceed with merging.",
+        "rebase-proceed": "Everything seems to be ok. Proceed with rebasing.",
+        "removed-merge-state": "Successfully removed merge state",
+        "remove-merge-state-failed": "Removal of merge state failed",
+        "remove-merge-state-successful": "Removal of merge state was successful"
+      },
+      "pull": {
+        "title": "Finish merge state caused by pulling",
+        "description": {
+          "line.one": "Clicking on finish pull will close the merge state and update last commit hash to reflect the pulled remote.",
+          "line.two": "Note that after pulling second dialog may appear if the package in DS is already ahead of the commit."
+        },
+        "button": {
+          "finish": "Finish pull"
+        },
+        "error": {
+          "description": {
+            "line.one": "It appears that the commit, which is being pulled is already behind current commit inside DS.",
+            "line.two": "You can either remove the merge state and don't update the last commit for the package (The frequent choice). Or update the last commit hash in DS (and remove the merge state).",
+            "line.three": "Or you can just close the dialog and decide later."
+          },
+          "button": {
+            "remove": "Remove merge state",
+            "update": "Update the last commit hash in DS"
+          }
+        }
+      },
+      "merge": {
+        "title": "Finish merge state caused by merging",
+        "no-branch": {
+          "title": "Finishing merging to non-branch",
+          "description": "There is no action to perform. Merge state was removed."
+        },
+        "description": {
+          "buttons-info": "Check tooltips on button{{suffix}} for more info."
+        },
+        "button": {
+          "rebase": "Rebase",
+          "merge": "Merge",
+          "rebase-tooltip": "Creates new commit with the changes on top. Basically the same thing as fast-forward.",
+          "merge-tooltip": "Creates classic merge commit."
+        },
+        "error": {
+          "unknown": "⚠️ Unknown error when finalizing merge state caused by merging. You can check console for more information.\n\nUsually it is caused by one branch not matching the remote state (or not being pushed in the remote repository).",
+          "remote-head-moved": "It appears that the remote head moved, therefore you are no longer pushing on top of the latest commit(s).\nYou can either remove the merge state (and pull change(s) and create new merge state) or close dialog.",
+          "button": {
+            "remove": "Remove merge state",
+            "close": "Close dialog"
+          }
+        }
+      },
+      "push": {
+        "title": "Finish merge state caused by pushing to remote repository",
+        "description": {
+          "line.one": "You can either push the current content of package to Git remote or close the dialog and finish later.",
+          "line.two": "If the remote moved, you will be informed that the push failed."
+        },
+        "button": {
+          "push": "Push"
+        },
+        "error": {
+          "title": "Finish merge state caused by pushing",
+          "unknown": "⚠️ Unknown error when finalizing merge state caused by pushing. You can check console for more information.\n\nUsually it is caused by the branch not matching the remote state",
+          "remote-head-moved": "It appears that the remote head moved, therefore you are no longer pushing on top of the latest commit.\nYou can either remove the merge state (and run push again, which will create new merge state with correct remote commit) or close dialog.",
+          "button": {
+            "remove": "Remove merge state",
+            "close": "Close dialog"
+          }
+        }
+      }
+    }
   }
 }

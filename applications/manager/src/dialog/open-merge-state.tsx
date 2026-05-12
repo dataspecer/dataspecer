@@ -8,6 +8,7 @@ import { EditableType, MergeState } from "@dataspecer/git";
 import { requestLoadPackage } from "@/package";
 import { removeMergeState } from "@/utils/merge-state-backend-requests";
 import { MergeActor } from "@/hooks/use-merge-actors";
+import { useTranslation } from "react-i18next";
 
 
 /**
@@ -111,6 +112,7 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
   const [mergeStateCreationFailure, setMergeStateCreatingFailure] = useState<boolean>(false);
   const [mergeStateIdInCaseOfNoConflicts, setMergeStateIdInCaseOfNoConflicts] = useState<string | null>(null);
   const openModal = useBetterModal();
+  const { t } = useTranslation();
   const [showingNonBranchWarning, setShowingNonBranchWarning] = useState<boolean>(false);
 
   const [secondsPassed, setSecondsPassed] = useState<number>(0);
@@ -243,12 +245,16 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
         <Modal open={isOpen} onClose={() => resolve(null)}>
           <ModalContent>
             <ModalHeader>
-              <ModalTitle>⚠️Merging into non-branch.</ModalTitle>
-              <ModalDescription>You can not perform any Git action after finishing.<br/>This is only useful if you want to move data from one package to another within Dataspecer.</ModalDescription>
+              <ModalTitle>{t("git.merge-state-dialog.warning.non-branch.title")}</ModalTitle>
+              <ModalDescription>
+                <span>{t("git.merge-state-dialog.warning.non-branch.description.line-one")}</span>
+                <br/>
+                <span>{t("git.merge-state-dialog.warning.non-branch.description.line-two")}</span>
+              </ModalDescription>
             </ModalHeader>
             <ModalFooter>
-              <Button title="Closes the dialog" variant="outline" onClick={() => resolve(null)}>Close dialog</Button>
-              <Button title="Creates the merge state, user can do normal actions, but when finalizing nothing happens and the state is removed" variant="default" onClick={createMergeStateHandler}>Create merge state</Button>
+              <Button title={t("git.merge-state-dialog.warning.non-branch.close-button-title")} variant="outline" onClick={() => resolve(null)}>{t("git.merge-state-dialog.warning.non-branch.close-button")}</Button>
+              <Button title={t("git.merge-state-dialog.warning.non-branch.create-button-title")} variant="default" onClick={createMergeStateHandler}>{t("git.merge-state-dialog.warning.non-branch.create-button")}</Button>
             </ModalFooter>
           </ModalContent>
         </Modal>);
@@ -258,12 +264,12 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
         <Modal open={isOpen} onClose={() => resolve(null)}>
           <ModalContent>
             <ModalHeader>
-              <ModalTitle>⚠️Merging from non-branch into branch</ModalTitle>
-              <ModalDescription>This kind of merge state can be finalized only through rebase commit.</ModalDescription>
+              <ModalTitle>{t("git.merge-state-dialog.warning.from-non-branch.title")}</ModalTitle>
+              <ModalDescription>{t("git.merge-state-dialog.warning.from-non-branch.description")}</ModalDescription>
             </ModalHeader>
             <ModalFooter>
-              <Button title="Closes the dialog." variant="outline" onClick={() => resolve(null)}>Close dialog</Button>
-              <Button title="Creates the merge state. Finalizing through merge commit is not available, only the rebase commit." variant="default" onClick={createMergeStateHandler}>Create merge state</Button>
+              <Button title={t("git.merge-state-dialog.warning.non-branch.close-button-title")} variant="outline" onClick={() => resolve(null)}>{t("git.merge-state-dialog.warning.non-branch.close-button")}</Button>
+              <Button title={t("git.merge-state-dialog.warning.from-non-branch.create-button-title")} variant="default" onClick={createMergeStateHandler}>{t("git.merge-state-dialog.warning.non-branch.create-button")}</Button>
             </ModalFooter>
           </ModalContent>
         </Modal>);
@@ -275,11 +281,11 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
       <Modal open={isOpen} onClose={() => resolve(null)}>
         <ModalContent>
           <ModalHeader>
-            <ModalTitle className="p-1">Created merge state for DS packages and there were no conflicts.</ModalTitle>
+            <ModalTitle className="p-1">{t("git.merge-state-dialog.created.no-conflicts.title")}</ModalTitle>
           </ModalHeader>
           <ModalFooter>
-            <Button title="Closes the dialog. Note that the merge state still exists. You can resolve it later" variant="outline" onClick={() => resolve(null)}>Close dialog</Button>
-            <Button title="Opens the diff editor with the preview of the merge commit. Finalize the merging inside the editor." variant="default" onClick={openDiffEditorPreviewNoConflicts}>Open diff editor preview</Button>
+            <Button title={t("git.merge-state-dialog.created.close-button-title")} variant="outline" onClick={() => resolve(null)}>{t("git.merge-state-dialog.created.close-button")}</Button>
+            <Button title={t("git.merge-state-dialog.created.preview-button-title")} variant="default" onClick={openDiffEditorPreviewNoConflicts}>{t("git.merge-state-dialog.created.preview-button")}</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>);
@@ -290,11 +296,11 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
       <Modal open={isOpen} onClose={() => resolve(null)}>
         <ModalContent>
           <ModalHeader>
-            <ModalTitle className="p-1">Created merge state for DS packages and there were conflicts.</ModalTitle>
+            <ModalTitle className="p-1">{t("git.merge-state-dialog.created.with-conflicts.title")}</ModalTitle>
           </ModalHeader>
           <ModalFooter>
-            <Button title="Closes the dialog. Note that the merge state still exists. You can resolve it later" variant="outline" onClick={() => resolve(null)}>Close dialog</Button>
-            <Button title="Opens the diff editor with the preview of the merge commit. Finalize the merging inside the editor." variant="default" onClick={openDiffEditorPreviewNoConflicts}>Open diff editor preview</Button>
+            <Button title={t("git.merge-state-dialog.created.close-button-title")} variant="outline" onClick={() => resolve(null)}>{t("git.merge-state-dialog.created.close-button")}</Button>
+            <Button title={t("git.merge-state-dialog.created.preview-button-title")} variant="default" onClick={openDiffEditorPreviewNoConflicts}>{t("git.merge-state-dialog.created.preview-button")}</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>);
@@ -305,16 +311,16 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
     <Modal open={isOpen} onClose={() => resolve(null)}>
       <ModalContent>
         <ModalHeader>
-          <ModalTitle>Create merge state between Dataspecer packages</ModalTitle>
+          <ModalTitle>{t("git.merge-state-dialog.title")}</ModalTitle>
           <ModalDescription>
           {(alreadyExisted || !isLoading) ?
             null :
             <div className="flex flex-col">
-              <p>Merge state did not exist. Creating a new one.</p>
-              <p>Usually takes around 5-10 seconds.</p>
+              <p>{t("git.merge-state-dialog.status.creating.title")}</p>
+              <p>{t("git.merge-state-dialog.status.creating.subtitle")}</p>
               <div className="flex">
                 <Loader className="mr-2 mt-1 h-4 w-4 animate-spin" />
-                {`${secondsPassed - secondsPassedStartTime} seconds passed`}
+                {t("git.merge-state-dialog.status.seconds-passed", { seconds: secondsPassed - secondsPassedStartTime })}
               </div>
             </div>
           }
@@ -322,34 +328,34 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
             (!(alreadyExisted && isLoading)) ?
               null :
               <div className="flex flex-col">
-                <p>Replacing merge state.</p>
-                <p>Usually takes around 5-10 seconds.</p>
+                <p>{t("git.merge-state-dialog.status.replacing.title")}</p>
+                <p>{t("git.merge-state-dialog.status.replacing.subtitle")}</p>
                 <div className="flex">
                   <Loader className="mr-2 mt-1 h-4 w-4 animate-spin" />
-                  {`${secondsPassed - secondsPassedStartTime} seconds passed`}
+                  {t("git.merge-state-dialog.status.seconds-passed", { seconds: secondsPassed - secondsPassedStartTime })}
                 </div>
               </div>
           }
           </ModalDescription>
         </ModalHeader>
-        { mergeStateCreationFailure ? "There was some failure when fetching/creating merge state, check console for more info." : null }
+        { mergeStateCreationFailure ? t("git.merge-state-dialog.error.fetch-failure") : null }
         { !isLoading && !mergeStateCreationFailure && alreadyExisted ?
           <div>
-            The merge state already exists. Do you wish to replace it with new one?
+            {t("git.merge-state-dialog.already-exists")}
           </div> :
           null
         }
         { mergeStateCreationFailure ??
           <ModalFooter>
-            <Button variant="outline" onClick={() => resolve(null)}>Close</Button>
+            <Button variant="outline" onClick={() => resolve(null)}>{t("close")}</Button>
           </ModalFooter>
         }
         {
         (!isLoading && !mergeStateCreationFailure && alreadyExisted) &&
           <ModalFooter>
-            <Button variant="outline" onClick={() => resolve(null)}>Leave</Button>
-            <Button variant="destructive" onClick={handleReplaceExisting}>Replace</Button>
-            <Button variant="default" onClick={handleKeepExisting}>Keep old</Button>
+            <Button variant="outline" onClick={() => resolve(null)}>{t("git.merge-state-dialog.button.leave")}</Button>
+            <Button variant="destructive" onClick={handleReplaceExisting}>{t("git.merge-state-dialog.button.replace")}</Button>
+            <Button variant="default" onClick={handleKeepExisting}>{t("git.merge-state-dialog.button.keep-old")}</Button>
           </ModalFooter>
         }
       </ModalContent>

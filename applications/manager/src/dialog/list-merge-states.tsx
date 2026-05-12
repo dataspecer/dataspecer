@@ -9,6 +9,8 @@ import { ShowMergeStateInfoDialog } from "./show-merge-state-info-dialog";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
 import { requestLoadPackage } from "@/package";
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
+import { useTranslation } from "react-i18next";
+import { TFunction } from "i18next";
 
 type MergeStateDialogProps = {
   iri: string,
@@ -19,6 +21,7 @@ type MergeStateDialogProps = {
  * Lists the merge states for data specification with the given IRI.
  */
 export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialogProps) => {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [mergeStates, setMergeStates] = useState<any[]>([]);
   const openModal = useBetterModal();
@@ -52,22 +55,22 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
     <Modal open={!isInfoDialogShown && isOpen} onClose={() => resolve(null)}>
       <ModalContent className="md:min-w-[1300px]">
         <ModalHeader>
-          <ModalTitle>List of currently opened merge states for chosen data specification <PopOverGitGeneralComponent><MergeStateListTooltip/></PopOverGitGeneralComponent></ModalTitle>
+          <ModalTitle>{t("merge-state.list.title")} <PopOverGitGeneralComponent><MergeStateListTooltip/></PopOverGitGeneralComponent></ModalTitle>
           <ModalDescription>
             {mergeStateCount > 0 ?
               mergeStateCount === 1 ?
                 <>
-                  <p className="flex flex-1 flex-row">- <p className="text-red-600">&nbsp;Removing&nbsp;</p> merge state and creating new one of the same type helps if you get stuck or not up to date with remote.</p>
-                  <strong className="flex flex-1 flex-row pt-0.5">Hint for resolving PULL merge states <PopOverGitGeneralComponent><MergeStatePullResolvingHintTooltip/></PopOverGitGeneralComponent></strong>
-                  <strong className="flex flex-1 flex-row -mt-4">Hint when you have more than one merge state, but it may help you anyways.<PopOverGitGeneralComponent><MergeStateResolveOrderTooltip/></PopOverGitGeneralComponent></strong>
+                  <p className="flex flex-1 flex-row">- <p className="text-red-600">&nbsp;{t("merge-state.list.single-state.line.one.part.one")}&nbsp;</p>{t("merge-state.list.single-state.line.one.part.two")}</p>
+                  <strong className="flex flex-1 flex-row pt-0.5">{t("merge-state.list.hint.pull")}&nbsp;<PopOverGitGeneralComponent><MergeStatePullResolvingHintTooltip/></PopOverGitGeneralComponent></strong>
+                  <strong className="flex flex-1 flex-row -mt-4">{t("merge-state.list.hint.single")}&nbsp;<PopOverGitGeneralComponent><MergeStateResolveOrderTooltip/></PopOverGitGeneralComponent></strong>
                 </> :
                 <>
-                  <p className="flex flex-1 flex-row">- Sorted by creation date (newest first).</p>
-                  <p className="flex flex-1 flex-row">- <p className="text-red-600">&nbsp;Removing&nbsp;</p> merge state and creating new one of the same type helps if you get stuck or not up to date with remote.</p>
-                  <strong className="flex flex-1 flex-row pt-0.5">Hint for resolving PULL merge states <PopOverGitGeneralComponent><MergeStatePullResolvingHintTooltip/></PopOverGitGeneralComponent></strong>
-                  <strong className="flex flex-1 flex-row -mt-4">Overhelmed by too many merge states? Check this hint.<PopOverGitGeneralComponent><MergeStateResolveOrderTooltip/></PopOverGitGeneralComponent></strong>
+                  <p className="flex flex-1 flex-row">- {t("merge-state.list.sorted-by-date")}</p>
+                  <p className="flex flex-1 flex-row">- <p className="text-red-600">&nbsp;{t("merge-state.list.single-state.line.one.part.one")}&nbsp;</p>{t("merge-state.list.single-state.line.one.part.two")}</p>
+                  <strong className="flex flex-1 flex-row pt-0.5">{t("merge-state.list.hint.pull")}&nbsp;<PopOverGitGeneralComponent><MergeStatePullResolvingHintTooltip/></PopOverGitGeneralComponent></strong>
+                  <strong className="flex flex-1 flex-row -mt-4">{t("merge-state.list.hint.many")}&nbsp;<PopOverGitGeneralComponent><MergeStateResolveOrderTooltip/></PopOverGitGeneralComponent></strong>
                 </> :
-              <p>There are currently no merge states open.</p>
+              <p>{t("merge-state.list.empty")}</p>
             }
           </ModalDescription>
           {isLoading && <Loader className="mr-2 h-4 w-4 animate-spin" /> }
@@ -77,22 +80,22 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
             {/* The ml-4 is here for the first button, otherwise the merge state cause in the rows is shifted */}
             <div className="grid grid-cols-[86%_14%]">
               <div className="grid grid-cols-[2fr_2fr_1fr_2.1fr_2.1fr] divide-x divide-gray-300 min-w-[1000px] max-lg:min-w-[1000px]">
-                <div className="flex items-center justify-center">Created at</div>
-                <div className="flex items-center justify-center">Last modified at</div>
-                <div className="flex items-center justify-center">Cause</div>
-                <div className="flex items-center justify-center">Merge from</div>
-                <div className="flex items-center justify-center">Merge to</div>
+                <div className="flex items-center justify-center">{t("merge-state.list.columns.created-at")}</div>
+                <div className="flex items-center justify-center">{t("merge-state.list.columns.last-modified-at")}</div>
+                <div className="flex items-center justify-center">{t("merge-state.list.columns.cause")}</div>
+                <div className="flex items-center justify-center">{t("merge-state.list.columns.merge-from")}</div>
+                <div className="flex items-center justify-center">{t("merge-state.list.columns.merge-to")}</div>
               </div>
             </div>
 
             { mergeStates
               .sort((a: MergeState, b: MergeState) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-              .map(mergeState => renderMergeState(mergeState, removeFromMergeStatesInDialog, setIsInfoDialogShown, openModal, resolve)) }
+              .map(mergeState => renderMergeState(mergeState, removeFromMergeStatesInDialog, setIsInfoDialogShown, openModal, resolve, t)) }
           </>
           }
         </ModalHeader>
         <ModalFooter className="pt-8">
-          <Button variant="outline" onClick={() => resolve(null)}>Close</Button>
+          <Button variant="outline" onClick={() => resolve(null)}>{t("close")}</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
@@ -107,7 +110,8 @@ const renderMergeState = (
   removeFromMergeStatesInDialog: (uuid: string) => void,
   setIsInfoDialogShown: (isShown: boolean) => void,
   openModal: OpenBetterModal,
-  closeMergeStateListDialog: (value: null) => void
+  closeMergeStateListDialog: (value: null) => void,
+  t: TFunction<"translation", undefined>,
 ) => {
   const removeMergeStateOnClickHandler = async () => {
     removeFromMergeStatesInDialog(mergeState.uuid);
@@ -132,13 +136,13 @@ const renderMergeState = (
           {mergeStateRowText(mergeState)}
         </div>
         <div className="flex flex-row relative top-[10%] ml-8 gap-x-8">
-          <button title="Open merge state in diff editor" onClick={openDiffEditor} className="cursor-pointer relative">
+          <button title={t("merge-state.list.button.open-diff-editor")} onClick={openDiffEditor} className="cursor-pointer relative">
             <BookOpenTextIcon className="hover:bg-gray-400 dark:hover:bg-gray-700 hover:text-white dark:text-gray-200"/>
           </button>
-          <button title="Show info about merge state" onClick={() => openModal(ShowMergeStateInfoDialog, {mergeState, setIsInfoDialogShown})} className="cursor-pointer hover:bg-blue-500 relative">
+          <button title={t("merge-state.list.button.show-info")} onClick={() => openModal(ShowMergeStateInfoDialog, {mergeState, setIsInfoDialogShown})} className="cursor-pointer hover:bg-blue-500 relative">
             <InfoIcon className="text-blue-400 hover:bg-blue-400 hover:text-white dark:hover:bg-blue-700"/>
           </button>
-          <button title="Remove merge state" onClick={removeMergeStateOnClickHandler} className="cursor-pointer hover:bg-red-600 relative">
+          <button title={t("merge-state.list.button.remove")} onClick={removeMergeStateOnClickHandler} className="cursor-pointer hover:bg-red-600 relative">
             <Trash2 className="text-destructive hover:bg-destructive hover:text-black dark:hover:text-white"/>
           </button>
         </div>
@@ -185,52 +189,70 @@ function mergeStateSourceText(mergeState: MergeState, side: "MergeFrom" | "Merge
 
 
 function MergeStateListTooltip() {
+  const { t } = useTranslation();
   return <div>
-    <p>- Merge state signalizes the fact that Git operation has conflicts that need to be resolved in the diff editor.</p>
+    <p>{t("merge-state.list-tooltip.main.line.one")}</p>
     <br/>
-    - If an entry is <p className="text-destructive inline">red</p>, then it means that it was modified from somewhere else than the diff editor of the corresponding merge state.
+    <p>
+      - {t("merge-state.list-tooltip.main.line.two.part.one")}
+      <span className="text-destructive inline">{t("merge-state.list-tooltip.main.line.two.part.two")}</span>
+      {t("merge-state.list-tooltip.main.line.two.part.three")}
+    </p>
     <br/>
-    - From user perspective it means, that the user should double check the changes were performed by them and not somebody else.
+    <p>- {t("merge-state.list-tooltip.main.line.three")}</p>
     <br/>
-    - Note that user should double check the modification time even if it is not red, to be sure that somebody else did not modify the entry from the diff editor.
+    <p>- {t("merge-state.list-tooltip.main.line.four")}</p>
     <br/>
-    - When entry is <p className="text-destructive inline">red</p> it means, on a technical level, that the diff tree will be recomputed when fetched.
+    <p>
+      - {t("merge-state.list-tooltip.main.line.five.part.one")}
+      <span className="text-destructive inline">{t("merge-state.list-tooltip.main.line.five.part.two")}</span>
+      {t("merge-state.list-tooltip.main.line.five.part.three")}
+    </p>
   </div>;
 }
 
 function MergeStateResolveOrderTooltip() {
+  const { t } = useTranslation();
   return <div>
-    - You can resolve merge states in any order.
-    <h2 className="text-base font-bold">- If you are completely stuck then <span className="text-red-600">remove</span> all of the created merge states and do the following:</h2>
+    <p>- {t("merge-state.resolve-order-tooltip.line.one")}</p>
+    <h2 className="text-base font-bold">
+      {t("merge-state.resolve-order-tooltip.line.two.part.one")}
+      <span className="text-red-600">{t("merge-state.resolve-order-tooltip.line.two.part.two")}</span>
+      {t("merge-state.resolve-order-tooltip.line.two.part.three")}
+    </h2>
     <br/>
     <ul>
-      <li>&nbsp; - If you are sure that you want to commit some changes. Simply commit.</li>
-      <li>&nbsp; - If you just want to be up to date with the remote, then pull.</li>
-      <li>&nbsp; - If you want to merge, then make the two branches up to date (either by pulling or commiting) and create merge state for merge.</li>
+      <li>&nbsp; - {t("merge-state.resolve-order-tooltip.list.one")}</li>
+      <li>&nbsp; - {t("merge-state.resolve-order-tooltip.list.two")}</li>
+      <li>&nbsp; - {t("merge-state.resolve-order-tooltip.list.three")}</li>
     </ul>
     <br/>
-    <h2 className="text-base font-bold">- If you have some actions in mind and their order, then you can use the following hints:</h2>
+    <h2 className="text-base font-bold">- {t("merge-state.resolve-order-tooltip.line.four")}</h2>
     <br/>
-    - In case of more merge states caused by pull. You can remove all of them. Manually pull again and resolve that.
+    <p>- {t("merge-state.resolve-order-tooltip.line.five")}</p>
     <br/>
-    &nbsp;&nbsp;&nbsp;&nbsp;Because you want to have the data specification up to date with latest commit anyways.
+    <p>&nbsp;&nbsp;&nbsp;&nbsp;{t("merge-state.resolve-order-tooltip.line.six")}</p>
     <br/>
-
-    - If there is push conflict, once again you can only resolve the newest one and again remove all the others.
+    <p>- {t("merge-state.resolve-order-tooltip.line.seven")}</p>
     <br/>
-    &nbsp;&nbsp;&nbsp;&nbsp;Push conflicts should have higher priority than pull, since resolving push updates also does update the tracked commit hash.
+    <p>&nbsp;&nbsp;&nbsp;&nbsp;{t("merge-state.resolve-order-tooltip.line.eight")}</p>
     <br/>
-    - Merge conflicts should be resolved last. After the Dataspecer state matches the expected remote state.
+    <p>- {t("merge-state.resolve-order-tooltip.line.nine")}</p>
     <br/>
-    &nbsp;&nbsp;&nbsp;&nbsp;Again do not be afraid to remove the merge state and create a new one.
+    <p>&nbsp;&nbsp;&nbsp;&nbsp;{t("merge-state.resolve-order-tooltip.line.ten")}</p>
   </div>;
 }
 
 
 function MergeStatePullResolvingHintTooltip() {
+  const { t } = useTranslation();
   return <div>
-    <p className="flex flex-1 flex-row">-&nbsp;<span className="text-red-600">Remove&nbsp;</span> all merge states caused by pull and pull again. You want to be up to date with latest commit.</p>
-    <p className="flex flex-1 flex-row">-&nbsp;Performing manual pull again succeeds if you did not do any action between now and the last Git operation, pull will finish without creating merge state.</p>
-    <p className="flex flex-1 flex-row">&nbsp;&nbsp;&nbsp;This is useful when you want to resolve automatically created pull.</p>
+    <p className="flex flex-1 flex-row">
+      -&nbsp;
+      <span className="text-red-600">{t("merge-state.pull-resolving-hint-tooltip.line.one.part.one")}</span>
+      {t("merge-state.pull-resolving-hint-tooltip.line.one.part.two")}
+    </p>
+    <p className="flex flex-1 flex-row">-&nbsp;{t("merge-state.pull-resolving-hint-tooltip.line.two")}</p>
+    <p className="flex flex-1 flex-row">&nbsp;&nbsp;&nbsp;{t("merge-state.pull-resolving-hint-tooltip.line.three")}</p>
   </div>;
 }

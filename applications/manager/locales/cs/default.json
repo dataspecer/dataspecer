@@ -250,6 +250,13 @@
         "name": "název",
         "of-the-repository": "repozitáře",
         "can-be": "může být buď organizace, nebo uživatel (to znamená, že bude shodné s uživatelským jménem)"
+      },
+      "alert": {
+        "too-many-user-organizations": "Uživatel je členem více organizací, než je podporováno (první implementace měla tvrdě zakódovaný limit 1000).",
+        "too-many-bot-organizations": "Bot je členem více organizací, než je podporováno (první implementace měla tvrdě zakódovaný limit 1000)."
+      },
+      "error": {
+        "failed-saving-configuration": "Nepodařilo se uložit novou konfiguraci Gitu do Dataspecer backendu"
       }
     },
     "loading": {
@@ -286,7 +293,7 @@
     "diff-editor-props": {
       "storing-to-backend": {
         "title": "Ukládání změn na backend",
-        "waiting-text": "Ukládání změn na backend"
+        "wait-text": "Ukládání změn na backend"
       }
     },
     "export-format-tooltip": {
@@ -417,6 +424,59 @@
         "line.thirteen": "Proto musíme aktualizovat lokální (\"merge from\") tak, aby obsahoval změny z remote a teprve pak můžeme provést push.",
         "line.fourteen": "Mezi diffy ve souboru se můžete přesouvat pomocí tlačítek nahoře nebo ctrl + šipka nahoru / dolů."
       }
+    },
+    "merge-state-dialog": {
+      "title": "Vytvořit merge stav mezi Dataspecer balíčky",
+      "warning": {
+        "non-branch": {
+          "title": "⚠️ Mergování do nebranche (commitu).",
+          "description": {
+            "line-one": "Při finalizaci nelze provést žádnou Git akci.",
+            "line-two": "Je to užitečné pouze pro přesun data z jednoho balíčku do druhého uvnitř Dataspeceru."
+          },
+          "close-button": "Zavřít dialog",
+          "close-button-title": "Zavře dialog",
+          "create-button": "Vytvořit merge stav",
+          "create-button-title": "Vytvoří merge stav. Finalizace pomocí merge commitu není dostupná, lze finalizovat jen skrze rebase commit."
+        },
+        "from-non-branch": {
+          "title": "⚠️ Mergování z nebranche (commitu) do branche.",
+          "description": "Tento typ merge stavu lze finalizovat pouze skrze rebase commit.",
+          "create-button-title": "Vytvoří merge stav. Finalizace pomocí merge commitu není dostupná, pouze rebase commit."
+        }
+      },
+      "created": {
+        "no-conflicts": {
+          "title": "Byl vytvořen merge stav mezi Dataspecer balíčky a nebyly nalezeny konflikty."
+        },
+        "with-conflicts": {
+          "title": "Byl vytvořen merge stav mezi Dataspecer balíčky a byly nalezeny konflikty."
+        },
+        "close-button": "Zavřít dialog",
+        "close-button-title": "Zavře dialog. Upozornění: merge stav stále existuje. Můžete ho vyřešit později.",
+        "preview-button": "Otevřít náhled v diff editoru",
+        "preview-button-title": "Otevře diff editor s náhledem merge commitu. Finalizujte merge v diff editoru."
+      },
+      "status": {
+        "creating": {
+          "title": "Merge stav neexistoval. Vytváří se nový.",
+          "subtitle": "Obvykle trvá přibližně 5-10 sekund."
+        },
+        "replacing": {
+          "title": "Nahrazuje se merge stav.",
+          "subtitle": "Obvykle trvá přibližně 5-10 sekund."
+        },
+        "seconds-passed": "Uplynulo {{seconds}} sekund"
+      },
+      "error": {
+        "fetch-failure": "Došlo k chybě při načítání/vytváření merge stavu, zkontrolujte konzoli pro více informací."
+      },
+      "already-exists": "Merge stav již existuje. Chcete jej nahradit novým?",
+      "button": {
+        "leave": "Odejít",
+        "replace": "Nahradit",
+        "keep-old": "Ponechat starý"
+      }
     }
   },
   "sign-in-dialog": {
@@ -481,8 +541,13 @@
         "part-three": "práva, pokud jste vývojář, který debugguje Git integraci Dataspeceru."
       },
       "long-line-three": "Je to samozřejmě dostupné i pro nevyvojáře, ale nedoporučuje se.",
-      "long-line-four": "Přístupové tokeny pro Git operace jsou zkoušeny, dokud jeden z nich neuspěje: vaše SSH, váš PAT, bot SSH, bot PAT",
-      "long-line-five": "kde PAT = Personal Access Token, tedy věc, kterou získáte od Git poskytovatele při přihlášení.",
+      "long-line-four": {
+        "part-one": "Zvolte",
+        "part-two": "Name + E-mail",
+        "part-three": "pro následující situace"
+      },
+      "long-line-five": "Přístupové tokeny pro Git operace jsou zkoušeny, dokud jeden z nich neuspěje: vaše SSH, váš PAT, bot SSH, bot PAT",
+      "long-line-six": "kde PAT = Personal Access Token, tedy věc, kterou získáte od Git poskytovatele při přihlášení.",
       "long-subline-one": "Získávání issues, pull requestů, historie Git nebo podobných informací od poskytovatele Gitu.",
       "long-subline-two": "Commitování vaším jménem do repozitářů přístupných Dataspecer botovi.",
       "long-subline-three": "Dataspecer bot je v podstatě fallback uživatel.",
@@ -567,8 +632,7 @@
     "remove-button": "Odebrat privátní SSH klíč"
   },
   "show-svgs-diff-dialog": {
-    "title": "Vizuální porovnání SVG",
-    "close-button": "Zavřít"
+    "title": "Vizuální porovnání SVG"
   },
   "show-merge-state-info-dialog": {
     "title": "Informace o merge stavu",
@@ -588,8 +652,7 @@
     "location-label": "Umístění:",
     "merge-from-location": "Merge from umístění:",
     "merge-to-location": "Merge to umístění:",
-    "git-url": "Git URL:",
-    "close-button": "Zavřít"
+    "git-url": "Git URL:"
   },
   "set-projectIRI-and-branch-dialog": {
     "title": "Nastavit projektové IRI a jméno větve pro balíček",
@@ -730,5 +793,164 @@
       "total-issue-count": "Celkový počet issues"
     },
     "create-new-issue": "Vytvořit nové issue"
+  },
+  "merge-state": {
+    "list": {
+      "title": "Seznam aktuálně otevřených merge stavů pro vybranou datovou specifikaci",
+      "empty": "Momentálně neexistují žádné otevřené merge stavy pro vybranou datovou specifikaci.",
+      "sorted-by-date": "Seřazeno podle data vytvoření (od nejnovějších).",
+      "single-state": {
+        "line.one": {
+          "part.one": "Odstranění",
+          "part.two": " merge stavu a vytvoření nového stejného typu pomáhá, pokud uvíznete nebo datová specifikace není aktuální vůči vzdálenému repozitáři."
+        }
+      },
+      "hint": {
+        "pull": "Tip pro řešení merge stavů způsobených PULLem",
+        "single": "Tip, pro situaci s více merge stavy, ale i tak může pomoci.",
+        "many": "Příliš mnoho merge stavů? Podívejte se na tento tip."
+      },
+      "columns": {
+        "created-at": "Vytvořeno",
+        "last-modified-at": "Naposledy upraveno",
+        "cause": "Příčina",
+        "merge-from": "Merge ze",
+        "merge-to": "Merge do"
+      },
+      "button": {
+        "open-diff-editor": "Otevřít merge stav v diff editoru",
+        "show-info": "Zobrazit informace o merge stavu",
+        "remove": "Odstranit merge stav"
+      }
+    },
+    "list-tooltip": {
+      "main": {
+        "line.one": "Merge stav signalizuje, že Git operace má konflikty, které je třeba vyřešit v diff editoru.",
+        "line.two": {
+          "part.one": "Pokud je záznam ",
+          "part.two": "červený",
+          "part.three": ", znamená to, že byl upraven z jiného místa než z diff editoru odpovídajícího merge stavu."
+        },
+        "line.three": "Z uživatelského pohledu to znamená, že byste měli zkontrolovat, zda jste změny provedli Vy nebo ne.",
+        "line.four": "Upozornění: Ověřte si čas úpravy, i když není červený.",
+        "line.five": {
+          "part.one": "Když je záznam ",
+          "part.two": "červený",
+          "part.three": ", znamená to, že na technické úrovni bude diff strom přepočítán při načtení."
+        }
+      }
+    },
+    "resolve-order-tooltip": {
+      "line.one": "Merge stavy můžete vyřešit v libovolném pořadí.",
+      "line.two": {
+        "part.one": "Pokud jste úplně zaseknutí, tak ",
+        "part.two": "odstraňte",
+        "part.three": " všechny vytvořené merge stavy a udělejte následující:"
+      },
+      "list": {
+        "one": "Pokud si jste jisti, že chcete nějaké změny commitnout. Prostě commitněte.",
+        "two": "Pokud chcete být aktuální vůči remote, pak pullněte.",
+        "three": "Pokud chcete merge, udělejte obě větve aktuální (buď pullnutím nebo commitnutím) a vytvořte merge stav pro merge."
+      },
+      "line.four": "Pokud máte v hlavě nějaké akce a jejich pořadí, můžete použít následující tipy:",
+      "line.five": "V případě více merge stavů způsobených pull je možné je všechny odstranit. Ručně pullněte znovu a vyřešte ten.",
+      "line.six": "To protože chcete mít datovou specifikaci aktuální s nejnovějším commitem.",
+      "line.seven": "Pokud se jedná o push konflikt, opět můžete řešit jen ten nejnovější a vymazat ostatní.",
+      "line.eight": "Push konflikty by měly mít vyšší prioritu než pull, protože řešení push aktualizuje trackovanou commit hash.",
+      "line.nine": "Merge konflikty by měly být řešeny nakonec. Poté, co stav Dataspeceru odpovídá očekávanému stavu oproti remote.",
+      "line.ten": "Opět se nebojte odstranit merge stav a vytvořit nový."
+    },
+    "pull-resolving-hint-tooltip": {
+      "line.one": {
+        "part.one": "Odstraňte",
+        "part.two": " všechny merge stavy způsobené PULLem a pullněte znovu. Chcete být aktuální s posledním commitem."
+      },
+      "line.two": "Ruční pull nevytvoří merge stav, pokud jste od poslední Git operace neprovedli žádnou změnu.",
+      "line.three": "To je užitečné, když chcete vyřešit automaticky vytvořený pull."
+    },
+    "finalizer": {
+      "waiting": {
+        "validation": "Validuji merge stav vůči Git remote.",
+        "validation-duration": "Obvykle trvá přibližně {{lower}}-{{upper}} sekund.",
+        "seconds-passed": "Uplynulo {{seconds}} sekund",
+        "updating-merge-state": "Aktualizuji metadata posledního commitu a odstraňuji merge stav."
+      },
+      "toast": {
+        "unresolved-conflicts": "Stále existují nevyřešené konflikty",
+        "finalizer-finished": "Finalizace byla úspěšně dokončena",
+        "error-finalizer": "Při finalizaci nastala chyba, zkontrolujte konzoli pro více informací",
+        "finalizing-successful": "Finalizace byla úspěšná",
+        "finalizing-failed": "Finalizace selhala",
+        "merge-proceed": "Všechno vypadá v pořádku. Pokračujte merge commitem.",
+        "rebase-proceed": "Všechno vypadá v pořádku. Pokračujte s rebase.",
+        "removed-merge-state": "Merge stav byl úspěšně odstraněn",
+        "remove-merge-state-failed": "Odstranění merge stavu selhalo",
+        "remove-merge-state-successful": "Odstranění merge stavu proběhlo úspěšně"
+      },
+      "pull": {
+        "title": "Dokončete merge stav způsobený pullem",
+        "description": {
+          "line.one": "Kliknutím na dokončit pull uzavřete merge stav a aktualizujete metadata poslední commit hash na commit vzdáleného repozitáře.",
+          "line.two": "Poznámka: Po pullu se může zobrazit druhý dialog, pokud je již balíček v DS na novějším commitu."
+        },
+        "button": {
+          "finish": "Dokončit pull"
+        },
+        "error": {
+          "description": {
+            "line.one": "Zdá se, že pullovaný commit je již starší než aktuální commit v Dataspeceru.",
+            "line.two": "Můžete buď odstranit merge stav a neaktualizovat poslední commit hash balíčku (Typická volba). Nebo aktualizovat poslední commit hash v Dataspeceru (a tím odstranit merge stav).",
+            "line.three": "Nebo dialog jednoduše zavřete a rozhodněte se později."
+          },
+          "button": {
+            "remove": "Odstranit merge stav",
+            "update": "Aktualizovat poslední commit hash v Dataspeceru"
+          }
+        }
+      },
+      "merge": {
+        "title": "Dokončit merge stav způsobený mergem",
+        "description": {
+          "buttons-info": "Klikněte na tooltipy na tlačítkách pro více informací."
+        },
+        "no-branch": {
+          "title": "Dokončení merge do nebranche (tj. commitu)",
+          "description": "Není akce k provedení. Merge stav byl odstraněn."
+        },
+        "button": {
+          "rebase": "Rebase",
+          "merge": "Merge",
+          "rebase-tooltip": "Vytvoří nový commit se změnami. V podstatě to samé jako fast-forward.",
+          "merge-tooltip": "Vytvoří klasický merge commit."
+        },
+        "error": {
+          "unknown": "⚠️ Neznámá chyba při finalizaci merge stavu způsobeného merge. Zkontrolujte konzoli pro více informací.\n\nError je obvykle způsoben tím, že jedna větev neodpovídá vzdálenému stavu (nebo nebyla pushnuta do vzdáleného repozitáře).",
+          "remote-head-moved": "Zdá se, že vzdálený repozitář obsahuje nový commit, který neodpovídá commitu/commitům v merge stavu.\nMůžete buď odstranit merge stav (pullnout změny do větve/větví a následně vytvořit nový merge stav), nebo zavřít dialog.",
+          "button": {
+            "remove": "Odstranit merge stav",
+            "close": "Zavřít dialog"
+          }
+        }
+      },
+      "push": {
+        "title": "Dokončit merge stav způsobený pushem do vzdáleného repozitáře",
+        "description": {
+          "line.one": "Můžete buď pushnout aktuální obsah balíčku do vzdáleného repozitáře, nebo zavřít dialog a dokončit akci později.",
+          "line.two": "Pokud vzdálený repozitář obsahuje nový commit, budete informováni, že push selhal."
+        },
+        "button": {
+          "push": "Push"
+        },
+        "error": {
+          "title": "Dokončit merge stav způsobený pushem",
+          "unknown": "⚠️ Neznámá chyba při finalizaci merge stavu způsobeného push. Zkontrolujte konzoli pro více informací.\n\nObvykle je to způsobeno tím, že větev neodpovídá vzdálenému stavu",
+          "remote-head-moved": "Zdá se, že vzdálený repozitář obsahuje nový commit, který neodpovídá commitu v merge stavu.\nMůžete buď odstranit merge stav (a znovu spustit push, čímž se vytvoří nový merge stav se správným commitem), nebo zavřít dialog.",
+          "button": {
+            "remove": "Odstranit merge stav",
+            "close": "Zavřít dialog"
+          }
+        }
+      }
+    }
   }
 }
