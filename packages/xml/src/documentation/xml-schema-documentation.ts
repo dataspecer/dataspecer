@@ -203,6 +203,9 @@ export class XmlSchemaDocumentationGenerator {
       // Use structure to link to other documentation of structure model
       if (structureModelEntity?.isReferenced) {
         const specification = Object.values(this.context.specifications).find(specification => specification.psms.includes(structureModelEntity.structureSchema));
+        if (!specification) {
+          return ""; // todo
+        }
         const artefact = specification.artefacts.find(artefact => artefact.generator === NEW_DOC_GENERATOR);
         const path = pathRelative(this.documentationArtifact.publicUrl, artefact.publicUrl, artefact !== this.documentationArtifact);
         return path + "#" + this.getElementUniqueId(element);
@@ -286,7 +289,11 @@ export class XmlSchemaDocumentationGenerator {
     const classSpecificationArtifact = (schema: string) => {
       const specification = Object.values(this.context.specifications).find(
         (s) => s.psms.includes(schema)
-      ).iri;
+      )?.iri;
+
+      if (!specification) {
+        return null;
+      }
 
       const artefact = this.context.specifications[
         specification
@@ -300,16 +307,15 @@ export class XmlSchemaDocumentationGenerator {
           this.documentationArtifact.publicUrl,
           artefact.publicUrl
         ),
-        semanticModel:
-          this.context.conceptualModels[
-            this.context.specifications[specification].pim
-          ],
+        specificationName: this.context.conceptualModels[
+          this.context.specifications[specification].pim
+        ].humanLabel,
       };
     };
 
     const imports = [];
     for (const imp of this.xmlSchema.imports) {
-      const schema = imp.schemaId;
+      const schema = imp.schemaIds?.[0];
       imports.push({
         prefix: this.xmlSchema.namespaces.find(ns => ns.namespace === imp.namespace)?.prefix,
         namespace: imp.namespace,

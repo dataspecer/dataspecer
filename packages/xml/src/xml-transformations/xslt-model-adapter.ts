@@ -36,6 +36,7 @@ import { collectProfilingChain, GEO_SPARQL_WKT_LITERAL } from "../xml-schema/xml
 import { structureModelAddXmlProperties } from "../xml-structure-model/add-xml-properties.ts";
 import { XSLT_LIFTING, XSLT_LOWERING } from "./xslt-vocabulary.ts";
 import { DataSpecificationConfigurator, DefaultDataSpecificationConfiguration, type DataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
+import { isGmlLiteral } from "../xml-schema/gml-support.ts";
 
 /**
  * Converts a {@link StructureModel} to an {@link XmlTransformation}.
@@ -538,7 +539,7 @@ class XsltAdapter {
    * http://www.opengis.net/ont/geosparql#gmlLiteral.
    */
   isTypeGmlLiteral(type: StructureModelType): boolean {
-    return type.isAttribute() && type.dataType === "http://www.opengis.net/ont/geosparql#gmlLiteral";
+    return type.isAttribute() && isGmlLiteral(type.dataType);
   }
 
   /**

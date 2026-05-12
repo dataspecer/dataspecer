@@ -82,7 +82,7 @@ function prepareStructureModel(rawModel: StructureModel, context: ArtefactGenera
 const XML_IMPORT = {
   namespace: "http://www.w3.org/XML/1998/namespace",
   schemaLocation: "http://www.w3.org/2001/xml.xsd",
-  schemaId: null, // There is no schema that is being imported
+  schemaIds: [], // There is no schema that is being imported
 } satisfies XmlSchemaImportDeclaration;
 
 /**
@@ -499,7 +499,7 @@ class XmlSchemaAdapter {
         this.imports[commonXmlNamespace] = {
           namespace: commonXmlNamespace,
           schemaLocation: this.commonXmlSchemaLocation,
-          schemaId: null, // Common XML schema does not have a structure model
+          schemaIds: [], // Common XML schema does not have a structure model
         };
       }
       return commonXmlPrefix;
@@ -580,7 +580,7 @@ class XmlSchemaAdapter {
    */
   public async fromStructureModel(): Promise<void> {
     for (const root of this.model.roots) {
-      let rootElement = await this.rootToElement(root);
+      const rootElement = await this.rootToElement(root);
       if (!this.model.skipRootElement) {
         this.elements.push(rootElement);
       }
@@ -670,7 +670,7 @@ class XmlSchemaAdapter {
 
     const namespacePrefix = this.isDocumentationMode && root.classes.length > 0 ? this.getNamespacePrefixForEntity(root.classes[0]) : null;
 
-    let rootElement = {
+    const rootElement = {
       entityType: "element",
       name: [namespacePrefix, technicalLabel],
       type: await this.objectTypeToSchemaType(root),
@@ -834,7 +834,7 @@ class XmlSchemaAdapter {
         annotation: this.getAnnotation(cls),
       } satisfies XmlSchemaType;
     } else {
-      let complexDefinition = await this.propertiesToComplexSequence(cls.properties, "sequence");
+      const complexDefinition = await this.propertiesToComplexSequence(cls.properties, "sequence");
       let iriAsAttribute: XmlSchemaAttribute | null = null;
 
       // Inject IRI into the sequence as hardcoded first element
@@ -886,23 +886,23 @@ class XmlSchemaAdapter {
   private getImportedTypeForEntity(entity: StructureModelClass | StructureModelProperty): QName {
     const structureSchema = (entity as StructureModelClass).structureSchema || (entity as StructureModelProperty).referencingStructureSchema;
     const specification = (entity as StructureModelClass).specification || (entity as StructureModelProperty).referencingSpecification;
-    const importDeclaration = this.imports[structureSchema];
-
-    // Already imported
-    if (importDeclaration) {
-      return [this.namespaces[importDeclaration.namespace], entity.technicalLabel];
-    }
 
     // Find the artefact and import
     const imported = this.getReferencedSchema(structureSchema, specification);
     if (imported) {
       const prefix = imported.namespacePrefix ?? null;
       const namespace = imported.namespace ?? null;
-      this.imports[structureSchema] = {
-        namespace: namespace,
-        schemaLocation: pathRelative(this.currentPath(), imported.publicUrl, specification !== this.model.specification),
-        schemaId: structureSchema,
-      };
+      const location = pathRelative(this.currentPath(), imported.publicUrl, specification !== this.model.specification);
+      if (this.imports[location]) {
+        this.imports[location].schemaIds.push(structureSchema);
+      } else {
+        this.imports[location] = {
+          namespace: namespace,
+          schemaLocation: location,
+          schemaIds: [structureSchema],
+        };
+      }
+
       if (namespace && prefix) {
         this.namespaces[namespace] = prefix;
       }
@@ -988,8 +988,10 @@ class XmlSchemaAdapter {
           content.effectiveCardinalityMin = multiplyMinCardinality(content.effectiveCardinalityMin, thisCardinalityMin);
           content.effectiveCardinalityMax = multiplyMaxCardinality(content.effectiveCardinalityMax, thisCardinalityMax);
         } else if (xmlSchemaComplexContentIsItem(content)) {
-          const lookup = [...(content.item as XmlSchemaComplexContainer)?.contents];
-          lookupContents.push(...lookup);
+          const contents = (content.item as XmlSchemaComplexContainer)?.contents;
+          if (contents) {
+            lookupContents.push(...contents);
+          }
         }
       }
 
@@ -1063,7 +1065,7 @@ class XmlSchemaAdapter {
       this.imports[otherModel.namespace] = {
         namespace: otherModel.namespace,
         schemaLocation: extensionSchemaLocation,
-        schemaId: otherModel.psmIri,
+        schemaIds: [otherModel.psmIri],
       };
     }
   }

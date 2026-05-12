@@ -70,16 +70,19 @@ export class XmlSchema {
 
 /**
  * Defines imports/includes of external schemas (in different/same namespace).
+ *
+ * Import declarations are indexed by their schemaLocation as this is the only unique identifier of them.
  */
 export class XmlSchemaImportDeclaration {
-  namespace: string | null;
   schemaLocation: string;
 
+  namespace: string | null;
+
   /**
-   * ID of structure schema this imports. If null, the schema is external and
+   * ID of structure schema(s) this imports. If empty, the schema is external and
    * does not exist in Dataspecer.
    */
-  schemaId: string | null;
+  schemaIds: string[];
 }
 
 /**
