@@ -36,7 +36,7 @@ import { collectProfilingChain, GEO_SPARQL_WKT_LITERAL } from "../xml-schema/xml
 import { structureModelAddXmlProperties } from "../xml-structure-model/add-xml-properties.ts";
 import { XSLT_LIFTING, XSLT_LOWERING } from "./xslt-vocabulary.ts";
 import { DataSpecificationConfigurator, DefaultDataSpecificationConfiguration, type DataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
-import { isGmlLiteral } from "../xml-schema/gml-support.ts";
+import { isGmlLiteral, XML_GML_NAMESPACE } from "../xml-schema/gml-support.ts";
 
 /**
  * Converts a {@link StructureModel} to an {@link XmlTransformation}.
@@ -373,6 +373,9 @@ class XsltAdapter {
    * Create a named template from a class.
    */
   classToTemplate(classData: StructureModelClass): XmlTemplate | null {
+    if (classData.specification === XML_GML_NAMESPACE) {
+      return null;
+    }
     const [imported] = this.resolveImportedClassName(classData);
     if (imported) {
       return null;
@@ -486,7 +489,27 @@ class XsltAdapter {
   /**
    * Construct a class match from a class property.
    */
-  classPropertyToClassMatch(propertyData: StructureModelProperty, interpretations: QName[], propertyName: QName, dataTypes: StructureModelComplexType[]): XmlClassMatch {
+  classPropertyToClassMatch(propertyData: StructureModelProperty, interpretations: QName[], propertyName: QName, dataTypes: StructureModelComplexType[]): XmlClassMatch | XmlGmlLiteralMatch {
+    if (dataTypes.length === 1 && dataTypes[0].dataType.specification === XML_GML_NAMESPACE) {
+      // Handle this as gml literal
+      this.usesGmlLiterals = true;
+
+      const baseMatch = {
+        interpretations: interpretations,
+        propertyIris: propertyData.iris ?? [],
+        propertyName: propertyName,
+        isReverse: propertyData.isReverse,
+        isAttribute: propertyData.xmlIsAttribute,
+        minCardinality: propertyData.cardinalityMin ?? 1,
+        dataTypeIri: XML_GML_NAMESPACE + "#" + dataTypes[0].dataType.structureSchema,
+      };
+      return {
+        ...baseMatch,
+        isGmlLiteral: true,
+      } as XmlGmlLiteralMatch;
+    }
+
+
     return {
       interpretations: interpretations,
       propertyIris: propertyData.iris ?? [],
@@ -569,6 +592,7 @@ class XsltAdapter {
       } as XmlWktLiteralMatch;
     }
 
+    // This wont be used because GML literals are not represented as primitive types anymore due to transformation
     if (this.isTypeGmlLiteral(dataTypes[0])) {
       this.usesGmlLiterals = true;
       return {

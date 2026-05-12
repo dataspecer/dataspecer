@@ -7,7 +7,7 @@ import { StructureModelProperty } from "@dataspecer/core/structure-model/model/s
 
 const RDF_GEOSPARQL_GML_LITERAL = "http://www.opengis.net/ont/geosparql#gmlLiteral";
 const RDF_GEOSPARQL_WKT_LITERAL = "http://www.opengis.net/ont/geosparql#wktLiteral";
-const XML_GML_NAMESPACE = "http://www.opengis.net/gml/3.2";
+export const XML_GML_NAMESPACE = "http://www.opengis.net/gml/3.2";
 const XML_GML_NAMESPACE_PREFIX = "gml";
 
 const XML_TYPE_GML_BOUNDING_SHAPE = XML_GML_NAMESPACE + "#BoundingShapeType";
@@ -89,6 +89,10 @@ export function structureModelPopulateSfGeometry(structure: XmlStructureModel): 
             gmlProperty.iris = ["http://www.opengis.net/ont/geosparql#asGML"];
             gmlProperty.cardinalityMax = 1;
             gmlProperty.dataTypes = [gmlType];
+            // We need to create new IRI and properly mark profiling info
+            gmlProperty.psmIri = property.psmIri + "-gml";
+            gmlProperty.profiling = property.profiling.map((p) => p + "-gml");
+
             wrappingGeometryClass.properties.push(gmlProperty);
           }
 
@@ -100,6 +104,10 @@ export function structureModelPopulateSfGeometry(structure: XmlStructureModel): 
             wktProperty.iris = ["http://www.opengis.net/ont/geosparql#asWKT"];
             wktProperty.cardinalityMax = 1;
             wktProperty.dataTypes = [wktType];
+
+            wktProperty.psmIri = property.psmIri + "-wkt";
+            wktProperty.profiling = property.profiling.map((p) => p + "-wkt");
+
             wrappingGeometryClass.properties.push(wktProperty);
           }
 

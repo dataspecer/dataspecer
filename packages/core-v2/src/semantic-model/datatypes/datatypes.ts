@@ -102,5 +102,6 @@ export const isDataType = (uri: string | null): uri is string => {
     if (!uri) {
         return false;
     }
-    return isXsdSimpleDataType(uri) || isRdfDataType(uri) || isGeoSPARQLDataType(uri)|| uri === "http://www.w3.org/2000/01/rdf-schema#Literal" || uri.startsWith("https://ofn.gov.cz/zdroj/základní-datové-typy/"); // || isOtherDataType(uri)...
+    return DataTypeURIs.includes(uri) ||
+        uri.startsWith("https://ofn.gov.cz/zdroj/základní-datové-typy/");
 };
