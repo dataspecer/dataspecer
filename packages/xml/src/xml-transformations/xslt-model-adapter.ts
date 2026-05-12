@@ -13,7 +13,9 @@ import {
   XmlClassMatch,
   XmlClassTargetTemplate,
   XmlContainerMatch,
+  XmlGmlLiteralMatch,
   XmlLiteralMatch,
+  XmlWktLiteralMatch,
   XmlMatch,
   XmlRootTemplate,
   XmlTemplate,
@@ -30,10 +32,11 @@ import { OFN } from "@dataspecer/core/well-known";
 import { DefaultXmlConfiguration, XmlConfiguration, XmlConfigurator } from "../configuration.ts";
 import { iriElementName, namespaceFromIri, QName, simpleTypeMapIri } from "../conventions.ts";
 import { buildEntityOriginMap, type EntityOriginMap } from "../xml-schema/utils/entity-origin-map.ts";
-import { collectProfilingChain } from "../xml-schema/xml-schema-model-adapter.ts";
+import { collectProfilingChain, GEO_SPARQL_WKT_LITERAL } from "../xml-schema/xml-schema-model-adapter.ts";
 import { structureModelAddXmlProperties } from "../xml-structure-model/add-xml-properties.ts";
 import { XSLT_LIFTING, XSLT_LOWERING } from "./xslt-vocabulary.ts";
 import { DataSpecificationConfigurator, DefaultDataSpecificationConfiguration, type DataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
+import { isGmlLiteral } from "../xml-schema/gml-support.ts";
 
 /**
  * Converts a {@link StructureModel} to an {@link XmlTransformation}.
@@ -68,6 +71,9 @@ class XsltAdapter {
   private entityOriginMap: EntityOriginMap;
   private options: XmlConfiguration;
   private generalOptions: DataSpecificationConfiguration;
+
+  private usesWktLiterals: boolean = false;
+  private usesGmlLiterals: boolean = false;
 
   /**
    *
@@ -207,15 +213,20 @@ class XsltAdapter {
     this.imports = {};
     this.schemaNamespacePrefixes = {};
     this.ensureProfilingChainImports();
+
+    const templates = this.model
+    .getClasses()
+    .map(this.classToTemplate, this)
+    .filter((template) => template != null);
+
     return {
       targetNamespace: this.model.namespace,
       targetNamespacePrefix: this.model.namespacePrefix,
       rdfNamespaces: this.rdfNamespaces,
       rootTemplates: roots.flatMap(this.rootToTemplates, this),
-      templates: this.model
-        .getClasses()
-        .map(this.classToTemplate, this)
-        .filter((template) => template != null),
+      usesWktLiterals: this.usesWktLiterals,
+      usesGmlLiterals: this.usesGmlLiterals,
+      templates,
       imports: Object.values(this.imports),
       elementIriAsAttribute: this.options.elementIriAsAttribute,
     };
@@ -516,13 +527,30 @@ class XsltAdapter {
   }
 
   /**
+   * Returns true for types that can be converted to RDF literal of type
+   * http://www.opengis.net/ont/geosparql#gmlLiteral. There can be many types
+   * because there is no 1:1 mapping between RDF world and world of GML
+   * (http://www.opengis.net/gml/3.2).
+   *
+   * For example, gml:GeometryPropertyType in XML can contain <gml:Point>,
+   * <gml:MultiSurface> but cannot contain <gml:Envelope> (for that you need
+   * gml:BoundingShapeType type of parent element). All of these can be
+   * represented as serialized strings in RDF of type
+   * http://www.opengis.net/ont/geosparql#gmlLiteral.
+   */
+  isTypeGmlLiteral(type: StructureModelType): boolean {
+    return type.isAttribute() && isGmlLiteral(type.dataType);
+  }
+
+  /**
    * Construct a literal match from a class property.
    */
-  datatypePropertyToLiteralMatch(propertyData: StructureModelProperty, interpretations: QName[], propertyName: QName, dataTypes: StructureModelPrimitiveType[]): XmlLiteralMatch {
+  datatypePropertyToLiteralMatch(propertyData: StructureModelProperty, interpretations: QName[], propertyName: QName, dataTypes: StructureModelPrimitiveType[]): XmlLiteralMatch | XmlWktLiteralMatch | XmlGmlLiteralMatch {
     if (dataTypes.length > 1) {
       throw new Error(`Multiple datatypes on a property ${propertyData.psmIri} are ` + "not supported.");
     }
-    return {
+
+    const baseMatch = {
       interpretations: interpretations,
       propertyIris: propertyData.iris ?? [],
       propertyName: propertyName,
@@ -531,6 +559,25 @@ class XsltAdapter {
       minCardinality: propertyData.cardinalityMin ?? 1,
       dataTypeIri: this.primitiveToIri(dataTypes[0]),
     };
+
+    // Detect WKT literal types
+    if (dataTypes[0]?.dataType === GEO_SPARQL_WKT_LITERAL) {
+      this.usesWktLiterals = true;
+      return {
+        ...baseMatch,
+        isWktLiteral: true,
+      } as XmlWktLiteralMatch;
+    }
+
+    if (this.isTypeGmlLiteral(dataTypes[0])) {
+      this.usesGmlLiterals = true;
+      return {
+        ...baseMatch,
+        isGmlLiteral: true,
+      } as XmlGmlLiteralMatch;
+    }
+
+    return baseMatch;
   }
 
   /**

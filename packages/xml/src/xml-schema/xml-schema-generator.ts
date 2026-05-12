@@ -13,6 +13,7 @@ import { XML_SCHEMA } from "./xml-schema-vocabulary.ts";
 import { writeXmlSchema } from "./xml-schema-writer.ts";
 import { HandlebarsAdapter } from "../../../handlebars-adapter/lib/interface.js";
 import { XmlSchemaDocumentationGenerator } from "../documentation/xml-schema-documentation.ts";
+import { structureModelMarkGmlLiteralAsReferencing, structureModelPopulateSfGeometry } from "./gml-support.ts";
 
 export const NEW_DOC_GENERATOR = "https://schemas.dataspecer.com/generator/template-artifact";
 
@@ -90,18 +91,18 @@ export class XmlSchemaGenerator implements ArtefactGenerator {
       transformations
     );
 
-    const xmlModel = await structureModelAddXmlProperties(
+    let xmlModel = structureModelAddXmlProperties(
       model, context.reader
     );
+    xmlModel = structureModelPopulateSfGeometry(xmlModel);
+    xmlModel = structureModelMarkGmlLiteralAsReferencing(xmlModel);
 
     const xmlSchemas = await structureModelToXmlSchema(
-      context, specification, schemaArtefact, xmlModel, generateForDocumentation
+      context, schemaArtefact, xmlModel, generateForDocumentation
     );
 
     return {
       xmlSchemas,
-      // Keep backward compatibility: first schema is main, last is extension if profiling
-      xmlSchema: xmlSchemas[0],
       conceptualModel,
     };
   }
