@@ -15,6 +15,7 @@ export function createCmeClass(
     name: value.name ?? undefined,
     description: value.description ?? undefined,
     externalDocumentationUrl: value.externalDocumentationUrl ?? null,
+    order: value.order ?? undefined,
   });
 
   const result = model.executeOperation(operation);

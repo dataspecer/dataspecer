@@ -1,6 +1,5 @@
+import { EntityModel } from "@dataspecer/core-v2";
 import { VisualModel } from "@dataspecer/visual-model";
-import { ClassesContextType } from "../../context/classes-context";
-import { ModelGraphContextType } from "../../context/model-context";
 import {
   type BaseEntityProfileDialogState,
   createEditBaseEntityProfileDialogState,
@@ -8,20 +7,18 @@ import {
 } from "../base-entity-profile/base-entity-profile-dialog-state";
 import {
   type EntityRepresentative,
-  listClassToProfiles,
-  representClassProfiles,
+  listClassToProfilesFromTracker,
+  listClassToSpecializeFromTracker,
   representUndefinedClass,
 } from "../utilities/dialog-utilities";
+import { DialogSemanticTracker } from "../dialog-semantic-tracker";
 import { EntityDsIdentifier } from "../../dataspecer/entity-model";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
-import { semanticModelMapToCmeSemanticModel } from "../../dataspecer/cme-model/adapter";
-import { configuration, createLogger, t } from "../../application";
-import { InvalidState } from "../../application/error";
-import { isSemanticModelClassProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { CmeSemanticModel } from "../../dataspecer/cme-model";
+import { semanticModelTrackerToCmeSemanticModel } from "../../dataspecer/cme-model/adapter";
+import { configuration } from "../../application";
+import { LabelResolver } from "../../dependency-tracker";
+import { SemanticModelClassProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { CmeClassProfileRole } from "@/dataspecer/cme-model/model";
-
-const LOG = createLogger(import.meta.url);
 
 export interface ClassProfileDialogState
   extends BaseEntityProfileDialogState<EntityRepresentative> {
@@ -55,25 +52,22 @@ const ROLES = [{
 }];
 
 export function createNewProfileClassDialogState(
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
   profilesIdentifiers: EntityDsIdentifier[],
+  tracker: DialogSemanticTracker,
+  labelResolver: LabelResolver,
 ): ClassProfileDialogState {
 
-  const allModels = semanticModelMapToCmeSemanticModel(
-    graphContext.models, visualModel,
-    configuration().defaultModelColor,
-    identifier => t("model-service.model-label-from-id", identifier));
+  const allModels = semanticModelTrackerToCmeSemanticModel(
+    tracker.semanticModels, visualModel,
+    configuration().defaultModelColor);
 
   const noProfile = representUndefinedClass();
 
-  const allProfiles = listClassToProfiles(
-    classesContext, graphContext, allModels);
+  const allProfiles = listClassToProfilesFromTracker(tracker, labelResolver);
 
-  const allSpecializations = listClassToSpecialize(
-    classesContext, graphContext, allModels);
+  const allSpecializations = listClassToSpecializeFromTracker(tracker, labelResolver);
 
   // EntityProfileState
 
@@ -91,60 +85,34 @@ export function createNewProfileClassDialogState(
   };
 }
 
-function listClassToSpecialize(
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
-  vocabularies: CmeSemanticModel[],
-): EntityRepresentative[] {
-  const entities = graphContext.aggregatorView.getEntities();
-  const models = [...graphContext.models.values()];
-
-  return [
-    ...representClassProfiles(entities, models, vocabularies,
-      classesContext.classProfiles),
-  ];
-}
-
 /**
  * @throws InvalidState
  */
 export function createEditClassProfileDialogState(
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
   model: InMemorySemanticModel,
-  entityIdentifier: string,
+  entity: SemanticModelClassProfile,
+  entityModels: Map<string, EntityModel>,
+  tracker: DialogSemanticTracker,
+  labelResolver: LabelResolver,
 ): ClassProfileDialogState {
-  const entities = graphContext.aggregatorView.getEntities();
 
-  const aggregate = entities[entityIdentifier];
-  const entity = aggregate.rawEntity;
-  if (entity === null || !isSemanticModelClassProfile(entity)) {
-    LOG.error("Missing entity.", { aggregate });
-    throw new InvalidState();
-  }
-
-  //
-
-  const allModels = semanticModelMapToCmeSemanticModel(
-    graphContext.models, visualModel,
-    configuration().defaultModelColor,
-    identifier => t("model-service.model-label-from-id", identifier));
+  const allModels = semanticModelTrackerToCmeSemanticModel(
+    tracker.semanticModels, visualModel,
+    configuration().defaultModelColor);
 
   const noProfile = representUndefinedClass();
 
-  const allProfiles = listClassToProfiles(
-    classesContext, graphContext, allModels)
+  const allProfiles = listClassToProfilesFromTracker(tracker, labelResolver)
     .filter(item => item.identifier !== entity.id);
 
-  const allSpecializations = listClassToSpecialize(
-    classesContext, graphContext, allModels);
+  const allSpecializations = listClassToSpecializeFromTracker(tracker, labelResolver);
 
   // EntityProfileState
 
   const entityProfileState = createEditBaseEntityProfileDialogState(
-    language, graphContext.models, allModels,
+    language, entityModels, allModels,
     { identifier: entity.id, model: model.getId() },
     allProfiles, entity.profiling, noProfile,
     entity.iri ?? "",
@@ -152,7 +120,8 @@ export function createEditClassProfileDialogState(
     entity.description, entity.descriptionFromProfiled,
     entity.externalDocumentationUrl ?? "",
     entity.usageNote, entity.usageNoteFromProfiled,
-    allSpecializations);
+    allSpecializations,
+    entity.order ?? "");
 
   return {
     ...entityProfileState,

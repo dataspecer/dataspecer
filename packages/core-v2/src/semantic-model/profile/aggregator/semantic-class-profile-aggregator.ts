@@ -81,6 +81,7 @@ function aggregateSemanticModelClassProfile(
     iri: profile.iri,
     externalDocumentationUrl: profile.externalDocumentationUrl,
     tags: profile.tags,
+    order: profile.order ?? null,
     //
     usageNote: (profiled(profile.usageNoteFromProfiled) as SemanticModelClassProfile)?.usageNote ?? usageNote ?? null,
     usageNoteFromProfiled: profile.usageNoteFromProfiled,

@@ -24,6 +24,7 @@ export function createCmeRelationship(
       cardinality: value.rangeCardinality ?? undefined,
       iri: value.iri,
       externalDocumentationUrl: value.externalDocumentationUrl ?? null,
+      order: value.order ?? undefined,
     }]
   });
 

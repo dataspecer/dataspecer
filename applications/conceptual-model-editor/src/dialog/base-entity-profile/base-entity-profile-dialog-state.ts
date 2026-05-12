@@ -123,6 +123,12 @@ export interface BaseEntityProfileDialogState<
    */
   allSpecializations: EntityRepresentative[];
 
+  /**
+   * Optional ordering string for custom sorting of profiles in documentation.
+   * Uses natural sort order, items without order are placed at the end.
+   */
+  order: string;
+
 }
 
 /**
@@ -159,7 +165,7 @@ export function createNewBaseEntityProfileDialogState<
   const availableSpecializations = sanitizeDuplicitiesInRepresentativeLabels(
     allModels,
     allSpecializations.filter(item => item.model === model.identifier));
-  sortRepresentatives(language, availableSpecializations);
+  sortRepresentatives(availableSpecializations);
 
   const source = profiles[0];
   const usageNoteSource = availableUsageNoteSources[0];
@@ -206,6 +212,7 @@ export function createNewBaseEntityProfileDialogState<
     hideUsageNoteProfile: usageNoteSource === noProfile,
     //
     externalDocumentationUrl: "",
+    order: "",
   };
 }
 
@@ -299,6 +306,7 @@ export function createEditBaseEntityProfileDialogState
   usageNote: LanguageString | null,
   usageNoteSourceIdentifier: string | null,
   allSpecializations: EntityRepresentative[],
+  order: string = "",
 ): BaseEntityProfileDialogState<ProfileType> {
 
   const semanticModels: InMemorySemanticModel[] =
@@ -339,13 +347,11 @@ export function createEditBaseEntityProfileDialogState
     allModels, allSpecializations
       .filter(item => item.model === model.identifier)
       .filter(item => item.identifier !== entity.identifier));
-  sortRepresentatives(language, availableSpecializations);
+  sortRepresentatives(availableSpecializations);
 
   const availableProfiles = sanitizeDuplicitiesInRepresentativeLabels(
     allModels, allProfiles);
-  sortRepresentatives(language, availableProfiles);
-
-  console.log("createEditBaseEntityProfileDialogState", { description, descriptionSourceValue: descriptionSource.description });
+  sortRepresentatives(availableProfiles);
 
   return {
     language,
@@ -392,6 +398,7 @@ export function createEditBaseEntityProfileDialogState
       entity.identifier, allSpecializations, semanticModels),
     //
     externalDocumentationUrl,
+    order,
   };
 }
 

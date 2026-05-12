@@ -252,6 +252,7 @@ export const english: Record<string, string | Function> = {
   "create-class-dialog.iri": "IRI",
   "create-class-dialog.description": "Definition",
   "create-class-dialog.external-documentation-url": "External documentation URL",
+  "create-class-dialog.order": "Order",
   "create-class-dialog.error-iri-not-set": "iri not set",
   "create-class-dialog.btn-ok": "✅ create",
   "create-class-dialog.btn-cancel": "❌ cancel",

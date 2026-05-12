@@ -70,11 +70,19 @@ export class XmlSchema {
 
 /**
  * Defines imports/includes of external schemas (in different/same namespace).
+ *
+ * Import declarations are indexed by their schemaLocation as this is the only unique identifier of them.
  */
 export class XmlSchemaImportDeclaration {
-  namespace: string | null;
   schemaLocation: string;
-  model: StructureModel | null;
+
+  namespace: string | null;
+
+  /**
+   * ID of structure schema(s) this imports. If empty, the schema is external and
+   * does not exist in Dataspecer.
+   */
+  schemaIds: string[];
 }
 
 /**
@@ -283,6 +291,23 @@ export class XmlSchemaComplexExtension extends XmlSchemaComplexContainer {
   base: QName;
 }
 
+/**
+ * Represents an xs:simpleContent element in an xs:complexType.
+ */
+export class XmlSchemaComplexSimpleContent extends XmlSchemaComplexItem {
+  declare xsType: "simpleContent";
+
+  /**
+   * The base type of the extension.
+   */
+  base: QName;
+
+  /**
+   * The attributes on the simpleContent extension.
+   */
+  attributes: XmlSchemaAttribute[];
+}
+
 export function xmlSchemaComplexTypeDefinitionIsSequence(
   typeDefinition: XmlSchemaComplexItem
 ): typeDefinition is XmlSchemaComplexSequence {
@@ -305,6 +330,12 @@ export function xmlSchemaComplexTypeDefinitionIsExtension(
   typeDefinition: XmlSchemaComplexItem
 ): typeDefinition is XmlSchemaComplexExtension {
   return typeDefinition.xsType === "extension";
+}
+
+export function xmlSchemaComplexTypeDefinitionIsSimpleContent(
+  typeDefinition: XmlSchemaComplexItem
+): typeDefinition is XmlSchemaComplexSimpleContent {
+  return typeDefinition.xsType === "simpleContent";
 }
 
 /**

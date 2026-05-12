@@ -1,8 +1,7 @@
 import { useState } from "react";
 
 import { EntityRepresentative } from "../utilities/dialog-utilities";
-import { configuration, t } from "../../application";
-import { languageStringToString } from "../../utilities/string";
+import { t } from "../../application";
 import { SelectEntity } from "./select-entity";
 
 export function SelectEntities<
@@ -92,7 +91,6 @@ function RemovableItem<ValueType>(props: {
   onRemove: (value: ValueType) => void,
   disabled: boolean,
 }) {
-  const languagePreferences = configuration().languagePreferences;
   return (
     <div>
       {props.disabled ? null :
@@ -101,9 +99,7 @@ function RemovableItem<ValueType>(props: {
         </button>
       }
       &nbsp;
-      {languageStringToString(
-        languagePreferences,
-        props.language, props.item.label)}
+      {props.item.displayLabel}
     </div>
   )
 }

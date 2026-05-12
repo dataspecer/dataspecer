@@ -6,7 +6,7 @@ import {
   UiRelationshipProfile,
   UiGeneralization,
   UiEntity,
-} from "../dataspecer/ui-model";
+} from "./ui-model";
 import { CatalogLayout } from "./catalog-layout";
 
 export interface CatalogState {

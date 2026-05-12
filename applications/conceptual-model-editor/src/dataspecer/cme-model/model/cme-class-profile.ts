@@ -26,6 +26,8 @@ export interface NewCmeClassProfile {
 
   role: CmeClassProfileRole | null;
 
+  order?: string | null;
+
 }
 
 export interface CmeClassProfile extends CmeEntity, NewCmeClassProfile {

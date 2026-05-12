@@ -1,6 +1,4 @@
-import { ClassesContextType } from "../../context/classes-context";
-import { ModelGraphContextType } from "../../context/model-context";
-import { CmeSemanticModel } from "../../dataspecer/cme-model";
+import { EntityModel } from "@dataspecer/core-v2";
 import {
   type BaseEntityProfileDialogState,
   createEditBaseEntityProfileDialogState,
@@ -13,25 +11,26 @@ import {
 import {
   type EntityRepresentative,
   filterByModel,
-  isRepresentingAssociation,
-  listRelationshipProfileDomains,
+  listAssociationsToProfileFromTracker,
+  listAssociationsToSpecializeFromTracker,
+  listRelationshipProfileDomainsFromTracker,
   type RelationshipRepresentative,
   representOwlThing,
   representRdfsLiteral,
-  representRelationshipProfile,
-  representRelationships,
   representUndefinedAssociation,
   representUndefinedClassProfile,
   sortRepresentatives,
 } from "../utilities/dialog-utilities";
+import { DialogSemanticTracker } from "../dialog-semantic-tracker";
 import { VisualModel } from "@dataspecer/visual-model";
 import { EntityDsIdentifier } from "../../dataspecer/entity-model";
-import { semanticModelMapToCmeSemanticModel } from "../../dataspecer/cme-model/adapter";
-import { configuration, createLogger, t } from "../../application";
+import { semanticModelTrackerToCmeSemanticModel } from "../../dataspecer/cme-model/adapter";
+import { configuration, createLogger } from "../../application";
+import { LabelResolver } from "../../dependency-tracker";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
-import { isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { InvalidState } from "../../application/error";
 import { getDomainAndRange } from "../../util/relationship-utils";
+import { SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 
 const LOG = createLogger(import.meta.url);
 
@@ -43,32 +42,33 @@ export interface AssociationProfileDialogState extends
  * State represents a newly created profile for given profiled entity.
  */
 export function createNewAssociationProfileDialogState(
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
   profilesIdentifiers: EntityDsIdentifier[],
+  tracker: DialogSemanticTracker,
+  labelResolver: LabelResolver,
 ): AssociationProfileDialogState {
 
-  const allModels = semanticModelMapToCmeSemanticModel(
-    graphContext.models, visualModel,
-    configuration().defaultModelColor,
-    identifier => t("model-service.model-label-from-id", identifier));
+  const allModels = semanticModelTrackerToCmeSemanticModel(
+    tracker.semanticModels, visualModel,
+    configuration().defaultModelColor);
 
   const noProfile = representUndefinedAssociation();
 
-  const allProfiles = listAssociationsToProfile(
-    classesContext, graphContext, allModels);
-  sortRepresentatives(language, allProfiles);
+  const owlThing = representOwlThing();
+  const rdfsLiteral = representRdfsLiteral();
 
-  const allDomains = listRelationshipProfileDomains(
-    classesContext, graphContext, allModels);
-  sortRepresentatives(language, allDomains);
+  const allProfiles = listAssociationsToProfileFromTracker(
+    tracker, owlThing.identifier, rdfsLiteral.identifier, labelResolver);
+  sortRepresentatives(allProfiles);
+
+  const allDomains = listRelationshipProfileDomainsFromTracker(tracker, labelResolver);
+  sortRepresentatives(allDomains);
 
   const allRanges = allDomains;
 
-  const allSpecializations = listAssociationsToSpecialize(
-    classesContext, graphContext, allModels);
+  const allSpecializations = listAssociationsToSpecializeFromTracker(
+    tracker, owlThing.identifier, rdfsLiteral.identifier, labelResolver);
 
   // EntityProfileState
 
@@ -100,67 +100,24 @@ export function createNewAssociationProfileDialogState(
   return configuration().relationshipProfileToIri(result);
 }
 
-function listAssociationsToProfile(
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
-  vocabularies: CmeSemanticModel[],
-) {
-  const entities = graphContext.aggregatorView.getEntities();
-  const models = [...graphContext.models.values()];
-
-  const owlThing = representOwlThing();
-
-  const rdfsLiteral = representRdfsLiteral();
-
-  return [
-    ...representRelationships(models, vocabularies,
-      classesContext.relationships,
-      owlThing.identifier, rdfsLiteral.identifier),
-    ...representRelationshipProfile(entities, models, vocabularies,
-      classesContext.relationshipProfiles)
-  ].filter(isRepresentingAssociation);
-}
-
-function listAssociationsToSpecialize(
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
-  vocabularies: CmeSemanticModel[],
-) {
-  const entities = graphContext.aggregatorView.getEntities();
-  const models = [...graphContext.models.values()];
-
-  return [
-    ...representRelationshipProfile(entities, models, vocabularies,
-      classesContext.relationshipProfiles)
-  ].filter(isRepresentingAssociation);
-}
-
 /**
  * @throws {InvalidState}
  */
 export function createEditAssociationProfileDialogState(
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
   model: InMemorySemanticModel,
-  entityIdentifier: string,
+  rawEntity: SemanticModelRelationshipProfile,
+  aggregatedEntity: SemanticModelRelationshipProfile,
+  entityModels: Map<string, EntityModel>,
+  tracker: DialogSemanticTracker,
+  labelResolver: LabelResolver,
 ): AssociationProfileDialogState {
-  const entities = graphContext.aggregatorView.getEntities();
 
-  const { rawEntity: entity, aggregatedEntity: aggregate } =
-    entities[entityIdentifier];
-
-  if (!isSemanticModelRelationshipProfile(entity)
-    || !isSemanticModelRelationshipProfile(aggregate)) {
-    LOG.error("Entity is not of expected type.", { entity, aggregate });
-    throw new InvalidState();
-  }
-
-  const { domain, range } = getDomainAndRange(entity);
+  const { domain, range } = getDomainAndRange(rawEntity);
 
   const { domain: aggregatedDomain, range: aggregatedRange } =
-    getDomainAndRange(aggregate);
+    getDomainAndRange(aggregatedEntity);
 
   if (domain === null || range === null
     || aggregatedDomain === null || aggregatedRange === null) {
@@ -171,37 +128,39 @@ export function createEditAssociationProfileDialogState(
 
   //
 
-  const allModels = semanticModelMapToCmeSemanticModel(
-    graphContext.models, visualModel,
-    configuration().defaultModelColor,
-    identifier => t("model-service.model-label-from-id", identifier));
+  const allModels = semanticModelTrackerToCmeSemanticModel(
+    tracker.semanticModels, visualModel,
+    configuration().defaultModelColor);
 
   const noProfile = representUndefinedAssociation();
 
-  const allProfiles = listAssociationsToProfile(
-    classesContext, graphContext, allModels);
-  sortRepresentatives(language, allProfiles);
+  const owlThing = representOwlThing();
+  const rdfsLiteral = representRdfsLiteral();
 
-  const allDomains = listRelationshipProfileDomains(
-    classesContext, graphContext, allModels);
-  sortRepresentatives(language, allDomains);
+  const allProfiles = listAssociationsToProfileFromTracker(
+    tracker, owlThing.identifier, rdfsLiteral.identifier, labelResolver);
+  sortRepresentatives(allProfiles);
+
+  const allDomains = listRelationshipProfileDomainsFromTracker(tracker, labelResolver);
+  sortRepresentatives(allDomains);
 
   const allRanges = allDomains;
 
-  const allSpecializations = listAssociationsToSpecialize(
-    classesContext, graphContext, allModels);
+  const allSpecializations = listAssociationsToSpecializeFromTracker(
+    tracker, owlThing.identifier, rdfsLiteral.identifier, labelResolver);
 
   // EntityProfileState
 
   const entityProfileState = createEditBaseEntityProfileDialogState(
-    language, graphContext.models, allModels,
-    { identifier: entity.id, model: model.getId() },
+    language, entityModels, allModels,
+    { identifier: rawEntity.id, model: model.getId() },
     allProfiles, range.profiling, noProfile, range.iri ?? "",
     range.name, range.nameFromProfiled,
     range.description, range.descriptionFromProfiled,
     range.externalDocumentationUrl ?? "",
     range.usageNote, range.usageNoteFromProfiled,
-    allSpecializations);
+    allSpecializations,
+    range.order ?? "");
 
   // RelationshipState<EntityRepresentative>
 

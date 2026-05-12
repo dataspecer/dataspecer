@@ -100,6 +100,7 @@ test("Aggregate relationship without profiling name and description.", () => {
         conceptIris: [],
         externalDocumentationUrl: "1-1-document",
         tags: ["1-1-level"],
+        order: null,
       },
       {
         iri: "1-2-iri",
@@ -117,6 +118,7 @@ test("Aggregate relationship without profiling name and description.", () => {
         conceptIris: ["2-iri"],
         externalDocumentationUrl: "1-2-document",
         tags: ["1-2-level"],
+        order: null,
       },
     ],
   });

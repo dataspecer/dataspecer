@@ -20,7 +20,7 @@ import {
   ModelIdentifier,
 } from "@dataspecer/entity-model";
 
-import { t } from "../application";
+import { configuration, t } from "../application";
 import { useModelGraphContext } from "../context/model-context";
 import { useOptions } from "../configuration";
 import {
@@ -30,11 +30,12 @@ import {
 import {
   useDependencyTrackers,
   SemanticModelEntry,
+  LabelResolver,
+  createLabelResolver,
 } from "../dependency-tracker/";
 import { selectDomainAndRange } from "../dataspecer/semantic-model";
 import { useActions } from "../action/actions-react-binding";
 import * as Actions from "./catalog-action";
-import { effectiveLabel } from "../dependency-tracker/";
 
 export const Catalog = () => {
 
@@ -275,10 +276,14 @@ export const Catalog = () => {
   const trackers = useMemo(() => {
     const onTrackerDidChanged = (tracker: CatalogTracker) => {
       // TODO This cause full reload instead of fine grained update.
+      console.log("[debug] onTrackerDidChanged", tracker);
+      const labelResolver = createLabelResolver(
+        configuration().prefixes,
+        [language]);
       setState(previous => ({
         ...previous,
         views: previous.views
-          .map(view => view.createView([language], visualModel, tracker, view))
+          .map(view => view.createView(labelResolver, visualModel, tracker, view))
           .map(view => updateVisibleItems(view, previous.searchText)),
       }));
     };
@@ -475,7 +480,7 @@ interface CatalogView {
    * Create new version of this view.
    */
   createView: (
-    languages: string[],
+    labelResolver: LabelResolver,
     visualModel: string | null,
     tracker: CatalogTracker,
     previous: CatalogView,
@@ -707,7 +712,7 @@ const RELATIONSHIP_TYPES = [{
 }];
 
 function createModelView(
-  _languages: string[],
+  _labelResolver: LabelResolver,
   visualModel: string | null,
   tracker: CatalogTracker,
   previous: CatalogView,
@@ -727,7 +732,7 @@ function createModelView(
 }
 
 function createClassView(
-  languages: string[],
+  labelResolver: LabelResolver,
   visualModel: string | null,
   tracker: CatalogTracker,
   previous: CatalogView,
@@ -756,10 +761,10 @@ function createClassView(
         continue;
       }
       items.push(asSemanticClass(
-        languages, visualModel, tracker, entity, 1));
+        labelResolver, visualModel, tracker, entity, 1));
       items.push(...createEntityTree(
         CLASS_TYPES, collectProfilesAndGeneralizations,
-        languages, visualModel, tracker, entity, 2));
+        labelResolver, visualModel, tracker, entity, 2));
     }
   }
   return {
@@ -769,7 +774,7 @@ function createClassView(
 }
 
 function createAssociationView(
-  languages: string[],
+  labelResolver: LabelResolver,
   visualModel: string | null,
   tracker: CatalogTracker,
   previous: CatalogView,
@@ -793,10 +798,10 @@ function createAssociationView(
         continue;
       }
       items.push(asSemanticRelationship(
-        languages, visualModel, tracker, entity, 1));
+        labelResolver, visualModel, tracker, entity, 1));
       items.push(...createEntityTree(
         RELATIONSHIP_TYPES, collectProfilesAndGeneralizations,
-        languages, visualModel, tracker, entity, 2));
+        labelResolver, visualModel, tracker, entity, 2));
     }
   }
   return {
@@ -806,7 +811,7 @@ function createAssociationView(
 }
 
 function createAttributeView(
-  languages: string[],
+  labelResolver: LabelResolver,
   visualModel: string | null,
   tracker: CatalogTracker,
   previous: CatalogView,
@@ -831,10 +836,10 @@ function createAttributeView(
         continue;
       }
       items.push(asSemanticRelationship(
-        languages, visualModel, tracker, entity, 1));
+        labelResolver, visualModel, tracker, entity, 1));
       items.push(...createEntityTree(
         RELATIONSHIP_TYPES, collectProfilesAndGeneralizations,
-        languages, visualModel, tracker, entity, 2));
+        labelResolver, visualModel, tracker, entity, 2));
     }
   }
   return {
@@ -844,7 +849,7 @@ function createAttributeView(
 }
 
 function createProfileView(
-  languages: string[],
+  labelResolver: LabelResolver,
   visualModel: string | null,
   tracker: CatalogTracker,
   previous: CatalogView,
@@ -859,17 +864,17 @@ function createProfileView(
       }
       if (isProfileClass(entity.entity)) {
         items.push(asSemanticClassProfile(
-          languages, visualModel, tracker, entity, 1));
+          labelResolver, visualModel, tracker, entity, 1));
         items.push(...createEntityTree(
           CLASS_TYPES, collectProfiles,
-          languages, visualModel, tracker, entity, 2));
+          labelResolver, visualModel, tracker, entity, 2));
       }
       if (isProfileRelationship(entity.entity)) {
         items.push(asSemanticRelationshipProfile(
-          languages, visualModel, tracker, entity, 1));
+          labelResolver, visualModel, tracker, entity, 1));
         items.push(...createEntityTree(
           RELATIONSHIP_TYPES, collectProfiles,
-          languages, visualModel, tracker, entity, 2));
+          labelResolver, visualModel, tracker, entity, 2));
       }
     }
   }
@@ -886,7 +891,7 @@ function collectProfiles(entity: CatalogEntity) {
 }
 
 function createGeneralizationView(
-  languages: string[],
+  labelResolver: LabelResolver,
   visualModel: string | null,
   tracker: CatalogTracker,
   previous: CatalogView,
@@ -903,7 +908,7 @@ function createGeneralizationView(
         continue;
       }
       items.push(asSemanticGeneralization(
-        languages, visualModel, tracker, entity, 1));
+        labelResolver, visualModel, tracker, entity, 1));
     }
   }
   return {
@@ -1073,13 +1078,13 @@ function collectProfilesAndGeneralizations(entity: CatalogEntity) {
 }
 
 function asSemanticClass(
-  languages: string[],
+  labelResolver: LabelResolver,
   visualModel: string | null,
   tracker: CatalogTracker,
   catalogEntity: CatalogEntity,
   level: number,
 ): CatalogEntityItem {
-  const label = effectiveLabel(languages, catalogEntity);
+  const label = labelResolver.resolveLabel(catalogEntity);
   const model = tracker.semanticModels.get(catalogEntity.model);
   return {
     level,
@@ -1185,13 +1190,13 @@ function renderSemanticClass(item: CatalogItem) {
 }
 
 function asSemanticClassProfile(
-  languages: string[],
+  labelResolver: LabelResolver,
   visualModel: string | null,
   tracker: CatalogTracker,
   catalogEntity: CatalogEntity,
   level: number,
 ): CatalogEntityItem {
-  const label = effectiveLabel(languages, catalogEntity);
+  const label = labelResolver.resolveLabel(catalogEntity);
   const model = tracker.semanticModels.get(catalogEntity.model);
   return {
     level,
@@ -1281,13 +1286,13 @@ function renderSemanticClassProfile(item: CatalogItem) {
 }
 
 function asSemanticRelationship(
-  languages: string[],
+  labelResolver: LabelResolver,
   visualModel: string | null,
   tracker: CatalogTracker,
   catalogEntity: CatalogEntity,
   level: number,
 ): CatalogEntityItem {
-  const label = effectiveLabel(languages, catalogEntity);
+  const label = labelResolver.resolveLabel(catalogEntity);
   const model = tracker.semanticModels.get(catalogEntity.model);
   return {
     level,
@@ -1378,7 +1383,7 @@ function renderSemanticRelationship(item: CatalogItem) {
 }
 
 function asSemanticRelationshipProfile(
-  languages: string[],
+  labelResolver: LabelResolver,
   visualModel: string | null,
   tracker: CatalogTracker,
   catalogEntity: CatalogEntity,
@@ -1389,14 +1394,14 @@ function asSemanticRelationshipProfile(
   {
     let domainLabel = "";
 
-    let associationLabel = effectiveLabel(languages, catalogEntity);
+    let associationLabel = labelResolver.resolveLabel(catalogEntity);
     const entity = tracker.entities.get(catalogEntity.identifier);
 
     if (entity !== undefined && isProfileRelationship(entity.entity)) {
       const [domain, _] = selectDomainAndRange(entity.entity.ends);
       const domainEntity = tracker.entities.get(domain.concept ?? "");
       if (domainEntity !== undefined) {
-        domainLabel = effectiveLabel(languages, domainEntity);;
+        domainLabel = labelResolver.resolveLabel(domainEntity);;
       }
     }
 
@@ -1494,7 +1499,7 @@ function renderSemanticRelationshipProfile(item: CatalogItem) {
 }
 
 function asSemanticGeneralization(
-  languages: string[],
+  labelResolver: LabelResolver,
   visualModel: string | null,
   tracker: CatalogTracker,
   catalogEntity: CatalogEntity,
@@ -1507,8 +1512,15 @@ function asSemanticGeneralization(
 
     const entity = tracker.entities.get(catalogEntity.identifier);
     if (entity !== undefined && isSemanticGeneralization(entity.entity)) {
-      childName = tracker.getEntityLabel(languages, entity.entity.child);
-      parentName = tracker.getEntityLabel(languages, entity.entity.parent);
+      const child = tracker.getEntityOrPartial(entity.entity.child);
+      if (child !== null) {
+        childName = labelResolver.resolveLabel(child);
+      }
+
+      const parent = tracker.getEntityOrPartial(entity.entity.parent);
+      if (parent !== null) {
+        parentName = labelResolver.resolveLabel(parent);
+      }
     }
     label = `${parentName} -> ${childName}`;
   }
@@ -1579,7 +1591,7 @@ function createEntityTree(
   types: {
     guard: (what: Entity) => boolean,
     factory: (
-      languages: string[],
+      labelResolver: LabelResolver,
       visualModel: string | null,
       tracker: CatalogTracker,
       catalogEntity: CatalogEntity,
@@ -1587,7 +1599,7 @@ function createEntityTree(
     ) => CatalogItem,
   }[],
   childrenSelector: (entity: CatalogEntity) => EntityIdentifier[],
-  languages: string[],
+  labelResolver: LabelResolver,
   visualModel: string | null,
   tracker: CatalogTracker,
   catalogEntity: CatalogEntity,
@@ -1608,7 +1620,7 @@ function createEntityTree(
       if (!guard(entity.entity)) {
         continue;
       }
-      items.push(factory(languages, visualModel, tracker, entity, level));
+      items.push(factory(labelResolver, visualModel, tracker, entity, level));
       // If we have already visited this item, we stop here to not
       // end up in a loop.
       if (visited.includes(entity)) {
@@ -1616,7 +1628,7 @@ function createEntityTree(
       }
       items.push(...createEntityTree(
         types, childrenSelector,
-        languages, visualModel, tracker, entity, level + 1,
+        labelResolver, visualModel, tracker, entity, level + 1,
         [...visited, entity]));
       break;
     }

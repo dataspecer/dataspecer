@@ -15,6 +15,7 @@ import { createEditAttributeProfileDialog } from "../dialog/attribute-profile/ed
 import {
   attributeProfileDialogStateToNewCmeRelationshipProfile,
 } from "../dialog/attribute-profile/edit-attribute-profile-dialog-state-adapter";
+import { LabelResolver } from "../dependency-tracker";
 
 /**
  * Open and handle edit Attribute dialog.
@@ -28,9 +29,11 @@ export function openEditAttributeProfileDialogAction(
   visualModel: VisualModel | null,
   model: InMemorySemanticModel,
   entity: SemanticModelRelationshipProfile,
+  labelResolver: LabelResolver,
 ) {
   const initialState = createEditAttributeProfileDialogState(
-    classes, graph, visualModel, options.language, model, entity.id);
+    classes, graph, visualModel, options.language, model, entity.id,
+    labelResolver);
 
   const onConfirm = (state: AttributeProfileDialogState) => {
     cmeExecutor.updateRelationshipProfile({

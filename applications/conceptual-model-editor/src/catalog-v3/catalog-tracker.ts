@@ -5,11 +5,9 @@ import {
 } from "@dataspecer/entity-model";
 import {
   isProfileClass,
-  isProfileGeneralization,
   isProfileRelationship,
 } from "@dataspecer/profile-model";
 import {
-  isSemanticGeneralization,
   isSemanticRelationship,
 } from "@dataspecer/semantic-model";
 import {
@@ -17,20 +15,17 @@ import {
   createColorGenerator,
 } from "@dataspecer/visual-model";
 
-import { selectDomainAndRange } from "../dataspecer/semantic-model";
 import {
+  createSemanticGeneralizationOfTracker,
   createSemanticLabelTracker,
   createSemanticModelTracker,
+  createSemanticProfiledByTracker,
   createVisualModelTracker,
   createVisualRepresentationTracker,
-  effectiveLabel,
   SemanticModelEntry,
   Tracker,
   VisualModelEntry,
 } from "../dependency-tracker";
-import { createLogger } from "../application";
-
-const logger = createLogger(import.meta.url);
 
 export class CatalogTracker implements Tracker {
 
@@ -59,11 +54,14 @@ export class CatalogTracker implements Tracker {
       createSemanticLabelTracker(
         (model, entity) =>
           this.getOrCreateCatalogEntity(entity.id, model, entity),
-        (entity) =>
-          this.getOrCreatePartialCatalogEntity(entity),
+        (identifier) => this.getOrCreatePartialCatalogEntity(identifier),
       ),
       createVisualModelTracker(this.visualModels),
       createVisualRepresentationTracker(
+        identifier => this.getOrCreatePartialCatalogEntity(identifier)),
+      createSemanticGeneralizationOfTracker(
+        identifier => this.getOrCreatePartialCatalogEntity(identifier)),
+      createSemanticProfiledByTracker(
         identifier => this.getOrCreatePartialCatalogEntity(identifier)),
     ];
     this.onDidChangeCallback = onDidChangeCallback;
@@ -82,9 +80,6 @@ export class CatalogTracker implements Tracker {
         }
       });
     }
-    if (isSemanticGeneralization(entity)) {
-      dependencies.push(entity.child, entity.parent);
-    }
     // Semantic profile dependency collector.
     if (isProfileClass(entity)) {
       dependencies.push(...entity.profiling);
@@ -95,42 +90,11 @@ export class CatalogTracker implements Tracker {
         dependencies.push(end.concept);
       });
     }
-    if (isProfileGeneralization(entity)) {
-      dependencies.push(entity.child, entity.parent);
-    }
     // Make it uniq.
     return dependencies;
   }
 
-  onEntityDidCreate(model: ModelIdentifier, next: Entity): void {
-    this.trackers.forEach(tracker => tracker?.onEntityDidCreate?.(model, next));
-    if (isSemanticGeneralization(next)) {
-      const child = this.getOrCreatePartialCatalogEntity(next.child);
-      secureInArrayInPlace(next.parent, child.generalizationOf);
-    }
-    if (isProfileClass(next)) {
-      next.profiling.forEach(identifier => {
-        const profiled = this.getOrCreatePartialCatalogEntity(identifier);
-        secureInArrayInPlace(next.id, profiled.profiledBy);
-      });
-    }
-    if (isProfileRelationship(next)) {
-      const [_, range] = selectDomainAndRange(next.ends);
-      range.profiling.forEach(identifier => {
-        const profiled = this.getOrCreatePartialCatalogEntity(identifier);
-        secureInArrayInPlace(next.id, profiled.profiledBy);
-      });
-    }
-    if (isProfileGeneralization(next)) {
-      const child = this.getOrCreatePartialCatalogEntity(next.child);
-      secureInArrayInPlace(next.parent, child.generalizationOf);
-    }
-  }
-
   /**
-   * @param model
-   * @param identifier
-   * @param entity
    * @returns Catalog entity for given identifier.
    */
   private getOrCreateCatalogEntity(
@@ -197,79 +161,26 @@ export class CatalogTracker implements Tracker {
     return created;
   }
 
+  onEntityDidCreate(model: ModelIdentifier, next: Entity): void {
+    this.trackers.forEach(tracker =>
+      tracker?.onEntityDidCreate?.(model, next));
+  }
+
   onEntityDidChange(
     model: ModelIdentifier, previous: Entity, next: Entity,
   ): void {
-    this.trackers.forEach(tracker => tracker?.onEntityDidChange?.(model, previous, next));
-
-    if (isSemanticGeneralization(next)) {
-      // Update generalization information.
-      this.updateGeneralization(model, previous as any, next);
-    } else if (isProfileClass(next)) {
-      // Update profile of information.
-      this.updateProfile(
-        model, next.id, (previous as any).profiling, next.profiling);
-    } else if (isProfileRelationship(next)) {
-      const [, range] = selectDomainAndRange(next.ends);
-      // Update profile of information.
-      const [, previousRange] = selectDomainAndRange((previous as any).ends);
-      this.updateProfile(
-        model, next.id, (previousRange as any).profiling, range.profiling);
-    } else if (isProfileGeneralization(next)) {
-      // Update generalization of information.
-      this.updateGeneralization(model, previous as any, next);
-    }
-  }
-
-  private updateGeneralization(
-    _model: ModelIdentifier,
-    previous: { child: EntityIdentifier, parent: EntityIdentifier },
-    next: { child: EntityIdentifier, parent: EntityIdentifier },
-  ) {
-    // Check if there was a change.
-    if (previous.child === next.child && previous.parent === next.parent) {
-      return;
-    }
-    // Remove previous.
-    {
-      const child = this.getOrCreatePartialCatalogEntity(previous.child);
-      removeFromArrayInPlace(previous.parent, child.generalizationOf);
-    }
-    // Add next.
-    {
-      const child = this.getOrCreatePartialCatalogEntity(next.child);
-      secureInArrayInPlace(next.parent, child.generalizationOf);
-    }
-  }
-
-  private updateProfile(
-    _model: ModelIdentifier,
-    id: EntityIdentifier,
-    previous: EntityIdentifier[],
-    next: EntityIdentifier[],
-  ) {
-    if (previous === next) {
-      return;
-    }
-    const [removed, added] = diffArrays(previous, next);
-    for (const item of removed) {
-      const profiled = this.getOrCreatePartialCatalogEntity(item);
-      removeFromArrayInPlace(id, profiled.profiledBy);
-    }
-    for (const item of added) {
-      const profiled = this.getOrCreatePartialCatalogEntity(item);
-      secureInArrayInPlace(id, profiled.profiledBy);
-    }
+    this.trackers.forEach(tracker =>
+      tracker?.onEntityDidChange?.(model, previous, next));
   }
 
   onEntityDidRemove(model: ModelIdentifier, previous: Entity): void {
     this.trackers.forEach(tracker => tracker?.onEntityDidRemove?.(model, previous));
-    // We just try to delete the entity.
+    // Make sure we no longer store any information about the entity.
     this.entities.delete(previous.id);
   }
 
-  onDependenciesDidChange(next: Entity): void {
-    this.trackers.forEach(tracker => tracker?.onDependenciesDidChange?.(next));
+  onDependencyDidChange(next: Entity): void {
+    this.trackers.forEach(tracker => tracker?.onDependencyDidChange?.(next));
   }
 
   onDidUpdate() {
@@ -280,23 +191,15 @@ export class CatalogTracker implements Tracker {
   // API methods.
   //
 
-  getEntityLabel(
-    languages: string[],
+  getEntityOrPartial(
     identifier: EntityIdentifier | undefined,
-  ): string {
+  ): PartialCatalogEntity | null {
     if (identifier === undefined) {
-      return "";
+      return null;
     }
-    const entity = this.entities.get(identifier)
-    if (entity !== undefined) {
-      return effectiveLabel(languages, entity);
-    }
-    logger.missingEntity(identifier);
-    const partial = this.partialEntities.get(identifier);
-    if (partial !== undefined) {
-      return effectiveLabel(languages, partial);
-    }
-    return identifier;
+    return this.entities.get(identifier)
+      ?? this.partialEntities.get(identifier)
+      ?? null;
   }
 
   getModelColor(
@@ -312,7 +215,7 @@ export class CatalogTracker implements Tracker {
   }
 
   hasVisualEntity(
-    entity: CatalogEntity,
+    entity: PartialCatalogEntity,
     visualModelIdentifier: string | null,
   ): boolean {
     if (visualModelIdentifier === null) {
@@ -322,32 +225,6 @@ export class CatalogTracker implements Tracker {
     return visual?.length > 0;
   }
 
-}
-
-/**
- * Add item to the array if not present.
- */
-function secureInArrayInPlace<Type>(item: Type, items: Type[]) {
-  if (items.includes(item)) {
-    return;
-  }
-  items.push(item);
-}
-
-function removeFromArrayInPlace<Type>(item: Type, items: Type[]) {
-  const index = items.indexOf(item);
-  if (index === -1) {
-    return;
-  }
-  items.splice(index, 1);
-}
-
-function diffArrays<T>(
-  previous: T[], next: T[],
-): [T[], T[]] {
-  const removed: T[] = previous.filter(item => !next.includes(item));
-  const added: T[] = next.filter(item => !previous.includes(item));
-  return [removed, added];
 }
 
 /**
@@ -367,7 +244,7 @@ interface PartialCatalogEntity {
   profiledBy: EntityIdentifier[];
 
   /**
-   * List of all entities that this entity is generalization of.
+   * List of entities that are specialization of this entity.
    */
   generalizationOf: EntityIdentifier[];
 

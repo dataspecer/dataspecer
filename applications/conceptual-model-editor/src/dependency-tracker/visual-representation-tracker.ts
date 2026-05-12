@@ -5,8 +5,6 @@ import {
   isVisualNode,
   isVisualRelationship,
   VisualEntity,
-  VisualNode,
-  VisualRelationship,
 } from "@dataspecer/visual-model";
 
 import { Tracker } from "./dependency-tracker";

@@ -37,7 +37,7 @@ export function useClassProfileDialogController(
         const availableSpecializations = sanitizeDuplicitiesInRepresentativeLabels(
           state.allModels,
           state.allSpecializations.filter(item => item.model === model.identifier));
-        sortRepresentatives(state.language, availableSpecializations);
+        sortRepresentatives(availableSpecializations);
         state.availableSpecializations = availableSpecializations;
 
         // Remove specializations from other model.

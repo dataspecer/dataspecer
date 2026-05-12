@@ -50,6 +50,11 @@ export interface BaseEntityDialogController {
    */
   setExternalDocumentationUrl: (value: string) => void;
 
+  /**
+   * Set the ordering string for custom sorting in documentation.
+   */
+  setOrder: (value: string) => void;
+
 }
 
 export function createBaseEntityDialogController<
@@ -130,6 +135,11 @@ export function createBaseEntityDialogController<
     }
   });
 
+  const setOrder = (value: string) => changeState(state => ({
+    ...state,
+    order: value,
+  }));
+
   return {
     setModel,
     setIri,
@@ -139,5 +149,6 @@ export function createBaseEntityDialogController<
     addSpecialization,
     removeSpecialization,
     setExternalDocumentationUrl,
+    setOrder,
   };
 }

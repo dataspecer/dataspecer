@@ -11,11 +11,13 @@ import { Position } from "../diagram";
 import { ClassDialogState } from "../dialog/class/edit-class-dialog-state";
 import { createNewAssociationDialogState } from "../dialog/association/edit-association-dialog-state";
 import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
+import { DialogSemanticTracker } from "../dialog/dialog-semantic-tracker";
 import {
   associationDialogStateToNewCmeRelationship,
 } from "../dialog/association/edit-association-dialog-state-adapter";
 import { CmeReference } from "../dataspecer/cme-model/model";
 import { addSemanticRelationshipToVisualModelAction } from "./add-relationship-to-visual-model";
+import { LabelResolver } from "@/dependency-tracker";
 
 /**
  * Opens dialog which on confirm creates class,
@@ -34,32 +36,37 @@ export function openCreateClassDialogAndCreateAssociationAction(
   nodeIdentifier: string,
   isCreatedClassTarget: boolean,
   positionToPlaceClassOn: Position,
+  tracker: DialogSemanticTracker,
+  labelResolver: LabelResolver,
 ) {
   const onConfirm = (created: CmeReference, state: ClassDialogState) => {
     createAssociationToCreatedClass(
-      cmeExecutor, notifications, classes, options, graph, visualModel,
-      nodeIdentifier, isCreatedClassTarget, created, state);
+      cmeExecutor, notifications, options, graph, visualModel,
+      nodeIdentifier, isCreatedClassTarget, created, state, tracker,
+      labelResolver);
   }
 
   openCreateClassDialogWithModelDerivedFromClassAction(
     cmeExecutor, notifications, graph, dialogs, classes, options,
-    diagram, visualModel, nodeIdentifier, positionToPlaceClassOn, onConfirm);
+    diagram, visualModel, nodeIdentifier, positionToPlaceClassOn, onConfirm,
+    tracker, labelResolver);
 }
 
 function createAssociationToCreatedClass(
   cmeExecutor: CmeModelOperationExecutor,
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
   options: Options,
   graph: ModelGraphContextType,
   visualModel: WritableVisualModel,
   nodeIdentifier: string,
   isCreatedClassTarget: boolean,
   createdClassData: CmeReference,
-  editClassDialogState: ClassDialogState
+  editClassDialogState: ClassDialogState,
+  tracker: DialogSemanticTracker,
+  labelResolver: LabelResolver,
 ) {
   const state = createNewAssociationDialogState(
-    classes, graph, visualModel, options.language, null);
+    visualModel, options.language, null, tracker, labelResolver);
 
   const node = visualModel.getVisualEntity(nodeIdentifier);
   if (node === null) {
@@ -74,6 +81,7 @@ function createAssociationToCreatedClass(
 
   const vocabularyForCreatedClass = findVocabularyForModel(
     graph, visualModel, createdClassData.model);
+
   const createdClassEntityRepresentative: EntityRepresentative = {
     identifier: createdClassData.identifier,
     iri: editClassDialogState.iri,
@@ -83,8 +91,11 @@ function createAssociationToCreatedClass(
     description: editClassDialogState.description,
     profileOfIdentifiers: [],
     usageNote: null,
-    isProfile: false
+    isProfile: false,
+    displayLabel: "", // We compute this later.
   };
+  createdClassEntityRepresentative.displayLabel =
+    labelResolver.resolveLabel(createdClassEntityRepresentative);
 
   if (isCreatedClassTarget) {
     state.range = createdClassEntityRepresentative;

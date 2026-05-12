@@ -12,5 +12,6 @@ export const semanticClassToCmeClass = (
     name: entity.name,
     description: entity.description,
     externalDocumentationUrl: entity.externalDocumentationUrl ?? null,
+    order: entity.order ?? null,
   };
 };
