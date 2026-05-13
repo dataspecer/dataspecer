@@ -459,12 +459,10 @@
       },
       "status": {
         "creating": {
-          "title": "Merge state did not exist. Creating a new one.",
-          "subtitle": "Usually takes around 5-10 seconds."
+          "title": "Merge state did not exist. Creating a new one."
         },
         "replacing": {
-          "title": "Replacing merge state.",
-          "subtitle": "Usually takes around 5-10 seconds."
+          "title": "Replacing merge state."
         },
         "seconds-passed": "{{seconds}} seconds passed"
       },
@@ -477,6 +475,86 @@
         "replace": "Replace",
         "keep-old": "Keep old"
       }
+    }
+  },
+  "git-prs-list": {
+    "title": {
+      "all": "List of all opened {{gitProviderSpecificNameForPR}}s ({{gitProviderSpecificNameForPRShortcut}}) for given Git repository",
+      "branch": "List of opened {{gitProviderSpecificNameForPR}}s ({{gitProviderSpecificNameForPRShortcut}}) for given package and branch"
+    },
+    "description": {
+      "branch": "The PRs where one of the merge actors is the examined branch.",
+      "warning": {
+        "line.one": "⚠️ Note that you have to close {{gitProviderSpecificNameForPRShortcut}} in Dataspecer with merge commit.",
+        "line.two": "Merging (or rebasing) {{gitProviderSpecificNameForPRShortcut}} in Git breaks IRIs.",
+        "line.three": "You can either close the {{gitProviderSpecificNameForPRShortcut}} with merge, or merge the changes from the 'merge to' branch to the 'merge from' branch (reverse merge)."
+      }
+    },
+    "table": {
+      "title": "Title",
+      "created-at": "Created at",
+      "modified-at": "Modified at",
+      "merge-from": "Merge from",
+      "merge-to": "Merge to",
+      "add-del": "Add/Del",
+      "reverse-merge": "Reverse merge",
+      "merge-pr": "Merge {{gitProviderSpecificNameForPRShortcut}}"
+    },
+    "pagination": {
+      "count-on-page": "{{gitProviderSpecificNameForPRShortcut}} count on page",
+      "count-total": "Total {{gitProviderSpecificNameForPRShortcut}} count"
+    },
+    "buttons": {
+      "visit-page-with-prs": "Visit page with PRs"
+    },
+    "tooltip": {
+      "line.one": "The reverse merge represents the classic workflow, where you first merge the 'merge to' branch",
+      "line.two": "into your branch to make sure that everything works and finish the {{gitProviderSpecificNameForPRShortcut}} after that.",
+      "line.three": "The 'Merge {{gitProviderSpecificNameForPRShortcut}}' simply merges the 'merge from' branch into the 'merge to' branch.",
+      "buttons-description": "The buttons do the following:",
+      "open-merge-state": {
+        "part.one": "Open Merge state",
+        "part.two": " - opens the already existing merge state"
+      },
+      "merge": {
+        "part.one": "Merge",
+        "part.two": " - Creates new merge state, since it does not exist."
+      },
+      "import-merge": {
+        "part.one": "Import + Merge",
+        "part.two": " - Imports the missing package and creates merge state between them"
+      },
+      "import-both-merge": {
+        "part.one": "Import both + Merge",
+        "part.two": " - Imports both packages and creates merge state between them."
+      }
+    },
+    "action": {
+      "open-merge-state": "Open merge state",
+      "open-merge-state-tooltip": "The merge state already exists in Dataspecer. The button opens it.",
+      "merge": "Merge",
+      "merge-tooltip": "Both branches are already tracked inside Dataspecer. This button will create new merge state between them",
+      "import-merge": "Import + Merge",
+      "import-merge-tooltip": {
+        "merge-to-branch": "Imports the merge to branch of the PR and creates a new merge state between the two branches tracked in Dataspecer",
+        "merge-from-branch": "Imports the merge from branch of the PR and creates a new merge state between the two branches tracked in Dataspecer"
+      },
+      "import-both-merge": "Import both + Merge",
+      "import-both-merge-tooltip": "Imports both the merge from and merge to branches into Dataspecer and creates a new merge state between them."
+    },
+    "loading": {
+      "import-branch": "Importing the '{{importedBranchType}}' branch from the PR",
+      "branch-type": {
+        "merge-from": "merge from",
+        "merge-to": "merge to"
+      },
+      "branch-name": "Branch name: {{branchName}}",
+      "creating-merge-state": "Creating merge state",
+      "merge-branch-path": "\"{{mergeFromBranch}}\" -> \"{{mergeToBranch}}\""
+    },
+    "toast": {
+      "create-merge-state-success": "The creation of merge state succeeded",
+      "create-merge-state-failed": "The creation of merge state failed"
     }
   },
   "sign-in-dialog": {
@@ -798,7 +876,7 @@
     "list": {
       "title": "List of currently opened merge states for chosen data specification",
       "empty": "There are currently no merge states open for selected data specification.",
-      "sorted-by-date": "- Sorted by creation date (newest first).",
+      "sorted-by-date": "Sorted by creation date (newest first).",
       "single-state": {
         "line.one": {
           "part.one": "Removing",

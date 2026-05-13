@@ -295,7 +295,7 @@ function MoreDetailChildrenForTooltip() {
     <h2 className="text-base font-bold">{t("git.diff-editor.more-detail.title")}</h2>
     <p>- {t("git.diff-editor.more-detail.line.one")}</p>
     <p>- {t("git.diff-editor.more-detail.line.two")}</p>
-    <p>- {saveChangesTooltipText}</p>
+    <p>- {t(saveChangesTooltipText)}</p>
     <p>- {t("git.diff-editor.more-detail.line.four")}</p>
     <p>- {t("git.diff-editor.more-detail.line.five")}</p>
     <p>- {t("git.diff-editor.more-detail.line.six")}</p>

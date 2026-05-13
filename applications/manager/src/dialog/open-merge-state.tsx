@@ -9,6 +9,7 @@ import { requestLoadPackage } from "@/package";
 import { removeMergeState } from "@/utils/merge-state-backend-requests";
 import { MergeActor } from "@/hooks/use-merge-actors";
 import { useTranslation } from "react-i18next";
+import { createTranslationForWaitTime, CREATE_MERGE_STATE_WAIT_TIME } from "@/utils/git-wait-times";
 
 
 /**
@@ -317,7 +318,7 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
             null :
             <div className="flex flex-col">
               <p>{t("git.merge-state-dialog.status.creating.title")}</p>
-              <p>{t("git.merge-state-dialog.status.creating.subtitle")}</p>
+              <p>{createTranslationForWaitTime(t, CREATE_MERGE_STATE_WAIT_TIME)}</p>
               <div className="flex">
                 <Loader className="mr-2 mt-1 h-4 w-4 animate-spin" />
                 {t("git.merge-state-dialog.status.seconds-passed", { seconds: secondsPassed - secondsPassedStartTime })}
@@ -329,7 +330,7 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
               null :
               <div className="flex flex-col">
                 <p>{t("git.merge-state-dialog.status.replacing.title")}</p>
-                <p>{t("git.merge-state-dialog.status.replacing.subtitle")}</p>
+                <p>{createTranslationForWaitTime(t, CREATE_MERGE_STATE_WAIT_TIME)}</p>
                 <div className="flex">
                   <Loader className="mr-2 mt-1 h-4 w-4 animate-spin" />
                   {t("git.merge-state-dialog.status.seconds-passed", { seconds: secondsPassed - secondsPassedStartTime })}

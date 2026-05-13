@@ -61,14 +61,14 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
               mergeStateCount === 1 ?
                 <>
                   <p className="flex flex-1 flex-row">- <p className="text-red-600">&nbsp;{t("merge-state.list.single-state.line.one.part.one")}&nbsp;</p>{t("merge-state.list.single-state.line.one.part.two")}</p>
-                  <strong className="flex flex-1 flex-row pt-0.5">{t("merge-state.list.hint.pull")}&nbsp;<PopOverGitGeneralComponent><MergeStatePullResolvingHintTooltip/></PopOverGitGeneralComponent></strong>
-                  <strong className="flex flex-1 flex-row -mt-4">{t("merge-state.list.hint.single")}&nbsp;<PopOverGitGeneralComponent><MergeStateResolveOrderTooltip/></PopOverGitGeneralComponent></strong>
+                  <strong className="flex flex-1 flex-row pt-0.5">{t("merge-state.list.hint.pull")}<PopOverGitGeneralComponent><MergeStatePullResolvingHintTooltip/></PopOverGitGeneralComponent></strong>
+                  <strong className="flex flex-1 flex-row -mt-4">{t("merge-state.list.hint.single")}<PopOverGitGeneralComponent><MergeStateResolveOrderTooltip/></PopOverGitGeneralComponent></strong>
                 </> :
                 <>
                   <p className="flex flex-1 flex-row">- {t("merge-state.list.sorted-by-date")}</p>
                   <p className="flex flex-1 flex-row">- <p className="text-red-600">&nbsp;{t("merge-state.list.single-state.line.one.part.one")}&nbsp;</p>{t("merge-state.list.single-state.line.one.part.two")}</p>
-                  <strong className="flex flex-1 flex-row pt-0.5">{t("merge-state.list.hint.pull")}&nbsp;<PopOverGitGeneralComponent><MergeStatePullResolvingHintTooltip/></PopOverGitGeneralComponent></strong>
-                  <strong className="flex flex-1 flex-row -mt-4">{t("merge-state.list.hint.many")}&nbsp;<PopOverGitGeneralComponent><MergeStateResolveOrderTooltip/></PopOverGitGeneralComponent></strong>
+                  <strong className="flex flex-1 flex-row pt-0.5">{t("merge-state.list.hint.pull")}<PopOverGitGeneralComponent><MergeStatePullResolvingHintTooltip/></PopOverGitGeneralComponent></strong>
+                  <strong className="flex flex-1 flex-row -mt-4">{t("merge-state.list.hint.many")}<PopOverGitGeneralComponent><MergeStateResolveOrderTooltip/></PopOverGitGeneralComponent></strong>
                 </> :
               <p>{t("merge-state.list.empty")}</p>
             }
@@ -198,11 +198,8 @@ function MergeStateListTooltip() {
       <span className="text-destructive inline">{t("merge-state.list-tooltip.main.line.two.part.two")}</span>
       {t("merge-state.list-tooltip.main.line.two.part.three")}
     </p>
-    <br/>
     <p>- {t("merge-state.list-tooltip.main.line.three")}</p>
-    <br/>
     <p>- {t("merge-state.list-tooltip.main.line.four")}</p>
-    <br/>
     <p>
       - {t("merge-state.list-tooltip.main.line.five.part.one")}
       <span className="text-destructive inline">{t("merge-state.list-tooltip.main.line.five.part.two")}</span>
@@ -230,15 +227,10 @@ function MergeStateResolveOrderTooltip() {
     <h2 className="text-base font-bold">- {t("merge-state.resolve-order-tooltip.line.four")}</h2>
     <br/>
     <p>- {t("merge-state.resolve-order-tooltip.line.five")}</p>
-    <br/>
     <p>&nbsp;&nbsp;&nbsp;&nbsp;{t("merge-state.resolve-order-tooltip.line.six")}</p>
-    <br/>
     <p>- {t("merge-state.resolve-order-tooltip.line.seven")}</p>
-    <br/>
     <p>&nbsp;&nbsp;&nbsp;&nbsp;{t("merge-state.resolve-order-tooltip.line.eight")}</p>
-    <br/>
     <p>- {t("merge-state.resolve-order-tooltip.line.nine")}</p>
-    <br/>
     <p>&nbsp;&nbsp;&nbsp;&nbsp;{t("merge-state.resolve-order-tooltip.line.ten")}</p>
   </div>;
 }
@@ -249,7 +241,7 @@ function MergeStatePullResolvingHintTooltip() {
   return <div>
     <p className="flex flex-1 flex-row">
       -&nbsp;
-      <span className="text-red-600">{t("merge-state.pull-resolving-hint-tooltip.line.one.part.one")}</span>
+      <span className="text-red-600">{t("merge-state.pull-resolving-hint-tooltip.line.one.part.one")}&nbsp;</span>
       {t("merge-state.pull-resolving-hint-tooltip.line.one.part.two")}
     </p>
     <p className="flex flex-1 flex-row">-&nbsp;{t("merge-state.pull-resolving-hint-tooltip.line.two")}</p>

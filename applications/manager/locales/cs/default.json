@@ -413,7 +413,7 @@
         },
         "line.seven": "Jinak - Stejný obsah v obou.",
         "line.eight": "Merge aktéři jsou nezměněni. To znamená, že musíte všechny změny provést ručně, pokud je potřebujete.",
-        "merge-strategy": "Také můžete použít strategii sloučení nahoře k automatickému provedení změn.",
+        "merge-strategy": "Také můžete použít merge strategii nahoře k automatickému provedení změn.",
         "line.nine": {
           "part-one": "přidá datastore do editovatelného okna.",
           "part-two": "odstraní ho. Backend je ovlivněn až po kliknutí na jedno z tlačítek Uložit."
@@ -459,12 +459,10 @@
       },
       "status": {
         "creating": {
-          "title": "Merge stav neexistoval. Vytváří se nový.",
-          "subtitle": "Obvykle trvá přibližně 5-10 sekund."
+          "title": "Merge stav neexistoval. Vytváří se nový."
         },
         "replacing": {
-          "title": "Nahrazuje se merge stav.",
-          "subtitle": "Obvykle trvá přibližně 5-10 sekund."
+          "title": "Nahrazuje se merge stav."
         },
         "seconds-passed": "Uplynulo {{seconds}} sekund"
       },
@@ -477,6 +475,86 @@
         "replace": "Nahradit",
         "keep-old": "Ponechat starý"
       }
+    }
+  },
+  "git-prs-list": {
+    "title": {
+      "all": "Seznam všech otevřených {{gitProviderSpecificNameForPR}} ({{gitProviderSpecificNameForPRShortcut}}) pro daný Git repozitář",
+      "branch": "Seznam otevřených {{gitProviderSpecificNameForPR}} ({{gitProviderSpecificNameForPRShortcut}}) pro danou package a větev"
+    },
+    "description": {
+      "branch": "PR, kde je jeden z merge aktérů zkoumaná větev.",
+      "warning": {
+        "line.one": "⚠️ Poznámka: Musíte uzavřít {{gitProviderSpecificNameForPRShortcut}} v Dataspeceru pomocí merge commitu.",
+        "line.two": "Mergování (nebo rebase) {{gitProviderSpecificNameForPRShortcut}} v Gitu rozbije IRI.",
+        "line.three": "Buď můžete {{gitProviderSpecificNameForPRShortcut}} uzavřít pomocí merge, nebo provést reverzní merge, tj. z větve 'merge to' do větve 'merge from'."
+      }
+    },
+    "table": {
+      "title": "Název",
+      "created-at": "Vytvořeno",
+      "modified-at": "Změněno",
+      "merge-from": "Merge from",
+      "merge-to": "Merge to",
+      "add-del": "Přid./Odstr.",
+      "reverse-merge": "Reverzní merge",
+      "merge-pr": "Merge {{gitProviderSpecificNameForPRShortcut}}"
+    },
+    "pagination": {
+      "count-on-page": "Počet {{gitProviderSpecificNameForPRShortcut}} na stránce",
+      "count-total": "Celkový počet {{gitProviderSpecificNameForPRShortcut}}"
+    },
+    "buttons": {
+      "visit-page-with-prs": "Otevřít stránku s PR"
+    },
+    "tooltip": {
+      "line.one": "Reverzní merge představuje klasický postup, kdy nejprve mergenete větev 'merge to'",
+      "line.two": "do vaší větve, abyste se ujistili, že vše funguje, a teprve poté dokončíte {{gitProviderSpecificNameForPRShortcut}}.",
+      "line.three": "Tlačítko 'Merge {{gitProviderSpecificNameForPRShortcut}}' jednoduše mergne větev 'merge from' do větve 'merge to'.",
+      "buttons-description": "Tlačítka provádějí následující:",
+      "open-merge-state": {
+        "part.one": "Otevřít merge stav",
+        "part.two": " - otevře již existující merge stav"
+      },
+      "merge": {
+        "part.one": "Merge",
+        "part.two": " - Vytvoří nový merge stav, pokud dosud neexistuje."
+      },
+      "import-merge": {
+        "part.one": "Import + Merge",
+        "part.two": " - Naimportuje chybějící package a vytvoří mezi nimi merge stav"
+      },
+      "import-both-merge": {
+        "part.one": "Import oba + Merge",
+        "part.two": " - Naimportuje oba package a vytvoří mezi nimi merge stav."
+      }
+    },
+    "action": {
+      "open-merge-state": "Otevřít merge stav",
+      "open-merge-state-tooltip": "Merge stav už existuje v Dataspeceru. Tlačítko jej otevře.",
+      "merge": "Merge",
+      "merge-tooltip": "Obě větve už existují v Dataspeceru. Toto tlačítko mezi nimi vytvoří nový merge stav.",
+      "import-merge": "Import + Merge",
+      "import-merge-tooltip": {
+        "merge-to-branch": "Naimportuje větev 'merge to' z PR a vytvoří nový merge stav mezi dvěma existujícímí větvemi v Dataspeceru",
+        "merge-from-branch": "Naimportuje větev 'merge from' z PR a vytvoří nový merge stav mezi dvěma existujícímí větvemi v Dataspeceru"
+      },
+      "import-both-merge": "Import both + Merge",
+      "import-both-merge-tooltip": "Naimportuje obě větve 'merge from' a 'merge to' do Dataspeceru a vytvoří mezi nimi nový merge stav."
+    },
+    "loading": {
+      "import-branch": "Importuji větev '{{importedBranchType}}' z PR",
+      "branch-type": {
+        "merge-from": "merge from",
+        "merge-to": "merge to"
+      },
+      "branch-name": "Název větve: {{branchName}}",
+      "creating-merge-state": "Vytváření merge stavu",
+      "merge-branch-path": "\"{{mergeFromBranch}}\" -> \"{{mergeToBranch}}\""
+    },
+    "toast": {
+      "create-merge-state-success": "Vytvoření merge stavu bylo úspěšné",
+      "create-merge-state-failed": "Vytvoření merge stavu selhalo"
     }
   },
   "sign-in-dialog": {
@@ -506,7 +584,7 @@
         "part-one": "Poskytnutá práva, na která se vás přihlášení dále ptá, se vztahuje na",
         "part-two": "každý repozitář, ke kterému máte přístup"
       },
-      "line-two": "Přístupový token získaný při přihlášení by měl být automaticky odvolán po odhlášení.",
+      "line-two": "Přístupový token získaný při přihlášení by měl být automaticky odstraněn po odhlášení.",
       "short-title": "Krátce:",
       "short-line-one": {
         "part-one": "Zvolte možnost",

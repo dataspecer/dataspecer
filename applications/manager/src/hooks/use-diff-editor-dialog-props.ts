@@ -964,7 +964,7 @@ export const useDiffEditorDialogProps = ({editable, initialMergeFromRootMetaPath
     const saveToBackend = async () => {
       const closeDialogObject = createCloseLoadingDialogObject();
       openModal(LoadingDialog, {
-        dialogTitle: "git.diff-editor.storing-to-backend-props.title",
+        dialogTitle: "git.diff-editor-props.storing-to-backend.title",
         waitingText: "",
         waitTime: SAVING_DIFF_EDITOR_STATE_TO_BACKEND,
         setCloseDialogAction: closeDialogObject.setCloseDialogAction,
