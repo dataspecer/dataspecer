@@ -651,6 +651,188 @@ function StyledNode({
   return styledNode;
 }
 
+/**
+ * Copy paste of {@link StyledNode} with some modifications, since the tour mode has different requirements for what to show and when to show it.
+ *  (we just show everything all the time)
+ */
+function TourModeStyledNode({
+  renderNodeProps,
+  extraRenderNodeProps,
+}: StyledNodeProps) {
+  const { node, style, dragHandle } = renderNodeProps;
+
+  let color: "black" | "blue" | "green" | "red" = "black";
+  let colorClassNames: string = "text-black dark:text-white";
+  let modificationTagColor: string = "";
+  let resourceExists: boolean = true;
+
+  if (node.data.status === "modified") {
+    colorClassNames = "text-blue-700 dark:text-blue-400";
+    modificationTagColor = "text-blue-700 dark:text-blue-400";
+    color = "blue";
+  }
+  else if (node.data.status === "created") {
+    colorClassNames = "text-green-700";
+    modificationTagColor = "text-green-700";
+    color = "green";
+  }
+  else if (node.data.status === "removed") {
+    colorClassNames = "text-red-500 dark:text-red-600";
+    modificationTagColor = "text-red-500 dark:text-red-650";
+    color = "red";
+    resourceExists = false;
+  }
+
+  const isExpandable = node.data.dataSourceType !== "datastore";
+  const textClassName = resourceExists ? "" : "line-through";
+
+  let resolveIcon: string = "";
+
+  const isCurrentlyInConflict = node.data.nowInConflictCount > 0;
+  resolveIcon = isCurrentlyInConflict ? "⚠️" : "";   // Always show the conflict mark
+  // TODO RadStr PR: Two Trees - The isInEditableTree is useless if we render only the one directory diff tree
+  // console.info({"extraRenderNodeProps.conflictsToBeResolvedOnSaveInThisComponent": extraRenderNodeProps.conflictsToBeResolvedOnSaveInThisComponent})
+  resolveIcon = (node.data.isInEditableTree && extraRenderNodeProps.conflictsToBeResolvedOnSaveInThisComponent.find(resolvedConflict => node.data.id === createIdForDatastoreRenderNode(resolvedConflict, node.data.treeType))) ? "✅" : resolveIcon;
+  if (resolveIcon === "✅" && isCurrentlyInConflict) {
+    // ... Small hack ... if the update was caused by adding parent nodes in the use-diff-editor props, then we have to do this.
+    // Otherwise it keeps showing that you can click check instead of cross (that is the component does not properly register that there are no longer conflicts)
+    onClickResolveConflict(null, node, extraRenderNodeProps, false);
+  }
+
+  let highlightColorClassName: string = "";
+  if (node.isSelected) {
+    highlightColorClassName = "bg-[#c9c2f3] dark:bg-gray-600";
+    colorClassNames += " " + highlightColorClassName;
+  }
+  else if (node.data.shouldBeHighlighted) {
+    highlightColorClassName = "bg-[#d3d9ec] dark:bg-gray-700";
+    colorClassNames += " " + highlightColorClassName;
+  }
+
+  const type = (node.data.resourceComparison?.resources.old ?? node.data.resourceComparison?.resources.new)?.metadata.types;
+
+  const idWithoutDotsAndSlashes = node.data.id.replace(/\./g, "-").replace(/\//g, "-");
+
+  console.info(node.data.id);
+  const styledNode = (
+    <>
+      <div
+        id={`${idWithoutDotsAndSlashes}`}
+        key={node.data.id}
+        className={"relative group whitespace-nowrap " + colorClassNames}
+      >
+        <div
+          style={{
+            ...style,
+            display: "flex",
+            alignItems: "center",
+            // To match the height of rows, otherwise there are vertical spaces between nodes,
+            // which is problem because if we click in the space,
+            // the upper node is selected - which can be non-leaf and we do not want that
+            height: `${treeRowHeight}px`,
+            width: 1900,   // Hack to not have text over multiple lines (can't think of any other EASY fix - non-easy fix would be set the width based on longest element or set rowHeight based on over how many lines it goes over)
+            cursor: isExpandable ? "pointer" : "default",
+          }}
+          ref={dragHandle}
+          onClick={async (e) => {
+            e.stopPropagation();
+            if (node.isFocused) {
+              return;
+            }
+            if (!extraRenderNodeProps.isCurrentlyAllowedChangeOfModels) {
+              return;
+            }
+            // Removed  part since it is not needed for tour
+          }}
+          onMouseOver={(_e) => {
+            handleMouseHoverHighlightingForNode(node, true);
+          }}
+          onMouseLeave={(_e) => {
+            handleMouseHoverHighlightingForNode(node, false);
+          }}
+        >
+          {
+          // Note that we do not show the current editing, since does not matter.
+          // We want user to care about the final result and not about the fact the currently edited some stuff in the session
+          // Well we kinda does, but it is difficult to show
+          }
+
+          {/* Changed order for tour and changed the logic for "in cache" */}
+          <p id={`${idWithoutDotsAndSlashes}-resolve-icon`}>{resolveIcon}</p>
+          {<p className={`font-bold pt-1 pr-1 text-xs ${extraRenderNodeProps.isNewlyCreated ? "visible": "invisible w-0 h-0"}`} style={{color: "green"}}>Newly C</p>}
+          {<p className={`font-bold pt-1 pr-1 text-xs ${extraRenderNodeProps.isNewlyRemoved ? "visible" : "invisible w-0 h-0"}`} style={{color: "red"}}>Newly D</p>}
+          {<p id={`${idWithoutDotsAndSlashes}-in-cache`} className={`font-bold pt-1 pr-1 text-xs ${resolveIcon === "✅" && idWithoutDotsAndSlashes === "root-package-project-iriroot-package-iri-datastore-0-meta-json-new" ? "visible": "invisible w-0 h-0"}`}>📥</p>}
+          {<p className={`font-bold pt-1 pr-1 text-xs ${color === "green" ? "visible": "invisible w-0 h-0"} ${modificationTagColor}`}>C</p>}
+          {<p className={`font-bold pt-1 pr-1 text-xs ${color === "blue" ? "visible" : "invisible w-0 h-0"} ${modificationTagColor}`}>M</p>}
+          {<p className={`font-bold pt-1 pr-1 text-xs ${color === "red" ? "visible" : "invisible w-0 h-0"} ${modificationTagColor}`}>D</p>}
+          {type !== undefined && <ModelIcon className="mt-1" type={type}/>}
+          <span className={textClassName}>{node.data.name}</span>
+            {/* The buttons on hover */}
+            <div
+              style={{ right: "0px" }}
+              className={highlightColorClassName + " absolute text-black top-1/2 -translate-y-1/2 flex pointer-events-none"}
+              >
+
+              {
+              isExpandable ?
+                !isCurrentlyInConflict ?
+                  null :
+                  <button id={`${idWithoutDotsAndSlashes}-resolve-button1`} title="Mark as resolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickResolveConflict(e, node, extraRenderNodeProps, true)}>
+                    <Check className="h-6 w-6"/>
+                  </button> :
+                <>
+                  {
+                  !isCurrentlyInConflict ?
+                    null :
+                    <button id={`${idWithoutDotsAndSlashes}-resolve-button2`} title="Mark as resolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickResolveConflict(e, node, extraRenderNodeProps, true)}>
+                      <Check className="h-6 w-6"/>
+                    </button>
+                  }
+                  {
+                  node.data.canBeInCoflictCount !== 0 && !isCurrentlyInConflict ?
+                    <button id={`${idWithoutDotsAndSlashes}-unresolve-button`} title="Mark as unresolved" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickUnresolveConflict(e, node, extraRenderNodeProps)}>
+                      <X className="h-6 w-6"/>
+                    </button> :
+                    null
+                  }
+                  {/* {
+                  TODO RadStr: Nice to have, could be implemented later. It just to make it faster for user.
+                                Since currently they can perform the same action through merge resolver.
+                  node.data.status === "modified" ?
+                    <button title="Replace by other version" className="hover:bg-gray-400 text-sm" onClick={(e) => {e.stopPropagation();}}>
+                      { node.data.treeType === "new" ? <MoveRight className="h-6 w-6"/> : <MoveLeft className="h-6 w-6"/> }
+                    </button> :
+                    null
+                  } */}
+                  {
+                  (node.data.status === "same") ?
+                    <div className="h-6 w-6"/> :    // Not null because we want to keep the button positioning
+                    null
+                  }
+                  {
+                  node.data.status === "removed" ?
+                    <button id={`${idWithoutDotsAndSlashes}-create-datastore-button`} title="Create datastore" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickCreateDatastore(e, node, extraRenderNodeProps)}>
+                      <Plus className="h-6 w-6"/>
+                    </button> :
+                    null
+                  }
+                  {
+                  node.data.status === "created" ?
+                    <button id={`${idWithoutDotsAndSlashes}-remove-datastore-button`} title="Remove datastore" className="hover:bg-gray-400 text-sm" onClick={(e) => onClickRemoveDatastore(e, node.parent?.data, node, extraRenderNodeProps)}>
+                      <Minus className="h-6 w-6"/>
+                    </button> :
+                    null
+                  }
+                </>
+            }
+          </div>
+        </div>
+      </div>
+    </>);
+
+  return styledNode;
+}
+
 
 const createStyledNode = (
   props: NodeRendererProps<RenderNode>,
@@ -661,6 +843,17 @@ const createStyledNode = (
   propsWithHighlighting.node.data.shouldBeHighlighted = shouldBeHighlighted;
   propsWithHighlighting.node.data.setShouldBeHighlighted = setShouldBeHighlighted;
   return <StyledNode renderNodeProps={propsWithHighlighting} extraRenderNodeProps={extraProps} />;
+}
+
+const createTourModeStyledNode = (
+  props: NodeRendererProps<RenderNode>,
+  extraProps: ExtraRenderNodeProps,
+) => {
+  const [shouldBeHighlighted, setShouldBeHighlighted] = useState<boolean>(false);
+  const propsWithHighlighting: NodeRendererProps<RenderNodeWithHighlighting> = props as any;
+  propsWithHighlighting.node.data.shouldBeHighlighted = shouldBeHighlighted;
+  propsWithHighlighting.node.data.setShouldBeHighlighted = setShouldBeHighlighted;
+  return <TourModeStyledNode renderNodeProps={propsWithHighlighting} extraRenderNodeProps={extraProps} />;
 }
 
 const updateConflictsToBeResolvedOnSave = (
@@ -766,13 +959,15 @@ export const DiffTreeVisualization = (props: {
   setRemovedDatastoresAndLoadIntoCache: AddToRemovedDatastoresAndAddToCacheMethodType,
   removedTreePaths: string[],
   setRemovedTreePaths: Dispatch<SetStateAction<string[]>>,
+  tourModeActive?: boolean,
 }) => {
   const {
     createdDatastores, addToCreatedDatastores,
     removedDatastores, setRemovedDatastores, setRemovedDatastoresAndLoadIntoCache,
     setConflictsToBeResolvedOnSave, createdFilesystemNodes,
     removedTreePaths, setRemovedTreePaths,
-    updateModelData, mergeStateFromBackend
+    updateModelData, mergeStateFromBackend,
+    tourModeActive,
   } = props;
   const createdFilesystemNodesAsArray = Object.values(createdFilesystemNodes).map(filesystemNode => filesystemNode.createdFilesystemNodes).flat();
 
@@ -1008,7 +1203,7 @@ export const DiffTreeVisualization = (props: {
     mergeStateFromBackend
   ]);
 
-  const nodeRenderer = useCallback((nodeProps: NodeRendererProps<RenderNode>) => {
+  const nodeRenderer = useCallback((nodeProps: NodeRendererProps<RenderNode>, tourModeActive?: boolean) => {
     const currentNodeTreePath = extractTreePathFromNode(nodeProps.node);
 
     let isNewlyCreated = createdDatastores.find(createdDatastore => createdDatastore.fullPath === nodeProps.node.data.fullDatastoreInfoInOldTree?.fullPath) !== undefined;
@@ -1039,9 +1234,15 @@ export const DiffTreeVisualization = (props: {
       ...baseObjectForNodeRenderer,
     };
 
-    return createStyledNode(nodeProps, extraProps);
+    if (tourModeActive) {
+      return createTourModeStyledNode(nodeProps, extraProps);
+    }
+    else {
+      return createStyledNode(nodeProps, extraProps);
+    }
   },
   [baseObjectForNodeRenderer, createdFilesystemNodesAsArray, removedTreePaths, props.datastoreInfosForCacheEntries]);
+
 
   return (
     <div className="h-full">
@@ -1076,7 +1277,7 @@ export const DiffTreeVisualization = (props: {
         <div className="flex-1 border border-stone-200 bg-gray-50 dark:bg-[#1e1e1e] h-full" style={{height: treeRowHeight*treeRowHeightMultiplier}}>
           {
             renderTreeWithLoading(props.isLoadingTreeStructure,
-              <Tree children={(nodeProps) => nodeRenderer(nodeProps)}
+              <Tree children={(nodeProps) => nodeRenderer(nodeProps, tourModeActive)}
                 className="overflow-x-hidden! bg-gray-50 dark:bg-[#1e1e1e] relative"
                 ref={newTreeRef} data={newRenderTreeDataToRender} width={"100%"}
                 onSelect={(nodes) => onNodesSelect(nodes, "new")}

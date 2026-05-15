@@ -125,7 +125,9 @@ export const MonacoDiffEditor: FC<{
   const originalEditorContent = useRef<string | undefined>(undefined);
   const modifiedEditorContent = useRef<string | undefined>(undefined);
 
-  return <div className="flex flex-col grow overflow-hidden h-screen! w-full!">
+  return <div id="diff-editor-parent-div" className="flex flex-col grow overflow-hidden h-screen! w-full!">
+    <div id="diff-editor-parent-left-half-div" className="absolute w-[40%] h-full opacity-0 pointer-events-none"/>
+    <div id="diff-editor-parent-right-half-div" className="absolute left-[60%] w-[40%] h-full opacity-0 pointer-events-none"/>
     <DiffEditor
       {...props}
       onMount={(editor: any) => {

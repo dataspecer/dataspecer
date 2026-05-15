@@ -10,12 +10,14 @@ import SvgVisualDiffDialog from "@/dialog/show-svgs-diff-dialog";
 import { goToNextDiff, goToPreviousDiff, MonacoDiffEditor } from "@/components/monaco-diff-editor";
 import { MergeStrategyComponent } from "@/components/merge-strategy-component";
 import { useDiffEditorDialogProps } from "@/hooks/use-diff-editor-dialog-props";
-import { AvailableFilesystems, DatastoreInfo, EditableType, getEditableAndNonEditableValue, MergeStateCause } from "@dataspecer/git";
+import { AvailableFilesystems, createEmptyMergeState, DatastoreComparison, DatastoreInfo, EditableType, getEditableAndNonEditableValue, MergeState, MergeStateCause, createComparisonResultForTourMode } from "@dataspecer/git";
 import { BetterModalProps, useBetterModal } from "@/lib/better-modal";
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 import { saveChangesTooltipText } from "./outside-changes-to-diff-editor-action-dialog";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { startDiffEditorDialogTour } from "./diff-editor-dialog-tutorial";
+import { EntriesAffectedByCreateType } from "@/utils/use-diff-editor-dialog-props-utils";
 
 export type UpdateModelDataMethod = (
   treePathToNodeContainingDatastore: string,
@@ -49,6 +51,8 @@ export const DIFF_EDITOR_EDIT_ICON_TAILWIND_HEIGHT = "h-6";
 export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMergeToRootMetaPath, editable, isOpen, resolve, }: TextDiffEditorBetterModalProps) => {
   const openModel = useBetterModal();
   const { t } = useTranslation();
+
+  const [tourMockMode, setTourMockMode] = useState(false);
 
   const {
     monacoEditor,
@@ -107,7 +111,33 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
     getEditableAndNonEditableValue(examinedMergeState?.editable, mergeFromBranchDataToRender, mergeToBranchDataToRender);
 
 
-return (
+  const [conflictsToBeResolvedOnSaveForTour, setConflictsToBeResolvedOnSaveForTour] = useState<DatastoreComparison[]>([]);
+  const createdFilesystemNodesForTour: React.RefObject<Record<string, EntriesAffectedByCreateType>> = useRef({});
+  const createdDatastoresForTour:  React.RefObject<DatastoreInfo[]> = useRef([]);
+  const [removedDatastoresForTour, setRemovedDatastoresForTour] = useState<DatastoreInfo[]>([]);
+  const [removedTreePathsForTour, setRemovedTreePathsForTour] = useState<string[]>([]);
+  const mergeStateFromBackendForTourMode: React.RefObject<MergeState | null> = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (!tourMockMode) {
+        setIsLoadingTreeStructure(true);
+        createComparisonResultForTourMode().then((result) => {
+          mergeStateFromBackendForTourMode.current = createEmptyMergeState(
+            examinedMergeState?.mergeStateCause ?? "pull", result.diffTree, result.diffTreeSize, result.conflicts,
+          );
+          setConflictsToBeResolvedOnSaveForTour(conflictsToBeResolvedOnSave);
+          createdFilesystemNodesForTour.current = {};
+          createdDatastoresForTour.current = [];
+          setRemovedDatastoresForTour([]);
+          setRemovedTreePathsForTour([]);
+          setIsLoadingTreeStructure(false);
+        });
+      }
+    };
+  }, [tourMockMode]);
+
+  return (
     <Modal open={isOpen} onOpenChange={(value: boolean) => value ? null : closeWithSuccess()}>
       <ModalContent className="max-w-none! h-full! py-0 rounded-none! border-none!">
         <ModalBody className="grow overflow-hidden h-screen!">
@@ -122,24 +152,45 @@ return (
               </ModalHeader>
                 {/* The overflow-y is needed however it adds a bit horizontal space between the vertical splitter and the Tree structure */}
                 <div className="h-full">
-                  <div className="flex! flex-1 flex-col grow pr-2 -mr-2 -ml-2 pl-2 h-[70%]! w-full!">
-                    <DiffTreeVisualization updateModelData={updateModelData}
-                                            datastoreInfosForCacheEntries={datastoreInfosForCacheEntries}
-                                            isLoadingTreeStructure={isLoadingTreeStructure}
-                                            setIsLoadingTreeStructure={setIsLoadingTreeStructure}
-                                            mergeStateFromBackend={examinedMergeState}
-                                            conflictsToBeResolvedOnSaveFromParent={conflictsToBeResolvedOnSave}
-                                            setConflictsToBeResolvedOnSave={setConflictsToBeResolvedOnSave}
-                                            createdFilesystemNodes={createdFilesystemNodes}
-                                            createdDatastores={createdDatastores}
-                                            addToCreatedDatastores={addToCreatedDatastoresAndAddToCache}
-                                            removedDatastores={removedDatastores}
-                                            setRemovedDatastores={setRemovedDatastores}
-                                            setRemovedDatastoresAndLoadIntoCache={addToRemovedDatastoresAndAddToCache}
-                                            removedTreePaths={removedTreePaths}
-                                            setRemovedTreePaths={setRemovedTreePaths}
-                    />
-                  </div>
+                    { !tourMockMode ?
+                        <div id="diff-editor-tree-panel-not-used-for-tour-mode" className="flex! flex-1 flex-col grow pr-2 -mr-2 -ml-2 pl-2 h-[70%]! w-full!">
+                          <DiffTreeVisualization updateModelData={updateModelData}
+                                                  datastoreInfosForCacheEntries={datastoreInfosForCacheEntries}
+                                                  isLoadingTreeStructure={isLoadingTreeStructure}
+                                                  setIsLoadingTreeStructure={setIsLoadingTreeStructure}
+                                                  mergeStateFromBackend={examinedMergeState}
+                                                  conflictsToBeResolvedOnSaveFromParent={conflictsToBeResolvedOnSave}
+                                                  setConflictsToBeResolvedOnSave={setConflictsToBeResolvedOnSave}
+                                                  createdFilesystemNodes={createdFilesystemNodes}
+                                                  createdDatastores={createdDatastores}
+                                                  addToCreatedDatastores={addToCreatedDatastoresAndAddToCache}
+                                                  removedDatastores={removedDatastores}
+                                                  setRemovedDatastores={setRemovedDatastores}
+                                                  setRemovedDatastoresAndLoadIntoCache={addToRemovedDatastoresAndAddToCache}
+                                                  removedTreePaths={removedTreePaths}
+                                                  setRemovedTreePaths={setRemovedTreePaths}
+                          />
+                        </div> :
+                        <div id="diff-editor-tree-panel" className="flex! flex-1 flex-col grow pr-2 -mr-2 -ml-2 pl-2 h-[70%]! w-full!">
+                          <DiffTreeVisualization updateModelData={async () => {}}
+                                                  datastoreInfosForCacheEntries={{}}
+                                                  isLoadingTreeStructure={false}
+                                                  setIsLoadingTreeStructure={() => {}}
+                                                  mergeStateFromBackend={mergeStateFromBackendForTourMode.current}
+                                                  conflictsToBeResolvedOnSaveFromParent={conflictsToBeResolvedOnSaveForTour}
+                                                  setConflictsToBeResolvedOnSave={setConflictsToBeResolvedOnSaveForTour}
+                                                  createdFilesystemNodes={createdFilesystemNodesForTour.current}
+                                                  createdDatastores={createdDatastoresForTour.current}
+                                                  addToCreatedDatastores={async () => {}}
+                                                  removedDatastores={removedDatastoresForTour}
+                                                  setRemovedDatastores={setRemovedDatastoresForTour}
+                                                  setRemovedDatastoresAndLoadIntoCache={async () => {}}
+                                                  removedTreePaths={removedTreePathsForTour}
+                                                  setRemovedTreePaths={setRemovedTreePathsForTour}
+                                                  tourModeActive={true}
+                          />
+                        </div>
+                    }
                   <div className="gap-2 mt-7 justify-start -pl-8">
                     <Button title={t("git.diff-editor.button.close-tooltip")}
                             variant={"outline"}
@@ -147,7 +198,7 @@ return (
                             className="m-1">
                       {t("close")}
                     </Button>
-                    <Button title={t("git.diff-editor.button.save-all-tooltip")}
+                    <Button id="diff-editor-save-all-button" title={t("git.diff-editor.button.save-all-tooltip")}
                             variant={"outline"}
                             onClick={() => saveEverything()}
                             className="m-1 border bg-blue-100 border-blue-500 hover:bg-blue-500 hover:text-white dark:bg-blue-900 dark:border-blue-400 dark:hover:bg-blue-500 dark:hover:text-white transition">
@@ -158,7 +209,7 @@ return (
                     <span title={cantFinalize ?
                                 t("git.diff-editor.tooltip.resolve-conflicts") :
                                 t("git.diff-editor.tooltip.save-and-finalize") }>
-                      <Button variant={"outline"}
+                      <Button id="diff-editor-finalize-button" variant={"outline"}
                               onClick={finalizeMergeStateHandler}
                               disabled={cantFinalize}
                               className="m-1 border bg-green-100 border-green-500 hover:bg-green-500 hover:text-white dark:bg-green-900 dark:border-green-400 dark:hover:bg-green-500 dark:hover:text-white transition">
@@ -185,8 +236,9 @@ return (
                       }
                       <div className="flex! items-center justify-center space-x-4 -ml-32">    { /* TODO RadStr: ... the ml mr is a bit hacky, it does not scale well */ }
                         <div className="flex flex-row mr-24">
-                          <Button className="flex! cursor-pointer" variant="outline" onClick={() => goToPreviousDiff(monacoEditor.current?.editor)}><ArrowUpIcon/>{t("git.diff-editor.button.prev-diff")}</Button>
-                          <Button className="flex! ml-1 cursor-pointer" variant="outline" onClick={() => goToNextDiff(monacoEditor.current?.editor)}><ArrowDownIcon/>{t("git.diff-editor.button.next-diff")}</Button>
+                          <Button id="diff-editor-prev-diff" className="flex! cursor-pointer" variant="outline" onClick={() => goToPreviousDiff(monacoEditor.current?.editor)}><ArrowUpIcon/>{t("git.diff-editor.button.prev-diff")}</Button>
+                          <Button id="diff-editor-next-diff" className="flex! ml-1 cursor-pointer" variant="outline" onClick={() => goToNextDiff(monacoEditor.current?.editor)}><ArrowDownIcon/>{t("git.diff-editor.button.next-diff")}</Button>
+                          <Button id="diff-editor-tour-button" className="flex! ml-1 cursor-pointer" variant="outline" onClick={() => { setTourMockMode(true); startDiffEditorDialogTour(t, () => setTourMockMode(false)); }}>{t("git.diff-editor.button.tutorial", "Tour")}</Button>
                         </div>
                         <MergeStrategyComponent handleMergeStateResolving={applyAutomaticMergeStateResolver}/>
                         {
@@ -194,7 +246,7 @@ return (
                             <Button variant="default" onClick={() => {openModel(SvgVisualDiffDialog, {editableType: editable, mergeFromSvg, mergeToSvg})}}>{t("git.diff-editor.button.show-as-images")}</Button>
                             : null
                         }
-                        <label className="flex! items-center">
+                        <label id="diff-editor-show-stripped-version" className="flex! items-center">
                           <input
                             type="checkbox"
                             checked={showStrippedVersion}
@@ -206,26 +258,36 @@ return (
                         </label>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 items-center w-full pt-1 pb-1">
-                      <div className="text-center font-semibold">
-                        {nonEditableBranchDataToRender?.branch} {nonEditableBranchDataToRender?.filesystem === AvailableFilesystems.ClassicFilesystem ? " (Git)" : ""}
-                      </div>
+                    {
+                      tourMockMode ?
+                        <div className="grid grid-cols-2 items-center w-full pt-1 pb-1">
+                          <div id="diff-editor-branch-names-tour-left" className="text-center font-semibold">
+                            my-tour-branch (Git)
+                          </div>
+                          <div id="diff-editor-branch-names-tour-right" className="text-center font-semibold">
+                            my-tour-branch
+                          </div>
+                        </div> :
+                        <div className="grid grid-cols-2 items-center w-full pt-1 pb-1">
+                          <div className="text-center font-semibold">
+                            {nonEditableBranchDataToRender?.branch} {nonEditableBranchDataToRender?.filesystem === AvailableFilesystems.ClassicFilesystem ? " (Git)" : ""}
+                          </div>
 
-
-                      <div className="text-center font-semibold">
-                        {editableBranchDataToRender?.branch} {editableBranchDataToRender?.filesystem === AvailableFilesystems.ClassicFilesystem ? " (Git)" : ""}
-                      </div>
-                    </div>
+                          <div className="text-center font-semibold">
+                            {editableBranchDataToRender?.branch} {editableBranchDataToRender?.filesystem === AvailableFilesystems.ClassicFilesystem ? " (Git)" : ""}
+                          </div>
+                        </div>
+                    }
                     <MonacoDiffEditor className="-ml-2 h-[95.5%]!"       // The h- has to be defined otherwise it takes full window (which goes beyound the start taskbar)
-                                        editorRef={monacoEditor}
-                                        mergeFromContent={strippedMergeFromContent}
-                                        editable={editable}
-                                        mergeToContent={strippedMergeToContent}
-                                        datastoreType={activeDatastoreType}
-                                        format={activeFormat}
-                                        projectIrisTreePathToFilesystemNode={activeTreePathToNodeContainingDatastore}
-                                        mergeState={examinedMergeState}
-                                        setMergeState={setExaminedMergeState}
+                                      editorRef={monacoEditor}
+                                      mergeFromContent={strippedMergeFromContent}
+                                      editable={editable}
+                                      mergeToContent={strippedMergeToContent}
+                                      datastoreType={activeDatastoreType}
+                                      format={activeFormat}
+                                      projectIrisTreePathToFilesystemNode={activeTreePathToNodeContainingDatastore}
+                                      mergeState={examinedMergeState}
+                                      setMergeState={setExaminedMergeState}
                     />
                   </div>
               }

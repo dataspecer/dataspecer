@@ -892,8 +892,8 @@
         "created-at": "Vytvořeno",
         "last-modified-at": "Naposledy upraveno",
         "cause": "Příčina",
-        "merge-from": "Merge ze",
-        "merge-to": "Merge do"
+        "merge-from": "Merge from",
+        "merge-to": "Merge to"
       },
       "button": {
         "open-diff-editor": "Otevřít merge stav v diff editoru",

@@ -235,3 +235,46 @@ export interface MergeState {
 
   isUpToDate: boolean;
 }
+
+
+/**
+ * Used for the diff editor tour
+ */
+export function createEmptyMergeState(
+  mergeStateCause: MergeStateCause,
+  diffTree?: DiffTree,
+  diffTreeSize?: number,
+  conflicts?: DatastoreComparison[],
+): MergeState {
+  return {
+    uuid: "",
+    commitMessage: "",
+    createdAt: new Date(),
+    modifiedDiffTreeAt: new Date(),
+    isMergeToBranch: false,
+    branchMergeTo: "",
+    gitUrlMergeTo: "",
+    lastCommitHashMergeTo: "",
+    rootFullPathToMetaMergeTo: "",
+    rootIriMergeTo: "",
+    filesystemTypeMergeTo: AvailableFilesystems.DS_Filesystem,
+    isMergeFromBranch: false,
+    branchMergeFrom: "",
+    gitUrlMergeFrom: "",
+    lastCommitHashMergeFrom: "",
+    rootFullPathToMetaMergeFrom: "",
+    rootIriMergeFrom: "",
+    filesystemTypeMergeFrom: AvailableFilesystems.DS_Filesystem,
+    editable: convertMergeStateCauseToEditable(mergeStateCause),
+    lastCommonCommitHash: "",
+    conflicts: conflicts ?? [],
+    unresolvedConflicts: conflicts ?? [],
+    conflictCount: conflicts?.length ?? 0,
+    mergeStateCause,
+    diffTreeData: (diffTree === undefined || diffTreeSize === undefined) ? undefined : {
+      diffTree: diffTree!,
+      diffTreeSize: diffTreeSize!,
+    },
+    isUpToDate: true,
+  };
+}
