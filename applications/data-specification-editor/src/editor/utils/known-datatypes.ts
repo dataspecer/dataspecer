@@ -172,4 +172,20 @@ export const knownDatatypes: KnownDatatype[] = [
             "en": "GeoJSON"
         }
     },
+    {
+        "iri": "http://www.opengis.net/ont/sf#Geometry",
+        "documentation": "http://www.opengis.net/ont/sf#Geometry",
+        "label": {
+            "cs": "Opengis - Geometry",
+            "en": "Opengis - Geometry"
+        }
+    },
+    {
+        "iri": "http://www.opengis.net/ont/sf#Envelope",
+        "documentation": "http://www.opengis.net/ont/sf#Envelope",
+        "label": {
+            "cs": "Opengis - Envelope or Bounding Box",
+            "en": "Opengis - Envelope or Bounding Box"
+        }
+    }
 ];

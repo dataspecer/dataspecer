@@ -3,8 +3,10 @@ import {
   XmlMatch,
   xmlMatchIsClass,
   xmlMatchIsContainer,
+  xmlMatchIsGmlLiteral,
   xmlMatchIsIri,
   xmlMatchIsLiteral,
+  xmlMatchIsWktLiteral,
   XmlRootTemplate,
   XmlTemplate,
   XmlTransformation,
@@ -17,6 +19,11 @@ import { writePrefixesFromImports } from "./utils.ts";
 const xslNamespace = "http://www.w3.org/1999/XSL/Transform";
 
 /**
+ * Name of the template that takes contents of a GML literal and emits XML nodes.
+ */
+const gmlTransformLoweringTemplateName = "gml-transform-lowering";
+
+/**
  * Writes out a lowering transformation.
  */
 export async function writeXsltLowering(model: XmlTransformation, stream: OutputStream): Promise<void> {
@@ -25,7 +32,7 @@ export async function writeXsltLowering(model: XmlTransformation, stream: Output
   await writeImports(model, writer);
   await writeSettings(writer);
   await writeRootTemplates(model, writer);
-  await writeCommonTemplates(writer);
+  await writeCommonTemplates(model, writer);
   await writeTemplates(model, writer);
   await writeFinalTemplates(writer);
   await writeTransformationEnd(writer);
@@ -36,13 +43,22 @@ export async function writeXsltLowering(model: XmlTransformation, stream: Output
  * transformation definition and options, and declares used namespaces.
  */
 async function writeTransformationBegin(model: XmlTransformation, writer: XmlWriter): Promise<void> {
+  /**
+   * Default is off and individual features may turn this on if they require XSLT 3.0 features.
+   */
+  let usesVersion3 = false;
+  usesVersion3 ||= model.usesGmlLiterals;
+
   await writer.writeXmlDeclaration("1.0", "utf-8");
   writer.registerNamespace("xsl", xslNamespace);
   await writer.writeElementBegin("xsl", "stylesheet");
   await writer.writeNamespaceDeclaration("xsl", xslNamespace);
   await writer.writeAndRegisterNamespaceDeclaration("sp", "http://www.w3.org/2005/sparql-results#");
   await writer.writeAndRegisterNamespaceDeclaration("xsi", "http://www.w3.org/2001/XMLSchema-instance");
-  await writer.writeLocalAttributeValue("version", "2.0");
+  if (model.usesWktLiterals || model.usesGmlLiterals) {
+    await writer.writeAndRegisterNamespaceDeclaration("gsp", "http://www.opengis.net/ont/geosparql#");
+  }
+  await writer.writeLocalAttributeValue("version", usesVersion3 ? "3.0" : "2.0");
 
   if (model.targetNamespacePrefix != null) {
     await writer.writeAndRegisterNamespaceDeclaration(model.targetNamespacePrefix, model.targetNamespace);
@@ -173,7 +189,7 @@ async function writeTransformationEnd(writer: XmlWriter): Promise<void> {
 /**
  * Writes common templates used from other places.
  */
-async function writeCommonTemplates(writer: XmlWriter): Promise<void> {
+async function writeCommonTemplates(model: XmlTransformation, writer: XmlWriter): Promise<void> {
   // todo only for lang properties
   await writer.writeElementFull(
     "xsl",
@@ -222,6 +238,129 @@ async function writeCommonTemplates(writer: XmlWriter): Promise<void> {
       await writer.writeLocalAttributeValue("select", ".");
     });
   });
+
+  if (model.usesWktLiterals) {
+    // Template for WKT literal transformation (lowering)
+    // Expects a string in the form "<srsurl> WKT_CONTENT" or just "WKT_CONTENT".
+    // When called inside an element, this template will add @srsName (if present)
+    // and write the WKT content as the element text. Trims leading/trailing whitespace.
+    await writer.writeElementFull(
+      "xsl",
+      "template",
+    )(async (writer) => {
+      await writer.writeLocalAttributeValue("name", "wkt-transform-lowering");
+      await writer.writeElementFull(
+        "xsl",
+        "param",
+      )(async (writer) => {
+        await writer.writeLocalAttributeValue("name", "value");
+      });
+
+      // Trim the input value (only leading/trailing whitespace)
+      await writer.writeElementFull(
+        "xsl",
+        "variable",
+      )(async (writer) => {
+        await writer.writeLocalAttributeValue("name", "trimmed");
+        await writer.writeLocalAttributeValue("select", "replace(string($value), '^\\s+|\\s+$','')");
+      });
+
+      await writer.writeElementFull(
+        "xsl",
+        "choose",
+      )(async (writer) => {
+        // If the trimmed value starts with '<' we treat the first token as srs
+        await writer.writeElementFull(
+          "xsl",
+          "when",
+        )(async (writer) => {
+          await writer.writeLocalAttributeValue("test", "starts-with($trimmed, '<')");
+
+          // srs is the token before the first space, with surrounding <> stripped
+          await writer.writeElementFull(
+            "xsl",
+            "variable",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("name", "srsRaw");
+            await writer.writeLocalAttributeValue("select", "substring-before($trimmed, ' ')");
+          });
+
+          await writer.writeElementFull(
+            "xsl",
+            "variable",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("name", "srs");
+            await writer.writeLocalAttributeValue("select", "replace($srsRaw, '^<(.*)>$','$1')");
+          });
+
+          // write attribute srsName
+          await writer.writeElementFull(
+            "xsl",
+            "attribute",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("name", "srsName");
+            await writer.writeElementFull(
+              "xsl",
+              "value-of",
+            )(async (writer) => {
+              await writer.writeLocalAttributeValue("select", "$srs");
+            });
+          });
+
+          // write WKT content (rest after first space), trimmed
+          await writer.writeElementFull(
+            "xsl",
+            "value-of",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("select", "replace(substring-after($trimmed, ' '), '^\\s+|\\s+$','')");
+          });
+        });
+
+        // If it does not start with '<', treat the whole trimmed value as WKT content
+        await writer.writeElementFull(
+          "xsl",
+          "otherwise",
+        )(async (writer) => {
+          await writer.writeElementFull(
+            "xsl",
+            "value-of",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("select", "$trimmed");
+          });
+        });
+      });
+    });
+  }
+
+  if (model.usesGmlLiterals) {
+    await writer.writeElementFull(
+      "xsl",
+      "template",
+    )(async (writer) => {
+      await writer.writeLocalAttributeValue("name", gmlTransformLoweringTemplateName);
+      await writer.writeElementFull(
+        "xsl",
+        "param",
+      )(async (writer) => {
+        await writer.writeLocalAttributeValue("name", "value");
+      });
+
+      await writer.writeElementFull(
+        "xsl",
+        "variable",
+      )(async (writer) => {
+        await writer.writeLocalAttributeValue("name", "fragment");
+        await writer.writeLocalAttributeValue("select", "parse-xml-fragment(concat('<wrapper>', string($value), '</wrapper>'))/*/node()");
+      });
+
+      await writer.writeElementFull(
+        "xsl",
+        "copy-of",
+      )(async (writer) => {
+        await writer.writeLocalAttributeValue("select", "$fragment");
+      });
+    });
+  }
 }
 
 /**
@@ -646,12 +785,55 @@ async function writeMatchedProperty(match: XmlMatch, obj: string | null, writer:
  */
 async function writePropertyContents(match: XmlMatch, obj: string | null, writer: XmlWriter): Promise<void> {
   if (xmlMatchIsLiteral(match)) {
-    await writer.writeElementFull(
-      "xsl",
-      "apply-templates",
-    )(async (writer) => {
-      await writer.writeLocalAttributeValue("select", `sp:binding[@name=${obj}]/sp:literal`);
-    });
+    if (xmlMatchIsWktLiteral(match)) {
+      // For WKT literals, extract the text content and pass to wkt-transform-lowering template
+      await writer.writeElementFull(
+        "xsl",
+        "call-template",
+      )(async (writer) => {
+        await writer.writeLocalAttributeValue("name", "wkt-transform-lowering");
+        await writer.writeElementFull(
+          "xsl",
+          "with-param",
+        )(async (writer) => {
+          await writer.writeLocalAttributeValue("name", "value");
+          await writer.writeElementFull(
+            "xsl",
+            "value-of",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("select", `sp:binding[@name=${obj}]/sp:literal`);
+          });
+        });
+      });
+    } else if (xmlMatchIsGmlLiteral(match)) {
+      // For GML literals, parse the serialized XML string and emit XML nodes.
+      await writer.writeElementFull(
+        "xsl",
+        "call-template",
+      )(async (writer) => {
+        await writer.writeLocalAttributeValue("name", gmlTransformLoweringTemplateName);
+        await writer.writeElementFull(
+          "xsl",
+          "with-param",
+        )(async (writer) => {
+          await writer.writeLocalAttributeValue("name", "value");
+          await writer.writeElementFull(
+            "xsl",
+            "value-of",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("select", `sp:binding[@name=${obj}]/sp:literal`);
+          });
+        });
+      });
+    } else {
+      // For regular literals, apply templates
+      await writer.writeElementFull(
+        "xsl",
+        "apply-templates",
+      )(async (writer) => {
+        await writer.writeLocalAttributeValue("select", `sp:binding[@name=${obj}]/sp:literal`);
+      });
+    }
   } else if (xmlMatchIsIri(match)) {
     await writer.writeElementFull(
       "xsl",
