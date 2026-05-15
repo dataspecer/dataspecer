@@ -19,12 +19,12 @@ export class MakeConcrete implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const dataPsmSchema = this.store.getSchemaForResource(this.dataPsmOrIri) as string;
 
     const dataPsmSetChoice = new DataPsmSetChoice();
     dataPsmSetChoice.dataPsmOr = this.dataPsmOrIri;
     dataPsmSetChoice.dataPsmChoice = this.classId;
-    await this.store.applyOperation(dataPsmSchema, dataPsmSetChoice);
+    this.store.applyOperation(dataPsmSchema, dataPsmSetChoice);
   }
 }

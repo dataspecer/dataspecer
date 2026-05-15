@@ -1,4 +1,4 @@
-import { UiModelState, UiSemanticModel } from "../../dataspecer/ui-model";
+import { UiModelState, UiSemanticModel } from "../ui-model";
 import {
   uiGeneralizationToNode,
   uiSemanticModelToNode,

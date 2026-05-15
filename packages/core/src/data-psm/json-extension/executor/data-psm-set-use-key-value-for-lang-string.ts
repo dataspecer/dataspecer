@@ -5,12 +5,12 @@ import { DataPsmJsonPropertyExtension } from "../model/index.ts";
 import { DataPsmSetUseKeyValueForLangString } from "../operation/index.ts";
 import { JSON_EXTENSION } from "../vocabulary.ts";
 
-export async function executeDataPsmSetUseKeyValueForLangString(
+export function executeDataPsmSetUseKeyValueForLangString(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetUseKeyValueForLangString
-): Promise<CoreExecutorResult> {
-  const resource = await reader.readResource(operation.dataPsmProperty) as DataPsmJsonPropertyExtension;
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.dataPsmProperty) as DataPsmJsonPropertyExtension;
   if (resource == null || !DataPsmAttribute.is(resource)) {
     return DataPsmExecutorResultFactory.invalidType(
       resource,

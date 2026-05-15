@@ -20,7 +20,7 @@ export class SetPimDatatype implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.forPimAttributeIri) as string;
 
     let datatype = this.datatype;
@@ -42,6 +42,6 @@ export class SetPimDatatype implements ComplexOperation {
     });
 
     // @ts-ignore
-    await this.store.applyOperation(schema, operation);
+    this.store.applyOperation(schema, operation);
   }
 }

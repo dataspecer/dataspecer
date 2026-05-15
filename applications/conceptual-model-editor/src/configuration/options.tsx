@@ -1,4 +1,4 @@
-import { DiagramOptions, EntityColor, LabelVisual, ProfileOfVisual } from "../diagram/model";
+import { EntityColor, LabelVisual, ProfileOfVisual } from "../diagram/model";
 import React, { useContext, useMemo, useState } from "react";
 
 export enum Language {

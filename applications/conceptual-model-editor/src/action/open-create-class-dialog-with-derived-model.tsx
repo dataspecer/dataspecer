@@ -12,6 +12,8 @@ import { ClassDialogState } from "../dialog/class/edit-class-dialog-state";
 import { firstInMemorySemanticModel } from "../utilities/model";
 import { CmeReference } from "../dataspecer/cme-model/model";
 import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
+import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
+import { LabelResolver } from "../dependency-tracker";
 
 export function openCreateClassDialogWithModelDerivedFromClassAction(
   cmeExecutor: CmeModelOperationExecutor,
@@ -25,6 +27,8 @@ export function openCreateClassDialogWithModelDerivedFromClassAction(
   nodeIdentifier: string,
   positionToPlaceClassOn: Position,
   onConfirmCallback: ((created: CmeReference, state: ClassDialogState) => void) | null,
+  tracker: DialogSemanticTracker,
+  labelResolver: LabelResolver,
 ) {
   const node = visualModel.getVisualEntity(nodeIdentifier);
   if(node === null) {
@@ -47,5 +51,6 @@ export function openCreateClassDialogWithModelDerivedFromClassAction(
     positionToPlaceClassOn, configuration().xSnapGrid, configuration().ySnapGrid);
   openCreateClassDialogAction(
     cmeExecutor, options, dialogs, classes, graph, notifications, visualModel,
-    diagram, model, positionToPlaceClassOn, onConfirmCallback);
+    diagram, model, positionToPlaceClassOn, onConfirmCallback, tracker,
+    labelResolver);
 }

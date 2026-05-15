@@ -22,7 +22,7 @@ export class SetPimLabelAndDescription implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const pimSchema = this.store.getSchemaForResource(this.semanticEntityId) as string;
 
     const operation = modifyClass(this.semanticEntityId, {
@@ -30,6 +30,6 @@ export class SetPimLabelAndDescription implements ComplexOperation {
       description: this.description,
     });
     // @ts-ignore
-    await this.store.applyOperation(pimSchema, operation);
+    this.store.applyOperation(pimSchema, operation);
   }
 }

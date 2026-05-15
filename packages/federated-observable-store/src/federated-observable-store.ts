@@ -1,17 +1,12 @@
-import { Entity, EntityModel, InMemoryEntityModel } from '@dataspecer/core-v2';
-import { isSemanticModelClass, isSemanticModelRelationship } from '@dataspecer/core-v2/semantic-model/concepts';
+import { Entity, EntityModel } from '@dataspecer/core-v2';
 import { Operation } from '@dataspecer/core-v2/semantic-model/operations';
 import { CoreOperation, CoreOperationResult, CoreResource, CoreResourceReader, CoreResourceWriter } from "@dataspecer/core/core";
 import * as DataPSM from "@dataspecer/core/data-psm/data-psm-vocabulary";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model";
-import { PimResource } from "@dataspecer/core/pim/model";
-import * as PIM from "@dataspecer/core/pim/pim-vocabulary";
 import { cloneDeep } from "lodash";
 import { ComplexOperation } from "./complex-operation.ts";
 import { FederatedCoreResourceWriter } from "./federated-core-resource-writer.ts";
-import type { ImmediateCoreResourceReader } from "@dataspecer/core/core/store"
 import { Resource } from "./resource.ts";
-import { InMemorySemanticModel } from '@dataspecer/core-v2/semantic-model/in-memory';
 
 /**
  * Callback listening for resource changes.
@@ -23,10 +18,6 @@ interface Subscription {
     subscribers: Subscriber[];
 }
 
-export function cloneResource<ResourceType extends CoreResource | Entity | null>(from: ResourceType, alreadyExists: ResourceType | null = null): ResourceType {
-    return cloneDeep(from);
-}
-
 /**
  * Wraps store in case of additional metadata would be needed in the future.
  *
@@ -34,10 +25,6 @@ export function cloneResource<ResourceType extends CoreResource | Entity | null>
  */
 type ModelWrapper = {
     store: CoreResourceReader,
-    hasImmediateInterface: false,
-} | {
-    store: ImmediateCoreResourceReader & CoreResourceReader,
-    hasImmediateInterface: true,
 } | {
     store: EntityModel,
 };
@@ -47,11 +34,7 @@ function isModelWrapperEntityModel(wrapper: ModelWrapper): wrapper is { store: E
 }
 
 function isModelWrapperCoreResourceReader(wrapper: ModelWrapper): wrapper is {
-    store: CoreResourceReader,
-    hasImmediateInterface: false,
-} | {
-    store: ImmediateCoreResourceReader & CoreResourceReader,
-    hasImmediateInterface: true,
+    store: CoreResourceReader
 } {
     return wrapper.store["listResources"] !== undefined;
 }
@@ -76,10 +59,6 @@ interface CachedModel {
     // List of resource IRIs that belongs to the schema and therefore are in the
     // same store as the schema's resource
     resources: string[];
-}
-
-function isPromise<T>(value: Promise<T>|T): value is Promise<T> {
-    return value instanceof Promise;
 }
 
 /**
@@ -109,22 +88,14 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
     /**
      * Adds a store to the federated store and updates all resources that may
      * depend on it.
-     * @param store
-     * @param options
-     * @returns Promise that completes when the store is added and all its
-     * schemas are loaded. It is not required to wait for this promise to use
-     * the store.
      */
-    addStore<HasImmediateInterface extends boolean>(
-        store: HasImmediateInterface extends true ? (ImmediateCoreResourceReader) : CoreResourceReader,
-        options: { hasImmediateInterface?: HasImmediateInterface } = {}): Promise<void> {
+    addStore(store: CoreResourceReader): void {
         if (this.models.some(wrapper => wrapper.store === store)) {
             throw new Error("Store already presented in FederatedObservableStore.");
         }
 
         const wrappedStore = {
             store,
-            hasImmediateInterface: options.hasImmediateInterface,
         } as ModelWrapper;
         this.models.push(wrappedStore);
 
@@ -185,22 +156,6 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
         }
     }
 
-    /**
-     * Returns the {@link Resource} for given iri
-     *
-     * By calling this method the caller guarantees that eventually will
-     * subscribe.
-     * @param iri
-     */
-    getBeforeSubscription<ResourceType extends CoreResource | Entity>(iri: string): Resource<ResourceType> {
-        if (!this.subscriptions.has(iri)) {
-            this.createSubscriptionForNewResource(iri);
-        }
-
-        const subscription = this.subscriptions.get(iri) as Subscription;
-        return subscription.currentValue as Resource<ResourceType>;
-    }
-
     getStores(): (CoreResourceReader | EntityModel)[] {
         return this.models.map(s => s.store);
     }
@@ -233,45 +188,11 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
     }
 
     /**
-     * Returns PIM class IRI that has interpretation set to cimIri.
-     * @param cimIri
-     * @param pimSchemaIri
-     */
-    async getPimHavingInterpretation(cimIri: string, resourceType: string, pimSchemaIri: string): Promise<string|null> {
-        const schema = this.modelSchemas.get(pimSchemaIri);
-        if (!schema) {
-            return null;
-        }
-
-        if (isModelWrapperEntityModel(schema.belongsToStore)) {
-            const entities = Object.values(schema.belongsToStore.store.getEntities());
-            for (const entity of entities) {
-                if (isSemanticModelClass(entity) && entity.iri === cimIri) {
-                    return entity.id;
-                }
-                if (isSemanticModelRelationship(entity) && (entity.ends[1].iri === cimIri || entity.ends[0].iri === cimIri)) {
-                    return entity.id;
-                }
-            }
-        }
-
-        for (const resourceIri of schema.resources) {
-            const resource = await this.readResource(resourceIri) as CoreResource;
-            // Ducktyping for PimResource
-            if ((resource as PimResource).pimInterpretation === cimIri && resource.types.includes(resourceType)) {
-                return resourceIri;
-            }
-        }
-
-        return null;
-    }
-
-    /**
      * @see https://github.com/dataspecer/dataspecer/issues/151
      * @param schemaIri Schema IRI under which the operation is applied
      * @param operation The operation to be applied
      */
-    async applyOperation(schemaIri: string, operation: CoreOperation): Promise<CoreOperationResult> {
+    applyOperation(schemaIri: string, operation: CoreOperation): CoreOperationResult {
         const storeWrapper = this.modelSchemas.get(schemaIri)?.belongsToStore;
         // todo: this checks only the local schemas
 
@@ -279,7 +200,7 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
             throw new Error(`Internal error: No store found for schema ${schemaIri}.`);
         }
 
-        let result;
+        let result: any;
         if (isModelWrapperEntityModel(storeWrapper)) {
             const op = operation as unknown as Operation;
             // @ts-ignore
@@ -289,7 +210,7 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
             result.created = op.type.startsWith("create") ? [result.id] : []; // todo: hotfix
             result.deleted = op.type.startsWith("delete") ? [result.id] : []; // todo: hotfix
         } else {
-            result = await (storeWrapper.store as unknown as CoreResourceWriter).applyOperation(operation);
+            result = (storeWrapper.store as unknown as CoreResourceWriter).applyOperation(operation);
         }
 
 
@@ -315,10 +236,10 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
      * Executes complex operation on the store.
      * @param operation
      */
-    async executeComplexOperation(operation: ComplexOperation) {
+    executeComplexOperation(operation: ComplexOperation) {
         try {
             operation.setStore(this);
-            await operation.execute();
+            operation.execute();
         } catch (e) {
             console.warn("Operation failed", e);
         }
@@ -326,7 +247,7 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
         this.eventListeners.get("afterOperationExecuted")?.forEach(l => l());
     }
 
-    async listResources(): Promise<string[]> {
+    listResources(): string[] {
         // todo: this method shall be optimized
         const resources = new Set<string>();
         for (const store of this.models) {
@@ -334,43 +255,31 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
                 Object.values(store.store.getEntities()).forEach(entity => resources.add(entity.id));
                 resources.add(store.store.getId());
             } else {
-                (await store.store.listResources()).forEach(resource => resources.add(resource));
+                store.store.listResources().forEach(resource => resources.add(resource));
             }
         }
         return [...resources];
     }
 
-    async listResourcesOfType(typeIri: string): Promise<string[]> {
+    listResourcesOfType(typeIri: string): string[] {
         const resources = new Set<string>();
         for (const store of this.models) {
             if (isModelWrapperCoreResourceReader(store)) {
-                (await store.store.listResourcesOfType(typeIri))
+                store.store.listResourcesOfType(typeIri)
                     .forEach(resource => resources.add(resource));
             }
         }
         return [...resources];
     }
 
-    readResource(iri: string): Promise<CoreResource|Entity|null> {
-        return new Promise(resolve => {
-            const subscriber: Subscriber = (_, resource) => {
-                if (!resource.isLoading) {
-                    this.removeSubscriber(iri, subscriber);
-                    resolve(resource.resource);
-                }
-            }
-            this.addSubscriber(iri, subscriber);
-        });
-    };
-
-    async forceReload(iri: string) {
-        const schemaIri = [...this.modelSchemas.values()].find(schema => schema.resources.includes(iri) || schema.iri === iri)?.iri;
-        if (iri) {
-            this.loadResource(iri, schemaIri);
+    readResource(iri: string): CoreResource|Entity|null {
+        if (!this.subscriptions.has(iri)) {
+            this.createSubscriptionForNewResource(iri);
         }
+
+        const subscription = this.subscriptions.get(iri) as Subscription;
+        return subscription.currentValue.resource;
     }
-
-
 
     private createSubscriptionForNewResource(iri: string) {
         let schemaIri: string|null = null;
@@ -425,21 +334,6 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
         }
     }
 
-    doOptimisticUpdate(iri: string, resource: CoreResource | Entity | null) {
-        this.updateSubscriptionTo(iri, {
-            resource: cloneResource(resource),
-        });
-    }
-
-    readSync(iri: string): CoreResource | Entity | null {
-        const subscription = this.subscriptions.get(iri);
-        if (!subscription) {
-            return null;
-        }
-
-        return subscription.currentValue.resource;
-    }
-
     /**
      * Loads the resource from the store regardless of the current value. The
      * store is identified by schema IRI which must be known.
@@ -460,7 +354,7 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
         // todo: If the resource is the model itself, it should not be cloned
         let doNotClone = false;
 
-        let resource: Promise<CoreResource> | CoreResource | Entity | null;
+        let resource: CoreResource | Entity | null;
         if (isModelWrapperEntityModel(storeWrapper)) {
             if (resourceIri === schemaIri) {
                 doNotClone = resourceIri === schemaIri;
@@ -470,31 +364,13 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
                 resource = storeWrapper.store.getEntities()[resourceIri];
             }
         } else {
-            if (storeWrapper.hasImmediateInterface) {
-                resource = storeWrapper.store.readResourceImmediate(resourceIri);
-            } else {
-                resource = storeWrapper.store.readResource(resourceIri);
-            }
+            resource = storeWrapper.store.readResource(resourceIri);
         }
 
-        if (resource instanceof Promise) {
-            this.updateSubscriptionTo(resourceIri, {
-                isLoading: true,
-            });
-
-            resource.then(resource => {
-                    // Following function checks the existence
-                    this.updateSubscriptionTo(resourceIri, {
-                        isLoading: false,
-                        resource: cloneResource(resource),
-                    });
-                });
-        } else {
-            this.updateSubscriptionTo(resourceIri, {
-                isLoading: false,
-                resource: doNotClone ? resource : cloneResource(resource),
-            });
-        }
+        this.updateSubscriptionTo(resourceIri, {
+            isLoading: false,
+            resource: doNotClone ? resource : cloneDeep(resource),
+        });
     }
 
     /**
@@ -519,24 +395,10 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
     /**
      * Fetches schemas for given store.
      * @param wrappedStore
-     * @param updateAll Whether to update all the schemas or just the new ones.
      */
-    private async getSchemas(wrappedStore: ModelWrapper, updateAll: boolean = false): Promise<void> {
+    private getSchemas(wrappedStore: ModelWrapper): void {
         if (isModelWrapperCoreResourceReader(wrappedStore)) {
-            const pimSchemas = await wrappedStore.store.listResourcesOfType(PIM.SCHEMA);
-            const dataPsmSchemas = await wrappedStore.store.listResourcesOfType(DataPSM.SCHEMA);
-
-            // Check if still relevant
-            if (!this.models.includes(wrappedStore)) {
-                return;
-            }
-
-            for (const schemaIri of pimSchemas) {
-                let schema = this.modelSchemas.get(schemaIri);
-                if (!schema) {
-                    this.createSchema(schemaIri, wrappedStore, PIM.SCHEMA);
-                }
-            }
+            const dataPsmSchemas = wrappedStore.store.listResourcesOfType(DataPSM.SCHEMA);
 
             for (const schemaIri of dataPsmSchemas) {
                 let schema = this.modelSchemas.get(schemaIri);
@@ -560,7 +422,7 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
         }
     }
 
-    /**`
+    /**
      * Registers new schema that does not exist yet.
      * @param schemaIri
      * @param store

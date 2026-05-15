@@ -19,7 +19,7 @@ test("Update data PSM resource technical label.", async () => {
     },
   };
 
-  const actual = await executeDataPsmSetTechnicalLabel(
+  const actual = executeDataPsmSetTechnicalLabel(
     wrapResourcesWithReader(before),
     undefined,
     operation

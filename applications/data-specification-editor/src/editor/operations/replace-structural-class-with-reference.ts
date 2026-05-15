@@ -26,9 +26,9 @@ export class ReplaceStructuralClassWithReference implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
-    const schema = (await this.store.readResource(this.referencedDataPsmSchema)) as CoreResource | null;
-    const owningEntity = (await this.store.readResource(this.owningEntityId)) as CoreResource | null;
+  execute(): void {
+    const schema = (this.store.readResource(this.referencedDataPsmSchema)) as CoreResource | null;
+    const owningEntity = (this.store.readResource(this.owningEntityId)) as CoreResource | null;
 
     if (!schema || !DataPsmSchema.is(schema)) {
       throw new Error(`Schema '${this.referencedDataPsmSchema}' is not a schema.`);
@@ -47,7 +47,7 @@ export class ReplaceStructuralClassWithReference implements ComplexOperation {
     const dataPsmCreateClassReference = new DataPsmCreateClassReference();
     dataPsmCreateClassReference.dataPsmClass = replacingClass;
     dataPsmCreateClassReference.dataPsmSpecification = schema.iri;
-    const dataPsmCreateClassReferenceResult = await this.store.applyOperation(dataPsmSchema, dataPsmCreateClassReference);
+    const dataPsmCreateClassReferenceResult = this.store.applyOperation(dataPsmSchema, dataPsmCreateClassReference);
     const reference = dataPsmCreateClassReferenceResult.created[0];
 
     // Replace it
@@ -56,17 +56,17 @@ export class ReplaceStructuralClassWithReference implements ComplexOperation {
       const remove = new DataPsmUnsetChoice();
       remove.dataPsmOr = this.owningEntityId;
       remove.dataPsmChoice = this.structuralClassId;
-      await this.store.applyOperation(dataPsmSchema, remove);
+      this.store.applyOperation(dataPsmSchema, remove);
 
       const add = new DataPsmSetChoice();
       add.dataPsmOr = this.owningEntityId;
       add.dataPsmChoice = reference;
-      await this.store.applyOperation(dataPsmSchema, add);
+      this.store.applyOperation(dataPsmSchema, add);
     } else if (DataPsmAssociationEnd.is(owningEntity)) {
       const dataPsmSetPart = new DataPsmSetPart();
       dataPsmSetPart.dataPsmAssociationEnd = this.structuralClassId;
       dataPsmSetPart.dataPsmPart = reference;
-      await this.store.applyOperation(dataPsmSchema, dataPsmSetPart);
+      this.store.applyOperation(dataPsmSchema, dataPsmSetPart);
     }
 
     // Remove the old class
@@ -76,7 +76,7 @@ export class ReplaceStructuralClassWithReference implements ComplexOperation {
 
       const dataPsmDeleteClass = new DataPsmDeleteClass();
       dataPsmDeleteClass.dataPsmClass = oldClass;
-      await this.store.applyOperation(oldClassSchema, dataPsmDeleteClass);
+      this.store.applyOperation(oldClassSchema, dataPsmDeleteClass);
     }
   }
 }

@@ -20,6 +20,7 @@ import {
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { isSemanticModelAttributeProfile } from "../dataspecer/semantic-model";
 import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
+import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { addSemanticAttributeToVisualModelAction } from "./add-semantic-attribute-to-visual-model";
 import {
   ClassProfileDialogState,
@@ -45,6 +46,7 @@ import {
 import {
   associationProfileDialogStateToNewCmeRelationshipProfile,
 } from "../dialog/association-profile/edit-association-profile-dialog-state-adapter";
+import { LabelResolver } from "../dependency-tracker";
 
 export function openCreateProfileDialogAction(
   cmeExecutor: CmeModelOperationExecutor,
@@ -57,6 +59,8 @@ export function openCreateProfileDialogAction(
   diagram: UseDiagramType,
   position: { x: number, y: number },
   identifier: string,
+  tracker: DialogSemanticTracker,
+  labelResolver: LabelResolver,
 ) {
   const entity = graph.aggregatorView.getEntities()?.[identifier].aggregatedEntity;
   if (entity === undefined) {
@@ -66,7 +70,7 @@ export function openCreateProfileDialogAction(
   //
   if (isSemanticModelClass(entity) || isSemanticModelClassProfile(entity)) {
     const initialState = createNewProfileClassDialogState(
-      classes, graph, visualModel, options.language, [entity.id]);
+      visualModel, options.language, [entity.id], tracker, labelResolver);
     const onConfirm = (state: ClassProfileDialogState) => {
 
       const result = cmeExecutor.createClassProfile(
@@ -88,7 +92,7 @@ export function openCreateProfileDialogAction(
 
   if (isSemanticModelAttribute(entity) || isSemanticModelAttributeProfile(entity)) {
     const initialState = createNewAttributeProfileDialogState(
-      classes, graph, visualModel, options.language, [entity.id]);
+      classes, graph, visualModel, options.language, [entity.id], labelResolver);
     const onConfirm = (state: AttributeProfileDialogState) => {
 
       const result = cmeExecutor.createRelationshipProfile(
@@ -109,7 +113,7 @@ export function openCreateProfileDialogAction(
 
   if (isSemanticModelRelationship(entity) || isSemanticModelRelationshipProfile(entity)) {
     const initialState = createNewAssociationProfileDialogState(
-      classes, graph, visualModel, options.language, [entity.id]);
+      visualModel, options.language, [entity.id], tracker, labelResolver);
     const onConfirm = (state: AssociationProfileDialogState) => {
 
       const result = cmeExecutor.createRelationshipProfile(

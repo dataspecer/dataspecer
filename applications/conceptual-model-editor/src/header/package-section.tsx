@@ -1,4 +1,4 @@
-import { ManagementButton } from "../components/management/buttons/management-button";
+import { ManagementButton } from "./components/management-button";
 import { usePackageSectionService } from "./package-section-service";
 import { t } from "../application";
 

@@ -10,12 +10,12 @@ import {
   loadDataPsmSchema,
 } from "./data-psm-executor-utils.ts";
 
-export async function executeDataPsmSetRoots(
+export function executeDataPsmSetRoots(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetRoots
-): Promise<CoreExecutorResult> {
-  const resource = await loadDataPsmSchema(reader);
+): CoreExecutorResult {
+  const resource = loadDataPsmSchema(reader);
   if (resource === null) {
     return DataPsmExecutorResultFactory.missingSchema();
   }

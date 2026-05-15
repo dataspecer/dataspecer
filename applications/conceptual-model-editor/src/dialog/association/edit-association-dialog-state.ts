@@ -1,6 +1,5 @@
+import { EntityModel } from "@dataspecer/core-v2";
 import { VisualModel } from "@dataspecer/visual-model";
-import { ClassesContextType } from "../../context/classes-context";
-import { ModelGraphContextType } from "../../context/model-context";
 import {
   BaseEntityDialogState,
   createEditBaseEntityDialogState,
@@ -13,21 +12,22 @@ import {
 import {
   EntityRepresentative,
   isRepresentingAssociation,
-  listRelationshipDomains,
+  listRelationshipDomainsFromTracker,
   representOwlThing,
-  representRelationships,
+  representRelationshipsFromTracker,
   representUndefinedClass,
   sortRepresentatives,
 } from "../utilities/dialog-utilities";
-import { semanticModelMapToCmeSemanticModel } from "../../dataspecer/cme-model/adapter";
-import { configuration, createLogger, t } from "../../application";
+import { DialogSemanticTracker } from "../../dialog-v2/dialog-semantic-tracker";
+import { semanticModelTrackerToCmeSemanticModel } from "../../dataspecer/cme-model/adapter";
+import { configuration, createLogger } from "../../application";
+import { LabelResolver } from "../../dependency-tracker";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import {
   type SemanticModelRelationship,
 } from "@dataspecer/core-v2/semantic-model/concepts";
 import { getDomainAndRange } from "../../util/relationship-utils";
 import { InvalidState } from "../../application/error";
-import { CmeSemanticModel } from "../../dataspecer/cme-model";
 
 const LOG = createLogger(import.meta.url);
 
@@ -36,29 +36,26 @@ export interface AssociationDialogState extends
   BaseRelationshipDialogState<EntityRepresentative> { }
 
 export function createNewAssociationDialogState(
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
   defaultModelIdentifier: string | null,
+  tracker: DialogSemanticTracker,
+  labelResolver: LabelResolver,
 ): AssociationDialogState {
 
-  const allModels = semanticModelMapToCmeSemanticModel(
-    graphContext.models, visualModel,
+  const allModels = semanticModelTrackerToCmeSemanticModel(
+    tracker.semanticModels, visualModel,
     configuration().defaultModelColor,
-    identifier => t("model-service.model-label-from-id", identifier),
   );
 
   const owlThing = representOwlThing();
 
-  const allDomains = listRelationshipDomains(
-    classesContext, graphContext, allModels);
-  sortRepresentatives(language, allDomains);
+  const allDomains = listRelationshipDomainsFromTracker(tracker, labelResolver);
+  sortRepresentatives(allDomains);
 
   const allRanges = allDomains;
 
-  const allSpecializations = listAssociations(
-    language, classesContext, graphContext, allModels);
+  const allSpecializations = listAssociationsFromTracker(labelResolver, tracker);
 
   // EntityState
 
@@ -79,23 +76,17 @@ export function createNewAssociationDialogState(
   };
 }
 
-function listAssociations(
-  language: string,
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
-  vocabularies: CmeSemanticModel[],
+function listAssociationsFromTracker(
+  labelResolver: LabelResolver,
+  tracker: DialogSemanticTracker,
 ) {
-  const models = [...graphContext.models.values()];
-
   const owlThing = representOwlThing();
 
-  const result = [
-    ...representRelationships(models, vocabularies,
-      classesContext.relationships,
-      owlThing.identifier, owlThing.identifier),
-  ].filter(isRepresentingAssociation);
+  const result = representRelationshipsFromTracker(
+    tracker, owlThing.identifier, owlThing.identifier, labelResolver,
+  ).filter(isRepresentingAssociation);
 
-  sortRepresentatives(language, result);
+  sortRepresentatives(result);
 
   return result;
 }
@@ -104,12 +95,13 @@ function listAssociations(
  * @throws InvalidState
  */
 export function createEditAssociationDialogState(
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
   model: InMemorySemanticModel,
   entity: SemanticModelRelationship,
+  entityModels: Map<string, EntityModel>,
+  tracker: DialogSemanticTracker,
+  labelResolver: LabelResolver,
 ): AssociationDialogState {
 
   const { domain, range } = getDomainAndRange(entity);
@@ -120,30 +112,28 @@ export function createEditAssociationDialogState(
 
   //
 
-  const allModels = semanticModelMapToCmeSemanticModel(
-    graphContext.models, visualModel,
-    configuration().defaultModelColor,
-    identifier => t("model-service.model-label-from-id", identifier));
+  const allModels = semanticModelTrackerToCmeSemanticModel(
+    tracker.semanticModels, visualModel,
+    configuration().defaultModelColor);
 
   const owlThing = representOwlThing();
 
-  const allDomains = listRelationshipDomains(
-    classesContext, graphContext, allModels);
-  sortRepresentatives(language, allDomains);
+  const allDomains = listRelationshipDomainsFromTracker(tracker, labelResolver);
+  sortRepresentatives(allDomains);
 
   const allRanges = allDomains;
 
-  const allSpecializations = listAssociations(
-    language, classesContext, graphContext, allModels);
+  const allSpecializations = listAssociationsFromTracker(labelResolver, tracker);
 
   // EntityState
 
   const entityState = createEditBaseEntityDialogState(
-    language, graphContext.models, allModels,
+    language, entityModels, allModels,
     { identifier: entity.id, model: model.getId() },
     range.iri ?? "", range.name, range.description,
     range.externalDocumentationUrl ?? "",
-    allSpecializations);
+    allSpecializations,
+    range.order ?? "");
 
   // RelationshipState
 

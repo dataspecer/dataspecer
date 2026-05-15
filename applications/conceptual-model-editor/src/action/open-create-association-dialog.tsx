@@ -2,7 +2,6 @@ import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-mem
 import { VisualModel, isWritableVisualModel } from "@dataspecer/visual-model";
 
 import { DialogApiContextType } from "../dialog/dialog-service";
-import { ClassesContextType } from "../context/classes-context";
 import { ModelGraphContextType } from "../context/model-context";
 import { Options } from "../application";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
@@ -11,6 +10,7 @@ import {
   AssociationDialogState,
   createNewAssociationDialogState,
 } from "../dialog/association/edit-association-dialog-state";
+import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import {
   addVisualRelationshipsWithSpecifiedVisualEnds,
 } from "../dataspecer/visual-model/operation/add-visual-relationships";
@@ -19,6 +19,7 @@ import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-ope
 import {
   associationDialogStateToNewCmeRelationship,
 } from "../dialog/association/edit-association-dialog-state-adapter";
+import { LabelResolver } from "../dependency-tracker";
 
 /**
  * Open and handle create association dialog.
@@ -27,11 +28,12 @@ export function openCreateAssociationDialogAction(
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
-  classes: ClassesContextType,
   graph: ModelGraphContextType,
   notifications: UseNotificationServiceWriterType,
   visualModel: VisualModel | null,
   defaultModel: InMemorySemanticModel | null,
+  tracker: DialogSemanticTracker,
+  labelResolver: LabelResolver,
 ) {
 
   const model = defaultModel ?? firstInMemorySemanticModel(graph.models);
@@ -41,7 +43,7 @@ export function openCreateAssociationDialogAction(
   }
 
   const initialState = createNewAssociationDialogState(
-    classes, graph, visualModel, options.language, model.getId());
+    visualModel, options.language, model.getId(), tracker, labelResolver);
 
   const onConfirm = (state: AssociationDialogState) => {
 
@@ -51,7 +53,6 @@ export function openCreateAssociationDialogAction(
       initialState.specializations, state.specializations);
 
     if (isWritableVisualModel(visualModel)) {
-      // TODO PeSk Update visual model
       const visualSources = visualModel.getVisualEntitiesForRepresented(state.domain.identifier);
       const visualTargets = visualModel.getVisualEntitiesForRepresented(state.range.identifier);
       if (visualSources.length > 0 && visualTargets.length > 0) {

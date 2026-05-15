@@ -1,5 +1,5 @@
 import { isPrimitiveType } from "@dataspecer/core-v2/semantic-model/datatypes";
-import { UiModelState, UiSemanticModel } from "../../dataspecer/ui-model";
+import { UiModelState, UiSemanticModel } from "../ui-model";
 import {
   uiRelationshipProfileToNode,
   uiRelationshipToNode,

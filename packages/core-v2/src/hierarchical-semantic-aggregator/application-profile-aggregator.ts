@@ -631,6 +631,7 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
           profiling: [],
           externalDocumentationUrl: null,
           tags: [],
+          order: null,
         },
         {
           iri: iriGetLastChunk(firstProfiledEntity.aggregatedEntity.ends[1]!.iri),
@@ -645,6 +646,7 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
           profiling,
           externalDocumentationUrl: null,
           tags: [],
+          order: null,
         }
       ]
     });
@@ -687,6 +689,7 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
       profiling,
       externalDocumentationUrl: null,
       tags: [],
+      order: null,
     });
     const { id } = this.profile.executeOperation(operation) as CreatedEntityOperationResult;
 

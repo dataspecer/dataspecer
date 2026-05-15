@@ -5,11 +5,11 @@ import {
 } from "../../core/index.ts";
 import { DataPsmSchema, DataPsmClass, DataPsmContainer } from "../model/index.ts";
 
-export async function loadDataPsmSchema(
+export function loadDataPsmSchema(
   reader: CoreResourceReader
-): Promise<DataPsmSchema | null> {
-  for (const iri of await reader.listResources()) {
-    const resource = await reader.readResource(iri);
+): DataPsmSchema | null {
+  for (const iri of reader.listResources()) {
+    const resource = reader.readResource(iri);
     if (DataPsmSchema.is(resource)) {
       return resource;
     }
@@ -17,11 +17,11 @@ export async function loadDataPsmSchema(
   return null;
 }
 
-export async function loadDataPsmClass(
+export function loadDataPsmClass(
   reader: CoreResourceReader,
   iri: string
-): Promise<DataPsmClass | DataPsmContainer | null> {
-  const result = await reader.readResource(iri);
+): DataPsmClass | DataPsmContainer | null {
+  const result = reader.readResource(iri);
   if (DataPsmClass.is(result) || DataPsmContainer.is(result)) {
     return result;
   }
@@ -67,17 +67,17 @@ export class DataPsmExecutorResultFactory {
   }
 }
 
-export async function removeFromClass(
+export function removeFromClass(
   reader: CoreResourceReader,
   ownerClass: string,
   entityToRemove: string
-): Promise<CoreExecutorResult> {
-  const schema = await loadDataPsmSchema(reader);
+): CoreExecutorResult {
+  const schema = loadDataPsmSchema(reader);
   if (schema === null) {
     return DataPsmExecutorResultFactory.missingSchema();
   }
 
-  const owner = await loadDataPsmClass(reader, ownerClass);
+  const owner = loadDataPsmClass(reader, ownerClass);
   if (owner === null) {
     return DataPsmExecutorResultFactory.missingOwner(ownerClass);
   }

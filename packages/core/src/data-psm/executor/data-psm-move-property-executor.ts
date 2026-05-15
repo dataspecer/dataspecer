@@ -11,12 +11,12 @@ import {
 
 type containerType = DataPsmClass | DataPsmContainer | DataPsmSchema;
 
-export async function executeDataPsmMoveProperty(
+export function executeDataPsmMoveProperty(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmMoveProperty
-): Promise<CoreExecutorResult> {
-  const sourceResource = await reader.readResource(
+): CoreExecutorResult {
+  const sourceResource = reader.readResource(
     operation.dataPsmSourceContainer
   );
   if (sourceResource === null) {
@@ -24,7 +24,7 @@ export async function executeDataPsmMoveProperty(
       operation.dataPsmSourceContainer
     );
   }
-  const resourceToMove = await reader.readResource(
+  const resourceToMove = reader.readResource(
     operation.dataPsmProperty
   );
   if (resourceToMove === null) {
@@ -32,7 +32,7 @@ export async function executeDataPsmMoveProperty(
       operation.dataPsmProperty
     );
   }
-  const destinationResource = await reader.readResource(
+  const destinationResource = reader.readResource(
     operation.dataPsmTargetContainer
   );
   if (destinationResource === null) {

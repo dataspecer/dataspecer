@@ -4,19 +4,19 @@ import {DataPsmExecutorResultFactory, loadDataPsmSchema,} from "./data-psm-execu
 import {DataPsmOr, DataPsmSchema} from "../model/index.ts";
 import {replaceObjectInSchema} from "./replace-object-in-schema.ts";
 
-export async function executeDataPsmWrapWithOr(
+export function executeDataPsmWrapWithOr(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmWrapWithOr
-): Promise<CoreExecutorResult> {
-  const schema = await loadDataPsmSchema(reader);
+): CoreExecutorResult {
+  const schema = loadDataPsmSchema(reader);
   if (schema === null) {
     return DataPsmExecutorResultFactory.missingSchema();
   }
 
   const iri = operation.dataPsmNewIri ?? createNewIdentifier("or");
 
-  const changed = await replaceObjectInSchema(schema.iri, operation.dataPsmChild, iri, reader);
+  const changed = replaceObjectInSchema(schema.iri, operation.dataPsmChild, iri, reader);
 
   const result = new DataPsmOr(iri);
   result.dataPsmChoices = [operation.dataPsmChild];

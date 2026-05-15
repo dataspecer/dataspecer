@@ -28,18 +28,18 @@ class ConceptualModelAdapter {
     this.reader = reader;
   }
 
-  async load(pimSchemaIri: string): Promise<ConceptualModel | null> {
-    const pimSchema = await this.reader.readResource(pimSchemaIri) as unknown as EntityModel;
+  load(pimSchemaIri: string): ConceptualModel | null {
+    const pimSchema = this.reader.readResource(pimSchemaIri) as unknown as EntityModel;
 
     const result = new ConceptualModel();
     this.pimSchemaToModel(pimSchema, result);
     for (const entity of Object.keys(pimSchema.getEntities())) {
-      await this.loadPimPart(entity);
+      this.loadPimPart(entity);
     }
     for (const entityId of Object.keys(pimSchema.getEntities())) {
-      const entity = await this.reader.readResource(entityId) as unknown as Entity;
+      const entity = this.reader.readResource(entityId) as unknown as Entity;
       if (isSemanticModelGeneralization(entity)) {
-        await this.loadGeneralization(entity);
+        this.loadGeneralization(entity);
       }
     }
     result.classes = { ...this.classes };
@@ -52,17 +52,17 @@ class ConceptualModelAdapter {
     model.humanDescription = {};
   }
 
-  private async loadPimPart(partIri: string) {
-    const part = await this.reader.readResource(partIri) as unknown as Entity;
+  private loadPimPart(partIri: string) {
+    const part = this.reader.readResource(partIri) as unknown as Entity;
     // let isKnown = false;
     // if (PimAssociation.is(part)) {
     //   await this.loadPimAssociation(part);
     //   isKnown = true;
     // }
     if (isSemanticModelAttribute(part)) {
-      await this.loadPimAttribute(part as ExtendedSemanticModelRelationship);
+      this.loadPimAttribute(part as ExtendedSemanticModelRelationship);
     } else if (isSemanticModelRelationship(part)) {
-      await this.loadPimAssociation(part as ExtendedSemanticModelRelationship);
+      this.loadPimAssociation(part as ExtendedSemanticModelRelationship);
     } else if (isSemanticModelClass(part)) {
       this.loadPimClass(part as ExtendedSemanticModelClass);
     }
@@ -71,7 +71,7 @@ class ConceptualModelAdapter {
     // }
   }
 
-  private async loadPimAssociation(associationData: ExtendedSemanticModelRelationship) {
+  private loadPimAssociation(associationData: ExtendedSemanticModelRelationship) {
     // Association can be used in both directions.
     const leftClass = this.getClass(associationData.ends[0].concept);
     const rightClass = this.getClass(associationData.ends[1].concept);
@@ -80,7 +80,7 @@ class ConceptualModelAdapter {
     this.createAssociationEnd(rightClass, leftClass, associationData, 0, true);
   }
 
-  private async loadGeneralization(generalization: SemanticModelGeneralization) {
+  private loadGeneralization(generalization: SemanticModelGeneralization) {
     const child = this.classes[generalization.child];
     const parent = this.classes[generalization.parent];
     if (child && parent) {
@@ -135,7 +135,7 @@ class ConceptualModelAdapter {
     return (entity as WithConceptIris).conceptIris.filter((iri) => iri !== null && iri !== "");
   }
 
-  private async loadPimAttribute(attributeData: ExtendedSemanticModelRelationship) {
+  private loadPimAttribute(attributeData: ExtendedSemanticModelRelationship) {
     const end = attributeData.ends[1];
 
     const model = new ConceptualModelProperty();
@@ -178,11 +178,11 @@ class ConceptualModelAdapter {
   }
 }
 
-export async function coreResourcesToConceptualModel(
+export function coreResourcesToConceptualModel(
   reader: CoreResourceReader,
   pimSchemaIri: string
-): Promise<ConceptualModel | null> {
+): ConceptualModel | null {
   const adapter = new ConceptualModelAdapter(reader);
-  const data = await adapter.load(pimSchemaIri);
+  const data = adapter.load(pimSchemaIri);
   return data;
 }

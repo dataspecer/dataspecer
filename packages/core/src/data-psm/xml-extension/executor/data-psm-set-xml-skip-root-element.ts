@@ -5,12 +5,12 @@ import {DataPsmSetXmlSkipRootElement} from "../operation/index.ts";
 import {DataPsmSchemaXmlExtension} from "../model/index.ts";
 import {XML_EXTENSION} from "../vocabulary.ts";
 
-export async function executeDataPsmSetXmlSkipRootElement(
+export function executeDataPsmSetXmlSkipRootElement(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetXmlSkipRootElement
-): Promise<CoreExecutorResult> {
-  const resource = await reader.readResource(operation.dataPsmSchema);
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.dataPsmSchema);
   if (resource == null || !DataPsmSchema.is(resource)) {
     return DataPsmExecutorResultFactory.invalidType(
       resource,

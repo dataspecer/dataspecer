@@ -78,8 +78,3 @@ function languageStringToHumanReadable(
 
   return null;
 }
-
-export type SelectItem = {
-  identifier: string;
-  label: string;
-};

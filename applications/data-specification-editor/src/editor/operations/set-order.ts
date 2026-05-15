@@ -19,10 +19,10 @@ export class SetOrder implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.parentDataPsmClassIri) as string;
 
-    const parentClass = await this.store.readResource(this.parentDataPsmClassIri) as DataPsmClass;
+    const parentClass = this.store.readResource(this.parentDataPsmClassIri) as DataPsmClass;
     const previousIndex = parentClass.dataPsmParts.indexOf(this.movedDataPsmResourceIri);
 
     const dataPsmSetOrder = new DataPsmSetOrder();
@@ -31,6 +31,6 @@ export class SetOrder implements ComplexOperation {
     dataPsmSetOrder.dataPsmMoveAfter = this.newIndexPosition === 0 ?
         null :
         parentClass.dataPsmParts[this.newIndexPosition - ((this.newIndexPosition) > previousIndex ? 0 : 1)];
-    await this.store.applyOperation(schema, dataPsmSetOrder);
+    this.store.applyOperation(schema, dataPsmSetOrder);
   }
 }

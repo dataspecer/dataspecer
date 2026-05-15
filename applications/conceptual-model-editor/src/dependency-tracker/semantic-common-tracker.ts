@@ -28,8 +28,7 @@ export function createSemanticCommonTracker(
 
 /**
  * Track common properties of semantic entities.
- * This includes IRI, label, description, usage note.
- * Does not delete entities.
+ * This includes IRI, label, description, and usage note.
  */
 class SemanticCommonTracker implements Tracker {
 
@@ -150,7 +149,7 @@ class SemanticCommonTracker implements Tracker {
     }
   }
 
-  onDependenciesDidChange(next: Entity): void {
+  onDependencyDidChange(next: Entity): void {
     const entity = this.getEntityWeak(next.id);
     if (entity === null) {
       return;

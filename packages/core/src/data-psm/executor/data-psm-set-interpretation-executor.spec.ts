@@ -19,7 +19,7 @@ test("Update data PSM resource interpretation.", async () => {
     },
   };
 
-  const actual = await executeDataPsmSetInterpretation(
+  const actual = executeDataPsmSetInterpretation(
     wrapResourcesWithReader(before),
     undefined,
     operation

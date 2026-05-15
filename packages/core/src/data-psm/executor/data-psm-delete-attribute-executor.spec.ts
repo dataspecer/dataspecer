@@ -29,7 +29,7 @@ test("Delete data PSM attribute.", async () => {
     },
   };
 
-  const actual = await executeDataPsmDeleteAttribute(
+  const actual = executeDataPsmDeleteAttribute(
     wrapResourcesWithReader(before),
     undefined,
     operation

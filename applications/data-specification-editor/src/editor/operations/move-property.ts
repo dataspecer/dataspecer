@@ -21,13 +21,13 @@ export class MoveProperty implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     // We expect that the schema for all resources is the same.
     const schema = this.store.getSchemaForResource(this.fromContainerId) as string;
 
     let moveAfter: string | null;
 
-    const targetContainerResource = await this.store.readResource(this.toContainerId);
+    const targetContainerResource = this.store.readResource(this.toContainerId);
     if (this.newIndexPosition === 0) {
       moveAfter = null;
     } else {
@@ -44,6 +44,6 @@ export class MoveProperty implements ComplexOperation {
     operation.dataPsmProperty = this.propertyId;
     operation.dataPsmMoveAfter = moveAfter;
 
-    await this.store.applyOperation(schema, operation);
+    this.store.applyOperation(schema, operation);
   }
 }

@@ -19,7 +19,7 @@ export class SetRootCollection implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.rootId) as string;
 
     const operation = new DataPsmSetRootCollection();
@@ -27,6 +27,6 @@ export class SetRootCollection implements ComplexOperation {
     operation.dataPsmEnforceCollection = this.enforceRootCollection;
     operation.dataPsmCollectionTechnicalLabel = this.rootCollectionTechnicalLabel;
 
-    await this.store.applyOperation(schema, operation);
+    this.store.applyOperation(schema, operation);
   }
 }

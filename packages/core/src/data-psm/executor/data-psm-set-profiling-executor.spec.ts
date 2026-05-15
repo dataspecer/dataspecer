@@ -19,7 +19,7 @@ test("Update data PSM resource profiling.", async () => {
     },
   };
 
-  const actual = await executeDataPsmSetProfiling(
+  const actual = executeDataPsmSetProfiling(
     wrapResourcesWithReader(before),
     undefined,
     operation

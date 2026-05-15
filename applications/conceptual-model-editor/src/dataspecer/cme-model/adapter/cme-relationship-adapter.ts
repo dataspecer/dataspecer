@@ -18,6 +18,7 @@ export const semanticRelationshipToCmeRelationship = (
     domainCardinality: domain.cardinality ?? null,
     range: range.concept,
     rangeCardinality: range.cardinality ?? null,
+    order: range.order ?? null,
   };
 };
 

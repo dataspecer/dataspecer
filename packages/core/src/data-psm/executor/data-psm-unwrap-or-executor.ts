@@ -4,17 +4,17 @@ import {DataPsmExecutorResultFactory, loadDataPsmSchema,} from "./data-psm-execu
 import {DataPsmOr, DataPsmSchema} from "../model/index.ts";
 import {replaceObjectInSchema} from "./replace-object-in-schema.ts";
 
-export async function executeDataPsmUnwrapOr(
+export function executeDataPsmUnwrapOr(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmUnwrapOr
-): Promise<CoreExecutorResult> {
-  const schema = await loadDataPsmSchema(reader);
+): CoreExecutorResult {
+  const schema = loadDataPsmSchema(reader);
   if (schema === null) {
     return DataPsmExecutorResultFactory.missingSchema();
   }
 
-  const or = await reader.readResource(operation.dataPsmOr) as DataPsmOr;
+  const or = reader.readResource(operation.dataPsmOr) as DataPsmOr;
   if (or.dataPsmChoices.length === 0) {
     return CoreExecutorResult.createError("Data-psm or does not have any choice.");
   }
@@ -23,7 +23,7 @@ export async function executeDataPsmUnwrapOr(
   }
   const replacementIri = or.dataPsmChoices[0];
 
-  const changed = await replaceObjectInSchema(schema.iri, operation.dataPsmOr, replacementIri, reader);
+  const changed = replaceObjectInSchema(schema.iri, operation.dataPsmOr, replacementIri, reader);
 
   const changedSchema = changed.some(c => c.iri === schema.iri);
   if (changedSchema) {

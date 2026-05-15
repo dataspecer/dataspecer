@@ -23,7 +23,7 @@ test("Set data PSM class as a schema root.", async () => {
     },
   };
 
-  const actual = await executeDataPsmSetRoots(
+  const actual = executeDataPsmSetRoots(
     wrapResourcesWithReader(before),
     undefined,
     operation

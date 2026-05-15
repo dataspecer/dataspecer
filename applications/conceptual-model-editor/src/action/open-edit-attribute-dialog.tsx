@@ -10,6 +10,7 @@ import { AttributeDialogState, createEditAttributeDialogState } from "../dialog/
 import { createEditAttributeDialog } from "../dialog/attribute/edit-attribute-dialog";
 import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
 import { attributeDialogStateToNewCmeRelationship } from "../dialog/attribute/edit-attribute-dialog-state-adapter";
+import { LabelResolver } from "../dependency-tracker";
 
 /**
  * Open and handle edit Attribute dialog.
@@ -23,9 +24,11 @@ export function openEditAttributeDialogAction(
   visualModel: VisualModel | null,
   model: InMemorySemanticModel,
   entity: SemanticModelRelationship,
+  labelResolver: LabelResolver,
 ) {
   const initialState = createEditAttributeDialogState(
-    classes, graph, visualModel, options.language, model, entity);
+    classes, graph, visualModel, options.language, model, entity,
+    labelResolver);
 
   const onConfirm = (state: AttributeDialogState) => {
     cmeExecutor.updateRelationship({

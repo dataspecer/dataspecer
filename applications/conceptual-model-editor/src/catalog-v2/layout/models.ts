@@ -1,4 +1,4 @@
-import { UiModelState } from "../../dataspecer/ui-model";
+import { UiModelState } from "../ui-model";
 import { uiSemanticModelToNode } from "../catalog-state-adapter";
 import * as State from "../catalog-state";
 import * as Toolbars from "../catalog-toolbar";

@@ -42,7 +42,7 @@ export class CreateRootClass implements ComplexOperation {
     this.context = context;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const dataPsmCreateClass = new DataPsmCreateClass();
 
     const semanticClass = this.semanticClassId ? this.semanticStore.getLocalEntity(this.semanticClassId).aggregatedEntity as SemanticModelClass : null;
@@ -53,11 +53,11 @@ export class CreateRootClass implements ComplexOperation {
       dataPsmCreateClass.dataPsmTechnicalLabel = "root";
     }
 
-    const dataPsmCreateClassResult = await this.store.applyOperation(this.dataPsmSchemaIri, dataPsmCreateClass);
+    const dataPsmCreateClassResult = this.store.applyOperation(this.dataPsmSchemaIri, dataPsmCreateClass);
 
     const dataPsmUpdateSchemaRoots = new DataPsmSetRoots();
     dataPsmUpdateSchemaRoots.dataPsmRoots = [dataPsmCreateClassResult.created[0]];
-    await this.store.applyOperation(this.dataPsmSchemaIri, dataPsmUpdateSchemaRoots);
+    this.store.applyOperation(this.dataPsmSchemaIri, dataPsmUpdateSchemaRoots);
 
     // Schema label and description
 
@@ -65,14 +65,14 @@ export class CreateRootClass implements ComplexOperation {
       const dataPsmSetHumanLabel = new DataPsmSetHumanLabel();
       dataPsmSetHumanLabel.dataPsmResource = this.dataPsmSchemaIri;
       dataPsmSetHumanLabel.dataPsmHumanLabel = this.schemaHumanLabel;
-      await this.store.applyOperation(this.dataPsmSchemaIri, dataPsmSetHumanLabel);
+      this.store.applyOperation(this.dataPsmSchemaIri, dataPsmSetHumanLabel);
     }
 
     if (this.schemaHumanDescription) {
       const dataPsmSetHumanDescription = new DataPsmSetHumanDescription();
       dataPsmSetHumanDescription.dataPsmResource = this.dataPsmSchemaIri;
       dataPsmSetHumanDescription.dataPsmHumanDescription = this.schemaHumanDescription;
-      await this.store.applyOperation(this.dataPsmSchemaIri, dataPsmSetHumanDescription);
+      this.store.applyOperation(this.dataPsmSchemaIri, dataPsmSetHumanDescription);
     }
   }
 }

@@ -11,18 +11,18 @@ import {
 } from "./data-psm-executor-utils.ts";
 import { DataPsmClass } from "../model/index.ts";
 
-export async function executeDataPsmCreateClass(
+export function executeDataPsmCreateClass(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmCreateClass
-): Promise<CoreExecutorResult> {
-  const schema = await loadDataPsmSchema(reader);
+): CoreExecutorResult {
+  const schema = loadDataPsmSchema(reader);
   if (schema === null) {
     return DataPsmExecutorResultFactory.missingSchema();
   }
 
   for (const iri of operation.dataPsmExtends) {
-    const resource = await reader.readResource(iri);
+    const resource = reader.readResource(iri);
     if (!DataPsmClass.is(resource)) {
       return CoreExecutorResult.createError(`Missing extended class: '${iri}'`);
     }

@@ -145,6 +145,52 @@ export function sanitizeDuplicitiesInRepresentativeLabels<Type extends LabeledEn
     });
   }
 
+  if (result.length > 0 && (result[0] as any).displayLabel !== undefined) {
+    sanitizeDuplicitiesInRepresentativeLabelsV2(vocabularies, result as any);
+  }
+
   return result;
+}
+
+/**
+ * This is a workaround function for
+ * https://github.com/dataspecer/dataspecer/issues/1483
+ *
+ * The issue is that
+ * https://github.com/dataspecer/dataspecer/commit/1c920a7e2beb548e11ba968bdc78c2efe7939e07
+ * introduced `displayLabel` for entities to be used in the dialogs.
+ *
+ * Yet this was not deduplicated in the
+ * {@link sanitizeDuplicitiesInRepresentativeLabels} function.
+ *
+ * To resolve this workaround we need to decided whether dialog state
+ * is language aware or agnostic when it comes to list of entities.
+ */
+function sanitizeDuplicitiesInRepresentativeLabelsV2(
+  vocabularies: CmeSemanticModel[],
+  entities: { model: string, displayLabel: string }[],
+) {
+  // Find colliding.
+  const collisions: Record<string, number> = {};
+  for (const entity of entities) {
+    collisions[entity.displayLabel] = (collisions[entity.displayLabel] ?? 0) + 1;
+  }
+  //
+  for (const entity of entities) {
+    if (collisions[entity.displayLabel] < 2) {
+      continue;
+    }
+    let modelLabel = entity.model;
+    for (const vocabulary of vocabularies) {
+      if (vocabulary.identifier === entity.model) {
+        // This is wrong, but for now we know there is no language support
+        // anyway so we use it as a quick fix.
+        modelLabel = vocabulary.name[''];
+        break;
+      }
+    }
+    const entityLabel = `${entity.displayLabel} [${modelLabel}]`;
+    entity.displayLabel = entityLabel;
+  }
 }
 

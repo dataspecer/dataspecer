@@ -19,17 +19,17 @@ export class SetDataPsmLabelAndDescription implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.forDataPsmResourceIri) as string;
 
     const dataPsmSetHumanLabel = new DataPsmSetHumanLabel();
     dataPsmSetHumanLabel.dataPsmResource = this.forDataPsmResourceIri;
     dataPsmSetHumanLabel.dataPsmHumanLabel = this.dataPsmHumanLabel;
-    await this.store.applyOperation(schema, dataPsmSetHumanLabel);
+    this.store.applyOperation(schema, dataPsmSetHumanLabel);
 
     const dataPsmSetHumanDescription = new DataPsmSetHumanDescription();
     dataPsmSetHumanDescription.dataPsmResource = this.forDataPsmResourceIri;
     dataPsmSetHumanDescription.dataPsmHumanDescription = this.dataPsmHumanDescription;
-    await this.store.applyOperation(schema, dataPsmSetHumanDescription);
+    this.store.applyOperation(schema, dataPsmSetHumanDescription);
   }
 }

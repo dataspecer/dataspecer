@@ -33,15 +33,3 @@ export const findSourceModelOfEntity = (
   }
   return null;
 };
-
-export const findSourceModelsOfEntities = (
-  entityIdentifiers: string[],
-  models: Map<string, EntityModel>,
-): (EntityModel | null)[] => {
-  const sourceModels = [];
-  for (const entityIdentifier of entityIdentifiers) {
-    const sourceModel = findSourceModelOfEntity(entityIdentifier, models);
-    sourceModels.push(sourceModel);
-  }
-  return sourceModels;
-};

@@ -25,7 +25,7 @@ test("Delete data PSM class.", async () => {
     },
   };
 
-  const actual = await executeDataPsmDeleteClassReference(
+  const actual = executeDataPsmDeleteClassReference(
     wrapResourcesWithReader(before),
     undefined,
     operation

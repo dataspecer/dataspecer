@@ -11,12 +11,12 @@ import {
 } from "../model/index.ts";
 import { DataPsmExecutorResultFactory } from "./data-psm-executor-utils.ts";
 
-export async function executeDataPsmUnsetChoice(
+export function executeDataPsmUnsetChoice(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmUnsetChoice
-): Promise<CoreExecutorResult> {
-  const resource = await reader.readResource(operation.dataPsmOr);
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.dataPsmOr);
   if (resource == null || !DataPsmOr.is(resource)) {
     return DataPsmExecutorResultFactory.invalidType(
       resource,
@@ -24,7 +24,7 @@ export async function executeDataPsmUnsetChoice(
     );
   }
 
-  const newChoice = await reader.readResource(operation.dataPsmChoice);
+  const newChoice = reader.readResource(operation.dataPsmChoice);
   if (
     newChoice == null ||
     (!DataPsmClass.is(newChoice) && !DataPsmClassReference.is(newChoice))

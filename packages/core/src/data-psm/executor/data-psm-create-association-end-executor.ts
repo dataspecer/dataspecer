@@ -12,17 +12,17 @@ import {
 } from "./data-psm-executor-utils.ts";
 import { DataPsmAssociationEnd, DataPsmClass } from "../model/index.ts";
 
-export async function executeDataPsmCreateAssociationEnd(
+export function executeDataPsmCreateAssociationEnd(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmCreateAssociationEnd
-): Promise<CoreExecutorResult> {
-  const schema = await loadDataPsmSchema(reader);
+): CoreExecutorResult {
+  const schema = loadDataPsmSchema(reader);
   if (schema === null) {
     return DataPsmExecutorResultFactory.missingSchema();
   }
 
-  const owner = await loadDataPsmClass(reader, operation.dataPsmOwner);
+  const owner = loadDataPsmClass(reader, operation.dataPsmOwner);
   if (owner === null) {
     return DataPsmExecutorResultFactory.missingOwner(operation.dataPsmOwner);
   }

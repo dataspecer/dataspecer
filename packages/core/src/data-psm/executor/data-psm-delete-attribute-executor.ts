@@ -10,7 +10,7 @@ export function executeDataPsmDeleteAttribute(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmDeleteAttribute
-): Promise<CoreExecutorResult> {
+): CoreExecutorResult {
   return removeFromClass(
     reader,
     operation.dataPsmOwner,

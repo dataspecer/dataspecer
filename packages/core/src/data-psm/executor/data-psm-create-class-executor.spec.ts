@@ -28,7 +28,7 @@ test("Create data PSM class.", async () => {
   };
 
   let counter = 0;
-  const actual = await executeDataPsmCreateClass(
+  const actual = executeDataPsmCreateClass(
     wrapResourcesWithReader(before),
     () => "http://localhost/" + ++counter,
     operation

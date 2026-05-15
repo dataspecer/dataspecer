@@ -86,7 +86,7 @@ export class Generator {
     const conceptualModels = {};
     const structureModels = {};
     for (const specification of Object.values(this.specifications)) {
-      const conceptualModel = await coreResourcesToConceptualModel(
+      const conceptualModel = coreResourcesToConceptualModel(
         this.reader,
         specification.pim
       );
@@ -113,7 +113,7 @@ export class Generator {
       }
 
       for (const iri of specification.psms) {
-        const structureModel = await coreResourcesToStructuralModel(
+        const structureModel = coreResourcesToStructuralModel(
           this.reader,
           iri
         );

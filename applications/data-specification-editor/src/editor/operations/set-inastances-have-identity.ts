@@ -16,13 +16,13 @@ export class SetInstancesHaveIdentity implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.forDataPsmClass) as string;
 
 
     const psmSetInstancesHaveIdentity = new DataPsmSetInstancesHaveIdentity();
     psmSetInstancesHaveIdentity.dataPsmClass = this.forDataPsmClass;
     psmSetInstancesHaveIdentity.instancesHaveIdentity = this.instancesHaveIdentity;
-    await this.store.applyOperation(schema, psmSetInstancesHaveIdentity);
+    this.store.applyOperation(schema, psmSetInstancesHaveIdentity);
   }
 }

@@ -19,7 +19,7 @@ test("Update jsonLdDefinedPrefixes in data PSM schema.", async () => {
     },
   };
 
-  const actual = await executeDataPsmSetJsonLdDefinedPrefixes(
+  const actual = executeDataPsmSetJsonLdDefinedPrefixes(
     wrapResourcesWithReader(before),
     undefined,
     operation

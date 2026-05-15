@@ -24,12 +24,12 @@ export class CreateRootOr implements ComplexOperation {
         this.store = store;
     }
 
-    async execute(): Promise<void> {
+    execute(): void {
         const createOr = new DataPsmCreateOr();
-        const createOrResult = await this.store.applyOperation(this.dataPsmSchemaIri, createOr);
+        const createOrResult = this.store.applyOperation(this.dataPsmSchemaIri, createOr);
 
         const dataPsmUpdateSchemaRoots = new DataPsmSetRoots();
         dataPsmUpdateSchemaRoots.dataPsmRoots = [createOrResult.created[0]];
-        await this.store.applyOperation(this.dataPsmSchemaIri, dataPsmUpdateSchemaRoots);
+        this.store.applyOperation(this.dataPsmSchemaIri, dataPsmUpdateSchemaRoots);
     }
 }

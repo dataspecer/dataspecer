@@ -29,7 +29,7 @@ test("Delete data PSM association-end.", async () => {
     },
   };
 
-  const actual = await executeDataPsmDeleteAssociationEnd(
+  const actual = executeDataPsmDeleteAssociationEnd(
     wrapResourcesWithReader(before),
     undefined,
     operation

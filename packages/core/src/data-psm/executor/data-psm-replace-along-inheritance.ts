@@ -4,14 +4,14 @@ import {DataPsmExecutorResultFactory, loadDataPsmSchema,} from "./data-psm-execu
 import {DataPsmClass} from "../model/index.ts";
 import {replaceObjectInSchema} from "./replace-object-in-schema.ts";
 
-export async function executeDataPsmReplaceAlongInheritance(
+export function executeDataPsmReplaceAlongInheritance(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmReplaceAlongInheritance
-): Promise<CoreExecutorResult> {
-  const schema = await loadDataPsmSchema(reader);
+): CoreExecutorResult {
+  const schema = loadDataPsmSchema(reader);
 
-  const originalResource = await reader.readResource(
+  const originalResource = reader.readResource(
     operation.dataPsmOriginalClass
   );
   if (originalResource === null) {
@@ -26,7 +26,7 @@ export async function executeDataPsmReplaceAlongInheritance(
     );
   }
 
-  const replacingResource = await reader.readResource(
+  const replacingResource = reader.readResource(
     operation.dataPsmReplacingClass
   );
   if (replacingResource === null) {
@@ -52,7 +52,7 @@ export async function executeDataPsmReplaceAlongInheritance(
   // todo are all parts valid under the new replacingResource
 
   // No collisions with other entities
-  const changed = await replaceObjectInSchema(
+  const changed = replaceObjectInSchema(
     schema.iri,
     operation.dataPsmOriginalClass,
     operation.dataPsmReplacingClass,

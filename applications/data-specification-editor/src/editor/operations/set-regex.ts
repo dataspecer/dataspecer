@@ -18,9 +18,9 @@ export class SetRegex implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.entityId) as string;
-    const entity = await this.store.readResource(this.entityId) as Entity | null;
+    const entity = this.store.readResource(this.entityId) as Entity | null;
 
     let regex = this.regex;
     if (regex === "") {
@@ -43,14 +43,14 @@ export class SetRegex implements ComplexOperation {
         ],
       });
       // @ts-ignore
-      await this.store.applyOperation(schema, operation);
+      this.store.applyOperation(schema, operation);
     } else {
       // We are modifying class
       const operation = modifyClass(this.entityId, {
         regex,
       } as ExtendedSemanticModelClass);
       // @ts-ignore
-      await this.store.applyOperation(schema, operation);
+      this.store.applyOperation(schema, operation);
     }
   }
 }

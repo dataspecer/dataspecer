@@ -5,12 +5,12 @@ import { DataPsmExecutorResultFactory } from "./data-psm-executor-utils.ts";
 
 type RootCollectionType = DataPsmSchema;
 
-export async function executeDataPsmSetRootCollection(
+export function executeDataPsmSetRootCollection(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetRootCollection
-): Promise<CoreExecutorResult> {
-  const resource = (await reader.readResource(operation.entityId)) as RootCollectionType;
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.entityId) as RootCollectionType;
   if (!DataPsmSchema.is(resource)) {
     return DataPsmExecutorResultFactory.invalidType(resource, "data-psm schema");
   }

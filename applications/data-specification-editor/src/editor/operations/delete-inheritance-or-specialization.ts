@@ -21,22 +21,22 @@ export class DeleteInheritanceOrSpecialization implements ComplexOperation {
     this.store = store;
   }
 
-  async execute(): Promise<void> {
+  execute(): void {
     const schema = this.store.getSchemaForResource(this.ownerOrIri) as string;
 
     // choice IRI to included iri
     const choiceCache: Record<string, string|null> = {};
 
-    const or = await this.store.readResource(this.ownerOrIri) as DataPsmOr;
+    const or = this.store.readResource(this.ownerOrIri) as DataPsmOr;
     for (const choiceIri of or.dataPsmChoices) {
-      const choice = await this.store.readResource(choiceIri);
+      const choice = this.store.readResource(choiceIri);
       if (!choice || !DataPsmClass.is(choice)) {
         throw new Error("Invalid OR structure");
       }
       const firstItemIri = choice.dataPsmParts[0];
       let includes: string | null = null
       if (firstItemIri) {
-        const firstItem = await this.store.readResource(firstItemIri);
+        const firstItem = this.store.readResource(firstItemIri);
         if (firstItem && DataPsmInclude.is(firstItem)) {
           includes = firstItem.dataPsmIncludes as string;
         }
@@ -62,7 +62,7 @@ export class DeleteInheritanceOrSpecialization implements ComplexOperation {
       const dataPsmUnsetChoice = new DataPsmUnsetChoice();
       dataPsmUnsetChoice.dataPsmOr = this.ownerOrIri;
       dataPsmUnsetChoice.dataPsmChoice = choiceToDelete;
-      await this.store.applyOperation(schema, dataPsmUnsetChoice);
+      this.store.applyOperation(schema, dataPsmUnsetChoice);
     }
 
     // Check if unwrap is ok
@@ -70,7 +70,7 @@ export class DeleteInheritanceOrSpecialization implements ComplexOperation {
     if (choicesToDelete.length + 1 === or.dataPsmChoices.length) {
       const unwrap = new DataPsmUnwrapOr();
       unwrap.dataPsmOr = or.iri;
-      await this.store.applyOperation(schema, unwrap);
+      this.store.applyOperation(schema, unwrap);
     }
   }
 }

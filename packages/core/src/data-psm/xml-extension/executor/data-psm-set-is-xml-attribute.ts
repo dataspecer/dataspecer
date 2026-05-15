@@ -5,12 +5,12 @@ import { DataPsmXmlPropertyExtension } from "../model/index.ts";
 import { DataPsmSetIsXmlAttribute } from "../operation/index.ts";
 import { XML_EXTENSION } from "../vocabulary.ts";
 
-export async function executeDataPsmSetIsXmlAttribute(
+export function executeDataPsmSetIsXmlAttribute(
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetIsXmlAttribute
-): Promise<CoreExecutorResult> {
-  const resource = await reader.readResource(operation.dataPsmProperty) as DataPsmXmlPropertyExtension;
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.dataPsmProperty) as DataPsmXmlPropertyExtension;
   if (resource == null || (!DataPsmAttribute.is(resource) && !DataPsmAssociationEnd.is(resource))) {
     return DataPsmExecutorResultFactory.invalidType(
       resource,
