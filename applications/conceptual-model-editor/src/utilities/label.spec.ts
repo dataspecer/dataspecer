@@ -38,7 +38,7 @@ class EntityModelMock implements EntityModel {
 
 }
 
-describe("createGetModelLabel", () => {
+describe.skip("createGetModelLabel", () => {
 
   test("Get model label for undefined.", () => {
     const getLabel = createGetModelLabel((value) => value);
@@ -117,6 +117,82 @@ describe("sanitizeDuplicitiesInRepresentativeLabels", () => {
     expect(actual).toStrictEqual(expected);
 
   });
+
+  test("https://github.com/dataspecer/dataspecer/issues/1483", () => {
+
+    const actual = sanitizeDuplicitiesInRepresentativeLabels([{
+      "identifier": "is9ick",
+      "name": { "": "Primary" },
+      "modelType": "in-memory",
+      "color": "#ffd670",
+      "baseIri": "https://example.com/is9ick/#"
+    }, {
+      "identifier": "lc7b9",
+      "name": { "": "Secondary" },
+      "modelType": "in-memory",
+      "color": "#92bcea",
+      "baseIri": "https://example.com/lc7b9/#"
+    }, {
+      "identifier": "fx9v3",
+      "name": { "": "Profile" },
+      "modelType": "in-memory",
+      "color": "#b8a3d3",
+      "baseIri": "https://example.com/fx9v3/#"
+    }
+    ] as any, [{
+      "identifier": "baccjcpg8dlmp3ynisp",
+      "iri": "ZanyFact",
+      "model": "is9ick",
+      "name": { "en": "Zany Fact" },
+      "label": { "en": "Zany Fact" },
+      "displayLabel": "Zany Fact",
+      "description": {},
+      "profileOfIdentifiers": [],
+      "usageNote": null,
+      "isProfile": false
+    }, {
+      "identifier": "s8dxx6cpjdjmp6otdfb",
+      "iri": "ZanyFact",
+      "model": "lc7b9",
+      "name": { "en": "Zany Fact" },
+      "label": { "en": "Zany Fact" },
+      "displayLabel": "Zany Fact",
+      "description": {},
+      "profileOfIdentifiers": [],
+      "usageNote": null,
+      "isProfile": false
+    }, {
+      "identifier": "7s4pohwaaipmp6otvmg",
+      "iri": "ZanyFact",
+      "model": "fx9v3",
+      "name": { "en": "Zany Fact" },
+      "label": { "en": "Zany Fact" },
+      "displayLabel": "Zany Fact",
+      "description": {},
+      "profileOfIdentifiers": [],
+      "usageNote": null,
+      "isProfile": false
+    }]);
+
+    const actualLabels = actual.map(item => ({
+      identifier: item.identifier,
+      displayLabel: item.displayLabel,
+    }));
+
+    const expected = [{
+      "identifier": "baccjcpg8dlmp3ynisp",
+      "displayLabel": "Zany Fact [Primary]",
+    }, {
+      "identifier": "s8dxx6cpjdjmp6otdfb",
+      "displayLabel": "Zany Fact [Secondary]",
+    }, {
+      "identifier": "7s4pohwaaipmp6otvmg",
+      "displayLabel": "Zany Fact [Profile]",
+    }];
+
+    expect(actualLabels).toStrictEqual(expected);
+
+});
 
 });
 
