@@ -206,7 +206,7 @@
         "commit": "Insert the commit message for Git",
         "commit-tag-error": "You cannot commit from a package representing a tag. Turn it into a branch first.",
         "merge-commit": "Insert the commit message for Git merge",
-        "link-to-existing-repository": "Insert URL of an existing remote Git repository you want to link to this package. URL may point to commit/branch/tag.",
+        "link-to-existing-repository": "Insert URL of an existing remote Git repository you want to link to this package. URL may point to commit/branch/tag.\n⚠️Caution: This is an untested feature, so it may not work correctly every time.",
         "fallback": "[Programmer oversight - Git dialog description missing]"
       },
       "label": {

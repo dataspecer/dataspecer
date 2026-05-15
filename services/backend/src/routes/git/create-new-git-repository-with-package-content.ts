@@ -52,13 +52,18 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
     else {
       const botName = gitProvider.getBotCredentials()?.name;
       if (botName === undefined) {
-        throw new Error("Creating bot repository, but there is no bot set")
+        throw new Error("Creating bot repository, but there is no bot set");
       }
       repositoryOwner = botName;
     }
   }
   else {
     repositoryOwner = organization!;
+  }
+
+  const originalResourceBeforeUpdate = await resourceModel.getResource(query.iri);
+  if (originalResourceBeforeUpdate === null) {
+    throw new Error(`Can not commit to git since the resource (iri: ${query.iri}) does not exist`);
   }
 
   // Either the user has create repo access AND it has access to the "user", then we are good
@@ -82,7 +87,8 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
       await gitProvider.createWebhook(patAccessToken.value, repositoryOwner, repositoryName, webhookUrl, ["push"]);
       // The projectIri is undefiend since it should be already set from the time we created the resource
       await resourceModel.updateResourceProjectIriAndBranch(query.iri, undefined, defaultBranch ?? undefined);
-      await resourceModel.updateResourceGitLink(query.iri, fullLinkedGitRepositoryURL, true);
+      // ... I think that it is always non-empty so the shouldSetProjectIris argument should probably always be false, this is just safety measure.
+      await resourceModel.updateResourceGitLink(query.iri, fullLinkedGitRepositoryURL, originalResourceBeforeUpdate.projectIri === "");
 
       const repositoryIdentificationInfo: GitRepositoryIdentification = {
         repositoryOwner,
@@ -105,6 +111,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
       // Get the updated resource, howver, it should be already set, so technically we could get it before the for cycle
       const resource = await resourceModel.getResource(query.iri);
       if (resource === null) {
+        // Unnecessary check, since we already check it above. But creating repo is rare operation so one "if" check is literally nothing.
         throw new Error(`Can not commit to git since the resource (iri: ${query.iri}) does not exist`);
       }
 

@@ -5,6 +5,13 @@ import { Profile } from "./profile";
 import { Schema } from "./schema";
 import { Vocabulary } from "./vocabulary";
 
+import template1Dark from "../../graphics/undraw_project_team_lc5a_dark.svg";
+import template1Light from "../../graphics/undraw_project_team_lc5a.svg";
+import template2Dark from "../../graphics/undraw_solution_mindset_re_57bf_dark.svg";
+import template2Light from "../../graphics/undraw_solution_mindset_re_57bf.svg";
+import template3Dark from "../../graphics/undraw_code_review_re_woeb_dark.svg";
+import template3Light from "../../graphics/undraw_code_review_re_woeb.svg";
+
 
 export const ProjectWizard = ({ isOpen, resolve, iri }: { iri: string } & BetterModalProps) => {
   const {t} = useTranslation("project-wizard");

@@ -177,7 +177,7 @@ application.get(apiBasename + "/git/remove-git-repository", currentSession, remo
 application.get(apiBasename + "/git/test-docker", currentSession, exportPackageResource);
 application.get(apiBasename + "/git/fetch-git-commit-history", currentSession, fetchGitCommitHistory);
 application.get(apiBasename + "/git/pull", currentSession, pullRemoteRepository);
-// application.get(apiBasename + "/git/link-to-existing-git-repository", currentSession, linkToExistingGitRepository);    // TODO RadStr PR: For now unused as explained in the 'Dir.tsx' in manager
+application.get(apiBasename + "/git/link-to-existing-git-repository", currentSession, linkToExistingGitRepository);    // TODO RadStr PR: For now unused as explained in the 'Dir.tsx' in manager
 application.get(apiBasename + "/git/opened-pull-requests", currentSession, getOpenedPullRequests);
 application.get(apiBasename + "/git/opened-pull-requests-for-branch", currentSession, getOpenedPullRequestsForBranch);
 application.get(apiBasename + "/git/opened-pull-requests-involving-user", currentSession, getOpenedPullRequestsInvolvingUser);

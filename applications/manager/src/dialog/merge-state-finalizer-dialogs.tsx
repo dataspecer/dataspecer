@@ -327,8 +327,8 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
         </ModalDescription>
       </ModalHeader>
       <ModalFooter>
-        <Button variant="outline" className="border bg-blue-100 border-blue-500 hover:bg-blue-500 hover:text-white dark:bg-blue-900 dark:border-blue-400 dark:hover:bg-blue-500 dark:hover:text-white transition" title={rebaseCommitTooltip} onClick={() => handleRebaseAction()}>{t("merge-state.finalizer.button.rebase")}</Button>
-        {mergeState.isMergeFromBranch && <Button variant="outline" className="border bg-green-100 border-green-500 hover:bg-green-500 hover:text-white dark:bg-green-900 dark:border-green-400 dark:hover:bg-green-500 dark:hover:text-white transition" title={mergeCommitTooltip} onClick={() => handleMergeAction()}>{t("merge-state.finalizer.button.merge")}</Button>}
+        <Button variant="outline" className="border bg-blue-100 border-blue-500 hover:bg-blue-500 hover:text-white dark:bg-blue-900 dark:border-blue-400 dark:hover:bg-blue-500 dark:hover:text-white transition" title={rebaseCommitTooltip} onClick={() => handleRebaseAction()}>Rebase</Button>
+        {mergeState.isMergeFromBranch && <Button variant="outline" className="border bg-green-100 border-green-500 hover:bg-green-500 hover:text-white dark:bg-green-900 dark:border-green-400 dark:hover:bg-green-500 dark:hover:text-white transition" title={mergeCommitTooltip} onClick={() => handleMergeAction()}>Merge</Button>}
       </ModalFooter>
     </>
   );

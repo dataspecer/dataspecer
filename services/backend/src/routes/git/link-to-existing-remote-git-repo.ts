@@ -6,6 +6,7 @@ import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import configuration from "../../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 import { updateGitRelatedDataForPackage } from "../resource.ts";
+import { resourceModel } from "../../main.ts";
 
 
 /**
@@ -16,13 +17,19 @@ import { updateGitRelatedDataForPackage } from "../resource.ts";
 export const linkToExistingGitRepository = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
     iri: z.string().min(1),
-    repositoryURL: z.string().min(1),
+    repositoryURL: z.string(),
   });
   const { iri, repositoryURL } = querySchema.parse(request.query);
-  const gitProvider: GitProviderNode = GitProviderNodeFactory.createGitProviderFromRepositoryURL(repositoryURL, httpFetch, configuration);
-  const commitReferenceType: CommitReferenceType = "branch";
-  const commitReferenceValue = (await gitProvider.extractCommitReferenceValue(repositoryURL, commitReferenceType)).commitReferenceValue;
-  await updateGitRelatedDataForPackage(iri, gitProvider, repositoryURL, commitReferenceValue, commitReferenceType);
+  if (repositoryURL === "") {
+    await resourceModel.updateResourceGitLink(iri, "", false);
+  }
+  else {
+    const gitProvider: GitProviderNode = GitProviderNodeFactory.createGitProviderFromRepositoryURL(repositoryURL, httpFetch, configuration);
+    const commitReferenceType: CommitReferenceType = "branch";
+    const commitReferenceValue = (await gitProvider.extractCommitReferenceValue(repositoryURL, commitReferenceType)).commitReferenceValue;
+    await updateGitRelatedDataForPackage(iri, gitProvider, repositoryURL, commitReferenceValue, commitReferenceType);
+  }
+  await resourceModel.setHasUncommittedChanges(iri, true);
   // Ok, I think that if there was some failure, then it caused error and errors are handled by asyncHandler.
   response.sendStatus(200);
   return;

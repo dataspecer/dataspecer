@@ -206,7 +206,7 @@
         "commit": "Zadejte commit zprávu pro Git",
         "commit-tag-error": "Nelze commitovat z package reprezentující tag. Nejprve jí převeďte na větev.",
         "merge-commit": "Zadejte commit zprávu pro Git merge",
-        "link-to-existing-repository": "Zadejte URL existujícího vzdáleného Git repozitáře, ke kterému chcete package připojit. URL může odkazovat na commit/větev/tag.",
+        "link-to-existing-repository": "Zadejte URL existujícího vzdáleného Git repozitáře, ke kterému chcete package připojit. URL může odkazovat na commit/větev/tag.\n⚠️Pozor, že toto je neotestovaná funkcionalita, tedy ne vždy musí fungovat správně.",
         "fallback": "[Chyba vývojáře - chybí popis dialogu Git]"
       },
       "label": {

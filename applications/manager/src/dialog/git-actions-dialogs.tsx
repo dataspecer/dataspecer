@@ -617,7 +617,7 @@ export const GitActionsDialog = ({ inputPackage, defaultCommitMessage, isOpen, r
         <ModalHeader>
           <ModalTitle>{modalTitle}</ModalTitle>
           <ModalDescription>
-            {modalDescription}
+            <p className="whitespace-pre-line">{modalDescription}</p>
           </ModalDescription>
         </ModalHeader>
         <ModalBody>
