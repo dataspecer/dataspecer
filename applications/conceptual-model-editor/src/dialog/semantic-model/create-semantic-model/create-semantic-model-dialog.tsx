@@ -108,6 +108,7 @@ function renderAddModelByUrl(props: {
         value={props.url}
         onChange={(event) => props.setUrl(event.target.value.trim())}
         required
+        autoFocus
       />
       <Label html-for="model-alias">{t("add-model-dialog.alias-label")}</Label>
       <Input
