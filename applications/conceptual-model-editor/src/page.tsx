@@ -215,8 +215,14 @@ const Page = () => {
       return;
     }
     const currentActiveViewId = aggregatorView.getActiveViewId();
+    if (currentActiveViewId === undefined) {
+      // We are not ready yet.
+      // When this is removed it caused the application failure.
+      return;
+    }
     if (viewId !== null && viewId !== currentActiveViewId) {
-      console.log("Browser navigation detected, changing active visual model", { from: currentActiveViewId, to: viewId });
+      console.log("Browser navigation detected, changing active visual model",
+        { from: currentActiveViewId, to: viewId });
       aggregatorView.changeActiveVisualModel(viewId);
       setAggregatorView(aggregator.getView());
     }
