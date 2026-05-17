@@ -1,7 +1,7 @@
 import { BranchSummary, CommitResult, SimpleGit } from "simple-git";
-import { getLastCommit, getLastCommitHash, isDefaultBranch, removeEverythingExcept, removePathRecursively } from "../git-utils-node.ts";
+import { getLastCommitHash, isDefaultBranch, removeEverythingExcept, removePathRecursively } from "../git-utils-node.ts";
 import { createGitReadMeFile } from "../git-readme/git-readme-generator.ts";
-import { AvailableFilesystems, CommitConflictInfo, CommitType, createRootFilesystemNodeLocation, CreateRootFilesystemNodeParams, createTransitiveMapFromFilesystems, ErrorDefinitionConstantsClass, ExportFormatType, ExportVersionType, FilesystemAbstraction, getAuthorizationURL, getMergeFromMergeToForGitAndDS, GitCredentials, GitIgnoreBase, GitProviderNode, MergeEndInfoWithRootNode, MergeFromDataType } from "@dataspecer/git";
+import { AvailableFilesystems, CommitConflictInfo, CommitType, createRootFilesystemNodeLocation, CreateRootFilesystemNodeParams, createTransitiveMapFromFilesystems, ErrorDefinitionConstantsClass, ExportFormatType, ExportVersionType, FilesystemAbstraction, getAuthorizationURL, getMergeFromMergeToForGitAndDS, GitCredentials, GitIgnoreBase, GitProviderNode, GitRestApiOperationError, MergeEndInfoWithRootNode, MergeFromDataType } from "@dataspecer/git";
 import { AvailableExports } from "../resource-model-api/export/export-api/export-actions.ts";
 import { DsFsConstructorParams, DsFsConstructorParamsWithStrongerResourceModel, FilesystemFactory, FilesystemFactoryMethodParams } from "../filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
 import { PackageExporterFactory } from "../resource-model-api/export/implementation/export-by-resource-type.ts";
@@ -124,10 +124,12 @@ export class GitCommit {
    */
   public constructor(params: GitCommitConstructorParams) {
     this.params = params;
+    this.errorStack = [];
   }
 
   // Fields
   private params: GitCommitConstructorParams;
+  private errorStack: any[];
 
   // Methods
 
@@ -269,7 +271,7 @@ export class GitCommit {
       const pushResult = await GitCommit.exportAndPushToGit(
         createSimpleGitResult, iri, projectIri, repoURLWithAuthorization, commitInfo, hasSetLastCommit,
         mergeFromBranch, isLastAccessToken, hashOfPerformedCommit, isMergingToDefaultBranch,
-        cloneResult!.mergeToBranchExists, filesystemFactoryParams);
+        cloneResult!.mergeToBranchExists, filesystemFactoryParams, this.errorStack);
 
       hashOfPerformedCommit = pushResult.hashOfPeformedCommit;
       if (pushResult.isPushSuccessful) {
@@ -380,7 +382,7 @@ export class GitCommit {
       const pushResult = await GitCommit.exportAndPushToGit(
         createSimpleGitResult, iri, projectIri, repoURLWithAuthorization, commitInfo, hasSetLastCommit,
         null, isLastAccessToken, hashOfPerformedCommit, isCommittingToDefaultBranch,
-        !isNewlyCreatedBranchPresentOnlyInDS, filesystemFactoryParams);
+        !isNewlyCreatedBranchPresentOnlyInDS, filesystemFactoryParams, this.errorStack);
 
       hashOfPerformedCommit = pushResult.hashOfPeformedCommit;
       if (pushResult.isPushSuccessful) {
@@ -414,6 +416,7 @@ export class GitCommit {
     shouldContainWorkflowFiles: boolean,
     isBranchAlreadyTrackedOnRemote: boolean,
     dataspecerFilesystemFactoryParams: DsFsConstructorParamsWithStrongerResourceModel,
+    errorStack: any[],
   ): Promise<PushToGitResult> {
     // Will be used in the result
     const shouldSkipCommitting = hashOfCommitToUse !== null;
@@ -525,13 +528,37 @@ export class GitCommit {
       else if (error?.message?.includes(ErrorDefinitionConstantsClass.NO_CHANGES_TO_COMMIT_ERROR_MSG)) {
         throw error;
       }
+
+      let betterError: GitRestApiOperationError | null = null;
+      if (
+        error.message.includes("The requested URL returned error: 403") ||
+        error.message.includes("Please make sure you have the correct access rights")
+      ) {
+        betterError = new GitRestApiOperationError(error.message, 403); // Slightly overloading the RestApi error - maybe could be a separate error - possible TODO: for refactoring
+        errorStack.push(betterError);
+      }
+      else {
+        errorStack.push(error);
+      }
+
       // Error can be caused by Not sufficient rights for the pushing - then we have to try all and fail on last
       if (isLastAccessToken) {
         // It is important to not only remove the actual files, but also the .git directory,
         // otherwise we would later also push the git history, which we don't want (unless we get the history through git clone)
         removePathRecursively(gitDirectoryToRemoveAfterWork);
-        // If it is last then rethrow. Otherwise try again.
-        throw error;
+        // If it is last token then rethrow the corresponding error which probably caused the issue. Otherwise try again.
+        if (errorStack[0]?.getStatusCode?.() === 403 && errorStack.at(-1)?.getStatusCode?.() === 403) {
+          // Either it was not sufficient rights then just return the first one
+          throw errorStack[0];
+        }
+        else {
+          // Otherwise just connect all errors and return it.
+          let finalErrorMessage: string = "";
+          for (const errorInStack of errorStack) {
+            finalErrorMessage += (errorInStack?.message ?? "") + "\n";
+          }
+          throw new GitRestApiOperationError(finalErrorMessage, 500);
+        }
       }
       else {
         return {

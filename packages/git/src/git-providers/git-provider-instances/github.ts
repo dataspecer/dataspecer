@@ -227,7 +227,7 @@ export class GitHubProvider extends GitProviderBase {
 
     if (fetchResponse.status < 200 || fetchResponse.status >= 300) {
       const content = JSON.stringify(await fetchResponse.json());
-      throw new GitRestApiOperationError(`Error when creating new remote GitHub repository: ${fetchResponse.status} ${fetchResponse} ${content}`);
+      throw new GitRestApiOperationError(`Error when creating new remote GitHub repository: ${fetchResponse.status} ${fetchResponse} ${content}`, fetchResponse.status);
     }
 
     const responseAsJSON = (await fetchResponse.json()) as any;
@@ -300,7 +300,7 @@ export class GitHubProvider extends GitProviderBase {
       return {
         type: "error",
         fetchResponse,
-        error: new GitRestApiOperationError(`Error when getting the latest commit of GitHub repository: ${repositoryOwner};${repoName};${branch} ${fetchResponse.status} ${textResponse}`),
+        error: new GitRestApiOperationError(`Error when getting the latest commit of GitHub repository: ${repositoryOwner};${repoName};${branch} ${fetchResponse.status} ${textResponse}`, fetchResponse.status),
       }
     }
 
@@ -375,7 +375,7 @@ export class GitHubProvider extends GitProviderBase {
     });
 
     if (fetchResponse.status < 200 || fetchResponse.status >= 300) {
-      throw new GitRestApiOperationError(`Error when creating branch of GitHub repository: ${fetchResponse.status} ${fetchResponse}`);
+      throw new GitRestApiOperationError(`Error when creating branch of GitHub repository: ${fetchResponse.status} ${fetchResponse}`, fetchResponse.status);
     }
 
     return fetchResponse;
@@ -487,7 +487,7 @@ export class GitHubProvider extends GitProviderBase {
     });
 
     if (response.status < 200 || response.status > 299) {
-      console.error(`Error ${response.status}: ${JSON.stringify(await response.json())}`);
+      throw new GitRestApiOperationError(`Error ${response.status}: ${JSON.stringify(await response.json())}`, response.status);
       return null;
     }
 

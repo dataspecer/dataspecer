@@ -671,7 +671,26 @@ export const createNewRemoteRepositoryHandler = async (t: TFunction<"translation
       const response = await createNewRemoteRepositoryRequest(iri, result);
       closeDialogObject.closeDialogAction();
       await requestLoadPackage(iri, true);
-      gitOperationResultToast(t, response);
+      if (response.status === 422) {
+        // TODO RadStr: Localization
+        toast.error(`Repository with the same name "${result.repositoryName}" and under the same user "${result.signedInUserOrOrganization ?? "Dataspecer bot"}" already exists.`, { richColors: true });
+        return;
+      }
+      else if (response.status === 403) {
+        toast.error(`Unauthorized (not sufficient permissions) - Cannot create repository: ${result.repositoryName}, and user: ${result.signedInUserOrOrganization ?? "Dataspecer bot"}`, { richColors: true });
+      }
+      else if (response.status === 404) {
+        if (result.isUserRepo) {
+          console.error(`THIS SHOULD NOT HAPPEN. It should happen only for organization repositories, since this would otherwise mean that the user does not exist. (User: ${result.signedInUserOrOrganization ?? "Dataspecer bot"}) (Repo name: ${result.repositoryName})`);
+          toast.error(`Could not create the repository since the user does not exist. Check console for more details.`, { richColors: true });
+        }
+        else {
+          toast.error(`Organization with given name (${result.signedInUserOrOrganization}) does not exist.`, { richColors: true });
+        }
+      }
+      else {
+        gitOperationResultToast(t, response);
+      }
     }
     catch (error) {
       closeDialogObject.closeDialogAction();  // Closing the dialog twice is fine
@@ -879,6 +898,12 @@ export const commitToGitHandler = async (
         openModal(TextDiffEditorDialog, { initialMergeFromRootMetaPath: jsonResponseTyped.conflictMergeFromRootPath, initialMergeToRootMetaPath: jsonResponseTyped.conflictMergeToRootPath, editable: convertMergeStateCauseToEditable("push")});
         toast.success(t("git.toast.merge-state-created"));
         await requestLoadPackage(iri, true);
+        return;
+      }
+      else if (response.status === 403) {
+        // TODO RadStr: Localization
+        toast.error("Unathorized - Cannot commit, neither the user or the bot has sufficient rights", { richColors: true });
+        closeDialogObject.closeDialogAction();
         return;
       }
       else {

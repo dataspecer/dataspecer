@@ -2,7 +2,7 @@ import { z } from "zod";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { mergeStateModel, resourceModel } from "../../main.ts";
-import { ExportVersionType, extractPartOfRepositoryURL, convertStringToExportVersion, MergeState, stringToBoolean, ExportFormatType, convertStringToExportFormat, SingleBranchCommitType, CommitType, AccessTokenType } from "@dataspecer/git";
+import { ExportVersionType, extractPartOfRepositoryURL, convertStringToExportVersion, MergeState, stringToBoolean, ExportFormatType, convertStringToExportFormat, SingleBranchCommitType, CommitType, AccessTokenType, GitRestApiOperationError } from "@dataspecer/git";
 import { GitCredentials, MergeStateCause, CommitHttpRedirectionCause, CommitRedirectResponseJson, MergeFromDataType, CommitConflictInfo, defaultBranchForPackageInDatabase, createUniqueCommitMessage } from "@dataspecer/git";
 import { getGitCredentialsFromSession, getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import { PrismaMergeStateWithData } from "../../models/merge-state-model.ts";
@@ -192,21 +192,34 @@ const commitHandlerInternal = async (
     remoteRepositoryUrl,
     commitType,
   };
-  const commitConflictInfo: CommitConflictInfo = await commitPackageToGitUsingAuthSession(commitParams);
 
-  if (commitConflictInfo !== null) {
-    const status = 409;
-    response.status(status).json(commitConflictInfo);
+  try {
+    const commitConflictInfo: CommitConflictInfo = await commitPackageToGitUsingAuthSession(commitParams);
+
+    if (commitConflictInfo !== null) {
+      const status = 409;
+      response.status(status).json(commitConflictInfo);
+      return status;
+    }
+
+    const status = 200;
+    await resourceModel.setHasUncommittedChanges(iri, false); // Just hardcode it instead of perfoming comparison. It should be correct conceptual-wise.
+    if (mergeFromData !== null) {
+      await trySetPackageIriAsUpToDate(mergeFromData.iri, request, response, false);
+    }
+    response.sendStatus(status);
     return status;
   }
-
-  const status = 200;
-  await resourceModel.setHasUncommittedChanges(iri, false); // Just hardcode it instead of perfoming comparison. It should be correct conceptual-wise.
-  if (mergeFromData !== null) {
-    await trySetPackageIriAsUpToDate(mergeFromData.iri, request, response, false);
+  catch (error: any) {
+    if (error instanceof GitRestApiOperationError) {
+      const status = error.getStatusCode();
+      if (status === 403) {
+        response.sendStatus(status);
+        return status;
+      }
+    }
+    throw error;
   }
-  response.sendStatus(status);
-  return status;
 }
 
 export type CommitUsingAuthSessionParams = {

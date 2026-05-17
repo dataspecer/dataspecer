@@ -5,6 +5,7 @@ import { gitOperationResultToast } from "./utilities";
 import { BranchAction, CreateNewBranchDialog } from "@/dialog/create-new-branch";
 import { OpenBetterModal } from "@/lib/better-modal";
 import { TFunction } from "i18next";
+import { ErrorDefinitionConstantsClass } from "@dataspecer/git";
 
 
 export async function manualPull(t: TFunction<"translation", undefined>, iri: string) {
@@ -22,9 +23,16 @@ export async function manualPull(t: TFunction<"translation", undefined>, iri: st
     toast.success(t("The DS last commit hash already matched the Git one"))
   }
   else if (response.status >= 500) {
-    console.error("Check if the remote follows the [.name.type.format] naming and each resource has .meta file.");
-    toast.error(t("There was an error during the git pull. Check console", { "richColors": true }));
-    console.error(await response.json());
+    // TODO RadStr: Localization
+    const responseJson = await response.json();
+    if (responseJson?.startsWith?.(ErrorDefinitionConstantsClass.convertToFrontendResponseMessage(ErrorDefinitionConstantsClass.INVALID_FORMAT_ON_PULL))) {
+      toast.error(`${ErrorDefinitionConstantsClass.INVALID_FORMAT_ON_PULL} Check console for more info`, { "richColors": true });
+    }
+    else {
+      console.error("Check if the remote follows the [.name.type.format] naming and each resource has .meta file or if it has valid format.");
+      toast.error("There was an error during the git pull. Check console", { "richColors": true });
+    }
+    console.error(responseJson);
   }
   else {
     toast.error(t("There were conflicts in the git pull, resolve them in DS", { "richColors": true }));

@@ -8,6 +8,7 @@ import configuration from "../../configuration.ts";
 import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
 import { updateBlob, updateResourceMetadata } from "../resource.ts";
 import { createFilesystemFactoryParams } from "../../utils/filesystem-helpers.ts";
+import { ErrorDefinitionConstantsClass } from "@dataspecer/git";
 
 
 /**
@@ -48,19 +49,30 @@ export const pullRemoteRepository = asyncHandler(async (request: express.Request
     filesystemConstructorParams,
   };
   const pullContainer = new GitPull(pullUpdateParams);
-  const result = await pullContainer.updateDSRepositoryByGitPull();
-  if (result.hashMatch) {
-    response.sendStatus(204);
-    return;
+
+  try {
+    const result = await pullContainer.updateDSRepositoryByGitPull();
+    if (result.hashMatch) {
+      response.sendStatus(204);
+      return;
+    }
+    else if (result.createdMergeState) {
+      response.status(409).json("Created merge state");   // 409 is error code for conflict
+      return;
+    }
+    else {
+      await resourceModel.setHasUncommittedChanges(query.iri, false);     // TODO RadStr: 99% Correct - Just hardcode it instead of perfoming comparison, that being said it should be correct
+      //                                                                  //                  Technically, this happens only when there are no changes, so we just confirm it
+      response.sendStatus(200);
+      return;
+    }
   }
-  else if (result.createdMergeState) {
-    response.status(409).json("Created merge state");   // 409 is error code for conflict
-    return;
-  }
-  else {
-    await resourceModel.setHasUncommittedChanges(query.iri, false);     // TODO RadStr: 99% Correct - Just hardcode it instead of perfoming comparison, that being said it should be correct
-    //                                                                  //                  Technically, this happens only when there are no changes, so we just confirm it
-    response.sendStatus(200);
-    return;
+  catch (error: any) {
+    if (error?.message?.startsWith("Unexpected token")) {
+      const errorMsg = ErrorDefinitionConstantsClass.convertToFrontendResponseMessage(ErrorDefinitionConstantsClass.INVALID_FORMAT_ON_PULL + "\n" + error.message);
+      response.status(500).json(errorMsg);
+      return;
+    }
+    throw error;
   }
 });

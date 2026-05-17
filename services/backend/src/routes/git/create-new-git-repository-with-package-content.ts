@@ -2,7 +2,7 @@ import { z } from "zod";
 import { asyncHandler } from "../../utils/async-handler.ts";
 import express from "express";
 import { resourceModel, webhookUrl } from "../../main.ts";
-import { convertToValidGitName, findPatAccessTokens, convertStringToExportVersion, PUBLICATION_BRANCH_DEFAULT_NAME, stringToBoolean, transformCommitMessageIfEmpty, convertStringToExportFormat } from "@dataspecer/git";
+import { convertToValidGitName, findPatAccessTokens, convertStringToExportVersion, PUBLICATION_BRANCH_DEFAULT_NAME, stringToBoolean, transformCommitMessageIfEmpty, convertStringToExportFormat, GitRestApiOperationError } from "@dataspecer/git";
 import { commitPackageToGitUsingAuthSession, CommitUsingAuthSessionParams } from "./commit-package-to-git.ts";
 import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
 import { CommitBranchAndHashInfo, GitCommitToCreateInfoBasic, GitRepositoryIdentification } from "@dataspecer/git-node";
@@ -141,8 +141,21 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
       return;
     }
     catch(error) {
+      if (error instanceof GitRestApiOperationError) {
+        if (error.getStatusCode() === 422) {
+          response.status(422).send(`Repository with the same name ${repositoryName} and under the same user ${repositoryOwner} already exists.`);
+          return;
+        }
+        else if (error.getStatusCode() === 403) {
+          response.status(403).send(`Unauthorized (not sufficient permissions) - Cannot create repository: ${repositoryName},  and user: ${repositoryOwner}`);
+          return;
+        }
+        else if (error.getStatusCode() === 404) {
+          response.status(404).send(`Not found - Cannot create repository: ${repositoryName},  and user: ${repositoryOwner}.`);
+          return;
+        }
+      }
       throw error;
-      // EMPTY, we just want to try another iteration, don't care about errors
     }
   }
 
