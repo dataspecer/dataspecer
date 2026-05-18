@@ -18,8 +18,10 @@ export const Profile = ({ isOpen, resolve, iri }: { iri: string } & BetterModalP
     event.stopPropagation();
     setLoading(true);
 
+    const formData = new FormData(event.target as HTMLFormElement);
+
     try {
-      const urls = (event.target as any)["url"].value
+      const urls = (formData.get("url") as string ?? "")
         .split("\n")
         .map((url: string) => url.trim())
         .filter((url: string) => url.length > 0);
@@ -29,10 +31,10 @@ export const Profile = ({ isOpen, resolve, iri }: { iri: string } & BetterModalP
         return;
       }
 
-      const label = (event.target as any)["name"].value;
-      const description = (event.target as any)["description"].value;
-      const baseIri = (event.target as any)["base-url"].value;
-      const autoProfile = (event.target as any)["auto-profile"].checked;
+      const label = formData.get("name") as string;
+      const description = formData.get("description") as string;
+      const baseIri = formData.get("base-url") as string;
+      const autoProfile = formData.get("auto-profile") === "on";
 
       // Call the API endpoint
       const response = await fetch(import.meta.env.VITE_BACKEND + "/new/application-profile?parentIri=" + encodeURIComponent(iri), {
@@ -83,35 +85,35 @@ export const Profile = ({ isOpen, resolve, iri }: { iri: string } & BetterModalP
                 {t("form.url.name")}
                 <span className="text-red-500">*</span>
               </Label>
-              <Textarea id="url" placeholder={t("form.url.instruction")} required />
+              <Textarea id="url" name="url" placeholder={t("form.url.instruction")} required />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="auto-profile" className="grow">
                 {t("project-wizard:projects.profile.auto-profile-title")}
               </Label>
               <div className="flex items-center space-x-5">
-                <Switch id="auto-profile" defaultChecked />
+                <Switch id="auto-profile" name="auto-profile" defaultChecked />
                 <p className="text-muted-foreground text-sm">{t("project-wizard:projects.profile.auto-profile-description")}</p>
               </div>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="name">{t("form.name.name")}</Label>
-              <Input id="name" placeholder={t("form.name.instruction")} />
+              <Input id="name" name="name" placeholder={t("form.name.instruction")} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="description">{t("form.description.name")}</Label>
-              <Textarea id="description" placeholder={t("form.description.instruction")} />
+              <Textarea id="description" name="description" placeholder={t("form.description.instruction")} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="base-url">
                 {t("form.base-iri.name")}
                 <span className="text-red-500">*</span>
               </Label>
-              <Input id="base-url" placeholder={t("form.base-iri.instruction")} defaultValue="https://example.com/profile/vocabulary#" />
+              <Input id="base-url" name="base-url" placeholder={t("form.base-iri.instruction")} defaultValue="https://example.com/profile/vocabulary#" />
             </div>
             {/* <div className="grid gap-2">
               <Label htmlFor="documentation-url">{t("form.documentation-base-url.name")}</Label>
-              <Input id="documentation-url" placeholder={t("form.documentation-base-url.instruction")} defaultValue="https://example.com/profile/" />
+              <Input id="documentation-url" name="documentation-url" placeholder={t("form.documentation-base-url.instruction")} defaultValue="https://example.com/profile/" />
             </div> */}
             <LoadingButton type="submit" loading={loading}>
               {t("form.create-button.name")}
