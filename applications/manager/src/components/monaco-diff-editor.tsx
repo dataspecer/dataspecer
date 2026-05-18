@@ -41,6 +41,7 @@ export const MonacoDiffEditor: FC<{
   const [previousEditableContent, setPreviousEditableContent] = useState<string | null>(null);
   const [previousDatastoreType, setPreviousDatastoreType] = useState<string | null>(null);
   const [previousProjectIrisTreePathToFilesystemNode, setPreviousProjectIrisTreePathToFilesystemNode] = useState<string | null>(null);
+  const [possiblyReloadedContent, setPossiblyReloadedContent] = useState<boolean>(false);
 
   // ..... We have to do this because otherwise the onDidDispose methods and so on use captures of props, which is bad, really bad.
   const datastoreTypeRef = useRef<string | null>(null);
@@ -58,7 +59,11 @@ export const MonacoDiffEditor: FC<{
       // Get the current content of the editor
       const original = props.editorRef.current?.editor.getOriginalEditor().getValue({ lineEnding: "lf", preserveBOM: false }) ?? null;
       const modified = props.editorRef.current?.editor.getModifiedEditor().getValue({ lineEnding: "lf", preserveBOM: false }) ?? null;
-      if (previousDatastoreType !== null && original === editorsContent.nonEditable && modified === editorsContent.editable &&
+      if (original === "" && modified === "" && previousNonEditableContent !== "" && editorsContent.nonEditable !== "" && editorsContent.editable !== "") {
+        // This is just some weird state before the editor has any values
+        return;
+      }
+      if (previousDatastoreType !== null && original === previousNonEditableContent && modified === previousEditableContent &&
           props.datastoreType === previousDatastoreType && previousProjectIrisTreePathToFilesystemNode === props.projectIrisTreePathToFilesystemNode) {
         return;
       }
@@ -67,7 +72,7 @@ export const MonacoDiffEditor: FC<{
       setPreviousDatastoreType(props.datastoreType);
       setPreviousProjectIrisTreePathToFilesystemNode(props.projectIrisTreePathToFilesystemNode);
     };
-  }, [editorsContent.nonEditable, editorsContent.editable, props.projectIrisTreePathToFilesystemNode, props.datastoreType, props.mergeState]);
+  }, [editorsContent.nonEditable, editorsContent.editable, props.projectIrisTreePathToFilesystemNode, props.datastoreType, props.mergeState, possiblyReloadedContent]);
 
 
   useEffect(() => {
@@ -161,6 +166,8 @@ export const MonacoDiffEditor: FC<{
             projectIrisTreePathToFilesystemNodeRef.current, datastoreTypeRef.current
           );
         });
+
+        setPossiblyReloadedContent(prev => !prev);
       }}
       theme={resolvedTheme === "dark" ? "dataspecer-dark" : "vs"}
       language={props.format}
