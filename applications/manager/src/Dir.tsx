@@ -373,7 +373,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
                 {hasSetRemoteRepository && <hr className="border-gray-300" />}
                 {<DropdownMenuItem onClick={async () => createNewRemoteRepositoryHandler(t, openModal, iri, resource)}><GitPullRequestIcon className="mr-2 h-4 w-4" />Create remote repository</DropdownMenuItem>}
                 {<DropdownMenuItem onClick={async () => linkToExistingGitRepositoryHandler(t, openModal, iri, resource)}><Link className="mr-2 h-4 w-4" />Link to remote repository</DropdownMenuItem>}
-                {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => commitToGitDialogOnClickHandler(t, openModal, iri, resource, "classic-commit", true, null, null)}><GitCommit className="mr-2 h-4 w-4" />Commit</DropdownMenuItem>}
+                {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => commitToGitDialogOnClickHandler(t, openModal, iri, resource, "classic-commit", true, true, null, null)}><GitCommit className="mr-2 h-4 w-4" />Commit</DropdownMenuItem>}
                 {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => manualPull(t, iri)}><Import className="mr-2 h-4 w-4" />Pull</DropdownMenuItem>}
                 {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => openModal(SetGitRemoteConfigurationDialog, {inputPackage: resource})}><Pencil className="mr-2 h-4 w-4" />Configure Git</DropdownMenuItem>}
                 {hasSetRemoteRepository && <hr className="border-gray-300" />}

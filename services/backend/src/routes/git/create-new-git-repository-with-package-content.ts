@@ -126,6 +126,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
         shouldAlwaysCreateMergeState: false,
         shouldAppendAfterDefaultMergeCommitMessage: null,
         remoteRepositoryUrl: fullLinkedGitRepositoryURL,
+        allowMergeStateCreation: false,
         commitType: "classic-commit",
       };
       // Just provide empty merge from values, since we are newly creating the link we can not perform merge right away anyways

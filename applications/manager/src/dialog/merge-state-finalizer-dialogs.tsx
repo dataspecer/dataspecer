@@ -6,7 +6,7 @@ import { AvailableFilesystems, FinalizerVariantsForPullOnFailure, getEditableVal
 import { Loader } from "lucide-react";
 import { Dispatch, SetStateAction, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { commitToGitDialogOnClickHandler, mergeCommitToGitDialogOnClickHandler } from "./git-actions-dialogs";
+import { commitToGitDialogOnClickHandler, mergeCommitToGitDialogOnClickHandler, MergeStateCreationAllowanceType } from "./git-actions-dialogs";
 import { requestLoadPackage, ResourcesContext } from "@/package";
 import { useTranslation } from "react-i18next";
 import { GIT_MERGE_VALIDATION_WAIT_TIME } from "@/utils/git-wait-times";
@@ -270,7 +270,11 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
           requestLoadPackage(mergeState.rootIriMergeTo, true);
         };
         setTimeout(() => {
-          commitToGitDialogOnClickHandler(t, openModal, iri, sourceDSPackage, "rebase-commit", false, mergeState.commitMessage, onSuccessCallback);
+          const createMergeStateAllowance: MergeStateCreationAllowanceType = {
+            allowMergeStateCreation: false,
+            toastMessageForUnexpectedMergeStateCreation: "The commit in the 'merge to' branch of the rebase did not match the latest commit in Git. You have to push again.",
+          };
+          commitToGitDialogOnClickHandler(t, openModal, iri, sourceDSPackage, "rebase-commit", false, false, mergeState.commitMessage, onSuccessCallback, createMergeStateAllowance);
         }, 10);     // Same as for merge, small delay to keep the background same color.
       }
       else if (response.status < 400) {
@@ -416,7 +420,11 @@ const MergeStateFinalizerForPush = ({ mergeState, setIsWaitingForAnswer, shouldR
       else if (response.status < 300) {
         toast.success(t("merge-state.finalizer.toast.finalizer-finished"));
         resolve();
-        commitToGitDialogOnClickHandler(t, openModal, iri, sourceDSPackage, "classic-commit", false, mergeState.commitMessage, null);
+        const createMergeStateAllowance: MergeStateCreationAllowanceType = {
+          allowMergeStateCreation: false,
+          toastMessageForUnexpectedMergeStateCreation: "The commit in the push merge state did not match the latest commit in Git. You have to push again.",
+        };
+        commitToGitDialogOnClickHandler(t, openModal, iri, sourceDSPackage, "classic-commit", false, false, mergeState.commitMessage, null, createMergeStateAllowance);
       }
       else if (response.status < 400) {
         // Probably do nothing - we will just show the another dialog.

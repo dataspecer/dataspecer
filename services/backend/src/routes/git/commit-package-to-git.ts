@@ -59,7 +59,7 @@ export const mergeCommitPackageToGitHandler = asyncHandler(async (request: expre
 
   const returnedStatus = await commitHandlerInternal(
     request, response, iri, "merge-commit", mergeFromData, commitMessage, exportFormat, exportVersion,
-    shouldRedirectWithExistenceOfMergeStates, false, shouldAppendAfterDefaultMergeCommitMessage);
+    shouldRedirectWithExistenceOfMergeStates, false, false, shouldAppendAfterDefaultMergeCommitMessage);
 });
 
 /**
@@ -73,19 +73,21 @@ export const commitPackageToGitHandler = asyncHandler(async (request: express.Re
     exportVersion: z.string().min(1).optional(),
     shouldAlwaysCreateMergeState: z.string().min(1),
     shouldRedirectWithExistenceOfMergeStates: z.string().min(1),
+    allowMergeStateCreation: z.string().min(1),
     commitType: z.enum(["classic-commit", "rebase-commit"]),
   });
 
   const query = querySchema.parse(request.query);
   const shouldAlwaysCreateMergeState = stringToBoolean(query.shouldAlwaysCreateMergeState);
   const shouldRedirectWithExistenceOfMergeStates = stringToBoolean(query.shouldRedirectWithExistenceOfMergeStates);
+  const allowMergeStateCreation = stringToBoolean(query.allowMergeStateCreation);
   const { iri, commitMessage } = query;
   const exportVersion = convertStringToExportVersion(query.exportVersion);
   const exportFormat = convertStringToExportFormat(query.exportFormat);
   const commitType: SingleBranchCommitType = query.commitType;
   await commitHandlerInternal(
     request, response, iri, commitType, null, commitMessage, exportFormat, exportVersion,
-    shouldRedirectWithExistenceOfMergeStates, shouldAlwaysCreateMergeState, null);
+    shouldRedirectWithExistenceOfMergeStates, shouldAlwaysCreateMergeState, allowMergeStateCreation, null);
 });
 
 /**
@@ -105,6 +107,7 @@ const commitHandlerInternal = async (
   exportVersion: ExportVersionType,
   shouldRedirectWithExistenceOfMergeStates: boolean,
   shouldAlwaysCreateMergeState: boolean,
+  allowMergeStateCreation: boolean,
   shouldAppendAfterDefaultMergeCommitMessage: boolean | null,
 ) => {
   const transformedCommitMessage: string | null = originalCommitMessage.length === 0 ? null : originalCommitMessage;
@@ -188,6 +191,7 @@ const commitHandlerInternal = async (
     repositoryIdentificationInfo,
     gitCommitInfoBasic: gitCommitInfo,
     shouldAlwaysCreateMergeState,
+    allowMergeStateCreation,
     shouldAppendAfterDefaultMergeCommitMessage,
     remoteRepositoryUrl,
     commitType,
@@ -239,7 +243,7 @@ export const commitPackageToGitUsingAuthSession = async (
 ): Promise<CommitConflictInfo> => {
   const {
     branchAndLastCommit, gitCommitInfoBasic, iri, projectIri, remoteRepositoryUrl, repositoryIdentificationInfo,
-    request, response, shouldAlwaysCreateMergeState, shouldAppendAfterDefaultMergeCommitMessage, commitType
+    request, response, shouldAlwaysCreateMergeState, allowMergeStateCreation, shouldAppendAfterDefaultMergeCommitMessage, commitType
    } = commitParams;
   const commitInfo: GitCommitToCreateInfoExplicitWithCredentials = await prepareCommitDataForCommit(
     request, response, remoteRepositoryUrl, gitCommitInfoBasic, shouldAppendAfterDefaultMergeCommitMessage);
@@ -254,6 +258,7 @@ export const commitPackageToGitUsingAuthSession = async (
     remoteRepositoryUrl,
     repositoryIdentificationInfo,
     shouldAlwaysCreateMergeState,
+    allowMergeStateCreation,
   };
   const gitCommitObject = new GitCommit(commitObjectParams);
   const commitConflictInfo = await gitCommitObject.commitPackageToGit();

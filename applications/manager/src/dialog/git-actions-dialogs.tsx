@@ -781,6 +781,17 @@ export const mergeCommitToGitHandler = async (
           gitOperationResultToast(t, response);
         }
       }
+      else if (response.status === 409) {
+        // We put the message into console again
+        console.error("One of the branches did not match the latest commit in Git. Merge again.");
+        toast.error("One of the branches did not match the latest commit in Git. Merge again.", { "richColors": true });
+        const removalResult = await removeMergeState(mergeState.uuid);
+        if (!removalResult) {
+          setTimeout(() => {
+            toast.error(t("git.error.merge-state-removal-failed"), { "richColors": true });
+          }, 1000);
+        }
+      }
       else if (response.status === 200) {
         // Unlike for other merge states, we remove th emerge state here instead when finalizing backend (the merge state is exception).
         // Since other mergestates just updated the last commit in the finalizer. But that is not the case for merge
@@ -803,6 +814,15 @@ export const mergeCommitToGitHandler = async (
     });
 };
 
+export type MergeStateCreationAllowanceType = {
+  allowMergeStateCreation: boolean;
+  // Should be defined if "allowMergeStateCreation" is false (for true it is not used). If it is not defined some default message will be used.
+  toastMessageForUnexpectedMergeStateCreation?: string;
+}
+
+/**
+ * @param mergeStateCreationAllowance If not provided then we allow creation of merge states by default.
+ */
 export const commitToGitDialogOnClickHandler = async (
   t: TFunction<"translation", undefined>,
   openModal: OpenBetterModal,
@@ -810,8 +830,10 @@ export const commitToGitDialogOnClickHandler = async (
   inputPackage: Package,
   commitType: SingleBranchCommitType,
   shouldShowAlwaysCreateMergeStateOption: boolean,
+  shouldRedirectWithExistenceOfMergeStates: boolean,
   defaultCommitMessage: string | null,
   onSuccessCallback: (() => void) | null,
+  mergeStateCreationAllowance?: MergeStateCreationAllowanceType,
 ) => {
   if (defaultCommitMessage === "" && commitType === "rebase-commit") {
     defaultCommitMessage = "Rebase commit message";
@@ -823,29 +845,31 @@ export const commitToGitDialogOnClickHandler = async (
     type: "commit",
     shouldShowAlwaysCreateMergeStateOption,
     defaultShouldAlwaysCreateMergeStateValue: false,
-   });
+  });
   if (result) {
-    const gitCommitData = {
+    const gitCommitData: GitCommitData = {
       ...result,
-      commitType
+      commitType,
+      allowMergeStateCreation: mergeStateCreationAllowance?.allowMergeStateCreation ?? true,
     };
     await commitToGitHandler(
-      t, openModal, iri, shouldShowAlwaysCreateMergeStateOption, gitCommitData, true, onSuccessCallback);
+      t, openModal, iri, gitCommitData, shouldRedirectWithExistenceOfMergeStates, onSuccessCallback, mergeStateCreationAllowance?.toastMessageForUnexpectedMergeStateCreation);
   }
 };
 
 
 /**
  * @param shouldRedirectWithExistenceOfMergeStates for commitType singalizing "rebase-commit", this parameter will be ignored and false will be used instead.
+ * @param toastMessageForUnexpectedMergeStateCreation used when the canCreateMergeStateIfNecessary is false but we hit conflicts anyways and create merge state because of that
  */
 export const commitToGitHandler = async (
   t: TFunction<"translation", undefined>,
   openModal: OpenBetterModal,
   iri: string,
-  canCreateMergeStateIfNecessary: boolean,
   gitCommitData: GitCommitData,
   shouldRedirectWithExistenceOfMergeStates: boolean,
   onSuccessCallback: (() => void) | null,
+  toastMessageForUnexpectedMergeStateCreation?: string,
 ) => {
   const closeDialogObject = createCloseLoadingDialogObject();
   openModal(LoadingDialog, {
@@ -892,11 +916,18 @@ export const commitToGitHandler = async (
           await requestLoadPackage(iri, true);
         }
       }
-      else if (response.status === 409 && canCreateMergeStateIfNecessary) {
+      else if (response.status === 409) {
         closeDialogObject.closeDialogAction();
-        const jsonResponseTyped: NonNullable<CommitConflictInfo> = await response.json() as NonNullable<CommitConflictInfo>;
-        openModal(TextDiffEditorDialog, { initialMergeFromRootMetaPath: jsonResponseTyped.conflictMergeFromRootPath, initialMergeToRootMetaPath: jsonResponseTyped.conflictMergeToRootPath, editable: convertMergeStateCauseToEditable("push")});
-        toast.success(t("git.toast.merge-state-created"));
+        if (gitCommitData.allowMergeStateCreation) {
+          const jsonResponseTyped: NonNullable<CommitConflictInfo> = await response.json() as NonNullable<CommitConflictInfo>;
+          openModal(TextDiffEditorDialog, { initialMergeFromRootMetaPath: jsonResponseTyped.conflictMergeFromRootPath, initialMergeToRootMetaPath: jsonResponseTyped.conflictMergeToRootPath, editable: convertMergeStateCauseToEditable("push")});
+          toast.success(t("git.toast.merge-state-created"));
+        }
+        else {
+          const errorMessage = toastMessageForUnexpectedMergeStateCreation ?? "You should create merge state, since the commit had conflicts.";
+          console.error(errorMessage);   // We also write it to the console if the user misses it because it was too quick.
+          toast.error(errorMessage, { "richColors": true });
+        }
         await requestLoadPackage(iri, true);
         return;
       }

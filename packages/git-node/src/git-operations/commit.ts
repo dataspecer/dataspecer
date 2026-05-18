@@ -84,6 +84,7 @@ export type GitCommitBaseType = {
   branchAndLastCommit: CommitBranchAndHashInfo;
   repositoryIdentificationInfo: GitRepositoryIdentification;
   shouldAlwaysCreateMergeState: boolean;
+  allowMergeStateCreation: boolean;
   commitType: CommitType;
 };
 
@@ -232,37 +233,47 @@ export class GitCommit {
           mergeToFilesystemInformation,
         } = await compareBackendFilesystems(mergeFrom, mergeTo, projectIri, "merge");
 
-        const commonCommitHash = await getCommonCommitInHistory(git, mergeFromCommitHash, mergeToCommitHash);
-
-        const mergeFromInfo: MergeEndInfoWithRootNode = {
-          rootNode: mergeFromFilesystemInformation.root,
-          filesystemType: mergeFromFilesystemInformation.filesystem.getFilesystemType(),
-          lastCommitHash: mergeFromCommitHash,
-          isBranch: true,     // It has to be true, we do not allow it to not be branch, if it is we failed to perform the checks earlier. (probably on front end)
-          branch: mergeFromBranch,
-          rootFullPathToMeta: mergeFromFilesystemInformation.pathToRootMeta,
-          gitUrl: remoteRepositoryUrl,
-        };
-        const mergeToInfo: MergeEndInfoWithRootNode = {
-          rootNode: mergeToFilesystemInformation.root,
-          filesystemType: mergeToFilesystemInformation.filesystem.getFilesystemType(),
-          lastCommitHash: mergeToCommitHash,
-          isBranch: true,
-          branch: cloneResult!.mergeToBranchExplicitName,
-          rootFullPathToMeta: mergeToFilesystemInformation.pathToRootMeta,
-          gitUrl: remoteRepositoryUrl,
-        };
-
-        const createdMergeStateId = await mergeStateModel.createMergeState(
-          commitInfo.commitMessage, "merge", diffTreeComparison, commonCommitHash, mergeFromInfo, mergeToInfo);
-        if (diffTreeComparison.conflicts.length > 0) {
-          return {
-            conflictMergeFromRootPath: mergeFromInfo.rootFullPathToMeta,
-            conflictMergeToRootPath: mergeToInfo.rootFullPathToMeta,
-          };
+        if (!this.params.allowMergeStateCreation) {
+          if (diffTreeComparison.conflicts.length > 0) {
+            return {
+              conflictMergeFromRootPath: "",
+              conflictMergeToRootPath: "",
+            };
+          }
         }
-        // Well now what? For some reason the merge state was not created, but I think that it always should be, since we are not matching the commit hashes.
-        // Actually if we commit and then revert then we don't get conflicts
+        else {
+          const commonCommitHash = await getCommonCommitInHistory(git, mergeFromCommitHash, mergeToCommitHash);
+
+          const mergeFromInfo: MergeEndInfoWithRootNode = {
+            rootNode: mergeFromFilesystemInformation.root,
+            filesystemType: mergeFromFilesystemInformation.filesystem.getFilesystemType(),
+            lastCommitHash: mergeFromCommitHash,
+            isBranch: true,     // It has to be true, we do not allow it to not be branch, if it is we failed to perform the checks earlier. (probably on front end)
+            branch: mergeFromBranch,
+            rootFullPathToMeta: mergeFromFilesystemInformation.pathToRootMeta,
+            gitUrl: remoteRepositoryUrl,
+          };
+          const mergeToInfo: MergeEndInfoWithRootNode = {
+            rootNode: mergeToFilesystemInformation.root,
+            filesystemType: mergeToFilesystemInformation.filesystem.getFilesystemType(),
+            lastCommitHash: mergeToCommitHash,
+            isBranch: true,
+            branch: cloneResult!.mergeToBranchExplicitName,
+            rootFullPathToMeta: mergeToFilesystemInformation.pathToRootMeta,
+            gitUrl: remoteRepositoryUrl,
+          };
+
+          const createdMergeStateId = await mergeStateModel.createMergeState(
+            commitInfo.commitMessage, "merge", diffTreeComparison, commonCommitHash, mergeFromInfo, mergeToInfo);
+          if (diffTreeComparison.conflicts.length > 0) {
+            return {
+              conflictMergeFromRootPath: mergeFromInfo.rootFullPathToMeta,
+              conflictMergeToRootPath: mergeToInfo.rootFullPathToMeta,
+            };
+          }
+          // Well now what? For some reason the merge state was not created, but I think that it always should be, since we are not matching the commit hashes.
+          // Actually if we commit and then revert then we don't get conflicts
+        }
       }
 
 
@@ -338,36 +349,46 @@ export class GitCommit {
               mergeToFilesystemInformation
             } = await compareGitAndDSFilesystems(new GitIgnoreBase(gitProvider), iri, projectIri, gitInitialDirectoryParent, "push", filesystemFactoryParams);
 
-            const commonCommitHash = await getCommonCommitInHistory(git, localLastCommitHash, remoteRepositoryLastCommitHash);
-            const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS("push", localLastCommitHash, remoteRepositoryLastCommitHash);
-            const mergeFromInfo: MergeEndInfoWithRootNode = {
-              rootNode: mergeFromFilesystemInformation.root,
-              filesystemType: mergeFromFilesystemInformation.filesystem.getFilesystemType(),
-              lastCommitHash: lastHashMergeFrom,
-              branch: branchExplicit,
-              isBranch: true,     // Same as for merge. It has to be true, otherwise we failed some earlier check (probably on front end)
-              rootFullPathToMeta: mergeFromFilesystemInformation.pathToRootMeta,
-              gitUrl: remoteRepositoryUrl,
-            };
-            const mergeToInfo: MergeEndInfoWithRootNode = {
-              rootNode: mergeToFilesystemInformation.root,
-              filesystemType: mergeToFilesystemInformation.filesystem.getFilesystemType(),
-              lastCommitHash: lastHashMergeTo,
-              isBranch: true,
-              branch: branchExplicit,
-              rootFullPathToMeta: mergeToFilesystemInformation.pathToRootMeta,
-              gitUrl: remoteRepositoryUrl,
-            };
-
-
-
-            const createdMergeStateId = await mergeStateModel.createMergeState(
-              commitInfo.commitMessage, "push", diffTreeComparison, commonCommitHash, mergeFromInfo, mergeToInfo);
-            if (diffTreeComparison.conflicts.length > 0 || shouldAlwaysCreateMergeState) {
-              return {
-                conflictMergeFromRootPath: mergeFromInfo.rootFullPathToMeta,
-                conflictMergeToRootPath: mergeToInfo.rootFullPathToMeta,
+            if (!this.params.allowMergeStateCreation) {
+              if (diffTreeComparison.conflicts.length > 0) {
+                return {
+                  conflictMergeFromRootPath: "",
+                  conflictMergeToRootPath: "",
+                };
+              }
+            }
+            else {
+              const commonCommitHash = await getCommonCommitInHistory(git, localLastCommitHash, remoteRepositoryLastCommitHash);
+              const { valueMergeFrom: lastHashMergeFrom, valueMergeTo: lastHashMergeTo } = getMergeFromMergeToForGitAndDS("push", localLastCommitHash, remoteRepositoryLastCommitHash);
+              const mergeFromInfo: MergeEndInfoWithRootNode = {
+                rootNode: mergeFromFilesystemInformation.root,
+                filesystemType: mergeFromFilesystemInformation.filesystem.getFilesystemType(),
+                lastCommitHash: lastHashMergeFrom,
+                branch: branchExplicit,
+                isBranch: true,     // Same as for merge. It has to be true, otherwise we failed some earlier check (probably on front end)
+                rootFullPathToMeta: mergeFromFilesystemInformation.pathToRootMeta,
+                gitUrl: remoteRepositoryUrl,
               };
+              const mergeToInfo: MergeEndInfoWithRootNode = {
+                rootNode: mergeToFilesystemInformation.root,
+                filesystemType: mergeToFilesystemInformation.filesystem.getFilesystemType(),
+                lastCommitHash: lastHashMergeTo,
+                isBranch: true,
+                branch: branchExplicit,
+                rootFullPathToMeta: mergeToFilesystemInformation.pathToRootMeta,
+                gitUrl: remoteRepositoryUrl,
+              };
+
+
+
+              const createdMergeStateId = await mergeStateModel.createMergeState(
+                commitInfo.commitMessage, "push", diffTreeComparison, commonCommitHash, mergeFromInfo, mergeToInfo);
+              if (diffTreeComparison.conflicts.length > 0 || shouldAlwaysCreateMergeState) {
+                return {
+                  conflictMergeFromRootPath: mergeFromInfo.rootFullPathToMeta,
+                  conflictMergeToRootPath: mergeToInfo.rootFullPathToMeta,
+                };
+              }
             }
           }
         }
