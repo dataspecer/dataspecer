@@ -318,8 +318,8 @@ const MergeStateFinalizerForMerge = ({ mergeState, shouldRenderAnswerDialog, set
     );
   }
 
-  const rebaseCommitTooltip = t("merge-state.finalizer.button.rebase-tooltip");
-  const mergeCommitTooltip = t("merge-state.finalizer.button.merge-tooltip");
+  const rebaseCommitTooltip = t("merge-state.finalizer.merge.button.rebase-tooltip");
+  const mergeCommitTooltip = t("merge-state.finalizer.merge.button.merge-tooltip");
 
   return (
     <>
