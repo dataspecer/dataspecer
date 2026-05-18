@@ -365,6 +365,12 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
       const gitCommitHash = await getLastCommitHash(git);
       // If we throw error then it means that the commit on which the DS resource already is within DS is actually after the commit to which we are updating.
       const commonCommit = await getCommonCommitInHistory(git, gitCommitHash, mergeState.lastCommitHashMergeTo);
+      if (gitCommitHash !== mergeState.lastCommitHashMergeTo) {
+        // Also we check that the merge to hashes match. Otherwise,
+        //  we would simply just rebase on top the merge to branch, no matter how many different commits
+        //  came after the creation of merge state, which is not something we want.
+        throw new Error("The remote commit of the merge to branch does not match the local one");
+      }
       await this.forceHandlePullFinalizer(mergeState.rootIriMergeTo, gitCommitHash);
     }
     catch (error) {
