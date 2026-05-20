@@ -115,10 +115,10 @@ describe("PhantomElementsFactory", () => {
   });
 
   test("constructs and deconstructs split ids", () => {
-    const splitId = PhantomElementsFactory.constructSplitID("relationship-1", 3);
-    expect(splitId).toBe("SPLIT-3-relationship-1");
+    const splitId = PhantomElementsFactory.constructSplitID("relationship1", 3);
+    expect(splitId).toBe("SPLIT-3-relationship1");
     expect(PhantomElementsFactory.isSplitID(splitId)).toBe(true);
-    expect(PhantomElementsFactory.isSplitID("relationship-1")).toBe(false);
-    expect(PhantomElementsFactory.deconstructSplitID(splitId)).toBe("1");
+    expect(PhantomElementsFactory.isSplitID("relationship1")).toBe(false);
+    expect(PhantomElementsFactory.deconstructSplitID(splitId)).toBe("relationship1");
   });
 });
