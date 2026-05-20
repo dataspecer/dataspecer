@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+import { LayoutOptions } from "elkjs";
 import {
   configToElkConfigSpecialCasesConvertor,
   modifyElkDataObject,
@@ -19,7 +20,7 @@ describe("elk-utils", () => {
   });
 
   test("modifyElkDataObject maps config, applies special cases and stringifies advanced settings", () => {
-    const elkData: Record<string, string | number> = {};
+    const elkData: LayoutOptions = {};
 
     modifyElkDataObject({
       layout_alg: "elk_force",
@@ -44,7 +45,7 @@ describe("elk-utils", () => {
   });
 
   test("modifyElkDataObject ignores empty advanced settings", () => {
-    const elkData: Record<string, string | number> = {};
+    const elkData: LayoutOptions = {};
 
     modifyElkDataObject({
       layout_alg: "elk_layered",
