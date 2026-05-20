@@ -15,6 +15,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
+import type { Vocabulary } from "@/types/vocabulary"
 
 interface VocabularyFormValues {
   name: string
@@ -26,12 +27,16 @@ interface VocabularyFormValues {
 
 interface VocabularyFormProps {
   initialValues?: VocabularyFormValues
+  vocabularies: Vocabulary[]
+  currentVocabularyId?: string
   onCancel: () => void
   onConfirm: (values: VocabularyFormValues) => void
 }
 
 export function VocabularyForm({
   initialValues,
+  vocabularies,
+  currentVocabularyId,
   onCancel,
   onConfirm,
 }: VocabularyFormProps) {
@@ -63,8 +68,21 @@ export function VocabularyForm({
     },
   })
 
+  const handleSubmit = (values: VocabularyFormValues) => {
+    // Check if IRI already exists in other vocabularies
+    const existingVocab = vocabularies.find((v) => v.iri === values.iri)
+    if (existingVocab && existingVocab.id !== currentVocabularyId) {
+      form.setError("iri", {
+        type: "manual",
+        message: t("form.validation.duplicateIri"),
+      })
+      return
+    }
+    onConfirm(values)
+  }
+
   return (
-    <form onSubmit={form.handleSubmit(onConfirm)}>
+    <form onSubmit={form.handleSubmit(handleSubmit)}>
       <Form {...form}>
         <Card>
           <CardContent className="p-5 space-y-4">

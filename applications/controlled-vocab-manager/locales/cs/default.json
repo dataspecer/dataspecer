@@ -6,16 +6,13 @@
   "breadcrumb.addByUrl": "Přidat podle URL",
   "breadcrumb.edit": "Upravit",
   "breadcrumb.search": "Hledat",
-
   "list.title": "Správce řízených slovníků",
   "list.addFromSource": "Přidat ze zdroje",
   "list.addByUrl": "Přidat podle URL",
   "list.empty.message": "Zatím nebyly identifikovány žádné řízené slovníky.",
   "list.empty.hint": "Pomocí tlačítek výše přidejte slovníky do tohoto projektu.",
-
   "actions.edit": "Upravit",
   "actions.remove": "Odstranit",
-
   "form.edit.title": "Upravit slovník",
   "form.edit.subtitle": "Aktualizujte metadata slovníku. Pole označená <asterisk>*</asterisk> jsou povinná.",
   "form.empty.title": "Identifikovat slovník pomocí URL",
@@ -34,6 +31,7 @@
   "form.validation.requiredField": "Toto pole je povinné.",
   "form.validation.invalidUrl": "Zadejte prosím platnou URL adresu.",
   "form.validation.invalidRegex": "Zadejte prosím platný regulární výraz.",
+  "form.validation.duplicateIri": "Slovník s tímto IRI již byl identifikován.",
   "form.cancel": "Zrušit",
   "form.confirm": "Potvrdit"
 }

@@ -70,12 +70,14 @@ function App() {
           <VocabularyEditPage
             key={editingVocabulary.id}
             vocabulary={editingVocabulary}
+            vocabularies={vocabularies}
             onCancel={handleFormCancel}
             onConfirm={handleFormConfirm}
           />
         ) : (
           <VocabularyFormPage
             key="new"
+            vocabularies={vocabularies}
             onCancel={handleFormCancel}
             onConfirm={handleFormConfirm}
           />

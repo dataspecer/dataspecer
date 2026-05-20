@@ -5,12 +5,14 @@ import type { Vocabulary } from "@/types/vocabulary"
 
 interface VocabularyEditPageProps {
   vocabulary: Vocabulary
+  vocabularies: Vocabulary[]
   onCancel: () => void
   onConfirm: (vocabulary: Vocabulary) => void
 }
 
 export function VocabularyEditPage({
   vocabulary,
+  vocabularies,
   onCancel,
   onConfirm,
 }: VocabularyEditPageProps) {
@@ -24,7 +26,7 @@ export function VocabularyEditPage({
     docsUrl: string
   }) => {
     const updated: Vocabulary = {
-      id: vocabulary.id,
+      id: values.iri,
       source: vocabulary.source,
       ...values,
     }
@@ -53,6 +55,8 @@ export function VocabularyEditPage({
       </p>
       <VocabularyForm
         initialValues={vocabulary}
+        vocabularies={vocabularies}
+        currentVocabularyId={vocabulary.id}
         onCancel={onCancel}
         onConfirm={handleConfirm}
       />
