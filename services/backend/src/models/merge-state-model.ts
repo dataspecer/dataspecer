@@ -726,7 +726,7 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
     if (inputData.mergeStateCause === "merge" || inputData.mergeStateCause === "pull") {
       await this.resourceModel.increaseActiveMergeStateCount(inputData.mergeToInfo.rootIri);
     }
-    if (inputData.mergeStateCause === "merge" || inputData.mergeStateCause === "push") {
+    if (inputData.mergeStateCause === "push") {
       await this.resourceModel.increaseActiveMergeStateCount(inputData.mergeFromInfo.rootIri);
     }
 
@@ -816,7 +816,7 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
     if (mergeState.mergeStateCause === "merge" || mergeState.mergeStateCause === "pull") {
       await this.resourceModel.decreaseActiveMergeStateCount(mergeState.rootIriMergeTo);
     }
-    if (mergeState.mergeStateCause === "merge" || mergeState.mergeStateCause === "push") {
+    if (mergeState.mergeStateCause === "push") {
       await this.resourceModel.decreaseActiveMergeStateCount(mergeState.rootIriMergeFrom);
     }
     this.removeRepository(mergeState.filesystemTypeMergeFrom as AvailableFilesystems, mergeState.rootFullPathToMetaMergeFrom, true);
