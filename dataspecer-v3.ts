@@ -164,16 +164,6 @@ namespace backend_api {
     ): () => void;
 
     /**
-     * Undo last operation submited by this connection.
-     */
-    undoOperation(): TransactionResult;
-
-    /**
-     * Redo last undone operation by this connection.
-     */
-    redoOperation(): TransactionResult;
-
-    /**
      * Save changes to backend.
      * @deprecated
      */
@@ -219,7 +209,6 @@ namespace backend_api {
 
   export type EntityIdentifier = string;
 
-
   export interface Operation {
 
     identifier: OperationIdentifier;
@@ -230,6 +219,12 @@ namespace backend_api {
 
   export type OperationIdentifier = string;
 
+  /* Undo last non-undo opration executed using the connection. */
+  export interface UndoOperation extends Operation {  } 
+
+  /* Redo last undo opration executed using the connection. */
+  export interface RedoOperation extends Operation {  }
+  
   export interface TransactionResult {
 
     /**
