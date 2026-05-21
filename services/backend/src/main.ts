@@ -73,6 +73,7 @@ import { getOpenedPullRequestsInvolvingUser } from "./routes/git/get-opened-pull
 import { getAuthenticatedUserOrganizations } from "./routes/git/get-git-organizations-for-authenticated-user.ts";
 import { getBotOrganizations } from "./routes/git/get-git-organizations-for-bot.ts";
 import { getMetas } from "./routes/git/get-metas.ts";
+import { checkIfHashMatchesGitRemote } from "./routes/git/check-if-hash-matches-git-remote.ts";
 
 
 populateSshKnownHosts();
@@ -164,6 +165,7 @@ application.delete(apiBasename + "/git/remove-merge-state", removeMergeState);
 // TODO RadStr: debug/migration, commented for now, but may be useful in future
 // application.post(apiBasename + "/git/debug-clear-merge-state-table", clearMergeStateTableDebug);
 
+application.get(apiBasename + "/git/check-if-hash-matches-git-remote", currentSession, checkIfHashMatchesGitRemote);
 application.get(apiBasename + "/git/try-set-package-as-up-to-date", currentSession, trySetPackageAsUpToDateHandler);
 application.post(apiBasename + "/git/webhook-test", currentSession, handleWebhook);
 application.post(apiBasename + "/git/webhook-test2", currentSession, handleWebhook);

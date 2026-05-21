@@ -1,8 +1,19 @@
 import { FetchResponse } from "@dataspecer/core/io/fetch/fetch-api";
 import { GitIssuesFetchResponse, IssueState } from "./git-issues/git-issue-types.ts";
 import { GenericScope } from "@dataspecer/auth";
+import { GitRestApiOperationError } from "./error-definitions.ts";
 
 export const PUBLICATION_BRANCH_DEFAULT_NAME: string = "publication-branch";
+
+export type GetLatestCommitResult = {
+  type: "ok";
+  sha: string;
+} | {
+  type: "error";
+  fetchResponse: FetchResponse;
+  error: GitRestApiOperationError;
+};
+
 
 ////////////////////
 // Pull requests
@@ -541,6 +552,11 @@ export interface GitProvider {
    * @todo Currently (at least for GitHub) there is a hardcoded limit for at most 1000 organizations.
    */
   getOrganizationsForAuthenticatedUser(authToken: string | null): Promise<UserOrganizationsFetchResponse>;
+
+  /**
+   * @returns The latest commit hash on the branch found in the corresponding remote repository
+   */
+  getLatestCommit(repositoryOwner: string, repoName: string, branch: string, authToken: string): Promise<GetLatestCommitResult>;
 }
 
 /**

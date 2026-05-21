@@ -3,7 +3,7 @@ import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import sodium from "libsodium-wrappers-sumo";
 import { AuthenticationGitProviderData, GitProviderBase } from "../git-provider-base.ts";
 import { AuthenticationGitProvidersData } from "../git-provider-factory.ts";
-import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, PUBLICATION_BRANCH_DEFAULT_NAME, GitProviderIndependentWebhookRequestData, PullRequestFetchResponse, PullRequestInfo, PullRequestInvolvingUserFetchResponse, UserOrganizationsFetchResponse, GitHubLabel, getGitProviderDomain } from "../../git-provider-api.ts";
+import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, PUBLICATION_BRANCH_DEFAULT_NAME, GitProviderIndependentWebhookRequestData, PullRequestFetchResponse, PullRequestInfo, PullRequestInvolvingUserFetchResponse, UserOrganizationsFetchResponse, GitHubLabel, getGitProviderDomain, GetLatestCommitResult } from "../../git-provider-api.ts";
 import { GitRestApiOperationError } from "../../error-definitions.ts";
 import { findPatAccessToken, GITHUB_USER_AGENT } from "../../git-utils.ts";
 import { GitIssueInfo, GitIssuesFetchResponse, IssueState } from "../../git-issues/git-issue-types.ts";
@@ -14,14 +14,6 @@ import { GenericScope } from "@dataspecer/auth";
 const scopes = ["read:user", "read:org", "user:email", "public_repo", "workflow", "delete_repo"] as const;
 export type GitHubScope = typeof scopes[number];
 
-type GetLatestCommitResult = {
-  type: "ok",
-  sha: string
-} | {
-  type: "error",
-  fetchResponse: FetchResponse,
-  error: GitRestApiOperationError,
-};
 
 // Note:
 // Even though the request usually work without, the docs demand to specify User-Agent in headers for REST API requests
@@ -283,7 +275,7 @@ export class GitHubProvider extends GitProviderBase {
 
 
 
-  private async getLatestCommit(repositoryOwner: string, repoName: string, branch: string, authToken: string): Promise<GetLatestCommitResult> {
+  public async getLatestCommit(repositoryOwner: string, repoName: string, branch: string, authToken: string): Promise<GetLatestCommitResult> {
     const url = `https://api.github.com/repos/${repositoryOwner}/${repoName}/branches/${branch}`;
 
     const fetchResponse = await this.httpFetch(url, {

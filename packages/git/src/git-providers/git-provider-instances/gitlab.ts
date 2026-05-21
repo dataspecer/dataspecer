@@ -8,7 +8,8 @@ import {
   PullRequestInvolvingUserFetchResponse,
   UserOrganizationsFetchResponse,
   GitHubLabel,
-  gitProviderDomains
+  gitProviderDomains,
+  GetLatestCommitResult
 } from "../../git-provider-api.ts";
 import { GitIssuesFetchResponse, IssueState } from "../../git-issues/git-issue-types.ts";
 import { GenericScope } from "@dataspecer/auth";
@@ -315,6 +316,10 @@ export class GitLabProvider extends GitProviderBase {
   }
 
   getOrganizationsForAuthenticatedUser(authToken: string | null): Promise<UserOrganizationsFetchResponse> {
+    throw new Error("Method not implemented.");
+  }
+
+  getLatestCommit(repositoryOwner: string, repoName: string, branch: string, authToken: string): Promise<GetLatestCommitResult> {
     throw new Error("Method not implemented.");
   }
 }
