@@ -1,14 +1,18 @@
 import { DataSpecification } from "@dataspecer/backend-utils/connectors/specification";
 import { BaseResource, Package } from "@dataspecer/core-v2/project";
+import type { EntityRecord } from "@dataspecer/core/entity-model";
+import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
+import type { ModelIdentifier } from "@dataspecer/core/model";
+import { createDSEModelStore } from "@dataspecer/model-store/implementation";
+import type { ModelEntity } from "@dataspecer/project-model";
 import { getDataSpecification } from "@dataspecer/specification/specification";
+import { Box, CircularProgress, Container, Typography } from "@mui/material";
 import { createContext, FC, useContext, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { BackendConnectorContext } from "../../../application";
-import { modelRepository } from "../../../generators/configuration/provided-configuration";
+import { backendPackageService } from "../../../generators/configuration/provided-configuration";
 import { DocumentationSpecification } from "./documentation-specification";
-import { Box, CircularProgress, Container, Typography } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import { CachedModelRepository } from "@dataspecer/specification/model-repository";
 
 export const SpecificationContext = createContext<[DataSpecification & Package, (update: DataSpecification & Package) => void]>(null);
 
@@ -30,10 +34,21 @@ export const Specification: FC = () => {
 
   useEffect(() => {
     (async () => {
-      const cachedModelRepository = new CachedModelRepository(modelRepository);
-      const model = await cachedModelRepository.getModelById(dataSpecificationIri as string);
-      const packageModel = await model?.asPackageModel();
-      const dataSpecification = packageModel ? await getDataSpecification(packageModel) : undefined;
+      const modelStore = createDSEModelStore({
+        projectId: dataSpecificationIri,
+        packageService: backendPackageService,
+        httpFetch,
+      });
+
+      await modelStore.initialize();
+      await modelStore.waitForModelsToLoad();
+
+      const PROJECT_MODEL_ID: ModelIdentifier = "_project_model";
+      const allEntities = modelStore.getAllEntities();
+      const projectModel = allEntities[PROJECT_MODEL_ID] as EntityRecord<ModelEntity>;
+      const rootModel = allEntities[dataSpecificationIri as string] || null;
+
+      const dataSpecification = getDataSpecification(dataSpecificationIri, projectModel, rootModel);
       updateSpecification(dataSpecification);
     })();
   }, [dataSpecificationIri, updateSpecification]);

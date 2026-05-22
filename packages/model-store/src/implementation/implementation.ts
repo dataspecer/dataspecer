@@ -213,9 +213,10 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
   }
 
   /**
-   * Use this to perform operations.
+   * Allows executing a set of operations by calling this method multiple times
+   * and then commiting them all at once.
    */
-  transaction(operations: OperationInModel[], metadata: TransactionMetadata): TransactionResult {
+  addOperationForTransaction(operations: OperationInModel[]): void {
     // Changes made in this transaction
     const entityChanges: Record<ModelIdentifier, EntityChange[]> = {};
 
@@ -239,11 +240,24 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     }
 
     this.internalNotifyEntityChange({ entityChanges });
+  }
 
+  /**
+   * Commits all operations added via {@link addOperationForTransaction}.
+   */
+  commitTransaction(metadata: TransactionMetadata): TransactionResult {
     return {
       transactionId: "todo",
       confirmation: Promise.resolve({}),
     }
+  }
+
+  /**
+   * Use this to perform operations.
+   */
+  transaction(operations: OperationInModel[], metadata: TransactionMetadata): TransactionResult {
+    this.addOperationForTransaction(operations);
+    return this.commitTransaction(metadata);
   }
 
   protected internalNotifyEntityChange(entityChaneEvent: ObservableEntityModelStoreChangeEvent): void {
@@ -288,6 +302,9 @@ export function createCMEModelStore(params: {
   });
 }
 
+/**
+ * @todo we need mode for manager that will show only the project model and maybe the package model and the configuration model.
+ */
 export function createDSEModelStore(params: {
   projectId: ModelIdentifier,
   packageService: PackageService,

@@ -202,7 +202,7 @@ export const AddInterpretedSurroundingsDialog: React.FC<AddInterpretedSurroundin
                 onClick={async () => {
                     const transformedEntities: [string, boolean][] = [];
                     for (const [resource, direction] of selectedResources) {
-                        const transformedRelationship = await semanticModelAggregator.externalEntityToLocalForSurroundings(
+                        const transformedRelationship = semanticModelAggregator.externalEntityToLocalForSurroundings(
                             forPimClassIri,
                             flatSurroundings.find(e => e.aggregatedEntity.id === resource) as ExternalEntityWrapped<SemanticModelRelationship>,
                             direction,

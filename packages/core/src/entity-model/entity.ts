@@ -1,4 +1,5 @@
 import { v7 as uuidv7 } from 'uuid';
+import { CoreResource } from '../core/core-resource.ts';
 
 /**
  * Must be unique withing the project.
@@ -48,3 +49,9 @@ export type EntityArray<T extends Entity = Entity> = T[];
 export type EntityRecord<T extends Entity = Entity> = Record<string, T>;
 
 export type EntityMap<T extends Entity = Entity> = Map<string, T>;
+
+/**
+ * Helper method to convert old, deprecated interface of CoreResource to new
+ * Entity interface.
+ */
+export type FixResourceAsEntity<T extends CoreResource> = Omit<T, keyof CoreResource> & { id: T["iri"]; type: T["types"] };

@@ -7,14 +7,12 @@ import { useEffect } from "react";
  * This hook creates a new federated observable store from the given semantic entities.
  */
 export function useNewFederatedObservableStoreFromSemanticEntities(entities: SemanticModelEntity[] | null | undefined) {
-    const store = useNewFederatedObservableStore();
-    useEffect(() => {
-        const model = new InMemoryEntityModel();
-        model.entities = entities ? Object.fromEntries(entities.map(e => [e.id, e])) : {};
-        // @ts-ignore
-        store.addStore(model);
-        // @ts-ignore
-        return () => store.removeStore(model);
-    }, [store, entities]);
-    return store;
+  const store = useNewFederatedObservableStore();
+  useEffect(() => {
+    const model = new InMemoryEntityModel();
+    model.entities = entities ? Object.fromEntries(entities.map((e) => [e.id, e])) : {};
+    store.addModel("_temporaryModel", model.entities);
+    return () => store.removeModel("_temporaryModel");
+  }, [store, entities]);
+  return store;
 }

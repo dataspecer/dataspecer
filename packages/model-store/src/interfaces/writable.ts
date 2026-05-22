@@ -25,6 +25,9 @@ export interface WritableModelStore {
    * If error occurs, the error is thrown.
    */
   transaction(operations: OperationInModel[], metadata: TransactionMetadata): TransactionResult;
+
+  addOperationForTransaction(operations: OperationInModel[]): void;
+  commitTransaction(metadata: TransactionMetadata): TransactionResult;
 }
 
 export interface TransactionMetadata {

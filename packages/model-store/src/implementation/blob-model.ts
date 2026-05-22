@@ -40,19 +40,21 @@ export class BlobModelInModelStore extends BaseModelInModelStore implements Mode
   public async load(): Promise<void> {
     // Todo obtain all data, not just the main model.
 
-    const data = await this.service.getResourceJsonData(this.id) as Entity;
+    const data = ((await this.service.getResourceJsonData(this.id)) as Entity) ?? {};
 
     data.id = this.id;
 
     this.entities = {
       ...this.entities,
       [this.id]: data,
-    }
+    };
 
-    this.internalNotifyExternalChanges([{
-      previous: null,
-      next: data,
-    }]);
+    this.internalNotifyExternalChanges([
+      {
+        previous: null,
+        next: data,
+      },
+    ]);
   }
 
   public async save(): Promise<void> {
@@ -60,8 +62,11 @@ export class BlobModelInModelStore extends BaseModelInModelStore implements Mode
   }
 }
 
-export function createBlobModel(modelId: ModelIdentifier, context: {
-  service: PackageService;
-}): Model & ModelInDefaultFrontendModelStore {
+export function createBlobModel(
+  modelId: ModelIdentifier,
+  context: {
+    service: PackageService;
+  },
+): Model & ModelInDefaultFrontendModelStore {
   return new BlobModelInModelStore(modelId, context.service);
 }

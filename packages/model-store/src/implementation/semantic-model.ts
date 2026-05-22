@@ -7,7 +7,6 @@ import { v7 as uuidv7 } from "uuid";
 import { diffEntities } from "../utilities.ts";
 import type { ApplyOperationResult, ModelInDefaultFrontendModelStore } from "./implementation.ts";
 import { BaseModelInModelStore } from "./base.ts";
-import type { EntityList } from "../../../entity-model/lib/index.js";
 
 /**
  * This class implements support for semantic model for DefaultFrontendModelStore.
@@ -35,12 +34,12 @@ export class SemanticModelInModelStore extends BaseModelInModelStore implements 
    * Returns immutable entities of the model.
    */
   getAllEntities() {
-    // @ts-ignore: Property 'entityModel' is protected and only accessible within class 'WritableSemanticModelAdapter' and its subclasses.
+    // @ts-expect-error: Property 'entityModel' is protected and only accessible within class 'WritableSemanticModelAdapter' and its subclasses.
     return this.model.entityModel.entities;
   }
 
   protected internalSetImmutableEntities(entities: Record<string, Entity>) {
-    // @ts-ignore: Property 'entityModel' is protected and only accessible within class 'WritableSemanticModelAdapter' and its subclasses.
+    // @ts-expect-error: Property 'entityModel' is protected and only accessible within class 'WritableSemanticModelAdapter' and its subclasses.
     this.model.entityModel.entities = entities;
   }
 
@@ -115,7 +114,7 @@ export class SemanticModelInModelStore extends BaseModelInModelStore implements 
   public async load(): Promise<void> {
     // Todo set loading state?
 
-    const modelData = (await this.service.getResourceJsonData(this.id)) as any;
+    const modelData = (await this.service.getResourceJsonData(this.id)) as object;
     this.model.deserializeModel(modelData); // This wont trigger update
 
     let entities = Object.values(this.model.getEntities());

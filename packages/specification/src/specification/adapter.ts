@@ -10,6 +10,8 @@ import { MemoryStoreFromBlob } from "../memory-store.ts";
 import { build } from "../model-hierarchy/semantic-model-aggregator-builder.ts";
 import { DataSpecification } from "./model.ts";
 import { loadDataSpecifications } from "./utils.ts";
+import { TransactionMetadata } from "@dataspecer/model-store";
+import { OperationInModel } from "@dataspecer/core/operation";
 
 export function getDataSpecification(dataSpecificationId: string, projectModel: EntityRecord<ModelEntity>, model: EntityRecord | null): DataSpecification & Package {
   const mainPackage = projectModel[dataSpecificationId] as PackageEntity;
@@ -93,18 +95,21 @@ function serializePackageModel(packageId: string, projectModel: EntityRecord<Mod
  * @param projectId The ID of the package that is being worked on
  * @param models All models needed to build the specification.
  * @param onChange
- * @param executeOperation
  */
 export function getDataSpecificationWithModels(
   projectId: ModelIdentifier,
   models: Record<ModelIdentifier, EntityRecord>,
   onChange?: (changeListener: (changes: Record<ModelIdentifier, EntityChange[]>) => void) => () => void,
-  executeOperation?: (modelId: ModelIdentifier, operation: any) => void,
+
+  addOperationForTransaction?: (operations: OperationInModel[]) => void,
+  commitTransaction?: (metadata: TransactionMetadata) => void,
 ) {
-  if (!executeOperation) {
-    executeOperation = () => console.error("Model is in a read only mode, you cannot execute operations on it.");
+  if (!addOperationForTransaction || !commitTransaction) {
+    const fallback = () => console.error("Model is in a read only mode, you cannot execute operations on it.");
+    addOperationForTransaction = fallback;
+    commitTransaction = fallback;
   }
-  const store = new FederatedObservableStore(executeOperation);
+  const store = new FederatedObservableStore(addOperationForTransaction, commitTransaction);
   const dataStructureIds: string[] = [];
 
   onChange?.((change) => {
@@ -116,6 +121,7 @@ export function getDataSpecificationWithModels(
     }
   });
 
+  const executeOperation = (modelId: ModelIdentifier, operation: any) => addOperationForTransaction([{ modelId, operation }]);
   const semanticModelAggregator = build(projectId, models, onChange, executeOperation);
 
   const dataSpecifications = loadDataSpecifications(projectId, models);

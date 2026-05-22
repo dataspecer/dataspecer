@@ -1,11 +1,11 @@
 import { Entity } from "@dataspecer/core-v2";
-import { Operation } from "@dataspecer/core-v2/semantic-model/operations";
 import { CoreOperation, CoreResource, CoreResourceReader } from "@dataspecer/core/core";
 import type { EntityChange, EntityChangeCreated, EntityIdentifier, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { ComplexOperation } from "./complex-operation.ts";
 import { FederatedCoreResourceWriter } from "./federated-core-resource-writer.ts";
 import { Resource } from "./resource.ts";
+import { Operation, OperationInModel } from "@dataspecer/core/operation";
 
 /**
  * Callback listening for resource changes.
@@ -27,10 +27,15 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter, Co
   protected toNotifyUpdate: Set<EntityIdentifier> = new Set();
   protected entitySubscriptions: Map<string, Set<Subscriber>> = new Map();
   protected allChangesSubscribers: Set<() => void> = new Set();
-  protected operationExecutor: (modelId: ModelIdentifier, operation: CoreOperation | Operation) => any;
+  protected addOperationForTransaction?: (operations: OperationInModel[]) => void;
+  protected commitTransaction?: (metadata: object) => void;
 
-  constructor(operationExecutor: (modelId: ModelIdentifier, operation: CoreOperation | Operation) => any) {
-    this.operationExecutor = operationExecutor;
+  constructor(
+    addOperationForTransaction?: (operations: OperationInModel[]) => void,
+    commitTransaction?: (metadata: object) => void,
+  ) {
+    this.addOperationForTransaction = addOperationForTransaction;
+    this.commitTransaction = commitTransaction;
   }
 
   listResources(): string[] {
@@ -42,16 +47,22 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter, Co
   }
 
   listResourcesOfType(typeIri: string): string[] {
-    return this.entities
-      .values()
-      .map((entityMetadata) => entityMetadata.resource)
-      .filter((e) => e.type.includes(typeIri))
-      .map((e) => e.id)
-      .toArray();
+    return (
+      this.entities
+        .values()
+        .map((entityMetadata) => entityMetadata.resource)
+        // @ts-expect-error we are checking type and types
+        .filter((e) => e.type?.includes(typeIri) || e.types?.includes(typeIri))
+        .map((e) => e.id)
+        .toArray()
+    );
   }
 
-  readResource(iri: string): CoreResource | null {
-    return (this.entities.get(iri)?.resource as unknown as CoreResource) ?? null;
+  /**
+   * @todo There is a problem that currently we are using two different interfaces for resource.
+   */
+  readResource(iri: string): any | null {
+    return (this.entities.get(iri)?.resource as unknown as CoreResource & Entity) ?? null;
   }
 
   addModel(modelId: string, entities: EntityRecord): void {
@@ -128,20 +139,31 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter, Co
   }
 
   applyOperation(modelId: ModelIdentifier, operation: CoreOperation | Operation): any {
-    return this.operationExecutor(modelId, operation);
+    if (!this.addOperationForTransaction) {
+      throw new Error("The model is read only.");
+    };
+    return this.addOperationForTransaction([{
+      modelId,
+      operation: operation as Operation,
+    }]);
   }
 
   /**
-   * This should guard the transaction.
+   * All the user operations in DSE are executed via this method. Since all
+   * opearations are synchronous, we should start and commit transaction here in
+   * order to properly handle undo/redo functionality.
    */
   executeComplexOperation(operation: ComplexOperation) {
-    // todo start transaction
+    if (!this.commitTransaction || !this.addOperationForTransaction) {
+      throw new Error("The model is read only.");
+    }
     try {
       operation.setStore(this);
       operation.execute();
     } catch (e) {
       console.warn("Operation failed", e);
+    } finally {
+      this.commitTransaction({});
     }
-    // todo commit transaction
   }
 }

@@ -36,12 +36,8 @@ export async function getConfiguration(dataSpecificationIri: string | null, data
         changeListener(changes.entityChanges);
       });
     },
-    (modelId, operation) => modelStore.transaction([
-      {
-        modelId,
-        operation,
-      }
-    ], {})
+    modelStore.addOperationForTransaction,
+    modelStore.commitTransaction,
   );
 
   const operationContext = getOperationContext(dataSpecification.dataSpecifications[dataSpecificationIri]);

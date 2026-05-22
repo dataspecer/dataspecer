@@ -20,6 +20,9 @@ export class CoreTyped {
 /**
  * Define the a core resource for the model, this interface shall be
  * used as a base class for every other core entity/object.
+ *
+ * @deprecated This interface is deprecated and all models should be refactored
+ * to use {@link Entity} instead.
  */
 export class CoreResource extends CoreTyped {
   /**
