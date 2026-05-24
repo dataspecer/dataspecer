@@ -96,43 +96,12 @@ export class Generator {
       );
       conceptualModels[specification.pim] = conceptualModel;
 
-      // todo: It seems that there is a problem that multiple classes can have the same CIM IRI
-      // this is a workaround for now
-      const pimMapping = new Map<string, string>();
-      for (const cls of Object.values(conceptualModel.classes)) {
-        const properties = cls.properties;
-        cls.properties = [];
-        for (const p of properties) {
-          const found = cls.properties.find(cp => cp.cimIri === p.cimIri && cp.cimIri)
-          if (!found) {
-            cls.properties.push(p);
-          } else {
-            pimMapping.set(p.pimIri, found.pimIri);
-          }
-        }
-      }
-
       for (const iri of specification.psms) {
         const structureModel = coreResourcesToStructuralModel(
           this.reader,
           iri
         );
         structureModels[iri] = structureModel;
-
-        // Structure model may not exist if there is no PSM tree in reader. That is OK as it means that
-        // the user does not want to generate anything from such PSM.
-
-        // todo: It seems that there is a problem that multiple classes can have the same CIM IRI
-        // this is a workaround for now
-        if (structureModel) {
-          for (const cls of structureModel.getClasses()) {
-            for (const p of cls.properties) {
-              if (pimMapping.has(p.pimIri)) {
-                p.pimIri = pimMapping.get(p.pimIri);
-              }
-            }
-          }
-        }
       }
     }
 
