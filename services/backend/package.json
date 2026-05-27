@@ -17,7 +17,6 @@
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
     "@dataspecer/data-specification-vocabulary": "*",
-    "@dataspecer/genapp": "*",
     "@dataspecer/lightweight-owl": "*",
     "@dataspecer/profile-model": "*",
     "@dataspecer/specification": "*",
