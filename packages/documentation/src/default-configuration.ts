@@ -116,7 +116,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
     {{/if}}
 
     {{#structureModels}}
-      <section>
+      <section id="{{structureAnchor}}">
       <h2>
         {{#iflng "cs"}}Specifikace struktury pro{{lng}}Data structure specification for{{/iflng}}
         {{translate humanLabel}}

@@ -386,6 +386,24 @@ export async function generateDocumentation(
     return this.id;
   };
 
+  data['structureAnchor'] = function(this: {
+    humanLabel?: LanguageString | null;
+    technicalLabel?: string | null;
+    psmIri?: string | null;
+  }) {
+    const prefix = configuration.language === "cs" ? "struktura-" : "structure-";
+
+    let anchor = null as string | null;
+    if (this.humanLabel) {
+      const {ok, translation} = getTranslation(this.humanLabel, [configuration.language]);
+      anchor = ok ? normalizeLabel(translation) : null;
+    }
+    anchor = anchor || (this.technicalLabel ? normalizeLabel(this.technicalLabel) : null);
+    anchor = anchor || getLastChunkFromIri(this.psmIri);
+
+    return prefix + (anchor || "");
+  };
+
   data['parentClasses'] =  function(id: string) {
     let entities: SemanticModelEntity[] = [];
     for (const model of models) {
