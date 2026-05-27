@@ -44,7 +44,7 @@
     "@types/multer": "^1.4.12",
     "@types/uuid": "^9.0.1",
     "prisma": "^6.19.2",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.2"
   }
 }

@@ -22,7 +22,7 @@
     "@types/n3": "^1.24.2",
     "@types/rdf-ext": "^2.0.1",
     "@types/rdf-validate-shacl": "^0.4.2",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.2"
   }
 }

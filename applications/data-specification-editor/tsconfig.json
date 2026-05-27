@@ -15,7 +15,6 @@
     "useDefineForClassFields": true,
     "module": "ESNext",
     "resolveJsonModule": true,
-    "downlevelIteration": true,
     "sourceMap": true,
     "declaration": true,
     "types": [
