@@ -30,7 +30,6 @@
     "@dataspecer/json-example": "*",
     "@dataspecer/lightweight-owl": "*",
     "@dataspecer/openapi": "*",
-    "@dataspecer/plant-uml": "*",
     "@dataspecer/rdfs-adapter": "*",
     "@dataspecer/sgov-adapter": "*",
     "@dataspecer/shacl": "*",

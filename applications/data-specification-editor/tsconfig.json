@@ -41,5 +41,5 @@
   },
   "include": [
     "src"
-, "../../packages/specification/src/configuration/semantic-model-aggregator-builder.ts", "../../packages/specification/src/configuration/adapter.ts", "../../packages/specification/src/v1/plant-uml-image-generator.ts", "../../packages/specification/src/v1/artifact-configurator.ts", "../../packages/specification/src/v1/generate-report.ts", "../../packages/specification/src/v1/default-artifact-builder.ts"  ]
+, "../../packages/specification/src/configuration/semantic-model-aggregator-builder.ts", "../../packages/specification/src/configuration/adapter.ts", "../../packages/specification/src/v1/artifact-configurator.ts", "../../packages/specification/src/v1/generate-report.ts", "../../packages/specification/src/v1/default-artifact-builder.ts"  ]
 }
