@@ -31,7 +31,7 @@ export const createNewGitRepositoryWithPackageContent = asyncHandler(async (requ
 
   const query = querySchema.parse(request.query);
   query.publicationBranch ??= PUBLICATION_BRANCH_DEFAULT_NAME;
-  const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(query.gitProviderURL, httpFetch, configuration);
+  const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(query.gitProviderURL, httpFetch, configuration, configuration.inDocker);
   const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
   const isUserRepo = stringToBoolean(query.isUserRepo);
   const signedInUserOrOrganization = query.signedInUserOrOrganization === undefined ? null : convertToValidGitName(query.signedInUserOrOrganization);

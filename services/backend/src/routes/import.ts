@@ -758,7 +758,7 @@ export const importPackageFromGit = asyncHandler(async (request: express.Request
     return;
   }
 
-  const gitProvider: GitProviderNode = GitProviderNodeFactory.createGitProviderFromRepositoryURL(gitURL, httpFetch, configuration);
+  const gitProvider: GitProviderNode = GitProviderNodeFactory.createGitProviderFromRepositoryURL(gitURL, httpFetch, configuration, configuration.inDocker);
   // TODO: Can have better scope
   const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.FullPublicRepoControl]);
   const prismaClientApi: StorageApiForIriReplacement = new PrismaClientStorageApiForIriReplacement(prismaClient);

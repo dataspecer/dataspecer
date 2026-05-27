@@ -32,7 +32,7 @@ export const pullRemoteRepository = asyncHandler(async (request: express.Request
     return;
   }
 
-  const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(resource.linkedGitRepositoryURL, httpFetch, configuration);
+  const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(resource.linkedGitRepositoryURL, httpFetch, configuration, configuration.inDocker);
   const filesystemConstructorParams = createFilesystemFactoryParams(true);
   const pullUpdateParams: GitPullFields = {
     iri: query.iri,

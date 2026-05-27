@@ -12,12 +12,14 @@ export class GitHubNodeProvider extends GitHubProvider implements GitProviderNod
   // Fields
   ////////////////////////////
   private gitProviderInternalComposite: GitProviderInternalCompositeNode;
+  private isRunningInDocker: boolean;
   ////////////////////////////
   // Constructor
   ////////////////////////////
-  constructor(httpFetch: HttpFetch, authenticationGitProvidersData: AuthenticationGitProvidersData) {
+  constructor(httpFetch: HttpFetch, authenticationGitProvidersData: AuthenticationGitProvidersData, isRunningInDocker: boolean = false) {
     super(httpFetch, authenticationGitProvidersData);
     this.gitProviderInternalComposite = new GitProviderInternalCompositeNodeBase(this);
+    this.isRunningInDocker = isRunningInDocker;
   }
 
   ////////////////////////////
@@ -30,7 +32,16 @@ export class GitHubNodeProvider extends GitHubProvider implements GitProviderNod
       fs.mkdirSync(workflowsDirPath, { recursive: true });
     }
 
-    const sourceWorkflowDirectory = "./git-workflows/github/workflows";
+    let sourceWorkflowDirectory: string;
+    if (this.isRunningInDocker) {
+      // For docker we put it into database directory (we perform the copying in there in the Dockerfile on creation)
+      //  The reason why we do that, is that if it is not in the database directory, we cannot use hardlink, because then it is in different
+      //  device (filesystem), and therefore we would have to perform copy as a fallback, which is slower than just creating hardlink.
+      sourceWorkflowDirectory = "./database/git-workflows/github/workflows";
+    }
+    else {
+      sourceWorkflowDirectory = "./git-workflows/github/workflows";
+    }
     createLinksForFiles(sourceWorkflowDirectory, workflowsDirPath);
   }
 

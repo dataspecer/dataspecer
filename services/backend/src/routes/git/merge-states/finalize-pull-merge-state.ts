@@ -84,7 +84,7 @@ async function createDataForBackendComparisonForPull(mergeStateUuid: string): Pr
       responseText: `Merge state with uuid (${mergeStateUuid}) does not exist`,
     };
   }
-  const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(mergeState.gitUrlMergeFrom, httpFetch, configuration);
+  const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(mergeState.gitUrlMergeFrom, httpFetch, configuration, configuration.inDocker);
 
   const gitEndpoint: MergeEndpointForComparison = {
     rootIri: mergeState.rootIriMergeFrom,

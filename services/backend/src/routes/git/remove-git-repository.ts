@@ -35,7 +35,7 @@ export const removeGitRepository = asyncHandler(async (request: express.Request,
     throw new Error(`Can not extract repository name from repository URL: ${repositoryURL}`);
   }
 
-  const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(repositoryURL, httpFetch, configuration);
+  const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(repositoryURL, httpFetch, configuration, configuration.inDocker);
   const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.DeleteRepoControl]);
   const patAccessTokens = findPatAccessTokens(accessTokens);
   for (const patAccessToken of patAccessTokens) {

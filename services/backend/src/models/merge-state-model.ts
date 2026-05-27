@@ -840,7 +840,7 @@ export class MergeStateModel implements ResourceChangeListener, MergeStateCreato
       const pathToGitRepository = MergeStateModel.extractGitRoot(rootFullPathToMeta);
       git = simpleGit(pathToGitRepository);
     }
-    const gitProvider = gitUrl === "" ? null : GitProviderNodeFactory.createGitProviderFromRepositoryURL(gitUrl, httpFetch, configuration);
+    const gitProvider = gitUrl === "" ? null : GitProviderNodeFactory.createGitProviderFromRepositoryURL(gitUrl, httpFetch, configuration, configuration.inDocker);
 
     return {
       git,

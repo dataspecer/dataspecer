@@ -24,7 +24,7 @@ export const linkToExistingGitRepository = asyncHandler(async (request: express.
     await resourceModel.updateResourceGitLink(iri, "", false);
   }
   else {
-    const gitProvider: GitProviderNode = GitProviderNodeFactory.createGitProviderFromRepositoryURL(repositoryURL, httpFetch, configuration);
+    const gitProvider: GitProviderNode = GitProviderNodeFactory.createGitProviderFromRepositoryURL(repositoryURL, httpFetch, configuration, configuration.inDocker);
     const commitReferenceType: CommitReferenceType = "branch";
     const commitReferenceValue = (await gitProvider.extractCommitReferenceValue(repositoryURL, commitReferenceType)).commitReferenceValue;
     await updateGitRelatedDataForPackage(iri, gitProvider, repositoryURL, commitReferenceValue, commitReferenceType);

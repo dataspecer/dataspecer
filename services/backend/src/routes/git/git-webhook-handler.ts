@@ -24,7 +24,7 @@ import { createFilesystemFactoryParams } from "../../utils/filesystem-helpers.ts
 
 
 export const handleWebhook = asyncHandler(async (request: express.Request, response: express.Response) => {
-  const { gitProvider, webhookPayload } = GitProviderNodeFactory.createGitProviderFromWebhookRequest(request, httpFetch, configuration);
+  const { gitProvider, webhookPayload } = GitProviderNodeFactory.createGitProviderFromWebhookRequest(request, httpFetch, configuration, configuration.inDocker);
   const isPushWebhook = gitProvider.isPushWebhook(request.headers);
   if(!isPushWebhook) {
     response.sendStatus(200);

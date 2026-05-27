@@ -278,7 +278,7 @@ async function prepareCommitDataForCommit(
   shouldAppendAfterDefaultMergeCommitMessage: boolean | null,
 ): Promise<GitCommitToCreateInfoExplicitWithCredentials> {
   // If gitProvider not given - extract it from url
-  const gitProvider = gitCommitInfoBasic.gitProvider ?? GitProviderNodeFactory.createGitProviderFromRepositoryURL(remoteRepositoryUrl, httpFetch, configuration);
+  const gitProvider = gitCommitInfoBasic.gitProvider ?? GitProviderNodeFactory.createGitProviderFromRepositoryURL(remoteRepositoryUrl, httpFetch, configuration, configuration.inDocker);
   const committer = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
 
   // Have to get the user login name separately. It is not part of OAuth - OAuth contains actual name (For example John Doe).

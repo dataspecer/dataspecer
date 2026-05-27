@@ -135,12 +135,17 @@ async function generateDocumentationFromFileSystem() {
 /**
  * Generates specification from Git URL passed in as argument from command line
  * @param gitZipDownloadURL is the URL of git provider, which returns the zip on access - for example https://github.com/RadStr-bot/4f21bf6d-2116-4ab3-b387-1f8074f7f412/archive/refs/heads/main.zip
+ * @todo no longer used, also newly we have added {@link isRunningInDocker}, maybe it should be just hardcoded to false in this call.
  */
-async function generateDocumentationFromGitURL(httpFetch: HttpFetch, authenticationGitProvidersData: AuthenticationGitProvidersData) {
+async function generateDocumentationFromGitURL(
+  httpFetch: HttpFetch,
+  authenticationGitProvidersData: AuthenticationGitProvidersData,
+  isRunningInDocker: boolean
+) {
   console.info("process.argv", process.argv);
   // Example of download URL - https://github.com/RadStr-bot/4f21bf6d-2116-4ab3-b387-1f8074f7f412/archive/refs/heads/main.zip (or commit SHA instead of refs/heads/main)
   const gitZipDownloadURL = process.argv[2];
-  const gitProvider: GitProviderNode = GitProviderNodeFactory.createGitProviderFromRepositoryURL(gitZipDownloadURL, httpFetch, authenticationGitProvidersData);
+  const gitProvider: GitProviderNode = GitProviderNodeFactory.createGitProviderFromRepositoryURL(gitZipDownloadURL, httpFetch, authenticationGitProvidersData, isRunningInDocker);
   const prismaClientApi: StorageApiForIriReplacement = new PrismaClientStorageApiForIriReplacement(prismaClient);
   const imported = await importFromGitUrl(gitProvider, [], gitZipDownloadURL, storeModel, prismaClientApi, "branch");
   await generateArtifactsFromImported(imported);

@@ -10,12 +10,19 @@ export class GitLabNodeProvider extends GitLabProvider implements GitProviderNod
   // Fields
   ////////////////////////////
   private gitProviderInternalComposite: GitProviderInternalCompositeNode;
+  private isRunningInDocker: boolean;
   ////////////////////////////
   // Constructor
   ////////////////////////////
-  constructor(httpFetch: HttpFetch, authenticationGitProvidersData: AuthenticationGitProvidersData, domainURL?: string) {
+  constructor(
+    httpFetch: HttpFetch,
+    authenticationGitProvidersData: AuthenticationGitProvidersData,
+    isRunningInDocker: boolean,
+    domainURL?: string
+  ) {
     super(httpFetch, authenticationGitProvidersData, domainURL);
     this.gitProviderInternalComposite = new GitProviderInternalCompositeNodeBase(this);
+    this.isRunningInDocker = isRunningInDocker;
   }
 
   ////////////////////////////

@@ -15,17 +15,18 @@ export abstract class GitProviderNodeFactory {
   static createGitProviderFromWebhookRequest(
     request: ExpressRequestForGitProviderFactory,
     httpFetch: HttpFetch,
-    authenticationGitProvidersData: AuthenticationGitProvidersData
+    authenticationGitProvidersData: AuthenticationGitProvidersData,
+    isRunningInDocker: boolean,
   ): WebhookDataAndGitProvider {
     if (request.body !== undefined && request.body.payload === undefined) {
       return {
-        gitProvider: new GitLabNodeProvider(httpFetch, authenticationGitProvidersData),
+        gitProvider: new GitLabNodeProvider(httpFetch, authenticationGitProvidersData, isRunningInDocker),
         webhookPayload: request.body,
       };
     }
     else if (request?.body?.payload !== undefined) {
       return {
-        gitProvider: new GitHubNodeProvider(httpFetch, authenticationGitProvidersData),
+        gitProvider: new GitHubNodeProvider(httpFetch, authenticationGitProvidersData, isRunningInDocker),
         webhookPayload: JSON.parse(request.body.payload),
       };
     }
@@ -43,13 +44,14 @@ export abstract class GitProviderNodeFactory {
     gitProviderName: GitProviderEnum,
     httpFetch: HttpFetch,
     authenticationGitProvidersData: AuthenticationGitProvidersData,
+    isRunningInDocker: boolean,
     domainURL?: string
   ): GitProviderNode {
     switch (gitProviderName) {
       case GitProviderEnum.GitHub:
-        return new GitHubNodeProvider(httpFetch, authenticationGitProvidersData);
+        return new GitHubNodeProvider(httpFetch, authenticationGitProvidersData, isRunningInDocker);
       case GitProviderEnum.GitLab:
-        return new GitLabNodeProvider(httpFetch, authenticationGitProvidersData, domainURL);
+        return new GitLabNodeProvider(httpFetch, authenticationGitProvidersData, isRunningInDocker, domainURL);
       default:
         // TODO: Or maybe return default implementation, which does not do anything
         console.error(`${gitProviderName} does not exist. You forgot to extend GitProviderNodeFactory`);
@@ -64,38 +66,46 @@ export abstract class GitProviderNodeFactory {
   static createGitProviderFromRepositoryURL(
     repositoryURL: string,
     httpFetch: HttpFetch,
-    authenticationGitProvidersData: AuthenticationGitProvidersData
+    authenticationGitProvidersData: AuthenticationGitProvidersData,
+    isRunningInDocker: boolean,
   ): GitProviderNode {
     const gitProvider = getMainGitProviderFromRepositoryURL(repositoryURL);
     if (gitProvider === null) {
       throw new Error(`Git provider with given URL ${repositoryURL} does not exist.`);
     }
     const domainURL = extractPartOfRepositoryURL(repositoryURL, "url-domain") ?? undefined;
-    return GitProviderNodeFactory.createGitProvider(gitProvider, httpFetch, authenticationGitProvidersData, domainURL);
+    return GitProviderNodeFactory.createGitProvider(gitProvider, httpFetch, authenticationGitProvidersData, isRunningInDocker, domainURL);
   }
 }
 
 /**
- * Recursively creates links using fs.link. From {@link sourceDirectory} to {@link targetDirectory}
+ * Recursively creates links using fs.link. From {@link sourceDirectory} to {@link targetDirectory}.
  */
 export function createLinksForFiles(sourceDirectory: string, targetDirectory: string): void {
   const files = fs.readdirSync(sourceDirectory);
   for (const file of files) {
-    const newSourcefullPath = `${sourceDirectory}/${file}`;
-    const newTargetFullPath = `${targetDirectory}/${file}`;
-    const stats = fs.statSync(newSourcefullPath);
+    const fullPathToSource = `${sourceDirectory}/${file}`;
+    const fullPathToTarget = `${targetDirectory}/${file}`;
+    const stats = fs.statSync(fullPathToSource);
     if (stats.isDirectory()) {
-      createLinksForFiles(newSourcefullPath, newTargetFullPath);
+      createLinksForFiles(fullPathToSource, fullPathToTarget);
     }
     else {
-      fs.link(newSourcefullPath, newTargetFullPath, (error) => {
-        // We check for both values, but probably code or just errno should be sufficient
-        if (error?.code === "EXDEV" && error?.errno === -18) {
-          // We try to copy on failure. This for example happens in Docker, sicne they are on different devices (filesystems).
-          // We could also try to put it into the database directory instead and then the link should probably work.
-          fs.copyFileSync(newSourcefullPath, newTargetFullPath);
+      try {
+        fs.linkSync(fullPathToSource, fullPathToTarget);
+      }
+      catch (error: any) {
+        if (error?.code === "EXDEV") {
+          // We try to copy on failure. This for example happens in Docker for workflow files copying IF they are not in the database directory,
+          //  since then they are on different devices (filesystems). However, in case of the Docker we do have them in the database directory, so it is no longer an issue.
+          //  Therefore, if it happens now there is a different reason for it.
+          fs.copyFileSync(fullPathToSource, fullPathToTarget);
         }
-      });
+        else {
+          // TODO RadStr: Either try copy or throw error, cannot currently tell what is better.
+          fs.copyFileSync(fullPathToSource, fullPathToTarget);
+        }
+      }
     }
   }
 }

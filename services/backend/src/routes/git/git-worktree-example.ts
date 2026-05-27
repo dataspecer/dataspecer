@@ -26,7 +26,7 @@ export const gitWorktreeExample = async (
     fs.mkdirSync(gitInitialDirectory);
   }
 
-  const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL, httpFetch, configuration);
+  const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(remoteRepositoryURL, httpFetch, configuration, configuration.inDocker);
   const botCredentials = gitProvider.getBotCredentials();
   if (botCredentials === null) {
     throw new Error("No bot credentials, can not create gitWorkTreeExample");
