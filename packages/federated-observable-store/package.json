@@ -25,7 +25,6 @@
   },
   "dependencies": {
     "@dataspecer/core": "*",
-    "@dataspecer/core-v2": "*",
-    "lodash": "^4.17.21"
+    "@dataspecer/core-v2": "*"
   }
 }
