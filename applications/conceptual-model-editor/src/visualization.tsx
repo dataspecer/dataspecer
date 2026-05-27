@@ -485,7 +485,7 @@ function prepareItemRangeEntity(
   if (range.concept === null) {
     return "";
   }
-  return dataTypeUriToName(range.concept);
+  return dataTypeUriToName(range.concept) ?? "";
 }
 
 function prepareVocabulary(
