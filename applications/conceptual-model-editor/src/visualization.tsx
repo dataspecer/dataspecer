@@ -411,7 +411,6 @@ function prepareItems(
       if (rangeEntity === null) {
         LOG.warn("Missing range.", entity);
       }
-      console.log("[debug] relation", { entity, domain, range, rangeEntity });
       nextLevel = null;
       nextItem = {
         options,
