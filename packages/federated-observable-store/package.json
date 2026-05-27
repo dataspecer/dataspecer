@@ -21,7 +21,7 @@
     "@types/lodash": "^4.14.192",
     "@types/node": "^25.5.2",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.7"
   },
   "dependencies": {
     "@dataspecer/core": "*",
