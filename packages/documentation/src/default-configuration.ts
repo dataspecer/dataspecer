@@ -220,7 +220,8 @@ export const defaultConfiguration: DocumentationConfiguration = {
   </table>
 
   {{#if relationships}}
-    <p>{{#each relationships}}{{relation}}{{#unless @last}}, {{/unless}}{{/each}}</p>
+    <p><strong>{{#iflng "cs"}}Vlastnosti{{lng}}Properties{{/iflng}}</strong></p>
+    <p>{{#iflng "cs"}}Pro tuto třídu jsou definovány následující vlastnosti: {{lng}}For this class the following properties are defined: {{/iflng}}{{#each relationships}}{{relation}}{{#unless @last}}, {{/unless}}{{/each}}.</p>
   {{/if}}
 </section>`,
 
@@ -316,11 +317,12 @@ export const defaultConfiguration: DocumentationConfiguration = {
   </table>
 
   {{#if relationships}}
-    <p>{{#each relationships}}{{relation}}{{#unless @last}}, {{/unless}}{{/each}}</p>
+    <p><strong>{{#iflng "cs"}}Vlastnosti{{lng}}Properties{{/iflng}}</strong></p>
+    <p>{{#iflng "cs"}}Pro tento profil třídy jsou definovány následující vlastnosti: {{lng}}For this class profile the following properties are defined: {{/iflng}}{{#each relationships}}{{relation}}{{#unless @last}}, {{/unless}}{{/each}}.</p>
   {{/if}}
 
   {{#if backwardsRelationships}}
-    <p>{{#iflng "cs"}}Zpětné asociace{{lng}}Backwards associations{{/iflng}}</p>
+    <p><strong>{{#iflng "cs"}}Zpětné asociace{{lng}}Backwards associations{{/iflng}}</strong></p>
     <ul>
       {{#each backwardsRelationships}}
         <li>{{#iflng "cs"}}z domény{{lng}}from domain{{/iflng}} <a href="{{{href ends.0.concept}}}"></a> → <a href="{{{href id}}}"></a></li>
