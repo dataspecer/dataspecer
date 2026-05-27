@@ -157,7 +157,7 @@ export async function generateDocumentation(
   // Add all relationships to each entity
   // We know, that each relationship profile MUST have its concept present in the model so we do not need to enumerate rest
   for (const entity of sortedSemanticModel) {
-    if (isSemanticModelRelationshipProfile(entity)) {
+    if (isSemanticModelRelationship(entity) || isSemanticModelRelationshipProfile(entity)) {
       {
         const conceptId = entity.ends[0]?.concept;
         if (conceptId) {

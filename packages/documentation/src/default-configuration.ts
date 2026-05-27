@@ -182,6 +182,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
       </tr>
       {{/if}}
   </table>
+
 </section>`,
 
     "semantic-model-class": `<section id="{{anchor}}">
@@ -217,6 +218,10 @@ export const defaultConfiguration: DocumentationConfiguration = {
     </tr>
     {{/if}}
   </table>
+
+  {{#if relationships}}
+    <p>{{#each relationships}}{{relation}}{{#unless @last}}, {{/unless}}{{/each}}</p>
+  {{/if}}
 </section>`,
 
     "class-profile": `<section id="{{anchor}}">
@@ -309,6 +314,10 @@ export const defaultConfiguration: DocumentationConfiguration = {
     </tr>
     {{/translate}}
   </table>
+
+  {{#if relationships}}
+    <p>{{#each relationships}}{{relation}}{{#unless @last}}, {{/unless}}{{/each}}</p>
+  {{/if}}
 
   {{#if backwardsRelationships}}
     <p>{{#iflng "cs"}}Zpětné asociace{{lng}}Backwards associations{{/iflng}}</p>
