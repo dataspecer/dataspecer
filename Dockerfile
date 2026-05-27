@@ -63,7 +63,9 @@ RUN bunx prisma@6 migrate deploy --schema /usr/src/app/dist/schema.prisma
 FROM base AS final
 WORKDIR /usr/src/app
 
-COPY services/backend/git-workflows ./git-workflows
+# Copy into database directory, otherwise we can not create hardlinks,
+#  we would have to copy the files, which is slower than just creating hardlinks.
+COPY services/backend/git-workflows ./database/git-workflows
 
 RUN apk update && apk add --no-cache git
 RUN apk update && apk add --no-cache openssh
