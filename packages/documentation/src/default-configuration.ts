@@ -221,7 +221,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
 
   {{#if relationships}}
     <p><strong>{{#iflng "cs"}}Vlastnosti{{lng}}Properties{{/iflng}}</strong></p>
-    <p>{{#iflng "cs"}}Pro tuto třídu jsou definovány následující vlastnosti: {{lng}}For this class the following properties are defined: {{/iflng}}{{#each relationships}}{{relation}}{{#unless @last}}, {{/unless}}{{/each}}.</p>
+    <p>{{#iflng "cs"}}Pro tuto třídu jsou definovány následující vlastnosti: {{lng}}For this class the following properties are defined: {{/iflng}}{{#each relationships}}{{relation}}{{#unless @last}}, {{/unless}}{{#if @last}}.{{/if}}{{/each}}</p>
   {{/if}}
 </section>`,
 
@@ -318,7 +318,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
 
   {{#if relationships}}
     <p><strong>{{#iflng "cs"}}Vlastnosti{{lng}}Properties{{/iflng}}</strong></p>
-    <p>{{#iflng "cs"}}Pro tento profil třídy jsou definovány následující vlastnosti: {{lng}}For this class profile the following properties are defined: {{/iflng}}{{#each relationships}}{{relation}}{{#unless @last}}, {{/unless}}{{/each}}.</p>
+    <p>{{#iflng "cs"}}Pro tento profil třídy jsou definovány následující vlastnosti: {{lng}}For this class profile the following properties are defined: {{/iflng}}{{#each relationships}}{{relation}}{{#unless @last}}, {{/unless}}{{#if @last}}.{{/if}}{{/each}}</p>
   {{/if}}
 
   {{#if backwardsRelationships}}
