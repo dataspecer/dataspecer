@@ -315,6 +315,32 @@ export async function generateDocumentation(
     return null;
   }
 
+  type StructureAnchorTarget = {
+    humanLabel?: LanguageString | null;
+    technicalLabel?: string | null;
+    psmIri?: string | null;
+    id?: string | null;
+  };
+
+  function isStructureAnchorTarget(value: unknown): value is StructureAnchorTarget {
+    return typeof value === "object" && value !== null &&
+      ("humanLabel" in value || "technicalLabel" in value || "psmIri" in value);
+  }
+
+  function getAnchorForStructure(target: StructureAnchorTarget): string {
+    const prefix = configuration.language === "cs" ? "struktura-" : "structure-";
+
+    let anchor = null as string | null;
+    if (target.humanLabel) {
+      const {ok, translation} = getTranslation(target.humanLabel, [configuration.language]);
+      anchor = ok ? normalizeLabel(translation) : null;
+    }
+    anchor = anchor || (target.technicalLabel ? normalizeLabel(target.technicalLabel) : null);
+    anchor = anchor || getLastChunkFromIri(target.psmIri);
+
+    return prefix + (anchor || "");
+  }
+
   /**
    * Generates link for the given entity by entity ID, not IRI.
    * @todo Split to class-like and relationship-like links.
@@ -372,36 +398,35 @@ export async function generateDocumentation(
    *
    * It does not contain the # character. It is intended to be used as an id attribute.
    */
-  data['anchor'] =  function(this: SemanticModelEntity) {
+  data['anchor'] =  function(this: SemanticModelEntity | StructureAnchorTarget) {
     // todo: handle colisions if multiple classes are named the same
     // todo: handle custom anchors
     // todo: handle stability of anchors - if new entitity with the same name is added, the anchor to the previous entity should not change
 
-    const anchor = getAnchorForLocalEntity(this);
-    if (anchor) {
-      return anchor;
+    if (
+      isSemanticModelClass(this as SemanticModelEntity) ||
+      isSemanticModelClassProfile(this as SemanticModelEntity) ||
+      isSemanticModelRelationship(this as SemanticModelEntity) ||
+      isSemanticModelRelationshipProfile(this as SemanticModelEntity)
+    ) {
+      const anchor = getAnchorForLocalEntity(this as SemanticModelEntity);
+      if (anchor) {
+        return anchor;
+      }
+
+      // Last option
+      return (this as SemanticModelEntity).id;
     }
 
-    // Last option
-    return this.id;
-  };
-
-  data['structureAnchor'] = function(this: {
-    humanLabel?: LanguageString | null;
-    technicalLabel?: string | null;
-    psmIri?: string | null;
-  }) {
-    const prefix = configuration.language === "cs" ? "struktura-" : "structure-";
-
-    let anchor = null as string | null;
-    if (this.humanLabel) {
-      const {ok, translation} = getTranslation(this.humanLabel, [configuration.language]);
-      anchor = ok ? normalizeLabel(translation) : null;
+    if (isStructureAnchorTarget(this)) {
+      return getAnchorForStructure(this);
     }
-    anchor = anchor || (this.technicalLabel ? normalizeLabel(this.technicalLabel) : null);
-    anchor = anchor || getLastChunkFromIri(this.psmIri);
 
-    return prefix + (anchor || "");
+    if (this && typeof this === "object" && "id" in this && typeof this.id === "string") {
+      return this.id;
+    }
+
+    return "";
   };
 
   data['parentClasses'] =  function(id: string) {
