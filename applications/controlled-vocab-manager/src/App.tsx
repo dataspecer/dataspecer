@@ -5,6 +5,10 @@ import { useVocabularyEditor } from './hooks/use-vocabulary-editor'
 import { VocabularyListPage } from './components/vocabulary-list/vocabulary-list-page'
 import { VocabularyFormPage } from './components/vocabulary-form/vocabulary-form-page'
 import type { Vocabulary } from './types/vocabulary'
+import { useTranslation } from 'react-i18next'
+import { useTheme } from 'next-themes'
+import { useEffect } from 'react'
+import { supportedLanguages } from './i18n'
 
 export type Screen = "list" | "source-selection" | "search" | "form-prefilled" | "form-empty"
 
@@ -12,6 +16,22 @@ function App() {
   const [screen, navigate] = useHashRoute()
   const { loading, addVocabulary, updateVocabulary, deleteVocabulary } = useVocabulariesContext()
   const { editingVocabulary, startEditing, startCreating, cancelEditing } = useVocabularyEditor()
+  const { i18n } = useTranslation()
+  const { setTheme } = useTheme()
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const language = params.get('language')
+    const theme = params.get('theme')
+
+    if (language && supportedLanguages.includes(language)) {
+      i18n.changeLanguage(language)
+    }
+
+    if (theme && ['light', 'dark', 'system'].includes(theme)) {
+      setTheme(theme)
+    }
+  }, [i18n, setTheme])
 
   const handleFormConfirm = (vocabulary: Vocabulary) => {
     if (editingVocabulary) {
