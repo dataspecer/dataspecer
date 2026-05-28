@@ -12,21 +12,21 @@ import type { Vocabulary } from '../types/vocabulary'
  * @returns Object with editing state and workflow methods
  */
 export function useVocabularyEditor() {
-  const [editingVocabulary, setEditingVocabulary] = useState<Vocabulary | null>(null)
+  const [editingVocabulary, setEditingVocabulary] = useState<Vocabulary | undefined>(undefined)
 
   const startEditing = useCallback((vocabulary: Vocabulary) => {
     setEditingVocabulary(vocabulary)
   }, [])
 
   const startCreating = useCallback(() => {
-    setEditingVocabulary(null)
+    setEditingVocabulary(undefined)
   }, [])
 
   const cancelEditing = useCallback(() => {
-    setEditingVocabulary(null)
+    setEditingVocabulary(undefined)
   }, [])
 
-  const isEditing = editingVocabulary !== null
+  const isEditing = editingVocabulary !== undefined
 
   return {
     editingVocabulary,
