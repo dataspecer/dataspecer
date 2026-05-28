@@ -1,10 +1,9 @@
+import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { AlertTriangle } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -42,7 +41,7 @@ export function VocabularyForm({
   const { t } = useTranslation()
   const { vocabularies } = useVocabulariesContext()
 
-  const schema = z.object({
+  const schema = useMemo(() => z.object({
     name: z.string().min(1, t("form.validation.requiredField")),
     iri: z.string().min(1, t("form.validation.requiredField")).url(t("form.validation.invalidUrl")),
     regex: z.string().refine(
@@ -54,7 +53,7 @@ export function VocabularyForm({
     ),
     downloadUrl: z.string().min(1, t("form.validation.requiredField")).url(t("form.validation.invalidUrl")),
     docsUrl: z.union([z.literal(""), z.string().url(t("form.validation.invalidUrl"))]),
-  })
+  }), [t])
 
   const form = useForm<VocabularyFormValues>({
     resolver: zodResolver(schema),
@@ -173,12 +172,6 @@ export function VocabularyForm({
             />
           </CardContent>
         </Card>
-        {(!form.watch("name") || !form.watch("iri") || !form.watch("downloadUrl")) && (
-          <Alert variant="warning" className="mt-4">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>{t("form.validation.required")}</AlertDescription>
-          </Alert>
-        )}
         <div className="mt-6 flex gap-2">
           <Button variant="outline" size="sm" type="button" onClick={onCancel}>
             {t("form.cancel")}
