@@ -37,18 +37,12 @@ const GeoSPARQLURIs = [
     "http://www.opengis.net/ont/geosparql#geoJSONLiteral",
 ];
 
-const SfURIs = [
-    "http://www.opengis.net/ont/sf#Geometry",
-    "http://www.opengis.net/ont/sf#Envelope",
-];
-
 export const DataTypeURIs = [
     ...XsdSimpleTypeURIs,
     ...RdfTypeURIs,
     ...RdfsTypeURIs,
     ...SGovTypeURIs,
     ...GeoSPARQLURIs,
-    ...SfURIs,
 ];
 
 const PRIMITIVE_TYPES: Set<string> = new Set([

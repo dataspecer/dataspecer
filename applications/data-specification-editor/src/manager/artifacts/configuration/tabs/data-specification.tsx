@@ -188,16 +188,6 @@ export const DataSpecification: FC<{
           undefinedIs={generatorsEnabledByDefault}
         />
       </Grid>
-      <Grid item xs={12}>
-        <SwitchWithDefault
-          label="PlantUML diagrams"
-          current={input.useGenerators ?? {}}
-          itemKey="plantUML"
-          onChange={(value) => onChange({ ...input, useGenerators: value })}
-          default={defaultObject ? (defaultObject?.useGenerators ?? {}) : undefined}
-          undefinedIs={generatorsEnabledByDefault}
-        />
-      </Grid>
     </Grid>
 
     <Typography variant="body2" sx={{mt: 1}}>
