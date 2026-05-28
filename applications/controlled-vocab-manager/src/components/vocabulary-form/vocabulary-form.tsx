@@ -15,6 +15,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
+import { useVocabulariesContext } from "@/contexts/vocabularies-context"
 import type { Vocabulary } from "@/types/vocabulary"
 
 interface VocabularyFormValues {
@@ -27,7 +28,6 @@ interface VocabularyFormValues {
 
 interface VocabularyFormProps {
   initialValues?: Vocabulary
-  vocabularies: Vocabulary[]
   currentVocabularyId?: string
   onCancel: () => void
   onConfirm: (vocabulary: Vocabulary) => void
@@ -35,12 +35,12 @@ interface VocabularyFormProps {
 
 export function VocabularyForm({
   initialValues,
-  vocabularies,
   currentVocabularyId,
   onCancel,
   onConfirm,
 }: VocabularyFormProps) {
   const { t } = useTranslation()
+  const { vocabularies } = useVocabulariesContext()
 
   const schema = z.object({
     name: z.string().min(1, t("form.validation.requiredField")),

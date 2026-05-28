@@ -5,14 +5,12 @@ import type { Vocabulary } from "@/types/vocabulary"
 
 interface VocabularyFormPageProps {
   vocabulary?: Vocabulary
-  vocabularies: Vocabulary[]
   onCancel: () => void
   onConfirm: (vocabulary: Vocabulary) => void
 }
 
 export function VocabularyFormPage({
   vocabulary,
-  vocabularies,
   onCancel,
   onConfirm,
 }: VocabularyFormPageProps) {
@@ -41,7 +39,6 @@ export function VocabularyFormPage({
       </p>
       <VocabularyForm
         initialValues={vocabulary}
-        vocabularies={vocabularies}
         currentVocabularyId={vocabulary?.id}
         onCancel={onCancel}
         onConfirm={onConfirm}

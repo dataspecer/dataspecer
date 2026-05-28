@@ -5,10 +5,10 @@ import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "./empty-state"
 import { VocabularyCard } from "./vocabulary-card"
+import { useVocabulariesContext } from "@/contexts/vocabularies-context"
 import type { Vocabulary } from "@/types/vocabulary"
 
 interface VocabularyListPageProps {
-  vocabularies: Vocabulary[]
   onNavigateSourceSelection: () => void
   onNavigateFormEmpty: () => void
   onEdit: (vocabulary: Vocabulary) => void
@@ -16,13 +16,13 @@ interface VocabularyListPageProps {
 }
 
 export function VocabularyListPage({
-  vocabularies,
   onNavigateSourceSelection,
   onNavigateFormEmpty,
   onEdit,
   onDelete,
 }: VocabularyListPageProps) {
   const { t } = useTranslation()
+  const { vocabularies } = useVocabulariesContext()
 
   return (
     <>

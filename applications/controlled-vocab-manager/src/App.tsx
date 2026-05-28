@@ -1,6 +1,6 @@
 import { PageLayout } from './components/layout/page-layout'
 import { useHashRoute } from './hooks/use-hash-route'
-import { useVocabularies } from './hooks/use-vocabularies'
+import { useVocabulariesContext } from './contexts/vocabularies-context'
 import { useVocabularyEditor } from './hooks/use-vocabulary-editor'
 import { VocabularyListPage } from './components/vocabulary-list/vocabulary-list-page'
 import { VocabularyFormPage } from './components/vocabulary-form/vocabulary-form-page'
@@ -10,7 +10,7 @@ export type Screen = "list" | "source-selection" | "search" | "form-prefilled" |
 
 function App() {
   const [screen, navigate] = useHashRoute()
-  const { vocabularies, loading, addVocabulary, updateVocabulary, deleteVocabulary } = useVocabularies()
+  const { loading, addVocabulary, updateVocabulary, deleteVocabulary } = useVocabulariesContext()
   const { editingVocabulary, startEditing, startCreating, cancelEditing } = useVocabularyEditor()
 
   const handleFormConfirm = (vocabulary: Vocabulary) => {
@@ -52,7 +52,6 @@ function App() {
     <PageLayout>
       {screen === "list" ? (
         <VocabularyListPage
-          vocabularies={vocabularies}
           onNavigateSourceSelection={() => navigate("form-empty")}
           onNavigateFormEmpty={handleCreate}
           onEdit={handleEdit}
@@ -61,7 +60,6 @@ function App() {
       ) : screen === "form-empty" ? (
         <VocabularyFormPage
           vocabulary={editingVocabulary}
-          vocabularies={vocabularies}
           onCancel={handleFormCancel}
           onConfirm={handleFormConfirm}
         />
