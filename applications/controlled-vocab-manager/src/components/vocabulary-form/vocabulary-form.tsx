@@ -26,11 +26,11 @@ interface VocabularyFormValues {
 }
 
 interface VocabularyFormProps {
-  initialValues?: VocabularyFormValues
+  initialValues?: Vocabulary
   vocabularies: Vocabulary[]
   currentVocabularyId?: string
   onCancel: () => void
-  onConfirm: (values: VocabularyFormValues) => void
+  onConfirm: (vocabulary: Vocabulary) => void
 }
 
 export function VocabularyForm({
@@ -78,7 +78,14 @@ export function VocabularyForm({
       })
       return
     }
-    onConfirm(values)
+
+    // Transform form values to Vocabulary domain object
+    const vocabulary: Vocabulary = {
+      id: values.iri,
+      source: initialValues?.source,
+      ...values,
+    }
+    onConfirm(vocabulary)
   }
 
   return (

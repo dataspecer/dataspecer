@@ -4,31 +4,20 @@ import { VocabularyForm } from "./vocabulary-form"
 import type { Vocabulary } from "@/types/vocabulary"
 
 interface VocabularyFormPageProps {
+  vocabulary?: Vocabulary
   vocabularies: Vocabulary[]
   onCancel: () => void
   onConfirm: (vocabulary: Vocabulary) => void
 }
 
 export function VocabularyFormPage({
+  vocabulary,
   vocabularies,
   onCancel,
   onConfirm,
 }: VocabularyFormPageProps) {
   const { t } = useTranslation()
-
-  const handleConfirm = (values: {
-    name: string
-    iri: string
-    regex: string
-    downloadUrl: string
-    docsUrl: string
-  }) => {
-    const vocabulary: Vocabulary = {
-      id: values.iri,
-      ...values,
-    }
-    onConfirm(vocabulary)
-  }
+  const isEditMode = vocabulary !== undefined
 
   return (
     <>
@@ -36,24 +25,26 @@ export function VocabularyFormPage({
         items={[
           { label: t("breadcrumb.packageManager"), href: import.meta.env.VITE_MANAGER },
           { label: t("breadcrumb.controlledVocabularies"), onClick: onCancel },
-          { label: t("breadcrumb.addByUrl") },
+          { label: t(isEditMode ? "breadcrumb.edit" : "breadcrumb.addByUrl") },
         ]}
       />
       <h1 className="text-page-title font-semibold mb-1">
-        {t("form.empty.title")}
+        {t(isEditMode ? "form.edit.title" : "form.empty.title")}
       </h1>
       <p className="text-sm text-muted-foreground mb-4">
         <Trans
-          i18nKey="form.empty.subtitle"
+          i18nKey={isEditMode ? "form.edit.subtitle" : "form.empty.subtitle"}
           components={{
-            asterisk: <span key="asterisk" className="text-destructive" />,
+            asterisk: <span className="text-destructive" />,
           }}
         />
       </p>
       <VocabularyForm
+        initialValues={vocabulary}
         vocabularies={vocabularies}
+        currentVocabularyId={vocabulary?.id}
         onCancel={onCancel}
-        onConfirm={handleConfirm}
+        onConfirm={onConfirm}
       />
     </>
   )

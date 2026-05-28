@@ -1,54 +1,47 @@
-import { useState, useEffect } from 'react'
 import { PageLayout } from './components/layout/page-layout'
 import { useHashRoute } from './hooks/use-hash-route'
+import { useVocabularies } from './hooks/use-vocabularies'
+import { useVocabularyEditor } from './hooks/use-vocabulary-editor'
 import { VocabularyListPage } from './components/vocabulary-list/vocabulary-list-page'
 import { VocabularyFormPage } from './components/vocabulary-form/vocabulary-form-page'
-import { VocabularyEditPage } from './components/vocabulary-form/vocabulary-edit-page'
 import type { Vocabulary } from './types/vocabulary'
-import { isBackendConnected, loadVocabularies, saveVocabularies } from './services/backend-vocabulary-storage'
 
 export type Screen = "list" | "source-selection" | "search" | "form-prefilled" | "form-empty"
 
 function App() {
   const [screen, navigate] = useHashRoute()
-  const [vocabularies, setVocabularies] = useState<Vocabulary[]>([])
-  const [loading, setLoading] = useState(isBackendConnected)
-  const [editingVocabulary, setEditingVocabulary] = useState<Vocabulary | null>(null)
-
-  useEffect(() => {
-    if (!isBackendConnected) return
-    loadVocabularies()
-      .then(vocabs => setVocabularies(vocabs))
-      .finally(() => setLoading(false))
-  }, [])
-
-  const updateVocabularies = (updater: (prev: Vocabulary[]) => Vocabulary[]) => {
-    setVocabularies(prev => {
-      const next = updater(prev)
-      saveVocabularies(next)
-      return next
-    })
-  }
+  const { vocabularies, loading, addVocabulary, updateVocabulary, deleteVocabulary } = useVocabularies()
+  const { editingVocabulary, startEditing, startCreating, cancelEditing } = useVocabularyEditor()
 
   const handleFormConfirm = (vocabulary: Vocabulary) => {
     if (editingVocabulary) {
-      updateVocabularies((prev) => prev.map((v) => v.id === vocabulary.id ? vocabulary : v))
+      updateVocabulary(vocabulary)
     } else {
-      updateVocabularies((prev) => [...prev, vocabulary])
+      addVocabulary(vocabulary)
     }
-    setEditingVocabulary(null)
+    cancelEditing()
     navigate("list")
   }
 
   const handleFormCancel = () => {
-    setEditingVocabulary(null)
+    cancelEditing()
     navigate("list")
+  }
+
+  const handleEdit = (vocab: Vocabulary) => {
+    startEditing(vocab)
+    navigate("form-empty")
+  }
+
+  const handleCreate = () => {
+    startCreating()
+    navigate("form-empty")
   }
 
   if (loading) {
     return (
       <PageLayout>
-        <div style={{ display: "flex", justifyContent: "center", padding: "2rem" }}>
+        <div className="flex justify-center p-8">
           Loading…
         </div>
       </PageLayout>
@@ -61,27 +54,17 @@ function App() {
         <VocabularyListPage
           vocabularies={vocabularies}
           onNavigateSourceSelection={() => navigate("form-empty")}
-          onNavigateFormEmpty={() => { setEditingVocabulary(null); navigate("form-empty") }}
-          onEdit={(vocab) => { setEditingVocabulary(vocab); navigate("form-empty") }}
-          onDelete={(vocab) => updateVocabularies((prev) => prev.filter((v) => v.id !== vocab.id))}
+          onNavigateFormEmpty={handleCreate}
+          onEdit={handleEdit}
+          onDelete={deleteVocabulary}
         />
       ) : screen === "form-empty" ? (
-        editingVocabulary ? (
-          <VocabularyEditPage
-            key={editingVocabulary.id}
-            vocabulary={editingVocabulary}
-            vocabularies={vocabularies}
-            onCancel={handleFormCancel}
-            onConfirm={handleFormConfirm}
-          />
-        ) : (
-          <VocabularyFormPage
-            key="new"
-            vocabularies={vocabularies}
-            onCancel={handleFormCancel}
-            onConfirm={handleFormConfirm}
-          />
-        )
+        <VocabularyFormPage
+          vocabulary={editingVocabulary}
+          vocabularies={vocabularies}
+          onCancel={handleFormCancel}
+          onConfirm={handleFormConfirm}
+        />
       ) : (
         <div>Screen: {screen}</div>
       )}
