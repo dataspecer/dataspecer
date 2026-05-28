@@ -6,6 +6,7 @@ import {
   saveVocabularies
 } from '../services/backend-vocabulary-storage'
 import { useEventCallback } from './use-event-callback'
+import { useConfig } from '../contexts/config-context'
 
 /**
  * Manages vocabulary collection state with automatic persistence to backend.
@@ -18,6 +19,7 @@ import { useEventCallback } from './use-event-callback'
  * @returns Object with vocabularies array, loading state, and CRUD methods
  */
 export function useVocabularies() {
+  const { backendUrl } = useConfig()
   const [vocabularies, setVocabularies] = useState<Vocabulary[]>([])
   const [loading, setLoading] = useState(isBackendConnected)
   const isInitialMount = useRef(true)
@@ -25,10 +27,10 @@ export function useVocabularies() {
   // Initial load from backend
   useEffect(() => {
     if (!isBackendConnected) return
-    loadVocabularies()
+    loadVocabularies(backendUrl)
       .then(vocabs => setVocabularies(vocabs))
       .finally(() => setLoading(false))
-  }, [])
+  }, [backendUrl])
 
   // Auto-save on changes (skip initial mount to avoid saving on load)
   useEffect(() => {
@@ -37,9 +39,9 @@ export function useVocabularies() {
       return
     }
     if (isBackendConnected) {
-      saveVocabularies(vocabularies)
+      saveVocabularies(backendUrl, vocabularies)
     }
-  }, [vocabularies])
+  }, [vocabularies, backendUrl])
 
   const addVocabulary = useEventCallback((vocabulary: Vocabulary) => {
     setVocabularies(prev => [...prev, vocabulary])

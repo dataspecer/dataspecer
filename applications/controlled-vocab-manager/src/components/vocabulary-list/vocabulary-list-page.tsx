@@ -7,6 +7,7 @@ import { EmptyState } from "./empty-state"
 import { VocabularyCard } from "./vocabulary-card"
 import { useVocabulariesContext } from "@/contexts/vocabularies-context"
 import type { Vocabulary } from "@/types/vocabulary"
+import { useConfig } from "@/contexts/config-context"
 
 interface VocabularyListPageProps {
   onNavigateSourceSelection: () => void
@@ -22,13 +23,14 @@ export function VocabularyListPage({
   onDelete,
 }: VocabularyListPageProps) {
   const { t } = useTranslation()
+  const { managerUrl } = useConfig()
   const { vocabularies } = useVocabulariesContext()
 
   return (
     <>
       <Breadcrumb
         items={[
-          { label: t("breadcrumb.packageManager"), href: import.meta.env.VITE_MANAGER },
+          { label: t("breadcrumb.packageManager"), href: managerUrl },
           { label: t("breadcrumb.controlledVocabularies") },
         ]}
       />
