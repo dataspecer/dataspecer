@@ -1,100 +1,58 @@
 import { Badge } from "@/components/ui/badge";
 import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
-import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { AlertTriangleIcon, ArrowLeftRight, BugIcon, CheckIcon, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, Eye, EyeIcon, FileText, Filter, FilterX, Folder, FolderDown, GitBranchPlus, GitCommit, GitGraph, GitMerge, GitPullRequestArrowIcon, GitPullRequestIcon, Import, LightbulbIcon, Link, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, Sparkles, TagIcon, TimerResetIcon, Trash2, WandSparkles } from "lucide-react";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { AlertTriangleIcon, ArrowLeftRight, BugIcon, CheckIcon, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, Eye, EyeIcon, FileText, Filter, Folder, FolderDown, GitBranchPlus, GitCommit, GitGraph, GitMerge, GitPullRequestArrowIcon, GitPullRequestIcon, Import, LightbulbIcon, Link, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, Sparkles, TagIcon, TimerResetIcon, Trash2 } from "lucide-react";
+import { useCallback, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getValidTime } from "./components/time";
-import { Translate } from "./components/translate";
-import { Button } from "./components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "./components/ui/dropdown-menu";
-import { Skeleton } from "./components/ui/skeleton";
-import { CreateNew } from "./dialog/create-new";
-import { DeleteResource } from "./dialog/delete-resource";
-import { ProjectWizard } from "./dialog/project-wizard/project-wizard";
-import { RenameResourceDialog } from "./dialog/rename-resource";
-import { ResourceDetail } from "./dialog/resource-detail";
-import { useToggle } from "./hooks/use-toggle";
-import { ModelIcon, modelTypeToName } from "./known-models";
-import { useBetterModal } from "./lib/better-modal";
-import { ResourceWithIris, ResourcesContext, ensurePackageWorksForDSE, modifyUserMetadata, requestLoadPackage } from "./package";
-import { ModifyDocumentationTemplate } from "./dialog/modify-documentation-template";
+import { getValidTime } from "../time";
+import { Translate } from "../translate";
+import { Button } from "../ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { CreateNew } from "@/dialog/create-new";
+import { DeleteResource } from "@/dialog/delete-resource";
+import { RenameResourceDialog } from "@/dialog/rename-resource";
+import { ResourceDetail } from "@/dialog/resource-detail";
+import { useToggle } from "@/hooks/use-toggle";
+import { ModelIcon, modelTypeToName } from "@/known-models";
+import { useBetterModal } from "@/lib/better-modal";
+import { ResourceWithIris, ResourcesContext, ensurePackageWorksForDSE, modifyUserMetadata, requestLoadPackage } from "@/package";
+import { ModifyDocumentationTemplate } from "@/dialog/modify-documentation-template";
 import React from "react";
-import { SortModelsContext } from "./components/sort-models";
-import { ModifyRawDialog } from "./dialog/modify-raw";
-import { Autolayout } from "./dialog/autolayout";
-import { Tooltip, TooltipContent, TooltipTrigger } from "./components/ui/tooltip";
-import { ReloadImported } from "./dialog/reload-imported";
-import { AddImported } from "./dialog/add-imported";
-import { ReloadPimWrapper } from "./dialog/reload-pim-wrapper";
-import { stopPropagation } from "./utils/events";
-import { commitToGitDialogOnClickHandler, createNewRemoteRepositoryHandler, linkToExistingGitRepositoryHandler } from "./dialog/git-actions-dialogs";
-import { gitHistoryVisualizationOnClickHandler } from "./components/git-history-visualization";
-import { BranchAction, CreateNewBranchDialog } from "./dialog/create-new-branch";
-import { ListMergeStatesDialog } from "./dialog/list-merge-states";
-import { useLogin, UseLoginType } from "./hooks/use-login";
-import { GitProvider, GitRef, isGitUrlSet, PACKAGE_ROOT, PullRequestInvolvingUserFetchResponse } from "@dataspecer/git";
+import { ModifyRawDialog } from "@/dialog/modify-raw";
+import { Autolayout } from "@/dialog/autolayout";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { ReloadImported } from "@/dialog/reload-imported";
+import { AddImported } from "@/dialog/add-imported";
+import { ReloadPimWrapper } from "@/dialog/reload-pim-wrapper";
+import { stopPropagation } from "@/utils/events";
+import { gitHistoryVisualizationOnClickHandler } from "../git-history-visualization";
+import { BranchAction, CreateNewBranchDialog } from "@/dialog/create-new-branch";
+import { ListMergeStatesDialog } from "@/dialog/list-merge-states";
+import { GitProvider, GitRef, isGitUrlSet, PACKAGE_ROOT } from "@dataspecer/git";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
-import { manualPull, trySetPackageAsUpToDate, switchRepresentsBranchHead } from "./utils/git-fetch-related-actions";
-import ResourceTooltip from "./components/git-tooltip";
-import { CreateMergeStateCausedByMergeDialog } from "./dialog/open-merge-state";
-import { PackageListDialog } from "./dialog/package-list-dialog";
-import { DeleteGitRepoDialog } from "./dialog/remove-git-repo-dialog";
-import { SetGitRemoteConfigurationDialog } from "./dialog/set-git-remote-configuration-dialog";
-import { GitPrsListDialog } from "./dialog/list-git-prs-for-branch";
-import { GitIssuesListDialog } from "./dialog/list-git-issues";
-import { createNewTabAndOpen } from "./dialog/advanced-sign-in";
-import { TourRow } from "./components/driver-tutorial-tours/manager-row-tour-copy";
-import { ManagerTourProvider, useManagerTour } from "./manager-git-tour-context/manager-tour-context";
+import { manualPull, trySetPackageAsUpToDate, switchRepresentsBranchHead } from "@/utils/git-fetch-related-actions";
+import ResourceTooltip from "../git-tooltip";
+import { CreateMergeStateCausedByMergeDialog } from "@/dialog/open-merge-state";
+import { PackageListDialog } from "@/dialog/package-list-dialog";
+import { DeleteGitRepoDialog } from "@/dialog/remove-git-repo-dialog";
+import { SetGitRemoteConfigurationDialog } from "@/dialog/set-git-remote-configuration-dialog";
+import { GitPrsListDialog } from "@/dialog/list-git-prs-for-branch";
+import { GitIssuesListDialog } from "@/dialog/list-git-issues";
+import { createNewTabAndOpen } from "@/dialog/advanced-sign-in";
+import { commitToGitDialogOnClickHandler, createNewRemoteRepositoryHandler, linkToExistingGitRepositoryHandler } from "@/dialog/git-actions-dialogs";
+import { ManagerRowType, useSortIris } from "@/Dir";
+import { useManagerTour } from "@/managerTourContext";
 
 
-export function lng(text: LanguageString | undefined): string | undefined {
-  return text?.["cs"] ?? text?.["en"];
-}
-
-export const useSortIris = (iris: string[]) => {
-  const {selectedOption} = React.useContext(SortModelsContext);
-  const resources = useContext(ResourcesContext);
-  return useMemo(() => {
-    const toSort = iris.map(iri => resources[iri]!);
-    toSort?.sort((a, b) => {
-      if (!a || !b) return 0;
-      if (selectedOption === "name-az") {
-        return lng(a.userMetadata?.label)?.localeCompare(lng(b.userMetadata?.label) ?? "") ?? 0;
-      } else if (selectedOption === "name-za") {
-        return (lng(b.userMetadata?.label) ?? "").localeCompare(lng(a.userMetadata?.label) ?? "") ?? 0;
-      } else if (selectedOption === "modification-new-first") {
-        return new Date(b.metadata?.modificationDate ?? 0).getTime() - new Date(a.metadata?.modificationDate ?? 0).getTime();
-      } else if (selectedOption === "modification-old-first") {
-        return new Date(a.metadata?.modificationDate ?? 0).getTime() - new Date(b.metadata?.modificationDate ?? 0).getTime();
-      } else if (selectedOption === "creation-new-first") {
-        return new Date(b.metadata?.creationDate ?? 0).getTime() - new Date(a.metadata?.creationDate ?? 0).getTime();
-      } else if (selectedOption === "creation-old-first") {
-        return new Date(a.metadata?.creationDate ?? 0).getTime() - new Date(b.metadata?.creationDate ?? 0).getTime();
-      }
-      return 0;
-    });
-
-    return toSort.map(r => r?.iri);
-  }, [iris, resources, selectedOption]);
+type ManagerTourRowType = ManagerRowType & {
+  isFirstRow: boolean;
+  tourStep: number;
 };
 
-
-export type ManagerRowType = {
-  underRootIri: string;
-  iri: string;
-  signedInUserPullRequests: string[];
-  packageGitFilter: string | null;
-  setPackageGitFilter: (value: string | null) => void;
-  isSignedIn: boolean;
-  parentIri?: string;
-}
-
-const Row = ({ iri, underRootIri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri, signedInUserPullRequests }: ManagerRowType) => {
+export const TourRow = ({ isFirstRow, tourStep, iri, underRootIri, packageGitFilter, setPackageGitFilter, isSignedIn, parentIri, signedInUserPullRequests }: ManagerTourRowType) => {
   const resources = useContext(ResourcesContext);
   const resource = resources[iri]!;
 
-  const { startManagerTour } = useManagerTour();
+  const { startManagerTour, managerTourStep } = useManagerTour();
 
   if (packageGitFilter !== null && resource.projectIri !== packageGitFilter) {
     return null;
@@ -336,9 +294,9 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
 
       {/* Git actions */}
       { (resource.types.includes(LOCAL_PACKAGE) && parentIri === PACKAGE_ROOT) ?
-        <DropdownMenu>
+        <DropdownMenu open={isFirstRow}>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="shrink-0">
+            <Button id="manager-git-actions-button" variant="ghost" size="icon" className="shrink-0">
               <EllipsisVertical className="h-4 w-4" /><p className="text-xs">Git</p>
             </Button>
           </DropdownMenuTrigger>
@@ -348,48 +306,49 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
               !hasSetRemoteRepository ? null :
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
-                  <div className="flex flex-1 flex-row"><Eye className="h-4 w-4 mt-0.75 mr-2" />Show</div>
+                  <div id="manager-git-show-submenu-trigger" className="flex flex-1 flex-row"><Eye className="h-4 w-4 mt-0.75 mr-2" />Show</div>
                 </DropdownMenuSubTrigger>
 
                 <DropdownMenuSubContent className="data-[side=top]">
-                  {hasSetRemoteRepository && <DropdownMenuItem onClick={() => createNewTabAndOpen(gitProvider === null ? "" : gitProvider.createGitRepositoryURL(repositoryOwner!, repositoryName!, gitRef!))}><Eye className="mr-2 h-4 w-4" />Show {resource.representsBranchHead ? "branch" : "commit"} on GitHub</DropdownMenuItem>}
-                  {hasSetRemoteRepository && <DropdownMenuItem onClick={() => createNewTabAndOpen(gitProvider === null ? "" : gitProvider.getGitPagesURL(resource.linkedGitRepositoryURL))}><Eye className="mr-2 h-4 w-4" />Show {gitProvider?.getProviderSpecificLabel("GitHub Pages")}</DropdownMenuItem>}
-                  {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>}
+                  {<DropdownMenuItem id="manager-tour-git-show-branch-item" onClick={() => createNewTabAndOpen(gitProvider === null ? "" : gitProvider.createGitRepositoryURL(repositoryOwner!, repositoryName!, gitRef!))}><Eye className="mr-2 h-4 w-4" />Show {resource.representsBranchHead ? "branch" : "commit"} on GitHub</DropdownMenuItem>}
+                  {<DropdownMenuItem id="manager-tour-git-show-pages-item" onClick={() => createNewTabAndOpen(gitProvider === null ? "" : gitProvider.getGitPagesURL(resource.linkedGitRepositoryURL))}><Eye className="mr-2 h-4 w-4" />Show {gitProvider?.getProviderSpecificLabel("GitHub Pages")}</DropdownMenuItem>}
+                  {<DropdownMenuItem id="manager-tour-git-history-item" onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>}
+                  {<hr className="border-gray-300" />}
+                  {<DropdownMenuItem id="manager-tour-git-active-prs-item" onClick={async () => openModal(GitPrsListDialog, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: null, gitProviderSpecificNameForPR, gitProviderSpecificNameForPRShortcut})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Active {gitProviderSpecificNameForPR}s</DropdownMenuItem>}
+                  {<DropdownMenuItem id="manager-tour-git-active-prs-branch-item" onClick={async () => openModal(GitPrsListDialog, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: resource.branch, gitProviderSpecificNameForPR, gitProviderSpecificNameForPRShortcut})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Active {gitProviderSpecificNameForPR}s for branch</DropdownMenuItem>}
+                  {<DropdownMenuItem id="manager-tour-git-active-issues-item" onClick={async () => openModal(GitIssuesListDialog, {gitUrl: resource.linkedGitRepositoryURL})}><BugIcon className="mr-2 h-4 w-4" />Active issues</DropdownMenuItem>}
+                  {<hr className="border-gray-300" />}
+                  {<DropdownMenuItem id="manager-tour-git-show-merge-states-item" onClick={() => openModal(ListMergeStatesDialog, { iri })}><EyeIcon className="mr-2 h-4 w-4" />Show merge states</DropdownMenuItem>}
+                  {<DropdownMenuItem id="manager-tour-git-show-same-repo-item" onClick={() => setPackageGitFilter(resource.projectIri)}><Filter className="mr-2 h-4 w-4" />Show same repository projects</DropdownMenuItem>}
                   {hasSetRemoteRepository && <hr className="border-gray-300" />}
-                  {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialog, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: null, gitProviderSpecificNameForPR, gitProviderSpecificNameForPRShortcut})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Active {gitProviderSpecificNameForPR}s</DropdownMenuItem>}
-                  {hasSetRemoteRepository && resource.representsBranchHead && <DropdownMenuItem onClick={async () => openModal(GitPrsListDialog, {resources, gitUrl: resource.linkedGitRepositoryURL, branch: resource.branch, gitProviderSpecificNameForPR, gitProviderSpecificNameForPRShortcut})}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Active {gitProviderSpecificNameForPR}s for branch</DropdownMenuItem>}
-                  {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => openModal(GitIssuesListDialog, {gitUrl: resource.linkedGitRepositoryURL})}><BugIcon className="mr-2 h-4 w-4" />Active issues</DropdownMenuItem>}
-                  {hasSetRemoteRepository && <hr className="border-gray-300" />}
-                  {hasSetRemoteRepository && <DropdownMenuItem onClick={() => openModal(ListMergeStatesDialog, { iri })}><EyeIcon className="mr-2 h-4 w-4" />Show merge states</DropdownMenuItem>}
-                  {hasSetRemoteRepository && <DropdownMenuItem onClick={() => setPackageGitFilter(resource.projectIri)}><Filter className="mr-2 h-4 w-4" />Show same repository projects</DropdownMenuItem>}
-                  {hasSetRemoteRepository && <hr className="border-gray-300" />}
-                  {hasSetRemoteRepository && <Button variant="default" size={"sm"} className="shrink-0 ml-4" onClick={() => startManagerTour(t)}><LightbulbIcon className="mr-2 h-4 w-4" />TODO RadStr: Start tour</Button>}
+                                    {hasSetRemoteRepository && <Button variant="default" size={"sm"} className="shrink-0 ml-4" onClick={() => startManagerTour(t)}><LightbulbIcon className="mr-2 h-4 w-4" />TODO RadStr: HELP ME!!!!!!!!!!!</Button>}
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
             }
             {/* Git perform actions */}
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
+            <DropdownMenuSub open={isFirstRow}>
+              <DropdownMenuSubTrigger id="manager-git-actions-submenu-trigger">
                 <div className="flex flex-1 flex-row"><GitCommit className="h-4 w-4 mt-0.75 mr-2" />Actions</div>
               </DropdownMenuSubTrigger>
 
               <DropdownMenuSubContent className="data-[side=top]">
                 {/* TODO RadStr: For debug/migration */}
                 {/* {hasSetRemoteRepository && <DropdownMenuItem onClick={() => debugClearMergeStateDBTable()}><ShieldQuestion className="mr-2 h-4 w-4" />DEBUG - Clear merge db state table</DropdownMenuItem>} */}
-                {hasSetRemoteRepository && <DropdownMenuItem title={tooltipForSetUpToDateMenuItem} onClick={() => trySetPackageAsUpToDate(resource.iri)}><TimerResetIcon className="mr-2 h-4 w-4" />Verify status of local changes</DropdownMenuItem>}
-                {hasSetRemoteRepository && <hr className="border-gray-300" />}
-                {<DropdownMenuItem onClick={async () => createNewRemoteRepositoryHandler(t, openModal, iri, resource)}><GitPullRequestIcon className="mr-2 h-4 w-4" />Create remote repository</DropdownMenuItem>}
-                {<DropdownMenuItem onClick={async () => linkToExistingGitRepositoryHandler(t, openModal, iri, resource)}><Link className="mr-2 h-4 w-4" />Link to remote repository</DropdownMenuItem>}
-                {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => commitToGitDialogOnClickHandler(t, openModal, iri, resource, "classic-commit", true, true, null, null)}><GitCommit className="mr-2 h-4 w-4" />Commit</DropdownMenuItem>}
-                {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => manualPull(t, iri)}><Import className="mr-2 h-4 w-4" />Pull</DropdownMenuItem>}
-                {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => openModal(SetGitRemoteConfigurationDialog, {inputPackage: resource})}><Pencil className="mr-2 h-4 w-4" />Configure Git</DropdownMenuItem>}
-                {hasSetRemoteRepository && <hr className="border-gray-300" />}
-                {hasSetRemoteRepository && <DropdownMenuItem onClick={() => openModal(CreateNewBranchDialog, { sourcePackage: resource, actionOnConfirm: BranchAction.CreateNewBranch })}><GitBranchPlus className="mr-2 h-4 w-4" />Create branch</DropdownMenuItem>}
-                {hasSetRemoteRepository && <DropdownMenuItem onClick={createMergeStateAction}><GitMerge className="mr-2 h-4 w-4"/>Merge - Choose merge from</DropdownMenuItem>}
-                {hasSetRemoteRepository && <hr className="border-gray-300" />}
-                {hasSetRemoteRepository && <DropdownMenuItem onClick={() => switchRepresentsBranchHead(resource, openModal)}><ArrowLeftRight className="mr-2 h-4 w-4" /> Convert to {resource.representsBranchHead ? "tag" : "branch"}</DropdownMenuItem>}
-                {hasSetRemoteRepository && <hr className="border-gray-300" />}
-                {hasSetRemoteRepository && <DropdownMenuItem className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={() => openModal(DeleteGitRepoDialog, {iri, gitUrl: resource.linkedGitRepositoryURL})}><Trash2 className="mr-2 h-4 w-4" />Delete Git repository</DropdownMenuItem>}
+                {<DropdownMenuItem title={tooltipForSetUpToDateMenuItem} onClick={() => trySetPackageAsUpToDate(resource.iri)}><TimerResetIcon className="mr-2 h-4 w-4" />Verify status of local changes</DropdownMenuItem>}
+                {<hr className="border-gray-300" />}
+                {<DropdownMenuItem id="manager-tour-git-create-remote-repo-item" onClick={async () => createNewRemoteRepositoryHandler(t, openModal, iri, resource)}><GitPullRequestIcon className="mr-2 h-4 w-4" />Create remote repository</DropdownMenuItem>}
+                {<DropdownMenuItem id="manager-tour-git-link-existing-item" onClick={async () => linkToExistingGitRepositoryHandler(t, openModal, iri, resource)}><Link className="mr-2 h-4 w-4" />Link to remote repository</DropdownMenuItem>}
+                {<DropdownMenuItem id="manager-tour-git-action-commit-item" onClick={async () => commitToGitDialogOnClickHandler(t, openModal, iri, resource, "classic-commit", true, true, null, null)}><GitCommit className="mr-2 h-4 w-4" />Commit</DropdownMenuItem>}
+                {<DropdownMenuItem id="manager-tour-git-action-pull-item" onClick={async () => manualPull(t, iri)}><Import className="mr-2 h-4 w-4" />Pull</DropdownMenuItem>}
+                {<DropdownMenuItem id="manager-tour-git-configure-item" onClick={async () => openModal(SetGitRemoteConfigurationDialog, {inputPackage: resource})}><Pencil className="mr-2 h-4 w-4" />Configure Git</DropdownMenuItem>}
+                {<hr className="border-gray-300" />}
+                {<DropdownMenuItem id="manager-tour-git-create-branch-item" onClick={() => openModal(CreateNewBranchDialog, { sourcePackage: resource, actionOnConfirm: BranchAction.CreateNewBranch })}><GitBranchPlus className="mr-2 h-4 w-4" />Create branch</DropdownMenuItem>}
+                {<DropdownMenuItem id="manager-tour-git-merge-item" onClick={createMergeStateAction}><GitMerge className="mr-2 h-4 w-4"/>Merge - Choose merge from</DropdownMenuItem>}
+                {<hr className="border-gray-300" />}
+                {<DropdownMenuItem id="manager-tour-git-convert-item" onClick={() => switchRepresentsBranchHead(resource, openModal)}><ArrowLeftRight className="mr-2 h-4 w-4" /> Convert to {resource.representsBranchHead ? "tag" : "branch"}</DropdownMenuItem>}
+                {<hr className="border-gray-300" />}
+                {<DropdownMenuItem id="manager-tour-git-delete-item" className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={() => openModal(DeleteGitRepoDialog, {iri, gitUrl: resource.linkedGitRepositoryURL})}><Trash2 className="mr-2 h-4 w-4" />Delete Git repository</DropdownMenuItem>}
+                {<DropdownMenuItem id="manager-tour-git-delete-item" className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={() => openModal(DeleteGitRepoDialog, {iri, gitUrl: resource.linkedGitRepositoryURL})}><Trash2 className="mr-2 h-4 w-4" />{managerTourStep}</DropdownMenuItem>}
               </DropdownMenuSubContent>
             </DropdownMenuSub>
           </DropdownMenuContent>
@@ -426,133 +385,8 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
     </div>
     {subResources.length > 0 && isOpen && <ul className="pl-8">
       {/* We pass null for the filter, since we want to render the children and the root packages, which we do not render are already blocked by the filter */}
-      {subResources.map(iri => <Row underRootIri={underRootIri} iri={iri} key={iri} parentIri={resource.iri} isSignedIn={isSignedIn} packageGitFilter={null} setPackageGitFilter={setPackageGitFilter} signedInUserPullRequests={signedInUserPullRequests} />)}
+      {subResources.map(iri => <TourRow isFirstRow={isFirstRow} tourStep={tourStep} underRootIri={underRootIri} iri={iri} key={iri} parentIri={resource.iri} isSignedIn={isSignedIn} packageGitFilter={null} setPackageGitFilter={setPackageGitFilter} signedInUserPullRequests={signedInUserPullRequests} />)}
     </ul>}
     <ResourceDetail isOpen={detailModalToggle.isOpen} close={detailModalToggle.close} iri={iri} />
   </li>
 };
-
-export default function Component() {
-  const login = useLogin();
-
-
-  const [signedInUserPullRequests, setSignedInUserPullRequests] = useState<string[]>([]);
-  useEffect(() => {
-    if (login.isSignedIn) {
-      fetch(import.meta.env.VITE_BACKEND + "/git/opened-pull-requests-involving-user", {
-          method: "GET",
-          credentials: "include",         // Important, without this we don't send the authorization cookies
-          headers: {
-            "Content-Type": "application/json",
-          },
-        })
-        .then(async (response) => {
-          const responseData = await response.json();
-          setSignedInUserPullRequests((await responseData as PullRequestInvolvingUserFetchResponse)?.pullRequestRepositoryUrls ?? [])
-        });
-      }
-  }, [login.isSignedIn]);
-
-
-  return (
-    <ManagerTourProvider>
-      <RootPackage iri={PACKAGE_ROOT} login={login} signedInUserPullRequests={signedInUserPullRequests} />
-    </ManagerTourProvider>
-  )
-}
-
-function RootPackage({iri, defaultToggle, login, signedInUserPullRequests}: {iri: string, defaultToggle?: boolean, login: UseLoginType, signedInUserPullRequests: string[]}) {
-  const openModal = useBetterModal();
-  const resources = useContext(ResourcesContext);
-  const pckg = resources[iri];
-  const {t} = useTranslation();
-  // Manager tour state comes from context to avoid prop drilling.
-  const { isManagerTourOn, managerTourStep } = useManagerTour();
-
-  // Whether the package is open or not
-  const [isOpen, setIsOpen] = useState<boolean>(defaultToggle ?? true);
-
-  const [packageGitFilter, setPackageGitFilter] = useState<string | null>(null);
-
-  useEffect(() => {
-    requestLoadPackage(iri);
-  }, []);
-
-  const subResources = useSortIris(pckg?.subResourcesIri ?? []);
-
-  if (pckg === null) {
-    return;
-  }
-
-  if (!pckg) {
-    return <div className="my-2 flex">
-      <Skeleton className="w-[44px] h-[44px] rounded-full" />
-      <div className="ml-3">
-        <Skeleton className="w-[200px] h-6 mb-1" />
-        <Skeleton className="w-[100px] h-4" />
-      </div>
-    </div>;
-  }
-
-  return <div className="mb-12">
-    <div className="flex flex-row">
-      <button onClick={() => setIsOpen(!isOpen)} className="cursor-pointer">
-        {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-      </button>
-      <h2 className="font-heading ml-3 scroll-m-20 pb-2 text-2xl font-semibold tracking-tight first:mt-0 grow">
-        <Translate
-          text={pckg.userMetadata?.label}
-          match={(t, isMatch, language) => <>
-            <span className={isMatch ? "" : "text-muted-foreground"}>{t}</span>
-            {!isMatch && <span className="ml-1 ">@{language}</span>}
-          </>}
-        />
-      </h2>
-      {
-        packageGitFilter === null ?
-          null :
-          <Button variant="ghost" size="sm" className="shrink=0 ml-4"
-            onClick={() => setPackageGitFilter(null)}>
-              <FilterX className="mr-2 h-4 w-4" />
-              Remove same repository filter
-          </Button>
-      }
-      <Button variant="ghost" size="sm" className="shrink-0 ml-4"
-        onClick={() => openModal(AddImported, {iri})}>
-        <Import className="mr-2 h-4 w-4" /> {t("import")}
-      </Button>
-      <Button variant="default" size={"sm"} className="shrink-0 ml-4" onClick={() => openModal(ProjectWizard, {iri})}><WandSparkles className="mr-2 h-4 w-4" /> {t("project-wizard")}</Button>
-    </div>
-    {isOpen &&
-      isManagerTourOn ?
-        <ul>
-          {["1", "2"].map((iri, index, _array) => {
-            const isFirstRow = index === 0;
-            const tourIri = `unique-iri-${iri}`;
-            return <TourRow
-              isFirstRow={isFirstRow}
-              tourStep={managerTourStep}
-              iri={tourIri}
-              key={tourIri}
-              packageGitFilter={packageGitFilter}
-              setPackageGitFilter={setPackageGitFilter}
-            />;
-          })}
-        </ul> :
-        <ul>
-          {subResources.map(iri => {
-            return <Row
-              underRootIri={iri}
-              iri={iri}
-              parentIri={pckg.iri}
-              key={iri}
-              isSignedIn={login.isSignedIn}
-              signedInUserPullRequests={signedInUserPullRequests}
-              packageGitFilter={packageGitFilter}
-              setPackageGitFilter={setPackageGitFilter}
-            />;
-          })}
-        </ul>
-    }
-  </div>;
-}

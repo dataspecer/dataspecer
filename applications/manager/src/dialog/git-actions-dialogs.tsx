@@ -673,7 +673,7 @@ export const createNewRemoteRepositoryHandler = async (t: TFunction<"translation
       await requestLoadPackage(iri, true);
       if (response.status === 422) {
         // TODO RadStr: Localization
-        toast.error(`Repository with the same name "${result.repositoryName}" and under the same user "${result.signedInUserOrOrganization ?? "Dataspecer bot"}" already exists.`, { richColors: true });
+        toast.error(`Repository with the given name (${result.repositoryName}) already exists under the user (${result.signedInUserOrOrganization ?? "Dataspecer bot"}).`, { richColors: true });
         return;
       }
       else if (response.status === 403) {

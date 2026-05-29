@@ -16,8 +16,8 @@ import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
 import { saveChangesTooltipText } from "./outside-changes-to-diff-editor-action-dialog";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { startDiffEditorDialogTour } from "./diff-editor-dialog-tutorial";
 import { EntriesAffectedByCreateType } from "@/utils/use-diff-editor-dialog-props-utils";
+import { startDiffEditorDialogTour } from "@/components/driver-tutorial-tours/diff-editor-dialog-tutorial";
 
 export type UpdateModelDataMethod = (
   treePathToNodeContainingDatastore: string,
