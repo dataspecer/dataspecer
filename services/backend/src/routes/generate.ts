@@ -12,6 +12,7 @@ import { resourceModel } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { BackendModelRepository } from "../utils/model-repository.ts";
 import { getContentDispositionAttachmentHeaderValue, safeAsciiFileName, safeUnicodeFileName } from "../utils/safe-file-name.ts";
+import { getModelsForPackage } from "../utils/backend-model-store.ts";
 
 interface DataSpecifications {
   [key: string]: any;
@@ -62,8 +63,9 @@ async function generateArtifacts(
   singleFilePath: string | null = null,
 ) {
   const modelRepository = new BackendModelRepository(resourceModel);
+  const allModels = await getModelsForPackage(packageIri, resourceModel);
 
-  const { store, dataSpecifications } = await getDataSpecificationWithModels(packageIri, "", modelRepository);
+  const { store, dataSpecifications } = getDataSpecificationWithModels(packageIri, allModels);
   const generator = new DefaultArtifactBuilder(store as CoreResourceReader, dataSpecifications, configuration.configuration, fetch, modelRepository);
   generator.singleSpecificationOnly = true; // We want to generate only a single specification without extra directories.
   await generator.prepare(Object.keys(dataSpecifications), undefined, queryParams);

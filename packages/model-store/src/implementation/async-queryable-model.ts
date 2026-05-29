@@ -29,7 +29,7 @@ export class AsyncQueryableModelInModelStore extends BaseModelInModelStore imple
   }
 
   getAllEntities(): EntityRecord {
-    throw new Error("Method not implemented.");
+    return this.model!.getEntities();
   }
 
   applyOperations(operations: Operation[]): ApplyOperationResult {
@@ -47,7 +47,9 @@ export class AsyncQueryableModelInModelStore extends BaseModelInModelStore imple
       previousEntities = currentEntities;
       this.internalNotifyExternalChanges(diff);
     });
-    this.model.unserializeModel(modelData);
+    await this.model.unserializeModel(modelData);
+    const entityChanges = diffEntities(previousEntities, this.getAllEntities());
+    this.internalNotifyExternalChanges(entityChanges);
   }
 
   async save(): Promise<void> {

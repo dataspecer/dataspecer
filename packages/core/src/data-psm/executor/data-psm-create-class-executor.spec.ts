@@ -14,6 +14,7 @@ test("Create data PSM class.", async () => {
   operation.dataPsmHumanLabel = { en: "Label" };
   operation.dataPsmHumanDescription = { en: "Desc" };
   operation.dataPsmExtends = ["http://base"];
+  operation.dataPsmNewIri = "http://localhost/1";
 
   const before = {
     "http://schema": {

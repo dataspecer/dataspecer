@@ -13,6 +13,7 @@ export class PimModelInModelStore implements Model, ModelInDefaultFrontendModelS
   id: string;
   protected service: PackageService;
   protected externalChangesSubscribers: ((changes: EntityChange[]) => void)[] = [];
+  protected model!: PimStoreWrapper;
 
   constructor(id: string, service: PackageService) {
     this.id = id;
@@ -20,7 +21,7 @@ export class PimModelInModelStore implements Model, ModelInDefaultFrontendModelS
   }
 
   getAllEntities(): EntityRecord {
-    throw new Error("Method not implemented.");
+    return this.model.getEntities();
   }
 
   /**
@@ -43,6 +44,7 @@ export class PimModelInModelStore implements Model, ModelInDefaultFrontendModelS
     const modelData = await this.service.getResourceJsonData(this.id) as any;
     const model = new PimStoreWrapper(modelData.pimStore, this.id, "model", modelData.urls);
     model.fetchFromPimStore();
+    this.model = model;
 
     // Todo add main entity
   }

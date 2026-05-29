@@ -81,6 +81,10 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter, Co
   updateModel(modelId: string, change: EntityChange[]): void {
     for (const changeItem of change) {
       if (changeItem.next) {
+        if (!changeItem.next.id) {
+          throw new Error("Entity must have an id");
+        }
+
         // Update or create
         // todo check previous state
         this.entities.set(changeItem.next.id, {

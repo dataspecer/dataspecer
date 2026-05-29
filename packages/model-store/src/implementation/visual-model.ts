@@ -32,7 +32,7 @@ export class VisualModelInModelStore implements Model, ModelInDefaultFrontendMod
   }
 
   getAllEntities(): EntityRecord {
-    throw new Error("Method not implemented.");
+    return this.internalGetImmutableEntities();
   }
 
   protected internalToStoreEntity(entity: unknown): Entity {

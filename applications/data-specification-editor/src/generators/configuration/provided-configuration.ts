@@ -36,8 +36,8 @@ export async function getConfiguration(dataSpecificationIri: string | null, data
         changeListener(changes.entityChanges);
       });
     },
-    modelStore.addOperationForTransaction,
-    modelStore.commitTransaction,
+    modelStore.addOperationForTransaction.bind(modelStore),
+    modelStore.commitTransaction.bind(modelStore),
   );
 
   const operationContext = getOperationContext(dataSpecification.dataSpecifications[dataSpecificationIri]);

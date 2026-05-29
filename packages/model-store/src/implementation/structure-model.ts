@@ -22,6 +22,17 @@ export interface StructureModelCommitData {
   resources: EntityRecord<BaseEntityType>;
 }
 
+/**
+ * Todo this function will be part of the new adapter on backend.
+ */
+function coreResourceToEntity(resource: CoreResource): BaseEntityType {
+  return {
+    ...resource,
+    id: resource.iri!,
+    type: resource.types!,
+  };
+}
+
 const structureModelExecutors = createExecutorMap([...dataPsmExecutors]);
 
 /**
@@ -68,7 +79,17 @@ export class StructureModelInModelStore extends BaseModelInModelStore implements
   }
 
   async load(): Promise<void> {
-    const state = this.parseCommitData(await this.service.getResourceJsonData(this.id));
+    const data = await this.service.getResourceJsonData(this.id) as any;
+
+    const coreResources = data.resources as Record<string, CoreResource>;
+    const operations = data.operations;
+
+    const resources = Object.fromEntries(Object.entries(coreResources).map(([iri, resource]) => [iri, coreResourceToEntity(resource)]));
+
+    const state = this.parseCommitData({
+      operations,
+      resources,
+    });
     this.restore(state);
   }
 
@@ -176,14 +197,7 @@ export class StructureModelInModelStore extends BaseModelInModelStore implements
 
     for (const resource of [...Object.values(executorResult.changed), ...Object.values(executorResult.created)]) {
       // We map core resource to entity and do clone by it
-      const entity = {
-        ...resource,
-
-        id: resource.iri!,
-        type: resource.types!,
-      } satisfies Entity;
-
-
+      const entity = coreResourceToEntity(resource);
       this.entities[entity.id] = entity;
     }
 

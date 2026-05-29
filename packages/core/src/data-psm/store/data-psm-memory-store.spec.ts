@@ -21,6 +21,7 @@ test("Create data PSM schema with class and attribute.", async () => {
 
   const dataPsmClass = new Operations.DataPsmCreateClass();
   dataPsmClass.dataPsmInterpretation = "http://localhost/cim/TheClass";
+  dataPsmClass.dataPsmNewIri = "http://localhost/class/3";
   const dataPsmClassChange = store.applyOperation(dataPsmClass);
   expect(dataPsmClassChange.operation.iri).toBeDefined();
   expect(dataPsmClassChange.created).toEqual(["http://localhost/class/3"]);
@@ -31,6 +32,7 @@ test("Create data PSM schema with class and attribute.", async () => {
   dataPsmAttribute.dataPsmDatatype = "xsd:string";
   dataPsmAttribute.dataPsmInterpretation = "http://localhost/cim/TheProperty";
   dataPsmAttribute.dataPsmOwner = "http://localhost/class/3";
+  dataPsmAttribute.dataPsmNewIri = "http://localhost/attribute/5";
   const dataPsmAttributeChange = store.applyOperation(dataPsmAttribute);
   expect(dataPsmAttributeChange.operation.iri).toBeDefined();
   expect(dataPsmAttributeChange.created).toEqual([
@@ -100,6 +102,7 @@ test("Create and delete data PSM class", async () => {
   expect(pimSchemaChange.deleted).toEqual([]);
 
   const pimCreate = new Operations.DataPsmCreateClass();
+  pimCreate.dataPsmNewIri = "http://localhost/class/3";
   const pimCreateChange = store.applyOperation(pimCreate);
   expect(pimCreateChange.operation.iri).toBeDefined();
   expect(pimCreateChange.created).toEqual(["http://localhost/class/3"]);
