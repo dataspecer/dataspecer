@@ -82,6 +82,9 @@ async function writeTransformationBegin(model: XmlTransformation, writer: XmlWri
   if (model.usesWktLiterals || model.usesGmlLiterals) {
     await writer.writeAndRegisterNamespaceDeclaration("gsp", "http://www.opengis.net/ont/geosparql#");
   }
+  if (model.usesGmlLiterals) {
+    await writer.writeAndRegisterNamespaceDeclaration("gml", "http://www.opengis.net/gml/3.2");
+  }
   await writer.writeLocalAttributeValue("version", usesVersion3 ? "3.0" : "2.0");
 
   if (model.targetNamespacePrefix != null) {
@@ -235,9 +238,60 @@ async function writeCommonTemplates(model: XmlTransformation, writer: XmlWriter)
       await writer.writeLocalAttributeValue("name", gmlTransformLiftingTemplateName);
       await writer.writeElementFull(
         "xsl",
-        "value-of",
+        "param",
       )(async (writer) => {
-        await writer.writeLocalAttributeValue("select", "serialize(node(), map{'method':'xml','omit-xml-declaration':true(),'indent':false()})");
+        await writer.writeLocalAttributeValue("name", "wrapper-name");
+        await writer.writeLocalAttributeValue("select", "''");
+      });
+
+      await writer.writeElementFull(
+        "xsl",
+        "choose",
+      )(async (writer) => {
+        await writer.writeElementFull(
+          "xsl",
+          "when",
+        )(async (writer) => {
+          await writer.writeLocalAttributeValue("test", "normalize-space($wrapper-name) != ''");
+
+          await writer.writeElementFull(
+            "xsl",
+            "variable",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("name", "wrapped-gml");
+            await writer.writeElementFull(
+              "xsl",
+              "element",
+            )(async (writer) => {
+              await writer.writeLocalAttributeValue("name", "{$wrapper-name}");
+              await writer.writeElementFull(
+                "xsl",
+                "copy-of",
+              )(async (writer) => {
+                await writer.writeLocalAttributeValue("select", "@*|node()");
+              });
+            });
+          });
+
+          await writer.writeElementFull(
+            "xsl",
+            "value-of",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("select", "serialize($wrapped-gml, map{'method':'xml','omit-xml-declaration':true(),'indent':false()})");
+          });
+        });
+
+        await writer.writeElementFull(
+          "xsl",
+          "otherwise",
+        )(async (writer) => {
+          await writer.writeElementFull(
+            "xsl",
+            "value-of",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("select", "serialize(node(), map{'method':'xml','omit-xml-declaration':true(),'indent':false()})");
+          });
+        });
       });
     });
   }
@@ -773,6 +827,15 @@ async function writeForwardProperty(match: XmlMatch, writer: XmlWriter) {
             "call-template",
           )(async (writer) => {
             await writer.writeLocalAttributeValue("name", gmlTransformLiftingTemplateName);
+            if (match.wrappingElementName != null) {
+              await writer.writeElementFull(
+                "xsl",
+                "with-param",
+              )(async (writer) => {
+                await writer.writeLocalAttributeValue("name", "wrapper-name");
+                await writer.writeLocalAttributeValue("select", `'${writer.getQName(...match.wrappingElementName)}'`);
+              });
+            }
           });
         } else {
           // Copy xml:lang and the value for regular literals.

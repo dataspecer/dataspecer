@@ -75,6 +75,12 @@
   "label regex for value": "Regular expression",
   "label string examples": "String examples",
   "label technical label": "Technical label",
+  "mapping to xml type": {
+    "title": "Mapping to XML type",
+    "gml:BoundingShapeType": "must contain <gml:Envelope> element",
+    "gml:EnvelopeType": "has the same type as <gml:Envelope> element",
+    "gml:GeometryPropertyType": "must contain any geometry element, e.g. <gml:Point>, <gml:Polygon>, etc."
+  },
   "no codelist url": "No codelist URL set",
   "no description": "no description",
   "no label": "no label",

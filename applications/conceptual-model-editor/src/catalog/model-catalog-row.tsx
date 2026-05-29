@@ -7,7 +7,7 @@ import { shortenStringTo } from "../util/utils";
 import { useModelGraphContext } from "../context/model-context";
 import { useEditInput } from "../components/input/edit-input";
 import { ModelTypeIcon } from "../components/model-type-icon";
-import { ColorPicker } from "../features/color-picker";
+import { ColorPicker } from "./components/color-picker";
 import { randomColorFromPalette } from "../util/color-utils";
 import {
   ShowAllClassesFromSemanticModelButton,

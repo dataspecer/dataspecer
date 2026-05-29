@@ -14,7 +14,7 @@ import {
   ClassProfileDialogState,
   createEditClassProfileDialogState,
 } from "../dialog/class-profile/edit-class-profile-dialog-state";
-import { DialogSemanticTracker } from "../dialog/dialog-semantic-tracker";
+import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { createEditClassProfileDialog } from "../dialog/class-profile/edit-class-profile-dialog";
 import {
   classProfileDialogStateToNewCmeClassProfile,

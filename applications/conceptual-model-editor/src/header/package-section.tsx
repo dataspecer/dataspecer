@@ -1,6 +1,6 @@
-import { ManagementButton } from "../components/management/buttons/management-button";
 import { usePackageSectionService } from "./package-section-service";
 import { t } from "../application";
+import { ReactNode } from "react";
 
 export const PackageSection = () => {
   const { packageHasIdentifier, packageLabel, save, saveAndClose } = usePackageSectionService();
@@ -34,5 +34,32 @@ const SavePackageAndLeaveButton = (props: { disabled?: boolean; title?: string; 
     <ManagementButton color="bg-green-600" {...props} withDisabledHelpCursor={true}>
       {t("header.package.save-and-leave")}
     </ManagementButton>
+  );
+};
+
+
+type ManagementButtonPropsType = {
+    children?: ReactNode;
+    disabled?: boolean;
+    color?: string;
+    title?: string;
+    onClick?: () => void;
+    withDisabledHelpCursor?: boolean;
+};
+
+const ManagementButton = (props: ManagementButtonPropsType) => {
+  const { children, title, color, disabled, onClick, withDisabledHelpCursor } = props;
+
+  return (
+    <button
+      className={`mx-0.5 ${color ?? "bg-green-600"} px-1 disabled:opacity-50 ${
+        (withDisabledHelpCursor && "disabled:hover:cursor-help") || ""
+      }`}
+      disabled={disabled}
+      title={title}
+      onClick={onClick}
+    >
+      {children}
+    </button>
   );
 };

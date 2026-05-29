@@ -37,7 +37,7 @@ import { Language } from "@/configuration";
 import {
   associationProfileDialogStateToNewCmeRelationshipProfileWithOverriddenEnds,
 } from "@/dialog/association-profile/edit-association-profile-dialog-state-adapter";
-import { DialogSemanticTracker } from "../dialog/dialog-semantic-tracker";
+import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { LabelResolver } from "../dependency-tracker";
 
 /**

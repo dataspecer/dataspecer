@@ -13,7 +13,7 @@ import {
   AssociationProfileDialogState,
   createEditAssociationProfileDialogState,
 } from "../dialog/association-profile/edit-association-profile-dialog-state";
-import { DialogSemanticTracker } from "../dialog/dialog-semantic-tracker";
+import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { createEditAssociationProfileDialog } from "../dialog/association-profile/edit-association-profile-dialog";
 import {
   associationProfileDialogStateToNewCmeRelationshipProfile,

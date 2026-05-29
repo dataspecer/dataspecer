@@ -6,7 +6,7 @@ import { DialogApiContextType } from "../dialog/dialog-service";
 import { ModelGraphContextType } from "../context/model-context";
 import { Options } from "../application";
 import { ClassDialogState, createEditClassDialogState } from "../dialog/class/edit-class-dialog-state";
-import { DialogSemanticTracker } from "../dialog/dialog-semantic-tracker";
+import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { createEditClassDialog } from "../dialog/class/edit-class-dialog";
 import { classDialogStateToNewCmeClass } from "../dialog/class/edit-class-dialog-state-adapter";
 import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";

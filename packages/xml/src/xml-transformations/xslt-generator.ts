@@ -62,6 +62,8 @@ class XsltGenerator implements ArtefactGenerator {
       transformation =>
         transformation !== structureModelDematerialize
     );
+    // Populate gml geometry must be placed before transformation of primitive types
+    transformations.push(structureModelPopulateSfGeometry);
     transformations.push(structureModelTransformPrimitiveTypes);
     model = transformStructureModel(
       conceptualModel,
@@ -71,11 +73,9 @@ class XsltGenerator implements ArtefactGenerator {
       transformations
     );
 
-    let xmlModel = await structureModelAddXmlProperties(
+    let xmlModel = structureModelAddXmlProperties(
       model, context.reader
     );
-
-    xmlModel = structureModelPopulateSfGeometry(xmlModel);
 
     return await structureModelToXslt(
       context, specification, schemaArtefact, xmlModel

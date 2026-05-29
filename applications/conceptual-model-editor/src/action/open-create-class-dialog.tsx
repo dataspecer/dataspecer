@@ -10,7 +10,7 @@ import { firstInMemorySemanticModel } from "../utilities/model";
 import { addSemanticClassToVisualModelAction } from "./add-class-to-visual-model";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { ClassDialogState, createNewClassDialogState } from "../dialog/class/edit-class-dialog-state";
-import { DialogSemanticTracker } from "../dialog/dialog-semantic-tracker";
+import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { createNewClassDialog } from "../dialog/class/edit-class-dialog";
 import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
 import { classDialogStateToNewCmeClass } from "../dialog/class/edit-class-dialog-state-adapter";

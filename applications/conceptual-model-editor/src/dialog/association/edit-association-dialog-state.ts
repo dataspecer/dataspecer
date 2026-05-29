@@ -18,7 +18,7 @@ import {
   representUndefinedClass,
   sortRepresentatives,
 } from "../utilities/dialog-utilities";
-import { DialogSemanticTracker } from "../dialog-semantic-tracker";
+import { DialogSemanticTracker } from "../../dialog-v2/dialog-semantic-tracker";
 import { semanticModelTrackerToCmeSemanticModel } from "../../dataspecer/cme-model/adapter";
 import { configuration, createLogger } from "../../application";
 import { LabelResolver } from "../../dependency-tracker";

@@ -9,7 +9,7 @@ import {
   AssociationDialogState,
   createEditAssociationDialogState,
 } from "../dialog/association/edit-association-dialog-state";
-import { DialogSemanticTracker } from "../dialog/dialog-semantic-tracker";
+import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { createEditAssociationDialog } from "../dialog/association/edit-association-dialog";
 import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
 import {

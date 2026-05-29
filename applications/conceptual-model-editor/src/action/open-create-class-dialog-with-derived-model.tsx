@@ -12,7 +12,7 @@ import { ClassDialogState } from "../dialog/class/edit-class-dialog-state";
 import { firstInMemorySemanticModel } from "../utilities/model";
 import { CmeReference } from "../dataspecer/cme-model/model";
 import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
-import { DialogSemanticTracker } from "../dialog/dialog-semantic-tracker";
+import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { LabelResolver } from "../dependency-tracker";
 
 export function openCreateClassDialogWithModelDerivedFromClassAction(

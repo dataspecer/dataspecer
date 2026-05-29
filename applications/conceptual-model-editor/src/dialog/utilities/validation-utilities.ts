@@ -16,8 +16,6 @@ export interface ValidationMessage {
 }
 
 export enum Level {
-  INFO = "info",
-  WARNING = "warning",
   ERROR = "error",
 }
 
@@ -34,18 +32,6 @@ export function validationNoProblem(): ValidationState {
   return NO_PROBLEM;
 }
 
-export function validationWarning(
-  message: string, ...args: unknown[]
-): ValidationState {
-  return {
-    message: {
-      level: Level.WARNING,
-      message,
-      args,
-    },
-  };
-}
-
 export function validationError(
   message: string, ...args: unknown[]
 ): ValidationState {
@@ -59,5 +45,5 @@ export function validationError(
 }
 
 export function isValid(state: ValidationState) {
-  return (state?.message?.level ?? Level.INFO) !== Level.ERROR
+  return state?.message?.level !== Level.ERROR
 }

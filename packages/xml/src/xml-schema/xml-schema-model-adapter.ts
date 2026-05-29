@@ -19,7 +19,7 @@ import { XmlStructureModel } from "../xml-structure-model/model/xml-structure-mo
 import { multiplyMaxCardinality, multiplyMinCardinality } from "./utils/cardinality.ts";
 import { buildEntityOriginMap, type EntityOriginMap } from "./utils/entity-origin-map.ts";
 import { getExtensionSchemaPath } from "./xml-schema-generator.ts";
-import { GetReferencedSchemaForGml } from "./gml-support.ts";
+import { GetReferencedSchemaForGml, structureModelMarkGmlLiteralAsReferencing, structureModelPopulateSfGeometry } from "./gml-support.ts";
 import {
   XmlSchema,
   XmlSchemaAnnotation,
@@ -73,8 +73,24 @@ interface ProfilingLevelInfo {
  * todo: We need to do full transformation here including from the conceptual model.
  */
 function prepareStructureModel(rawModel: StructureModel, context: ArtefactGeneratorContext, configuration: DataSpecificationConfiguration): XmlStructureModel {
+  // const conceptualModel = context.conceptualModels[rawModel.specification];
+  // if (conceptualModel) {
+  //   const transformations = [...defaultStructureTransformations];
+  //   transformations.push(structureModelTransformPrimitiveTypes);
+  //   rawModel = transformStructureModel(
+  //     conceptualModel,
+  //     rawModel,
+  //     Object.values(context.specifications),
+  //     null,
+  //     transformations
+  //   );
+  // }
+
   rawModel = structureModelAddDefaultValues(rawModel, configuration);
-  const xmlModel = structureModelAddXmlProperties(rawModel, context.reader);
+  let xmlModel = structureModelAddXmlProperties(rawModel, context.reader);
+
+  xmlModel = structureModelPopulateSfGeometry(xmlModel);
+  xmlModel = structureModelMarkGmlLiteralAsReferencing(xmlModel);
 
   return xmlModel;
 }

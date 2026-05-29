@@ -11,7 +11,7 @@ import { Position } from "../diagram";
 import { ClassDialogState } from "../dialog/class/edit-class-dialog-state";
 import { createNewAssociationDialogState } from "../dialog/association/edit-association-dialog-state";
 import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
-import { DialogSemanticTracker } from "../dialog/dialog-semantic-tracker";
+import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import {
   associationDialogStateToNewCmeRelationship,
 } from "../dialog/association/edit-association-dialog-state-adapter";

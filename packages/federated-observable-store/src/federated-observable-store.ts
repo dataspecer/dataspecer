@@ -2,10 +2,10 @@ import { Entity } from "@dataspecer/core-v2";
 import { CoreOperation, CoreResource, CoreResourceReader } from "@dataspecer/core/core";
 import type { EntityChange, EntityChangeCreated, EntityIdentifier, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
+import { Operation, OperationInModel } from "@dataspecer/core/operation";
 import { ComplexOperation } from "./complex-operation.ts";
 import { FederatedCoreResourceWriter } from "./federated-core-resource-writer.ts";
 import { Resource } from "./resource.ts";
-import { Operation, OperationInModel } from "@dataspecer/core/operation";
 
 /**
  * Callback listening for resource changes.

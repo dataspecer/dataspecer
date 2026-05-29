@@ -9,18 +9,6 @@ export const ValidationMessage = (props: {
     return null;
   }
   switch (message.level) {
-  case Level.INFO:
-    return (
-      <div>
-        {t(message.message, ...message.args)}
-      </div>
-    )
-  case Level.WARNING:
-    return (
-      <div className="text-orange-600">
-        {t(message.message, ...message.args)}
-      </div>
-    )
   case Level.ERROR:
     return (
       <div className="text-red-600">
