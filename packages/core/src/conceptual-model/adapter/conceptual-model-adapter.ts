@@ -1,4 +1,3 @@
-// @ts-ignore
 import {
   ExtendedSemanticModelClass,
   ExtendedSemanticModelRelationship,
@@ -8,6 +7,7 @@ import {
   isSemanticModelRelationship,
   SemanticModelGeneralization,
   SemanticModelRelationship,
+  // @ts-ignore cyclic dependency
 } from "@dataspecer/core-v2/semantic-model/concepts";
 import { OFN } from "../../well-known/index.ts";
 import { ConceptualModel, ConceptualModelClass, ConceptualModelComplexType, ConceptualModelPrimitiveType, ConceptualModelProperty } from "../model/index.ts";
