@@ -1,12 +1,20 @@
 // Generated using copilot
 
 import React, { createContext, useContext, useState } from "react";
-import { startManagerTour } from "../components/driver-tutorial-tours/manager-git-tutorial-tour";
+import { startGitManagerInitialTour } from "../components/driver-tutorial-tours/manager-git-initial-tutorial-tour";
 import type { ReactNode } from "react";
 
+
+export enum ManagerTourType {
+  None,
+  GitInitial,
+  GitMergeStatesAndActions
+}
+
+
 type ManagerTourApi = {
-  startManagerTour: (t: any) => void;
-  isManagerTourOn: boolean;
+  startManagerTour: (t: any, managerTourType: ManagerTourType) => void;
+  managerGitTourType: ManagerTourType;
   managerTourStep: number;
   setManagerTourStep: React.Dispatch<React.SetStateAction<number>>;
 };
@@ -14,19 +22,19 @@ type ManagerTourApi = {
 const ManagerTourContext = createContext<ManagerTourApi | undefined>(undefined);
 
 export const ManagerTourProvider = ({ children }: { children: ReactNode }) => {
-  const [isManagerTourOn, setIsManagerTourOn] = useState(false);
+  const [managerGitTourType, setManagerGitTourType] = useState<ManagerTourType>(ManagerTourType.None);
   const [managerTourStep, setManagerTourStep] = useState(0);
 
-  const startManagerTourWrapper = (t: any) => {
-    setIsManagerTourOn(true);
-    startManagerTour(t, setManagerTourStep, () => {
-      setIsManagerTourOn(false);
+  const startManagerTourWrapper = (t: any, managerTourType: ManagerTourType) => {
+    setManagerGitTourType(managerTourType);
+    startGitManagerInitialTour(t, setManagerTourStep, () => {
+      setManagerGitTourType(ManagerTourType.None);
       setManagerTourStep(0);
     });
   };
 
   return (
-    <ManagerTourContext.Provider value={{ startManagerTour: startManagerTourWrapper, isManagerTourOn, managerTourStep, setManagerTourStep }}>
+    <ManagerTourContext.Provider value={{ startManagerTour: startManagerTourWrapper, managerTourStep, setManagerTourStep, managerGitTourType }}>
       {children}
     </ManagerTourContext.Provider>
   );

@@ -36,7 +36,7 @@ import { useLogin, UseLoginType } from "./hooks/use-login";
 import { GitProvider, GitRef, isGitUrlSet, PACKAGE_ROOT, PullRequestInvolvingUserFetchResponse } from "@dataspecer/git";
 import { GitProviderFactory } from "@dataspecer/git/git-providers";
 import { manualPull, trySetPackageAsUpToDate, switchRepresentsBranchHead } from "./utils/git-fetch-related-actions";
-import ResourceTooltip from "./components/git-tooltip";
+import ResourceGitInfoTooltip from "./components/git-tooltip";
 import { CreateMergeStateCausedByMergeDialog } from "./dialog/open-merge-state";
 import { PackageListDialog } from "./dialog/package-list-dialog";
 import { DeleteGitRepoDialog } from "./dialog/remove-git-repo-dialog";
@@ -45,7 +45,7 @@ import { GitPrsListDialog } from "./dialog/list-git-prs-for-branch";
 import { GitIssuesListDialog } from "./dialog/list-git-issues";
 import { createNewTabAndOpen } from "./dialog/advanced-sign-in";
 import { TourRow } from "./components/driver-tutorial-tours/manager-row-tour-copy";
-import { ManagerTourProvider, useManagerTour } from "./manager-git-tour-context/manager-tour-context";
+import { ManagerTourProvider, ManagerTourType, useManagerTour } from "./manager-git-tour-context/manager-tour-context";
 
 
 export function lng(text: LanguageString | undefined): string | undefined {
@@ -212,7 +212,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
           {
             !isGitUrlSet(resource.linkedGitRepositoryURL) ?
               null :
-              <ResourceTooltip resource={resource} side="right">
+              <ResourceGitInfoTooltip resource={resource} side="right">
                 <div className="flex pl-4 pr-2 w-20 -mt-1">
                   {gitPart}
                   {
@@ -221,7 +221,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
                       <TagIcon className="w-4 h-4 pl-0.5 mt-1" />
                   }
                 </div>
-              </ResourceTooltip>
+              </ResourceGitInfoTooltip>
           }
           {
             !isGitUrlSet(resource.linkedGitRepositoryURL) ?
@@ -363,7 +363,8 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
                   {hasSetRemoteRepository && <DropdownMenuItem onClick={() => openModal(ListMergeStatesDialog, { iri })}><EyeIcon className="mr-2 h-4 w-4" />Show merge states</DropdownMenuItem>}
                   {hasSetRemoteRepository && <DropdownMenuItem onClick={() => setPackageGitFilter(resource.projectIri)}><Filter className="mr-2 h-4 w-4" />Show same repository projects</DropdownMenuItem>}
                   {hasSetRemoteRepository && <hr className="border-gray-300" />}
-                  {hasSetRemoteRepository && <Button variant="default" size={"sm"} className="shrink-0 ml-4" onClick={() => startManagerTour(t)}><LightbulbIcon className="mr-2 h-4 w-4" />TODO RadStr: Start tour</Button>}
+                  {hasSetRemoteRepository && <DropdownMenuItem onClick={() => startManagerTour(t, ManagerTourType.GitInitial)}><LightbulbIcon className="mr-2 h-4 w-4" />Guide - Git basics</DropdownMenuItem>}
+                  {hasSetRemoteRepository && <DropdownMenuItem onClick={() => startManagerTour(t, ManagerTourType.GitMergeStatesAndActions)}><LightbulbIcon className="mr-2 h-4 w-4" />Guide - Git actions + merge states</DropdownMenuItem>}
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
             }
@@ -467,7 +468,7 @@ function RootPackage({iri, defaultToggle, login, signedInUserPullRequests}: {iri
   const pckg = resources[iri];
   const {t} = useTranslation();
   // Manager tour state comes from context to avoid prop drilling.
-  const { isManagerTourOn, managerTourStep } = useManagerTour();
+  const { managerTourStep, managerGitTourType } = useManagerTour();
 
   // Whether the package is open or not
   const [isOpen, setIsOpen] = useState<boolean>(defaultToggle ?? true);
@@ -524,16 +525,15 @@ function RootPackage({iri, defaultToggle, login, signedInUserPullRequests}: {iri
       <Button variant="default" size={"sm"} className="shrink-0 ml-4" onClick={() => openModal(ProjectWizard, {iri})}><WandSparkles className="mr-2 h-4 w-4" /> {t("project-wizard")}</Button>
     </div>
     {isOpen &&
-      isManagerTourOn ?
+      managerGitTourType !== ManagerTourType.None ?
         <ul>
           {["1", "2"].map((iri, index, _array) => {
             const isFirstRow = index === 0;
-            const tourIri = `unique-iri-${iri}`;
             return <TourRow
               isFirstRow={isFirstRow}
               tourStep={managerTourStep}
-              iri={tourIri}
-              key={tourIri}
+              iri={iri}
+              key={iri}
               packageGitFilter={packageGitFilter}
               setPackageGitFilter={setPackageGitFilter}
             />;

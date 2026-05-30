@@ -11,7 +11,7 @@ import { ModelIcon, modelTypeToName } from "@/known-models";
 import React from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { isGitUrlSet } from "@dataspecer/git";
-import ResourceTooltip from "../git-tooltip";
+import ResourceGitInfoTooltip from "../git-tooltip";
 import { ManagerRowType, useSortIris } from "@/Dir";
 import { useManagerTour } from "@/manager-git-tour-context/manager-tour-context";
 import { ResourceWithIris } from "@/package";
@@ -23,9 +23,14 @@ type ManagerTourRowType = Omit<ManagerRowType & {
 }, "isSignedIn" | "signedInUserPullRequests" | "underRootIri" | "parentIri">;
 
 export const TourRow = ({ iri, isFirstRow, tourStep, packageGitFilter, setPackageGitFilter }: ManagerTourRowType) => {
+  const getTourId = (element: string) => {
+    const tourId = `${element}-${iri}`;
+    return tourId;
+  };
+
   const resource: ResourceWithIris = {
     activeMergeStateCount: 0,
-    branch: "main",
+    branch: isFirstRow ? "main" : "feature-branch",
     hasUncommittedChanges: false,
     iri: iri,
     lastCommitHash: "abc123",
@@ -68,22 +73,20 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
 
   let gitPart: React.ReactNode;
   // We put all of the Git stuff in <a> to show that the url at the bottom left
-  if (resource.activeMergeStateCount !== 0) {
-    gitPart = <a onClick={(e) => {e.preventDefault();}} href={resource.linkedGitRepositoryURL} className="text-red-500 pt-1 flex flex-1 flex-row cursor-pointer">GIT<AlertTriangleIcon className="w-4 h-4 ml-0.75 mt-1"/>
+  if (managerTourStep === 6) {
+    gitPart = <div id={getTourId("manager-git-status-indicator")} onClick={(e) => {e.preventDefault();}} className="text-red-500 pt-1 flex flex-1 flex-row cursor-pointer">GIT<AlertTriangleIcon className="w-4 h-4 ml-0.75 mt-1"/>
       <sup className="pt-2">{prInfo}</sup>
-    </a>;
+    </div>;
+  }
+  else if (managerTourStep === 5) {
+    gitPart = <div id={getTourId("manager-git-status-indicator")} onClick={(e) => {e.preventDefault();}} className="text-yellow-400 pt-1 flex flex-1 flex-row cursor-pointer">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/>
+      <sup className="pt-2">{prInfo}</sup>
+    </div>;
   }
   else {
-    if (resource.hasUncommittedChanges) {
-      gitPart = <a onClick={(e) => {e.preventDefault();}} href={resource.linkedGitRepositoryURL} className="text-yellow-400 pt-1 flex flex-1 flex-row cursor-pointer">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/>
-        <sup className="pt-2">{prInfo}</sup>
-      </a>;
-    }
-    else {
-      gitPart = <a onClick={(e) => {e.preventDefault();}} href={resource.linkedGitRepositoryURL} className="text-green-400 pt-1 flex flex-1 flex-row cursor-pointer">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/>
-        <sup className="pt-2">{prInfo}</sup>
-      </a>;
-    }
+    gitPart = <div id={getTourId("manager-git-status-indicator")} onClick={(e) => {e.preventDefault();}} className="text-green-400 pt-1 flex flex-1 flex-row cursor-pointer">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/>
+      <sup className="pt-2">{prInfo}</sup>
+    </div>;
   }
 
   return <li className="first:border-y last:border-none border-b">
@@ -111,13 +114,13 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
           <span className="truncate w-[6cm]">
             {getValidTime(resource.metadata?.modificationDate) && t("changed", {val: new Date(resource.metadata?.modificationDate!)})}
           </span>
-          <span className="truncate w-[5cm]" title={"IRI: " + resource.iri}>
-            {resource.iri}
+          <span id={getTourId("manager-git-unique-iri-label")} className="truncate w-[5cm]" title={"IRI: " + resource.iri}>
+            {"This-is-unique-IRI-" + resource.iri}
           </span>
           {
             !isGitUrlSet(resource.linkedGitRepositoryURL) ?
               null :
-              <ResourceTooltip resource={resource} side="right">
+              <ResourceGitInfoTooltip resource={resource} side="right" shouldBeOpen={isFirstRow && managerTourStep >= 4 && managerTourStep <= 10}>
                 <div className="flex pl-4 pr-2 w-20 -mt-1">
                   {gitPart}
                   {
@@ -126,7 +129,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
                       <TagIcon className="w-4 h-4 pl-0.5 mt-1" />
                   }
                 </div>
-              </ResourceTooltip>
+              </ResourceGitInfoTooltip>
           }
           {
             !isGitUrlSet(resource.linkedGitRepositoryURL) ?
@@ -134,10 +137,10 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
                 {resource.projectIri}
               </span> :
               <>
-                <span className="truncate px-2 w-[2.5cm]" title={"Project IRI: " + resource.projectIri}>
+                <span id={getTourId("manager-git-project-iri-label")} className="truncate px-2 w-[6.5cm]" title={"Project IRI: " + resource.projectIri}>
                   {resource.projectIri}
                 </span>
-                <span className="truncate px-2 w-[4cm]" title={"Branch name: " + resource.branch}>
+                <span id={getTourId("manager-git-branch-label")} className="truncate px-2 w-[4cm]" title={"Branch name: " + resource.branch}>
                   {resource.branch}
                 </span>
               </>
@@ -230,7 +233,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
       { (resource.types.includes(LOCAL_PACKAGE)) ?
         <DropdownMenu open={isFirstRow}>
           <DropdownMenuTrigger asChild>
-            <Button id="manager-git-actions-button" variant="ghost" size="icon" className="shrink-0">
+            <Button id={getTourId("manager-git-actions-button")} variant="ghost" size="icon" className="shrink-0">
               <EllipsisVertical className="h-4 w-4" /><p className="text-xs">Git</p>
             </Button>
           </DropdownMenuTrigger>
@@ -240,28 +243,29 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
               !hasSetRemoteRepository ? null :
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
-                  <div id="manager-git-show-submenu-trigger" className="flex flex-1 flex-row"><Eye className="h-4 w-4 mt-0.75 mr-2" />Show</div>
+                  <div id={getTourId("manager-git-show-submenu-trigger")} className="flex flex-1 flex-row"><Eye className="h-4 w-4 mt-0.75 mr-2" />Show</div>
                 </DropdownMenuSubTrigger>
 
                 <DropdownMenuSubContent className="data-[side=top]">
-                  {<DropdownMenuItem id="manager-tour-git-show-branch-item" onClick={() => {}}><Eye className="mr-2 h-4 w-4" />Show {resource.representsBranchHead ? "branch" : "commit"} on GitHub</DropdownMenuItem>}
-                  {<DropdownMenuItem id="manager-tour-git-show-pages-item" onClick={() => {}}><Eye className="mr-2 h-4 w-4" />Show {"GitHub Pages"}</DropdownMenuItem>}
-                  {<DropdownMenuItem id="manager-tour-git-history-item" onClick={() => {}}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>}
+                  {<DropdownMenuItem id={getTourId("manager-tour-git-show-branch-item")} onClick={() => {}}><Eye className="mr-2 h-4 w-4" />Show {resource.representsBranchHead ? "branch" : "commit"} on GitHub</DropdownMenuItem>}
+                  {<DropdownMenuItem id={getTourId("manager-tour-git-show-pages-item")} onClick={() => {}}><Eye className="mr-2 h-4 w-4" />Show {"GitHub Pages"}</DropdownMenuItem>}
+                  {<DropdownMenuItem id={getTourId("manager-tour-git-history-item")} onClick={() => {}}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>}
                   {<hr className="border-gray-300" />}
-                  {<DropdownMenuItem id="manager-tour-git-active-prs-item" onClick={() => {}}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Active PRs</DropdownMenuItem>}
-                  {<DropdownMenuItem id="manager-tour-git-active-prs-branch-item" onClick={() => {}}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Active PRs for branch</DropdownMenuItem>}
-                  {<DropdownMenuItem id="manager-tour-git-active-issues-item" onClick={() => {}}><BugIcon className="mr-2 h-4 w-4" />Active issues</DropdownMenuItem>}
+                  {<DropdownMenuItem id={getTourId("manager-tour-git-active-prs-item")} onClick={() => {}}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Active PRs</DropdownMenuItem>}
+                  {<DropdownMenuItem id={getTourId("manager-tour-git-active-prs-branch-item")} onClick={() => {}}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Active PRs for branch</DropdownMenuItem>}
+                  {<DropdownMenuItem id={getTourId("manager-tour-git-active-issues-item")} onClick={() => {}}><BugIcon className="mr-2 h-4 w-4" />Active issues</DropdownMenuItem>}
                   {<hr className="border-gray-300" />}
-                  {<DropdownMenuItem id="manager-tour-git-show-merge-states-item" onClick={() => {}}><EyeIcon className="mr-2 h-4 w-4" />Show merge states</DropdownMenuItem>}
-                  {<DropdownMenuItem id="manager-tour-git-show-same-repo-item" onClick={() => {}}><Filter className="mr-2 h-4 w-4" />Show same repository projects</DropdownMenuItem>}
-                  {hasSetRemoteRepository && <hr className="border-gray-300" />}
-                  {hasSetRemoteRepository && <Button variant="default" size={"sm"} className="shrink-0 ml-4" onClick={() => {}}><LightbulbIcon className="mr-2 h-4 w-4" />TODO RadStr: Start tour</Button>}
+                  {<DropdownMenuItem id={getTourId("manager-tour-git-show-merge-states-item")} onClick={() => {}}><EyeIcon className="mr-2 h-4 w-4" />Show merge states</DropdownMenuItem>}
+                  {<DropdownMenuItem id={getTourId("manager-tour-git-show-same-repo-item")} onClick={() => {}}><Filter className="mr-2 h-4 w-4" />Show same repository projects</DropdownMenuItem>}
+                  <hr className="border-gray-300" />
+                  <DropdownMenuItem onClick={() => {}}><LightbulbIcon className="mr-2 h-4 w-4" />Guide me through Git</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {}}><LightbulbIcon className="mr-2 h-4 w-4" />Guide - Git actions + merge states</DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
             }
             {/* Git perform actions */}
             <DropdownMenuSub open={isFirstRow}>
-              <DropdownMenuSubTrigger id="manager-git-actions-submenu-trigger">
+              <DropdownMenuSubTrigger id={getTourId("manager-git-actions-submenu-trigger")}>
                 <div className="flex flex-1 flex-row"><GitCommit className="h-4 w-4 mt-0.75 mr-2" />Actions</div>
               </DropdownMenuSubTrigger>
 
@@ -270,19 +274,18 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
                 {/* {hasSetRemoteRepository && <DropdownMenuItem onClick={() => debugClearMergeStateDBTable()}><ShieldQuestion className="mr-2 h-4 w-4" />DEBUG - Clear merge db state table</DropdownMenuItem>} */}
                 {<DropdownMenuItem title={tooltipForSetUpToDateMenuItem} onClick={() => {}}><TimerResetIcon className="mr-2 h-4 w-4" />Verify status of local changes</DropdownMenuItem>}
                 {<hr className="border-gray-300" />}
-                {<DropdownMenuItem id="manager-tour-git-create-remote-repo-item" onClick={() => {}}><GitPullRequestIcon className="mr-2 h-4 w-4" />Create remote repository</DropdownMenuItem>}
-                {<DropdownMenuItem id="manager-tour-git-link-existing-item" onClick={() => {}}><Link className="mr-2 h-4 w-4" />Link to remote repository</DropdownMenuItem>}
-                {<DropdownMenuItem id="manager-tour-git-action-commit-item" onClick={() => {}}><GitCommit className="mr-2 h-4 w-4" />Commit</DropdownMenuItem>}
-                {<DropdownMenuItem id="manager-tour-git-action-pull-item" onClick={() => {}}><Import className="mr-2 h-4 w-4" />Pull</DropdownMenuItem>}
-                {<DropdownMenuItem id="manager-tour-git-configure-item" onClick={() => {}}><Pencil className="mr-2 h-4 w-4" />Configure Git</DropdownMenuItem>}
+                {<DropdownMenuItem id={getTourId("manager-tour-git-create-remote-repo-item")} onClick={() => {}}><GitPullRequestIcon className="mr-2 h-4 w-4" />Create remote repository</DropdownMenuItem>}
+                {<DropdownMenuItem id={getTourId("manager-tour-git-link-existing-item")} onClick={() => {}}><Link className="mr-2 h-4 w-4" />Link to remote repository</DropdownMenuItem>}
+                {<DropdownMenuItem id={getTourId("manager-tour-git-action-commit-item")} onClick={() => {}}><GitCommit className="mr-2 h-4 w-4" />Commit</DropdownMenuItem>}
+                {<DropdownMenuItem id={getTourId("manager-tour-git-action-pull-item")} onClick={() => {}}><Import className="mr-2 h-4 w-4" />Pull</DropdownMenuItem>}
+                {<DropdownMenuItem id={getTourId("manager-tour-git-configure-item")} onClick={() => {}}><Pencil className="mr-2 h-4 w-4" />Configure Git</DropdownMenuItem>}
                 {<hr className="border-gray-300" />}
-                {<DropdownMenuItem id="manager-tour-git-create-branch-item" onClick={() => {}}><GitBranchPlus className="mr-2 h-4 w-4" />Create branch</DropdownMenuItem>}
-                {<DropdownMenuItem id="manager-tour-git-merge-item" onClick={() => {}}><GitMerge className="mr-2 h-4 w-4"/>Merge - Choose merge from</DropdownMenuItem>}
+                {<DropdownMenuItem id={getTourId("manager-tour-git-create-branch-item")} onClick={() => {}}><GitBranchPlus className="mr-2 h-4 w-4" />Create branch</DropdownMenuItem>}
+                {<DropdownMenuItem id={getTourId("manager-tour-git-merge-item")} onClick={() => {}}><GitMerge className="mr-2 h-4 w-4"/>Merge - Choose merge from</DropdownMenuItem>}
                 {<hr className="border-gray-300" />}
-                {<DropdownMenuItem id="manager-tour-git-convert-item" onClick={() => {}}><ArrowLeftRight className="mr-2 h-4 w-4" /> Convert to {resource.representsBranchHead ? "tag" : "branch"}</DropdownMenuItem>}
+                {<DropdownMenuItem id={getTourId("manager-tour-git-convert-item")} onClick={() => {}}><ArrowLeftRight className="mr-2 h-4 w-4" /> Convert to {resource.representsBranchHead ? "tag" : "branch"}</DropdownMenuItem>}
                 {<hr className="border-gray-300" />}
-                {<DropdownMenuItem id="manager-tour-git-delete-item" className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={() => {}}><Trash2 className="mr-2 h-4 w-4" />Delete Git repository</DropdownMenuItem>}
-                {<DropdownMenuItem id="manager-tour-git-delete-item" className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={() => {}}><Trash2 className="mr-2 h-4 w-4" />{managerTourStep}</DropdownMenuItem>}
+                {<DropdownMenuItem id={getTourId("manager-tour-git-delete-item")} className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={() => {}}><Trash2 className="mr-2 h-4 w-4" />Delete Git repository</DropdownMenuItem>}
               </DropdownMenuSubContent>
             </DropdownMenuSub>
           </DropdownMenuContent>

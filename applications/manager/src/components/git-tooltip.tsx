@@ -9,43 +9,45 @@ interface ResourceTooltipProps {
   resource: ResourceWithIris; // <-- replace this with your actual type
   side: "left" | "right";
   children: React.ReactNode;
+  shouldBeOpen?: boolean;     // This prop is used for tour functionality - to open the tooltip even without pointing
 }
 
 
-export default function ResourceTooltip({ resource, side, children }: ResourceTooltipProps) {
+export default function ResourceGitInfoTooltip({ resource, side, shouldBeOpen, children }: ResourceTooltipProps) {
   const { t } = useTranslation();
 
   return (
     <TooltipProvider delayDuration={80}>
-      <Tooltip>
+      <Tooltip open={shouldBeOpen}>
         <TooltipTrigger asChild>
           {children}
         </TooltipTrigger>
 
         <TooltipContent
+          id="git-tooltip-manager-all"
           side={side}
         >
-          <div>
+          <div id="git-tooltip-manager-has-uncommitted-changes">
             <strong>{t("git-tooltip.has-uncommitted-changes")}</strong>{" "}
             {resource.hasUncommittedChanges ? t("git-tooltip.yes") : t("git-tooltip.no")}
           </div>
-          <div>
+          <div id="git-tooltip-manager-active-merge-state-count">
             <strong>{t("git-tooltip.active-merge-state-count")}</strong>{" "}
             {resource.activeMergeStateCount}
           </div>
-          <div>
+          <div id="git-tooltip-manager-project-iri">
             <strong>{t("git-tooltip.project-iri")}</strong>{" "}
             {resource.projectIri}
           </div>
-          <div>
+          <div id="git-tooltip-manager-branch-or-commit">
             <strong>{resource.representsBranchHead ? t("git-tooltip.branch") : t("git-tooltip.commit")}</strong>
             : {resource.branch}
           </div>
-          <div>
+          <div id="git-tooltip-manager-type">
             <strong>{t("git-tooltip.type")}</strong>{" "}
             {resource.representsBranchHead ? t("git-tooltip.branch") : t("git-tooltip.commit")}
           </div>
-          <div>
+          <div id="git-tooltip-manager-tracked-commit-hash">
             <strong>{t("git-tooltip.tracked-commit-inside-dataspecer")}</strong>{" "}
             {resource.lastCommitHash.substring(0, 10)}
           </div>
