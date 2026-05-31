@@ -73,12 +73,12 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
 
   let gitPart: React.ReactNode;
   // We put all of the Git stuff in <a> to show that the url at the bottom left
-  if (managerTourStep === 6) {
+  if (managerTourStep === 14) {
     gitPart = <div id={getTourId("manager-git-status-indicator")} onClick={(e) => {e.preventDefault();}} className="text-red-500 pt-1 flex flex-1 flex-row cursor-pointer">GIT<AlertTriangleIcon className="w-4 h-4 ml-0.75 mt-1"/>
       <sup className="pt-2">{prInfo}</sup>
     </div>;
   }
-  else if (managerTourStep === 5) {
+  else if (managerTourStep === 13) {
     gitPart = <div id={getTourId("manager-git-status-indicator")} onClick={(e) => {e.preventDefault();}} className="text-yellow-400 pt-1 flex flex-1 flex-row cursor-pointer">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/>
       <sup className="pt-2">{prInfo}</sup>
     </div>;
@@ -120,7 +120,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
           {
             !isGitUrlSet(resource.linkedGitRepositoryURL) ?
               null :
-              <ResourceGitInfoTooltip resource={resource} side="right" shouldBeOpen={isFirstRow && managerTourStep >= 4 && managerTourStep <= 10}>
+              <ResourceGitInfoTooltip resource={resource} side="right" shouldBeOpen={isFirstRow && managerTourStep >= 5 && managerTourStep <= 11}>
                 <div className="flex pl-4 pr-2 w-20 -mt-1">
                   {gitPart}
                   {
@@ -247,19 +247,19 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
                 </DropdownMenuSubTrigger>
 
                 <DropdownMenuSubContent className="data-[side=top]">
-                  {<DropdownMenuItem id={getTourId("manager-tour-git-show-branch-item")} onClick={() => {}}><Eye className="mr-2 h-4 w-4" />Show {resource.representsBranchHead ? "branch" : "commit"} on GitHub</DropdownMenuItem>}
-                  {<DropdownMenuItem id={getTourId("manager-tour-git-show-pages-item")} onClick={() => {}}><Eye className="mr-2 h-4 w-4" />Show {"GitHub Pages"}</DropdownMenuItem>}
-                  {<DropdownMenuItem id={getTourId("manager-tour-git-history-item")} onClick={() => {}}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>}
-                  {<hr className="border-gray-300" />}
-                  {<DropdownMenuItem id={getTourId("manager-tour-git-active-prs-item")} onClick={() => {}}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Active PRs</DropdownMenuItem>}
-                  {<DropdownMenuItem id={getTourId("manager-tour-git-active-prs-branch-item")} onClick={() => {}}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Active PRs for branch</DropdownMenuItem>}
-                  {<DropdownMenuItem id={getTourId("manager-tour-git-active-issues-item")} onClick={() => {}}><BugIcon className="mr-2 h-4 w-4" />Active issues</DropdownMenuItem>}
-                  {<hr className="border-gray-300" />}
-                  {<DropdownMenuItem id={getTourId("manager-tour-git-show-merge-states-item")} onClick={() => {}}><EyeIcon className="mr-2 h-4 w-4" />Show merge states</DropdownMenuItem>}
-                  {<DropdownMenuItem id={getTourId("manager-tour-git-show-same-repo-item")} onClick={() => {}}><Filter className="mr-2 h-4 w-4" />Show same repository projects</DropdownMenuItem>}
-                  <hr className="border-gray-300" />
                   <DropdownMenuItem onClick={() => {}}><LightbulbIcon className="mr-2 h-4 w-4" />Guide me through Git</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => {}}><LightbulbIcon className="mr-2 h-4 w-4" />Guide - Git actions + merge states</DropdownMenuItem>
+                  <hr className="border-gray-300" />
+                  <DropdownMenuItem id={getTourId("manager-tour-git-show-branch-item")} onClick={() => {}}><Eye className="mr-2 h-4 w-4" />Show {resource.representsBranchHead ? "branch" : "commit"} on GitHub</DropdownMenuItem>
+                  <DropdownMenuItem id={getTourId("manager-tour-git-show-pages-item")} onClick={() => {}}><Eye className="mr-2 h-4 w-4" />Show {"GitHub Pages"}</DropdownMenuItem>
+                  <DropdownMenuItem id={getTourId("manager-tour-git-history-item")} onClick={() => {}}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>
+                  <hr className="border-gray-300" />
+                  <DropdownMenuItem id={getTourId("manager-tour-git-active-prs-item")} onClick={() => {}}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Active PRs</DropdownMenuItem>
+                  <DropdownMenuItem id={getTourId("manager-tour-git-active-prs-branch-item")} onClick={() => {}}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Active PRs for branch</DropdownMenuItem>
+                  <DropdownMenuItem id={getTourId("manager-tour-git-active-issues-item")} onClick={() => {}}><BugIcon className="mr-2 h-4 w-4" />Active issues</DropdownMenuItem>
+                  <hr className="border-gray-300" />
+                  <DropdownMenuItem id={getTourId("manager-tour-git-show-merge-states-item")} onClick={() => {}}><EyeIcon className="mr-2 h-4 w-4" />Show merge states</DropdownMenuItem>
+                  <DropdownMenuItem id={getTourId("manager-tour-git-show-same-repo-item")} onClick={() => {}}><Filter className="mr-2 h-4 w-4" />Show same repository projects</DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
             }
@@ -272,7 +272,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
               <DropdownMenuSubContent className="data-[side=top]">
                 {/* TODO RadStr: For debug/migration */}
                 {/* {hasSetRemoteRepository && <DropdownMenuItem onClick={() => debugClearMergeStateDBTable()}><ShieldQuestion className="mr-2 h-4 w-4" />DEBUG - Clear merge db state table</DropdownMenuItem>} */}
-                {<DropdownMenuItem title={tooltipForSetUpToDateMenuItem} onClick={() => {}}><TimerResetIcon className="mr-2 h-4 w-4" />Verify status of local changes</DropdownMenuItem>}
+                {<DropdownMenuItem id={getTourId("manager-tour-git-verify-changes")} title={tooltipForSetUpToDateMenuItem} onClick={() => {}}><TimerResetIcon className="mr-2 h-4 w-4" />Verify status of local changes</DropdownMenuItem>}
                 {<hr className="border-gray-300" />}
                 {<DropdownMenuItem id={getTourId("manager-tour-git-create-remote-repo-item")} onClick={() => {}}><GitPullRequestIcon className="mr-2 h-4 w-4" />Create remote repository</DropdownMenuItem>}
                 {<DropdownMenuItem id={getTourId("manager-tour-git-link-existing-item")} onClick={() => {}}><Link className="mr-2 h-4 w-4" />Link to remote repository</DropdownMenuItem>}

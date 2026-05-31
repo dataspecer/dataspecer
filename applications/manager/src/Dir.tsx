@@ -352,6 +352,9 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
                 </DropdownMenuSubTrigger>
 
                 <DropdownMenuSubContent className="data-[side=top]">
+                  {hasSetRemoteRepository && <DropdownMenuItem onClick={() => startManagerTour(t, ManagerTourType.GitInitial)}><LightbulbIcon className="mr-2 h-4 w-4" />Guide - Git basics</DropdownMenuItem>}
+                  {hasSetRemoteRepository && <DropdownMenuItem onClick={() => startManagerTour(t, ManagerTourType.GitMergeStatesAndActions)}><LightbulbIcon className="mr-2 h-4 w-4" />Guide - Git actions + merge states</DropdownMenuItem>}
+                  {hasSetRemoteRepository && <hr className="border-gray-300" />}
                   {hasSetRemoteRepository && <DropdownMenuItem onClick={() => createNewTabAndOpen(gitProvider === null ? "" : gitProvider.createGitRepositoryURL(repositoryOwner!, repositoryName!, gitRef!))}><Eye className="mr-2 h-4 w-4" />Show {resource.representsBranchHead ? "branch" : "commit"} on GitHub</DropdownMenuItem>}
                   {hasSetRemoteRepository && <DropdownMenuItem onClick={() => createNewTabAndOpen(gitProvider === null ? "" : gitProvider.getGitPagesURL(resource.linkedGitRepositoryURL))}><Eye className="mr-2 h-4 w-4" />Show {gitProvider?.getProviderSpecificLabel("GitHub Pages")}</DropdownMenuItem>}
                   {hasSetRemoteRepository && <DropdownMenuItem onClick={async () => gitHistoryVisualizationOnClickHandler(openModal, resource, resources)}><GitGraph className="mr-2 h-4 w-4" />Git history visualization</DropdownMenuItem>}
@@ -362,9 +365,6 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
                   {hasSetRemoteRepository && <hr className="border-gray-300" />}
                   {hasSetRemoteRepository && <DropdownMenuItem onClick={() => openModal(ListMergeStatesDialog, { iri })}><EyeIcon className="mr-2 h-4 w-4" />Show merge states</DropdownMenuItem>}
                   {hasSetRemoteRepository && <DropdownMenuItem onClick={() => setPackageGitFilter(resource.projectIri)}><Filter className="mr-2 h-4 w-4" />Show same repository projects</DropdownMenuItem>}
-                  {hasSetRemoteRepository && <hr className="border-gray-300" />}
-                  {hasSetRemoteRepository && <DropdownMenuItem onClick={() => startManagerTour(t, ManagerTourType.GitInitial)}><LightbulbIcon className="mr-2 h-4 w-4" />Guide - Git basics</DropdownMenuItem>}
-                  {hasSetRemoteRepository && <DropdownMenuItem onClick={() => startManagerTour(t, ManagerTourType.GitMergeStatesAndActions)}><LightbulbIcon className="mr-2 h-4 w-4" />Guide - Git actions + merge states</DropdownMenuItem>}
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
             }

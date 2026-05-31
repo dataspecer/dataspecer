@@ -16,7 +16,7 @@ export function startGitManagerInitialTour(_t: TFunction<"translation", undefine
     {
       element: getTourId("manager-git-unique-iri-label"),
       popover: {
-        title: "Hi, this tour will guide you through Git related functionality ",
+        title: "This tour will guide you through Git related functionality ",
         description: "You can use left and right arrow to navigate through steps.",
       },
       onHighlighted: () => {},
@@ -38,6 +38,14 @@ export function startGitManagerInitialTour(_t: TFunction<"translation", undefine
       onHighlighted: () => {},
     },
     {
+      element: getTourId("manager-git-branch-label"),
+      popover: {
+        title: "Git branch",
+        description: "The represented Git branch.<br/><br/>Note that the branch does not have to exist on remote.",
+      },
+      onHighlighted: () => {},
+    },
+    {
       element: getTourId("manager-git-status-indicator"),
       popover: {
         title: "Git status",
@@ -46,10 +54,10 @@ export function startGitManagerInitialTour(_t: TFunction<"translation", undefine
       onHighlighted: () => {},
     },
     {
-      element: "#git-tooltip-manager-all",
+      element: getTourId("manager-git-status-indicator"),
       popover: {
-        title: "Project IRI",
-        description: "The Git project identifier for this resource within the repository.",
+        title: "Git status tooltip",
+        description: "Pointing at the 'Git' renders the tooltip seen at right.",
       },
       onHighlighted: () => {},
     },
@@ -57,7 +65,15 @@ export function startGitManagerInitialTour(_t: TFunction<"translation", undefine
       element: "#git-tooltip-manager-has-uncommitted-changes",
       popover: {
         title: "Uncommitted changes",
-        description: "Indicates whether the current resource has local changes that are not yet committed.",
+        description: "Indicates whether the dataspec has local not yet committed changes.",
+      },
+      onHighlighted: () => {},
+    },
+    {
+      element: getTourId("manager-tour-git-verify-changes"),
+      popover: {
+        title: "Verify changes",
+        description: "If you undid all changes, click this button.<br/><br/>It validates whether the dataspec really has uncommitted changes.",
       },
       onHighlighted: () => {},
     },
@@ -65,31 +81,23 @@ export function startGitManagerInitialTour(_t: TFunction<"translation", undefine
       element: "#git-tooltip-manager-active-merge-state-count",
       popover: {
         title: "Merge state count",
-        description: "Shows how many merge states are currently active for this resource.",
+        description: "Shows how many merge states are currently active for this resource.<br/><br/>Merge states are explained in a separate tour together with Git actions.",
       },
       onHighlighted: () => {},
     },
     {
       element: "#git-tooltip-manager-project-iri",
       popover: {
-        title: "Project IRI",
-        description: "The Git project identifier for this resource within the repository.",
-      },
-      onHighlighted: () => {},
-    },
-    {
-      element: "#git-tooltip-manager-branch-or-commit",
-      popover: {
-        title: "Branch or commit",
-        description: "Displays whether this resource represents a branch head or a specific commit and the branch/commit name.",
+        title: "Full project IRI",
+        description: "Explained earlier.",
       },
       onHighlighted: () => {},
     },
     {
       element: "#git-tooltip-manager-type",
       popover: {
-        title: "Type",
-        description: "Shows if the resource is represented as a branch or a commit.",
+        title: "Branch or commit",
+        description: "Whether the dataspec represents a branch head or a specific commit.",
       },
       onHighlighted: () => {},
     },
@@ -97,7 +105,7 @@ export function startGitManagerInitialTour(_t: TFunction<"translation", undefine
       element: "#git-tooltip-manager-tracked-commit-hash",
       popover: {
         title: "Tracked commit hash",
-        description: "Displays the shortened commit hash currently tracked by Dataspecer.",
+        description: "Displays the shortened commit hash that this dataspec represents.<br/><br/>It moves once you pull/commit changes.",
       },
       onHighlighted: () => {},
     },
@@ -121,7 +129,7 @@ export function startGitManagerInitialTour(_t: TFunction<"translation", undefine
       element: getTourId("manager-git-status-indicator"),
       popover: {
         title: '<span style="color:red">Red</span> Git status',
-        description: "Dataspec has open merge state that need to be resolved.<br/><br/>Merge states are in separate tour together with Git actions.",
+        description: "Dataspec has open merge state that need to be resolved.",
       },
       onHighlighted: () => {},
     },

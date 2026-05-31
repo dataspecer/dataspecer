@@ -9,10 +9,17 @@ import { Dispatch, SetStateAction } from "react";
 /**
  * Starts a simple guided tour for the Git related functionality in the manager application.
  */
-export function startGitManagerInitialTour(_t: TFunction<"translation", undefined>, setTourStep: Dispatch<SetStateAction<number>>, onDestroyed?: () => void): void {
+export function startGitManagerMergeStatesAndGitActionsTour(_t: TFunction<"translation", undefined>, setTourStep: Dispatch<SetStateAction<number>>, onDestroyed?: () => void): void {
   const getTourId = (element: string) => `#${element}-1`;
 
   const tourSteps: DriveStep[] = [
+    {
+      popover: {
+        title: "This tour will explain merge states and related Git actions",
+        description: "You can use left and right arrow to navigate through steps.",
+      },
+      onHighlighted: () => {},
+    },
     {
       popover: {
         title: 'Merge states',
@@ -41,6 +48,14 @@ export function startGitManagerInitialTour(_t: TFunction<"translation", undefine
       popover: {
         title: "Merge",
         description: "Always creates a merge state between two chosen dataspec branches.",
+      },
+      onHighlighted: () => {},
+    },
+    {
+      element: getTourId("manager-tour-git-show-merge-states-item"),
+      popover: {
+        title: "Resolve merge states",
+        description: "You can view and resolve the merge states here.",
       },
       onHighlighted: () => {},
     },
