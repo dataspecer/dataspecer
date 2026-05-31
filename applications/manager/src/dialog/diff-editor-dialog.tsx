@@ -113,7 +113,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
 
   const [conflictsToBeResolvedOnSaveForTour, setConflictsToBeResolvedOnSaveForTour] = useState<DatastoreComparison[]>([]);
   const createdFilesystemNodesForTour: React.RefObject<Record<string, EntriesAffectedByCreateType>> = useRef({});
-  const createdDatastoresForTour:  React.RefObject<DatastoreInfo[]> = useRef([]);
+  const createdDatastoresForTour: React.RefObject<DatastoreInfo[]> = useRef([]);
   const [removedDatastoresForTour, setRemovedDatastoresForTour] = useState<DatastoreInfo[]>([]);
   const [removedTreePathsForTour, setRemovedTreePathsForTour] = useState<string[]>([]);
   const mergeStateFromBackendForTourMode: React.RefObject<MergeState | null> = useRef(null);
@@ -122,6 +122,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
     return () => {
       if (!tourMockMode) {
         setIsLoadingTreeStructure(true);
+        // Create the data for the tour mode.
         createComparisonResultForTourMode().then((result) => {
           mergeStateFromBackendForTourMode.current = createEmptyMergeState(
             examinedMergeState?.mergeStateCause ?? "pull", result.diffTree, result.diffTreeSize, result.conflicts,
@@ -153,7 +154,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
                 {/* The overflow-y is needed however it adds a bit horizontal space between the vertical splitter and the Tree structure */}
                 <div className="h-full">
                     { !tourMockMode ?
-                        <div id="diff-editor-tree-panel-not-used-for-tour-mode" className="flex! flex-1 flex-col grow pr-2 -mr-2 -ml-2 pl-2 h-[70%]! w-full!">
+                        <div className="flex! flex-1 flex-col grow pr-2 -mr-2 -ml-2 pl-2 h-[70%]! w-full!">
                           <DiffTreeVisualization updateModelData={updateModelData}
                                                   datastoreInfosForCacheEntries={datastoreInfosForCacheEntries}
                                                   isLoadingTreeStructure={isLoadingTreeStructure}
@@ -171,7 +172,7 @@ export const TextDiffEditorDialog = ({ initialMergeFromRootMetaPath, initialMerg
                                                   setRemovedTreePaths={setRemovedTreePaths}
                           />
                         </div> :
-                        <div id="diff-editor-tree-panel" className="flex! flex-1 flex-col grow pr-2 -mr-2 -ml-2 pl-2 h-[70%]! w-full!">
+                        <div id="diff-editor-tree-panel-for-tour" className="flex! flex-1 flex-col grow pr-2 -mr-2 -ml-2 pl-2 h-[70%]! w-full!">
                           <DiffTreeVisualization updateModelData={async () => {}}
                                                   datastoreInfosForCacheEntries={{}}
                                                   isLoadingTreeStructure={false}
@@ -306,7 +307,7 @@ function DiffEditorInfoGeneralPopOver(props: {mergeStateCause: MergeStateCause})
   useEffect(() => {
     const timer = setTimeout(() => {
       setShouldAnimate(false);
-    }, 5000);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, []);

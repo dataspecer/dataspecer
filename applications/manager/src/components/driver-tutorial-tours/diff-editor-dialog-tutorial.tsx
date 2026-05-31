@@ -29,16 +29,6 @@ export function startDiffEditorDialogTour(t: TFunction<"translation", undefined>
       },
     },
     {
-      element: "#root-package-project-iriroot-package-iri-datastore-0-meta-json-new",
-      popover: {
-        title: "Datastore",
-        description: "Packages/models consist of datastores",
-      },
-      // onHighlighted: (element) => {    // To highlight the line, but we do not want that
-      //   (element as HTMLButtonElement)?.click()
-      // }
-    },
-    {
       element: "#diff-editor-branch-names-tour-left",
       popover: {
         title: "Left branch - the incoming changes",
@@ -56,7 +46,7 @@ export function startDiffEditorDialogTour(t: TFunction<"translation", undefined>
       element: "#diff-editor-parent-div",
       popover: {
         title: "The diff text editor",
-        description: "Both windows of diff editor are unchanged at the time of creation of the merge state",
+        description: "Both windows of diff editor are unchanged at the time of creation of the merge state.<br/><br/>IRIs are replaced by their project IRIs to minimize conflicts.",
       },
     },
     {
@@ -74,7 +64,7 @@ export function startDiffEditorDialogTour(t: TFunction<"translation", undefined>
       },
     },
     {
-      element: "#diff-editor-tree-panel",
+      element: "#diff-editor-tree-panel-for-tour",
       popover: {
         title: "This is the diff tree with packages/models and the datastores",
         description: "",
@@ -85,6 +75,13 @@ export function startDiffEditorDialogTour(t: TFunction<"translation", undefined>
       popover: {
         title: "Package",
         description: "Or model - the type is indicated by the icon.",
+      },
+    },
+    {
+      element: "#root-package-project-iri-new-model-icon",
+      popover: {
+        title: "The icon indicating type",
+        description: "",
       },
     },
     {

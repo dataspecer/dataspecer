@@ -713,7 +713,6 @@ function TourModeStyledNode({
 
   const idWithoutDotsAndSlashes = node.data.id.replace(/\./g, "-").replace(/\//g, "-");
 
-  console.info(node.data.id);
   const styledNode = (
     <>
       <div
@@ -765,7 +764,7 @@ function TourModeStyledNode({
           {<p className={`font-bold pt-1 pr-1 text-xs ${color === "green" ? "visible": "invisible w-0 h-0"} ${modificationTagColor}`}>C</p>}
           {<p className={`font-bold pt-1 pr-1 text-xs ${color === "blue" ? "visible" : "invisible w-0 h-0"} ${modificationTagColor}`}>M</p>}
           {<p className={`font-bold pt-1 pr-1 text-xs ${color === "red" ? "visible" : "invisible w-0 h-0"} ${modificationTagColor}`}>D</p>}
-          {type !== undefined && <ModelIcon className="mt-1" type={type}/>}
+          {type !== undefined && <div id={`${idWithoutDotsAndSlashes}-model-icon`}><ModelIcon className="mt-1" type={type}/></div>}
           <span className={textClassName}>{node.data.name}</span>
             {/* The buttons on hover */}
             <div

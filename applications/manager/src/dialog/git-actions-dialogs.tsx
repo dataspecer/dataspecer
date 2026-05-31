@@ -933,7 +933,7 @@ export const commitToGitHandler = async (
       }
       else if (response.status === 403) {
         // TODO RadStr: Localization
-        toast.error("Unathorized - Cannot commit, neither the user or the bot has sufficient rights", { richColors: true });
+        toast.error("Unauthorized - Cannot commit, neither the user or the bot has sufficient rights", { richColors: true });
         closeDialogObject.closeDialogAction();
         return;
       }

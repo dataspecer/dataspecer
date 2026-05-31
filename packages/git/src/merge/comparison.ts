@@ -4,6 +4,7 @@ import { AvailableFilesystems, FilesystemAbstraction, getDatastoreInfoOfGivenDat
 import { DatastoreComparison, DatastoreComparisonWithChangeTypeInfo, DiffTree, OldNewFilesystemNode, ResourceComparison, ResourceComparisonResult } from "./merge-state.ts";
 import { ResourceDatastoreStripHandlerBase } from "./comparison/resource-datastore-strip-handler-base.ts";
 import { createDatastoreWithReplacedIris } from "../datastore-manipulation/iri-replacement.ts";
+import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 
 export type ComparisonFullResult = {
   diffTree: DiffTree,
@@ -394,7 +395,7 @@ function generateOneLevelTestDirectoryNode(
   iri: string,
   projectIri: string,
   datastoreCount: number,
-) {
+): DirectoryNode {
   const time = new Date();
 
   let irisTreePath: string;
@@ -437,7 +438,7 @@ function generateOneLevelTestDirectoryNode(
     metadata: {
       iri: iri,
       projectIri: projectIri,
-      types: ["Package"],
+      types: [LOCAL_PACKAGE],
       userMetadata: {
         createdBy: "dataspecer-tester",
         createdAt: time,
@@ -456,13 +457,15 @@ function generateTestFileNode(
   parentIriPath: string,
   parentProjectIriPath: string,
   iri: string,
-  projectIri: string
+  projectIri: string,
+  fileNodeType: string,
 ): FileNode {
   const directoryNodeToCreateFileNodeFrom: DirectoryNode = generateOneLevelTestDirectoryNode(
     parentIriPath, parentProjectIriPath, iri, projectIri, 1);
   const fileNode: FileNode = _.cloneDeep(directoryNodeToCreateFileNodeFrom) as unknown as FileNode;
   delete (fileNode as any).content;
   fileNode.type = "file";
+  fileNode.metadata.types = [fileNodeType];
   return fileNode;
 }
 
@@ -516,12 +519,12 @@ export function createRootDirectoryNodesForComparisonTest(): ComparisonTreeRootN
 
   const fileNodeA: FileNode = generateTestFileNode(
     underRoot.irisTreePath, underRoot.projectIrisTreePath,
-    createIriWithCopy(rootIri + "-file-node", 1, "under"), createIriWithCopy(rootProjectIri + "-file-node", 1, "under"));
+    createIriWithCopy(rootIri + "-file-node", 1, "under"), createIriWithCopy(rootProjectIri + "-file-node", 1, "under"), LOCAL_SEMANTIC_MODEL);
   underRoot.content[fileNodeA.name] = fileNodeA;
 
   const fileNodeB: FileNode = generateTestFileNode(
     underUnderRoot.irisTreePath, underUnderRoot.projectIrisTreePath,
-    createIriWithCopy(rootIri + "-file-node", 2, "under"), createIriWithCopy(rootProjectIri + "-file-node", 2, "under"));
+    createIriWithCopy(rootIri + "-file-node", 2, "under"), createIriWithCopy(rootProjectIri + "-file-node", 2, "under"), LOCAL_VISUAL_MODEL);
   underUnderRoot.content[fileNodeB.name] = fileNodeB;
 
   const fakeRoot2 = _.cloneDeep(fakeRoot1);
