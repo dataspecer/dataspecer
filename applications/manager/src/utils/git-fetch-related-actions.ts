@@ -57,12 +57,21 @@ export async function removeGitLinkFromPackage(t: TFunction<"translation", undef
     }
   );
 
-  const irisToUpdate = (await response.json())?.irisToUpdate ?? [];
+  const jsonResponse = await response.json();
+  const irisToUpdate = jsonResponse?.irisToUpdate ?? [];
   for (const iriToUpdate of irisToUpdate) {
     await requestLoadPackage(iriToUpdate, true);
   }
 
-  gitOperationResultToast(t, response);
+  if (response.status === 403) {
+    toast.error("Unauthorized - Cannot remove Git repository", { "richColors": true });
+  }
+  else {
+    gitOperationResultToast(t, response);
+  }
+  if (!response.ok) {
+    console.error(jsonResponse);
+  }
 }
 
 export async function switchRepresentsBranchHead(examinedPackage: Package, openModal: OpenBetterModal) {
