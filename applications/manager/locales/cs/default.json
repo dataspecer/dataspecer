@@ -335,6 +335,10 @@
       "tooltip": {
         "resolve-conflicts": "Vyřešte všechny konflikty, aby bylo možné tlačítko použít a tím získat možnost finalizovat merge stav. Konflikty jsou označeny jako vyřešené kliknutím na zaškrtávátka v directory diff. Tento tooltip se změní po aktivaci tlačítka.",
         "save-and-finalize": "Nejprve uloží všechny neuložené změny a poté provede operaci, která spustila merge stav. Může to být pull/push/merge.",
+        "common": {
+          "line-one": "Pro vizuální, obecný a rozsáhlý přehled zkontrolujte tlačítko Tour viditelné nad textovým editorem po otevření souboru!!",
+          "line-two": "Tato nápověda obsahuje informace založené specificky na příčině merge stavu. Tedy se mění dle toho jestli se jedná o pull/merge/push."
+        },
         "pull": {
           "line.one": {
             "part-one": "OBĚ OKNA jsou nezměněna",
@@ -395,34 +399,6 @@
       "checkbox": {
         "show-stripped-version": "Zobrazit zestručněnou verzi",
         "show-stripped-version-tooltip": "Pokud je zaškrtnuto, datastore se zbaví unikátních polí. Pokud není, zobrazí se plná verze. V současnosti jsou zestručněné pouze meta soubory."
-      },
-      "more-detail": {
-        "title": "Diff editor ve velkém detailu:",
-        "line.one": "Krátký popis výše se mění podle příčiny merge stavu",
-        "line.two": "Účel Diff editoru je vyřešit merge stav provedením změn v modelech a označit konflikty (⚠️) jako vyřešené (✅).",
-        "line.four": "Stripped verze souboru skrývá obsah, který se očekává, že bude změněn automaticky, například čas exportu.",
-        "line.five": "Levá část tohoto dialogu obsahuje directory diff. Directory diff je vizualizován vzhledem k editovatelnému oknu textového editoru.",
-        "line.six": "To znamená:",
-        "color": {
-          "red": "Červená",
-          "red.description": "položka - NENÍ přítomna v editovatelném okně.",
-          "green": "Zelená",
-          "green.description": "položka - Je přítomna v editovatelném okně. A není v druhém.",
-          "blue": "Modrá",
-          "blue.description": "položka - Je přítomna v obou, ale liší se."
-        },
-        "line.seven": "Jinak - Stejný obsah v obou.",
-        "line.eight": "Merge aktéři jsou nezměněni. To znamená, že musíte všechny změny provést ručně, pokud je potřebujete.",
-        "merge-strategy": "Také můžete použít merge strategii nahoře k automatickému provedení změn.",
-        "line.nine": {
-          "part-one": "přidá datastore do editovatelného okna.",
-          "part-two": "odstraní ho. Backend je ovlivněn až po kliknutí na jedno z tlačítek Uložit."
-        },
-        "line.ten": "Editovatelné okno je vždy napravo.",
-        "line.eleven": "Pro pull a merge jsou editovatelná okna aktéři \"merge to\".",
-        "line.twelve": "Push je obrácený, tedy editovatelné okno je aktér \"merge from\". To je stejné jako v Gitu, protože \"merge to\" je remote.",
-        "line.thirteen": "Proto musíme aktualizovat lokální (\"merge from\") tak, aby obsahoval změny z remote a teprve pak můžeme provést push.",
-        "line.fourteen": "Mezi diffy ve souboru se můžete přesouvat pomocí tlačítek nahoře nebo ctrl + šipka nahoru / dolů."
       }
     },
     "merge-state-dialog": {
@@ -930,7 +906,7 @@
         "two": "Pokud chcete být aktuální vůči remote, pak pullněte.",
         "three": "Pokud chcete merge, udělejte obě větve aktuální (buď pullnutím nebo commitnutím) a vytvořte merge stav pro merge."
       },
-      "line.four": "Pokud máte v hlavě nějaké akce a jejich pořadí, můžete použít následující tipy:",
+      "line.four": "Pokud máte v hlavě nějaké akce a jejich pořadí, můžete použít následující tipy",
       "line.five": "V případě více merge stavů způsobených pull je možné je všechny odstranit. Ručně pullněte znovu a vyřešte ten.",
       "line.six": "To protože chcete mít datovou specifikaci aktuální s nejnovějším commitem.",
       "line.seven": "Pokud se jedná o push konflikt, opět můžete řešit jen ten nejnovější a vymazat ostatní.",

@@ -335,6 +335,10 @@
       "tooltip": {
         "resolve-conflicts": "Resolve all conflicts to enable the button and with that get the option to finalize the merge state. The conflicts are marked as resolved by clicking on checkmarks in the directory diff. This tooltip changes after the button gets enabled.",
         "save-and-finalize": "First saves all the unsaved changes and then it performs the operation, which triggered the merge state. Can be pull/push/merge.",
+        "common": {
+          "line-one": "For visual general and extensive overview check the Tour button seen above the text editor once you open a file!!",
+          "line-two": "This tooltip contains info based on the merge state cause. So it changes based on whether it is pull/merge/push."
+        },
         "pull": {
           "line.one": {
             "part-one": "BOTH WINDOWS are unchanged",
@@ -395,34 +399,6 @@
       "checkbox": {
         "show-stripped-version": "Show stripped version",
         "show-stripped-version-tooltip": "If checked then strips the datastore of unique fields. If unchecked then it shows the full datastore. Currently only meta files are stripped."
-      },
-      "more-detail": {
-        "title": "Diff editor in huge detail:",
-        "line.one": "Note that the short description changes based on the merge state cause",
-        "line.two": "Diff Editor's purpose is to resolve the merge state by performing changes to models and marking conflicts (⚠️) as resolved (✅).",
-        "line.four": "The stripped version of file hides content, which is expected to be changed automatically, such as export time.",
-        "line.five": "The left component of this dialog contains directory diff. The directory diff is visualized with regards to the editable window of the text editor.",
-        "line.six": "This means that:",
-        "color": {
-          "red": "Red",
-          "red.description": "node - It is NOT present in the editable window.",
-          "green": "Green",
-          "green.description": "node - It is present in the editable window. And not in the other one.",
-          "blue": "Blue",
-          "blue.description": "node - Present in both, but they differ."
-        },
-        "line.seven": "Otherwise - Same text in both.",
-        "line.eight": "The merge actors are not changed in any way. This means that you have to manually do all the changes if needed.",
-        "merge-strategy": "You can also use merge strategy at the top to do the changes automatically.",
-        "line.nine": {
-          "part-one": "adds datastore to the editable window.",
-          "part-two": "removes it. The backend is affected only after clicking on one of the Save buttons."
-        },
-        "line.ten": "The editable window is always on the right.",
-        "line.eleven": "For pull and merge the editable windows are the \"merge to\" actors.",
-        "line.twelve": "The push is reversed, that is the editable window is the \"merge from\" actor. This is same as in Git, since the \"merge to\" is the remote.",
-        "line.thirteen": "Therefore, we have to update the local (the \"merge from\") to contain the changes from remote and then we can perform the push.",
-        "line.fourteen": "You can move between diffs within the \"file\" using the buttons at the top or ctrl + 'arrow up', respectively ctrl + 'arrow down'"
       }
     },
     "merge-state-dialog": {
@@ -930,7 +906,7 @@
         "two": "If you just want to be up to date with the remote, then pull.",
         "three": "If you want to merge, then make the two branches up to date (either by pulling or commiting) and create merge state for merge."
       },
-      "line.four": "If you have some actions in mind and their order, then you can use the following hints:",
+      "line.four": "If you have some actions in mind and their order, then you can use the following hints",
       "line.five": "In case of more merge states caused by pull. You can remove all of them. Manually pull again and resolve that.",
       "line.six": "Because you want to have the data specification up to date with latest commit anyways.",
       "line.seven": "If there is push conflict, once again you can only resolve the newest one and again remove all the others.",
