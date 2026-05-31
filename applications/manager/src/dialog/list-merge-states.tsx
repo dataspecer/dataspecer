@@ -372,7 +372,7 @@ function MergeStateResolveOrderTooltip() {
       <li>&nbsp; - {t("merge-state.resolve-order-tooltip.list.three")}</li>
     </ul>
     <br/>
-    <h2 className="text-base font-bold">- {t("merge-state.resolve-order-tooltip.line.four")}</h2>
+    <h2 className="text-base font-bold flex flex-1 flex-row">- {t("merge-state.resolve-order-tooltip.line.four")} (<SparkleIcon/>):</h2>
     <br/>
     <p>- {t("merge-state.resolve-order-tooltip.line.five")}</p>
     <p>&nbsp;&nbsp;&nbsp;&nbsp;{t("merge-state.resolve-order-tooltip.line.six")}</p>
@@ -380,6 +380,10 @@ function MergeStateResolveOrderTooltip() {
     <p>&nbsp;&nbsp;&nbsp;&nbsp;{t("merge-state.resolve-order-tooltip.line.eight")}</p>
     <p>- {t("merge-state.resolve-order-tooltip.line.nine")}</p>
     <p>&nbsp;&nbsp;&nbsp;&nbsp;{t("merge-state.resolve-order-tooltip.line.ten")}</p>
+    {/* TODO RadStr: Localization */}
+    <br/>
+    <p className="text-base flex flex-1 flex-row">Note that "<SparkleIcon/>" only removes and creates merge states. You still have to resolve them.</p>
+    <p className="text-base flex flex-1 flex-row">&nbsp;&nbsp;&nbsp;&nbsp;(Except for the pulls that may be resolved automatically under already-mentioned specific conditions)</p>
   </div>;
 }
 

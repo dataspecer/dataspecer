@@ -8,7 +8,7 @@ import { TFunction } from "i18next";
  * Starts a simple guided tour for the diff editor dialog.
  * This is an example of how Driver.js can be used in the manager application.
  */
-export function startDiffEditorDialogTour(t: TFunction<"translation", undefined>, onDestroyed?: () => void): void {
+export function startDiffEditorDialogTour(_t: TFunction<"translation", undefined>, onDestroyed?: () => void): void {
   const driver = createDriver({
     overlayClickBehavior: "close",
     nextBtnText: "Next",
@@ -24,8 +24,15 @@ export function startDiffEditorDialogTour(t: TFunction<"translation", undefined>
     {
       element: "#directory-diff-tour-panel",
       popover: {
-        title: "You are in diff editor (You can use left and right arrows to step in the tutorial)",
-        description: t("git.diff-editor.more-detail.line.two"),
+        title: "Diff editor tour<br/>You can use left and right arrows to step in the tutorial",
+        description: `Diff Editor's purpose is to resolve the merge state by performing changes to models and marking conflicts (⚠️) as resolved (✅).<br/><br/>Merge states can be caused by pull/push/merge.`,
+      },
+    },
+    {
+      element: "#diff-editor-info-general",
+      popover: {
+        title: "Pull/Push/Merge specific tooltip",
+        description: "This tooltip contains info based on the merge state cause.",
       },
     },
     {
@@ -133,6 +140,13 @@ export function startDiffEditorDialogTour(t: TFunction<"translation", undefined>
     {
       element: "#root-package-project-iri-root-package-project-iri-underroot-package-iri-under-datastore-0-meta-json-new",
       popover: {
+        title: "The color of text indicates how the two datastores currently differ",
+        description: "It updated after save or datastore change.",
+      },
+    },
+    {
+      element: "#root-package-project-iri-root-package-project-iri-underroot-package-iri-under-datastore-0-meta-json-new",
+      popover: {
         title: "Black means unchanged",
         description: "",
       },
@@ -184,6 +198,13 @@ export function startDiffEditorDialogTour(t: TFunction<"translation", undefined>
       popover: {
         title: "Next diff",
         description: "Use this button to move to the next diff in the current file.",
+      },
+    },
+    {
+      element: "#merge-strategy-component",
+      popover: {
+        title: "Merge strategy resolver",
+        description: "You can use this to resolve conflicts.",
       },
     },
     {

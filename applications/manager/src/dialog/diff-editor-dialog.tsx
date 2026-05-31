@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useOnBeforeUnload } from "@/hooks/use-on-before-unload";
 import { useOnKeyDown } from "@/hooks/use-on-key-down";
 import { DiffTreeVisualization } from "@/components/directory-diff";
-import { ArrowDownIcon, ArrowUpIcon, Loader, Minus, Plus } from "lucide-react";
+import { ArrowDownIcon, ArrowUpIcon, Loader } from "lucide-react";
 import SvgVisualDiffDialog from "@/dialog/show-svgs-diff-dialog";
 import { goToNextDiff, goToPreviousDiff, MonacoDiffEditor } from "@/components/monaco-diff-editor";
 import { MergeStrategyComponent } from "@/components/merge-strategy-component";
@@ -13,7 +13,6 @@ import { useDiffEditorDialogProps } from "@/hooks/use-diff-editor-dialog-props";
 import { AvailableFilesystems, createEmptyMergeState, DatastoreComparison, DatastoreInfo, EditableType, getEditableAndNonEditableValue, MergeState, MergeStateCause, createComparisonResultForTourMode } from "@dataspecer/git";
 import { BetterModalProps, useBetterModal } from "@/lib/better-modal";
 import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
-import { saveChangesTooltipText } from "./outside-changes-to-diff-editor-action-dialog";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EntriesAffectedByCreateType } from "@/utils/use-diff-editor-dialog-props-utils";
@@ -312,8 +311,8 @@ function DiffEditorInfoGeneralPopOver(props: {mergeStateCause: MergeStateCause})
     return () => clearTimeout(timer);
   }, []);
 
-  return <div onMouseEnter={() => setShouldAnimate(false)} className={`${shouldAnimate ? "motion-safe:animate-ping pt-2.5" : "pt-1"}`}>
-    <PopOverGitGeneralComponent moreDetailChildren={<MoreDetailChildrenForTooltip />} timeForMoreDetailChildren={3000}>
+  return <div id="diff-editor-info-general" onMouseEnter={() => setShouldAnimate(false)} className={`${shouldAnimate ? "motion-safe:animate-ping pt-2.5" : "pt-1"}`}>
+    <PopOverGitGeneralComponent>
       <BasicTutorialTooltipForMergeState mergeStateCause={props.mergeStateCause}/>
     </PopOverGitGeneralComponent>
   </div>;
@@ -322,9 +321,13 @@ function DiffEditorInfoGeneralPopOver(props: {mergeStateCause: MergeStateCause})
 
 const BasicTutorialTooltipForMergeState = (props: {mergeStateCause: MergeStateCause}): React.ReactNode => {
   const { t } = useTranslation();
+  const commonTooltipPart = <strong>{t("git.diff-editor.tooltip.common.line-one")}<br/>
+    {t("git.diff-editor.tooltip.common.line-two")}<br/><br/>
+    </strong>;
   switch(props.mergeStateCause) {
     case "pull":
       return <div>
+        {commonTooltipPart}
         <p><strong>{t("git.diff-editor.tooltip.pull.line.one.part-one")}</strong>! {t("git.diff-editor.tooltip.pull.line.one.part-two")} <strong>{t("git.diff-editor.tooltip.pull.line.one.part-three")}</strong> {t("git.diff-editor.tooltip.pull.line.one.part-four")}</p>
         <p><strong>{t("git.diff-editor.tooltip.pull.left-window.part-one")}</strong> = {t("git.diff-editor.tooltip.pull.left-window.part-two")}<strong>{t("git.diff-editor.tooltip.pull.left-window.part-three")}</strong>{t("git.diff-editor.tooltip.pull.left-window.part-four")}</p>
         <p><strong>{t("git.diff-editor.tooltip.pull.right-window.part-one")}</strong> = {t("git.diff-editor.tooltip.pull.right-window.part-two")}<strong>{t("git.diff-editor.tooltip.pull.right-window.part-three")}</strong></p>
@@ -333,6 +336,7 @@ const BasicTutorialTooltipForMergeState = (props: {mergeStateCause: MergeStateCa
       </div>;
     case "push":
       return <div>
+        {commonTooltipPart}
         <p><strong>{t("git.diff-editor.tooltip.push.line.one.part-one")}</strong>! {t("git.diff-editor.tooltip.push.line.one.part-two")} <strong>{t("git.diff-editor.tooltip.push.line.one.part-three")}</strong> {t("git.diff-editor.tooltip.push.line.one.part-four")}</p>
         <p><strong>{t("git.diff-editor.tooltip.push.left-window.part-one")}</strong> = {t("git.diff-editor.tooltip.push.left-window.part-two")}<strong>{t("git.diff-editor.tooltip.push.left-window.part-three")}</strong>{t("git.diff-editor.tooltip.push.left-window.part-four")}</p>
         <p><strong>{t("git.diff-editor.tooltip.push.right-window.part-one")}</strong> = {t("git.diff-editor.tooltip.push.right-window.part-two")}<strong>{t("git.diff-editor.tooltip.push.right-window.part-three")}</strong></p>
@@ -340,6 +344,7 @@ const BasicTutorialTooltipForMergeState = (props: {mergeStateCause: MergeStateCa
       </div>;
     case "merge":
       return <div>
+        {commonTooltipPart}
         <p><strong>{t("git.diff-editor.tooltip.merge.line.one.part-one")}</strong>! {t("git.diff-editor.tooltip.merge.line.one.part-two")} <strong>{t("git.diff-editor.tooltip.merge.line.one.part-three")}</strong> {t("git.diff-editor.tooltip.merge.line.one.part-four")}</p>
         <p><strong>{t("git.diff-editor.tooltip.merge.left-window.part-one")}</strong> = {t("git.diff-editor.tooltip.merge.left-window.part-two")}</p>
         <p><strong>{t("git.diff-editor.tooltip.merge.right-window.part-one")}</strong> = {t("git.diff-editor.tooltip.merge.right-window.part-two")}</p>
@@ -351,28 +356,3 @@ const BasicTutorialTooltipForMergeState = (props: {mergeStateCause: MergeStateCa
   }
 };
 
-function MoreDetailChildrenForTooltip() {
-  const { t } = useTranslation();
-
-  return <>
-    <h2 className="text-base font-bold">{t("git.diff-editor.more-detail.title")}</h2>
-    <p>- {t("git.diff-editor.more-detail.line.one")}</p>
-    <p>- {t("git.diff-editor.more-detail.line.two")}</p>
-    <p>- {t(saveChangesTooltipText)}</p>
-    <p>- {t("git.diff-editor.more-detail.line.four")}</p>
-    <p>- {t("git.diff-editor.more-detail.line.five")}</p>
-    <p>- {t("git.diff-editor.more-detail.line.six")}</p>
-    <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;<p className="text-red-600">{t("git.diff-editor.more-detail.color.red")}</p>&nbsp;{t("git.diff-editor.more-detail.color.red.description")}</div>
-    <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;<p className="text-green-600">{t("git.diff-editor.more-detail.color.green")}</p>&nbsp;{t("git.diff-editor.more-detail.color.green.description")}</div>
-    <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;<p className="text-blue-600">{t("git.diff-editor.more-detail.color.blue")}</p>&nbsp;{t("git.diff-editor.more-detail.color.blue.description")}</div>
-    <div className="flex flex-1 flex-row">&nbsp;&nbsp; -&nbsp;{t("git.diff-editor.more-detail.line.seven")}</div>
-    <p>- {t("git.diff-editor.more-detail.line.eight")}</p>
-    <p className="pl-5">{t("git.diff-editor.more-detail.merge-strategy")}</p>
-    <div className="flex flex-row">- <Plus className="mt-1 h-4 w-4"/> {t("git.diff-editor.more-detail.line.nine.part-one")} <Minus className="mt-1 h-4 w-4"/> {t("git.diff-editor.more-detail.line.nine.part-two")}</div>
-    <p>- {t("git.diff-editor.more-detail.line.ten")}</p>
-    <p>- {t("git.diff-editor.more-detail.line.eleven")}</p>
-    <p>- {t("git.diff-editor.more-detail.line.twelve")}</p>
-    <p>&nbsp;&nbsp; {t("git.diff-editor.more-detail.line.thirteen")}</p>
-    <p>&nbsp;&nbsp; {t("git.diff-editor.more-detail.line.fourteen")}</p>
-  </>;
-}

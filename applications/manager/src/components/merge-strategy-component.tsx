@@ -35,7 +35,7 @@ export const MergeStrategyComponent = (props: {
   };
 
   return (
-    <div className="flex flex-row items-center gap-x-3 pt-0.75 pb-1.5">
+    <div id="merge-strategy-component" className="flex flex-row items-center gap-x-3 pt-0.75 pb-1.5">
       <select
         id="merge-strategy-select"
         className={[
