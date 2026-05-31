@@ -1,15 +1,12 @@
 // Generated using copilot
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, ReactNode } from "react";
 import { startGitManagerInitialTour } from "../components/driver-tutorial-tours/manager-git-initial-tutorial-tour";
-import type { ReactNode } from "react";
-import { startGitManagerMergeStatesAndGitActionsTour } from "@/components/driver-tutorial-tours/manager-git-actions-and-merge-states-tour";
 
 
 export enum ManagerTourType {
   None,
   GitInitial,
-  GitMergeStatesAndActions
 }
 
 
@@ -34,12 +31,6 @@ export const ManagerTourProvider = ({ children }: { children: ReactNode }) => {
         break;
       case ManagerTourType.GitInitial:
         startGitManagerInitialTour(t, setManagerTourStep, () => {
-          setManagerGitTourType(ManagerTourType.None);
-          setManagerTourStep(0);
-        });
-        break;
-      case ManagerTourType.GitMergeStatesAndActions:
-        startGitManagerMergeStatesAndGitActionsTour(t, setManagerTourStep, () => {
           setManagerGitTourType(ManagerTourType.None);
           setManagerTourStep(0);
         });

@@ -73,12 +73,12 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
 
   let gitPart: React.ReactNode;
   // We put all of the Git stuff in <a> to show that the url at the bottom left
-  if (managerTourStep === 14) {
+  if (managerTourStep === 20) {
     gitPart = <div id={getTourId("manager-git-status-indicator")} onClick={(e) => {e.preventDefault();}} className="text-red-500 pt-1 flex flex-1 flex-row cursor-pointer">GIT<AlertTriangleIcon className="w-4 h-4 ml-0.75 mt-1"/>
       <sup className="pt-2">{prInfo}</sup>
     </div>;
   }
-  else if (managerTourStep === 13) {
+  else if (managerTourStep === 19) {
     gitPart = <div id={getTourId("manager-git-status-indicator")} onClick={(e) => {e.preventDefault();}} className="text-yellow-400 pt-1 flex flex-1 flex-row cursor-pointer">GIT<CheckIcon className="w-4 h-4 ml-0.75 mt-1"/>
       <sup className="pt-2">{prInfo}</sup>
     </div>;
@@ -120,7 +120,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
           {
             !isGitUrlSet(resource.linkedGitRepositoryURL) ?
               null :
-              <ResourceGitInfoTooltip resource={resource} side="right" shouldBeOpen={isFirstRow && managerTourStep >= 5 && managerTourStep <= 11}>
+              <ResourceGitInfoTooltip resource={resource} side="right" shouldBeOpen={isFirstRow && managerTourStep >= 5 && managerTourStep <= 17}>
                 <div className="flex pl-4 pr-2 w-20 -mt-1">
                   {gitPart}
                   {
@@ -248,7 +248,6 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
 
                 <DropdownMenuSubContent className="data-[side=top]">
                   <DropdownMenuItem onClick={() => {}}><LightbulbIcon className="mr-2 h-4 w-4" />Guide me through Git</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => {}}><LightbulbIcon className="mr-2 h-4 w-4" />Guide - Git actions + merge states</DropdownMenuItem>
                   <hr className="border-gray-300" />
                   <DropdownMenuItem id={getTourId("manager-tour-git-show-branch-item")} onClick={() => {}}><Eye className="mr-2 h-4 w-4" />Show {resource.representsBranchHead ? "branch" : "commit"} on GitHub</DropdownMenuItem>
                   <DropdownMenuItem id={getTourId("manager-tour-git-show-pages-item")} onClick={() => {}}><Eye className="mr-2 h-4 w-4" />Show {"GitHub Pages"}</DropdownMenuItem>
@@ -286,6 +285,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
                 {<DropdownMenuItem id={getTourId("manager-tour-git-convert-item")} onClick={() => {}}><ArrowLeftRight className="mr-2 h-4 w-4" /> Convert to {resource.representsBranchHead ? "tag" : "branch"}</DropdownMenuItem>}
                 {<hr className="border-gray-300" />}
                 {<DropdownMenuItem id={getTourId("manager-tour-git-delete-item")} className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={() => {}}><Trash2 className="mr-2 h-4 w-4" />Delete Git repository</DropdownMenuItem>}
+                {<DropdownMenuItem id={getTourId("manager-tour-git-delete-item")} className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={() => {}}><Trash2 className="mr-2 h-4 w-4" />{managerTourStep}</DropdownMenuItem>}
               </DropdownMenuSubContent>
             </DropdownMenuSub>
           </DropdownMenuContent>

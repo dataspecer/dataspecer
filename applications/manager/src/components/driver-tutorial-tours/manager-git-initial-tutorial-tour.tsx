@@ -81,7 +81,55 @@ export function startGitManagerInitialTour(_t: TFunction<"translation", undefine
       element: "#git-tooltip-manager-active-merge-state-count",
       popover: {
         title: "Merge state count",
-        description: "Shows how many merge states are currently active for this resource.<br/><br/>Merge states are explained in a separate tour together with Git actions.",
+        description: "Shows how many merge states are currently active for this resource.",
+      },
+      onHighlighted: () => {},
+    },
+    {
+      element: "#git-tooltip-manager-active-merge-state-count",
+      popover: {
+        title: 'Merge states',
+        description: "Merge state marks the fact that the Git operation has conflicts that need to be resolved.<br/><br/>Merge states can be created by the following actions.",
+      },
+      onHighlighted: () => {},
+    },
+    {
+      element: getTourId("manager-tour-git-action-commit-item"),
+      popover: {
+        title: "Commit",
+        description: "Commit your local changes to remote.<br/><br/>If the dataspec does not track latest commit a merge state will be created.",
+      },
+      onHighlighted: () => {},
+    },
+    {
+      element: getTourId("manager-tour-git-action-pull-item"),
+      popover: {
+        title: "Manually Pull",
+        description: "Pulls the latest changes from the remote repository.<br/><br/>If the dataspec contains changes compared to the tracked commit a merge state will be created.<br/>Otherwise, the dataspec will be updated with the data from remote.",
+      },
+      onHighlighted: () => {},
+    },
+    {
+      element: getTourId("manager-tour-git-action-pull-item"),
+      popover: {
+        title: "Automatic pulls",
+        description: "Note that Dataspecer can be configured to automatically pull changes from the remote repository.<br/><br/>Those pulls always create merge states.<br/>",
+      },
+      onHighlighted: () => {},
+    },
+    {
+      element: getTourId("manager-tour-git-merge-item"),
+      popover: {
+        title: "Merge",
+        description: "Always creates a merge state between two chosen dataspec branches.",
+      },
+      onHighlighted: () => {},
+    },
+    {
+      element: getTourId("manager-tour-git-show-merge-states-item"),
+      popover: {
+        title: "Resolve merge states",
+        description: "You can view and resolve the merge states here.",
       },
       onHighlighted: () => {},
     },
@@ -89,7 +137,7 @@ export function startGitManagerInitialTour(_t: TFunction<"translation", undefine
       element: "#git-tooltip-manager-project-iri",
       popover: {
         title: "Full project IRI",
-        description: "Explained earlier.",
+        description: "Already explained.",
       },
       onHighlighted: () => {},
     },
