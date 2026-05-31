@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
-import { AlertTriangleIcon, ArrowLeftRight, BugIcon, CheckIcon, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, Eye, EyeIcon, FileText, Filter, Folder, FolderDown, GitBranchPlus, GitCommit, GitGraph, GitMerge, GitPullRequestArrowIcon, GitPullRequestIcon, Import, LightbulbIcon, Link, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, Sparkles, TagIcon, TimerResetIcon, Trash2 } from "lucide-react";
+import { AlertTriangleIcon, ArrowLeftRight, BugIcon, CheckIcon, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, Eye, FileText, Filter, Folder, FolderDown, GitBranchPlus, GitCommit, GitGraph, GitMerge, GitPullRequestArrowIcon, GitPullRequestIcon, Import, LightbulbIcon, Link, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, Sparkles, TagIcon, TimerResetIcon, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getValidTime } from "../time";
@@ -257,7 +257,6 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
                   <DropdownMenuItem id={getTourId("manager-tour-git-active-prs-branch-item")} onClick={() => {}}><GitPullRequestArrowIcon className="mr-2 h-4 w-4" />Active PRs for branch</DropdownMenuItem>
                   <DropdownMenuItem id={getTourId("manager-tour-git-active-issues-item")} onClick={() => {}}><BugIcon className="mr-2 h-4 w-4" />Active issues</DropdownMenuItem>
                   <hr className="border-gray-300" />
-                  <DropdownMenuItem id={getTourId("manager-tour-git-show-merge-states-item")} onClick={() => {}}><EyeIcon className="mr-2 h-4 w-4" />Show merge states</DropdownMenuItem>
                   <DropdownMenuItem id={getTourId("manager-tour-git-show-same-repo-item")} onClick={() => {}}><Filter className="mr-2 h-4 w-4" />Show same repository projects</DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
@@ -281,11 +280,13 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
                 {<hr className="border-gray-300" />}
                 {<DropdownMenuItem id={getTourId("manager-tour-git-create-branch-item")} onClick={() => {}}><GitBranchPlus className="mr-2 h-4 w-4" />Create branch</DropdownMenuItem>}
                 {<DropdownMenuItem id={getTourId("manager-tour-git-merge-item")} onClick={() => {}}><GitMerge className="mr-2 h-4 w-4"/>Merge - Choose merge from</DropdownMenuItem>}
+                <DropdownMenuItem id={getTourId("manager-tour-git-resolve-merge-states-item")} onClick={() => {}}><AlertTriangleIcon className="mr-2 h-4 w-4" />Resolve merge states</DropdownMenuItem>
                 {<hr className="border-gray-300" />}
                 {<DropdownMenuItem id={getTourId("manager-tour-git-convert-item")} onClick={() => {}}><ArrowLeftRight className="mr-2 h-4 w-4" /> Convert to {resource.representsBranchHead ? "tag" : "branch"}</DropdownMenuItem>}
                 {<hr className="border-gray-300" />}
                 {<DropdownMenuItem id={getTourId("manager-tour-git-delete-item")} className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={() => {}}><Trash2 className="mr-2 h-4 w-4" />Delete Git repository</DropdownMenuItem>}
-                {<DropdownMenuItem id={getTourId("manager-tour-git-delete-item")} className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={() => {}}><Trash2 className="mr-2 h-4 w-4" />{managerTourStep}</DropdownMenuItem>}
+                {/* Debug line to see the current step in tour */}
+                {/* {<DropdownMenuItem id={getTourId("manager-tour-git-delete-item")} className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={() => {}}><Trash2 className="mr-2 h-4 w-4" />{managerTourStep}</DropdownMenuItem>} */}
               </DropdownMenuSubContent>
             </DropdownMenuSub>
           </DropdownMenuContent>

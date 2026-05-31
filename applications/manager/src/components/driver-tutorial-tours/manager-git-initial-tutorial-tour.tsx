@@ -126,7 +126,7 @@ export function startGitManagerInitialTour(_t: TFunction<"translation", undefine
       onHighlighted: () => {},
     },
     {
-      element: getTourId("manager-tour-git-show-merge-states-item"),
+      element: getTourId("manager-tour-git-resolve-merge-states-item"),
       popover: {
         title: "Resolve merge states",
         description: "You can view and resolve the merge states here.",
