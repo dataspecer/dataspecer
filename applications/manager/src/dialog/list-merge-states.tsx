@@ -393,10 +393,6 @@ function MergeStateResolveOrderTooltip() {
     <br/>
     {/* Not localized */}
     <h2 className="text-base font-bold flex flex-1 flex-row">- If you have specific actions in mind check "<SparkleIcon/>", respectively its explanation in tour.</h2>
-    {/* TODO RadStr: Localization */}
-    <br/>
-    <p className="text-base flex flex-1 flex-row">Note that "<SparkleIcon/>" only removes and creates merge states. You still have to resolve them.</p>
-    <p className="text-base flex flex-1 flex-row">&nbsp;&nbsp;&nbsp;&nbsp;(Except for the pulls that may be resolved automatically under already-mentioned specific conditions)</p>
   </div>;
 }
 
