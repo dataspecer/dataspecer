@@ -150,7 +150,12 @@ jobs:
             exit 1
           fi
 
+          IMAGE="${{ env.IMAGE_NAME }}"
+          IMAGE="${IMAGE##*/}"
+          RAW_TAG="${{ matrix.tag }}"
+          TAG="${RAW_TAG##*:}"
+
           curl -fsS -X POST "$DEPLOY_WEBHOOK_URL" \
             -H "Authorization: Bearer $DEPLOY_WEBHOOK_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"image\":\"${{ env.IMAGE_NAME }}\",\"tag\":\"${{ matrix.tag }}\"}"
+            -d "{\"image\":\"$IMAGE\",\"tag\":\"$TAG\"}"
