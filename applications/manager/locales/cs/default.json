@@ -877,23 +877,6 @@
         "remove": "Odstranit merge stav"
       }
     },
-    "list-tooltip": {
-      "main": {
-        "line.one": "Merge stav signalizuje, že Git operace má konflikty, které je třeba vyřešit v diff editoru.",
-        "line.two": {
-          "part.one": "Pokud je záznam ",
-          "part.two": "červený",
-          "part.three": ", znamená to, že byl upraven z jiného místa než z diff editoru odpovídajícího merge stavu."
-        },
-        "line.three": "Z uživatelského pohledu to znamená, že byste měli zkontrolovat, zda jste změny provedli Vy nebo ne.",
-        "line.four": "Upozornění: Ověřte si čas úpravy, i když není červený.",
-        "line.five": {
-          "part.one": "Když je záznam ",
-          "part.two": "červený",
-          "part.three": ", znamená to, že na technické úrovni bude diff strom přepočítán při načtení."
-        }
-      }
-    },
     "resolve-order-tooltip": {
       "line.one": "Merge stavy můžete vyřešit v libovolném pořadí.",
       "line.two": {
@@ -905,14 +888,7 @@
         "one": "Pokud si jste jisti, že chcete nějaké změny commitnout. Prostě commitněte.",
         "two": "Pokud chcete být aktuální vůči remote, pak pullněte.",
         "three": "Pokud chcete merge, udělejte obě větve aktuální (buď pullnutím nebo commitnutím) a vytvořte merge stav pro merge."
-      },
-      "line.four": "Pokud máte v hlavě nějaké akce a jejich pořadí, můžete použít následující tipy",
-      "line.five": "V případě více merge stavů způsobených pull je možné je všechny odstranit. Ručně pullněte znovu a vyřešte ten.",
-      "line.six": "To protože chcete mít datovou specifikaci aktuální s nejnovějším commitem.",
-      "line.seven": "Pokud se jedná o push konflikt, opět můžete řešit jen ten nejnovější a vymazat ostatní.",
-      "line.eight": "Push konflikty by měly mít vyšší prioritu než pull, protože řešení push aktualizuje trackovanou commit hash.",
-      "line.nine": "Merge konflikty by měly být řešeny nakonec. Poté, co stav Dataspeceru odpovídá očekávanému stavu oproti remote.",
-      "line.ten": "Opět se nebojte odstranit merge stav a vytvořit nový."
+      }
     },
     "pull-resolving-hint-tooltip": {
       "line.one": {

@@ -877,23 +877,6 @@
         "remove": "Remove merge state"
       }
     },
-    "list-tooltip": {
-      "main": {
-        "line.one": "Merge state signalizes the fact that Git operation has conflicts that need to be resolved in the diff editor.",
-        "line.two": {
-          "part.one": "If an entry is ",
-          "part.two": "red",
-          "part.three": ", then it means that it was modified from somewhere else than the diff editor of the corresponding merge state."
-        },
-        "line.three": "From user perspective it means, that the user should double check the changes were performed by them and not somebody else.",
-        "line.four": "Note that user should double check the modification time even if it is not red.",
-        "line.five": {
-          "part.one": "When entry is ",
-          "part.two": "red",
-          "part.three": " it means, on a technical level, that the diff tree will be recomputed when fetched."
-        }
-      }
-    },
     "resolve-order-tooltip": {
       "line.one": "You can resolve merge states in any order.",
       "line.two": {
@@ -905,14 +888,7 @@
         "one": "If you are sure that you want to commit some changes. Simply commit.",
         "two": "If you just want to be up to date with the remote, then pull.",
         "three": "If you want to merge, then make the two branches up to date (either by pulling or commiting) and create merge state for merge."
-      },
-      "line.four": "If you have some actions in mind and their order, then you can use the following hints",
-      "line.five": "In case of more merge states caused by pull. You can remove all of them. Manually pull again and resolve that.",
-      "line.six": "Because you want to have the data specification up to date with latest commit anyways.",
-      "line.seven": "If there is push conflict, once again you can only resolve the newest one and again remove all the others.",
-      "line.eight": "Push conflicts should have higher priority than pull, since resolving push updates also does update the tracked commit hash.",
-      "line.nine": "Merge conflicts should be resolved last. After the Dataspecer state matches the expected remote state.",
-      "line.ten": "Again do not be afraid to remove the merge state and create a new one."
+      }
     },
     "pull-resolving-hint-tooltip": {
       "line.one": {

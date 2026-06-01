@@ -1,6 +1,6 @@
 import { BetterModalProps, OpenBetterModal, useBetterModal, } from "@/lib/better-modal";
 import { useContext, useEffect, useMemo, useState } from "react";
-import { BadgeHelpIcon, BookOpenTextIcon, InfoIcon, Loader, SparkleIcon, Trash2, HelpCircle } from "lucide-react";
+import { BadgeHelpIcon, BookOpenTextIcon, InfoIcon, Loader, SparkleIcon, Trash2 } from "lucide-react";
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { createEmptyMergeState, getHumanReadableFilesystemName, getHumanReadableFilesystemShortName, MergeState } from "@dataspecer/git";
@@ -83,31 +83,30 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
     <Modal open={!isInfoDialogShown && isOpen} onClose={() => resolve(null)}>
       <ModalContent className="md:min-w-[1280px]">
         <ModalHeader>
-          <ModalTitle>{t("merge-state.list.title")} <PopOverGitGeneralComponent><MergeStateListTooltip/></PopOverGitGeneralComponent></ModalTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-4 top-4 shrink-0"
-            onClick={() => {
-              setIsTourModeOn(true);
-              startMergeStatesListTour(t, () => {}, () => {setIsTourModeOn(false)});
-            }}
-            title="Start guided tour"
-          >
-            <HelpCircle className="h-4 w-4" />
-          </Button>
+          <ModalTitle>{t("merge-state.list.title")}
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setIsTourModeOn(true);
+                startMergeStatesListTour(t, () => {}, () => {setIsTourModeOn(false)});
+              }}
+              title="Start guided tour"
+            >
+              <InfoIcon className="h-6 w-6" />
+            </Button>
+          </ModalTitle>
           <ModalDescription>
             {mergeStateCount > 0 ?
               mergeStateCount === 1 ?
                 <>
-                  <strong className="flex flex-1 flex-row -mt-4">Click the info at top to start tour.</strong>
+                  <strong className="flex flex-1 flex-row">Click the info at top to start tour.</strong>
                   <p className="flex flex-1 flex-row">- <p className="text-red-600">&nbsp;{t("merge-state.list.single-state.line.one.part.one")}&nbsp;</p>{t("merge-state.list.single-state.line.one.part.two")}</p>
                   <strong className="flex flex-1 flex-row pt-0.5">{t("merge-state.list.hint.pull")}<PopOverGitGeneralComponent><MergeStatePullResolvingHintTooltip/></PopOverGitGeneralComponent></strong>
                   {/* TODO RadStr: Localize the following (the newly added part of string) */}
                   <strong className="flex flex-1 flex-row -mt-4">{t("merge-state.list.hint.single")} (The bottom part is what <SparkleIcon className="dark:text-gray-200"/> does) <PopOverGitGeneralComponent><MergeStateResolveOrderTooltip/></PopOverGitGeneralComponent></strong>
                 </> :
                 <>
-                  <strong className="flex flex-1 flex-row -mt-4">Click the info at top to start tour.</strong>
+                  <strong className="flex flex-1 flex-row">Click the info at top to start tour.</strong>
                   <p className="flex flex-1 flex-row">- <p className="text-red-600">&nbsp;{t("merge-state.list.single-state.line.one.part.one")}&nbsp;</p>{t("merge-state.list.single-state.line.one.part.two")}</p>
                   <strong className="flex flex-1 flex-row pt-0.5">{t("merge-state.list.hint.pull")}<PopOverGitGeneralComponent><MergeStatePullResolvingHintTooltip/></PopOverGitGeneralComponent></strong>
                   {/* TODO RadStr: Localize the following (the newly added part of string) */}
@@ -376,26 +375,6 @@ function mergeStateSourceText(mergeState: MergeState, side: "MergeFrom" | "Merge
 }
 
 
-function MergeStateListTooltip() {
-  const { t } = useTranslation();
-  return <div>
-    <p>{t("merge-state.list-tooltip.main.line.one")}</p>
-    <br/>
-    <p>
-      - {t("merge-state.list-tooltip.main.line.two.part.one")}
-      <span className="text-destructive inline">{t("merge-state.list-tooltip.main.line.two.part.two")}</span>
-      {t("merge-state.list-tooltip.main.line.two.part.three")}
-    </p>
-    <p>- {t("merge-state.list-tooltip.main.line.three")}</p>
-    <p>- {t("merge-state.list-tooltip.main.line.four")}</p>
-    <p>
-      - {t("merge-state.list-tooltip.main.line.five.part.one")}
-      <span className="text-destructive inline">{t("merge-state.list-tooltip.main.line.five.part.two")}</span>
-      {t("merge-state.list-tooltip.main.line.five.part.three")}
-    </p>
-  </div>;
-}
-
 function MergeStateResolveOrderTooltip() {
   const { t } = useTranslation();
   return <div>
@@ -412,14 +391,8 @@ function MergeStateResolveOrderTooltip() {
       <li>&nbsp; - {t("merge-state.resolve-order-tooltip.list.three")}</li>
     </ul>
     <br/>
-    <h2 className="text-base font-bold flex flex-1 flex-row">- {t("merge-state.resolve-order-tooltip.line.four")} (<SparkleIcon/>):</h2>
-    <br/>
-    <p>- {t("merge-state.resolve-order-tooltip.line.five")}</p>
-    <p>&nbsp;&nbsp;&nbsp;&nbsp;{t("merge-state.resolve-order-tooltip.line.six")}</p>
-    <p>- {t("merge-state.resolve-order-tooltip.line.seven")}</p>
-    <p>&nbsp;&nbsp;&nbsp;&nbsp;{t("merge-state.resolve-order-tooltip.line.eight")}</p>
-    <p>- {t("merge-state.resolve-order-tooltip.line.nine")}</p>
-    <p>&nbsp;&nbsp;&nbsp;&nbsp;{t("merge-state.resolve-order-tooltip.line.ten")}</p>
+    {/* Not localized */}
+    <h2 className="text-base font-bold flex flex-1 flex-row">- If you have specific actions in mind check "<SparkleIcon/>", respectively its explanation in tour.</h2>
     {/* TODO RadStr: Localization */}
     <br/>
     <p className="text-base flex flex-1 flex-row">Note that "<SparkleIcon/>" only removes and creates merge states. You still have to resolve them.</p>
