@@ -56,8 +56,11 @@ export function semanticModelsToShacl(
   configuration: SemanticModelsToShaclConfiguration,
   options: SemanticModelsToShaclConfigurationOptions,
 ): ShaclModel {
-
   const policy = createPolicy(configuration, options);
+
+  if (!profileModels.includes(topProfileModel)) {
+    console.error("The top profile should be among all profiles.");
+  }
 
   // Prepare Lightweight OWL models.
   const owl = semanticModelToLightweightOwl(
@@ -69,10 +72,22 @@ export function semanticModelsToShacl(
 
   const dsv = createDataSpecificationVocabulary(
     { semantics: semanticModels, profiles: profileModels, },
-    // Here we need to pass all model as we need the full hierarchy.
+    // Here we need to pass all models as we need the full hierarchy.
     // Without it we do not have the connection to OWL classes.
-    [...profileModels, topProfileModel],
+    // We know that the top model is part of the profile models.
+    profileModels,
     { iri: "http://example.com/" });
+
+  // This is a workaround for
+  // https://github.com/dataspecer/dataspecer/issues/1493.
+  // To properly solve the issue we need to be able to produce DSV at
+  // different levels and then aggregate them or mark from which model
+  // they are.
+  const topDsv = createDataSpecificationVocabulary(
+    { semantics: semanticModels, profiles: profileModels, },
+    [topProfileModel],
+    { iri: "http://example.com/" });
+  const topClassesByIri = topDsv.classProfiles.map(item => item.iri);
 
   const structure = createStructureModelForProfile(owl, dsv);
   const classMap: Record<string, StructureClass> = {};
@@ -82,6 +97,9 @@ export function semanticModelsToShacl(
 
   // For each entity we build a property shapes.
   for (const entity of structure.classes) {
+    if (!topClassesByIri.includes(entity.iri)) {
+      continue;
+    }
     // First we build a list of all properties for the given entity
     // as templates. The reason is we do not have a complete information
     // about them yet.
