@@ -1,9 +1,9 @@
 import { BetterModalProps, OpenBetterModal, useBetterModal, } from "@/lib/better-modal";
-import { useContext, useEffect, useState } from "react";
-import { BadgeHelpIcon, BookOpenTextIcon, InfoIcon, Loader, SparkleIcon, Trash2 } from "lucide-react";
+import { useContext, useEffect, useMemo, useState } from "react";
+import { BadgeHelpIcon, BookOpenTextIcon, InfoIcon, Loader, SparkleIcon, Trash2, HelpCircle } from "lucide-react";
 import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
-import { getHumanReadableFilesystemName, getHumanReadableFilesystemShortName, MergeState } from "@dataspecer/git";
+import { createEmptyMergeState, getHumanReadableFilesystemName, getHumanReadableFilesystemShortName, MergeState } from "@dataspecer/git";
 import { removeMergeState } from "@/utils/merge-state-backend-requests";
 import { ShowMergeStateInfoDialog } from "./show-merge-state-info-dialog";
 import { TextDiffEditorDialog } from "./diff-editor-dialog";
@@ -14,6 +14,7 @@ import { TFunction } from "i18next";
 import { checkIfHashMatchesGitRemote, manualPull } from "@/utils/git-fetch-related-actions";
 import { commitToGitDialogOnClickHandler } from "./git-actions-dialogs";
 import { createMergeStateOnBackend } from "./open-merge-state";
+import { startMergeStatesListTour } from "@/components/driver-tutorial-tours/list-merge-states-tutorial-tour";
 
 
 type MergeStateDialogProps = {
@@ -36,6 +37,29 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
   // The value does not matter - it just says that on change there should be refetch
   const [shouldRefetchMergeStates, setShouldRefetchMergeStates] = useState<boolean>(true);
 
+  const [isTourModeOn, setIsTourModeOn] = useState<boolean>(false);
+  const tourMergeStates: MergeState[] = useMemo(() => {
+    const emptyMergeState1 = createEmptyMergeState("pull");
+    emptyMergeState1.isUpToDate = true;
+    emptyMergeState1.branchMergeFrom = "main";
+    emptyMergeState1.branchMergeTo = "main";
+    const emptyMergeState2 = createEmptyMergeState("merge");
+    // Could be refactored ... doing the same thing three times
+    emptyMergeState2.isUpToDate = false;
+    emptyMergeState2.branchMergeFrom = "main";
+    emptyMergeState2.branchMergeTo = "feature-branch";
+
+    const emptyMergeState3 = createEmptyMergeState("push");
+    emptyMergeState3.isUpToDate = true;
+    emptyMergeState3.branchMergeFrom = "main";
+    emptyMergeState3.branchMergeTo = "main";
+    const tourMergeStatesInternal: MergeState[] = [
+      emptyMergeState1,
+      emptyMergeState2,
+      emptyMergeState3,
+    ];
+    return tourMergeStatesInternal;
+  }, []);
 
   useEffect(() => {
     setIsLoading(true);
@@ -52,24 +76,38 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
     setMergeStates(prev => prev.filter(mergeState => uuid !== mergeState.uuid));
   };
 
-  const mergeStateCount = (mergeStates?.length ?? 0);
+  const mergeStatesToRender = isTourModeOn ? tourMergeStates : mergeStates;
+  const mergeStateCount = (mergeStatesToRender?.length ?? 0);
 
   return (
     <Modal open={!isInfoDialogShown && isOpen} onClose={() => resolve(null)}>
-      <ModalContent className="md:min-w-[1380px]">
+      <ModalContent className="md:min-w-[1280px]">
         <ModalHeader>
           <ModalTitle>{t("merge-state.list.title")} <PopOverGitGeneralComponent><MergeStateListTooltip/></PopOverGitGeneralComponent></ModalTitle>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-4 top-4 shrink-0"
+            onClick={() => {
+              setIsTourModeOn(true);
+              startMergeStatesListTour(t, () => {}, () => {setIsTourModeOn(false)});
+            }}
+            title="Start guided tour"
+          >
+            <HelpCircle className="h-4 w-4" />
+          </Button>
           <ModalDescription>
             {mergeStateCount > 0 ?
               mergeStateCount === 1 ?
                 <>
+                  <strong className="flex flex-1 flex-row -mt-4">Click the info at top to start tour.</strong>
                   <p className="flex flex-1 flex-row">- <p className="text-red-600">&nbsp;{t("merge-state.list.single-state.line.one.part.one")}&nbsp;</p>{t("merge-state.list.single-state.line.one.part.two")}</p>
                   <strong className="flex flex-1 flex-row pt-0.5">{t("merge-state.list.hint.pull")}<PopOverGitGeneralComponent><MergeStatePullResolvingHintTooltip/></PopOverGitGeneralComponent></strong>
                   {/* TODO RadStr: Localize the following (the newly added part of string) */}
                   <strong className="flex flex-1 flex-row -mt-4">{t("merge-state.list.hint.single")} (The bottom part is what <SparkleIcon className="dark:text-gray-200"/> does) <PopOverGitGeneralComponent><MergeStateResolveOrderTooltip/></PopOverGitGeneralComponent></strong>
                 </> :
                 <>
-                  <p className="flex flex-1 flex-row">- {t("merge-state.list.sorted-by-date")}</p>
+                  <strong className="flex flex-1 flex-row -mt-4">Click the info at top to start tour.</strong>
                   <p className="flex flex-1 flex-row">- <p className="text-red-600">&nbsp;{t("merge-state.list.single-state.line.one.part.one")}&nbsp;</p>{t("merge-state.list.single-state.line.one.part.two")}</p>
                   <strong className="flex flex-1 flex-row pt-0.5">{t("merge-state.list.hint.pull")}<PopOverGitGeneralComponent><MergeStatePullResolvingHintTooltip/></PopOverGitGeneralComponent></strong>
                   {/* TODO RadStr: Localize the following (the newly added part of string) */}
@@ -80,23 +118,23 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
           </ModalDescription>
           {isLoading && <Loader className="mr-2 h-4 w-4 animate-spin" /> }
           {
-          !isLoading && <>
+          !isLoading && <div id="merge-states-list-id" className="flex flex-col space-y-2">
             {/* The header */}
             {/* The ml-4 is here for the first button, otherwise the merge state cause in the rows is shifted */}
-            <div className="grid grid-cols-[79%_21%]">
-              <div className="grid grid-cols-[1.8fr_1.9fr_1fr_1.9fr_2.0fr] divide-x divide-gray-300 min-w-[1000px] max-lg:min-w-[1000px]">
-                <div className="flex items-center justify-center">{t("merge-state.list.columns.created-at")}</div>
-                <div className="flex items-center justify-center">{t("merge-state.list.columns.last-modified-at")}</div>
-                <div className="flex items-center justify-center">{t("merge-state.list.columns.cause")}</div>
-                <div className="flex items-center justify-center">{t("merge-state.list.columns.merge-from")}</div>
-                <div className="flex items-center justify-center">{t("merge-state.list.columns.merge-to")}</div>
+            <div id="merge-state-selection-header-id" className="grid grid-cols-[1fr_300px]">
+              <div id="merge-state-selection-columns-id" className="grid grid-cols-[1.8fr_1.9fr_1.1fr_1.9fr_2.0fr] divide-x divide-gray-300 min-w-[800px] max-lg:min-w-[800px]">
+                <div id="merge-state-selection-created-at-column-id" className="flex items-center justify-center">{t("merge-state.list.columns.created-at")}</div>
+                <div id="merge-state-selection-last-modified-at-column-id" className="flex items-center justify-center">{t("merge-state.list.columns.last-modified-at")}</div>
+                <div id="merge-state-selection-cause-column-id" className="flex items-center justify-center">{t("merge-state.list.columns.cause")}</div>
+                <div id="merge-state-selection-merge-from-column-id" className="flex items-center justify-center">{t("merge-state.list.columns.merge-from")}</div>
+                <div id="merge-state-selection-merge-to-column-id" className="flex items-center justify-center">{t("merge-state.list.columns.merge-to")}</div>
               </div>
             </div>
 
-            { mergeStates
+            { mergeStatesToRender
               .sort((a: MergeState, b: MergeState) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-              .map(mergeState => renderMergeState(resource, mergeState, mergeStates, removeFromMergeStatesInDialog, setIsInfoDialogShown, openModal, setIsLoading, () => setShouldRefetchMergeStates(prev => !prev), resolve, t)) }
-          </>
+              .map((mergeState, index) => renderMergeState(resource, mergeState, mergeStatesToRender, removeFromMergeStatesInDialog, setIsInfoDialogShown, openModal, setIsLoading, () => setShouldRefetchMergeStates(prev => !prev), resolve, t, index)) }
+          </div>
           }
         </ModalHeader>
         <ModalFooter className="pt-8">
@@ -241,7 +279,9 @@ const renderMergeState = (
   forceMergeStatesRefetch: () => void,
   closeMergeStateListDialog: (value: null) => void,
   t: TFunction<"translation", undefined>,
+  rowIndex: number,
 ) => {
+  const rowNumber = rowIndex + 1;
   const removeMergeStateOnClickHandler = async () => {
     removeFromMergeStatesInDialog(mergeState.uuid);
     await removeMergeState(mergeState.uuid);
@@ -270,27 +310,27 @@ const renderMergeState = (
   };
 
 
-  return <div className={`flex items-baseline`}>
-      <div className="grid grid-cols-[89%_11%] min-w-[1175px] ">
-        <div className={`${mergeState.isUpToDate ? "" : "bg-red-400"} w-full`}>
+  return <div id={`merge-state-row-${rowNumber}`} className={`flex items-baseline`}>
+      <div className="grid grid-cols-[1fr_auto] min-w-[1200px]">
+        <div id={`merge-state-row-text-${rowNumber}`} className={`${mergeState.isUpToDate ? "" : "bg-red-400"} w-full`}>
           {mergeStateRowText(mergeState)}
         </div>
         <div className="flex flex-row relative top-[10%] ml-8 gap-x-8">
-          <button title={t("merge-state.list.button.open-diff-editor")} onClick={openDiffEditor} className="cursor-pointer relative">
+          <button id={`merge-state-open-diff-editor-button-${rowNumber}`} title={t("merge-state.list.button.open-diff-editor")} onClick={openDiffEditor} className="cursor-pointer relative">
             <BookOpenTextIcon className="hover:bg-gray-400 dark:hover:bg-gray-700 hover:text-white dark:text-gray-200"/>
           </button>
           {/* TODO RadStr: Localize title */}
-          <button title={t("Performs 'magic' resolving - Explained in the tooltip")} onClick={automaticResolveHelperAction} className="cursor-pointer relative">
+          <button id={`merge-state-automatic-resolve-button-${rowNumber}`} title={t("Removes old and creates new merge state - Explained in the tour")} onClick={automaticResolveHelperAction} className="cursor-pointer relative">
             <SparkleIcon className="hover:bg-gray-400 dark:hover:bg-gray-700 hover:text-white dark:text-gray-200"/>
           </button>
           {/* TODO RadStr: Localize title */}
-          <button title={t("Checks whether the merge states is performed on top of the latest Git remote commits")} onClick={validateAction} className="cursor-pointer relative">
+          <button id={`merge-state-validate-button-${rowNumber}`} title={t("Checks whether the merge states is performed on top of the latest Git remote commits")} onClick={validateAction} className="cursor-pointer relative">
             <BadgeHelpIcon className="hover:bg-gray-400 dark:hover:bg-gray-700 hover:text-white dark:text-gray-200"/>
           </button>
-          <button title={t("merge-state.list.button.show-info")} onClick={() => openModal(ShowMergeStateInfoDialog, {mergeState, setIsInfoDialogShown})} className="cursor-pointer hover:bg-blue-500 relative">
+          <button id={`merge-state-show-info-button-${rowNumber}`} title={t("merge-state.list.button.show-info")} onClick={() => openModal(ShowMergeStateInfoDialog, {mergeState, setIsInfoDialogShown})} className="cursor-pointer hover:bg-blue-500 relative">
             <InfoIcon className="text-blue-400 hover:bg-blue-400 hover:text-white dark:hover:bg-blue-700"/>
           </button>
-          <button title={t("merge-state.list.button.remove")} onClick={removeMergeStateOnClickHandler} className="cursor-pointer hover:bg-red-600 relative">
+          <button id={`merge-state-remove-button-${rowNumber}`} title={t("merge-state.list.button.remove")} onClick={removeMergeStateOnClickHandler} className="cursor-pointer hover:bg-red-600 relative">
             <Trash2 className="text-destructive hover:bg-destructive hover:text-black dark:hover:text-white"/>
           </button>
         </div>

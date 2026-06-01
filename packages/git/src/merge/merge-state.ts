@@ -246,6 +246,9 @@ export function createEmptyMergeState(
   diffTreeSize?: number,
   conflicts?: DatastoreComparison[],
 ): MergeState {
+  const filesystemTypeMergeFrom: AvailableFilesystems = mergeStateCause === "pull" ? AvailableFilesystems.ClassicFilesystem : AvailableFilesystems.DS_Filesystem;
+  const filesystemTypeMergeTo: AvailableFilesystems = mergeStateCause === "push" ? AvailableFilesystems.ClassicFilesystem : AvailableFilesystems.DS_Filesystem;
+
   return {
     uuid: "",
     commitMessage: "",
@@ -257,14 +260,14 @@ export function createEmptyMergeState(
     lastCommitHashMergeTo: "",
     rootFullPathToMetaMergeTo: "",
     rootIriMergeTo: "",
-    filesystemTypeMergeTo: AvailableFilesystems.DS_Filesystem,
+    filesystemTypeMergeTo,
     isMergeFromBranch: false,
     branchMergeFrom: "",
     gitUrlMergeFrom: "",
     lastCommitHashMergeFrom: "",
     rootFullPathToMetaMergeFrom: "",
     rootIriMergeFrom: "",
-    filesystemTypeMergeFrom: AvailableFilesystems.DS_Filesystem,
+    filesystemTypeMergeFrom,
     editable: convertMergeStateCauseToEditable(mergeStateCause),
     lastCommonCommitHash: "",
     conflicts: conflicts ?? [],
