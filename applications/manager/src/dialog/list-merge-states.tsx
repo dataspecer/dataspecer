@@ -79,38 +79,29 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
   const mergeStatesToRender = isTourModeOn ? tourMergeStates : mergeStates;
   const mergeStateCount = (mergeStatesToRender?.length ?? 0);
 
+  const tourStarter = () => {
+    setIsTourModeOn(true);
+    startMergeStatesListTour(t, () => {}, () => {setIsTourModeOn(false)});
+  };
+
   return (
     <Modal open={!isInfoDialogShown && isOpen} onClose={() => resolve(null)}>
       <ModalContent className="md:min-w-[1280px]">
         <ModalHeader>
           <ModalTitle>{t("merge-state.list.title")}
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setIsTourModeOn(true);
-                startMergeStatesListTour(t, () => {}, () => {setIsTourModeOn(false)});
-              }}
-              title="Start guided tour"
-            >
-              <InfoIcon className="h-6 w-6" />
-            </Button>
           </ModalTitle>
           <ModalDescription>
             {mergeStateCount > 0 ?
               mergeStateCount === 1 ?
                 <>
-                  <strong className="flex flex-1 flex-row">Click the info at top to start tour.</strong>
-                  <p className="flex flex-1 flex-row">- <p className="text-red-600">&nbsp;{t("merge-state.list.single-state.line.one.part.one")}&nbsp;</p>{t("merge-state.list.single-state.line.one.part.two")}</p>
-                  <strong className="flex flex-1 flex-row pt-0.5">{t("merge-state.list.hint.pull")}<PopOverGitGeneralComponent><MergeStatePullResolvingHintTooltip/></PopOverGitGeneralComponent></strong>
+                  <p className="flex flex-1 flex-row">{t("merge-state.pull-resolving-hint-tooltip.line.two")}</p>
                   {/* TODO RadStr: Localize the following (the newly added part of string) */}
-                  <strong className="flex flex-1 flex-row -mt-4">{t("merge-state.list.hint.single")} (The bottom part is what <SparkleIcon className="dark:text-gray-200"/> does) <PopOverGitGeneralComponent><MergeStateResolveOrderTooltip/></PopOverGitGeneralComponent></strong>
+                  <strong className="flex flex-1 flex-row">{t("merge-state.list.hint.single")}<PopOverGitGeneralComponent><MergeStateResolveOrderTooltip/></PopOverGitGeneralComponent></strong>
                 </> :
                 <>
-                  <strong className="flex flex-1 flex-row">Click the info at top to start tour.</strong>
-                  <p className="flex flex-1 flex-row">- <p className="text-red-600">&nbsp;{t("merge-state.list.single-state.line.one.part.one")}&nbsp;</p>{t("merge-state.list.single-state.line.one.part.two")}</p>
-                  <strong className="flex flex-1 flex-row pt-0.5">{t("merge-state.list.hint.pull")}<PopOverGitGeneralComponent><MergeStatePullResolvingHintTooltip/></PopOverGitGeneralComponent></strong>
+                  <p className="flex flex-1 flex-row">{t("merge-state.pull-resolving-hint-tooltip.line.two")}</p>
                   {/* TODO RadStr: Localize the following (the newly added part of string) */}
-                  <strong className="flex flex-1 flex-row -mt-4">{t("merge-state.list.hint.many")} (The bottom part is what <SparkleIcon className="dark:text-gray-200"/> does) <PopOverGitGeneralComponent><MergeStateResolveOrderTooltip/></PopOverGitGeneralComponent></strong>
+                  <strong className="flex flex-1 flex-row">{t("merge-state.list.hint.many")}<PopOverGitGeneralComponent><MergeStateResolveOrderTooltip/></PopOverGitGeneralComponent></strong>
                 </> :
               <p>{t("merge-state.list.empty")}</p>
             }
@@ -137,6 +128,11 @@ export const ListMergeStatesDialog = ({ iri, isOpen, resolve }: MergeStateDialog
           }
         </ModalHeader>
         <ModalFooter className="pt-8">
+          <Button variant="outline"
+                  className="border bg-blue-100 border-blue-500 hover:bg-blue-500 hover:text-white dark:bg-blue-900 dark:border-blue-400 dark:hover:bg-blue-500 dark:hover:text-white transition"
+                  onClick={tourStarter}>
+            <InfoIcon className="mr-2"/> <p>Tour</p>
+          </Button>
           <Button variant="outline" onClick={() => resolve(null)}>{t("close")}</Button>
         </ModalFooter>
       </ModalContent>
@@ -378,7 +374,6 @@ function mergeStateSourceText(mergeState: MergeState, side: "MergeFrom" | "Merge
 function MergeStateResolveOrderTooltip() {
   const { t } = useTranslation();
   return <div>
-    <p>- {t("merge-state.resolve-order-tooltip.line.one")}</p>
     <h2 className="text-base font-bold">
       {t("merge-state.resolve-order-tooltip.line.two.part.one")}
       <span className="text-red-600">{t("merge-state.resolve-order-tooltip.line.two.part.two")}</span>
@@ -392,20 +387,6 @@ function MergeStateResolveOrderTooltip() {
     </ul>
     <br/>
     {/* Not localized */}
-    <h2 className="text-base font-bold flex flex-1 flex-row">- If you have specific actions in mind check "<SparkleIcon/>", respectively its explanation in tour.</h2>
-  </div>;
-}
-
-
-function MergeStatePullResolvingHintTooltip() {
-  const { t } = useTranslation();
-  return <div>
-    <p className="flex flex-1 flex-row">
-      -&nbsp;
-      <span className="text-red-600">{t("merge-state.pull-resolving-hint-tooltip.line.one.part.one")}&nbsp;</span>
-      {t("merge-state.pull-resolving-hint-tooltip.line.one.part.two")}
-    </p>
-    <p className="flex flex-1 flex-row">-&nbsp;{t("merge-state.pull-resolving-hint-tooltip.line.two")}</p>
-    <p className="flex flex-1 flex-row">&nbsp;&nbsp;&nbsp;{t("merge-state.pull-resolving-hint-tooltip.line.three")}</p>
+    <h2 className="text-base font-bold flex flex-1 flex-row">If you have specific actions in mind check "<SparkleIcon/>" tooltip, respectively its explanation in tour.</h2>
   </div>;
 }

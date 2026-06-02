@@ -853,12 +853,6 @@
       "title": "List of currently opened merge states for chosen data specification",
       "empty": "There are currently no merge states open for selected data specification.",
       "sorted-by-date": "Sorted by creation date (newest first).",
-      "single-state": {
-        "line.one": {
-          "part.one": "Removing",
-          "part.two": " merge state and creating new one of the same type helps if you get stuck or not up to date with remote."
-        }
-      },
       "hint": {
         "pull": "Hint for resolving PULL merge states",
         "single": "Hint when you have more than one merge state, but it may help you anyways.",
@@ -878,7 +872,6 @@
       }
     },
     "resolve-order-tooltip": {
-      "line.one": "You can resolve merge states in any order.",
       "line.two": {
         "part.one": "If you are completely stuck then ",
         "part.two": "remove",
@@ -891,12 +884,7 @@
       }
     },
     "pull-resolving-hint-tooltip": {
-      "line.one": {
-        "part.one": "Remove",
-        "part.two": " all merge states caused by pull and pull again. You want to be up to date with latest commit."
-      },
-      "line.two": "Performing manual pull succeeds if you did not do any action between now and the last Git operation, pull will finish without creating merge state.",
-      "line.three": "This is useful when you want to resolve automatically created pull."
+      "line.two": "Hint: Performing MANUAL pull succeeds without merge state if you did not do any action between now and the last Git operation."
     },
     "finalizer": {
       "waiting": {

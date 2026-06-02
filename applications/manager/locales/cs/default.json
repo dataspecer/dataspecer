@@ -853,12 +853,6 @@
       "title": "Seznam aktuálně otevřených merge stavů pro vybranou datovou specifikaci",
       "empty": "Momentálně neexistují žádné otevřené merge stavy pro vybranou datovou specifikaci.",
       "sorted-by-date": "Seřazeno podle data vytvoření (od nejnovějších).",
-      "single-state": {
-        "line.one": {
-          "part.one": "Odstranění",
-          "part.two": " merge stavu a vytvoření nového stejného typu pomáhá, pokud uvíznete nebo datová specifikace není aktuální vůči vzdálenému repozitáři."
-        }
-      },
       "hint": {
         "pull": "Tip pro řešení merge stavů způsobených PULLem",
         "single": "Tip, pro situaci s více merge stavy, ale i tak může pomoci.",
@@ -878,7 +872,6 @@
       }
     },
     "resolve-order-tooltip": {
-      "line.one": "Merge stavy můžete vyřešit v libovolném pořadí.",
       "line.two": {
         "part.one": "Pokud jste úplně zaseknutí, tak ",
         "part.two": "odstraňte",
@@ -891,12 +884,7 @@
       }
     },
     "pull-resolving-hint-tooltip": {
-      "line.one": {
-        "part.one": "Odstraňte",
-        "part.two": " všechny merge stavy způsobené PULLem a pullněte znovu. Chcete být aktuální s posledním commitem."
-      },
-      "line.two": "Ruční pull nevytvoří merge stav, pokud jste od poslední Git operace neprovedli žádnou změnu.",
-      "line.three": "To je užitečné, když chcete vyřešit automaticky vytvořený pull."
+      "line.two": "Nápověda: MANUÁLNÍ pull nevytvoří merge stav, pokud jste od poslední Git operace neprovedli žádnou změnu."
     },
     "finalizer": {
       "waiting": {

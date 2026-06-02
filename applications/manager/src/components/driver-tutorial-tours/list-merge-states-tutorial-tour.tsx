@@ -87,7 +87,7 @@ export function startMergeStatesListTour(
       popover: {
         title: "'Red' state means modified",
         description:
-          "Merge state is red if it was modified from either outside of diff editor or diff editor that was resovling different merge state.<br/><br/>After opening in diff editor, the merge state will be reloaded and turned 'white'.",
+          "Merge state is red if it was modified from either outside of diff editor or diff editor that was resolving different merge state.<br/><br/>After opening in diff editor, the merge state will be reloaded, turned 'white' and 'modified at' updated.",
       },
     },
     {
@@ -100,7 +100,7 @@ export function startMergeStatesListTour(
     {
       element: getTourId("merge-state-automatic-resolve-button"),
       popover: {
-        title: "Remove old merge states and create a with the latest Git remote commits",
+        title: "✨ - Removes old merge states and create a new one with the latest Git remote commits",
         description:
           "Useful if merge state is not up-to-date with remote.<br/><br/>The exact action depends on the merge state cause. See next.",
       },
@@ -109,7 +109,7 @@ export function startMergeStatesListTour(
     {
       element: "#merge-state-automatic-resolve-button-1",
       popover: {
-        title: "For pull",
+        title: "✨ For pull",
         description:
           "Removes all pull merge states and creates a new pull merge state with latest.",
       },
@@ -117,15 +117,15 @@ export function startMergeStatesListTour(
     {
       element: "#merge-state-automatic-resolve-button-2",
       popover: {
-        title: "For merge",
+        title: "✨ For merge",
         description:
-          "Removes all pull, and 'merge' merge states. Checks if both ends are up-to-date.<br/><br/>If not creates relevant pull merge states, if yes creates a 'merge' merge state.",
+          "Removes all pull, and 'merge' merge states. Checks if both ends are up-to-date.<br/><br/>If not: Creates relevant pull merge states<br/>If yes: Creates a 'merge' merge state.",
       },
     },
     {
       element: "#merge-state-automatic-resolve-button-3",
       popover: {
-        title: "For push",
+        title: "✨For push",
         description:
           "Removes all pull and push merge states and creates a new push merge state with latest.",
       },
