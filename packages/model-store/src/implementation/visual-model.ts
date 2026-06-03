@@ -3,7 +3,6 @@ import { createVisualModel } from "@dataspecer/core-v2/semantic-model/simplified
 import type { Entity, EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
-import { v7 as uuidv7 } from "uuid";
 import { diffEntities } from "../utilities.ts";
 import type { ApplyOperationResult, ModelInDefaultFrontendModelStore } from "./implementation.ts";
 
@@ -114,9 +113,8 @@ export class VisualModelInModelStore implements Model, ModelInDefaultFrontendMod
     });
   }
 
-  applyOperations(operations: Operation[]): ApplyOperationResult {
+  applyOperations(transactionId: string, operations: Operation[]): ApplyOperationResult {
     let changes: EntityChange[] = [];
-    const transactionId = uuidv7();
     const oldEntities = this.internalGetImmutableEntities();
     const oldModelData = this.internalSerializeModel();
 

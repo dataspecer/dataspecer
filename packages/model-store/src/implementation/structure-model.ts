@@ -1,25 +1,18 @@
 import type { PackageService } from "@dataspecer/core-v2/project";
-import {
-  CoreResource,
-  createExecutorMap,
-  type CoreOperation,
-  type CoreOperationExecutor,
-  type CoreResourceReader
-} from "@dataspecer/core/core";
+import { CoreResource, createExecutorMap, type CoreOperation, type CoreOperationExecutor, type CoreResourceReader } from "@dataspecer/core/core";
 import { dataPsmExecutors } from "@dataspecer/core/data-psm/data-psm-executors";
 import { generateEntityId, type Entity, type EntityRecord } from "@dataspecer/core/entity-model";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
-import { diffEntities } from "../utilities.ts";
 import { BaseModelInModelStore } from "./base.ts";
-import type { ApplyOperationResult, ModelInDefaultFrontendModelStore } from "./implementation.ts";
+import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
 
 type BaseEntityType = Entity & CoreResource;
 type BaseOperationType = Operation & CoreOperation;
 
-export interface StructureModelCommitData {
+export interface StructureModelState {
   operations: Operation[];
-  resources: EntityRecord<BaseEntityType>;
+  entities: EntityRecord<BaseEntityType>;
 }
 
 /**
@@ -33,13 +26,21 @@ function coreResourceToEntity(resource: CoreResource): BaseEntityType {
   };
 }
 
+function coreOperationToOperation(operation: CoreOperation): BaseOperationType {
+  return {
+    ...operation,
+    id: operation.iri!,
+    type: operation.types![0],
+  };
+}
+
 const structureModelExecutors = createExecutorMap([...dataPsmExecutors]);
 
 /**
  * Currently, the structure model is PSM. This will be changed in the future,
  * but we will already call it properly to avoid refactoring in the future.
  */
-export class StructureModelInModelStore extends BaseModelInModelStore implements Model, ModelInDefaultFrontendModelStore {
+export class StructureModelInModelStore extends BaseModelInModelStore<BaseEntityType> implements Model, ModelInDefaultFrontendModelStore {
   protected service: PackageService;
 
   constructor(id: string, service: PackageService) {
@@ -48,107 +49,29 @@ export class StructureModelInModelStore extends BaseModelInModelStore implements
   }
 
   /**
-   * List of all applied operations.
-   *
-   * Mutable array of immutable objects.
+   * Loads structure model state from the backend.
+   * When resolves, everything is loaded and ready to be used.
    */
-  protected operations: Operation[] = [];
-
-  /**
-   * Current entities state.
-   *
-   * Mutable objects with immutable values.
-   */
-  protected entities: EntityRecord<BaseEntityType> = {};
-
-  getAllEntities(): EntityRecord<BaseEntityType> {
-    return {...this.entities};
+  protected async loadInternal() {
+    const data = await this.service.getResourceJsonData(this.id);
+    const state = this.parseJsonData(data);
+    return state;
   }
 
-  applyOperations(operations: BaseOperationType[]): ApplyOperationResult {
-    const oldEntities = this.getAllEntities();
-    for (const operation of operations) {
-      this.applyOperation(operation);
-    }
-    const entityChanges = diffEntities(oldEntities, this.entities);
+  protected async saveInternal(state: StructureModelState): Promise<void> {
+    await this.service.setResourceJsonData(this.id, state);
+  }
+
+  private parseJsonData(data: unknown): StructureModelState {
+    const coreOperations = (data as any).operations as CoreOperation[];
+    const coreResources = (data as any).resources as Record<string, CoreResource>;
+
+    const operations = coreOperations.map(coreOperationToOperation);
+    const entities = Object.fromEntries(Object.entries(coreResources).map(([iri, resource]) => [iri, coreResourceToEntity(resource)])) as EntityRecord<BaseEntityType>;
 
     return {
-      entityChanges,
-      transactionId: "",
-    };
-  }
-
-  async load(): Promise<void> {
-    const data = await this.service.getResourceJsonData(this.id) as any;
-
-    const coreResources = data.resources as Record<string, CoreResource>;
-    const operations = data.operations;
-
-    const resources = Object.fromEntries(Object.entries(coreResources).map(([iri, resource]) => [iri, coreResourceToEntity(resource)]));
-
-    const state = this.parseCommitData({
       operations,
-      resources,
-    });
-    this.restore(state);
-  }
-
-  async save(): Promise<void> {
-    await this.service.setResourceJsonData(this.id, this.commit());
-  }
-
-  /**
-   * Performs commit by freezing the current state.
-   */
-  commit(): StructureModelCommitData {
-    return {
-      operations: [...this.operations],
-      resources: { ...this.entities },
-    };
-  }
-
-  /**
-   * Restores the previous state and returns changes here as return type.
-   */
-  restore(state: StructureModelCommitData): ApplyOperationResult {
-    const previousEntities = this.getAllEntities();
-    this.operations = [...state.operations];
-    this.entities = { ...state.resources };
-    const entityChanges = diffEntities(previousEntities, this.getAllEntities());
-    this.internalNotifyExternalChanges(entityChanges);
-    return {
-      entityChanges,
-      transactionId: "",
-    };
-  }
-
-  protected parseCommitData(data: unknown): StructureModelCommitData {
-    if (data === null) {
-      return {
-        operations: [],
-        resources: {},
-      };
-    }
-    if (typeof data !== "object") {
-      throw new Error(`Invalid structure model data for '${this.id}'.`);
-    }
-
-    const typedData = data as Partial<StructureModelCommitData>;
-    if (!Array.isArray(typedData.operations)) {
-      throw new Error(`Invalid structure model operations for '${this.id}'.`);
-    }
-    if (
-      typedData.resources === undefined ||
-      typedData.resources === null ||
-      typeof typedData.resources !== "object" ||
-      Array.isArray(typedData.resources)
-    ) {
-      throw new Error(`Invalid structure model resources for '${this.id}'.`);
-    }
-
-    return {
-      operations: typedData.operations as Operation[],
-      resources: typedData.resources as EntityRecord<BaseEntityType>,
+      entities,
     };
   }
 
@@ -158,7 +81,7 @@ export class StructureModelInModelStore extends BaseModelInModelStore implements
    * Since the operations are using CoreResource internally, we need to sync
    * entity types.
    */
-  protected applyOperation(operation: BaseOperationType): void {
+  protected override applyOperation(operation: BaseOperationType, mutableState: EntityRecord<BaseEntityType>): void {
     // Since there is an interface mismatch, we need to ensure that the operation is compatible with both interfaces
     operation.id = operation.id ?? operation.iri;
     operation.iri = operation.id;
@@ -169,15 +92,17 @@ export class StructureModelInModelStore extends BaseModelInModelStore implements
 
     const reader: CoreResourceReader = {
       readResource: (iri: string): CoreResource | null => {
-        return this.entities[iri] as unknown as CoreResource ?? null;
+        return (mutableState[iri] as unknown as CoreResource) ?? null;
       },
       listResources: (): string[] => {
-        return Object.keys(this.entities);
+        return Object.keys(mutableState);
       },
       listResourcesOfType: (typeIri: string): string[] => {
-        return Object.values(this.entities).filter(entity => entity.type.includes(typeIri)).map(entity => entity.id);
+        return Object.values(mutableState)
+          .filter((entity) => entity.type.includes(typeIri))
+          .map((entity) => entity.id);
       },
-    }
+    };
 
     const executorResult = executor.execute(
       reader,
@@ -193,18 +118,16 @@ export class StructureModelInModelStore extends BaseModelInModelStore implements
       return;
     }
 
-    this.operations.push(operation);
-
     for (const resource of [...Object.values(executorResult.changed), ...Object.values(executorResult.created)]) {
       // We map core resource to entity and do clone by it
       const entity = coreResourceToEntity(resource);
-      this.entities[entity.id] = entity;
+      mutableState[entity.id] = entity;
     }
 
-    executorResult.deleted.forEach((iri) => delete this.entities[iri]);
+    executorResult.deleted.forEach((iri) => delete mutableState[iri]);
   }
 
-  protected findExecutor(operation: CoreOperation): CoreOperationExecutor<CoreOperation> {
+  private findExecutor(operation: CoreOperation): CoreOperationExecutor<CoreOperation> {
     const candidates: CoreOperationExecutor<CoreOperation>[] = [];
     operation.types.forEach((type) => {
       const executor = structureModelExecutors[type];

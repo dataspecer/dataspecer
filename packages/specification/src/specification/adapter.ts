@@ -1,4 +1,4 @@
-import { AggregatorAsEntityModel } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
+import { AggregatorAsEntityModel, type ApplicationProfileAggregator } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
 import { LOCAL_PACKAGE, V1 } from "@dataspecer/core-v2/model/known-models";
 import { BaseResource, Package } from "@dataspecer/core-v2/project";
 import { DataSpecification as LegacyDataSpecification } from "@dataspecer/core/data-specification/model";
@@ -113,7 +113,6 @@ export function getDataSpecificationWithModels(
   const dataStructureIds: string[] = [];
 
   onChange?.((change) => {
-    console.warn("Applying changes to the store", change, dataStructureIds);
     for (const [modelId, changesForModel] of Object.entries(change)) {
       if (dataStructureIds.includes(modelId)) {
         store.updateModel(modelId, changesForModel);
@@ -122,7 +121,7 @@ export function getDataSpecificationWithModels(
   });
 
   const executeOperation = (modelId: ModelIdentifier, operation: any) => addOperationForTransaction([{ modelId, operation }]);
-  const semanticModelAggregator = build(projectId, models, onChange, executeOperation);
+  const semanticModelAggregator = build(projectId, models, onChange, executeOperation) as ApplicationProfileAggregator;
 
   const dataSpecifications = loadDataSpecifications(projectId, models);
 
@@ -141,10 +140,11 @@ export function getDataSpecificationWithModels(
   const semanticAsEntity = new AggregatorAsEntityModel(semanticModelAggregator, projectId);
 
   const previousModel = { ...semanticAsEntity.getEntities() };
-  store.addModel(projectId, { ...previousModel });
+  // We need to add the model as the lowest level model because some operations
+  // want to modify the profiled entities directly.
+  const aggregatorId = semanticModelAggregator.profileId;
+  store.addModel(aggregatorId, { ...previousModel });
   semanticAsEntity.subscribeToChanges((updated, removed) => {
-    console.log("Semantic model aggregator emitted changes", { updated, removed });
-
     const changes: EntityChange[] = [];
     for (const [id, entity] of Object.entries(updated)) {
       changes.push({
@@ -161,7 +161,7 @@ export function getDataSpecificationWithModels(
       delete previousModel[id];
     }
 
-    store.updateModel(projectId, changes);
+    store.updateModel(aggregatorId, changes);
   });
 
   // @ts-ignore

@@ -1,9 +1,9 @@
 import type { PackageService } from "@dataspecer/core-v2/project";
-import type { Entity, EntityIdentifier } from "@dataspecer/core/entity-model";
+import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
-import { BaseModelInModelStore } from "./base.ts";
-import type { ApplyOperationResult, ModelInDefaultFrontendModelStore } from "./implementation.ts";
+import { BaseModelInModelStore, type ModelState } from "./base.ts";
+import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
 
 /**
  * For given model returns everything as blob.
@@ -11,53 +11,33 @@ import type { ApplyOperationResult, ModelInDefaultFrontendModelStore } from "./i
 export class BlobModelInModelStore extends BaseModelInModelStore implements Model, ModelInDefaultFrontendModelStore {
   protected service: PackageService;
 
-  protected history: Record<
-    string,
-    {
-      previous: Record<string, Entity>;
-      current: Record<string, Entity>;
-    }
-  > = {};
-
-  protected entities: Record<EntityIdentifier, Entity> = {};
-
-  getAllEntities() {
-    return this.entities;
-  }
-
   constructor(id: string, service: PackageService) {
     super(id);
     this.service = service;
   }
 
-  applyOperations(operations: Operation[]): ApplyOperationResult {
+  protected applyOperation(operation: Operation, mutableState: EntityRecord): void {
     throw new Error("Applying operations to blob model is not yet supported!");
   }
 
-  /**
-   * Asynchronously loads the model state from the backend.
-   */
-  public async load(): Promise<void> {
+  protected async loadInternal(): Promise<ModelState> {
     // Todo obtain all data, not just the main model.
 
     const data = ((await this.service.getResourceJsonData(this.id)) as Entity) ?? {};
 
     data.id = this.id;
 
-    this.entities = {
-      ...this.entities,
+    const entities = {
       [this.id]: data,
-    };
+    }
 
-    this.internalNotifyExternalChanges([
-      {
-        previous: null,
-        next: data,
-      },
-    ]);
+    return {
+      entities,
+      operations: [],
+    };
   }
 
-  public async save(): Promise<void> {
+  protected async saveInternal(state: ModelState): Promise<void> {
     throw new Error("Saving blob model is not yet supported!");
   }
 }

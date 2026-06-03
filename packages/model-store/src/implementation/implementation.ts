@@ -15,6 +15,8 @@ import { createSemanticModel } from "./semantic-model.ts";
 import { createVisualModelInModelStore } from "./visual-model.ts";
 import { createStructureModel } from "./structure-model.ts";
 import { createBlobModel } from "./blob-model.ts";
+import { v4 as uuidv4 } from "uuid";
+import { UNDO_OPERATION_TYPE, type UndoOperation } from "./base.ts";
 
 export interface ApplyOperationResult {
   entityChanges: EntityChange[];
@@ -30,7 +32,7 @@ export interface ModelInDefaultFrontendModelStore {
    *
    * It is also used for applying undo redo operations.
    */
-  applyOperations(operations: Operation[]): ApplyOperationResult;
+  applyOperations(transactionId: string, operations: Operation[]): ApplyOperationResult;
 
   /**
    * Subscribes for asynchronous changes that did not come synchronously from applying operations in this model.
@@ -76,6 +78,15 @@ export interface DefaultFrontendModelStoreParams {
 }
 
 /**
+ * Transaction that is executed on the model store.
+ */
+interface Transaction {
+  id: string;
+  metadata: any;
+  operations: OperationInModel[];
+}
+
+/**
  * This wont store data of individual models.
  * This will only manage synchronization via operations and model readiness.
  * The clearest implementation should simply do writing and ignore the actual entities.
@@ -108,6 +119,16 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
    */
   protected models: Record<string, ModelInDefaultFrontendModelStore> = {};
   protected httpFetch: HttpFetch;
+
+  /**
+   * Ids of regular transactions that can be undone.
+   */
+  private transactionIdsToUndoStack: string[] = [];
+
+  /**
+   * Ids of undo operations that can be undone, thus redone.
+   */
+  private transactionIdsToRedoStack: string[] = [];
 
   /**
    * Creates a model store that is connected to the backend to the specific
@@ -213,10 +234,34 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
   }
 
   /**
+   * List of operations (grouped into transactions) that were executed on
+   * models.
+   */
+  protected transactions: Transaction[] = [];
+
+  /**
+   * Current transaction that is being executed. null if there is no transaction.
+   *
+   * @see addOperationForTransaction
+   */
+  protected currentTransaction: Transaction | null = null;
+
+  /**
    * Allows executing a set of operations by calling this method multiple times
-   * and then commiting them all at once.
+   * and then committing them all at once.
    */
   addOperationForTransaction(operations: OperationInModel[]): void {
+    // Start transaction if there is no transaction yet.
+    if (!this.currentTransaction) {
+      this.currentTransaction = {
+        id: uuidv4(),
+        metadata: {},
+        operations: [],
+      };
+    }
+    this.currentTransaction.operations.push(...operations);
+    const transactionId = this.currentTransaction.id;
+
     // Changes made in this transaction
     const entityChanges: Record<ModelIdentifier, EntityChange[]> = {};
 
@@ -233,7 +278,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
         continue;
       }
 
-      const changes = model.applyOperations(pureOperations);
+      const changes = model.applyOperations(transactionId, pureOperations);
       if (changes.entityChanges.length !== 0) {
         entityChanges[modelId] = changes.entityChanges;
       }
@@ -242,12 +287,89 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     this.internalNotifyEntityChange({ entityChanges });
   }
 
+  undo(): void {
+    this.undoRedo(true);
+  }
+
+  redo(): void {
+    this.undoRedo(false);
+  }
+
+  private undoRedo(isUndoNotRedo: boolean): void {
+    if (this.currentTransaction) {
+      throw new Error("Cannot undo/redo while there is an ongoing transaction!");
+    }
+
+    const transactionIdToUndo = (isUndoNotRedo ? this.transactionIdsToUndoStack : this.transactionIdsToRedoStack).pop();
+    if (!transactionIdToUndo) {
+      // There is nothing to undo, just return.
+      return;
+    }
+    const transactionToRevert = this.transactions.find((transaction) => transaction.id === transactionIdToUndo)!;
+
+    // This undo transaction
+    const transactionId = uuidv4();
+
+    // Changes made in this transaction
+    const entityChanges: Record<ModelIdentifier, EntityChange[]> = {};
+
+    const affectedModels = new Set(transactionToRevert.operations.map((operation) => operation.modelId));
+
+    const allOperations: OperationInModel<UndoOperation>[] = [];
+    for (const modelId of affectedModels) {
+      const model = this.models[modelId];
+      if (!model) {
+        // Model may not be present here, this is absolutely ok.
+        continue;
+      }
+
+      const undoOperation = {
+        id: uuidv4(),
+        type: UNDO_OPERATION_TYPE,
+        cancelTransactionId: transactionToRevert.id,
+      } satisfies UndoOperation;
+      allOperations.push({
+        modelId,
+        operation: undoOperation,
+      });
+
+      const changes = model.applyOperations(transactionId, [undoOperation]);
+      entityChanges[modelId] = changes.entityChanges;
+    }
+
+    // Handle undo/redo stacks
+    (isUndoNotRedo ? this.transactionIdsToRedoStack : this.transactionIdsToUndoStack).push(transactionId);
+
+    this.transactions.push({
+      id: transactionId,
+      metadata: {},
+      operations: allOperations,
+    });
+
+    this.internalNotifyEntityChange({ entityChanges });
+  }
+
   /**
    * Commits all operations added via {@link addOperationForTransaction}.
    */
   commitTransaction(metadata: TransactionMetadata): TransactionResult {
+    if (!this.currentTransaction) {
+      throw new Error("There is no transaction to commit!");
+    }
+
+    const transaction = this.currentTransaction;
+    transaction.metadata = metadata;
+
+    this.transactions.push(transaction);
+    this.currentTransaction = null;
+
+    // Handle undo/redo stacks
+
+    this.transactionIdsToUndoStack.push(transaction.id);
+    this.transactionIdsToRedoStack = [];
+
     return {
-      transactionId: "todo",
+      transactionId: transaction.id,
       confirmation: Promise.resolve({}),
     }
   }

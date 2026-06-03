@@ -16,6 +16,7 @@
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
     "@dataspecer/project-model": "*",
+    "@dataspecer/sgov-adapter": "*",
     "uuid": "^14.0.0"
   },
   "devDependencies": {

@@ -1,4 +1,4 @@
-import { isSemanticModelRelationPrimitive, isSemanticModelRelationship, SemanticModelClass, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
+import { isSemanticModelRelationPrimitive, isSemanticModelRelationship, SemanticModelClass, SemanticModelRelationship, type SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { DataPsmClass } from "@dataspecer/core/data-psm/model";
 import { StoreContext } from "@dataspecer/federated-observable-store-react/store";
 import InfoTwoToneIcon from '@mui/icons-material/InfoTwoTone';
@@ -94,8 +94,8 @@ export const AddInterpretedSurroundingsDialog: React.FC<AddInterpretedSurroundin
     }, [isOpen, forPimClassIri]); // change of switchCurrentCimClassIri should not trigger this effect
 
     const flatSurroundings = useMemo(() => ([...Object.values(surroundings).filter(e => e).flat(1) as ExternalEntityWrapped[], ...(hierarchyStore ?? [])]), [surroundings, hierarchyStore]);
-    // @ts-ignore
-    const newStore = useNewFederatedObservableStoreFromSemanticEntities(flatSurroundings);
+    const flatSurroundingsEntities = useMemo(() => flatSurroundings.map(wrap => wrap.aggregatedEntity as SemanticModelEntity), [flatSurroundings]);
+    const newStore = useNewFederatedObservableStoreFromSemanticEntities(flatSurroundingsEntities);
 
     const currentSurroundings = surroundings[currentCimClassIri];
 

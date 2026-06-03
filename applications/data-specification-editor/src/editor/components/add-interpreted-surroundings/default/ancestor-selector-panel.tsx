@@ -2,7 +2,7 @@ import { isSemanticModelGeneralization, SemanticModelClass, SemanticModelEntity,
 import { StoreContext } from "@dataspecer/federated-observable-store-react/store";
 import InfoTwoToneIcon from '@mui/icons-material/InfoTwoTone';
 import { IconButton, List, ListItem, ListItemText, Tooltip, Typography } from "@mui/material";
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useAsyncMemo } from "../../../hooks/use-async-memo";
 import { useDialog } from "../../../hooks/use-dialog";
@@ -64,8 +64,8 @@ export const AncestorSelectorPanel: React.FC<AncestorSelectorPanelParameters> = 
 
     const ClassDetailDialog = useDialog(PimClassDetailDialog, ["iri"]);
 
-    // @ts-ignore
-    const newStore = useNewFederatedObservableStoreFromSemanticEntities(hierarchyStore);
+    const entities = useMemo(() => hierarchyStore?.map(wrap => wrap.aggregatedEntity as SemanticModelEntity) ?? null, [hierarchyStore]);
+    const newStore = useNewFederatedObservableStoreFromSemanticEntities(entities);
 
     return <>
         <Typography variant="subtitle1" component="h2">{t('ancestors title')}</Typography>

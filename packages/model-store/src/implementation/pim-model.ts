@@ -1,10 +1,9 @@
 import type { PackageService } from "@dataspecer/core-v2/project";
+import { PimStoreWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
-import { v7 as uuidv7 } from "uuid";
 import type { ApplyOperationResult, ModelInDefaultFrontendModelStore } from "./implementation.ts";
-import { PimStoreWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 
 /**
  * Old PIM model
@@ -27,11 +26,11 @@ export class PimModelInModelStore implements Model, ModelInDefaultFrontendModelS
   /**
    * This loads model data from the backend, this is not FETCH of remote model.
    */
-  applyOperations(operations: Operation[]): ApplyOperationResult {
+  applyOperations(transactionId: string, operations: Operation[]): ApplyOperationResult {
     console.warn("External semantic model operation application is not implemented yet.", operations);
     return {
       entityChanges: [],
-      transactionId: uuidv7(),
+      transactionId,
     };
   }
 

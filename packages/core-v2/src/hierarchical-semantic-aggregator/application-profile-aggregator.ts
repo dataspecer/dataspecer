@@ -71,6 +71,11 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
   private readonly profile: InMemorySemanticModel;
 
   /**
+   * ID of the profiled model.
+   */
+  public readonly profileId: string;
+
+  /**
    * Entities from this model ({@link profile}) easily accessible by id.
    */
   private readonly profileEntities: Record<string, Entity> = {};
@@ -129,6 +134,8 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
     this.thisVocabularyChain = {
       name: this.profile.getAlias() ?? "AP",
     };
+
+    this.profileId = this.profile.getId();
   }
 
   setCanAddEntities(canAddEntities: boolean = true): this {

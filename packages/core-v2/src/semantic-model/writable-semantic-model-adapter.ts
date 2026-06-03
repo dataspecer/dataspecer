@@ -32,6 +32,7 @@ import {
 } from "./usage/operations/index.ts";
 import { SemanticModelClassUsage, SemanticModelRelationshipUsage } from "./usage/concepts/index.ts";
 import { createDefaultSemanticModelProfileOperationExecutor } from "./profile/operations/index.ts";
+import type { EntityChange, EntityChangeDeleted, EntityRecord } from "@dataspecer/core/entity-model";
 
 function uuid() {
     return Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -58,67 +59,96 @@ export class WritableSemanticModelAdapter extends SemanticModelAdapter {
     }
 
     public executeOperations(operations: Operation[]) : (OperationResult | CreatedEntityOperationResult)[] {
-        const updatedCollector: Record<string, Entity> = {};
-        const removedCollector: string[] = [];
-
-        const getEntity: EntityGetter = identifier => this.entityModel.entities[identifier];
-        const change: ChangeCollector = (updated, removed) => {
-            for (const [id, entity] of Object.entries(updated)) {
-                updatedCollector[id] = entity;
-            }
-            removed.forEach(item => removedCollector.push(item));
-        };
-
-        const profileExecutor = createDefaultSemanticModelProfileOperationExecutor(
-            { createIdentifier: uuid },
-            { entity: identifier => getEntity(identifier) ?? null },
-            { change}
+        const {result, updated, removed} = applyOperationToSemanticModel(
+            this.entityModel.entities,
+            operations,
         );
+        this.entityModel.change(updated, removed);
+        return result;
+    }
+}
 
-        const result: (OperationResult | CreatedEntityOperationResult)[] = [];
 
-        for (const operation of operations) {
-            if (isCreateClassOperation(operation)) {
-                result.push(handleCreateClassOperation(getEntity, change, operation));
-            } else if (isModifyClassOperation(operation)) {
-                result.push(handleModifyClassOperation(getEntity, change, operation));
-            } else if (isCreateRelationshipOperation(operation)) {
-                result.push(handleCreateRelationshipOperation(getEntity, change, operation));
-            } else if (isModifyRelationOperation(operation)) {
-                result.push(handleModifyRelationOperation(getEntity, change, operation));
-            } else if (isCreateGeneralizationOperation(operation)) {
-                result.push(handleCreateGeneralizationOperation(getEntity, change, operation));
-            } else if (isModifyGeneralizationOperation(operation)) {
-                result.push(handleModifyGeneralizationOperation(getEntity, change, operation));
-            } else if (isDeleteEntityOperation(operation)) {
-                result.push(handleDeleteEntityOperation(getEntity, change, operation));
-            } else if (isCreateClassUsageOperation(operation)) {
-                result.push(handleCreateClassUsageOperation(getEntity, change, operation));
-            } else if (isModifyClassUsageOperation(operation)) {
-                result.push(handleModifyClassUsageOperation(getEntity, change, operation));
-            } else if (isCreateRelationshipUsageOperation(operation)) {
-                result.push(handleCreateRelationshipUsageOperation(getEntity, change, operation));
-            } else if (isModifyRelationshipUsageOperation(operation)) {
-                result.push(handleModifyRelationshipUsageOperation(getEntity, change, operation));
+export function applyOperationToSemanticModel(semanticModel: EntityRecord, operations: Operation[]): {
+    result: (OperationResult | CreatedEntityOperationResult)[],
+    changes: EntityChange[],
+    updated: Record<string, Entity>,
+    removed: string[],
+} {
+    const updatedCollector: Record<string, Entity> = {};
+    const removedCollector: string[] = [];
+
+    const getEntity: EntityGetter = identifier => semanticModel[identifier];
+    const change: ChangeCollector = (updated, removed) => {
+        for (const [id, entity] of Object.entries(updated)) {
+            updatedCollector[id] = entity;
+        }
+        removed.forEach(item => removedCollector.push(item));
+    };
+
+    const profileExecutor = createDefaultSemanticModelProfileOperationExecutor(
+        { createIdentifier: uuid },
+        { entity: identifier => getEntity(identifier) ?? null },
+        { change}
+    );
+
+    const result: (OperationResult | CreatedEntityOperationResult)[] = [];
+
+    for (const operation of operations) {
+        if (isCreateClassOperation(operation)) {
+            result.push(handleCreateClassOperation(getEntity, change, operation));
+        } else if (isModifyClassOperation(operation)) {
+            result.push(handleModifyClassOperation(getEntity, change, operation));
+        } else if (isCreateRelationshipOperation(operation)) {
+            result.push(handleCreateRelationshipOperation(getEntity, change, operation));
+        } else if (isModifyRelationOperation(operation)) {
+            result.push(handleModifyRelationOperation(getEntity, change, operation));
+        } else if (isCreateGeneralizationOperation(operation)) {
+            result.push(handleCreateGeneralizationOperation(getEntity, change, operation));
+        } else if (isModifyGeneralizationOperation(operation)) {
+            result.push(handleModifyGeneralizationOperation(getEntity, change, operation));
+        } else if (isDeleteEntityOperation(operation)) {
+            result.push(handleDeleteEntityOperation(getEntity, change, operation));
+        } else if (isCreateClassUsageOperation(operation)) {
+            result.push(handleCreateClassUsageOperation(getEntity, change, operation));
+        } else if (isModifyClassUsageOperation(operation)) {
+            result.push(handleModifyClassUsageOperation(getEntity, change, operation));
+        } else if (isCreateRelationshipUsageOperation(operation)) {
+            result.push(handleCreateRelationshipUsageOperation(getEntity, change, operation));
+        } else if (isModifyRelationshipUsageOperation(operation)) {
+            result.push(handleModifyRelationshipUsageOperation(getEntity, change, operation));
+        } else {
+            const operationResult = profileExecutor.executeOperation(operation);
+            if (operationResult !== null) {
+                result.push({
+                    success: true,
+                    id: operationResult.created[0],
+                });
             } else {
-                const operationResult = profileExecutor.executeOperation(operation);
-                if (operationResult !== null) {
-                    result.push({
-                        success: true,
-                        id: operationResult.created[0],
-                    });
-                } else {
-                    // Unknown operation.
-                    result.push({
-                        success: false,
-                    });
-                }
+                // Unknown operation.
+                result.push({
+                    success: false,
+                });
             }
         }
-        // We execute all updates at once.
-        this.entityModel.change(updatedCollector, removedCollector);
-        //
-        return result;
+    }
+
+    const changes = [
+        ...Object.entries(updatedCollector).map(([id, entity]) => ({
+            previous: semanticModel[id] ?? null,
+            next: entity,
+        })) as EntityChange[],
+        ...removedCollector.map(id => ({
+            previous: semanticModel[id] ?? null,
+            next: null,
+        })) as EntityChangeDeleted[],
+    ];
+
+    return {
+        result,
+        changes,
+        updated: updatedCollector,
+        removed: removedCollector,
     }
 }
 

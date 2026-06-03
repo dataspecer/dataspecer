@@ -9,6 +9,15 @@ import { diffEntities } from "../utilities.ts";
 import type { ApplyOperationResult, ModelInDefaultFrontendModelStore } from "./implementation.ts";
 
 /**
+ * This is the whole state of the model store that can be easily restored by the
+ * undo/redo mechanism.
+ */
+interface ProjectModelInModelStoreInternalState {
+  entities: Record<string, ModelEntity>;
+  operations: Operation[];
+}
+
+/**
  * Adapter for project model into model store.
  *
  * Provides entities that represent the project structure and can modify the project via operations.
@@ -25,11 +34,18 @@ export class ProjectModelInModelStore implements Model, ModelInDefaultFrontendMo
     this.rootProjectId = rootProjectId;
   }
 
+  /**
+   * Restores the model state from the given data.
+   */
+  restore(state: ProjectModelInModelStoreInternalState): void {
+
+  }
+
   getAllEntities(): EntityRecord {
     return this.entities;
   }
 
-  applyOperations(operations: Operation[]): ApplyOperationResult {
+  applyOperations(transactionId: string, operations: Operation[]): ApplyOperationResult {
     const newEntityList = { ...this.entities };
     for (const operation of operations) {
       if (isRemoveModelOperation(operation)) {

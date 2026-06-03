@@ -28,6 +28,10 @@ export async function getConfiguration(dataSpecificationIri: string | null, data
   await modelStore.initialize();
   await modelStore.waitForModelsToLoad();
 
+  window["modelStore"] = modelStore; // For debugging purposes
+
+
+
   const dataSpecification = getDataSpecificationWithModels(
     dataSpecificationIri,
     modelStore.getAllEntities(),
@@ -40,6 +44,8 @@ export async function getConfiguration(dataSpecificationIri: string | null, data
     modelStore.commitTransaction.bind(modelStore),
   );
 
+  window["dataSpecification"] = dataSpecification; // For debugging purposes
+
   const operationContext = getOperationContext(dataSpecification.dataSpecifications[dataSpecificationIri]);
 
   return {
@@ -47,6 +53,8 @@ export async function getConfiguration(dataSpecificationIri: string | null, data
     dataSpecificationIri,
     dataPsmSchemaIri,
     operationContext,
+    // @ts-ignore
+    modelStore,
   };
 }
 
