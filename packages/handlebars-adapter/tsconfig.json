@@ -23,7 +23,8 @@
 
     "declarationMap": true,
 
-    "lib": ["ESNext"]
+    "lib": ["ESNext"],
+    "types": ["@types/node"]
   },
   "include": ["src/**/*"]
 }

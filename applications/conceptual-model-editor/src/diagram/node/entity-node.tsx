@@ -241,43 +241,49 @@ function PrimaryNodeMenu(props: NodeProps<Node<ApiNode>>) {
   const addAttributeTitle = props.data.type === NodeType.Class ?
     t("node-add-attribute") : t("node-add-attribute-profile");
 
+  // Prevent canvas dragging when clicking/dragging on buttons
+  const preventDrag = (e: React.PointerEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <>
-      <NodeToolbar isVisible={shouldShowToolbar} position={Position.Top} className="flex gap-2 entity-node-menu" >
-        <button onClick={onShowDetail} title={t("class-detail-button")}>ℹ</button>
+      <NodeToolbar isVisible={shouldShowToolbar} position={Position.Top} className="flex gap-2 entity-node-menu nopan" >
+        <button onClick={onShowDetail} onPointerDown={preventDrag} title={t("class-detail-button")}>ℹ</button>
         &nbsp;
-        <button onClick={onEdit} title={t("class-edit-button")}>✏️</button>
+        <button onClick={onEdit} onPointerDown={preventDrag} title={t("class-edit-button")}>✏️</button>
         &nbsp;
-        <button onClick={onCreateProfile} title={t("class-profile-button")}>🧲</button>
+        <button onClick={onCreateProfile} onPointerDown={preventDrag} title={t("class-profile-button")}>🧲</button>
         &nbsp;
-        <button onClick={onEditAttributes} title={t("edit-node-attributes-visiblity-button")}>📏</button>
+        <button onClick={onEditAttributes} onPointerDown={preventDrag} title={t("edit-node-attributes-visiblity-button")}>📏</button>
         &nbsp;
-        <button onClick={onDuplicateNode} title={t("duplicate-node-button")}>⿻</button>
+        <button onClick={onDuplicateNode} onPointerDown={preventDrag} title={t("duplicate-node-button")}>⿻</button>
         &nbsp;
       </NodeToolbar>
-      <NodeToolbar isVisible={shouldShowToolbar} position={Position.Right} className="flex gap-2 entity-node-menu" >
+      <NodeToolbar isVisible={shouldShowToolbar} position={Position.Right} className="flex gap-2 entity-node-menu nopan" >
         <Handle type="source" position={Position.Right} title={t("node-connection-handle")}>🔗</Handle>
       </NodeToolbar>
       {
         !isPartOfGroup ? null :
-          <NodeToolbar isVisible={shouldShowToolbar} position={Position.Left} className="flex gap-2 entity-node-menu" >
-            <button onClick={onDissolveGroup} title={t("dissolve-group-button")}>⛓️‍💥</button>
+          <NodeToolbar isVisible={shouldShowToolbar} position={Position.Left} className="flex gap-2 entity-node-menu nopan" >
+            <button onClick={onDissolveGroup} onPointerDown={preventDrag} title={t("dissolve-group-button")}>⛓️‍💥</button>
           </NodeToolbar>
       }
-      <NodeToolbar isVisible={shouldShowToolbar} position={Position.Bottom} className="flex gap-2 entity-node-menu" >
-        <button onClick={onHide} title={t("class-hide-button")}>🕶</button>
+      <NodeToolbar isVisible={shouldShowToolbar} position={Position.Bottom} className="flex gap-2 entity-node-menu nopan" >
+        <button onClick={onHide} onPointerDown={preventDrag} title={t("class-hide-button")}>🕶</button>
         &nbsp;
-        <button onClick={onDelete} title={t("class-remove-button")}>🗑</button>
+        <button onClick={onDelete} onPointerDown={preventDrag} title={t("class-remove-button")}>🗑</button>
         &nbsp;
         <button
           onClick={onAnchor}
+          onPointerDown={preventDrag}
           title={isPartOfGroup ? t("group-anchor-button") : t("node-anchor-button")} >
           ⚓
         </button>
         &nbsp;
-        <button onClick={onAddAttribute} title={addAttributeTitle} >➕</button>
+        <button onClick={onAddAttribute} onPointerDown={preventDrag} title={addAttributeTitle} >➕</button>
         &nbsp;
-        <button onClick={onShowExpandSelection} title={t("selection-extend-button")} >📈</button>
+        <button onClick={onShowExpandSelection} onPointerDown={preventDrag} title={t("selection-extend-button")} >📈</button>
         &nbsp;
       </NodeToolbar>
     </>);
@@ -300,6 +306,11 @@ function RelationshipItem(props: {
         <span>
           - {label}&nbsp;
         </span>
+        {data.options.displayRangeDetail ? (
+          <span>
+            : {data.range?.label ?? ""} &nbsp;
+          </span>
+        ) : null}
         <ProfileOf options={data.options} profileOf={data.profileOf} />
         <Cardinality options={data.options} data={data} />
       </div>

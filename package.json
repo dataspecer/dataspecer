@@ -6,8 +6,8 @@
     "test": "turbo test"
   },
   "devDependencies": {
-    "prettier": "^3.7.4",
-    "turbo": "^2.8.10"
+    "prettier": "^3.8.3",
+    "turbo": "^2.9.14"
   },
   "workspaces": [
     "packages/*",
