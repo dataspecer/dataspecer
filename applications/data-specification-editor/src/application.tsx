@@ -11,6 +11,9 @@ import EditorPage from "./editor/components/App";
 import ManagerPage from "./manager/app";
 import { Specification } from "./manager/routes/specification/specification";
 
+/**
+ * @deprecated You should use the model store instead.
+ */
 export const BackendConnectorContext = React.createContext(null as unknown as StructureEditorBackendService);
 
 export const RefreshContext = React.createContext(null as unknown as () => void);

@@ -1,7 +1,10 @@
-import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
-import { ModelRepository } from "../model-repository/model-repository.ts";
+import type { EntityRecord } from "@dataspecer/core/entity-model";
+import type { ModelIdentifier } from "@dataspecer/core/model";
+import type { ModelEntity, PackageEntity } from "@dataspecer/project-model";
 import { getDataSpecification } from "./adapter.ts";
 import { DataSpecification } from "./model.ts";
+
+const PROJECT_MODEL_ID: ModelIdentifier = "_project_model";
 
 /**
  * Loads a data specification for structure modeling. This means loading all
@@ -12,45 +15,39 @@ import { DataSpecification } from "./model.ts";
  * via explicit `importsDataSpecificationIds`, the other is via sub-packages.
  * This is due to historical reasons. The correct way is to use sub-packages.
  */
-export async function loadDataSpecifications(dataSpecificationIri: string, modelRepository: ModelRepository): Promise<Record<string, DataSpecification>> {
-  const dataSpecificationIrisToLoad = [dataSpecificationIri];
+export function loadDataSpecifications(rootDataSpecificationId: ModelIdentifier, models: Record<ModelIdentifier, EntityRecord>): Record<string, DataSpecification> {
   const dataSpecifications: { [iri: string]: DataSpecification } = {};
 
-  for (let i = 0; i < dataSpecificationIrisToLoad.length; i++) {
-    const dsIriToProcess = dataSpecificationIrisToLoad[i]!;
+  const projectModel = models[PROJECT_MODEL_ID] as EntityRecord<ModelEntity>;
 
-    const model = await modelRepository.getModelById(dsIriToProcess);
-    const packageModel = await model?.asPackageModel();
-    const dataSpecification = packageModel ? await getDataSpecification(packageModel) : undefined;
+  const specificationToLoad = [rootDataSpecificationId];
 
-    if (dataSpecification?.dataStructures.length === 0 && dsIriToProcess !== dataSpecificationIri) {
+  for (let i = 0; i < specificationToLoad.length; i++) {
+    const specificationId = specificationToLoad[i]!;
+    if (dataSpecifications[specificationId]) {
+      // This specification is already loaded, so we can skip it
+      continue;
+    }
+    const specificationPackageEntity = projectModel[specificationId] as PackageEntity;
+
+    const specification = getDataSpecification(specificationId, projectModel, models[specificationId] ?? (null as EntityRecord | null));
+
+    if (specification?.dataStructures.length === 0 && specificationId !== rootDataSpecificationId) {
       // This specification is empty, so we can safely skip it
       continue;
     }
 
-    if (dataSpecification) {
-      dataSpecifications[dsIriToProcess] = dataSpecification;
-      dataSpecification.importsDataSpecificationIds.forEach((importIri) => {
-        if (!dataSpecificationIrisToLoad.includes(importIri)) {
-          dataSpecificationIrisToLoad.push(importIri);
-        }
-      });
-    }
+    if (specification) {
+      dataSpecifications[specificationId] = specification;
 
-    /**
-     * @todo Individual packages should not be used to find imports. This should
-     * be the correct way that one "package" is hidden under the other. Of
-     * course, we can then employ something like symbolic links to point to
-     * other specifications, but this would be considered as explicit hack.
-     */
-    if (packageModel) {
-      const subResources = await packageModel.getSubResources();
-      for (const subResource of subResources) {
-        if (subResource.types.includes(LOCAL_PACKAGE)) {
-          // This is a sub-specification
-          dataSpecificationIrisToLoad.push(subResource.id);
-        }
-      }
+      /**
+       * @todo Individual packages should not be used to find imports. This should
+       * be the correct way that one "package" is hidden under the other. Of
+       * course, we can then employ something like symbolic links to point to
+       * other specifications, but this would be considered as explicit hack.
+       */
+      specificationToLoad.push(...specification.importsDataSpecificationIds);
+      specificationToLoad.push(...(specificationPackageEntity.subModels ?? []));
     }
   }
 

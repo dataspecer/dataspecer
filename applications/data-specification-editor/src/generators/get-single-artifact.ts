@@ -40,19 +40,18 @@ export async function getSingleArtifact(
 
   // Find the correct artifact
 
-  const artefact = dataSpecificationsWithArtifacts[forDataSpecificationIri]
-      // @ts-ignore
-      ?.artefacts
+  // @ts-ignore
+  const artefact = dataSpecificationsWithArtifacts[forDataSpecificationIri]?.artefacts
     ?.find(artifactSelector);
 
   // Generate the artifact and return it
 
   // Convert data specification
-  const ds = Object.values(dataSpecificationsWithArtifacts).map(specification => ({
+  const ds = Object.values(dataSpecificationsWithArtifacts).map((specification) => ({
     ...specification,
     iri: specification.id,
     pim: specification.id,
-    psms: specification.dataStructures.map(ds => ds.id),
+    psms: specification.dataStructures.map((ds) => ds.id),
     type: CoreDataSpecification.TYPE_DOCUMENTATION,
     importsDataSpecifications: specification.importsDataSpecificationIds,
     // @ts-ignore
@@ -62,10 +61,7 @@ export async function getSingleArtifact(
     cimAdapters: [],
   })) as CoreDataSpecification[];
 
-  const generator = new Generator(
-      ds,
-      store as CoreResourceReader,
-      getArtefactGenerators());
+  const generator = new Generator(ds, store as CoreResourceReader, getArtefactGenerators());
   const dict = new MemoryStreamDictionary();
   await generator.generateArtefact(forDataSpecificationIri, artefact?.iri as string, dict);
   return dict;
