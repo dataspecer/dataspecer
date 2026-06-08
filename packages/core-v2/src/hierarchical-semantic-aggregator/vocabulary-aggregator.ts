@@ -50,7 +50,7 @@ export class VocabularyAggregator implements SemanticModelAggregator {
         aggregatedEntity = this.noProfileAggregator.aggregateSemanticModelClass(aggregatedEntity);
       } else if (isSemanticModelRelationship(aggregatedEntity)) {
         // todo fix types
-        aggregatedEntity = this.noProfileAggregator.aggregateSemanticModelRelationship(aggregatedEntity) as AggregatedProfiledSemanticModelRelationship & {iri: string};
+        aggregatedEntity = this.noProfileAggregator.aggregateSemanticModelRelationship(aggregatedEntity) as AggregatedProfiledSemanticModelRelationship & { iri: string };
       }
 
       const update = {
@@ -76,7 +76,7 @@ export class VocabularyAggregator implements SemanticModelAggregator {
    * Notifies all subscribers about the change that is already in entities.
    */
   private notifySubscribers(changed: typeof this.entities, removed: (keyof typeof this.entities)[]) {
-    this.subscribers.forEach(subscriber => subscriber(changed, removed));
+    this.subscribers.forEach((subscriber) => subscriber(changed, removed));
   }
 
   /**
@@ -88,13 +88,18 @@ export class VocabularyAggregator implements SemanticModelAggregator {
    *  - create a new entity profile in this AP
    */
   async search(searchQuery: string): Promise<ExternalEntityWrapped[]> {
-    const query = new RegExp(searchQuery, 'i');
+    const query = new RegExp(searchQuery, "i");
     const results: ExternalEntityWrapped[] = [];
 
     const entities = Object.values(this.entities);
-    const classes = entities.filter(entity => isSemanticModelClass(entity.aggregatedEntity)) as AggregatedEntityInVocabularyAggregator<SemanticModelClass>[];
-    const localResults = classes.map(cls => ([cls, getSearchRelevance(query, cls.aggregatedEntity)]) as [AggregatedEntityInVocabularyAggregator<SemanticModelClass>, number | false])
-      .filter((([_, relevance]) => relevance !== false) as (result: [AggregatedEntityInVocabularyAggregator<SemanticModelClass>, number | false]) => result is [AggregatedEntityInVocabularyAggregator<SemanticModelClass>, number])
+    const classes = entities.filter((entity) => isSemanticModelClass(entity.aggregatedEntity)) as AggregatedEntityInVocabularyAggregator<SemanticModelClass>[];
+    const localResults = classes
+      .map((cls) => [cls, getSearchRelevance(query, cls.aggregatedEntity)] as [AggregatedEntityInVocabularyAggregator<SemanticModelClass>, number | false])
+      .filter(
+        (([_, relevance]) => relevance !== false) as (
+          result: [AggregatedEntityInVocabularyAggregator<SemanticModelClass>, number | false],
+        ) => result is [AggregatedEntityInVocabularyAggregator<SemanticModelClass>, number],
+      )
       .sort(([_, a], [__, b]) => a - b);
 
     for (const [cls] of localResults) {
@@ -108,7 +113,7 @@ export class VocabularyAggregator implements SemanticModelAggregator {
     return results;
   }
 
-  async externalEntityToLocalForSearch(entity: ExternalEntityWrapped) {
+  externalEntityToLocalForSearch(entity: ExternalEntityWrapped) {
     return this.entities[entity.aggregatedEntity.id]!;
   }
 
@@ -120,7 +125,7 @@ export class VocabularyAggregator implements SemanticModelAggregator {
    * We treat profiled entities as not part of this entity surroundings so we only return the direct entities.
    */
   async getSurroundings(localOrExternalEntityId: string): Promise<ExternalEntityWrapped[]> {
-    return Object.values(this.entities).map(entity => ({
+    return Object.values(this.entities).map((entity) => ({
       aggregatedEntity: entity.aggregatedEntity,
       vocabularyChain: [this.thisVocabularyChain],
       originatingModel: [this],
@@ -153,11 +158,21 @@ export class VocabularyAggregator implements SemanticModelAggregator {
     return this.entities;
   }
 
-  async externalEntityToLocalForHierarchyExtension(fromEntity: string, entity: ExternalEntityWrapped<SemanticModelClass>, isEntityMoreGeneral: boolean, sourceSemanticModel: ExternalEntityWrapped[]): Promise<AggregatedEntityInVocabularyAggregator> {
+  externalEntityToLocalForHierarchyExtension(
+    fromEntity: string,
+    entity: ExternalEntityWrapped<SemanticModelClass>,
+    isEntityMoreGeneral: boolean,
+    sourceSemanticModel: ExternalEntityWrapped[],
+  ): AggregatedEntityInVocabularyAggregator {
     return this.entities[entity.aggregatedEntity.id]!;
   }
 
-  async externalEntityToLocalForSurroundings(fromEntity: string, entity: ExternalEntityWrapped<SemanticModelRelationship>, direction: boolean, sourceSemanticModel: ExternalEntityWrapped[]): Promise<AggregatedEntityInVocabularyAggregator> {
+  externalEntityToLocalForSurroundings(
+    fromEntity: string,
+    entity: ExternalEntityWrapped<SemanticModelRelationship>,
+    direction: boolean,
+    sourceSemanticModel: ExternalEntityWrapped[],
+  ): AggregatedEntityInVocabularyAggregator {
     return this.entities[entity.aggregatedEntity.id]!;
   }
 }
