@@ -158,14 +158,13 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
         entityChanges: diffEntities(previousEntities, this.state.entities),
       };
     } else {
-      const entities = {...this.state.entities};
+      const previousState = {...this.state.entities};
 
       for (const operation of operations) {
-        this.applyOperation(operation, entities);
+        this.applyOperation(operation, this.state.entities);
       }
 
-      const diff = diffEntities(this.state.entities, entities);
-      this.state.entities = entities;
+      const diff = diffEntities(previousState, this.state.entities);
 
       return {
         transactionId,

@@ -2,10 +2,7 @@ import { v7 as uuidv7 } from 'uuid';
 import { CoreResource } from '../core/core-resource.ts';
 
 /**
- * Must be unique withing the project.
- *
- * @todo Consider uniqueness only withing the model and use a combination of
- *  model id and entity id to identify an entity globally.
+ * Must be unique withing the model it belongs to.
  */
 export type EntityIdentifier = string;
 

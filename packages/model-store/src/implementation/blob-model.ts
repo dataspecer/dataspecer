@@ -2,6 +2,7 @@ import type { PackageService } from "@dataspecer/core-v2/project";
 import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
+import { UpdateEntityOperationType, type UpdateEntityOperation } from "@dataspecer/core/operation";
 import { BaseModelInModelStore, type ModelState } from "./base.ts";
 import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
 
@@ -17,19 +18,30 @@ export class BlobModelInModelStore extends BaseModelInModelStore implements Mode
   }
 
   protected applyOperation(operation: Operation, mutableState: EntityRecord): void {
-    throw new Error("Applying operations to blob model is not yet supported!");
+    if (operation.type !== UpdateEntityOperationType) {
+      throw new Error("Applying operations to blob model is not yet supported!");
+    }
+
+    const updateOperation = operation as UpdateEntityOperation;
+    const currentEntity = mutableState[this.id];
+
+    if (updateOperation.update.id !== this.id) {
+      throw new Error(`Blob model can only update entity with id \"${this.id}\".`);
+    }
+
+    mutableState[this.id] = {
+      ...currentEntity,
+      ...updateOperation.update,
+    };
   }
 
   protected async loadInternal(): Promise<ModelState> {
-    // Todo obtain all data, not just the main model.
-
-    const data = ((await this.service.getResourceJsonData(this.id)) as Entity) ?? {};
-
+    const data = await this.service.getResourceJsonData(this.id) as Entity ?? {};
     data.id = this.id;
 
     const entities = {
       [this.id]: data,
-    }
+    };
 
     return {
       entities,
@@ -38,7 +50,8 @@ export class BlobModelInModelStore extends BaseModelInModelStore implements Mode
   }
 
   protected async saveInternal(state: ModelState): Promise<void> {
-    throw new Error("Saving blob model is not yet supported!");
+    const data = state.entities[this.id];
+    await this.service.setResourceJsonData(this.id, data);
   }
 }
 
