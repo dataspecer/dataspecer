@@ -98,7 +98,7 @@ export async function generateShaclApplicationProfile(forExportModel: ModelDescr
 
   const shacl = semanticModelsToShacl(
     forContextModels.filter((model) => isModelVocabulary(model.entities)).map(mapModel),
-    forContextModels.filter((model) => !model.isPrimary && isModelProfile(model.entities)).map(mapModel),
+    forContextModels.filter((model) => isModelProfile(model.entities)).map(mapModel),
     mapModel(forExportModel),
     configuration, { baseIri: iri, defaultPrefixes: prefixesForIriConstruction },
   );

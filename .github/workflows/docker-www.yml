@@ -33,3 +33,28 @@ jobs:
           file: ./www/Dockerfile
           push: true
           tags: ${{env.REGISTRY}}/${{env.IMAGE_NAME}}:latest
+
+  notify-deploy-webhook:
+    name: Notify deploy webhook
+    needs: build-and-push-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send deploy notification
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ vars.DEPLOY_WEBHOOK_URL }}
+          DEPLOY_WEBHOOK_TOKEN: ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}
+        run: |
+          if [ -z "$DEPLOY_WEBHOOK_URL" ]; then
+            echo "DEPLOY_WEBHOOK_URL is not set"
+            exit 1
+          fi
+          if [ -z "$DEPLOY_WEBHOOK_TOKEN" ]; then
+            echo "DEPLOY_WEBHOOK_TOKEN is not set"
+            exit 1
+          fi
+
+          curl -fsS -X POST "$DEPLOY_WEBHOOK_URL" \
+            -H "Authorization: Bearer $DEPLOY_WEBHOOK_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"image":"www","tag":"latest"}'
+

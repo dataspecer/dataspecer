@@ -84,9 +84,11 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  create-manifest:
+  create_manifest:
     name: Create multi-arch manifest
     needs: build-and-push-image
+    outputs:
+      tags_json: ${{ steps.tags.outputs.tags_json }}
     runs-on: ubuntu-latest
     steps:
       - name: Download digests
@@ -106,6 +108,11 @@ jobs:
             type=raw,enable=${{ github.event_name == 'pull_request' }},value=branch-${{ github.head_ref }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+      - name: Export tags as JSON
+        id: tags
+        run: |
+          tags_json=$(printf '%s\n' "${{ steps.meta.outputs.tags }}" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "tags_json=$tags_json" >> "$GITHUB_OUTPUT"
       - name: Log in to the Container registry
         uses: docker/login-action@v4
         with:
@@ -118,3 +125,37 @@ jobs:
           TAGS=$(echo "${{ steps.meta.outputs.tags }}" | xargs -I {} echo "-t {}")
           docker buildx imagetools create $TAGS \
             $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
+
+  notify-deploy-webhook:
+    name: Notify deploy webhook
+    needs: create_manifest
+    if: ${{ needs.create_manifest.result == 'success' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tag: ${{ fromJSON(needs.create_manifest.outputs.tags_json) }}
+    steps:
+      - name: Send deploy notification
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ vars.DEPLOY_WEBHOOK_URL }}
+          DEPLOY_WEBHOOK_TOKEN: ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}
+        run: |
+          if [ -z "$DEPLOY_WEBHOOK_URL" ]; then
+            echo "DEPLOY_WEBHOOK_URL is not set"
+            exit 1
+          fi
+          if [ -z "$DEPLOY_WEBHOOK_TOKEN" ]; then
+            echo "DEPLOY_WEBHOOK_TOKEN is not set"
+            exit 1
+          fi
+
+          IMAGE="${{ env.IMAGE_NAME }}"
+          IMAGE="${IMAGE##*/}"
+          RAW_TAG="${{ matrix.tag }}"
+          TAG="${RAW_TAG##*:}"
+
+          curl -fsS -X POST "$DEPLOY_WEBHOOK_URL" \
+            -H "Authorization: Bearer $DEPLOY_WEBHOOK_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"image\":\"$IMAGE\",\"tag\":\"$TAG\"}"
