@@ -17,6 +17,7 @@
     "./hierarchical-semantic-aggregator": "./lib/hierarchical-semantic-aggregator/index.js",
     "./model/known-models": "./lib/model/known-models.js",
     "./project": "./lib/project/index.js",
+    "./semantic-model": "./lib/semantic-model/index.js",
     "./semantic-model/aggregator": "./lib/semantic-model/aggregator/index.js",
     "./semantic-model/concepts": "./lib/semantic-model/concepts/index.js",
     "./semantic-model/simplified": "./lib/semantic-model/simplified/index.js",
