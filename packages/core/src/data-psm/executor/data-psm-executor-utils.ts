@@ -85,12 +85,15 @@ export function removeFromClass(
   // We do not check if the deleted item is part of the schema nor class
   // to allow deletion of dangling objects.
 
-  schema.dataPsmParts = removeValue(entityToRemove, schema.dataPsmParts);
-  owner.dataPsmParts = removeValue(entityToRemove, owner.dataPsmParts);
-
   return CoreExecutorResult.createSuccess(
     [],
-    [schema, owner],
+    [{
+      ...schema,
+      dataPsmParts: removeValue(entityToRemove, schema.dataPsmParts),
+    } as DataPsmSchema, {
+      ...owner,
+      dataPsmParts: removeValue(entityToRemove, owner.dataPsmParts),
+    } as DataPsmClass],
     [entityToRemove]
   );
 }
