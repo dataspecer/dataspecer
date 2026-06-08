@@ -431,6 +431,8 @@
     "./data-specification/model/index": "./lib/data-specification/model/index.js",
     "./data-specification/model/index.js": "./lib/data-specification/model/index.js",
     "./data-specification/model": "./lib/data-specification/model/index.js",
+    "./entity-model": "./lib/entity-model/index.js",
+    "./entity-model/implementation": "./lib/entity-model/implementation/index.js",
     "./generator/artefact-generator-context": "./lib/generator/artefact-generator-context.js",
     "./generator/artefact-generator-context.js": "./lib/generator/artefact-generator-context.js",
     "./generator/artefact-generator": "./lib/generator/artefact-generator.js",
@@ -486,6 +488,8 @@
     "./io/stream/output-stream.js": "./lib/io/stream/output-stream.js",
     "./io/stream/stream-dictionary": "./lib/io/stream/stream-dictionary.js",
     "./io/stream/stream-dictionary.js": "./lib/io/stream/stream-dictionary.js",
+    "./model": "./lib/model/index.js",
+    "./operation": "./lib/operation/index.js",
     "./pim/README.md": "./lib/pim/README.md",
     "./pim/README.md.js": "./lib/pim/README.md",
     "./pim/adapter/rdf/index": "./lib/pim/adapter/rdf/index.js",
@@ -592,7 +596,8 @@
     "minipass-fetch": "^3.0.1",
     "n3": "^1.25.1",
     "rdflib": "^2.2.31",
-    "rdfxml-streaming-parser": "^2.2.2"
+    "rdfxml-streaming-parser": "^2.2.2",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.57.1",
