@@ -46,7 +46,8 @@ export function SelectQualifier(props: {
   name?: string,
   onChange: (value: Qualifier) => void,
 }) {
-  const groupName = props.name ?? useId();
+  const generatedId = useId();
+  const groupName = props.name ?? generatedId;
   return (
     <fieldset className="flex flex-row flex-wrap gap-x-3">
       {QUALIFIERS.map(qualifier => {

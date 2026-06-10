@@ -12,6 +12,7 @@ export function VocabularyItem(props: {
 }) {
   const showOverrideCheckbox = props.onOverrideToggle !== undefined;
   const qualifierDisabled = showOverrideCheckbox && !props.overrideEnabled;
+  const effectiveQualifier = qualifierDisabled ? null : props.qualifier;
 
   return (
     <div className="rounded border bg-white p-3">
@@ -31,7 +32,7 @@ export function VocabularyItem(props: {
       </div>
       <div className="mt-2 flex items-center gap-4">
         <SelectQualifier
-          value={props.overrideEnabled ? props.qualifier : null}
+          value={effectiveQualifier}
           inherited={props.inherited}
           disabled={qualifierDisabled}
           onChange={props.onQualifierChange}

@@ -33,14 +33,14 @@ export function SelectControlledVocabularies(props: {
 }) {
   const [isAdding, setIsAdding] = useState(false);
 
-  const conflict = useMemo(
+  const hasConflict = useMemo(
     () => hasMustConflict(props.inherited, props.overrides, props.added),
     [props.inherited, props.overrides, props.added],
   );
 
   useEffect(() => {
-    props.onValidityChange(!conflict);
-  }, [conflict]);
+    props.onValidityChange(!hasConflict);
+  }, [hasConflict, props.onValidityChange]);
 
   const onOverrideToggle = (vocabularyId: string, currentlyEnabled: boolean) => {
     if (currentlyEnabled) {
@@ -80,7 +80,7 @@ export function SelectControlledVocabularies(props: {
     setIsAdding(false);
   };
 
-  const showAddButton = !isAdding && !conflict;
+  const showAddButton = !isAdding && !hasConflict;
 
   return (
     <div className="flex flex-col gap-3">
@@ -121,7 +121,7 @@ export function SelectControlledVocabularies(props: {
         </div>
       )}
 
-      {conflict && (
+      {hasConflict && (
         <p className="text-sm text-red-600">
           A profile cannot contain more than one controlled vocabulary when one has a MUST qualifier.
           Remove the others or change the MUST qualifier to continue.
