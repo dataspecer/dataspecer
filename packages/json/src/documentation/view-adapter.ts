@@ -15,9 +15,11 @@ import {
 } from "../json-schema/json-schema-model.ts";
 import type {
   JsonSchemaArrayViewModel,
+  JsonSchemaAnyViewModel,
   JsonSchemaBooleanViewModel,
   JsonSchemaConstViewModel,
   JsonSchemaDefinitionViewModel,
+  JsonSchemaEnumViewModel,
   JsonSchemaNumericViewModel,
   JsonSchemaObjectPropertyViewModel,
   JsonSchemaObjectViewModel,
@@ -172,7 +174,7 @@ class ViewAdapter {
     };
   }
 
-  private jsonSchemaAnyToViewModel(definition: JsonSchemaDefinition): JsonSchemaDefinitionViewModel {
+  private jsonSchemaAnyToViewModel(definition: JsonSchemaDefinition): JsonSchemaAnyViewModel {
     return {
       ...this.processCommonProperties(definition),
       type: "any",
@@ -214,7 +216,7 @@ class ViewAdapter {
     };
   }
 
-  private jsonSchemaEnumToViewModel(definition: JsonSchemaEnum): JsonSchemaDefinitionViewModel {
+  private jsonSchemaEnumToViewModel(definition: JsonSchemaEnum): JsonSchemaEnumViewModel {
     return {
       ...this.processCommonProperties(definition),
       type: "enum",
@@ -222,7 +224,8 @@ class ViewAdapter {
 
       isMain: false,
       examples: null,
-    };
+      values: definition.values,
+    } as JsonSchemaEnumViewModel;
   }
 
   private jsonSchemaNumberToViewModel(definition: JsonSchemaNumber): JsonSchemaNumericViewModel {
@@ -248,7 +251,7 @@ class ViewAdapter {
       format: definition.format,
       pattern: definition.pattern,
 
-      examples: null,
+      examples: definition.examples.length > 0 ? definition.examples : null,
     };
   }
 
@@ -267,7 +270,7 @@ class ViewAdapter {
     return {
       ...this.processCommonProperties(definition),
       type: "ref",
-      anchor: null, // todo
+      anchor: null,
 
       structureEntity: definition.representsStructuralElement || null,
 
@@ -276,7 +279,7 @@ class ViewAdapter {
       semanticModel,
 
       isMain: false,
-      ref: null as any, // todo
+      ref: null as any,
 
       examples: null,
     };
@@ -299,6 +302,9 @@ class ViewAdapter {
 
     const isMain = !!definition.representsStructuralElement;
 
+    // Collect examples: prefer objectExamples, fall back to examples strings
+    const examplesArray = definition.objectExamples.length > 0 ? definition.objectExamples : (definition.examples.length > 0 ? definition.examples : []);
+
     const result = {
       ...this.processCommonProperties(definition),
       jsonSchemaDefinition: definition,
@@ -313,7 +319,7 @@ class ViewAdapter {
 
       additionalProperties: false,
 
-      examples: null,
+      examples: examplesArray.length > 0 ? examplesArray : null,
     } satisfies JsonSchemaObjectViewModel;
 
     if (isMain) {
@@ -324,8 +330,8 @@ class ViewAdapter {
   }
 
   private jsonSchemaArrayToViewModel(definition: JsonSchemaArray): JsonSchemaArrayViewModel {
-    const minItems = 0;
-    const maxItems = null;
+    const minItems = definition.minItems ?? 0;
+    const maxItems = definition.maxItems ?? null;
     const result: JsonSchemaArrayViewModel = {
       ...this.processCommonProperties(definition),
       jsonSchemaDefinition: definition,
