@@ -17,7 +17,7 @@ export const defaultJsonPartials: Record<string, string> = {
   {{#if (equals type "array")}}{{json-tree-array}}{{/if}}
   {{#if (equals type "string")}}{{json-tree-string}}{{/if}}
   {{#if (equals type "boolean")}}{{#iflng "cs"}}boolean (ano/ne){{lng}}boolean (yes/no){{/iflng}}{{/if}}
-  {{#if (equals type "enum")}}{{#iflng "cs"}}enum{{lng}}enum{{/iflng}}{{/if}}
+  {{#if (equals type "enum")}}{{#iflng "cs"}}výčet s hodnotami: {{#each values}}<code>{{this}}</code>{{#unless @last}}, {{/unless}}{{/each}}{{lng}}enum with values: {{#each values}}<code>{{this}}</code>{{#unless @last}}, {{/unless}}{{/each}}{{/iflng}}{{/if}}
   {{#if (equals type "ref")}}{{json-tree-ref}}{{/if}}
   {{#if (equals type "numeric")}}{{json-tree-numeric}}{{/if}}
   {{#if (equals type "any")}}{{json-tree-any}}{{/if}}
@@ -33,6 +33,23 @@ export const defaultJsonPartials: Record<string, string> = {
 
 {{#def "json-tree-any"}}
   {{xof}}
+{{/def}}
+
+{{~#def "json-examples"}}
+  {{#if examples}}
+    <div class="examples">
+      {{#iflng "cs"}}
+        <strong>Příklady:</strong>
+      {{lng}}
+        <strong>Examples:</strong>
+      {{/iflng}}
+      <ul>
+        {{#each examples}}
+          <li><pre><code>{{#if (typeof this "object")}}{{json this}}{{else}}{{this}}{{/if}}</code></pre></li>
+        {{/each}}
+      </ul>
+    </div>
+  {{/if}}
 {{/def}}
 
 {{#def "json-tree-const"}}
