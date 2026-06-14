@@ -111,6 +111,10 @@ class WrappedModel implements WritableVisualModel {
     return this.model.getInitialModelVersion();
   }
 
+  getVisualView(): VisualView | null {
+    return this.model.getVisualView();
+  }
+
   getTypes(): string[] {
     return this.model.getTypes();
   }
