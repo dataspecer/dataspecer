@@ -442,6 +442,7 @@ export function createDSEModelStore(params: {
       ["https://dataspecer.com/core/model-descriptor/sgov"]: createAsyncQueryableModel,
       ["https://dataspecer.com/core/model-descriptor/pim-store-wrapper"]: createPimModel,
       [V1.PSM]: createStructureModel,
+      [V1.GENERATOR_CONFIGURATION]: createBlobModel,
     },
     packageService: params.packageService,
     httpFetch: params.httpFetch,

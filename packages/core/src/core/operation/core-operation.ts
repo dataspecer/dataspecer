@@ -1,4 +1,5 @@
 import { CoreResource } from "../core-resource.ts";
+import type { Operation } from "../../operation/index.ts";
 
 /**
  * Operation can be applied to change data model. Any data model, like
@@ -22,4 +23,14 @@ export class CoreOperation extends CoreResource {
   static is(resource: CoreResource): resource is CoreOperation {
     return resource.types.includes(CoreOperation.OPERATION_TYPE);
   }
+}
+
+export type CoreOperationAndOperation = Operation & CoreOperation;
+
+export function coreOperationToOperation(operation: CoreOperation): CoreOperationAndOperation {
+  return {
+    ...operation,
+    id: operation.iri!,
+    type: operation.types![0],
+  };
 }

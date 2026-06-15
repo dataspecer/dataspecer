@@ -1,10 +1,11 @@
 import type { PackageService } from "@dataspecer/core-v2/project";
-import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
+import type { EntityRecord } from "@dataspecer/core/entity-model";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
 import { UpdateEntityOperationType, type UpdateEntityOperation } from "@dataspecer/core/operation";
 import { BaseModelInModelStore, type ModelState } from "./base.ts";
 import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
+import { serializationToBlobModelEntities } from "@dataspecer/core/entity-model/utils";
 
 /**
  * For given model returns everything as blob.
@@ -36,12 +37,8 @@ export class BlobModelInModelStore extends BaseModelInModelStore implements Mode
   }
 
   protected async loadInternal(): Promise<ModelState> {
-    const data = await this.service.getResourceJsonData(this.id) as Entity ?? {};
-    data.id = this.id;
-
-    const entities = {
-      [this.id]: data,
-    };
+    const data = await this.service.getResourceJsonData(this.id) as object;
+    const entities = serializationToBlobModelEntities(this.id, data);
 
     return {
       entities,

@@ -1,6 +1,5 @@
-import { LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { PackageService } from "@dataspecer/core-v2/project";
-import { applyOperationToSemanticModel } from "@dataspecer/core-v2/semantic-model";
+import { applyOperationToSemanticModel, semanticModelEntitiesToSerialization, serializationToSemanticModelEntities } from "@dataspecer/core-v2/semantic-model";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
@@ -24,14 +23,9 @@ export class SemanticModelInModelStore extends BaseModelInModelStore implements 
   }
 
   private async deserializeModel(data: unknown): Promise<ModelState> {
-    const modelDescriptor = {...(data as any)};
-
-    const entities = modelDescriptor.entities;
-    const operations = [] as Operation[];
-
     return {
-      entities,
-      operations,
+      entities: serializationToSemanticModelEntities(data),
+      operations: [], // todo still no operations
     };
   }
 
@@ -41,15 +35,7 @@ export class SemanticModelInModelStore extends BaseModelInModelStore implements 
   }
 
   private serializeModel(state: ModelState): unknown {
-    return {
-      type: LOCAL_SEMANTIC_MODEL,
-      ...{}, // todo model metadata
-
-      modelId: this.id,
-      modelAlias: "todo alias",
-      baseIri: "todo base iri",
-      entities: state.entities,
-    };
+    return semanticModelEntitiesToSerialization(state.entities);
   }
 
   protected override applyOperation(operation: Operation, mutableState: EntityRecord): void {
@@ -64,8 +50,11 @@ export class SemanticModelInModelStore extends BaseModelInModelStore implements 
   }
 }
 
-export function createSemanticModel(modelId: ModelIdentifier, context: {
-  service: PackageService;
-}): Model & ModelInDefaultFrontendModelStore {
+export function createSemanticModel(
+  modelId: ModelIdentifier,
+  context: {
+    service: PackageService;
+  },
+): Model & ModelInDefaultFrontendModelStore {
   return new SemanticModelInModelStore(modelId, context.service);
 }

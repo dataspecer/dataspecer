@@ -8,6 +8,7 @@ import type { Operation } from "@dataspecer/core/operation";
 import { diffEntities } from "../utilities.ts";
 import { BaseModelInModelStore, type ModelState } from "./base.ts";
 import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
+import { serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 
 export const ReloadModelOperationType = "http://dataspecer.com/core/operation/reload" as const;
 /**
@@ -85,27 +86,11 @@ export class PimModelInModelStore extends BaseModelInModelStore implements Model
   }
 
   protected async loadInternal(): Promise<ModelState> {
-    const modelData = (await this.service.getResourceJsonData(this.id)) as any;
-    const model = new PimStoreWrapper(modelData.pimStore, this.id, "model", modelData.urls);
-    model.fetchFromPimStore();
-    this.model = model;
-
-    /**
-     * The main entity represents the model itself. Currently it is just a dump
-     * of the data from the root of the blob.
-     */
-    const mainEntity = {
-      id: this.id,
-      type: [],
-      ...modelData,
-    } satisfies Entity;
-    delete mainEntity.pimStore;
-
+    const data = (await this.service.getResourceJsonData(this.id)) as any;
+    const {adapter, entities} = serializationToPimModelEntities(data);
+    this.model = adapter;
     return {
-      entities: {
-        ...model.getEntities(),
-        [mainEntity.id]: mainEntity,
-      },
+      entities,
       operations: [],
     };
   }

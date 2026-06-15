@@ -1,8 +1,8 @@
 import { CoreResourceReader } from "@dataspecer/core/core";
 import { Entity } from "../../entity-model/entity.ts";
 import { InMemoryEntityModel } from "../../entity-model/in-memory-entity-model.ts";
-
 import { transformCoreResources } from "./transform-core-resources.ts";
+import type { EntityRecord } from "@dataspecer/core/entity-model";
 
 function deepEqual(a: any, b: any): boolean {
     if (a === b) {
@@ -80,4 +80,39 @@ export class PimStoreWrapper extends InMemoryEntityModel {
             urls: this.urls,
         };
     }
+}
+
+/**
+ * Converts PIM serialization (js object) into an entity record with semantic
+ * entities.
+ */
+export function serializationToPimModelEntities(serialization: object): {
+  adapter: PimStoreWrapper;
+  entities: EntityRecord;
+} {
+  const modelData = {...serialization} as any;
+  const adapter = new PimStoreWrapper(modelData.pimStore, modelData.id, "model", modelData.urls);
+  adapter.fetchFromPimStore();
+
+  delete modelData.pimStore;
+
+  /**
+   * The main entity represents the model itself. Currently it is just a dump
+   * of the data from the root of the blob.
+   */
+  const mainEntity = {
+    id: modelData.id,
+    type: [],
+    ...modelData,
+  } satisfies Entity;
+
+  const entities = {
+    ...adapter.getEntities(),
+    [mainEntity.id]: mainEntity,
+  };
+
+  return {
+    entities,
+    adapter,
+  };
 }

@@ -33,6 +33,7 @@ import {
 import { SemanticModelClassUsage, SemanticModelRelationshipUsage } from "./usage/concepts/index.ts";
 import { createDefaultSemanticModelProfileOperationExecutor } from "./profile/operations/index.ts";
 import type { EntityChange, EntityChangeDeleted, EntityRecord } from "@dataspecer/core/entity-model";
+import { LOCAL_SEMANTIC_MODEL } from "../model/known-models.ts";
 
 function uuid() {
     return Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -66,6 +67,51 @@ export class WritableSemanticModelAdapter extends SemanticModelAdapter {
         this.entityModel.change(updated, removed);
         return result;
     }
+}
+
+/**
+ * Returns entities that represent the semantic model based on the provided serialization.
+ */
+export function serializationToSemanticModelEntities(serialization: unknown): EntityRecord {
+    const modelDescriptor = {...(serialization as any)};
+
+    const entities = modelDescriptor.entities;
+    delete modelDescriptor.entities;
+
+    const mainEntity = {
+        ...modelDescriptor,
+        id: modelDescriptor.modelId,
+        type: [LOCAL_SEMANTIC_MODEL],
+    } as Entity;
+
+    return {
+        ...entities,
+        [mainEntity.id]: mainEntity,
+    };
+}
+
+/**
+ * Serializes entities that represent single semantic model.
+ */
+export function semanticModelEntitiesToSerialization(entities: EntityRecord): unknown {
+    const mainEntity = Object.values(entities).find((e) => e.type?.includes(LOCAL_SEMANTIC_MODEL));
+
+    if (!mainEntity) {
+      throw new Error("Semantic model must contain an entity with type " + LOCAL_SEMANTIC_MODEL);
+    }
+
+    const restEntities = {...entities};
+    delete restEntities[mainEntity.id];
+
+    return {
+      ...mainEntity,
+
+      // Required fields
+
+      modelId: mainEntity.id,
+      type: LOCAL_SEMANTIC_MODEL,
+      entities: restEntities,
+    };
 }
 
 

@@ -1,1 +1,1 @@
-export { applyOperationToSemanticModel } from "./writable-semantic-model-adapter.ts";
+export { applyOperationToSemanticModel, semanticModelEntitiesToSerialization, serializationToSemanticModelEntities } from "./writable-semantic-model-adapter.ts";
