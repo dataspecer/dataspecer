@@ -14,6 +14,7 @@
     "./executor": "./lib/executor/index.js"
   },
   "dependencies": {
+    "@dataspecer/core": "*",
     "@dataspecer/utilities": "*"
   },
   "devDependencies": {
