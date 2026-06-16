@@ -2,13 +2,13 @@ import type { Entity } from "@dataspecer/core-v2";
 import { createDefaultConfigurationModelFromJsonObject } from "@dataspecer/core-v2/configuration-model";
 import { isSemanticModelClass, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import type { LanguageString } from "@dataspecer/core/core/core-resource";
 import * as DataSpecificationVocabulary from "@dataspecer/data-specification-vocabulary/semantic-model";
 import { getMustacheView } from "@dataspecer/documentation";
 import { createPartialDocumentationConfiguration, DOCUMENTATION_MAIN_TEMPLATE_PARTIAL } from "@dataspecer/documentation/configuration";
 import { generateDocumentation } from "@dataspecer/documentation/documentation-generator";
 import { generateLightweightOwl as generateLightweightOwlInternal } from "@dataspecer/lightweight-owl";
 import { mergeDocumentationConfigurations } from "./documentation/documentation.ts";
-import { BlobModel } from "./model-repository/blob-model.ts";
 import { ModelDescription } from "./model.ts";
 import { GenerateSpecificationContext } from "./specification.ts";
 import { semanticModelsToShacl, shaclToRdf, type SemanticModelsToShaclConfiguration } from "@dataspecer/shacl-v2";
@@ -150,7 +150,7 @@ export async function getIdToIriMapping(models: ModelDescription[]): Promise<Rec
  * Returns HTML documentation for the given package.
  */
 export async function generateHtmlDocumentation(
-  thisPackageModel: BlobModel,
+  rootPackage: { data: unknown; label: LanguageString },
   models: ModelDescription[],
   options: {
     externalArtifacts?: Record<
@@ -168,13 +168,12 @@ export async function generateHtmlDocumentation(
 ): Promise<string> {
   const externalArtifacts = options.externalArtifacts ?? {};
 
-  const packageData = await thisPackageModel.getJsonBlob();
-  const configuration = createDefaultConfigurationModelFromJsonObject(packageData as object);
+  const configuration = createDefaultConfigurationModelFromJsonObject(rootPackage.data as object);
   const documentationConfiguration = createPartialDocumentationConfiguration(configuration);
   const fullConfiguration = mergeDocumentationConfigurations([documentationConfiguration]);
 
   const context = {
-    label: thisPackageModel.getUserMetadata().label ?? {},
+    label: rootPackage.label ?? {},
     models,
     externalArtifacts,
     dsv: options.dsv ? JSON.parse(options.dsv) : {},

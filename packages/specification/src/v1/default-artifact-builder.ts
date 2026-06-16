@@ -1,10 +1,10 @@
 import { Configurator } from "@dataspecer/core/configuration/configurator";
 import { CoreResourceReader } from "@dataspecer/core/core";
 import { DataSpecification as CoreDataSpecification } from "@dataspecer/core/data-specification/model";
+import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { Generator } from "@dataspecer/core/generator";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
-import { ModelRepository } from "../model-repository/model-repository.ts";
 import { GenerateReport } from "./generate-report.ts";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
 import { ArtifactConfigurator } from "./artifact-configurator.ts";
@@ -24,7 +24,7 @@ export class DefaultArtifactBuilder {
     private configuration: object;
     private readonly httpFetch: HttpFetch;
     private readonly configurator: Configurator[];
-    private readonly modelRepository: ModelRepository;
+    private readonly models: Record<string, EntityRecord>;
 
     /**
      * Whether to generate a single specification only. This will affect the file structure.
@@ -36,7 +36,7 @@ export class DefaultArtifactBuilder {
         dataSpecifications: Record<string, DataSpecification>,
         configuration: object,
         httpFetch: HttpFetch,
-        modelRepository: ModelRepository,
+        models: Record<string, EntityRecord>,
         configurator?: Configurator[],
     ) {
         this.store = store;
@@ -45,7 +45,7 @@ export class DefaultArtifactBuilder {
         this.configuration = configuration;
         this.httpFetch = httpFetch;
         this.configurator = configurator ?? getDefaultConfigurators();
-        this.modelRepository = modelRepository;
+        this.models = models;
     }
 
     public async prepare(
@@ -154,7 +154,7 @@ export class DefaultArtifactBuilder {
             await generateSpecification(
                 dataSpecificationIri,
                 {
-                    modelRepository: this.modelRepository,
+                    models: this.models,
                     output: zip,
 
                     fetch: this.httpFetch,

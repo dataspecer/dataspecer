@@ -18,6 +18,13 @@ import { createBlobModel } from "./blob-model.ts";
 import { v4 as uuidv4 } from "uuid";
 import { UNDO_OPERATION_TYPE, type UndoOperation } from "./base.ts";
 
+/**
+ * Synthetic model type used to register {@link createBlobModel} as the
+ * builder for a visual model's companion "svg" blob (id `${visualModelId}#svg`).
+ * It is not a real model type stored anywhere.
+ */
+const VISUAL_MODEL_SVG_BLOB_TYPE = "#svg";
+
 export interface ApplyOperationResult {
   entityChanges: EntityChange[];
   transactionId: string;
@@ -202,18 +209,14 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
         const modelEntity = change.next as ModelEntity;
 
         const modelType = modelEntity.modelType;
-        const createdModel = this.buildModel(modelEntity.id, modelType);
+        this.buildModelAndSubscribe(modelEntity.id, modelType);
 
-        if (!createdModel) {
-          // This model is not meant to be subscribed to, ignore it.
-          continue;
+        if (modelType === LOCAL_VISUAL_MODEL) {
+          // A visual model may have an additional "svg" blob attached to it.
+          // It is tracked as its own companion model, analogous to how the
+          // default "model" blob is tracked.
+          this.buildModelAndSubscribe(`${modelEntity.id}${VISUAL_MODEL_SVG_BLOB_TYPE}`, VISUAL_MODEL_SVG_BLOB_TYPE);
         }
-
-        createdModel.subscribeForAsyncChanges(modelChanges => {
-          this.internalNotifyEntityChange({ entityChanges: {[modelEntity.id]: modelChanges} });
-        });
-
-        this.modelPromises.push(createdModel.load());
       } else if (change.next === null) {
         // Model was deleted
         // todo
@@ -221,6 +224,26 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
         // Model changes are ignored, there is no need to react on them.
       }
     }
+  }
+
+  /**
+   * Builds a model of the given type (if there is a builder registered for
+   * it), subscribes to its async changes and starts loading it. No-op if
+   * there is no builder for the given model type.
+   */
+  private buildModelAndSubscribe(modelId: ModelIdentifier, modelType: string): void {
+    const createdModel = this.buildModel(modelId, modelType);
+
+    if (!createdModel) {
+      // This model is not meant to be subscribed to, ignore it.
+      return;
+    }
+
+    createdModel.subscribeForAsyncChanges(modelChanges => {
+      this.internalNotifyEntityChange({ entityChanges: { [modelId]: modelChanges } });
+    });
+
+    this.modelPromises.push(createdModel.load());
   }
 
   getModel(id: ModelIdentifier | null | undefined): Model | null {
@@ -438,6 +461,7 @@ export function createDSEModelStore(params: {
     modelBuilders: {
       [LOCAL_SEMANTIC_MODEL]: createSemanticModel,
       [LOCAL_VISUAL_MODEL]: createVisualModelInModelStore,
+      [VISUAL_MODEL_SVG_BLOB_TYPE]: createBlobModel,
       [LOCAL_PACKAGE]: createBlobModel,
       ["https://dataspecer.com/core/model-descriptor/sgov"]: createAsyncQueryableModel,
       ["https://dataspecer.com/core/model-descriptor/pim-store-wrapper"]: createPimModel,

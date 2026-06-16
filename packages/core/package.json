@@ -599,7 +599,7 @@
     "n3": "^1.25.1",
     "rdflib": "^2.2.31",
     "rdfxml-streaming-parser": "^2.2.2",
-    "uuid": "^13.0.0"
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.57.1",

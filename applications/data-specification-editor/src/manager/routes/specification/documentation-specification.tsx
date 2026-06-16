@@ -12,7 +12,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { BackendConnectorContext, DefaultConfigurationContext } from "../../../application";
 import { LanguageStringText } from "../../../editor/components/helper/LanguageStringComponents";
 import { useDialog } from "../../../editor/dialog";
-import { getConfiguration, modelRepository } from "../../../generators/configuration/provided-configuration";
+import { getConfiguration } from "../../../generators/configuration/provided-configuration";
 import { ZipStreamDictionary } from "../../../generators/zip-stream-dictionary";
 import { ConfigureArtifacts } from "../../artifacts/configuration/configure-artifacts";
 import { ConfigureButton } from "../../artifacts/configuration/configure-button";
@@ -60,7 +60,7 @@ export const DocumentationSpecification = memo(() => {
     setGenerateState([]);
     setGenerateDialogOpen(true);
 
-    const { store: federatedStore, dataSpecifications } = await getConfiguration(dataSpecificationIri as string, "");
+    const { store: federatedStore, dataSpecifications, models } = await getConfiguration(dataSpecificationIri as string, "");
 
     // Override base urls to null
     if (overrideBasePathsToNull) {
@@ -75,7 +75,7 @@ export const DocumentationSpecification = memo(() => {
 
     setZipLoading("generating");
 
-    const generator = new DefaultArtifactBuilder(federatedStore as CoreResourceReader, dataSpecifications, defaultConfiguration, fetch, modelRepository);
+    const generator = new DefaultArtifactBuilder(federatedStore as CoreResourceReader, dataSpecifications, defaultConfiguration, fetch, models);
     await generator.prepare(Object.keys(dataSpecifications), setGenerateState);
     const zip = new ZipStreamDictionary();
     await generator.build(zip);

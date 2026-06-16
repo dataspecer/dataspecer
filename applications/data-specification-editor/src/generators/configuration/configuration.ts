@@ -1,5 +1,6 @@
 import { DataSpecification } from '@dataspecer/backend-utils/connectors/specification';
 import { SemanticModelClass, SemanticModelEntity } from '@dataspecer/core-v2/semantic-model/concepts';
+import type { EntityRecord } from '@dataspecer/core/entity-model';
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
 import { OperationContext } from "../../editor/operations/context/operation-context";
 import { SemanticModelAggregator } from '@dataspecer/core-v2/hierarchical-semantic-aggregator';
@@ -15,6 +16,12 @@ export interface Configuration {
     dataSpecificationIri: string|null;
     dataPsmSchemaIri: string|null;
     operationContext: OperationContext,
+
+    /**
+     * All models loaded for this data specification, keyed by model id (see
+     * {@link DefaultArtifactBuilder}'s `models` constructor parameter).
+     */
+    models: Record<string, EntityRecord>;
 
     /**
      * todo experimental

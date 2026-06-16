@@ -10,7 +10,6 @@ import configuration from "../configuration.ts";
 import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
 import { resourceModel } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
-import { BackendModelRepository } from "../utils/model-repository.ts";
 import { getContentDispositionAttachmentHeaderValue, safeAsciiFileName, safeUnicodeFileName } from "../utils/safe-file-name.ts";
 import { getModelsForPackage } from "../utils/backend-model-store.ts";
 
@@ -62,11 +61,10 @@ async function generateArtifacts(
   queryParams: string = "",
   singleFilePath: string | null = null,
 ) {
-  const modelRepository = new BackendModelRepository(resourceModel);
   const allModels = await getModelsForPackage(packageIri, resourceModel);
 
   const { store, dataSpecifications } = getDataSpecificationWithModels(packageIri, allModels);
-  const generator = new DefaultArtifactBuilder(store as CoreResourceReader, dataSpecifications, configuration.configuration, fetch, modelRepository);
+  const generator = new DefaultArtifactBuilder(store as CoreResourceReader, dataSpecifications, configuration.configuration, fetch, allModels);
   generator.singleSpecificationOnly = true; // We want to generate only a single specification without extra directories.
   await generator.prepare(Object.keys(dataSpecifications), undefined, queryParams);
   await generator.build(streamDictionary, singleFilePath, queryParams, packageIri);

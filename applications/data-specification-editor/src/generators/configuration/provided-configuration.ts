@@ -5,10 +5,8 @@ import { getDataSpecificationWithModels } from "@dataspecer/specification/specif
 import { ClientConfigurator, DefaultClientConfiguration } from "../../configuration";
 import { OperationContext } from "../../editor/operations/context/operation-context";
 import { Configuration } from "./configuration";
-import { FrontendModelRepository } from "@/manager/utils/model-repository";
 
 export const backendPackageService = new StructureEditorBackendService(import.meta.env.VITE_BACKEND as string, httpFetch, "http://dataspecer.com/packages/local-root");
-export const modelRepository = new FrontendModelRepository(backendPackageService);
 
 /**
  * Based on the package iri and schema iri provides the full configuration which
@@ -30,11 +28,11 @@ export async function getConfiguration(dataSpecificationIri: string | null, data
 
   window["modelStore"] = modelStore; // For debugging purposes
 
-
+  const models = modelStore.getAllEntities();
 
   const dataSpecification = getDataSpecificationWithModels(
     dataSpecificationIri,
-    modelStore.getAllEntities(),
+    models,
     changeListener => {
       return modelStore.subscribeToEntityChanges(changes => {
         changeListener(changes.entityChanges);
@@ -53,6 +51,7 @@ export async function getConfiguration(dataSpecificationIri: string | null, data
     dataSpecificationIri,
     dataPsmSchemaIri,
     operationContext,
+    models,
     // @ts-ignore
     modelStore,
   };

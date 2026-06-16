@@ -12,6 +12,9 @@ const PROJECT_MODEL_ID = "_project_model";
 
 function createRegularResourceEntity(resource: BaseResource): ModelEntity {
   return {
+    // Resources may carry arbitrary extra metadata fields (e.g. documentBaseUrl,
+    // importedFromUrl) beyond label/description, which callers rely on.
+    ...(resource.userMetadata as object ?? {}),
     id: resource.iri,
     type: [],
     label: resource.userMetadata?.label ?? {},
@@ -22,6 +25,7 @@ function createRegularResourceEntity(resource: BaseResource): ModelEntity {
 
 function createProjectPackageEntity(resource: Package): PackageEntity {
   return {
+    ...(resource.userMetadata as object ?? {}),
     id: resource.iri,
     type: [],
     label: resource.userMetadata?.label ?? {},
@@ -29,6 +33,20 @@ function createProjectPackageEntity(resource: Package): PackageEntity {
     modelType: LOCAL_PACKAGE,
     subModels: resource.subResources?.map((subResource) => subResource.iri) ?? [],
   };
+}
+
+/**
+ * Loads a named, non-default storage blob of a model (e.g. the "svg" blob of
+ * a visual model) and returns it as its own top-level blob model entry, keyed
+ * by `${modelId}#${blobName}`. Returns null if the blob does not exist.
+ */
+async function loadNamedBlobEntities(modelId: string, blobName: string, resourceModel: ResourceModel): Promise<EntityRecord | null> {
+  const store = await resourceModel.getResourceModelStore(modelId, blobName);
+  const blobData = store ? await store.getJson() : null;
+  if (!blobData) {
+    return null;
+  }
+  return serializationToBlobModelEntities(`${modelId}#${blobName}`, blobData);
 }
 
 async function loadModelEntities(modelId: string, modelType: string, resourceModel: ResourceModel): Promise<EntityRecord> {
@@ -93,6 +111,13 @@ export async function getModelsForPackage(packageId: string, resourceModel: Reso
         await loadPackageRecursively(subResource.iri);
       } else {
         models[subResource.iri] = await loadModelEntities(subResource.iri, subModelType, resourceModel);
+
+        if (subModelType === LOCAL_VISUAL_MODEL) {
+          const svgEntities = await loadNamedBlobEntities(subResource.iri, "svg", resourceModel);
+          if (svgEntities) {
+            models[`${subResource.iri}#svg`] = svgEntities;
+          }
+        }
       }
 
       if (subModelType !== LOCAL_PACKAGE) {

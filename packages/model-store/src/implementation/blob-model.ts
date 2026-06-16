@@ -9,13 +9,34 @@ import { serializationToBlobModelEntities } from "@dataspecer/core/entity-model/
 
 /**
  * For given model returns everything as blob.
+ *
+ * A resource may have several named storage blobs (the default one simply
+ * called "model"). To represent a non-default blob as its own model, use an
+ * id of the form `${resourceId}#${blobName}` - this class resolves the
+ * resource id and blob name from it and reads/writes that particular blob,
+ * while the model itself still has exactly one entity, keyed by its own
+ * (full, possibly `#`-suffixed) id.
  */
 export class BlobModelInModelStore extends BaseModelInModelStore implements Model, ModelInDefaultFrontendModelStore {
   protected service: PackageService;
 
+  /**
+   * Id of the underlying resource, with any `#blobName` suffix stripped off.
+   */
+  protected readonly resourceId: string;
+
+  /**
+   * Name of the storage blob to read/write, or undefined for the default blob.
+   */
+  protected readonly blobName: string | undefined;
+
   constructor(id: string, service: PackageService) {
     super(id);
     this.service = service;
+
+    const hashIndex = id.indexOf("#");
+    this.resourceId = hashIndex === -1 ? id : id.slice(0, hashIndex);
+    this.blobName = hashIndex === -1 ? undefined : id.slice(hashIndex + 1);
   }
 
   protected applyOperation(operation: Operation, mutableState: EntityRecord): void {
@@ -37,7 +58,7 @@ export class BlobModelInModelStore extends BaseModelInModelStore implements Mode
   }
 
   protected async loadInternal(): Promise<ModelState> {
-    const data = await this.service.getResourceJsonData(this.id) as object;
+    const data = await this.service.getResourceJsonData(this.resourceId, this.blobName) as object;
     const entities = serializationToBlobModelEntities(this.id, data);
 
     return {
@@ -48,7 +69,7 @@ export class BlobModelInModelStore extends BaseModelInModelStore implements Mode
 
   protected async saveInternal(state: ModelState): Promise<void> {
     const data = state.entities[this.id];
-    await this.service.setResourceJsonData(this.id, data);
+    await this.service.setResourceJsonData(this.resourceId, data, this.blobName);
   }
 }
 
