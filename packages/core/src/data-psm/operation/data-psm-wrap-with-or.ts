@@ -1,5 +1,6 @@
 import {CoreOperation, CoreOperationResult, CoreResource, CoreTyped} from "../../core/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
+import { generateEntityId } from "../../entity-model/entity.ts";
 
 /**
  * Wraps {@link DataPsmClass}, {@link DataPsmClassReference} or
@@ -9,9 +10,10 @@ export class DataPsmWrapWithOr extends CoreOperation {
   static readonly TYPE = PSM.WRAP_WITH_OR;
 
   /**
-   * IRI of the newly created DataPsmOr
+   * IRI of the newly created DataPsmOr, generated up-front so that callers
+   * can use it without depending on the (deprecated) return value of applyOperation.
    */
-  dataPsmNewIri: string | null = null;
+  dataPsmNewIri: string | null = generateEntityId();
 
   /**
    * The wrapped resource

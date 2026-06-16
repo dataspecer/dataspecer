@@ -15,6 +15,7 @@ test("Create data PSM attribute.", async () => {
   operation.dataPsmHumanDescription = { en: "Desc" };
   operation.dataPsmOwner = "http://class";
   operation.dataPsmDatatype = "xsd:string";
+  operation.dataPsmNewIri = "http://localhost/1";
 
   const before = {
     "http://schema": {

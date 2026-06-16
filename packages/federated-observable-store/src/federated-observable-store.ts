@@ -142,11 +142,11 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter, Co
     return () => this.allChangesSubscribers.delete(listener);
   }
 
-  applyOperation(modelId: ModelIdentifier, operation: CoreOperation | Operation): any {
+  applyOperation(modelId: ModelIdentifier, operation: CoreOperation | Operation): void {
     if (!this.addOperationForTransaction) {
       throw new Error("The model is read only.");
     };
-    return this.addOperationForTransaction([{
+    this.addOperationForTransaction([{
       modelId,
       operation: operation as Operation,
     }]);

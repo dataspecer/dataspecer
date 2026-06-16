@@ -5,14 +5,16 @@ import {
   CoreTyped,
 } from "../../core/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
+import { generateEntityId } from "../../entity-model/entity.ts";
 
 export class DataPsmCreateClassReference extends CoreOperation {
   static readonly TYPE = PSM.CREATE_CLASS_REFERENCE;
 
   /**
-   * IRI of the newly created object.
+   * IRI of the newly created object, generated up-front so that callers can
+   * use it without depending on the (deprecated) return value of applyOperation.
    */
-  dataPsmNewIri: string | null = null;
+  dataPsmNewIri: string | null = generateEntityId();
 
   /**
    * IRI of a specification.

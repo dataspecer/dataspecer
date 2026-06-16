@@ -13,10 +13,6 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import { getContentDispositionAttachmentHeaderValue, safeAsciiFileName, safeUnicodeFileName } from "../utils/safe-file-name.ts";
 import { getModelsForPackage } from "../utils/backend-model-store.ts";
 
-interface DataSpecifications {
-  [key: string]: any;
-}
-
 function getName(name: LanguageString | undefined, defaultName: string) {
   return name?.["cs"] || name?.["en"] || defaultName;
 }

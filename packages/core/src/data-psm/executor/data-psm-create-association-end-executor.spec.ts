@@ -15,6 +15,7 @@ test("Create data PSM association-end.", async () => {
   operation.dataPsmHumanDescription = { en: "Desc" };
   operation.dataPsmOwner = "http://class";
   operation.dataPsmIsDematerialize = true;
+  operation.dataPsmNewIri = "http://localhost/1";
 
   const before = {
     "http://schema": {
