@@ -1,7 +1,7 @@
-import { DataSpecification, StructureEditorBackendService } from "@dataspecer/backend-utils/connectors/specification";
+import { StructureEditorBackendService } from "@dataspecer/backend-utils/connectors/specification";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import { createDSEModelStore } from "@dataspecer/model-store/implementation";
-import { getDataSpecificationWithModels } from "@dataspecer/specification/specification";
+import { getDataSpecificationWithModels, type DataSpecification } from "@dataspecer/specification/specification";
 import { ClientConfigurator, DefaultClientConfiguration } from "../../configuration";
 import { OperationContext } from "../../editor/operations/context/operation-context";
 import { Configuration } from "./configuration";

@@ -1,4 +1,4 @@
-import { DataSpecification } from "@dataspecer/backend-utils/connectors/specification";
+import type { DataSpecification } from '@dataspecer/specification/specification';
 import { BaseResource, Package } from "@dataspecer/core-v2/project";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";

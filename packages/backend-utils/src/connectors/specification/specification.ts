@@ -1,4 +1,3 @@
-// @ts-nocheck due to circular dependencies
 import { HttpStoreDescriptor, StoreDescriptor } from "../../store-descriptor/index.ts";
 import { EntityModel } from "@dataspecer/core-v2";
 import { LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
@@ -6,67 +5,7 @@ import { BackendPackageService, Package } from "@dataspecer/core-v2/project";
 import { CoreResource, LanguageString } from "@dataspecer/core/core/core-resource";
 import { DataSpecification as LegacyDataSpecification } from "@dataspecer/core/data-specification/model";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
-
-export type DataSpecification = Package & {
-  /**
-   * ID of the parent package that is being interpreted as Data Specification.
-   */
-  id: string;
-
-  type: string;
-
-  label: LanguageString;
-  tags: string[];
-
-  /**
-   * List of IDs of models that are being interpreted as CIMs.
-   * @deprecated Use {@link modelCompositionConfiguration} instead.
-   * */
-  sourceSemanticModelIds: string[];
-
-  /**
-   * List of IDs of models that are being interpreted as PIMs.
-   * @deprecated Use {@link modelCompositionConfiguration} instead.
-   */
-  localSemanticModelIds: string[];
-
-  /**
-   * Information about models and how they are composed.
-   * Overrides {@link sourceSemanticModelIds} and {@link localSemanticModelIds}.
-   */
-  modelCompositionConfiguration: object | null;
-
-  dataStructures: DataSpecificationStructure[];
-
-  importsDataSpecificationIds: string[];
-
-  /**
-   * This is a list of ids of models of type "Generator Configuration". You
-   * should read the given model in oder to properly configure the artifact
-   * generation.
-   *
-   * @todo There was this idea that we can have multiple artifact configurations
-   * per data specification, but probably this was a mistake. Backend generator,
-   * for example, uses the first one always. We should probably change this to a
-   * single artifact configuration in the future.
-   */
-  artifactConfigurations: ArtifactConfigurationDescriptor[];
-
-  /**
-   * Additional data that can be used to store user preferences.
-   */
-  userPreferences: object;
-};
-
-export type DataSpecificationStructure = {
-  id: string;
-  label: LanguageString;
-}
-
-export type ArtifactConfigurationDescriptor = {
-  id: string;
-  label: LanguageString;
-}
+import type { DataSpecification } from "@dataspecer/specification/specification";
 
 export class HttpSemanticModelStoreDescriptor implements StoreDescriptor {
   static readonly TYPE = "https://schemas.dataspecer.com/store-descriptor/semantic-model/http";
@@ -137,7 +76,6 @@ export class StructureEditorBackendService extends BackendPackageService {
       label: pckg.userMetadata?.label || {},
       tags: pckg.userMetadata?.tags || [],
 
-      sourceSemanticModelIds: model.sourceSemanticModelIds ?? ["https://dataspecer.com/adapters/sgov"], // SGOV is default model if none is selected
       localSemanticModelIds: model.localSemanticModelIds ?? [],
       modelCompositionConfiguration: model.modelCompositionConfiguration ?? null,
       dataStructures,

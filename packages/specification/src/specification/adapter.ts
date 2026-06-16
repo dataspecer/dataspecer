@@ -193,7 +193,6 @@ export function getDataSpecification(projectId: string, projectModel: EntityReco
     label: mainPackage.label || {},
     tags: [], // todo
 
-    sourceSemanticModelIds: rawModelData.sourceSemanticModelIds ?? ["https://dataspecer.com/adapters/sgov"], // SGOV is default model if none is selected
     localSemanticModelIds: rawModelData.localSemanticModelIds ?? [],
     modelCompositionConfiguration: rawModelData.modelCompositionConfiguration ?? null,
     dataStructures,
