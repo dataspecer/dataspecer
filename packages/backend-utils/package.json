@@ -8,10 +8,7 @@
     "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\""
   },
   "exports": {
-    ".": "./lib/index.js",
-    "./connectors": "./lib/connectors/index.js",
-    "./connectors/specification": "./lib/connectors/specification/index.js",
-    "./store-descriptor": "./lib/store-descriptor/index.js"
+    ".": "./lib/index.js"
   },
   "devDependencies": {
     "typescript": "^6.0.3"

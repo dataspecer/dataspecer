@@ -6,7 +6,7 @@ import { useAsyncMemo } from "@/editor/hooks/use-async-memo";
 import type { Configuration } from "@/generators/configuration/configuration";
 import { getConfiguration } from "@/generators/configuration/provided-configuration";
 import { cn } from "@/lib/utils";
-import type { StructureEditorBackendService } from "@dataspecer/backend-utils/connectors/specification";
+import type { StructureEditorBackendService } from "@dataspecer/backend-utils";
 import type { DataSpecificationStructure } from '@dataspecer/specification/specification';
 import type { ApplicationProfileAggregator } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
 import { V1 } from "@dataspecer/core-v2/model/known-models";

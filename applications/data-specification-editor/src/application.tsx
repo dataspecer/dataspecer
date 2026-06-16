@@ -1,4 +1,4 @@
-import { StructureEditorBackendService } from "@dataspecer/backend-utils/connectors/specification";
+import { StructureEditorBackendService } from "@dataspecer/backend-utils";
 import { getDefaultConfiguration, mergeConfigurations } from "@dataspecer/core/configuration/utils";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import { createTheme, CssBaseline, ThemeProvider } from "@mui/material";
