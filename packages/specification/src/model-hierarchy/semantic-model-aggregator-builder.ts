@@ -1,4 +1,4 @@
-import { ApplicationProfileAggregator, MergeAggregator, SemanticModelAggregator, VocabularyAggregator } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
+import { ApplicationProfileAggregator, ExternalModelWithCacheAggregator, MergeAggregator, SemanticModelAggregator, VocabularyAggregator } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
 import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
@@ -7,6 +7,7 @@ import type { ModelIdentifier } from "@dataspecer/core/model";
 import type { ModelEntity, PackageEntity } from "@dataspecer/project-model";
 import { VisualModelData } from "@dataspecer/visual-model";
 import { ModelCompositionConfiguration, ModelCompositionConfigurationApplicationProfile, ModelCompositionConfigurationMerge } from "./composition-configuration.ts";
+import { getProvidedSourceSemanticModel } from "./adapter.ts";
 
 const PROJECT_MODEL_ID: ModelIdentifier = "_project_model";
 const DEFAULT_VOCABULARY_COLOR = "#f9aa49";
@@ -343,13 +344,12 @@ class SemanticModelAggregatorBuilder {
     // It's a semantic model
     const model = this.getSemanticModel(modelId);
 
-    // TODO: Handle external model cache (requires async/await refactoring)
-    // if ((model.modelMetadata as any)?.["caches"]) {
-    //   const cimAdapter = await getProvidedSourceSemanticModel((model.modelMetadata as any)["caches"]);
-    //   const aggregator = new ExternalModelWithCacheAggregator(model, cimAdapter);
-    //   (aggregator.thisVocabularyChain as any)["color"] = this.modelData[modelId]?.color ?? DEFAULT_VOCABULARY_COLOR;
-    //   return aggregator;
-    // }
+    if ((model.modelMetadata as any)?.["caches"]) {
+      const cimAdapter = getProvidedSourceSemanticModel((model.modelMetadata as any)["caches"]);
+      const aggregator = new ExternalModelWithCacheAggregator(model, cimAdapter);
+      (aggregator.thisVocabularyChain as any)["color"] = this.modelData[modelId]?.color ?? DEFAULT_VOCABULARY_COLOR;
+      return aggregator;
+    }
 
     const aggregator = new VocabularyAggregator(model);
     (aggregator.thisVocabularyChain as any)["color"] = this.modelData[modelId]?.color ?? DEFAULT_VOCABULARY_COLOR;

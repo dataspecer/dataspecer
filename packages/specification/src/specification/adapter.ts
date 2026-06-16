@@ -6,11 +6,11 @@ import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
 import type { ModelEntity, PackageEntity } from "@dataspecer/project-model";
-import { MemoryStoreFromBlob } from "../memory-store.ts";
 import { build } from "../model-hierarchy/semantic-model-aggregator-builder.ts";
 import { DataSpecification } from "./model.ts";
 import { TransactionMetadata } from "@dataspecer/model-store";
 import { OperationInModel } from "@dataspecer/core/operation";
+import type { MemoryStore } from "@dataspecer/core/core";
 
 const PROJECT_MODEL_ID: ModelIdentifier = "_project_model";
 
@@ -100,7 +100,7 @@ export function getDataSpecificationWithModels(
     semanticModelAggregator,
     store,
 
-    structureModels: {} as Record<string, MemoryStoreFromBlob>,
+    structureModels: {} as Record<string, MemoryStore>,
   };
 }
 

@@ -11,6 +11,7 @@ test("Create data PSM class reference.", async () => {
   const operation = new DataPsmCreateClassReference();
   operation.dataPsmSpecification = "http://example.com/remote";
   operation.dataPsmClass = "http://example.com/class";
+  operation.dataPsmNewIri = "http://localhost/1";
 
   const before = {
     "http://schema": {

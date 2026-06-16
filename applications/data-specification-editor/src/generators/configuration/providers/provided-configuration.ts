@@ -12,6 +12,9 @@ import { getConfiguration } from "../provided-configuration";
  */
 export const useProvidedConfiguration = (dataSpecificationIri: string | null, dataPsmSchemaIri: string | null): Configuration | null => {
   const [configuration] = useAsyncMemo(() => getConfiguration(dataSpecificationIri, dataPsmSchemaIri), [dataSpecificationIri, dataPsmSchemaIri]);
+
+  window["configuration"] = configuration; // For debugging purposes
+
   useEffect(() => {
     // @ts-ignore
     const modelStore = (configuration as any)?.modelStore;
