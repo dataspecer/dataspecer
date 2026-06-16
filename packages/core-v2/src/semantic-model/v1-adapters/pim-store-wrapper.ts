@@ -1,31 +1,8 @@
 import { CoreResourceReader } from "@dataspecer/core/core";
 import { Entity } from "../../entity-model/entity.ts";
 import { InMemoryEntityModel } from "../../entity-model/in-memory-entity-model.ts";
-
+import { deepEqual } from "@dataspecer/utilities";
 import { transformCoreResources } from "./transform-core-resources.ts";
-
-function deepEqual(a: any, b: any): boolean {
-    if (a === b) {
-        return true;
-    }
-    if (typeof a == "object" && typeof b == "object") {
-        const keysA = Object.keys(a);
-        const keysB = Object.keys(b);
-        if (keysA.length != keysB.length) {
-            return false;
-        }
-        for (const key of keysA) {
-            if (!keysB.includes(key)) {
-                return false;
-            }
-            if (!deepEqual(a[key], b[key])) {
-                return false;
-            }
-        }
-        return true;
-    }
-    return false;
-}
 
 export class PimStoreWrapper extends InMemoryEntityModel {
     private pimStore: CoreResourceReader;

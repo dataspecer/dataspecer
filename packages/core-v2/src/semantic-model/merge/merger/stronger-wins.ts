@@ -1,3 +1,4 @@
+import { deepEqual } from "@dataspecer/utilities";
 import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, SemanticModelClass, SemanticModelRelationship, type SemanticModelEntity, type SemanticModelGeneralization } from "../../concepts/index.ts";
 import { SemanticEntityIdMerger } from "./interface.ts";
 
@@ -75,7 +76,15 @@ export class StrongerWinsSemanticEntityIdMerger implements SemanticEntityIdMerge
       return this.mergeRelationships(entities.filter(isSemanticModelRelationship) as SemanticModelRelationship[]);
     }
 
-    console.error(`Unable to merge entities with colliding id ${entities[0]!.id} because they are of unsupported types. Falling back to the first one.`, entities);
+    let mismatch = false;
+    for (let index = 1; index < entities.length; index++) {
+      mismatch ||= !deepEqual(entities[0], entities[index]);
+    }
+
+    if (mismatch) {
+      // Entities are not identical, this is a problem.
+      console.error(`Unable to merge entities with colliding id ${entities[0]!.id} because they are of unsupported types. Falling back to the first one.`, entities);
+    }
     return entities[0]!;
   }
 }

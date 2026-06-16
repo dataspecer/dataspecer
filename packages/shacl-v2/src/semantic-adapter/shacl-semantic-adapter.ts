@@ -58,7 +58,7 @@ export function semanticModelsToShacl(
 ): ShaclModel {
   const policy = createPolicy(configuration, options);
 
-  if (!profileModels.includes(topProfileModel)) {
+  if (!profileModels.map(model => model.getId()).includes(topProfileModel.getId())) {
     console.error("The top profile should be among all profiles.");
   }
 
