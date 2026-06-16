@@ -126,7 +126,7 @@ application.post(apiBasename + "/experimental/lightweight-owl-from-simplified.tt
 
 application.get(apiBasename + "/generate", getZip);
 application.get(apiBasename + "/experimental/output.zip", getZip);
-application.get(apiBasename + "/preview/*", getSingleFile);
+application.get(apiBasename + "/preview/{*splat}", getSingleFile);
 
 
 // System routes
@@ -143,12 +143,12 @@ if (configuration.staticFilesPath) {
     process.exit(1);
   }
   application.get(basename + "/conceptual-model-editor", (_, res) => res.status(302).redirect(basename + "/conceptual-model-editor/"));
-  application.get(basename + "/conceptual-model-editor/**", useStaticSpaHandler(configuration.staticFilesPath + "conceptual-model-editor/"));
+  application.get(basename + "/conceptual-model-editor/{*splat}", useStaticSpaHandler(configuration.staticFilesPath + "conceptual-model-editor/"));
 
   application.get(basename + "/data-specification-editor", (_, res) => res.status(302).redirect(basename + "/data-specification-editor/"));
-  application.get(basename + "/data-specification-editor/**", useStaticSpaHandler(configuration.staticFilesPath + "data-specification-editor/"));
+  application.get(basename + "/data-specification-editor/{*splat}", useStaticSpaHandler(configuration.staticFilesPath + "data-specification-editor/"));
 
-  application.get(basename + "**", useStaticSpaHandler(configuration.staticFilesPath + ""));
+  application.get(basename + "{/*splat}", useStaticSpaHandler(configuration.staticFilesPath + ""));
 }
 
 (async () => {
