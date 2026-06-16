@@ -1,4 +1,4 @@
-import { DataSpecification } from '@dataspecer/backend-utils/connectors/specification';
+import type { DataSpecification } from '@dataspecer/specification/specification';
 import { SemanticModelClass, SemanticModelEntity } from '@dataspecer/core-v2/semantic-model/concepts';
 import type { EntityRecord } from '@dataspecer/core/entity-model';
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";

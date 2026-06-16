@@ -5,7 +5,7 @@ import { MemoryStreamDictionary } from "@dataspecer/core/io/stream/memory-stream
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
 import { DefaultArtifactConfigurator, getArtefactGenerators } from "@dataspecer/specification/v1";
 import { DataSpecification as CoreDataSpecification } from "@dataspecer/core/data-specification/model";
-import { DataSpecification } from "@dataspecer/backend-utils/connectors/specification";
+import type { DataSpecification } from '@dataspecer/specification/specification';
 
 /**
  * Returns a single generated artifact with its name based on the given artifact
