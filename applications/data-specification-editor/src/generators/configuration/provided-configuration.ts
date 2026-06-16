@@ -1,4 +1,4 @@
-import { StructureEditorBackendService } from "@dataspecer/backend-utils/connectors/specification";
+import { StructureEditorBackendService } from "@dataspecer/backend-utils";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import { createDSEModelStore } from "@dataspecer/model-store/implementation";
 import { getDataSpecificationWithModels, type DataSpecification } from "@dataspecer/specification/specification";

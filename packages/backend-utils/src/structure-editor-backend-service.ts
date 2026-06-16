@@ -1,33 +1,9 @@
-import { HttpStoreDescriptor, StoreDescriptor } from "../../store-descriptor/index.ts";
-import { EntityModel } from "@dataspecer/core-v2";
-import { LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
-import { BackendPackageService, Package } from "@dataspecer/core-v2/project";
-import { CoreResource, LanguageString } from "@dataspecer/core/core/core-resource";
-import { DataSpecification as LegacyDataSpecification } from "@dataspecer/core/data-specification/model";
-import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
+import { V1, LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { BackendPackageService, type Package } from "@dataspecer/core-v2/project";
+import type { LanguageString } from "@dataspecer/core/core/core-resource";
+import { DataSpecification as LegacyDataSpecification } from "@dataspecer/core/data-specification/model/data-specification";
+import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import type { DataSpecification } from "@dataspecer/specification/specification";
-
-export class HttpSemanticModelStoreDescriptor implements StoreDescriptor {
-  static readonly TYPE = "https://schemas.dataspecer.com/store-descriptor/semantic-model/http";
-
-  type: typeof HttpSemanticModelStoreDescriptor.TYPE;
-
-  url: string | null = null;
-
-  modelId: string | null = null;
-
-  isReadOnly: boolean;
-
-  constructor() {
-    this.type = HttpSemanticModelStoreDescriptor.TYPE;
-    this.isReadOnly = true;
-    this.url = null;
-  }
-
-  static is(storeDescriptor: StoreDescriptor): storeDescriptor is HttpSemanticModelStoreDescriptor {
-    return storeDescriptor.type === HttpSemanticModelStoreDescriptor.TYPE;
-  }
-}
 
 /**
  * This serves as an extension to the BackendPackageService that adds methods for operations on data specifications in structure editor.
@@ -56,12 +32,12 @@ export class StructureEditorBackendService extends BackendPackageService {
   public async getDataSpecification(dataSpecificationId: string): Promise<DataSpecification & Package> {
     const pckg = await this.getPackage(dataSpecificationId)!;
 
-    const dataStructures = pckg.subResources.filter(r => r.types.includes(V1.PSM)).map(ds => ({
+    const dataStructures = pckg.subResources!.filter(r => r.types.includes(V1.PSM)).map(ds => ({
       id: ds.iri,
       label: ds.userMetadata?.label || {},
     }));
 
-    const artifactConfigurations = pckg.subResources.filter(r => r.types.includes(V1.GENERATOR_CONFIGURATION)).map(ds => ({
+    const artifactConfigurations = pckg.subResources!.filter(r => r.types.includes(V1.GENERATOR_CONFIGURATION)).map(ds => ({
       id: ds.iri,
       label: ds.userMetadata?.label || {},
     }));
@@ -85,30 +61,6 @@ export class StructureEditorBackendService extends BackendPackageService {
 
       userPreferences: model.userPreferences ?? {},
     };
-  }
-
-  /**
-   * Returns information on how to fetch models for given data specification.
-   */
-  public getStoreDescriptorsForDataSpecification(dataSpecification: DataSpecification) {
-    const pimStores = dataSpecification.localSemanticModelIds.map(id => {
-      const store = new HttpSemanticModelStoreDescriptor();
-      store.isReadOnly = false;
-      store.modelId = id;
-      return store;
-    });
-
-    const psmStores = Object.fromEntries(dataSpecification.dataStructures.map(ds => {
-      const store = new HttpStoreDescriptor();
-      store.isReadOnly = false;
-      store.url = this.backendUrl + '/resources/blob?iri=' + encodeURIComponent(ds.id);
-      return [ds.id, [store]];
-    }));
-
-    return {
-      pimStores,
-      psmStores,
-    }
   }
 
   public async updateImportedDataSpecifications(dataSpecificationId: string, importedDataSpecificationIds: string[]): Promise<void> {
@@ -149,22 +101,10 @@ export class StructureEditorBackendService extends BackendPackageService {
     return this.getDataSpecification(dataSpecificationId);
   }
 
-  async constructSemanticModelFromIds(
-    ids: string[]
-  ): Promise<EntityModel[]> {
-    const entityModels: EntityModel[] = [];
-    for (const id of ids) {
-      const resource = await this.getResource(id);
-      const [[model]] = await this.getModelsFromResources([resource]);
-      entityModels.push(model);
-    }
-    return entityModels;
-  }
-
   /**
    * Creates new package with empty semantic model as PIM.
    */
-  public async createDataSpecification(set: {tags?: string[], label?: LanguageString} = {}): Promise<DataSpecification & Package> {
+  public async createDataSpecification(set: { tags?: string[]; label?: LanguageString; } = {}): Promise<DataSpecification & Package> {
     const pckg = await this.createPackage(this.packageRoot, {
       userMetadata: {
         tags: set.tags,
@@ -184,7 +124,7 @@ export class StructureEditorBackendService extends BackendPackageService {
     await this.setResourceJsonData(pim.iri, {
       "type": "http://dataspecer.com/resources/local/semantic-model",
       "modelId": pim.iri,
-      "modelAlias": set?.label.en ?? set?.label.cs ?? "",
+      "modelAlias": set?.label?.en ?? set?.label?.cs ?? "",
       "entities": {}
     });
 
@@ -200,7 +140,7 @@ export class StructureEditorBackendService extends BackendPackageService {
     await this.setResourceJsonData(sgov.iri, {
       "type": "http://dataspecer.com/resources/local/semantic-model",
       "modelId": sgov.iri,
-      "modelAlias": set?.label.en ?? set?.label.cs ?? "",
+      "modelAlias": set?.label?.en ?? set?.label?.cs ?? "",
       "caches": ["https://dataspecer.com/adapters/sgov"],
       "entities": {}
     });
@@ -227,8 +167,8 @@ export class StructureEditorBackendService extends BackendPackageService {
   }
 
   public async createDataStructure(dataSpecificationIri: string): Promise<{
-    dataSpecification: DataSpecification & Package,
-    createdPsmSchemaIri: string,
+    dataSpecification: DataSpecification & Package;
+    createdPsmSchemaIri: string;
   }> {
     const resource = await this.createResource(dataSpecificationIri, {
       type: V1.PSM,
@@ -239,7 +179,7 @@ export class StructureEditorBackendService extends BackendPackageService {
       resources: {
         [resource.iri]: {
           "types": [
-              "https://ofn.gov.cz/slovník/psm/Schema"
+            "https://ofn.gov.cz/slovník/psm/Schema"
           ],
           "iri": resource.iri,
           "dataPsmHumanLabel": null,
