@@ -197,10 +197,10 @@ const modelEntityIdentifier = (identifier: string) => {
 /**
  * Contains data about the model.
  */
-interface ModelEntity extends Entity {
+export interface ModelEntity extends Entity {
 
   label: LanguageString | null;
 
 }
 
-const ModelEntityType = "entity-model-type";
+export const ModelEntityType = "entity-model-type";

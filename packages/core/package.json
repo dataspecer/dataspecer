@@ -116,6 +116,7 @@
     "./core/utilities/path-relative.js": "./lib/core/utilities/path-relative.js",
     "./core/utilities/string-selector": "./lib/core/utilities/string-selector.js",
     "./core/utilities/string-selector.js": "./lib/core/utilities/string-selector.js",
+    "./data-psm": "./lib/data-psm/index.js",
     "./data-psm/README.md": "./lib/data-psm/README.md",
     "./data-psm/README.md.js": "./lib/data-psm/README.md",
     "./data-psm/adapter/rdf/data-psm-association-end-adapter": "./lib/data-psm/adapter/rdf/data-psm-association-end-adapter.js",
@@ -433,6 +434,7 @@
     "./data-specification/model": "./lib/data-specification/model/index.js",
     "./entity-model": "./lib/entity-model/index.js",
     "./entity-model/implementation": "./lib/entity-model/implementation/index.js",
+    "./entity-model/utils": "./lib/entity-model/utils/index.js",
     "./generator/artefact-generator-context": "./lib/generator/artefact-generator-context.js",
     "./generator/artefact-generator-context.js": "./lib/generator/artefact-generator-context.js",
     "./generator/artefact-generator": "./lib/generator/artefact-generator.js",
@@ -597,7 +599,7 @@
     "n3": "^1.25.1",
     "rdflib": "^2.2.31",
     "rdfxml-streaming-parser": "^2.2.2",
-    "uuid": "^13.0.0"
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.57.1",

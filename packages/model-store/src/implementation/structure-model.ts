@@ -1,38 +1,20 @@
 import type { PackageService } from "@dataspecer/core-v2/project";
-import { CoreResource, createExecutorMap, type CoreOperation, type CoreOperationExecutor, type CoreResourceReader } from "@dataspecer/core/core";
+import {
+  coreResourceToEntity,
+  createExecutorMap,
+  type CoreOperation,
+  type CoreOperationAndOperation,
+  type CoreOperationExecutor,
+  type CoreResource,
+  type CoreResourceAndEntity,
+  type CoreResourceReader,
+} from "@dataspecer/core/core";
+import { serializationToStructureModelEntities, structureModelEntitiesToSerialization, StructureModelState } from "@dataspecer/core/data-psm";
 import { dataPsmExecutors } from "@dataspecer/core/data-psm/data-psm-executors";
-import { generateEntityId, type Entity, type EntityRecord } from "@dataspecer/core/entity-model";
+import { generateEntityId, type EntityRecord } from "@dataspecer/core/entity-model";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
-import type { Operation } from "@dataspecer/core/operation";
 import { BaseModelInModelStore } from "./base.ts";
 import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
-
-type BaseEntityType = Entity & CoreResource;
-type BaseOperationType = Operation & CoreOperation;
-
-export interface StructureModelState {
-  operations: Operation[];
-  entities: EntityRecord<BaseEntityType>;
-}
-
-/**
- * Todo this function will be part of the new adapter on backend.
- */
-function coreResourceToEntity(resource: CoreResource): BaseEntityType {
-  return {
-    ...resource,
-    id: resource.iri!,
-    type: resource.types!,
-  };
-}
-
-function coreOperationToOperation(operation: CoreOperation): BaseOperationType {
-  return {
-    ...operation,
-    id: operation.iri!,
-    type: operation.types![0],
-  };
-}
 
 const structureModelExecutors = createExecutorMap([...dataPsmExecutors]);
 
@@ -40,7 +22,7 @@ const structureModelExecutors = createExecutorMap([...dataPsmExecutors]);
  * Currently, the structure model is PSM. This will be changed in the future,
  * but we will already call it properly to avoid refactoring in the future.
  */
-export class StructureModelInModelStore extends BaseModelInModelStore<BaseEntityType> implements Model, ModelInDefaultFrontendModelStore {
+export class StructureModelInModelStore extends BaseModelInModelStore<CoreResourceAndEntity> implements Model, ModelInDefaultFrontendModelStore {
   protected service: PackageService;
 
   constructor(id: string, service: PackageService) {
@@ -54,25 +36,12 @@ export class StructureModelInModelStore extends BaseModelInModelStore<BaseEntity
    */
   protected async loadInternal() {
     const data = await this.service.getResourceJsonData(this.id);
-    const state = this.parseJsonData(data);
-    return state;
+    return serializationToStructureModelEntities(data);
   }
 
   protected async saveInternal(state: StructureModelState): Promise<void> {
-    await this.service.setResourceJsonData(this.id, state);
-  }
-
-  private parseJsonData(data: unknown): StructureModelState {
-    const coreOperations = (data as any).operations as CoreOperation[];
-    const coreResources = (data as any).resources as Record<string, CoreResource>;
-
-    const operations = coreOperations.map(coreOperationToOperation);
-    const entities = Object.fromEntries(Object.entries(coreResources).map(([iri, resource]) => [iri, coreResourceToEntity(resource)])) as EntityRecord<BaseEntityType>;
-
-    return {
-      operations,
-      entities,
-    };
+    const data = structureModelEntitiesToSerialization(state);
+    await this.service.setResourceJsonData(this.id, data);
   }
 
   /**
@@ -81,7 +50,7 @@ export class StructureModelInModelStore extends BaseModelInModelStore<BaseEntity
    * Since the operations are using CoreResource internally, we need to sync
    * entity types.
    */
-  protected override applyOperation(operation: BaseOperationType, mutableState: EntityRecord<BaseEntityType>): void {
+  protected override applyOperation(operation: CoreOperationAndOperation, mutableState: EntityRecord<CoreResourceAndEntity>): void {
     // Since there is an interface mismatch, we need to ensure that the operation is compatible with both interfaces
     operation.id = operation.id ?? operation.iri;
     operation.iri = operation.id;

@@ -1,3 +1,5 @@
+import type { Entity } from "../entity-model/index.ts";
+
 /**
  * Allow for single value in each language. It is not possible to have
  * multiple values for a single language.
@@ -36,4 +38,14 @@ export class CoreResource extends CoreTyped {
     super();
     this.iri = iri;
   }
+}
+
+export type CoreResourceAndEntity = Entity & CoreResource;
+
+export function coreResourceToEntity(resource: CoreResource): CoreResourceAndEntity {
+  return {
+    ...resource,
+    id: resource.iri!,
+    type: resource.types!,
+  };
 }
