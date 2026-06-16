@@ -5,7 +5,7 @@ import { createRdfsModel, createSgovModel } from "../../semantic-model/simplifie
 import { createInMemorySemanticModel } from "../../semantic-model/simplified/in-memory-semantic-model.ts";
 import { createVisualModel } from "../../semantic-model/simplified/visual-model.ts";
 import { PimStoreWrapper } from "../../semantic-model/v1-adapters/index.ts";
-import { VisualModel } from "@dataspecer/visual-model";
+import { VisualModel, isLabeledModel } from "@dataspecer/visual-model";
 import { BaseResource, Package, ResourceEditable } from "../resource/resource.ts";
 import { PackageService, SemanticModelPackageService } from "./package-service.ts";
 
@@ -142,8 +142,11 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
             const iri = visualModel.getId();
             const name = modelSerialization.modelAlias ?? modelSerialization.alias;
 
+            // Use the label from getLabel() if the model is a LabeledModel (e.g., VisualModel)
+            const label = isLabeledModel(visualModel) ? visualModel.getLabel() : null;
+            const userMetadata = label ? { label } : (name ? { label: { en: name } } : {});
+
             const response = await this.httpFetch(this.getResourceUrl(iri));
-            const userMetadata = name ? { label: { en: name } } : {};
             if (response.status !== 200) {
                 const createdResponse = await this.httpFetch(this.getResourceUrl(packageId, true), {
                     method: "POST",
