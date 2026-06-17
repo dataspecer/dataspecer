@@ -22,9 +22,9 @@ import { DialogAppProvider } from "./dialog-app-provider";
 import { LanguageSelector } from "./language-selector";
 import { SettingsContext, useApplicationSettings } from "./settings/settings";
 import { SettingsMenu } from "./settings/settings-menu";
+import { UndoRedoButtons } from "./undo-redo-buttons";
 
-// @ts-ignore default value
-export const ConfigurationContext = React.createContext<Configuration>(null);
+export const ConfigurationContext = React.createContext<Configuration>(null!);
 
 const ButtonMenuTheme = createTheme({
   palette: {
@@ -149,7 +149,9 @@ export default function App() {
                     {t("back to specification manager")}
                   </Button>
                 </ThemeProvider>
-                <Box display="flex" sx={{ flexGrow: 1, gap: 4 }} justifyContent="flex-end">
+                <Box display="flex" sx={{ flexGrow: 1, gap: 4 }} justifyContent="flex-end" alignItems="center">
+                  <UndoRedoButtons modelStore={configuration?.modelStore} />
+                  <div style={{width: "1em"}} />
                   <Help />
                   <SettingsMenu />
                   <ThemeSelector />

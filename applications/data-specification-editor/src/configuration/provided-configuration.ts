@@ -6,7 +6,7 @@ import { ClientConfigurator, DefaultClientConfiguration } from "../configuration
 import { OperationContext } from "../editor/operations/context/operation-context";
 import { Configuration } from "./configuration";
 import { useAsyncMemo } from "@/editor/hooks/use-async-memo";
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import { BackendConnectorContext } from "@/application";
 
 /**
@@ -53,7 +53,6 @@ export async function getConfiguration(dataSpecificationIri: string | null, data
     dataPsmSchemaIri,
     operationContext,
     models,
-    // @ts-ignore
     modelStore,
   };
 }
@@ -87,32 +86,5 @@ export const useProvidedConfiguration = (dataSpecificationIri: string | null, da
 
   window["configuration"] = configuration; // For debugging purposes
 
-  useEffect(() => {
-    // @ts-ignore
-    const modelStore = (configuration as any)?.modelStore;
-
-    if (!modelStore) return;
-
-    // WIP
-    const onKeyDown = (e: KeyboardEvent) => {
-      const key = e.key.toLowerCase();
-      const mod = e.ctrlKey || e.metaKey;
-      // Undo: Ctrl/Cmd+Z (without Shift)
-      if (mod && !e.shiftKey && key === "z") {
-        e.preventDefault();
-        if (typeof modelStore.undo === "function") modelStore.undo();
-        return;
-      }
-      // Redo: Ctrl/Cmd+Shift+Z or Ctrl+Y
-      if (mod && ((e.shiftKey && key === "z") || key === "y")) {
-        e.preventDefault();
-        if (typeof modelStore.redo === "function") modelStore.redo();
-        return;
-      }
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [configuration]);
   return configuration;
 };
