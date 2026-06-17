@@ -24,7 +24,7 @@ describe("createDependencyTracker", () => {
           .dependencies.map(item => values[item] ?? 0)
           .reduce((prev, next) => prev + next, (next as TestEntity).value);
       },
-      onDependenciesDidChange(entity) {
+      onDependencyDidChange(entity) {
         // We need to recompute.
         values[entity.id] = (entity as TestEntity)
           .dependencies.map(item => values[item] ?? 0)
@@ -91,7 +91,7 @@ describe("createDependencyTracker", () => {
       dependencies(entity) {
         return (entity as TestEntity).dependencies;
       },
-      onDependenciesDidChange(entity) {
+      onDependencyDidChange(entity) {
         updateCounter[entity.id] = (updateCounter[entity.id] ?? 0) + 1;
       },
     }]);
@@ -121,7 +121,7 @@ describe("createDependencyTracker", () => {
       dependencies(entity) {
         return (entity as TestEntity).dependencies;
       },
-      onDependenciesDidChange(entity) {
+      onDependencyDidChange(entity) {
         updateCounter[entity.id] = (updateCounter[entity.id] ?? 0) + 1;
       },
     }]);
@@ -224,7 +224,7 @@ describe("createDependencyTracker", () => {
 
   })
 
-  it ("Changing nad missing dependencies.", () => {
+  it("Changing nad missing dependencies.", () => {
 
     const values: Record<string, number> = {};
 
@@ -242,7 +242,7 @@ describe("createDependencyTracker", () => {
           .dependencies.map(item => values[item] ?? 0)
           .reduce((prev, next) => prev + next, (next as TestEntity).value);
       },
-      onDependenciesDidChange(entity) {
+      onDependencyDidChange(entity) {
         // We need to recompute.
         values[entity.id] = (entity as TestEntity)
           .dependencies.map(item => values[item] ?? 0)
@@ -270,7 +270,8 @@ describe("createDependencyTracker", () => {
       "m": {
         created: [],
         updated: [
-          { id: "2", type: [], value: 1, dependencies: []
+          {
+            id: "2", type: [], value: 1, dependencies: []
 
           }] as TestEntity[],
         deleted: []
@@ -279,6 +280,69 @@ describe("createDependencyTracker", () => {
 
     expect(values["1"]).toBe(1);
     expect(values["1"]).toBe(1);
+
+  });
+
+  it("Tracker calls.", () => {
+
+    const calls: { id: string, type: string }[] = [];
+
+    const dependencyTracker = createDependencyTracker([{
+      dependencies(entity) {
+        return (entity as any).dependencies;
+      },
+      onEntityDidCreate(_, next) {
+        calls.push({ id: next.id, type: "create" });
+      },
+      onEntityDidChange(_model, _previous, next) {
+        calls.push({ id: next.id, type: "change" });
+      },
+      onDependencyDidChange(entity) {
+        calls.push({ id: entity.id, type: "dependency" });
+      },
+      onEntityDidRemove(_model, previous) {
+        calls.push({ id: previous.id, type: "delete" });
+      },
+    }]);
+
+    const expected: { id: string, type: string }[] = [];
+
+    // For each operation we declare the expected call.
+    dependencyTracker.onEntitiesDidChange({
+      "m": {
+        created: [
+          { id: "0", type: [], dependencies: [] } as any,
+          { id: "1", type: [], dependencies: ["0"] } as any
+        ],
+        updated: [],
+        deleted: []
+      }
+    });
+    expected.push({id: "0", type: "create"});
+    expected.push({id: "1", type: "create"});
+    expected.push({id: "1", type: "dependency"});
+
+    dependencyTracker.onEntitiesDidChange({
+      "m": {
+        created: [],
+        updated: [{ id: "0", type: [], dependencies: [] } as any,],
+        deleted: []
+      }
+    });
+    expected.push({id: "0", type: "change"});
+    expected.push({id: "1", type: "dependency"});
+
+    dependencyTracker.onEntitiesDidChange({
+      "m": {
+        created: [],
+        updated: [],
+        deleted: ["0"]
+      }
+    });
+    expected.push({id: "0", type: "delete"});
+    expected.push({id: "1", type: "dependency"});
+
+    expect(calls).toStrictEqual(expected);
 
   });
 

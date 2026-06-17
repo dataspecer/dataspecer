@@ -1,16 +1,18 @@
-// @ts-ignore
-import { Entity, EntityModel } from "@dataspecer/core-v2";
-// @ts-ignore
-import { ExtendedSemanticModelClass, ExtendedSemanticModelRelationship, isSemanticModelAttribute, isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, SemanticModelGeneralization, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
-import { CoreResourceReader } from "../../core/index.ts";
-import { OFN } from "../../well-known/index.ts";
 import {
-  ConceptualModel,
-  ConceptualModelClass,
-  ConceptualModelComplexType,
-  ConceptualModelPrimitiveType,
-  ConceptualModelProperty,
-} from "../model/index.ts";
+  ExtendedSemanticModelClass,
+  ExtendedSemanticModelRelationship,
+  isSemanticModelAttribute,
+  isSemanticModelClass,
+  isSemanticModelGeneralization,
+  isSemanticModelRelationship,
+  SemanticModelGeneralization,
+  SemanticModelRelationship,
+  // @ts-ignore cyclic dependency
+} from "@dataspecer/core-v2/semantic-model/concepts";
+import { OFN } from "../../well-known/index.ts";
+import { ConceptualModel, ConceptualModelClass, ConceptualModelComplexType, ConceptualModelPrimitiveType, ConceptualModelProperty } from "../model/index.ts";
+import { Entity, EntityArray } from "../../entity-model/entity.ts";
+import { ModelIdentifier } from "../../model/model.ts";
 
 interface WithConceptIris {
   /**
@@ -20,24 +22,23 @@ interface WithConceptIris {
 }
 
 class ConceptualModelAdapter {
-  private readonly reader: CoreResourceReader;
+  private model: EntityArray | null = null;
+  private modelId: ModelIdentifier | null = null;
 
   private readonly classes: { [iri: string]: ConceptualModelClass } = {};
 
-  constructor(reader: CoreResourceReader) {
-    this.reader = reader;
-  }
-
-  load(pimSchemaIri: string): ConceptualModel | null {
-    const pimSchema = this.reader.readResource(pimSchemaIri) as unknown as EntityModel;
+  load(model: EntityArray, modelId: ModelIdentifier): ConceptualModel | null {
+    this.model = model;
+    this.modelId = modelId;
 
     const result = new ConceptualModel();
-    this.pimSchemaToModel(pimSchema, result);
-    for (const entity of Object.keys(pimSchema.getEntities())) {
-      this.loadPimPart(entity);
+    result.pimIri = this.modelId;
+    result.humanLabel = {};
+    result.humanDescription = {};
+    for (const entity of this.model) {
+      this.loadSemanticEntity(entity);
     }
-    for (const entityId of Object.keys(pimSchema.getEntities())) {
-      const entity = this.reader.readResource(entityId) as unknown as Entity;
+    for (const entity of this.model) {
       if (isSemanticModelGeneralization(entity)) {
         this.loadGeneralization(entity);
       }
@@ -46,32 +47,18 @@ class ConceptualModelAdapter {
     return result;
   }
 
-  private pimSchemaToModel(schemaData: EntityModel, model: ConceptualModel) {
-    model.pimIri = schemaData.getId();
-    model.humanLabel = {};
-    model.humanDescription = {};
-  }
-
-  private loadPimPart(partIri: string) {
-    const part = this.reader.readResource(partIri) as unknown as Entity;
-    // let isKnown = false;
-    // if (PimAssociation.is(part)) {
-    //   await this.loadPimAssociation(part);
-    //   isKnown = true;
-    // }
-    if (isSemanticModelAttribute(part)) {
-      this.loadPimAttribute(part as ExtendedSemanticModelRelationship);
-    } else if (isSemanticModelRelationship(part)) {
-      this.loadPimAssociation(part as ExtendedSemanticModelRelationship);
-    } else if (isSemanticModelClass(part)) {
-      this.loadPimClass(part as ExtendedSemanticModelClass);
+  private loadSemanticEntity(entity: Entity) {
+    // todo: there should be no distinction between association and attribute
+    if (isSemanticModelAttribute(entity)) {
+      this.loadAttribute(entity as ExtendedSemanticModelRelationship);
+    } else if (isSemanticModelRelationship(entity)) {
+      this.loadRelationship(entity as ExtendedSemanticModelRelationship);
+    } else if (isSemanticModelClass(entity)) {
+      this.loadClass(entity as ExtendedSemanticModelClass);
     }
-    // if (!isKnown) {
-    //   throw new Error(`Unsupported PIM part entity '${partIri}'.`);
-    // }
   }
 
-  private loadPimAssociation(associationData: ExtendedSemanticModelRelationship) {
+  private loadRelationship(associationData: ExtendedSemanticModelRelationship) {
     // Association can be used in both directions.
     const leftClass = this.getClass(associationData.ends[0].concept);
     const rightClass = this.getClass(associationData.ends[1].concept);
@@ -80,6 +67,9 @@ class ConceptualModelAdapter {
     this.createAssociationEnd(rightClass, leftClass, associationData, 0, true);
   }
 
+  /**
+   * Needs to be loaded after all classes have been loaded.
+   */
   private loadGeneralization(generalization: SemanticModelGeneralization) {
     const child = this.classes[generalization.child];
     const parent = this.classes[generalization.parent];
@@ -88,13 +78,7 @@ class ConceptualModelAdapter {
     }
   }
 
-  private createAssociationEnd(
-    source: ConceptualModelClass,
-    target: ConceptualModelClass,
-    association: SemanticModelRelationship,
-    associationEnd: number,
-    isReverse = false,
-  ) {
+  private createAssociationEnd(source: ConceptualModelClass, target: ConceptualModelClass, association: SemanticModelRelationship, associationEnd: number, isReverse = false) {
     const end = association.ends[associationEnd];
 
     const property = new ConceptualModelProperty();
@@ -135,7 +119,7 @@ class ConceptualModelAdapter {
     return (entity as WithConceptIris).conceptIris.filter((iri) => iri !== null && iri !== "");
   }
 
-  private loadPimAttribute(attributeData: ExtendedSemanticModelRelationship) {
+  private loadAttribute(attributeData: ExtendedSemanticModelRelationship) {
     const end = attributeData.ends[1];
 
     const model = new ConceptualModelProperty();
@@ -149,19 +133,19 @@ class ConceptualModelAdapter {
     model.cardinalityMax = end.cardinality?.[1];
 
     //if (attributeData.pimDatatype !== null) {
-      const type = new ConceptualModelPrimitiveType();
-      type.dataType = end.concept ?? OFN.string; // If no datatype is known for PIM attribute, use string
-      type.languageStringRequiredLanguages = end.languageStringRequiredLanguages ?? [];
-      type.regex = end.regex;
-      type.example = end.example;
-      model.dataTypes.push(type);
+    const type = new ConceptualModelPrimitiveType();
+    type.dataType = end.concept ?? OFN.string; // If no datatype is known for PIM attribute, use string
+    type.languageStringRequiredLanguages = end.languageStringRequiredLanguages ?? [];
+    type.regex = end.regex;
+    type.example = end.example;
+    model.dataTypes.push(type);
     //}
 
     const owner = this.getClass(attributeData.ends[0].concept);
     owner.properties.push(model);
   }
 
-  private loadPimClass(classData: ExtendedSemanticModelClass) {
+  private loadClass(classData: ExtendedSemanticModelClass) {
     const model = this.getClass(classData.id);
     model.pimIri = classData.id;
     model.iris = this.getConceptIris(classData);
@@ -178,11 +162,17 @@ class ConceptualModelAdapter {
   }
 }
 
-export function coreResourcesToConceptualModel(
-  reader: CoreResourceReader,
-  pimSchemaIri: string
-): ConceptualModel | null {
-  const adapter = new ConceptualModelAdapter(reader);
-  const data = adapter.load(pimSchemaIri);
+/**
+ * Converts a semantic model represented by entities to a conceptual model.
+ *
+ * To use it, you probably want to pass an aggregated result = aggregated
+ * semantic model, not a single semantic model from a package. It accepts
+ * regular semantic entities, such as classes, properties, and relationships.
+ *
+ * @param model Aggregated semantic model.
+ */
+export function semanticModelToConceptualModel(model: EntityArray, modelId: ModelIdentifier): ConceptualModel | null {
+  const adapter = new ConceptualModelAdapter();
+  const data = adapter.load(model, modelId);
   return data;
 }

@@ -25,6 +25,7 @@ import {
 } from "../utilities/dialog-utilities";
 import { semanticModelMapToCmeSemanticModel } from "../../dataspecer/cme-model/adapter";
 import { configuration, createLogger, t } from "../../application";
+import { createLabelResolver, LabelResolver } from "../../dependency-tracker";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import {
   type SemanticModelClass,
@@ -45,6 +46,7 @@ export function createNewAttributeDialogState(
   visualModel: VisualModel | null,
   language: string,
   defaultModelIdentifier: string | null,
+  labelResolver: LabelResolver,
 ): AttributeDialogState {
 
   const allModels = semanticModelMapToCmeSemanticModel(
@@ -57,13 +59,13 @@ export function createNewAttributeDialogState(
   const rdfsLiteral = representRdfsLiteral();
 
   const allDomains = listRelationshipDomains(
-    classesContext, graphContext, allModels);
-  sortRepresentatives(language, allDomains);
+    classesContext, graphContext, allModels, labelResolver);
+  sortRepresentatives(allDomains);
 
   const allRanges = listAttributeRanges();
 
   const allSpecializations = listAttributes(
-    language, classesContext, graphContext, allModels);
+    labelResolver, classesContext, graphContext, allModels);
 
   // EntityState
 
@@ -85,7 +87,7 @@ export function createNewAttributeDialogState(
 }
 
 function listAttributes(
-  language: string,
+  labelResolver: LabelResolver,
   classesContext: ClassesContextType,
   graphContext: ModelGraphContextType,
   vocabularies: CmeSemanticModel[],
@@ -97,10 +99,10 @@ function listAttributes(
   const result = [
     ...representRelationships(models, vocabularies,
       classesContext.relationships,
-      owlThing.identifier, owlThing.identifier),
+      owlThing.identifier, owlThing.identifier, labelResolver),
   ].filter(isRepresentingAttribute);
 
-  sortRepresentatives(language, result);
+  sortRepresentatives(result);
 
   return result;
 }
@@ -115,6 +117,7 @@ export function createEditAttributeDialogState(
   language: string,
   model: InMemorySemanticModel,
   entity: SemanticModelRelationship,
+  labelResolver: LabelResolver,
 ): AttributeDialogState {
 
   const { domain, range } = getDomainAndRange(entity);
@@ -135,13 +138,13 @@ export function createEditAttributeDialogState(
   const rdfsLiteral = representRdfsLiteral();
 
   const allDomains = listRelationshipDomains(
-    classesContext, graphContext, allModels);
-  sortRepresentatives(language, allDomains);
+    classesContext, graphContext, allModels, labelResolver);
+  sortRepresentatives(allDomains);
 
   const allRanges = listAttributeRanges();
 
   const allSpecializations = listAttributes(
-    language, classesContext, graphContext, allModels);
+    labelResolver, classesContext, graphContext, allModels);
 
   // EntityState
 
@@ -150,7 +153,8 @@ export function createEditAttributeDialogState(
     { identifier: entity.id, model: model.getId() },
     range.iri ?? "", range.name, range.description,
     range.externalDocumentationUrl ?? "",
-    allSpecializations);
+    allSpecializations,
+    range.order ?? "");
 
   // RelationshipState
 
@@ -179,6 +183,7 @@ export function createAddAttributeDialogState(
   visualModel: VisualModel | null,
   language: string,
   entity: SemanticModelClass,
+  labelResolver: LabelResolver,
 ): AttributeDialogState {
 
   const allModels = semanticModelMapToCmeSemanticModel(
@@ -189,13 +194,13 @@ export function createAddAttributeDialogState(
   const rdfsLiteral = representRdfsLiteral();
 
   const allDomains = listRelationshipDomains(
-    classesContext, graphContext, allModels);
-  sortRepresentatives(language, allDomains);
+    classesContext, graphContext, allModels, labelResolver);
+  sortRepresentatives(allDomains);
 
   const allRanges = listAttributeRanges();
 
   const allSpecializations = listAttributes(
-    language, classesContext, graphContext, allModels);
+    labelResolver, classesContext, graphContext, allModels);
 
   const defaultModel = selectDefaultModelForAttribute(
     entity.id, [...graphContext.models.values()], allModels);

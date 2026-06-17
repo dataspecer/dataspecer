@@ -51,11 +51,18 @@ import { DataPsmJsonPropertyExtension } from "@dataspecer/core/data-psm/json-ext
 import { SetXmlIsAttribute } from "../../../operations/set-xml-is-attribute";
 import { SetJsonKeyValueForLangString } from "../../../operations/set-json-key-value-for-lang-string";
 import { SetEmptyAsComplex } from "../../../operations/set-is-primitive";
+import {
+    DataPsmXmlBoundingShapeType,
+    DataPsmXmlEnvelopeType,
+    DataPsmXmlGeometryPropertyType,
+    getDataPsmXmlGmlType,
+} from "@dataspecer/core/data-psm/xml-extension/model/data-psm-property-extension";
+import { SetXmlGmlType } from "@/editor/operations/set-xml-gml-type";
 
 export const RightPanel: React.FC<{ iri: string, close: () => void }> = memo(({iri}) => {
     const store = useFederatedObservableStore();
     const theme = useTheme();
-    
+
     // Use TwoTone icons in light mode, regular icons in dark mode
     const iconSet = theme.palette.mode === 'dark' ? Icons : IconsTwoTone;
 
@@ -291,6 +298,22 @@ export const RightPanel: React.FC<{ iri: string, close: () => void }> = memo(({i
 
     // endregion xml is attribute
 
+    // region xml gml type
+
+    const xmlGmlTypeIsRelevant = isAttribute && getIriFromDatatypeSelectorValue(datatype) === "http://www.opengis.net/ont/geosparql#gmlLiteral";
+    const currentGmlType = DataPsmXmlPropertyExtension.getExtensionData(resource).gmlType;
+    const [xmlGmlType, setXmlGmlType] = useState(getDataPsmXmlGmlType(currentGmlType));
+    useEffect(() => setXmlGmlType(getDataPsmXmlGmlType(currentGmlType)), [currentGmlType]);
+    useSaveHandler(
+        xmlGmlType !== getDataPsmXmlGmlType(currentGmlType),
+        useCallback(
+            () => resource && store.executeComplexOperation(new SetXmlGmlType(resource.iri as string, xmlGmlType as string)),
+            [resource, store, xmlGmlType]
+        ),
+    );
+
+    // endregion xml gml type
+
     // region class is closed
 
     const [isClassClosed, setIsClassClosed] = useState<boolean | null>(null);
@@ -495,6 +518,53 @@ export const RightPanel: React.FC<{ iri: string, close: () => void }> = memo(({i
                 </Collapse>
             </Box>
         </>}
+
+        {xmlGmlTypeIsRelevant && <Box sx={{mb: 3}}>
+            <Typography variant="subtitle1" component="h2">
+                {t('mapping to xml type.title')}
+            </Typography>
+
+            <FormControl component="fieldset" sx={{mt: 1}}>
+                <RadioGroup value={xmlGmlType} onChange={(_, value) => setXmlGmlType(value as ReturnType<typeof getDataPsmXmlGmlType>)}>
+                    <FormControlLabel
+                        value={DataPsmXmlBoundingShapeType}
+                        control={<Radio />}
+                        label={
+                            <Box>
+                                <Typography variant="body1">gml:BoundingShapeType</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    {t('mapping to xml type.gml:BoundingShapeType')}
+                                </Typography>
+                            </Box>
+                        }
+                    />
+                    <FormControlLabel
+                        value={DataPsmXmlEnvelopeType}
+                        control={<Radio />}
+                        label={
+                            <Box>
+                                <Typography variant="body1">gml:EnvelopeType</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    {t('mapping to xml type.gml:EnvelopeType')}
+                                </Typography>
+                            </Box>
+                        }
+                    />
+                    <FormControlLabel
+                        value={DataPsmXmlGeometryPropertyType}
+                        control={<Radio />}
+                        label={
+                            <Box>
+                                <Typography variant="body1">gml:GeometryPropertyType</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    {t('mapping to xml type.gml:GeometryPropertyType')}
+                                </Typography>
+                            </Box>
+                        }
+                    />
+                </RadioGroup>
+            </FormControl>
+        </Box>}
 
         {isClass && <>
              <Typography variant="subtitle1" component="h2">

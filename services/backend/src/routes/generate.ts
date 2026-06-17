@@ -101,7 +101,8 @@ export const getZip = asyncHandler(async (request: express.Request, response: ex
 
 export const getSingleFile = asyncHandler(async (request: express.Request, response: express.Response) => {
   // The path does not start with slash.
-  let path = request.params[0];
+  const splat = request.params.splat;
+  let path = Array.isArray(splat) ? splat.join("/") : "";
   if (path === "") {
     path = "index.html";
   }

@@ -20,6 +20,7 @@ import {
 } from "../utilities/dialog-utilities";
 import { semanticModelMapToCmeSemanticModel } from "../../dataspecer/cme-model/adapter";
 import { configuration, createLogger, t } from "../../application";
+import { createLabelResolver, LabelResolver } from "../../dependency-tracker";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { getDomainAndRange } from "../../util/relationship-utils";
 import {
@@ -51,6 +52,7 @@ export function createNewAttributeProfileDialogState(
   visualModel: VisualModel | null,
   language: string,
   profilesIdentifiers: EntityDsIdentifier[],
+  labelResolver: LabelResolver,
 ): AttributeProfileDialogState {
 
   const allModels = semanticModelMapToCmeSemanticModel(
@@ -61,17 +63,17 @@ export function createNewAttributeProfileDialogState(
   const noProfile = representUndefinedAttribute();
 
   const allProfiles = listAttributesToProfile(
-    classesContext, graphContext, allModels);
-  sortRepresentatives(language, allProfiles);
+    labelResolver, classesContext, graphContext, allModels);
+  sortRepresentatives(allProfiles);
 
   const allDomains = listRelationshipProfileDomains(
-    classesContext, graphContext, allModels);
-  sortRepresentatives(language, allDomains);
+    classesContext, graphContext, allModels, labelResolver);
+  sortRepresentatives(allDomains);
 
   const allRanges = listAttributeProfileRanges();
 
   const allSpecializations = listAttributesToSpecialize(
-    classesContext, graphContext, allModels);
+    labelResolver, classesContext, graphContext, allModels);
 
   // EntityProfileState
 
@@ -112,6 +114,7 @@ export function createEditAttributeProfileDialogState(
   language: string,
   model: InMemorySemanticModel,
   entityIdentifier: string,
+  labelResolver: LabelResolver,
 ): AttributeProfileDialogState {
   const entities = graphContext.aggregatorView.getEntities();
 
@@ -146,17 +149,17 @@ export function createEditAttributeProfileDialogState(
   const noProfile = representUndefinedAssociation();
 
   const allProfiles = listAttributesToProfile(
-    classesContext, graphContext, allModels);
-  sortRepresentatives(language, allProfiles);
+    labelResolver, classesContext, graphContext, allModels);
+  sortRepresentatives(allProfiles);
 
   const allDomains = listRelationshipProfileDomains(
-    classesContext, graphContext, allModels);
-  sortRepresentatives(language, allDomains);
+    classesContext, graphContext, allModels, labelResolver);
+  sortRepresentatives(allDomains);
 
   const allRanges = listAttributeProfileRanges();
 
   const allSpecializations = listAttributesToSpecialize(
-    classesContext, graphContext, allModels);
+    labelResolver, classesContext, graphContext, allModels);
 
   // EntityProfileState
 
@@ -168,7 +171,8 @@ export function createEditAttributeProfileDialogState(
     range.description, range.descriptionFromProfiled,
     range.externalDocumentationUrl ?? "",
     range.usageNote, range.usageNoteFromProfiled,
-    allSpecializations);
+    allSpecializations,
+    range.order ?? "");
 
   // RelationshipState<EntityRepresentative>
 
@@ -189,6 +193,7 @@ export function createEditAttributeProfileDialogState(
 }
 
 function listAttributesToProfile(
+  labelResolver: LabelResolver,
   classesContext: ClassesContextType,
   graphContext: ModelGraphContextType,
   vocabularies: CmeSemanticModel[],
@@ -203,13 +208,14 @@ function listAttributesToProfile(
   return [
     ...representRelationships(models, vocabularies,
       classesContext.relationships,
-      owlThing.identifier, rdfsLiteral.identifier),
+      owlThing.identifier, rdfsLiteral.identifier, labelResolver),
     ...representRelationshipProfile(entities, models, vocabularies,
-      classesContext.relationshipProfiles)
+      classesContext.relationshipProfiles, labelResolver)
   ].filter(isRepresentingAttribute);
 }
 
 function listAttributesToSpecialize(
+  labelResolver: LabelResolver,
   classesContext: ClassesContextType,
   graphContext: ModelGraphContextType,
   vocabularies: CmeSemanticModel[],
@@ -218,7 +224,7 @@ function listAttributesToSpecialize(
   const models = [...graphContext.models.values()];
   return [
     ...representRelationshipProfile(entities, models, vocabularies,
-      classesContext.relationshipProfiles)
+      classesContext.relationshipProfiles, labelResolver)
   ].filter(isRepresentingAttribute);
 }
 
@@ -228,6 +234,7 @@ export function createAddAttributeProfileDialogState(
   visualModel: VisualModel | null,
   language: string,
   domainIdentifier: EntityDsIdentifier,
+  labelResolver: LabelResolver,
 ): AttributeProfileDialogState {
 
   const allModels = semanticModelMapToCmeSemanticModel(
@@ -238,12 +245,12 @@ export function createAddAttributeProfileDialogState(
   const noProfile = representUndefinedAttribute();
 
   const allProfiles = listAttributesToProfile(
-    classesContext, graphContext, allModels);
-  sortRepresentatives(language, allProfiles);
+    labelResolver, classesContext, graphContext, allModels);
+  sortRepresentatives(allProfiles);
 
   const allDomains = listRelationshipProfileDomains(
-    classesContext, graphContext, allModels);
-  sortRepresentatives(language, allDomains);
+    classesContext, graphContext, allModels, labelResolver);
+  sortRepresentatives(allDomains);
 
   const allRanges = listAttributeProfileRanges();
 

@@ -1,4 +1,5 @@
 import { EntityModel } from "@dataspecer/core-v2";
+import { DialogSemanticTracker } from "../../dialog-v2/dialog-semantic-tracker";
 import {
   LanguageString,
   SemanticModelClass,
@@ -25,6 +26,7 @@ import {
   UnknownCmeSemanticModel,
 } from "../../dataspecer/cme-model/cme-well-known";
 import { CmeSemanticModel } from "../../dataspecer/cme-model";
+import { LabelResolver } from "../../dependency-tracker";
 
 const LOG = createLogger(import.meta.url);
 
@@ -63,10 +65,12 @@ export interface EntityRepresentative {
    */
   name: LanguageString;
 
-  /**
-   * Visible label. May be different from name.
-   */
   label: LanguageString;
+
+  /**
+   * Resolved display label ready for rendering, produced by LabelResolver.
+   */
+  displayLabel: string;
 
   description: LanguageString;
 
@@ -88,6 +92,7 @@ const UNDEFINED_CLASS: EntityRepresentative = {
   model: UnknownCmeSemanticModel.identifier,
   name: { "": "Undefined" },
   label: { "": "Undefined" },
+  displayLabel: "Undefined",
   description: {},
   profileOfIdentifiers: [],
   usageNote: null,
@@ -113,6 +118,7 @@ const OWL_THING: EntityRepresentative = {
   model: OwlCmeSemanticModel.identifier,
   name: { "": "owl:Thing" },
   label: { "": "owl:Thing" },
+  displayLabel: "owl:Thing",
   description: {},
   profileOfIdentifiers: [],
   usageNote: null,
@@ -127,6 +133,7 @@ export function representClasses(
   models: EntityModel[] | Map<string, EntityModel>,
   vocabularies: CmeSemanticModel[],
   classes: SemanticModelClass[],
+  labelResolver: LabelResolver,
 ): EntityRepresentative[] {
   let modelArray: EntityModel[] = [];
   if (models instanceof Map) {
@@ -147,6 +154,8 @@ export function representClasses(
       model: vocabulary.identifier,
       name: item.name,
       label: item.name,
+      displayLabel: labelResolver.resolveLabel({
+        identifier: item.id, iri: item.iri, label: item.name }),
       description: item.description,
       profileOfIdentifiers: [],
       usageNote: null,
@@ -191,6 +200,7 @@ export function representClassProfiles(
   models: EntityModel[],
   vocabularies: CmeSemanticModel[],
   classes: SemanticModelClassProfile[],
+  labelResolver: LabelResolver,
 ): EntityRepresentative[] {
   const result: EntityRepresentative[] = [];
   for (const item of classes) {
@@ -207,12 +217,15 @@ export function representClassProfiles(
     if (vocabulary === null) {
       continue;
     }
+    const name = entity.name ?? {};
     result.push({
       identifier: item.id,
       iri: item.iri,
       model: vocabulary.identifier,
-      name: entity.name ?? {},
-      label: entity.name ?? {},
+      name,
+      label: name,
+      displayLabel: labelResolver.resolveLabel({
+        identifier: item.id, iri: item.iri, label: name }),
       description: entity.description ?? {},
       profileOfIdentifiers: entity.profiling,
       usageNote: entity.usageNote,
@@ -220,26 +233,6 @@ export function representClassProfiles(
     });
   }
   return result;
-}
-
-/**
- * Result can be used to select what to profile class from.
- *
- * @returns classes, class profiles.
- */
-export function listClassToProfiles(
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
-  vocabularies: CmeSemanticModel[],
-): EntityRepresentative[] {
-  const entities = graphContext.aggregatorView.getEntities();
-  const models = [...graphContext.models.values()];
-
-  return [
-    ...representClasses(models, vocabularies, classesContext.classes),
-    ...representClassProfiles(entities, models, vocabularies,
-      classesContext.classProfiles),
-  ];
 }
 
 /**
@@ -251,12 +244,13 @@ export function listRelationshipDomains(
   classesContext: ClassesContextType,
   graphContext: ModelGraphContextType,
   vocabularies: CmeSemanticModel[],
+  labelResolver: LabelResolver,
 ): EntityRepresentative[] {
   const models = [...graphContext.models.values()];
 
   return [
     representOwlThing(),
-    ...representClasses(models, vocabularies, classesContext.classes)
+    ...representClasses(models, vocabularies, classesContext.classes, labelResolver)
   ]
 
 }
@@ -270,6 +264,7 @@ export function listRelationshipProfileDomains(
   classesContext: ClassesContextType,
   graphContext: ModelGraphContextType,
   vocabularies: CmeSemanticModel[],
+  labelResolver: LabelResolver,
 ): EntityRepresentative[] {
   const entities = graphContext.aggregatorView.getEntities();
   const models = [...graphContext.models.values()];
@@ -277,7 +272,7 @@ export function listRelationshipProfileDomains(
   return [
     representOwlThing(),
     ...representClassProfiles(entities, models, vocabularies,
-      classesContext.classProfiles),
+      classesContext.classProfiles, labelResolver),
   ]
 }
 
@@ -320,6 +315,7 @@ export function representRelationships(
   relationships: SemanticModelRelationship[],
   defaultDomain: string,
   defaultRange: string,
+  labelResolver: LabelResolver,
 ): RelationshipRepresentative[] {
   const result: RelationshipRepresentative[] = [];
   for (const item of relationships) {
@@ -332,12 +328,15 @@ export function representRelationships(
       LOG.invalidEntity(item.id, "Missing ends for relationship.");
       continue;
     }
+    const name = range.name ?? {};
     result.push({
       identifier: item.id,
       iri: item.iri,
       model: vocabulary.identifier,
-      name: range.name ?? {},
-      label: range.name ?? {},
+      name,
+      label: name,
+      displayLabel: labelResolver.resolveLabel({
+        identifier: item.id, iri: range.iri, label: name }),
       description: range.description ?? {},
       profileOfIdentifiers: [],
       usageNote: null,
@@ -356,6 +355,7 @@ export function representRelationshipProfile(
   models: EntityModel[],
   vocabularies: CmeSemanticModel[],
   relationships: SemanticModelRelationshipProfile[],
+  labelResolver: LabelResolver,
 ): RelationshipRepresentative[] {
   const result: RelationshipRepresentative[] = [];
   for (const item of relationships) {
@@ -377,12 +377,15 @@ export function representRelationshipProfile(
       LOG.invalidEntity(item.id, "Missing ends for relationship profile.");
       continue;
     }
+    const name = range.name ?? {};
     result.push({
       identifier: item.id,
       iri: range.iri,
       model: vocabulary.identifier,
-      name: range.name ?? {},
-      label: range.name ?? {},
+      name,
+      label: name,
+      displayLabel: labelResolver.resolveLabel({
+        identifier: item.id, iri: range.iri, label: name }),
       description: range.description ?? {},
       profileOfIdentifiers: range.profiling,
       usageNote: range.usageNote,
@@ -403,6 +406,7 @@ export function representUndefinedAttribute(): RelationshipRepresentative {
     model: UnknownCmeSemanticModel.identifier,
     name: { "": "Undefined" },
     label: { "": "Undefined" },
+    displayLabel: "Undefined",
     description: {},
     profileOfIdentifiers: [],
     usageNote: null,
@@ -421,6 +425,7 @@ export function representUndefinedAssociation(): RelationshipRepresentative {
     model: UnknownCmeSemanticModel.identifier,
     name: { "": "Undefined" },
     label: { "": "Undefined" },
+    displayLabel: "Undefined",
     description: {},
     profileOfIdentifiers: [],
     usageNote: null,
@@ -612,15 +617,10 @@ export function findRepresentative(
   return entities.find(item => item.identifier === identifier) ?? null;
 }
 
-export function sortRepresentatives<T extends { label: LanguageString }>(
-  language: string,
+export function sortRepresentatives<T extends { displayLabel: string }>(
   array: T[],
 ) {
-  array.sort((left, right) => {
-    const leftLabel = left.label[language] ?? left.label[""] ?? "";
-    const rightLabel = right.label[language] ?? right.label[""] ?? "";
-    return leftLabel.localeCompare(rightLabel);
-  });
+  array.sort((left, right) => left.displayLabel.localeCompare(right.displayLabel));
 }
 
 export function filterByModel<Type extends { model: string }>(
@@ -628,4 +628,170 @@ export function filterByModel<Type extends { model: string }>(
 ): Type[] {
   return items.filter(
     item => item.model === model.identifier);
+}
+
+//
+// Tracker-based helpers
+// These build EntityRepresentative / RelationshipRepresentative arrays
+// directly from a DialogSemanticTracker without iterating classesContext.
+//
+
+export function representClassesFromTracker(
+  tracker: DialogSemanticTracker,
+  labelResolver: LabelResolver,
+): EntityRepresentative[] {
+  const result: EntityRepresentative[] = [];
+  for (const entry of tracker.semanticClasses.values()) {
+    result.push({
+      identifier: entry.identifier,
+      iri: entry.iri,
+      model: entry.model,
+      name: entry.label,
+      label: entry.label,
+      displayLabel: labelResolver.resolveLabel(entry),
+      description: entry.description,
+      profileOfIdentifiers: [],
+      usageNote: null,
+      isProfile: false,
+    });
+  }
+  return result;
+}
+
+export function representClassProfilesFromTracker(
+  tracker: DialogSemanticTracker,
+  labelResolver: LabelResolver,
+): EntityRepresentative[] {
+  const result: EntityRepresentative[] = [];
+  for (const entry of tracker.classProfiles.values()) {
+    result.push({
+      identifier: entry.identifier,
+      iri: entry.iri,
+      model: entry.model,
+      name: entry.label,
+      label: entry.label,
+      displayLabel: labelResolver.resolveLabel(entry),
+      description: entry.description,
+      profileOfIdentifiers: entry.profiling,
+      usageNote: entry.usageNote ?? null,
+      isProfile: true,
+    });
+  }
+  return result;
+}
+
+export function representRelationshipsFromTracker(
+  tracker: DialogSemanticTracker,
+  defaultDomain: string,
+  defaultRange: string,
+  labelResolver: LabelResolver,
+): RelationshipRepresentative[] {
+  const result: RelationshipRepresentative[] = [];
+  for (const entry of tracker.semanticRelationships.values()) {
+    result.push({
+      identifier: entry.identifier,
+      iri: entry.iri,
+      model: entry.model,
+      name: entry.label,
+      label: entry.label,
+      displayLabel: labelResolver.resolveLabel(entry),
+      description: entry.description,
+      profileOfIdentifiers: [],
+      usageNote: null,
+      isProfile: false,
+      domain: entry.domain ?? defaultDomain,
+      domainCardinality: representCardinality(entry.domainCardinality),
+      range: entry.range ?? defaultRange,
+      rangeCardinality: representCardinality(entry.rangeCardinality),
+    });
+  }
+  return result;
+}
+
+export function representRelationshipProfilesFromTracker(
+  tracker: DialogSemanticTracker,
+  defaultDomain: string,
+  defaultRange: string,
+  labelResolver: LabelResolver,
+): RelationshipRepresentative[] {
+  const result: RelationshipRepresentative[] = [];
+  for (const entry of tracker.relationshipProfiles.values()) {
+    result.push({
+      identifier: entry.identifier,
+      iri: entry.iri,
+      model: entry.model,
+      name: entry.label,
+      label: entry.label,
+      displayLabel: labelResolver.resolveLabel(entry),
+      description: entry.description,
+      profileOfIdentifiers: entry.profiling,
+      usageNote: entry.usageNote ?? null,
+      isProfile: true,
+      domain: entry.domain ?? defaultDomain,
+      domainCardinality: representCardinality(entry.domainCardinality),
+      range: entry.range ?? defaultRange,
+      rangeCardinality: representCardinality(entry.rangeCardinality),
+    });
+  }
+  return result;
+}
+
+export function listRelationshipDomainsFromTracker(
+  tracker: DialogSemanticTracker,
+  labelResolver: LabelResolver,
+): EntityRepresentative[] {
+  return [
+    representOwlThing(),
+    ...representClassesFromTracker(tracker, labelResolver),
+  ];
+}
+
+export function listRelationshipProfileDomainsFromTracker(
+  tracker: DialogSemanticTracker,
+  labelResolver: LabelResolver,
+): EntityRepresentative[] {
+  return [
+    representOwlThing(),
+    ...representClassProfilesFromTracker(tracker, labelResolver),
+  ];
+}
+
+export function listClassToProfilesFromTracker(
+  tracker: DialogSemanticTracker,
+  labelResolver: LabelResolver,
+): EntityRepresentative[] {
+  return [
+    ...representClassesFromTracker(tracker, labelResolver),
+    ...representClassProfilesFromTracker(tracker, labelResolver),
+  ];
+}
+
+export function listClassToSpecializeFromTracker(
+  tracker: DialogSemanticTracker,
+  labelResolver: LabelResolver,
+): EntityRepresentative[] {
+  return representClassProfilesFromTracker(tracker, labelResolver);
+}
+
+export function listAssociationsToProfileFromTracker(
+  tracker: DialogSemanticTracker,
+  defaultDomain: string,
+  defaultRange: string,
+  labelResolver: LabelResolver,
+): RelationshipRepresentative[] {
+  return [
+    ...representRelationshipsFromTracker(tracker, defaultDomain, defaultRange, labelResolver),
+    ...representRelationshipProfilesFromTracker(tracker, defaultDomain, defaultRange, labelResolver),
+  ].filter(isRepresentingAssociation);
+}
+
+export function listAssociationsToSpecializeFromTracker(
+  tracker: DialogSemanticTracker,
+  defaultDomain: string,
+  defaultRange: string,
+  labelResolver: LabelResolver,
+): RelationshipRepresentative[] {
+  return representRelationshipProfilesFromTracker(
+    tracker, defaultDomain, defaultRange, labelResolver,
+  ).filter(isRepresentingAssociation);
 }

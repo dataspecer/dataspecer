@@ -1,10 +1,12 @@
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { ExternalSemanticModel } from "@dataspecer/core-v2/semantic-model/simplified";
 import { HexColor, VisualModel } from "@dataspecer/visual-model";
+import { ModelIdentifier } from "@dataspecer/entity-model";
 
 import { SemanticModel } from "../../semantic-model";
 import { CmeSemanticModel, CmeSemanticModelNameLanguage, CmeSemanticModelType } from "../model";
 import { LanguageString } from "../../entity-model";
+import { SemanticModelEntry } from "../../../dependency-tracker";
 
 /**
  * This function shall be removed once we do not need to work with Map os models.
@@ -59,6 +61,32 @@ function getModelType(model: SemanticModel): CmeSemanticModelType {
   } else {
     return CmeSemanticModelType.DefaultSemanticModel;
   }
+}
+
+/**
+ * Build CmeSemanticModel list from the DialogSemanticTracker's model map.
+ * Replaces semanticModelMapToCmeSemanticModel for dialogs that use the tracker.
+ */
+export function semanticModelTrackerToCmeSemanticModel(
+  semanticModels: Map<ModelIdentifier, SemanticModelEntry>,
+  visualModel: VisualModel | null,
+  defaultColor: HexColor,
+): CmeSemanticModel[] {
+  const result: CmeSemanticModel[] = [];
+  for (const entry of semanticModels.values()) {
+    result.push({
+      identifier: entry.model,
+      name: entry.label,
+      modelType: entry.isExternal
+        ? CmeSemanticModelType.ExternalSemanticModel
+        : entry.isReadOnly
+          ? CmeSemanticModelType.DefaultSemanticModel
+          : CmeSemanticModelType.InMemorySemanticModel,
+      color: visualModel?.getModelColor(entry.model) ?? defaultColor,
+      baseIri: entry.baseIri,
+    });
+  }
+  return result;
 }
 
 function getModelBaseIri(model: SemanticModel): string | null {

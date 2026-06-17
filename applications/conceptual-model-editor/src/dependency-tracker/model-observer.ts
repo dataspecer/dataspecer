@@ -61,7 +61,7 @@ export function useModelObserver(
       state.entityModels.clear();
       state.visualModels.clear();
       state.observer = observer;
-      console.log("  observer has changed, running full reload!")
+      console.log("  Observer has changed, running full reload!")
     }
 
     const [removedEntityModels, newEntityModels] =

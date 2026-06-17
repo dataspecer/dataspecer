@@ -1,4 +1,4 @@
-import { isUiClass, isUiClassProfile, UiModelState, UiSemanticModel } from "../../dataspecer/ui-model";
+import { isUiClass, isUiClassProfile, UiModelState, UiSemanticModel } from "../ui-model";
 import {
   uiClassProfileToNode,
   uiClassToNode,

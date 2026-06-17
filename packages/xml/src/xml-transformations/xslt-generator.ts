@@ -13,6 +13,7 @@ import { assertFailed, assertNot } from "@dataspecer/core/core";
 import { defaultStructureTransformations, structureModelDematerialize, structureModelTransformPrimitiveTypes, transformStructureModel } from "@dataspecer/core/structure-model/transformation";
 import { XSLT_LIFTING, XSLT_LOWERING } from "./xslt-vocabulary.ts";
 import { structureModelAddXmlProperties } from "../xml-structure-model/add-xml-properties.ts";
+import { structureModelPopulateSfGeometry } from "../xml-schema/gml-support.ts";
 
 class XsltGenerator implements ArtefactGenerator {
   isLifting: boolean;
@@ -61,6 +62,8 @@ class XsltGenerator implements ArtefactGenerator {
       transformation =>
         transformation !== structureModelDematerialize
     );
+    // Populate gml geometry must be placed before transformation of primitive types
+    transformations.push(structureModelPopulateSfGeometry);
     transformations.push(structureModelTransformPrimitiveTypes);
     model = transformStructureModel(
       conceptualModel,
@@ -70,7 +73,7 @@ class XsltGenerator implements ArtefactGenerator {
       transformations
     );
 
-    const xmlModel = await structureModelAddXmlProperties(
+    let xmlModel = structureModelAddXmlProperties(
       model, context.reader
     );
 

@@ -5,7 +5,7 @@ import { CatalogState, SEMANTIC_MODEL_NODE_TYPE, SemanticModelNode, TreeNode } f
 import * as Actions from "./catalog-action";
 import { configuration, createLogger } from "../application";
 import { Language } from "../configuration";
-import { createUiModelState } from "../dataspecer/ui-model";
+import { createUiModelState } from "./ui-model";
 import { updateItemsOrder, updatePath, updateVisualEntities, preserveCollapsedState } from "./catalog-state-adapter";
 
 const LOG = createLogger(import.meta.url);

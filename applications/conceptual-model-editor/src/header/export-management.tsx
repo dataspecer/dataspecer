@@ -1,82 +1,35 @@
-import { useMemo } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
+import { Bug } from "lucide-react";
 import { generateLightweightOwl } from "@dataspecer/lightweight-owl";
 import type { SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
-import { BackendPackageService } from "@dataspecer/core-v2/project";
-import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { type Entities, type Entity, type EntityModel } from "@dataspecer/core-v2/entity-model";
-import type { VisualModel, WritableVisualModel } from "@dataspecer/visual-model";
 import * as DataSpecificationVocabulary from "@dataspecer/data-specification-vocabulary/semantic-model";
 import { shaclToRdf, semanticModelsToShacl } from "@dataspecer/shacl-v2";
 
-import {
-  type ExportedConfigurationType,
-  modelsToWorkspaceString,
-  useLocalStorage,
-} from "../features/export/export-utils";
 import { useModelGraphContext } from "../context/model-context";
-import { useDownload } from "../features/export/download";
 import { useClassesContext } from "../context/classes-context";
 import { entityWithOverriddenIri, getIri, getModelIri } from "../util/iri-utils";
-import { ExportButton } from "../components/management/buttons/export-button";
-import { useQueryParamsContext } from "../context/query-params-context";
 import { isInMemorySemanticModel } from "../dataspecer/semantic-model";
 
 import { useActions } from "../action/actions-react-binding";
 
 export const ExportManagement = () => {
   const actions = useActions();
-  const {
-    aggregator, aggregatorView, setAggregatorView,
-    models, visualModels, replaceModels,
-  } = useModelGraphContext();
+  const { aggregatorView, models } = useModelGraphContext();
   const { sourceModelOfEntityMap } = useClassesContext();
-  const { saveWorkspaceState } = useLocalStorage();
 
-  const { updatePackageId: setPackage } = useQueryParamsContext();
   const { download } = useDownload();
-  const service = useMemo(() => new BackendPackageService("fail-if-needed", httpFetch), []);
 
-  const uploadConfiguration = (contentType: string = "application/json") => {
-    return new Promise<string | undefined>((resolve) => {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.multiple = false;
-      input.accept = contentType;
+  const [open, setOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-      input.onchange = () => {
-        const file = input.files?.[0];
-        if (!file) {
-          resolve(undefined);
-          return;
-        }
-
-        const fileReader = new FileReader();
-        fileReader.readAsText(file);
-
-        fileReader.onload = (readerEvent) => {
-          const content = readerEvent?.target?.result;
-          if (typeof content === "string") {
-            resolve(content);
-            return;
-          }
-          resolve(undefined);
-        };
-      };
-
-      input.click();
-    });
-  };
-
-  const loadWorkSpaceConfiguration = (
-    entityModels: EntityModel[],
-    visualModels: VisualModel[],
-    activeView?: string
-  ) => {
-    replaceModels(entityModels, visualModels as WritableVisualModel[]);
-    aggregatorView.changeActiveVisualModel(activeView ?? visualModels.at(0)?.getId() ?? null);
-    setAggregatorView(aggregator.getView());
-  };
+  useEffect(() => {
+    if (open) {
+      menuRef.current?.focus();
+    }
+  }, [open]);
 
   const handleGenerateLightweightOwl = () => {
     const entities = Object.values(aggregatorView.getEntities())
@@ -104,47 +57,17 @@ export const ExportManagement = () => {
         const date = Date.now();
         download(generatedLightweightOwl, `dscme-lw-ontology-${date}.ttl`, "text/plain");
       })
-      .catch((err) => console.log("couldn't generate lw-ontology", err));
+      .catch((err) => console.error("Failed to export OWL ontology.", err));
   };
 
   const handleExportSVG = async () => {
     const svg = await actions.diagram?.actions().renderToSvgString();
     if (svg === null || svg === undefined) {
-      console.error("Can not export SVG file.")
+      console.error("Failed to export SVG file.");
       return;
     }
     const date = Date.now();
     download(svg, `dscme-workspace-${date}.svg`, "image/svg+xml");
-  };
-
-  const handleLoadWorkspaceFromJson = () => {
-    const loadConfiguration = async (configuration: string) => {
-      const { modelDescriptors, activeView } = JSON.parse(configuration) as ExportedConfigurationType;
-      const [entityModels, visualModels] = await service.getModelsFromModelDescriptors(modelDescriptors);
-
-      loadWorkSpaceConfiguration(entityModels, visualModels, activeView);
-    };
-
-    uploadConfiguration()
-      .then((configuration) => {
-        if (!configuration) {
-          return;
-        }
-
-        console.log("configuration is gonna be used");
-        loadConfiguration(configuration).catch((err) => console.log("problem with loading configuration", err));
-        // Make sure we won't work with packages any more
-        setPackage(null);
-      })
-      .catch(console.error);
-  };
-
-  const handleExportWorkspaceToJson = () => {
-    const activeView = aggregatorView.getActiveVisualModel()?.getId();
-    const date = Date.now();
-    const workspace = modelsToWorkspaceString(models, visualModels, date, activeView);
-    download(workspace, `dscme-workspace-${date}.json`, "application/json");
-    saveWorkspaceState(models, visualModels, activeView);
   };
 
   const handleGenerateDataSpecificationVocabulary = () => {
@@ -172,8 +95,7 @@ export const ExportManagement = () => {
         conceptualModel, { prettyPrint: true });
       const date = Date.now();
       download(stringContent, `dscme-dsv-${date}.ttl`, "text/plain");
-    })()
-      .catch(console.error);
+    })().catch((err) => console.error("Failed to export DSV.", err));
   };
 
   const handleGenerateProfileShacl = () => {
@@ -191,11 +113,11 @@ export const ExportManagement = () => {
       profileModels.map(model => new SemanticModelWrap(model)),
       new SemanticModelWrap(topProfileModel),
       {
-      policy: "semic-v1",
-      languages: [],
-      noClassConstraints: false,
-      splitPropertyShapesByConstraints: false,
-    }, { baseIri: iri, defaultPrefixes: {} },);
+        policy: "semic-v1",
+        languages: [],
+        noClassConstraints: false,
+        splitPropertyShapesByConstraints: false,
+      }, { baseIri: iri, defaultPrefixes: {} },);
 
     shaclToRdf(shacl, {
       prettyPrint: true,
@@ -203,29 +125,55 @@ export const ExportManagement = () => {
       console.log("SHACL export:", shaclAsRdf);
       const date = Date.now();
       download(shaclAsRdf, `shacl-profile-${date}.ttl`, "text/plain");
-    });
+    }).catch((err) => console.error("Failed to export SHACL.", err));
   };
 
   return (
-    <div className="my-auto mr-2 flex flex-row">
-      <ExportButton title="Download current view as SVG file." onClick={handleExportSVG}>
-        💾svg
-      </ExportButton>
-      <ExportButton title="Open workspace from configuration file" onClick={handleLoadWorkspaceFromJson}>
-        📥ws
-      </ExportButton>
-      <ExportButton title="Generate workspace configuration file" onClick={handleExportWorkspaceToJson}>
-        💾ws
-      </ExportButton>
-      <ExportButton title="Generate RDFS/OWL (vocabulary)" onClick={handleGenerateLightweightOwl}>
-        💾rdfs/owl
-      </ExportButton>
-      <ExportButton title="Generate DSV (application profile)" onClick={handleGenerateDataSpecificationVocabulary}>
-        💾dsv
-      </ExportButton>
-      <ExportButton title="Generate SHACL for profile" onClick={handleGenerateProfileShacl}>
-        💾shacl
-      </ExportButton>
+    <div className="flex relative">
+      <button
+        ref={buttonRef}
+        title="Debug menu"
+        onClick={() => setOpen(prev => !prev)}
+        className="text-white hover:bg-white/20 px-2"
+      >
+        <Bug className="h-5 w-5" />
+        <span className="sr-only">Debug menu</span>
+      </button>
+      {open === true ? (
+        <div
+          ref={menuRef}
+          tabIndex={-1}
+          className="absolute right-0 top-[70%] z-10 flex flex-col min-w-48 text-black bg-white rounded-md shadow-lg border border-gray-200 py-1 mt-1"
+          onBlur={(event) => {
+            if (menuRef.current?.contains(event.relatedTarget as Node)) {
+              return;
+            }
+            if (event.relatedTarget === buttonRef.current) {
+              return;
+            }
+            setOpen(false);
+          }}
+        >
+          <DropdownItem title="Download current view as SVG file."
+            onClick={() => { setOpen(false); handleExportSVG(); }}>
+            💾 Export SVG
+          </DropdownItem>
+          <DropdownItem title="Generate RDFS/OWL (vocabulary)"
+            onClick={() => { setOpen(false); handleGenerateLightweightOwl(); }}>
+            💾 Export RDFS/OWL
+          </DropdownItem>
+          <DropdownItem
+            title="Generate DSV (application profile)"
+            onClick={() => { setOpen(false); handleGenerateDataSpecificationVocabulary(); }}>
+            💾 Export DSV
+          </DropdownItem>
+          <DropdownItem
+            title="Generate SHACL for profile"
+            onClick={() => { setOpen(false); handleGenerateProfileShacl(); }}>
+            💾 Export SHACL
+          </DropdownItem>
+        </div>
+      ) : null}
     </div>
   );
 };
@@ -272,3 +220,40 @@ class SemanticModelWrap implements EntityModel {
   }
 
 }
+
+const useDownload = () => {
+  const download = (content: string, name: string, type: string) => {
+    const element = document.createElement("a");
+    const file = new Blob([content], { type: type });
+    element.href = URL.createObjectURL(file);
+    element.download = name;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
+
+  const downloadImage = (dataUrl: string) => {
+    const a = document.createElement("a");
+
+    a.setAttribute("download", "reactflow.svg");
+    a.setAttribute("href", dataUrl);
+    a.click();
+  };
+
+  return { download, downloadImage };
+};
+
+const DropdownItem = (props: {
+  children: ReactNode;
+  title: string;
+  onClick?: () => void;
+}) => {
+  return (
+    <button
+      {...props}
+      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-100 cursor-pointer"
+    >
+      {props.children}
+    </button>
+  );
+};

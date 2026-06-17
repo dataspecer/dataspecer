@@ -154,6 +154,8 @@ export class StructureModelProperty {
    */
   xmlIsAttribute: boolean = false;
 
+  xmlGmlType: string | null = null;
+
   /**
    * List of identifiers of entities this structure entity profiles.
    */

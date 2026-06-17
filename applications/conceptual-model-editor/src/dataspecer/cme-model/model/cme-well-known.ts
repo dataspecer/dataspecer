@@ -1,4 +1,7 @@
 
+/**
+ * @deprecated Move to the profile model.
+ */
 export enum CmeRelationshipProfileMandatoryLevel {
 
   Mandatory = "https://w3id.org/dsv/requirement-level#mandatory",
@@ -9,6 +12,9 @@ export enum CmeRelationshipProfileMandatoryLevel {
 
 }
 
+/**
+ * @deprecated Move to the profile model.
+ */
 export enum CmeClassProfileRole {
 
   Main = "https://w3id.org/dsv/class-role#main",

@@ -1,4 +1,4 @@
-import { UiEntity, UiGeneralization, UiSemanticModel } from "../../dataspecer/ui-model";
+import { UiEntity, UiGeneralization, UiSemanticModel } from "../ui-model";
 import { EntityNode, TreeNode } from "../catalog-state";
 
 /**

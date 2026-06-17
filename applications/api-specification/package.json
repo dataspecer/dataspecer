@@ -27,7 +27,7 @@
     "swr": "^2.2.5",
     "tailwind-merge": "^2.2.1",
     "tailwindcss-animate": "^1.0.7",
-    "uuid": "^9.0.1",
+    "uuid": "^14.0.0",
     "zod": "^3.23.4"
   },
   "devDependencies": {
@@ -39,7 +39,7 @@
     "eslint": "^8.55.0",
     "postcss": "^8.4.34",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5.9.3",
-    "vite": "^7.3.1"
+    "typescript": "^6.0.3",
+    "vite": "^8.0.13"
   }
 }

@@ -32,6 +32,8 @@ import {
 } from "./usage/operations/index.ts";
 import { SemanticModelClassUsage, SemanticModelRelationshipUsage } from "./usage/concepts/index.ts";
 import { createDefaultSemanticModelProfileOperationExecutor } from "./profile/operations/index.ts";
+import type { EntityChange, EntityChangeDeleted, EntityRecord } from "@dataspecer/core/entity-model";
+import { LOCAL_SEMANTIC_MODEL } from "../model/known-models.ts";
 
 function uuid() {
     return Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -58,67 +60,141 @@ export class WritableSemanticModelAdapter extends SemanticModelAdapter {
     }
 
     public executeOperations(operations: Operation[]) : (OperationResult | CreatedEntityOperationResult)[] {
-        const updatedCollector: Record<string, Entity> = {};
-        const removedCollector: string[] = [];
-
-        const getEntity: EntityGetter = identifier => this.entityModel.entities[identifier];
-        const change: ChangeCollector = (updated, removed) => {
-            for (const [id, entity] of Object.entries(updated)) {
-                updatedCollector[id] = entity;
-            }
-            removed.forEach(item => removedCollector.push(item));
-        };
-
-        const profileExecutor = createDefaultSemanticModelProfileOperationExecutor(
-            { createIdentifier: uuid },
-            { entity: identifier => getEntity(identifier) ?? null },
-            { change}
+        const {result, updated, removed} = applyOperationToSemanticModel(
+            this.entityModel.entities,
+            operations,
         );
+        this.entityModel.change(updated, removed);
+        return result;
+    }
+}
 
-        const result: (OperationResult | CreatedEntityOperationResult)[] = [];
+/**
+ * Returns entities that represent the semantic model based on the provided serialization.
+ */
+export function serializationToSemanticModelEntities(serialization: unknown): EntityRecord {
+    const modelDescriptor = {...(serialization as any)};
 
-        for (const operation of operations) {
-            if (isCreateClassOperation(operation)) {
-                result.push(handleCreateClassOperation(getEntity, change, operation));
-            } else if (isModifyClassOperation(operation)) {
-                result.push(handleModifyClassOperation(getEntity, change, operation));
-            } else if (isCreateRelationshipOperation(operation)) {
-                result.push(handleCreateRelationshipOperation(getEntity, change, operation));
-            } else if (isModifyRelationOperation(operation)) {
-                result.push(handleModifyRelationOperation(getEntity, change, operation));
-            } else if (isCreateGeneralizationOperation(operation)) {
-                result.push(handleCreateGeneralizationOperation(getEntity, change, operation));
-            } else if (isModifyGeneralizationOperation(operation)) {
-                result.push(handleModifyGeneralizationOperation(getEntity, change, operation));
-            } else if (isDeleteEntityOperation(operation)) {
-                result.push(handleDeleteEntityOperation(getEntity, change, operation));
-            } else if (isCreateClassUsageOperation(operation)) {
-                result.push(handleCreateClassUsageOperation(getEntity, change, operation));
-            } else if (isModifyClassUsageOperation(operation)) {
-                result.push(handleModifyClassUsageOperation(getEntity, change, operation));
-            } else if (isCreateRelationshipUsageOperation(operation)) {
-                result.push(handleCreateRelationshipUsageOperation(getEntity, change, operation));
-            } else if (isModifyRelationshipUsageOperation(operation)) {
-                result.push(handleModifyRelationshipUsageOperation(getEntity, change, operation));
+    const entities = modelDescriptor.entities;
+    delete modelDescriptor.entities;
+
+    const mainEntity = {
+        ...modelDescriptor,
+        id: modelDescriptor.modelId,
+        type: [LOCAL_SEMANTIC_MODEL],
+    } as Entity;
+
+    return {
+        ...entities,
+        [mainEntity.id]: mainEntity,
+    };
+}
+
+/**
+ * Serializes entities that represent single semantic model.
+ */
+export function semanticModelEntitiesToSerialization(entities: EntityRecord): unknown {
+    const mainEntity = Object.values(entities).find((e) => e.type?.includes(LOCAL_SEMANTIC_MODEL));
+
+    if (!mainEntity) {
+      throw new Error("Semantic model must contain an entity with type " + LOCAL_SEMANTIC_MODEL);
+    }
+
+    const restEntities = {...entities};
+    delete restEntities[mainEntity.id];
+
+    return {
+      ...mainEntity,
+
+      // Required fields
+
+      modelId: mainEntity.id,
+      type: LOCAL_SEMANTIC_MODEL,
+      entities: restEntities,
+    };
+}
+
+
+export function applyOperationToSemanticModel(semanticModel: EntityRecord, operations: Operation[]): {
+    result: (OperationResult | CreatedEntityOperationResult)[],
+    changes: EntityChange[],
+    updated: Record<string, Entity>,
+    removed: string[],
+} {
+    const updatedCollector: Record<string, Entity> = {};
+    const removedCollector: string[] = [];
+
+    const getEntity: EntityGetter = identifier => semanticModel[identifier];
+    const change: ChangeCollector = (updated, removed) => {
+        for (const [id, entity] of Object.entries(updated)) {
+            updatedCollector[id] = entity;
+        }
+        removed.forEach(item => removedCollector.push(item));
+    };
+
+    const profileExecutor = createDefaultSemanticModelProfileOperationExecutor(
+        { createIdentifier: uuid },
+        { entity: identifier => getEntity(identifier) ?? null },
+        { change}
+    );
+
+    const result: (OperationResult | CreatedEntityOperationResult)[] = [];
+
+    for (const operation of operations) {
+        if (isCreateClassOperation(operation)) {
+            result.push(handleCreateClassOperation(getEntity, change, operation));
+        } else if (isModifyClassOperation(operation)) {
+            result.push(handleModifyClassOperation(getEntity, change, operation));
+        } else if (isCreateRelationshipOperation(operation)) {
+            result.push(handleCreateRelationshipOperation(getEntity, change, operation));
+        } else if (isModifyRelationOperation(operation)) {
+            result.push(handleModifyRelationOperation(getEntity, change, operation));
+        } else if (isCreateGeneralizationOperation(operation)) {
+            result.push(handleCreateGeneralizationOperation(getEntity, change, operation));
+        } else if (isModifyGeneralizationOperation(operation)) {
+            result.push(handleModifyGeneralizationOperation(getEntity, change, operation));
+        } else if (isDeleteEntityOperation(operation)) {
+            result.push(handleDeleteEntityOperation(getEntity, change, operation));
+        } else if (isCreateClassUsageOperation(operation)) {
+            result.push(handleCreateClassUsageOperation(getEntity, change, operation));
+        } else if (isModifyClassUsageOperation(operation)) {
+            result.push(handleModifyClassUsageOperation(getEntity, change, operation));
+        } else if (isCreateRelationshipUsageOperation(operation)) {
+            result.push(handleCreateRelationshipUsageOperation(getEntity, change, operation));
+        } else if (isModifyRelationshipUsageOperation(operation)) {
+            result.push(handleModifyRelationshipUsageOperation(getEntity, change, operation));
+        } else {
+            const operationResult = profileExecutor.executeOperation(operation);
+            if (operationResult !== null) {
+                result.push({
+                    success: true,
+                    id: operationResult.created[0],
+                });
             } else {
-                const operationResult = profileExecutor.executeOperation(operation);
-                if (operationResult !== null) {
-                    result.push({
-                        success: true,
-                        id: operationResult.created[0],
-                    });
-                } else {
-                    // Unknown operation.
-                    result.push({
-                        success: false,
-                    });
-                }
+                // Unknown operation.
+                result.push({
+                    success: false,
+                });
             }
         }
-        // We execute all updates at once.
-        this.entityModel.change(updatedCollector, removedCollector);
-        //
-        return result;
+    }
+
+    const changes = [
+        ...Object.entries(updatedCollector).map(([id, entity]) => ({
+            previous: semanticModel[id] ?? null,
+            next: entity,
+        })) as EntityChange[],
+        ...removedCollector.map(id => ({
+            previous: semanticModel[id] ?? null,
+            next: null,
+        })) as EntityChangeDeleted[],
+    ];
+
+    return {
+        result,
+        changes,
+        updated: updatedCollector,
+        removed: removedCollector,
     }
 }
 

@@ -1,5 +1,5 @@
 import { JSX } from "react";
-import { UiModelState } from "../dataspecer/ui-model";
+import { UiModelState } from "./ui-model";
 import * as State from "./catalog-state";
 
 type Toolbar<T> = ({ node }: { node: T }) => JSX.Element;

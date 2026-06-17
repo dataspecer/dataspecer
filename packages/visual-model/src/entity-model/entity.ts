@@ -10,6 +10,7 @@ export interface Entity {
 
   /**
    * Entity identifier.
+   * @deprecated Use `id` instead on Entity from `@dataspecer/core`.
    */
   identifier: EntityIdentifier;
 

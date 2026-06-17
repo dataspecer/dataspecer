@@ -37,6 +37,7 @@ const ClassDialog = (props: DialogProps<ClassDialogState>) => {
             onChange={controller.setName}
             defaultLanguage={state.language}
             inputType="text"
+            autoFocus
           />
         </DialogDetailRow>
         <DialogDetailRow detailKey={t("create-class-dialog.iri")}>
@@ -70,6 +71,12 @@ const ClassDialog = (props: DialogProps<ClassDialogState>) => {
           <InputText
             value={state.externalDocumentationUrl}
             onChange={controller.setExternalDocumentationUrl}
+          />
+        </DialogDetailRow>
+        <DialogDetailRow detailKey={t("create-class-dialog.order")}>
+          <InputText
+            value={state.order}
+            onChange={controller.setOrder}
           />
         </DialogDetailRow>
       </div>

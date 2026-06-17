@@ -7,7 +7,7 @@ import { useMemo } from "react";
 import {
   isUiRelationshipProfile,
   UiRelationshipProfile,
-} from "../../../dataspecer/ui-model";
+} from "../../../catalog-v2/ui-model";
 import {
   CmeRelationshipProfileMandatoryLevel,
 } from "../../../dataspecer/cme-model";

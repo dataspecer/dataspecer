@@ -7,7 +7,7 @@ import { createClass, createGeneralization } from "../../semantic-model/operatio
  * Copies classes with their inheritance from the source model to the target model.
  * Starts with {@link fromClassId} and ends with {@link toClassId}. These ids refer to the source model.
  */
-export async function copyInheritanceToModel(targetSemanticModel: InMemorySemanticModel, sourceSemanticModel: Entity[], fromClassId: string, toClassId: string) {
+export function copyInheritanceToModel(targetSemanticModel: InMemorySemanticModel, sourceSemanticModel: Entity[], fromClassId: string, toClassId: string) {
   const fromClass = sourceSemanticModel.find((e) => e.id === fromClassId) as SemanticModelClass;
   const toClass = sourceSemanticModel.find((e) => e.id === toClassId) as SemanticModelClass;
 
@@ -23,7 +23,7 @@ export async function copyInheritanceToModel(targetSemanticModel: InMemorySemant
   const classesToProcess: string[] = [];
 
   // DFS that finds a SINGLE (random, if multiple exists) path
-  const traverseFunction = async (currentClass: SemanticModelClass, path: Set<string> = new Set()): Promise<boolean> => {
+  const traverseFunction = (currentClass: SemanticModelClass, path: Set<string> = new Set()): boolean => {
     let success = currentClass.id === toClass.id;
 
     if (currentClass !== toClass) {
@@ -40,7 +40,7 @@ export async function copyInheritanceToModel(targetSemanticModel: InMemorySemant
         if (path.has(extClass.iri as string)) {
           continue;
         }
-        if (await traverseFunction(extClass, path)) {
+        if (traverseFunction(extClass, path)) {
           success = true;
           break;
         }
@@ -54,7 +54,7 @@ export async function copyInheritanceToModel(targetSemanticModel: InMemorySemant
     return success;
   };
 
-  const success = await traverseFunction(fromClass);
+  const success = traverseFunction(fromClass);
 
   const targetEntities = targetSemanticModel.getEntities();
 
@@ -70,7 +70,7 @@ export async function copyInheritanceToModel(targetSemanticModel: InMemorySemant
 
     if (parentLocalClassInChain) {
       const generalization = sourceSemanticModel.find(
-        (entity) => isSemanticModelGeneralization(entity) && entity.child === classToProcessId && entity.parent === parentLocalClassInChain
+        (entity) => isSemanticModelGeneralization(entity) && entity.child === classToProcessId && entity.parent === parentLocalClassInChain,
       ) as SemanticModelGeneralization;
       if (!targetEntities[generalization.id]) {
         const op = createGeneralization(generalization);

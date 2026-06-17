@@ -139,7 +139,7 @@ class SemanticLabelTracker implements Tracker {
     }
   }
 
-  onDependenciesDidChange(next: Entity): void {
+  onDependencyDidChange(next: Entity): void {
     const entity = this.getEntityWeak(next.id);
     if (entity === null) {
       return;

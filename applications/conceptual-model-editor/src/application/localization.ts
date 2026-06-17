@@ -1,5 +1,6 @@
 import { createLogger } from "./logging";
-import { english, translations } from "./localization-translations";
+import { translations } from "./localization-translations";
+import { english } from "./localization-translations-en";
 
 const LOG = createLogger(import.meta.url);
 

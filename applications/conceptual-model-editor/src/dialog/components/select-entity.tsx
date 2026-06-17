@@ -1,8 +1,6 @@
 import { ChangeEvent } from "react";
 
 import { EntityRepresentative } from "../utilities/dialog-utilities";
-import { configuration } from "../../application";
-import { languageStringToString } from "../../utilities/string";
 
 export function SelectEntity<ValueType extends EntityRepresentative>(props: {
   language: string,
@@ -21,8 +19,6 @@ export function SelectEntity<ValueType extends EntityRepresentative>(props: {
     }
   };
 
-  const languagePreferences = configuration().languagePreferences;
-
   return (
     <select
       className="w-full"
@@ -32,9 +28,7 @@ export function SelectEntity<ValueType extends EntityRepresentative>(props: {
     >
       {props.items.map(item => (
         <option key={item.identifier} value={item.identifier}>
-          {languageStringToString(
-            languagePreferences,
-            props.language, item.label)}
+          {item.displayLabel}
         </option>
       ))}
     </select>

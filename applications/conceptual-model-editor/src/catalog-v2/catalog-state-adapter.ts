@@ -24,7 +24,7 @@ import {
   UiRelationship,
   UiRelationshipProfile,
   UiSemanticModel,
-} from "../dataspecer/ui-model";
+} from "./ui-model";
 import { VisualModel } from "@dataspecer/visual-model";
 
 export const uiSemanticModelToNode = (

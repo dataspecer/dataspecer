@@ -69,11 +69,27 @@ export async function generateDsvApplicationProfile(forExportModels: ModelDescri
 }
 
 export async function generateShaclApplicationProfile(forExportModel: ModelDescription, forContextModels: ModelDescription[], iri: string, configuration: SemanticModelsToShaclConfiguration) {
-  const mapModel = (model: ModelDescription) => ({
-    getId: () => model.baseIri!,
-    getBaseIri: () => model.baseIri ?? null,
-    getEntities: () => model.entities,
-  });
+  // We want to do memoization here because the called function is depending on the same models
+  const mapModelMemoization = new WeakMap<ModelDescription, ReturnType<typeof mapModel>>();
+  const mapModel = (model: ModelDescription): {
+  getId: () => string;
+  getBaseIri: () => string | null;
+  getEntities: () => Record<string, SemanticModelEntity>;
+  } => {
+    if (mapModelMemoization.has(model)) {
+      return mapModelMemoization.get(model)!;
+    }
+
+    const result = {
+      getId: () => model.baseIri!,
+      getBaseIri: () => model.baseIri ?? null,
+      getEntities: () => model.entities,
+    };
+
+    mapModelMemoization.set(model, result);
+
+    return result;
+  };
 
   /**
    * IRI to key mapping.
@@ -98,7 +114,7 @@ export async function generateShaclApplicationProfile(forExportModel: ModelDescr
 
   const shacl = semanticModelsToShacl(
     forContextModels.filter((model) => isModelVocabulary(model.entities)).map(mapModel),
-    forContextModels.filter((model) => !model.isPrimary && isModelProfile(model.entities)).map(mapModel),
+    forContextModels.filter((model) => isModelProfile(model.entities)).map(mapModel),
     mapModel(forExportModel),
     configuration, { baseIri: iri, defaultPrefixes: prefixesForIriConstruction },
   );
