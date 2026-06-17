@@ -5,6 +5,7 @@ import { FederatedObservableStore } from "@dataspecer/federated-observable-store
 import { OperationContext } from "../editor/operations/context/operation-context";
 import { SemanticModelAggregator } from '@dataspecer/core-v2/hierarchical-semantic-aggregator';
 import type { MemoryStore } from '@dataspecer/core/core';
+import type { RemoteModelStore } from '@dataspecer/model-store';
 
 /**
  * Editor's configuration (or context) that specifies how the editor should work.
@@ -33,6 +34,11 @@ export interface Configuration {
      * All of them are registered in the `store` as well.
      */
     structureModels: Record<string, MemoryStore>;
+
+    /**
+     * Class that provides access to all data.
+     */
+    modelStore: RemoteModelStore;
 }
 
 /**
@@ -51,6 +57,6 @@ export interface SearchableSemanticModelSync {
     searchEntitySync(searchQuery: string): SemanticModelClass[];
 }
 
-export function isSourceSemanticModelSearchableSync(model: any): model is SearchableSemanticModelSync {
+export function isSourceSemanticModelSearchableSync(model: unknown): model is SearchableSemanticModelSync {
     return model && (model as SearchableSemanticModelSync).searchEntitySync !== undefined;
 }

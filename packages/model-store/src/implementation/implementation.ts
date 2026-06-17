@@ -17,6 +17,7 @@ import { createStructureModel } from "./structure-model.ts";
 import { createBlobModel } from "./blob-model.ts";
 import { v4 as uuidv4 } from "uuid";
 import { UNDO_OPERATION_TYPE, type UndoOperation } from "./base.ts";
+import type { UndoRedoState } from "../interfaces/undo-redo.ts";
 
 /**
  * Synthetic model type used to register {@link createBlobModel} as the
@@ -310,15 +311,40 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     this.internalNotifyEntityChange({ entityChanges });
   }
 
-  undo(): void {
-    this.undoRedo(true);
+  undo(): TransactionResult | null {
+    return this.undoRedo(true);
   }
 
-  redo(): void {
-    this.undoRedo(false);
+  redo(): TransactionResult | null {
+    return this.undoRedo(false);
   }
 
-  private undoRedo(isUndoNotRedo: boolean): void {
+  getUndoRedoState(): UndoRedoState {
+    return {
+      canUndo: this.transactionIdsToUndoStack.length > 0,
+      canRedo: this.transactionIdsToRedoStack.length > 0,
+    };
+  }
+
+  protected undoRedoSubscribers: Set<(state: UndoRedoState) => void> = new Set();
+
+  subscribeToUndoRedoState(listener: (state: UndoRedoState) => void): () => void {
+    this.undoRedoSubscribers.add(listener);
+    return () => this.undoRedoSubscribers.delete(listener);
+  }
+
+  protected lastUndoRedoState: UndoRedoState | null = null;
+  protected notifyUndoRedoSubscribers(): void {
+    const newState = this.getUndoRedoState();
+    if (this.lastUndoRedoState === null || this.lastUndoRedoState.canUndo !== newState.canUndo || this.lastUndoRedoState.canRedo !== newState.canRedo) {
+      this.lastUndoRedoState = newState;
+      for (const listener of this.undoRedoSubscribers) {
+        listener(newState);
+      }
+    }
+  }
+
+  private undoRedo(isUndoNotRedo: boolean): TransactionResult | null {
     if (this.currentTransaction) {
       throw new Error("Cannot undo/redo while there is an ongoing transaction!");
     }
@@ -326,7 +352,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     const transactionIdToUndo = (isUndoNotRedo ? this.transactionIdsToUndoStack : this.transactionIdsToRedoStack).pop();
     if (!transactionIdToUndo) {
       // There is nothing to undo, just return.
-      return;
+      return null;
     }
     const transactionToRevert = this.transactions.find((transaction) => transaction.id === transactionIdToUndo)!;
 
@@ -370,6 +396,12 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     });
 
     this.internalNotifyEntityChange({ entityChanges });
+
+    this.notifyUndoRedoSubscribers();
+    return {
+      transactionId,
+      confirmation: Promise.resolve({}),
+    };
   }
 
   /**
@@ -390,6 +422,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
 
     this.transactionIdsToUndoStack.push(transaction.id);
     this.transactionIdsToRedoStack = [];
+    this.notifyUndoRedoSubscribers();
 
     return {
       transactionId: transaction.id,
