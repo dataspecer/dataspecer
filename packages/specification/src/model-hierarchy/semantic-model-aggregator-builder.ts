@@ -206,8 +206,7 @@ class SemanticModelAggregatorBuilder {
     this.knownModels = {};
     this.modelData = {};
     this.usedModels = new Set();
-    const rootConfiguration = this.getCompositionConfiguration(this.mainProjectModelId);
-    return this.buildFromConfiguration(this.mainProjectModelId, rootConfiguration);
+    return this.buildFromModelReference(this.mainProjectModelId);
   }
 
   /**
@@ -233,6 +232,13 @@ class SemanticModelAggregatorBuilder {
       return subModel && subModel.id.endsWith("/profile");
     });
 
+    /**
+     * Hack: We want profiled specification to be less strict regarding the
+     * passing of other non-profiled entities, therefore we use the (i) profile
+     * and its (ii) profiles in merge to allow (ii) profiles to pass.
+     */
+    const isSubSpecification = packageId !== this.mainProjectModelId;
+
     if (hasProfile) {
       return {
         modelType: "application-profile",
@@ -240,6 +246,8 @@ class SemanticModelAggregatorBuilder {
         profiles: { modelType: "merge", models: null },
         canAddEntities: true,
         canModify: true,
+
+        allowPassThrough: isSubSpecification,
       } as unknown as ModelCompositionConfigurationApplicationProfile;
     }
 
@@ -308,9 +316,14 @@ class SemanticModelAggregatorBuilder {
         .setCanAddEntities(profileConfig.canAddEntities ?? true)
         .setCanModify(profileConfig.canModify ?? true);
 
+
       (aggregator.thisVocabularyChain as any)["color"] = this.modelData[profileModelId]?.color ?? DEFAULT_COLOR;
 
-      return aggregator;
+      if (profileConfig.allowPassThrough) {
+        return new MergeAggregator([aggregator, profilesAggregator]);
+      } else {
+        return aggregator;
+      }
     } else if (configuration.modelType === "merge") {
       // Merge configuration
       const mergeConfig = configuration as ModelCompositionConfigurationMerge;

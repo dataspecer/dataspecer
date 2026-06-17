@@ -45,6 +45,12 @@ export type ModelCompositionConfigurationApplicationProfile = ModelCompositionCo
   profiles: ModelCompositionConfiguration;
   canAddEntities: boolean;
   canModify: boolean;
+
+  /**
+   * Whether to allow pass-through of profiled entities.
+   * @default false for main package and true for sub-packages
+   */
+  allowPassThrough?: boolean;
 };
 
 export type ModelCompositionConfigurationCache = ModelCompositionConfiguration & {
