@@ -46,6 +46,10 @@ export async function generatorConfigurationToRdf(
   writer.addQuad(IRI(iri), RDF.type, GENERATOR_CONFIGURATION_DSV["configuration"]);
 
   for (const [key] of Object.entries(configuration)) {
+    if (["id", "type"].includes(key)) {
+      // We skip properties of Entity that were added for interoperability purposes.
+      continue;
+    }
     const configEntryIri = `${iri}${encodeURIComponent(key)}`;
     writer.addQuad(IRI(iri), GENERATOR_CONFIGURATION_DSV["hasConfigurations"], IRI(configEntryIri));
   }
