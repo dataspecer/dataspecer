@@ -8,11 +8,13 @@ export type LanguageString = Record<string, string>;
 
 /**
  * Core object that support type control.
+ * @deprecated
  */
 export class CoreTyped {
   /**
    * Types used by core model. Single resource can be of multiple
    * application types like PimClass, PimAttribute, etc..
+   * @deprecated
    */
   types: string[] = [];
 
