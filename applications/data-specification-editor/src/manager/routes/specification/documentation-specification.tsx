@@ -12,7 +12,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { BackendConnectorContext, DefaultConfigurationContext } from "../../../application";
 import { LanguageStringText } from "../../../editor/components/helper/LanguageStringComponents";
 import { useDialog } from "../../../editor/dialog";
-import { getConfiguration } from "../../../generators/configuration/provided-configuration";
+import { getConfiguration } from "../../../configuration/provided-configuration";
 import { ZipStreamDictionary } from "../../../generators/zip-stream-dictionary";
 import { ConfigureArtifacts } from "../../artifacts/configuration/configure-artifacts";
 import { ConfigureButton } from "../../artifacts/configuration/configure-button";
@@ -60,7 +60,7 @@ export const DocumentationSpecification = memo(() => {
     setGenerateState([]);
     setGenerateDialogOpen(true);
 
-    const { store: federatedStore, dataSpecifications, models } = await getConfiguration(dataSpecificationIri as string, "");
+    const { store: federatedStore, dataSpecifications, models } = await getConfiguration(dataSpecificationIri as string, "", backendConnector);
 
     // Override base urls to null
     if (overrideBasePathsToNull) {

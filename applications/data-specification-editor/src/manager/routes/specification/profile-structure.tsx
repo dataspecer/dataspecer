@@ -3,8 +3,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CloseDialogButton } from "@/editor/components/detail/components/close-dialog-button";
 import { dialog } from "@/editor/dialog";
 import { useAsyncMemo } from "@/editor/hooks/use-async-memo";
-import type { Configuration } from "@/generators/configuration/configuration";
-import { getConfiguration } from "@/generators/configuration/provided-configuration";
+import type { Configuration } from "@/configuration/configuration";
+import { getConfiguration } from "@/configuration/provided-configuration";
 import { cn } from "@/lib/utils";
 import type { StructureEditorBackendService } from "@dataspecer/backend-utils";
 import type { DataSpecificationStructure } from '@dataspecer/specification/specification';
@@ -29,13 +29,13 @@ interface ProfileStructureDialogProps {
  */
 export const ProfileStructureDialog = dialog<ProfileStructureDialogProps>({ maxWidth: "md", fullWidth: true }, ({ isOpen, close, dataSpecificationId }) => {
   const { t } = useTranslation("ui");
+  const backendConnector = useContext(BackendConnectorContext);
 
-  const [configuration, isLoading] = useAsyncMemo(() => (isOpen ? getConfiguration(dataSpecificationId, "") : null), [dataSpecificationId, isOpen], null);
+  const [configuration, isLoading] = useAsyncMemo(() => (isOpen ? getConfiguration(dataSpecificationId, "", backendConnector) : null), [dataSpecificationId, isOpen, backendConnector], null);
   const data = configuration ? getStructuresToProfile(configuration) : [];
 
   const [selectedStructures, setSelectedStructures] = useState<Set<string>>(new Set());
 
-  const backendConnector = useContext(BackendConnectorContext);
   const [specification, updateSpecification] = useContext(SpecificationContext);
   const dataSpecificationIri = specification.id;
   const profile = async () => {

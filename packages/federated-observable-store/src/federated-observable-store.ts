@@ -30,10 +30,7 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter, Co
   protected addOperationForTransaction?: (operations: OperationInModel[]) => void;
   protected commitTransaction?: (metadata: object) => void;
 
-  constructor(
-    addOperationForTransaction?: (operations: OperationInModel[]) => void,
-    commitTransaction?: (metadata: object) => void,
-  ) {
+  constructor(addOperationForTransaction?: (operations: OperationInModel[]) => void, commitTransaction?: (metadata: object) => void) {
     this.addOperationForTransaction = addOperationForTransaction;
     this.commitTransaction = commitTransaction;
   }
@@ -43,7 +40,7 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter, Co
   }
 
   getSchemaForResource(iri: string): string | null {
-    return this.entities.get(iri).modelId ?? null;
+    return this.entities.get(iri)?.modelId ?? null;
   }
 
   listResourcesOfType(typeIri: string): string[] {
@@ -115,7 +112,10 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter, Co
   protected flushNotifications() {
     if (this.toNotifyUpdate.size > 0) {
       for (const iri of this.toNotifyUpdate) {
-        const entity = this.entities.get(iri);
+        let entity: Resource = this.entities.get(iri) ?? {
+          resource: null,
+          isLoading: false,
+        };
         this.entitySubscriptions.get(iri)?.forEach((subscriber) => subscriber(iri, entity));
       }
     }
@@ -127,7 +127,7 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter, Co
     if (!this.entitySubscriptions.has(iri)) {
       this.entitySubscriptions.set(iri, new Set());
     }
-    this.entitySubscriptions.get(iri).add(subscriber);
+    this.entitySubscriptions.get(iri)!.add(subscriber);
   }
 
   removeSubscriber(iri: string, subscriber: Subscriber): void {
@@ -145,11 +145,13 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter, Co
   applyOperation(modelId: ModelIdentifier, operation: CoreOperation | Operation): void {
     if (!this.addOperationForTransaction) {
       throw new Error("The model is read only.");
-    };
-    this.addOperationForTransaction([{
-      modelId,
-      operation: operation as Operation,
-    }]);
+    }
+    this.addOperationForTransaction([
+      {
+        modelId,
+        operation: operation as Operation,
+      },
+    ]);
   }
 
   /**

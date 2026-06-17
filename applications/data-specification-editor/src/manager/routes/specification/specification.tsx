@@ -11,7 +11,6 @@ import { createContext, FC, useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { BackendConnectorContext } from "../../../application";
-import { backendPackageService } from "../../../generators/configuration/provided-configuration";
 import { DocumentationSpecification } from "./documentation-specification";
 
 export const SpecificationContext = createContext<[DataSpecification & Package, (update: DataSpecification & Package) => void]>(null);
@@ -26,6 +25,7 @@ export const Specification: FC = () => {
   const { t } = useTranslation("ui");
   const [searchParams] = useSearchParams();
   const dataSpecificationIri = searchParams.get("dataSpecificationIri");
+  const backendConnector = useContext(BackendConnectorContext);
 
   const connector = useContext(BackendConnectorContext);
 
@@ -36,7 +36,7 @@ export const Specification: FC = () => {
     (async () => {
       const modelStore = createDSEModelStore({
         projectId: dataSpecificationIri,
-        packageService: backendPackageService,
+        packageService: backendConnector,
         httpFetch,
       });
 
@@ -51,7 +51,7 @@ export const Specification: FC = () => {
       const dataSpecification = getDataSpecification(dataSpecificationIri, projectModel, rootModel);
       updateSpecification(dataSpecification);
     })();
-  }, [dataSpecificationIri, updateSpecification]);
+  }, [dataSpecificationIri, updateSpecification, backendConnector]);
 
   const [allSpecifications, setAllSpecifications] = useState<Record<string, BaseResource>>(null);
   useEffect(() => {

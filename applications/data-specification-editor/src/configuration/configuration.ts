@@ -2,7 +2,7 @@ import type { DataSpecification } from '@dataspecer/specification/specification'
 import { SemanticModelClass, SemanticModelEntity } from '@dataspecer/core-v2/semantic-model/concepts';
 import type { EntityRecord } from '@dataspecer/core/entity-model';
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
-import { OperationContext } from "../../editor/operations/context/operation-context";
+import { OperationContext } from "../editor/operations/context/operation-context";
 import { SemanticModelAggregator } from '@dataspecer/core-v2/hierarchical-semantic-aggregator';
 import type { MemoryStore } from '@dataspecer/core/core';
 
