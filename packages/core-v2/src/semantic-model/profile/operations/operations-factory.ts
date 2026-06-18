@@ -1,3 +1,4 @@
+import { generateEntityId } from "@dataspecer/core/entity-model";
 import { EntityIdentifier } from "../../../entity-model/entity.ts";
 import { SemanticModelClassProfile, SemanticModelRelationshipProfile } from "../concepts/index.ts";
 import { CREATE_SEMANTIC_MODEL_CLASS_PROFILE, CREATE_SEMANTIC_MODEL_RELATIONSHIP_PROFILE, CreateSemanticModelClassProfile, CreateSemanticModelRelationshipProfile, MODIFY_SEMANTIC_MODEL_CLASS_PROFILE, MODIFY_SEMANTIC_MODEL_RELATIONSHIP_PROFILE, ModifySemanticModelClassProfile, ModifySemanticModelRelationshipProfile } from "./operations.ts";
@@ -5,7 +6,7 @@ import { CREATE_SEMANTIC_MODEL_CLASS_PROFILE, CREATE_SEMANTIC_MODEL_RELATIONSHIP
 export interface SemanticModelProfileOperationFactory {
 
   createClassProfile(
-    entity: Omit<SemanticModelClassProfile, "id" | "type">
+    entity: Omit<SemanticModelClassProfile, "id" | "type"> & Partial<Pick<SemanticModelClassProfile, "id">>
   ): CreateSemanticModelClassProfile;
 
   modifyClassProfile(
@@ -14,7 +15,7 @@ export interface SemanticModelProfileOperationFactory {
   ): ModifySemanticModelClassProfile;
 
   createRelationshipProfile(
-    entity: Omit<SemanticModelRelationshipProfile, "id" | "type">
+    entity: Omit<SemanticModelRelationshipProfile, "id" | "type"> & Partial<Pick<SemanticModelRelationshipProfile, "id">>
   ): CreateSemanticModelRelationshipProfile;
 
   modifyRelationshipProfile(
@@ -27,11 +28,11 @@ export interface SemanticModelProfileOperationFactory {
 class DefaultSemanticModelProfileOperationFactory
   implements SemanticModelProfileOperationFactory {
 
-  createClassProfile(entity: Omit<SemanticModelClassProfile, "id" | "type">)
+  createClassProfile(entity: Omit<SemanticModelClassProfile, "id" | "type"> & Partial<Pick<SemanticModelClassProfile, "id">>)
     : CreateSemanticModelClassProfile {
     return {
       type: CREATE_SEMANTIC_MODEL_CLASS_PROFILE,
-      entity,
+      entity: { ...entity, id: entity.id ?? generateEntityId() },
     };
   }
 
@@ -46,11 +47,11 @@ class DefaultSemanticModelProfileOperationFactory
     };
   }
 
-  createRelationshipProfile(entity: Omit<SemanticModelRelationshipProfile, "id" | "type">)
+  createRelationshipProfile(entity: Omit<SemanticModelRelationshipProfile, "id" | "type"> & Partial<Pick<SemanticModelRelationshipProfile, "id">>)
     : CreateSemanticModelRelationshipProfile {
       return {
         type: CREATE_SEMANTIC_MODEL_RELATIONSHIP_PROFILE,
-        entity,
+        entity: { ...entity, id: entity.id ?? generateEntityId() },
       };
   }
 

@@ -6,7 +6,7 @@ export interface CreateSemanticModelClassProfile extends Operation {
 
   type: typeof CREATE_SEMANTIC_MODEL_CLASS_PROFILE;
 
-  entity: Omit<SemanticModelClassProfile, "id" | "type">;
+  entity: Omit<SemanticModelClassProfile, "type">;
 }
 
 export const CREATE_SEMANTIC_MODEL_CLASS_PROFILE = "create-class-profile";
@@ -37,7 +37,7 @@ export interface CreateSemanticModelRelationshipProfile extends Operation {
 
   type: typeof CREATE_SEMANTIC_MODEL_RELATIONSHIP_PROFILE;
 
-  entity: Omit<SemanticModelRelationshipProfile, "id" | "type">;
+  entity: Omit<SemanticModelRelationshipProfile, "type">;
 
 }
 
