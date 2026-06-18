@@ -255,6 +255,32 @@ export class AsyncQueryableModelInModelStore extends BaseModelInModelStore imple
   }
 }
 
+/**
+ * Resolves all entities (queries and the semantic entities they resolve to)
+ * for the serialized data of an async queryable (SGOV) model, without
+ * instantiating a full {@link AsyncQueryableModelInModelStore}. Useful for
+ * one-off reads, e.g. on the backend, where we don't need to keep subscribing
+ * to query changes.
+ */
+export async function resolveAsyncQueryableModelEntities(data: unknown, httpFetch: HttpFetch): Promise<EntityRecord> {
+  const modelDescriptor = data as { queries: string[] };
+  const queries = modelDescriptor.queries ?? [];
+
+  const adapter = new SgovAdapter("https://slovník.gov.cz/sparql", httpFetch);
+  adapter.setIriProvider(new IdentityIriProvider());
+  const queryAdapter = new CimAdapterWrapper(adapter);
+
+  const queryEntities: EntityRecord = Object.fromEntries(queries.map(queryStringToQueryEntity).map((entity) => [entity.id, entity]));
+
+  const queryResults = await Promise.all(queries.map((query) => queryAdapter.query(query)));
+  const semanticEntities: EntityRecord = Object.assign({}, ...queryResults);
+
+  return {
+    ...queryEntities,
+    ...semanticEntities,
+  };
+}
+
 export function createAsyncQueryableModel(
   modelId: ModelIdentifier,
   context: {

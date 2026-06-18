@@ -1,6 +1,5 @@
 import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
-import { SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
-import { createSgovModel } from "@dataspecer/core-v2/semantic-model/simplified";
+import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { withAbsoluteIri } from "@dataspecer/core-v2/semantic-model/utils";
 import { LanguageString, type CoreResource } from "@dataspecer/core/core/core-resource";
 import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model/data-specification-artefact";
@@ -182,11 +181,14 @@ export async function generateSpecification(packageId: string, context: Generate
     }
     const sgovModels = children.filter((r) => r.modelType === SGOV);
     for (const sgovModel of sgovModels) {
-      const model = createSgovModel("https://slovník.gov.cz/sparql", context.fetch, sgovModel.id);
-      const data = getModelBlobData(allModels, sgovModel.id) as any;
-      await model.unserializeModel(data);
+      const modelEntities = allModels[sgovModel.id] ?? {};
+      const entities = Object.fromEntries(Object.entries(modelEntities).filter(([_, entity]) =>
+        isSemanticModelClass(entity) ||
+        isSemanticModelRelationship(entity) ||
+        isSemanticModelGeneralization(entity)
+      )) as Record<string, SemanticModelEntity>;
       modelDescriptions.push({
-        entities: model.getEntities() as Record<string, SemanticModelEntity>,
+        entities: entities,
         isPrimary: false,
         documentationUrl: null,
         baseIri: null,

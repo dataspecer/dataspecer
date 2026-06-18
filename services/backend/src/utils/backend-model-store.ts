@@ -4,6 +4,8 @@ import { serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-mo
 import { serializationToStructureModelEntities } from "@dataspecer/core/data-psm";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { serializationToBlobModelEntities } from "@dataspecer/core/entity-model/utils";
+import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
+import { resolveAsyncQueryableModelEntities } from "@dataspecer/model-store/implementation";
 import type { ModelEntity, PackageEntity } from "@dataspecer/project-model";
 import { serializationToVisualModelEntities } from "@dataspecer/visual-model";
 import type { BaseResource, Package, ResourceModel } from "../models/resource-model.ts";
@@ -70,8 +72,16 @@ async function loadModelEntities(modelId: string, modelType: string, resourceMod
     return serializationToStructureModelEntities(modelData).entities;
   }
 
+  if (modelType === "https://dataspecer.com/core/model-descriptor/sgov") {
+    return await resolveAsyncQueryableModelEntities(modelData, httpFetch);
+  }
+
   if (modelType === "https://dataspecer.com/core/model-descriptor/pim-store-wrapper") {
     return serializationToPimModelEntities(modelData as object).entities;
+  }
+
+  if (modelType === V1.GENERATOR_CONFIGURATION) {
+    return serializationToBlobModelEntities(modelId, modelData);
   }
 
   // Fallback to blob model
