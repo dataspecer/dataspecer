@@ -59,6 +59,13 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
 
   private externalChangesSubscribers: ((changes: EntityChange[]) => void)[] = [];
 
+  /**
+   * Whether the entities changed since the last successful {@link save} (or
+   * since the model was loaded). Used to implement smart save, i.e. saving
+   * only models that actually changed.
+   */
+  private dirty: boolean = false;
+
   constructor(id: string) {
     this.id = id;
   }
@@ -68,15 +75,23 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
   async load(): Promise<void> {
     const oldEntities = this.state.entities;
     this.state = await this.loadInternal();
+    this.dirty = false;
     const changes = diffEntities(oldEntities, this.state.entities);
     this.notifyAboutExternalChanges(changes);
   }
 
   protected abstract saveInternal(state: ModelState<BaseEntityType>): Promise<void>;
 
+  /**
+   * Saves the model to the backend, but only if it actually changed since the
+   * last save (or load). This is a no-op for unchanged models.
+   */
   async save(): Promise<void> {
-    // Todo check for state changes
-    this.saveInternal(this.state);
+    if (!this.dirty) {
+      return;
+    }
+    this.dirty = false;
+    await this.saveInternal(this.state);
   }
 
   /**
@@ -102,6 +117,10 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
       }
     }
     this.state.entities = newEntities;
+
+    if (changes.length > 0) {
+      this.dirty = true;
+    }
 
     this.notifyAboutExternalChanges(changes);
   }
@@ -153,9 +172,14 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
       const previousEntities = {...this.state.entities};
       this.state.entities = {...snapshot.stateBefore.entities};
 
+      const diff = diffEntities(previousEntities, this.state.entities);
+      if (diff.length > 0) {
+        this.dirty = true;
+      }
+
       return {
         transactionId,
-        entityChanges: diffEntities(previousEntities, this.state.entities),
+        entityChanges: diff,
       };
     } else {
       const previousState = {...this.state.entities};
@@ -165,6 +189,9 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
       }
 
       const diff = diffEntities(previousState, this.state.entities);
+      if (diff.length > 0) {
+        this.dirty = true;
+      }
 
       return {
         transactionId,

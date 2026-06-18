@@ -29,6 +29,15 @@ export interface RemoteModelStore extends WritableModelStore, EntityObservableMo
 
   getConnectionStatus(): ConnectionStatus;
   subscribeToConnectionStatus(update: (status: ConnectionStatus) => void): () => void;
+
+  /**
+   * Subscribes to be notified every time a transaction is fully applied, i.e.
+   * after a transaction is committed, or after undo/redo. Useful for example
+   * to trigger a save of the changed models.
+   *
+   * @returns Unsubscribe function.
+   */
+  subscribeToTransactionCommit(listener: () => void): () => void;
 }
 
 /**

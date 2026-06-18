@@ -398,6 +398,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     this.internalNotifyEntityChange({ entityChanges });
 
     this.notifyUndoRedoSubscribers();
+    this.notifyTransactionCommitSubscribers();
     return {
       transactionId,
       confirmation: Promise.resolve({}),
@@ -423,10 +424,33 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     this.transactionIdsToUndoStack.push(transaction.id);
     this.transactionIdsToRedoStack = [];
     this.notifyUndoRedoSubscribers();
+    this.notifyTransactionCommitSubscribers();
 
     return {
       transactionId: transaction.id,
       confirmation: Promise.resolve({}),
+    }
+  }
+
+  protected transactionCommitSubscribers: Set<() => void> = new Set();
+
+  /**
+   * Subscribes to be notified every time a transaction is fully applied, i.e.
+   * after {@link commitTransaction}, {@link undo} or {@link redo}. This is
+   * useful for example to trigger a save of the changed models.
+   *
+   * Unlike {@link subscribeToEntityChanges}, this does not fire for
+   * intermediate calls to {@link addOperationForTransaction} that are part of
+   * a not yet committed transaction.
+   */
+  subscribeToTransactionCommit(listener: () => void): () => void {
+    this.transactionCommitSubscribers.add(listener);
+    return () => this.transactionCommitSubscribers.delete(listener);
+  }
+
+  protected notifyTransactionCommitSubscribers(): void {
+    for (const listener of this.transactionCommitSubscribers) {
+      listener();
     }
   }
 
@@ -451,9 +475,21 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     }
   }
 
-  saveByOverride(): Promise<void> {
-    // todo update only the models that were changed
-    return Promise.resolve();
+  /**
+   * Saves all models that support saving and were changed since the last
+   * save (or load). Models that do not support saving (currently the
+   * virtual project model) are skipped.
+   */
+  async saveByOverride(): Promise<void> {
+    const savePromises: Promise<void>[] = [];
+    for (const modelId in this.models) {
+      if (modelId === this.projectModelId) {
+        // The project model is virtual and does not support saving yet.
+        continue;
+      }
+      savePromises.push(this.models[modelId]!.save());
+    }
+    await Promise.all(savePromises);
   }
 }
 
