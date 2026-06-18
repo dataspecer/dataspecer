@@ -1,13 +1,12 @@
 import { DataSpecification, StructureEditorBackendService } from "@dataspecer/backend-utils/connectors/specification";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
+import { createDSEModelStore } from "@dataspecer/model-store/implementation";
 import { getDataSpecificationWithModels } from "@dataspecer/specification/specification";
 import { ClientConfigurator, DefaultClientConfiguration } from "../../configuration";
-import { FrontendModelRepository } from "../../manager/utils/model-repository";
 import { OperationContext } from "../../editor/operations/context/operation-context";
 import { Configuration } from "./configuration";
 
 export const backendPackageService = new StructureEditorBackendService(import.meta.env.VITE_BACKEND as string, httpFetch, "http://dataspecer.com/packages/local-root");
-export const modelRepository = new FrontendModelRepository(backendPackageService);
 
 /**
  * Based on the package iri and schema iri provides the full configuration which
@@ -18,18 +17,47 @@ export async function getConfiguration(dataSpecificationIri: string | null, data
     throw new Error("Data specification IRI is required.");
   }
 
-  const dataSpecification = await getDataSpecificationWithModels(dataSpecificationIri, dataPsmSchemaIri, modelRepository);
-  const operationContext = await getOperationContext(dataSpecification.dataSpecifications[dataSpecificationIri]);
+  const modelStore = createDSEModelStore({
+    projectId: dataSpecificationIri,
+    packageService: backendPackageService,
+    httpFetch,
+  });
+
+  await modelStore.initialize();
+  await modelStore.waitForModelsToLoad();
+
+  window["modelStore"] = modelStore; // For debugging purposes
+
+  const models = modelStore.getAllEntities();
+
+  const dataSpecification = getDataSpecificationWithModels(
+    dataSpecificationIri,
+    models,
+    changeListener => {
+      return modelStore.subscribeToEntityChanges(changes => {
+        changeListener(changes.entityChanges);
+      });
+    },
+    modelStore.addOperationForTransaction.bind(modelStore),
+    modelStore.commitTransaction.bind(modelStore),
+  );
+
+  window["dataSpecification"] = dataSpecification; // For debugging purposes
+
+  const operationContext = getOperationContext(dataSpecification.dataSpecifications[dataSpecificationIri]);
 
   return {
     ...dataSpecification,
     dataSpecificationIri,
     dataPsmSchemaIri,
     operationContext,
+    models,
+    // @ts-ignore
+    modelStore,
   };
 }
 
-export async function getOperationContext(dataSpecification: DataSpecification): Promise<OperationContext> {
+export function getOperationContext(dataSpecification: DataSpecification): OperationContext {
   const configurationForContext = ClientConfigurator.merge(
     DefaultClientConfiguration,
     ClientConfigurator.getFromObject(dataSpecification.userPreferences)
