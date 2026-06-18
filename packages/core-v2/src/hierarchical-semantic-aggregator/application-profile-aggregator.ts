@@ -9,8 +9,6 @@ import {
   SemanticModelGeneralization,
   SemanticModelRelationship,
 } from "../semantic-model/concepts/index.ts";
-import { InMemorySemanticModel } from "../semantic-model/in-memory/index.ts";
-import { CreatedEntityOperationResult } from "../semantic-model/operations/index.ts";
 import { createSemanticProfileAggregator, ProfileAggregator } from "../semantic-model/profile/aggregator/index.ts";
 import {
   isSemanticModelClassProfile,
@@ -23,6 +21,7 @@ import { ExternalEntityWrapped, SemanticModelAggregator, LocalEntityWrapped } fr
 import { getSearchRelevance } from "./utils/get-search-relevance.ts";
 import { TupleSet } from "./utils/tuple-set.ts";
 import { withAbsoluteIri } from "../semantic-model/utils/index.ts";
+import { EntityModel, getModelAlias, getModelBaseIri, getModelId, isMainEntity, splitEntityChanges } from "./utils/entity-model.ts";
 
 const APPLICATION_PROFILE_AGGREGATOR_TYPE = "application-profile-aggregator";
 
@@ -68,7 +67,7 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
   /**
    * The profile that is being "wrapped" by this aggregator.
    */
-  private readonly profile: InMemorySemanticModel;
+  private readonly profile: EntityModel;
 
   /**
    * ID of the profiled model.
@@ -114,9 +113,9 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
   private allowOnlyProfiledEntities: boolean = false;
   private readonly profileBaseIri: string;
 
-  constructor(profile: InMemorySemanticModel, source: SemanticModelAggregator, allowOnlyProfiledEntities: boolean = false, profileEntityAggregator?: ProfileAggregator) {
+  constructor(profile: EntityModel, source: SemanticModelAggregator, allowOnlyProfiledEntities: boolean = false, profileEntityAggregator?: ProfileAggregator) {
     this.profile = profile;
-    this.profileBaseIri = profile.getBaseIri();
+    this.profileBaseIri = getModelBaseIri(profile.getEntities());
     this.source = source;
     this.profileEntityAggregator = profileEntityAggregator ?? createSemanticProfileAggregator();
     this.allowOnlyProfiledEntities = allowOnlyProfiledEntities;
@@ -127,15 +126,20 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
     });
 
     this.updateLocalEntities(this.profile.getEntities(), []);
-    this.profile.subscribeToChanges((updated, removed) => {
+    this.profile.subscribeToChanges((changes) => {
+      const [updated, removed] = splitEntityChanges(changes);
       this.updateLocalEntities(updated, removed);
     });
 
     this.thisVocabularyChain = {
-      name: this.profile.getAlias() ?? "AP",
+      name: getModelAlias(this.profile.getEntities()) ?? "AP",
     };
 
-    this.profileId = this.profile.getId();
+    const profileId = getModelId(this.profile.getEntities());
+    if (!profileId) {
+      throw new Error("Profile model does not contain a main entity describing the model.");
+    }
+    this.profileId = profileId;
   }
 
   setCanAddEntities(canAddEntities: boolean = true): this {
@@ -176,6 +180,9 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
    */
   private updateLocalEntities(updated: Record<string, Entity>, removed: string[]) {
     for (const entity of Object.values(updated)) {
+      if (isMainEntity(entity)) {
+        continue;
+      }
       this.profileEntities[entity.id] = withAbsoluteIri(entity as SemanticModelEntity, this.profileBaseIri);
     }
 
@@ -708,9 +715,9 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
         },
       ],
     });
-    const { id } = this.profile.executeOperation(operation) as CreatedEntityOperationResult;
+    this.profile.executeOperation(operation);
 
-    return this.entities[id] as LocalEntityWrapped<SemanticModelRelationship>;
+    return this.entities[operation.entity.id] as LocalEntityWrapped<SemanticModelRelationship>;
   }
 
   /**
@@ -749,9 +756,9 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
       tags: [],
       order: null,
     });
-    const { id } = this.profile.executeOperation(operation) as CreatedEntityOperationResult;
+    this.profile.executeOperation(operation);
 
-    return this.entities[id] as LocalEntityWrapped<SemanticModelClassProfile & SemanticModelClass>;
+    return this.entities[operation.entity.id] as LocalEntityWrapped<SemanticModelClassProfile & SemanticModelClass>;
   }
 
   private getFakeGeneralization(child: string, parent: string): LocalEntityWrapped<SemanticModelGeneralization> {

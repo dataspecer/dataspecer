@@ -1,13 +1,13 @@
 import { Entity } from "../../entity-model/index.ts";
 import { isSemanticModelGeneralization, SemanticModelClass, SemanticModelGeneralization } from "../../semantic-model/concepts/index.ts";
-import { InMemorySemanticModel } from "../../semantic-model/in-memory/index.ts";
 import { createClass, createGeneralization } from "../../semantic-model/operations/index.ts";
+import { EntityModel } from "./entity-model.ts";
 
 /**
  * Copies classes with their inheritance from the source model to the target model.
  * Starts with {@link fromClassId} and ends with {@link toClassId}. These ids refer to the source model.
  */
-export function copyInheritanceToModel(targetSemanticModel: InMemorySemanticModel, sourceSemanticModel: Entity[], fromClassId: string, toClassId: string) {
+export function copyInheritanceToModel(targetSemanticModel: EntityModel, sourceSemanticModel: Entity[], fromClassId: string, toClassId: string) {
   const fromClass = sourceSemanticModel.find((e) => e.id === fromClassId) as SemanticModelClass;
   const toClass = sourceSemanticModel.find((e) => e.id === toClassId) as SemanticModelClass;
 

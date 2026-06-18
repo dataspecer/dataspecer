@@ -1,8 +1,14 @@
-import { ApplicationProfileAggregator, ExternalModelWithCacheAggregator, MergeAggregator, SemanticModelAggregator, VocabularyAggregator } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
+import {
+  ApplicationProfileAggregator,
+  EntityModel,
+  ExternalModelWithCacheAggregator,
+  getMainEntity,
+  MergeAggregator,
+  SemanticModelAggregator,
+  VocabularyAggregator,
+} from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
 import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
-import { SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
-import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
-import type { Entity, EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
+import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import type { ModelEntity, PackageEntity } from "@dataspecer/project-model";
 import { VisualModelData } from "@dataspecer/visual-model";
@@ -46,123 +52,62 @@ function isSemanticModelType(modelType: string): boolean {
 }
 
 /**
- * Helper function to check if an entity is the main entity of a model
+ * Wraps an {@link EntityRecord} as an {@link EntityModel}.
+ *
+ * Operations are not applied locally - they are only forwarded via
+ * {@link executeOperation}. The model only updates once the resulting change
+ * comes back through {@link onChange}.
  */
-function isMainEntity(entity: Entity | null | undefined, modelId: string): boolean {
-  if (!entity) {
-    return false;
-  }
-  if (entity.id === modelId) {
-    return true;
-  }
-  return false;
-}
-
-/**
- * Remove known main entity fields from metadata
- */
-function removeKnownMainEntityFields(entity: Record<string, unknown>): Record<string, unknown> {
-  const metadata = { ...entity };
-  delete metadata.id;
-  delete metadata.type;
-  delete metadata.modelId;
-  delete metadata.modelAlias;
-  delete metadata.baseIri;
-  delete metadata.entities;
-  return metadata;
-}
-
-/**
- * Wraps an EntityRecord as an InMemorySemanticModel
- */
-class EntityRecordAsInMemorySemanticModel extends InMemorySemanticModel {
+class EntityRecordModel implements EntityModel {
   private readonly modelId: ModelIdentifier;
   private readonly executeOperationCallback?: (modelId: ModelIdentifier, operation: any) => void;
+  private readonly subscribers: ((changes: EntityChange[]) => void)[] = [];
+  private entities: EntityRecord;
 
   constructor(
     modelId: ModelIdentifier,
     entities: EntityRecord,
-    label: Record<string, string> | undefined,
     onChange?: (changeListener: (changes: Record<ModelIdentifier, EntityChange[]>) => void) => () => void,
     executeOperation?: (modelId: ModelIdentifier, operation: any) => void,
   ) {
-    super();
     this.modelId = modelId;
+    this.entities = entities;
     this.executeOperationCallback = executeOperation;
 
-    this.initializeFromEntityRecord(entities, label);
-
-    if (onChange) {
-      onChange((changes) => {
-        const modelChanges = changes[this.modelId];
-        if (!modelChanges || modelChanges.length === 0) {
-          return;
-        }
-        this.applyExternalChanges(modelChanges);
-      });
-    }
-  }
-
-  private initializeFromEntityRecord(entities: EntityRecord, label?: Record<string, string>): void {
-    const mainEntity = entities[this.modelId] as Record<string, unknown> | undefined;
-
-    const modelAlias = typeof mainEntity?.["modelAlias"] === "string" ? (mainEntity["modelAlias"] as string) : (label?.en ?? label?.cs ?? this.modelId);
-
-    const baseIri = typeof mainEntity?.["baseIri"] === "string" ? (mainEntity["baseIri"] as string) : "";
-
-    const semanticEntities = Object.fromEntries(
-      Object.entries(entities)
-        .filter(([_, entity]) => !isMainEntity(entity as Entity, this.modelId))
-        .map(([id, entity]) => [id, entity as SemanticModelEntity]),
-    );
-
-    this.deserializeModel({
-      ...(mainEntity ? removeKnownMainEntityFields(mainEntity) : {}),
-      modelId: this.modelId,
-      modelAlias,
-      baseIri,
-      entities: semanticEntities,
+    onChange?.((changes) => {
+      const modelChanges = changes[this.modelId];
+      if (!modelChanges || modelChanges.length === 0) {
+        return;
+      }
+      this.applyChanges(modelChanges);
+      for (const subscriber of this.subscribers) {
+        subscriber(modelChanges);
+      }
     });
   }
 
-  private applyExternalChanges(changes: EntityChange[]): void {
-    const updated: Record<string, Entity> = {};
-    const removed: string[] = [];
-
+  private applyChanges(changes: EntityChange[]): void {
+    const entities = { ...this.entities };
     for (const change of changes) {
       if (change.next) {
-        if (isMainEntity(change.next, this.modelId)) {
-          const mainEntityData = change.next as unknown as Record<string, unknown>;
-          if (typeof mainEntityData["modelAlias"] === "string") {
-            this.setAlias(mainEntityData["modelAlias"] as string);
-          }
-          if (typeof mainEntityData["baseIri"] === "string") {
-            this.setBaseIri(mainEntityData["baseIri"] as string);
-          }
-          Object.assign(this.modelMetadata, removeKnownMainEntityFields(mainEntityData));
-          continue;
-        }
-        updated[change.next.id] = change.next;
-      }
-
-      if (change.previous && change.next === null && !isMainEntity(change.previous, this.modelId)) {
-        removed.push(change.previous.id);
+        entities[change.next.id] = change.next;
+      } else if (change.previous) {
+        delete entities[change.previous.id];
       }
     }
-
-    if (Object.keys(updated).length > 0 || removed.length > 0) {
-      this.entityModel.change(updated, removed);
-    }
+    this.entities = entities;
   }
 
-  override executeOperations(operations: any[]): any[] {
-    const result = super.executeOperations(operations);
-    if (this.executeOperationCallback) {
-      for (const operation of operations) {
-        this.executeOperationCallback(this.modelId, operation);
-      }
-    }
-    return result;
+  getEntities(): EntityRecord {
+    return this.entities;
+  }
+
+  subscribeToChanges(callback: (changes: EntityChange[]) => void): void {
+    this.subscribers.push(callback);
+  }
+
+  executeOperation(operation: any): void {
+    this.executeOperationCallback?.(this.modelId, operation);
   }
 }
 
@@ -175,7 +120,7 @@ class SemanticModelAggregatorBuilder {
   private readonly projectModel: EntityRecord<ModelEntity>;
   private readonly onChange?: (changeListener: (changes: Record<ModelIdentifier, EntityChange[]>) => void) => () => void;
   private readonly executeOperation?: (modelId: ModelIdentifier, operation: any) => void;
-  private knownModels: Record<string, InMemorySemanticModel> = {};
+  private knownModels: Record<string, EntityModel> = {};
   private modelData: Record<string, VisualModelData> = {};
   private usedModels: Set<string> = new Set();
 
@@ -286,12 +231,12 @@ class SemanticModelAggregatorBuilder {
   /**
    * Get or create a semantic model wrapper for the given model ID
    */
-  private getSemanticModel(modelId: string): InMemorySemanticModel {
+  private getSemanticModel(modelId: string): EntityModel {
     if (this.knownModels[modelId]) {
       return this.knownModels[modelId];
     }
 
-    const model = new EntityRecordAsInMemorySemanticModel(modelId, this.allModels[modelId] as EntityRecord, undefined, this.onChange, this.executeOperation);
+    const model = new EntityRecordModel(modelId, this.allModels[modelId] as EntityRecord, this.onChange, this.executeOperation);
 
     this.knownModels[modelId] = model;
     return model;
@@ -356,9 +301,10 @@ class SemanticModelAggregatorBuilder {
 
     // It's a semantic model
     const model = this.getSemanticModel(modelId);
+    const mainEntity = getMainEntity(model.getEntities()) as Record<string, unknown> | null;
 
-    if ((model.modelMetadata as any)?.["caches"]) {
-      const cimAdapter = getProvidedSourceSemanticModel((model.modelMetadata as any)["caches"]);
+    if (mainEntity?.["caches"]) {
+      const cimAdapter = getProvidedSourceSemanticModel(mainEntity["caches"] as any[]);
       const aggregator = new ExternalModelWithCacheAggregator(model, cimAdapter);
       (aggregator.thisVocabularyChain as any)["color"] = this.modelData[modelId]?.color ?? DEFAULT_VOCABULARY_COLOR;
       return aggregator;
