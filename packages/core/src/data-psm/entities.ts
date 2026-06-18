@@ -24,5 +24,8 @@ export function serializationToStructureModelEntities(serialization: unknown): S
 export function structureModelEntitiesToSerialization(state: StructureModelState): unknown {
   // todo we may want to remove original ids and types
 
-  return state;
+  return {
+    operations: state.operations,
+    resources: state.entities,
+  };
 }

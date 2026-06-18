@@ -27,6 +27,12 @@ export async function getConfiguration(dataSpecificationIri: string | null, data
   await modelStore.initialize();
   await modelStore.waitForModelsToLoad();
 
+  // Autosave: persist changed models to the backend after every fully
+  // executed operation (commit, undo, redo).
+  modelStore.subscribeToTransactionCommit(() => {
+    modelStore.saveByOverride().catch(error => console.error("Failed to save models.", error));
+  });
+
   window["modelStore"] = modelStore; // For debugging purposes
 
   const models = modelStore.getAllEntities();
