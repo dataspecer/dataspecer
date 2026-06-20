@@ -1,9 +1,7 @@
-import { V1, LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
-import { BackendPackageService, type Package } from "@dataspecer/core-v2/project";
+import { LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { BackendPackageService } from "@dataspecer/core-v2/project";
 import type { LanguageString } from "@dataspecer/core/core/core-resource";
-import { DataSpecification as LegacyDataSpecification } from "@dataspecer/core/data-specification/model/data-specification";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
-import type { DataSpecification } from "@dataspecer/specification/specification";
 
 /**
  * This serves as an extension to the BackendPackageService that adds methods for operations on data specifications in structure editor.
@@ -21,128 +19,52 @@ export class StructureEditorBackendService extends BackendPackageService {
 
   public async readDefaultConfiguration(): Promise<object> {
     const data = await this.httpFetch(this.backendUrl + "/default-configuration");
-    return await data.json() as object;
-  }
-
-  /**
-   * Returns extended information for given package that is being interpreted as Data Specification.
-   * @param dataSpecificationId ID of the package that is being interpreted as Data Specification.
-   * @deprecated
-   */
-  public async getDataSpecification(dataSpecificationId: string): Promise<DataSpecification & Package> {
-    const pckg = await this.getPackage(dataSpecificationId)!;
-
-    const dataStructures = pckg.subResources!.filter(r => r.types.includes(V1.PSM)).map(ds => ({
-      id: ds.iri,
-      label: ds.userMetadata?.label || {},
-    }));
-
-    const artifactConfigurations = pckg.subResources!.filter(r => r.types.includes(V1.GENERATOR_CONFIGURATION)).map(ds => ({
-      id: ds.iri,
-      label: ds.userMetadata?.label || {},
-    }));
-
-    const model = await this.getResourceJsonData(dataSpecificationId) as any ?? {};
-
-    return {
-      ...pckg,
-      id: pckg.iri,
-      type: LegacyDataSpecification.TYPE_DOCUMENTATION,
-
-      label: pckg.userMetadata?.label || {},
-      tags: pckg.userMetadata?.tags || [],
-
-      localSemanticModelIds: model.localSemanticModelIds ?? [],
-      modelCompositionConfiguration: model.modelCompositionConfiguration ?? null,
-      dataStructures,
-      importsDataSpecificationIds: model.dataStructuresImportPackages ?? [],
-
-      artifactConfigurations,
-
-      userPreferences: model.userPreferences ?? {},
-    };
-  }
-
-  public async updateImportedDataSpecifications(dataSpecificationId: string, importedDataSpecificationIds: string[]): Promise<void> {
-    const model = await this.getResourceJsonData(dataSpecificationId) as any ?? {};
-    model.dataStructuresImportPackages = importedDataSpecificationIds;
-    await this.setResourceJsonData(dataSpecificationId, model);
-  }
-
-  public async updateDefaultModelCompositionConfiguration(dataSpecificationId: string, modelCompositionConfiguration: any): Promise<void> {
-    const model = await this.getResourceJsonData(dataSpecificationId) as any ?? {};
-    model.modelCompositionConfiguration = modelCompositionConfiguration;
-    await this.setResourceJsonData(dataSpecificationId, model);
-  }
-
-  public async getArtifactConfiguration(artifactConfigurationId: string): Promise<unknown> {
-    return await this.getResourceJsonData(artifactConfigurationId);
-  }
-
-  public async updateArtifactConfiguration(artifactConfigurationId: string, configuration: object): Promise<void> {
-    await this.setResourceJsonData(artifactConfigurationId, configuration);
-  }
-
-  /**
-   * The last argument specifies whether the preferences should be overwritten or merged with the existing ones.
-   * Default is merge.
-   */
-  public async updateUserPreferences(dataSpecificationId: string, preferences: object, overwrite: boolean = false): Promise<DataSpecification & Package> {
-    const model = await this.getResourceJsonData(dataSpecificationId) as any ?? {};
-    if (overwrite) {
-      model.userPreferences = preferences;
-    } else {
-      model.userPreferences = {
-        ...model.userPreferences,
-        ...preferences,
-      };
-    }
-    await this.setResourceJsonData(dataSpecificationId, model);
-    return this.getDataSpecification(dataSpecificationId);
+    return (await data.json()) as object;
   }
 
   /**
    * Creates new package with empty semantic model as PIM.
+   * @returns Data specification ID
    */
-  public async createDataSpecification(set: { tags?: string[]; label?: LanguageString; } = {}): Promise<DataSpecification & Package> {
+  public async createDataSpecification(set: { tags?: string[]; label?: LanguageString } = {}): Promise<string> {
     const pckg = await this.createPackage(this.packageRoot, {
       userMetadata: {
         tags: set.tags,
         label: set.label,
-      }
+      },
     });
 
     const pim = await this.createResource(pckg.iri, {
       type: LOCAL_SEMANTIC_MODEL,
       userMetadata: {
         label: {
-          "en": "Main Application Profile",
-          "cs": "Hlavní aplikační profil",
+          en: "Main Application Profile",
+          cs: "Hlavní aplikační profil",
         },
-      }
+      },
     });
     await this.setResourceJsonData(pim.iri, {
-      "type": "http://dataspecer.com/resources/local/semantic-model",
-      "modelId": pim.iri,
-      "modelAlias": set?.label?.en ?? set?.label?.cs ?? "",
-      "entities": {}
+      type: "http://dataspecer.com/resources/local/semantic-model",
+      modelId: pim.iri,
+      modelAlias: set?.label?.en ?? set?.label?.cs ?? "",
+      entities: {},
     });
 
     const sgov = await this.createResource(pckg.iri, {
       type: LOCAL_SEMANTIC_MODEL,
       userMetadata: {
         label: {
-          "en": "SGOV cache",
-          "cs": "SGOV cache",
+          en: "SGOV cache",
+          cs: "SGOV cache",
         },
-      }
+      },
     });
     await this.setResourceJsonData(sgov.iri, {
-      "type": "http://dataspecer.com/resources/local/semantic-model",
-      "modelId": sgov.iri,
-      "modelAlias": set?.label?.en ?? set?.label?.cs ?? "",
-      "caches": ["https://dataspecer.com/adapters/sgov"],
-      "entities": {}
+      type: "http://dataspecer.com/resources/local/semantic-model",
+      modelId: sgov.iri,
+      modelAlias: set?.label?.en ?? set?.label?.cs ?? "",
+      caches: ["https://dataspecer.com/adapters/sgov"],
+      entities: {},
     });
 
     await this.setResourceJsonData(pckg.iri, {
@@ -150,24 +72,23 @@ export class StructureEditorBackendService extends BackendPackageService {
         modelType: "application-profile",
         model: pim.iri,
         profiles: { modelType: "merge" },
-      }
+      },
     });
 
     const configuration = await this.createResource(pckg.iri, {
       type: V1.GENERATOR_CONFIGURATION,
       userMetadata: {
         label: {
-          "en": "Artifact configuration",
-        }
-      }
+          en: "Artifact configuration",
+        },
+      },
     });
     await this.setResourceJsonData(configuration.iri, {});
 
-    return this.getDataSpecification(pckg.iri);
+    return pckg.iri;
   }
 
   public async createDataStructure(dataSpecificationIri: string): Promise<{
-    dataSpecification: DataSpecification & Package;
     createdPsmSchemaIri: string;
   }> {
     const resource = await this.createResource(dataSpecificationIri, {
@@ -178,24 +99,19 @@ export class StructureEditorBackendService extends BackendPackageService {
       operations: [],
       resources: {
         [resource.iri]: {
-          "types": [
-            "https://ofn.gov.cz/slovník/psm/Schema"
-          ],
-          "iri": resource.iri,
-          "dataPsmHumanLabel": null,
-          "dataPsmHumanDescription": null,
-          "dataPsmTechnicalLabel": null,
-          "dataPsmRoots": [],
-          "dataPsmParts": []
-        }
-      }
+          types: ["https://ofn.gov.cz/slovník/psm/Schema"],
+          iri: resource.iri,
+          dataPsmHumanLabel: null,
+          dataPsmHumanDescription: null,
+          dataPsmTechnicalLabel: null,
+          dataPsmRoots: [],
+          dataPsmParts: [],
+        },
+      },
     });
 
-    const dataSpecification = await this.getDataSpecification(dataSpecificationIri);
     return {
-      dataSpecification,
       createdPsmSchemaIri: resource.iri,
     };
   }
-
 }

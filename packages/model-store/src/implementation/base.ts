@@ -70,14 +70,45 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
     this.id = id;
   }
 
+  /**
+   * Function to load the state from backend.
+   */
   protected abstract loadInternal(): Promise<ModelState<BaseEntityType>>;
 
-  async load(): Promise<void> {
-    const oldEntities = this.state.entities;
-    this.state = await this.loadInternal();
-    this.dirty = false;
-    const changes = diffEntities(oldEntities, this.state.entities);
-    this.notifyAboutExternalChanges(changes);
+  /**
+   * Function to load the initial state of the model for newly created models.
+   */
+  protected loadInitialStateInternal(): void {
+    this.initializeState({
+      entities: {},
+      operations: [],
+    });
+  }
+
+  async load(doNotFetch: boolean = false): Promise<void> {
+    if (!doNotFetch) {
+      const oldEntities = this.state.entities;
+      this.state = await this.loadInternal();
+      this.dirty = false;
+      const changes = diffEntities(oldEntities, this.state.entities);
+      this.notifyAboutExternalChanges(changes);
+    } else {
+      // Initializes the model as freshly created (e.g. as a reaction to a
+      // {@link CreateModelOperation} on the project model), without fetching
+      // anything from the backend. Marks the model dirty so that it gets
+      // persisted on the next {@link save}.
+      this.loadInitialStateInternal();
+    }
+  }
+
+  /**
+   * Synchronously sets the model state, bypassing any diffing/notification.
+   * Intended to be used by {@link createNew} (and its overrides) to set up
+   * the initial state of a freshly created model.
+   */
+  protected initializeState(state: ModelState<BaseEntityType>): void {
+    this.state = state;
+    this.dirty = true;
   }
 
   protected abstract saveInternal(state: ModelState<BaseEntityType>): Promise<void>;

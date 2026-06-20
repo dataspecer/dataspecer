@@ -1,9 +1,10 @@
 import SettingsIcon from "@mui/icons-material/Settings";
+import type { Entity } from "@dataspecer/core/entity-model";
+import { createUpdateEntityOperation } from "@dataspecer/core/operation";
 import { Fab } from "@mui/material";
 import { FC, useCallback, useContext } from "react";
 import { useTranslation } from "react-i18next";
-import { BackendConnectorContext } from "../../../application";
-import { SpecificationContext } from "../../routes/specification/specification";
+import { ManagerModelStoreContext, SpecificationContext } from "../../routes/specification/specification";
 import { useToggle } from "../../use-toggle";
 import { ConfigureDialog } from "./configure-dialog";
 
@@ -14,16 +15,20 @@ import { ConfigureDialog } from "./configure-dialog";
 export const ConfigureButton: FC = () => {
   const { t } = useTranslation("ui");
   const [specification, updateSpecification] = useContext(SpecificationContext);
-  const backendConnector = useContext(BackendConnectorContext);
+  const modelStore = useContext(ManagerModelStoreContext);
 
   const configuration = specification?.userPreferences ?? {};
 
   const update = useCallback(
     async (configuration: object) => {
-      const result = await backendConnector.updateUserPreferences(specification.iri, configuration);
-      updateSpecification(result);
+      const userPreferences = { ...specification.userPreferences, ...configuration };
+      modelStore.transaction([{
+        modelId: specification.iri,
+        operation: createUpdateEntityOperation({ id: specification.iri, userPreferences } as Partial<Entity> & Pick<Entity, "id">),
+      }], {});
+      updateSpecification({ ...specification, userPreferences });
     },
-    [backendConnector, specification, updateSpecification]
+    [modelStore, specification, updateSpecification]
   );
 
   const ConfigureDialogOpen = useToggle(false);

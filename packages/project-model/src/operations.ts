@@ -1,3 +1,4 @@
+import { generateEntityId } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { generateOperationId, type Operation } from "@dataspecer/core/operation";
 
@@ -68,22 +69,18 @@ export interface CreateModelOperation extends Operation {
   modelType: string;
 }
 
-export function createCreateModelOperation(parentPackageId: ModelIdentifier, modelId: ModelIdentifier, modelType: string): CreateModelOperation {
-  if (!(typeof parentPackageId === "string" && parentPackageId.length > 0)) {
-    throw new Error("Invalid parent package identifier.");
-  }
-  if (!(typeof modelId === "string" && modelId.length > 0)) {
-    throw new Error("Invalid model identifier.");
-  }
-  if (!(typeof modelType === "string" && modelType.length > 0)) {
-    throw new Error("Invalid model type.");
-  }
-
+/**
+ * Creates a new operation that will create a new model. ID of such model is
+ * pre-generated, but can be overridden by the caller.
+ *
+ * You need to specify model type.
+ */
+export function createCreateModelOperation(parentPackageId: ModelIdentifier, modelType: string, modelId?: ModelIdentifier): CreateModelOperation {
   return {
     id: generateOperationId(),
     type: CreateModelOperationType,
     parentPackageId,
-    modelId,
+    modelId: modelId ?? generateEntityId(),
     modelType,
   };
 }

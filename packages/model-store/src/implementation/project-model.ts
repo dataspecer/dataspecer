@@ -50,6 +50,23 @@ export class ProjectModelInModelStore extends BaseModelInModelStore<ModelEntity>
           packageEntity.subModels.forEach((subModelId) => toDelete.push(subModelId));
         }
       }
+
+      // Remove the (now deleted) model from its parent package's subModels list.
+      for (const id in mutableState) {
+        const entity = mutableState[id];
+        if (entity.modelType !== LOCAL_PACKAGE) {
+          continue;
+        }
+        const packageEntity = entity as PackageEntity;
+        if (!packageEntity.subModels.includes(operation.modelId)) {
+          continue;
+        }
+        mutableState[id] = {
+          ...packageEntity,
+          subModels: packageEntity.subModels.filter((subModelId) => subModelId !== operation.modelId),
+        } as PackageEntity;
+        break;
+      }
       return;
     }
 

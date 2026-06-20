@@ -3,7 +3,7 @@ import { BaseResource, Package } from "@dataspecer/core-v2/project";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import type { ModelIdentifier } from "@dataspecer/core/model";
-import { createDSEModelStore } from "@dataspecer/model-store/implementation";
+import { createManagerModelStore, type DefaultFrontendModelStore } from "@dataspecer/model-store/implementation";
 import type { ModelEntity } from "@dataspecer/project-model";
 import { getDataSpecification } from "@dataspecer/specification/specification";
 import { Box, CircularProgress, Container, Typography } from "@mui/material";
@@ -16,6 +16,13 @@ import { DocumentationSpecification } from "./documentation-specification";
 export const SpecificationContext = createContext<[DataSpecification & Package, (update: DataSpecification & Package) => void]>(null);
 
 export const AllSpecificationsContext = createContext<Record<string, BaseResource>>(null);
+
+/**
+ * Lightweight model store used by the manager to read and directly mutate the
+ * package and artifact configuration blobs, without needing the heavier
+ * semantic/structure/visual models used by the structure editor.
+ */
+export const ManagerModelStoreContext = createContext<DefaultFrontendModelStore>(null);
 
 /**
  * There could be more types of specifications. This component decides which one
@@ -32,9 +39,11 @@ export const Specification: FC = () => {
   const contextForSpecificationContext = useState(null);
   const updateSpecification = contextForSpecificationContext[1];
 
+  const [modelStore, setModelStore] = useState<DefaultFrontendModelStore>(null);
+
   useEffect(() => {
     (async () => {
-      const modelStore = createDSEModelStore({
+      const modelStore = createManagerModelStore({
         projectId: dataSpecificationIri,
         packageService: backendConnector,
         httpFetch,
@@ -43,12 +52,19 @@ export const Specification: FC = () => {
       await modelStore.initialize();
       await modelStore.waitForModelsToLoad();
 
+      // Autosave: persist changed models to the backend after every fully
+      // executed operation (commit, undo, redo).
+      modelStore.subscribeToTransactionCommit(() => {
+        modelStore.saveByOverride().catch(error => console.error("Failed to save models.", error));
+      });
+
       const PROJECT_MODEL_ID: ModelIdentifier = "_project_model";
       const allEntities = modelStore.getAllEntities();
       const projectModel = allEntities[PROJECT_MODEL_ID] as EntityRecord<ModelEntity>;
       const rootModel = allEntities[dataSpecificationIri as string] || null;
 
       const dataSpecification = getDataSpecification(dataSpecificationIri, projectModel, rootModel);
+      setModelStore(modelStore);
       updateSpecification(dataSpecification);
     })();
   }, [dataSpecificationIri, updateSpecification, backendConnector]);
@@ -60,12 +76,14 @@ export const Specification: FC = () => {
       .then((result) => setAllSpecifications(Object.fromEntries(result.subResources.map((resource) => [resource.iri, resource]))));
   }, [connector]);
 
-  if (contextForSpecificationContext[0] && allSpecifications) {
+  if (contextForSpecificationContext[0] && allSpecifications && modelStore) {
     return (
       <SpecificationContext.Provider value={contextForSpecificationContext}>
-        <AllSpecificationsContext.Provider value={allSpecifications}>
-          <DocumentationSpecification />
-        </AllSpecificationsContext.Provider>
+        <ManagerModelStoreContext.Provider value={modelStore}>
+          <AllSpecificationsContext.Provider value={allSpecifications}>
+            <DocumentationSpecification />
+          </AllSpecificationsContext.Provider>
+        </ManagerModelStoreContext.Provider>
       </SpecificationContext.Provider>
     );
   } else {

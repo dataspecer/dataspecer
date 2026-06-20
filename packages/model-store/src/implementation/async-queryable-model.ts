@@ -215,14 +215,30 @@ export class AsyncQueryableModelInModelStore extends BaseModelInModelStore imple
   }
 
   protected async loadInternal(): Promise<ModelState> {
-    // Load adapter
-    const adapter = new SgovAdapter("https://slovník.gov.cz/sparql", httpFetch);
-    adapter.setIriProvider(new IdentityIriProvider());
-    this.queryAdapter = new CimAdapterWrapper(adapter);
+    this.queryAdapter = this.createQueryAdapter();
 
     // Load data
     const modelData = (await this.service.getResourceJsonData(this.id)) as any;
     return this.deserializeModel(modelData);
+  }
+
+  private createQueryAdapter(): CimAdapterWrapper {
+    const adapter = new SgovAdapter("https://slovník.gov.cz/sparql", httpFetch);
+    adapter.setIriProvider(new IdentityIriProvider());
+    return new CimAdapterWrapper(adapter);
+  }
+
+  /**
+   * An empty model (no queries) is a valid state and needs no main entity,
+   * but the query adapter must still be set up before any query operations
+   * can be applied.
+   */
+  override loadInitialStateInternal(): void {
+    this.queryAdapter = this.createQueryAdapter();
+    this.initializeState({
+      entities: {},
+      operations: [],
+    });
   }
 
   /**

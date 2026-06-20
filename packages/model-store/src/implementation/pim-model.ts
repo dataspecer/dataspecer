@@ -95,6 +95,31 @@ export class PimModelInModelStore extends BaseModelInModelStore implements Model
     };
   }
 
+  /**
+   * Sets up an empty legacy model synchronously, without fetching anything
+   * from the backend. The model must always contain a {@link MainEntity}
+   * representing itself, analogous to {@link loadInternal}.
+   */
+  override loadInitialStateInternal(): void {
+    const adapter = new PimStoreWrapper({ resources: {} } as any, this.id, "model", []);
+    adapter.fetchFromPimStore();
+    this.model = adapter;
+
+    const mainEntity: MainEntity = {
+      id: this.id,
+      type: ["mainEntity"],
+      urls: [],
+    };
+
+    this.initializeState({
+      entities: {
+        ...adapter.getEntities(),
+        [this.id]: mainEntity,
+      },
+      operations: [],
+    });
+  }
+
   protected async saveInternal(state: ModelState): Promise<void> {
     // Instead of using the state to serialize model, we use this.model which is
     // synchronized with the state.

@@ -29,6 +29,19 @@ export class SemanticModelInModelStore extends BaseModelInModelStore implements 
     };
   }
 
+  /**
+   * A semantic model must always contain an entity of type
+   * {@link LOCAL_SEMANTIC_MODEL} representing the model itself (see
+   * {@link semanticModelEntitiesToSerialization}, which throws without it) -
+   * even when it otherwise has no entities.
+   */
+  override loadInitialStateInternal(): void {
+    this.initializeState({
+      entities: serializationToSemanticModelEntities({ modelId: this.id }),
+      operations: [],
+    });
+  }
+
   protected async saveInternal(state: ModelState): Promise<void> {
     const data = this.serializeModel(state);
     await this.service.setResourceJsonData(this.id, data);

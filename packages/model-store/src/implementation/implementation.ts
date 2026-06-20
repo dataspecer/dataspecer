@@ -1,4 +1,4 @@
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { type PackageService } from "@dataspecer/core-v2/project";
 import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
@@ -8,13 +8,6 @@ import type { ModelEntity } from "@dataspecer/project-model";
 import type { ObservableEntityModelStoreChangeEvent } from "../interfaces/observable.ts";
 import type { ConnectionStatus, RemoteModelStore } from "../interfaces/remote.ts";
 import type { TransactionMetadata, TransactionResult } from "../interfaces/writable.ts";
-import { createAsyncQueryableModel } from "./async-queryable-model.ts";
-import { createPimModel } from "./pim-model.ts";
-import { createProjectModel } from "./project-model.ts";
-import { createSemanticModel } from "./semantic-model.ts";
-import { createVisualModelInModelStore } from "./visual-model.ts";
-import { createStructureModel } from "./structure-model.ts";
-import { createBlobModel } from "./blob-model.ts";
 import { v4 as uuidv4 } from "uuid";
 import { UNDO_OPERATION_TYPE, type UndoOperation } from "./base.ts";
 import type { UndoRedoState } from "../interfaces/undo-redo.ts";
@@ -24,8 +17,7 @@ import type { UndoRedoState } from "../interfaces/undo-redo.ts";
  * builder for a visual model's companion "svg" blob (id `${visualModelId}#svg`).
  * It is not a real model type stored anywhere.
  */
-const VISUAL_MODEL_SVG_BLOB_TYPE = "#svg";
-
+export const VISUAL_MODEL_SVG_BLOB_TYPE = "#svg";
 export interface ApplyOperationResult {
   entityChanges: EntityChange[];
   transactionId: string;
@@ -47,7 +39,13 @@ export interface ModelInDefaultFrontendModelStore {
    */
   subscribeForAsyncChanges(listener: (changeEvent: EntityChange[]) => void): () => void;
 
-  load(): Promise<void>;
+  /**
+   * Instructs model to load. Currently there are two options for loading:
+   * - load from backend (set to false)
+   * - initialize as empty (set to true)
+   * @default false (load from backend)
+   */
+  load(doNotFetch?: boolean): Promise<void>;
 
   save(): Promise<void>;
 
@@ -59,7 +57,7 @@ export interface ModelInDefaultFrontendModelStore {
   //subscribeForReadinessChange(): () => void;
 }
 
-type ModelInModelStoreBuilder = (modelId: ModelIdentifier, context: {
+export type ModelInModelStoreBuilder = (modelId: ModelIdentifier, context: {
   service: PackageService;
   httpFetch: HttpFetch;
   rootProjectId: ModelIdentifier;
@@ -90,7 +88,7 @@ export interface DefaultFrontendModelStoreParams {
  */
 interface Transaction {
   id: string;
-  metadata: any;
+  metadata: TransactionMetadata;
   operations: OperationInModel[];
 }
 
@@ -139,6 +137,19 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
   private transactionIdsToRedoStack: string[] = [];
 
   /**
+   * Ids of models in {@link models} that were removed from the project
+   * structure (via {@link RemoveModelOperation}, or by undoing the operation
+   * that created them) and are thus currently inactive.
+   *
+   * The model instance itself is intentionally never removed from
+   * {@link models} - it is kept around (together with its undo/redo snapshots)
+   * so that re-creating it (by undoing its removal, or redoing its creation)
+   * can restore its exact previous state instead of starting over from an empty
+   * model.
+   */
+  protected inactiveModelIds: Set<ModelIdentifier> = new Set();
+
+  /**
    * Creates a model store that is connected to the backend to the specific
    * package by its id. It subscribes to the following models.
    */
@@ -146,7 +157,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     this.service = params.packageService;
     this.rootProjectId = params.projectId;
     this.projectModelBuilder = params.projectModelBuilder;
-    this.modelBuilders = params.modelBuilders;
+    this.modelBuilders = { ...params.modelBuilders };
     this.httpFetch = params.httpFetch;
   }
   loadByOverride(): Promise<void> {
@@ -156,6 +167,10 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
   getAllEntities(): Record<ModelIdentifier, EntityRecord> {
     const allEntities: Record<ModelIdentifier, EntityRecord> = {};
     for (const modelId in this.models) {
+      if (this.inactiveModelIds.has(modelId)) {
+        // Model was removed from the project structure, ignore it.
+        continue;
+      }
       const model = this.models[modelId]!;
       allEntities[modelId] = model.getAllEntities();
     }
@@ -204,47 +219,130 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
    * other models based on that.
    */
   protected onProjectModelEntityChange(changedEntities: EntityChange[]): void {
-    for (const change of changedEntities) {
+    const entityChanges: Record<ModelIdentifier, EntityChange[]> = {};
+    this.applyProjectStructureChanges(changedEntities, entityChanges, false);
+    if (Object.keys(entityChanges).length > 0) {
+      this.internalNotifyEntityChange({ entityChanges });
+    }
+  }
+
+  /**
+   * Reacts to changes in project structure and updates the models and their
+   * data.
+   *
+   * @param entityChanges Mutable object of entities in individual models that
+   * were changed.
+   * @param isLocalChange Set to true if the change is local and thus potential
+   * models do not exist on backend.
+   */
+  protected applyProjectStructureChanges(
+    structuralChanges: EntityChange[],
+    entityChanges: Record<ModelIdentifier, EntityChange[]>,
+    isLocalChange: boolean,
+  ): void {
+    for (const change of structuralChanges) {
       if (change.previous === null) {
         // New model was created
         const modelEntity = change.next as ModelEntity;
-
-        const modelType = modelEntity.modelType;
-        this.buildModelAndSubscribe(modelEntity.id, modelType);
-
-        if (modelType === LOCAL_VISUAL_MODEL) {
+        this.activateModel(modelEntity.id, modelEntity.modelType, isLocalChange, entityChanges);
+        if (modelEntity.modelType === LOCAL_VISUAL_MODEL) {
           // A visual model may have an additional "svg" blob attached to it.
           // It is tracked as its own companion model, analogous to how the
           // default "model" blob is tracked.
-          this.buildModelAndSubscribe(`${modelEntity.id}${VISUAL_MODEL_SVG_BLOB_TYPE}`, VISUAL_MODEL_SVG_BLOB_TYPE);
+          this.activateModel(`${modelEntity.id}${VISUAL_MODEL_SVG_BLOB_TYPE}`, VISUAL_MODEL_SVG_BLOB_TYPE, isLocalChange, entityChanges);
         }
       } else if (change.next === null) {
         // Model was deleted
-        // todo
+        const modelEntity = change.previous as ModelEntity;
+        this.deactivateModel(modelEntity.id, entityChanges);
+
+        if (modelEntity.modelType === LOCAL_VISUAL_MODEL) {
+          this.deactivateModel(`${modelEntity.id}${VISUAL_MODEL_SVG_BLOB_TYPE}`, entityChanges);
+        }
       } else {
-        // Model changes are ignored, there is no need to react on them.
+        // Model metadata changes (e.g. label) are ignored, there is no need to react on them.
       }
     }
   }
 
   /**
-   * Builds a model of the given type (if there is a builder registered for
-   * it), subscribes to its async changes and starts loading it. No-op if
-   * there is no builder for the given model type.
+   * Ensures the model with the given id is active, building (or reusing) and
+   * subscribing to it as needed, and records its appearance into
+   * `entityChanges`.
    */
-  private buildModelAndSubscribe(modelId: ModelIdentifier, modelType: string): void {
-    const createdModel = this.buildModel(modelId, modelType);
+  private activateModel(
+    modelId: ModelIdentifier,
+    modelType: string,
+    createFresh: boolean,
+    entityChanges: Record<ModelIdentifier, EntityChange[]>,
+  ): void {
+    let model = this.models[modelId];
 
-    if (!createdModel) {
-      // This model is not meant to be subscribed to, ignore it.
+    if (!model) {
+      // First time we see this model - build and subscribe to it.
+      const createdModel = this.buildModel(modelId, modelType);
+      if (!createdModel) {
+        // This model is not meant to be subscribed to, ignore it.
+        return;
+      }
+      model = createdModel;
+
+      model.subscribeForAsyncChanges(modelChanges => {
+        this.internalNotifyEntityChange({ entityChanges: { [modelId]: modelChanges } });
+      });
+
+      this.modelPromises.push(model.load(createFresh));
+
       return;
     }
 
-    createdModel.subscribeForAsyncChanges(modelChanges => {
-      this.internalNotifyEntityChange({ entityChanges: { [modelId]: modelChanges } });
-    });
+    if (!this.inactiveModelIds.has(modelId)) {
+      // The model is already active, nothing to do.
+      return;
+    }
 
-    this.modelPromises.push(createdModel.load());
+    // The model already existed (it was previously deactivated) - reactivate
+    // it. It already retains its previous entities (and undo/redo history),
+    // so we only need to report them as visible again.
+    this.inactiveModelIds.delete(modelId);
+    this.appendEntityChanges(
+      entityChanges,
+      modelId,
+      Object.values(model.getAllEntities()).map((entity) => ({ previous: null, next: entity }))
+    );
+  }
+
+  /**
+   * Deactivates the model with the given id (if it exists and is currently
+   * active) and records the disappearance of all of its entities into
+   * `entityChanges`. The model instance itself is preserved.
+   */
+  private deactivateModel(modelId: ModelIdentifier, entityChanges: Record<ModelIdentifier, EntityChange[]>): void {
+    const model = this.models[modelId];
+    if (!model || this.inactiveModelIds.has(modelId)) {
+      return;
+    }
+
+    this.inactiveModelIds.add(modelId);
+    this.appendEntityChanges(
+      entityChanges,
+      modelId,
+      Object.values(model.getAllEntities()).map((entity) => ({ previous: entity, next: null }))
+    );
+  }
+
+  /**
+   * Appends `changes` to the entries already recorded for `modelId` in
+   * `entityChanges`, if any.
+   */
+  private appendEntityChanges(
+    entityChanges: Record<ModelIdentifier, EntityChange[]>,
+    modelId: ModelIdentifier,
+    changes: EntityChange[],
+  ): void {
+    if (changes.length > 0) {
+      entityChanges[modelId] = [...(entityChanges[modelId] ?? []), ...changes];
+    }
   }
 
   getModel(id: ModelIdentifier | null | undefined): Model | null {
@@ -271,6 +369,15 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
   protected currentTransaction: Transaction | null = null;
 
   /**
+   * Comparator that sorts the project model's id first, leaving the relative
+   * order of all other ids unchanged. Used so that the project model's
+   * operations are always processed first within a transaction, see
+   * {@link addOperationForTransaction} and {@link undoRedo}.
+   */
+  private compareProjectModelFirst = (a: ModelIdentifier, b: ModelIdentifier): number =>
+    a === this.projectModelId ? -1 : b === this.projectModelId ? 1 : 0;
+
+  /**
    * Allows executing a set of operations by calling this method multiple times
    * and then committing them all at once.
    */
@@ -292,19 +399,30 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     // Todo maybe group by is not ideal because in one transaction, we might need to create new model or delete model after/before applying some operations.
     const groupedOperations = Object.groupBy(operations, (operation) => operation.modelId);
 
-    for (const modelId in groupedOperations) {
+    // The project model is processed first so that models it creates (or
+    // removes) within this same transaction are already active (or
+    // deactivated) by the time operations targeting them directly are
+    // processed below.
+    const modelIds = Object.keys(groupedOperations).sort(this.compareProjectModelFirst);
+
+    for (const modelId of modelIds) {
       const thisModelOperations = groupedOperations[modelId]!;
       const pureOperations = thisModelOperations.map((operation) => operation.operation);
 
       const model = this.models[modelId];
-      if (!model) {
-        console.error(`Model ${modelId} does not exist. Operations will be ignored!`);
+      if (!model || this.inactiveModelIds.has(modelId)) {
+        console.error(`Model ${modelId} does not exist or is not active. Operations will be ignored!`);
         continue;
       }
 
       const changes = model.applyOperations(transactionId, pureOperations);
       if (changes.entityChanges.length !== 0) {
         entityChanges[modelId] = changes.entityChanges;
+      }
+
+      if (modelId === this.projectModelId) {
+        // React to models being created/removed in the project structure.
+        this.applyProjectStructureChanges(changes.entityChanges, entityChanges, true);
       }
     }
 
@@ -362,7 +480,8 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     // Changes made in this transaction
     const entityChanges: Record<ModelIdentifier, EntityChange[]> = {};
 
-    const affectedModels = new Set(transactionToRevert.operations.map((operation) => operation.modelId));
+    // The project model is processed first, analogous to addOperationForTransaction.
+    const affectedModels = [...new Set(transactionToRevert.operations.map((operation) => operation.modelId))].sort(this.compareProjectModelFirst);
 
     const allOperations: OperationInModel<UndoOperation>[] = [];
     for (const modelId of affectedModels) {
@@ -384,6 +503,13 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
 
       const changes = model.applyOperations(transactionId, [undoOperation]);
       entityChanges[modelId] = changes.entityChanges;
+
+      if (modelId === this.projectModelId) {
+        // React to models being created/removed in the project structure (e.g.
+        // undoing the creation of a model deactivates it, undoing the removal
+        // of a model reactivates it with its previous state intact).
+        this.applyProjectStructureChanges(changes.entityChanges, entityChanges, true);
+      }
     }
 
     // Handle undo/redo stacks
@@ -404,6 +530,8 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
       confirmation: Promise.resolve({}),
     };
   }
+
+  protected transactionConfirmations: ((value: {}) => void)[] = [];
 
   /**
    * Commits all operations added via {@link addOperationForTransaction}.
@@ -426,9 +554,11 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     this.notifyUndoRedoSubscribers();
     this.notifyTransactionCommitSubscribers();
 
+    const confirmation = new Promise<{}>(resolve => this.transactionConfirmations.push(resolve));
+
     return {
       transactionId: transaction.id,
-      confirmation: Promise.resolve({}),
+      confirmation,
     }
   }
 
@@ -487,57 +617,15 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
         // The project model is virtual and does not support saving yet.
         continue;
       }
+      if (this.inactiveModelIds.has(modelId)) {
+        // Model was removed from the project structure, nothing to save.
+        continue;
+      }
       savePromises.push(this.models[modelId]!.save());
     }
     await Promise.all(savePromises);
+    this.transactionConfirmations.forEach((resolve) => resolve({}));
+    this.transactionConfirmations = [];
   }
 }
 
-/**
- * Configures and creates a remote model store that is intended to be used by CME.
- * It skips all unsupported models and only subscribes to those that CME needs.
- */
-export function createCMEModelStore(params: {
-  projectId: ModelIdentifier,
-  packageService: PackageService,
-  httpFetch: HttpFetch,
-}): RemoteModelStore {
-  return new DefaultFrontendModelStore({
-    projectId: params.projectId,
-    projectModelBuilder: createProjectModel,
-    modelBuilders: {
-      [LOCAL_SEMANTIC_MODEL]: createSemanticModel,
-      [LOCAL_VISUAL_MODEL]: createVisualModelInModelStore,
-      ["https://dataspecer.com/core/model-descriptor/sgov"]: createAsyncQueryableModel,
-      ["https://dataspecer.com/core/model-descriptor/pim-store-wrapper"]: createPimModel,
-    },
-    packageService: params.packageService,
-    httpFetch: params.httpFetch,
-  });
-}
-
-/**
- * @todo we need mode for manager that will show only the project model and maybe the package model and the configuration model.
- */
-export function createDSEModelStore(params: {
-  projectId: ModelIdentifier,
-  packageService: PackageService,
-  httpFetch: HttpFetch,
-}): DefaultFrontendModelStore {
-  return new DefaultFrontendModelStore({
-    projectId: params.projectId,
-    projectModelBuilder: createProjectModel,
-    modelBuilders: {
-      [LOCAL_SEMANTIC_MODEL]: createSemanticModel,
-      [LOCAL_VISUAL_MODEL]: createVisualModelInModelStore,
-      [VISUAL_MODEL_SVG_BLOB_TYPE]: createBlobModel,
-      [LOCAL_PACKAGE]: createBlobModel,
-      ["https://dataspecer.com/core/model-descriptor/sgov"]: createAsyncQueryableModel,
-      ["https://dataspecer.com/core/model-descriptor/pim-store-wrapper"]: createPimModel,
-      [V1.PSM]: createStructureModel,
-      [V1.GENERATOR_CONFIGURATION]: createBlobModel,
-    },
-    packageService: params.packageService,
-    httpFetch: params.httpFetch,
-  });
-}
