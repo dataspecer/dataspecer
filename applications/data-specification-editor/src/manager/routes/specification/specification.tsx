@@ -58,13 +58,14 @@ export const Specification: FC = () => {
         modelStore.saveByOverride().catch(error => console.error("Failed to save models.", error));
       });
 
-      const allEntities = modelStore.getAllEntities();
-      const projectModel = allEntities[PROJECT_MODEL_ID] as EntityRecord<ModelEntity>;
-      const rootModel = allEntities[dataSpecificationIri as string] || null;
 
       setModelStore(modelStore);
 
       const reloadSpecification = () => {
+        const allEntities = modelStore.getAllEntities();
+        const projectModel = allEntities[PROJECT_MODEL_ID] as EntityRecord<ModelEntity>;
+        const rootModel = allEntities[dataSpecificationIri as string] || null;
+
         const dataSpecification = getDataSpecification(dataSpecificationIri, projectModel, rootModel);
         updateSpecification(dataSpecification);
       };

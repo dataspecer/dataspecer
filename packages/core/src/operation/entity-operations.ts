@@ -60,6 +60,10 @@ export function createSetEntityOperation(entity: Entity): SetEntityOperation {
   };
 }
 
+export function isSetEntityOperation(operation: Operation): operation is SetEntityOperation {
+  return operation.type === SetEntityOperationType;
+}
+
 /**
  * @see {@link UpdateEntityOperation}
  */
@@ -101,4 +105,8 @@ export function createUpdateEntityOperation(update: Partial<Entity> & Pick<Entit
     type: UpdateEntityOperationType,
     update,
   };
+}
+
+export function isUpdateEntityOperation(operation: Operation): operation is UpdateEntityOperation {
+  return operation.type === UpdateEntityOperationType;
 }

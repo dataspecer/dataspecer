@@ -1,6 +1,6 @@
 import type { Entity, EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { Model } from "@dataspecer/core/model";
-import type { Operation } from "@dataspecer/core/operation";
+import { isSetEntityOperation, isUpdateEntityOperation, type Operation } from "@dataspecer/core/operation";
 import { diffEntities } from "../utilities.ts";
 import type { ApplyOperationResult, ModelInDefaultFrontendModelStore } from "./implementation.ts";
 
@@ -178,7 +178,7 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
     if (lastSnapshotTransactionId !== transactionId) {
       this.snapshots.push({
         stateBefore: {
-          entities: {...this.state.entities},  // We create copy to conserve the state
+          entities: { ...this.state.entities }, // We create copy to conserve the state
           operations: [...this.state.operations],
         },
         transactionId: transactionId,
@@ -194,14 +194,14 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
 
       // Todo we trust that caller use undo operations in correct order.
 
-      const snapshot = this.snapshots.find(snapshot => snapshot.transactionId === undoOperation.cancelTransactionId);
+      const snapshot = this.snapshots.find((snapshot) => snapshot.transactionId === undoOperation.cancelTransactionId);
 
       if (!snapshot) {
         throw new Error(`Cannot find snapshot for transaction ID ${undoOperation.cancelTransactionId}`);
       }
 
-      const previousEntities = {...this.state.entities};
-      this.state.entities = {...snapshot.stateBefore.entities};
+      const previousEntities = { ...this.state.entities };
+      this.state.entities = { ...snapshot.stateBefore.entities };
 
       const diff = diffEntities(previousEntities, this.state.entities);
       if (diff.length > 0) {
@@ -213,10 +213,23 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
         entityChanges: diff,
       };
     } else {
-      const previousState = {...this.state.entities};
+      const previousState = { ...this.state.entities };
 
       for (const operation of operations) {
-        this.applyOperation(operation, this.state.entities);
+        // todo: we allow running this low level operations on all models, is it correct?
+        if (isSetEntityOperation(operation)) {
+          const entity = operation.entity as BaseEntityType;
+          this.state.entities[entity.id] = entity;
+        } else if (isUpdateEntityOperation(operation)) {
+          const update = operation.update;
+          const entity = this.state.entities[update.id];
+          // If entity does not exist, do nothing
+          if (entity) {
+            this.state.entities[update.id] = { ...entity, ...update };
+          }
+        } else {
+          this.applyOperation(operation, this.state.entities);
+        }
       }
 
       const diff = diffEntities(previousState, this.state.entities);
