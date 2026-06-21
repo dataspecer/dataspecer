@@ -14,7 +14,7 @@ import { ConfigureDialog } from "./configure-dialog";
  */
 export const ConfigureButton: FC = () => {
   const { t } = useTranslation("ui");
-  const [specification, updateSpecification] = useContext(SpecificationContext);
+  const specification = useContext(SpecificationContext);
   const modelStore = useContext(ManagerModelStoreContext);
 
   const configuration = specification?.userPreferences ?? {};
@@ -26,9 +26,8 @@ export const ConfigureButton: FC = () => {
         modelId: specification.iri,
         operation: createUpdateEntityOperation({ id: specification.iri, userPreferences } as Partial<Entity> & Pick<Entity, "id">),
       }], {});
-      updateSpecification({ ...specification, userPreferences });
     },
-    [modelStore, specification, updateSpecification]
+    [modelStore, specification]
   );
 
   const ConfigureDialogOpen = useToggle(false);

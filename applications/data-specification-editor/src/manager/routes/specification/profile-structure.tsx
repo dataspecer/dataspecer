@@ -36,14 +36,14 @@ export const ProfileStructureDialog = dialog<ProfileStructureDialogProps>({ maxW
 
   const [selectedStructures, setSelectedStructures] = useState<Set<string>>(new Set());
 
-  const [specification, updateSpecification] = useContext(SpecificationContext);
+  const specification = useContext(SpecificationContext);
   const dataSpecificationIri = specification.id;
   const profile = async () => {
     await profileStructures(Array.from(selectedStructures), dataSpecificationIri, configuration!, backendConnector, (newStructures) => {
-      updateSpecification({
-        ...specification,
-        dataStructures: [...specification.dataStructures, ...newStructures],
-      });
+      // updateSpecification({
+      //   ...specification,
+      //   dataStructures: [...specification.dataStructures, ...newStructures],
+      // });
     });
 
     close();

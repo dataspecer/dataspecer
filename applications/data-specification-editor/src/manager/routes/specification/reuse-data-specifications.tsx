@@ -10,7 +10,7 @@ import { AllSpecificationsContext, ManagerModelStoreContext, SpecificationContex
 export const ReuseDataSpecifications: React.FC = () => {
   const dialog = useToggle();
 
-  const [specification, updateSpecification] = useContext(SpecificationContext);
+  const specification = useContext(SpecificationContext);
   const modelStore = useContext(ManagerModelStoreContext);
 
   const allSpecifications = useContext(AllSpecificationsContext);
@@ -41,11 +41,6 @@ export const ReuseDataSpecifications: React.FC = () => {
       modelId: specification.id,
       operation: createUpdateEntityOperation({ id: specification.id, dataStructuresImportPackages: selectedSpecificationIds } as Partial<Entity> & Pick<Entity, "id">),
     }], {});
-
-    updateSpecification({
-      ...specification,
-      importsDataSpecificationIds: selectedSpecificationIds,
-    });
 
     await transaction.confirmation;
     dialog.close();

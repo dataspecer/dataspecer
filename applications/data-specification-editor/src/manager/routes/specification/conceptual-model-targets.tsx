@@ -9,7 +9,7 @@ import { LanguageStringText } from "../../../editor/components/helper/LanguageSt
 import { ManagerModelStoreContext, SpecificationContext } from "./specification";
 
 export const ConceptualModelTargets: FC = () => {
-  const [specification, updateSpecification] = useContext(SpecificationContext);
+  const specification = useContext(SpecificationContext);
   const modelStore = useContext(ManagerModelStoreContext);
 
   const { enqueueSnackbar } = useSnackbar();
@@ -36,10 +36,6 @@ export const ConceptualModelTargets: FC = () => {
       modelId: specification.id,
       operation: createUpdateEntityOperation({ id: specification.id, modelCompositionConfiguration: newConfiguration } as Partial<Entity> & Pick<Entity, "id">),
     }], {});
-    updateSpecification({
-      ...specification,
-      modelCompositionConfiguration: newConfiguration,
-    });
     await transaction.confirmation;
     enqueueSnackbar("Source configuration saved", { variant: "success" });
   };

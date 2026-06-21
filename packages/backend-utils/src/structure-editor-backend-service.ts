@@ -87,31 +87,4 @@ export class StructureEditorBackendService extends BackendPackageService {
 
     return pckg.iri;
   }
-
-  public async createDataStructure(dataSpecificationIri: string): Promise<{
-    createdPsmSchemaIri: string;
-  }> {
-    const resource = await this.createResource(dataSpecificationIri, {
-      type: V1.PSM,
-    });
-
-    await this.setResourceJsonData(resource.iri, {
-      operations: [],
-      resources: {
-        [resource.iri]: {
-          types: ["https://ofn.gov.cz/slovník/psm/Schema"],
-          iri: resource.iri,
-          dataPsmHumanLabel: null,
-          dataPsmHumanDescription: null,
-          dataPsmTechnicalLabel: null,
-          dataPsmRoots: [],
-          dataPsmParts: [],
-        },
-      },
-    });
-
-    return {
-      createdPsmSchemaIri: resource.iri,
-    };
-  }
 }

@@ -4,7 +4,7 @@ import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import { createTheme, CssBaseline, ThemeProvider } from "@mui/material";
 import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from "next-themes";
 import { SnackbarProvider } from "notistack";
-import React, { createContext, StrictMode, useCallback, useEffect, useMemo, useState } from "react";
+import React, { createContext, StrictMode, useEffect, useMemo, useState } from "react";
 import { BrowserRouter, useRoutes } from "react-router-dom";
 import { getDefaultConfigurators } from "./configurators";
 import EditorPage from "./editor/components/App";
@@ -16,12 +16,10 @@ import { Specification } from "./manager/routes/specification/specification";
  */
 export const BackendConnectorContext = React.createContext(null as unknown as StructureEditorBackendService);
 
-export const RefreshContext = React.createContext(null as unknown as () => void);
 /**
  * Contains merged default configuration from the source code and the configuration from the backend.
  */
-// @ts-ignore
-export const DefaultConfigurationContext = createContext<object>(null);
+export const DefaultConfigurationContext = createContext<object>(null as unknown as object);
 
 const useDefaultConfiguration = (backendConnector: StructureEditorBackendService) => {
   const [context, setContext] = useState<object>(() => getDefaultConfiguration(getDefaultConfigurators()));
@@ -36,8 +34,7 @@ const useDefaultConfiguration = (backendConnector: StructureEditorBackendService
 export const PACKAGE_ROOT = "http://dataspecer.com/packages/local-root";
 
 export const Application = () => {
-  const [backendConnector, setBackendConnector] = useState(new StructureEditorBackendService(import.meta.env.VITE_BACKEND, httpFetch, PACKAGE_ROOT));
-  const refresh = useCallback(() => setBackendConnector(new StructureEditorBackendService(import.meta.env.VITE_BACKEND, httpFetch, PACKAGE_ROOT)), []);
+  const [backendConnector] = useState(new StructureEditorBackendService(import.meta.env.VITE_BACKEND, httpFetch, PACKAGE_ROOT));
 
   const defaultConfiguration = useDefaultConfiguration(backendConnector);
 
@@ -46,16 +43,14 @@ export const Application = () => {
       <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
         <MuiThemeWrapper>
           <SnackbarProvider maxSnack={3}>
-            <RefreshContext.Provider value={refresh}>
-              <BackendConnectorContext.Provider value={backendConnector}>
-                <DefaultConfigurationContext.Provider value={defaultConfiguration}>
-                  <CssBaseline />
-                  <BrowserRouter basename={(import.meta.env.VITE_BASE_PATH ?? "") + "/"}>
-                    <MainRouter />
-                  </BrowserRouter>
-                </DefaultConfigurationContext.Provider>
-              </BackendConnectorContext.Provider>
-            </RefreshContext.Provider>
+            <BackendConnectorContext.Provider value={backendConnector}>
+              <DefaultConfigurationContext.Provider value={defaultConfiguration}>
+                <CssBaseline />
+                <BrowserRouter basename={(import.meta.env.VITE_BASE_PATH ?? "") + "/"}>
+                  <MainRouter />
+                </BrowserRouter>
+              </DefaultConfigurationContext.Provider>
+            </BackendConnectorContext.Provider>
           </SnackbarProvider>
         </MuiThemeWrapper>
       </NextThemesProvider>

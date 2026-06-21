@@ -51,6 +51,11 @@ export function createManagerModelStore(params: {
     modelBuilders: {
       [LOCAL_PACKAGE]: createBlobModel,
       [V1.GENERATOR_CONFIGURATION]: createBlobModel,
+
+      // We need this to create new PSM models.
+      // todo: come up with a better way to create new PSM models without
+      // needing to subscribe to the whole model.
+      [V1.PSM]: createStructureModel,
     },
     packageService: params.packageService,
     httpFetch: params.httpFetch,

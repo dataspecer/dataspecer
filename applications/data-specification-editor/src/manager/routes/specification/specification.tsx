@@ -13,7 +13,7 @@ import { useSearchParams } from "react-router-dom";
 import { BackendConnectorContext } from "../../../application";
 import { DocumentationSpecification } from "./documentation-specification";
 
-export const SpecificationContext = createContext<[DataSpecification & Package, (update: DataSpecification & Package) => void]>(null);
+export const SpecificationContext = createContext<DataSpecification & Package>(null);
 
 export const AllSpecificationsContext = createContext<Record<string, BaseResource>>(null);
 
@@ -23,6 +23,7 @@ export const AllSpecificationsContext = createContext<Record<string, BaseResourc
  * semantic/structure/visual models used by the structure editor.
  */
 export const ManagerModelStoreContext = createContext<DefaultFrontendModelStore>(null);
+export const PROJECT_MODEL_ID: ModelIdentifier = "_project_model";
 
 /**
  * There could be more types of specifications. This component decides which one
@@ -36,8 +37,7 @@ export const Specification: FC = () => {
 
   const connector = useContext(BackendConnectorContext);
 
-  const contextForSpecificationContext = useState(null);
-  const updateSpecification = contextForSpecificationContext[1];
+  const [specification, updateSpecification] = useState<DataSpecification & Package>(null);
 
   const [modelStore, setModelStore] = useState<DefaultFrontendModelStore>(null);
 
@@ -58,14 +58,18 @@ export const Specification: FC = () => {
         modelStore.saveByOverride().catch(error => console.error("Failed to save models.", error));
       });
 
-      const PROJECT_MODEL_ID: ModelIdentifier = "_project_model";
       const allEntities = modelStore.getAllEntities();
       const projectModel = allEntities[PROJECT_MODEL_ID] as EntityRecord<ModelEntity>;
       const rootModel = allEntities[dataSpecificationIri as string] || null;
 
-      const dataSpecification = getDataSpecification(dataSpecificationIri, projectModel, rootModel);
       setModelStore(modelStore);
-      updateSpecification(dataSpecification);
+
+      const reloadSpecification = () => {
+        const dataSpecification = getDataSpecification(dataSpecificationIri, projectModel, rootModel);
+        updateSpecification(dataSpecification);
+      };
+      reloadSpecification();
+      modelStore.subscribeToEntityChanges(reloadSpecification);
     })();
   }, [dataSpecificationIri, updateSpecification, backendConnector]);
 
@@ -76,9 +80,9 @@ export const Specification: FC = () => {
       .then((result) => setAllSpecifications(Object.fromEntries(result.subResources.map((resource) => [resource.iri, resource]))));
   }, [connector]);
 
-  if (contextForSpecificationContext[0] && allSpecifications && modelStore) {
+  if (specification && allSpecifications && modelStore) {
     return (
-      <SpecificationContext.Provider value={contextForSpecificationContext}>
+      <SpecificationContext.Provider value={specification}>
         <ManagerModelStoreContext.Provider value={modelStore}>
           <AllSpecificationsContext.Provider value={allSpecifications}>
             <DocumentationSpecification />

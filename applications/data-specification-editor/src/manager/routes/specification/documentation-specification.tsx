@@ -26,17 +26,20 @@ import { GeneratingDialog } from "./generating-dialog";
 import { ProfileStructureDialog } from "./profile-structure";
 import { RedirectDialog } from "./redirect-dialog";
 import { ReuseDataSpecifications } from "./reuse-data-specifications";
-import { AllSpecificationsContext, SpecificationContext } from "./specification";
+import { AllSpecificationsContext, ManagerModelStoreContext, PROJECT_MODEL_ID, SpecificationContext } from "./specification";
+import { createCreateModelOperation } from "@dataspecer/project-model";
+import { V1 } from "@dataspecer/core-v2/model/known-models";
 
 export const DocumentationSpecification = memo(() => {
   const { t } = useTranslation("ui");
 
-  const [specification] = useContext(SpecificationContext);
+  const specification = useContext(SpecificationContext);
   const dataSpecificationIri = specification.id;
 
   const defaultConfiguration = useContext(DefaultConfigurationContext);
 
   const backendConnector = useContext(BackendConnectorContext);
+  const modelStore = useContext(ManagerModelStoreContext);
 
   const navigate = useNavigate();
 
@@ -44,11 +47,17 @@ export const DocumentationSpecification = memo(() => {
   const createDataStructure = useCallback(async () => {
     if (dataSpecificationIri) {
       setRedirecting(true);
-      const { createdPsmSchemaIri } = await backendConnector.createDataStructure(dataSpecificationIri);
-      navigate(getEditorLink(dataSpecificationIri, createdPsmSchemaIri));
+      const op = createCreateModelOperation(dataSpecificationIri, V1.PSM);
+      const transaction = modelStore.transaction([{
+        operation: op,
+        modelId: PROJECT_MODEL_ID,
+      }], {});
+      await transaction.confirmation;
+
+      navigate(getEditorLink(dataSpecificationIri, op.modelId));
       setRedirecting(false);
     }
-  }, [navigate, backendConnector, dataSpecificationIri]);
+  }, [navigate, modelStore, dataSpecificationIri]);
 
   const profileStructureDialog = useDialog(ProfileStructureDialog, ["dataSpecificationId"]);
 

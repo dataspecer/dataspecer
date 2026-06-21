@@ -1,4 +1,4 @@
-import { LOCAL_VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_PACKAGE, LOCAL_VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { type PackageService } from "@dataspecer/core-v2/project";
 import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
@@ -11,6 +11,7 @@ import type { TransactionMetadata, TransactionResult } from "../interfaces/writa
 import { v4 as uuidv4 } from "uuid";
 import { UNDO_OPERATION_TYPE, type UndoOperation } from "./base.ts";
 import type { UndoRedoState } from "../interfaces/undo-redo.ts";
+import type { ProjectModelInModelStore } from "./project-model.ts";
 
 /**
  * Synthetic model type used to register {@link createBlobModel} as the
@@ -90,6 +91,13 @@ interface Transaction {
   id: string;
   metadata: TransactionMetadata;
   operations: OperationInModel[];
+
+  /**
+   * Whether this transaction contains an operation on the project model (i.e.
+   * it creates or removes a model). Such transactions are not added to the
+   * undo/redo stack for simplicity of implementation.
+   */
+  touchesProjectModel: boolean;
 }
 
 /**
@@ -388,9 +396,13 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
         id: uuidv4(),
         metadata: {},
         operations: [],
+        touchesProjectModel: false,
       };
     }
     this.currentTransaction.operations.push(...operations);
+    if (operations.some((operation) => operation.modelId === this.projectModelId)) {
+      this.currentTransaction.touchesProjectModel = true;
+    }
     const transactionId = this.currentTransaction.id;
 
     // Changes made in this transaction
@@ -519,6 +531,9 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
       id: transactionId,
       metadata: {},
       operations: allOperations,
+      // Transactions reachable from the undo/redo stacks never touch the
+      // project model, see commitTransaction.
+      touchesProjectModel: false,
     });
 
     this.internalNotifyEntityChange({ entityChanges });
@@ -549,7 +564,16 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
 
     // Handle undo/redo stacks
 
-    this.transactionIdsToUndoStack.push(transaction.id);
+    if (transaction.touchesProjectModel) {
+      // Undoing/redoing the creation or removal of a model would require
+      // un-creating/un-removing the corresponding resource on the backend,
+      // which is not supported yet. Invalidate the whole undo/redo history
+      // instead, so the project model is never asked to undo/redo such a
+      // change.
+      this.transactionIdsToUndoStack = [];
+    } else {
+      this.transactionIdsToUndoStack.push(transaction.id);
+    }
     this.transactionIdsToRedoStack = [];
     this.notifyUndoRedoSubscribers();
     this.notifyTransactionCommitSubscribers();
@@ -611,6 +635,8 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
    * virtual project model) are skipped.
    */
   async saveByOverride(): Promise<void> {
+    await this.synchronizeProjectStructureWithBackend();
+
     const savePromises: Promise<void>[] = [];
     for (const modelId in this.models) {
       if (modelId === this.projectModelId) {
@@ -627,5 +653,30 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     this.transactionConfirmations.forEach((resolve) => resolve({}));
     this.transactionConfirmations = [];
   }
-}
 
+  /**
+   * Creates and removes the backend resources for models that were locally
+   * created/removed in the project structure since the last save. Once a
+   * model is created on the backend, the regular save loop in
+   * {@link saveByOverride} is responsible for storing its actual data.
+   */
+  protected async synchronizeProjectStructureWithBackend(): Promise<void> {
+    const projectModel = this.models[this.projectModelId] as ProjectModelInModelStore;
+
+    const { creations, deletions } = projectModel.takePendingStructuralChanges();
+
+    // Created sequentially (in the order they happened) so that a parent
+    // package always exists on the backend before its children are created.
+    for (const creation of creations) {
+      if (creation.modelType === LOCAL_PACKAGE) {
+        await this.service.createPackage(creation.parentPackageId, { iri: creation.modelId, userMetadata: {} });
+      } else {
+        await this.service.createResource(creation.parentPackageId, { iri: creation.modelId, type: creation.modelType, userMetadata: {} });
+      }
+    }
+
+    for (const modelId of deletions) {
+      await this.service.deleteResource(modelId);
+    }
+  }
+}

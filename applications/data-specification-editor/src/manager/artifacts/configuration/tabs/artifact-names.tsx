@@ -83,7 +83,7 @@ export const ArtifactNames: FC<{
   currentConfiguration: object,
   //fullCurrentConfiguration: object,
 }> = ({input, onChange, defaultObject, currentConfiguration}) => {
-  const [specification] = useContext(SpecificationContext);
+  const specification = useContext(SpecificationContext);
   const defaultConfiguration = useContext(DefaultConfigurationContext);
   const [searchParams] = useSearchParams();
   const dataSpecificationIri = searchParams.get("dataSpecificationIri");
