@@ -1,4 +1,4 @@
-import { StructureEditorBackendService } from "@dataspecer/backend-utils";
+import { BackendPackageService } from "@dataspecer/core-v2/project";
 import { getDefaultConfiguration, mergeConfigurations } from "@dataspecer/core/configuration/utils";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import { createTheme, CssBaseline, ThemeProvider } from "@mui/material";
@@ -14,29 +14,29 @@ import { Specification } from "./manager/routes/specification/specification";
 /**
  * @deprecated You should use the model store instead.
  */
-export const BackendConnectorContext = React.createContext(null as unknown as StructureEditorBackendService);
+export const BackendConnectorContext = React.createContext(null as unknown as BackendPackageService);
 
 /**
  * Contains merged default configuration from the source code and the configuration from the backend.
  */
 export const DefaultConfigurationContext = createContext<object>(null as unknown as object);
 
-const useDefaultConfiguration = (backendConnector: StructureEditorBackendService) => {
+const useDefaultConfiguration = () => {
   const [context, setContext] = useState<object>(() => getDefaultConfiguration(getDefaultConfigurators()));
   useEffect(() => {
-    backendConnector
-      .readDefaultConfiguration()
+    fetch(import.meta.env.VITE_BACKEND + "/default-configuration")
+      .then((response) => response.json())
       .then((configuration) => setContext(mergeConfigurations(getDefaultConfigurators(), getDefaultConfiguration(getDefaultConfigurators()), configuration)));
-  }, [backendConnector]);
+  }, []);
   return context;
 };
 
 export const PACKAGE_ROOT = "http://dataspecer.com/packages/local-root";
 
 export const Application = () => {
-  const [backendConnector] = useState(new StructureEditorBackendService(import.meta.env.VITE_BACKEND, httpFetch, PACKAGE_ROOT));
+  const [backendConnector] = useState(new BackendPackageService(import.meta.env.VITE_BACKEND, httpFetch));
 
-  const defaultConfiguration = useDefaultConfiguration(backendConnector);
+  const defaultConfiguration = useDefaultConfiguration();
 
   return (
     <StrictMode>

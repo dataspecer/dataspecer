@@ -10,7 +10,6 @@
     "i18n": "i18next-cli extract"
   },
   "dependencies": {
-    "@dataspecer/backend-utils": "*",
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
     "@dataspecer/csv": "*",
