@@ -21,11 +21,14 @@ import N3, { Quad_Object } from "n3";
 import { parse } from "node-html-parser";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
-import { resourceModel } from "../main.ts";
+import { resourceModel, transactionModel } from "../main.ts";
 import { BaseResource } from "../models/resource-model.ts";
+import type { OperationInput } from "../models/transaction-model.ts";
+import { getModelsForPackage, loadModelEntities } from "../utils/backend-model-store.ts";
 import { asyncHandler } from "./../utils/async-handler.ts";
 import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { canonicalizeIds } from "@dataspecer/structure-model";
+import { changesToEntityOperations, diffEntities, type EntityRecord } from "@dataspecer/core/entity-model";
 import { DataSpecificationConfigurator, type DataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
 import { turtleStringToGeneratorConfiguration } from "@dataspecer/data-specification-vocabulary/generator-configuration";
 
@@ -487,6 +490,25 @@ async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIr
 }
 
 /**
+ * Diffs two snapshots of model states (as produced by {@link getModelsForPackage}
+ * or single {@link loadModelEntities} calls) and converts the differences into
+ * operations, tagged with the id of the model they belong to.
+ */
+function diffModelStatesToOperations(previous: Record<string, EntityRecord>, next: Record<string, EntityRecord>): OperationInput[] {
+  const modelIds = new Set([...Object.keys(previous), ...Object.keys(next)]);
+  const operations: OperationInput[] = [];
+
+  for (const modelId of modelIds) {
+    const changes = diffEntities(previous[modelId] ?? {}, next[modelId] ?? {});
+    for (const operation of changesToEntityOperations(changes)) {
+      operations.push({ modelId, operation });
+    }
+  }
+
+  return operations;
+}
+
+/**
  * Universal function that detects the type of the resource and imports it.
  * @todo move to packages so it is not backend dependent, make more generic such as custom fetch function
  */
@@ -582,6 +604,9 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
 
   // Check if it is a PIM wrapper and if so, we can reload it directly
   if (existingResource.types.includes("https://dataspecer.com/core/model-descriptor/pim-store-wrapper")) {
+    const pimStoreWrapperType = "https://dataspecer.com/core/model-descriptor/pim-store-wrapper";
+    const previousEntities = await loadModelEntities(existingResource.iri, pimStoreWrapperType, resourceModel);
+
     const store = await resourceModel.getOrCreateResourceModelStore(existingResource.iri);
     const data = await store.getJson()  as {urls: string[]};
     const urls = data.urls;
@@ -589,6 +614,12 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
     // We need to override its id
     newModel.id = existingResource.iri;
     await store.setJson(newModel.serializeModel());
+
+    const nextEntities = await loadModelEntities(existingResource.iri, pimStoreWrapperType, resourceModel);
+    const operations = diffModelStatesToOperations({ [existingResource.iri]: previousEntities }, { [existingResource.iri]: nextEntities });
+    if (operations.length > 0) {
+      await transactionModel.createTransactions(existingResource.iri, [{ operations }]);
+    }
 
     response.send(await resourceModel.getResource(existingResource.iri));
     return;
@@ -604,7 +635,15 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
   // Perform reload by re-importing into the existing package.
   // The import functions will reuse existing resource IRIs and update their
   // content in-place, then delete any resources that are no longer present.
+  const previousModels = await getModelsForPackage(query.iri, resourceModel);
+
   const [result] = await importFromUrl("", url, query.iri);
+
+  const nextModels = await getModelsForPackage(query.iri, resourceModel);
+  const operations = diffModelStatesToOperations(previousModels, nextModels);
+  if (operations.length > 0) {
+    await transactionModel.createTransactions(query.iri, [{ operations }]);
+  }
 
   response.send(result ?? existingResource);
   return;
