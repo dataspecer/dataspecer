@@ -1,4 +1,5 @@
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
+import type { Transaction } from "@dataspecer/core/operation";
 import { EntityModel } from "../../entity-model/index.ts";
 import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL } from "../../model/known-models.ts";
 import { createRdfsModel, createSgovModel } from "../../semantic-model/simplified/index.ts";
@@ -77,6 +78,16 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
     async deleteResource(iri: string): Promise<void> {
         await this.httpFetch(this.getResourceUrl(iri), {
             method: "DELETE",
+        });
+    }
+
+    async uploadTransactions(projectId: string, transactions: Transaction[]): Promise<void> {
+        await this.httpFetch(this.getTransactionsUrl(projectId), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ transactions }),
         });
     }
 
@@ -240,6 +251,12 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
         if (name) {
             url += "&name=" + encodeURIComponent(name);
         }
+        return url;
+    }
+
+    private getTransactionsUrl(projectIri: string): string {
+        let url = this.backendUrl + "/transactions";
+        url += "?" + "projectIri" + "=" + encodeURIComponent(projectIri);
         return url;
     }
 

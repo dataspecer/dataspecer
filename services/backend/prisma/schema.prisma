@@ -49,6 +49,9 @@ model Resource {
   // Technical metadata: last time the subtree was modified.
   // It should represent the max time of all children.
   subtreeModifiedAt DateTime @default(now()) @updatedAt
+
+  transactions Transaction[]
+  operations   Operation[]
 }
 
 
@@ -124,4 +127,62 @@ model Package {
 model system {
   key String @id
   value String
+}
+
+/* Transaction is a sequence of operations bundled together as a single unit of work. */
+model Transaction {
+  /* Internal numerical ID for database purposes. */
+  id Int @id @default(autoincrement())
+
+  /* Numerical id of the project (root resource), for easier querying. */
+  projectId Int
+  project   Resource @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  /* Technical metadata: creation date. */
+  createdAt DateTime @default(now())
+
+  operations Operation[]
+
+  /* Parent transactions of this transaction. */
+  parents TransactionParent[] @relation("TransactionParents")
+
+  /* Transactions that have this transaction as their parent. */
+  children TransactionParent[] @relation("TransactionChildren")
+
+  @@index([projectId])
+}
+
+/* Links a transaction to its parent transaction(s). */
+model TransactionParent {
+  transactionId Int
+  transaction   Transaction @relation("TransactionParents", fields: [transactionId], references: [id], onDelete: Cascade)
+
+  parentTransactionId Int
+  parentTransaction   Transaction @relation("TransactionChildren", fields: [parentTransactionId], references: [id], onDelete: Cascade)
+
+  @@id([transactionId, parentTransactionId])
+}
+
+/* A single operation, applied to one model, that is part of a transaction. */
+model Operation {
+  id Int @id @default(autoincrement())
+
+  /* Numerical id of the project (root resource), for easier querying. */
+  projectId Int
+  project   Resource @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  transactionId Int
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  /* Order of this operation inside its transaction. */
+  order Int
+
+  /* Id of the model this operation is applied to. */
+  modelId String
+
+  /* The operation itself, serialized as JSON. The backend does not interpret it. */
+  data String
+
+  @@index([transactionId])
+  @@index([projectId])
 }
