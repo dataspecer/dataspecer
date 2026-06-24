@@ -5,12 +5,12 @@ import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Transaction as CoreTransaction, Operation, OperationInModel } from "@dataspecer/core/operation";
 import type { ModelEntity } from "@dataspecer/project-model";
+import { v4 as uuidv4 } from "uuid";
 import type { ObservableEntityModelStoreChangeEvent } from "../interfaces/observable.ts";
 import type { ConnectionStatus, RemoteModelStore } from "../interfaces/remote.ts";
-import type { TransactionMetadata, TransactionResult } from "../interfaces/writable.ts";
-import { v4 as uuidv4 } from "uuid";
-import { UNDO_OPERATION_TYPE, type UndoOperation } from "./base.ts";
 import type { UndoRedoState } from "../interfaces/undo-redo.ts";
+import type { TransactionMetadata, TransactionResult } from "../interfaces/writable.ts";
+import { UNDO_OPERATION_TYPE, type UndoOperation } from "./base.ts";
 import type { ProjectModelInModelStore } from "./project-model.ts";
 
 /**
@@ -89,7 +89,7 @@ export interface DefaultFrontendModelStoreParams {
  */
 interface Transaction extends CoreTransaction {
   metadata: TransactionMetadata;
-  
+
   /**
    * Whether this transaction contains an operation on the project model (i.e.
    * it creates or removes a model). Such transactions are not added to the
@@ -366,6 +366,12 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
    * models.
    */
   protected transactions: Transaction[] = [];
+
+  /**
+   * Number of leading entries of {@link transactions} whose operations were
+   * already uploaded to the backend, see {@link uploadPendingTransactions}.
+   */
+  private uploadedTransactionCount: number = 0;
 
   /**
    * Current transaction that is being executed. null if there is no transaction.
@@ -647,9 +653,40 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
       }
       savePromises.push(this.models[modelId]!.save());
     }
+    await this.uploadPendingTransactions();
     await Promise.all(savePromises);
     this.transactionConfirmations.forEach((resolve) => resolve({}));
     this.transactionConfirmations = [];
+  }
+
+  /**
+   * Uploads operations of transactions (commits, undos and redos) that happened
+   * since the last call, to the backend's operation log, via a side channel
+   * that is independent of the regular model save above.
+   *
+   * This is a temporary, simplified approach: the backend still receives the
+   * full model snapshot on every save; this additionally records the operations
+   * that led to it for future use, once the application switches to storing
+   * only operations instead of snapshots.
+   *
+   * Failures are logged and otherwise ignored, since this is only a best-effort
+   * side channel and must not prevent the regular save above.
+   */
+  protected async uploadPendingTransactions(): Promise<void> {
+    const pendingTransactions = this.transactions
+      .slice(this.uploadedTransactionCount)
+      .filter((transaction) => transaction.operations.length > 0);
+    this.uploadedTransactionCount = this.transactions.length;
+
+    if (pendingTransactions.length === 0) {
+      return;
+    }
+
+    try {
+      await this.service.uploadTransactions(this.rootProjectId, pendingTransactions);
+    } catch (error) {
+      console.error("Failed to upload transaction operations to the backend.", error);
+    }
   }
 
   /**

@@ -1,5 +1,6 @@
 import { EntityModel } from "../../entity-model/index.ts";
 import { VisualModel } from "@dataspecer/visual-model";
+import type { Transaction } from "@dataspecer/core/operation";
 import { Package, ResourceEditable, type BaseResource } from "../resource/resource.ts";
 
 /**
@@ -46,6 +47,13 @@ export interface PackageService extends ResourceService {
      * its sub-resources are removed as well.
      */
     deleteResource(iri: string): Promise<void>;
+
+    /**
+     * Uploads transactions (in order) to the backend via a side channel, for
+     * storage alongside the model snapshots. The backend is responsible for
+     * chaining the given transactions together.
+     */
+    uploadTransactions(projectId: string, transactions: Transaction[]): Promise<void>;
 }
 
 export interface SemanticModelPackageService extends PackageService {

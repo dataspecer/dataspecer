@@ -6,6 +6,7 @@ import configuration from "./configuration.ts";
 import { Migrate } from "./migrations/migrate.ts";
 import { LocalStoreModel } from "./models/local-store-model.ts";
 import { ResourceModel } from "./models/resource-model.ts";
+import { TransactionModel } from "./models/transaction-model.ts";
 import { getDefaultConfiguration } from "./routes/configuration.ts";
 import { getLightweightOwlFromSimplified } from "./routes/experimental.ts";
 import { getSingleFile, getZip } from "./routes/generate.ts";
@@ -29,12 +30,14 @@ import { getSystemData } from "./routes/system.ts";
 import { useStaticSpaHandler } from "./static.ts";
 import { migratePR419 } from "./tools/migrate-pr419.ts";
 import { newApplicationProfile } from "./routes/new.ts";
+import { createTransactions } from "./routes/transaction.ts";
 
 // Create application models
 
 export const storeModel = new LocalStoreModel("./database/stores");
 export const prismaClient = new PrismaClient();
 export const resourceModel = new ResourceModel(storeModel, prismaClient);
+export const transactionModel = new TransactionModel(prismaClient);
 const migration = new Migrate(prismaClient);
 
 let fullUrl: string;
@@ -95,6 +98,9 @@ application.delete(apiBasename + "/resources/packages", deleteResource); // same
 application.get(apiBasename + "/resources/root-resources", getRootPackages); // ---
 
 application.post(apiBasename + "/repository/copy-recursively", copyRecursively);
+
+// Side-channel for storing operations performed on the project, see TransactionModel.
+application.post(apiBasename + "/transactions", createTransactions);
 
 application.post(apiBasename + "/new/application-profile", newApplicationProfile);
 
