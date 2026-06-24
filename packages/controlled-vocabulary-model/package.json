@@ -1,0 +1,22 @@
+{
+  "name": "@dataspecer/controlled-vocabulary-model",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\"",
+    "test": "vitest run --pass-with-no-tests",
+    "test:watch": "vitest"
+  },
+  "exports": {
+    ".": "./lib/index.js"
+  },
+  "dependencies": {
+    "@dataspecer/core": "*"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
+  }
+}
