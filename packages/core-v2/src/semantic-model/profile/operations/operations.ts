@@ -1,5 +1,5 @@
 import { EntityIdentifier } from "../../../entity-model/entity.ts";
-import { Operation } from "../../operations/index.ts";
+import type { Operation } from "@dataspecer/core/operation";
 import { SemanticModelClassProfile, SemanticModelRelationshipProfile } from "../concepts/index.ts";
 
 export interface CreateSemanticModelClassProfile extends Operation {

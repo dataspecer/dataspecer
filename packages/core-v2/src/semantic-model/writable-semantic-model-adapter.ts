@@ -16,13 +16,13 @@ import {
     ModifyClassOperation,
     ModifyGeneralizationOperation,
     ModifyRelationOperation,
-    Operation,
     OperationResult,
 } from "./operations/index.ts";
 import { SemanticModelClass, SemanticModelGeneralization, SemanticModelRelationship } from "./concepts/index.ts";
 import { createDefaultSemanticModelProfileOperationExecutor } from "./profile/operations/index.ts";
 import type { EntityChange, EntityChangeDeleted, EntityRecord } from "@dataspecer/core/entity-model";
 import { LOCAL_SEMANTIC_MODEL } from "../model/known-models.ts";
+import type { Operation } from "@dataspecer/core/operation";
 
 function uuid() {
     return Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -31,6 +31,7 @@ function uuid() {
 type EntityGetter = (identifier: string) => Entity | undefined;
 
 type ChangeCollector = (updated: Record<string, Entity>, removed: string[]) => void;
+
 
 /**
  * Semantic model, that is writable.
@@ -220,12 +221,12 @@ function handleModifyClassOperation(
     change: ChangeCollector,
     operation: ModifyClassOperation,
 ): OperationResult {
-    if (!getEntity(operation.id)) {
+    if (!getEntity(operation.entity.id)) {
         return {
             success: false,
         };
     }
-    change({ [operation.id]: { ...getEntity(operation.id)!, ...operation.entity } }, []);
+    change({ [operation.entity.id]: { ...getEntity(operation.entity.id)!, ...operation.entity } }, []);
     return {
         success: true,
     };
@@ -290,7 +291,7 @@ function handleModifyRelationOperation(
     change: ChangeCollector,
     operation: ModifyRelationOperation,
 ): OperationResult {
-    const oldRelationship = getEntity(operation.id) as SemanticModelRelationship | undefined;
+    const oldRelationship = getEntity(operation.entity.id) as SemanticModelRelationship | undefined;
 
     if (!oldRelationship) {
         return {
@@ -316,7 +317,7 @@ function handleModifyRelationOperation(
         iri: operation.entity.iri ?? oldRelationship.iri,
     } as SemanticModelRelationship;
 
-    change({ [operation.id]: updatedRelationship }, []);
+    change({ [operation.entity.id]: updatedRelationship }, []);
     return {
         success: true,
     };
@@ -360,12 +361,12 @@ function handleModifyGeneralizationOperation(
     change: ChangeCollector,
     operation: ModifyGeneralizationOperation,
 ): OperationResult {
-    if (!getEntity(operation.id)) {
+    if (!getEntity(operation.entity.id)) {
         return {
             success: false,
         };
     }
-    change({ [operation.id]: { ...getEntity(operation.id)!, ...operation.entity } }, []);
+    change({ [operation.entity.id]: { ...getEntity(operation.entity.id)!, ...operation.entity } }, []);
     return {
         success: true,
     };
@@ -376,12 +377,12 @@ function handleDeleteEntityOperation(
     change: ChangeCollector,
     operation: DeleteEntityOperation,
 ): OperationResult {
-    if (!getEntity(operation.id)) {
+    if (!getEntity(operation.entityId)) {
         return {
             success: false,
         };
     }
-    change({}, [operation.id]);
+    change({}, [operation.entityId]);
     return {
         success: true,
     };
