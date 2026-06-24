@@ -103,6 +103,7 @@ test("End to end test I.", async () => {
       "type": ["class-profile"],
       "externalDocumentationUrl": "external-doc-1",
       "tags": [],
+      controlledVocabularies: undefined,
     } as SemanticModelClassProfile, {
       "id": "94kn5yss8dm7d1jv9z",
       "type": ["class-profile"],
@@ -116,6 +117,7 @@ test("End to end test I.", async () => {
       "profiling": ["lqo2gocgg4sm7d1ivqx"],
       "externalDocumentationUrl": "external-doc-2",
       "tags": [DSV_CLASS_ROLE.supportive],
+      "controlledVocabularies": undefined,
     } as SemanticModelClassProfile, {
       "ends": [{
         "name": null,

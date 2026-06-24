@@ -169,6 +169,7 @@ test("Default test for profiles.", () => {
             "usageNoteFromProfiled": null,
             "externalDocumentationUrl": "http://documenation-1",
             "tags": [],
+            controlledVocabularies: undefined,
         } as SemanticModelClassProfile, {
             "id": "3sww3fqegbxly6tk8z3",
             "type": ["relationship-profile"],

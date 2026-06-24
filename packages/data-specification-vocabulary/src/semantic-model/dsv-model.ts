@@ -153,6 +153,8 @@ export interface ClassProfile extends TermProfile {
    */
   classRole: ClassRole;
 
+  // controlledVocabularies: undefined; // TODO: specify controlled vocabularies in DSV
+
 }
 
 export const ClassProfileType = "class-profile";

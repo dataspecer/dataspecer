@@ -133,6 +133,7 @@ test("From DSV to entity model and back.", async () => {
       "usageNoteFromProfiled": null,
       "externalDocumentationUrl": "external-3",
       "tags": [],
+      controlledVocabularies: undefined,
     } as SemanticModelClassProfile, {
       "id": "dcat-ap-0005",
       "type": ["relationship-profile"],

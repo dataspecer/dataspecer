@@ -120,6 +120,7 @@ export function flattenClassProfile(
     externalDocumentationUrl: profile.externalDocumentationUrl,
     profiling,
     tags: profile.tags,
+    controlledVocabularies: profile.controlledVocabularies, // TODO: is this correct
   }
 }
 

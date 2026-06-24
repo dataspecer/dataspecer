@@ -70,6 +70,7 @@ class DefaultProfileModelBuilder implements ProfileModelBuilder {
       externalDocumentationUrl: null,
       // SemanticModelClassProfile
       tags: [],
+      controlledVocabularies: undefined,
       ...value,
       // SemanticModelEntity
       iri: this.urlResolver(value?.iri ?? `classProfile#${this.counter}`),

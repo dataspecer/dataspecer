@@ -32,6 +32,7 @@ export function createCmeClassProfile(
     externalDocumentationUrl: value.externalDocumentationUrl,
     tags,
     order: value.order,
+    controlledVocabularies: undefined,
   });
 
   const result = model.executeOperation(operation);

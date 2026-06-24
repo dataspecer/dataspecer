@@ -27,6 +27,7 @@ class DefaultMergePolicy implements ProfileModelMergePolicy {
       // Here the order does not matter.
       profiling: [...new Set(...left.profiling, ...right.profiling)],
       tags: [...new Set(...left.tags, ...right.tags)],
+      controlledVocabularies: [...(left.controlledVocabularies ?? []), ...(right.controlledVocabularies ?? [])]
     };
   }
 
