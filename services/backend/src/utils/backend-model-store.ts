@@ -52,7 +52,7 @@ async function loadNamedBlobEntities(modelId: string, blobName: string, resource
   return serializationToBlobModelEntities(`${modelId}#${blobName}`, blobData);
 }
 
-async function loadModelEntities(modelId: string, modelType: string, resourceModel: ResourceModel): Promise<EntityRecord> {
+export async function loadModelEntities(modelId: string, modelType: string, resourceModel: ResourceModel): Promise<EntityRecord> {
   const store = await resourceModel.getResourceModelStore(modelId);
   const modelData = store ? await store.getJson() : null;
 
