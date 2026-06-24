@@ -8,7 +8,6 @@ import {
 } from "@dataspecer/core-v2/semantic-model/concepts";
 import { DataTypeURIs, isDataType } from "@dataspecer/core-v2/semantic-model/datatypes";
 import { createRdfsModel } from "@dataspecer/core-v2/semantic-model/simplified";
-import { isSemanticModelRelationshipUsage } from "@dataspecer/core-v2/semantic-model/usage/concepts";
 import { PimStoreWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
@@ -207,7 +206,7 @@ async function importRdfsAndDsv(parentIri: string, rdfsUrl: string | null, dsvUr
         prefixesCount[prefix] = (prefixesCount[prefix] ?? 0) + 1;
       }
 
-      if (isSemanticModelRelationship(entity) || isSemanticModelRelationshipUsage(entity)) {
+      if (isSemanticModelRelationship(entity)) {
         for (const end of entity.ends) {
           const [prefix] = splitIri(end.iri);
           if (prefix) {
@@ -229,7 +228,7 @@ async function importRdfsAndDsv(parentIri: string, rdfsUrl: string | null, dsvUr
         if (entity.iri && entity.iri.startsWith(bestPrefix)) {
           entity.iri = entity.iri.substring(bestPrefix.length);
         }
-        if (isSemanticModelRelationship(entity) || isSemanticModelRelationshipUsage(entity)) {
+        if (isSemanticModelRelationship(entity)) {
           for (const end of entity.ends) {
             if (end.iri && end.iri.startsWith(bestPrefix)) {
               end.iri = end.iri.substring(bestPrefix.length);
