@@ -215,14 +215,30 @@ export class AsyncQueryableModelInModelStore extends BaseModelInModelStore imple
   }
 
   protected async loadInternal(): Promise<ModelState> {
-    // Load adapter
-    const adapter = new SgovAdapter("https://slovník.gov.cz/sparql", httpFetch);
-    adapter.setIriProvider(new IdentityIriProvider());
-    this.queryAdapter = new CimAdapterWrapper(adapter);
+    this.queryAdapter = this.createQueryAdapter();
 
     // Load data
     const modelData = (await this.service.getResourceJsonData(this.id)) as any;
     return this.deserializeModel(modelData);
+  }
+
+  private createQueryAdapter(): CimAdapterWrapper {
+    const adapter = new SgovAdapter("https://slovník.gov.cz/sparql", httpFetch);
+    adapter.setIriProvider(new IdentityIriProvider());
+    return new CimAdapterWrapper(adapter);
+  }
+
+  /**
+   * An empty model (no queries) is a valid state and needs no main entity,
+   * but the query adapter must still be set up before any query operations
+   * can be applied.
+   */
+  override loadInitialStateInternal(): void {
+    this.queryAdapter = this.createQueryAdapter();
+    this.initializeState({
+      entities: {},
+      operations: [],
+    });
   }
 
   /**
@@ -253,6 +269,32 @@ export class AsyncQueryableModelInModelStore extends BaseModelInModelStore imple
       queries: Object.values(state.entities as EntityRecord<QueryEntity>).map(queryEntityToQueryString),
     };
   }
+}
+
+/**
+ * Resolves all entities (queries and the semantic entities they resolve to)
+ * for the serialized data of an async queryable (SGOV) model, without
+ * instantiating a full {@link AsyncQueryableModelInModelStore}. Useful for
+ * one-off reads, e.g. on the backend, where we don't need to keep subscribing
+ * to query changes.
+ */
+export async function resolveAsyncQueryableModelEntities(data: unknown, httpFetch: HttpFetch): Promise<EntityRecord> {
+  const modelDescriptor = data as { queries: string[] };
+  const queries = modelDescriptor.queries ?? [];
+
+  const adapter = new SgovAdapter("https://slovník.gov.cz/sparql", httpFetch);
+  adapter.setIriProvider(new IdentityIriProvider());
+  const queryAdapter = new CimAdapterWrapper(adapter);
+
+  const queryEntities: EntityRecord = Object.fromEntries(queries.map(queryStringToQueryEntity).map((entity) => [entity.id, entity]));
+
+  const queryResults = await Promise.all(queries.map((query) => queryAdapter.query(query)));
+  const semanticEntities: EntityRecord = Object.assign({}, ...queryResults);
+
+  return {
+    ...queryEntities,
+    ...semanticEntities,
+  };
 }
 
 export function createAsyncQueryableModel(

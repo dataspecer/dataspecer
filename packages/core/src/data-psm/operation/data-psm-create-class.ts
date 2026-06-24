@@ -1,7 +1,6 @@
 import { CoreOperationResult, CoreResource, CoreTyped } from "../../core/index.ts";
 import { DataPsmCreate } from "./data-psm-create.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
-import { generateEntityId } from "../../entity-model/entity.ts";
 
 export class DataPsmCreateClass extends DataPsmCreate {
   static readonly TYPE = PSM.CREATE_CLASS;
@@ -13,7 +12,6 @@ export class DataPsmCreateClass extends DataPsmCreate {
   constructor() {
     super();
     this.types.push(DataPsmCreateClass.TYPE);
-    this.dataPsmNewIri = generateEntityId();
   }
 
   static is(resource: CoreResource | null): resource is DataPsmCreateClass {

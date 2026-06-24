@@ -10,7 +10,6 @@
     "i18n": "i18next-cli extract"
   },
   "dependencies": {
-    "@dataspecer/backend-utils": "*",
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
     "@dataspecer/csv": "*",
@@ -18,7 +17,9 @@
     "@dataspecer/federated-observable-store-react": "*",
     "@dataspecer/json": "*",
     "@dataspecer/json-example": "*",
+    "@dataspecer/model-store": "^0.0.0",
     "@dataspecer/openapi": "*",
+    "@dataspecer/project-model": "*",
     "@dataspecer/shacl": "*",
     "@dataspecer/shacl-v2": "*",
     "@dataspecer/shex": "*",

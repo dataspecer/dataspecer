@@ -1,7 +1,7 @@
 import type { Entity, EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
+import { diffEntities } from "@dataspecer/core/entity-model";
 import type { Model } from "@dataspecer/core/model";
-import type { Operation } from "@dataspecer/core/operation";
-import { diffEntities } from "../utilities.ts";
+import { isSetEntityOperation, isUpdateEntityOperation, type Operation } from "@dataspecer/core/operation";
 import type { ApplyOperationResult, ModelInDefaultFrontendModelStore } from "./implementation.ts";
 
 export const UNDO_OPERATION_TYPE = "undo" as const;
@@ -59,24 +59,70 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
 
   private externalChangesSubscribers: ((changes: EntityChange[]) => void)[] = [];
 
+  /**
+   * Whether the entities changed since the last successful {@link save} (or
+   * since the model was loaded). Used to implement smart save, i.e. saving
+   * only models that actually changed.
+   */
+  private dirty: boolean = false;
+
   constructor(id: string) {
     this.id = id;
   }
 
+  /**
+   * Function to load the state from backend.
+   */
   protected abstract loadInternal(): Promise<ModelState<BaseEntityType>>;
 
-  async load(): Promise<void> {
-    const oldEntities = this.state.entities;
-    this.state = await this.loadInternal();
-    const changes = diffEntities(oldEntities, this.state.entities);
-    this.notifyAboutExternalChanges(changes);
+  /**
+   * Function to load the initial state of the model for newly created models.
+   */
+  protected loadInitialStateInternal(): void {
+    this.initializeState({
+      entities: {},
+      operations: [],
+    });
+  }
+
+  async load(doNotFetch: boolean = false): Promise<void> {
+    if (!doNotFetch) {
+      const oldEntities = this.state.entities;
+      this.state = await this.loadInternal();
+      this.dirty = false;
+      const changes = diffEntities(oldEntities, this.state.entities);
+      this.notifyAboutExternalChanges(changes);
+    } else {
+      // Initializes the model as freshly created (e.g. as a reaction to a
+      // {@link CreateModelOperation} on the project model), without fetching
+      // anything from the backend. Marks the model dirty so that it gets
+      // persisted on the next {@link save}.
+      this.loadInitialStateInternal();
+    }
+  }
+
+  /**
+   * Synchronously sets the model state, bypassing any diffing/notification.
+   * Intended to be used by {@link createNew} (and its overrides) to set up
+   * the initial state of a freshly created model.
+   */
+  protected initializeState(state: ModelState<BaseEntityType>): void {
+    this.state = state;
+    this.dirty = true;
   }
 
   protected abstract saveInternal(state: ModelState<BaseEntityType>): Promise<void>;
 
+  /**
+   * Saves the model to the backend, but only if it actually changed since the
+   * last save (or load). This is a no-op for unchanged models.
+   */
   async save(): Promise<void> {
-    // Todo check for state changes
-    this.saveInternal(this.state);
+    if (!this.dirty) {
+      return;
+    }
+    this.dirty = false;
+    await this.saveInternal(this.state);
   }
 
   /**
@@ -103,6 +149,10 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
     }
     this.state.entities = newEntities;
 
+    if (changes.length > 0) {
+      this.dirty = true;
+    }
+
     this.notifyAboutExternalChanges(changes);
   }
 
@@ -128,7 +178,7 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
     if (lastSnapshotTransactionId !== transactionId) {
       this.snapshots.push({
         stateBefore: {
-          entities: {...this.state.entities},  // We create copy to conserve the state
+          entities: { ...this.state.entities }, // We create copy to conserve the state
           operations: [...this.state.operations],
         },
         transactionId: transactionId,
@@ -144,27 +194,48 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
 
       // Todo we trust that caller use undo operations in correct order.
 
-      const snapshot = this.snapshots.find(snapshot => snapshot.transactionId === undoOperation.cancelTransactionId);
+      const snapshot = this.snapshots.find((snapshot) => snapshot.transactionId === undoOperation.cancelTransactionId);
 
       if (!snapshot) {
         throw new Error(`Cannot find snapshot for transaction ID ${undoOperation.cancelTransactionId}`);
       }
 
-      const previousEntities = {...this.state.entities};
-      this.state.entities = {...snapshot.stateBefore.entities};
+      const previousEntities = { ...this.state.entities };
+      this.state.entities = { ...snapshot.stateBefore.entities };
+
+      const diff = diffEntities(previousEntities, this.state.entities);
+      if (diff.length > 0) {
+        this.dirty = true;
+      }
 
       return {
         transactionId,
-        entityChanges: diffEntities(previousEntities, this.state.entities),
+        entityChanges: diff,
       };
     } else {
-      const previousState = {...this.state.entities};
+      const previousState = { ...this.state.entities };
 
       for (const operation of operations) {
-        this.applyOperation(operation, this.state.entities);
+        // todo: we allow running this low level operations on all models, is it correct?
+        if (isSetEntityOperation(operation)) {
+          const entity = operation.entity as BaseEntityType;
+          this.state.entities[entity.id] = entity;
+        } else if (isUpdateEntityOperation(operation)) {
+          const update = operation.update;
+          const entity = this.state.entities[update.id];
+          // If entity does not exist, do nothing
+          if (entity) {
+            this.state.entities[update.id] = { ...entity, ...update };
+          }
+        } else {
+          this.applyOperation(operation, this.state.entities);
+        }
       }
 
       const diff = diffEntities(previousState, this.state.entities);
+      if (diff.length > 0) {
+        this.dirty = true;
+      }
 
       return {
         transactionId,

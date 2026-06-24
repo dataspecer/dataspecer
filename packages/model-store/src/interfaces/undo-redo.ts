@@ -14,6 +14,14 @@ export interface UndoRedoState {
 export interface UndoRedoModelStore {
   getUndoRedoState(): UndoRedoState;
   subscribeToUndoRedoState(listener: (state: UndoRedoState) => void): () => void;
-  undo(): TransactionResult;
-  redo(): TransactionResult;
+
+  /**
+   * Undoes the last transaction. If there is no transaction to undo, returns null.
+   */
+  undo(): TransactionResult | null;
+
+  /**
+   * Redoes the last undone transaction. If there is no transaction to redo, returns null.
+   */
+  redo(): TransactionResult | null;
 }

@@ -1,19 +1,18 @@
 import { CoreResourceReader } from "@dataspecer/core/core/core-reader";
 import { DataSpecificationConfiguration, DataSpecificationConfigurator } from "@dataspecer/core/data-specification/configuration";
-import { loadDataSpecifications } from "@dataspecer/specification/specification";
 import { DefaultArtifactBuilder, GenerateReport } from "@dataspecer/specification/v1";
 import AddIcon from "@mui/icons-material/Add";
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import LoadingButton from "@mui/lab/LoadingButton";
 import { Box, Button, Fab, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
 import { saveAs } from "file-saver";
+import { Magnet } from "lucide-react";
 import React, { memo, useCallback, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { BackendConnectorContext, DefaultConfigurationContext } from "../../../application";
 import { LanguageStringText } from "../../../editor/components/helper/LanguageStringComponents";
 import { useDialog } from "../../../editor/dialog";
-import { getConfiguration, modelRepository } from "../../../generators/configuration/provided-configuration";
+import { getConfiguration } from "../../../configuration/provided-configuration";
 import { ZipStreamDictionary } from "../../../generators/zip-stream-dictionary";
 import { ConfigureArtifacts } from "../../artifacts/configuration/configure-artifacts";
 import { ConfigureButton } from "../../artifacts/configuration/configure-button";
@@ -27,18 +26,20 @@ import { GeneratingDialog } from "./generating-dialog";
 import { ProfileStructureDialog } from "./profile-structure";
 import { RedirectDialog } from "./redirect-dialog";
 import { ReuseDataSpecifications } from "./reuse-data-specifications";
-import { AllSpecificationsContext, SpecificationContext } from "./specification";
-import { Magnet } from "lucide-react";
+import { AllSpecificationsContext, ManagerModelStoreContext, PROJECT_MODEL_ID, SpecificationContext } from "./specification";
+import { createCreateModelOperation } from "@dataspecer/project-model";
+import { V1 } from "@dataspecer/core-v2/model/known-models";
 
 export const DocumentationSpecification = memo(() => {
   const { t } = useTranslation("ui");
 
-  const [specification] = useContext(SpecificationContext);
+  const specification = useContext(SpecificationContext);
   const dataSpecificationIri = specification.id;
 
   const defaultConfiguration = useContext(DefaultConfigurationContext);
 
   const backendConnector = useContext(BackendConnectorContext);
+  const modelStore = useContext(ManagerModelStoreContext);
 
   const navigate = useNavigate();
 
@@ -46,11 +47,17 @@ export const DocumentationSpecification = memo(() => {
   const createDataStructure = useCallback(async () => {
     if (dataSpecificationIri) {
       setRedirecting(true);
-      const { createdPsmSchemaIri } = await backendConnector.createDataStructure(dataSpecificationIri);
-      navigate(getEditorLink(dataSpecificationIri, createdPsmSchemaIri));
+      const op = createCreateModelOperation(dataSpecificationIri, V1.PSM);
+      const transaction = modelStore.transaction([{
+        operation: op,
+        modelId: PROJECT_MODEL_ID,
+      }], {});
+      await transaction.confirmation;
+
+      navigate(getEditorLink(dataSpecificationIri, op.modelId));
       setRedirecting(false);
     }
-  }, [navigate, backendConnector, dataSpecificationIri]);
+  }, [navigate, modelStore, dataSpecificationIri]);
 
   const profileStructureDialog = useDialog(ProfileStructureDialog, ["dataSpecificationId"]);
 
@@ -62,27 +69,23 @@ export const DocumentationSpecification = memo(() => {
     setGenerateState([]);
     setGenerateDialogOpen(true);
 
-    // Gather all data specifications that are needed for the generation
-    let gatheredDataSpecifications = await loadDataSpecifications(dataSpecificationIri as string, modelRepository); // todo we probably do not need this
+    const { store: federatedStore, dataSpecifications, models } = await getConfiguration(dataSpecificationIri as string, "", backendConnector);
 
     // Override base urls to null
     if (overrideBasePathsToNull) {
-      gatheredDataSpecifications = structuredClone(gatheredDataSpecifications);
-      for (const ds of Object.values(gatheredDataSpecifications)) {
-        // @ts-ignore
+      for (const ds of Object.values(dataSpecifications)) {
+        // @ts-expect-error different type of configuration
         if (ds.artefactConfiguration[DataSpecificationConfigurator.KEY]) {
-          // @ts-ignore
+          // @ts-expect-error different type of configuration
           (ds.artefactConfiguration[DataSpecificationConfigurator.KEY] as DataSpecificationConfiguration).publicBaseUrl = null;
         }
       }
     }
 
-    const { store: federatedStore, dataSpecifications: ds2 } = await getConfiguration(dataSpecificationIri as string, "");
-
     setZipLoading("generating");
 
-    const generator = new DefaultArtifactBuilder(federatedStore as CoreResourceReader, ds2, defaultConfiguration, fetch, modelRepository);
-    await generator.prepare(Object.keys(ds2), setGenerateState);
+    const generator = new DefaultArtifactBuilder(federatedStore as CoreResourceReader, dataSpecifications, defaultConfiguration, fetch, models);
+    await generator.prepare(Object.keys(dataSpecifications), setGenerateState);
     const zip = new ZipStreamDictionary();
     await generator.build(zip);
     const data = await zip.save();

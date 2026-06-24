@@ -1,9 +1,11 @@
-import { DataSpecification } from '@dataspecer/backend-utils/connectors/specification';
+import type { DataSpecification } from '@dataspecer/specification/specification';
 import { SemanticModelClass, SemanticModelEntity } from '@dataspecer/core-v2/semantic-model/concepts';
+import type { EntityRecord } from '@dataspecer/core/entity-model';
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
-import { OperationContext } from "../../editor/operations/context/operation-context";
+import { OperationContext } from "../editor/operations/context/operation-context";
 import { SemanticModelAggregator } from '@dataspecer/core-v2/hierarchical-semantic-aggregator';
-import type { MemoryStoreFromBlob } from '@dataspecer/specification/memory-store';
+import type { MemoryStore } from '@dataspecer/core/core';
+import type { RemoteModelStore } from '@dataspecer/model-store';
 
 /**
  * Editor's configuration (or context) that specifies how the editor should work.
@@ -17,6 +19,12 @@ export interface Configuration {
     operationContext: OperationContext,
 
     /**
+     * All models loaded for this data specification, keyed by model id (see
+     * {@link DefaultArtifactBuilder}'s `models` constructor parameter).
+     */
+    models: Record<string, EntityRecord>;
+
+    /**
      * todo experimental
      */
     semanticModelAggregator: SemanticModelAggregator;
@@ -25,7 +33,12 @@ export interface Configuration {
      * Individual structure models mapped by their IRIs.
      * All of them are registered in the `store` as well.
      */
-    structureModels: Record<string, MemoryStoreFromBlob>;
+    structureModels: Record<string, MemoryStore>;
+
+    /**
+     * Class that provides access to all data.
+     */
+    modelStore: RemoteModelStore;
 }
 
 /**
@@ -44,6 +57,6 @@ export interface SearchableSemanticModelSync {
     searchEntitySync(searchQuery: string): SemanticModelClass[];
 }
 
-export function isSourceSemanticModelSearchableSync(model: any): model is SearchableSemanticModelSync {
+export function isSourceSemanticModelSearchableSync(model: unknown): model is SearchableSemanticModelSync {
     return model && (model as SearchableSemanticModelSync).searchEntitySync !== undefined;
 }

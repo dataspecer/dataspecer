@@ -34,6 +34,18 @@ export interface PackageService extends ResourceService {
      * Removes the package with all models and sub-packages.
      */
     deletePackage(packageId: string): Promise<void>;
+
+    /**
+     * Creates a new resource (a model, not a package) of the given type under
+     * the parent package, with the given id.
+     */
+    createResource(parentPackageId: string, data: ResourceEditable & { type: string }): Promise<BaseResource>;
+
+    /**
+     * Removes the resource identified by its id. If it is a package, all of
+     * its sub-resources are removed as well.
+     */
+    deleteResource(iri: string): Promise<void>;
 }
 
 export interface SemanticModelPackageService extends PackageService {

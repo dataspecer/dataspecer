@@ -1,3 +1,4 @@
+import { generateEntityId } from "@dataspecer/core/entity-model";
 import {SemanticModelClass, SemanticModelGeneralization, SemanticModelRelationship} from "../concepts/index.ts";
 
 /**
@@ -23,7 +24,7 @@ const CREATE_CLASS_OPERATION = 'create';
 
 export interface CreateClassOperation extends Operation {
     type: typeof CREATE_CLASS_OPERATION;
-    entity: Partial<Omit<SemanticModelClass, "type">>;
+    entity: Partial<Omit<SemanticModelClass, "type">> & Pick<SemanticModelClass, "id">;
 }
 
 export function isCreateClassOperation(operation: Operation): operation is CreateClassOperation {
@@ -33,7 +34,7 @@ export function isCreateClassOperation(operation: Operation): operation is Creat
 export function createClass(entity: Partial<Omit<SemanticModelClass, "type">> = {}): CreateClassOperation {
     return {
         type: CREATE_CLASS_OPERATION,
-        entity
+        entity: { ...entity, id: entity.id ?? generateEntityId() },
     }
 }
 
@@ -65,7 +66,7 @@ const CREATE_RELATIONSHIP_OPERATION = 'create-relation';
 
 export interface CreateRelationshipOperation extends Operation {
     type: typeof CREATE_RELATIONSHIP_OPERATION;
-    entity: Partial<Omit<SemanticModelRelationship, "type">>;
+    entity: Partial<Omit<SemanticModelRelationship, "type">> & Pick<SemanticModelRelationship, "id">;
 }
 
 export function isCreateRelationshipOperation(operation: Operation): operation is CreateRelationshipOperation {
@@ -75,7 +76,7 @@ export function isCreateRelationshipOperation(operation: Operation): operation i
 export function createRelationship(entity: Partial<Omit<SemanticModelRelationship, "type">>): CreateRelationshipOperation {
     return {
         type: CREATE_RELATIONSHIP_OPERATION,
-        entity
+        entity: { ...entity, id: entity.id ?? generateEntityId() },
     }
 }
 
@@ -107,7 +108,7 @@ const CREATE_GENERALIZATION_OPERATION = 'create-generalization';
 
 export interface CreateGeneralizationOperation extends Operation {
     type: typeof CREATE_GENERALIZATION_OPERATION;
-    entity: Partial<Omit<SemanticModelGeneralization, "type">>;
+    entity: Partial<Omit<SemanticModelGeneralization, "type">> & Pick<SemanticModelGeneralization, "id">;
 }
 
 export function isCreateGeneralizationOperation(operation: Operation): operation is CreateGeneralizationOperation {
@@ -117,7 +118,7 @@ export function isCreateGeneralizationOperation(operation: Operation): operation
 export function createGeneralization(entity: Partial<Omit<SemanticModelGeneralization, "id" | "type">>): CreateGeneralizationOperation {
     return {
         type: CREATE_GENERALIZATION_OPERATION,
-        entity
+        entity: { ...entity, id: generateEntityId() },
     }
 }
 

@@ -1,8 +1,8 @@
-import { Entity, EntityModel } from '@dataspecer/core-v2';
-import { Operation } from '@dataspecer/core-v2/semantic-model/operations';
-import { CoreOperation, CoreOperationResult, CoreResource, CoreResourceReader, CoreResourceWriter } from "@dataspecer/core/core";
-import * as DataPSM from "@dataspecer/core/data-psm/data-psm-vocabulary";
-import { DataPsmSchema } from "@dataspecer/core/data-psm/model";
+import { Entity } from "@dataspecer/core-v2";
+import { CoreOperation, CoreResource, CoreResourceReader } from "@dataspecer/core/core";
+import type { EntityChange, EntityChangeCreated, EntityIdentifier, EntityRecord } from "@dataspecer/core/entity-model";
+import type { ModelIdentifier } from "@dataspecer/core/model";
+import { Operation, OperationInModel } from "@dataspecer/core/operation";
 import { ComplexOperation } from "./complex-operation.ts";
 import { FederatedCoreResourceWriter } from "./federated-core-resource-writer.ts";
 import { Resource } from "./resource.ts";
@@ -12,483 +12,164 @@ import { Resource } from "./resource.ts";
  */
 export type Subscriber = (iri: string, resource: Resource) => void;
 
-interface Subscription {
-    currentValue: Resource;
-    subscribers: Subscriber[];
-}
-
 /**
- * Wraps store in case of additional metadata would be needed in the future.
- *
- * Currently, there are no metadata needed.
+ * This is new implementation for model store
  */
-type ModelWrapper = {
-    store: CoreResourceReader,
-} | {
-    store: EntityModel,
-};
-
-function isModelWrapperEntityModel(wrapper: ModelWrapper): wrapper is { store: EntityModel } {
-    return wrapper.store["listResources"] === undefined;
-}
-
-function isModelWrapperCoreResourceReader(wrapper: ModelWrapper): wrapper is {
-    store: CoreResourceReader
-} {
-    return wrapper.store["listResources"] !== undefined;
-}
-
-/**
- * Represents necessary information about a single schema that was obtained from
- * a store.
- *
- * @todo schema is a model
- */
-interface CachedModel {
-    // IRI of the schema's resource that is in the store
-    iri: string;
-
-    // Type of the schema's resource
-    type: string;
-
-    belongsToStore: ModelWrapper;
-
-    isLoading: boolean;
-
-    // List of resource IRIs that belongs to the schema and therefore are in the
-    // same store as the schema's resource
-    resources: string[];
-}
-
-/**
- * Federates multiple stores into one, allowing reading and modifying resources, observing changes and caching the results.
- *
- * @see {@link ../README.md README file}
- */
-export class FederatedObservableStore implements FederatedCoreResourceWriter {
-    /**
-     * Models registered in this aggregator.
-     */
-    private models: ModelWrapper[] = [];
-
-    // Schemas indexed by their IRI
-    private modelSchemas: Map<string, CachedModel> = new Map();
-
-    // List of current resource subscriptions
-    private subscriptions: Map<string, Subscription> = new Map();
-
-
-    // This store is passed to operations to read resources that are internally cached
-    //private readonly storeForOperations: _CoreResourceReader_WithMissingMethods;
-    // We will use lazy loading of resources during the operation execution. Only if needed the check method is called
-    //private resourcesToCheckAfterOperation: Set<string> = new Set();
-    private eventListeners: Map<string, Set<() => void>> = new Map();
-
-    /**
-     * Adds a store to the federated store and updates all resources that may
-     * depend on it.
-     */
-    addStore(store: CoreResourceReader): void {
-        if (this.models.some(wrapper => wrapper.store === store)) {
-            throw new Error("Store already presented in FederatedObservableStore.");
-        }
-
-        const wrappedStore = {
-            store,
-        } as ModelWrapper;
-        this.models.push(wrappedStore);
-
-        return this.getSchemas(wrappedStore);
+export class FederatedObservableStore implements FederatedCoreResourceWriter, CoreResourceReader {
+  protected entities: Map<
+    EntityIdentifier,
+    {
+      modelId: ModelIdentifier;
+      resource: Entity;
+      isLoading: boolean;
     }
+  > = new Map();
+  protected toNotifyUpdate: Set<EntityIdentifier> = new Set();
+  protected entitySubscriptions: Map<string, Set<Subscriber>> = new Map();
+  protected allChangesSubscribers: Set<() => void> = new Set();
+  protected addOperationForTransaction?: (operations: OperationInModel[]) => void;
+  protected commitTransaction?: (metadata: object) => void;
 
-    /**
-     * Removes a store from the federated store and updates all resources that
-     * depend on it.
-     * @param store
-     */
-    removeStore(store: CoreResourceReader) {
-        const wrappedStore = this.models.find(wrapper => wrapper.store === store);
-        if (wrappedStore === undefined) {
-            throw new Error("Unable to remove store from FederatedObservableStore because it is not present.");
+  constructor(addOperationForTransaction?: (operations: OperationInModel[]) => void, commitTransaction?: (metadata: object) => void) {
+    this.addOperationForTransaction = addOperationForTransaction;
+    this.commitTransaction = commitTransaction;
+  }
+
+  listResources(): string[] {
+    return Array.from(this.entities.keys());
+  }
+
+  getSchemaForResource(iri: string): string | null {
+    return this.entities.get(iri)?.modelId ?? null;
+  }
+
+  listResourcesOfType(typeIri: string): string[] {
+    return (
+      this.entities
+        .values()
+        .map((entityMetadata) => entityMetadata.resource)
+        // @ts-expect-error we are checking type and types
+        .filter((e) => e.type?.includes(typeIri) || e.types?.includes(typeIri))
+        .map((e) => e.id)
+        .toArray()
+    );
+  }
+
+  /**
+   * @todo There is a problem that currently we are using two different interfaces for resource.
+   */
+  readResource(iri: string): any | null {
+    return (this.entities.get(iri)?.resource as unknown as CoreResource & Entity) ?? null;
+  }
+
+  addModel(modelId: string, entities: EntityRecord): void {
+    this.updateModel(
+      modelId,
+      Object.values(entities).map(
+        (e) =>
+          ({
+            previous: null,
+            next: e,
+          }) satisfies EntityChangeCreated,
+      ),
+    );
+  }
+
+  updateModel(modelId: string, change: EntityChange[]): void {
+    for (const changeItem of change) {
+      if (changeItem.next) {
+        if (!changeItem.next.id) {
+          throw new Error("Entity must have an id");
         }
 
-        // Remove all schemas
-        [...this.modelSchemas.values()].filter(s => s.belongsToStore === wrappedStore)
-            .forEach(s => this.deleteSchema(s.iri));
-
-        // Remove from stores
-        this.models = this.models.filter(s => s !== wrappedStore);
-    }
-
-    /**
-     * Adds subscriber to specific resource.
-     *
-     * The method is called immediately. todo is it ok?
-     * @param iri IRI of the resource to subscribe to.
-     * @param subscriber Method that will be called when the resource changes.
-     */
-    addSubscriber(iri: string, subscriber: Subscriber) {
-        // Create if not yet exists
-        if (!this.subscriptions.has(iri)) {
-            this.createSubscriptionForNewResource(iri);
-        }
-
-        const subscription = this.subscriptions.get(iri) as Subscription;
-
-        subscription.subscribers.push(subscriber);
-        subscriber(iri, subscription.currentValue);
-    }
-
-    /**
-     * Removes subscriber from specific resource.
-     * @param iri IRI of the resource that was previously subscribed to.
-     * @param subscriber Method that was previously subscribed to the resource.
-     */
-    removeSubscriber(iri: string, subscriber: Subscriber) {
-        const entry = this.subscriptions.get(iri) as Subscription;
-        entry.subscribers = entry.subscribers.filter(s => s !== subscriber);
-
-        // Drop immediately if there are no more subscribers
-        if (entry.subscribers.length === 0) {
-            // todo: keep old cached resource
-            //this.subscriptions.delete(iri);
-        }
-    }
-
-    getStores(): (CoreResourceReader | EntityModel)[] {
-        return this.models.map(s => s.store);
-    }
-
-    addEventListener(event: string, listener: () => void) {
-        let entry = this.eventListeners.get(event);
-        if (!entry) {
-            entry = new Set();
-            this.eventListeners.set(event, entry);
-        }
-
-        entry.add(listener);
-    }
-
-    removeEventListener(event: string, listener: () => void) {
-        let entry = this.eventListeners.get(event) as Set<() => void>;
-        entry.delete(listener);
-        if (entry.size === 0) {
-            this.eventListeners.delete(event);
-        }
-    }
-
-    getSchemaForResource(iri: string): string | null {
-        for (const schema of this.modelSchemas.values()) {
-            if (schema.resources.includes(iri) || schema.iri === iri) {
-                return schema.iri;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * @see https://github.com/dataspecer/dataspecer/issues/151
-     * @param schemaIri Schema IRI under which the operation is applied
-     * @param operation The operation to be applied
-     */
-    applyOperation(schemaIri: string, operation: CoreOperation): CoreOperationResult {
-        const storeWrapper = this.modelSchemas.get(schemaIri)?.belongsToStore;
-        // todo: this checks only the local schemas
-
-        if (!storeWrapper) {
-            throw new Error(`Internal error: No store found for schema ${schemaIri}.`);
-        }
-
-        let result: any;
-        if (isModelWrapperEntityModel(storeWrapper)) {
-            const op = operation as unknown as Operation;
-            // @ts-ignore
-            result = (storeWrapper.store).executeOperation(op);
-            // @ts-ignore
-            result.changed = op.type.startsWith("modify") ? [operation.id] : []; // todo: hotfix
-            result.created = op.type.startsWith("create") ? [result.id] : []; // todo: hotfix
-            result.deleted = op.type.startsWith("delete") ? [result.id] : []; // todo: hotfix
-        } else {
-            result = (storeWrapper.store as unknown as CoreResourceWriter).applyOperation(operation);
-        }
-
-
-        for (const changedIri of result.changed) {
-            this.loadResource(changedIri, schemaIri);
-        }
-
-        // This should not be necessary, because the schema updates as well
-        // which causes the resources to be added and removed. Nevertheless,
-        // it is crucial to create update as soon as possible.
-        const schema = this.modelSchemas.get(schemaIri) as CachedModel;
-        schema.resources = [
-            ...schema.resources.filter(r => !result.deleted.includes(r)),
-            ...result.created,
-        ];
-        this.updateResourcesBySchema(schema, result.created, result.deleted);
-
-        return result;
-    }
-
-
-    /**
-     * Executes complex operation on the store.
-     * @param operation
-     */
-    executeComplexOperation(operation: ComplexOperation) {
-        try {
-            operation.setStore(this);
-            operation.execute();
-        } catch (e) {
-            console.warn("Operation failed", e);
-        }
-
-        this.eventListeners.get("afterOperationExecuted")?.forEach(l => l());
-    }
-
-    listResources(): string[] {
-        // todo: this method shall be optimized
-        const resources = new Set<string>();
-        for (const store of this.models) {
-            if (isModelWrapperEntityModel(store)) {
-                Object.values(store.store.getEntities()).forEach(entity => resources.add(entity.id));
-                resources.add(store.store.getId());
-            } else {
-                store.store.listResources().forEach(resource => resources.add(resource));
-            }
-        }
-        return [...resources];
-    }
-
-    listResourcesOfType(typeIri: string): string[] {
-        const resources = new Set<string>();
-        for (const store of this.models) {
-            if (isModelWrapperCoreResourceReader(store)) {
-                store.store.listResourcesOfType(typeIri)
-                    .forEach(resource => resources.add(resource));
-            }
-        }
-        return [...resources];
-    }
-
-    readResource(iri: string): CoreResource|Entity|null {
-        if (!this.subscriptions.has(iri)) {
-            this.createSubscriptionForNewResource(iri);
-        }
-
-        const subscription = this.subscriptions.get(iri) as Subscription;
-        return subscription.currentValue.resource;
-    }
-
-    private createSubscriptionForNewResource(iri: string) {
-        let schemaIri: string|null = null;
-        for (const schema of this.modelSchemas.values()) {
-            if (schema.resources.includes(iri)) {
-                schemaIri = schema.iri;
-                break;
-            }
-        }
-
-        this.subscriptions.set(iri, {
-            currentValue: {
-                resource: null,
-                isLoading: schemaIri !== null,
-            },
-            subscribers: [],
+        // Update or create
+        // todo check previous state
+        this.entities.set(changeItem.next.id, {
+          modelId,
+          resource: changeItem.next,
+          isLoading: false,
         });
-
-        if (schemaIri !== null) {
-            this.loadResource(iri, schemaIri);
-        }
+        this.toNotifyUpdate.add(changeItem.next.id);
+      } else {
+        // Delete
+        this.entities.delete(changeItem.previous.id);
+        this.toNotifyUpdate.add(changeItem.previous.id);
+      }
     }
 
-    /**
-     * Updates resource know value and triggers the subscribers.
-     * Resource does not have to exist.
-     * @param iri
-     * @param update
-     * @private
-     */
-    private updateSubscriptionTo(
-        iri: string, update: Partial<Resource>) {
-        const subscription = this.subscriptions.get(iri);
-        if (!subscription) {
-            return;
-        }
+    this.flushNotifications();
+  }
 
-        let doUpdate = false;
-        for (const key of Object.keys(update)) {
-            if (subscription.currentValue[key] !== update[key]) {
-                doUpdate = true;
-                break;
-            }
-        }
+  removeModel(modelId: string): void {
+    this.entities.forEach((metadata, iri) => {
+      if (metadata.modelId === modelId) {
+        this.entities.delete(iri);
+        this.toNotifyUpdate.add(iri);
+      }
+    });
+  }
 
-        if (doUpdate) {
-            subscription.currentValue = {
-                ...subscription.currentValue,
-                ...update,
-            };
-            subscription.subscribers.forEach(s => s(iri, subscription.currentValue));
-        }
-    }
-
-    /**
-     * Loads the resource from the store regardless of the current value. The
-     * store is identified by schema IRI which must be known.
-     * @param resourceIri Resource to load and trigger its subscribers.
-     * @param schemaIri Known schema IRI specifying concrete store.
-     * @private
-     */
-    private loadResource(
-        resourceIri: string, schemaIri: string,
-    ) {
-        const subscription = this.subscriptions.get(resourceIri);
-        if (!subscription) {
-            return;
-        }
-
-        const storeWrapper = this.modelSchemas.get(schemaIri).belongsToStore;
-
-        // todo: If the resource is the model itself, it should not be cloned
-        let doNotClone = false;
-
-        let resource: CoreResource | Entity | null;
-        if (isModelWrapperEntityModel(storeWrapper)) {
-            if (resourceIri === schemaIri) {
-                doNotClone = resourceIri === schemaIri;
-                // @ts-ignore
-                resource = storeWrapper.store;
-            } else {
-                resource = storeWrapper.store.getEntities()[resourceIri];
-            }
-        } else {
-            resource = storeWrapper.store.readResource(resourceIri);
-        }
-
-        this.updateSubscriptionTo(resourceIri, {
-            isLoading: false,
-            resource: doNotClone ? resource : structuredClone(resource),
-        });
-    }
-
-    /**
-     * If schema changes (loaded, updated, deleted) this functions updates the
-     * subscriptions.
-     * @private
-     */
-    private updateResourcesBySchema(
-        schema: CachedModel, added: string[], removed: string[]) {
-        for (const iri of added) {
-            this.loadResource(iri, schema.iri);
-        }
-
-        for (const iri of removed) {
-            this.updateSubscriptionTo(iri, {
-                isLoading: false,
-                resource: null,
-            });
-        }
-    }
-
-    /**
-     * Fetches schemas for given store.
-     * @param wrappedStore
-     */
-    private getSchemas(wrappedStore: ModelWrapper): void {
-        if (isModelWrapperCoreResourceReader(wrappedStore)) {
-            const dataPsmSchemas = wrappedStore.store.listResourcesOfType(DataPSM.SCHEMA);
-
-            for (const schemaIri of dataPsmSchemas) {
-                let schema = this.modelSchemas.get(schemaIri);
-                if (!schema) {
-                    this.createSchema(schemaIri, wrappedStore, DataPSM.SCHEMA);
-                }
-            }
-
-            // todo: remove schemas that are registered but not in the current list
-        } else {
-            const schema = this.createSchema(wrappedStore.store.getId(), wrappedStore, "EntityModel");
-            const store = wrappedStore.store;
-            store.subscribeToChanges((updated, removed) => {
-                const updatedIds = Object.keys(updated);
-                for (const updatedId of updatedIds) {
-                    this.loadResource(updatedId, schema.iri);
-                }
-                schema.resources = Object.keys(store.getEntities());
-                this.updateResourcesBySchema(schema, updatedIds, removed);
-            });
-        }
-    }
-
-    /**
-     * Registers new schema that does not exist yet.
-     * @param schemaIri
-     * @param store
-     * @param type
-     * @private
-     */
-    private createSchema(schemaIri: string, store: ModelWrapper, type: string) {
-        const schema = {
-            iri: schemaIri,
-            type,
-            belongsToStore: store,
-            isLoading: true,
-            resources: [],
+  protected flushNotifications() {
+    if (this.toNotifyUpdate.size > 0) {
+      for (const iri of this.toNotifyUpdate) {
+        let entity: Resource = this.entities.get(iri) ?? {
+          resource: null,
+          isLoading: false,
         };
-        this.modelSchemas.set(schemaIri, schema);
-        // Because the schema does not exist yet, it is not possible that the
-        // resource is cached
-        this.addSubscriber(schemaIri, this.schemaUpdateListener);
-        this.updateResourcesBySchema(schema, [schemaIri], []);
-        return schema;
+        this.entitySubscriptions.get(iri)?.forEach((subscriber) => subscriber(iri, entity));
+      }
     }
+    this.toNotifyUpdate.clear();
+    this.allChangesSubscribers.forEach((callback) => callback());
+  }
 
-    private deleteSchema(schemaIri: string) {
-        this.removeSubscriber(schemaIri, this.schemaUpdateListener);
-        const schema = this.modelSchemas.get(schemaIri);
-        this.updateResourcesBySchema(schema, [], [...schema.resources, schemaIri]);
-        this.modelSchemas.delete(schemaIri);
+  addSubscriber(iri: string, subscriber: Subscriber): void {
+    if (!this.entitySubscriptions.has(iri)) {
+      this.entitySubscriptions.set(iri, new Set());
     }
+    this.entitySubscriptions.get(iri)!.add(subscriber);
+  }
 
-    /**
-     * Arrow function that listens for schema updates and accordingly updates
-     * its resources and triggers the load of them if necessary.
-     * @param iri
-     * @param resource
-     */
-    private schemaUpdateListener: Subscriber = (iri, resource) => {
-        const schema = this.modelSchemas.get(iri) as CachedModel; // Schema should be in the cache
-
-        if (!resource.resource) {
-            return;
-        }
-
-        if (resource.isLoading) {
-            schema.isLoading = true;
-            return;
-        }
-        schema.isLoading = false;
-
-        let iris: string[] = [];
-
-        if (DataPsmSchema.is(resource.resource)) {
-            iris = resource.resource.dataPsmParts;
-        // @ts-ignore
-        } else if (resource.resource.getEntities) {
-            // @ts-ignore
-            iris = Object.keys(resource.resource.getEntities());
-            // @ts-ignore
-            iris.push(resource.resource.getId())
-        } else {
-            console.log(resource.resource);
-            throw new Error(`Internal error: Unknown schema type.`);
-        }
-
-        // Update an existing list of resources
-        const deleted = schema.resources.filter(iri => !iris.includes(iri));
-        const added = iris.filter(iri => !schema.resources.includes(iri));
-        schema.resources = iris;
-        this.updateResourcesBySchema(schema, added, deleted);
+  removeSubscriber(iri: string, subscriber: Subscriber): void {
+    this.entitySubscriptions.get(iri)?.delete(subscriber);
+    if (this.entitySubscriptions.get(iri)?.size === 0) {
+      this.entitySubscriptions.delete(iri);
     }
+  }
+
+  subscribeToChanges(listener: () => void): () => void {
+    this.allChangesSubscribers.add(listener);
+    return () => this.allChangesSubscribers.delete(listener);
+  }
+
+  applyOperation(modelId: ModelIdentifier, operation: CoreOperation | Operation): void {
+    if (!this.addOperationForTransaction) {
+      throw new Error("The model is read only.");
+    }
+    this.addOperationForTransaction([
+      {
+        modelId,
+        operation: operation as Operation,
+      },
+    ]);
+  }
+
+  /**
+   * All the user operations in DSE are executed via this method. Since all
+   * opearations are synchronous, we should start and commit transaction here in
+   * order to properly handle undo/redo functionality.
+   */
+  executeComplexOperation(operation: ComplexOperation) {
+    if (!this.commitTransaction || !this.addOperationForTransaction) {
+      throw new Error("The model is read only.");
+    }
+    try {
+      operation.setStore(this);
+      operation.execute();
+    } catch (e) {
+      console.warn("Operation failed", e);
+    } finally {
+      this.commitTransaction({});
+    }
+  }
 }

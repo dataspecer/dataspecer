@@ -35,6 +35,7 @@
   "no title": "no title",
   "open data structure": "Open data structure",
   "profile": "Profile",
+  "redo": "Redo",
   "report a bug": "report a bug",
   "request a feature": "request a feature",
   "return back button": "Go back to {{toolName}}",
@@ -53,5 +54,6 @@
     "system": "System"
   },
   "title": "schema editor",
+  "undo": "Undo",
   "version": "Version"
 }

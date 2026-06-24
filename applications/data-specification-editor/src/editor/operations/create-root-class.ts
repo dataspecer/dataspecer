@@ -53,10 +53,10 @@ export class CreateRootClass implements ComplexOperation {
       dataPsmCreateClass.dataPsmTechnicalLabel = "root";
     }
 
-    const dataPsmCreateClassResult = this.store.applyOperation(this.dataPsmSchemaIri, dataPsmCreateClass);
+    this.store.applyOperation(this.dataPsmSchemaIri, dataPsmCreateClass);
 
     const dataPsmUpdateSchemaRoots = new DataPsmSetRoots();
-    dataPsmUpdateSchemaRoots.dataPsmRoots = [dataPsmCreateClassResult.created[0]];
+    dataPsmUpdateSchemaRoots.dataPsmRoots = [dataPsmCreateClass.dataPsmNewIri as string];
     this.store.applyOperation(this.dataPsmSchemaIri, dataPsmUpdateSchemaRoots);
 
     // Schema label and description

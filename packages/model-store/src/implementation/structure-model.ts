@@ -15,6 +15,7 @@ import { generateEntityId, type EntityRecord } from "@dataspecer/core/entity-mod
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import { BaseModelInModelStore } from "./base.ts";
 import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
+import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 
 const structureModelExecutors = createExecutorMap([...dataPsmExecutors]);
 
@@ -111,7 +112,20 @@ export class StructureModelInModelStore extends BaseModelInModelStore<CoreResour
 
     return candidates[0];
   }
+
+  override loadInitialStateInternal(): void {
+    const mainEntity = new DataPsmSchema(this.id);
+    const mainEntityAsEntity = coreResourceToEntity(mainEntity);
+
+    this.initializeState({
+      entities: {
+        [mainEntityAsEntity.id]: mainEntityAsEntity,
+      },
+      operations: [],
+    });
+  }
 }
+
 
 export function createStructureModel(
   modelId: ModelIdentifier,

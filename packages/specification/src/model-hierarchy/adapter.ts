@@ -7,7 +7,7 @@ import { WikidataAdapter } from "@dataspecer/wikidata-experimental-adapter";
 
 const DEFAULT_CONFIG = [] as [];
 
-export async function getProvidedSourceSemanticModel(
+export function getProvidedSourceSemanticModel(
   cimAdaptersConfiguration: any[] = DEFAULT_CONFIG
 ) {
   const iriProvider = new PrefixIriProvider();

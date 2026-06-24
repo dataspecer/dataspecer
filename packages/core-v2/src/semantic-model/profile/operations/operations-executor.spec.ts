@@ -22,6 +22,7 @@ test("Create class profile.", () => {
   );
   //
   const result = executor.executeOperation(factory.createClassProfile({
+    id: "1",
     iri: "iri",
     name: { "en": "name" },
     nameFromProfiled: "name-source",
@@ -177,6 +178,7 @@ test("Create relationship profile.", () => {
   );
   //
   const result = executor.executeOperation(factory.createRelationshipProfile({
+    id: "1",
     ends: [{
       iri: "first",
       name: { "en": "first-name" },
@@ -369,6 +371,7 @@ test("Relationship use all edges.", () => {
   );
   //
   const result = executor.executeOperation(factory.createRelationshipProfile({
+    id: "1",
     ends: [{
       iri: "first",
       name: null,
@@ -484,6 +487,7 @@ test("Issue #917: Change class profile to null.", () => {
   );
   //
   const result = executor.executeOperation(factory.createClassProfile({
+    id: "1",
     iri: "iri",
     name: { "en": "name" },
     nameFromProfiled: "name-source",

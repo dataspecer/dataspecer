@@ -1,6 +1,7 @@
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { EntityObservableModelStore } from "./observable.ts";
 import type { WritableModelStore } from "./writable.ts";
+import type { UndoRedoModelStore } from "./undo-redo.ts";
 
 /**
  * The purpose of the remote model store is to provide a unified interface for
@@ -8,7 +9,7 @@ import type { WritableModelStore } from "./writable.ts";
  * applications need transactions, change observation, undo/redo,
  * synchronization, etc.
  */
-export interface RemoteModelStore extends WritableModelStore, EntityObservableModelStore, SimpleSyncRemoteModelStore {
+export interface RemoteModelStore extends WritableModelStore, EntityObservableModelStore, SimpleSyncRemoteModelStore, UndoRedoModelStore {
   /**
    * Returns a materialized model for remote use.
    *
@@ -28,6 +29,15 @@ export interface RemoteModelStore extends WritableModelStore, EntityObservableMo
 
   getConnectionStatus(): ConnectionStatus;
   subscribeToConnectionStatus(update: (status: ConnectionStatus) => void): () => void;
+
+  /**
+   * Subscribes to be notified every time a transaction is fully applied, i.e.
+   * after a transaction is committed, or after undo/redo. Useful for example
+   * to trigger a save of the changed models.
+   *
+   * @returns Unsubscribe function.
+   */
+  subscribeToTransactionCommit(listener: () => void): () => void;
 }
 
 /**

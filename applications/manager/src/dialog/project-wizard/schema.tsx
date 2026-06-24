@@ -26,13 +26,13 @@ export const Schema = ({ isOpen, resolve, iri }: { iri: string } & BetterModalPr
 
       const specService = getSpecificationService(iri);
 
-      const dataSpecification = await specService.createDataSpecification({
+      const dataSpecificationId = await specService.createDataSpecification({
         label: {[i18n.language]: name},
         tags: [],
       });
 
       // Redirect to url
-      window.location.href = getSchemaLink(dataSpecification.id);
+      window.location.href = getSchemaLink(dataSpecificationId);
 
       // Never resolve as we need to redirect!
       // resolve(true);

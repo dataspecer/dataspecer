@@ -4,9 +4,9 @@ import { FormControl, FormGroup, FormHelperText, Input, InputLabel, Typography }
 import { cloneDeep } from "lodash";
 import { FC, useContext } from "react";
 import { useSearchParams } from "react-router-dom";
-import { DefaultConfigurationContext } from "../../../../application";
+import { BackendConnectorContext, DefaultConfigurationContext } from "../../../../application";
 import { getDefaultConfigurators } from "../../../../configurators";
-import { getConfiguration } from "../../../../generators/configuration/provided-configuration";
+import { getConfiguration } from "../../../../configuration/provided-configuration";
 import { useAsyncMemo } from "../../../../editor/hooks/use-async-memo";
 import { ArtifactConfigurator } from "@dataspecer/specification/v1";
 import { SpecificationContext } from "../../../routes/specification/specification";
@@ -83,10 +83,11 @@ export const ArtifactNames: FC<{
   currentConfiguration: object,
   //fullCurrentConfiguration: object,
 }> = ({input, onChange, defaultObject, currentConfiguration}) => {
-  const [specification] = useContext(SpecificationContext);
+  const specification = useContext(SpecificationContext);
   const defaultConfiguration = useContext(DefaultConfigurationContext);
   const [searchParams] = useSearchParams();
   const dataSpecificationIri = searchParams.get("dataSpecificationIri");
+  const backendConnector = useContext(BackendConnectorContext);
 
   const [currentArtifactConfiguration] = useAsyncMemo(async () => {
     const clonedSpecification = cloneDeep(specification);
@@ -95,7 +96,7 @@ export const ArtifactNames: FC<{
     // @ts-ignore
     clonedSpecification.artefactConfiguration = currentConfiguration;
 
-    const {store, dataSpecifications: ds2} = await getConfiguration(specification.id, "");
+    const { store } = await getConfiguration(specification.id, "", backendConnector);
 
     // We know, that the current data specification and its stores are present
     const configurator = new ArtifactConfigurator(
@@ -110,7 +111,7 @@ export const ArtifactNames: FC<{
     const generators = [...new Set(artifacts.map(a => a.generator))];
 
     return generators;
-  }, [specification]);
+  }, [specification, backendConnector]);
 
   return <FormGroup>
     <Typography sx={{mb: 3}}>

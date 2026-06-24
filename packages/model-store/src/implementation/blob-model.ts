@@ -2,7 +2,7 @@ import type { PackageService } from "@dataspecer/core-v2/project";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
-import { UpdateEntityOperationType, type UpdateEntityOperation } from "@dataspecer/core/operation";
+import { SetEntityOperationType, UpdateEntityOperationType, type SetEntityOperation, type UpdateEntityOperation } from "@dataspecer/core/operation";
 import { BaseModelInModelStore, type ModelState } from "./base.ts";
 import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
 import { serializationToBlobModelEntities } from "@dataspecer/core/entity-model/utils";
@@ -40,6 +40,15 @@ export class BlobModelInModelStore extends BaseModelInModelStore implements Mode
   }
 
   protected applyOperation(operation: Operation, mutableState: EntityRecord): void {
+    if (operation.type === SetEntityOperationType) {
+      const setOperation = operation as SetEntityOperation;
+      if (setOperation.entity.id !== this.id) {
+        throw new Error(`Blob model can only set entity with id \"${this.id}\".`);
+      }
+      mutableState[this.id] = setOperation.entity;
+      return;
+    }
+
     if (operation.type !== UpdateEntityOperationType) {
       throw new Error("Applying operations to blob model is not yet supported!");
     }
@@ -65,6 +74,14 @@ export class BlobModelInModelStore extends BaseModelInModelStore implements Mode
       entities,
       operations: [],
     };
+  }
+
+  override loadInitialStateInternal(): void {
+    // A blob model always has exactly one entity even if empty
+    this.initializeState({
+      entities: serializationToBlobModelEntities(this.id, {}),
+      operations: [],
+    });
   }
 
   protected async saveInternal(state: ModelState): Promise<void> {

@@ -1,5 +1,5 @@
-import {CoreOperation} from "@dataspecer/core/core";
-import {FederatedObservableStore} from "./federated-observable-store.ts";
+import { CoreOperation } from "@dataspecer/core/core";
+import { FederatedObservableStore } from "./federated-observable-store.ts";
 
 /**
  * Associates multiple {@link CoreOperation} into one component operation.
@@ -9,6 +9,6 @@ import {FederatedObservableStore} from "./federated-observable-store.ts";
  * most once for every instance.
  */
 export interface ComplexOperation {
-    setStore(store: FederatedObservableStore): void;
-    execute(): void;
+  setStore(store: FederatedObservableStore): void;
+  execute(): void;
 }

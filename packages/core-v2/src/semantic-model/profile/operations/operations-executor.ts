@@ -94,7 +94,7 @@ function executeCreateSemanticModelClassProfile(
   entityWriter: EntityWriter,
   { entity }: CreateSemanticModelClassProfile,
 ): OperationResult {
-  const identifier = identifierSource.createIdentifier();
+  const identifier = entity.id ?? identifierSource.createIdentifier();
   const newEntity: SemanticModelClassProfile = {
     ...entity,
     id: identifier,
@@ -168,7 +168,7 @@ function executeCreateSemanticModelRelationshipProfile(
   entityWriter: EntityWriter,
   { entity }: CreateSemanticModelRelationshipProfile,
 ): OperationResult {
-  const identifier = identifierSource.createIdentifier();
+  const identifier = entity.id ?? identifierSource.createIdentifier();
   const newEntity: SemanticModelRelationshipProfile = {
     ...entity,
     id: identifier,

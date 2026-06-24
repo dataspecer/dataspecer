@@ -44,6 +44,10 @@ export async function structureModelToRdf(entities: CoreResource[], configuratio
     writer.addQuad(IRI(entity.iri!), RDF.type, STRUCTURE_MODEL_DSV["entity"]);
     const sortedEntries = Object.entries(entity).sort(([a], [b]) => a > b ? 1 : a < b ? -1 : 0);
     for (const [key, value] of sortedEntries) {
+      if (["id", "type"].includes(key)) {
+        // We skip properties of Entity that were added for interoperability purposes.
+        continue;
+      }
       const data = JSON.stringify(value);
       writer.addQuad(IRI(entity.iri!), IRI(DUMP_BASE_IRI + key), Literal(data));
     }

@@ -1,14 +1,13 @@
 import type { PackageService } from "@dataspecer/core-v2/project";
 import { createRdfsModel } from "@dataspecer/core-v2/semantic-model/simplified";
-import { PimStoreWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
+import { PimStoreWrapper, serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
+import { diffEntities } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
-import { diffEntities } from "../utilities.ts";
 import { BaseModelInModelStore, type ModelState } from "./base.ts";
 import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
-import { serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 
 export const ReloadModelOperationType = "http://dataspecer.com/core/operation/reload" as const;
 /**
@@ -93,6 +92,31 @@ export class PimModelInModelStore extends BaseModelInModelStore implements Model
       entities,
       operations: [],
     };
+  }
+
+  /**
+   * Sets up an empty legacy model synchronously, without fetching anything
+   * from the backend. The model must always contain a {@link MainEntity}
+   * representing itself, analogous to {@link loadInternal}.
+   */
+  override loadInitialStateInternal(): void {
+    const adapter = new PimStoreWrapper({ resources: {} } as any, this.id, "model", []);
+    adapter.fetchFromPimStore();
+    this.model = adapter;
+
+    const mainEntity: MainEntity = {
+      id: this.id,
+      type: ["mainEntity"],
+      urls: [],
+    };
+
+    this.initializeState({
+      entities: {
+        ...adapter.getEntities(),
+        [this.id]: mainEntity,
+      },
+      operations: [],
+    });
   }
 
   protected async saveInternal(state: ModelState): Promise<void> {

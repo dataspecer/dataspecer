@@ -43,9 +43,9 @@ export interface Entity {
  */
 export type EntityArray<T extends Entity = Entity> = T[];
 
-export type EntityRecord<T extends Entity = Entity> = Record<string, T>;
+export type EntityRecord<T extends Entity = Entity> = Record<EntityIdentifier, T>;
 
-export type EntityMap<T extends Entity = Entity> = Map<string, T>;
+export type EntityMap<T extends Entity = Entity> = Map<EntityIdentifier, T>;
 
 /**
  * Helper method to convert old, deprecated interface of CoreResource to new
