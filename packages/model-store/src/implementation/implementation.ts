@@ -3,7 +3,7 @@ import { type PackageService } from "@dataspecer/core-v2/project";
 import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
-import type { Operation, OperationInModel } from "@dataspecer/core/operation";
+import type { Transaction as CoreTransaction, Operation, OperationInModel } from "@dataspecer/core/operation";
 import type { ModelEntity } from "@dataspecer/project-model";
 import type { ObservableEntityModelStoreChangeEvent } from "../interfaces/observable.ts";
 import type { ConnectionStatus, RemoteModelStore } from "../interfaces/remote.ts";
@@ -87,11 +87,9 @@ export interface DefaultFrontendModelStoreParams {
 /**
  * Transaction that is executed on the model store.
  */
-interface Transaction {
-  id: string;
+interface Transaction extends CoreTransaction {
   metadata: TransactionMetadata;
-  operations: OperationInModel[];
-
+  
   /**
    * Whether this transaction contains an operation on the project model (i.e.
    * it creates or removes a model). Such transactions are not added to the

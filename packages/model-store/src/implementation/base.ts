@@ -1,7 +1,7 @@
 import type { Entity, EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
+import { diffEntities } from "@dataspecer/core/entity-model";
 import type { Model } from "@dataspecer/core/model";
 import { isSetEntityOperation, isUpdateEntityOperation, type Operation } from "@dataspecer/core/operation";
-import { diffEntities } from "../utilities.ts";
 import type { ApplyOperationResult, ModelInDefaultFrontendModelStore } from "./implementation.ts";
 
 export const UNDO_OPERATION_TYPE = "undo" as const;

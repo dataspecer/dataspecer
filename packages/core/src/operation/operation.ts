@@ -1,4 +1,5 @@
 import { v7 as uuidv7 } from 'uuid';
+import type { ModelIdentifier } from '../model/model.ts';
 
 export type OperationIdentifier = string;
 
@@ -55,5 +56,14 @@ export interface WrappedOperation<T extends Operation = Operation> {
 }
 
 export interface OperationInModel<T extends Operation = Operation> extends WrappedOperation<T> {
-  modelId: string;
+  modelId: ModelIdentifier;
+}
+
+/**
+ * A transaction is a set of operations (possibly targeting several models) that
+ * were applied atomically and are grouped together as a single unit of work.
+ */
+export interface Transaction<T extends Operation = Operation> {
+  id: OperationIdentifier;
+  operations: OperationInModel<T>[];
 }

@@ -592,6 +592,7 @@
     "./well-known/xsd.js": "./lib/well-known/xsd.js"
   },
   "dependencies": {
+    "@dataspecer/utilities": "*",
     "@types/jsonld": "^1.5.8",
     "@types/n3": "^1.24.2",
     "jsonld": "^8.1.1",

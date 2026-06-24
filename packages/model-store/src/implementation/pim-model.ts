@@ -1,14 +1,13 @@
 import type { PackageService } from "@dataspecer/core-v2/project";
 import { createRdfsModel } from "@dataspecer/core-v2/semantic-model/simplified";
-import { PimStoreWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
+import { PimStoreWrapper, serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
+import { diffEntities } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
-import { diffEntities } from "../utilities.ts";
 import { BaseModelInModelStore, type ModelState } from "./base.ts";
 import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
-import { serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 
 export const ReloadModelOperationType = "http://dataspecer.com/core/operation/reload" as const;
 /**
