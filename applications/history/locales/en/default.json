@@ -1,0 +1,74 @@
+{
+  "--lang-name": "English",
+  "app-name": "history",
+  "breadcrumbs": {
+    "home": "Packages",
+    "no-specification": "No specification selected"
+  },
+  "nav": {
+    "evolution": "Evolution"
+  },
+  "mode-toggle": {
+    "title": "Toggle theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "evolution": {
+    "title": "Pending changes",
+    "description": "Changes made in one model that have not yet been propagated to the other models of this specification.",
+    "empty": "There are no pending changes.",
+    "all-reviewed": "All pending changes have been reviewed.",
+    "progress": "Change {{current}} of {{total}}",
+    "previous": "Previous",
+    "approve-and-continue": "Approve and continue",
+    "proposed-operations_one": "{{count}} proposed operation in other models",
+    "proposed-operations_other": "{{count}} proposed operations in other models",
+    "apply": "Apply",
+    "skip": "Skip",
+    "status-applied": "Applied",
+    "status-skipped": "Skipped"
+  },
+  "operations": {
+    "generic": {
+      "type": "Type"
+    },
+    "semantic": {
+      "id": "Id",
+      "iri": "Iri",
+      "name": "Name",
+      "description": "Description",
+      "end": "End {{index}}",
+      "child": "Child",
+      "parent": "Parent"
+    },
+    "structure": {
+      "new-iri": "New iri",
+      "interpretation": "Interpretation",
+      "human-label": "Human label",
+      "extends": "Extends",
+      "class": "Class",
+      "resource": "Resource",
+      "owner": "Owner",
+      "datatype": "Datatype",
+      "entity": "Entity",
+      "cardinality": "Cardinality"
+    },
+    "titles": {
+      "semantic-create-class": "Create class",
+      "semantic-modify-class": "Modify class",
+      "semantic-create-relationship": "Create relationship",
+      "semantic-modify-relationship": "Modify relationship",
+      "semantic-create-generalization": "Create generalization",
+      "semantic-modify-generalization": "Modify generalization",
+      "semantic-delete-entity": "Delete entity",
+      "semantic-generic": "Semantic model operation",
+      "structure-create-class": "Create class",
+      "structure-delete-class": "Delete class",
+      "structure-set-human-label": "Set human label",
+      "structure-create-attribute": "Create attribute",
+      "structure-set-cardinality": "Set cardinality",
+      "structure-generic": "Structure model operation"
+    }
+  }
+}

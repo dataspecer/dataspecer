@@ -13,6 +13,10 @@ export function getSchemaLink(packageId: string) {
   return (import.meta.env.VITE_DATA_SPECIFICATION_EDITOR ?? "") + "/specification?dataSpecificationIri=" + encodeURIComponent(packageId);
 }
 
+export function getHistoryLink(packageId: string) {
+  return (import.meta.env.VITE_HISTORY ?? "") + "/evolution?packageIri=" + encodeURIComponent(packageId);
+}
+
 export interface createModelContext {
   iri?: string;
   parentIri: string;
