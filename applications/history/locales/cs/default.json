@@ -1,0 +1,75 @@
+{
+  "--lang-name": "Čeština",
+  "app-name": "historie",
+  "breadcrumbs": {
+    "home": "Balíčky",
+    "no-specification": "Není vybrána žádná specifikace"
+  },
+  "nav": {
+    "evolution": "Evoluce"
+  },
+  "mode-toggle": {
+    "title": "Přepnout téma",
+    "light": "Světlé",
+    "dark": "Tmavé",
+    "system": "Systémové"
+  },
+  "evolution": {
+    "title": "Nevyřízené změny",
+    "description": "Změny provedené v jednom modelu, které ještě nebyly promítnuty do ostatních modelů této specifikace.",
+    "empty": "Nejsou žádné nevyřízené změny.",
+    "all-reviewed": "Všechny nevyřízené změny byly zpracovány.",
+    "progress": "Změna {{current}} z {{total}}",
+    "previous": "Předchozí",
+    "approve-and-continue": "Schválit a pokračovat",
+    "proposed-operations_one": "{{count}} navrhovaná operace v ostatních modelech",
+    "proposed-operations_few": "{{count}} navrhované operace v ostatních modelech",
+    "proposed-operations_other": "{{count}} navrhovaných operací v ostatních modelech",
+    "apply": "Použít",
+    "skip": "Přeskočit",
+    "status-applied": "Použito",
+    "status-skipped": "Přeskočeno"
+  },
+  "operations": {
+    "generic": {
+      "type": "Typ"
+    },
+    "semantic": {
+      "id": "Id",
+      "iri": "Iri",
+      "name": "Název",
+      "description": "Popis",
+      "end": "Konec {{index}}",
+      "child": "Potomek",
+      "parent": "Předek"
+    },
+    "structure": {
+      "new-iri": "Nové iri",
+      "interpretation": "Interpretace",
+      "human-label": "Lidský popisek",
+      "extends": "Rozšiřuje",
+      "class": "Třída",
+      "resource": "Zdroj",
+      "owner": "Vlastník",
+      "datatype": "Datový typ",
+      "entity": "Entita",
+      "cardinality": "Kardinalita"
+    },
+    "titles": {
+      "semantic-create-class": "Vytvoření třídy",
+      "semantic-modify-class": "Úprava třídy",
+      "semantic-create-relationship": "Vytvoření vztahu",
+      "semantic-modify-relationship": "Úprava vztahu",
+      "semantic-create-generalization": "Vytvoření generalizace",
+      "semantic-modify-generalization": "Úprava generalizace",
+      "semantic-delete-entity": "Smazání entity",
+      "semantic-generic": "Operace konceptuálního modelu",
+      "structure-create-class": "Vytvoření třídy",
+      "structure-delete-class": "Smazání třídy",
+      "structure-set-human-label": "Nastavení lidského popisku",
+      "structure-create-attribute": "Vytvoření atributu",
+      "structure-set-cardinality": "Nastavení kardinality",
+      "structure-generic": "Operace strukturálního modelu"
+    }
+  }
+}

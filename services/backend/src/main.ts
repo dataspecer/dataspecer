@@ -154,6 +154,9 @@ if (configuration.staticFilesPath) {
   application.get(basename + "/data-specification-editor", (_, res) => res.status(302).redirect(basename + "/data-specification-editor/"));
   application.get(basename + "/data-specification-editor/{*splat}", useStaticSpaHandler(configuration.staticFilesPath + "data-specification-editor/"));
 
+  application.get(basename + "/history", (_, res) => res.status(302).redirect(basename + "/history/"));
+  application.get(basename + "/history/{*splat}", useStaticSpaHandler(configuration.staticFilesPath + "history/"));
+
   application.get(basename + "{/*splat}", useStaticSpaHandler(configuration.staticFilesPath + ""));
 }
 
