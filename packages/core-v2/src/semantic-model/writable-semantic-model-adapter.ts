@@ -13,9 +13,11 @@ import {
     isModifyClassOperation,
     isModifyGeneralizationOperation,
     isModifyRelationOperation,
+    isModifyRelationEndOperation,
     ModifyClassOperation,
     ModifyGeneralizationOperation,
     ModifyRelationOperation,
+    ModifyRelationEndOperation,
     OperationResult,
 } from "./operations/index.ts";
 import { SemanticModelClass, SemanticModelGeneralization, SemanticModelRelationship } from "./concepts/index.ts";
@@ -139,6 +141,8 @@ export function applyOperationToSemanticModel(semanticModel: EntityRecord, opera
             result.push(handleCreateRelationshipOperation(getEntity, change, operation));
         } else if (isModifyRelationOperation(operation)) {
             result.push(handleModifyRelationOperation(getEntity, change, operation));
+        } else if (isModifyRelationEndOperation(operation)) {
+            result.push(handleModifyRelationEndOperation(getEntity, change, operation));
         } else if (isCreateGeneralizationOperation(operation)) {
             result.push(handleCreateGeneralizationOperation(getEntity, change, operation));
         } else if (isModifyGeneralizationOperation(operation)) {
@@ -318,6 +322,35 @@ function handleModifyRelationOperation(
     } as SemanticModelRelationship;
 
     change({ [operation.entity.id]: updatedRelationship }, []);
+    return {
+        success: true,
+    };
+}
+
+function handleModifyRelationEndOperation(
+    getEntity: EntityGetter,
+    change: ChangeCollector,
+    operation: ModifyRelationEndOperation,
+): OperationResult {
+    const oldRelationship = getEntity(operation.entityId) as SemanticModelRelationship | undefined;
+
+    if (!oldRelationship) {
+        return {
+            success: false,
+        };
+    }
+
+    const previousEnd = oldRelationship.ends[operation.endIndex];
+    if (previousEnd === undefined) {
+        return {
+            success: false,
+        };
+    }
+
+    const ends = [...oldRelationship.ends];
+    ends[operation.endIndex] = { ...previousEnd, ...operation.end };
+
+    change({ [operation.entityId]: { ...oldRelationship, ends } as SemanticModelRelationship }, []);
     return {
         success: true,
     };

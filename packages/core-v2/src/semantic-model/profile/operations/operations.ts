@@ -1,6 +1,6 @@
 import { EntityIdentifier } from "../../../entity-model/entity.ts";
 import type { Operation } from "@dataspecer/core/operation";
-import { SemanticModelClassProfile, SemanticModelRelationshipProfile } from "../concepts/index.ts";
+import { SemanticModelClassProfile, SemanticModelRelationshipEndProfile, SemanticModelRelationshipProfile } from "../concepts/index.ts";
 
 export interface CreateSemanticModelClassProfile extends Operation {
 
@@ -48,6 +48,10 @@ export function isCreateSemanticModelRelationshipProfile(operation: Operation)
   return operation.type === CREATE_SEMANTIC_MODEL_RELATIONSHIP_PROFILE;
 }
 
+/**
+ * If you modifying individual ends of the relationship profile, use
+ * `ModifySemanticModelRelationshipEndProfile` instead.
+ */
 export interface ModifySemanticModelRelationshipProfile extends Operation {
 
   type: typeof MODIFY_SEMANTIC_MODEL_RELATIONSHIP_PROFILE;
@@ -63,4 +67,26 @@ export const MODIFY_SEMANTIC_MODEL_RELATIONSHIP_PROFILE = "modify-relation-profi
 export function isModifySemanticModelRelationshipProfile(operation: Operation)
   : operation is ModifySemanticModelRelationshipProfile {
   return operation.type === MODIFY_SEMANTIC_MODEL_RELATIONSHIP_PROFILE;
+}
+
+export interface ModifySemanticModelRelationshipEndProfile extends Operation {
+
+  type: typeof MODIFY_SEMANTIC_MODEL_RELATIONSHIP_END_PROFILE;
+
+  identifier: EntityIdentifier;
+
+  /**
+   * Zero-based index of the end to modify.
+   */
+  endIndex: number;
+
+  end: Partial<SemanticModelRelationshipEndProfile>;
+
+}
+
+export const MODIFY_SEMANTIC_MODEL_RELATIONSHIP_END_PROFILE = "modify-relation-end-profile";
+
+export function isModifySemanticModelRelationshipEndProfile(operation: Operation)
+  : operation is ModifySemanticModelRelationshipEndProfile {
+  return operation.type === MODIFY_SEMANTIC_MODEL_RELATIONSHIP_END_PROFILE;
 }

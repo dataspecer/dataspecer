@@ -1,7 +1,7 @@
 import { Entity, EntityIdentifier } from "../../../entity-model/entity.ts";
 import type { Operation } from "@dataspecer/core/operation";
 import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile, SEMANTIC_MODEL_CLASS_PROFILE, SEMANTIC_MODEL_RELATIONSHIP_PROFILE, SemanticModelClassProfile, SemanticModelRelationshipEndProfile, SemanticModelRelationshipProfile, } from "../concepts/index.ts";
-import { CreateSemanticModelClassProfile, ModifySemanticModelClassProfile, CreateSemanticModelRelationshipProfile, ModifySemanticModelRelationshipProfile, isCreateSemanticModelClassProfile, isModifySemanticModelClassProfile, isCreateSemanticModelRelationshipProfile, isModifySemanticModelRelationshipProfile } from "./operations.ts";
+import { CreateSemanticModelClassProfile, ModifySemanticModelClassProfile, CreateSemanticModelRelationshipProfile, ModifySemanticModelRelationshipProfile, ModifySemanticModelRelationshipEndProfile, isCreateSemanticModelClassProfile, isModifySemanticModelClassProfile, isCreateSemanticModelRelationshipProfile, isModifySemanticModelRelationshipProfile, isModifySemanticModelRelationshipEndProfile } from "./operations.ts";
 
 export interface IdentifierSource {
 
@@ -82,6 +82,10 @@ class DefaultSemanticModelProfileOperationExecutor implements SemanticModelProfi
     }
     if (isModifySemanticModelRelationshipProfile(operation)) {
       return executeModifySemanticModelRelationshipProfile(
+        this.entityReader, this.entityWriter, operation);
+    }
+    if (isModifySemanticModelRelationshipEndProfile(operation)) {
+      return executeModifySemanticModelRelationshipEndProfile(
         this.entityReader, this.entityWriter, operation);
     }
     return null;
@@ -239,6 +243,44 @@ function executeModifySemanticModelRelationshipProfile(
     success: true,
     created: [],
   }
+}
+
+function executeModifySemanticModelRelationshipEndProfile(
+  entityReader: EntityReader,
+  entityWriter: EntityWriter,
+  { identifier, endIndex, end }: ModifySemanticModelRelationshipEndProfile,
+): OperationResult {
+  const previous = entityReader.entity(identifier);
+  if (previous === null || !isSemanticModelRelationshipProfile(previous)) {
+    console.error("Previous value is not relationship profile, action to update the end profile is ignored.",
+      { previous, next: end });
+    return {
+      success: false,
+      created: [],
+    };
+  }
+  const previousEnd = previous.ends[endIndex];
+  if (previousEnd === undefined) {
+    console.error("End index out of bounds, action to update the end profile is ignored.",
+      { endIndex, ends: previous.ends });
+    return {
+      success: false,
+      created: [],
+    };
+  }
+  const ends = [...previous.ends];
+  ends[endIndex] = { ...previousEnd, ...end };
+  const updatedEntity: SemanticModelRelationshipProfile = {
+    ...previous,
+    id: identifier,
+    type: [SEMANTIC_MODEL_RELATIONSHIP_PROFILE],
+    ends,
+  };
+  entityWriter.change({ [identifier]: updatedEntity }, []);
+  return {
+    success: true,
+    created: [],
+  };
 }
 
 export function createDefaultSemanticModelProfileOperationExecutor(

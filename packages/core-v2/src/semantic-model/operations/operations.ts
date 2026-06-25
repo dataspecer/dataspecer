@@ -1,5 +1,5 @@
 import { generateEntityId } from "@dataspecer/core/entity-model";
-import {SemanticModelClass, SemanticModelGeneralization, SemanticModelRelationship} from "../concepts/index.ts";
+import {SemanticModelClass, SemanticModelGeneralization, SemanticModelRelationship, SemanticModelRelationshipEnd} from "../concepts/index.ts";
 import { generateOperationId, type Operation } from "@dataspecer/core/operation";
 
 export interface OperationResult {
@@ -81,6 +81,9 @@ export function createRelationship(entity: Partial<Omit<SemanticModelRelationshi
 
 const MODIFY_RELATIONSHIP_OPERATION = 'modify-relation';
 
+/**
+ * If you modifying individual ends of the relationship, use `ModifyRelationEndOperation` instead.
+ */
 export interface ModifyRelationOperation extends Operation {
     type: typeof MODIFY_RELATIONSHIP_OPERATION;
     entity: Partial<Omit<SemanticModelRelationship, "type">> & Pick<SemanticModelRelationship, "id">;
@@ -98,6 +101,34 @@ export function modifyRelation(id: string, entity: Partial<Omit<SemanticModelRel
             ...entity,
             id,
         }
+    }
+}
+
+// Modify relationship end
+
+const MODIFY_RELATIONSHIP_END_OPERATION = 'modify-relation-end';
+
+export interface ModifyRelationEndOperation extends Operation {
+    type: typeof MODIFY_RELATIONSHIP_END_OPERATION;
+    entityId: string;
+    /**
+     * Zero-based index of the end to modify.
+     */
+    endIndex: number;
+    end: Partial<SemanticModelRelationshipEnd>;
+}
+
+export function isModifyRelationEndOperation(operation: Operation): operation is ModifyRelationEndOperation {
+    return operation.type === MODIFY_RELATIONSHIP_END_OPERATION;
+}
+
+export function modifyRelationEnd(id: string, endIndex: number, end: Partial<SemanticModelRelationshipEnd>): ModifyRelationEndOperation {
+    return {
+        id: generateOperationId(),
+        type: MODIFY_RELATIONSHIP_END_OPERATION,
+        entityId: id,
+        endIndex,
+        end,
     }
 }
 
