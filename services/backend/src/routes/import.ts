@@ -1,4 +1,4 @@
-import { LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_SEMANTIC_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import {
   isSemanticModelClass,
   isSemanticModelRelationPrimitive,
@@ -109,7 +109,7 @@ async function importRdfsModel(parentIri: string, url: string, newIri: string, u
   const serialization = wrapper.serializeModel();
   serialization.id = newIri;
   serialization.alias = userMetadata?.label?.en ?? userMetadata?.label?.cs;
-  await ensureResource(parentIri, newIri, "https://dataspecer.com/core/model-descriptor/pim-store-wrapper", userMetadata);
+  await ensureResource(parentIri, newIri, RDFS_MODEL, userMetadata);
   const store = await resourceModel.getOrCreateResourceModelStore(newIri);
   await store.setJson(serialization);
   return Object.values(wrapper.getEntities()) as SemanticModelEntity[];
@@ -580,7 +580,7 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
   }
 
   // Check if it is a PIM wrapper and if so, we can reload it directly
-  if (existingResource.types.includes("https://dataspecer.com/core/model-descriptor/pim-store-wrapper")) {
+  if (existingResource.types.includes(RDFS_MODEL)) {
     const store = await resourceModel.getOrCreateResourceModelStore(existingResource.iri);
     const data = await store.getJson()  as {urls: string[]};
     const urls = data.urls;

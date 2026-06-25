@@ -1,4 +1,4 @@
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { serializationToSemanticModelEntities } from "@dataspecer/core-v2/semantic-model";
 import { serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import { serializationToStructureModelEntities } from "@dataspecer/core/data-psm";
@@ -64,7 +64,7 @@ async function loadModelEntities(modelId: string, modelType: string, resourceMod
     return serializationToSemanticModelEntities(modelData);
   }
 
-  if (modelType === LOCAL_VISUAL_MODEL) {
+  if (modelType === VISUAL_MODEL) {
     return serializationToVisualModelEntities(modelData);
   }
 
@@ -72,11 +72,11 @@ async function loadModelEntities(modelId: string, modelType: string, resourceMod
     return serializationToStructureModelEntities(modelData).entities;
   }
 
-  if (modelType === "https://dataspecer.com/core/model-descriptor/sgov") {
+  if (modelType === QUERYABLE_MODEL) {
     return await resolveAsyncQueryableModelEntities(modelData, httpFetch);
   }
 
-  if (modelType === "https://dataspecer.com/core/model-descriptor/pim-store-wrapper") {
+  if (modelType === RDFS_MODEL) {
     return serializationToPimModelEntities(modelData as object).entities;
   }
 
@@ -123,7 +123,7 @@ export async function getModelsForPackage(packageId: ModelIdentifier, resourceMo
       } else {
         models[subResource.iri] = await loadModelEntities(subResource.iri, subModelType, resourceModel);
 
-        if (subModelType === LOCAL_VISUAL_MODEL) {
+        if (subModelType === VISUAL_MODEL) {
           const svgEntities = await loadNamedBlobEntities(subResource.iri, "svg", resourceModel);
           if (svgEntities) {
             models[`${subResource.iri}#svg`] = svgEntities;

@@ -4,6 +4,7 @@ import { deepEqual } from "@dataspecer/utilities";
 import { Entity } from "../../entity-model/entity.ts";
 import { InMemoryEntityModel } from "../../entity-model/in-memory-entity-model.ts";
 import { transformCoreResources } from "./transform-core-resources.ts";
+import { RDFS_MODEL } from "../../model/known-models.ts";
 
 export class PimStoreWrapper extends InMemoryEntityModel {
     private pimStore: CoreResourceReader;
@@ -50,8 +51,7 @@ export class PimStoreWrapper extends InMemoryEntityModel {
 
     serializeModel() {
         return {
-            // todo fix
-            type: "https://dataspecer.com/core/model-descriptor/pim-store-wrapper",
+            type: RDFS_MODEL,
             id: this.id,
             alias: this.alias,
             pimStore: this.pimStore,

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { modelTypeToName } from "@/known-models";
 import { BetterModalProps } from "@/lib/better-modal";
 import { ResourcesContext, packageService, requestLoadPackage } from "@/package";
-import { LOCAL_VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { applyLayoutConfiguration, createLayoutConfiguration, performLayoutOfSemanticModel, type VisualEntitiesWithModelVisualInformation } from "@dataspecer/layout";
 import { Loader } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
@@ -89,7 +89,7 @@ export const Autolayout = ({ iri, isOpen, resolve, parentIri }: { iri: string, p
     const visualizationModel = {
       identifier: modelVisualizationId,
       version: VISUAL_MODEL_VERSION,
-      type: LOCAL_VISUAL_MODEL,
+      type: VISUAL_MODEL,
       entities: Object.values(visualEntities),
     };
 
@@ -101,7 +101,7 @@ export const Autolayout = ({ iri, isOpen, resolve, parentIri }: { iri: string, p
         },
         body: JSON.stringify({
           iri: modelVisualizationId,
-          type: LOCAL_VISUAL_MODEL,
+          type: VISUAL_MODEL,
           userMetadata: {
             label: {
               cs: "Vygenerovaný autolayout",

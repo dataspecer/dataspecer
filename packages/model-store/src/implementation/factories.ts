@@ -1,4 +1,4 @@
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import type { PackageService } from "@dataspecer/core-v2/project";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import type { ModelIdentifier } from "@dataspecer/core/model";
@@ -25,9 +25,9 @@ export function createCMEModelStore(params: {
     projectModelBuilder: createProjectModel,
     modelBuilders: {
       [LOCAL_SEMANTIC_MODEL]: createSemanticModel,
-      [LOCAL_VISUAL_MODEL]: createVisualModelInModelStore,
-      ["https://dataspecer.com/core/model-descriptor/sgov"]: createAsyncQueryableModel,
-      ["https://dataspecer.com/core/model-descriptor/pim-store-wrapper"]: createPimModel,
+      [VISUAL_MODEL]: createVisualModelInModelStore,
+      [QUERYABLE_MODEL]: createAsyncQueryableModel,
+      [RDFS_MODEL]: createPimModel,
     },
     packageService: params.packageService,
     httpFetch: params.httpFetch,
@@ -72,11 +72,11 @@ export function createDSEModelStore(params: {
     projectModelBuilder: createProjectModel,
     modelBuilders: {
       [LOCAL_SEMANTIC_MODEL]: createSemanticModel,
-      [LOCAL_VISUAL_MODEL]: createVisualModelInModelStore,
+      [VISUAL_MODEL]: createVisualModelInModelStore,
       [VISUAL_MODEL_SVG_BLOB_TYPE]: createBlobModel,
       [LOCAL_PACKAGE]: createBlobModel,
-      ["https://dataspecer.com/core/model-descriptor/sgov"]: createAsyncQueryableModel,
-      ["https://dataspecer.com/core/model-descriptor/pim-store-wrapper"]: createPimModel,
+      [QUERYABLE_MODEL]: createAsyncQueryableModel,
+      [RDFS_MODEL]: createPimModel,
       [V1.PSM]: createStructureModel,
       [V1.GENERATOR_CONFIGURATION]: createBlobModel,
     },

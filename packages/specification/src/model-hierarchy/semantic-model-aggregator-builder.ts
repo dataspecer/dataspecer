@@ -7,7 +7,7 @@ import {
   SemanticModelAggregator,
   VocabularyAggregator,
 } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import type { ModelEntity, PackageEntity } from "@dataspecer/project-model";
@@ -18,8 +18,6 @@ import { getProvidedSourceSemanticModel } from "./adapter.ts";
 const PROJECT_MODEL_ID: ModelIdentifier = "_project_model";
 const DEFAULT_VOCABULARY_COLOR = "#f9aa49";
 const DEFAULT_COLOR = "#4998f9";
-const SGOV_MODEL_DESCRIPTOR = "https://dataspecer.com/core/model-descriptor/sgov";
-const PIM_STORE_WRAPPER_DESCRIPTOR = "https://dataspecer.com/core/model-descriptor/pim-store-wrapper";
 
 /**
  * Build semantic model aggregator. If onChange is not provided, then the model
@@ -48,7 +46,7 @@ export function build(
  * Helper function to check if a model type is a semantic model type
  */
 function isSemanticModelType(modelType: string): boolean {
-  return [LOCAL_SEMANTIC_MODEL, V1.CIM, V1.PIM, SGOV_MODEL_DESCRIPTOR, PIM_STORE_WRAPPER_DESCRIPTOR].includes(modelType);
+  return [LOCAL_SEMANTIC_MODEL, V1.CIM, V1.PIM, QUERYABLE_MODEL, RDFS_MODEL].includes(modelType);
 }
 
 /**

@@ -1,9 +1,10 @@
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import type { ModelEntity, PackageEntity } from "@dataspecer/project-model";
 import type { ModelCompositionConfiguration, ModelCompositionConfigurationApplicationProfile, ModelCompositionConfigurationMerge } from "@dataspecer/specification/model-hierarchy";
 import { MODEL_HIERARCHY_APPLICATION_PROFILE, MODEL_HIERARCHY_VOCABULARY, type ModelHierarchyEntity } from "./entities.ts";
+import { QUERYABLE_MODEL } from "@dataspecer/core-v2/model/known-models";
 
 /**
  * Id of the virtual project model (within {@link DefaultFrontendModelStore})
@@ -12,19 +13,16 @@ import { MODEL_HIERARCHY_APPLICATION_PROFILE, MODEL_HIERARCHY_VOCABULARY, type M
  */
 export const PROJECT_MODEL_ID: ModelIdentifier = "_project_model";
 
-const SGOV_MODEL_DESCRIPTOR = "https://dataspecer.com/core/model-descriptor/sgov";
-const PIM_STORE_WRAPPER_DESCRIPTOR = "https://dataspecer.com/core/model-descriptor/pim-store-wrapper";
-
 /**
  * Model types for which there is no editing support at all, regardless of any
  * composition configuration or where the model is located.
  */
 function isAlwaysReadOnlyModelType(modelType: string): boolean {
-  return modelType === SGOV_MODEL_DESCRIPTOR || modelType === PIM_STORE_WRAPPER_DESCRIPTOR;
+  return modelType === QUERYABLE_MODEL || modelType === RDFS_MODEL;
 }
 
 function isHierarchySemanticModelType(modelType: string): boolean {
-  return modelType === LOCAL_SEMANTIC_MODEL || modelType === SGOV_MODEL_DESCRIPTOR || modelType === PIM_STORE_WRAPPER_DESCRIPTOR;
+  return modelType === LOCAL_SEMANTIC_MODEL || modelType === QUERYABLE_MODEL || modelType === RDFS_MODEL;
 }
 
 /**
