@@ -28,6 +28,7 @@ import { asyncHandler } from "./../utils/async-handler.ts";
 import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { canonicalizeIds } from "@dataspecer/structure-model";
 import { changesToEntityOperations, diffEntities, type EntityRecord } from "@dataspecer/core/entity-model";
+import { changesToSemanticModelOperations } from "@dataspecer/core-v2/semantic-model/operations";
 import { DataSpecificationConfigurator, type DataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
 import { turtleStringToGeneratorConfiguration } from "@dataspecer/data-specification-vocabulary/generator-configuration";
 
@@ -499,7 +500,11 @@ function diffModelStatesToOperations(previous: Record<string, EntityRecord>, nex
 
   for (const modelId of modelIds) {
     const changes = diffEntities(previous[modelId] ?? {}, next[modelId] ?? {});
-    for (const operation of changesToEntityOperations(changes)) {
+    const { operations: semanticOps, remainingChanges } = changesToSemanticModelOperations(changes);
+    for (const operation of semanticOps) {
+      operations.push({ modelId, operation });
+    }
+    for (const operation of changesToEntityOperations(remainingChanges)) {
       operations.push({ modelId, operation });
     }
   }
