@@ -4,7 +4,7 @@ import { FormControl, FormGroup, FormHelperText, Input, InputLabel, Typography }
 import { cloneDeep } from "lodash";
 import { FC, useContext } from "react";
 import { useSearchParams } from "react-router-dom";
-import { BackendConnectorContext, DefaultConfigurationContext } from "../../../../application";
+import { DefaultConfigurationContext } from "../../../../application";
 import { getDefaultConfigurators } from "../../../../configurators";
 import { getConfiguration } from "../../../../configuration/provided-configuration";
 import { useAsyncMemo } from "../../../../editor/hooks/use-async-memo";
@@ -87,7 +87,6 @@ export const ArtifactNames: FC<{
   const defaultConfiguration = useContext(DefaultConfigurationContext);
   const [searchParams] = useSearchParams();
   const dataSpecificationIri = searchParams.get("dataSpecificationIri");
-  const backendConnector = useContext(BackendConnectorContext);
 
   const [currentArtifactConfiguration] = useAsyncMemo(async () => {
     const clonedSpecification = cloneDeep(specification);
@@ -96,7 +95,7 @@ export const ArtifactNames: FC<{
     // @ts-ignore
     clonedSpecification.artefactConfiguration = currentConfiguration;
 
-    const { store } = await getConfiguration(specification.id, "", backendConnector);
+    const { store } = await getConfiguration(specification.id, "");
 
     // We know, that the current data specification and its stores are present
     const configurator = new ArtifactConfigurator(
@@ -111,7 +110,7 @@ export const ArtifactNames: FC<{
     const generators = [...new Set(artifacts.map(a => a.generator))];
 
     return generators;
-  }, [specification, backendConnector]);
+  }, [specification]);
 
   return <FormGroup>
     <Typography sx={{mb: 3}}>

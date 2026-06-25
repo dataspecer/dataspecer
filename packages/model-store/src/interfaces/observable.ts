@@ -1,4 +1,4 @@
-import type { EntityChange } from "@dataspecer/core/entity-model";
+import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 
 export interface ObservableEntityModelStoreChangeEvent {
@@ -35,6 +35,13 @@ export interface ObservableEntityModelStoreChangeEvent {
  * at once to avoid multiple notifications from the same transaction.
  */
 export interface EntityObservableModelStore {
+  /**
+   * Immutable snapshot of entities of every (currently registered) entity
+   * model, keyed by model id. Use together with `subscribeToEntityChanges` to
+   * observe changes in all entity models.
+   */
+  getAllEntities(): Record<ModelIdentifier, EntityRecord>;
+
   /**
    * Subscribes to changes in all entity models. The purpose of this method is to
    * gather all changes at once to avoid multiple notifications from the same

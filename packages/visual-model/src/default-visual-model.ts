@@ -35,7 +35,7 @@ const UNKNOWN_MODEL = "unknown-model";
  */
 const UNKNOWN_ENTITY = "unknown-entity";
 
-const LOCAL_VISUAL_MODEL =
+const VISUAL_MODEL =
   "http://dataspecer.com/resources/local/visual-model";
 
 /**
@@ -43,7 +43,7 @@ const LOCAL_VISUAL_MODEL =
  */
 interface VisualModelJsonSerializationV0 {
 
-  type: typeof LOCAL_VISUAL_MODEL;
+  type: typeof VISUAL_MODEL;
 
   modelId: string;
 
