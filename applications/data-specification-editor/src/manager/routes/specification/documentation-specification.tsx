@@ -9,7 +9,7 @@ import { Magnet } from "lucide-react";
 import React, { memo, useCallback, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { BackendConnectorContext, DefaultConfigurationContext } from "../../../application";
+import { DefaultConfigurationContext } from "../../../application";
 import { LanguageStringText } from "../../../editor/components/helper/LanguageStringComponents";
 import { useDialog } from "../../../editor/dialog";
 import { getConfiguration } from "../../../configuration/provided-configuration";
@@ -38,7 +38,6 @@ export const DocumentationSpecification = memo(() => {
 
   const defaultConfiguration = useContext(DefaultConfigurationContext);
 
-  const backendConnector = useContext(BackendConnectorContext);
   const modelStore = useContext(ManagerModelStoreContext);
 
   const navigate = useNavigate();
@@ -69,7 +68,7 @@ export const DocumentationSpecification = memo(() => {
     setGenerateState([]);
     setGenerateDialogOpen(true);
 
-    const { store: federatedStore, dataSpecifications, models } = await getConfiguration(dataSpecificationIri as string, "", backendConnector);
+    const { store: federatedStore, dataSpecifications, models } = await getConfiguration(dataSpecificationIri as string, "");
 
     // Override base urls to null
     if (overrideBasePathsToNull) {

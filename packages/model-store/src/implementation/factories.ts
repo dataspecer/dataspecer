@@ -1,5 +1,5 @@
 import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
-import type { PackageService } from "@dataspecer/core-v2/project";
+import { BackendPackageService, type PackageService } from "@dataspecer/core-v2/project";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { createAsyncQueryableModel } from "./async-queryable-model.ts";
@@ -17,9 +17,10 @@ import { createStructureModel } from "./structure-model.ts";
  */
 export function createCMEModelStore(params: {
   projectId: ModelIdentifier;
-  packageService: PackageService;
+  backendUrl: string;
   httpFetch: HttpFetch;
 }): DefaultFrontendModelStore {
+  const packageService = new BackendPackageService(params.backendUrl, params.httpFetch);
   return new DefaultFrontendModelStore({
     projectId: params.projectId,
     projectModelBuilder: createProjectModel,
@@ -29,7 +30,7 @@ export function createCMEModelStore(params: {
       [QUERYABLE_MODEL]: createAsyncQueryableModel,
       [RDFS_MODEL]: createPimModel,
     },
-    packageService: params.packageService,
+    packageService: packageService,
     httpFetch: params.httpFetch,
   });
 }
@@ -42,9 +43,10 @@ export function createCMEModelStore(params: {
  */
 export function createManagerModelStore(params: {
   projectId: ModelIdentifier;
-  packageService: PackageService;
+  backendUrl: string;
   httpFetch: HttpFetch;
 }): DefaultFrontendModelStore {
+  const packageService = new BackendPackageService(params.backendUrl, params.httpFetch);
   return new DefaultFrontendModelStore({
     projectId: params.projectId,
     projectModelBuilder: createProjectModel,
@@ -57,16 +59,17 @@ export function createManagerModelStore(params: {
       // needing to subscribe to the whole model.
       [V1.PSM]: createStructureModel,
     },
-    packageService: params.packageService,
+    packageService: packageService,
     httpFetch: params.httpFetch,
   });
 }
 
 export function createDSEModelStore(params: {
   projectId: ModelIdentifier;
-  packageService: PackageService;
+  backendUrl: string;
   httpFetch: HttpFetch;
 }): DefaultFrontendModelStore {
+  const packageService = new BackendPackageService(params.backendUrl, params.httpFetch);
   return new DefaultFrontendModelStore({
     projectId: params.projectId,
     projectModelBuilder: createProjectModel,
@@ -80,7 +83,7 @@ export function createDSEModelStore(params: {
       [V1.PSM]: createStructureModel,
       [V1.GENERATOR_CONFIGURATION]: createBlobModel,
     },
-    packageService: params.packageService,
+    packageService: packageService,
     httpFetch: params.httpFetch,
   });
 }
