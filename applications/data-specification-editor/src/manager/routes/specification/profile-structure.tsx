@@ -1,4 +1,3 @@
-import { BackendConnectorContext } from "@/application";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CloseDialogButton } from "@/editor/components/detail/components/close-dialog-button";
 import { dialog } from "@/editor/dialog";
@@ -34,10 +33,9 @@ interface ProfileStructureDialogProps {
  */
 export const ProfileStructureDialog = dialog<ProfileStructureDialogProps>({ maxWidth: "md", fullWidth: true }, ({ isOpen, close, dataSpecificationId }) => {
   const { t } = useTranslation("ui");
-  const backendConnector = useContext(BackendConnectorContext);
   const modelStore = useContext(ManagerModelStoreContext);
 
-  const [configuration, isLoading] = useAsyncMemo(() => (isOpen ? getConfiguration(dataSpecificationId, "", backendConnector) : null), [dataSpecificationId, isOpen, backendConnector], null);
+  const [configuration, isLoading] = useAsyncMemo(() => (isOpen ? getConfiguration(dataSpecificationId, "") : null), [dataSpecificationId, isOpen], null);
   const data = configuration ? getStructuresToProfile(configuration) : [];
 
   const [selectedStructures, setSelectedStructures] = useState<Set<string>>(new Set());

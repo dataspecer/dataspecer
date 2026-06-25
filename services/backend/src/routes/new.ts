@@ -1,5 +1,5 @@
 import type { Entity } from "@dataspecer/core-v2";
-import { LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { createWritableInMemoryProfileModel, isSemanticModelClassProfile, isSemanticModelRelationshipProfile, SemanticProfileModelOperations } from "@dataspecer/profile-model";
@@ -114,7 +114,7 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
               if (subModelJson.entities) {
                 thisSpecificationEntities.push(...Object.values(subModelJson.entities as Record<string, Entity>));
               }
-            } else if (subResource.types.includes("https://dataspecer.com/core/model-descriptor/pim-store-wrapper")) {
+            } else if (subResource.types.includes(RDFS_MODEL)) {
               const subModel = await resourceModel.getOrCreateResourceModelStore(subResource.iri);
               const subModelJson = await subModel.getJson();
               const model = new PimStoreWrapper(subModelJson.pimStore, subModelJson.id, "", subModelJson.urls);
@@ -177,7 +177,7 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
       profiledEntities = profileModel.getEntities();
     }
     await semanticModel.setJson({
-      type: "http://dataspecer.com/resources/local/semantic-model",
+      type: LOCAL_SEMANTIC_MODEL,
       modelId: packageIri + "/semantic-model",
       modelAlias: profileLabel || "Profile",
       baseIri: body.baseIri,
@@ -186,13 +186,13 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
 
     // Create visual model
     const viewIri = packageIri + "/visual-model";
-    await resourceModel.createResource(packageIri, viewIri, LOCAL_VISUAL_MODEL, {
+    await resourceModel.createResource(packageIri, viewIri, VISUAL_MODEL, {
       label: { en: "View for " + (profileLabel || "Profile") },
       description: { en: "Visual model for the profile" },
     });
     const visualModel = await resourceModel.getOrCreateResourceModelStore(viewIri);
     await visualModel.setJson({
-      type: "http://dataspecer.com/resources/local/visual-model",
+      type: VISUAL_MODEL,
       modelId: viewIri,
       visualEntities: {},
       modelColors: {

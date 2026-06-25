@@ -12,9 +12,9 @@ import { Entity } from "@dataspecer/entity-model";
 import { isSemanticModelGeneralizationProfile } from "./index.ts";
 import {
   CreatedEntityOperationResult,
-  Operation,
   OperationResult
 } from "@dataspecer/core-v2/semantic-model/operations";
+import type { Operation } from "@dataspecer/core/operation";
 
 export {
   SEMANTIC_MODEL_CLASS_PROFILE,

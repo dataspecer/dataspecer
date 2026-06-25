@@ -1,27 +1,91 @@
 # @dataspecer/model-store
 
-Currently there is only a single implementation targeted at the frontend. In the future, we may also provide an implementation for the backend and a read-only implementation (no subscribe, no write) for other use cases.
+A Dataspecer project consists of several **models** (semantic model, visual model, ...). The model store (`packages/model-store`) gives a frontend client a single place to read, modify, undo/redo and synchronize all of them at once.
 
-## Frontend implementation
+The key idea: every model is interpreted as **a set of entities** - plain JSON objects with an `id` and a `type`. The model store does not understand what an entity *means* (e.g. that it's a class or a visual node); it only tracks which entities exist in which model and notifies you when that set changes. To understand what a given model's entities actually mean and how to change them, you use that model's own interface and operations (see the table below).
 
-When working with the Dataspecer project, you often need to read and manipulate multiple models simultaneously. This package provides an API to do so, primarily targeting frontend applications, which must handle backend synchronization, observability, undo/redo operations, and other concerns.
+## Using it as a client (CME for example)
 
-The goal of this API is to provide raw access to the models, specifically entity models:
+The Conceptual Model Editor (CME) gets a ready-to-use store via `createCMEModelStore` from `@dataspecer/model-store/implementation`:
 
-- You can subscribe to all entity changes across relevant models and read raw entities from individual models.
-- You can apply changes to multiple models simultaneously.
-- The API provides undo/redo functionality that updates the entity list.
-- It supports live synchronization with the backend and conflict resolution.
+```ts
+import { createCMEModelStore } from "@dataspecer/model-store/implementation";
 
-This API:
+const modelStore = createCMEModelStore({
+  projectId: dataSpecificationIri, // root package of the project
+  backendUrl,
+  httpFetch,
+});
 
-- **DOES NOT** understand the semantics of entities and models (entities are simply JSON-serializable objects with an ID).
-- **DOES NOT** provide any high-level aggregation of entities (e.g., compute the effective title of a profile that profiles a vocabulary concept).
+await modelStore.initialize();
+await modelStore.waitForModelsToLoad();
+```
 
-## Core Concepts
+After this, the store has loaded the project model (the virtual model describing which models exist in the project) and every other model it knows about (semantic, visual, PIM/RDFS, SGOV query model - see the table).
 
-The underlying principle of this package is that most models can be interpreted as a set of entities. This abstraction simplifies synchronization and change tracking with the backend. While most tools only require a list of these entity-based models, frontend applications must maintain strict consistency across them.
+**Reading entities**
 
-This package provides a unified snapshot of all models and an event subscription mechanism that guarantees changes are delivered consistently across the entire model set.
+```ts
+const allEntities = modelStore.getAllEntities(); // Record<modelId, Record<entityId, Entity>>
 
-In addition to standard models, the store utilizes a **project model**. This virtual model represents the overall structure of the project (i.e., which models exist and their locations) using the same entity-based approach. Callers are expected to read the project model first to understand the project structure before consuming individual models. Because the project model is virtual and does not physically exist on the backend, it is assigned an artificial ID.
+const unsubscribe = modelStore.subscribeToEntityChanges((event) => {
+  // event.entityChanges: Record<modelId, EntityChange[]>
+});
+```
+
+**Writing entities** - dispatch operations created with the helpers from the model's own package (see the table), grouped into a single transaction:
+
+```ts
+modelStore.addOperationForTransaction([
+  { modelId: semanticModelId, operation: createClass({ ... }) },
+]);
+modelStore.addOperationForTransaction([
+  { modelId: visualModelId, operation: createAddVisualNodeOperation({ ... }) },
+]);
+const result = modelStore.commitTransaction({});
+await result.confirmation;
+```
+
+or, for a single batch, `modelStore.transaction(operations, {})`.
+
+**Undo/redo** - this is provided by the model store itself, not by individual models; do not implement your own undo/redo when consuming it:
+
+```ts
+modelStore.undo();
+modelStore.redo();
+const { canUndo, canRedo } = modelStore.getUndoRedoState();
+modelStore.subscribeToUndoRedoState((state) => { ... });
+```
+
+**Saving** - the store does not auto-save; subscribe to commits and save yourself:
+
+```ts
+modelStore.subscribeToTransactionCommit(() => {
+  modelStore.saveByOverride();
+});
+```
+
+A complete working example (using `createDSEModelStore`, a superset of the CME store that also includes the structure model and a few blobs) is in [`applications/data-specification-editor/src/configuration/provided-configuration.ts`](../../applications/data-specification-editor/src/configuration/provided-configuration.ts).
+
+## Models
+
+For each model, **Operations** links to where to find functions that create operations to dispatch to that model, and **Interface** links to where the model's entity types are defined.
+
+All models also accept the generic `SetEntityOperation` / `UpdateEntityOperation` from [`packages/core/src/operation/entity-operations.ts`](../core/src/operation/entity-operations.ts), which overwrite an entity directly.
+
+| Model | Operations | Interface |
+|---|---|---|
+| Project model (virtual, lists models in the project) | [`packages/project-model/src/operations.ts`](../project-model/src/operations.ts) | [`packages/project-model/src/model.ts`](../project-model/src/model.ts) |
+| Semantic model (vocabulary classes/relationships/profiles) | [`packages/core-v2/src/semantic-model/operations/operations.ts`](../core-v2/src/semantic-model/operations/operations.ts) (and profile operations in [`packages/core-v2/src/semantic-model/profile/operations/operations.ts`](../core-v2/src/semantic-model/profile/operations/operations.ts)) | [`packages/core-v2/src/semantic-model/concepts/concepts.ts`](../core-v2/src/semantic-model/concepts/concepts.ts) (profiles in [`packages/core-v2/src/semantic-model/profile/concepts/index.ts`](../core-v2/src/semantic-model/profile/concepts/index.ts)) |
+| Visual model (canvas layout) | [`packages/visual-model/src/operations.ts`](../visual-model/src/operations.ts) | [`packages/visual-model/src/concepts/index.ts`](../visual-model/src/concepts/index.ts) |
+| RDFS model (imported vocabulary by URL) | [`packages/model-store/src/implementation/pim-model.ts`](./src/implementation/pim-model.ts) | [`packages/model-store/src/implementation/pim-model.ts`](./src/implementation/pim-model.ts) |
+| Queryable model (SGOV) | [`packages/model-store/src/implementation/async-queryable-model.ts`](./src/implementation/async-queryable-model.ts) | [`packages/model-store/src/implementation/async-queryable-model.ts`](./src/implementation/async-queryable-model.ts) |
+| Structure model (PSM) | [`packages/core/src/data-psm/operation/index.ts`](../core/src/data-psm/operation/index.ts) | [`packages/core/src/data-psm/model/index.ts`](../core/src/data-psm/model/index.ts) |
+| Blob model (arbitrary JSON resource, e.g. package metadata, generator config) | none (only generic `SetEntityOperation`/`UpdateEntityOperation` above) | [`packages/core/src/entity-model/utils/blob-model.ts`](../core/src/entity-model/utils/blob-model.ts) |
+| Model hierarchy (read-only, see below) | none (read-only) | [`packages/model-hierarchy/src/entities.ts`](../model-hierarchy/src/entities.ts) |
+
+### Model hierarchy
+
+The model hierarchy (`packages/model-hierarchy`) describes how the project's semantic models relate to each other (imports/profiles). It is **read-only** for now - there are no operations to apply to it.
+
+It is **not** wired up automatically by `createCMEModelStore`/`createDSEModelStore`. To use it, a client must manually create it on top of an existing model store with `createModelHierarchyModel(modelStore, rootProjectId)` from `@dataspecer/model-hierarchy`, then call `.initialize()` and read it via its own `getAllEntities()` / `subscribeToEntityChanges()`.

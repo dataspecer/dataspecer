@@ -6,7 +6,7 @@ import {
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { isRepresentingAttribute } from "../../dialog/utilities/dialog-utilities";
 import { EntityDsIdentifier } from "../entity-model";
-import { Operation } from "@dataspecer/core-v2/semantic-model/operations";
+import type { Operation } from "@dataspecer/core/operation";
 import { isPrimitiveType } from "@dataspecer/core-v2/semantic-model/datatypes";
 
 export * from "./data-type";

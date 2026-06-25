@@ -1,4 +1,4 @@
-import { LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_SEMANTIC_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import {
   isSemanticModelClass,
   isSemanticModelRelationPrimitive,
@@ -8,7 +8,6 @@ import {
 } from "@dataspecer/core-v2/semantic-model/concepts";
 import { DataTypeURIs, isDataType } from "@dataspecer/core-v2/semantic-model/datatypes";
 import { createRdfsModel } from "@dataspecer/core-v2/semantic-model/simplified";
-import { isSemanticModelRelationshipUsage } from "@dataspecer/core-v2/semantic-model/usage/concepts";
 import { PimStoreWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
@@ -113,7 +112,7 @@ async function importRdfsModel(parentIri: string, url: string, newIri: string, u
   const serialization = wrapper.serializeModel();
   serialization.id = newIri;
   serialization.alias = userMetadata?.label?.en ?? userMetadata?.label?.cs;
-  await ensureResource(parentIri, newIri, "https://dataspecer.com/core/model-descriptor/pim-store-wrapper", userMetadata);
+  await ensureResource(parentIri, newIri, RDFS_MODEL, userMetadata);
   const store = await resourceModel.getOrCreateResourceModelStore(newIri);
   await store.setJson(serialization);
   return Object.values(wrapper.getEntities()) as SemanticModelEntity[];
@@ -210,7 +209,7 @@ async function importRdfsAndDsv(parentIri: string, rdfsUrl: string | null, dsvUr
         prefixesCount[prefix] = (prefixesCount[prefix] ?? 0) + 1;
       }
 
-      if (isSemanticModelRelationship(entity) || isSemanticModelRelationshipUsage(entity)) {
+      if (isSemanticModelRelationship(entity)) {
         for (const end of entity.ends) {
           const [prefix] = splitIri(end.iri);
           if (prefix) {
@@ -232,7 +231,7 @@ async function importRdfsAndDsv(parentIri: string, rdfsUrl: string | null, dsvUr
         if (entity.iri && entity.iri.startsWith(bestPrefix)) {
           entity.iri = entity.iri.substring(bestPrefix.length);
         }
-        if (isSemanticModelRelationship(entity) || isSemanticModelRelationshipUsage(entity)) {
+        if (isSemanticModelRelationship(entity)) {
           for (const end of entity.ends) {
             if (end.iri && end.iri.startsWith(bestPrefix)) {
               end.iri = end.iri.substring(bestPrefix.length);
@@ -603,9 +602,8 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
   }
 
   // Check if it is a PIM wrapper and if so, we can reload it directly
-  if (existingResource.types.includes("https://dataspecer.com/core/model-descriptor/pim-store-wrapper")) {
-    const pimStoreWrapperType = "https://dataspecer.com/core/model-descriptor/pim-store-wrapper";
-    const previousEntities = await loadModelEntities(existingResource.iri, pimStoreWrapperType, resourceModel);
+  if (existingResource.types.includes(RDFS_MODEL)) {
+    const previousEntities = await loadModelEntities(existingResource.iri, RDFS_MODEL, resourceModel);
 
     const store = await resourceModel.getOrCreateResourceModelStore(existingResource.iri);
     const data = await store.getJson()  as {urls: string[]};
@@ -615,7 +613,7 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
     newModel.id = existingResource.iri;
     await store.setJson(newModel.serializeModel());
 
-    const nextEntities = await loadModelEntities(existingResource.iri, pimStoreWrapperType, resourceModel);
+    const nextEntities = await loadModelEntities(existingResource.iri, RDFS_MODEL, resourceModel);
     const operations = diffModelStatesToOperations({ [existingResource.iri]: previousEntities }, { [existingResource.iri]: nextEntities });
     if (operations.length > 0) {
       await transactionModel.createTransactions(existingResource.iri, [{ operations }]);

@@ -1,5 +1,5 @@
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
-import type { PackageService } from "@dataspecer/core-v2/project";
+import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { BackendPackageService, type PackageService } from "@dataspecer/core-v2/project";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { createAsyncQueryableModel } from "./async-queryable-model.ts";
@@ -17,19 +17,20 @@ import { createStructureModel } from "./structure-model.ts";
  */
 export function createCMEModelStore(params: {
   projectId: ModelIdentifier;
-  packageService: PackageService;
+  backendUrl: string;
   httpFetch: HttpFetch;
 }): DefaultFrontendModelStore {
+  const packageService = new BackendPackageService(params.backendUrl, params.httpFetch);
   return new DefaultFrontendModelStore({
     projectId: params.projectId,
     projectModelBuilder: createProjectModel,
     modelBuilders: {
       [LOCAL_SEMANTIC_MODEL]: createSemanticModel,
-      [LOCAL_VISUAL_MODEL]: createVisualModelInModelStore,
-      ["https://dataspecer.com/core/model-descriptor/sgov"]: createAsyncQueryableModel,
-      ["https://dataspecer.com/core/model-descriptor/pim-store-wrapper"]: createPimModel,
+      [VISUAL_MODEL]: createVisualModelInModelStore,
+      [QUERYABLE_MODEL]: createAsyncQueryableModel,
+      [RDFS_MODEL]: createPimModel,
     },
-    packageService: params.packageService,
+    packageService: packageService,
     httpFetch: params.httpFetch,
   });
 }
@@ -42,9 +43,10 @@ export function createCMEModelStore(params: {
  */
 export function createManagerModelStore(params: {
   projectId: ModelIdentifier;
-  packageService: PackageService;
+  backendUrl: string;
   httpFetch: HttpFetch;
 }): DefaultFrontendModelStore {
+  const packageService = new BackendPackageService(params.backendUrl, params.httpFetch);
   return new DefaultFrontendModelStore({
     projectId: params.projectId,
     projectModelBuilder: createProjectModel,
@@ -57,30 +59,31 @@ export function createManagerModelStore(params: {
       // needing to subscribe to the whole model.
       [V1.PSM]: createStructureModel,
     },
-    packageService: params.packageService,
+    packageService: packageService,
     httpFetch: params.httpFetch,
   });
 }
 
 export function createDSEModelStore(params: {
   projectId: ModelIdentifier;
-  packageService: PackageService;
+  backendUrl: string;
   httpFetch: HttpFetch;
 }): DefaultFrontendModelStore {
+  const packageService = new BackendPackageService(params.backendUrl, params.httpFetch);
   return new DefaultFrontendModelStore({
     projectId: params.projectId,
     projectModelBuilder: createProjectModel,
     modelBuilders: {
       [LOCAL_SEMANTIC_MODEL]: createSemanticModel,
-      [LOCAL_VISUAL_MODEL]: createVisualModelInModelStore,
+      [VISUAL_MODEL]: createVisualModelInModelStore,
       [VISUAL_MODEL_SVG_BLOB_TYPE]: createBlobModel,
       [LOCAL_PACKAGE]: createBlobModel,
-      ["https://dataspecer.com/core/model-descriptor/sgov"]: createAsyncQueryableModel,
-      ["https://dataspecer.com/core/model-descriptor/pim-store-wrapper"]: createPimModel,
+      [QUERYABLE_MODEL]: createAsyncQueryableModel,
+      [RDFS_MODEL]: createPimModel,
       [V1.PSM]: createStructureModel,
       [V1.GENERATOR_CONFIGURATION]: createBlobModel,
     },
-    packageService: params.packageService,
+    packageService: packageService,
     httpFetch: params.httpFetch,
   });
 }

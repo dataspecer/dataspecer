@@ -86,16 +86,7 @@ export class DefaultArtifactBuilder {
      * that if one fails, other can still be generated.
      */
     public async build(dictionary: StreamDictionary, singleFileArtifact: string | null = null, queryParams: string = "", singleSpecificationId: string | null = null): Promise<void> {
-        if (!singleFileArtifact) {
-            await this.writeReadme(dictionary);
-        }
         await this.writeArtifacts(dictionary, singleFileArtifact, queryParams, singleSpecificationId ?? undefined);
-    }
-
-    private async writeReadme(writer: StreamDictionary) {
-        const stream = writer.writePath("README.md");
-        await stream.write(`Tento dokument byl vygenerován ${new Date().toLocaleString("cs-CZ")}.`);
-        await stream.close();
     }
 
     private async writeArtifacts(

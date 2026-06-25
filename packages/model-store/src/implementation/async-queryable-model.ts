@@ -10,6 +10,7 @@ import type { Operation } from "@dataspecer/core/operation";
 import { SgovAdapter } from "@dataspecer/sgov-adapter";
 import { BaseModelInModelStore, type ModelState } from "./base.ts";
 import type { ApplyOperationResult, ModelInDefaultFrontendModelStore } from "./implementation.ts";
+import { QUERYABLE_MODEL } from "@dataspecer/core-v2/model/known-models";
 
 class IdentityIriProvider implements IriProvider {
   cimToPim = (cimIri: string) => cimIri;
@@ -264,7 +265,7 @@ export class AsyncQueryableModelInModelStore extends BaseModelInModelStore imple
    */
   private serializeModel(state: ModelState): unknown {
     return {
-      type: "https://dataspecer.com/core/model-descriptor/sgov",
+      type: QUERYABLE_MODEL,
       id: this.id,
       queries: Object.values(state.entities as EntityRecord<QueryEntity>).map(queryEntityToQueryString),
     };
