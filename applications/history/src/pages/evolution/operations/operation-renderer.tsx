@@ -14,7 +14,6 @@ import {
   DataPsmSetCardinality,
   DataPsmSetHumanLabel,
 } from "@dataspecer/core/data-psm/operation";
-import type { AnyOperation } from "../types";
 import { isStructureOperation } from "../types";
 import { CreateClassOperationView } from "./semantic/create-class";
 import { ModifyClassOperationView } from "./semantic/modify-class";
@@ -29,6 +28,7 @@ import { DataPsmSetHumanLabelView } from "./structure/set-human-label";
 import { DataPsmCreateAttributeView } from "./structure/create-attribute";
 import { DataPsmSetCardinalityView } from "./structure/set-cardinality";
 import { GenericOperationView } from "./generic-operation";
+import type { Operation } from "@dataspecer/core/operation";
 
 /**
  * Picks the React component responsible for rendering a single operation,
@@ -36,7 +36,7 @@ import { GenericOperationView } from "./generic-operation";
  * gets a dedicated component; everything else falls back to
  * {@link GenericOperationView}.
  */
-export function OperationRenderer({ operation }: { operation: AnyOperation }) {
+export function OperationRenderer({ operation }: { operation: Operation }) {
   if (isStructureOperation(operation)) {
     if (DataPsmCreateClass.is(operation)) return <DataPsmCreateClassView operation={operation} />;
     if (DataPsmDeleteClass.is(operation)) return <DataPsmDeleteClassView operation={operation} />;
@@ -60,7 +60,7 @@ export function OperationRenderer({ operation }: { operation: AnyOperation }) {
  * Translation key for the human-readable title of an operation's type,
  * shown above the operation-specific rendering.
  */
-export function getOperationTitleKey(operation: AnyOperation): string {
+export function getOperationTitleKey(operation: Operation): string {
   if (isStructureOperation(operation)) {
     if (DataPsmCreateClass.is(operation)) return "operations.titles.structure-create-class";
     if (DataPsmDeleteClass.is(operation)) return "operations.titles.structure-delete-class";

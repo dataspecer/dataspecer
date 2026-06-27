@@ -1,22 +1,8 @@
-import type { Operation as SemanticOperation } from "@dataspecer/core-v2/semantic-model/operations";
-import type { CoreOperation } from "@dataspecer/core/core";
+import type { CoreOperationAndOperation } from "@dataspecer/core/core/index";
+import type { Operation } from "@dataspecer/core/operation";
 
-/**
- * Operation performed on a data-psm (structure) model. All such operations
- * are instances of {@link CoreOperation} subclasses defined in
- * `@dataspecer/core/data-psm/operation`.
- */
-export type StructureOperation = CoreOperation;
-
-export type AnyOperation = SemanticOperation | StructureOperation;
-
-/**
- * A structure operation is a class instance carrying its type(s) in the
- * `types` array, while a semantic operation is a plain object with a single
- * `type` string. This is enough to tell them apart for rendering purposes.
- */
-export function isStructureOperation(operation: AnyOperation): operation is StructureOperation {
-  return Array.isArray((operation as StructureOperation).types);
+export function isStructureOperation(operation: Operation): operation is CoreOperationAndOperation {
+  return (operation as any)["types"] !== undefined;
 }
 
 export type ModelKind = "semantic" | "structure";
@@ -36,7 +22,7 @@ export type ProposedOperationStatus = "pending" | "applied" | "skipped";
 export interface ProposedOperation {
   id: string;
   targetModel: ModelRef;
-  operation: AnyOperation;
+  operation: Operation;
 }
 
 /**
@@ -48,6 +34,6 @@ export interface PendingChange {
   sourceModel: ModelRef;
   occurredAt: string;
   summary: string;
-  operation: AnyOperation;
+  operation: Operation;
   proposedOperations: ProposedOperation[];
 }
