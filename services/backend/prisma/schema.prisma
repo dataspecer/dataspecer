@@ -52,6 +52,7 @@ model Resource {
 
   transactions Transaction[]
   operations   Operation[]
+  branches     Branch[]
 }
 
 
@@ -142,6 +143,7 @@ model Transaction {
   createdAt DateTime @default(now())
 
   operations Operation[]
+  branches   Branch[]
 
   /* Parent transactions of this transaction. */
   parents TransactionParent[] @relation("TransactionParents")
@@ -184,5 +186,21 @@ model Operation {
   data String
 
   @@index([transactionId])
+  @@index([projectId])
+}
+
+/* A named pointer to a transaction, representing the tip of a branch's history. */
+model Branch {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  projectId Int
+  project   Resource @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  /* The transaction this branch currently points to. Null for a newly created empty branch. */
+  transactionId Int?
+  transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@unique([projectId, name])
   @@index([projectId])
 }
