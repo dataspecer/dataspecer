@@ -33,20 +33,33 @@ export class TransactionModel {
     /**
      * Creates the given transactions (in order) for the project identified by
      * its resource IRI, chaining each one to the previous transaction in the
-     * array, and the first one to the project's current latest transaction
-     * (if any).
+     * array, and the first one to the named branch's current tip (or the
+     * project's latest transaction if the branch does not exist yet).
+     *
+     * After all transactions are created, the branch pointer is automatically
+     * advanced to the last new transaction.
      */
-    async createTransactions(projectIri: string, transactions: TransactionInput[]): Promise<void> {
+    async createTransactions(projectIri: string, transactions: TransactionInput[], branchName = "main"): Promise<void> {
         const project = await this.prismaClient.resource.findFirst({ select: { id: true }, where: { iri: projectIri } });
         if (project === null) {
             throw new Error("Project resource not found.");
         }
 
-        let parentId = (await this.prismaClient.transaction.findFirst({
-            select: { id: true },
-            where: { projectId: project.id },
-            orderBy: { id: "desc" },
-        }))?.id ?? null;
+        const branchRecord = await this.prismaClient.branch.findUnique({
+            select: { transactionId: true },
+            where: { projectId_name: { projectId: project.id, name: branchName } },
+        });
+
+        let parentId: number | null;
+        if (branchRecord !== null) {
+            parentId = branchRecord.transactionId;
+        } else {
+            parentId = (await this.prismaClient.transaction.findFirst({
+                select: { id: true },
+                where: { projectId: project.id },
+                orderBy: { id: "desc" },
+            }))?.id ?? null;
+        }
 
         for (const transaction of transactions) {
             const created = await this.prismaClient.transaction.create({
@@ -64,6 +77,14 @@ export class TransactionModel {
                 },
             });
             parentId = created.id;
+        }
+
+        if (parentId !== null) {
+            await this.prismaClient.branch.upsert({
+                where: { projectId_name: { projectId: project.id, name: branchName } },
+                update: { transactionId: parentId },
+                create: { name: branchName, projectId: project.id, transactionId: parentId },
+            });
         }
     }
 }

@@ -8,7 +8,7 @@ import {
 } from "@dataspecer/core-v2/semantic-model/concepts";
 import { DataTypeURIs, isDataType } from "@dataspecer/core-v2/semantic-model/datatypes";
 import { createRdfsModel } from "@dataspecer/core-v2/semantic-model/simplified";
-import { PimStoreWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
+import { PimStoreWrapper, serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import { conceptualModelToEntityListContainer, rdfToConceptualModel } from "@dataspecer/data-specification-vocabulary/semantic-model";
@@ -611,17 +611,17 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
     const previousEntities = await loadModelEntities(existingResource.iri, RDFS_MODEL, resourceModel);
 
     const store = await resourceModel.getOrCreateResourceModelStore(existingResource.iri);
-    const data = await store.getJson()  as {urls: string[]};
+    const data = await store.getJson() as {urls: string[]};
     const urls = data.urls;
     const newModel = await createRdfsModel(urls, httpFetch);
-    // We need to override its id
     newModel.id = existingResource.iri;
-    await store.setJson(newModel.serializeModel());
+    // Intentionally skip store.setJson() — the blob stays unchanged.
+    // The diff is recorded as pending operations on the "upstream" branch.
+    const nextEntities = serializationToPimModelEntities(newModel.serializeModel() as object).entities;
 
-    const nextEntities = await loadModelEntities(existingResource.iri, RDFS_MODEL, resourceModel);
     const operations = diffModelStatesToOperations({ [existingResource.iri]: previousEntities }, { [existingResource.iri]: nextEntities });
     if (operations.length > 0) {
-      await transactionModel.createTransactions(existingResource.iri, [{ operations }]);
+      await transactionModel.createTransactions(existingResource.iri, [{ operations }], "upstream");
     }
 
     response.send(await resourceModel.getResource(existingResource.iri));
@@ -638,6 +638,9 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
   // Perform reload by re-importing into the existing package.
   // The import functions will reuse existing resource IRIs and update their
   // content in-place, then delete any resources that are no longer present.
+  // Note: blob updates here are a known limitation — blobs are not yet connected
+  // to branches, so the diff is recorded on "upstream" even though the blob
+  // is also written. This will be resolved when blobs support branching.
   const previousModels = await getModelsForPackage(query.iri, resourceModel);
 
   const [result] = await importFromUrl("", url, query.iri);
@@ -645,7 +648,7 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
   const nextModels = await getModelsForPackage(query.iri, resourceModel);
   const operations = diffModelStatesToOperations(previousModels, nextModels);
   if (operations.length > 0) {
-    await transactionModel.createTransactions(query.iri, [{ operations }]);
+    await transactionModel.createTransactions(query.iri, [{ operations }], "upstream");
   }
 
   response.send(result ?? existingResource);
