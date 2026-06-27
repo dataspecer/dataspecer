@@ -5,19 +5,33 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { GithubLink } from "@/components/github-link";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ModeToggle } from "@/components/mode-toggle";
+import { ModelStoreProvider, useModelStore } from "@/contexts/model-store-context";
+import { useProjectTitle } from "@/hooks/use-project-title";
 
 const subPageLabelKeys: Record<string, string> = {
   "/evolution": "nav.evolution",
 };
 
 export function Layout() {
+  const location = useLocation();
+  const packageIri = (location.search as Record<string, unknown>).packageIri as string | undefined;
+
+  return (
+    <ModelStoreProvider packageIri={packageIri}>
+      <LayoutContent />
+    </ModelStoreProvider>
+  );
+}
+
+function LayoutContent() {
   const { t } = useTranslation();
   const location = useLocation();
   const pathname = location.pathname;
   const packageIri = (location.search as Record<string, unknown>).packageIri as string | undefined;
   const searchString = new URLSearchParams(location.search as Record<string, string>).toString();
-
   const subPageLabelKey = subPageLabelKeys[pathname];
+  const { isLoading } = useModelStore();
+  const projectTitle = useProjectTitle(packageIri);
 
   return (
     <div className="relative flex min-h-screen flex-col bg-background">
@@ -37,7 +51,7 @@ export function Layout() {
         <Breadcrumbs
           items={[
             {
-              label: packageIri ?? t("breadcrumbs.no-specification"),
+              label: projectTitle ?? packageIri ?? t("breadcrumbs.no-specification"),
               href: subPageLabelKey ? pathname + (searchString ? `?${searchString}` : "") : undefined,
             },
             ...(subPageLabelKey ? [{ label: t(subPageLabelKey) }] : []),
@@ -45,11 +59,19 @@ export function Layout() {
         />
       </div>
       <main className="container flex flex-1 items-start gap-6 py-6">
-        {/* Side panel has a single entry for now, hidden until there is more than one sub-page. */}
-        {/* <SidebarNav /> */}
-        <div className="min-w-0 flex-1">
-          <Outlet />
-        </div>
+        {isLoading ? (
+          <div className="flex flex-1 items-center justify-center py-16">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-foreground" />
+          </div>
+        ) : (
+          <>
+            {/* Side panel has a single entry for now, hidden until there is more than one sub-page. */}
+            {/* <SidebarNav /> */}
+            <div className="min-w-0 flex-1">
+              <Outlet />
+            </div>
+          </>
+        )}
       </main>
     </div>
   );
