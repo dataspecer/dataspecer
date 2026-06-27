@@ -10,7 +10,8 @@
     "test:watch": "vitest"
   },
   "exports": {
-    ".": "./lib/index.js"
+    ".": "./lib/index.js",
+    "./hooks": "./lib/hooks/index.js"
   },
   "dependencies": {
     "@dataspecer/core-v2": "*",
