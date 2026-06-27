@@ -7,6 +7,7 @@ import {
   DataPsmSetTechnicalLabel,
 } from "@dataspecer/core/data-psm/operation";
 import type { ModelRef, PendingChange } from "./types";
+import { coreOperationToOperation } from "@dataspecer/core/core/index";
 
 /**
  * Sets fields on a freshly constructed data-psm operation instance, typed
@@ -48,10 +49,10 @@ export const mockPendingChanges: PendingChange[] = [
         {
           id: "change-1-po-1",
           targetModel: touristSchema,
-          operation: withFields(new DataPsmCreateClass(), {
+          operation: coreOperationToOperation(withFields(new DataPsmCreateClass(), {
             dataPsmInterpretation: operation.entity.iri ?? null,
             dataPsmHumanLabel: operation.entity.name ?? null,
-          }),
+          })),
         },
         {
           id: "change-1-po-2",
@@ -83,10 +84,10 @@ export const mockPendingChanges: PendingChange[] = [
         {
           id: "change-2-po-1",
           targetModel: touristSchema,
-          operation: withFields(new DataPsmSetCardinality(), {
+          operation: coreOperationToOperation(withFields(new DataPsmSetCardinality(), {
             entityId: "https://example.org/psm/tourist-destination/owner-address",
             dataPsmCardinality: [0, 1],
-          }),
+          })),
         },
         {
           id: "change-2-po-2",
@@ -115,20 +116,20 @@ export const mockPendingChanges: PendingChange[] = [
         {
           id: "change-3-po-1",
           targetModel: touristSchema,
-          operation: withFields(new DataPsmCreateAttribute(), {
+          operation: coreOperationToOperation(withFields(new DataPsmCreateAttribute(), {
             dataPsmOwner: "https://example.org/psm/tourist-destination/owner",
             dataPsmDatatype: "http://www.w3.org/2001/XMLSchema#integer",
             dataPsmHumanLabel: operation.entity.name ?? null,
-          }),
+          })),
         },
         {
           id: "change-3-po-2",
           targetModel: jsonLdContextSchema,
           // No dedicated component yet for this operation type, falls back to the generic renderer.
-          operation: withFields(new DataPsmSetTechnicalLabel(), {
+          operation: coreOperationToOperation(withFields(new DataPsmSetTechnicalLabel(), {
             dataPsmResource: "https://example.org/psm/jsonld-context/owner",
             dataPsmTechnicalLabel: "age",
-          }),
+          })),
         },
       ],
     };
@@ -146,9 +147,9 @@ export const mockPendingChanges: PendingChange[] = [
         {
           id: "change-4-po-1",
           targetModel: touristSchema,
-          operation: withFields(new DataPsmDeleteClass(), {
+          operation: coreOperationToOperation(withFields(new DataPsmDeleteClass(), {
             dataPsmClass: "https://example.org/psm/tourist-destination/obsolete-type",
-          }),
+          })),
         },
         {
           id: "change-4-po-2",
