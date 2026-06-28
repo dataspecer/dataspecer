@@ -4,7 +4,7 @@ import { AvailableFilesystems, FilesystemAbstraction, getDatastoreInfoOfGivenDat
 import { DatastoreComparison, DatastoreComparisonWithChangeTypeInfo, DiffTree, OldNewFilesystemNode, ResourceComparison, ResourceComparisonResult } from "./merge-state.ts";
 import { ResourceDatastoreStripHandlerBase } from "./comparison/resource-datastore-strip-handler-base.ts";
 import { createDatastoreWithReplacedIris } from "../datastore-manipulation/iri-replacement.ts";
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 
 export type ComparisonFullResult = {
   diffTree: DiffTree,
@@ -524,7 +524,7 @@ export function createRootDirectoryNodesForComparisonTest(): ComparisonTreeRootN
 
   const fileNodeB: FileNode = generateTestFileNode(
     underUnderRoot.irisTreePath, underUnderRoot.projectIrisTreePath,
-    createIriWithCopy(rootIri + "-file-node", 2, "under"), createIriWithCopy(rootProjectIri + "-file-node", 2, "under"), LOCAL_VISUAL_MODEL);
+    createIriWithCopy(rootIri + "-file-node", 2, "under"), createIriWithCopy(rootProjectIri + "-file-node", 2, "under"), VISUAL_MODEL);
   underUnderRoot.content[fileNodeB.name] = fileNodeB;
 
   const fakeRoot2 = _.cloneDeep(fakeRoot1);

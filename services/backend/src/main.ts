@@ -10,7 +10,6 @@ import { getDefaultConfiguration } from "./routes/configuration.ts";
 import { getLightweightOwlFromSimplified } from "./routes/experimental.ts";
 import { getSingleFile, getZip } from "./routes/generate.ts";
 import { exportPackageResource, importPackageResource } from "./routes/export-import-raw.ts";
-import { getGenerateApplicationByModelId, getGeneratedApplication } from "./routes/genapp.ts";
 import { importPackageFromGit, importResource, reloadResource } from "./routes/import.ts";
 import {
   copyRecursively,

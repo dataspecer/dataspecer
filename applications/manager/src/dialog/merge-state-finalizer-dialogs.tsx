@@ -48,7 +48,7 @@ export const MergeStateFinalizerDialog = ({ mergeState, openModal, isOpen, resol
   const [secondsAtStartOfMerge, setSecondsAtStartofMerge] = useState<number>(0);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+    let interval: any = null;     // Can't find better type
     if (mergeState.mergeStateCause === "merge") {
       // This probably causes redrawing of the dialog each second (even when we are not counting), but since we are computing on client we can afford that
       interval = setInterval(() => {

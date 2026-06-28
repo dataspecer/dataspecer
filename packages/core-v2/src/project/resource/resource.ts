@@ -44,4 +44,4 @@ export interface Package extends BaseResource {
     subResources?: BaseResource[];
 }
 
-export type ResourceEditable = Pick<BaseResource, "iri" | "userMetadata" | "projectIri" | "branch" >;
+export type ResourceEditable = Pick<BaseResource, "iri" | "userMetadata" >;

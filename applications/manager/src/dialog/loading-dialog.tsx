@@ -42,7 +42,7 @@ export const LoadingDialog = ({ isOpen, resolve, waitTime, waitingText, dialogTi
 
   useEffect(() => {
     setCloseDialogAction(resolve);
-    let interval: NodeJS.Timeout | null = null;
+    let interval: any = null;           // Can't find better type
     if (shouldShowTimer) {
       interval = setInterval(() => {
         setSecondsPassed(prev => prev + 1);

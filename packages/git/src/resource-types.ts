@@ -1,7 +1,7 @@
-import { LOCAL_PACKAGE, LOCAL_VISUAL_MODEL, LOCAL_SEMANTIC_MODEL, API_SPECIFICATION_MODEL, APPLICATION_GRAPH } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_PACKAGE, VISUAL_MODEL, LOCAL_SEMANTIC_MODEL, API_SPECIFICATION_MODEL, APPLICATION_GRAPH } from "@dataspecer/core-v2/model/known-models";
 
 export type ResourceTypes = typeof LOCAL_PACKAGE |
-  typeof LOCAL_VISUAL_MODEL |
+  typeof VISUAL_MODEL |
   typeof LOCAL_SEMANTIC_MODEL |
   typeof API_SPECIFICATION_MODEL |
   typeof APPLICATION_GRAPH |

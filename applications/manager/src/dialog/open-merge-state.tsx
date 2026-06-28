@@ -123,7 +123,8 @@ export const CreateMergeStateCausedByMergeDialog = ({ mergeFrom, mergeTo, editab
   const didRun = useRef<boolean>(false);
 
   useEffect(() => {
-    const interval: NodeJS.Timeout | null = setInterval(() => {
+    // Can't find better type
+    const interval: any = setInterval(() => {
       setSecondsPassed(prev => prev + 1);
     }, 1000);
 

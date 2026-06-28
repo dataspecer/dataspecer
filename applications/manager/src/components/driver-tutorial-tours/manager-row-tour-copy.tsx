@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { AlertTriangleIcon, ArrowLeftRight, BugIcon, CheckIcon, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, Eye, FileText, Filter, Folder, FolderDown, GitBranchPlus, GitCommit, GitGraph, GitMerge, GitPullRequestArrowIcon, GitPullRequestIcon, Import, LightbulbIcon, Link, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, Sparkles, TagIcon, TimerResetIcon, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -158,7 +158,7 @@ Reason: Since the comparison with remote is costly, we do not perform it automat
         </Button>
       }
       {resource.types.includes(V1.PSM) && <Button variant={"ghost"} onClick={() => {}}>{t("open")}</Button>}
-      {resource.types.includes(LOCAL_VISUAL_MODEL) && <Button asChild variant={"ghost"} onClick={() => {}}><a href={import.meta.env.VITE_CME + "/diagram?package-id=" + "&view-id=" + encodeURIComponent(iri) }>{t("open")}</a></Button>}
+      {resource.types.includes(VISUAL_MODEL) && <Button asChild variant={"ghost"} onClick={() => {}}><a href={import.meta.env.VITE_CME + "/diagram?package-id=" + "&view-id=" + encodeURIComponent(iri) }>{t("open")}</a></Button>}
       {resource.types.includes(API_SPECIFICATION_MODEL) && <Button asChild variant={"ghost"} size="icon" className="shrink-0" onClick={() => {}}><a href={import.meta.env.VITE_API_SPECIFICATION_APPLICATION + "?package-iri=" + "&model-iri=" + encodeURIComponent(iri) }>{t("open")}</a></Button>}
 
       {resource.types.includes(LOCAL_PACKAGE) && (resource.userMetadata as any)?.importedFromUrl &&

@@ -13,7 +13,6 @@
   "dependencies": {
     "@dataspecer/auth": "*",
     "@dataspecer/git": "*",
-    "@dataspecer/backend-utils": "*",
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
     "@dataspecer/documentation": "*",

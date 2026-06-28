@@ -80,7 +80,10 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
         return (await result.json()) as Package;
     }
 
-    async updatePackageProjectIriAndBranch(packageId: string, data: Partial<ResourceEditable>): Promise<Package> {
+    /**
+     * TODO PR: Actually, looking at it with hindisght I am not sure if we want allow changing projectIri from frontend.
+     */
+    async updatePackageProjectIriAndBranch(packageId: string, data: Partial<ResourceEditable & { projectIri: string; branch: string }>): Promise<Package> {
         const result = await this.httpFetch(this.getPackageUrlToUpdateProjectIri(packageId), {
             method: "PATCH",
             headers: {
