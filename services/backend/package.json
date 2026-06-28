@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "simple-git": "3.27.0",
-    "@auth/express": "0.10.1",
+    "@auth/express": "0.12.2",
     "psl": "1.15.0",
 
     "@dataspecer/core": "*",

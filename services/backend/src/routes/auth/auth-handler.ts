@@ -12,6 +12,16 @@ import { getBaseBackendUrl } from "../../utils/express-url-utils.ts";
  * Handles all the authentication requests and calls relevant methods based on the handled url
  */
 export const authHandler = asyncHandler(async (request: express.Request, response: express.Response, next: NextFunction) => {
+  // We do this if because of express v5, the v4 has the "0" filled with the path that the * matched
+  // and also in v5 it is array instead of just string
+  // This fix may not be completely correct though, possible TODO PR:.
+  // The code itself that causes the issue in the auth library is this: getBasePath(req) {return req.baseUrl.split(req.params[0])[0].replace(/\/$/, "");}
+  if (request.params.splat && request.params[0] === undefined) {
+    request.params[0] = Array.isArray(request.params.splat)
+      ? request.params.splat.join("/")
+      : request.params.splat;
+  }
+
   const strippedOriginalUrl = stripApiPrefixFromUrl(request.originalUrl);
   if (strippedOriginalUrl.startsWith("/auth/callback/")) {
     return authCallbackHandler(request, response, next);
