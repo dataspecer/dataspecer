@@ -136,9 +136,9 @@ application.use(express.urlencoded({ extended: true, limit: configuration.payloa
 // Api for authorization
 
 // We have to handle everything related to authorization under this handler - for some reason handlers for specific subparts (like /auth/callback/*) do not work.
-application.use(apiBasename + "/auth/*", authHandler);
+application.use(apiBasename + "/auth/*splat", authHandler);
 
-application.get(apiBasename + "/auth-handler/personal-callback/*", authJSRedirectCallback);
+application.get(apiBasename + "/auth-handler/personal-callback/*splat", authJSRedirectCallback);
 
 application.get(apiBasename + "/git/get-metas", getMetas);
 application.get(apiBasename + "/git/datastore-content", getDatastoreContentDirectly);
