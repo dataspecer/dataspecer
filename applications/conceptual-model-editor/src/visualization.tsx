@@ -60,7 +60,7 @@ import {
 } from "./dataspecer/visual-model/aggregator-to-visual-model-adapter";
 import { EntityDsIdentifier } from "./dataspecer/entity-model";
 import { getEntityLabelToShowInDiagram } from "./util/utils";
-import { SemanticModel } from "./dataspecer/semantic-model";
+import { dataTypeUriToName, SemanticModel } from "./dataspecer/semantic-model";
 import { CmeRelationshipProfileMandatoryLevel } from "./dataspecer/cme-model";
 import { asMandatoryLevel, selectDomainAndRange } from "./dataspecer/cme-model/adapter/adapter-utilities";
 
@@ -425,7 +425,7 @@ function prepareItems(
         cardinalityTarget: cardinalityToHumanLabel(range.cardinality),
         range: {
           iri: prepareIri(semanticModels, null, rangeEntity),
-          label: getEntityLabelToShowInDiagram(options.language, rangeEntity),
+          label: prepareItemRangeEntity(options.language, range, rangeEntity),
           vocabulary: prepareVocabulary(
             options, visualModel, semanticModels, entities, range.concept)
         },
@@ -451,7 +451,7 @@ function prepareItems(
         cardinalityTarget: cardinalityToHumanLabel(range.cardinality),
         range: {
           iri: prepareIri(semanticModels, null, rangeEntity),
-          label: getEntityLabelToShowInDiagram(options.language, rangeEntity),
+          label: prepareItemRangeEntity(options.language, range, rangeEntity),
           vocabulary: prepareVocabulary(
             options, visualModel, semanticModels, entities, range.concept)
         },
@@ -468,6 +468,23 @@ function prepareItems(
     result.push(nextItem);
   }
   return result;
+}
+
+/**
+ * We need to deal with labels for build-in types.
+ */
+function prepareItemRangeEntity(
+  language: string,
+  range: { concept: string | null },
+  rangeEntity: Entity | null,
+): string {
+  if (rangeEntity !== null) {
+    return getEntityLabelToShowInDiagram(language, rangeEntity);
+  }
+  if (range.concept === null) {
+    return "";
+  }
+  return dataTypeUriToName(range.concept) ?? "";
 }
 
 function prepareVocabulary(
@@ -721,7 +738,7 @@ function createDiagramEdgeForRelationshipProfile(
       options, semanticModels, entities, entity),
     vocabulary: prepareVocabulary(
       options, visualModel, semanticModels, entities, entity.id),
-    mandatoryLevelLabel: asMandatoryLevel(range?.tags ?? []),
+    mandatoryLevelLabel: selectMandatoryLevel(asMandatoryLevel(range?.tags ?? []), options.language),
   };
 }
 

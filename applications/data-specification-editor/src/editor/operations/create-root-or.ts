@@ -26,10 +26,10 @@ export class CreateRootOr implements ComplexOperation {
 
     execute(): void {
         const createOr = new DataPsmCreateOr();
-        const createOrResult = this.store.applyOperation(this.dataPsmSchemaIri, createOr);
+        this.store.applyOperation(this.dataPsmSchemaIri, createOr);
 
         const dataPsmUpdateSchemaRoots = new DataPsmSetRoots();
-        dataPsmUpdateSchemaRoots.dataPsmRoots = [createOrResult.created[0]];
+        dataPsmUpdateSchemaRoots.dataPsmRoots = [createOr.dataPsmNewIri as string];
         this.store.applyOperation(this.dataPsmSchemaIri, dataPsmUpdateSchemaRoots);
     }
 }

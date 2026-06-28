@@ -22,6 +22,7 @@ test("Create class profile.", () => {
   );
   //
   const result = executor.executeOperation(factory.createClassProfile({
+    id: "1",
     iri: "iri",
     name: { "en": "name" },
     nameFromProfiled: "name-source",
@@ -99,6 +100,7 @@ test("Modify class profile, change none.", () => {
         profiling: ["one", "two"],
         externalDocumentationUrl: "http://example.com/document",
         tags: ["main"],
+        order: null,
       } as SemanticModelClassProfile
     },
     removed: []
@@ -159,6 +161,7 @@ test("Modify class profile, change all.", () => {
         profiling: ["one", "two"],
         externalDocumentationUrl: "http://localhost/document",
         tags: ["support"],
+        order: null,
       } as SemanticModelClassProfile
     },
     removed: []
@@ -175,6 +178,7 @@ test("Create relationship profile.", () => {
   );
   //
   const result = executor.executeOperation(factory.createRelationshipProfile({
+    id: "1",
     ends: [{
       iri: "first",
       name: { "en": "first-name" },
@@ -224,6 +228,7 @@ test("Create relationship profile.", () => {
           usageNoteFromProfiled: "first-note-source",
           externalDocumentationUrl: "first-document",
           tags: ["first-level"],
+          order: null,
         }, {
           iri: "second",
           name: { "en": "second-name" },
@@ -237,6 +242,7 @@ test("Create relationship profile.", () => {
           usageNoteFromProfiled: "second-note-source",
           externalDocumentationUrl: "second-document",
           tags: ["second-level"],
+          order: null,
         }],
       }
     },
@@ -365,6 +371,7 @@ test("Relationship use all edges.", () => {
   );
   //
   const result = executor.executeOperation(factory.createRelationshipProfile({
+    id: "1",
     ends: [{
       iri: "first",
       name: null,
@@ -427,6 +434,7 @@ test("Relationship use all edges.", () => {
           usageNoteFromProfiled: null,
           externalDocumentationUrl: null,
           tags: [],
+          order: null,
         }, {
           iri: "second",
           name: null,
@@ -440,6 +448,7 @@ test("Relationship use all edges.", () => {
           usageNoteFromProfiled: null,
           externalDocumentationUrl: null,
           tags: [],
+          order: null,
         }, {
           iri: "third",
           name: null,
@@ -453,6 +462,7 @@ test("Relationship use all edges.", () => {
           usageNoteFromProfiled: null,
           externalDocumentationUrl: null,
           tags: [],
+          order: null,
         }],
       }
     },
@@ -477,6 +487,7 @@ test("Issue #917: Change class profile to null.", () => {
   );
   //
   const result = executor.executeOperation(factory.createClassProfile({
+    id: "1",
     iri: "iri",
     name: { "en": "name" },
     nameFromProfiled: "name-source",
@@ -515,6 +526,7 @@ test("Issue #917: Change class profile to null.", () => {
     profiling: ["one"],
     externalDocumentationUrl: null,
     tags: [],
+    order: null,
   } as SemanticModelClassProfile);
 });
 

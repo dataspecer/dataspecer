@@ -29,8 +29,9 @@
     "@dataspecer/json": "*",
     "@dataspecer/json-example": "*",
     "@dataspecer/lightweight-owl": "*",
+    "@dataspecer/model-store": "*",
     "@dataspecer/openapi": "*",
-    "@dataspecer/plant-uml": "*",
+    "@dataspecer/project-model": "*",
     "@dataspecer/rdfs-adapter": "*",
     "@dataspecer/sgov-adapter": "*",
     "@dataspecer/shacl": "*",
@@ -45,6 +46,6 @@
   },
   "devDependencies": {
     "@types/pako": "^2.0.0",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   }
 }

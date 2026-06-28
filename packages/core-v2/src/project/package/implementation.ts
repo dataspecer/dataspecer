@@ -1,6 +1,6 @@
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { EntityModel } from "../../entity-model/index.ts";
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL } from "../../model/known-models.ts";
+import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, RDFS_MODEL } from "../../model/known-models.ts";
 import { createRdfsModel, createSgovModel } from "../../semantic-model/simplified/index.ts";
 import { createInMemorySemanticModel } from "../../semantic-model/simplified/in-memory-semantic-model.ts";
 import { createVisualModel } from "../../semantic-model/simplified/visual-model.ts";
@@ -209,10 +209,10 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
         const pckg = await this.getPackage(packageId);
         for (const model of pckg.subResources!) {
             if (model.types.some(t => [
-                LOCAL_VISUAL_MODEL,
-                "https://dataspecer.com/core/model-descriptor/sgov",
+                VISUAL_MODEL,
+                QUERYABLE_MODEL,
                 LOCAL_SEMANTIC_MODEL,
-                "https://dataspecer.com/core/model-descriptor/pim-store-wrapper"
+                RDFS_MODEL
             ].includes(t))) {
                 if (!modelIds.includes(model.iri)) {
                     // Remove model
@@ -292,7 +292,7 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
             const name = resource.userMetadata.label?.en ?? resource.userMetadata.label?.cs;
 
             // Visual model
-            if (resource.types.includes(LOCAL_VISUAL_MODEL)) {
+            if (resource.types.includes(VISUAL_MODEL)) {
                 const modelData = (await (
                     await this.httpFetch(this.getBlobUrl(resource.iri).toString())
                 ).json()) as any;
@@ -302,7 +302,7 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
             }
 
             // SGOV model
-            if (resource.types.includes("https://dataspecer.com/core/model-descriptor/sgov")) {
+            if (resource.types.includes(QUERYABLE_MODEL)) {
                 const model = createSgovModel("https://slovník.gov.cz/sparql", this.httpFetch, resource.iri);
                 const modelData = (await (
                     await this.httpFetch(this.getBlobUrl(resource.iri).toString())
@@ -323,7 +323,7 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
             }
 
             // Pim store wrapper
-            if (resource.types.includes("https://dataspecer.com/core/model-descriptor/pim-store-wrapper")) {
+            if (resource.types.includes(RDFS_MODEL)) {
                 const modelData = (await (
                     await this.httpFetch(this.getBlobUrl(resource.iri).toString())
                 ).json()) as any;
@@ -344,7 +344,7 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
         const constructedVisualModels: VisualModel[] = [];
         // todo: use more robust approach
         for (const modelDescriptor of modelDescriptors) {
-            if (modelDescriptor.type === "https://dataspecer.com/core/model-descriptor/sgov") {
+            if (modelDescriptor.type === QUERYABLE_MODEL) {
                 const model = createSgovModel("https://slovník.gov.cz/sparql", this.httpFetch);
                 await model.unserializeModel(modelDescriptor);
                 constructedEntityModels.push(model);
@@ -353,7 +353,7 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
                 constructedEntityModels.push(model);
             } else if (
                 modelDescriptor.type === "https://dataspecer.com/core/model-descriptor/visual-model" ||
-                modelDescriptor.type === LOCAL_VISUAL_MODEL
+                modelDescriptor.type === VISUAL_MODEL
             ) {
                 const model = createVisualModel(modelDescriptor.modelId).deserializeModel(modelDescriptor);
                 constructedVisualModels.push(model);
@@ -363,7 +363,7 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
             ) {
                 const model = createInMemorySemanticModel().deserializeModel(modelDescriptor);
                 constructedEntityModels.push(model);
-            } else if (modelDescriptor.type === "https://dataspecer.com/core/model-descriptor/pim-store-wrapper") {
+            } else if (modelDescriptor.type === RDFS_MODEL) {
                 const model = new PimStoreWrapper(modelDescriptor.pimStore, modelDescriptor.id, modelDescriptor.alias);
                 model.fetchFromPimStore();
                 constructedEntityModels.push(model);

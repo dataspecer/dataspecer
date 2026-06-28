@@ -145,9 +145,7 @@ export class JsonLdAdapter {
           const artefact = findArtefactForImport(this.context, firstDataType.dataType);
           contextData["@context"] = pathRelative(this.artefact.publicUrl, artefact.publicUrl);
         } else {
-          if (property.cardinalityMax === 1) {
-            contextData["@type"] = "@id";
-          } else {
+          if (property.cardinalityMax !== 1) {
             contextData["@container"] = "@set";
           }
 

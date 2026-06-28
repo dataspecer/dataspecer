@@ -18,6 +18,7 @@ import { ExtendedSemanticModelClass, SemanticModelRelationship } from "@dataspec
 import RemoveIcon from "@mui/icons-material/Remove";
 import { useResource } from "@dataspecer/federated-observable-store-react/use-resource";
 import { ProfileInformation } from "../profiling/profile-information";
+import { isGeometryTypeObject } from "@/editor/utils/known-datatypes";
 
 const StrikeOut: React.FC<{
   children: React.ReactNode,
@@ -43,8 +44,10 @@ export const DataPsmAssociationEndItem: React.FC<{iri: string} & RowSlots & Clas
   const {resource: psmClassOrReference} = useResource<DataPsmClass | DataPsmClassReference>(dataPsmAssociationEnd?.dataPsmPart);
   const {resource: pimClass} = useResource<ExtendedSemanticModelClass>(DataPsmClass.is(psmClassOrReference) ? psmClassOrReference.dataPsmInterpretation : null);
 
+  const isGeometry = pimClass ? isGeometryTypeObject(pimClass) : false;
   const isCodelist = pimClass?.isCodelist ?? false;
-  const isPrimitive = DataPsmClass.is(psmClassOrReference) && psmClassOrReference?.dataPsmParts.length === 0 && psmClassOrReference?.dataPsmEmptyAsComplex !== true;
+  let isPrimitive = DataPsmClass.is(psmClassOrReference) && psmClassOrReference?.dataPsmParts.length === 0 && psmClassOrReference?.dataPsmEmptyAsComplex !== true;
+  isPrimitive ||= isGeometry;
 
   const isDematerialized = !!dataPsmAssociationEnd?.dataPsmIsDematerialize && !isPrimitive;
 

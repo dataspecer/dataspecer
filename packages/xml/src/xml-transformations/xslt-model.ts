@@ -31,6 +31,18 @@ export class XmlTransformation {
   templates: XmlTemplate[];
 
   /**
+   * Whether the transformation uses WKT literals, which require special
+   * handling in both lifting and lowering.
+   */
+  usesWktLiterals: boolean;
+
+  /**
+   * Whether the transformation uses GML literals, which require special
+   * handling in both lifting and lowering.
+   */
+  usesGmlLiterals: boolean;
+
+  /**
    * The array of imports of other stylesheets.
    */
   imports: XmlTransformationImport[];
@@ -161,6 +173,30 @@ export class XmlLiteralMatch extends XmlMatch {
 }
 
 /**
+ * Represents a match created from a WKT literal property.
+ * WKT literals have special handling: they contain geometry data with an optional SRS name.
+ */
+export class XmlWktLiteralMatch extends XmlLiteralMatch {
+  isWktLiteral: true;
+}
+
+/**
+ * Represents a match created from a GML literal property.
+ * GML literals keep their XML content as serialized RDF lexical form.
+ */
+export class XmlGmlLiteralMatch extends XmlLiteralMatch {
+  /**
+   * Optional wrapper element used when the literal needs synthetic wrapping.
+   *
+   * Used for example for gml:EnvelopeType which has no wrapping element in XML
+   * and therefore <gml:Envelope> is used as a wrapper.
+   */
+  wrappingElementName: QName | null;
+
+  isGmlLiteral: true;
+}
+
+/**
  * Represents a match created from a property whose range is an IRI.
  */
 export class XmlIriMatch extends XmlMatch {
@@ -222,6 +258,18 @@ export function xmlMatchIsLiteral(
   match: XmlMatch
 ): match is XmlLiteralMatch {
   return (match as XmlLiteralMatch).dataTypeIri !== undefined;
+}
+
+export function xmlMatchIsWktLiteral(
+  match: XmlMatch
+): match is XmlWktLiteralMatch {
+  return (match as XmlWktLiteralMatch).isWktLiteral === true;
+}
+
+export function xmlMatchIsGmlLiteral(
+  match: XmlMatch
+): match is XmlGmlLiteralMatch {
+  return (match as XmlGmlLiteralMatch).isGmlLiteral === true;
 }
 
 export function xmlMatchIsIri(

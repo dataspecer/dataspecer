@@ -1,6 +1,5 @@
 import {
   CreatedEntityOperationResult,
-  Operation,
   OperationResult,
 } from "@dataspecer/core-v2/semantic-model/operations";
 import { Entity } from "@dataspecer/entity-model";
@@ -10,6 +9,7 @@ import { isSemanticModelRelationship } from "./semantic-model.ts";
 import { SemanticModelRelationshipEnd } from "./semantic-model.ts";
 import { SemanticModelGeneralization } from "./semantic-model.ts";
 import { isSemanticModelGeneralization, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
+import type { Operation } from "@dataspecer/core/operation";
 
 export {
   SEMANTIC_MODEL_CLASS,

@@ -31,7 +31,7 @@ export const createResourceHandler = asyncHandler(async (request: express.Reques
     const bodySchema = z.object({
         iri: z.string().min(1).optional(),
         type: z.string().min(1),
-        userMetadata: z.optional(z.record(z.unknown())),
+        userMetadata: z.optional(z.record(z.string(), z.unknown())),
     }).strict();
     const body = bodySchema.parse(request.body);
 
@@ -66,7 +66,7 @@ export const copyRecursively = asyncHandler(async (request: express.Request, res
     const query = querySchema.parse(request.query);
 
     const bodySchema = z.object({
-        userMetadata: z.optional(z.record(z.unknown())),
+        userMetadata: z.optional(z.record(z.string(), z.unknown())),
     }).strict();
     const body = bodySchema.parse(request.body);
 
@@ -87,8 +87,7 @@ export const updateResourceMetadataHandler = asyncHandler(async (request: expres
     const query = querySchema.parse(request.query);
 
     const bodySchema = z.object({
-        userMetadata: z.optional(z.record(z.unknown())),
-
+        userMetadata: z.optional(z.record(z.string(), z.unknown())),
     }).strict();
     const body = bodySchema.parse(request.body);
 
@@ -239,7 +238,7 @@ export const createPackageResource = asyncHandler(async (request: express.Reques
 
     const bodySchema = z.object({
         iri: z.string().min(1).optional(),
-        userMetadata: z.optional(z.record(z.unknown())),
+        userMetadata: z.optional(z.record(z.string(), z.unknown())),
     }).strict();
     const body = bodySchema.parse(request.body);
 

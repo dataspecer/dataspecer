@@ -1,3 +1,8 @@
+/**
+ * @deprecated The `packages/entity-model` sources are deprecated.
+ * Use the entity model implementation in `packages/core/src/entity-model` instead.
+ * See: ../../core/src/entity-model/index.ts
+ */
 import { EntityModel } from "../entity-model.ts";
 import { EntityRecord } from "../model/index.ts";
 
@@ -26,6 +31,10 @@ class ReadOnlyInMemoryEntityModel implements EntityModel {
 
 }
 
+/**
+ * @deprecated Use `InMemoryEntityModel` from `packages/core/src/entity-model/implementation/in-memory.ts`.
+ * See: ../../core/src/entity-model/implementation/in-memory.ts
+ */
 export function createReadOnlyInMemoryEntityModel(
   identifier: string, entities: EntityRecord,
 ): EntityModel {

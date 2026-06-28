@@ -1,31 +1,10 @@
 import { CoreResourceReader } from "@dataspecer/core/core";
+import type { EntityRecord } from "@dataspecer/core/entity-model";
+import { deepEqual } from "@dataspecer/utilities";
 import { Entity } from "../../entity-model/entity.ts";
 import { InMemoryEntityModel } from "../../entity-model/in-memory-entity-model.ts";
-
 import { transformCoreResources } from "./transform-core-resources.ts";
-
-function deepEqual(a: any, b: any): boolean {
-    if (a === b) {
-        return true;
-    }
-    if (typeof a == "object" && typeof b == "object") {
-        const keysA = Object.keys(a);
-        const keysB = Object.keys(b);
-        if (keysA.length != keysB.length) {
-            return false;
-        }
-        for (const key of keysA) {
-            if (!keysB.includes(key)) {
-                return false;
-            }
-            if (!deepEqual(a[key], b[key])) {
-                return false;
-            }
-        }
-        return true;
-    }
-    return false;
-}
+import { RDFS_MODEL } from "../../model/known-models.ts";
 
 export class PimStoreWrapper extends InMemoryEntityModel {
     private pimStore: CoreResourceReader;
@@ -72,12 +51,46 @@ export class PimStoreWrapper extends InMemoryEntityModel {
 
     serializeModel() {
         return {
-            // todo fix
-            type: "https://dataspecer.com/core/model-descriptor/pim-store-wrapper",
+            type: RDFS_MODEL,
             id: this.id,
             alias: this.alias,
             pimStore: this.pimStore,
             urls: this.urls,
         };
     }
+}
+
+/**
+ * Converts PIM serialization (js object) into an entity record with semantic
+ * entities.
+ */
+export function serializationToPimModelEntities(serialization: object): {
+  adapter: PimStoreWrapper;
+  entities: EntityRecord;
+} {
+  const modelData = {...serialization} as any;
+  const adapter = new PimStoreWrapper(modelData.pimStore, modelData.id, "model", modelData.urls);
+  adapter.fetchFromPimStore();
+
+  delete modelData.pimStore;
+
+  /**
+   * The main entity represents the model itself. Currently it is just a dump
+   * of the data from the root of the blob.
+   */
+  const mainEntity = {
+    id: modelData.id,
+    type: [],
+    ...modelData,
+  } satisfies Entity;
+
+  const entities = {
+    ...adapter.getEntities(),
+    [mainEntity.id]: mainEntity,
+  };
+
+  return {
+    entities,
+    adapter,
+  };
 }

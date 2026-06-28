@@ -1,10 +1,12 @@
-import { BackendPackageService, Package } from "@dataspecer/core-v2/project";
+import { LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { BackendPackageService } from "@dataspecer/core-v2/project";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { createContext, useRef, useState } from "react";
-import { StructureEditorBackendService } from "@dataspecer/backend-utils/connectors/specification";
-import { LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { Package } from "../../../packages/core-v2/lib/project/resource/resource";
 import { createModelInstructions } from "./known-models";
+import { StructureEditorBackendService } from "./structure-editor-backend-service";
 import { PACKAGE_ROOT } from "@dataspecer/git";
+
 
 const backendUrl = import.meta.env.VITE_BACKEND;
 

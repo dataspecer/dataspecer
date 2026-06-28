@@ -11,21 +11,17 @@
   "exports": {
     ".": "./lib/index.js",
     "./complex-operation": "./lib/complex-operation.js",
-    "./federated-core-resource-writer": "./lib/federated-core-resource-writer.js",
     "./federated-observable-store": "./lib/federated-observable-store.js",
-    "./immediate-core-resource-reader": "./lib/immediate-core-resource-reader.js",
-    "./read-only-memory-store-with-dummy-pim-schema": "./lib/read-only-memory-store-with-dummy-pim-schema.js",
     "./resource": "./lib/resource.js"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.192",
     "@types/node": "^25.5.2",
-    "typescript": "^5.9.3",
-    "vitest": "^4.1.2"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
   },
   "dependencies": {
     "@dataspecer/core": "*",
-    "@dataspecer/core-v2": "*",
-    "lodash": "^4.17.21"
+    "@dataspecer/core-v2": "*"
   }
 }

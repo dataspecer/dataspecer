@@ -1,3 +1,5 @@
+import type { Entity } from "../entity-model/index.ts";
+
 /**
  * Allow for single value in each language. It is not possible to have
  * multiple values for a single language.
@@ -6,11 +8,13 @@ export type LanguageString = Record<string, string>;
 
 /**
  * Core object that support type control.
+ * @deprecated
  */
 export class CoreTyped {
   /**
    * Types used by core model. Single resource can be of multiple
    * application types like PimClass, PimAttribute, etc..
+   * @deprecated
    */
   types: string[] = [];
 
@@ -20,6 +24,9 @@ export class CoreTyped {
 /**
  * Define the a core resource for the model, this interface shall be
  * used as a base class for every other core entity/object.
+ *
+ * @deprecated This interface is deprecated and all models should be refactored
+ * to use {@link Entity} instead.
  */
 export class CoreResource extends CoreTyped {
   /**
@@ -33,4 +40,14 @@ export class CoreResource extends CoreTyped {
     super();
     this.iri = iri;
   }
+}
+
+export type CoreResourceAndEntity = Entity & CoreResource;
+
+export function coreResourceToEntity(resource: CoreResource): CoreResourceAndEntity {
+  return {
+    ...resource,
+    id: resource.iri!,
+    type: resource.types!,
+  };
 }

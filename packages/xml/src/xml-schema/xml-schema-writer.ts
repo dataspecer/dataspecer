@@ -22,6 +22,7 @@ import {
   xmlSchemaSimpleTypeDefinitionIsRestriction,
   XmlSchemaAttribute,
   xmlSchemaTypeIsLangString,
+  xmlSchemaComplexTypeDefinitionIsSimpleContent,
 } from "./xml-schema-model.ts";
 
 import { XmlWriter, XmlStreamWriter } from "../xml/xml-writer.ts";
@@ -355,6 +356,17 @@ async function writeComplexType(
     if (xmlSchemaComplexTypeDefinitionIsExtension(definition)) {
       await writer.writeElementFull("xs", "complexContent")(async writer => {
         await writeComplexContent(definition, null, writer);
+      });
+    } else if (xmlSchemaComplexTypeDefinitionIsSimpleContent(definition)) {
+      await writer.writeElementFull("xs", "simpleContent")(async writer => {
+        await writer.writeElementFull("xs", "extension")(async writer => {
+          await writer.writeLocalAttributeValue(
+            "base", writer.getQName(...definition.base)
+          );
+          for (const attribute of definition.attributes) {
+            await writeAttribute(attribute, writer);
+          }
+        });
       });
     } else {
       await writeComplexContent(definition, null, writer);

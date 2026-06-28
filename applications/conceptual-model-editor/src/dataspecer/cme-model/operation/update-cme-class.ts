@@ -16,6 +16,7 @@ export function updateCmeClass(
       name: next.name ?? undefined,
       description: next.description ?? undefined,
       externalDocumentationUrl: next.externalDocumentationUrl ?? null,
+      order: next.order ?? null,
     });
 
   const result = model.executeOperation(operation);

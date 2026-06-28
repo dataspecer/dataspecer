@@ -1,0 +1,256 @@
+import type { Entity, EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
+import { diffEntities } from "@dataspecer/core/entity-model";
+import type { Model } from "@dataspecer/core/model";
+import { isSetEntityOperation, isUpdateEntityOperation, type Operation } from "@dataspecer/core/operation";
+import type { ApplyOperationResult, ModelInDefaultFrontendModelStore } from "./implementation.ts";
+
+export const UNDO_OPERATION_TYPE = "undo" as const;
+
+/**
+ * An undo operation "cancels" specific transaction (a set of operations) in the
+ * model. It can be used to implement undo/redo functionality by simply
+ * canceling last non-canceled transactions an canceling undo operations to
+ * perform redo.
+ */
+export interface UndoOperation extends Operation {
+  type: typeof UNDO_OPERATION_TYPE;
+
+  /**
+   * Transaction ID that this undo cancels.
+   */
+  cancelTransactionId: string;
+}
+
+function isUndoOperation(operation: Operation): operation is UndoOperation {
+  return operation.type === UNDO_OPERATION_TYPE;
+}
+
+/**
+ * State of the model. Can be used for undo/redo operations and to keep track of changes.
+ * Can be mutable.
+ */
+export interface ModelState<BaseEntityType extends Entity = Entity> {
+  entities: EntityRecord<BaseEntityType>;
+  operations: Operation[];
+}
+
+interface Snapshot<BaseEntityType extends Entity = Entity> {
+  stateBefore: ModelState<BaseEntityType>;
+  // todo maybe state after?
+  transactionId: string | null;
+}
+
+/**
+ * This is helper implementation for EntityModels that handles subscription,
+ * undo/redo operations and other common logic.
+ */
+export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Entity> implements Model, ModelInDefaultFrontendModelStore {
+  id: string;
+
+  private state: ModelState<BaseEntityType> = {
+    entities: {},
+    operations: [],
+  };
+
+  /**
+   * For each transaction we will keep a snapshot of the model state.
+   */
+  private snapshots: Snapshot<BaseEntityType>[] = [];
+
+  private externalChangesSubscribers: ((changes: EntityChange[]) => void)[] = [];
+
+  /**
+   * Whether the entities changed since the last successful {@link save} (or
+   * since the model was loaded). Used to implement smart save, i.e. saving
+   * only models that actually changed.
+   */
+  private dirty: boolean = false;
+
+  constructor(id: string) {
+    this.id = id;
+  }
+
+  /**
+   * Function to load the state from backend.
+   */
+  protected abstract loadInternal(): Promise<ModelState<BaseEntityType>>;
+
+  /**
+   * Function to load the initial state of the model for newly created models.
+   */
+  protected loadInitialStateInternal(): void {
+    this.initializeState({
+      entities: {},
+      operations: [],
+    });
+  }
+
+  async load(doNotFetch: boolean = false): Promise<void> {
+    if (!doNotFetch) {
+      const oldEntities = this.state.entities;
+      this.state = await this.loadInternal();
+      this.dirty = false;
+      const changes = diffEntities(oldEntities, this.state.entities);
+      this.notifyAboutExternalChanges(changes);
+    } else {
+      // Initializes the model as freshly created (e.g. as a reaction to a
+      // {@link CreateModelOperation} on the project model), without fetching
+      // anything from the backend. Marks the model dirty so that it gets
+      // persisted on the next {@link save}.
+      this.loadInitialStateInternal();
+    }
+  }
+
+  /**
+   * Synchronously sets the model state, bypassing any diffing/notification.
+   * Intended to be used by {@link createNew} (and its overrides) to set up
+   * the initial state of a freshly created model.
+   */
+  protected initializeState(state: ModelState<BaseEntityType>): void {
+    this.state = state;
+    this.dirty = true;
+  }
+
+  protected abstract saveInternal(state: ModelState<BaseEntityType>): Promise<void>;
+
+  /**
+   * Saves the model to the backend, but only if it actually changed since the
+   * last save (or load). This is a no-op for unchanged models.
+   */
+  async save(): Promise<void> {
+    if (!this.dirty) {
+      return;
+    }
+    this.dirty = false;
+    await this.saveInternal(this.state);
+  }
+
+  /**
+   * Returns all entities in the model.
+   * The returned object is immutable.
+   */
+  getAllEntities(): EntityRecord<BaseEntityType> {
+    return this.state.entities;
+  }
+
+  /**
+   * Updates list of entities with the provided changes when the change is
+   * asynchronous or external - not caused directly and synchronously by
+   * applying operations in this model.
+   */
+  protected externalChange(changes: EntityChange[]): void {
+    const newEntities = { ...this.state.entities };
+    for (const change of changes) {
+      if (change.next) {
+        newEntities[change.next.id] = change.next as BaseEntityType;
+      } else {
+        delete newEntities[change.previous.id];
+      }
+    }
+    this.state.entities = newEntities;
+
+    if (changes.length > 0) {
+      this.dirty = true;
+    }
+
+    this.notifyAboutExternalChanges(changes);
+  }
+
+  /**
+   * Notifies subscribers about changes that did not happen during applying
+   * operations.
+   */
+  protected notifyAboutExternalChanges(changes: EntityChange[]): void {
+    for (const listener of this.externalChangesSubscribers) {
+      listener(changes);
+    }
+  }
+
+  /**
+   * Method to be implemented by individual subclasses to execute their domain
+   * logic.
+   */
+  protected abstract applyOperation(operation: Operation, mutableState: EntityRecord<BaseEntityType>): void;
+
+  public applyOperations(transactionId: string, operations: Operation[]): ApplyOperationResult {
+    // Perform snapshot if necessary
+    const lastSnapshotTransactionId = this.snapshots.length > 0 ? this.snapshots[this.snapshots.length - 1].transactionId : null;
+    if (lastSnapshotTransactionId !== transactionId) {
+      this.snapshots.push({
+        stateBefore: {
+          entities: { ...this.state.entities }, // We create copy to conserve the state
+          operations: [...this.state.operations],
+        },
+        transactionId: transactionId,
+      });
+    }
+
+    if (operations.some(isUndoOperation)) {
+      // Handle UNDO
+      if (operations.length > 1) {
+        throw new Error("Undo operation must be applied separately from other operations!");
+      }
+      const undoOperation = operations[0] as UndoOperation;
+
+      // Todo we trust that caller use undo operations in correct order.
+
+      const snapshot = this.snapshots.find((snapshot) => snapshot.transactionId === undoOperation.cancelTransactionId);
+
+      if (!snapshot) {
+        throw new Error(`Cannot find snapshot for transaction ID ${undoOperation.cancelTransactionId}`);
+      }
+
+      const previousEntities = { ...this.state.entities };
+      this.state.entities = { ...snapshot.stateBefore.entities };
+
+      const diff = diffEntities(previousEntities, this.state.entities);
+      if (diff.length > 0) {
+        this.dirty = true;
+      }
+
+      return {
+        transactionId,
+        entityChanges: diff,
+      };
+    } else {
+      const previousState = { ...this.state.entities };
+
+      for (const operation of operations) {
+        // todo: we allow running this low level operations on all models, is it correct?
+        if (isSetEntityOperation(operation)) {
+          const entity = operation.entity as BaseEntityType;
+          this.state.entities[entity.id] = entity;
+        } else if (isUpdateEntityOperation(operation)) {
+          const update = operation.update;
+          const entity = this.state.entities[update.id];
+          // If entity does not exist, do nothing
+          if (entity) {
+            this.state.entities[update.id] = { ...entity, ...update };
+          }
+        } else {
+          this.applyOperation(operation, this.state.entities);
+        }
+      }
+
+      const diff = diffEntities(previousState, this.state.entities);
+      if (diff.length > 0) {
+        this.dirty = true;
+      }
+
+      return {
+        transactionId,
+        entityChanges: diff,
+      };
+    }
+  }
+
+  /**
+   * Subscribes to entity changes that are not caused by applying operations in this model.
+   */
+  subscribeForAsyncChanges(listener: (changes: EntityChange[]) => void): () => void {
+    this.externalChangesSubscribers.push(listener);
+    return () => {
+      this.externalChangesSubscribers = this.externalChangesSubscribers.filter((l) => l !== listener);
+    };
+  }
+}

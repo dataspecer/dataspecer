@@ -1,0 +1,54 @@
+import { v7 as uuidv7 } from 'uuid';
+import { CoreResource } from '../core/core-resource.ts';
+
+/**
+ * Must be unique withing the model it belongs to.
+ */
+export type EntityIdentifier = string;
+
+/**
+ * Generates random entity identifier.
+ */
+export function generateEntityId(): EntityIdentifier {
+  return uuidv7();
+}
+
+/**
+ * Entity is JSON serializable immutable object that represents a thing in the
+ * model.
+ *
+ * Examples are: semantic model class, property, structure model object,
+ * configuration for the generator.
+ */
+export interface Entity {
+  id: EntityIdentifier;
+
+  // Type of the entity is not necessary for the high level interface here, but
+  // almost all models will use it, so we can put it here for convenience.
+  type: string[];
+}
+
+/**
+ * Can be used to represent a serialized entity model. As this interface is
+ * simplest, it should be used in places where we want to pass the whole entity
+ * model for reading.
+ *
+ * Depending on the typing, it may contain the main entity that describes the
+ * model itself. You should filter it out.
+ *
+ * If a consumer gets an entity with an unknown type, it should ignore it with a
+ * warning.
+ *
+ * @todo maybe consider separating the main entity
+ */
+export type EntityArray<T extends Entity = Entity> = T[];
+
+export type EntityRecord<T extends Entity = Entity> = Record<EntityIdentifier, T>;
+
+export type EntityMap<T extends Entity = Entity> = Map<EntityIdentifier, T>;
+
+/**
+ * Helper method to convert old, deprecated interface of CoreResource to new
+ * Entity interface.
+ */
+export type FixResourceAsEntity<T extends CoreResource> = Omit<T, keyof CoreResource> & { id: T["iri"]; type: T["types"] };

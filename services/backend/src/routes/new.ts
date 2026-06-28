@@ -1,5 +1,5 @@
 import type { Entity } from "@dataspecer/core-v2";
-import { LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { createWritableInMemoryProfileModel, isSemanticModelClassProfile, isSemanticModelRelationshipProfile, SemanticProfileModelOperations } from "@dataspecer/profile-model";
@@ -11,6 +11,8 @@ import z from "zod";
 import { resourceModel } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { importFromUrl } from "./import.ts";
+import { PimStoreWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
+import { isSemanticModelClass, isSemanticModelRelationship, type SemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
 
 /**
  * Creates a new application profile by importing specifications and setting up
@@ -101,15 +103,23 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
       // We need to inspect all sub-packages and read semantic models from them
       const entitiesToProfile: Entity[] = [];
       const thisSpecificationEntities: Entity[] = [];
+      const otherEntities: Entity[] = [];
       for (const importedPackage of importResults) {
         if (importedPackage.importedResource) {
           const pckg = await resourceModel.getPackage(importedPackage.importedResource!.iri);
           for (const subResource of pckg!.subResources) {
-            if (!subResource.types.includes(LOCAL_SEMANTIC_MODEL)) continue; // todo so far we expect that semantic models are "local" and not imported
-            const subModel = await resourceModel.getOrCreateResourceModelStore(subResource.iri);
-            const subModelJson = await subModel.getJson();
-            if (subModelJson.entities) {
-              thisSpecificationEntities.push(...Object.values(subModelJson.entities as Record<string, Entity>));
+            if (subResource.types.includes(LOCAL_SEMANTIC_MODEL)) {
+              const subModel = await resourceModel.getOrCreateResourceModelStore(subResource.iri);
+              const subModelJson = await subModel.getJson();
+              if (subModelJson.entities) {
+                thisSpecificationEntities.push(...Object.values(subModelJson.entities as Record<string, Entity>));
+              }
+            } else if (subResource.types.includes(RDFS_MODEL)) {
+              const subModel = await resourceModel.getOrCreateResourceModelStore(subResource.iri);
+              const subModelJson = await subModel.getJson();
+              const model = new PimStoreWrapper(subModelJson.pimStore, subModelJson.id, "", subModelJson.urls);
+              model.fetchFromPimStore();
+              otherEntities.push(...Object.values(model.getEntities()));
             }
           }
         } else {
@@ -124,6 +134,29 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
           entitiesToProfile.push(...thisSpecificationEntities.filter((e) => isSemanticModelClassProfile(e) || isSemanticModelRelationshipProfile(e)));
         } else {
           entitiesToProfile.push(...thisSpecificationEntities);
+        }
+
+        // We need to include classes that are referenced by the resources that are being profiled
+        const otherClasses: Record<string, SemanticModelClass> = {};
+        for (const entity of otherEntities) {
+          if (isSemanticModelClass(entity)) {
+            otherClasses[entity.iri ?? entity.id] = entity;
+          }
+        }
+
+        const alreadyProfiledClasses = new Set<string>(entitiesToProfile.filter(isSemanticModelClass).map((e) =>  e.iri ?? e.id));
+        for (const entity of entitiesToProfile) {
+          if (isSemanticModelRelationship(entity)) {
+            for (const end of entity.ends) {
+              if (!alreadyProfiledClasses.has(end.concept ?? "")) {
+                const cls = otherClasses[end.concept ?? ""];
+                if (cls) {
+                  entitiesToProfile.push(cls);
+                  alreadyProfiledClasses.add(cls.iri ?? cls.id);
+                }
+              }
+            }
+          }
         }
       }
 
@@ -144,7 +177,7 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
       profiledEntities = profileModel.getEntities();
     }
     await semanticModel.setJson({
-      type: "http://dataspecer.com/resources/local/semantic-model",
+      type: LOCAL_SEMANTIC_MODEL,
       modelId: packageIri + "/semantic-model",
       modelAlias: profileLabel || "Profile",
       baseIri: body.baseIri,
@@ -153,13 +186,13 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
 
     // Create visual model
     const viewIri = packageIri + "/visual-model";
-    await resourceModel.createResource(packageIri, viewIri, LOCAL_VISUAL_MODEL, {
+    await resourceModel.createResource(packageIri, viewIri, VISUAL_MODEL, {
       label: { en: "View for " + (profileLabel || "Profile") },
       description: { en: "Visual model for the profile" },
     });
     const visualModel = await resourceModel.getOrCreateResourceModelStore(viewIri);
     await visualModel.setJson({
-      type: "http://dataspecer.com/resources/local/visual-model",
+      type: VISUAL_MODEL,
       modelId: viewIri,
       visualEntities: {},
       modelColors: {

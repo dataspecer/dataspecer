@@ -1,6 +1,4 @@
-import {PlantUmlImageGenerator} from "./plant-uml-image-generator.ts";
 import {SparqlGenerator} from "@dataspecer/sparql-query";
-import {PlantUmlGenerator} from "@dataspecer/plant-uml";
 import {JsonLdGenerator} from "@dataspecer/json/json-ld";
 import {JsonSchemaGenerator} from "@dataspecer/json/json-schema";
 import {XmlSchemaGenerator} from "@dataspecer/xml/xml-schema";
@@ -35,7 +33,6 @@ export function getArtefactGenerators() {
         new XsltLiftingGenerator(),
         new CsvSchemaGenerator(),
         new RdfToCsvGenerator(),
-        new PlantUmlGenerator(),
         new SparqlGenerator(),
         new ShaclGenerator(),
         new OpenapiGenerator(),
@@ -44,9 +41,6 @@ export function getArtefactGenerators() {
         // Generators that need backend support
         new ShexGenerator(),
         new ShexMapGenerator(),
-
-        // Generators that need backend support
-        new PlantUmlImageGenerator(),
     ];
 }
 

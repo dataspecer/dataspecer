@@ -2,15 +2,11 @@ import { DataSpecification } from "../data-specification/model/index.ts";
 import { assertFailed, assertNot, CoreResourceReader } from "../core/index.ts";
 import { StreamDictionary } from "../io/stream/stream-dictionary.ts";
 import { ArtefactGenerator } from "./artefact-generator.ts";
-import {
-  ArtefactGeneratorContext,
-  StructureClassLocation,
-} from "./artefact-generator-context.ts";
-import { coreResourcesToConceptualModel } from "../conceptual-model/index.ts";
-import {
-  StructureModel,
-} from "../structure-model/model/index.ts";
-import {coreResourcesToStructuralModel} from "../structure-model/index.ts";
+import { ArtefactGeneratorContext, StructureClassLocation } from "./artefact-generator-context.ts";
+import { semanticModelToConceptualModel } from "../conceptual-model/index.ts";
+import { StructureModel } from "../structure-model/model/index.ts";
+import { coreResourcesToStructuralModel } from "../structure-model/index.ts";
+import { EntityArray } from "../entity-model/entity.ts";
 
 export class Generator {
   private readonly specifications: { [iri: string]: DataSpecification } = {};
@@ -19,11 +15,7 @@ export class Generator {
 
   private readonly reader: CoreResourceReader;
 
-  constructor(
-    specifications: DataSpecification[],
-    reader: CoreResourceReader,
-    generators: ArtefactGenerator[] = []
-  ) {
+  constructor(specifications: DataSpecification[], reader: CoreResourceReader, generators: ArtefactGenerator[] = []) {
     for (const specification of specifications) {
       this.specifications[specification.iri] = specification;
     }
@@ -33,52 +25,25 @@ export class Generator {
     }
   }
 
-  public async generate(
-    specificationIri: string,
-    output: StreamDictionary
-  ): Promise<void> {
+  public async generate(specificationIri: string, output: StreamDictionary): Promise<void> {
     const specification = this.specifications[specificationIri];
-    assertNot(
-      specification == undefined,
-      `Missing specification ${specificationIri}`
-    );
+    assertNot(specification == undefined, `Missing specification ${specificationIri}`);
     const context = await this.createContext();
     for (const artefact of specification.artefacts) {
       const generator = this.generators[artefact.generator];
-      assertNot(
-        generator == undefined,
-        `Missing generator ${artefact.generator}`
-      );
-      await generator.generateToStream(
-        context,
-        artefact,
-        specification,
-        output
-      );
+      assertNot(generator == undefined, `Missing generator ${artefact.generator}`);
+      await generator.generateToStream(context, artefact, specification, output);
     }
   }
 
-  public async generateArtefact(
-    specificationIri: string,
-    artefactIri: string,
-    output: StreamDictionary
-  ): Promise<void> {
+  public async generateArtefact(specificationIri: string, artefactIri: string, output: StreamDictionary): Promise<void> {
     const specification = this.specifications[specificationIri];
-    assertNot(
-      specification == undefined,
-      `Missing specification ${specificationIri}`
-    );
+    assertNot(specification == undefined, `Missing specification ${specificationIri}`);
     const context = await this.createContext();
     const artefact = specification.artefacts.find((a) => a.iri === artefactIri);
-    assertNot(
-      artefact === undefined,
-      `Artefact ${artefactIri} not found in specification ${specificationIri}`
-    );
+    assertNot(artefact === undefined, `Artefact ${artefactIri} not found in specification ${specificationIri}`);
     const generator = this.generators[artefact.generator];
-    assertNot(
-      generator == undefined,
-      `Missing generator ${artefact.generator}`
-    );
+    assertNot(generator == undefined, `Missing generator ${artefact.generator}`);
     await generator.generateToStream(context, artefact, specification, output);
   }
 
@@ -86,61 +51,20 @@ export class Generator {
     const conceptualModels = {};
     const structureModels = {};
     for (const specification of Object.values(this.specifications)) {
-      const conceptualModel = coreResourcesToConceptualModel(
-        this.reader,
-        specification.pim
-      );
-      assertNot(
-        conceptualModel === null,
-        `Can't load conceptual model '${specification.pim}'.`
-      );
+      const allEntities = this.reader.listResources().map((id) => this.reader.readResource(id));
+      const conceptualModel = semanticModelToConceptualModel(allEntities as unknown as EntityArray, specification.pim);
+      assertNot(conceptualModel === null, `Can't load conceptual model '${specification.pim}'.`);
       conceptualModels[specification.pim] = conceptualModel;
 
-      // todo: It seems that there is a problem that multiple classes can have the same CIM IRI
-      // this is a workaround for now
-      const pimMapping = new Map<string, string>();
-      for (const cls of Object.values(conceptualModel.classes)) {
-        const properties = cls.properties;
-        cls.properties = [];
-        for (const p of properties) {
-          const found = cls.properties.find(cp => cp.cimIri === p.cimIri && cp.cimIri)
-          if (!found) {
-            cls.properties.push(p);
-          } else {
-            pimMapping.set(p.pimIri, found.pimIri);
-          }
-        }
-      }
-
       for (const iri of specification.psms) {
-        const structureModel = coreResourcesToStructuralModel(
-          this.reader,
-          iri
-        );
+        const structureModel = coreResourcesToStructuralModel(this.reader, iri);
         structureModels[iri] = structureModel;
-
-        // Structure model may not exist if there is no PSM tree in reader. That is OK as it means that
-        // the user does not want to generate anything from such PSM.
-
-        // todo: It seems that there is a problem that multiple classes can have the same CIM IRI
-        // this is a workaround for now
-        if (structureModel) {
-          for (const cls of structureModel.getClasses()) {
-            for (const p of cls.properties) {
-              if (pimMapping.has(p.pimIri)) {
-                p.pimIri = pimMapping.get(p.pimIri);
-              }
-            }
-          }
-        }
       }
     }
 
-    const createGenerator = (iri) =>
-      Promise.resolve(this.generators[iri] ?? null);
+    const createGenerator = (iri) => Promise.resolve(this.generators[iri] ?? null);
 
-    const findStructureClass = (iri) =>
-      this.findStructureClass(structureModels, iri);
+    const findStructureClass = (iri) => this.findStructureClass(structureModels, iri);
 
     return {
       reader: this.reader,
@@ -152,10 +76,7 @@ export class Generator {
     };
   }
 
-  private findStructureClass(
-    structureModels: { [iri: string]: StructureModel },
-    iri: string
-  ): StructureClassLocation | null {
+  private findStructureClass(structureModels: { [iri: string]: StructureModel }, iri: string): StructureClassLocation | null {
     const structureModel = findStructureClassModel(structureModels, iri);
     if (structureModel === null) {
       return null;
@@ -168,18 +89,13 @@ export class Generator {
         };
       }
     }
-    assertFailed(
-      `Missing specification for structure model '${structureModel.psmIri}'.`
-    );
+    assertFailed(`Missing specification for structure model '${structureModel.psmIri}'.`);
   }
 }
 
-function findStructureClassModel(
-  structureModels: { [iri: string]: StructureModel },
-  iri: string
-): StructureModel | null {
+function findStructureClassModel(structureModels: { [iri: string]: StructureModel }, iri: string): StructureModel | null {
   for (const structureModel of Object.values(structureModels)) {
-    const found = structureModel.getClasses().find(cls => cls.psmIri === iri)
+    const found = structureModel.getClasses().find((cls) => cls.psmIri === iri);
     if (found) {
       return structureModel;
     }

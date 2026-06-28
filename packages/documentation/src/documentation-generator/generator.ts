@@ -6,6 +6,7 @@ import { LanguageString, SemanticModelClass, SemanticModelEntity, SemanticModelR
 import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile, SemanticModelClassProfile, SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { getTranslation } from "@dataspecer/core-v2/utils/language";
 import { createHandlebarsAdapter, HandlebarsAdapter } from "@dataspecer/handlebars-adapter";
+import { StructureModel } from '@dataspecer/core/structure-model/model/structure-model';
 
 export interface DocumentationGeneratorConfiguration {
   template: string;
@@ -134,6 +135,21 @@ export async function generateDocumentation(
   }
 
   const sortedSemanticModel = Object.values(semanticModel).sort((a, b) => {
+    const getOrder = (entity: Entity & {aggregation?: Entity}): string | null => {
+      if (isSemanticModelClassProfile(entity)) return entity.order ?? null;
+      if (isSemanticModelRelationshipProfile(entity)) return entity.ends?.[1]?.order ?? null;
+      if (isSemanticModelClass(entity)) return entity.order ?? null;
+      if (isSemanticModelRelationship(entity)) return entity.ends?.[1]?.order ?? null;
+      return null;
+    };
+    const aOrder = getOrder(a);
+    const bOrder = getOrder(b);
+    // Items with order come before items without order
+    if (aOrder !== null && bOrder !== null) {
+      return aOrder.localeCompare(bOrder, undefined, { numeric: true, sensitivity: "base" });
+    }
+    if (aOrder !== null) return -1;
+    if (bOrder !== null) return 1;
     const aLang = getLabel(a.aggregation, configuration.language);
     const bLang = getLabel(b.aggregation, configuration.language);
     return aLang.localeCompare(bLang);
@@ -142,7 +158,7 @@ export async function generateDocumentation(
   // Add all relationships to each entity
   // We know, that each relationship profile MUST have its concept present in the model so we do not need to enumerate rest
   for (const entity of sortedSemanticModel) {
-    if (isSemanticModelRelationshipProfile(entity)) {
+    if (isSemanticModelRelationship(entity) || isSemanticModelRelationshipProfile(entity)) {
       {
         const conceptId = entity.ends[0]?.concept;
         if (conceptId) {
@@ -357,18 +373,32 @@ export async function generateDocumentation(
    *
    * It does not contain the # character. It is intended to be used as an id attribute.
    */
-  data['anchor'] =  function(this: SemanticModelEntity) {
-    // todo: handle colisions if multiple classes are named the same
-    // todo: handle custom anchors
-    // todo: handle stability of anchors - if new entitity with the same name is added, the anchor to the previous entity should not change
+  data['anchor'] =  function(this: SemanticModelEntity | StructureModel) {
+    if ("roots" in this) {
+      const prefix = configuration.language === "cs" ? "struktura-" : "structure-";
 
-    const anchor = getAnchorForLocalEntity(this);
-    if (anchor) {
-      return anchor;
+      let anchor = null as string | null;
+      if (this.humanLabel) {
+        const {ok, translation} = getTranslation(this.humanLabel, [configuration.language]);
+        anchor = ok ? normalizeLabel(translation) : null;
+      }
+      anchor = anchor || (this.technicalLabel ? normalizeLabel(this.technicalLabel) : null);
+      anchor = anchor || getLastChunkFromIri(this.psmIri);
+
+      return prefix + (anchor || "");
+    } else { // SemanticModelEntity
+      // todo: handle colisions if multiple classes are named the same
+      // todo: handle custom anchors
+      // todo: handle stability of anchors - if new entitity with the same name is added, the anchor to the previous entity should not change
+
+      const anchor = getAnchorForLocalEntity(this);
+      if (anchor) {
+        return anchor;
+      }
+
+      // Last option
+      return this.id;
     }
-
-    // Last option
-    return this.id;
   };
 
   data['parentClasses'] =  function(id: string) {

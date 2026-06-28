@@ -22,11 +22,11 @@ export class CreateContainer implements ComplexOperation {
     const op = new DataPsmCreateContainer();
     op.dataPsmOwner = this.ownerClass;
     op.dataPsmContainerType = this.type;
-    const container = (this.store.applyOperation(schema, op)).created[0];
+    this.store.applyOperation(schema, op);
 
     const cardinality = new DataPsmSetCardinality();
     cardinality.dataPsmCardinality = [1, 1];
-    cardinality.entityId = container;
+    cardinality.entityId = op.dataPsmNewIri as string;
     this.store.applyOperation(schema, cardinality);
   }
 }

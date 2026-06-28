@@ -10,14 +10,16 @@
     "test:watch": "vitest"
   },
   "exports": {
-    ".": "./lib/index.js"
+    ".": "./lib/index.js",
+    "./executor": "./lib/executor/index.js"
   },
   "dependencies": {
+    "@dataspecer/core": "*",
     "@dataspecer/utilities": "*"
   },
   "devDependencies": {
     "@types/node": "^25.5.2",
-    "typescript": "^5.9.3",
-    "vitest": "^4.1.2"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
   }
 }

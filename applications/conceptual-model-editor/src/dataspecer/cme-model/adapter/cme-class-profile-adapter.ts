@@ -20,5 +20,6 @@ export const semanticClassProfileToCmeClassProfile = (
     usageNoteSource: entity.usageNoteFromProfiled,
     // We use ?? [] as this may not be always there.
     role: asRole(entity.tags ?? []),
+    order: entity.order ?? null,
   };
 };
