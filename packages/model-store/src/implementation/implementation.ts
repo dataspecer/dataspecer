@@ -1,4 +1,4 @@
-import { LOCAL_PACKAGE, LOCAL_VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_PACKAGE, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { type PackageService } from "@dataspecer/core-v2/project";
 import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
@@ -89,7 +89,7 @@ export interface DefaultFrontendModelStoreParams {
  */
 interface Transaction extends CoreTransaction {
   metadata: TransactionMetadata;
-  
+
   /**
    * Whether this transaction contains an operation on the project model (i.e.
    * it creates or removes a model). Such transactions are not added to the
@@ -251,7 +251,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
         // New model was created
         const modelEntity = change.next as ModelEntity;
         this.activateModel(modelEntity.id, modelEntity.modelType, isLocalChange, entityChanges);
-        if (modelEntity.modelType === LOCAL_VISUAL_MODEL) {
+        if (modelEntity.modelType === VISUAL_MODEL) {
           // A visual model may have an additional "svg" blob attached to it.
           // It is tracked as its own companion model, analogous to how the
           // default "model" blob is tracked.
@@ -262,7 +262,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
         const modelEntity = change.previous as ModelEntity;
         this.deactivateModel(modelEntity.id, entityChanges);
 
-        if (modelEntity.modelType === LOCAL_VISUAL_MODEL) {
+        if (modelEntity.modelType === VISUAL_MODEL) {
           this.deactivateModel(`${modelEntity.id}${VISUAL_MODEL_SVG_BLOB_TYPE}`, entityChanges);
         }
       } else {

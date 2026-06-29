@@ -5,7 +5,6 @@ import { SEMANTIC_MODEL_CLASS, SEMANTIC_MODEL_GENERALIZATION, SEMANTIC_MODEL_REL
 import { SemanticEntityIdMerger, StrongerWinsSemanticEntityIdMerger } from "../merge/merger/index.ts";
 import { createSemanticProfileAggregator, ProfileEntityAggregator } from "../profile/aggregator/aggregator.ts";
 import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "../profile/concepts/index.ts";
-import { SemanticModelClassUsage, SemanticModelRelationshipUsage, isSemanticModelClassUsage, isSemanticModelRelationshipUsage } from "../usage/concepts/index.ts";
 
 /**
  * Object containing the result of the aggregation of an entity together with additional metadata, such as how the
@@ -179,10 +178,6 @@ class SemanticModelAggregatorInternal implements SemanticModelAggregator {
             return [];
         }
 
-        if (isSemanticModelClassUsage(entity) || isSemanticModelRelationshipUsage(entity)) {
-            return [entity.usageOf];
-        }
-
         // Special handling of selected entity types.
         if (isSemanticModelClass(entity) || isSemanticModelRelationship(entity) || isSemanticModelGeneralization(entity)) {
             return [];
@@ -286,57 +281,6 @@ class SemanticModelAggregatorInternal implements SemanticModelAggregator {
                         rawEntity: entity,
                         sources: dependencies,
                         visualEntities: [],
-                    };
-                } else if (
-                    isSemanticModelClassUsage(entity)
-                ) {
-                    const source = this.baseModelEntities[entity.usageOf];
-                    const sourceEntity = source?.aggregatedEntity as SemanticModelClassUsage & SemanticModelClass | undefined;
-                    const aggregatedEntity = {
-                        ...sourceEntity,
-                        ...entity,
-                        name: entity.name ?? sourceEntity?.name ?? null,
-                        description: entity.description ?? sourceEntity?.description ?? null,
-                        usageNote: entity.usageNote ?? sourceEntity?.usageNote ?? null,
-                    } as SemanticModelClassUsage & SemanticModelClass; // this is legal in the given context
-
-                    this.baseModelEntities[updatedEntity] = {
-                        id: updatedEntity,
-                        aggregatedEntity: aggregatedEntity,
-                        rawEntity: entity,
-                        sources: source ? [source] : [],
-                        visualEntities: [], // we do not have to deal with it
-                    };
-                } else if (
-                    isSemanticModelRelationshipUsage(entity)
-                ) {
-                    const source = this.baseModelEntities[entity.usageOf];
-                    const sourceEntity = source?.aggregatedEntity as SemanticModelRelationshipUsage & SemanticModelRelationship | undefined;
-                    const aggregatedEntity = {
-                        ...sourceEntity,
-                        ...entity,
-                        name: entity.name ?? sourceEntity?.name ?? null,
-                        description: entity.description ?? sourceEntity?.description ?? null,
-                        usageNote: entity.usageNote ?? sourceEntity?.usageNote ?? null,
-                        ends: entity.ends.map((end, index) => {
-                            const sourceEnd = sourceEntity?.ends[index];
-                            return {
-                                ...sourceEnd,
-                                ...end,
-                                name: end.name ?? sourceEnd?.name ?? null,
-                                description: end.description ?? sourceEnd?.description ?? null,
-                                cardinality: end.cardinality ?? sourceEnd?.cardinality ?? null,
-                                concept: end.concept ?? sourceEnd?.concept ?? null,
-                            };
-                        }),
-                    } as SemanticModelRelationshipUsage & SemanticModelRelationship;
-
-                    this.baseModelEntities[updatedEntity] = {
-                        id: updatedEntity,
-                        aggregatedEntity: aggregatedEntity,
-                        rawEntity: entity,
-                        sources: source ? [source] : [],
-                        visualEntities: [], // we do not have to deal with it
                     };
                 } else {
                     if (

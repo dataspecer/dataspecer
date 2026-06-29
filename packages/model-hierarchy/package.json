@@ -1,0 +1,23 @@
+{
+  "name": "@dataspecer/model-hierarchy",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\""
+  },
+  "exports": {
+    ".": "./lib/index.js"
+  },
+  "dependencies": {
+    "@dataspecer/core": "*",
+    "@dataspecer/core-v2": "*",
+    "@dataspecer/model-store": "*",
+    "@dataspecer/project-model": "*",
+    "@dataspecer/specification": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
