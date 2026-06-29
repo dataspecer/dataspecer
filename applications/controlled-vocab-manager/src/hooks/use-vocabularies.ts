@@ -1,67 +1,113 @@
 import { useState, useEffect, useRef } from 'react'
+import type { ControlledVocabulary } from '@dataspecer/controlled-vocabulary-model'
+import {
+  applyOperations,
+  createVocabulary,
+  modifyVocabulary,
+  deleteVocabulary,
+} from '@dataspecer/controlled-vocabulary-model'
 import type { Vocabulary } from '../types/vocabulary'
 import {
   isBackendConnected,
   loadVocabularies,
-  saveVocabularies
+  saveVocabularies,
 } from '../services/backend-vocabulary-storage'
 import { useEventCallback } from './use-event-callback'
 import { useConfig } from '../contexts/config-context'
 
-/**
- * Manages vocabulary collection state with automatic persistence to backend.
- *
- * Responsibilities:
- * - Load vocabularies from backend on mount
- * - Provide CRUD operations (add, update, delete)
- * - Auto-save changes to backend using proper React pattern
- *
- * @returns Object with vocabularies array, loading state, and CRUD methods
- */
+function toVocabulary(cv: ControlledVocabulary): Vocabulary {
+  return {
+    id: cv.id,
+    name: cv.title,
+    iri: cv.references,
+    regex: cv.pattern,
+    downloadUrl: cv.distribution.downloadUrl,
+    docsUrl: cv.documentation,
+  }
+}
+
 export function useVocabularies() {
   const { backendUrl } = useConfig()
-  const [vocabularies, setVocabularies] = useState<Vocabulary[]>([])
+  const [model, setModel] = useState<Record<string, ControlledVocabulary>>({})
   const [loading, setLoading] = useState(isBackendConnected)
   const isInitialMount = useRef(true)
 
-  // Initial load from backend
   useEffect(() => {
     if (!isBackendConnected) return
     loadVocabularies(backendUrl)
-      .then(vocabs => setVocabularies(vocabs))
+      .then(loaded => setModel(loaded))
       .finally(() => setLoading(false))
   }, [backendUrl])
 
-  // Auto-save on changes (skip initial mount to avoid saving on load)
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false
       return
     }
     if (isBackendConnected) {
-      saveVocabularies(backendUrl, vocabularies)
+      saveVocabularies(backendUrl, model)
     }
-  }, [vocabularies, backendUrl])
+  }, [model, backendUrl])
 
   const addVocabulary = useEventCallback((vocabulary: Vocabulary) => {
-    setVocabularies(prev => [...prev, vocabulary])
+    const { updated, removed } = applyOperations(model, [
+      createVocabulary({
+        id: vocabulary.id,
+        title: vocabulary.name,
+        references: vocabulary.iri,
+        pattern: vocabulary.regex,
+        documentation: vocabulary.docsUrl,
+        distribution: {
+          downloadUrl: vocabulary.downloadUrl,
+          accessUrl: vocabulary.downloadUrl,
+        },
+      }),
+    ])
+    setModel(prev => {
+      const next = { ...prev, ...updated }
+      for (const id of removed) delete next[id]
+      return next
+    })
   })
 
   const updateVocabulary = useEventCallback((vocabulary: Vocabulary) => {
-    setVocabularies(prev =>
-      prev.map(v => v.id === vocabulary.id ? vocabulary : v)
-    )
+    const { updated, removed } = applyOperations(model, [
+      modifyVocabulary(vocabulary.id, {
+        title: vocabulary.name,
+        references: vocabulary.iri,
+        pattern: vocabulary.regex,
+        documentation: vocabulary.docsUrl,
+        distribution: {
+          downloadUrl: vocabulary.downloadUrl,
+          accessUrl: vocabulary.downloadUrl,
+        },
+      }),
+    ])
+    setModel(prev => {
+      const next = { ...prev, ...updated }
+      for (const id of removed) delete next[id]
+      return next
+    })
   })
 
-  const deleteVocabulary = useEventCallback((vocabulary: Vocabulary) => {
-    setVocabularies(prev => prev.filter(v => v.id !== vocabulary.id))
+  const deleteVocabularyById = useEventCallback((vocabulary: Vocabulary) => {
+    const { updated, removed } = applyOperations(model, [
+      deleteVocabulary(vocabulary.id),
+    ])
+    setModel(prev => {
+      const next = { ...prev, ...updated }
+      for (const id of removed) delete next[id]
+      return next
+    })
   })
+
+  const vocabularies: Vocabulary[] = Object.values(model).map(toVocabulary)
 
   return {
     vocabularies,
     loading,
     addVocabulary,
     updateVocabulary,
-    deleteVocabulary,
+    deleteVocabulary: deleteVocabularyById,
   }
 }

@@ -1,62 +1,34 @@
-import type { Vocabulary } from "../types/vocabulary"
+import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
+import { CONTROLLED_VOCABULARY_TYPE } from "@dataspecer/controlled-vocabulary-model";
 
 const packageIri = new URLSearchParams(window.location.search).get("package-iri")
 
 export const isBackendConnected = !!packageIri
 
-/**
- * Transform stored dataset format to internal Vocabulary format
- */
-function datasetToVocabulary(dataset: any): Vocabulary {
-  return {
-    id: dataset.references, // Use references as ID
-    name: dataset.title,
-    iri: dataset.references,
-    regex: dataset.pattern,
-    downloadUrl: dataset.distribution.downloadUrl,
-    docsUrl: dataset.documentation,
-    source: undefined, // Not stored in new format
+export async function loadVocabularies(backendUrl: string): Promise<Record<string, ControlledVocabulary>> {
+  if (!packageIri) return {}
+  const blobUrl = `${backendUrl}/resources/blob?iri=${encodeURIComponent(packageIri)}`
+  try {
+    const res = await fetch(blobUrl)
+    if (!res.ok) return {}
+    const data = await res.json() as { datasets?: Omit<ControlledVocabulary, "type">[] }
+    const result: Record<string, ControlledVocabulary> = {}
+    for (const dataset of data.datasets ?? []) {
+      const vocab: ControlledVocabulary = { ...dataset, type: [CONTROLLED_VOCABULARY_TYPE] }
+      result[vocab.id] = vocab
+    }
+    return result
+  } catch {
+    return {}
   }
 }
 
-/**
- * Transform internal Vocabulary format to stored dataset format
- */
-function vocabularyToDataset(vocabulary: Vocabulary): any {
-  return {
-    title: vocabulary.name,
-    pattern: vocabulary.regex,
-    references: vocabulary.iri,
-    documentation: vocabulary.docsUrl,
-    distribution: {
-      downloadUrl: vocabulary.downloadUrl,
-      accessUrl: vocabulary.downloadUrl, // Duplicate downloadUrl
-    },
-  }
-}
-
-export function loadVocabularies(backendUrl: string): Promise<Vocabulary[]> {
-  if (!packageIri) return Promise.resolve([])
-  const blobUrl = `${backendUrl}/resources/blob?iri=${encodeURIComponent(packageIri)}&name=controlled-vocabularies`
-  return fetch(blobUrl)
-    .then(res => {
-      if (!res.ok) return null
-      return res.json()
-    })
-    .then(data => {
-      const datasets = data?.datasets ?? []
-      return datasets.map(datasetToVocabulary)  // Transform from storage format
-    })
-    .catch(() => [])
-}
-
-export function saveVocabularies(backendUrl: string, vocabs: Vocabulary[]): void {
+export function saveVocabularies(backendUrl: string, model: Record<string, ControlledVocabulary>): void {
   if (!packageIri) return
-  const blobUrl = `${backendUrl}/resources/blob?iri=${encodeURIComponent(packageIri)}&name=controlled-vocabularies`
-  const datasets = vocabs.map(vocabularyToDataset)  // Transform to storage format
+  const blobUrl = `${backendUrl}/resources/blob?iri=${encodeURIComponent(packageIri)}`
   fetch(blobUrl, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ datasets }),
+    body: JSON.stringify({ datasets: Object.values(model) }),
   })
 }

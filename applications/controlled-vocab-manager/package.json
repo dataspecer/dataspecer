@@ -11,6 +11,7 @@
     "i18n": "i18next-cli extract"
   },
   "dependencies": {
+    "@dataspecer/controlled-vocabulary-model": "*",
     "@radix-ui/react-label": "^2.0.2",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-tooltip": "^1.1.5",
