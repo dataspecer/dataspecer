@@ -20,7 +20,7 @@ import N3, { Quad_Object } from "n3";
 import { parse } from "node-html-parser";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
-import { resourceModel, transactionModel } from "../main.ts";
+import { prismaClient, resourceModel, transactionModel } from "../main.ts";
 import { BaseResource } from "../models/resource-model.ts";
 import type { OperationInput } from "../models/transaction-model.ts";
 import { getModelsForPackage, loadModelEntities } from "../utils/backend-model-store.ts";
@@ -81,6 +81,22 @@ async function deleteUntouchedChildren(packageIri: string, touchedIris: Set<stri
       }
     }
   }
+}
+
+/**
+ * Returns the IRI of the direct parent package of a resource, or null if it is a root resource.
+ */
+async function getParentIri(resourceIri: string): Promise<string | null> {
+  const row = await prismaClient.resource.findFirst({
+    select: { parentResourceId: true },
+    where: { iri: resourceIri },
+  });
+  if (!row?.parentResourceId) return null;
+  const parent = await prismaClient.resource.findUnique({
+    select: { iri: true },
+    where: { id: row.parentResourceId },
+  });
+  return parent?.iri ?? null;
 }
 
 /**
@@ -621,7 +637,8 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
 
     const operations = diffModelStatesToOperations({ [existingResource.iri]: previousEntities }, { [existingResource.iri]: nextEntities });
     if (operations.length > 0) {
-      await transactionModel.createTransactions(existingResource.iri, [{ operations }], "upstream");
+      const projectIri = await getParentIri(existingResource.iri) ?? existingResource.iri;
+      await transactionModel.createTransactions(projectIri, [{ operations }], "upstream");
     }
 
     response.send(await resourceModel.getResource(existingResource.iri));
@@ -648,7 +665,8 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
   const nextModels = await getModelsForPackage(query.iri, resourceModel);
   const operations = diffModelStatesToOperations(previousModels, nextModels);
   if (operations.length > 0) {
-    await transactionModel.createTransactions(query.iri, [{ operations }], "upstream");
+    const projectIri = await getParentIri(query.iri) ?? query.iri;
+    await transactionModel.createTransactions(projectIri, [{ operations }], "upstream");
   }
 
   response.send(result ?? existingResource);

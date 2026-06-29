@@ -30,7 +30,7 @@ import { getSystemData } from "./routes/system.ts";
 import { useStaticSpaHandler } from "./static.ts";
 import { migratePR419 } from "./tools/migrate-pr419.ts";
 import { newApplicationProfile } from "./routes/new.ts";
-import { createTransactions } from "./routes/transaction.ts";
+import { createTransactions, getTransactionsDiff } from "./routes/transaction.ts";
 
 // Create application models
 
@@ -101,6 +101,7 @@ application.post(apiBasename + "/repository/copy-recursively", copyRecursively);
 
 // Side-channel for storing operations performed on the project, see TransactionModel.
 application.post(apiBasename + "/transactions", createTransactions);
+application.get(apiBasename + "/transactions/diff/:range", getTransactionsDiff);
 
 application.post(apiBasename + "/new/application-profile", newApplicationProfile);
 

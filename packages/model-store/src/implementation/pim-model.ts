@@ -1,6 +1,8 @@
 import type { PackageService } from "@dataspecer/core-v2/project";
 import { createRdfsModel } from "@dataspecer/core-v2/semantic-model/simplified";
-import { PimStoreWrapper, serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
+import { PimStoreWrapper, serializationToPimModelEntities, buildPimResources } from "@dataspecer/core-v2/semantic-model/v1-adapters";
+import { applyOperationToSemanticModel } from "@dataspecer/core-v2/semantic-model";
+import { RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
 import { diffEntities } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
@@ -60,7 +62,13 @@ export class PimModelInModelStore extends BaseModelInModelStore implements Model
     } else if (operation.type === ReloadModelOperationType) {
       void this.freshLoad(mutableState[this.id] as MainEntity);
     } else {
-      throw new Error(`Unsupported operation type: ${operation.type}`);
+      const { updated, removed } = applyOperationToSemanticModel(mutableState, [operation]);
+      for (const [id, entity] of Object.entries(updated)) {
+        mutableState[id] = entity;
+      }
+      for (const id of removed) {
+        delete mutableState[id];
+      }
     }
   }
 
@@ -120,13 +128,6 @@ export class PimModelInModelStore extends BaseModelInModelStore implements Model
   }
 
   protected async saveInternal(state: ModelState): Promise<void> {
-    // Instead of using the state to serialize model, we use this.model which is
-    // synchronized with the state.
-
-    if (!this.model) {
-      throw new Error("Model is not loaded");
-    }
-
     const mainEntity = state.entities[this.id];
     const mainEntityMetadata: Partial<typeof mainEntity> = {
       ...mainEntity,
@@ -134,9 +135,11 @@ export class PimModelInModelStore extends BaseModelInModelStore implements Model
     delete mainEntityMetadata.id;
     delete mainEntityMetadata.type;
 
-    let serialization = {
+    const serialization = {
       ...mainEntityMetadata,
-      ...this.model.serializeModel(),
+      type: RDFS_MODEL,
+      id: this.id,
+      pimStore: { resources: buildPimResources(state.entities, this.id) },
     };
 
     await this.service.setResourceJsonData(this.id, serialization);
