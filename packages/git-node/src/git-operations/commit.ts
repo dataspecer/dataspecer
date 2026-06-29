@@ -132,6 +132,8 @@ export class GitCommit {
   private params: GitCommitConstructorParams;
   private errorStack: any[];
 
+  private static shouldDebugPrint: boolean = true;
+
   // Methods
 
   /**
@@ -307,9 +309,16 @@ export class GitCommit {
     const { gitCredentials, gitProvider } = commitInfo;
     const { repositoryOwner, repositoryName } = repositoryIdentificationInfo;
 
+    if (GitCommit.shouldDebugPrint) {
+      console.log(`Just started the committing process. All data:`);
+      console.log(this.params);
+    }
 
     const createSimpleGitResult: CreateSimpleGitResult = createSimpleGitUsingPredefinedGitRoot(iri, PUSH_PREFIX, true);
     const { git, gitDirectoryToRemoveAfterWork, gitInitialDirectory, gitInitialDirectoryParent } = createSimpleGitResult;
+    if (GitCommit.shouldDebugPrint) {
+      console.log(`Called createSimpleGitUsingPredefinedGitRoot.`);
+    }
 
     let isNewlyCreatedBranchPresentOnlyInDS: boolean = false;
     let hashOfPerformedCommit: string | null = null;
@@ -327,6 +336,9 @@ export class GitCommit {
       const hasSetLastCommit: boolean = localLastCommitHash !== "";
 
       if (!isAfterFirstSucessfulClone) {
+        if (GitCommit.shouldDebugPrint) {
+          console.log(`Calling GitCommit.cloneBeforeCommit`);
+        }
         const { isCloneSuccessful, isNewlyCreatedBranchOnlyInDS } = await GitCommit.cloneBeforeCommit(
           git, gitInitialDirectory, repoURLWithAuthorization, branch,
           localLastCommitHash, hasSetLastCommit, isLastAccessToken);
@@ -337,8 +349,14 @@ export class GitCommit {
         isNewlyCreatedBranchPresentOnlyInDS = isNewlyCreatedBranchOnlyInDS;
       }
 
+      if (GitCommit.shouldDebugPrint) {
+        console.log(`Calling (await git.branch()).current`);
+      }
       const branchExplicit = (await git.branch()).current;
       if (hasSetLastCommit && !isAfterFirstSucessfulClone) {
+        if (GitCommit.shouldDebugPrint) {
+          console.log(`The last commit hash is set, comparing.`);
+        }
         try {
           const remoteRepositoryLastCommitHash = await getLastCommitHash(git);
           const shouldTryCreateMergeState = localLastCommitHash !== remoteRepositoryLastCommitHash || shouldAlwaysCreateMergeState;
@@ -399,7 +417,13 @@ export class GitCommit {
         }
       }
 
+      if (GitCommit.shouldDebugPrint) {
+        console.log(`About to call isDefaultBranch on ${branchExplicit}.`);
+      }
       const isCommittingToDefaultBranch = await isDefaultBranch(git, branchExplicit);
+      if (GitCommit.shouldDebugPrint) {
+        console.log(`isDefaultBranch was success, the result is ${isCommittingToDefaultBranch}.`);
+      }
       const pushResult = await GitCommit.exportAndPushToGit(
         createSimpleGitResult, iri, projectIri, repoURLWithAuthorization, commitInfo, hasSetLastCommit,
         null, isLastAccessToken, hashOfPerformedCommit, isCommittingToDefaultBranch,
@@ -448,11 +472,20 @@ export class GitCommit {
     const isMergeCommit = !isClassicCommit;
     const { git, gitDirectoryToRemoveAfterWork } = createSimpleGitResult;
     const { commitMessage, gitCredentials, shouldAppendAfterDefaultMergeCommitMessage } = commitInfo;
+    if (GitCommit.shouldDebugPrint) {
+      console.log(`Calling GitCommit.setUserConfigForGitInstance.`);
+    }
     await GitCommit.setUserConfigForGitInstance(git, gitCredentials.name, gitCredentials.email);
 
     try {
       if (shouldSkipCommitting) {
+        if (GitCommit.shouldDebugPrint) {
+          console.log(`We are skipping the commit and pushing directly.`);
+        }
         const isPushSuccessful = await GitCommit.pushToRemoteAndUpdateResourceGitMetadata(dataspecerFilesystemFactoryParams.resourceModel, git, iri, repoURLWithAuthorization, hashOfCommitToUse, isClassicCommit);
+        if (GitCommit.shouldDebugPrint) {
+          console.log(`Push was successful?: ${isPushSuccessful}`);
+        }
         if (isPushSuccessful || isLastAccessToken) {
           removePathRecursively(gitDirectoryToRemoveAfterWork);
         }
@@ -480,6 +513,7 @@ export class GitCommit {
       }
 
       let mergeMessage: string = "";
+      // The purpose of this 'if' is to get the mergeMessage and create the merge commit - so TODO: The content of the if could be refactored into a separate method for more clarity.
       if (isMergeCommit) {
         // We create the merge commit but actually do not commit, we will do that later.
         try {
@@ -508,16 +542,29 @@ export class GitCommit {
         }
       }
 
+      if (GitCommit.shouldDebugPrint) {
+        console.log(`Calling GitCommit.fillGitDirectoryWithExport`);
+      }
       await GitCommit.fillGitDirectoryWithExport(
         iri, createSimpleGitResult, commitInfo.gitProvider, commitInfo.exportFormat, commitInfo.exportVersion,
         hasSetLastCommit, shouldContainWorkflowFiles, isBranchAlreadyTrackedOnRemote, dataspecerFilesystemFactoryParams, gitFilesystem);
+      if (GitCommit.shouldDebugPrint) {
+        console.log(`Finished callingGitCommit.fillGitDirectoryWithExport, the git.status is as follows:`);
+        console.log(await git.status());
+      }
 
       let commitResult: CommitResult;
       if (mergeFromBranch === null) {
+        if (GitCommit.shouldDebugPrint) {
+          console.log(`Calling GitCommit.createClassicGitCommit`);
+        }
         commitResult = await GitCommit.createClassicGitCommit(git, ["."], commitMessage);
         hashOfPeformedCommit = commitResult.commit;
         if (!commitResult.root && commitResult.commit === "" && commitResult.branch === "") {
           throw new Error(ErrorDefinitionConstantsClass.NO_CHANGES_TO_COMMIT_ERROR_MSG);
+        }
+        if (GitCommit.shouldDebugPrint) {
+          console.log(`GitCommit.createClassicGitCommit was successful, the commit hash is ${commitResult.commit}`);
         }
       }
       else {
@@ -532,8 +579,14 @@ export class GitCommit {
         hashOfPeformedCommit = commitResult.commit;
       }
 
+      if (GitCommit.shouldDebugPrint) {
+        console.log(`Calling GitCommit.pushToRemoteAndUpdateResourceGitMetadata`);
+      }
       const isPushSuccessful = await GitCommit.pushToRemoteAndUpdateResourceGitMetadata(
         dataspecerFilesystemFactoryParams.resourceModel, git, iri, repoURLWithAuthorization, hashOfPeformedCommit, isClassicCommit);
+      if (GitCommit.shouldDebugPrint) {
+        console.log(`GitCommit.pushToRemoteAndUpdateResourceGitMetadata was successful?: ${isPushSuccessful}`);
+      }
       if (isPushSuccessful || isLastAccessToken) {
         removePathRecursively(gitDirectoryToRemoveAfterWork);
       }
@@ -543,6 +596,10 @@ export class GitCommit {
       };    // We are done
     }
     catch(error: any) {
+      if (GitCommit.shouldDebugPrint) {
+        console.log(`We got error in exportAndPushToGit:`);
+        console.log(error);
+      }
       if (error?.message?.includes(ErrorDefinitionConstantsClass.BRANCH_ALREADY_MERGE_ERROR_MSG)) {
         throw error;
       }
@@ -763,10 +820,19 @@ export class GitCommit {
   ): Promise<{ isNewlyCreatedBranchOnlyInDS: boolean, isCloneSuccessful: boolean }> {
     let isNewlyCreatedBranchOnlyInDS = false;
 
+    if (GitCommit.shouldDebugPrint) {
+      console.log(`Calling gitCloneBasic`);
+    }
     try {
       await gitCloneBasic(git, gitInitialDirectory, repoURLWithAuthorization, true, false, branch ?? undefined);
+      if (GitCommit.shouldDebugPrint) {
+        console.log(`gitCloneBasic was successful`);
+      }
     }
     catch (cloneError: any) {
+      if (GitCommit.shouldDebugPrint) {
+        console.log(`gitCloneBasic failed. We are in the catch block.`);
+      }
       try {
         // It is possible that the branch is newly created inside DS.
         // It is newly possible (since Git 2.49 from March 2025) to easily fetch specific commit using git options
@@ -788,6 +854,9 @@ export class GitCommit {
         }
       }
       catch(cloneError2: any)  {
+        if (GitCommit.shouldDebugPrint) {
+          console.log(`cloneBeforeCommit failed.`);
+        }
         if (isLastAccessToken) {
           throw cloneError2;       // Every access token failed
         }
@@ -798,6 +867,9 @@ export class GitCommit {
       }
     }
 
+    if (GitCommit.shouldDebugPrint) {
+      console.log(`cloneBeforeCommit was successful.`);
+    }
     return {
       isNewlyCreatedBranchOnlyInDS,
       isCloneSuccessful: true,
