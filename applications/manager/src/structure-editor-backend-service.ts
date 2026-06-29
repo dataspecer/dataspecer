@@ -44,7 +44,7 @@ export class StructureEditorBackendService extends BackendPackageService {
       },
     });
     await this.setResourceJsonData(pim.iri, {
-      type: "http://dataspecer.com/resources/local/semantic-model",
+      type: LOCAL_SEMANTIC_MODEL,
       modelId: pim.iri,
       modelAlias: set?.label?.en ?? set?.label?.cs ?? "",
       entities: {},
@@ -60,7 +60,7 @@ export class StructureEditorBackendService extends BackendPackageService {
       },
     });
     await this.setResourceJsonData(sgov.iri, {
-      type: "http://dataspecer.com/resources/local/semantic-model",
+      type: LOCAL_SEMANTIC_MODEL,
       modelId: sgov.iri,
       modelAlias: set?.label?.en ?? set?.label?.cs ?? "",
       caches: ["https://dataspecer.com/adapters/sgov"],

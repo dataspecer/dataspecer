@@ -45,7 +45,7 @@ export const Specification: FC = () => {
     (async () => {
       const modelStore = createManagerModelStore({
         projectId: dataSpecificationIri,
-        packageService: backendConnector,
+        backendUrl: import.meta.env.VITE_BACKEND,
         httpFetch,
       });
 

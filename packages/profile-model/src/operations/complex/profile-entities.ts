@@ -26,9 +26,9 @@ import {
   type CreatedEntityOperationResult,
   createGeneralization,
   type CreateGeneralizationOperation,
-  type Operation,
   type OperationResult,
 } from "@dataspecer/core-v2/semantic-model/operations";
+import type { Operation } from "@dataspecer/core/operation";
 
 interface OperationContext {
 

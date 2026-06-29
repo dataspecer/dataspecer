@@ -13,27 +13,18 @@ import {
     isModifyClassOperation,
     isModifyGeneralizationOperation,
     isModifyRelationOperation,
+    isModifyRelationEndOperation,
     ModifyClassOperation,
     ModifyGeneralizationOperation,
     ModifyRelationOperation,
-    Operation,
+    ModifyRelationEndOperation,
     OperationResult,
 } from "./operations/index.ts";
 import { SemanticModelClass, SemanticModelGeneralization, SemanticModelRelationship } from "./concepts/index.ts";
-import {
-    CreateClassUsageOperation,
-    CreateRelationshipUsageOperation,
-    isCreateClassUsageOperation,
-    isCreateRelationshipUsageOperation,
-    isModifyClassUsageOperation,
-    isModifyRelationshipUsageOperation,
-    ModifyClassUsageOperation,
-    ModifyRelationshipUsageOperation,
-} from "./usage/operations/index.ts";
-import { SemanticModelClassUsage, SemanticModelRelationshipUsage } from "./usage/concepts/index.ts";
 import { createDefaultSemanticModelProfileOperationExecutor } from "./profile/operations/index.ts";
 import type { EntityChange, EntityChangeDeleted, EntityRecord } from "@dataspecer/core/entity-model";
 import { LOCAL_SEMANTIC_MODEL } from "../model/known-models.ts";
+import type { Operation } from "@dataspecer/core/operation";
 
 function uuid() {
     return Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -42,6 +33,7 @@ function uuid() {
 type EntityGetter = (identifier: string) => Entity | undefined;
 
 type ChangeCollector = (updated: Record<string, Entity>, removed: string[]) => void;
+
 
 /**
  * Semantic model, that is writable.
@@ -149,20 +141,14 @@ export function applyOperationToSemanticModel(semanticModel: EntityRecord, opera
             result.push(handleCreateRelationshipOperation(getEntity, change, operation));
         } else if (isModifyRelationOperation(operation)) {
             result.push(handleModifyRelationOperation(getEntity, change, operation));
+        } else if (isModifyRelationEndOperation(operation)) {
+            result.push(handleModifyRelationEndOperation(getEntity, change, operation));
         } else if (isCreateGeneralizationOperation(operation)) {
             result.push(handleCreateGeneralizationOperation(getEntity, change, operation));
         } else if (isModifyGeneralizationOperation(operation)) {
             result.push(handleModifyGeneralizationOperation(getEntity, change, operation));
         } else if (isDeleteEntityOperation(operation)) {
             result.push(handleDeleteEntityOperation(getEntity, change, operation));
-        } else if (isCreateClassUsageOperation(operation)) {
-            result.push(handleCreateClassUsageOperation(getEntity, change, operation));
-        } else if (isModifyClassUsageOperation(operation)) {
-            result.push(handleModifyClassUsageOperation(getEntity, change, operation));
-        } else if (isCreateRelationshipUsageOperation(operation)) {
-            result.push(handleCreateRelationshipUsageOperation(getEntity, change, operation));
-        } else if (isModifyRelationshipUsageOperation(operation)) {
-            result.push(handleModifyRelationshipUsageOperation(getEntity, change, operation));
         } else {
             const operationResult = profileExecutor.executeOperation(operation);
             if (operationResult !== null) {
@@ -239,12 +225,12 @@ function handleModifyClassOperation(
     change: ChangeCollector,
     operation: ModifyClassOperation,
 ): OperationResult {
-    if (!getEntity(operation.id)) {
+    if (!getEntity(operation.entity.id)) {
         return {
             success: false,
         };
     }
-    change({ [operation.id]: { ...getEntity(operation.id)!, ...operation.entity } }, []);
+    change({ [operation.entity.id]: { ...getEntity(operation.entity.id)!, ...operation.entity } }, []);
     return {
         success: true,
     };
@@ -309,7 +295,7 @@ function handleModifyRelationOperation(
     change: ChangeCollector,
     operation: ModifyRelationOperation,
 ): OperationResult {
-    const oldRelationship = getEntity(operation.id) as SemanticModelRelationship | undefined;
+    const oldRelationship = getEntity(operation.entity.id) as SemanticModelRelationship | undefined;
 
     if (!oldRelationship) {
         return {
@@ -335,7 +321,36 @@ function handleModifyRelationOperation(
         iri: operation.entity.iri ?? oldRelationship.iri,
     } as SemanticModelRelationship;
 
-    change({ [operation.id]: updatedRelationship }, []);
+    change({ [operation.entity.id]: updatedRelationship }, []);
+    return {
+        success: true,
+    };
+}
+
+function handleModifyRelationEndOperation(
+    getEntity: EntityGetter,
+    change: ChangeCollector,
+    operation: ModifyRelationEndOperation,
+): OperationResult {
+    const oldRelationship = getEntity(operation.entityId) as SemanticModelRelationship | undefined;
+
+    if (!oldRelationship) {
+        return {
+            success: false,
+        };
+    }
+
+    const previousEnd = oldRelationship.ends[operation.endIndex];
+    if (previousEnd === undefined) {
+        return {
+            success: false,
+        };
+    }
+
+    const ends = [...oldRelationship.ends];
+    ends[operation.endIndex] = { ...previousEnd, ...operation.end };
+
+    change({ [operation.entityId]: { ...oldRelationship, ends } as SemanticModelRelationship }, []);
     return {
         success: true,
     };
@@ -379,12 +394,12 @@ function handleModifyGeneralizationOperation(
     change: ChangeCollector,
     operation: ModifyGeneralizationOperation,
 ): OperationResult {
-    if (!getEntity(operation.id)) {
+    if (!getEntity(operation.entity.id)) {
         return {
             success: false,
         };
     }
-    change({ [operation.id]: { ...getEntity(operation.id)!, ...operation.entity } }, []);
+    change({ [operation.entity.id]: { ...getEntity(operation.entity.id)!, ...operation.entity } }, []);
     return {
         success: true,
     };
@@ -395,162 +410,13 @@ function handleDeleteEntityOperation(
     change: ChangeCollector,
     operation: DeleteEntityOperation,
 ): OperationResult {
-    if (!getEntity(operation.id)) {
+    if (!getEntity(operation.entityId)) {
         return {
             success: false,
         };
     }
-    change({}, [operation.id]);
+    change({}, [operation.entityId]);
     return {
         success: true,
     };
 }
-
-function handleCreateClassUsageOperation(
-    getEntity: EntityGetter,
-    change: ChangeCollector,
-    operation: CreateClassUsageOperation,
-): OperationResult | CreatedEntityOperationResult {
-    let id = operation.entity.id;
-
-    // Generate random id if not provided
-    if (id === undefined) {
-        id = uuid();
-    }
-
-    if (getEntity(id)) {
-        return {
-            success: false,
-        };
-    }
-
-    const cls: SemanticModelClassUsage = {
-        ...operation.entity,
-        id,
-        usageOf: operation.entity.usageOf,
-        type: ["class-usage"],
-        iri: operation.entity.iri ?? null,
-        name: operation.entity.name ?? null,
-        description: operation.entity.description ?? null,
-        usageNote: operation.entity.usageNote ?? null,
-    };
-
-    change({ [id]: cls }, []);
-    return {
-        success: true,
-        id,
-    };
-}
-
-function handleModifyClassUsageOperation(
-    getEntity: EntityGetter,
-    change: ChangeCollector,
-    operation: ModifyClassUsageOperation,
-): OperationResult {
-    if (!getEntity(operation.id)) {
-        return {
-            success: false,
-        };
-    }
-    change({ [operation.id]: { ...getEntity(operation.id)!, ...operation.entity } }, []);
-    return {
-        success: true,
-    };
-}
-
-function handleCreateRelationshipUsageOperation(
-    getEntity: EntityGetter,
-    change: ChangeCollector,
-    operation: CreateRelationshipUsageOperation,
-): OperationResult | CreatedEntityOperationResult {
-    let id = operation.entity.id;
-
-    // Generate random id if not provided
-    if (id === undefined) {
-        id = uuid();
-    }
-
-    if (getEntity(id)) {
-        return {
-            success: false,
-        };
-    }
-
-    const relationship: SemanticModelRelationshipUsage = {
-        ...operation.entity,
-        usageNote: operation.entity.usageNote ?? null,
-        id,
-        type: ["relationship-usage"],
-        iri: operation.entity.iri ?? null,
-        usageOf: operation.entity.usageOf,
-        name: operation.entity.name ?? null,
-        description: operation.entity.description ?? null,
-        ends: [
-            {
-                ...operation.entity.ends?.[0],
-                name: operation.entity.ends?.[0]?.name ?? null,
-                description: operation.entity.ends?.[0]?.description ?? null,
-                cardinality: operation.entity.ends?.[0]?.cardinality ?? null,
-                concept: operation.entity.ends?.[0]?.concept ?? null,
-                usageNote: operation.entity.ends?.[0]?.usageNote ?? null,
-                iri: operation.entity.ends?.[0]?.iri ?? null,
-            },
-            {
-                ...operation.entity.ends?.[1],
-                name: operation.entity.ends?.[1]?.name ?? null,
-                description: operation.entity.ends?.[1]?.description ?? null,
-                cardinality: operation.entity.ends?.[1]?.cardinality ?? null,
-                concept: operation.entity.ends?.[1]?.concept ?? null,
-                usageNote: operation.entity.ends?.[1]?.usageNote ?? null,
-                iri: operation.entity.ends?.[1]?.iri ?? null,
-            },
-        ],
-    };
-
-    change({ [id]: relationship }, []);
-    return {
-        success: true,
-        id,
-    };
-}
-
-function handleModifyRelationshipUsageOperation(
-    getEntity: EntityGetter,
-    change: ChangeCollector,
-    operation: ModifyRelationshipUsageOperation,
-): OperationResult {
-    const oldRelationship = getEntity(operation.id) as
-        | SemanticModelRelationshipUsage
-        | undefined;
-
-    if (!oldRelationship) {
-        return {
-            success: false,
-        };
-    }
-
-    const updatedRelationship = {
-        ...oldRelationship,
-        ...operation.entity,
-        usageNote: operation.entity.usageNote ?? oldRelationship.usageNote,
-        name: operation.entity.name ?? oldRelationship.name,
-        description: operation.entity.description ?? oldRelationship.description,
-        ends: [
-            {
-                ...oldRelationship.ends[0],
-                ...operation.entity.ends?.[0],
-            },
-            {
-                ...oldRelationship.ends[1],
-                ...operation.entity.ends?.[1],
-            },
-        ],
-    } as SemanticModelRelationshipUsage;
-
-    change({ [operation.id]: updatedRelationship }, []);
-    return {
-        success: true,
-    };
-}
-
-

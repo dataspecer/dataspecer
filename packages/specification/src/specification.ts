@@ -1,4 +1,4 @@
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, V1, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { withAbsoluteIri } from "@dataspecer/core-v2/semantic-model/utils";
 import { LanguageString, type CoreResource } from "@dataspecer/core/core/core-resource";
@@ -33,9 +33,6 @@ import {
   isModelVocabulary,
 } from "./utils.ts";
 import { artefactToDsv } from "./v1/artefact-to-dsv.ts";
-
-const PIM_STORE_WRAPPER = "https://dataspecer.com/core/model-descriptor/pim-store-wrapper";
-const SGOV = "https://dataspecer.com/core/model-descriptor/sgov";
 
 /**
  * Id under which the project model (the package hierarchy) is stored in the
@@ -179,7 +176,7 @@ export async function generateSpecification(packageId: string, context: Generate
         title: semanticModel.label,
       });
     }
-    const sgovModels = children.filter((r) => r.modelType === SGOV);
+    const sgovModels = children.filter((r) => r.modelType === QUERYABLE_MODEL);
     for (const sgovModel of sgovModels) {
       const modelEntities = allModels[sgovModel.id] ?? {};
       const entities = Object.fromEntries(Object.entries(modelEntities).filter(([_, entity]) =>
@@ -195,7 +192,7 @@ export async function generateSpecification(packageId: string, context: Generate
         title: null,
       });
     }
-    const pimModels = children.filter((r) => r.modelType === PIM_STORE_WRAPPER);
+    const pimModels = children.filter((r) => r.modelType === RDFS_MODEL);
     for (const pimModel of pimModels) {
       const modelEntities = allModels[pimModel.id] ?? {};
       const entities = Object.fromEntries(Object.entries(modelEntities).filter(([id]) => id !== pimModel.id)) as Record<string, SemanticModelEntity>;
@@ -313,7 +310,7 @@ export async function generateSpecification(packageId: string, context: Generate
   const usedVocabularies: ExternalSpecification[] = [];
 
   for (const entity of subResources) {
-    if (entity.modelType === PIM_STORE_WRAPPER) {
+    if (entity.modelType === RDFS_MODEL) {
       const data = (getModelBlobData(allModels, entity.id) ?? {}) as {
         urls?: string[];
         alias?: string;
@@ -576,7 +573,7 @@ export async function generateSpecification(packageId: string, context: Generate
   // Process all SVGs. Because we do not know which svg belongs to which model,
   // we assign all of them to all models.
   // Also, currently SVGs are not language dependent, so we generate them to the root of the directory.
-  const visualModels = subResources.filter((r) => r.modelType === LOCAL_VISUAL_MODEL);
+  const visualModels = subResources.filter((r) => r.modelType === VISUAL_MODEL);
   for (const visualModel of visualModels) {
     const svgData = getModelBlobData(allModels, visualModel.id, "svg") as { svg: string } | undefined;
     const svg = svgData ? svgData.svg : null;
