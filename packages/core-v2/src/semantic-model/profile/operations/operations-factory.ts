@@ -1,7 +1,7 @@
 import { generateEntityId } from "@dataspecer/core/entity-model";
 import { EntityIdentifier } from "../../../entity-model/entity.ts";
-import { SemanticModelClassProfile, SemanticModelRelationshipProfile } from "../concepts/index.ts";
-import { CREATE_SEMANTIC_MODEL_CLASS_PROFILE, CREATE_SEMANTIC_MODEL_RELATIONSHIP_PROFILE, CreateSemanticModelClassProfile, CreateSemanticModelRelationshipProfile, MODIFY_SEMANTIC_MODEL_CLASS_PROFILE, MODIFY_SEMANTIC_MODEL_RELATIONSHIP_PROFILE, ModifySemanticModelClassProfile, ModifySemanticModelRelationshipProfile } from "./operations.ts";
+import { ControlledVocabularyAssignment, SemanticModelClassProfile, SemanticModelRelationshipProfile } from "../concepts/index.ts";
+import { ADD_CONTROLLED_VOCABULARY_ASSIGNMENT, AddControlledVocabularyAssignment, CREATE_SEMANTIC_MODEL_CLASS_PROFILE, CREATE_SEMANTIC_MODEL_RELATIONSHIP_PROFILE, CreateSemanticModelClassProfile, CreateSemanticModelRelationshipProfile, MODIFY_CONTROLLED_VOCABULARY_ASSIGNMENT, MODIFY_SEMANTIC_MODEL_CLASS_PROFILE, MODIFY_SEMANTIC_MODEL_RELATIONSHIP_PROFILE, ModifyControlledVocabularyAssignment, ModifySemanticModelClassProfile, ModifySemanticModelRelationshipProfile, REMOVE_CONTROLLED_VOCABULARY_ASSIGNMENT, RemoveControlledVocabularyAssignment } from "./operations.ts";
 
 export interface SemanticModelProfileOperationFactory {
 
@@ -22,6 +22,22 @@ export interface SemanticModelProfileOperationFactory {
     identifier: EntityIdentifier,
     entity: Partial<Omit<SemanticModelRelationshipProfile, "type">>
   ): ModifySemanticModelRelationshipProfile;
+
+  addControlledVocabularyAssignment(
+    classProfileIdentifier: EntityIdentifier,
+    assignment: ControlledVocabularyAssignment,
+  ): AddControlledVocabularyAssignment;
+
+  removeControlledVocabularyAssignment(
+    classProfileIdentifier: EntityIdentifier,
+    vocabularyId: string,
+  ): RemoveControlledVocabularyAssignment;
+
+  modifyControlledVocabularyAssignment(
+    classProfileIdentifier: EntityIdentifier,
+    vocabularyId: string,
+    changes: Partial<Pick<ControlledVocabularyAssignment, "qualifier" | "override">>,
+  ): ModifyControlledVocabularyAssignment;
 
 }
 
@@ -64,6 +80,41 @@ class DefaultSemanticModelProfileOperationFactory
         entity,
         identifier,
       };
+  }
+
+  addControlledVocabularyAssignment(
+    classProfileIdentifier: EntityIdentifier,
+    assignment: ControlledVocabularyAssignment,
+  ): AddControlledVocabularyAssignment {
+    return {
+      type: ADD_CONTROLLED_VOCABULARY_ASSIGNMENT,
+      classProfileIdentifier,
+      assignment,
+    };
+  }
+
+  removeControlledVocabularyAssignment(
+    classProfileIdentifier: EntityIdentifier,
+    vocabularyId: string,
+  ): RemoveControlledVocabularyAssignment {
+    return {
+      type: REMOVE_CONTROLLED_VOCABULARY_ASSIGNMENT,
+      classProfileIdentifier,
+      vocabularyId,
+    };
+  }
+
+  modifyControlledVocabularyAssignment(
+    classProfileIdentifier: EntityIdentifier,
+    vocabularyId: string,
+    changes: Partial<Pick<ControlledVocabularyAssignment, "qualifier" | "override">>,
+  ): ModifyControlledVocabularyAssignment {
+    return {
+      type: MODIFY_CONTROLLED_VOCABULARY_ASSIGNMENT,
+      classProfileIdentifier,
+      vocabularyId,
+      changes,
+    };
   }
 
 }
