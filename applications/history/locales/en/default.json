@@ -18,6 +18,8 @@
     "title": "Pending changes",
     "description": "Changes made in one model that have not yet been propagated to the other models of this specification.",
     "empty": "There are no pending changes.",
+    "no-project": "No project selected. Open this page with a packageIri query parameter.",
+    "loading": "Loading pending changes…",
     "all-reviewed": "All pending changes have been reviewed.",
     "progress": "Change {{current}} of {{total}}",
     "previous": "Previous",
@@ -27,7 +29,10 @@
     "apply": "Apply",
     "skip": "Skip",
     "status-applied": "Applied",
-    "status-skipped": "Skipped"
+    "status-skipped": "Skipped",
+    "proposals-title": "Proposed evolution for the application profile:",
+    "no-proposals": "No evolution proposals for the application profile.",
+    "no-evolution": "No evolution (skip profile update)"
   },
   "operations": {
     "generic": {

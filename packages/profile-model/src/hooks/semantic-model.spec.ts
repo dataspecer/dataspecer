@@ -11,7 +11,6 @@ import {
 import { createDefaultSemanticModelProfileOperationFactory } from "@dataspecer/core-v2/semantic-model/profile/operations";
 import { createWritableInMemoryProfileModel } from "../index.ts";
 import { reactToSemanticModelOperation } from "./semantic-model.ts";
-import type { SemanticModel } from "@dataspecer/semantic-model";
 import type { WritableProfileModel } from "../profile-model.ts";
 
 const profileFactory = createDefaultSemanticModelProfileOperationFactory();
@@ -50,7 +49,7 @@ function buildSemanticModel() {
  * Build a profile model that profiles Person and Animal from the semantic model,
  * plus a relationship profile for hasPet and a generalization.
  */
-function buildProfileModel(semanticModel: SemanticModel, ids: ReturnType<typeof buildSemanticModel>["ids"]): WritableProfileModel {
+function buildProfileModel(semanticModel: ReturnType<typeof buildSemanticModel>["model"], ids: ReturnType<typeof buildSemanticModel>["ids"]): WritableProfileModel {
   const profileModel = createWritableInMemoryProfileModel({
     identifier: "profile",
     baseIri: "http://profile.example.com/",
@@ -168,7 +167,7 @@ describe("reactToSemanticModelOperation", () => {
       });
 
       const op = createClass({ id: "s-newClass", name: { en: "New Class" } });
-      const proposals = reactToSemanticModelOperation(model, op, profileModel);
+      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
 
       expect(proposals).toHaveLength(1);
       expect(proposals[0].label).toContain("New Class");
@@ -184,7 +183,7 @@ describe("reactToSemanticModelOperation", () => {
       });
 
       const op = createClass({ id: "s-newClass", name: { en: "New Class" } });
-      const proposals = reactToSemanticModelOperation(model, op, profileModel);
+      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
       const createOp = proposals[0].operations[0] as any;
 
       expect(createOp.entity.nameFromProfiled).toBe("s-newClass");
@@ -202,7 +201,7 @@ describe("reactToSemanticModelOperation", () => {
 
       // Person profile inherits name from profiled (nameFromProfiled = ids.person)
       const op = modifyClass(ids.person, { name: { en: "Human" } });
-      const proposals = reactToSemanticModelOperation(model, op, profileModel);
+      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
 
       const freezeProposal = proposals.find(p => p.label.includes("Keep old name"));
       expect(freezeProposal).toBeDefined();
@@ -219,7 +218,7 @@ describe("reactToSemanticModelOperation", () => {
       });
 
       const op = modifyClass(ids.person, { name: { en: "Human" } });
-      const proposals = reactToSemanticModelOperation(model, op, emptyProfile);
+      const proposals = reactToSemanticModelOperation(model.getEntities(), op, emptyProfile.getEntities());
 
       expect(proposals).toHaveLength(0);
     });
@@ -249,7 +248,7 @@ describe("reactToSemanticModelOperation", () => {
       ]);
 
       const op = modifyClass(ids.person, { name: { en: "Human" } });
-      const proposals = reactToSemanticModelOperation(model, op, profileModel);
+      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
 
       const adoptProposal = proposals.find(p => p.label.includes("Update name"));
       const inheritProposal = proposals.find(p => p.label.includes("Inherit new name"));
@@ -273,7 +272,7 @@ describe("reactToSemanticModelOperation", () => {
       const profileModel = buildProfileModel(model, ids);
 
       const op = modifyClass(ids.person, { description: { en: "Updated description." } });
-      const proposals = reactToSemanticModelOperation(model, op, profileModel);
+      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
 
       const freezeProposal = proposals.find(p => p.label.includes("Keep old description"));
       expect(freezeProposal).toBeDefined();
@@ -291,7 +290,7 @@ describe("reactToSemanticModelOperation", () => {
       const profileModel = buildProfileModel(model, ids);
 
       const op = modifyClass(ids.person, { iri: "new-person-iri" });
-      const proposals = reactToSemanticModelOperation(model, op, profileModel);
+      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
 
       const iriProposal = proposals.find(p => p.label.includes("Update profile IRI"));
       expect(iriProposal).toBeDefined();
@@ -315,7 +314,7 @@ describe("reactToSemanticModelOperation", () => {
         ],
       });
 
-      const proposals = reactToSemanticModelOperation(model, op, profileModel);
+      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
       expect(proposals.length).toBeGreaterThan(0);
       expect(proposals[0].label).toContain("Create relationship profile");
 
@@ -339,7 +338,7 @@ describe("reactToSemanticModelOperation", () => {
         ],
       });
 
-      const proposals = reactToSemanticModelOperation(model, op, profileModel);
+      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
       expect(proposals).toHaveLength(0);
     });
 
@@ -356,7 +355,7 @@ describe("reactToSemanticModelOperation", () => {
         ],
       });
 
-      const proposals = reactToSemanticModelOperation(model, op, profileModel);
+      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
       expect(proposals).toHaveLength(0);
     });
 
@@ -372,7 +371,7 @@ describe("reactToSemanticModelOperation", () => {
         ],
       });
 
-      const proposals = reactToSemanticModelOperation(model, op, profileModel);
+      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
       const createOp = proposals[0].operations[0] as any;
       expect(createOp.entity.ends[1].nameFromProfiled).toBe("s-newRel");
       expect(createOp.entity.ends[1].profiling).toContain("s-newRel");
@@ -388,7 +387,7 @@ describe("reactToSemanticModelOperation", () => {
 
       // hasPet's range end (index 1) has iri="hasPet", so it's the range end.
       const op = modifyRelationEnd(ids.hasPet, 1, { name: { en: "owns pet" } });
-      const proposals = reactToSemanticModelOperation(model, op, profileModel);
+      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
 
       const freezeProposal = proposals.find(p => p.label.includes("Keep old name"));
       expect(freezeProposal).toBeDefined();
@@ -442,7 +441,7 @@ describe("reactToSemanticModelOperation", () => {
       ]);
 
       const op = modifyRelationEnd(ids.hasPet, 1, { name: { en: "owns pet" } });
-      const proposals = reactToSemanticModelOperation(model, op, profileModel);
+      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
 
       const adoptProposal = proposals.find(p => p.label.includes('Update name to "owns pet"'));
       const inheritProposal = proposals.find(p => p.label.includes("Inherit new name"));
@@ -459,7 +458,7 @@ describe("reactToSemanticModelOperation", () => {
       const profileModel = buildProfileModel(model, ids);
 
       const op = modifyRelationEnd(ids.hasPet, 1, { cardinality: [0, 5] });
-      const proposals = reactToSemanticModelOperation(model, op, profileModel);
+      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
 
       const updateProposal = proposals.find(p => p.label.includes("Update cardinality to [0..5]"));
       const keepProposal = proposals.find(p => p.label.includes("Keep old cardinality"));
@@ -482,7 +481,7 @@ describe("reactToSemanticModelOperation", () => {
         parent: ids.animal,
       });
 
-      const proposals = reactToSemanticModelOperation(model, op, profileModel);
+      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
       expect(proposals.length).toBeGreaterThan(0);
 
       const createOp = proposals[0].operations[0] as any;
@@ -500,7 +499,7 @@ describe("reactToSemanticModelOperation", () => {
         parent: "s-unknown",
       });
 
-      const proposals = reactToSemanticModelOperation(model, op, profileModel);
+      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
       expect(proposals).toHaveLength(0);
     });
 
@@ -513,7 +512,7 @@ describe("reactToSemanticModelOperation", () => {
       const profileModel = buildProfileModel(model, ids);
 
       const op = deleteEntity(ids.person);
-      const proposals = reactToSemanticModelOperation(model, op, profileModel);
+      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
 
       expect(proposals.length).toBeGreaterThan(0);
 
@@ -532,7 +531,7 @@ describe("reactToSemanticModelOperation", () => {
       });
 
       const op = deleteEntity(ids.person);
-      const proposals = reactToSemanticModelOperation(model, op, emptyProfile);
+      const proposals = reactToSemanticModelOperation(model.getEntities(), op, emptyProfile.getEntities());
       expect(proposals).toHaveLength(0);
     });
 
@@ -545,7 +544,7 @@ describe("reactToSemanticModelOperation", () => {
       const profileModel = buildProfileModel(model, ids);
 
       const op = deleteEntity(ids.hasPet);
-      const proposals = reactToSemanticModelOperation(model, op, profileModel);
+      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
 
       expect(proposals.length).toBeGreaterThan(0);
       const deleteProposal = proposals.find(p => p.label.includes("Delete relationship profile"));
@@ -561,7 +560,7 @@ describe("reactToSemanticModelOperation", () => {
       const profileModel = buildProfileModel(model, ids);
 
       const op = deleteEntity(ids.gen1);
-      const proposals = reactToSemanticModelOperation(model, op, profileModel);
+      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
 
       expect(proposals.length).toBeGreaterThan(0);
       const deleteProposal = proposals.find(p => p.label.includes("Delete generalization profile"));
@@ -580,7 +579,7 @@ describe("reactToSemanticModelOperation", () => {
       });
 
       const op = { id: "op-x", type: "unknown-type" } as any;
-      const proposals = reactToSemanticModelOperation(model, op, profileModel);
+      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
       expect(proposals).toHaveLength(0);
     });
 

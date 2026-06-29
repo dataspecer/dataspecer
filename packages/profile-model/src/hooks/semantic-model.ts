@@ -34,11 +34,12 @@ import {
 import {
   createDefaultSemanticModelProfileOperationFactory,
 } from "@dataspecer/core-v2/semantic-model/profile/operations";
-import type { SemanticModel, SemanticOperation } from "@dataspecer/semantic-model";
+import type { SemanticOperation } from "@dataspecer/semantic-model";
+import type { EntityRecord } from "@dataspecer/core/entity-model";
 import {
-  type ProfileModel,
   type ProfileOperation,
 } from "../profile-model.ts";
+import { deepEqual } from "@dataspecer/utilities";
 
 const factory = createDefaultSemanticModelProfileOperationFactory();
 
@@ -53,37 +54,36 @@ export interface EvolutionProposal {
  * Given a semantic model operation (before it is applied), proposes evolution
  * operations for a dependent profile model.
  *
- * The semantic model state passed in is the state BEFORE the operation is
- * applied.
+ * Both entity records represent the state BEFORE the operation is applied.
  */
 export function reactToSemanticModelOperation(
-  semanticModel: SemanticModel,
+  semanticModelEntities: EntityRecord,
   operation: SemanticOperation,
-  profileModel: ProfileModel,
+  profileModelEntities: EntityRecord,
 ): EvolutionProposal[] {
   if (isCreateClassOperation(operation)) {
-    return reactToCreateClass(operation, profileModel);
+    return reactToCreateClass(operation, profileModelEntities);
   }
   if (isModifyClassOperation(operation)) {
-    return reactToModifyClass(semanticModel, operation, profileModel);
+    return reactToModifyClass(semanticModelEntities, operation, profileModelEntities);
   }
   if (isCreateRelationshipOperation(operation)) {
-    return reactToCreateRelationship(semanticModel, operation, profileModel);
+    return reactToCreateRelationship(semanticModelEntities, operation, profileModelEntities);
   }
   if (isModifyRelationOperation(operation)) {
-    return reactToModifyRelation(semanticModel, operation, profileModel);
+    return reactToModifyRelation(semanticModelEntities, operation, profileModelEntities);
   }
   if (isModifyRelationEndOperation(operation)) {
-    return reactToModifyRelationEnd(semanticModel, operation, profileModel);
+    return reactToModifyRelationEnd(semanticModelEntities, operation, profileModelEntities);
   }
   if (isCreateGeneralizationOperation(operation)) {
-    return reactToCreateGeneralization(semanticModel, operation, profileModel);
+    return reactToCreateGeneralization(semanticModelEntities, operation, profileModelEntities);
   }
   if (isModifyGeneralizationOperation(operation)) {
-    return reactToModifyGeneralization(semanticModel, operation, profileModel);
+    return reactToModifyGeneralization(semanticModelEntities, operation, profileModelEntities);
   }
   if (isDeleteEntityOperation(operation)) {
-    return reactToDeleteEntity(semanticModel, operation, profileModel);
+    return reactToDeleteEntity(semanticModelEntities, operation, profileModelEntities);
   }
   return [];
 }
@@ -91,7 +91,7 @@ export function reactToSemanticModelOperation(
 
 function reactToCreateClass(
   operation: CreateClassOperation,
-  _profileModel: ProfileModel,
+  _profileModelEntities: EntityRecord,
 ): EvolutionProposal[] {
   const entity = operation.entity;
   return [{
@@ -112,15 +112,16 @@ function reactToCreateClass(
 }
 
 function reactToModifyClass(
-  semanticModel: SemanticModel,
+  semanticModelEntities: EntityRecord,
   operation: ModifyClassOperation,
-  profileModel: ProfileModel,
+  profileModelEntities: EntityRecord,
 ): EvolutionProposal[] {
   const classId = operation.entity.id;
-  const previousClass = semanticModel.getEntities()[classId];
+  const previousClass = semanticModelEntities[classId];
   if (!isSemanticModelClass(previousClass)) return [];
 
-  const profiles = findClassProfilesProfilingEntity(profileModel, classId);
+  // Find all profiling children
+  const profiles = findClassProfilesProfilingEntity(profileModelEntities, classId);
   if (profiles.length === 0) return [];
 
   const proposals: EvolutionProposal[] = [];
@@ -128,8 +129,7 @@ function reactToModifyClass(
 
   for (const profile of profiles) {
     // Name change proposals
-    if (entity.name !== undefined &&
-        JSON.stringify(entity.name) !== JSON.stringify(previousClass.name)) {
+    if (entity.name !== undefined && !deepEqual(entity.name, previousClass.name)) {
       const newName = entity.name;
       const oldName = previousClass.name;
 
@@ -163,8 +163,7 @@ function reactToModifyClass(
     }
 
     // Description change proposals
-    if (entity.description !== undefined &&
-        JSON.stringify(entity.description) !== JSON.stringify(previousClass.description)) {
+    if (entity.description !== undefined && !deepEqual(entity.description, previousClass.description)) {
       const newDesc = entity.description;
       const oldDesc = previousClass.description;
 
@@ -220,9 +219,9 @@ function reactToModifyClass(
 }
 
 function reactToCreateRelationship(
-  _semanticModel: SemanticModel,
+  _semanticModelEntities: EntityRecord,
   operation: CreateRelationshipOperation,
-  profileModel: ProfileModel,
+  profileModelEntities: EntityRecord,
 ): EvolutionProposal[] {
   const entity = operation.entity;
   const ends = entity.ends ?? [];
@@ -239,8 +238,8 @@ function reactToCreateRelationship(
   // Both ends must be profiled for a relationship profile to be valid.
   if (!domainClassId || !rangeClassId) return [];
 
-  const domainProfiles = findClassProfilesProfilingEntity(profileModel, domainClassId);
-  const rangeProfiles = findClassProfilesProfilingEntity(profileModel, rangeClassId);
+  const domainProfiles = findClassProfilesProfilingEntity(profileModelEntities, domainClassId);
+  const rangeProfiles = findClassProfilesProfilingEntity(profileModelEntities, rangeClassId);
 
   if (domainProfiles.length === 0 || rangeProfiles.length === 0) return [];
 
@@ -291,15 +290,15 @@ function reactToCreateRelationship(
 }
 
 function reactToModifyRelation(
-  semanticModel: SemanticModel,
+  semanticModelEntities: EntityRecord,
   operation: ModifyRelationOperation,
-  profileModel: ProfileModel,
+  profileModelEntities: EntityRecord,
 ): EvolutionProposal[] {
   const relId = operation.entity.id;
-  const previousRel = semanticModel.getEntities()[relId];
+  const previousRel = semanticModelEntities[relId];
   if (!isSemanticModelRelationship(previousRel)) return [];
 
-  const profiles = findRelationshipProfilesProfilingEntity(profileModel, relId);
+  const profiles = findRelationshipProfilesProfilingEntity(profileModelEntities, relId);
   if (profiles.length === 0) return [];
 
   const proposals: EvolutionProposal[] = [];
@@ -320,8 +319,7 @@ function reactToModifyRelation(
       const prevDomainEnd = previousRel.ends[prevDomainEndIdx];
 
       // Name change on range end
-      if (newRangeEnd?.name !== undefined &&
-          JSON.stringify(newRangeEnd.name) !== JSON.stringify(prevRangeEnd?.name)) {
+      if (newRangeEnd?.name !== undefined && !deepEqual(newRangeEnd.name, prevRangeEnd?.name)) {
         const oldName = prevRangeEnd?.name ?? {};
         const newName = newRangeEnd.name;
 
@@ -352,8 +350,7 @@ function reactToModifyRelation(
       }
 
       // Description change on range end
-      if (newRangeEnd?.description !== undefined &&
-          JSON.stringify(newRangeEnd.description) !== JSON.stringify(prevRangeEnd?.description)) {
+      if (newRangeEnd?.description !== undefined && !deepEqual(newRangeEnd.description, prevRangeEnd?.description)) {
         const oldDesc = prevRangeEnd?.description ?? {};
         const newDesc = newRangeEnd.description;
 
@@ -384,8 +381,7 @@ function reactToModifyRelation(
       }
 
       // Cardinality change on range end
-      if (newRangeEnd?.cardinality !== undefined &&
-          JSON.stringify(newRangeEnd.cardinality) !== JSON.stringify(prevRangeEnd?.cardinality)) {
+      if (newRangeEnd?.cardinality !== undefined && !deepEqual(newRangeEnd.cardinality, prevRangeEnd?.cardinality)) {
         const newCard = newRangeEnd.cardinality ?? null;
         proposals.push({
           label: `[Profile ${profile.id}] Update cardinality to [${newCard?.[0] ?? 0}..${newCard?.[1] ?? '*'}]`,
@@ -399,7 +395,7 @@ function reactToModifyRelation(
       if (newRangeEnd?.concept !== undefined &&
           newRangeEnd.concept !== prevRangeEnd?.concept &&
           newRangeEnd.concept) {
-        const rangeClassProfiles = findClassProfilesProfilingEntity(profileModel, newRangeEnd.concept);
+        const rangeClassProfiles = findClassProfilesProfilingEntity(profileModelEntities, newRangeEnd.concept);
         for (const rangeClassProfile of rangeClassProfiles) {
           proposals.push({
             label: `[Profile ${profile.id}] Update range class to profile "${rangeClassProfile.id}"`,
@@ -414,7 +410,7 @@ function reactToModifyRelation(
       if (newDomainEnd?.concept !== undefined &&
           newDomainEnd.concept !== prevDomainEnd?.concept &&
           newDomainEnd.concept) {
-        const domainClassProfiles = findClassProfilesProfilingEntity(profileModel, newDomainEnd.concept);
+        const domainClassProfiles = findClassProfilesProfilingEntity(profileModelEntities, newDomainEnd.concept);
         for (const domainClassProfile of domainClassProfiles) {
           proposals.push({
             label: `[Profile ${profile.id}] Update domain class to profile "${domainClassProfile.id}"`,
@@ -441,15 +437,15 @@ function reactToModifyRelation(
 }
 
 function reactToModifyRelationEnd(
-  semanticModel: SemanticModel,
+  semanticModelEntities: EntityRecord,
   operation: ModifyRelationEndOperation,
-  profileModel: ProfileModel,
+  profileModelEntities: EntityRecord,
 ): EvolutionProposal[] {
   const relId = operation.entityId;
-  const previousRel = semanticModel.getEntities()[relId];
+  const previousRel = semanticModelEntities[relId];
   if (!isSemanticModelRelationship(previousRel)) return [];
 
-  const profiles = findRelationshipProfilesProfilingEntity(profileModel, relId);
+  const profiles = findRelationshipProfilesProfilingEntity(profileModelEntities, relId);
   if (profiles.length === 0) return [];
 
   const prevEnd = previousRel.ends[operation.endIndex];
@@ -466,8 +462,7 @@ function reactToModifyRelationEnd(
     if (!profileEnd) continue;
 
     // Name change
-    if (endChanges.name !== undefined &&
-        JSON.stringify(endChanges.name) !== JSON.stringify(prevEnd?.name)) {
+    if (endChanges.name !== undefined && !deepEqual(endChanges.name, prevEnd?.name)) {
       const oldName = prevEnd?.name ?? {};
       const newName = endChanges.name;
 
@@ -498,8 +493,7 @@ function reactToModifyRelationEnd(
     }
 
     // Description change
-    if (endChanges.description !== undefined &&
-        JSON.stringify(endChanges.description) !== JSON.stringify(prevEnd?.description)) {
+    if (endChanges.description !== undefined && !deepEqual(endChanges.description, prevEnd?.description)) {
       const oldDesc = prevEnd?.description ?? {};
       const newDesc = endChanges.description;
 
@@ -530,8 +524,7 @@ function reactToModifyRelationEnd(
     }
 
     // Cardinality change
-    if (endChanges.cardinality !== undefined &&
-        JSON.stringify(endChanges.cardinality) !== JSON.stringify(prevEnd?.cardinality)) {
+    if (endChanges.cardinality !== undefined && !deepEqual(endChanges.cardinality, prevEnd?.cardinality)) {
       const newCard = endChanges.cardinality ?? null;
       const oldCard = prevEnd?.cardinality ?? null;
       proposals.push({
@@ -551,7 +544,7 @@ function reactToModifyRelationEnd(
         endChanges.concept !== prevEnd?.concept &&
         endChanges.concept) {
       const newConceptId = endChanges.concept;
-      const conceptProfiles = findClassProfilesProfilingEntity(profileModel, newConceptId);
+      const conceptProfiles = findClassProfilesProfilingEntity(profileModelEntities, newConceptId);
       for (const conceptProfile of conceptProfiles) {
         proposals.push({
           label: `[Profile ${profile.id}] Update ${isRangeEnd ? 'range' : 'domain'} class to profile "${conceptProfile.id}"`,
@@ -574,17 +567,17 @@ function reactToModifyRelationEnd(
 }
 
 function reactToCreateGeneralization(
-  _semanticModel: SemanticModel,
+  _semanticModelEntities: EntityRecord,
   operation: CreateGeneralizationOperation,
-  profileModel: ProfileModel,
+  profileModelEntities: EntityRecord,
 ): EvolutionProposal[] {
   const entity = operation.entity;
   const childId = entity.child ?? null;
   const parentId = entity.parent ?? null;
   if (!childId || !parentId) return [];
 
-  const childProfiles = findClassProfilesProfilingEntity(profileModel, childId);
-  const parentProfiles = findClassProfilesProfilingEntity(profileModel, parentId);
+  const childProfiles = findClassProfilesProfilingEntity(profileModelEntities, childId);
+  const parentProfiles = findClassProfilesProfilingEntity(profileModelEntities, parentId);
 
   if (childProfiles.length === 0 || parentProfiles.length === 0) return [];
 
@@ -607,20 +600,20 @@ function reactToCreateGeneralization(
 }
 
 function reactToModifyGeneralization(
-  semanticModel: SemanticModel,
+  semanticModelEntities: EntityRecord,
   operation: ModifyGeneralizationOperation,
-  profileModel: ProfileModel,
+  profileModelEntities: EntityRecord,
 ): EvolutionProposal[] {
   const genId = operation.entity.id;
-  const previousGen = semanticModel.getEntities()[genId];
+  const previousGen = semanticModelEntities[genId];
   if (!isSemanticModelGeneralization(previousGen)) return [];
 
   // Find profile generalizations that connect profiles of the old child and parent.
-  const oldChildProfiles = findClassProfilesProfilingEntity(profileModel, previousGen.child);
-  const oldParentProfiles = findClassProfilesProfilingEntity(profileModel, previousGen.parent);
+  const oldChildProfiles = findClassProfilesProfilingEntity(profileModelEntities, previousGen.child);
+  const oldParentProfiles = findClassProfilesProfilingEntity(profileModelEntities, previousGen.parent);
 
   const profileGeneralizations = findGeneralizationsReferencingClassProfiles(
-    profileModel,
+    profileModelEntities,
     oldChildProfiles.map(p => p.id),
     oldParentProfiles.map(p => p.id),
   );
@@ -632,7 +625,7 @@ function reactToModifyGeneralization(
   for (const profileGen of profileGeneralizations) {
     // Child changed
     if (operation.entity.child && operation.entity.child !== previousGen.child) {
-      const newChildProfiles = findClassProfilesProfilingEntity(profileModel, operation.entity.child);
+      const newChildProfiles = findClassProfilesProfilingEntity(profileModelEntities, operation.entity.child);
       for (const newChildProfile of newChildProfiles) {
         proposals.push({
           label: `Update generalization child profile to "${newChildProfile.id}"`,
@@ -650,7 +643,7 @@ function reactToModifyGeneralization(
 
     // Parent changed
     if (operation.entity.parent && operation.entity.parent !== previousGen.parent) {
-      const newParentProfiles = findClassProfilesProfilingEntity(profileModel, operation.entity.parent);
+      const newParentProfiles = findClassProfilesProfilingEntity(profileModelEntities, operation.entity.parent);
       for (const newParentProfile of newParentProfiles) {
         proposals.push({
           label: `Update generalization parent profile to "${newParentProfile.id}"`,
@@ -671,21 +664,21 @@ function reactToModifyGeneralization(
 }
 
 function reactToDeleteEntity(
-  semanticModel: SemanticModel,
+  semanticModelEntities: EntityRecord,
   operation: DeleteEntityOperation,
-  profileModel: ProfileModel,
+  profileModelEntities: EntityRecord,
 ): EvolutionProposal[] {
   const entityId = operation.entityId;
-  const entity = semanticModel.getEntities()[entityId];
+  const entity = semanticModelEntities[entityId];
   const proposals: EvolutionProposal[] = [];
 
   if (isSemanticModelClass(entity)) {
-    const classProfiles = findClassProfilesProfilingEntity(profileModel, entityId);
+    const classProfiles = findClassProfilesProfilingEntity(profileModelEntities, entityId);
     for (const profile of classProfiles) {
       // Cascade: delete relationship profiles using this class profile as domain/range
       // and generalizations referencing this class profile.
-      const dependentRels = findRelationshipProfilesReferencingConcept(profileModel, profile.id);
-      const dependentGens = findGeneralizationsReferencingEntity(profileModel, profile.id);
+      const dependentRels = findRelationshipProfilesReferencingConcept(profileModelEntities, profile.id);
+      const dependentGens = findGeneralizationsReferencingEntity(profileModelEntities, profile.id);
 
       const ops: ProfileOperation[] = [
         deleteEntity(profile.id),
@@ -703,7 +696,7 @@ function reactToDeleteEntity(
       });
     }
   } else if (isSemanticModelRelationship(entity)) {
-    const relProfiles = findRelationshipProfilesProfilingEntity(profileModel, entityId);
+    const relProfiles = findRelationshipProfilesProfilingEntity(profileModelEntities, entityId);
     for (const profile of relProfiles) {
       proposals.push({
         label: `Delete relationship profile (profiling ${entityId})`,
@@ -711,11 +704,11 @@ function reactToDeleteEntity(
       });
     }
   } else if (isSemanticModelGeneralization(entity)) {
-    const childProfiles = findClassProfilesProfilingEntity(profileModel, entity.child);
-    const parentProfiles = findClassProfilesProfilingEntity(profileModel, entity.parent);
+    const childProfiles = findClassProfilesProfilingEntity(profileModelEntities, entity.child);
+    const parentProfiles = findClassProfilesProfilingEntity(profileModelEntities, entity.parent);
 
     const profileGeneralizations = findGeneralizationsReferencingClassProfiles(
-      profileModel,
+      profileModelEntities,
       childProfiles.map(p => p.id),
       parentProfiles.map(p => p.id),
     );
@@ -734,47 +727,47 @@ function reactToDeleteEntity(
 // --- Utilities ---
 
 function findClassProfilesProfilingEntity(
-  profileModel: ProfileModel,
+  profileModelEntities: EntityRecord,
   entityId: string,
 ): SemanticModelClassProfile[] {
-  return Object.values(profileModel.getEntities())
+  return Object.values(profileModelEntities)
     .filter(isSemanticModelClassProfile)
     .filter(p => p.profiling.includes(entityId));
 }
 
 function findRelationshipProfilesProfilingEntity(
-  profileModel: ProfileModel,
+  profileModelEntities: EntityRecord,
   entityId: string,
 ): SemanticModelRelationshipProfile[] {
-  return Object.values(profileModel.getEntities())
+  return Object.values(profileModelEntities)
     .filter(isSemanticModelRelationshipProfile)
     .filter(p => p.ends.some(end => end.profiling.includes(entityId)));
 }
 
 function findRelationshipProfilesReferencingConcept(
-  profileModel: ProfileModel,
+  profileModelEntities: EntityRecord,
   entityId: string,
 ): SemanticModelRelationshipProfile[] {
-  return Object.values(profileModel.getEntities())
+  return Object.values(profileModelEntities)
     .filter(isSemanticModelRelationshipProfile)
     .filter(p => p.ends.some(end => end.concept === entityId));
 }
 
 function findGeneralizationsReferencingEntity(
-  profileModel: ProfileModel,
+  profileModelEntities: EntityRecord,
   entityId: string,
 ): SemanticModelGeneralization[] {
-  return Object.values(profileModel.getEntities())
+  return Object.values(profileModelEntities)
     .filter(isSemanticModelGeneralization)
     .filter(g => g.child === entityId || g.parent === entityId);
 }
 
 function findGeneralizationsReferencingClassProfiles(
-  profileModel: ProfileModel,
+  profileModelEntities: EntityRecord,
   childProfileIds: string[],
   parentProfileIds: string[],
 ): SemanticModelGeneralization[] {
-  return Object.values(profileModel.getEntities())
+  return Object.values(profileModelEntities)
     .filter(isSemanticModelGeneralization)
     .filter(g =>
       childProfileIds.includes(g.child) && parentProfileIds.includes(g.parent));

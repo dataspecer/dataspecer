@@ -18,6 +18,8 @@
     "title": "Nevyřízené změny",
     "description": "Změny provedené v jednom modelu, které ještě nebyly promítnuty do ostatních modelů této specifikace.",
     "empty": "Nejsou žádné nevyřízené změny.",
+    "no-project": "Není vybrán žádný projekt. Otevřete tuto stránku s parametrem packageIri.",
+    "loading": "Načítám nevyřízené změny…",
     "all-reviewed": "Všechny nevyřízené změny byly zpracovány.",
     "progress": "Změna {{current}} z {{total}}",
     "previous": "Předchozí",
@@ -28,7 +30,10 @@
     "apply": "Použít",
     "skip": "Přeskočit",
     "status-applied": "Použito",
-    "status-skipped": "Přeskočeno"
+    "status-skipped": "Přeskočeno",
+    "proposals-title": "Navrhované evoluce pro aplikační profil:",
+    "no-proposals": "Žádné návrhy evoluce pro aplikační profil.",
+    "no-evolution": "Bez evoluce (přeskočit aktualizaci profilu)"
   },
   "operations": {
     "generic": {
