@@ -628,7 +628,11 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
 
     const store = await resourceModel.getOrCreateResourceModelStore(existingResource.iri);
     const data = await store.getJson() as {urls: string[]};
-    const urls = data.urls;
+    const bodyUrls = (request.body as { urls?: string[] })?.urls;
+    if (bodyUrls) {
+      await store.setJson({ ...data, urls: bodyUrls });
+    }
+    const urls = bodyUrls ?? data.urls;
     const newModel = await createRdfsModel(urls, httpFetch);
     newModel.id = existingResource.iri;
     // Intentionally skip store.setJson() — the blob stays unchanged.

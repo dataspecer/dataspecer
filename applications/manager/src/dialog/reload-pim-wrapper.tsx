@@ -1,9 +1,12 @@
 import { Modal, ModalBody, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useAsyncMemo } from "@/hooks/use-async-memo";
 import { BetterModalProps } from "@/lib/better-modal";
 import { requestLoadPackage } from "@/package";
 import { Loader } from "lucide-react";
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -14,13 +17,26 @@ export interface ReloadPimWrapperProps {
 
 export const ReloadPimWrapper = ({ id, parentId, isOpen, resolve }: ReloadPimWrapperProps & BetterModalProps<boolean>) => {
   const {t} = useTranslation();
+  const textareaId = useId();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const [currentUrls] = useAsyncMemo(async () => {
+    const response = await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(id));
+    if (!response.ok) return "";
+    const data = await response.json() as { urls?: string[] };
+    return (data.urls ?? []).join("\n");
+  }, [id]);
 
   const [isLoading, setIsLoading] = useState(false);
   const doReload = async () => {
     setIsLoading(true);
 
+    const urls = (textareaRef.current?.value ?? "").split("\n").map(u => u.trim()).filter(Boolean);
+
     const result = await fetch(import.meta.env.VITE_BACKEND + "/resources/reload?iri=" + encodeURIComponent(id), {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ urls }),
     });
 
     if (result.ok) {
@@ -43,7 +59,10 @@ export const ReloadPimWrapper = ({ id, parentId, isOpen, resolve }: ReloadPimWra
           </ModalDescription>
         </ModalHeader>
         <ModalBody>
-          {t("reload-pim-wrapper.confirm")}
+          <div className="grid gap-2">
+            <Label htmlFor={textareaId}>{t("reload-pim-wrapper.urls")}</Label>
+            <Textarea id={textareaId} ref={textareaRef} defaultValue={currentUrls} key={currentUrls} rows={5} />
+          </div>
         </ModalBody>
         <ModalFooter>
           <Button variant="destructive" onClick={doReload} disabled={isLoading}>

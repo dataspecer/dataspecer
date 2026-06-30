@@ -95,7 +95,8 @@
     "confirm": "Opravdu chcete znovu načíst obsah tohoto externího modelu?",
     "description": "Znovu načíst obsah externího modelu",
     "error": "Znovunačtení modelu selhalo. Více informací je v konzoli.",
-    "success": "Model byl úspěšně znovu načten."
+    "success": "Model byl úspěšně znovu načten.",
+    "urls": "URL adresy (jedna na řádek)"
   },
   "reload-imported": {
     "reload": "Aktualizovat",
