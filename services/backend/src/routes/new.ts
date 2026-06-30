@@ -192,12 +192,20 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
     });
     const visualModel = await resourceModel.getOrCreateResourceModelStore(viewIri);
     await visualModel.setJson({
-      type: VISUAL_MODEL,
-      modelId: viewIri,
-      visualEntities: {},
-      modelColors: {
-        vhfk9: "#ffd670",
-      },
+      "identifier": viewIri,
+      "version": 1,
+      "type": VISUAL_MODEL,
+      "entities": [
+        {
+          "identifier": viewIri,
+          "type": [
+            "entity-model-type"
+          ],
+          "label": {
+            "en": "Main view"
+          }
+        }
+      ]
     });
 
     // Update package metadata with the final label
