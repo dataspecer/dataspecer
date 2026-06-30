@@ -76,12 +76,7 @@ export function EntityName({ entities, id, showIri }: {
   );
 }
 
-function langStr(v: Record<string, string> | null | undefined): string {
-  if (!v || Object.keys(v).length === 0) return "";
-  return Object.entries(v).map(([l, t]) => `${l}: ${t}`).join(", ");
-}
-
-/** Renders two LanguageString values side-by-side with red/green diff colouring. */
+/** Renders two LanguageString values with per-language diff colouring, one language per line. */
 export function DiffLanguageStringText({
   current,
   next,
@@ -89,14 +84,34 @@ export function DiffLanguageStringText({
   current: Record<string, string> | null | undefined;
   next: Record<string, string> | null | undefined;
 }) {
-  const a = langStr(current);
-  const b = langStr(next);
-  if (a === b) return <Translate text={next} />;
+  const allLangs = [...new Set([...Object.keys(current ?? {}), ...Object.keys(next ?? {})])];
+
+  if (allLangs.length === 0) return <>—</>;
+
   return (
     <>
-      <span className="line-through text-red-500">{a || "—"}</span>
-      {" → "}
-      <span className="text-green-600 dark:text-green-400">{b || "—"}</span>
+      {allLangs.map((lang) => {
+        const a = current?.[lang];
+        const b = next?.[lang];
+        return (
+          <span key={lang} className="block">
+            <span className="opacity-60">{lang}: </span>
+            {a === b ? (
+              b
+            ) : a === undefined ? (
+              <span className="text-green-600 dark:text-green-400">{b}</span>
+            ) : b === undefined ? (
+              <span className="line-through text-red-500">{a}</span>
+            ) : (
+              <>
+                <span className="line-through text-red-500">{a}</span>
+                {" → "}
+                <span className="text-green-600 dark:text-green-400">{b}</span>
+              </>
+            )}
+          </span>
+        );
+      })}
     </>
   );
 }

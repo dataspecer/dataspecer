@@ -15,7 +15,9 @@ export function CreateClassOperationView({ operation }: { operation: CreateClass
         <div className="space-y-1">
           <Field label={t("operations.semantic.iri")}>{entity.iri}</Field>
           <Field label={t("operations.semantic.name")}><Translate text={entity.name} /></Field>
+          <Field label={t("operations.semantic.name-property")}>{entity.nameProperty}</Field>
           <Field label={t("operations.semantic.description")}><Translate text={entity.description} /></Field>
+          <Field label={t("operations.semantic.description-property")}>{entity.descriptionProperty}</Field>
         </div>
       </CardContent>
     </>

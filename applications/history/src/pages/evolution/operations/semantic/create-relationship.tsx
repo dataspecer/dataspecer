@@ -21,7 +21,9 @@ export function CreateRelationshipOperationView({ operation, entities }: { opera
         <div className="space-y-1">
           <Field label={t("operations.semantic.iri")}>{range?.iri}</Field>
           <Field label={t("operations.semantic.name")}><Translate text={range?.name} /></Field>
+          <Field label={t("operations.semantic.name-property")}>{range?.nameProperty}</Field>
           <Field label={t("operations.semantic.description")}><Translate text={range?.description} /></Field>
+          <Field label={t("operations.semantic.description-property")}>{range?.descriptionProperty}</Field>
           <Field label={t("operations.semantic.domain")}>
             <EntityName entities={entities} id={domain?.concept} /> (<CardinalityText value={domain?.cardinality} />)
           </Field>

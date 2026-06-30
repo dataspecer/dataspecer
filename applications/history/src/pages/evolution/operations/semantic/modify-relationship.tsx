@@ -61,10 +61,20 @@ export function ModifyRelationOperationView({ operation, entities }: { operation
               ? <DiffLanguageStringText current={current?.ends?.[1]?.name} next={entity.ends?.[1]?.name} />
               : <Translate text={current?.ends?.[1]?.name} />}
           </Field>
+          <Field label={t("operations.semantic.name-property")}>
+            {endsChanged
+              ? <DiffStringText current={current?.ends?.[1]?.nameProperty} next={entity.ends?.[1]?.nameProperty} />
+              : current?.ends?.[1]?.nameProperty}
+          </Field>
           <Field label={t("operations.semantic.description")}>
             {endsChanged
               ? <DiffLanguageStringText current={current?.ends?.[1]?.description} next={entity.ends?.[1]?.description} />
               : <Translate text={current?.ends?.[1]?.description} />}
+          </Field>
+          <Field label={t("operations.semantic.description-property")}>
+            {endsChanged
+              ? <DiffStringText current={current?.ends?.[1]?.descriptionProperty} next={entity.ends?.[1]?.descriptionProperty} />
+              : current?.ends?.[1]?.descriptionProperty}
           </Field>
           <Field label={t("operations.semantic.domain")}>
             {endsChanged

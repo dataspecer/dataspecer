@@ -43,6 +43,8 @@
       "iri": "Iri",
       "name": "Název",
       "description": "Popis",
+      "name-property": "Vlastnost názvu",
+      "description-property": "Vlastnost popisu",
       "domain": "Doména",
       "range": "Rozsah",
       "child": "Potomek",
