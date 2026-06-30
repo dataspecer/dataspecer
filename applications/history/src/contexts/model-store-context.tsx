@@ -43,6 +43,8 @@ export function ModelStoreProvider({ packageIri, children }: { packageIri: strin
     return () => { cancelled = true; };
   }, [packageIri]);
 
+  (window as any).store = value.modelStore;
+
   return <ModelStoreContext.Provider value={value}>{children}</ModelStoreContext.Provider>;
 }
 
