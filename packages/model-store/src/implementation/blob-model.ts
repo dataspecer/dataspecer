@@ -68,6 +68,13 @@ export class BlobModelInModelStore extends BaseModelInModelStore implements Mode
 
   protected async loadInternal(): Promise<ModelState> {
     const data = await this.service.getResourceJsonData(this.resourceId, this.blobName) as object;
+    if (!data) {
+      return {
+        entities: serializationToBlobModelEntities(this.id, {}),
+        operations: [],
+      };
+    }
+
     const entities = serializationToBlobModelEntities(this.id, data);
 
     return {

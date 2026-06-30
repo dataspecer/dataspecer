@@ -1252,7 +1252,9 @@ function rowRenderer(
       key={props.key}
       style={style}
     >
-      {item.renderItem(item)}
+      <div className="hover:bg-black/10">
+        {item.renderItem(item)}
+      </div>
     </div >
   );
 }
