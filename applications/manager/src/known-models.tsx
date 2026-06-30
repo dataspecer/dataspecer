@@ -105,12 +105,20 @@ export const createModelInstructions = {
   [VISUAL_MODEL]: {
     needsNaming: false,
     createHook: getHookForStandardModel(VISUAL_MODEL, iri => ({
+      "identifier": iri,
+      "version": 1,
       "type": VISUAL_MODEL,
-      "modelId": iri,
-      "visualEntities": {},
-      "modelColors": {
-        "vhfk9": "#ffd670"
-      }
+      "entities": [
+        {
+          "identifier": iri,
+          "type": [
+            "entity-model-type"
+          ],
+          "label": {
+            "en": "Main view"
+          }
+        }
+      ]
     })),
   },
   [APPLICATION_GRAPH]: {
