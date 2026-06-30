@@ -133,8 +133,8 @@ function reactToModifyClass(
       const newName = entity.name;
       const oldName = previousClass.name;
 
-      if (profile.nameFromProfiled !== null) {
-        // Profile currently inherits the name → will automatically get the new name.
+      if (profile.nameFromProfiled === classId) {
+        // Profile currently inherits the name from this class → will automatically get the new name.
         // Offer to freeze the old name instead.
         proposals.push({
           label: `[Profile ${profile.id}] Keep old name "${displayName(oldName)}" (stop inheriting)`,
@@ -143,23 +143,36 @@ function reactToModifyClass(
             nameFromProfiled: null,
           })],
         });
-      } else {
-        // Profile has its own name → offer to adopt the new name or start inheriting.
-        proposals.push({
-          label: `[Profile ${profile.id}] Update name to "${displayName(newName)}"`,
-          operations: [factory.modifyClassProfile(profile.id, {
-            name: newName,
-          })],
-        });
-        proposals.push({
-          label: `[Profile ${profile.id}] Inherit new name from profiled class`,
-          operations: [factory.modifyClassProfile(profile.id, {
-            name: null,
-            nameFromProfiled: classId,
-            profiling: uniqueArray([...profile.profiling, classId]),
-          })],
-        });
+      } else if (!profile.nameFromProfiled) {
+        // Profile has its own name.
+        if (deepEqual(newName, profile.name)) {
+          // New name matches the override → offer to remove the redundant override.
+          proposals.push({
+            label: `[Profile ${profile.id}] Remove name override (matches new name, inherit from profiled class)`,
+            operations: [factory.modifyClassProfile(profile.id, {
+              name: null,
+              nameFromProfiled: classId,
+            })],
+          });
+        } else {
+          // Offer to adopt the new name or start inheriting.
+          proposals.push({
+            label: `[Profile ${profile.id}] Update name to "${displayName(newName)}"`,
+            operations: [factory.modifyClassProfile(profile.id, {
+              name: newName,
+            })],
+          });
+          proposals.push({
+            label: `[Profile ${profile.id}] Inherit new name from profiled class`,
+            operations: [factory.modifyClassProfile(profile.id, {
+              name: null,
+              nameFromProfiled: classId,
+              profiling: uniqueArray([...profile.profiling, classId]),
+            })],
+          });
+        }
       }
+      // else: nameFromProfiled points to a different entity — not affected by this change.
     }
 
     // Description change proposals
@@ -167,7 +180,7 @@ function reactToModifyClass(
       const newDesc = entity.description;
       const oldDesc = previousClass.description;
 
-      if (profile.descriptionFromProfiled !== null) {
+      if (profile.descriptionFromProfiled === classId) {
         proposals.push({
           label: `[Profile ${profile.id}] Keep old description (stop inheriting)`,
           operations: [factory.modifyClassProfile(profile.id, {
@@ -175,32 +188,33 @@ function reactToModifyClass(
             descriptionFromProfiled: null,
           })],
         });
-      } else {
-        proposals.push({
-          label: `[Profile ${profile.id}] Update description to new value`,
-          operations: [factory.modifyClassProfile(profile.id, {
-            description: newDesc,
-          })],
-        });
-        proposals.push({
-          label: `[Profile ${profile.id}] Inherit new description from profiled class`,
-          operations: [factory.modifyClassProfile(profile.id, {
-            description: null,
-            descriptionFromProfiled: classId,
-            profiling: uniqueArray([...profile.profiling, classId]),
-          })],
-        });
+      } else if (!profile.descriptionFromProfiled) {
+        if (deepEqual(newDesc, profile.description)) {
+          proposals.push({
+            label: `[Profile ${profile.id}] Remove description override (matches new description, inherit from profiled class)`,
+            operations: [factory.modifyClassProfile(profile.id, {
+              description: null,
+              descriptionFromProfiled: classId,
+            })],
+          });
+        } else {
+          proposals.push({
+            label: `[Profile ${profile.id}] Update description to new value`,
+            operations: [factory.modifyClassProfile(profile.id, {
+              description: newDesc,
+            })],
+          });
+          proposals.push({
+            label: `[Profile ${profile.id}] Inherit new description from profiled class`,
+            operations: [factory.modifyClassProfile(profile.id, {
+              description: null,
+              descriptionFromProfiled: classId,
+              profiling: uniqueArray([...profile.profiling, classId]),
+            })],
+          });
+        }
       }
-    }
-
-    // IRI change proposals
-    if (entity.iri !== undefined && entity.iri !== previousClass.iri) {
-      proposals.push({
-        label: `[Profile ${profile.id}] Update profile IRI to match new class IRI "${entity.iri}"`,
-        operations: [factory.modifyClassProfile(profile.id, {
-          iri: entity.iri,
-        })],
-      });
+      // else: descriptionFromProfiled points to a different entity — not affected.
     }
 
     // External documentation URL change proposals
@@ -323,7 +337,7 @@ function reactToModifyRelation(
         const oldName = prevRangeEnd?.name ?? {};
         const newName = newRangeEnd.name;
 
-        if (profileRangeEnd?.nameFromProfiled !== null) {
+        if (profileRangeEnd?.nameFromProfiled === relId) {
           proposals.push({
             label: `[Profile ${profile.id}] Keep old property name "${displayName(oldName)}" (stop inheriting)`,
             operations: [factory.modifyRelationshipEndProfile(profile.id, 1, {
@@ -331,22 +345,34 @@ function reactToModifyRelation(
               nameFromProfiled: null,
             })],
           });
-        } else {
-          proposals.push({
-            label: `[Profile ${profile.id}] Update property name to "${displayName(newName)}"`,
-            operations: [factory.modifyRelationshipEndProfile(profile.id, 1, {
-              name: newName,
-            })],
-          });
-          proposals.push({
-            label: `[Profile ${profile.id}] Inherit new property name from profiled`,
-            operations: [factory.modifyRelationshipEndProfile(profile.id, 1, {
-              name: null,
-              nameFromProfiled: relId,
-              profiling: uniqueArray([...(profileRangeEnd?.profiling ?? []), relId]),
-            })],
-          });
+        } else if (!profileRangeEnd?.nameFromProfiled) {
+          if (deepEqual(newName, profileRangeEnd.name)) {
+            proposals.push({
+              label: `[Profile ${profile.id}] Remove name override (matches new name, inherit from profiled)`,
+              operations: [factory.modifyRelationshipEndProfile(profile.id, 1, {
+                name: null,
+                nameFromProfiled: relId,
+                profiling: uniqueArray([...(profileRangeEnd.profiling ?? []), relId]),
+              })],
+            });
+          } else {
+            proposals.push({
+              label: `[Profile ${profile.id}] Update property name to "${displayName(newName)}"`,
+              operations: [factory.modifyRelationshipEndProfile(profile.id, 1, {
+                name: newName,
+              })],
+            });
+            proposals.push({
+              label: `[Profile ${profile.id}] Inherit new property name from profiled`,
+              operations: [factory.modifyRelationshipEndProfile(profile.id, 1, {
+                name: null,
+                nameFromProfiled: relId,
+                profiling: uniqueArray([...(profileRangeEnd.profiling ?? []), relId]),
+              })],
+            });
+          }
         }
+        // else: nameFromProfiled points to a different entity — not affected.
       }
 
       // Description change on range end
@@ -354,7 +380,7 @@ function reactToModifyRelation(
         const oldDesc = prevRangeEnd?.description ?? {};
         const newDesc = newRangeEnd.description;
 
-        if (profileRangeEnd?.descriptionFromProfiled !== null) {
+        if (profileRangeEnd?.descriptionFromProfiled === relId) {
           proposals.push({
             label: `[Profile ${profile.id}] Keep old property description (stop inheriting)`,
             operations: [factory.modifyRelationshipEndProfile(profile.id, 1, {
@@ -362,33 +388,54 @@ function reactToModifyRelation(
               descriptionFromProfiled: null,
             })],
           });
-        } else {
-          proposals.push({
-            label: `[Profile ${profile.id}] Update property description to new value`,
-            operations: [factory.modifyRelationshipEndProfile(profile.id, 1, {
-              description: newDesc,
-            })],
-          });
-          proposals.push({
-            label: `[Profile ${profile.id}] Inherit new property description from profiled`,
-            operations: [factory.modifyRelationshipEndProfile(profile.id, 1, {
-              description: null,
-              descriptionFromProfiled: relId,
-              profiling: uniqueArray([...(profileRangeEnd?.profiling ?? []), relId]),
-            })],
-          });
+        } else if (!profileRangeEnd?.descriptionFromProfiled) {
+          if (deepEqual(newDesc, profileRangeEnd.description)) {
+            proposals.push({
+              label: `[Profile ${profile.id}] Remove description override (matches new description, inherit from profiled)`,
+              operations: [factory.modifyRelationshipEndProfile(profile.id, 1, {
+                description: null,
+                descriptionFromProfiled: relId,
+                profiling: uniqueArray([...(profileRangeEnd.profiling ?? []), relId]),
+              })],
+            });
+          } else {
+            proposals.push({
+              label: `[Profile ${profile.id}] Update property description to new value`,
+              operations: [factory.modifyRelationshipEndProfile(profile.id, 1, {
+                description: newDesc,
+              })],
+            });
+            proposals.push({
+              label: `[Profile ${profile.id}] Inherit new property description from profiled`,
+              operations: [factory.modifyRelationshipEndProfile(profile.id, 1, {
+                description: null,
+                descriptionFromProfiled: relId,
+                profiling: uniqueArray([...(profileRangeEnd.profiling ?? []), relId]),
+              })],
+            });
+          }
         }
+        // else: descriptionFromProfiled points to a different entity — not affected.
       }
 
       // Cardinality change on range end
       if (newRangeEnd?.cardinality !== undefined && !deepEqual(newRangeEnd.cardinality, prevRangeEnd?.cardinality)) {
         const newCard = newRangeEnd.cardinality ?? null;
-        proposals.push({
-          label: `[Profile ${profile.id}] Update cardinality to [${newCard?.[0] ?? 0}..${newCard?.[1] ?? '*'}]`,
-          operations: [factory.modifyRelationshipEndProfile(profile.id, 1, {
-            cardinality: newCard,
-          })],
-        });
+        if (deepEqual(profileRangeEnd?.cardinality ?? null, newCard)) {
+          proposals.push({
+            label: `[Profile ${profile.id}] Remove cardinality override (now matches profiled entity)`,
+            operations: [factory.modifyRelationshipEndProfile(profile.id, 1, {
+              cardinality: null,
+            })],
+          });
+        } else {
+          proposals.push({
+            label: `[Profile ${profile.id}] Update cardinality to [${newCard?.[0] ?? 0}..${newCard?.[1] ?? '*'}]`,
+            operations: [factory.modifyRelationshipEndProfile(profile.id, 1, {
+              cardinality: newCard,
+            })],
+          });
+        }
       }
 
       // Range class concept changed
@@ -422,15 +469,6 @@ function reactToModifyRelation(
       }
     }
 
-    // IRI change on the relationship itself
-    if (operation.entity.iri !== undefined && operation.entity.iri !== previousRel.iri) {
-      proposals.push({
-        label: `[Profile ${profile.id}] Update relationship profile range-end IRI to "${operation.entity.iri}"`,
-        operations: [factory.modifyRelationshipEndProfile(profile.id, 1, {
-          iri: operation.entity.iri,
-        })],
-      });
-    }
   }
 
   return proposals;
@@ -466,7 +504,7 @@ function reactToModifyRelationEnd(
       const oldName = prevEnd?.name ?? {};
       const newName = endChanges.name;
 
-      if (profileEnd.nameFromProfiled !== null) {
+      if (profileEnd.nameFromProfiled === relId) {
         proposals.push({
           label: `[Profile ${profile.id}] Keep old name "${displayName(oldName)}" (stop inheriting)`,
           operations: [factory.modifyRelationshipEndProfile(profile.id, profileEndIndex, {
@@ -474,22 +512,34 @@ function reactToModifyRelationEnd(
             nameFromProfiled: null,
           })],
         });
-      } else {
-        proposals.push({
-          label: `[Profile ${profile.id}] Update name to "${displayName(newName)}"`,
-          operations: [factory.modifyRelationshipEndProfile(profile.id, profileEndIndex, {
-            name: newName,
-          })],
-        });
-        proposals.push({
-          label: `[Profile ${profile.id}] Inherit new name from profiled`,
-          operations: [factory.modifyRelationshipEndProfile(profile.id, profileEndIndex, {
-            name: null,
-            nameFromProfiled: relId,
-            profiling: uniqueArray([...profileEnd.profiling, relId]),
-          })],
-        });
+      } else if (!profileEnd.nameFromProfiled) {
+        if (deepEqual(newName, profileEnd.name)) {
+          proposals.push({
+            label: `[Profile ${profile.id}] Remove name override (matches new name, inherit from profiled)`,
+            operations: [factory.modifyRelationshipEndProfile(profile.id, profileEndIndex, {
+              name: null,
+              nameFromProfiled: relId,
+              profiling: uniqueArray([...profileEnd.profiling, relId]),
+            })],
+          });
+        } else {
+          proposals.push({
+            label: `[Profile ${profile.id}] Update name to "${displayName(newName)}"`,
+            operations: [factory.modifyRelationshipEndProfile(profile.id, profileEndIndex, {
+              name: newName,
+            })],
+          });
+          proposals.push({
+            label: `[Profile ${profile.id}] Inherit new name from profiled`,
+            operations: [factory.modifyRelationshipEndProfile(profile.id, profileEndIndex, {
+              name: null,
+              nameFromProfiled: relId,
+              profiling: uniqueArray([...profileEnd.profiling, relId]),
+            })],
+          });
+        }
       }
+      // else: nameFromProfiled points to a different entity — not affected.
     }
 
     // Description change
@@ -497,7 +547,7 @@ function reactToModifyRelationEnd(
       const oldDesc = prevEnd?.description ?? {};
       const newDesc = endChanges.description;
 
-      if (profileEnd.descriptionFromProfiled !== null) {
+      if (profileEnd.descriptionFromProfiled === relId) {
         proposals.push({
           label: `[Profile ${profile.id}] Keep old description (stop inheriting)`,
           operations: [factory.modifyRelationshipEndProfile(profile.id, profileEndIndex, {
@@ -505,38 +555,59 @@ function reactToModifyRelationEnd(
             descriptionFromProfiled: null,
           })],
         });
-      } else {
-        proposals.push({
-          label: `[Profile ${profile.id}] Update description to new value`,
-          operations: [factory.modifyRelationshipEndProfile(profile.id, profileEndIndex, {
-            description: newDesc,
-          })],
-        });
-        proposals.push({
-          label: `[Profile ${profile.id}] Inherit new description from profiled`,
-          operations: [factory.modifyRelationshipEndProfile(profile.id, profileEndIndex, {
-            description: null,
-            descriptionFromProfiled: relId,
-            profiling: uniqueArray([...profileEnd.profiling, relId]),
-          })],
-        });
+      } else if (!profileEnd.descriptionFromProfiled) {
+        if (deepEqual(newDesc, profileEnd.description)) {
+          proposals.push({
+            label: `[Profile ${profile.id}] Remove description override (matches new description, inherit from profiled)`,
+            operations: [factory.modifyRelationshipEndProfile(profile.id, profileEndIndex, {
+              description: null,
+              descriptionFromProfiled: relId,
+              profiling: uniqueArray([...profileEnd.profiling, relId]),
+            })],
+          });
+        } else {
+          proposals.push({
+            label: `[Profile ${profile.id}] Update description to new value`,
+            operations: [factory.modifyRelationshipEndProfile(profile.id, profileEndIndex, {
+              description: newDesc,
+            })],
+          });
+          proposals.push({
+            label: `[Profile ${profile.id}] Inherit new description from profiled`,
+            operations: [factory.modifyRelationshipEndProfile(profile.id, profileEndIndex, {
+              description: null,
+              descriptionFromProfiled: relId,
+              profiling: uniqueArray([...profileEnd.profiling, relId]),
+            })],
+          });
+        }
       }
+      // else: descriptionFromProfiled points to a different entity — not affected.
     }
 
     // Cardinality change
     if (endChanges.cardinality !== undefined && !deepEqual(endChanges.cardinality, prevEnd?.cardinality)) {
       const newCard = endChanges.cardinality ?? null;
       const oldCard = prevEnd?.cardinality ?? null;
-      proposals.push({
-        label: `[Profile ${profile.id}] Update cardinality to [${newCard?.[0] ?? 0}..${newCard?.[1] ?? '*'}]`,
-        operations: [factory.modifyRelationshipEndProfile(profile.id, profileEndIndex, {
-          cardinality: newCard,
-        })],
-      });
-      proposals.push({
-        label: `[Profile ${profile.id}] Keep old cardinality [${oldCard?.[0] ?? 0}..${oldCard?.[1] ?? '*'}]`,
-        operations: [],
-      });
+      if (deepEqual(profileEnd.cardinality ?? null, newCard)) {
+        proposals.push({
+          label: `[Profile ${profile.id}] Remove cardinality override (now matches profiled entity)`,
+          operations: [factory.modifyRelationshipEndProfile(profile.id, profileEndIndex, {
+            cardinality: null,
+          })],
+        });
+      } else {
+        proposals.push({
+          label: `[Profile ${profile.id}] Update cardinality to [${newCard?.[0] ?? 0}..${newCard?.[1] ?? '*'}]`,
+          operations: [factory.modifyRelationshipEndProfile(profile.id, profileEndIndex, {
+            cardinality: newCard,
+          })],
+        });
+        proposals.push({
+          label: `[Profile ${profile.id}] Keep old cardinality [${oldCard?.[0] ?? 0}..${oldCard?.[1] ?? '*'}]`,
+          operations: [],
+        });
+      }
     }
 
     // Concept (class) change — update the concept in the profile end

@@ -283,21 +283,6 @@ describe("reactToSemanticModelOperation", () => {
 
   });
 
-  describe("ModifyClassOperation — IRI change", () => {
-
-    test("proposes to update profile IRI", () => {
-      const { model, ids } = buildSemanticModel();
-      const profileModel = buildProfileModel(model, ids);
-
-      const op = modifyClass(ids.person, { iri: "new-person-iri" });
-      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
-
-      const iriProposal = proposals.find(p => p.label.includes("Update profile IRI"));
-      expect(iriProposal).toBeDefined();
-    });
-
-  });
-
   describe("CreateRelationshipOperation", () => {
 
     test("proposes relationship profile when both ends are profiled", () => {
