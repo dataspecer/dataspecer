@@ -29,7 +29,7 @@ interface BackendOperation {
 // ---------------------------------------------------------------------------
 
 async function fetchUpstreamDiff(backendUrl: string, projectIri: string): Promise<BackendOperation[]> {
-  const url = new URL(`${backendUrl}/transactions/diff/main..upstream`);
+  const url = new URL(`${backendUrl}/transactions/diff/main..upstream`, window.location.origin);
   url.searchParams.set("projectIri", projectIri);
   const response = await fetch(url.toString());
   if (!response.ok) return [];
