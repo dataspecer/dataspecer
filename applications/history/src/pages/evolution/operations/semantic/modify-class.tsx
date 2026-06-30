@@ -28,10 +28,20 @@ export function ModifyClassOperationView({ operation, entities }: { operation: M
               ? <DiffLanguageStringText current={current?.name} next={entity.name} />
               : <Translate text={current?.name} />}
           </Field>
+          <Field label={t("operations.semantic.name-property")}>
+            {"nameProperty" in entity
+              ? <DiffStringText current={current?.nameProperty} next={entity.nameProperty} />
+              : current?.nameProperty}
+          </Field>
           <Field label={t("operations.semantic.description")}>
             {"description" in entity
               ? <DiffLanguageStringText current={current?.description} next={entity.description} />
               : <Translate text={current?.description} />}
+          </Field>
+          <Field label={t("operations.semantic.description-property")}>
+            {"descriptionProperty" in entity
+              ? <DiffStringText current={current?.descriptionProperty} next={entity.descriptionProperty} />
+              : current?.descriptionProperty}
           </Field>
         </div>
       </CardContent>

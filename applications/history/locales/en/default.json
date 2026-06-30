@@ -42,6 +42,8 @@
       "iri": "Iri",
       "name": "Name",
       "description": "Description",
+      "name-property": "Name property",
+      "description-property": "Description property",
       "domain": "Domain",
       "range": "Range",
       "child": "Child",
