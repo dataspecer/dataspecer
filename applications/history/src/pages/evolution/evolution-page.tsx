@@ -3,10 +3,10 @@ import { useTranslation } from "react-i18next";
 import { useLocation } from "@tanstack/react-router";
 import { ArrowRight, CheckCircle2, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useModelStore } from "@/contexts/model-store-context";
-import { OperationRenderer, getOperationTitleKey } from "./operations/operation-renderer";
+import { OperationRenderer } from "./operations/operation-renderer";
 import { LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { ModelEntity } from "@dataspecer/project-model";
 import { reactToSemanticModelOperation, type EvolutionProposal } from "@dataspecer/profile-model/hooks";
@@ -29,7 +29,7 @@ interface BackendOperation {
 // ---------------------------------------------------------------------------
 
 async function fetchUpstreamDiff(backendUrl: string, projectIri: string): Promise<BackendOperation[]> {
-  const url = new URL(`${backendUrl}/transactions/diff/upstream..main`);
+  const url = new URL(`${backendUrl}/transactions/diff/main..upstream`);
   url.searchParams.set("projectIri", projectIri);
   const response = await fetch(url.toString());
   if (!response.ok) return [];
@@ -213,13 +213,7 @@ export function EvolutionPage() {
 
           {/* Upstream operation card */}
           <Card key={current.id} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <CardHeader className="space-y-1 pb-3">
-              <p className="text-xs font-mono text-muted-foreground truncate">{current.modelId}</p>
-              <p className="text-base font-semibold">{t(getOperationTitleKey(current.data))}</p>
-            </CardHeader>
-            <CardContent>
-              <OperationRenderer operation={current.data} />
-            </CardContent>
+            <OperationRenderer operation={current.data} entities={modelStore?.getAllEntities()[current.modelId]} />
           </Card>
 
           {/* Evolution proposals */}

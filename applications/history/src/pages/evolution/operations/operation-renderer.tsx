@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   isCreateClassOperation,
   isCreateGeneralizationOperation,
@@ -30,52 +31,24 @@ import { DataPsmSetCardinalityView } from "./structure/set-cardinality";
 import { GenericOperationView } from "./generic-operation";
 import type { Operation } from "@dataspecer/core/operation";
 
-/**
- * Picks the React component responsible for rendering a single operation,
- * based on its concrete type. Add a case here whenever a new operation type
- * gets a dedicated component; everything else falls back to
- * {@link GenericOperationView}.
- */
-export function OperationRenderer({ operation }: { operation: Operation }) {
+export function OperationRenderer({ operation, entities }: { operation: Operation; entities?: Record<string, any> }) {
+  const { t } = useTranslation();
+
   if (isStructureOperation(operation)) {
     if (DataPsmCreateClass.is(operation)) return <DataPsmCreateClassView operation={operation} />;
     if (DataPsmDeleteClass.is(operation)) return <DataPsmDeleteClassView operation={operation} />;
     if (DataPsmSetHumanLabel.is(operation)) return <DataPsmSetHumanLabelView operation={operation} />;
     if (DataPsmCreateAttribute.is(operation)) return <DataPsmCreateAttributeView operation={operation} />;
     if (DataPsmSetCardinality.is(operation)) return <DataPsmSetCardinalityView operation={operation} />;
-    return <GenericOperationView operation={operation} />;
+    return <GenericOperationView operation={operation} title={t("operations.titles.structure-generic")} />;
   }
 
   if (isCreateClassOperation(operation)) return <CreateClassOperationView operation={operation} />;
-  if (isModifyClassOperation(operation)) return <ModifyClassOperationView operation={operation} />;
-  if (isCreateRelationshipOperation(operation)) return <CreateRelationshipOperationView operation={operation} />;
-  if (isModifyRelationOperation(operation)) return <ModifyRelationOperationView operation={operation} />;
-  if (isCreateGeneralizationOperation(operation)) return <CreateGeneralizationOperationView operation={operation} />;
-  if (isModifyGeneralizationOperation(operation)) return <ModifyGeneralizationOperationView operation={operation} />;
-  if (isDeleteEntityOperation(operation)) return <DeleteEntityOperationView operation={operation} />;
-  return <GenericOperationView operation={operation} />;
-}
-
-/**
- * Translation key for the human-readable title of an operation's type,
- * shown above the operation-specific rendering.
- */
-export function getOperationTitleKey(operation: Operation): string {
-  if (isStructureOperation(operation)) {
-    if (DataPsmCreateClass.is(operation)) return "operations.titles.structure-create-class";
-    if (DataPsmDeleteClass.is(operation)) return "operations.titles.structure-delete-class";
-    if (DataPsmSetHumanLabel.is(operation)) return "operations.titles.structure-set-human-label";
-    if (DataPsmCreateAttribute.is(operation)) return "operations.titles.structure-create-attribute";
-    if (DataPsmSetCardinality.is(operation)) return "operations.titles.structure-set-cardinality";
-    return "operations.titles.structure-generic";
-  }
-
-  if (isCreateClassOperation(operation)) return "operations.titles.semantic-create-class";
-  if (isModifyClassOperation(operation)) return "operations.titles.semantic-modify-class";
-  if (isCreateRelationshipOperation(operation)) return "operations.titles.semantic-create-relationship";
-  if (isModifyRelationOperation(operation)) return "operations.titles.semantic-modify-relationship";
-  if (isCreateGeneralizationOperation(operation)) return "operations.titles.semantic-create-generalization";
-  if (isModifyGeneralizationOperation(operation)) return "operations.titles.semantic-modify-generalization";
-  if (isDeleteEntityOperation(operation)) return "operations.titles.semantic-delete-entity";
-  return "operations.titles.semantic-generic";
+  if (isModifyClassOperation(operation)) return <ModifyClassOperationView operation={operation} entities={entities} />;
+  if (isCreateRelationshipOperation(operation)) return <CreateRelationshipOperationView operation={operation} entities={entities} />;
+  if (isModifyRelationOperation(operation)) return <ModifyRelationOperationView operation={operation} entities={entities} />;
+  if (isCreateGeneralizationOperation(operation)) return <CreateGeneralizationOperationView operation={operation} entities={entities} />;
+  if (isModifyGeneralizationOperation(operation)) return <ModifyGeneralizationOperationView operation={operation} entities={entities} />;
+  if (isDeleteEntityOperation(operation)) return <DeleteEntityOperationView operation={operation} entities={entities} />;
+  return <GenericOperationView operation={operation} title={t("operations.titles.semantic-generic")} />;
 }

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { PendingChange } from "./types";
 import { ModelBadge } from "./model-badge";
 import { ProposedOperationCard } from "./proposed-operation-card";
-import { OperationRenderer, getOperationTitleKey } from "./operations/operation-renderer";
+import { OperationRenderer } from "./operations/operation-renderer";
 
 export function ChangeCard({ change }: { change: PendingChange }) {
   const { t, i18n } = useTranslation();
@@ -19,8 +19,7 @@ export function ChangeCard({ change }: { change: PendingChange }) {
         <CardTitle className="text-base">{change.summary}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="rounded-md border bg-muted/30 p-4">
-          <div className="mb-2 text-sm font-medium">{t(getOperationTitleKey(change.operation))}</div>
+        <div className="rounded-md border bg-muted/30">
           <OperationRenderer operation={change.operation} />
         </div>
 

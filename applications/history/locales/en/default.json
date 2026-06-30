@@ -39,11 +39,11 @@
       "type": "Type"
     },
     "semantic": {
-      "id": "Id",
       "iri": "Iri",
       "name": "Name",
       "description": "Description",
-      "end": "End {{index}}",
+      "domain": "Domain",
+      "range": "Range",
       "child": "Child",
       "parent": "Parent"
     },
@@ -66,6 +66,9 @@
       "semantic-modify-relationship": "Modify relationship",
       "semantic-create-generalization": "Create generalization",
       "semantic-modify-generalization": "Modify generalization",
+      "semantic-delete-class": "Delete class",
+      "semantic-delete-relationship": "Delete relationship",
+      "semantic-delete-generalization": "Delete generalization",
       "semantic-delete-entity": "Delete entity",
       "semantic-generic": "Semantic model operation",
       "structure-create-class": "Create class",

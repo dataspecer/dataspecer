@@ -7,7 +7,7 @@ import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ProposedOperation, ProposedOperationStatus } from "./types";
 import { ModelBadge } from "./model-badge";
-import { OperationRenderer, getOperationTitleKey } from "./operations/operation-renderer";
+import { OperationRenderer } from "./operations/operation-renderer";
 
 /**
  * The apply/skip buttons only change local UI state for now - no operation
@@ -22,7 +22,6 @@ export function ProposedOperationCard({ proposedOperation }: { proposedOperation
       <CardHeader className="flex flex-row items-center justify-between gap-2 p-4">
         <div className="flex min-w-0 items-center gap-2">
           <ModelBadge model={proposedOperation.targetModel} />
-          <span className="truncate text-sm font-medium">{t(getOperationTitleKey(proposedOperation.operation))}</span>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {status === "pending" ? (

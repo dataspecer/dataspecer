@@ -80,7 +80,9 @@ export const getTransactionsDiff = asyncHandler(async (request: express.Request,
     const fromTipId = fromBranch?.transactionId ?? null;
     const toTipId = toBranch?.transactionId ?? null;
 
-    if (!fromTipId || fromTipId === toTipId) {
+    // Return empty when there is no target branch or both branches point to
+    // the same transaction (no difference).
+    if (!toTipId || toTipId === fromTipId) {
         response.json({ transactions: [] });
         return;
     }
@@ -92,12 +94,14 @@ export const getTransactionsDiff = asyncHandler(async (request: express.Request,
         parents: { parentTransactionId: number }[];
     }
 
-    // Walk backwards from the "from" tip, collecting transactions until we
-    // reach the "to" tip (exclusive) or run out of history.
+    // Walk backwards from the "to" tip, collecting transactions until we reach
+    // the "from" tip (exclusive) or run out of history.  When "from" does not
+    // exist (null) it is treated as the initial commit, so the entire "to"
+    // branch history is returned.
     const collected: CollectedTx[] = [];
 
-    let currentId: number | null = fromTipId;
-    while (currentId !== null && currentId !== toTipId) {
+    let currentId: number | null = toTipId;
+    while (currentId !== null && currentId !== fromTipId) {
         const row = await prismaClient.transaction.findUnique({
             where: { id: currentId },
             include: {
