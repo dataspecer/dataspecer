@@ -95,7 +95,8 @@
     "confirm": "Are you sure you want to reload the contents of this external model?",
     "description": "Reload contents of external model",
     "error": "Reloading model failed. More information in the console.",
-    "success": "Model reloaded successfully."
+    "success": "Model reloaded successfully.",
+    "urls": "URLs (one per line)"
   },
   "reload-imported": {
     "reload": "Reload",
