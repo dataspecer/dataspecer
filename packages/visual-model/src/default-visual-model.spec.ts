@@ -87,14 +87,26 @@ test("Create 2 visual entities for one semantic and remove one of the visuals.",
 
 test("Create and set visual view.", () => {
   const model = createModel("abc");
+  // Initially there should be no visual view
+  expect(model.getVisualView()).toBeNull();
   // This should create new entity.
   model.setView({
     initialPositions: {x: 0, y: 0},
   });
   expect(model.getVisualEntities().size).toBe(1);
+  // Check that we can retrieve the visual view
+  const visualView = model.getVisualView();
+  expect(visualView).not.toBeNull();
+  expect(visualView?.initialPositions?.x).toBe(0);
+  expect(visualView?.initialPositions?.y).toBe(0);
   // This should not create a new entity.
   model.setView({
     initialPositions: {x: 10, y: 10},
   });
   expect(model.getVisualEntities().size).toBe(1);
+  // Check that the visual view was updated
+  const updatedVisualView = model.getVisualView();
+  expect(updatedVisualView).not.toBeNull();
+  expect(updatedVisualView?.initialPositions?.x).toBe(10);
+  expect(updatedVisualView?.initialPositions?.y).toBe(10);
 });
