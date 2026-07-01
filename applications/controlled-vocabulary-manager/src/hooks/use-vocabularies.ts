@@ -6,7 +6,7 @@ import {
   modifyVocabulary,
   deleteVocabulary,
 } from '@dataspecer/controlled-vocabulary-model'
-import type { Vocabulary } from '../types/vocabulary'
+import type { CvmControlledVocabulary } from '../types/controlled-vocabulary'
 import {
   isBackendConnected,
   loadVocabularies,
@@ -15,7 +15,7 @@ import {
 import { useEventCallback } from './use-event-callback'
 import { useConfig } from '../contexts/config-context'
 
-function toVocabulary(cv: ControlledVocabulary): Vocabulary {
+function toVocabulary(cv: ControlledVocabulary): CvmControlledVocabulary {
   return {
     id: cv.id,
     name: cv.title,
@@ -49,7 +49,7 @@ export function useVocabularies() {
     }
   }, [model, backendUrl])
 
-  const addVocabulary = useEventCallback((vocabulary: Vocabulary) => {
+  const addVocabulary = useEventCallback((vocabulary: CvmControlledVocabulary) => {
     const { updated, removed } = applyOperations(model, [
       createVocabulary({
         id: vocabulary.id,
@@ -70,7 +70,7 @@ export function useVocabularies() {
     })
   })
 
-  const updateVocabulary = useEventCallback((vocabulary: Vocabulary) => {
+  const updateVocabulary = useEventCallback((vocabulary: CvmControlledVocabulary) => {
     const { updated, removed } = applyOperations(model, [
       modifyVocabulary(vocabulary.id, {
         title: vocabulary.name,
@@ -90,7 +90,7 @@ export function useVocabularies() {
     })
   })
 
-  const deleteVocabularyById = useEventCallback((vocabulary: Vocabulary) => {
+  const deleteVocabularyById = useEventCallback((vocabulary: CvmControlledVocabulary) => {
     const { updated, removed } = applyOperations(model, [
       deleteVocabulary(vocabulary.id),
     ])
@@ -101,7 +101,7 @@ export function useVocabularies() {
     })
   })
 
-  const vocabularies: Vocabulary[] = Object.values(model).map(toVocabulary)
+  const vocabularies: CvmControlledVocabulary[] = Object.values(model).map(toVocabulary)
 
   return {
     vocabularies,

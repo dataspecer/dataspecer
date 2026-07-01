@@ -4,7 +4,7 @@ import { useVocabulariesContext } from './contexts/vocabularies-context'
 import { useVocabularyEditor } from './hooks/use-vocabulary-editor'
 import { VocabularyListPage } from './components/vocabulary-list/vocabulary-list-page'
 import { VocabularyFormPage } from './components/vocabulary-form/vocabulary-form-page'
-import type { Vocabulary } from './types/vocabulary'
+import type { CvmControlledVocabulary } from './types/controlled-vocabulary'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from 'next-themes'
 import { useEffect } from 'react'
@@ -33,7 +33,7 @@ function App() {
     }
   }, [i18n, setTheme])
 
-  const handleFormConfirm = (vocabulary: Vocabulary) => {
+  const handleFormConfirm = (vocabulary: CvmControlledVocabulary) => {
     if (editingVocabulary) {
       updateVocabulary(vocabulary)
     } else {
@@ -48,7 +48,7 @@ function App() {
     navigate("list")
   }
 
-  const handleEdit = (vocab: Vocabulary) => {
+  const handleEdit = (vocab: CvmControlledVocabulary) => {
     startEditing(vocab)
     navigate("form-empty")
   }

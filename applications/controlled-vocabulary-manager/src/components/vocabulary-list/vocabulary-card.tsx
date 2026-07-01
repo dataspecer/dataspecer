@@ -1,9 +1,9 @@
 import { Pencil, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import type { Vocabulary } from "@/types/vocabulary"
+import type { CvmControlledVocabulary } from "@/types/controlled-vocabulary"
 
 interface VocabularyCardProps {
-  vocabulary: Vocabulary
+  vocabulary: CvmControlledVocabulary
   onEdit: () => void
   onDelete: () => void
 }

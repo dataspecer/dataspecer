@@ -6,14 +6,14 @@ import { Button } from "@/components/ui/button"
 import { EmptyState } from "./empty-state"
 import { VocabularyCard } from "./vocabulary-card"
 import { useVocabulariesContext } from "@/contexts/vocabularies-context"
-import type { Vocabulary } from "@/types/vocabulary"
+import type { CvmControlledVocabulary } from "@/types/controlled-vocabulary"
 import { useConfig } from "@/contexts/config-context"
 
 interface VocabularyListPageProps {
   onNavigateSourceSelection: () => void
   onNavigateFormEmpty: () => void
-  onEdit: (vocabulary: Vocabulary) => void
-  onDelete: (vocabulary: Vocabulary) => void
+  onEdit: (vocabulary: CvmControlledVocabulary) => void
+  onDelete: (vocabulary: CvmControlledVocabulary) => void
 }
 
 export function VocabularyListPage({

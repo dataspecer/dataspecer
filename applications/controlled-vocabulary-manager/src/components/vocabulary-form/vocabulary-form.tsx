@@ -15,7 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { useVocabulariesContext } from "@/contexts/vocabularies-context"
-import type { Vocabulary } from "@/types/vocabulary"
+import type { CvmControlledVocabulary } from "@/types/controlled-vocabulary"
 
 interface VocabularyFormValues {
   name: string
@@ -26,10 +26,10 @@ interface VocabularyFormValues {
 }
 
 interface VocabularyFormProps {
-  initialValues?: Vocabulary
+  initialValues?: CvmControlledVocabulary
   currentVocabularyId?: string
   onCancel: () => void
-  onConfirm: (vocabulary: Vocabulary) => void
+  onConfirm: (vocabulary: CvmControlledVocabulary) => void
 }
 
 export function VocabularyForm({
@@ -79,7 +79,7 @@ export function VocabularyForm({
     }
 
     // Transform form values to Vocabulary domain object
-    const vocabulary: Vocabulary = {
+    const vocabulary: CvmControlledVocabulary = {
       id: values.iri,
       source: initialValues?.source,
       ...values,

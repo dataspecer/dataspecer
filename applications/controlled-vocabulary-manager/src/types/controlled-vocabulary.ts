@@ -1,4 +1,4 @@
-export interface Vocabulary {
+export interface CvmControlledVocabulary {
   id: string
   name: string
   iri: string

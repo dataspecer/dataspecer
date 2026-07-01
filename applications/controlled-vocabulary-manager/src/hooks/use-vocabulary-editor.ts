@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import type { Vocabulary } from '../types/vocabulary'
+import type { CvmControlledVocabulary } from '../types/controlled-vocabulary'
 
 /**
  * Manages UI state for vocabulary editing workflow.
@@ -12,9 +12,9 @@ import type { Vocabulary } from '../types/vocabulary'
  * @returns Object with editing state and workflow methods
  */
 export function useVocabularyEditor() {
-  const [editingVocabulary, setEditingVocabulary] = useState<Vocabulary | undefined>(undefined)
+  const [editingVocabulary, setEditingVocabulary] = useState<CvmControlledVocabulary | undefined>(undefined)
 
-  const startEditing = useCallback((vocabulary: Vocabulary) => {
+  const startEditing = useCallback((vocabulary: CvmControlledVocabulary) => {
     setEditingVocabulary(vocabulary)
   }, [])
 

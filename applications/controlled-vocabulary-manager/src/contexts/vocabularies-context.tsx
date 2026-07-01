@@ -1,13 +1,13 @@
 import { createContext, useContext, type ReactNode } from 'react'
 import { useVocabularies } from '../hooks/use-vocabularies'
-import type { Vocabulary } from '../types/vocabulary'
+import type { CvmControlledVocabulary } from '../types/controlled-vocabulary'
 
 interface VocabulariesContextValue {
-  vocabularies: Vocabulary[]
+  vocabularies: CvmControlledVocabulary[]
   loading: boolean
-  addVocabulary: (vocabulary: Vocabulary) => void
-  updateVocabulary: (vocabulary: Vocabulary) => void
-  deleteVocabulary: (vocabulary: Vocabulary) => void
+  addVocabulary: (vocabulary: CvmControlledVocabulary) => void
+  updateVocabulary: (vocabulary: CvmControlledVocabulary) => void
+  deleteVocabulary: (vocabulary: CvmControlledVocabulary) => void
 }
 
 const VocabulariesContext = createContext<VocabulariesContextValue | null>(null)
