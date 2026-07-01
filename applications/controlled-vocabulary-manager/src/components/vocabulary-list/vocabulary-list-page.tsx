@@ -1,4 +1,4 @@
-import { Plus, Link } from "lucide-react"
+import { Plus, Link, BookOpen } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Breadcrumb } from "@/components/layout/breadcrumb"
 import { PageHeader } from "@/components/layout/page-header"
@@ -34,7 +34,7 @@ export function VocabularyListPage({
           { label: t("breadcrumb.controlledVocabularies") },
         ]}
       />
-      <PageHeader title={t("list.title")}>
+      <PageHeader title={t("list.title")} icon={<BookOpen className="h-5 w-5" />}>
         <Button size="sm" onClick={onNavigateSourceSelection}>
           <Plus className="mr-1 h-3.5 w-3.5" />
           {t("list.addFromSource")}
