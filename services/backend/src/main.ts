@@ -147,7 +147,7 @@ if (configuration.staticFilesPath) {
   // todo automate this
   const registeredSubdirectorySPAs = [
     "conceptual-model-editor",
-    "controlled-vocab-manager",
+    "controlled-vocabulary-manager",
     "data-specification-editor",
   ];
 

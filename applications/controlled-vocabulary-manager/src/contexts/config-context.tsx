@@ -15,7 +15,7 @@ interface ConfigProviderProps {
 
 function deriveManagerUrl(): string {
   const { origin, pathname } = window.location;
-  const base = pathname.replace(/\/controlled-vocab-manager(\/.*)?$/, "");
+  const base = pathname.replace(/\/controlled-vocabulary-manager(\/.*)?$/, "");
   return origin + (base || "/");
 }
 

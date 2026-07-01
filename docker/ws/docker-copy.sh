@@ -8,7 +8,7 @@ DATA_SPECIFICATION_EDITOR="/data-specification-editor"
 
 CONCEPTUAL_MODEL_EDITOR="/conceptual-model-editor"
 
-CONTROLLED_VOCAB_MANAGER="/controlled-vocab-manager"
+CONTROLLED_VOCABULARY_MANAGER="/controlled-vocabulary-manager"
 
 API_SPECIFICATION="/api-specification"
 
@@ -22,9 +22,9 @@ mv applications/data-specification-editor/dist/* .dist$DATA_SPECIFICATION_EDITOR
 mkdir -p .dist$CONCEPTUAL_MODEL_EDITOR
 mv applications/conceptual-model-editor/dist/* .dist$CONCEPTUAL_MODEL_EDITOR
 
-# Copy controlled-vocab-manager application
-mkdir -p .dist$CONTROLLED_VOCAB_MANAGER
-mv applications/controlled-vocab-manager/dist/* .dist$CONTROLLED_VOCAB_MANAGER
+# Copy controlled-vocabulary-manager application
+mkdir -p .dist$CONTROLLED_VOCABULARY_MANAGER
+mv applications/controlled-vocabulary-manager/dist/* .dist$CONTROLLED_VOCABULARY_MANAGER
 
 # Copy manager application
 mkdir -p .dist$MANAGER
