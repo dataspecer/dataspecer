@@ -3,7 +3,6 @@ import { type Operation, generateOperationId } from "@dataspecer/core/operation"
 import type { ControlledVocabulary } from "../concepts/controlled-vocabulary.ts";
 import { CONTROLLED_VOCABULARY_TYPE } from "../concepts/controlled-vocabulary.ts";
 
-// Based on the semantic-model from core-v2
 
 // Create vocabulary
 
