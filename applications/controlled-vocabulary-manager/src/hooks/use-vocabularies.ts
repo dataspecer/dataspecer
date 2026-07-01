@@ -15,7 +15,7 @@ import {
 import { useEventCallback } from './use-event-callback'
 import { useConfig } from '../contexts/config-context'
 
-function toVocabulary(cv: ControlledVocabulary): CvmControlledVocabulary {
+function mapFromModel(cv: ControlledVocabulary): CvmControlledVocabulary {
   return {
     id: cv.id,
     name: cv.title,
@@ -101,7 +101,7 @@ export function useVocabularies() {
     })
   })
 
-  const vocabularies: CvmControlledVocabulary[] = Object.values(model).map(toVocabulary)
+  const vocabularies: CvmControlledVocabulary[] = Object.values(model).map(mapFromModel)
 
   return {
     vocabularies,
