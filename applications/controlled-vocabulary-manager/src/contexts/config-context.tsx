@@ -13,15 +13,9 @@ interface ConfigProviderProps {
   backendUrl?: string
 }
 
-function deriveManagerUrl(): string {
-  const { origin, pathname } = window.location;
-  const base = pathname.replace(/\/controlled-vocabulary-manager(\/.*)?$/, "");
-  return origin + (base || "/");
-}
-
 export function ConfigProvider({
   children,
-  managerUrl = import.meta.env.VITE_MANAGER ?? deriveManagerUrl(),
+  managerUrl = import.meta.env.VITE_MANAGER,
   backendUrl = import.meta.env.VITE_BACKEND,
 }: ConfigProviderProps) {
   return (
