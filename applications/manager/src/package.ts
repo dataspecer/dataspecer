@@ -5,10 +5,12 @@ import { createContext, useRef, useState } from "react";
 import { Package } from "../../../packages/core-v2/lib/project/resource/resource";
 import { createModelInstructions } from "./known-models";
 import { StructureEditorBackendService } from "./structure-editor-backend-service";
+import { PACKAGE_ROOT } from "@dataspecer/git";
+
 
 const backendUrl = import.meta.env.VITE_BACKEND;
 
-type ResourceWithIris = Package & { subResourcesIri: string[] };
+export type ResourceWithIris = Package & { subResourcesIri: string[] };
 
 export const ResourcesContext = createContext<Record<string, ResourceWithIris>>({});
 
@@ -48,6 +50,28 @@ export async function requestLoadPackage(iri: string, forceUpdate = false) {
     copiedResourcesMemory[iri] = pckg;
     setResourcesReact(copiedResourcesMemory);
     resourcesMemory.current = copiedResourcesMemory;
+}
+
+export async function refreshRootPackage() {
+    requestLoadPackage(PACKAGE_ROOT, true);
+}
+
+export async function modifyPackageRepresentsBranchHead(iri: string, representsBranchHead: boolean) {
+    const pckg = await packageService.updatePackageRepresentsBranchHead(iri, {representsBranchHead});
+    const copiedResourcesMemory = {...resourcesMemory.current};
+    if (copiedResourcesMemory[iri]) {
+        copiedResourcesMemory[iri] = { ...copiedResourcesMemory[iri], representsBranchHead: pckg.representsBranchHead };
+    }
+    setResourcesReact(copiedResourcesMemory);
+}
+
+export async function modifyPackageProjectData(iri: string, projectIri: string, branch: string) {
+    const pckg = await packageService.updatePackageProjectIriAndBranch(iri, { projectIri, branch });
+    const copiedResourcesMemory = {...resourcesMemory.current};
+    if (copiedResourcesMemory[iri]) {
+        copiedResourcesMemory[iri] = { ...copiedResourcesMemory[iri], branch: pckg.branch, projectIri: pckg.projectIri };
+    }
+    setResourcesReact(copiedResourcesMemory);
 }
 
 export async function modifyUserMetadata(iri: string, metadata: {label?: LanguageString, description?: LanguageString}) {

@@ -1,6 +1,7 @@
 import { readFile, rm, writeFile } from "fs/promises";
 import path from "path";
 import { v4 as uuidv4 } from 'uuid';
+import { LocalStoreModelGetter, ModelStore } from "@dataspecer/git-node";
 
 type StoreDescriptor = {
     uuid: string;
@@ -12,73 +13,93 @@ type StoreDescriptor = {
  * Each store is a file in JSON format and the idea is that stores can be
  * accessed and modified from the client applications.
  */
-export class LocalStoreModel {
-    private readonly storage: string;
-
-    constructor(storage: string) {
-        this.storage = storage;
-    }
-
+export interface LocalStoreModel extends LocalStoreModelGetter {
     /**
      * Creates a new empty store and returns its handle.
      *
      * Please note that the store does not contain any schema. The schema needs
      * to be created separately.
      */
-    async create(): Promise<StoreDescriptor> {
-        const uuid = uuidv4();
-        await writeFile(this.getStorePath(uuid) as string, "{\"operations\":[],\"resources\":{}}");
-        return {uuid};
-    }
+    create(): Promise<StoreDescriptor>;
 
     /**
      * Removes store identified by the given handle.
      * @param localStoreDescriptor
      */
-    async remove(localStoreDescriptor: StoreDescriptor): Promise<void> {
-        const path = this.getStorePath(localStoreDescriptor.uuid);
-        if (path) {
-            try {
-                await rm(path, {force: true});
-            } catch (e) {
-            }
-        }
-    }
+    remove(localStoreDescriptor: StoreDescriptor): Promise<void>;
 
     /**
      * Returns already existing store identified by its uuid.
      * @param uuid Internal store identifier
      */
-    getById(uuid: string): StoreDescriptor {
-        return {uuid};
-    }
-
-    getModelStore(uuid: string, onChangeListeners: (() => Promise<unknown>)[] = []): ModelStore {
-        return new ModelStore(uuid, this, onChangeListeners);
-    }
+    getById(uuid: string): StoreDescriptor;
 
     /**
      * Returns the content of the store
      * @internal used only by MemoryStoreHandle
      * @param id
      */
+    get(id: string): Promise<Buffer | null>;
+
+    set(id: string, payload: string): Promise<void>;
+}
+
+export class LocalStoreModelBase implements LocalStoreModel {
+    private readonly storage: string;
+
+    constructor(storage: string) {
+        this.storage = storage;
+    }
+
+
+    async create(): Promise<StoreDescriptor> {
+        const uuid = uuidv4();
+        await writeFile(this.getStorePath(uuid) as string, "{\"operations\":[],\"resources\":{}}");
+        return {uuid};
+    }
+
+
+    async remove(localStoreDescriptor: StoreDescriptor): Promise<void> {
+        const path = this.getStorePath(localStoreDescriptor.uuid);
+        if (path) {
+            try {
+                await rm(path, {force: true});
+            } catch (e) {
+                // EMPTY
+            }
+        }
+    }
+
+
+    getById(uuid: string): StoreDescriptor {
+        return {uuid};
+    }
+
+
+    getModelStore(uuid: string, onChangeListeners: (() => Promise<unknown>)[] = []): ModelStore {
+        return new ModelStoreBase(uuid, this, onChangeListeners);
+    }
+
+
     async get(id: string): Promise<Buffer | null> {
         const path = this.getStorePath(id);
         if (path) {
             try {
                 return await readFile(path);
             } catch (e) {
+                // EMPTY
             }
         }
         return null;
     }
 
-    async set(id: string, payload: string) {
+    async set(id: string, payload: string): Promise<void> {
         const path = this.getStorePath(id);
         if (path) {
             try {
                 return await writeFile(path, payload);
             } catch (e) {
+                // EMPTY
             }
         }
     }
@@ -92,7 +113,7 @@ export class LocalStoreModel {
     }
 }
 
-export class ModelStore {
+export class ModelStoreBase implements ModelStore {
     private readonly uuid: string;
     private readonly storeModel: LocalStoreModel;
     private readonly onChangeListeners: (() => Promise<unknown>)[];
@@ -124,7 +145,7 @@ export class ModelStore {
         return this.setString(JSON.stringify(payload));
     }
 
-    async notifyChangeListeners() {
+    private async notifyChangeListeners() {
         for (const listener of this.onChangeListeners) {
             await listener();
         }

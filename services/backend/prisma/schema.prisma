@@ -39,6 +39,40 @@ model Resource {
   // This should be part of the model itself, but for now, we will keep it here for simplicity.
   userMetadata String @default("{}")
 
+  // The URL of the linked Git repository
+  // the given URL can either be the main page
+  // (for example https://github.com/mff-uk/dataspecer)
+  // or some of the branches
+  // (for example https://github.com/mff-uk/dataspecer/tree/stable)
+  // Should not end with "/"
+  linkedGitRepositoryURL String @default("")
+
+  // Note that "" is an invalid branch name. (You can see for more invalid names https://stackoverflow.com/questions/3651860/which-characters-are-illegal-within-a-branch-name))
+  // If the branch is set to "" we consider it as the default branch.
+  branch String @default("")
+
+  // Is iri of the "git" project this package is part of.
+  projectIri String @default("")
+  // True if this package represents head of branch. That is, it should move with commits to this branch.
+  // Otherwise it should not react to the webhooks from git, neither allow to commit from it to git.
+  representsBranchHead Boolean @default(true)
+
+  // Is the full hash of the last git commit on this package.
+  // Note that this value is one commit ahead, when it comes commiting to git.
+  // That is if we commit (or import package from git), it is pointing to the last commit on the relevant branch,
+  // however if you also exported this value to the git, it would contain the parent commit hash, that is next-to-last commit.
+  // It does not matter, since we don't commit the hash into Git (at least not yet), but it should be noted anyways.
+  // Also note that if decided to export the hash, it has to work this way. It is simply not possible to compute commit hash
+  // and then store it here and then commit, since the change of this value would change the computed commit hash.
+  // Another thing to note is that it needs to be full hash since abbreviated hash is enough in the time of checking, but not necessary for the future checks,
+  // since conflicts for first few characters may occur as time goes on
+  lastCommitHash String @default("")
+  // This basically marks the fact that we are not synchronized with remote, but we tried to, if the value is > 0.
+  // Either we tried pushing, or somebody updated git, or we explictly created merge state when merging locally inside Dataspecer.
+  activeMergeStateCount Int @default(0)
+  // If true then we have performed some change to the project, which means that the actual data between the remote and current Dataspecer content differ.
+  hasUncommittedChanges Boolean @default(false)
+
   // Technical metadata: creation date.
   createdAt DateTime @default(now())
 
@@ -49,6 +83,105 @@ model Resource {
   // Technical metadata: last time the subtree was modified.
   // It should represent the max time of all children.
   subtreeModifiedAt DateTime @default(now()) @updatedAt
+}
+
+
+model MergeState {
+  // Technical metadata: creation date.
+  createdAt DateTime @default(now())
+
+  // Technical metadata: modification date.
+  // It should be updated every time the merge state (respectively difftree!) changes.
+  modifiedDiffTreeAt DateTime @default(now()) @updatedAt
+
+  // Internal numerical ID for database purposes
+  id Int @id @default(autoincrement())
+
+  uuid String @unique
+
+  // We allow to have only one merge state between two specific merge sources
+  @@unique([rootFullPathToMetaMergeFrom, rootFullPathToMetaMergeTo])
+
+  // If true then the merge from is a branch, otherwise it is a tag/commit. If it is false, we allow only rebase commits as finalizer.
+  isMergeFromBranch Boolean
+  // If true then the merge to is a branch, otherwise it is a tag/commit.
+  // Note that if to is not a branch, we do not allow to perform any operation on Git.
+  // Basically only use case for this is when we want to actually merge changes, but do not commit anything to Git.
+  isMergeToBranch Boolean
+
+  // This is used since we want to store the commit message of the commit which caused this event. Note that for pull event it will be empty
+  commitMessage String @default("")
+
+  // Note: After thinking about it for some time, there are 3 possible situations when merge occurs
+  //  1) Pulling - Here we have local branch, perform git pull (or rather git clone) and try to merge into our local branch
+  //       - In this case we want to modify our local branch in such a way that eliminate all conflicts and can finally put in the remote changes
+  //  2) Pushing - Here we have local branch with changes and perform git clone followed by git push
+  //       - In this case we may get conflicts from the remote, if there were some new commits. So we want to once again modify our local branch by incorporating remote changes
+  //       - So here it was reversed, that is we were merging from our local branch and into remote branch
+  //  3) Manually choosing mergeFrom and mergeTo
+  //       - Here both branches are local, however we would still like to modify only one. So here we choose that the mergeTo will be editable.
+  // So what to take from this: We always want to modify our local DS branch and the remote to be unchanged
+  //  - However local branch can be either mergeFrom or mergeTo. And that means that "mergeTo !== must be editable", which I thought is the case at first
+  lastCommitHashMergeTo String @default("")
+  // We currently use it to find the correct git provider, since the used git remote might be using ssh config.
+  // We need the git provider to get the files/directories to ignore, note that technically we could just use union of all git providers for entries to ignore.
+  gitUrlMergeTo String @default("")
+  branchMergeTo String
+  rootFullPathToMetaMergeTo String @default("")
+  rootIriMergeTo String @default("")
+  // Only values from AvailableFilesystem are allowed (for now "ds-filesystem" and "classic-filesystem")
+  filesystemTypeMergeTo String
+
+  lastCommitHashMergeFrom String @default("")
+  // We currently use it to find the correct git provider, since the used git remote might be using ssh config.
+  // We need the git provider to get the files/directories to ignore, note that technically we could just use union of all git providers for entries to ignore.
+  gitUrlMergeFrom String @default("")
+  // We only need this for the commit message, otherwise it should be equivalent to using git merge with hash
+  // Note that if this is empty, then it means that we merged directly from commit.
+  // Also note that if the tip of branch moved, then the user should be probably warned, that he is performing merge directly from commit.
+  // (which as said before only reflects in the default commit message).
+  branchMergeFrom String
+  rootFullPathToMetaMergeFrom String @default("")
+  rootIriMergeFrom String @default("")
+  // Only values from AvailableFilesystem are allowed (for now "ds-filesystem" and "classic-filesystem")
+  filesystemTypeMergeFrom String
+
+  lastCommonCommitHash String @default("")
+
+  // Can be either "mergeFrom" or "mergeTo"
+  editable String
+  // Can be one of these: "pull" | "push" | "merge"
+  // Says the Cause of the merge. Combined with the "editable" field, that is the field which gives us information about what datasource we were changing,
+  //  will give us the action, which should be performed after the resolving of all the conflicts.
+  mergeStateCause String
+
+  // Sometimes users may work in conceptual model editor for example, when merge state is active.
+  // By work on resources they update the DiffTree in existing mergee states,
+  // however recomputing DiffTree differences with each change is not really smart thing to do.
+  // So each update in the relevant packages changes the isUpToDate field to false.
+  // It is then the responsibility of server to provide (and store) recomputed DiffTree, when the merge state is queried.
+  isUpToDate Boolean @default(true)
+  conflictCount Int
+  mergeStateData MergeStateData?
+}
+
+// This is separate table, since we want to sometimes only list the overview of the MergeState
+// And we don't actually care about the data, that is the diffTree, conflicts, etc.
+model MergeStateData {
+  id Int @id @default(autoincrement())
+
+  mergeStateId Int   @unique
+  mergeState   MergeState  @relation(fields: [mergeStateId], references: [id], onDelete: Cascade)
+
+  changedInEditable String @default("[]")
+  removedInEditable String @default("[]")
+  createdInEditable String @default("[]")
+  // Conflicts are "static"
+  conflicts String @default("[]")
+  // Is subset of conflicts. Once it is empty we can safely merge.
+  unresolvedConflicts String @default("[]")
+  diffTree String @default("{}")
+  diffTreeSize Int @default(0)
 }
 
 

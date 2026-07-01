@@ -27,7 +27,7 @@ export const ReloadPimWrapper = ({ id, parentId, isOpen, resolve }: ReloadPimWra
       await requestLoadPackage(parentId, true);
       toast.success(t("reload-pim-wrapper.success"));
     } else {
-      toast.error(t("reload-pim-wrapper.error"));
+      toast.error(t("reload-pim-wrapper.error"), { "richColors": true });
     }
 
     resolve(true);

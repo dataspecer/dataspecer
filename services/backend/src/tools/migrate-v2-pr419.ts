@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { ResourceModel } from "../models/resource-model.ts";
-import { LocalStoreModel } from "../models/local-store-model.ts";
+import { LocalStoreModelBase } from "../models/local-store-model.ts";
 import { LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { ROOT_PACKAGE_FOR_V1, createV1RootModel } from "../models/data-specification-model-adapted.ts";
 import { v4 as uuidv4 } from 'uuid';
@@ -12,7 +12,7 @@ const ROOT_FOR_V2 = "http://dataspecer.com/packages/local-root";
     const packages = await prisma.$queryRaw`SELECT * FROM Package` as any[];
     prisma.$disconnect();
 
-    const storeModel = new LocalStoreModel("./database/stores");
+    const storeModel = new LocalStoreModelBase("./database/stores");
     const adapter = new ResourceModel(storeModel, prisma);
 
     if (await adapter.getPackage(ROOT_FOR_V2)) {

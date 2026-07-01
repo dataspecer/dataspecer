@@ -3,12 +3,12 @@ import { useTranslation } from "react-i18next";
 
 /**
  * Translates language string.
- * @param props 
+ * @param props
  */
 export function Translate(props: {
   text: LanguageString | null | false | undefined,
   match?: (translation: string, isMatch: boolean, language: string) => React.ReactNode,
-  fallback?: React.ReactNode,  
+  fallback?: React.ReactNode,
 }) {
   const {i18n} = useTranslation();
   const match = props.match || (t => t);

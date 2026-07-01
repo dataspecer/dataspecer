@@ -1,0 +1,159 @@
+import { ExportFormatRadioButtons } from "@/components/export-format-radio-buttons";
+import { Modal, ModalBody, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
+import { Button } from "@/components/ui/button";
+import { BetterModalProps } from "@/lib/better-modal";
+import { createSetterWithGitValidation, ExportFormatType, ExportVersionType, getGitRemoteConfigurationModelFromPackage, GitRemoteConfigurations, saveGitRemoteConfiguration } from "@dataspecer/git";
+import { resolveWithRequiredCheck, SetGitConfigurationReactStateType, setGitRemoteConfigurationStatePart } from "./git-actions-dialogs";
+import { InputComponent } from "@/components/input-component";
+import { RefObject, useEffect, useState } from "react";
+import { Package } from "@dataspecer/core-v2/project";
+import { useRequiredFieldsForGitConfig } from "@/hooks/use-required-fields-for-git-config";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { requestLoadPackage } from "@/package";
+import { ExportVersionRadioButtons } from "@/components/export-version-radio-buttons";
+import { PopOverGitGeneralComponent } from "@/components/popover-git-general";
+
+export type RequiredFieldsPartialMap = Partial<Record<keyof GitRemoteConfigurations, RefObject<HTMLInputElement | null>>>;
+
+type SetGitRemoteConfigurationComponentProps = {
+  configuration: GitRemoteConfigurations;
+  setGitConfigurationReactState: SetGitConfigurationReactStateType;
+  requiredFieldsMap: RequiredFieldsPartialMap;
+};
+
+type SetGitRemoteConfigurationDialogProps = {
+  inputPackage: Package;
+} & BetterModalProps<null>;
+
+
+/**
+ * Separate dialog that lets user set Git configuration.
+ */
+export function SetGitRemoteConfigurationDialog({ inputPackage, isOpen, resolve }: SetGitRemoteConfigurationDialogProps) {
+  const [rootPackageContent, setRootPackageContent] = useState<any>();
+  const [gitRemoteConfiguration, setGitRemoteConfiguration] = useState<GitRemoteConfigurations | null>(null);
+  const { t } = useTranslation();
+
+  const { requiredGitConfigFieldsMap } = useRequiredFieldsForGitConfig();
+
+  const tryCloseWithSuccess = () => {
+    const resolveAsNoParamsMethod = async () => {
+      resolve(null);
+
+      const storeModelToBackend = async (iri: string, newPackageContent: object) => {
+        try {
+          // TODO RadStr Improvement to existing code: This probably should be in some interface, maybe the BackendPackageService
+          await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(iri), {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(newPackageContent),
+          });
+          toast.success(t("successfully saved"));
+        }
+        catch (error) {
+          toast.error(t("set-git-remote-configuration-dialog.error.save-failed"), { "richColors": true });
+          throw error;
+        }
+      };
+      await saveGitRemoteConfiguration(inputPackage.iri, rootPackageContent, gitRemoteConfiguration, storeModelToBackend);
+      await requestLoadPackage(inputPackage.iri, true);
+    };
+
+    resolveWithRequiredCheck(resolveAsNoParamsMethod, ...Object.values(requiredGitConfigFieldsMap));
+  };
+
+  useEffect(() => {
+    const setGitRemoteConfigurationState = async () => {
+      // For the commits (and creating of repo) we will pass in the exportFormat directly, instead of retrieving it again on server when the requests is processed.
+      const rootPackageFetchResponse = await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(inputPackage.iri));
+      const rootPackageFetchedContent = await rootPackageFetchResponse.json();
+      const fetchedGitRemoteConfiguration = await getGitRemoteConfigurationModelFromPackage(rootPackageFetchedContent);
+      setRootPackageContent(rootPackageFetchedContent);
+      setGitRemoteConfiguration(fetchedGitRemoteConfiguration);
+    };
+    setGitRemoteConfigurationState();
+  }, [inputPackage]);
+
+  if (gitRemoteConfiguration === null) {
+    return null;
+  }
+
+  return (
+    <Modal open={isOpen} onClose={() => resolve(null)}>
+      <ModalContent className="sm:max-w-[700px]!">
+        <ModalHeader>
+          <ModalTitle>
+            {t("set-git-remote-configuration-dialog.title")}
+            <PopOverGitGeneralComponent><SetConfigSeparatelyTooltip/></PopOverGitGeneralComponent>
+          </ModalTitle>
+          <ModalDescription>
+            {t("set-git-remote-configuration-dialog.description")}
+          </ModalDescription>
+        </ModalHeader>
+        <ModalBody>
+          <SetGitRemoteConfigurationComponent configuration={gitRemoteConfiguration} setGitConfigurationReactState={setGitRemoteConfiguration} requiredFieldsMap={requiredGitConfigFieldsMap}/>
+        </ModalBody>
+        <ModalFooter className="flex flex-row">
+          <Button variant="outline" onClick={() => resolve(null)}>{t("cancel")}</Button>
+          <Button variant="default" className="hover:bg-purple-700" onClick={tryCloseWithSuccess}>{t("confirm")}</Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+}
+
+const gitRemoteConfigurationIdPrefix = "sgrcc"
+
+/**
+ * Note that the component is called both from the create repository dialog and from the separate set config dialog. Since the contents of those are the same.
+ * @todo This component can be much more general in future - basically define the names of fields and their values and then just generate.
+ *  Therefore, we would not need to touch this component at all when introducing new types.
+ * But since we have currently only 3 values and we have no idea what might be the future ones, we will just keep it "hardcoded".
+ */
+export function SetGitRemoteConfigurationComponent({ configuration, requiredFieldsMap, setGitConfigurationReactState }: SetGitRemoteConfigurationComponentProps) {
+  const { t } = useTranslation();
+  let suffixNumber: number = 0;
+
+  const setPublicationBranchInConfig = (newPublicationBranch: string) => {
+    setGitRemoteConfigurationStatePart(setGitConfigurationReactState, "publicationBranch", newPublicationBranch);
+  };
+
+  const setExportFormatInConfig = (newExportFormat: ExportFormatType) => {
+    setGitRemoteConfigurationStatePart(setGitConfigurationReactState, "exportFormat", newExportFormat);
+  };
+
+  const setExportVersionInConfig = (newExportVersion: ExportVersionType) => {
+    setGitRemoteConfigurationStatePart(setGitConfigurationReactState, "exportVersion", newExportVersion);
+  };
+
+
+  return <div>
+    <InputComponent
+      idPrefix={gitRemoteConfigurationIdPrefix}
+      idSuffix={suffixNumber++}
+      label={t("git.configuration.publication-branch.title")}
+      TooltipComponent={<PublicationBranchTooltip/>}
+      setInput={createSetterWithGitValidation(setPublicationBranchInConfig)} input={configuration.publicationBranch}
+      requiredRefObject={requiredFieldsMap["publicationBranch"]}
+    />
+    <ExportFormatRadioButtons exportFormat={configuration.exportFormat} setExportFormat={setExportFormatInConfig} />
+    <ExportVersionRadioButtons exportVersion={configuration.exportVersion} setExportVersion={setExportVersionInConfig} />
+  </div>;
+}
+
+function PublicationBranchTooltip() {
+  const { t } = useTranslation();
+  return <div>{t("git.configuration.publication-branch.tooltip")}</div>;
+}
+
+function SetConfigSeparatelyTooltip() {
+  const { t } = useTranslation();
+  return <div>
+    {t("set-git-remote-configuration-dialog.tooltip.set-config-separately.line.one")}
+    <br/>
+    {t("set-git-remote-configuration-dialog.tooltip.set-config-separately.line.two")}
+  </div>;
+}

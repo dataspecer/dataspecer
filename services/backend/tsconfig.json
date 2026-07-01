@@ -34,7 +34,7 @@
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
     "skipLibCheck": true,                                /* Skip type checking all .d.ts files. */
 
-    "lib": ["dom.iterable"],
+    "lib": ["dom.iterable", "ES2022"],                  // Newly added by RadStr
 
     "types": ["vitest/globals"]
   }

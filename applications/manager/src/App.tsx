@@ -9,12 +9,15 @@ import { ResourcesContext, useResourcesContext } from './package';
 import { useTranslation } from "react-i18next";
 import { Toaster } from "@/components/ui/sonner"
 import { VersionInformation } from './components/version-information';
+import { LoginCard } from './components/login-card';
+import { useLogin } from './hooks/use-login';
 
 const version = import.meta.env.VITE_VERSION || null;
 
 function App() {
   const {resources} = useResourcesContext();
   const {t} = useTranslation();
+  const login = useLogin();
 
   return (
     <ResourcesContext.Provider value={resources}>
@@ -39,7 +42,8 @@ function App() {
                 <SortModels />
                 <GithubLink />
                 <ModeToggle />
-                <LanguageToggle />
+                <LanguageToggle/>
+                <LoginCard login={login} />
               </div>
             </div>
           </header>

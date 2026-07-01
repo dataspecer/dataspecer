@@ -1,0 +1,87 @@
+import { DirectoryNode, FilesystemAbstraction, AvailableFilesystems } from "@dataspecer/git";
+import { AllowedExportResults, AvailableExports, ExportActionForFilesystem, ExportActionForZip, ExportActions } from "./export-actions.ts";
+import { ZipStreamDictionary } from "../../utils/zip-stream-dictionary.ts";
+import { FilesystemFactoryMethodParams, FilesystemFactory } from "../../../filesystem-abstractions/backend-filesystem-abstraction-factory.ts";
+import { PackageExporterInterface } from "./package-export.ts";
+import { toSafePath } from "../../../git-operations/simple-git-utils.ts";
+
+
+export abstract class PackageExporterBase implements PackageExporterInterface {
+  protected exportActions!: ExportActions<AllowedExportResults>;
+  protected importFilesystem!: FilesystemAbstraction;
+  protected exportFormat!: string;
+  protected iriMapping: Record<string, string> | null;
+  protected shouldRemoveTimeMetadata: boolean = false;
+  protected shouldUseIrisForNames: boolean = false;
+  protected shouldRunTestVariantForIriReplacement: boolean = false;
+
+  public static setExportVersion(metaObject: any, exportVersion: number) {
+    metaObject._exportVersion = exportVersion;
+  }
+
+  protected setExportVersionInternal(metaObject: any) {
+    PackageExporterBase.setExportVersion(metaObject, this.getExportVersion());
+  }
+
+  public static createExportActionsForFilesystem(exportType: AvailableExports): ExportActions<AllowedExportResults> {
+    switch(exportType) {
+      case AvailableExports.Zip:
+        const zipStreamDictionary = new ZipStreamDictionary();
+        return new ExportActionForZip(zipStreamDictionary)
+      case AvailableExports.Filesystem:
+        return new ExportActionForFilesystem();
+      default:
+        throw new Error(`Invalid export type ${exportType}, most-likely programmer error. Forgot to extend factory switch`);
+    }
+  }
+
+  // Note that this is the only public export method
+  public async doExportFromIRI(
+    filesystemFactoryParams: FilesystemFactoryMethodParams,
+    pathToExportStartDirectory: string,
+    importFilesystem: AvailableFilesystems,
+    exportType: AvailableExports,
+    exportFormat: string,
+    shouldRemoveTimeMetadata: boolean,
+    shouldUseIrisForNames: boolean,
+    iriMapping?: Record<string, string>,
+    shouldRunTestVariantForIriReplacement?: boolean,
+  ): Promise<AllowedExportResults> {
+    if (shouldRunTestVariantForIriReplacement) {
+      this.shouldRunTestVariantForIriReplacement = shouldRunTestVariantForIriReplacement;
+    }
+    else {
+      this.shouldRunTestVariantForIriReplacement = false;
+    }
+    this.iriMapping = iriMapping ?? null;
+    this.shouldUseIrisForNames = shouldUseIrisForNames;
+    this.shouldRemoveTimeMetadata = shouldRemoveTimeMetadata;
+    const filesystem = await FilesystemFactory.createFileSystem(importFilesystem, filesystemFactoryParams);
+    const fakeRoot = filesystem.getRoot();
+
+    const root = Object.values(fakeRoot.content)[0] as DirectoryNode;
+    // const rootDirectoryName = root.name;
+    const rootDirectoryName = toSafePath(root.metadata.iri);    // The root has IRI
+    const rootDirectory = root;
+
+    this.importFilesystem = filesystem;
+    this.exportActions = PackageExporterBase.createExportActionsForFilesystem(exportType);
+    this.exportFormat = exportFormat;
+
+
+    pathToExportStartDirectory = pathToExportStartDirectory.length === 0 ? rootDirectoryName : `${pathToExportStartDirectory}/${rootDirectoryName}`;
+    return await this.doExportFromRootDirectory(rootDirectory, pathToExportStartDirectory);
+  }
+
+  abstract getExportVersion(): number;
+
+  private async doExportFromRootDirectory(
+    rootDirectory: DirectoryNode,
+    pathToExportStartDirectory: string,
+  ): Promise<AllowedExportResults> {
+    await this.exportDirectory(rootDirectory, pathToExportStartDirectory + "/");
+    return await this.exportActions.finishExport();
+  }
+
+  protected abstract exportDirectory(directory: DirectoryNode, pathToExportDirectory: string): Promise<void>;
+}

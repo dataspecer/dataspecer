@@ -1,0 +1,27 @@
+import { asyncHandler } from "../../utils/async-handler.ts";
+import express from "express";
+import { GitProvider, GitProviderEnum } from "@dataspecer/git";
+import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
+import configuration from "../../configuration.ts";
+import { getGitCredentialsFromSession, getGitProviderEnumFromSession } from "../../authentication/auth-session.ts";
+import { GitProviderFactory } from "@dataspecer/git/git-providers";
+import { ScopeGroup } from "@dataspecer/auth";
+
+/**
+ * Returns the opened pull requests which are in any way involving the signed in user.
+ *   The implementation sends queries to the Git provider and returns the response in changed format.
+ * @todo This works only for the Git provider that you used for signing in.
+ *  (In future it might be possible (once we introduce database) to have one DS account which is linked to many OAuth providers - GitHub, GitLab, ...
+ */
+export const getOpenedPullRequestsInvolvingUser = asyncHandler(async (request: express.Request, response: express.Response) => {
+  const gitProviderEnum: GitProviderEnum | null = getGitProviderEnumFromSession(response);
+  if (gitProviderEnum === null) {
+    response.status(401);
+    return;
+  }
+
+  const gitProvider: GitProvider = GitProviderFactory.createGitProvider(gitProviderEnum, httpFetch, configuration);
+  const { committerAccessToken } = getGitCredentialsFromSession(request, response, [ScopeGroup.LoginInfo, ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
+  const openedPullRequests = await gitProvider.getOpenedPullRequestsInvolvingUser(committerAccessToken);
+  response.status(200).json(openedPullRequests);
+});

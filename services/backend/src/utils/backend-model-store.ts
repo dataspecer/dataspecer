@@ -8,8 +8,9 @@ import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import { resolveAsyncQueryableModelEntities } from "@dataspecer/model-store/implementation";
 import type { ModelEntity, PackageEntity } from "@dataspecer/project-model";
 import { serializationToVisualModelEntities } from "@dataspecer/visual-model";
-import type { BaseResource, Package, ResourceModel } from "../models/resource-model.ts";
+import type { ResourceModel } from "../models/resource-model.ts";
 import type { ModelIdentifier } from "@dataspecer/core/model";
+import { BaseResource, Package } from "@dataspecer/git-node";
 
 const PROJECT_MODEL_ID = "_project_model";
 

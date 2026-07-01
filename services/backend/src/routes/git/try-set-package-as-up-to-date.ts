@@ -1,0 +1,131 @@
+import { z } from "zod";
+import { asyncHandler } from "../../utils/async-handler.ts";
+import express from "express";
+import { resourceModel } from "../../main.ts";
+import { compareBackendFilesystems, createSimpleGitUsingPredefinedGitRoot, gitCloneBasic, MergeEndpointForComparison, removePathRecursively, TMP_CLONE_PATH_PREFIX } from "@dataspecer/git-node";
+import { AvailableFilesystems, extractPartOfRepositoryURL, getAuthorizationURL, GitIgnoreBase, GitProvider, AccessTokenType } from "@dataspecer/git";
+import { GitProviderFactory } from "@dataspecer/git/git-providers";
+import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
+import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
+import configuration from "../../configuration.ts";
+import { createFilesystemFactoryParams } from "../../utils/filesystem-helpers.ts";
+import { ScopeGroup } from "@dataspecer/auth";
+
+
+/**
+ * Compares remote Git package with the package in DS and sets the is up to date flag based on if the packages is up to date with the Git Remote or not.
+ */
+export const trySetPackageAsUpToDateHandler = asyncHandler(async (request: express.Request, response: express.Response) => {
+  const querySchema = z.object({
+    iri: z.string().min(1),
+  });
+  const { iri } = querySchema.parse(request.query);
+  await trySetPackageIriAsUpToDate(iri, request, response, true);
+});
+
+
+export async function trySetPackageIriAsUpToDate(
+  iri: string,
+  request: express.Request,
+  response: express.Response,
+  shouldSendResponse: boolean
+): Promise<boolean> {
+  const resource = await resourceModel.getResource(iri);
+  if (resource === null) {
+    if (shouldSendResponse) {
+      response.status(404).json({error: `The provided iri ${iri} has no resource in database`});
+    }
+    return false;
+  }
+  const gitProvider = GitProviderFactory.createGitProviderFromRepositoryURL(resource.linkedGitRepositoryURL, httpFetch, configuration);
+
+  const { git, gitInitialDirectory, gitInitialDirectoryParent, gitDirectoryToRemoveAfterWork } = createSimpleGitUsingPredefinedGitRoot(iri, TMP_CLONE_PATH_PREFIX, true);
+  let isLastAccessToken = false;
+  const gitCredentials = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.LoginInfo, ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
+  const repositoryOwner = extractPartOfRepositoryURL(resource.linkedGitRepositoryURL, "repository-owner");
+  const repositoryName = extractPartOfRepositoryURL(resource.linkedGitRepositoryURL, "repository-name");
+  if (repositoryOwner === null || repositoryName === null) {
+    if (shouldSendResponse) {
+      response.status(400).json({error: `The repository URL ${resource.linkedGitRepositoryURL} could not be parsed to get the owner and name; owner: ${repositoryOwner}; name: ${repositoryName}`});
+    }
+    return false;
+  }
+
+  // OAuth returns actual name instead of login name ...
+  if (!gitCredentials.isBotName) {
+    const nameCandidate = await gitProvider.getUserLoginForAuthToken(gitCredentials.accessTokens.find(accessToken => !accessToken.isBotAccessToken && accessToken.type === AccessTokenType.PAT)!.value)
+    if (nameCandidate === null) {
+      throw new Error(`The user ${gitCredentials.name} does not exist on Git provider`);
+    }
+    gitCredentials.name = nameCandidate;
+  }
+
+  try {
+    for (const accessToken of gitCredentials.accessTokens) {
+      const repoURLWithAuthorization = getAuthorizationURL(gitCredentials, accessToken, resource.linkedGitRepositoryURL, repositoryOwner, repositoryName);
+      isLastAccessToken = accessToken === gitCredentials.accessTokens.at(-1);
+
+      // 1) Load from Git
+      try {
+        await gitCloneBasic(git, gitInitialDirectory, repoURLWithAuthorization, true, true, resource.branch, 1);
+      }
+      catch {
+        if (isLastAccessToken) {
+          if (shouldSendResponse) {
+            response.status(403).json({error: "The remote repository cannot be cloned. Therefore, we can not perform the comparison between current DS state and the Git remote state"});
+          }
+          return false;
+        }
+        else {
+          continue;
+        }
+      }
+      const hash = await git.revparse(['HEAD']);
+      if (hash !== resource.lastCommitHash) {
+        if (shouldSendResponse) {
+          response.status(404).json({error: `The provided hashes do not match - fetched hash (${hash}). The last commit hash (${resource.lastCommitHash})`});
+        }
+        return false;
+      }
+
+      // 2) Compare
+      const gitEndpoint: MergeEndpointForComparison = {
+        rootIri: iri,
+        filesystemFactoryParams: createFilesystemFactoryParams(false),
+        gitIgnore: new GitIgnoreBase(gitProvider),
+        fullPathToRootParent: gitInitialDirectoryParent,
+        filesystemType: AvailableFilesystems.ClassicFilesystem,
+      };
+      const dsEndpoint: MergeEndpointForComparison = {
+        rootIri: iri,
+        filesystemFactoryParams: createFilesystemFactoryParams(true),
+        gitIgnore: null,
+        fullPathToRootParent: gitInitialDirectoryParent,      // The value should not matter
+        filesystemType: AvailableFilesystems.DS_Filesystem,
+      };
+      const { diffTreeComparison } = await compareBackendFilesystems(gitEndpoint, dsEndpoint, resource.projectIri, "pull");
+
+      // 3) Set the result
+      const hasUncommittedChanges = diffTreeComparison.conflicts.length !== 0 || diffTreeComparison.created.length !== 0 ||
+                                    diffTreeComparison.changed.length !== 0 || diffTreeComparison.removed.length !== 0;
+      await resourceModel.setHasUncommittedChanges(iri, hasUncommittedChanges);
+      if (shouldSendResponse) {
+        if (hasUncommittedChanges) {
+          response.sendStatus(204);
+        }
+        else {
+          response.sendStatus(200);
+        }
+      }
+      return true;
+    }
+  }
+  catch(error) {
+    throw error;      // Should not happen. The cloning is covered by separate try/catch. Other code should not throw exceptions
+  }
+  finally {
+    removePathRecursively(gitDirectoryToRemoveAfterWork);
+  }
+
+  return false;
+}

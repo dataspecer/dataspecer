@@ -1,15 +1,17 @@
 import { Modal, ModalBody, ModalContent, ModalHeader, ModalTitle } from "@/components/modal";
-import imgDs from "@/graphics/undraw_code_review_re_woeb.svg";
-import imgDsDark from "@/graphics/undraw_code_review_re_woeb_dark.svg";
-import imgVoc from "@/graphics/undraw_project_team_lc5a.svg";
-import imgVocDark from "@/graphics/undraw_project_team_lc5a_dark.svg";
-import imgAp from "@/graphics/undraw_solution_mindset_re_57bf.svg";
-import imgApDark from "@/graphics/undraw_solution_mindset_re_57bf_dark.svg";
 import { BetterModalProps, useBetterModal } from "@/lib/better-modal";
 import { useTranslation } from "react-i18next";
 import { Profile } from "./profile";
 import { Schema } from "./schema";
 import { Vocabulary } from "./vocabulary";
+
+import template1Dark from "../../graphics/undraw_project_team_lc5a_dark.svg";
+import template1Light from "../../graphics/undraw_project_team_lc5a.svg";
+import template2Dark from "../../graphics/undraw_solution_mindset_re_57bf_dark.svg";
+import template2Light from "../../graphics/undraw_solution_mindset_re_57bf.svg";
+import template3Dark from "../../graphics/undraw_code_review_re_woeb_dark.svg";
+import template3Light from "../../graphics/undraw_code_review_re_woeb.svg";
+
 
 export const ProjectWizard = ({ isOpen, resolve, iri }: { iri: string } & BetterModalProps) => {
   const {t} = useTranslation("project-wizard");
@@ -44,8 +46,8 @@ export const ProjectWizard = ({ isOpen, resolve, iri }: { iri: string } & Better
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4 my-6">
           <button className="group cursor-pointer rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800" onClick={createVocabulary}>
             <div className="hidden md:block relative aspect-4/3 bg-gray-100 dark:bg-stone-900/20 group-hover:opacity-80 transition-opacity p-10 -z-10">
-              <img src={imgVocDark} alt="Template 1" className="object-cover hidden dark:block" />
-              <img src={imgVoc} alt="Template 1" className="object-cover dark:hidden" />
+              <img src={template1Dark} alt="Template 1" className="object-cover hidden dark:block" />
+              <img src={template1Light} alt="Template 1" className="object-cover dark:hidden" />
             </div>
             <div className="p-4 space-y-2">
               <h4 className="font-semibold">{t("projects.vocabulary.title")}</h4>
@@ -56,8 +58,8 @@ export const ProjectWizard = ({ isOpen, resolve, iri }: { iri: string } & Better
           </button>
           <button className="group cursor-pointer rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800" onClick={createProfile}>
             <div className="hidden md:block relative aspect-4/3 bg-gray-100 dark:bg-stone-900/20 group-hover:opacity-80 transition-opacity p-10 -z-10">
-              <img src={imgApDark} alt="Template 2" className="object-cover hidden dark:block" />
-              <img src={imgAp} alt="Template 2" className="object-cover dark:hidden" />
+              <img src={template2Dark} alt="Template 2" className="object-cover hidden dark:block" />
+              <img src={template2Light} alt="Template 2" className="object-cover dark:hidden" />
             </div>
             <div className="p-4 space-y-2">
               <h4 className="font-semibold">{t("projects.application-profile.title")}</h4>
@@ -68,8 +70,8 @@ export const ProjectWizard = ({ isOpen, resolve, iri }: { iri: string } & Better
           </button>
           <button className="group cursor-pointer rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800" onClick={createSchema}>
             <div className="hidden md:block relative aspect-4/3 bg-gray-100 dark:bg-stone-900/20 group-hover:opacity-80 transition-opacity p-10 -z-10">
-              <img src={imgDsDark} alt="Template 3" className="object-cover hidden dark:block" />
-              <img src={imgDs} alt="Template 3" className="object-cover dark:hidden" />
+              <img src={template3Dark} alt="Template 3" className="object-cover hidden dark:block" />
+              <img src={template3Light} alt="Template 3" className="object-cover dark:hidden" />
             </div>
             <div className="p-4 space-y-2">
               <h4 className="font-semibold">{t("projects.data-schema.title")}</h4>

@@ -239,5 +239,13 @@ function projectModelToPackage(packageId: string, projectModel: EntityRecord<Mod
     },
     metadata: null as any,
     subResources,
+
+    linkedGitRepositoryURL: "",       // TODO RadStr PR spec: I don't know about this, probably should be specified
+    projectIri: "",                   // TODO RadStr PR spec: I don't know about this, probably should be specified
+    branch: "",                       // TODO RadStr PR spec: I don't know about this, probably should be specified
+    representsBranchHead: true,       // TODO RadStr PR spec: I don't know about this, probably should be specified
+    lastCommitHash: "",               // TODO RadStr PR spec: I don't know about this, probably should be specified
+    activeMergeStateCount: 0,         // TODO RadStr PR spec: I don't know about this, probably should be specified
+    hasUncommittedChanges: true,      // TODO RadStr PR spec: I don't know about this, probably should be specified
   };
 }

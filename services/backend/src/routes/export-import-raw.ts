@@ -1,10 +1,14 @@
 import express from "express";
 import { asyncHandler } from "../utils/async-handler.ts";
-import { PackageExporter } from "../export-import/export.ts";
-import { resourceModel } from "../main.ts";
+import { prismaClient, resourceModel, storeModel } from "../main.ts";
 import z from "zod";
 import { PackageImporter } from "../export-import/import.ts";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
+import { AvailableFilesystems, createRootFilesystemNodeLocation, CreateRootFilesystemNodeParams, getDefaultExportFormat } from "@dataspecer/git";
+import JSZip from "jszip";
+import { PrismaClientStorageApiForIriReplacement, StorageApiForIriReplacement } from "../utils/iri-replace-util.ts";
+import { AvailableExports, FilesystemFactoryMethodParams, PackageExporterByResourceType } from "@dataspecer/git-node";
+import { createFilesystemFactoryParams } from "../utils/filesystem-helpers.ts";
 import { getContentDispositionAttachmentHeaderValue, safeAsciiFileName, safeUnicodeFileName } from "../utils/safe-file-name.ts";
 
 function getName(name: LanguageString | undefined, defaultName: string) {
@@ -17,14 +21,35 @@ function getName(name: LanguageString | undefined, defaultName: string) {
 export const exportPackageResource = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
     iri: z.string().min(1),
+    exportFormat: z.string().min(1).optional(),
   });
 
   const query = querySchema.parse(request.query);
-
-  const exporter = new PackageExporter(resourceModel);
-  const buffer = await exporter.doExport(query.iri);
-
   const resource = await resourceModel.getResource(query.iri);
+  if (resource === null) {
+    throw new Error(`The resource (${query.iri}) does not exist.`);
+  }
+
+  // TODO RadStr PR: ... maybe keep the old one?
+  // The old exporter:
+  // const exporter = new PackageExporterDeprecated(resourceModel);
+  // const buffer = await exporter.doExport(query.iri);
+  // const exporter = new PackageExporterNew();
+  const exporter = new PackageExporterByResourceType();
+  const rootParams: CreateRootFilesystemNodeParams = {
+      iri: query.iri,
+  };
+  const filesystemFactoryParams: FilesystemFactoryMethodParams = {
+    roots: [createRootFilesystemNodeLocation(AvailableFilesystems.DS_Filesystem, rootParams)],
+    gitIgnore: null,
+    ...createFilesystemFactoryParams(true),
+  };
+  const buffer = await exporter.doExportFromIRI(
+    filesystemFactoryParams, "", AvailableFilesystems.DS_Filesystem, AvailableExports.Zip, query.exportFormat ?? getDefaultExportFormat(), false, true);
+
+  // Kept just to show example how to use it for filesystem export (that being said the code is pretty old, so maybe it does not work)
+  // const buffer = await exporter.doExportFromIRI("aa99f378-0ba2-46a2-8642-f7683e778d6d", "C:\\Users\\export\\directory", "C:\\Users\\filesystem-output", AvailableFilesystems.ClassicFilesystem, AvailableExports.Filesystem);
+
   const filename = getName(resource?.userMetadata?.label, "package");
 
   const ascii = safeAsciiFileName(filename, "dataspecer-project") + "-backup.zip";
@@ -38,8 +63,9 @@ export const exportPackageResource = asyncHandler(async (request: express.Reques
 export const importPackageResource = asyncHandler(async (request: express.Request, response: express.Response) => {
   const file = request.file!.buffer;
 
-  const importer = new PackageImporter(resourceModel);
-  const imported = await importer.doImport(file);
+  const prismaClientApi: StorageApiForIriReplacement = new PrismaClientStorageApiForIriReplacement(prismaClient);
+  const importer = new PackageImporter(resourceModel, storeModel, prismaClientApi);
+  const imported = await importer.doImport(file, false);
 
   response.send(await Promise.all(imported.map(iri => resourceModel.getPackage(iri))));
 });

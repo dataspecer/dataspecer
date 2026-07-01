@@ -7,7 +7,7 @@ import { DefaultArtifactBuilder } from "@dataspecer/specification/v1";
 import express from "express";
 import { z } from "zod";
 import configuration from "../configuration.ts";
-import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
+import { ZipStreamDictionary } from "@dataspecer/git-node";
 import { resourceModel } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { getContentDispositionAttachmentHeaderValue, safeAsciiFileName, safeUnicodeFileName } from "../utils/safe-file-name.ts";
@@ -51,7 +51,7 @@ class SingleFileStreamDictionary implements StreamDictionary {
 /**
  * The main method to generate everything for a given package into a stream dictionary.
  */
-async function generateArtifacts(
+export async function generateArtifacts(
   packageIri: string,
   streamDictionary: StreamDictionary,
   queryParams: string = "",

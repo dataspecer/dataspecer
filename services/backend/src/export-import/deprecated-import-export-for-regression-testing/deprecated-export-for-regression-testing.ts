@@ -1,15 +1,15 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
-import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
-import { BaseResource, ResourceModel } from "../models/resource-model.ts";
-import { currentVersion } from "../tools/migrations/index.ts";
-import configuration from "../configuration.ts";
-import crypto from 'node:crypto';
+import { BaseResource, ResourceModelForExport, ZipStreamDictionary } from "@dataspecer/git-node";
+import { v4 as uuidv4 } from 'uuid';
 
-export class PackageExporter {
-  resourceModel: ResourceModel;
+/**
+ * @deprecated This is the previous exporter before we have implemented new version for Git, which uses the filesystem trees. This is used for regression testing.
+ */
+export class PackageExporterDeprecated {
+  resourceModel: ResourceModelForExport;
   zipStreamDictionary!: ZipStreamDictionary;
 
-  constructor(resourceModel: ResourceModel) {
+  constructor(resourceModel: ResourceModelForExport) {
     this.resourceModel = resourceModel;
   }
 
@@ -27,7 +27,7 @@ export class PackageExporter {
       localNameCandidate = iri.slice(path.length);
     }
     if (localNameCandidate.includes("/") || localNameCandidate.length === 0) {
-      localNameCandidate = crypto.hash('sha1', iri);
+      localNameCandidate = uuidv4();
     }
     let fullName = path + localNameCandidate;
 
@@ -56,10 +56,10 @@ export class PackageExporter {
       types: resource.types,
       userMetadata: resource.userMetadata,
       metadata: resource.metadata,
-      _version: currentVersion,
+      _version: 1,      // Just Hardcode it for testing
       _exportVersion: 1,
       _exportedAt: new Date().toISOString(),
-      _exportedBy: configuration.host,
+      _exportedBy: undefined,   // Just undefined for testing
     }
   }
 

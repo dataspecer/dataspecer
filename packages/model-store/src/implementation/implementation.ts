@@ -667,7 +667,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     // package always exists on the backend before its children are created.
     for (const creation of creations) {
       if (creation.modelType === LOCAL_PACKAGE) {
-        await this.service.createPackage(creation.parentPackageId, { iri: creation.modelId, userMetadata: {} });
+        await this.service.createPackage(creation.parentPackageId, { iri: creation.modelId, userMetadata: {}, });
       } else {
         await this.service.createResource(creation.parentPackageId, { iri: creation.modelId, type: creation.modelType, userMetadata: {} });
       }

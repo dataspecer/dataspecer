@@ -7,12 +7,17 @@
     "build": "tsc",
     "prebuild": "prisma generate",
     "start": "node --enable-source-maps dist/main.js",
+    "generate-specification": "node --enable-source-maps dist/generate-specification-from-local-storage.js",
     "update-database": "prisma migrate deploy",
     "load-lov": "./load-lov.sh",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
+    "simple-git": "3.27.0",
+    "@auth/express": "0.12.2",
+    "psl": "1.15.0",
+
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
     "@dataspecer/data-specification-vocabulary": "*",
@@ -22,6 +27,9 @@
     "@dataspecer/project-model": "*",
     "@dataspecer/specification": "*",
     "@dataspecer/structure-model": "*",
+    "@dataspecer/auth": "*",
+    "@dataspecer/git": "*",
+    "@dataspecer/git-node": "*",
     "@prisma/client": "^6.19.2",
     "@types/cli-progress": "^3.11.5",
     "@types/n3": "^1.26.1",
@@ -38,6 +46,9 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/uuid": "^9.0.1",
+    "@types/libsodium-wrappers-sumo": "0.7.8",
+    "@types/psl": "1.1.3",
     "@types/cors": "^2.8.13",
     "@types/express": "^5.0.6",
     "@types/jsonld": "^1.5.14",

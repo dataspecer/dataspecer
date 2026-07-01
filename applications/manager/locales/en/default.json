@@ -15,6 +15,7 @@
   "autolayout": "Auto layout",
   "changed": "Changed on {{val, datetime(dateStyle: short; timeStyle: short)}}",
   "close": "Close",
+  "confirm": "Confirm",
   "create-new": {
     "description-prefix": "Create a new dataspec under",
     "title": "Create new"
@@ -52,6 +53,10 @@
     "url": {
       "instruction": "URL of DSV specifications or RDFS/OWL vocabularies, each URL on a separate line",
       "name": "URL"
+    },
+    "git-url": {
+      "name": "Git URL",
+      "instruction": "Insert URL pointing to the specific Git repository (or even specific commit/branch)"
     }
   },
   "format as json": "Format as json",
@@ -132,5 +137,838 @@
     "name-az": "Alphabetically",
     "name-za": "Reverse alphabetically"
   },
-  "successfully saved": "Successfully saved."
+  "successfully saved": "Successfully saved.",
+  "git-tooltip": {
+    "has-uncommitted-changes": "Has uncommitted changes:",
+    "yes": "Yes",
+    "no": "No",
+    "active-merge-state-count": "Active merge state count:",
+    "project-iri": "Project IRI:",
+    "branch": "Branch",
+    "commit": "Commit",
+    "type": "Type:",
+    "tracked-commit-inside-dataspecer": "Tracked commit inside Dataspecer:"
+  },
+  "login-card": {
+    "sign-out-tooltip": "Note that if you provide Git permissions. The token with permissions should be revoked automatically, unless some error happened, if so then for safety reasons you should remove the permissions provided to this page in GitHub settings.",
+    "sign-out": "Sign Out",
+    "sign-in": "Sign In",
+    "standard-sign-in": "Standard sign-in",
+    "recommended": "(Recommended)",
+    "advanced-sign-in": "Advanced sign-in",
+    "user-avatar-alt": "User Avatar",
+    "user-avatar-title": "Username: {{username}}\nEmail: {{email}}\nScope: {{scope}}",
+    "add-private-ssh-key": "Add private SSH key"
+  },
+  "merge-state-finalizer-stepper": {
+    "steps": {
+      "pick-commit-type": "Pick commit type",
+      "validation": "Validation",
+      "commit": "Commit"
+    }
+  },
+  "merge-strategy-component": {
+    "resolve-button": "Resolve using merge strategy",
+    "modal-title": "Apply chosen merge resolver",
+    "modal-description": "Choose the affected models.",
+    "modal-warning": "⚠️ Note that the addition/deletion of datastores has to be done manually.",
+    "options": {
+      "only-current-datastore": "Only the currently opened datastore",
+      "all-datastores": "All datastores"
+    }
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {{page}}",
+    "page-of": "Page {{page}} of {{total}}"
+  },
+  "popover-git-general": {
+    "more-detail": "More detail will be shown in {{seconds}} seconds"
+  },
+
+  "git": {
+    "wait-seconds": "seconds",
+    "wait-prefix-text": "Usually takes around",
+    "choose-an-export-format": "Export format",
+    "choose-an-export-version": "Export version",
+    "loading-dialog-seconds-passed": "seconds passed",
+    "dialog": {
+      "title": {
+        "create-new-repository-and-commit": "Create new remote Git repository",
+        "commit": "Commit to remote Git repository",
+        "merge-commit": "Create merge commit to remote Git repository",
+        "link-to-existing-repository": "Link package to remote Git repository",
+        "fallback": "[Programmer oversight - Git dialog title missing]"
+      },
+      "description": {
+        "create-new-repository-and-commit": "On confirm new remote Git repository will be created and the current package will be linked to it",
+        "commit": "Insert the commit message for Git",
+        "commit-tag-error": "You cannot commit from a package representing a tag. Turn it into a branch first.",
+        "merge-commit": "Insert the commit message for Git merge",
+        "link-to-existing-repository": "Insert URL of an existing remote Git repository you want to link to this package. URL may point to commit/branch/tag.\n⚠️Caution: This is an untested feature, so it may not work correctly every time.",
+        "fallback": "[Programmer oversight - Git dialog description missing]"
+      },
+      "label": {
+        "repository-name": "Repository name",
+        "repository-owner": "Repository owner",
+        "initial-commit-message": "Initial commit message",
+        "commit-message": "Commit message",
+        "merge-commit-message": {
+          "input-title": "Merge commit message",
+          "append": "The given message will be appended after the default merge message automatically created by Git"
+        },
+        "remote-url": "Git remote repository URL",
+        "git-provider": "Git provider",
+        "repository-type": "Repository type",
+        "advanced-settings": "Advanced settings"
+      },
+      "radio": {
+        "user-repository": "User repository",
+        "organization-repository": "Organization repository",
+        "signed-in-user": "Signed-In User",
+        "bot-fallback-user": "Bot (fallback user)"
+      },
+      "merge-state": {
+        "always": "Always create merge state"
+      },
+      "text": {
+        "fetching-organizations": "Fetching organization names",
+        "git-configuration": "Git configuration:"
+      },
+      "button": {
+        "advanced-settings": "Advanced settings (Keeping the defaults is fine):"
+      },
+      "checkbox": {
+        "merge-state-tooltip": "If checked then merge state is always created. If unchecked it is created only on conflicts (when we do not match the head of remote branch)"
+      },
+      "repository-owner-tooltip": {
+        "example": "For Example: https://github.com/torvalds/linux",
+        "owner": "Owner",
+        "is-the": "is the",
+        "while": "while",
+        "name": "name",
+        "of-the-repository": "of the repository",
+        "can-be": "can be either Organization or User (that is it will be equal user's name)"
+      },
+      "alert": {
+        "too-many-user-organizations": "The user is member of more than the supported number of organizations (first implementation had a hardcoded limit of 1000).",
+        "too-many-bot-organizations": "The bot is member of more than the supported number of organizations (first implementation had a hardcoded limit of 1000)."
+      },
+      "error": {
+        "failed-saving-configuration": "Failed saving the new Git configuration to Dataspecer backend"
+      }
+    },
+    "loading": {
+      "create-repository": {
+        "title": "Creating repository with initial commit"
+      },
+      "merge": {
+        "title": "Creating merge commit"
+      },
+      "commit": {
+        "title": "Committing",
+        "wait-text": "⚠️ Do not modify the committed package during the commit process."
+      },
+      "merge-resolver": {
+        "title": "Performing merge resolving",
+        "wait-text": ""
+      }
+    },
+    "toast": {
+      "merge-state-created": "Created merge state",
+      "link-success": "Successfully updated link to remote Git repository",
+      "link-failed": "Failed updating link to remote Git repository"
+    },
+    "error": {
+      "merge-already-merged": "Already up to date - The merge from branch was already merged. We cannot merge again.",
+      "merge-state-removal-failed": "Removal of merge state failed"
+    },
+    "configuration": {
+      "publication-branch": {
+        "title": "Publication branch name",
+        "tooltip": "The publication Git branch, which will contain the generated documentation in the Git repository."
+      }
+    },
+    "diff-editor-props": {
+      "storing-to-backend": {
+        "title": "Storing changes to backend",
+        "wait-text": "Storing changes to backend"
+      }
+    },
+    "export-format-tooltip": {
+      "intro": "The format in which will be the models exported to Git. The diff editor also shows the models in this format.",
+      "json": "- JSON is well-tested and the default for the rest of Dataspecer. Therefore, it is recommended.",
+      "yaml": "- YAML may be slightly more friendly for diff/text viewing experience. However, the implementation is experimental with no guarantee of being bug-free.",
+      "note": "(From a software perspective we are still working with JSON within Dataspecer, this format only affects the Git export and the diff editor)"
+    },
+    "export-version": {
+      "old": "Old",
+      "new": "New (more structured)"
+    },
+    "export-version-tooltip": {
+      "old": "- The old version maps packages to directories and the models are put as files within the specific package.",
+      "new": "- The new version is more structured. It still holds true that models are files, which are inside directories that map to packages.",
+      "structure": "- The structure comes from the fact the models are put to a directory based on a type of the model.",
+      "example": "- For example, packages are inside \"directories\" directory, and visual models are in \"visual-models\" directory."
+    },
+    "diff-editor": {
+      "title": "Diff editor to resolve {{cause}} conflict",
+      "merge-state-cause": {
+        "pull": "pull",
+        "push": "push",
+        "merge": "merge"
+      },
+      "toast": {
+        "saved-cache-to-backend": "Saved files loaded in cache to backend"
+      },
+      "button": {
+        "close-tooltip": "Closes the diff editor without saving changes",
+        "save-all": "Save All (Ctrl + S)",
+        "save-all-tooltip": "This does save both the changes to files and updates the merge state",
+        "save-finalize-warning": "⚠️Resolve conflicts to finalize",
+        "save-finalize": "Save and Finalize",
+        "prev-diff": "Prev diff",
+        "next-diff": "Next diff",
+        "show-as-images": "Show as images"
+      },
+      "tooltip": {
+        "resolve-conflicts": "Resolve all conflicts to enable the button and with that get the option to finalize the merge state. The conflicts are marked as resolved by clicking on checkmarks in the directory diff. This tooltip changes after the button gets enabled.",
+        "save-and-finalize": "First saves all the unsaved changes and then it performs the operation, which triggered the merge state. Can be pull/push/merge.",
+        "common": {
+          "line-one": "For visual general and extensive overview check the Tour button seen above the text editor once you open a file!!",
+          "line-two": "This tooltip contains info based on the merge state cause. So it changes based on whether it is pull/merge/push."
+        },
+        "pull": {
+          "line.one": {
+            "part-one": "BOTH WINDOWS are unchanged",
+            "part-two": "You have to",
+            "part-three": "move all changes from left window to right",
+            "part-four": "until it has all the changes you want."
+          },
+          "left-window": {
+            "part-one": "Left window",
+            "part-two": "The ",
+            "part-three": "latest commit on Git",
+            "part-four": " at the time of creating merge state."
+          },
+          "right-window": {
+            "part-one": "Right window",
+            "part-two": "Current content of the ",
+            "part-three": "Dataspecer data specification."
+          },
+          "line.two": "When finalized the tracked hash in Dataspecer will track the Git one."
+        },
+        "push": {
+          "line.one": {
+            "part-one": "BOTH WINDOWS are unchanged",
+            "part-two": "You have to",
+            "part-three": "move all changes from left window to right",
+            "part-four": "until it has all the changes you want."
+          },
+          "left-window": {
+            "part-one": "Left window",
+            "part-two": "The ",
+            "part-three": "latest commit on Git",
+            "part-four": " at the time of creating merge state."
+          },
+          "right-window": {
+            "part-one": "Right window",
+            "part-two": "Current content of the ",
+            "part-three": "Dataspecer data specification to be pushed."
+          }
+        },
+        "merge": {
+          "line.one": {
+            "part-one": "BOTH WINDOWS are unchanged",
+            "part-two": "You have to",
+            "part-three": "move all changes from left window to right",
+            "part-four": "until it has all the changes you want."
+          },
+          "left-window": {
+            "part-one": "Left window",
+            "part-two": "Merge from."
+          },
+          "right-window": {
+            "part-one": "Right window",
+            "part-two": "Merge to - This will be pushed to Git."
+          },
+          "line.two": "Both left and right contain current contents of data specification stored in Dataspecer."
+        }
+      },
+      "checkbox": {
+        "show-stripped-version": "Show stripped version",
+        "show-stripped-version-tooltip": "If checked then strips the datastore of unique fields. If unchecked then it shows the full datastore. Currently only meta files are stripped."
+      }
+    },
+    "merge-state-dialog": {
+      "title": "Create merge state between Dataspecer packages",
+      "warning": {
+        "non-branch": {
+          "title": "⚠️ Merging into non-branch.",
+          "description": {
+            "line-one": "You can not perform any Git action after finishing.",
+            "line-two": "This is only useful if you want to move data from one package to another within Dataspecer."
+          },
+          "close-button": "Close dialog",
+          "close-button-title": "Closes the dialog",
+          "create-button": "Create merge state",
+          "create-button-title": "Creates the merge state, user can do normal actions, but when finalizing nothing happens and the state is removed"
+        },
+        "from-non-branch": {
+          "title": "⚠️ Merging from non-branch into branch",
+          "description": "This kind of merge state can be finalized only through rebase commit.",
+          "create-button-title": "Creates the merge state. Finalizing through merge commit is not available, only the rebase commit."
+        }
+      },
+      "created": {
+        "no-conflicts": {
+          "title": "Created merge state for DS packages and there were no conflicts."
+        },
+        "with-conflicts": {
+          "title": "Created merge state for DS packages and there were conflicts."
+        },
+        "close-button": "Close dialog",
+        "close-button-title": "Closes the dialog. Note that the merge state still exists. You can resolve it later",
+        "preview-button": "Open diff editor preview",
+        "preview-button-title": "Opens the diff editor with the preview of the merge commit. Finalize the merging inside the editor."
+      },
+      "status": {
+        "creating": {
+          "title": "Merge state did not exist. Creating a new one."
+        },
+        "replacing": {
+          "title": "Replacing merge state."
+        },
+        "seconds-passed": "{{seconds}} seconds passed"
+      },
+      "error": {
+        "fetch-failure": "There was some failure when fetching/creating merge state, check console for more info."
+      },
+      "already-exists": "The merge state already exists. Do you wish to replace it with new one?",
+      "button": {
+        "leave": "Leave",
+        "replace": "Replace",
+        "keep-old": "Keep old"
+      }
+    }
+  },
+  "git-prs-list": {
+    "title": {
+      "all": "List of all opened {{gitProviderSpecificNameForPR}}s ({{gitProviderSpecificNameForPRShortcut}}) for given Git repository",
+      "branch": "List of opened {{gitProviderSpecificNameForPR}}s ({{gitProviderSpecificNameForPRShortcut}}) for given package and branch"
+    },
+    "description": {
+      "branch": "The PRs where one of the merge actors is the examined branch.",
+      "warning": {
+        "line.one": "⚠️ Note that you have to close {{gitProviderSpecificNameForPRShortcut}} in Dataspecer with merge commit.",
+        "line.two": "Merging (or rebasing) {{gitProviderSpecificNameForPRShortcut}} in Git breaks IRIs.",
+        "line.three": "You can either close the {{gitProviderSpecificNameForPRShortcut}} with merge, or merge the changes from the 'merge to' branch to the 'merge from' branch (reverse merge)."
+      }
+    },
+    "table": {
+      "title": "Title",
+      "created-at": "Created at",
+      "modified-at": "Modified at",
+      "merge-from": "Merge from",
+      "merge-to": "Merge to",
+      "add-del": "Add/Del",
+      "reverse-merge": "Reverse merge",
+      "merge-pr": "Merge {{gitProviderSpecificNameForPRShortcut}}"
+    },
+    "pagination": {
+      "count-on-page": "{{gitProviderSpecificNameForPRShortcut}} count on page",
+      "count-total": "Total {{gitProviderSpecificNameForPRShortcut}} count"
+    },
+    "buttons": {
+      "visit-page-with-prs": "Visit page with PRs"
+    },
+    "tooltip": {
+      "line.one": "The reverse merge represents the classic workflow, where you first merge the 'merge to' branch",
+      "line.two": "into your branch to make sure that everything works and finish the {{gitProviderSpecificNameForPRShortcut}} after that.",
+      "line.three": "The 'Merge {{gitProviderSpecificNameForPRShortcut}}' simply merges the 'merge from' branch into the 'merge to' branch.",
+      "buttons-description": "The buttons do the following:",
+      "open-merge-state": {
+        "part.one": "Open Merge state",
+        "part.two": " - opens the already existing merge state"
+      },
+      "merge": {
+        "part.one": "Merge",
+        "part.two": " - Creates new merge state, since it does not exist."
+      },
+      "import-merge": {
+        "part.one": "Import + Merge",
+        "part.two": " - Imports the missing package and creates merge state between them"
+      },
+      "import-both-merge": {
+        "part.one": "Import both + Merge",
+        "part.two": " - Imports both packages and creates merge state between them."
+      }
+    },
+    "action": {
+      "open-merge-state": "Open merge state",
+      "open-merge-state-tooltip": "The merge state already exists in Dataspecer. The button opens it.",
+      "merge": "Merge",
+      "merge-tooltip": "Both branches are already tracked inside Dataspecer. This button will create new merge state between them",
+      "import-merge": "Import + Merge",
+      "import-merge-tooltip": {
+        "merge-to-branch": "Imports the merge to branch of the PR and creates a new merge state between the two branches tracked in Dataspecer",
+        "merge-from-branch": "Imports the merge from branch of the PR and creates a new merge state between the two branches tracked in Dataspecer"
+      },
+      "import-both-merge": "Import both + Merge",
+      "import-both-merge-tooltip": "Imports both the merge from and merge to branches into Dataspecer and creates a new merge state between them."
+    },
+    "loading": {
+      "import-branch": "Importing the '{{importedBranchType}}' branch from the PR",
+      "branch-type": {
+        "merge-from": "merge from",
+        "merge-to": "merge to"
+      },
+      "branch-name": "Branch name: {{branchName}}",
+      "creating-merge-state": "Creating merge state",
+      "merge-branch-path": "\"{{mergeFromBranch}}\" -> \"{{mergeToBranch}}\""
+    },
+    "toast": {
+      "create-merge-state-success": "The creation of merge state succeeded",
+      "create-merge-state-failed": "The creation of merge state failed"
+    }
+  },
+  "sign-in-dialog": {
+    "title": "Sign in options",
+    "description": {
+      "line-one": {
+        "part-one": "Choose",
+        "part-two": "how much information",
+        "part-three": "should be provided",
+        "part-four": "to Dataspecer"
+      },
+      "line-two": {
+        "part-one": "Sign-in with the",
+        "part-two": "default option",
+        "part-three": "to give Dataspecer Git permissions so you can sync up your Dataspecer package with a Git repository."
+      },
+      "line-three": "Next dialog lets you choose authentication provider.",
+      "line-four": "Hover on the info icon for more info."
+    },
+    "buttons": {
+      "login-info": "Name + E-mail",
+      "full-public-repo-control": "Name + E-mail + Git Push scope (Default sign-in option)",
+      "delete-repo-control": "Name + E-mail + Git Push and Delete scope"
+    },
+    "tooltip": {
+      "line-one": {
+        "part-one": "The provided rights, which you are asked further in the sign-in process, are for",
+        "part-two": "each repository you have access to"
+      },
+      "line-two": "The access token, which comes with the sign-in, should be automatically revoked after you sign out.",
+      "short-title": "In short:",
+      "short-line-one": {
+        "part-one": "Choose the option with",
+        "part-two": "Name + E-mail",
+        "part-three": "to access all",
+        "part-four": "Git features and nothing else."
+      },
+      "short-line-two": {
+        "part-one": "Choose the option with",
+        "part-two": "Name + E-mail + Git push scope",
+        "part-three": "to access all of the important Git features -",
+        "part-four": "Recommended"
+      },
+      "short-line-three": {
+        "part-one": "Choose the option with",
+        "part-two": "Name + E-mail + Git push + Delete scope",
+        "part-three": "to get the ability to remove any owned repository"
+      },
+      "long-title": "In long:",
+      "long-line-one": {
+        "part-one": "Choose the",
+        "part-two": "Name + E-mail + Git push scope",
+        "part-three": "if you want to",
+        "part-four": "create new repositories",
+        "part-five": "or",
+        "part-six": "commit",
+        "part-seven": "to repositories to which you have access."
+      },
+      "long-line-two": {
+        "part-one": "Choose the",
+        "part-two": "Delete",
+        "part-three": "rights if you are developer who is debugging Dataspecer's Git integration."
+      },
+      "long-line-three": "It is, of course, accessible to non-developers, but it is discouraged.",
+      "long-line-four": {
+        "part-one": "Choose the",
+        "part-two": "Name + E-mail",
+        "part-three": "option to either"
+      },
+      "long-line-five": "The access tokens for Git operations are tried out until one succeeds in this order. Your SSH, your PAT, bot SSH, bot PAT",
+      "long-line-six": "where PAT = Personal Access Token, that is the thing you get from the Git provider on sign in.",
+      "long-subline-one": "Fetch issues, pull requests, Git history or similar stuff from the Git provider.",
+      "long-subline-two": "Commit under your name to repositories accessible by the Dataspecer bot.",
+      "long-subline-three": "You can think of a Dataspecer bot as a fallback Git user.",
+      "long-subline-four": "Commit and pull to repositories using your private SSH key, which you can set up once you sign in."
+    }
+  },
+  "commit-redirect-dialog": {
+    "title": "Are you sure that you want to commit?",
+    "merge-state-count": {
+      "prefix": {
+        "one": "There is currently",
+        "other": "There are currently"
+      },
+      "suffix": {
+        "one": "opened merge state for current package.",
+        "other": "opened merge states for current package."
+      }
+    },
+    "available-actions-title": "Available actions:",
+    "actions": {
+      "perform-commit": "Perform the commit",
+      "open-merge-states-list": "Open the list of existing merge states",
+      "cancel-commit": "Cancel the action of committing by closing dialog",
+      "open-diff-editor": "Open the diff editor for the merge state, and finalize it",
+      "close-and-handle-later": "Close this dialog and handle it later"
+    },
+    "button": {
+      "commit-anyways": "Commit anyways",
+      "open-merge-states-list": "Open merge states list",
+      "open-diff-editor": "Open diff editor for merge state"
+    }
+  },
+  "create-new-branch-dialog": {
+    "title": {
+      "create-new-branch": "Create new branch in Dataspecer for project",
+      "turn-existing-into-branch": "Set name for branch to be created from static commit"
+    },
+    "description": {
+      "create-new-branch": "On confirm creates new package, which is copy of the source package and has branch set to given name.",
+      "create-new-branch-warning": "⚠️ Do not forget to commit (push) the branch to Git repository.",
+      "turn-existing-into-branch": "On confirm sets branch of the chosen data specification."
+    },
+    "label": {
+      "branch-name": "Branch name"
+    },
+    "tooltip": {
+      "branch-name": "Setting the branch name for the following projectIri: {{projectIri}}"
+    },
+    "loading": {
+      "dialogTitle": "Creating new branch in Dataspecer. Do not forget to push it to the remote after you are done.",
+      "waitingText": "Do not modify the package while branch is being created"
+    },
+    "toast": {
+      "branch-empty": "Given branch name is empty.",
+      "branch-already-exists": "Branch already exists.",
+      "failed-create-branch": "Failed to create the new branch.",
+      "success-create-branch": "Successfully created new branch in Dataspecer. Don't forget to push it.",
+      "unknown-failure-create-branch": "Unknown failure when creating new branch."
+    }
+  },
+  "ssh-menu": {
+    "title": "Manage SSH key",
+    "description": {
+      "line-1": "SSH keys in Dataspecer are useful mainly for two types of users:",
+      "line-2": "1) You signed in using a non-Git authentication provider (e.g., Keycloak).",
+      "line-3": "2) You have security concerns.",
+      "line-4": "- You simply do not trust Dataspecer to have access to anything except the profile info (name + email).",
+      "line-5": "- SSH key gives Dataspecer weaker permissions compared to the sign-in using \"push\" scope.",
+      "line-6": "- Also you can use so-called \"deploy\" SSH key associated with a single repository.",
+      "line-7": "Limitations:",
+      "line-8": "- At most one SSH key per authentication provider.",
+      "line-9": "- The private SSH key is stored in Dataspecer filesystem unencrypted."
+    },
+    "future-use-tooltip": "Currently not possible. However, in future it might be.",
+    "security-tooltip": {
+        "line-1": "This is how SSH works - Keys not protected by password are stored unencrypted. Those with password are stored encrypted.",
+        "line-2": "The key is never sent back to client.",
+        "line-3": "Possible attacker would have to get possession of the server and the file to steal it."
+    },
+    "add-button-title": "Experimental. Adds private SSH key to the Dataspecer.",
+    "add-button": "Add private SSH key",
+    "remove-button": "Remove private SSH key"
+  },
+  "show-svgs-diff-dialog": {
+    "title": "The visual diff of SVGs"
+  },
+  "show-merge-state-info-dialog": {
+    "title": "Info about merge state",
+    "conflict-count": "Conflict count:",
+    "merge-state-cause": "Merge state cause:",
+    "branch-label": "Branch:",
+    "merge-from-branch": "Merge from branch:",
+    "merge-to-branch": "Merge to branch:",
+    "created-at": "DiffTree created at:",
+    "modified-at": "DiffTree modified at:",
+    "iri-label": "IRI:",
+    "merge-from-iri": "Merge from IRI:",
+    "merge-to-iri": "Merge to IRI:",
+    "commit-hash": "Commit hash:",
+    "merge-from-commit-hash": "Merge from commit hash:",
+    "merge-to-commit-hash": "Merge to commit hash:",
+    "location-label": "Location:",
+    "merge-from-location": "Merge from location:",
+    "merge-to-location": "Merge to location:",
+    "git-url": "Git URL:"
+  },
+  "set-projectIRI-and-branch-dialog": {
+    "title": "Set project IRI and branch name for package",
+    "branch-label": "Set branch",
+    "projectIri-label": "Set project IRI"
+  },
+  "set-private-ssh-dialog": {
+    "title": "Store private SSH key for GitHub in Dataspecer",
+    "description": {
+      "line-1": "After submitting stores the given SSH key on server for the given login info (currently GitHub only).",
+      "line-2": "The SSH key should follow these rules:"
+    },
+    "rules": {
+      "rule-1": "Be on one line (no \\n)",
+      "rule-2": "Have no password",
+      "rule-3": "Be of type ed25519"
+    },
+    "input-placeholder": "Private SSH key",
+    "success-toast": "SSH key is successfully stored on server",
+    "error-toast": "Failed to set private SSH key, check console for more info."
+  },
+  "set-git-remote-configuration-dialog": {
+    "title": "Set new Git configuration",
+    "description": "The listed values are taken from the Git configuration.",
+    "tooltip": {
+      "set-config-separately": {
+        "line.one": "Currently changing these values after the repository was already created may cause issues. This part of Git integration is not tested properly.",
+        "line.two": "Also changing the publication branch expects you to change the GitHub (respectively Git provider) settings to track the correct branch."
+      }
+    },
+    "error": {
+      "save-failed": "Failed storing the new Git configuration to backend"
+    }
+  },
+  "delete-git-repo-dialog": {
+    "title": "Delete Git repository",
+    "description": {
+      "line.one": {
+        "part-one": "You are about to ",
+        "part-two": "DELETE",
+        "part-three": " remote Git repository. Are you sure?"
+      },
+      "line.two": "The Git repository URL:"
+    },
+    "button": {
+      "delete": "Delete"
+    }
+  },
+  "outside-changes-to-diff-editor-action-dialog": {
+    "title": "Changes detected outside the editor",
+    "description": {
+      "up-to-date": "The modification came from another diff editor instance.",
+      "not-up-to-date": "The modification came from another component of Dataspecer and not another instance of diff editor."
+    },
+    "working-version-modified-at": "Working version modified at",
+    "new-version-modified-at": "New version modified at",
+    "info": {
+      "line.one": {
+        "part-one": "Cancel",
+        "part-two": " closes the dialog, but keeps the diff editor unchanged."
+      },
+      "line.two": {
+        "part-one": "Discard changes",
+        "part-two": " discards your changes and resets the editor."
+      },
+      "line.three": {
+        "part-one": "Save changes",
+        "part-two": " saves your changes to backend."
+      }
+    },
+    "button": {
+      "cancel": "Cancel",
+      "discard-changes": "Discard changes",
+      "save-changes": "Save changes"
+    },
+    "save-changes-tooltip-text": "Only the files loaded in diff editor are saved. That is those which you touched while working in diff editor. They can be identified by the 📥 icon next to them."
+  },
+  "git-history-visualization": {
+    "title": "Project history in Git",
+    "description": {
+      "branch-tracked": " = Branch is tracked in DS.",
+      "branch-not-tracked": " = Branch not tracked in DS.",
+      "commit": {
+        "part.1": " = The commit exists in DS and it tracks commit, similarly ",
+        "part.2": "tracks head of branch. Click on the ⚪/⬜ to perform further actions. "
+      }
+    },
+    "error": "Fetch error, check console for more info"
+  },
+  "git-history-visualization-commit-actions": {
+    "title": "Perform action on Git commit",
+    "description": {
+      "closing": "Closing the dialog brings back the Git graph.",
+      "iri": "IRI:",
+      "label": "Label:",
+      "commit-hash": "Commit Hash:",
+      "branch": "Branch:",
+      "branch-already-tracked": "The Branch is already tracked in Dataspecer",
+      "commit-already-exists": "The commit already exists inside DS. However, you can import it again."
+    },
+    "import-commit": "Import commit as new Dataspec",
+    "import-branch": "Import branch as new Dataspec",
+    "view-in": "View in {{provider}}",
+    "tooltip": {
+      "branch-exists": {
+        "line.1": {
+          "part.1": "If the ",
+          "part.2": "branch already exists",
+          "part.3": " inside Dataspecer, it is forbidden (for your own good) to have two packages tracking the same remote branch in Dataspecer."
+        },
+        "line.2": {
+          "part.1": "You can ",
+          "part.2": "import static commit",
+          "part.3": " and then turn the commit into branch with ",
+          "part.4": "new",
+          "part.5": " name. Or just click on ",
+          "part.6": "Create branch",
+          "part.7": " in the Git menu."
+        }
+      }
+    }
+  },
+  "list-git-issues": {
+    "title": "List of opened issues",
+    "description": {
+      "line.1": "You can click on the issues and get redirected to them.",
+      "line.2": "You can also click on the 'Create new issue' to get redirected on the corresponding page."
+    },
+    "headers": {
+      "title": "Title",
+      "created-at": "Created at",
+      "last-activity-at": "Last activity at",
+      "author": "Author",
+      "labels": "labels"
+    },
+    "pagination": {
+      "issues-on-page": "Issues on page",
+      "total-issue-count": "Total issue count"
+    },
+    "create-new-issue": "Create new issue"
+  },
+  "merge-state": {
+    "list": {
+      "title": "List of currently opened merge states for chosen data specification",
+      "empty": "There are currently no merge states open for selected data specification.",
+      "sorted-by-date": "Sorted by creation date (newest first).",
+      "hint": {
+        "pull": "Hint for resolving PULL merge states",
+        "single": "Hint when you have more than one merge state, but it may help you anyways.",
+        "many": "Overhelmed by too many merge states? Check this hint."
+      },
+      "columns": {
+        "created-at": "Created at",
+        "last-modified-at": "Last modified at",
+        "cause": "Cause",
+        "merge-from": "Merge from",
+        "merge-to": "Merge to"
+      },
+      "button": {
+        "open-diff-editor": "Open merge state in diff editor",
+        "show-info": "Show info about merge state",
+        "remove": "Remove merge state"
+      }
+    },
+    "resolve-order-tooltip": {
+      "line.two": {
+        "part.one": "If you are completely stuck then ",
+        "part.two": "remove",
+        "part.three": " all of the created merge states and do the following:"
+      },
+      "list": {
+        "one": "If you are sure that you want to commit some changes. Simply commit.",
+        "two": "If you just want to be up to date with the remote, then pull.",
+        "three": "If you want to merge, then make the two branches up to date (either by pulling or commiting) and create merge state for merge."
+      }
+    },
+    "pull-resolving-hint-tooltip": {
+      "line.two": "Hint: Performing MANUAL pull succeeds without merge state if you did not do any action between now and the last Git operation."
+    },
+    "finalizer": {
+      "waiting": {
+        "validation": "Validating merge state against Git remote.",
+        "validation-duration": "Usually takes around {{lower}}-{{upper}} seconds.",
+        "seconds-passed": "{{seconds}} seconds passed",
+        "updating-merge-state": "Updating last commit hash metadata and removing merge state."
+      },
+      "toast": {
+        "unresolved-conflicts": "There are still unresolved conflicts",
+        "finalizer-finished": "Finalizer successfully finished",
+        "error-finalizer": "There was error when finalizing, check console for more info",
+        "finalizing-successful": "Finalizing was successful",
+        "finalizing-failed": "Finalizing ended in failure",
+        "merge-proceed": "Everything seems to be ok. Proceed with merging.",
+        "rebase-proceed": "Everything seems to be ok. Proceed with rebasing.",
+        "removed-merge-state": "Successfully removed merge state",
+        "remove-merge-state-failed": "Removal of merge state failed",
+        "remove-merge-state-successful": "Removal of merge state was successful"
+      },
+      "pull": {
+        "title": "Finish merge state caused by pulling",
+        "description": {
+          "line.one": "Clicking on finish pull will close the merge state and update last commit hash to reflect the pulled remote.",
+          "line.two": "Note that after pulling second dialog may appear if the package in DS is already ahead of the commit."
+        },
+        "button": {
+          "finish": "Finish pull"
+        },
+        "error": {
+          "description": {
+            "line.one": "It appears that the commit, which is being pulled is already behind current commit inside DS.",
+            "line.two": "You can either remove the merge state and don't update the last commit for the package (The frequent choice). Or update the last commit hash in DS (and remove the merge state).",
+            "line.three": "Or you can just close the dialog and decide later."
+          },
+          "button": {
+            "remove": "Remove merge state",
+            "update": "Update the last commit hash in DS"
+          }
+        }
+      },
+      "merge": {
+        "title": "Finish merge state caused by merging",
+        "no-branch": {
+          "title": "Finishing merging to non-branch",
+          "description": "There is no action to perform. Merge state was removed."
+        },
+        "description": {
+          "buttons-info": "Check tooltips on button{{suffix}} for more info."
+        },
+        "button": {
+          "rebase": "Rebase",
+          "merge": "Merge",
+          "rebase-tooltip": "Creates new commit with the changes on top. Basically the same thing as fast-forward.",
+          "merge-tooltip": "Creates classic merge commit."
+        },
+        "error": {
+          "unknown": "⚠️ Unknown error when finalizing merge state caused by merging. You can check console for more information.\n\nUsually it is caused by one branch not matching the remote state (or not being pushed in the remote repository).",
+          "remote-head-moved": "It appears that the remote head moved, therefore you are no longer pushing on top of the latest commit(s).\nYou can either remove the merge state (and pull change(s) and create new merge state) or close dialog.",
+          "button": {
+            "remove": "Remove merge state",
+            "close": "Close dialog"
+          }
+        }
+      },
+      "push": {
+        "title": "Finish merge state caused by pushing to remote repository",
+        "description": {
+          "line.one": "You can either push the current content of package to Git remote or close the dialog and finish later.",
+          "line.two": "If the remote moved, you will be informed that the push failed."
+        },
+        "button": {
+          "push": "Push"
+        },
+        "error": {
+          "title": "Finish merge state caused by pushing",
+          "unknown": "⚠️ Unknown error when finalizing merge state caused by pushing. You can check console for more information.\n\nUsually it is caused by the branch not matching the remote state",
+          "remote-head-moved": "It appears that the remote head moved, therefore you are no longer pushing on top of the latest commit.\nYou can either remove the merge state (and run push again, which will create new merge state with correct remote commit) or close dialog.",
+          "button": {
+            "remove": "Remove merge state",
+            "close": "Close dialog"
+          }
+        }
+      }
+    }
+  }
 }

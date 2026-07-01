@@ -1,0 +1,1165 @@
+import { FetchResponse, HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
+// Using this one since I could not make the ones for nodeJS (one is not using ES modules and the other one seems to be too old and correctly support types)
+import sodium from "libsodium-wrappers-sumo";
+import { AuthenticationGitProviderData, GitProviderBase } from "../git-provider-base.ts";
+import { AuthenticationGitProvidersData } from "../git-provider-factory.ts";
+import { AccessToken, AccessTokenType, CommitReferenceType, CreateRemoteRepositoryReturnType, GetResourceForGitUrlAndBranchType, GitCredentials, GitProviderEnum, GitRef, PUBLICATION_BRANCH_DEFAULT_NAME, GitProviderIndependentWebhookRequestData, PullRequestFetchResponse, PullRequestInfo, PullRequestInvolvingUserFetchResponse, UserOrganizationsFetchResponse, GitHubLabel, getGitProviderDomain, GetLatestCommitResult } from "../../git-provider-api.ts";
+import { GitRestApiOperationError } from "../../error-definitions.ts";
+import { findPatAccessToken, GITHUB_USER_AGENT } from "../../git-utils.ts";
+import { GitIssueInfo, GitIssuesFetchResponse, IssueState } from "../../git-issues/git-issue-types.ts";
+import { dataspecerGitIssueLabels } from "../../git-issues/git-issue-labels.ts";
+import { GenericScope } from "@dataspecer/auth";
+
+
+const scopes = ["read:user", "read:org", "user:email", "public_repo", "workflow", "delete_repo"] as const;
+export type GitHubScope = typeof scopes[number];
+
+
+// Note:
+// Even though the request usually work without, the docs demand to specify User-Agent in headers for REST API requests
+// https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api?apiVersion=2022-11-28#user-agent
+
+export class GitHubProvider extends GitProviderBase {
+  ////////////////////////////
+  // Fields
+  ////////////////////////////
+
+  ////////////////////////////
+  // Constructor
+  ////////////////////////////
+  constructor(httpFetch: HttpFetch, authenticationGitProvidersData: AuthenticationGitProvidersData) {
+    const authenticationGitProviderData: AuthenticationGitProviderData = {
+      gitBotConfiguration: authenticationGitProvidersData?.gitBotConfigurations?.github,
+      authConfiguration: authenticationGitProvidersData?.authConfiguration,
+    };
+    super(httpFetch, authenticationGitProviderData);
+  }
+
+  ////////////////////////////
+  // Methods
+  ////////////////////////////
+  getProviderName(): string {
+    return "GitHub";
+  }
+
+  getProviderSpecificLabel(githubLabel: GitHubLabel): string {
+    return githubLabel;
+  }
+
+  getGitProviderEnumValue(): GitProviderEnum {
+    return GitProviderEnum.GitHub;
+  }
+
+  getDomainURL(shouldPrefixWithHttps: boolean, shouldEndWithSlash: boolean): string {
+    return getGitProviderDomain(this.getGitProviderEnumValue(), shouldPrefixWithHttps, shouldEndWithSlash);
+  }
+
+  setDomainURL(newDomainURL: string): void {
+    // EMPTY - GitHub has only one domain
+  }
+
+  getGitPagesURL(repositoryUrl: string): string {
+    const owner = this.extractPartOfRepositoryURL(repositoryUrl, "repository-owner");
+    const repositoryName = this.extractPartOfRepositoryURL(repositoryUrl, "repository-name");
+    return `https://${owner}.github.io/${repositoryName}`;
+  }
+
+  async extractDataForWebhookProcessing(webhookPayload: any, getResourceForGitUrlAndBranch: GetResourceForGitUrlAndBranchType): Promise<GitProviderIndependentWebhookRequestData | null> {
+    // https://docs.github.com/en/webhooks/webhook-events-and-payloads#push
+
+    const refPrefix = "refs/heads/";
+    const branch = webhookPayload.ref.substring(refPrefix.length);
+    const repoName = webhookPayload.repository.name;
+    const repoURL = webhookPayload.repository.html_url;
+    const resourceToUpdateInWebhook = await getResourceForGitUrlAndBranch(repoURL, branch);
+
+    const iri = resourceToUpdateInWebhook?.iri;
+    if (iri === undefined) {
+      // This means that new branch was added to git, but the branch does not have equivalent in the DS
+      // TODO RadStr PR: We could create new package automatically, but I am not sure if we want that
+      return null;
+    }
+
+    const gitURL = webhookPayload.repository.git_url;
+    const cloneURL = webhookPayload.repository.clone_url;
+    const commits = webhookPayload.commits;
+    // Head commit could be useful
+    // const beforeCommit = webhookPayload.before;
+    // const afterCommit = webhookPayload.after;
+    // const lastCommit = webhookPayload.head_commit;
+    // const { id: lastId, tree_id: lastTreeId, url: lastUrl, added, removed, modified } = lastCommit;
+
+    return {
+      cloneURL,
+      commits,
+      repoName,
+      iri,
+      branch,
+    };
+  }
+
+  extractHashFromWebhookCommitObject(commit: object): string {
+    return (commit as any).id;
+  }
+  isPushWebhook(requestHeader: Record<string, any>): boolean {
+    // The headers from express request are lowercase
+    return requestHeader["x-github-event"] === "push";
+  }
+
+  removeRemoteRepository(authToken: string, repositoryOwner: string, repoName: string): Promise<FetchResponse> {
+    // https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#delete-a-repository
+    const fetchResponse = this.httpFetch(`https://api.github.com/repos/${repositoryOwner}/${repoName}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/vnd.github+json",
+        "Authorization": `Bearer ${authToken}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Accept": "application/vnd.github+json",
+        "User-Agent": GITHUB_USER_AGENT,
+      },
+    });
+
+    return fetchResponse;
+  }
+
+  async createWebhook(
+    authToken: string,
+    repositoryOwner: string,
+    repositoryName: string,
+    webhookHandlerURL: string,
+    webhookEvents: string[],
+  ): Promise<FetchResponse> {
+    // https://docs.github.com/en/rest/repos/webhooks?apiVersion=2022-11-28#create-a-repository-webhook
+
+    const webhookPayload = {
+      "name": "web",
+      "active": true,
+      "events": webhookEvents,
+      "description": "Auto-generated webhook for Dataspecer connection",
+      "config": {
+        "url": webhookHandlerURL,
+        "content_type": "x-www-form-urlencoded",    // Or can be JSON
+        "insecure_ssl": "0"
+      }
+    };
+
+    const requestHeaders = {
+      "Content-Type": "application/vnd.github+json",
+      "Authorization": `Bearer ${authToken}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+      "User-Agent": GITHUB_USER_AGENT,
+    };
+
+
+    const fetchWebhooksResponse = await this.httpFetch(`https://api.github.com/repos/${repositoryOwner}/${repositoryName}/hooks`, {
+      method: "GET",
+      headers: requestHeaders,
+    });
+
+    if (!(fetchWebhooksResponse.status >= 200 && fetchWebhooksResponse.status < 300)) {
+      return fetchWebhooksResponse;
+    }
+
+    const existingWebhooks = await fetchWebhooksResponse.json();
+    const existingHook = (existingWebhooks as any[]).find(hook => hook.config?.url === webhookPayload.config.url);
+    if (existingHook !== undefined) {
+      // Already existed just return the fetched webhooks
+      // TODO: The return type of this method can be improved. Sometimes we return the response of the GET request and sometimes of the POST.
+      //       But we usually just need the information if there was a success or not.
+      return fetchWebhooksResponse;
+    }
+
+
+    const createWebhookResponse = await this.httpFetch(`https://api.github.com/repos/${repositoryOwner}/${repositoryName}/hooks`, {
+      method: "POST",
+      headers: requestHeaders,
+      body: JSON.stringify(webhookPayload),
+    });
+
+    return createWebhookResponse;
+  }
+
+  async createRemoteRepository(
+    authToken: string,
+    organization: string | null,
+    repoName: string,
+    shouldEnablePublicationBranch: boolean,
+    publicationBranchName: string | null,
+  ): Promise<CreateRemoteRepositoryReturnType> {
+    publicationBranchName ??= PUBLICATION_BRANCH_DEFAULT_NAME;
+
+    // https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#create-an-organization-repository - org repo
+    // vs
+    // https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#create-a-repository-for-the-authenticated-user - user repo
+
+    const payload = {
+      "name": repoName,
+      "description": "Auto-generated repository to test Dataspecer connection",
+      "homepage": "https://github.com",
+      "private": false,
+      "is_template": false,
+      "auto_init": true     // We need this otherwise the repository does not have any branch, which creates a lot of issues
+                            // TODO RadStr: Maybe we need it only for the publication repository though
+    };
+
+    const restEndpoint = organization === null ? "https://api.github.com/user/repos" : `https://api.github.com/orgs/${organization}/repos`;
+
+    const fetchResponse = await this.httpFetch(restEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/vnd.github+json",
+        "Authorization": `Bearer ${authToken}`,
+        // The new REST API version has required default_branch field unlike the old one.
+        "X-GitHub-Api-Version": "2026-03-10",
+        "Accept": "application/vnd.github+json",
+        "User-Agent": GITHUB_USER_AGENT,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (fetchResponse.status < 200 || fetchResponse.status >= 300) {
+      const content = JSON.stringify(await fetchResponse.json());
+      throw new GitRestApiOperationError(`Error when creating new remote GitHub repository: ${fetchResponse.status} ${fetchResponse} ${content}`, fetchResponse.status);
+    }
+
+    const responseAsJSON = (await fetchResponse.json()) as any;
+    const defaultBranch: string | null = responseAsJSON?.default_branch ?? null;
+    const repositoryOwner = responseAsJSON?.owner.login;
+    if (defaultBranch === null) {
+      throw new Error("DEFAULT BRANCH IS NULL")
+    }
+
+
+    if (shouldEnablePublicationBranch) {
+      // We have to create the branch first, we can not enable GH pages on not existing branch
+      const defaultBranchExplicit = defaultBranch ?? "main";
+      // We have to try it multiple times, because for some reason one day the remote repository wa not ready after creation
+      //  Therefore, the request to get latest commit failed right after creation
+      let initialCommitHash: string | null = null;
+      let waitTime = 500;
+      let latestCommitResult: GetLatestCommitResult;
+      for (let i = 0; i < 10; i++) {
+        latestCommitResult = await this.getLatestCommit(repositoryOwner, repoName, defaultBranchExplicit, authToken);
+        if (latestCommitResult.type === "ok") {
+          initialCommitHash = latestCommitResult.sha;
+          break;
+        }
+        else {
+          if (latestCommitResult.fetchResponse.status !== 404) {
+            throw latestCommitResult.error;
+          }
+        }
+        // We got 404
+        await new Promise(res => setTimeout(res, waitTime));  // Sleep for waitTime ms
+        waitTime *= 2;                            // Double the wait time
+        waitTime = Math.min(waitTime, 10000);
+      }
+
+      if (initialCommitHash === null) {
+        if (latestCommitResult.type === "error") {
+          throw latestCommitResult.error;
+        }
+        throw new Error("Created the remote repository, but it is not available for some reason. We cannot create the publication branch on the remote repository.");
+      }
+      await this.createBranch(repositoryOwner, repoName, publicationBranchName, initialCommitHash, authToken);
+      const pagesResponse = await this.enableGitHubPages(repoName, repositoryOwner, publicationBranchName, authToken);
+    }
+
+    await this.createDataspecerIssueLabels(repositoryOwner, repoName, authToken);
+
+    return {
+      response: fetchResponse,
+      defaultBranch,
+    };
+  }
+
+
+
+  public async getLatestCommit(repositoryOwner: string, repoName: string, branch: string, authToken: string): Promise<GetLatestCommitResult> {
+    const url = `https://api.github.com/repos/${repositoryOwner}/${repoName}/branches/${branch}`;
+
+    const fetchResponse = await this.httpFetch(url, {
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+        "X-GitHub-Api-Version": "2026-03-10",
+        Accept: "application/vnd.github+json",
+        "User-Agent": GITHUB_USER_AGENT,
+      }
+    });
+
+    if (fetchResponse.status < 200 || fetchResponse.status >= 300) {
+      const textResponse = await fetchResponse.text();
+      return {
+        type: "error",
+        fetchResponse,
+        error: new GitRestApiOperationError(`Error when getting the latest commit of GitHub repository: ${repositoryOwner};${repoName};${branch} ${fetchResponse.status} ${textResponse}`, fetchResponse.status),
+      }
+    }
+
+    const responseAsJSON = (await fetchResponse.json()) as any;
+    const latestCommitHash = responseAsJSON.commit.sha;
+    return {
+      type: "ok",
+      sha: latestCommitHash
+    };
+
+
+    // ... Another possible implementation, should be also working.
+    // const mainRefUrl = `https://api.github.com/repos/${repositoryOwner}/${repoName}/git/ref/heads/${branch}`;
+
+    // const fetchResponse1 = await this.httpFetch(mainRefUrl, {
+    //   headers: {
+    //     Authorization: `Bearer ${authToken}`,
+    //     "X-GitHub-Api-Version": "2026-03-10",
+    //     Accept: "application/vnd.github+json",
+    //     "User-Agent": GITHUB_USER_AGENT,
+    //   },
+    // });
+
+    // const fetchResponse2 = await this.httpFetch(mainRefUrl, {
+    //   headers: {
+    //     Authorization: `Bearer ${authToken}`,
+    //     "X-GitHub-Api-Version": "2022-11-28",
+    //     Accept: "application/vnd.github+json",
+    //     "User-Agent": GITHUB_USER_AGENT,
+    //   },
+    // });
+
+
+    // return {
+    //   type: "error",
+    //   fetchResponse: fetchResponse1,
+    //   error: new GitRestApiOperationError(`${fetchResponse1.status} ${fetchResponse2.status} ${await fetchResponse1.text()} ${await fetchResponse2.text()}`),
+    // };
+
+    // throw new Error(`${fetchResponse1.status} ${fetchResponse2.status}`)
+    // // if (fetchResponse.status < 200 || fetchResponse.status >= 300) {
+    // //   const textResponse = await fetchResponse.text();
+    // //   return {
+    // //     type: "error",
+    // //     fetchResponse,
+    // //     error: new GitRestApiOperationError(`Error when getting the latest commit of GitHub repository: ${repositoryOwner};${repoName};${branch} ${fetchResponse.status} ${textResponse}`),
+    // //   }
+    // // }
+
+    // // const responseAsJSON = (await fetchResponse.json()) as any;
+    // // const latestCommitHash = responseAsJSON.object.sha;
+    // // return {
+    // //   type: "ok",
+    // //   sha: latestCommitHash
+    // // };
+  }
+
+  private async createBranch(repositoryOwner: string, repoName: string, branch: string, latestCommitHash: string, authToken: string) {
+    const createRefUrl = `https://api.github.com/repos/${repositoryOwner}/${repoName}/git/refs`;
+
+    const fetchResponse = await this.httpFetch(createRefUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+        Accept: "application/vnd.github+json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ref: `refs/heads/${branch}`,
+        sha: latestCommitHash,
+      }),
+    });
+
+    if (fetchResponse.status < 200 || fetchResponse.status >= 300) {
+      throw new GitRestApiOperationError(`Error when creating branch of GitHub repository: ${fetchResponse.status} ${fetchResponse}`, fetchResponse.status);
+    }
+
+    return fetchResponse;
+  }
+
+  getBotCredentials(): GitCredentials | null {
+    const accessTokens: AccessToken[] = [];
+    const githubConfiguration = this.authenticationGitProviderData.gitBotConfiguration;
+
+    if (githubConfiguration?.dsBotSSHId !== undefined) {
+      accessTokens.push({
+        isBotAccessToken: true,
+        type: AccessTokenType.SSH,
+        value: githubConfiguration.dsBotSSHId,
+      });
+    }
+    if (githubConfiguration?.dsBotAbsoluteGitProviderControlToken !== undefined) {
+      accessTokens.push({
+        isBotAccessToken: true,
+        type: AccessTokenType.PAT,
+        value: githubConfiguration.dsBotAbsoluteGitProviderControlToken,
+      });
+    }
+
+    if (accessTokens.length === 0 || githubConfiguration?.dsBotUserName === undefined || githubConfiguration?.dsBotEmail === undefined) {
+      return null;
+    }
+
+    return {
+      name: githubConfiguration.dsBotUserName,
+      isBotName: true,
+      email: githubConfiguration.dsBotEmail,
+      isBotEmail: true,
+      accessTokens,
+    };
+  }
+
+  async setBotAsCollaborator(repositoryOwner: string, repoName: string, accessToken: string): Promise<FetchResponse> {
+    // We have to actually perform 2 steps:
+    //  1) Add the collaborator
+    //  2) The collaborator has to accept the invitation
+
+
+    // Adding collaborator
+    // https://docs.github.com/en/rest/collaborators/collaborators?apiVersion=2022-11-28#add-a-repository-collaborator
+    const botCredentials = this.getBotCredentials();
+    if (botCredentials === null) {
+      throw new Error("Name of bot is not defined, we can not add him as a collaborator to repository");
+    }
+
+    const restEndPointToAddCollaborator = `https://api.github.com/repos/${repositoryOwner}/${repoName}/collaborators/${botCredentials.name}`;
+    const payload = {
+      permission: "push",
+    };
+
+    const addingCollaboratorFetchResponse = this.httpFetch(restEndPointToAddCollaborator, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/vnd.github+json",
+        "Authorization": `Bearer ${accessToken}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Accept": "application/vnd.github+json",
+        "User-Agent": GITHUB_USER_AGENT,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const addingCollaboratorFetchResponseAwaited = await addingCollaboratorFetchResponse;
+    if (addingCollaboratorFetchResponseAwaited.status < 200 || addingCollaboratorFetchResponseAwaited.status > 299) {
+      console.error("Could not add bot as a collaborator", addingCollaboratorFetchResponseAwaited);
+      return addingCollaboratorFetchResponse;
+    }
+
+    const addingCollaboratorResponseAsJSON = await addingCollaboratorFetchResponseAwaited.json();
+    const invitationIdentifier = (addingCollaboratorResponseAsJSON as any)?.["id"];
+
+    // Accepting invitation
+    // https://docs.github.com/en/rest/collaborators/invitations?apiVersion=2022-11-28#accept-a-repository-invitation
+    const botAccessToken = findPatAccessToken(botCredentials.accessTokens);
+    if (botAccessToken === null) {
+      throw new Error("There is not defined bot access token, so bot can not accept collaborator invitation");
+    }
+    const acceptInvitationRestEndpoint = `https://api.github.com/user/repository_invitations/${invitationIdentifier}`;
+
+    const acceptInvitationFetchResponse = this.httpFetch(acceptInvitationRestEndpoint, {
+      method: "PATCH",
+      headers: {
+        "Authorization": `Bearer ${botAccessToken}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Accept": "application/vnd.github+json",
+        "User-Agent": GITHUB_USER_AGENT,
+      },
+    });
+
+    return acceptInvitationFetchResponse;
+  }
+
+  async getUserLoginForAuthToken(authToken: string): Promise<string | null> {
+    const restEndpointForPublicKey = "https://api.github.com/user";
+
+    const response = await this.httpFetch(restEndpointForPublicKey, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${authToken}`,
+        "X-GitHub-Api-Version": "2026-03-10",
+        "Accept": "application/vnd.github+json",
+        "User-Agent": GITHUB_USER_AGENT,
+      },
+    });
+
+    if (response.status < 200 || response.status > 299) {
+      throw new GitRestApiOperationError(`Error ${response.status}: ${JSON.stringify(await response.json())}`, response.status);
+      return null;
+    }
+
+    const responseAsJSON: any = await response.json();
+    return responseAsJSON?.login ?? null;
+  }
+
+  async setRepositorySecret(repositoryOwner: string, repoName: string, accessToken: string, secretKey: string, secretValue: string): Promise<FetchResponse> {
+    // Get public key for encryption - https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#get-a-repository-public-key
+    const restEndpointForPublicKey = `https://api.github.com/repos/${repositoryOwner}/${repoName}/actions/secrets/public-key`;
+
+    const publicKeyResponse = this.httpFetch(restEndpointForPublicKey, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Accept": "application/vnd.github+json",
+        "User-Agent": GITHUB_USER_AGENT,
+      },
+    });
+
+    const publicKeyResponseValue = await publicKeyResponse;
+
+    if (publicKeyResponseValue.status < 200 || publicKeyResponseValue.status > 299) {
+      console.error("Not 2** status when fetching public key to store encrypted value of secret");
+      return publicKeyResponse;
+    }
+
+    const publicKeyJSONResponse = await publicKeyResponseValue.json();
+
+
+
+    const publicKey = (publicKeyJSONResponse as any)?.["key"];
+    const publicKeyIdentifier = (publicKeyJSONResponse as any)?.["key_id"];
+
+    if (publicKey === undefined || publicKeyIdentifier === undefined) {
+      console.error("Can't fetch public key values from repository, so we can't store encrypted value of secret");
+      return publicKeyResponse;
+    }
+
+    // Encrypt
+    // Based on https://docs.github.com/en/rest/guides/encrypting-secrets-for-the-rest-api?apiVersion=2022-11-28#example-encrypting-a-secret-using-nodejs
+    await sodium.ready;
+
+    // Convert the secret and key to a Uint8Array.
+    const binaryKey = sodium.from_base64(publicKey, sodium.base64_variants.ORIGINAL);
+    const binarySecret = sodium.from_string(secretValue);
+
+    // Encrypt the secret using libsodium
+    const encryptedBytes = sodium.crypto_box_seal(binarySecret, binaryKey);
+
+    // Convert the encrypted Uint8Array to Base64
+    const encryptedSecretValue = sodium.to_base64(encryptedBytes, sodium.base64_variants.ORIGINAL);
+
+
+    // Store the encrypted secret
+    // https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#create-or-update-a-repository-secret
+    const restEndPoint = `https://api.github.com/repos/${repositoryOwner}/${repoName}/actions/secrets/${secretKey}`;
+
+    const payload = {
+      encrypted_value: encryptedSecretValue,
+      key_id: publicKeyIdentifier
+    };
+
+    const fetchResponse = this.httpFetch(restEndPoint, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/vnd.github+json",
+        "Authorization": `Bearer ${accessToken}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Accept": "application/vnd.github+json",
+        "User-Agent": GITHUB_USER_AGENT,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    return fetchResponse;
+  }
+
+  /**
+   * @deprecated We put the GitHub Pages on the same repository instead of onto separate publication repository
+   * ..... it is deprecated I will no longer bother with fixing the implemetnation. Because of the repository owner and its relation to Auth (It returns The username not login name)
+   */
+  async createPublicationRepository(repoName: string, isUserRepo: boolean, repositoryOwner?: string, accessToken?: string): Promise<FetchResponse> {
+    throw new Error("Not implemented")
+    // const botCredentials = this.getBotCredentials();
+    // if (botCredentials === null) {
+    //   throw new Error("Can not create publication repository, since there are no bot credentials");
+    // }
+    // const botAccessToken = findPatAccessToken(botCredentials.accessTokens)?.value;
+
+    // repositoryOwner = repositoryOwner ?? botCredentials.name;
+    // accessToken = accessToken ?? (botAccessToken ?? undefined);
+    // if (accessToken === undefined) {
+    //   throw new Error("Can not create publication repository, since there is no access token - neiter from user and from bot");
+    // }
+
+    // await this.createRemoteRepository(accessToken, repositoryOwner, repoName, isUserRepo, false, null);
+    // await this.setBotAsCollaborator(repositoryOwner, repoName, accessToken);
+    // return this.enableGitHubPages(repoName, repositoryOwner, "main", accessToken);
+  }
+
+  getWorkflowFilesDirectoryName(): string {
+    return ".github";
+  }
+
+  isGitProviderDirectory(fullPath: string): boolean {
+    return fullPath.endsWith(".github");
+  }
+
+
+  /**
+   * Enables GitHub pages for given repository.
+   * @todo This is not part of GitProvider - maybe could be in future - We don't know details of other providers to decide if it should be
+   */
+  async enableGitHubPages(repoName: string, repositoryOwner: string, branch: string, accessToken: string): Promise<FetchResponse> {
+    // https://docs.github.com/en/rest/pages/pages?apiVersion=2022-11-28#create-a-github-pages-site
+    const payload = {
+      source: {
+        branch: branch,
+        path: "/" // Can be / or /docs - it is where are the pages' source stored
+      }
+    };
+
+    const restEndPoint = `https://api.github.com/repos/${repositoryOwner}/${repoName}/pages`;
+    const fetchResponse = this.httpFetch(restEndPoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${accessToken}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Accept": "application/vnd.github+json",
+        "User-Agent": GITHUB_USER_AGENT,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    return fetchResponse;
+  }
+
+
+  async getDefaultBranch(repositoryURL: string): Promise<string | null> {
+    const repo = this.extractPartOfRepositoryURL(repositoryURL, "repository-name");
+    const owner = this.extractPartOfRepositoryURL(repositoryURL, "repository-owner");
+    const restEndPointForRepo = `https://api.github.com/repos/${owner}/${repo}`;
+
+    const response = await this.httpFetch(restEndPointForRepo, {
+      method: "GET",
+      headers: {
+        "User-Agent": GITHUB_USER_AGENT,
+      },
+    });
+
+    const responseAsJSON = (await response.json()) as any;
+    const defaultBranch = responseAsJSON?.default_branch ?? null;
+
+    return defaultBranch;
+  }
+
+  extractCommitReferenceValueFromRepositoryURLSplit(repositoryURLSplit: string[], _commitReferenceType: CommitReferenceType): string | null {
+    // It has to have correct length and the type has to be "tree" or "commit", otherwise we return null
+    if (repositoryURLSplit.length < 4 || !(repositoryURLSplit.at(-2) === "tree" || repositoryURLSplit.at(-2) === "commit")) {
+      return null;
+    }
+
+    return repositoryURLSplit.at(-1)!;
+  }
+
+
+  protected getZipDownloadLink(owner: string, repo: string, commitName: string, commitReferenceType: CommitReferenceType): string {
+    let urlPartBasedOnCommitReferenceType: string;
+    switch (commitReferenceType) {
+      case "commit":
+        urlPartBasedOnCommitReferenceType = "";
+        break;
+      case "branch":
+        urlPartBasedOnCommitReferenceType = "refs/heads/";
+        break;
+      case "tag":
+        urlPartBasedOnCommitReferenceType = "tags/";
+        break;
+      default:
+        throw new Error(`Invalid commit type: ${commitReferenceType}. Probably programmer error`);
+    }
+    const zipURL = `https://github.com/${owner}/${repo}/archive/${urlPartBasedOnCommitReferenceType}${commitName}.zip`;
+    return zipURL;
+  }
+
+  createGitRepositoryURL(repositoryOwner: string, repoName: string, gitRef?: GitRef): string {
+    const url = `${this.getDomainURL(true, false)}/${repositoryOwner}/${repoName}`;
+    return this.extendGitRepositoryURLByGitRefSuffix(url, gitRef);
+  }
+
+  extendGitRepositoryURLByGitRefSuffix(gitUrl: string, gitRef?: GitRef): string {
+    let branchSuffix: string = "";
+    if (gitRef !== undefined) {
+      if (gitRef.type === "branch") {
+        branchSuffix = `/tree/${gitRef.name}`;
+      }
+      else if (gitRef.type === "commit") {
+        branchSuffix = `/commit/${gitRef.sha}`;
+      }
+    }
+
+    if (gitUrl.endsWith("/")) {
+      gitUrl = gitUrl.substring(0, gitUrl.length - 1);
+    }
+    const url = `${gitUrl}${branchSuffix}`;
+    return url;
+  }
+
+  extractDefaultRepositoryUrl(repositoryUrl: string): string {
+    const domain = this.extractPartOfRepositoryURL(repositoryUrl, "url-domain");
+    const owner = this.extractPartOfRepositoryURL(repositoryUrl, "repository-owner");
+    const repositoryName = this.extractPartOfRepositoryURL(repositoryUrl, "repository-name");
+    if (domain === null) {
+      throw new Error("Invalid domain in" + repositoryUrl);
+    }
+    else if (owner === null) {
+      throw new Error("Invalid owner in" + repositoryUrl);
+    }
+    else if (repositoryName === null) {
+      throw new Error("Invalid repositoryName in" + repositoryUrl);
+    }
+
+    return "https://" + domain + "/" + owner + "/" + repositoryName;
+  }
+
+  public static convertGenericScopeToProviderScopeStatic(scope: GenericScope): GitHubScope[] {
+    switch(scope) {
+      case "userInfo":
+        return ["read:user"];
+      case "readOrg":
+        return ["read:org"];
+      case "email":
+        return ["user:email"];
+      case "publicRepo":
+        return ["public_repo"];
+      case "workflow":
+        return ["workflow"];
+      case "deleteRepo":
+        return ["delete_repo"];
+      default:
+        throw new Error("Unknown scope.");
+    }
+  }
+
+  convertGenericScopeToProviderScope(scope: GenericScope): GitHubScope[] {
+    return GitHubProvider.convertGenericScopeToProviderScopeStatic(scope);
+  }
+
+  public static convertProviderScopeToGenericScopeStatic(scope: GitHubScope): GenericScope {
+    switch(scope) {
+      case "read:user":
+        return "userInfo";
+      case "read:org":
+        return "readOrg";
+      case "user:email":
+        return "email";
+      case "public_repo":
+        return "publicRepo";
+      case "workflow":
+        return "workflow";
+      case "delete_repo":
+        return "deleteRepo";
+      default:
+        throw new Error("Unknown scope.");
+    }
+  }
+
+  convertProviderScopeToGenericScope(scope: GitHubScope): GenericScope {
+    return GitHubProvider.convertProviderScopeToGenericScopeStatic(scope);
+  }
+
+  async revokePAT(personalAccessToken: string): Promise<FetchResponse> {
+    if (this.authenticationGitProviderData.authConfiguration === undefined) {
+      // Probably not needed, we can probably just always use ! instead, it should be always defined if we call this method
+      // But revoking is called rarely, so it is better to just be safe
+      throw new Error("Can not revoke PAT since the auth configuration is not defined")
+    }
+
+    // Generated by ChatGPT after being fed this page https://docs.github.com/en/rest/apps/oauth-applications?apiVersion=2022-11-28#delete-an-app-token
+    const url = `https://api.github.com/applications/${this.authenticationGitProviderData.authConfiguration.gitHubAuthClientId}/token`;
+
+    const response = await this.httpFetch(url, {
+      method: "DELETE",
+      headers: {
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Authorization": "Basic " + Buffer.from(`${this.authenticationGitProviderData.authConfiguration.gitHubAuthClientId}:${this.authenticationGitProviderData.authConfiguration.gitHubAuthClientSecret}`).toString("base64"),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        access_token: personalAccessToken,
+      }),
+    });
+
+    return response;
+  }
+
+  getUrlToPRs(gitUrl: string) {
+    if (!gitUrl.endsWith("/")) {
+      gitUrl += "/";
+    }
+    return `${gitUrl}pulls`;
+  }
+
+  getUrlToIssues(gitUrl: string) {
+    if (!gitUrl.endsWith("/")) {
+      gitUrl += "/";
+    }
+    return `${gitUrl}issues`;
+  }
+
+  getCreateNewIssueUrl(gitUrl: string): string {
+    if (!gitUrl.endsWith("/")) {
+      gitUrl += "/";
+    }
+    return `${gitUrl}issues/new`;
+  }
+
+  convertIssueStateEnumToStringForRequest(issueState: IssueState): string {
+    switch(issueState) {
+      case IssueState.Open:
+        return "open";
+      case IssueState.Closed:
+        return "closed";
+      case IssueState.All:
+        return "all";
+      default:
+        throw new Error(`Unknown issue state (${issueState}) - programmer error, forgot to extend the switch`);
+    }
+  }
+
+  async getTotalIssueCount(gitUrl: string, issueState: IssueState, authToken: string | null): Promise<number> {
+    // Using the query API, similarly as in the PR fetching.
+    const repoOwner = this.extractPartOfRepositoryURL(gitUrl, "repository-owner");
+    const repoName = this.extractPartOfRepositoryURL(gitUrl, "repository-name");
+
+    const issueStateAsString = this.convertIssueStateEnumToStringForRequest(issueState);
+    const token: string | null | undefined = authToken ?? this.authenticationGitProviderData?.gitBotConfiguration?.dsBotAbsoluteGitProviderControlToken;
+    if (token === null || token === undefined) {
+      throw new Error("Can not get total issue count, since there is not auth token to use");
+    }
+    const issuesURL = `https://api.github.com/search/issues?q=repo:${repoOwner}/${repoName}+type:issue+state:${issueStateAsString}&page=1&per_page=1`
+
+    const response = await this.httpFetch(issuesURL, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+
+    const isResponseOk = (status: number) => status >= 200 && status < 300;
+    if (!isResponseOk(response.status)) {
+      throw new Error(`GitHub API error when fetching issue count info: ${response.status}`);
+    }
+
+    const responseData: any = await response.json();
+    return responseData.total_count;
+  }
+
+  async getOpenedPullRequestsForBranch(gitUrl: string, branchToMatch: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse> {
+    // https://docs.github.com/en/rest/search/search?apiVersion=2022-11-28#search-issues-and-pull-requests
+    // https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests#search-by-branch-name
+    // Based on https://chatgpt.com/share/699f6225-7044-8011-80b7-3e4229ea2248
+    // GET https://api.github.com/search/issues?q=repo:owner/repo+is:pr+(base:main+OR+head:main) - ideally we would use, but it does not work
+    // https://github.com/orgs/community/discussions/125409 ... OR does not work
+    const repoOwner = this.extractPartOfRepositoryURL(gitUrl, "repository-owner");
+    const repoName = this.extractPartOfRepositoryURL(gitUrl, "repository-name");
+
+    const token: string | null | undefined = authToken ?? this.authenticationGitProviderData?.gitBotConfiguration?.dsBotAbsoluteGitProviderControlToken;
+    if (token === null || token === undefined) {
+      throw new Error("Can not get pull requests, since there is not auth token to use");
+    }
+
+    const urlMergeFrom = `https://api.github.com/search/issues?q=repo:${repoOwner}/${repoName}+is:pr+is:open+head:${branchToMatch}&per_page=${perPage}&page=${page}`;
+    const urlMergeTo = `https://api.github.com/search/issues?q=repo:${repoOwner}/${repoName}+is:pr+is:open+base:${branchToMatch}&per_page=${perPage}&page=${page}`;
+
+    const responseMergeFrom = await this.httpFetch(urlMergeFrom, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+    const isLastPageForMergeFrom: boolean = this.isLastPageBasedOnLinkHeader(responseMergeFrom);
+
+    const responseMergeTo = await this.httpFetch(urlMergeTo, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+    const isLastPageForMergeTo: boolean = this.isLastPageBasedOnLinkHeader(responseMergeTo);
+
+    const isResponseOk = (status: number) => status >= 200 && status < 300;
+    if (!isResponseOk(responseMergeFrom.status)) {
+      throw new Error(`GitHub API error when fetching PRs: ${responseMergeFrom.status}`);
+    }
+    if (!isResponseOk(responseMergeTo.status)) {
+      throw new Error(`GitHub API error when fetching PRs: ${responseMergeTo.status}`);
+    }
+
+    const mergeFromData: any = await responseMergeFrom.json();
+    const mergeToData: any = await responseMergeTo.json();
+    const mergeData: any = (mergeFromData.items.concat(mergeToData.items));   // No need for checking for duplicates
+
+    return {
+      pullRequests: await Promise.all(mergeData.map(async (pr: any) => await this.convertRestPrToDataspecerPr(pr, token))),
+      totalPrCount: mergeFromData.total_count + mergeToData.total_count,
+      isLastPage: isLastPageForMergeFrom && isLastPageForMergeTo,
+    };
+  }
+
+  async getOpenedPullRequests(gitUrl: string, page: number, perPage: number, authToken: string | null): Promise<PullRequestFetchResponse> {
+    // Simpler than the getOpenedPullRequests for branch, only one REST API call and we do not need to be afraid that the pages have different sizes.
+    const repoOwner = this.extractPartOfRepositoryURL(gitUrl, "repository-owner");
+    const repoName = this.extractPartOfRepositoryURL(gitUrl, "repository-name");
+
+    const token: string | null | undefined = authToken ?? this.authenticationGitProviderData?.gitBotConfiguration?.dsBotAbsoluteGitProviderControlToken;
+    if (token === null || token === undefined) {
+      throw new Error("Can not get pull requests, since there is not auth token to use");
+    }
+
+    const requestUrl = `https://api.github.com/search/issues?q=repo:${repoOwner}/${repoName}+is:pr+is:open&per_page=${perPage}&page=${page}`;
+
+    const response = await this.httpFetch(requestUrl, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+    const isLastPage: boolean = this.isLastPageBasedOnLinkHeader(response);
+
+    const isResponseOk = (status: number) => status >= 200 && status < 300;
+    if (!isResponseOk(response.status)) {
+      throw new Error(`GitHub API error when fetching PRs: ${response.status}`);
+    }
+
+    const mergeData: any = await response.json();
+
+    return {
+      pullRequests: await Promise.all(mergeData.items.map(async (pr: any) => await this.convertRestPrToDataspecerPr(pr, token))),
+      totalPrCount: mergeData.total_count,
+      isLastPage: isLastPage,
+    };
+  }
+
+  async getOpenedPullRequestsInvolvingUser(authToken: string | null): Promise<PullRequestInvolvingUserFetchResponse | null> {
+    if (authToken === null) {
+      return null;
+    }
+
+    const allMergeData: any[] = [];
+    let page = 1;
+    for (; page <= 10; page++) {    // Hardcoded limit - the REST API allows at most 10 pages of size 100
+      const requestUrl = `https://api.github.com/search/issues?q=is:pr+involves:@me+is:open&per_page=${100}&page=${page}`;
+
+      const response = await this.httpFetch(requestUrl, {
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${authToken}`,
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+      });
+      const isLastPage: boolean = this.isLastPageBasedOnLinkHeader(response);
+
+      const isResponseOk = (status: number) => status >= 200 && status < 300;
+      if (!isResponseOk(response.status)) {
+        throw new Error(`GitHub API error when fetching PRs involving user: ${response.status}`);
+      }
+
+      const mergeData: any = await response.json();
+      if (mergeData.items.length === 0) {
+        break;
+      }
+      allMergeData.push(mergeData);
+      if (isLastPage) {
+        break;
+      }
+
+    }
+
+    const items = [].concat(...allMergeData.map(data => data.items));
+    return {
+      pullRequestRepositoryUrls: items.map((pr: any) => this.convertApiUrlToClassic(pr.repository_url)),
+      totalPrCount: allMergeData.at(-1).total_count,
+      isLastPage: allMergeData.at(-1).total_count <= 1000,
+    };
+  }
+
+  private convertApiUrlToClassic(apiUrl: string): string {
+    const urlPartToToKeep: string = apiUrl.substring("https://api.github.com/repos/".length);
+    const outputUrl: string = this.getDomainURL(true, true) + urlPartToToKeep;
+    return outputUrl;
+  }
+
+  async getIssues(gitUrl: string, issueState: IssueState, page: number, perPage: number, authToken: string | null): Promise<GitIssuesFetchResponse> {
+    const repoOwner = this.extractPartOfRepositoryURL(gitUrl, "repository-owner");
+    const repoName = this.extractPartOfRepositoryURL(gitUrl, "repository-name");
+    const token: string | null | undefined = authToken ?? this.authenticationGitProviderData?.gitBotConfiguration?.dsBotAbsoluteGitProviderControlToken;
+    if (token === null || token === undefined) {
+      throw new Error("Can not get issues, since there is not auth token to use");
+    }
+
+    const issueStateAsString = this.convertIssueStateEnumToStringForRequest(issueState);
+    while (true) {  // We are in while, because it is possible that the page will contain only pull requests and 0 issues.
+      const query = `?page=${page}&per_page=${perPage}&state=${issueStateAsString}`;
+
+      const response = await this.httpFetch(`https://api.github.com/repos/${repoOwner}/${repoName}/issues${query}`, {
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${token}`,
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+      });
+      const isLastPage: boolean = this.isLastPageBasedOnLinkHeader(response);
+
+      const isResponseOk = (status: number) => status >= 200 && status < 300;
+      if (!isResponseOk(response.status)) {
+        throw new Error(`GitHub API error when fetching Git issues: ${response.status}`);
+      }
+
+      const responseData: any = await response.json();
+      const onlyIssues: any[] = responseData
+        .filter((issueOrPullRequest: any) => {
+          return issueOrPullRequest.pull_request === undefined;
+        }
+      );
+      if (onlyIssues.length === 0) {
+        if (isLastPage) {
+          return {
+            issues: [],
+            page,
+            isLastPage,
+          };
+        }
+        page++;
+        continue;
+      }
+
+      const strippedIssues: GitIssueInfo[] = onlyIssues
+        .map(githubIssue => ({
+          title: githubIssue.title,
+          author: githubIssue.user.login,
+          urlToIssue: githubIssue.html_url,
+          labels: githubIssue.labels.map((label: any) => ({name: label.name, color: label.color})),
+          createdAt: githubIssue.created_at,
+          lastActivityAt: githubIssue.updated_at,
+        }));
+
+      return {
+        issues: strippedIssues,
+        page,
+        isLastPage,
+      };
+    }
+  }
+
+  private isLastPageBasedOnLinkHeader(response: FetchResponse): boolean {
+    const linkHeader = response.headers.get("link");
+    const isLastPage: boolean = linkHeader === undefined || linkHeader === null || !linkHeader.includes('rel="next"');
+    return isLastPage;
+  }
+
+  async createDataspecerIssueLabels(repoOwner: string, repoName: string, authToken: string): Promise<boolean> {
+    const token: string | null | undefined = authToken ?? this.authenticationGitProviderData?.gitBotConfiguration?.dsBotAbsoluteGitProviderControlToken;
+    if (token === null || token === undefined) {
+      throw new Error("Can not create Dataspecer issue labels, since there is not auth token to use");
+    }
+
+    const responses: Promise<FetchResponse>[] = [];
+    for (const dataspecerLabel of Object.values(dataspecerGitIssueLabels)) {
+      const response = this.httpFetch(
+        `https://api.github.com/repos/${repoOwner}/${repoName}/labels`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/vnd.github+json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(dataspecerLabel),
+        }
+      );
+      responses.push(response);
+    }
+
+    const isOk = (status: number) => status >= 200 && status < 300;
+    const resolvedResponses = await Promise.all(responses);
+    const failedResponseIndex = resolvedResponses.findIndex(response => !isOk(response.status));
+
+    if (failedResponseIndex !== -1) {
+      const failedResponse = resolvedResponses[failedResponseIndex];
+      const error = await failedResponse.json();
+      throw new Error(`Failed to create ${dataspecerGitIssueLabels[failedResponseIndex]}: ${error}`);
+    }
+
+    return true;
+  }
+
+
+  /**
+   * @todo This method will not be needed once (respectively if) we introduce GraphQL later in the development.
+   *  We will just get all the data needed directly in one GraphQL request instead of sending separate REST API request.
+   */
+  private async convertRestPrToDataspecerPr(pullRequest: any, token: string): Promise<PullRequestInfo> {
+    const pullRequestMoreInfoResponse = await this.httpFetch(pullRequest.pull_request.url, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+
+    // https://api.github.com/repos/dataspecer/dataspecer/pulls/1339 - example of the output
+    const prInfo: any = await pullRequestMoreInfoResponse.json();
+
+    return {
+      title: pullRequest.title,
+      additions: prInfo.additions,
+      deletions: prInfo.deletions,
+      createdAt: pullRequest.created_at,
+      modifiedAt: pullRequest.updated_at,
+      mergeFromBranch: prInfo.head.ref,
+      mergeToBranch: prInfo.base.ref,
+      commitCountWithinPR: prInfo.commits,
+      urlToPR: pullRequest.pull_request.html_url,
+    };
+  }
+
+
+  async getOrganizationsForAuthenticatedUser(authToken: string | null): Promise<UserOrganizationsFetchResponse> {
+    // https://docs.github.com/en/rest/orgs/orgs?apiVersion=2022-11-28#list-organizations-for-the-authenticated-user
+
+    const token: string | null | undefined = authToken ?? this.authenticationGitProviderData?.gitBotConfiguration?.dsBotAbsoluteGitProviderControlToken;
+    if (token === null || token === undefined) {
+      return {
+        organizations: [],
+        isLastPage: true,
+      };
+    }
+
+    const organizations: string[] = [];
+    let page = 1;
+    // Hardcoded limit - expect that user is not a member of more than 1000 organizations, which is reasonable expectation
+    for (; page <= 10; page++) {    // Hardcoded limit - the REST API allows at most 10 pages of size 100
+      const response = await this.httpFetch(`https://api.github.com/user/orgs?page=${page}&per_page=${100}`, {
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${token}`,
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+      });
+      const isLastPage: boolean = this.isLastPageBasedOnLinkHeader(response);
+
+      const isResponseOk = (status: number) => status >= 200 && status < 300;
+      if (!isResponseOk(response.status)) {
+        throw new Error(`GitHub API error when fetching PRs involving user: ${response.status}`);
+      }
+
+      const fetchedOrganizations: any = await response.json();
+      if (fetchedOrganizations.length === 0) {
+        break;
+      }
+      organizations.push(fetchedOrganizations.map((org: { login: string }) => org.login));
+      if (isLastPage) {
+        break;
+      }
+    }
+
+    const flattenedOrganizations = [].concat(...organizations);
+    const result: UserOrganizationsFetchResponse = {
+      organizations: flattenedOrganizations,
+      isLastPage: page <= 10,
+    };
+    return result;
+  }
+}

@@ -1,0 +1,144 @@
+import { Modal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/modal";
+import { usePaginationComponent } from "@/components/pagination-component";
+import { Button } from "@/components/ui/button";
+import { useAsyncMemo } from "@/hooks/use-async-memo";
+import { BetterModalProps } from "@/lib/better-modal";
+import { GitIssueInfo, GitIssuesFetchResponse, GitProvider, IssueState } from "@dataspecer/git";
+import { GitProviderFactory } from "@dataspecer/git/git-providers";
+import { Loader } from "lucide-react";
+import { useMemo } from "react";
+import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+import { createNewTabAndOpen } from "./advanced-sign-in";
+
+
+type GitIssuesListDialogProps = {
+  gitUrl: string;
+} & BetterModalProps<null>;
+
+
+/**
+ * Shows the dialog with paginated view present on the given gitUrl
+ * @todo Lists only the opened issues - see IssueState.Open in the backend request
+ * @todo In some things similar to the PR component, there could be probably be one generic component which builds it.
+ *  But 1) It is extra work 2) The end result general component may be hard to read/modify.
+ *   Thereofre, the code duplication is fine. Well it is not that much of a code duplicaiton but rather sharing structure.
+ */
+export function GitIssuesListDialog({ gitUrl, isOpen, resolve }: GitIssuesListDialogProps) {
+  const { t } = useTranslation();
+  // Uses the PaginationComponent from the hook to render the pagination.
+  const {
+    pageOnFrontend, trackedPageOnBackend, setIsLastPageBasedOnServerResponse, setTrackedPageOnBackend,
+    itemCountPerPage, setTotalItemCount, PaginationComponent
+  } = usePaginationComponent();
+
+  const gitProvider: GitProvider = useMemo(() => {
+    return GitProviderFactory.createGitProviderFromRepositoryURL(gitUrl, fetch, null);
+  }, []);
+
+  const [gitIssues, cannotUseGitIssues] = useAsyncMemo(async () => {
+    const issuesFetchUrl: string = import.meta.env.VITE_BACKEND + `/git/issues?gitUrl=${gitUrl}&issueState=${IssueState.Open}&page=${trackedPageOnBackend}&perPage=${itemCountPerPage}`;
+    let failureOccurred = false;
+    // Optimization - we start this request without await and handle it in the .then, this measn that we can move on to the other fetch while this one is being performed.
+    const issueCountFetchUrl: string = import.meta.env.VITE_BACKEND + `/git/issue-total-count?gitUrl=${gitUrl}&issueState=${IssueState.Open}`;
+    fetch(
+      issueCountFetchUrl,
+      {
+        credentials: "include",         // Important, without this we don't send the authorization cookies
+        method: "GET",
+      })
+      .then(async (issueCountFetchResponse) => {
+         const issueTotalCount: any = (await issueCountFetchResponse.json());
+         if (issueTotalCount?.error !== undefined) {
+            if (failureOccurred) {
+              return;
+            }
+            failureOccurred = true;
+            toast.error((issueTotalCount as any).error, { "richColors": true });
+            resolve(null);
+            return;
+         }
+         setTotalItemCount(issueTotalCount);
+      });
+
+
+    const issuesFetchResponse = await fetch(
+      issuesFetchUrl,
+      {
+        credentials: "include",         // Important, without this we don't send the authorization cookies
+        method: "GET",
+      });
+    const gitIssuesResponseData: GitIssuesFetchResponse = await issuesFetchResponse.json();
+    if ((gitIssuesResponseData as any).error !== undefined) {
+      if (failureOccurred) {
+        return;
+      }
+      failureOccurred = true;
+      toast.error((gitIssuesResponseData as any).error, { "richColors": true });
+      resolve(null);
+      return;
+    }
+
+    setTrackedPageOnBackend(gitIssuesResponseData.page);
+    setIsLastPageBasedOnServerResponse(gitIssuesResponseData.isLastPage);
+    return gitIssuesResponseData.issues;
+  }, [pageOnFrontend, itemCountPerPage]);
+
+
+  return (
+    <Modal open={isOpen} onClose={() => resolve(null)}>
+      <ModalContent className={"min-w-[80%] overflow-x-auto overflow-y-auto max-h-[90%]"}>
+        <ModalHeader>
+          <ModalTitle>{t("list-git-issues.title")}</ModalTitle>
+          <ModalDescription>
+            {t("list-git-issues.description.line.1")}
+            <br/>
+            {t("list-git-issues.description.line.2")}
+          </ModalDescription>
+          {
+            cannotUseGitIssues ? <Loader className="mr-2 mt-1 h-4 w-4 animate-spin" /> :
+            <div className=" w-full">
+              <div className="grid grid-cols-[4fr_2fr_2fr_2fr_4fr] divide-x divide-y border-gray-300 divide-gray-300 ml-4 pt-6 w-full">
+                <div className="flex items-center justify-center border-gray-300">{t("list-git-issues.headers.title")}</div>
+                <div className="flex items-center justify-center">{t("list-git-issues.headers.created-at")}</div>
+                <div className="flex items-center justify-center">{t("list-git-issues.headers.last-activity-at")}</div>
+                <div className="flex items-center justify-center">{t("list-git-issues.headers.author")}</div>
+                <div className="flex items-center justify-center border-gray-300 border-b">{t("list-git-issues.headers.labels")}</div>
+              </div>
+              {gitIssues?.map(gitIssue => <GitIssueComponent gitIssueInfo={gitIssue}/>) ?? null}
+            </div>
+          }
+          {
+            cannotUseGitIssues ? null : <PaginationComponent items={gitIssues!} itemsOnPageScalingFactor={1} isPageNumberingExact={false}
+                                                             itemCountOnPageText={t("list-git-issues.pagination.issues-on-page")} totalItemCountText={t("list-git-issues.pagination.total-issue-count")}/>
+          }
+        </ModalHeader>
+        <ModalFooter>
+          <Button variant="outline" onClick={() => resolve(null)}>{t("close")}</Button>
+          <Button variant="default" onClick={() => { createNewTabAndOpen(gitProvider.getCreateNewIssueUrl(gitUrl)); resolve(null); }}>{t("list-git-issues.create-new-issue")}</Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+}
+
+
+type GitIssueComponentProps = {
+  gitIssueInfo: GitIssueInfo;
+}
+
+function GitIssueComponent({ gitIssueInfo }: GitIssueComponentProps) {
+  return <div onClick={() => createNewTabAndOpen(gitIssueInfo.urlToIssue)} className={"grid grid-cols-[4fr_2fr_2fr_2fr_4fr] divide-x divide-y divide-gray-300 pt-1 ml-4 w-full cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 dark:hover:text-white-400"}>
+    <div className="flex justify-center items-center border-gray-300">{gitIssueInfo.title}</div>
+    <div className="flex justify-center items-center">{new Date(gitIssueInfo.createdAt).toLocaleString()}</div>
+    <div className="flex justify-center items-center">{new Date(gitIssueInfo.lastActivityAt).toLocaleString()}</div>
+    <div className="flex justify-center items-center">{gitIssueInfo.author}</div>
+    <div className="flex flex-wrap justify-center items-center pl-2 border-gray-300 border-b pb-1">
+      {
+        gitIssueInfo.labels.map(label => {
+          return <span className="flex justify-center items-center inline-block px-2 py-1 mr-1 rounded" style={{backgroundColor: `#${label.color}`}}>{label.name}</span>;
+        })
+      }
+      </div>
+  </div>;
+}

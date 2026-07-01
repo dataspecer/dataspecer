@@ -1,0 +1,164 @@
+import { z } from "zod";
+import { asyncHandler } from "../../utils/async-handler.ts";
+import express from "express";
+import { resourceModel, webhookUrl } from "../../main.ts";
+import { convertToValidGitName, findPatAccessTokens, convertStringToExportVersion, PUBLICATION_BRANCH_DEFAULT_NAME, stringToBoolean, transformCommitMessageIfEmpty, convertStringToExportFormat, GitRestApiOperationError } from "@dataspecer/git";
+import { commitPackageToGitUsingAuthSession, CommitUsingAuthSessionParams } from "./commit-package-to-git.ts";
+import { getGitCredentialsFromSessionWithDefaults } from "../../authentication/auth-session.ts";
+import { CommitBranchAndHashInfo, GitCommitToCreateInfoBasic, GitRepositoryIdentification } from "@dataspecer/git-node";
+import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
+import configuration from "../../configuration.ts";
+import { GitProviderNodeFactory } from "@dataspecer/git-node/git-providers";
+import { ScopeGroup } from "@dataspecer/auth";
+
+/**
+ * Creates Git provider repository with content equal to the package with given iri inside the query part of express http request.
+ * The signedInUserOrOrganization is not defined if the user wants to create repo under bot name.
+ *  Otherwise, it is either the org or the user name from OAuth (not the login name).
+ */
+export const createNewGitRepositoryWithPackageContent = asyncHandler(async (request: express.Request, response: express.Response) => {
+  const querySchema = z.object({
+    iri: z.string().min(1),
+    signedInUserOrOrganization: z.string().optional(),
+    givenRepositoryName: z.string().min(1),
+    gitProviderURL: z.string().min(1),
+    commitMessage: z.string(),
+    isUserRepo: z.string().min(1),
+    publicationBranch: z.string().min(1).optional(),
+    exportFormat: z.string().min(1).optional(),
+    exportVersion: z.string().min(1).optional(),
+  });
+
+  const query = querySchema.parse(request.query);
+  query.publicationBranch ??= PUBLICATION_BRANCH_DEFAULT_NAME;
+  const gitProvider = GitProviderNodeFactory.createGitProviderFromRepositoryURL(query.gitProviderURL, httpFetch, configuration, configuration.inDocker);
+  const { accessTokens } = getGitCredentialsFromSessionWithDefaults(gitProvider, request, response, [ScopeGroup.FullPublicRepoControl, ScopeGroup.DeleteRepoControl]);
+  const isUserRepo = stringToBoolean(query.isUserRepo);
+  const signedInUserOrOrganization = query.signedInUserOrOrganization === undefined ? null : convertToValidGitName(query.signedInUserOrOrganization);
+  const organization = isUserRepo ? null : signedInUserOrOrganization;
+  const commitMessage = transformCommitMessageIfEmpty(query.commitMessage);
+  const repositoryName = convertToValidGitName(query.givenRepositoryName);
+  const patAccessTokens = findPatAccessTokens(accessTokens);
+  let repositoryOwner: string;      // .... OAuth is being funny, since the name you get may be your actual name if you have it set and not the login name which is used in the url
+  if (isUserRepo) {
+    // The name is defined, but the name is not equal to the bot name, then we can just use bot
+    if (signedInUserOrOrganization !== null && gitProvider.getBotCredentials()?.name !== signedInUserOrOrganization) {
+      const repositoryOwnerCandidate = await gitProvider.getUserLoginForAuthToken(patAccessTokens[0].value);
+      if (repositoryOwnerCandidate === null) {
+        throw new Error("OWNER CANDIDATE IS NULL");
+      }
+      repositoryOwner = repositoryOwnerCandidate;
+    }
+    else {
+      const botName = gitProvider.getBotCredentials()?.name;
+      if (botName === undefined) {
+        throw new Error("Creating bot repository, but there is no bot set");
+      }
+      repositoryOwner = botName;
+    }
+  }
+  else {
+    repositoryOwner = organization!;
+  }
+
+  const originalResourceBeforeUpdate = await resourceModel.getResource(query.iri);
+  if (originalResourceBeforeUpdate === null) {
+    throw new Error(`Can not commit to git since the resource (iri: ${query.iri}) does not exist`);
+  }
+
+  // Either the user has create repo access AND it has access to the "user", then we are good
+  // Or it has create repo access, but does not have access to the "user". Then we have two possibilities
+  //  either we fail, or we will try the bot token to create the repositories. To me the second one makes more sense. So that is the implemented variant.
+  for (const patAccessToken of patAccessTokens) {
+    try {
+      const fullLinkedGitRepositoryURL = gitProvider.createGitRepositoryURL(repositoryOwner, repositoryName);
+      if (isUserRepo) {
+        // If it is user repo then the owner of the pat access token have to be the user of the user part of repository url
+        // In other words if it is user repo for bot, the token has to be for bot and if it is not for bot it can not be bot token.
+        if ((!patAccessToken.isBotAccessToken && repositoryOwner === gitProvider.getBotCredentials()?.name) ||
+            (patAccessToken.isBotAccessToken && repositoryOwner !== gitProvider.getBotCredentials()?.name)) {
+          continue;
+        }
+      }
+
+      const { defaultBranch } = await gitProvider.createRemoteRepository(patAccessToken.value, organization, repositoryName, true, query.publicationBranch);
+
+
+      await gitProvider.createWebhook(patAccessToken.value, repositoryOwner, repositoryName, webhookUrl, ["push"]);
+      // The projectIri is undefiend since it should be already set from the time we created the resource
+      await resourceModel.updateResourceProjectIriAndBranch(query.iri, undefined, defaultBranch ?? undefined);
+      // ... I think that it is always non-empty so the shouldSetProjectIris argument should probably always be false, this is just safety measure.
+      await resourceModel.updateResourceGitLink(query.iri, fullLinkedGitRepositoryURL, originalResourceBeforeUpdate.projectIri === "");
+
+      const repositoryIdentificationInfo: GitRepositoryIdentification = {
+        repositoryOwner,
+        repositoryName,
+      };
+
+      const exportFormat = convertStringToExportFormat(query.exportFormat);
+      const commitInfo: GitCommitToCreateInfoBasic = {
+        commitMessage,
+        exportFormat: exportFormat,
+        exportVersion: convertStringToExportVersion(query.exportVersion),
+      };
+
+      const commitBranchAndHashInfo: CommitBranchAndHashInfo = {
+        localBranch: defaultBranch,
+        localLastCommitHash: "",
+        mergeFromData: null,
+      };
+
+      // Get the updated resource, howver, it should be already set, so technically we could get it before the for cycle
+      const resource = await resourceModel.getResource(query.iri);
+      if (resource === null) {
+        // Unnecessary check, since we already check it above. But creating repo is rare operation so one "if" check is literally nothing.
+        throw new Error(`Can not commit to git since the resource (iri: ${query.iri}) does not exist`);
+      }
+
+      const commitParams: CommitUsingAuthSessionParams = {
+        iri: query.iri,
+        projectIri: resource.projectIri,
+        request,
+        response,
+        branchAndLastCommit: commitBranchAndHashInfo,
+        repositoryIdentificationInfo,
+        gitCommitInfoBasic: commitInfo,
+        shouldAlwaysCreateMergeState: false,
+        shouldAppendAfterDefaultMergeCommitMessage: null,
+        remoteRepositoryUrl: fullLinkedGitRepositoryURL,
+        allowMergeStateCreation: false,
+        commitType: "classic-commit",
+      };
+      // Just provide empty merge from values, since we are newly creating the link we can not perform merge right away anyways
+      const commitConflictInfo = await commitPackageToGitUsingAuthSession(commitParams);
+
+      if (commitConflictInfo !== null) {
+        response.sendStatus(409);
+        return;
+      }
+
+      await resourceModel.setHasUncommittedChanges(query.iri, false);
+      response.sendStatus(200);
+      return;
+    }
+    catch(error) {
+      if (error instanceof GitRestApiOperationError) {
+        if (error.getStatusCode() === 422) {
+          response.status(422).send(`Repository with the same name ${repositoryName} and under the same user ${repositoryOwner} already exists.`);
+          return;
+        }
+        else if (error.getStatusCode() === 403) {
+          response.status(403).send(`Unauthorized (not sufficient permissions) - Cannot create repository: ${repositoryName},  and user: ${repositoryOwner}`);
+          return;
+        }
+        else if (error.getStatusCode() === 404) {
+          response.status(404).send(`Not found - Cannot create repository: ${repositoryName},  and user: ${repositoryOwner}.`);
+          return;
+        }
+      }
+      throw error;
+    }
+  }
+
+  throw new Error("There is neither user or bot pat token to perform operations needed to create the link. For example creating remote repo");
+});

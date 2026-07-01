@@ -11,6 +11,8 @@
     "i18n": "i18next-cli extract"
   },
   "dependencies": {
+    "@dataspecer/auth": "*",
+    "@dataspecer/git": "*",
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
     "@dataspecer/documentation": "*",
@@ -43,11 +45,16 @@
     "react-dropzone": "^14.3.8",
     "react-i18next": "^14.1.2",
     "react-resizable-panels": "^2.1.7",
+    "driver.js": "^1.4.0",
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.2.1",
     "usehooks-ts": "^3.1.0",
     "uuid": "^14.0.0",
-    "vaul": "^0.9.0"
+    "vaul": "^0.9.0",
+
+    "@gitgraph/core": "1.5.0",
+    "@gitgraph/react": "1.6.0",
+    "react-arborist": "3.4.3"
   },
   "devDependencies": {
     "@types/node": "^25.5.2",

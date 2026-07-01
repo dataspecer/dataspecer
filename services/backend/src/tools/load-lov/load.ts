@@ -3,8 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import cliProgress from 'cli-progress';
 import { readFileSync } from 'fs';
 import { Parser, Store } from 'n3';
-import path from 'path';
-import { LocalStoreModel } from '../../models/local-store-model.ts';
+import { LocalStoreModelBase } from '../../models/local-store-model.ts';
 import { ResourceModel } from '../../models/resource-model.ts';
 import { objectsToLanguageString } from './better-n3-store.ts';
 import type { SemanticModelEntity } from '@dataspecer/core-v2/semantic-model/concepts';
@@ -54,7 +53,7 @@ const filename = "./lov.nq";
     const LOD_ROOT = "https://dataspecer.com/resources/import/lod";
 
     const prisma = new PrismaClient();
-    const storeModel = new LocalStoreModel("./database/stores");
+    const storeModel = new LocalStoreModelBase("./database/stores");
     const resourceModel = new ResourceModel(storeModel, prisma);
 
     // Override the package
