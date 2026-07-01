@@ -1,4 +1,4 @@
-import { Qualifier, SelectQualifier } from "../../components/select-qualifier";
+import { Qualifier, SelectQualifier } from "../components/select-qualifier";
 import { Vocabulary } from "./vocabulary";
 
 export function VocabularyItem(props: {

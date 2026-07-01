@@ -1,4 +1,4 @@
-import { Qualifier } from "../../components/select-qualifier";
+import { Qualifier } from "../components/select-qualifier";
 
 export interface Vocabulary {
   id: string;

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Qualifier, SelectQualifier } from "../../components/select-qualifier";
+import { Qualifier, SelectQualifier } from "../components/select-qualifier";
 import { Vocabulary, VocabularyUsage } from "./vocabulary";
 
 export function AddVocabularyForm(props: {
