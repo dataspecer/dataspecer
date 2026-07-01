@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Qualifier, SelectQualifier } from "../components/select-qualifier";
+import { SelectQualifier } from "../components/select-qualifier";
+import type { Qualifier } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { ControlledVocabulary, ControlledVocabularyUsage } from "./controlled-vocabulary-model";
 
 export function AddVocabularyForm(props: {
@@ -8,7 +9,7 @@ export function AddVocabularyForm(props: {
   onCancel: () => void;
 }) {
   const [selectedVocabularyId, setSelectedVocabularyId] = useState<string>("");
-  const [qualifier, setQualifier] = useState<Qualifier>(Qualifier.AtLeastOne);
+  const [qualifier, setQualifier] = useState<Qualifier>("AT_LEAST_1");
 
   const selectedVocabulary = props.availableVocabularies.find(v => v.id === selectedVocabularyId) ?? null;
 

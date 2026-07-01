@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Qualifier } from "../components/select-qualifier";
+import type { Qualifier } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { ControlledVocabularyOverride, ControlledVocabularyUsage, ControlledVocabulary } from "./controlled-vocabulary-model";
 import { VocabularyItem } from "./vocabulary-item";
 import { AddVocabularyForm } from "./add-vocabulary-form";
@@ -22,7 +22,7 @@ function hasMustConflict(
   ];
 
   const totalCount = effectiveQualifiers.length;
-  const mustCount = effectiveQualifiers.filter(q => q === Qualifier.Must).length;
+  const mustCount = effectiveQualifiers.filter(q => q === "MUST").length;
   return mustCount > 0 && totalCount > 1;
 }
 

@@ -1,4 +1,4 @@
-import { Qualifier } from "../components/select-qualifier";
+import type { Qualifier } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 
 export interface ControlledVocabulary {
   id: string;

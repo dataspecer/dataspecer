@@ -1,4 +1,5 @@
-import { Qualifier, SelectQualifier } from "../components/select-qualifier";
+import { SelectQualifier } from "../components/select-qualifier";
+import type { Qualifier } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { ControlledVocabulary } from "./controlled-vocabulary-model";
 
 export function VocabularyItem(props: {

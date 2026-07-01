@@ -1,12 +1,6 @@
 import { useId } from "react";
 import { cn } from "./style";
-
-export enum Qualifier {
-  Must = "MUST",
-  AtLeastOne = "AT_LEAST_1",
-  Recommended = "RECOMMENDED",
-  May = "MAY",
-}
+import type { Qualifier } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 
 /**
  * Select usage qualifier for controlled vocabulary
@@ -51,9 +45,9 @@ export function SelectQualifier(props: {
                 isInherited && "underline decoration-dotted",
                 effectiveValue === qualifier && "font-bold",
               )}
-              title={isInherited ? `Inherited: ${QUALIFIER_LABELS[qualifier]}` : undefined}
+              title={isInherited ? `Inherited: ${qualifierLabel(qualifier)}` : undefined}
             >
-              {QUALIFIER_LABELS[qualifier]}
+              {qualifierLabel(qualifier)}
             </label>
           </div>
         );
@@ -63,26 +57,20 @@ export function SelectQualifier(props: {
 }
 
 
-const QUALIFIERS = [
-  Qualifier.Must,
-  Qualifier.AtLeastOne,
-  Qualifier.Recommended,
-  Qualifier.May,
-];
+const QUALIFIERS: Qualifier[] = ["MUST", "AT_LEAST_1", "RECOMMENDED", "MAY"];
 
-const QUALIFIER_LABELS: Record<Qualifier, string> = {
-  [Qualifier.Must]: "MUST",
-  [Qualifier.AtLeastOne]: "AT LEAST 1",
-  [Qualifier.Recommended]: "RECOMMENDED",
-  [Qualifier.May]: "MAY",
-};
+function qualifierLabel(qualifier: Qualifier): string {
+  return qualifier.replace(/_/g, " ");
+}
 
-// Stricter qualifiers come first - a qualifier is disabled if it is less strict than inherited.
+/**
+ * Stricter qualifiers come first - a qualifier is disabled if it is less strict than inherited.
+ */
 const QUALIFIER_STRICTNESS: Record<Qualifier, number> = {
-  [Qualifier.Must]: 0,
-  [Qualifier.AtLeastOne]: 1,
-  [Qualifier.Recommended]: 2,
-  [Qualifier.May]: 3,
+  MUST: 0,
+  AT_LEAST_1: 1,
+  RECOMMENDED: 2,
+  MAY: 3,
 };
 
 function isDisabledByInherited(option: Qualifier, inherited: Qualifier): boolean {
