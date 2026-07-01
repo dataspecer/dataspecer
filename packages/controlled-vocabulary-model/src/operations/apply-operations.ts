@@ -1,4 +1,4 @@
-import { type EntityRecord, generateEntityId } from "@dataspecer/core/entity-model";
+import { type EntityRecord, type EntityChange, diffEntities, generateEntityId } from "@dataspecer/core/entity-model";
 import type { Operation } from "@dataspecer/core/operation";
 import type { ControlledVocabulary } from "../concepts/controlled-vocabulary.ts";
 import {
@@ -9,15 +9,10 @@ import {
   type VocabularyOperation,
 } from "./operations.ts";
 
-export interface ApplyOperationsResult {
-  updated: Record<string, ControlledVocabulary>;
-  removed: string[];
-}
-
 export function applyOperations(
   model: EntityRecord<ControlledVocabulary>,
   operations: VocabularyOperation[]
-): ApplyOperationsResult {
+): EntityChange<ControlledVocabulary>[] {
   const updated: Record<string, ControlledVocabulary> = {};
   const removed: string[] = [];
 
@@ -33,7 +28,11 @@ export function applyOperations(
     }
   }
 
-  return { updated, removed };
+  const next = { ...model, ...updated };
+  for (const id of removed) {
+    delete next[id];
+  }
+  return diffEntities(model, next) as EntityChange<ControlledVocabulary>[];
 }
 
 function handleCreate(

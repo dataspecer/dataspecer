@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import type { EntityChange } from '@dataspecer/core/entity-model'
 import type { ControlledVocabulary } from '@dataspecer/controlled-vocabulary-model'
 import {
   applyOperations,
@@ -14,6 +15,21 @@ import {
 } from '../services/backend-vocabulary-storage'
 import { useEventCallback } from './use-event-callback'
 import { useConfig } from '../contexts/config-context'
+
+function applyChanges(
+  model: Record<string, ControlledVocabulary>,
+  changes: EntityChange<ControlledVocabulary>[]
+): Record<string, ControlledVocabulary> {
+  const next = { ...model }
+  for (const change of changes) {
+    if (change.next) {
+      next[change.next.id] = change.next
+    } else {
+      delete next[change.previous.id]
+    }
+  }
+  return next
+}
 
 function mapFromModel(cv: ControlledVocabulary): CvmControlledVocabulary {
   return {
@@ -50,7 +66,7 @@ export function useVocabularies() {
   }, [model, backendUrl])
 
   const addVocabulary = useEventCallback((vocabulary: CvmControlledVocabulary) => {
-    const { updated, removed } = applyOperations(model, [
+    const changes = applyOperations(model, [
       createVocabulary({
         id: vocabulary.id,
         title: vocabulary.name,
@@ -63,15 +79,11 @@ export function useVocabularies() {
         },
       }),
     ])
-    setModel(prev => {
-      const next = { ...prev, ...updated }
-      for (const id of removed) delete next[id]
-      return next
-    })
+    setModel(prev => applyChanges(prev, changes))
   })
 
   const updateVocabulary = useEventCallback((vocabulary: CvmControlledVocabulary) => {
-    const { updated, removed } = applyOperations(model, [
+    const changes = applyOperations(model, [
       modifyVocabulary(vocabulary.id, {
         title: vocabulary.name,
         references: vocabulary.iri,
@@ -83,25 +95,17 @@ export function useVocabularies() {
         },
       }),
     ])
-    setModel(prev => {
-      const next = { ...prev, ...updated }
-      for (const id of removed) delete next[id]
-      return next
-    })
+    setModel(prev => applyChanges(prev, changes))
   })
 
   const deleteVocabularyById = useEventCallback((vocabulary: CvmControlledVocabulary) => {
-    const { updated, removed } = applyOperations(model, [
+    const changes = applyOperations(model, [
       deleteVocabulary(vocabulary.id),
     ])
-    setModel(prev => {
-      const next = { ...prev, ...updated }
-      for (const id of removed) delete next[id]
-      return next
-    })
+    setModel(prev => applyChanges(prev, changes))
   })
 
-  const vocabularies: CvmControlledVocabulary[] = Object.values(model).map(mapFromModel)
+  const vocabularies = useMemo(() => Object.values(model).map(mapFromModel), [model])
 
   return {
     vocabularies,
