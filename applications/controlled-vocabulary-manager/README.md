@@ -1,73 +1,34 @@
-# React + TypeScript + Vite
+# Controlled Vocabulary Manager
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The Controlled Vocabulary Manager (CVM) is a graphical interface component responsible for identifying, storing, and managing controlled vocabulary metadata within a specification project.
 
-Currently, two official plugins are available:
+*TBD:* It allows searching for commonly used controlled vocabularies by accessing the Czech National Open Data Catalog and EU Vocabularies through their SPARQL endpoints.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Like the other front-end components, the CVM communicates with the Storage Backend via its REST API to persist controlled vocabulary metadata. The stored metadata is referenced by the [Conceptual Model Editor](../conceptual-model-editor) when linking class and relationship profiles to controlled vocabularies, and it is consumed by the Validation Schema Generator and the Documentation Generator when producing output artifacts.
 
-## React Compiler
+## Installation
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+CVM is installed and deployed as a part of Dataspecer. However, you need to provide it with configuration.
+You can do this using the `.env` file:
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+VITE_MANAGER=http://localhost:5174
+VITE_BACKEND=http://localhost:3100/api
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+- `VITE_MANAGER` - URL of the [Package Manager](../manager) application, used to link back to it.
+- `VITE_BACKEND` - URL of the Storage Backend REST API.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Development
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+This application is part of the Dataspecer monorepo, managed by [npm workspaces](https://docs.npmjs.com/cli/v10/using-npm/workspaces). From the repository root:
+
+- Run `npm install` to install dependencies and link local packages.
+- Run `npm run build` to build the packages this application depends on (only needed once, or after changing a dependency).
+
+Then, from this directory (`applications/controlled-vocabulary-manager`), or from the root using `npm run dev --workspace=controlled-vocabulary-manager`:
+
+- `npm run dev` - start the local development server with hot reload.
+- `npm run build` - type-check and build the application for production.
+- `npm run lint` - run ESLint.
+
