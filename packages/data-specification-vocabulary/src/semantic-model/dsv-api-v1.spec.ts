@@ -103,7 +103,7 @@ test("End to end test I.", async () => {
       "type": ["class-profile"],
       "externalDocumentationUrl": "external-doc-1",
       "tags": [],
-      controlledVocabularies: undefined,
+      controlledVocabularies: [],
     } as SemanticModelClassProfile, {
       "id": "94kn5yss8dm7d1jv9z",
       "type": ["class-profile"],

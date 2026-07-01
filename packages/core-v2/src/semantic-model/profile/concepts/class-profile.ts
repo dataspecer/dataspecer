@@ -13,7 +13,7 @@ export interface SemanticModelClassProfile extends SemanticModelEntity, Profile,
    */
   tags: string[];
 
-  controlledVocabularies: ControlledVocabularyAssignment[] | undefined
+  controlledVocabularies: ControlledVocabularyAssignment[] | undefined;
 }
 //TODO: agregacni funkce
 

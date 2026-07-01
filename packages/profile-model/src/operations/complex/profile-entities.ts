@@ -163,7 +163,7 @@ function prepareProfileSemanticClassOperations(
     usageNoteFromProfiled: null,
     externalDocumentationUrl: item.externalDocumentationUrl ?? null,
     tags: [],
-    controlledVocabularies: undefined,
+    controlledVocabularies: [],
   }))
 }
 

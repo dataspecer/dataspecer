@@ -174,7 +174,7 @@ class ApplicationProfileToEntityModel {
       usageNote: profile.usageNote ?? {},
       usageNoteFromProfiled: usageNoteReuse ? this.context.iriToIdentifier(usageNoteReuse.propertyReusedFromResourceIri) : null,
       externalDocumentationUrl: profile.externalDocumentationUrl,
-      controlledVocabularies: undefined,
+      controlledVocabularies: [],
       // NamedThingProfile
       name: profile.prefLabel ?? {},
       nameFromProfiled: nameReuse ? this.context.iriToIdentifier(nameReuse.propertyReusedFromResourceIri) : null,

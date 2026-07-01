@@ -28,7 +28,7 @@ test("Aggregate class with no profiles.", () => {
     conceptIris: [],
     externalDocumentationUrl: null,
     tags: [],
-    controlledVocabularies: undefined,
+    controlledVocabularies: [],
   };
   const actual = aggregator.aggregateSemanticModelClassProfile(profile, []);
   expect(actual).toStrictEqual(actual);
@@ -52,7 +52,7 @@ test("Aggregate class with multiple profiles.", () => {
       usageNoteFromProfiled: "3",
       externalDocumentationUrl: "1-document",
       tags: ["1-role"],
-      controlledVocabularies: undefined,
+      controlledVocabularies: [],
     },
     [
       {
@@ -80,7 +80,7 @@ test("Aggregate class with multiple profiles.", () => {
         profiling: [],
         externalDocumentationUrl: "3-document",
         tags: ["3-role"],
-      controlledVocabularies: undefined,
+      controlledVocabularies: [],
       },
     ]
   );
@@ -101,7 +101,7 @@ test("Aggregate class with multiple profiles.", () => {
     externalDocumentationUrl: "1-document",
     tags: ["1-role"],
     order: null,
-    controlledVocabularies: undefined,
+    controlledVocabularies: [],
   });
 });
 
@@ -269,7 +269,7 @@ test("Aggregate class without profiling name and description.", () => {
       usageNoteFromProfiled: null,
       externalDocumentationUrl: "1-document",
       tags: ["1-role"],
-      controlledVocabularies: undefined,
+      controlledVocabularies: [],
     } satisfies SemanticModelClassProfile,
     [
       {
@@ -300,7 +300,7 @@ test("Aggregate class without profiling name and description.", () => {
     externalDocumentationUrl: "1-document",
     tags: ["1-role"],
     order: null,
-    controlledVocabularies: undefined,
+    controlledVocabularies: [],
   });
 });
 
@@ -320,7 +320,7 @@ test("Aggregate class profile with duplicate IRIs should deduplicate conceptIris
       usageNoteFromProfiled: null,
       externalDocumentationUrl: null,
       tags: [],
-      controlledVocabularies: undefined,
+      controlledVocabularies: [],
     },
     [
       {
@@ -345,7 +345,7 @@ test("Aggregate class profile with duplicate IRIs should deduplicate conceptIris
         conceptIris: ["http://example.com/Dataset"],
         externalDocumentationUrl: null,
         tags: [],
-        controlledVocabularies: undefined,
+        controlledVocabularies: [],
       } satisfies AggregatedProfiledSemanticModelClass,
     ]
   );

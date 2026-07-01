@@ -33,7 +33,7 @@ test("Create class profile.", () => {
     profiling: ["one", "two"],
     externalDocumentationUrl: "http://example.com/document",
     tags: ["main"],
-    controlledVocabularies: undefined,
+    controlledVocabularies: [],
   }));
   //
   expect(result).toStrictEqual({ success: true, created: ["1"] });
@@ -53,7 +53,7 @@ test("Create class profile.", () => {
         profiling: ["one", "two"],
         externalDocumentationUrl: "http://example.com/document",
         tags: ["main"],
-        controlledVocabularies: undefined,
+        controlledVocabularies: [],
       } as SemanticModelClassProfile
     },
     removed: []
@@ -76,7 +76,7 @@ test("Modify class profile, change none.", () => {
     profiling: ["one", "two"],
     externalDocumentationUrl: "http://example.com/document",
     tags: ["main"],
-    controlledVocabularies: undefined,
+    controlledVocabularies: [],
   };
   const executor = createDefaultSemanticModelProfileOperationExecutor(
     { createIdentifier: () => (++counter).toString() },
@@ -104,7 +104,7 @@ test("Modify class profile, change none.", () => {
         externalDocumentationUrl: "http://example.com/document",
         tags: ["main"],
         order: null,
-        controlledVocabularies: undefined,
+        controlledVocabularies: [],
       } as SemanticModelClassProfile
     },
     removed: []
@@ -127,7 +127,7 @@ test("Modify class profile, change all.", () => {
     profiling: ["prev-one", "prev-two"],
     externalDocumentationUrl: "http://example.com/document",
     tags: ["main"],
-    controlledVocabularies: undefined,
+    controlledVocabularies: [],
   };
   const executor = createDefaultSemanticModelProfileOperationExecutor(
     { createIdentifier: () => (++counter).toString() },
@@ -167,7 +167,7 @@ test("Modify class profile, change all.", () => {
         externalDocumentationUrl: "http://localhost/document",
         tags: ["support"],
         order: null,
-        controlledVocabularies: undefined,
+        controlledVocabularies: [],
       } as SemanticModelClassProfile
     },
     removed: []
@@ -504,7 +504,7 @@ test("Issue #917: Change class profile to null.", () => {
     profiling: ["one"],
     externalDocumentationUrl: "profile-document",
     tags: ["profile-role"],
-    controlledVocabularies: undefined,
+    controlledVocabularies: [],
   }));
   expect(result).toStrictEqual({ success: true, created: ["1"] });
   executor.executeOperation(factory.modifyClassProfile("1", {
@@ -534,7 +534,7 @@ test("Issue #917: Change class profile to null.", () => {
     externalDocumentationUrl: null,
     tags: [],
     order: null,
-    controlledVocabularies: undefined,
+    controlledVocabularies: [],
   } as SemanticModelClassProfile);
 });
 
