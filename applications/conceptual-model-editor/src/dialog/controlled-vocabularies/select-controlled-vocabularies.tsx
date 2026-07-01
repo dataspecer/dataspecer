@@ -4,6 +4,10 @@ import { ControlledVocabularyOverride, ControlledVocabularyUsage, ControlledVoca
 import { VocabularyItem } from "./vocabulary-item";
 import { AddVocabularyForm } from "./add-vocabulary-form";
 
+/**
+ * Class profile can only contain 1 controlled vocabulary assignment if the qualifier is MUST
+ * This function validates it accross all CV assignements in the profile
+ */
 function hasMustConflict(
   inherited: ControlledVocabularyUsage[],
   overrides: ControlledVocabularyOverride[],
