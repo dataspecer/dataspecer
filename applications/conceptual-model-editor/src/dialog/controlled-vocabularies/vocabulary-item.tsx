@@ -1,5 +1,5 @@
 import { Qualifier, SelectQualifier } from "../components/select-qualifier";
-import { Vocabulary } from "./vocabulary";
+import { Vocabulary } from "./controlled-vocabulary-model";
 
 export function VocabularyItem(props: {
   vocabulary: Vocabulary;

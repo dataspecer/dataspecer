@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Qualifier } from "../components/select-qualifier";
-import { VocabularyOverride, VocabularyUsage, Vocabulary } from "./vocabulary";
+import { VocabularyOverride, VocabularyUsage, Vocabulary } from "./controlled-vocabulary-model";
 import { VocabularyItem } from "./vocabulary-item";
 import { AddVocabularyForm } from "./add-vocabulary-form";
 

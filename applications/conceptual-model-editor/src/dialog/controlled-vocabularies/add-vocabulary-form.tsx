@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Qualifier, SelectQualifier } from "../components/select-qualifier";
-import { Vocabulary, VocabularyUsage } from "./vocabulary";
+import { Vocabulary, VocabularyUsage } from "./controlled-vocabulary-model";
 
 export function AddVocabularyForm(props: {
   availableVocabularies: Vocabulary[];
