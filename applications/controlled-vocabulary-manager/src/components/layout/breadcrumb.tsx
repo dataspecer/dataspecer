@@ -1,14 +1,15 @@
 interface BreadcrumbItem {
   label: string
-  onClick?: () => void
   href?: string
 }
 
-interface BreadcrumbProps {
+export function Breadcrumb({
+  items,
+  onItemClick,
+}: {
   items: BreadcrumbItem[]
-}
-
-export function Breadcrumb({ items }: BreadcrumbProps) {
+  onItemClick?: (item: BreadcrumbItem) => void
+}) {
   return (
     <div className="flex items-center gap-2 mb-1">
       {items.map((item, index) => {
@@ -28,7 +29,7 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
             ) : (
               <button
                 className="text-caption text-muted-foreground hover:underline"
-                onClick={item.onClick}
+                onClick={() => onItemClick?.(item)}
               >
                 {item.label}
               </button>

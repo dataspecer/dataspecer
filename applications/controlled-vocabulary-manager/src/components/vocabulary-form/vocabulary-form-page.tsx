@@ -24,9 +24,10 @@ export function VocabularyFormPage({
       <Breadcrumb
         items={[
           { label: t("breadcrumb.packageManager"), href: managerUrl },
-          { label: t("breadcrumb.controlledVocabularies"), onClick: onCancel },
+          { label: t("breadcrumb.controlledVocabularies") },
           { label: t(isEditMode ? "breadcrumb.edit" : "breadcrumb.addByUrl") },
         ]}
+        onItemClick={onCancel}
       />
       <h1 className="text-page-title font-semibold mb-1">
         {t(isEditMode ? "form.edit.title" : "form.empty.title")}
