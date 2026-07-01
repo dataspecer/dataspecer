@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Qualifier, SelectQualifier } from "../components/select-qualifier";
-import { Vocabulary, VocabularyUsage } from "./controlled-vocabulary-model";
+import { ControlledVocabulary, ControlledVocabularyUsage } from "./controlled-vocabulary-model";
 
 export function AddVocabularyForm(props: {
-  availableVocabularies: Vocabulary[];
-  onAdd: (usage: VocabularyUsage) => void;
+  availableVocabularies: ControlledVocabulary[];
+  onAdd: (usage: ControlledVocabularyUsage) => void;
   onCancel: () => void;
 }) {
   const [selectedVocabularyId, setSelectedVocabularyId] = useState<string>("");

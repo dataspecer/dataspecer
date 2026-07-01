@@ -1,6 +1,6 @@
 import { Qualifier } from "../components/select-qualifier";
 
-export interface Vocabulary {
+export interface ControlledVocabulary {
   id: string;
   name: string;
   iri: string;
@@ -10,12 +10,12 @@ export interface Vocabulary {
   source?: string;
 }
 
-export interface VocabularyUsage {
-  vocabulary: Vocabulary;
+export interface ControlledVocabularyUsage {
+  vocabulary: ControlledVocabulary;
   qualifier: Qualifier;
 }
 
-export interface VocabularyOverride {
+export interface ControlledVocabularyOverride {
   vocabularyId: string;
   qualifier: Qualifier;
 }

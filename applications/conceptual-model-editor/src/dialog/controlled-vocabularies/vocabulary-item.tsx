@@ -1,8 +1,8 @@
 import { Qualifier, SelectQualifier } from "../components/select-qualifier";
-import { Vocabulary } from "./controlled-vocabulary-model";
+import { ControlledVocabulary } from "./controlled-vocabulary-model";
 
 export function VocabularyItem(props: {
-  vocabulary: Vocabulary;
+  vocabulary: ControlledVocabulary;
   qualifier: Qualifier;
   inherited?: Qualifier;
   overrideEnabled?: boolean;

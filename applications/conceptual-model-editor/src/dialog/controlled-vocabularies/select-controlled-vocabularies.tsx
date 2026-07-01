@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Qualifier } from "../components/select-qualifier";
-import { VocabularyOverride, VocabularyUsage, Vocabulary } from "./controlled-vocabulary-model";
+import { ControlledVocabularyOverride, ControlledVocabularyUsage, ControlledVocabulary } from "./controlled-vocabulary-model";
 import { VocabularyItem } from "./vocabulary-item";
 import { AddVocabularyForm } from "./add-vocabulary-form";
 
 function hasMustConflict(
-  inherited: VocabularyUsage[],
-  overrides: VocabularyOverride[],
-  added: VocabularyUsage[],
+  inherited: ControlledVocabularyUsage[],
+  overrides: ControlledVocabularyOverride[],
+  added: ControlledVocabularyUsage[],
 ): boolean {
   const effectiveQualifiers: Qualifier[] = [
     ...inherited.map(u => {
@@ -23,12 +23,12 @@ function hasMustConflict(
 }
 
 export function SelectControlledVocabularies(props: {
-  inherited: VocabularyUsage[];
-  overrides: VocabularyOverride[];
-  added: VocabularyUsage[];
-  availableVocabularies: Vocabulary[];
-  onOverridesChange: (overrides: VocabularyOverride[]) => void;
-  onAddedChange: (added: VocabularyUsage[]) => void;
+  inherited: ControlledVocabularyUsage[];
+  overrides: ControlledVocabularyOverride[];
+  added: ControlledVocabularyUsage[];
+  availableVocabularies: ControlledVocabulary[];
+  onOverridesChange: (overrides: ControlledVocabularyOverride[]) => void;
+  onAddedChange: (added: ControlledVocabularyUsage[]) => void;
   onValidityChange: (isValid: boolean) => void;
 }) {
   const [isAdding, setIsAdding] = useState(false);
@@ -75,7 +75,7 @@ export function SelectControlledVocabularies(props: {
     props.onAddedChange(props.added.filter((_, i) => i !== index));
   };
 
-  const onAdd = (usage: VocabularyUsage) => {
+  const onAdd = (usage: ControlledVocabularyUsage) => {
     props.onAddedChange([...props.added, usage]);
     setIsAdding(false);
   };
