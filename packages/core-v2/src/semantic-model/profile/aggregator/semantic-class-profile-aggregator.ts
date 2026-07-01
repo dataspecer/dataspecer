@@ -99,4 +99,4 @@ function aggregateSemanticModelClassProfile(
     controlledVocabularies: profile.controlledVocabularies,
   } satisfies AggregatedProfiledSemanticModelClass;
 }
-// TODO: add effective controlled vocabularies
+// TODO [E. Blajer]: add effective controlled vocabularies
