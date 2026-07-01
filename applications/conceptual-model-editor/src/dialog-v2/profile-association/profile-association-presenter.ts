@@ -95,7 +95,7 @@ export function useProfileAssociationPresenter(
     domainCardinality,
     range,
     rangeCardinality,
-  }
+  };
 }
 
 interface ProfileAssociationPresenter {

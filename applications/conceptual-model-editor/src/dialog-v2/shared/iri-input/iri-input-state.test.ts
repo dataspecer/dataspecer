@@ -5,7 +5,7 @@ describe("createIriInputState", () => {
 
   test("Create relative", () => {
     expect(createIriInputState("http://example.com/", "http://localhost/name"))
-      .toBe({
+      .toStrictEqual({
         base: "http://example.com/",
         value: "http://localhost/name",
         inputMode: "absolute",
@@ -14,7 +14,7 @@ describe("createIriInputState", () => {
 
   test("Create absolute", () => {
     expect(createIriInputState("http://example.com/", "http://example.com/name"))
-      .toBe({
+      .toStrictEqual({
         base: "http://example.com/",
         value: "name",
         inputMode: "relative",
