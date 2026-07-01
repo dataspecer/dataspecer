@@ -23,7 +23,7 @@ export type Qualifier = "MUST" | "AT_LEAST_1" | "RECOMMENDED" | "MAY"
 export type ControlledVocabularyAssignment = {
     vocabularyId: string;
     qualifier: Qualifier;
-    override: boolean; // co kdyz zmizi predek, rozlisit z ktereho predka?
+    override: boolean;
 }
 
 export const SEMANTIC_MODEL_CLASS_PROFILE = "class-profile";
