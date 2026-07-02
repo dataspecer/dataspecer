@@ -22,15 +22,15 @@ import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 import { prismaClient, resourceModel, transactionModel } from "../main.ts";
 import { BaseResource } from "../models/resource-model.ts";
-import type { OperationInput } from "../models/transaction-model.ts";
 import { getModelsForPackage, loadModelEntities } from "../utils/backend-model-store.ts";
 import { asyncHandler } from "./../utils/async-handler.ts";
 import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { canonicalizeIds } from "@dataspecer/structure-model";
 import { changesToEntityOperations, diffEntities, type EntityRecord } from "@dataspecer/core/entity-model";
 import { changesToSemanticModelOperations } from "@dataspecer/core-v2/semantic-model/operations";
-import { DataSpecificationConfigurator, type DataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
+import { DataSpecificationConfigurator } from "@dataspecer/core/data-specification/configuration";
 import { turtleStringToGeneratorConfiguration } from "@dataspecer/data-specification-vocabulary/generator-configuration";
+import type { OperationInModel } from "@dataspecer/core/operation";
 
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
@@ -510,9 +510,9 @@ async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIr
  * or single {@link loadModelEntities} calls) and converts the differences into
  * operations, tagged with the id of the model they belong to.
  */
-function diffModelStatesToOperations(previous: Record<string, EntityRecord>, next: Record<string, EntityRecord>): OperationInput[] {
+function diffModelStatesToOperations(previous: Record<string, EntityRecord>, next: Record<string, EntityRecord>): OperationInModel[] {
   const modelIds = new Set([...Object.keys(previous), ...Object.keys(next)]);
-  const operations: OperationInput[] = [];
+  const operations: OperationInModel[] = [];
 
   for (const modelId of modelIds) {
     const changes = diffEntities(previous[modelId] ?? {}, next[modelId] ?? {});
@@ -636,13 +636,14 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
     const newModel = await createRdfsModel(urls, httpFetch);
     newModel.id = existingResource.iri;
     // Intentionally skip store.setJson() — the blob stays unchanged.
-    // The diff is recorded as pending operations on the "upstream" branch.
+    // The diff is recorded as pending operations on an independent evolution branch.
     const nextEntities = serializationToPimModelEntities(newModel.serializeModel() as object).entities;
 
     const operations = diffModelStatesToOperations({ [existingResource.iri]: previousEntities }, { [existingResource.iri]: nextEntities });
     if (operations.length > 0) {
       const projectIri = await getParentIri(existingResource.iri) ?? existingResource.iri;
-      await transactionModel.createTransactions(projectIri, [{ operations }], "upstream");
+      const branchId = await transactionModel.getOrCreateEvolutionBranch(projectIri, existingResource.iri);
+      await transactionModel.createTransactions(projectIri, [{ operations }], branchId);
     }
 
     response.send(await resourceModel.getResource(existingResource.iri));
@@ -660,8 +661,8 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
   // The import functions will reuse existing resource IRIs and update their
   // content in-place, then delete any resources that are no longer present.
   // Note: blob updates here are a known limitation — blobs are not yet connected
-  // to branches, so the diff is recorded on "upstream" even though the blob
-  // is also written. This will be resolved when blobs support branching.
+  // to branches, so the diff is recorded on the evolution branch even though the
+  // blob is also written. This will be resolved when blobs support branching.
   const previousModels = await getModelsForPackage(query.iri, resourceModel);
 
   const [result] = await importFromUrl("", url, query.iri);
@@ -670,7 +671,8 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
   const operations = diffModelStatesToOperations(previousModels, nextModels);
   if (operations.length > 0) {
     const projectIri = await getParentIri(query.iri) ?? query.iri;
-    await transactionModel.createTransactions(projectIri, [{ operations }], "upstream");
+    const branchId = await transactionModel.getOrCreateEvolutionBranch(projectIri, query.iri);
+    await transactionModel.createTransactions(projectIri, [{ operations }], branchId);
   }
 
   response.send(result ?? existingResource);
