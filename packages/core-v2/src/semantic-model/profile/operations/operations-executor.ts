@@ -274,9 +274,9 @@ function executeAddControlledVocabularyAssignment(
     return { success: false, created: [] };
   }
   const existing = previous.controlledVocabularies ?? [];
-  if (existing.some(a => a.vocabularyId === assignment.vocabularyId)) {
-    console.error("vocabularyId is already assigned to this class profile, add controlled vocabulary assignment is ignored.",
-      { vocabularyId: assignment.vocabularyId });
+  if (existing.some(a => a.identifier === assignment.identifier)) {
+    console.error("controlledVocabularyIdentifier is already assigned to this class profile, add controlled vocabulary assignment is ignored.",
+      { controlledVocabularyIdentifier: assignment.identifier });
     return { success: false, created: [] };
   }
   const updatedEntity: SemanticModelClassProfile = {
@@ -290,7 +290,7 @@ function executeAddControlledVocabularyAssignment(
 function executeRemoveControlledVocabularyAssignment(
   entityReader: EntityReader,
   entityWriter: EntityWriter,
-  { classProfileIdentifier, vocabularyId }: RemoveControlledVocabularyAssignment,
+  { classProfileIdentifier, controlledVocabularyIdentifier }: RemoveControlledVocabularyAssignment,
 ): OperationResult {
   const previous = entityReader.entity(classProfileIdentifier);
   if (previous === null || !isSemanticModelClassProfile(previous)) {
@@ -299,14 +299,14 @@ function executeRemoveControlledVocabularyAssignment(
     return { success: false, created: [] };
   }
   const existing = previous.controlledVocabularies ?? [];
-  if (!existing.some(a => a.vocabularyId === vocabularyId)) {
-    console.error("vocabularyId not found in class profile, remove controlled vocabulary assignment is ignored.",
-      { vocabularyId });
+  if (!existing.some(a => a.identifier === controlledVocabularyIdentifier)) {
+    console.error("controlledVocabularyIdentifier not found in class profile, remove controlled vocabulary assignment is ignored.",
+      { controlledVocabularyIdentifier });
     return { success: false, created: [] };
   }
   const updatedEntity: SemanticModelClassProfile = {
     ...previous,
-    controlledVocabularies: existing.filter(a => a.vocabularyId !== vocabularyId),
+    controlledVocabularies: existing.filter(a => a.identifier !== controlledVocabularyIdentifier),
   };
   entityWriter.change({ [classProfileIdentifier]: updatedEntity }, []);
   return { success: true, created: [] };
@@ -315,7 +315,7 @@ function executeRemoveControlledVocabularyAssignment(
 function executeModifyControlledVocabularyAssignment(
   entityReader: EntityReader,
   entityWriter: EntityWriter,
-  { classProfileIdentifier, vocabularyId, changes }: ModifyControlledVocabularyAssignment,
+  { classProfileIdentifier, controlledVocabularyIdentifier, changes }: ModifyControlledVocabularyAssignment,
 ): OperationResult {
   const previous = entityReader.entity(classProfileIdentifier);
   if (previous === null || !isSemanticModelClassProfile(previous)) {
@@ -324,15 +324,15 @@ function executeModifyControlledVocabularyAssignment(
     return { success: false, created: [] };
   }
   const existing = previous.controlledVocabularies ?? [];
-  if (!existing.some(a => a.vocabularyId === vocabularyId)) {
-    console.error("vocabularyId not found in class profile, modify controlled vocabulary assignment is ignored.",
-      { vocabularyId });
+  if (!existing.some(a => a.identifier === controlledVocabularyIdentifier)) {
+    console.error("controlledVocabularyIdentifier not found in class profile, modify controlled vocabulary assignment is ignored.",
+      { controlledVocabularyIdentifier });
     return { success: false, created: [] };
   }
   const updatedEntity: SemanticModelClassProfile = {
     ...previous,
     controlledVocabularies: existing.map(a =>
-      a.vocabularyId === vocabularyId ? { ...a, ...changes } : a
+      a.identifier === controlledVocabularyIdentifier ? { ...a, ...changes } : a
     ),
   };
   entityWriter.change({ [classProfileIdentifier]: updatedEntity }, []);

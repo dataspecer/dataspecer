@@ -1,4 +1,5 @@
 import { Entity } from "../../../entity-model/index.ts";
+import { EntityIdentifier } from "../../../entity-model/entity.ts";
 import { SemanticModelEntity } from "../../concepts/index.ts";
 import { NamedThingProfile } from "./named-thing-profile.ts";
 import { Profile } from "./profile.ts";
@@ -21,7 +22,7 @@ export interface SemanticModelClassProfile extends SemanticModelEntity, Profile,
 export type Qualifier = "MUST" | "AT_LEAST_1" | "RECOMMENDED" | "MAY"
 
 export type ControlledVocabularyAssignment = {
-    vocabularyId: string;
+    identifier: EntityIdentifier;
     qualifier: Qualifier;
     override: boolean;
 }

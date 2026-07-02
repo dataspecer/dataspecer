@@ -106,7 +106,7 @@ export function isAddControlledVocabularyAssignment(op: Operation): op is AddCon
 export interface RemoveControlledVocabularyAssignment extends Operation {
   type: typeof REMOVE_CONTROLLED_VOCABULARY_ASSIGNMENT;
   classProfileIdentifier: EntityIdentifier;
-  vocabularyId: string;
+  controlledVocabularyIdentifier: EntityIdentifier;
 }
 
 export const REMOVE_CONTROLLED_VOCABULARY_ASSIGNMENT = "remove-controlled-vocabulary-assignment";
@@ -118,7 +118,7 @@ export function isRemoveControlledVocabularyAssignment(op: Operation): op is Rem
 export interface ModifyControlledVocabularyAssignment extends Operation {
   type: typeof MODIFY_CONTROLLED_VOCABULARY_ASSIGNMENT;
   classProfileIdentifier: EntityIdentifier;
-  vocabularyId: string;
+  controlledVocabularyIdentifier: EntityIdentifier;
   changes: Partial<Pick<ControlledVocabularyAssignment, "qualifier" | "override">>;
 }
 

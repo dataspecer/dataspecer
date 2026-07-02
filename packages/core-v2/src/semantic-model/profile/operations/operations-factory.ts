@@ -37,12 +37,12 @@ export interface SemanticModelProfileOperationFactory {
 
   removeControlledVocabularyAssignment(
     classProfileIdentifier: EntityIdentifier,
-    vocabularyId: string,
+    controlledVocabularyIdentifier: EntityIdentifier,
   ): RemoveControlledVocabularyAssignment;
 
   modifyControlledVocabularyAssignment(
     classProfileIdentifier: EntityIdentifier,
-    vocabularyId: string,
+    controlledVocabularyIdentifier: EntityIdentifier,
     changes: Partial<Pick<ControlledVocabularyAssignment, "qualifier" | "override">>,
   ): ModifyControlledVocabularyAssignment;
 
@@ -121,26 +121,26 @@ class DefaultSemanticModelProfileOperationFactory
 
   removeControlledVocabularyAssignment(
     classProfileIdentifier: EntityIdentifier,
-    vocabularyId: string,
+    controlledVocabularyIdentifier: EntityIdentifier,
   ): RemoveControlledVocabularyAssignment {
     return {
       id: generateOperationId(),
       type: REMOVE_CONTROLLED_VOCABULARY_ASSIGNMENT,
       classProfileIdentifier,
-      vocabularyId,
+      controlledVocabularyIdentifier,
     };
   }
 
   modifyControlledVocabularyAssignment(
     classProfileIdentifier: EntityIdentifier,
-    vocabularyId: string,
+    controlledVocabularyIdentifier: EntityIdentifier,
     changes: Partial<Pick<ControlledVocabularyAssignment, "qualifier" | "override">>,
   ): ModifyControlledVocabularyAssignment {
     return {
       id: generateOperationId(),
       type: MODIFY_CONTROLLED_VOCABULARY_ASSIGNMENT,
       classProfileIdentifier,
-      vocabularyId,
+      controlledVocabularyIdentifier,
       changes,
     };
   }
