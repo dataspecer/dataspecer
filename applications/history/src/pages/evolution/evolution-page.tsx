@@ -28,13 +28,43 @@ interface BackendOperation {
 // Data fetching
 // ---------------------------------------------------------------------------
 
-async function fetchUpstreamDiff(backendUrl: string, projectIri: string): Promise<BackendOperation[]> {
-  const url = new URL(`${backendUrl}/transactions/diff/main..upstream`, window.location.origin);
+interface BranchInfo {
+  id: number;
+  name: string | null;
+  resourceIri: string | null;
+}
+
+async function fetchBranches(backendUrl: string, projectIri: string): Promise<BranchInfo[]> {
+  const url = new URL(`${backendUrl}/transactions/branches`, window.location.origin);
+  url.searchParams.set("projectIri", projectIri);
+  const response = await fetch(url.toString());
+  if (!response.ok) return [];
+  const result = await response.json() as { branches: BranchInfo[] };
+  return result.branches;
+}
+
+async function fetchBranchDiff(backendUrl: string, projectIri: string, branchId: number): Promise<BackendOperation[]> {
+  const range = `main..[${branchId}]`;
+  const url = new URL(`${backendUrl}/transactions/log/${encodeURIComponent(range)}`, window.location.origin);
   url.searchParams.set("projectIri", projectIri);
   const response = await fetch(url.toString());
   if (!response.ok) return [];
   const result = await response.json() as { transactions: { operations: BackendOperation[] }[] };
   return result.transactions.flatMap((tx) => tx.operations);
+}
+
+/**
+ * Fetches pending operations from every evolution branch of the project (one
+ * per model currently being updated), not just a single hardcoded branch, so
+ * evolution can be reviewed for multiple models at once.
+ */
+async function fetchEvolutionOperations(backendUrl: string, projectIri: string): Promise<BackendOperation[]> {
+  const branches = await fetchBranches(backendUrl, projectIri);
+  const evolutionBranches = branches.filter((branch) => branch.resourceIri !== null);
+  const operationsPerBranch = await Promise.all(
+    evolutionBranches.map((branch) => fetchBranchDiff(backendUrl, projectIri, branch.id)),
+  );
+  return operationsPerBranch.flat();
 }
 
 // ---------------------------------------------------------------------------
@@ -101,8 +131,9 @@ function ProposalCard({ label, selected, onClick }: { label: string; selected: b
 // ---------------------------------------------------------------------------
 
 /**
- * Shows pending upstream operations one at a time. For each operation the hook
- * `reactToSemanticModelOperation` is called against the first child
+ * Shows pending operations from all evolution branches of the project (one
+ * per model currently being updated) one at a time. For each operation the
+ * hook `reactToSemanticModelOperation` is called against the first child
  * LOCAL_SEMANTIC_MODEL found in the project.  The user picks a proposed
  * evolution operation (or none) and approves, which dispatches both the
  * upstream operation on the parent model and the selected proposal's
@@ -126,7 +157,7 @@ export function EvolutionPage() {
 
     setLoading(true);
     setIndex(0);
-    fetchUpstreamDiff(backendUrl, packageIri)
+    fetchEvolutionOperations(backendUrl, packageIri)
       .then(setOperations)
       .catch(console.error)
       .finally(() => setLoading(false));

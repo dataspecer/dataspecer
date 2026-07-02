@@ -53,6 +53,9 @@ model Resource {
   transactions Transaction[]
   operations   Operation[]
   branches     Branch[]
+
+  /* Evolution branches that are currently tracking pending updates to this resource. */
+  evolutionBranches Branch[] @relation("BranchResource")
 }
 
 
@@ -191,8 +194,8 @@ model Operation {
 
 /* A named pointer to a transaction, representing the tip of a branch's history. */
 model Branch {
-  id   Int    @id @default(autoincrement())
-  name String
+  id   Int     @id @default(autoincrement())
+  name String?
 
   projectId Int
   project   Resource @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -201,6 +204,12 @@ model Branch {
   transactionId Int?
   transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
 
+  /* The resource that this branch tracks pending evolution updates for. Only
+     set for unnamed, independent evolution branches created by reload. */
+  resourceId Int?
+  resource   Resource? @relation("BranchResource", fields: [resourceId], references: [id], onDelete: Cascade)
+
   @@unique([projectId, name])
+  @@unique([projectId, resourceId])
   @@index([projectId])
 }
