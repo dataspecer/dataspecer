@@ -13,7 +13,7 @@ You can do this using the `.env` file:
 
 ```
 VITE_MANAGER=http://localhost:5174
-VITE_BACKEND=http://localhost:3100/api
+VITE_BACKEND=http://localhost:3100
 ```
 
 - `VITE_MANAGER` - URL of the [Package Manager](../manager) application, used to link back to it.
