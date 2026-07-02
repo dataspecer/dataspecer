@@ -1,7 +1,8 @@
 import { Entity, EntityIdentifier } from "../../../entity-model/entity.ts";
 import type { Operation } from "@dataspecer/core/operation";
 import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile, SEMANTIC_MODEL_CLASS_PROFILE, SEMANTIC_MODEL_RELATIONSHIP_PROFILE, SemanticModelClassProfile, SemanticModelRelationshipEndProfile, SemanticModelRelationshipProfile, } from "../concepts/index.ts";
-import { CreateSemanticModelClassProfile, ModifySemanticModelClassProfile, CreateSemanticModelRelationshipProfile, ModifySemanticModelRelationshipProfile, ModifySemanticModelRelationshipEndProfile, isCreateSemanticModelClassProfile, isModifySemanticModelClassProfile, isCreateSemanticModelRelationshipProfile, isModifySemanticModelRelationshipProfile, isModifySemanticModelRelationshipEndProfile } from "./operations.ts";
+import { CreateSemanticModelClassProfile, ModifySemanticModelClassProfile, CreateSemanticModelRelationshipProfile, ModifySemanticModelRelationshipProfile, isCreateSemanticModelClassProfile, isModifySemanticModelClassProfile, isCreateSemanticModelRelationshipProfile, isModifySemanticModelRelationshipProfile, AddControlledVocabularyAssignment, RemoveControlledVocabularyAssignment, ModifyControlledVocabularyAssignment, isAddControlledVocabularyAssignment, isRemoveControlledVocabularyAssignment, isModifyControlledVocabularyAssignment, ModifySemanticModelRelationshipEndProfile, isModifySemanticModelRelationshipEndProfile } from "./operations.ts";
+
 
 export interface IdentifierSource {
 
@@ -84,6 +85,18 @@ class DefaultSemanticModelProfileOperationExecutor implements SemanticModelProfi
       return executeModifySemanticModelRelationshipProfile(
         this.entityReader, this.entityWriter, operation);
     }
+    if (isAddControlledVocabularyAssignment(operation)) {
+      return executeAddControlledVocabularyAssignment(
+        this.entityReader, this.entityWriter, operation);
+    }
+    if (isRemoveControlledVocabularyAssignment(operation)) {
+      return executeRemoveControlledVocabularyAssignment(
+        this.entityReader, this.entityWriter, operation);
+    }
+    if (isModifyControlledVocabularyAssignment(operation)) {
+      return executeModifyControlledVocabularyAssignment(
+        this.entityReader, this.entityWriter, operation);
+    }
     if (isModifySemanticModelRelationshipEndProfile(operation)) {
       return executeModifySemanticModelRelationshipEndProfile(
         this.entityReader, this.entityWriter, operation);
@@ -148,6 +161,7 @@ function executeModifySemanticModelClassProfile(
     externalDocumentationUrl: mergeFromProfiled(entity.externalDocumentationUrl, previous.externalDocumentationUrl),
     tags: mergeFromProfiled(entity.tags, previous.tags),
     order: mergeFromProfiled(entity.order, previous.order) ?? null,
+    controlledVocabularies: mergeFromProfiled(entity.controlledVocabularies, previous.controlledVocabularies),
   };
   entityWriter.change({ [identifier]: updatedEntity }, []);
   return {
@@ -245,6 +259,85 @@ function executeModifySemanticModelRelationshipProfile(
   }
 }
 
+// TODO: should we do validations here?
+// - only one CV with MUST on profile
+// - inherited qualifiers can be only changed to stricter
+function executeAddControlledVocabularyAssignment(
+  entityReader: EntityReader,
+  entityWriter: EntityWriter,
+  { classProfileIdentifier, assignment }: AddControlledVocabularyAssignment,
+): OperationResult {
+  const previous = entityReader.entity(classProfileIdentifier);
+  if (previous === null || !isSemanticModelClassProfile(previous)) {
+    console.error("Target is not a class profile, add controlled vocabulary assignment is ignored.",
+      { previous });
+    return { success: false, created: [] };
+  }
+  const existing = previous.controlledVocabularies ?? [];
+  if (existing.some(a => a.identifier === assignment.identifier)) {
+    console.error("controlledVocabularyIdentifier is already assigned to this class profile, add controlled vocabulary assignment is ignored.",
+      { controlledVocabularyIdentifier: assignment.identifier });
+    return { success: false, created: [] };
+  }
+  const updatedEntity: SemanticModelClassProfile = {
+    ...previous,
+    controlledVocabularies: [...existing, assignment],
+  };
+  entityWriter.change({ [classProfileIdentifier]: updatedEntity }, []);
+  return { success: true, created: [] };
+}
+
+function executeRemoveControlledVocabularyAssignment(
+  entityReader: EntityReader,
+  entityWriter: EntityWriter,
+  { classProfileIdentifier, controlledVocabularyIdentifier }: RemoveControlledVocabularyAssignment,
+): OperationResult {
+  const previous = entityReader.entity(classProfileIdentifier);
+  if (previous === null || !isSemanticModelClassProfile(previous)) {
+    console.error("Target is not a class profile, remove controlled vocabulary assignment is ignored.",
+      { previous });
+    return { success: false, created: [] };
+  }
+  const existing = previous.controlledVocabularies ?? [];
+  if (!existing.some(a => a.identifier === controlledVocabularyIdentifier)) {
+    console.error("controlledVocabularyIdentifier not found in class profile, remove controlled vocabulary assignment is ignored.",
+      { controlledVocabularyIdentifier });
+    return { success: false, created: [] };
+  }
+  const updatedEntity: SemanticModelClassProfile = {
+    ...previous,
+    controlledVocabularies: existing.filter(a => a.identifier !== controlledVocabularyIdentifier),
+  };
+  entityWriter.change({ [classProfileIdentifier]: updatedEntity }, []);
+  return { success: true, created: [] };
+}
+
+function executeModifyControlledVocabularyAssignment(
+  entityReader: EntityReader,
+  entityWriter: EntityWriter,
+  { classProfileIdentifier, controlledVocabularyIdentifier, changes }: ModifyControlledVocabularyAssignment,
+): OperationResult {
+  const previous = entityReader.entity(classProfileIdentifier);
+  if (previous === null || !isSemanticModelClassProfile(previous)) {
+    console.error("Target is not a class profile, modify controlled vocabulary assignment is ignored.",
+      { previous });
+    return { success: false, created: [] };
+  }
+  const existing = previous.controlledVocabularies ?? [];
+  if (!existing.some(a => a.identifier === controlledVocabularyIdentifier)) {
+    console.error("controlledVocabularyIdentifier not found in class profile, modify controlled vocabulary assignment is ignored.",
+      { controlledVocabularyIdentifier });
+    return { success: false, created: [] };
+  }
+  const updatedEntity: SemanticModelClassProfile = {
+    ...previous,
+    controlledVocabularies: existing.map(a =>
+      a.identifier === controlledVocabularyIdentifier ? { ...a, ...changes } : a
+    ),
+  };
+  entityWriter.change({ [classProfileIdentifier]: updatedEntity }, []);
+  return { success: true, created: [] };
+}
 function executeModifySemanticModelRelationshipEndProfile(
   entityReader: EntityReader,
   entityWriter: EntityWriter,
