@@ -4,7 +4,7 @@ import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Transaction as CoreTransaction, Operation, OperationInModel } from "@dataspecer/core/operation";
-import type { ModelEntity } from "@dataspecer/project-model";
+import type { ProjectModelEntity } from "@dataspecer/project-model";
 import type { ObservableEntityModelStoreChangeEvent } from "../interfaces/observable.ts";
 import type { ConnectionStatus, RemoteModelStore } from "../interfaces/remote.ts";
 import type { TransactionMetadata, TransactionResult } from "../interfaces/writable.ts";
@@ -249,7 +249,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     for (const change of structuralChanges) {
       if (change.previous === null) {
         // New model was created
-        const modelEntity = change.next as ModelEntity;
+        const modelEntity = change.next as ProjectModelEntity;
         this.activateModel(modelEntity.id, modelEntity.modelType, isLocalChange, entityChanges);
         if (modelEntity.modelType === VISUAL_MODEL) {
           // A visual model may have an additional "svg" blob attached to it.
@@ -259,7 +259,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
         }
       } else if (change.next === null) {
         // Model was deleted
-        const modelEntity = change.previous as ModelEntity;
+        const modelEntity = change.previous as ProjectModelEntity;
         this.deactivateModel(modelEntity.id, entityChanges);
 
         if (modelEntity.modelType === VISUAL_MODEL) {

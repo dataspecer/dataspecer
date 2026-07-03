@@ -1,14 +1,14 @@
 import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
-import type { ModelEntity, PackageEntity } from "@dataspecer/project-model";
+import type { ProjectModelEntity, PackageEntity } from "@dataspecer/project-model";
 import type { ModelCompositionConfiguration, ModelCompositionConfigurationApplicationProfile, ModelCompositionConfigurationMerge } from "@dataspecer/specification/model-hierarchy";
 import { MODEL_HIERARCHY_APPLICATION_PROFILE, MODEL_HIERARCHY_VOCABULARY, type ModelHierarchyEntity } from "./entities.ts";
 import { QUERYABLE_MODEL } from "@dataspecer/core-v2/model/known-models";
 
 /**
  * Id of the virtual project model (within {@link DefaultFrontendModelStore})
- * that holds the {@link ModelEntity}/{@link PackageEntity} entries describing
+ * that holds the {@link ProjectModelEntity}/{@link PackageEntity} entries describing
  * the project's structure.
  */
 export const PROJECT_MODEL_ID: ModelIdentifier = "_project_model";
@@ -66,7 +66,7 @@ export function isModelHierarchyRelevantChange(entityChanges: Record<ModelIdenti
 class ModelHierarchyBuilder {
   private readonly mainProjectModelId: ModelIdentifier;
   private readonly allModels: Record<ModelIdentifier, EntityRecord>;
-  private readonly projectModel: EntityRecord<ModelEntity>;
+  private readonly projectModel: EntityRecord<ProjectModelEntity>;
 
   /**
    * Ids of models directly contained in the project's root package - the only
@@ -91,7 +91,7 @@ class ModelHierarchyBuilder {
     if (!projectModel) {
       throw new Error(`Project model with ID '${PROJECT_MODEL_ID}' is not available.`);
     }
-    this.projectModel = projectModel as EntityRecord<ModelEntity>;
+    this.projectModel = projectModel as EntityRecord<ProjectModelEntity>;
 
     const rootPackage = this.projectModel[mainProjectModelId] as PackageEntity | undefined;
     this.rootChildIds = new Set(rootPackage?.subModels ?? []);
@@ -121,7 +121,7 @@ class ModelHierarchyBuilder {
 
     // Generate default configuration
     const hasProfile = packageEntity.subModels.some((subModelId) => {
-      const subModel = this.projectModel[subModelId] as ModelEntity | undefined;
+      const subModel = this.projectModel[subModelId] as ProjectModelEntity | undefined;
       return subModel && subModel.id.endsWith("/profile");
     });
 
@@ -163,7 +163,7 @@ class ModelHierarchyBuilder {
     const subPackages: string[] = [];
 
     for (const subModelId of packageEntity.subModels) {
-      const subModel = this.projectModel[subModelId] as ModelEntity | undefined;
+      const subModel = this.projectModel[subModelId] as ProjectModelEntity | undefined;
       if (subModel) {
         if (isHierarchySemanticModelType(subModel.modelType)) {
           semanticModels.push(subModel.id);
@@ -183,7 +183,7 @@ class ModelHierarchyBuilder {
    */
   private resolveModelReference(modelId: ModelIdentifier): ModelIdentifier[] {
     this.usedModels.add(modelId);
-    const entity = this.projectModel[modelId] as ModelEntity | undefined;
+    const entity = this.projectModel[modelId] as ProjectModelEntity | undefined;
 
     if (entity?.modelType === LOCAL_PACKAGE) {
       // It's a package, recurse
@@ -260,7 +260,7 @@ class ModelHierarchyBuilder {
       return;
     }
 
-    const modelEntity = this.projectModel[modelId] as ModelEntity | undefined;
+    const modelEntity = this.projectModel[modelId] as ProjectModelEntity | undefined;
     const modelEntities = this.allModels[modelId];
     if (!modelEntity || !modelEntities) {
       // Model is referenced from the project structure but its data is not (yet) loaded.
@@ -283,7 +283,7 @@ class ModelHierarchyBuilder {
       return;
     }
 
-    const modelEntity = this.projectModel[modelId] as ModelEntity | undefined;
+    const modelEntity = this.projectModel[modelId] as ProjectModelEntity | undefined;
     const modelEntities = this.allModels[modelId];
     if (!modelEntity || !modelEntities) {
       // Model is referenced from the project structure but its data is not (yet) loaded.
