@@ -14,7 +14,8 @@ COPY packages/ packages/
 COPY .npmrc package-lock.json package.json turbo.json ./docker/ws/docker-configure.sh ./docker/ws/docker-copy.sh ./
 
 RUN sed -i "/packageManager/ c \"packageManager\": \"bun@`bun --version`\"," package.json
-RUN bun install --filter '!api-specification'
+# Since there is no bun.lock, bun should migrate the package-lock.json to bun.lock and do the clean install
+RUN bun install
 
 ARG GIT_COMMIT
 ARG GIT_REF
@@ -31,7 +32,7 @@ RUN BASE_PATH=/_BASE_PATH_DOCKER_REPLACE__ \
     sh ./docker-configure.sh
 
 # Build frontend and backend dependencies, do not cache (-> local:) to make build faster
-RUN bunx turbo run build --cache=local: --concurrency 100% --filter=data-specification-editor --filter=conceptual-model-editor --filter=manager --filter=backend^...
+RUN bunx turbo run build --cache=local: --concurrency 100% --filter=data-specification-editor --filter=conceptual-model-editor --filter=controlled-vocabulary-manager --filter=manager --filter=backend^...
 
 # Move frontend
 RUN sh ./docker-copy.sh

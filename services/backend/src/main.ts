@@ -142,11 +142,19 @@ if (configuration.staticFilesPath) {
     console.error("Static files path is set, but no base name is set.");
     process.exit(1);
   }
-  application.get(basename + "/conceptual-model-editor", (_, res) => res.status(302).redirect(basename + "/conceptual-model-editor/"));
-  application.get(basename + "/conceptual-model-editor/{*splat}", useStaticSpaHandler(configuration.staticFilesPath + "conceptual-model-editor/"));
 
-  application.get(basename + "/data-specification-editor", (_, res) => res.status(302).redirect(basename + "/data-specification-editor/"));
-  application.get(basename + "/data-specification-editor/{*splat}", useStaticSpaHandler(configuration.staticFilesPath + "data-specification-editor/"));
+  // List of directories that host its own SPA applications.
+  // todo automate this
+  const registeredSubdirectorySPAs = [
+    "conceptual-model-editor",
+    "controlled-vocabulary-manager",
+    "data-specification-editor",
+  ];
+
+  for (const subdirectoryApp of registeredSubdirectorySPAs) {
+    application.get(basename + `/${subdirectoryApp}`, (req, res, next) => req.path.endsWith("/") ? next() : res.status(302).redirect(basename + `/${subdirectoryApp}/`));
+    application.get([basename + `/${subdirectoryApp}/`, basename + `/${subdirectoryApp}/**`], useStaticSpaHandler(configuration.staticFilesPath + `${subdirectoryApp}/`));
+  }
 
   application.get(basename + "{/*splat}", useStaticSpaHandler(configuration.staticFilesPath + ""));
 }

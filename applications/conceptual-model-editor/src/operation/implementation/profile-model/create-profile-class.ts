@@ -93,6 +93,7 @@ export async function createProfileClassExecutor(
     usageNoteFromProfiled: args.usageNoteSource,
     externalDocumentationUrl: args.externalDocumentationUrl,
     tags: args.tags,
+    controlledVocabularies: [],
   });
 
   const result = await executeCreateProfileOperation(model, operation);

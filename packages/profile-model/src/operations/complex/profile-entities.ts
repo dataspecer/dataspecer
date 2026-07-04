@@ -163,6 +163,7 @@ function prepareProfileSemanticClassOperations(
     usageNoteFromProfiled: null,
     externalDocumentationUrl: item.externalDocumentationUrl ?? null,
     tags: [],
+    controlledVocabularies: [],
   }))
 }
 
@@ -180,6 +181,7 @@ function prepareProfileSemanticProfileClassOperations(
     usageNoteFromProfiled: item.id,
     externalDocumentationUrl: item.externalDocumentationUrl ?? null,
     tags: item.tags,
+    controlledVocabularies: item.controlledVocabularies,
   }))
 }
 
