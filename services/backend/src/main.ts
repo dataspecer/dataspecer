@@ -153,7 +153,7 @@ if (configuration.staticFilesPath) {
 
   for (const subdirectoryApp of registeredSubdirectorySPAs) {
     application.get(basename + `/${subdirectoryApp}`, (req, res, next) => req.path.endsWith("/") ? next() : res.status(302).redirect(basename + `/${subdirectoryApp}/`));
-    application.get([basename + `/${subdirectoryApp}/`, basename + `/${subdirectoryApp}/**`], useStaticSpaHandler(configuration.staticFilesPath + `${subdirectoryApp}/`));
+    application.get([basename + `/${subdirectoryApp}/`, basename + `/${subdirectoryApp}/{*splat}`], useStaticSpaHandler(configuration.staticFilesPath + `${subdirectoryApp}/`));
   }
 
   application.get(basename + "{/*splat}", useStaticSpaHandler(configuration.staticFilesPath + ""));
