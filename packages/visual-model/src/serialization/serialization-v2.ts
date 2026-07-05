@@ -15,6 +15,6 @@ export interface VisualModelSerializationV2 {
 export function isVisualModelSerializationV2(
   what: any,
 ): what is VisualModelSerializationV2 {
-  return what.version === 1
-    || what.type === "http://dataspecer.com/resources/local/visual-model";
+  return what.type === "http://dataspecer.com/resources/local/visual-model"
+    && what.version === 2;
 }

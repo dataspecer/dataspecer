@@ -81,8 +81,8 @@ export interface ModelEntityV1 extends VisualEntityV1 {
 export function isVisualModelSerializationV1(
   what: any,
 ): what is VisualModelSerializationV1 {
-  return what.version === 1
-    || what.type === "http://dataspecer.com/resources/local/visual-model";
+  return what.type === "http://dataspecer.com/resources/local/visual-model"
+    && what.version === 1;
 }
 
 export function visualModelSerializationV1ToV2(

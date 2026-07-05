@@ -55,8 +55,7 @@ const UNKNOWN_ENTITY = "unknown-entity";
 export function isVisualModelSerializationV0(
   what: any,
 ): what is VisualModelSerializationV0 {
-  return what.modelColors !== undefined
-    || what.visualEntities !== undefined;
+  return what.modelColors !== undefined || what.visualEntities !== undefined;
 }
 
 export function visualModelSerializationV0ToV2(
