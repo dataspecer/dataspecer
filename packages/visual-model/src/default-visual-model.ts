@@ -262,15 +262,8 @@ export class DefaultVisualModel implements WritableVisualModel {
       this.entities.set(identifier, newEntity);
       changed.push(newEntity);
     }
-    // Delete.
-    const removed: string[] = [];
-    remove.forEach(identifier => {
-      if (this.entities.delete(identifier)) {
-        removed.push(identifier);
-      }
-    });
     // Now let the event listener handle the change.
-    this.entitiesDidChange(create, changed, removed);
+    this.entitiesDidChange(create, changed, remove);
   }
 
   deleteVisualEntity(identifier: EntityIdentifier): void {
