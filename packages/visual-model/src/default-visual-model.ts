@@ -100,7 +100,13 @@ export class DefaultVisualModel implements WritableVisualModel {
   }
 
   getVisualEntities(): Map<EntityIdentifier, VisualEntity> {
-    return new Map(this.entities);
+    const result = new Map<EntityIdentifier, VisualEntity>();
+    for (const [identifier, entity] of this.entities) {
+      if (isVisualEntity(entity)) {
+        result.set(identifier, entity);
+      }
+    }
+    return result;
   }
 
   subscribeToChanges(listener: VisualModelListener): () => void {
@@ -564,4 +570,17 @@ export interface ModelEntity extends Entity {
 }
 
 export const ModelEntityType = "entity-model-type";
+
+/**
+ * The internal {@link entities} map also holds bookkeeping entities,
+ * like {@link ModelEntity} or {@link VisualModelData}, that are not
+ * part of the public visual model content.
+ */
+function isVisualEntity(entity: Entity): entity is VisualEntity {
+  return isVisualNode(entity)
+    || isVisualRelationship(entity)
+    || isVisualProfileRelationship(entity)
+    || isVisualDiagramNode(entity)
+    || isVisualGroup(entity);
+}
 
