@@ -581,6 +581,7 @@ function isVisualEntity(entity: Entity): entity is VisualEntity {
     || isVisualRelationship(entity)
     || isVisualProfileRelationship(entity)
     || isVisualDiagramNode(entity)
-    || isVisualGroup(entity);
+    || isVisualGroup(entity)
+    || isVisualView(entity);
 }
 
