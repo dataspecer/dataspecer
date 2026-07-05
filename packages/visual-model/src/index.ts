@@ -1,10 +1,100 @@
 export {
     createColorGenerator,
-    type ColorGenerator
+    type ColorGenerator,
 } from "./color-generator.ts";
-export * from "./concepts/index.ts";
-export * from "./operations.ts";
-export { createDefaultVisualModelFactory } from "./visual-model-factory.ts";
-export * from "./visual-model.ts";
-export * from "./writable-visual-model.ts";
-export * from "./serialization.ts";
+export {
+    VISUAL_DIAGRAM_NODE_TYPE,
+    VISUAL_GROUP_TYPE,
+    VISUAL_MODEL_DATA_TYPE,
+    VISUAL_NODE_TYPE,
+    VISUAL_PROFILE_RELATIONSHIP_TYPE,
+    VISUAL_RELATIONSHIP_TYPE,
+    VISUAL_VIEW_TYPE,
+    createVisualModelData,
+    isModelVisualInformation,
+    isVisualDiagramNode,
+    isVisualGroup,
+    isVisualNode,
+    isVisualProfileRelationship,
+    isVisualRelationship,
+    isVisualView,
+    type HexColor,
+    type Position,
+    type RepresentedEntityIdentifier,
+    type VisualDiagramNode,
+    type VisualEntity,
+    type VisualGroup,
+    type VisualModelData,
+    type VisualNode,
+    type VisualNodeRelationship,
+    type VisualProfileRelationship,
+    type VisualRelationship,
+    type VisualView,
+    type Waypoint,
+} from "./concepts/index.ts";
+export {
+    AddVisualDiagramNodeOperationType,
+    AddVisualGroupOperationType,
+    AddVisualNodeOperationType,
+    AddVisualProfileRelationshipOperationType,
+    AddVisualRelationshipOperationType,
+    DeleteModelColorOperationType,
+    DeleteVisualEntityOperationType,
+    SetLabelOperationType,
+    SetModelColorOperationType,
+    SetViewOperationType,
+    UpdateVisualEntityOperationType,
+    createAddVisualDiagramNodeOperation,
+    createAddVisualGroupOperation,
+    createAddVisualNodeOperation,
+    createAddVisualProfileRelationshipOperation,
+    createAddVisualRelationshipOperation,
+    createDeleteModelColorOperation,
+    createDeleteVisualEntityOperation,
+    createSetLabelOperation,
+    createSetModelColorOperation,
+    createSetViewOperation,
+    createUpdateVisualEntityOperation,
+    isAddVisualDiagramNodeOperation,
+    isAddVisualGroupOperation,
+    isAddVisualNodeOperation,
+    isAddVisualProfileRelationshipOperation,
+    isAddVisualRelationshipOperation,
+    isDeleteModelColorOperation,
+    isDeleteVisualEntityOperation,
+    isSetLabelOperation,
+    isSetModelColorOperation,
+    isSetViewOperation,
+    isUpdateVisualEntityOperation,
+    type AddVisualDiagramNodeOperation,
+    type AddVisualGroupOperation,
+    type AddVisualNodeOperation,
+    type AddVisualProfileRelationshipOperation,
+    type AddVisualRelationshipOperation,
+    type DeleteModelColorOperation,
+    type DeleteVisualEntityOperation,
+    type SetLabelOperation,
+    type SetModelColorOperation,
+    type SetViewOperation,
+    type UpdateVisualEntityOperation,
+    type VisualModelOperation,
+} from "./operations.ts";
+export {
+    createDefaultVisualModelFactory,
+} from "./visual-model-factory.ts";
+export {
+    isVisualModel,
+    VisualModelDataVersion,
+    type VisualModel,
+    type VisualModelListener,
+} from "./visual-model.ts";
+export {
+    isWritableVisualModel,
+    type WritableVisualModel,
+} from "./writable-visual-model.ts";
+
+// For use by new backend.
+export {
+    serializationToVisualModelEntities,
+    visualModelEntitiesToSerialization,
+} from "./serialization.ts";

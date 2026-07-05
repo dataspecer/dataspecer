@@ -86,7 +86,7 @@ function handleDeletionOfSemanticAttribute(
 
     for (const node of nodes) {
       const newContent = node.content.filter(attributeInNode => attributeInNode !== deletedEntity.id);
-      visualModel.updateVisualEntity(node.identifier, { content: newContent });
+      visualModel.updateVisualEntity(node.id, { content: newContent });
     }
   }
 }
@@ -126,11 +126,11 @@ function handleUpdateOfSemanticAttribute(
 
   for (const previousNode of previousNodes) {
     const newContentForPrevious = previousNode.content.filter(attributeInNode => attributeInNode !== previousEntity.id);
-    visualModel.updateVisualEntity(previousNode.identifier, { content: newContentForPrevious });
+    visualModel.updateVisualEntity(previousNode.id, { content: newContentForPrevious });
   }
 
   for (const nextNode of nextNodes) {
-    visualModel.updateVisualEntity(nextNode.identifier, { content: nextNode.content.concat([previousEntity.id]) });
+    visualModel.updateVisualEntity(nextNode.id, { content: nextNode.content.concat([previousEntity.id]) });
   }
 
 }
@@ -186,7 +186,7 @@ function updateVisualRelationship(
 
   // The entity must be relationship or a relationship profile.
   if (!isSemanticModelRelationship(entity) && !isSemanticModelRelationshipProfile(entity)) {
-    visualModel.deleteVisualEntity(visual.identifier);
+    visualModel.deleteVisualEntity(visual.id);
     LOG.invalidEntity(
       entity?.id ?? "",
       "Expected relationship or relationship profile.",
@@ -198,7 +198,7 @@ function updateVisualRelationship(
   const { domain, range } = getDomainAndRangeConcepts(entity);
   console.log("ENTITY", entity, { domain, range });
   if (domain === null || range === null) {
-    visualModel.deleteVisualEntity(visual.identifier);
+    visualModel.deleteVisualEntity(visual.id);
     LOG.invalidEntity(
       entity?.id ?? "",
       "Missing domain or range for aggregated entity.",
@@ -210,7 +210,7 @@ function updateVisualRelationship(
   const visualSources = visualModel.getVisualEntitiesForRepresented(domain);
   const visualTargets = visualModel.getVisualEntitiesForRepresented(range);
   if (visualSources.length === 0 || visualTargets.length === 0) {
-    visualModel.deleteVisualEntity(visual.identifier);
+    visualModel.deleteVisualEntity(visual.id);
     return;
   }
 
@@ -225,16 +225,16 @@ function updateVisualRelationship(
 
   for (const visualSource of visualSources) {
     for (const visualTarget of visualTargets) {
-      if (visual.visualSource === visualSource.identifier
-        && visual.visualTarget === visualTarget.identifier) {
+      if (visual.visualSource === visualSource.id
+        && visual.visualTarget === visualTarget.id) {
         // There was no change.
         continue;
       }
 
       // Update.
-      visualModel.updateVisualEntity(visual.identifier, {
-        visualSource: visualSource.identifier,
-        visualTarget: visualTarget.identifier,
+      visualModel.updateVisualEntity(visual.id, {
+        visualSource: visualSource.id,
+        visualTarget: visualTarget.id,
       });
     }
   }
@@ -248,7 +248,7 @@ function synchronizeRemoved(
   for (const identifier of removed) {
     const visuals = visualModel.getVisualEntitiesForRepresented(identifier);
     for (const visual of visuals) {
-      visualModel.deleteVisualEntity(visual.identifier);
+      visualModel.deleteVisualEntity(visual.id);
     }
   }
 }

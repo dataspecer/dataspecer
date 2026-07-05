@@ -237,7 +237,7 @@ export function processLayoutResult(
 
     // We update each entity separately (there is currently no other way)
     // If the entity isn't there, then nothing happens (at least for current implementation)
-    visualModel?.updateVisualEntity(visualEntity.identifier, visualEntity);
+    visualModel?.updateVisualEntity(visualEntity.id, visualEntity);
   });
 }
 

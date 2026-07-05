@@ -71,7 +71,7 @@ test("Try to call the action when all edges are missing, " +
   expect([...visualModel.getVisualEntities().keys()].length).toBe(5);
 
   // Remove one of the edges
-  visualModel.deleteVisualEntity(firstEdge[0].identifier);
+  visualModel.deleteVisualEntity(firstEdge[0].id);
   // Sanity check
   expect([...visualModel.getVisualEntities().keys()].length).toBe(4);
   firstEdge = visualModel.getVisualEntitiesForRepresented("5-6") as VisualRelationship[];

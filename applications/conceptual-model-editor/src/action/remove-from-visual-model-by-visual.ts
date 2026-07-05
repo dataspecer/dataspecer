@@ -90,13 +90,13 @@ function collectVisualEntitiesToRemoveInternal(
   return [...visualModel.getVisualEntities().values()].filter(entity => {
     // We look connection to the removed entity.
     if (isVisualRelationship(entity) || isVisualProfileRelationship(entity)) {
-      const shouldBeRemoved = entity.visualSource === removedEntity.identifier ||
-                            entity.visualTarget === removedEntity.identifier;
+      const shouldBeRemoved = entity.visualSource === removedEntity.id ||
+                            entity.visualTarget === removedEntity.id;
       return shouldBeRemoved;
     }
     else if(isVisualGroup(entity)) {
 
-      const shouldBeRemoved = entity.content.includes(removedEntity.identifier);
+      const shouldBeRemoved = entity.content.includes(removedEntity.id);
       return shouldBeRemoved;
     }
     return false;

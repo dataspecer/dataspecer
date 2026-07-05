@@ -171,14 +171,14 @@ export function useModelObserver(
                 // No action here.
               } else {
                 // Compatibility layer for Entity and VisualEntity.
-                created.push({ ...next, id: next.identifier });
+                created.push({ ...next, id: next.id });
               }
             } else {
               if (next === null) {
-                deleted.push(previous.identifier);
+                deleted.push(previous.id);
               } else {
                 // Compatibility layer for Entity and VisualEntity.
-                updated.push({ ...next, id: next.identifier });
+                updated.push({ ...next, id: next.id });
               }
             }
           }
@@ -193,7 +193,7 @@ export function useModelObserver(
         created: [
           createModelMetadataEntity(model),
           ...model.getVisualEntities().values()
-            .map(item => ({ ...item, id: item.identifier })),
+            .map(item => ({ ...item, id: item.id })),
         ],
         updated: [],
         deleted: [],

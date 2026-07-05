@@ -15,17 +15,17 @@ export function removeVisualEntitiesFromVisualModelAction(
   visualModel: WritableVisualModel,
   entitiesToRemove: VisualEntity[],
 ) {
-  const entitiesToRemoveIdentifiers = entitiesToRemove.map(entity => entity.identifier);
+  const entitiesToRemoveIdentifiers = entitiesToRemove.map(entity => entity.id);
   const removedGroups: string[] = [];
   entitiesToRemove.forEach(entity => {
-    if(isVisualGroup(entity) && !removedGroups.includes(entity.identifier)) {
+    if(isVisualGroup(entity) && !removedGroups.includes(entity.id)) {
       const isGroupRemoved = removePartOfGroupContentAction(
-        notifications, visualModel, entity.identifier, entitiesToRemoveIdentifiers, false);
+        notifications, visualModel, entity.id, entitiesToRemoveIdentifiers, false);
       if(isGroupRemoved) {
-        removedGroups.push(entity.identifier);
+        removedGroups.push(entity.id);
       }
       return;
     }
-    visualModel.deleteVisualEntity(entity.identifier);
+    visualModel.deleteVisualEntity(entity.id);
   });
 }

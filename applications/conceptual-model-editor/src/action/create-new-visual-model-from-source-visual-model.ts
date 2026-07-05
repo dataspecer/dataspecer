@@ -65,11 +65,11 @@ function addNodesFromSourceModelToTargetModel(
     }
     if(isVisualNode(visualEntity)) {
       const newIdentifier = targetVisualModel.addVisualNode({ ...visualEntity });
-      oldToNewIdMapping[visualEntity.identifier] = newIdentifier;
+      oldToNewIdMapping[visualEntity.id] = newIdentifier;
     }
     else if(isVisualDiagramNode(visualEntity)) {
       const newIdentifier = targetVisualModel.addVisualDiagramNode(visualEntity);
-      oldToNewIdMapping[visualEntity.identifier] = newIdentifier;
+      oldToNewIdMapping[visualEntity.id] = newIdentifier;
     }
   }
 

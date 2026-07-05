@@ -1,4 +1,4 @@
-import { Entity } from "../entity-model/entity.ts";
+import { Entity } from "@dataspecer/core/entity-model";
 import { Position } from "./position.ts";
 import { VisualEntity } from "./visual-entity.ts";
 
