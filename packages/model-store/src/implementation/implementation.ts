@@ -11,6 +11,7 @@ import type { TransactionMetadata, TransactionResult } from "../interfaces/writa
 import { v4 as uuidv4 } from "uuid";
 import { UNDO_OPERATION_TYPE, type UndoOperation } from "./base.ts";
 import type { UndoRedoState } from "../interfaces/undo-redo.ts";
+import { getModelMetadata } from "./metadata.ts";
 import type { ProjectModelInModelStore } from "./project-model.ts";
 
 /**
@@ -96,6 +97,19 @@ interface Transaction extends CoreTransaction {
    * undo/redo stack for simplicity of implementation.
    */
   touchesProjectModel: boolean;
+}
+
+/**
+ * Adds entity changes to the existing entity changes per model record.
+ */
+function appendEntityChanges(
+  entityChanges: Record<ModelIdentifier, EntityChange[]>,
+  modelId: ModelIdentifier,
+  changes: EntityChange[],
+): void {
+  if (changes.length > 0) {
+    entityChanges[modelId] = [...(entityChanges[modelId] ?? []), ...changes];
+  }
 }
 
 /**
@@ -311,7 +325,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     // it. It already retains its previous entities (and undo/redo history),
     // so we only need to report them as visible again.
     this.inactiveModelIds.delete(modelId);
-    this.appendEntityChanges(
+    appendEntityChanges(
       entityChanges,
       modelId,
       Object.values(model.getAllEntities()).map((entity) => ({ previous: null, next: entity }))
@@ -330,25 +344,11 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     }
 
     this.inactiveModelIds.add(modelId);
-    this.appendEntityChanges(
+    appendEntityChanges(
       entityChanges,
       modelId,
       Object.values(model.getAllEntities()).map((entity) => ({ previous: entity, next: null }))
     );
-  }
-
-  /**
-   * Appends `changes` to the entries already recorded for `modelId` in
-   * `entityChanges`, if any.
-   */
-  private appendEntityChanges(
-    entityChanges: Record<ModelIdentifier, EntityChange[]>,
-    modelId: ModelIdentifier,
-    changes: EntityChange[],
-  ): void {
-    if (changes.length > 0) {
-      entityChanges[modelId] = [...(entityChanges[modelId] ?? []), ...changes];
-    }
   }
 
   getModel(id: ModelIdentifier | null | undefined): Model | null {
@@ -615,8 +615,50 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
   }
 
   protected internalNotifyEntityChange(entityChaneEvent: ObservableEntityModelStoreChangeEvent): void {
+    // Modifies entityChanges in place
+    this.updateProjectModelMetadata(entityChaneEvent.entityChanges);
+
     for (const listener of this.subscribers) {
       listener(entityChaneEvent);
+    }
+  }
+
+  /**
+   * Updates the metadata of project entities based on the changed entities of
+   * individual models. For every changed model, the new or updated entities
+   * (the main entity cannot be removed) are passed to the metadata extraction
+   * and the result is handed over to the project model. Any resulting change
+   * of the project entity is appended to `entityChanges`, so it is reported
+   * in the same batch as the changes that caused it.
+   */
+  protected updateProjectModelMetadata(entityChanges: Record<ModelIdentifier, EntityChange[]>): void {
+    const projectModel = this.models[this.projectModelId] as ProjectModelInModelStore | undefined;
+    if (!projectModel) {
+      return;
+    }
+    const projectEntities = projectModel.getAllEntities();
+
+    for (const modelId in entityChanges) {
+      if (modelId === this.projectModelId) {
+        continue;
+      }
+      const projectEntity = projectEntities[modelId];
+      if (!projectEntity) {
+        continue;
+      }
+
+      const changedEntities: EntityRecord = {};
+      for (const change of entityChanges[modelId]!) {
+        if (change.next) {
+          changedEntities[change.next.id] = change.next;
+        }
+      }
+
+      const metadata = getModelMetadata(projectEntity.modelType, changedEntities, modelId);
+      if (metadata === null) {
+        continue;
+      }
+      appendEntityChanges(entityChanges, this.projectModelId, projectModel.setModelMetadata(modelId, metadata));
     }
   }
 

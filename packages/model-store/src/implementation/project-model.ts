@@ -1,9 +1,10 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import type { PackageService } from "@dataspecer/core-v2/project";
-import type { EntityRecord } from "@dataspecer/core/entity-model";
-import type { Model, ModelIdentifier } from "@dataspecer/core/model";
+import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
+import type { Model, ModelIdentifier, ModelMetadata } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
 import { isCreateModelOperation, isRemoveModelOperation, loadProjectStructure, PROJECT_MODEL_MODEL_ENTITY, type PackageEntity, type ProjectModelEntity } from "@dataspecer/project-model";
+import { deepEqual } from "@dataspecer/utilities";
 import { BaseModelInModelStore, type ModelState } from "./base.ts";
 import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
 
@@ -52,6 +53,26 @@ export class ProjectModelInModelStore extends BaseModelInModelStore<ProjectModel
     super(id);
     this.service = service;
     this.rootProjectId = rootProjectId;
+  }
+
+  /**
+   * @internal function to append additional information to entities in the
+   * project model. It is used to set metadata about models (label and
+   * description) by reading the individual models and extracting the metadata
+   * from them.
+   */
+  setModelMetadata(modelId: ModelIdentifier, metadata: ModelMetadata): EntityChange[] {
+    const previous = this.getAllEntities()[modelId];
+    if (!previous) {
+      return [];
+    }
+    const next: ProjectModelEntity = { ...previous, label: metadata.label, description: metadata.description };
+    if (deepEqual(previous, next)) {
+      return [];
+    }
+    const changes = [{ previous, next } as EntityChange];
+    this.externalChange(changes);
+    return changes;
   }
 
   /**

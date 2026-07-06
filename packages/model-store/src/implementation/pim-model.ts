@@ -4,7 +4,7 @@ import { PimStoreWrapper, serializationToPimModelEntities } from "@dataspecer/co
 import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
 import { diffEntities } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
-import type { Model, ModelIdentifier } from "@dataspecer/core/model";
+import type { Model, ModelIdentifier, ModelMetadata } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
 import { BaseModelInModelStore, type ModelState } from "./base.ts";
 import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
@@ -29,6 +29,17 @@ export interface MainEntity extends Entity {
   type: ["mainEntity"];
   alias?: string;
   urls?: string[];
+}
+
+export function getPimModelMetadata(entities: EntityRecord, modelId: ModelIdentifier): ModelMetadata | null {
+  const mainEntity = entities[modelId] as MainEntity | undefined;
+  if (!mainEntity) {
+    return null;
+  }
+  return {
+    label: mainEntity.alias ? { en: mainEntity.alias } : {},
+    description: {},
+  };
 }
 
 /**

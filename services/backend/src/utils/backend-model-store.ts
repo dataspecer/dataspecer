@@ -5,7 +5,7 @@ import { serializationToStructureModelEntities } from "@dataspecer/core/data-psm
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { serializationToBlobModelEntities } from "@dataspecer/core/entity-model/utils";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
-import { resolveAsyncQueryableModelEntities } from "@dataspecer/model-store/implementation";
+import { getModelMetadata, resolveAsyncQueryableModelEntities } from "@dataspecer/model-store/implementation";
 import { PROJECT_MODEL_MODEL_ENTITY, type ProjectModelEntity, type PackageEntity } from "@dataspecer/project-model";
 import { serializationToVisualModelEntities } from "@dataspecer/visual-model";
 import type { BaseResource, Package, ResourceModel } from "../models/resource-model.ts";
@@ -133,6 +133,15 @@ export async function getModelsForPackage(packageId: ModelIdentifier, resourceMo
 
       if (subModelType !== LOCAL_PACKAGE) {
         const projectEntity = createRegularResourceEntity(subResource);
+
+        // The metadata stored inside the model take precedence over the
+        // resource's user metadata.
+        const metadata = getModelMetadata(subModelType, models[subResource.iri] ?? {}, subResource.iri);
+        if (metadata) {
+          projectEntity.label = metadata.label;
+          projectEntity.description = metadata.description;
+        }
+
         projectModelEntities[projectEntity.id] = projectEntity;
       }
     }
