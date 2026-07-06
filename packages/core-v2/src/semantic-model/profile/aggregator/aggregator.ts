@@ -12,7 +12,7 @@ import {
 import {
   AggregatedProfiledSemanticModelClass,
   AggregatedProfiledSemanticModelRelationship,
-} from "./aggregator-model.ts";
+} from "./aggregator-concepts.ts";
 import {
   SemanticClassProfileAggregator,
 } from "./semantic-class-profile-aggregator.ts";
@@ -23,11 +23,11 @@ import {
 /**
  * Provide single interface for access to semantic profile aggregator.
  */
-export function createSemanticProfileAggregator(): ProfileEntityAggregator {
+export function createSemanticProfileAggregator(): SemanticProfileAggregator {
   return new DefaultProfileEntityAggregator();
 }
 
-export interface ProfileEntityAggregator extends ProfileAggregator {
+export interface SemanticProfileAggregator {
 
   /**
    * Given an entity analyze and return dependencies to other entities.
@@ -35,31 +35,30 @@ export interface ProfileEntityAggregator extends ProfileAggregator {
    */
   dependencies(entity: Entity): EntityIdentifier[] | null;
 
-}
-
-export interface ProfileAggregator {
-
   aggregateSemanticModelClassProfile(
     profile: SemanticModelClassProfile,
-    aggregatedProfiled: (
-      SemanticModelClassProfile |
+    dependencies: (
       SemanticModelClass |
+      SemanticModelClassProfile |
       AggregatedProfiledSemanticModelClass
     )[],
   ): AggregatedProfiledSemanticModelClass;
 
   aggregateSemanticModelRelationshipProfile(
     profile: SemanticModelRelationshipProfile,
-    aggregatedProfiled: (
-      SemanticModelRelationshipProfile |
+    dependencies: (
       SemanticModelRelationship |
+      SemanticModelRelationshipProfile |
       AggregatedProfiledSemanticModelRelationship
     )[],
   ): AggregatedProfiledSemanticModelRelationship;
 
 }
 
-class DefaultProfileEntityAggregator implements ProfileEntityAggregator {
+/**
+ * Just a wrapper to expose internal functionality of this package.
+ */
+class DefaultProfileEntityAggregator implements SemanticProfileAggregator {
 
   dependencies(entity: Entity): EntityIdentifier[] | null {
     if (isSemanticModelClassProfile(entity)) {
@@ -74,8 +73,8 @@ class DefaultProfileEntityAggregator implements ProfileEntityAggregator {
   aggregateSemanticModelClassProfile(
     profile: SemanticModelClassProfile,
     aggregatedProfiled: (
-      SemanticModelClassProfile |
       SemanticModelClass |
+      SemanticModelClassProfile |
       AggregatedProfiledSemanticModelClass
     )[],
   ): AggregatedProfiledSemanticModelClass {
@@ -86,8 +85,8 @@ class DefaultProfileEntityAggregator implements ProfileEntityAggregator {
   aggregateSemanticModelRelationshipProfile(
     profile: SemanticModelRelationshipProfile,
     aggregatedProfiled: (
-      SemanticModelRelationshipProfile |
       SemanticModelRelationship |
+      SemanticModelRelationshipProfile |
       AggregatedProfiledSemanticModelRelationship
     )[],
   ): AggregatedProfiledSemanticModelRelationship {
