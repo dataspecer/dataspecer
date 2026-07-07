@@ -20,9 +20,10 @@ export const createTransactions = asyncHandler(async (request: express.Request, 
 
     const bodySchema = z.object({
         transactions: z.array(z.object({
+            id: z.string(),
             operations: z.array(z.object({
                 modelId: z.string().min(1),
-                operation: z.unknown(),
+                operation: z.any(),
             })),
         })),
     });
