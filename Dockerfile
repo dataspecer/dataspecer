@@ -32,7 +32,7 @@ RUN BASE_PATH=/_BASE_PATH_DOCKER_REPLACE__ \
     sh ./docker-configure.sh
 
 # Build frontend and backend dependencies, do not cache (-> local:) to make build faster
-RUN bunx turbo run build --cache=local: --concurrency 100% --filter=data-specification-editor --filter=conceptual-model-editor --filter=history --filter=controlled-vocabulary-manager --filter=manager --filter=backend^...
+RUN bunx turbo run build --cache=local: --concurrency 100% --filter=./applications/* --filter=!api-specification
 
 # Move frontend
 RUN sh ./docker-copy.sh

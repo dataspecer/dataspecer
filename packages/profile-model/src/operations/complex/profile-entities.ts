@@ -193,9 +193,11 @@ async function createSemanticClassProfiles(
   const classProfiles: EntityIdentifier[] = [];
   (await context.targetModel.executeOperations(operations)).map((item, index) => {
     if (item.success) {
-      const source = operations[index].entity.profiling[0];
+      const source = operations[index].entity.profiling?.[0];
       const target = (item as CreatedEntityOperationResult).id;
-      mappings[source] = target;
+      if (source !== undefined) {
+        mappings[source] = target;
+      }
       classProfiles.push(target);
     }
   });

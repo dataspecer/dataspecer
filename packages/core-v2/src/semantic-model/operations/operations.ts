@@ -62,14 +62,16 @@ const CREATE_RELATIONSHIP_OPERATION = 'create-relation';
 
 export interface CreateRelationshipOperation extends Operation {
     type: typeof CREATE_RELATIONSHIP_OPERATION;
-    entity: Partial<Omit<SemanticModelRelationship, "type">> & Pick<SemanticModelRelationship, "id">;
+    entity: Partial<Omit<SemanticModelRelationship, "type" | "ends">>
+        & Pick<SemanticModelRelationship, "id">
+        & { ends?: Partial<SemanticModelRelationshipEnd>[] };
 }
 
 export function isCreateRelationshipOperation(operation: Operation): operation is CreateRelationshipOperation {
     return operation.type === CREATE_RELATIONSHIP_OPERATION;
 }
 
-export function createRelationship(entity: Partial<Omit<SemanticModelRelationship, "type">>): CreateRelationshipOperation {
+export function createRelationship(entity: Partial<Omit<SemanticModelRelationship, "type" | "ends">> & { ends?: Partial<SemanticModelRelationshipEnd>[] } = {}): CreateRelationshipOperation {
     return {
         id: generateOperationId(),
         type: CREATE_RELATIONSHIP_OPERATION,
@@ -145,11 +147,11 @@ export function isCreateGeneralizationOperation(operation: Operation): operation
     return operation.type === CREATE_GENERALIZATION_OPERATION;
 }
 
-export function createGeneralization(entity: Partial<Omit<SemanticModelGeneralization, "id" | "type">>): CreateGeneralizationOperation {
+export function createGeneralization(entity: Partial<Omit<SemanticModelGeneralization, "type">> = {}): CreateGeneralizationOperation {
     return {
         id: generateOperationId(),
         type: CREATE_GENERALIZATION_OPERATION,
-        entity: { ...entity, id: generateEntityId() },
+        entity: { ...entity, id: entity.id ?? generateEntityId() },
     }
 }
 

@@ -26,10 +26,6 @@ import type { EntityChange, EntityChangeDeleted, EntityRecord } from "@dataspece
 import { LOCAL_SEMANTIC_MODEL } from "../model/known-models.ts";
 import type { Operation } from "@dataspecer/core/operation";
 
-function uuid() {
-    return Math.random().toString(36).substring(2) + Date.now().toString(36);
-}
-
 type EntityGetter = (identifier: string) => Entity | undefined;
 
 type ChangeCollector = (updated: Record<string, Entity>, removed: string[]) => void;
@@ -125,7 +121,6 @@ export function applyOperationToSemanticModel(semanticModel: EntityRecord, opera
     };
 
     const profileExecutor = createDefaultSemanticModelProfileOperationExecutor(
-        { createIdentifier: uuid },
         { entity: identifier => getEntity(identifier) ?? null },
         { change}
     );
@@ -189,12 +184,7 @@ function handleCreateClassOperation(
     change: ChangeCollector,
     operation: CreateClassOperation,
 ): OperationResult | CreatedEntityOperationResult {
-    let id = operation.entity.id;
-
-    // Generate random id if not provided
-    if (id === undefined) {
-        id = uuid();
-    }
+    const id = operation.entity.id;
 
     if (getEntity(id)) {
         return {
@@ -241,12 +231,7 @@ function handleCreateRelationshipOperation(
     change: ChangeCollector,
     operation: CreateRelationshipOperation,
 ): OperationResult | CreatedEntityOperationResult {
-    let id = operation.entity.id;
-
-    // Generate random id if not provided
-    if (id === undefined) {
-        id = uuid();
-    }
+    const id = operation.entity.id;
 
     if (getEntity(id)) {
         return {
@@ -361,12 +346,7 @@ function handleCreateGeneralizationOperation(
     change: ChangeCollector,
     operation: CreateGeneralizationOperation,
 ): OperationResult | CreatedEntityOperationResult {
-    let id = operation.entity.id;
-
-    // Generate random id if not provided
-    if (id === undefined) {
-        id = uuid();
-    }
+    const id = operation.entity.id;
 
     if (getEntity(id)) {
         return {

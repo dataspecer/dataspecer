@@ -4,15 +4,6 @@ import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile, SEMANT
 import { CreateSemanticModelClassProfile, ModifySemanticModelClassProfile, CreateSemanticModelRelationshipProfile, ModifySemanticModelRelationshipProfile, isCreateSemanticModelClassProfile, isModifySemanticModelClassProfile, isCreateSemanticModelRelationshipProfile, isModifySemanticModelRelationshipProfile, AddControlledVocabularyAssignment, RemoveControlledVocabularyAssignment, ModifyControlledVocabularyAssignment, isAddControlledVocabularyAssignment, isRemoveControlledVocabularyAssignment, isModifyControlledVocabularyAssignment, ModifySemanticModelRelationshipEndProfile, isModifySemanticModelRelationshipEndProfile } from "./operations.ts";
 
 
-export interface IdentifierSource {
-
-  /**
-   * Create and return a new identifier;
-   */
-  createIdentifier(): EntityIdentifier;
-
-}
-
 export interface OperationResult {
 
   /**
@@ -52,18 +43,14 @@ export interface SemanticModelProfileOperationExecutor {
 
 class DefaultSemanticModelProfileOperationExecutor implements SemanticModelProfileOperationExecutor {
 
-  private readonly identifierSource: IdentifierSource;
-
   private readonly entityReader: EntityReader;
 
   private readonly entityWriter: EntityWriter;
 
   public constructor(
-    identifierSource: IdentifierSource,
     entityReader: EntityReader,
     entityWriter: EntityWriter,
   ) {
-    this.identifierSource = identifierSource;
     this.entityReader = entityReader;
     this.entityWriter = entityWriter;
   }
@@ -71,7 +58,7 @@ class DefaultSemanticModelProfileOperationExecutor implements SemanticModelProfi
   executeOperation(operation: Operation): OperationResult | null {
     if (isCreateSemanticModelClassProfile(operation)) {
       return executeCreateSemanticModelClassProfile(
-        this.identifierSource, this.entityWriter, operation);
+        this.entityWriter, operation);
     }
     if (isModifySemanticModelClassProfile(operation)) {
       return executeModifySemanticModelClassProfile(
@@ -79,7 +66,7 @@ class DefaultSemanticModelProfileOperationExecutor implements SemanticModelProfi
     }
     if (isCreateSemanticModelRelationshipProfile(operation)) {
       return executeCreateSemanticModelRelationshipProfile(
-        this.identifierSource, this.entityWriter, operation);
+        this.entityWriter, operation);
     }
     if (isModifySemanticModelRelationshipProfile(operation)) {
       return executeModifySemanticModelRelationshipProfile(
@@ -107,12 +94,12 @@ class DefaultSemanticModelProfileOperationExecutor implements SemanticModelProfi
 }
 
 function executeCreateSemanticModelClassProfile(
-  identifierSource: IdentifierSource,
   entityWriter: EntityWriter,
   { entity }: CreateSemanticModelClassProfile,
 ): OperationResult {
-  const identifier = entity.id ?? identifierSource.createIdentifier();
+  const identifier = entity.id;
   const newEntity: SemanticModelClassProfile = {
+    ...defaultClassProfile(),
     ...entity,
     id: identifier,
     type: [SEMANTIC_MODEL_CLASS_PROFILE],
@@ -122,6 +109,22 @@ function executeCreateSemanticModelClassProfile(
     success: true,
     created: [identifier],
   };
+}
+
+function defaultClassProfile(): Omit<SemanticModelClassProfile, "id" | "type"> {
+  return {
+    iri: null,
+    name: null,
+    nameFromProfiled: null,
+    description: null,
+    descriptionFromProfiled: null,
+    usageNote: null,
+    usageNoteFromProfiled: null,
+    profiling: [],
+    externalDocumentationUrl: null,
+    tags: [],
+    controlledVocabularies: [],
+  }
 }
 
 function executeModifySemanticModelClassProfile(
@@ -182,11 +185,10 @@ function mergeFromProfiled<T>(
 }
 
 function executeCreateSemanticModelRelationshipProfile(
-  identifierSource: IdentifierSource,
   entityWriter: EntityWriter,
   { entity }: CreateSemanticModelRelationshipProfile,
 ): OperationResult {
-  const identifier = entity.id ?? identifierSource.createIdentifier();
+  const identifier = entity.id;
   const newEntity: SemanticModelRelationshipProfile = {
     ...entity,
     id: identifier,
@@ -377,10 +379,9 @@ function executeModifySemanticModelRelationshipEndProfile(
 }
 
 export function createDefaultSemanticModelProfileOperationExecutor(
-  identifierSource: IdentifierSource,
   entityReader: EntityReader,
   entityWriter: EntityWriter,
 ) {
   return new DefaultSemanticModelProfileOperationExecutor(
-    identifierSource, entityReader, entityWriter);
+    entityReader, entityWriter);
 }
