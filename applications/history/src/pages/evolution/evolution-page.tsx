@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { useModelStore } from "@/contexts/model-store-context";
 import { OperationRenderer } from "./operations/operation-renderer";
 import { LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
-import type { ModelEntity } from "@dataspecer/project-model";
+import type { ProjectModelEntity } from "@dataspecer/project-model";
 import { reactToSemanticModelOperation, type EvolutionProposal } from "@dataspecer/profile-model/hooks";
 import type { Operation, OperationInModel } from "@dataspecer/core/operation";
 import type { DefaultFrontendModelStore } from "@dataspecer/model-store/implementation";
@@ -80,7 +80,7 @@ function findChildModelId(modelStore: DefaultFrontendModelStore, parentModelId: 
   const projectEntities = modelStore.getAllEntities()[modelStore.projectModelId] ?? {};
   return (
     Object.values(projectEntities)
-      .filter((e): e is ModelEntity => (e as ModelEntity).modelType === LOCAL_SEMANTIC_MODEL)
+      .filter((e): e is ProjectModelEntity => (e as ProjectModelEntity).modelType === LOCAL_SEMANTIC_MODEL)
       .find((e) => e.id !== parentModelId)
       ?.id ?? null
   );

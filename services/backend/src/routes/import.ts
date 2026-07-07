@@ -643,7 +643,7 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
     if (operations.length > 0) {
       const projectIri = await getParentIri(existingResource.iri) ?? existingResource.iri;
       const branchId = await transactionModel.getOrCreateEvolutionBranch(projectIri, existingResource.iri);
-      await transactionModel.createTransactions(projectIri, [{ operations }], branchId);
+      await transactionModel.createTransactions(projectIri, [{ id: uuidv4(), operations }], branchId);
     }
 
     response.send(await resourceModel.getResource(existingResource.iri));
@@ -672,7 +672,7 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
   if (operations.length > 0) {
     const projectIri = await getParentIri(query.iri) ?? query.iri;
     const branchId = await transactionModel.getOrCreateEvolutionBranch(projectIri, query.iri);
-    await transactionModel.createTransactions(projectIri, [{ operations }], branchId);
+    await transactionModel.createTransactions(projectIri, [{ id: uuidv4(), operations }], branchId);
   }
 
   response.send(result ?? existingResource);

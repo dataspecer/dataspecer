@@ -7,40 +7,6 @@ import type { WritableProfileModel } from "../profile-model.ts";
 
 const profileFactory = createDefaultSemanticModelProfileOperationFactory();
 
-function emptyEnd(overrides: Partial<Parameters<typeof profileFactory.createRelationshipProfile>[0]["ends"][number]> = {}) {
-  return {
-    iri: null,
-    concept: "",
-    cardinality: null,
-    name: null,
-    nameFromProfiled: null,
-    description: null,
-    descriptionFromProfiled: null,
-    usageNote: null,
-    usageNoteFromProfiled: null,
-    profiling: [],
-    externalDocumentationUrl: null,
-    tags: [],
-    ...overrides,
-  };
-}
-
-function emptyClassProfile(overrides: Partial<Parameters<typeof profileFactory.createClassProfile>[0]> = {}) {
-  return {
-    iri: null,
-    profiling: [],
-    name: null,
-    nameFromProfiled: null,
-    description: null,
-    descriptionFromProfiled: null,
-    usageNote: null,
-    usageNoteFromProfiled: null,
-    externalDocumentationUrl: null,
-    tags: [],
-    ...overrides,
-  };
-}
-
 /**
  * A "parent" profile model with a class profile Person, a class profile
  * Animal, and a relationship profile Person --hasPet--> Animal.
@@ -52,16 +18,16 @@ function buildParentProfileModel(): WritableProfileModel {
   });
 
   model.executeOperations([
-    profileFactory.createClassProfile(emptyClassProfile({ id: "pp-person", profiling: ["s-person"], name: { en: "Person" } })),
-    profileFactory.createClassProfile(emptyClassProfile({ id: "pp-animal", profiling: ["s-animal"], name: { en: "Animal" } })),
+    profileFactory.createClassProfile(({ id: "pp-person", profiling: ["s-person"], name: { en: "Person" } })),
+    profileFactory.createClassProfile(({ id: "pp-animal", profiling: ["s-animal"], name: { en: "Animal" } })),
   ]);
 
   model.executeOperations([
     profileFactory.createRelationshipProfile({
       id: "pp-hasPet",
       ends: [
-        emptyEnd({ concept: "pp-person" }),
-        emptyEnd({ concept: "pp-animal", iri: "hasPet", name: { en: "has pet" } }),
+        ({ concept: "pp-person" }),
+        ({ concept: "pp-animal", iri: "hasPet", name: { en: "has pet" } }),
       ],
     }),
   ]);
@@ -75,7 +41,7 @@ describe("reactToProfileModelOperation", () => {
 
     test("proposes creating a profile of the new class profile, without an IRI", () => {
       const child = createWritableInMemoryProfileModel({ identifier: "child", baseIri: null });
-      const op = profileFactory.createClassProfile(emptyClassProfile({
+      const op = profileFactory.createClassProfile(({
         id: "pp-newClass",
         iri: "http://example.com/new",
         profiling: ["s-new"],
@@ -102,18 +68,18 @@ describe("reactToProfileModelOperation", () => {
 
       // Two profiles of pp-person (domain), three profiles of pp-animal (range).
       child.executeOperations([
-        profileFactory.createClassProfile(emptyClassProfile({ id: "c-person-1", profiling: ["pp-person"] })),
-        profileFactory.createClassProfile(emptyClassProfile({ id: "c-person-2", profiling: ["pp-person"] })),
-        profileFactory.createClassProfile(emptyClassProfile({ id: "c-animal-1", profiling: ["pp-animal"] })),
-        profileFactory.createClassProfile(emptyClassProfile({ id: "c-animal-2", profiling: ["pp-animal"] })),
-        profileFactory.createClassProfile(emptyClassProfile({ id: "c-animal-3", profiling: ["pp-animal"] })),
+        profileFactory.createClassProfile(({ id: "c-person-1", profiling: ["pp-person"] })),
+        profileFactory.createClassProfile(({ id: "c-person-2", profiling: ["pp-person"] })),
+        profileFactory.createClassProfile(({ id: "c-animal-1", profiling: ["pp-animal"] })),
+        profileFactory.createClassProfile(({ id: "c-animal-2", profiling: ["pp-animal"] })),
+        profileFactory.createClassProfile(({ id: "c-animal-3", profiling: ["pp-animal"] })),
       ]);
 
       const op = profileFactory.createRelationshipProfile({
         id: "pp-newHasPet",
         ends: [
-          emptyEnd({ concept: "pp-person" }),
-          emptyEnd({ concept: "pp-animal", iri: "hasPet", name: { en: "has pet" } }),
+          ({ concept: "pp-person" }),
+          ({ concept: "pp-animal", iri: "hasPet", name: { en: "has pet" } }),
         ],
       });
 
@@ -132,14 +98,14 @@ describe("reactToProfileModelOperation", () => {
       const parent = buildParentProfileModel();
       const child = createWritableInMemoryProfileModel({ identifier: "child", baseIri: null });
       child.executeOperations([
-        profileFactory.createClassProfile(emptyClassProfile({ id: "c-person", profiling: ["pp-person"] })),
+        profileFactory.createClassProfile(({ id: "c-person", profiling: ["pp-person"] })),
       ]);
 
       const op = profileFactory.createRelationshipProfile({
         id: "pp-newHasPet",
         ends: [
-          emptyEnd({ concept: "pp-person" }),
-          emptyEnd({ concept: "pp-animal", iri: "hasPet" }),
+          ({ concept: "pp-person" }),
+          ({ concept: "pp-animal", iri: "hasPet" }),
         ],
       });
 
@@ -154,7 +120,7 @@ describe("reactToProfileModelOperation", () => {
     function childWithPersonProfile(nameFromProfiled: string | null, name: Record<string, string> | null) {
       const child = createWritableInMemoryProfileModel({ identifier: "child", baseIri: null });
       child.executeOperations([
-        profileFactory.createClassProfile(emptyClassProfile({
+        profileFactory.createClassProfile(({
           id: "c-person",
           profiling: ["pp-person"],
           name,
@@ -222,15 +188,15 @@ describe("reactToProfileModelOperation", () => {
       const parent = buildParentProfileModel();
       const child = createWritableInMemoryProfileModel({ identifier: "child", baseIri: null });
       child.executeOperations([
-        profileFactory.createClassProfile(emptyClassProfile({ id: "c-person", profiling: ["pp-person"] })),
-        profileFactory.createClassProfile(emptyClassProfile({ id: "c-animal", profiling: ["pp-animal"] })),
+        profileFactory.createClassProfile(({ id: "c-person", profiling: ["pp-person"] })),
+        profileFactory.createClassProfile(({ id: "c-animal", profiling: ["pp-animal"] })),
       ]);
       child.executeOperations([
         profileFactory.createRelationshipProfile({
           id: "c-hasPet",
           ends: [
-            emptyEnd({ concept: "c-person" }),
-            emptyEnd({ concept: "c-animal", iri: "hasPet", profiling: ["pp-hasPet"] }),
+            ({ concept: "c-person" }),
+            ({ concept: "c-animal", iri: "hasPet", profiling: ["pp-hasPet"] }),
           ],
         }),
       ]);
