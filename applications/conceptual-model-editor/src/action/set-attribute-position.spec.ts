@@ -36,7 +36,7 @@ test("Test change attribute order - one", () => {
   setAttributePositionAction(
     notificationMockup,
     visualModel,
-    visualModel.getVisualEntitiesForRepresented("0")![0]!.identifier,
+    visualModel.getVisualEntitiesForRepresented("0")![0]!.id,
     attributes[2],
     4,
   );
@@ -75,7 +75,7 @@ test("Test change attribute order - one - test 2", () => {
   setAttributePositionAction(
     notificationMockup,
     visualModel,
-    visualModel.getVisualEntitiesForRepresented("0")![0]!.identifier,
+    visualModel.getVisualEntitiesForRepresented("0")![0]!.id,
     attributes[4],
     2,
   );
@@ -115,7 +115,7 @@ test("Test change attribute order - back to back", () => {
   setAttributePositionAction(
     notificationMockup,
     visualModel,
-    visualModel.getVisualEntitiesForRepresented("0")![0]!.identifier,
+    visualModel.getVisualEntitiesForRepresented("0")![0]!.id,
     attributes[2],
     4,
   );
@@ -131,7 +131,7 @@ test("Test change attribute order - back to back", () => {
   setAttributePositionAction(
     notificationMockup,
     visualModel,
-    visualModel.getVisualEntitiesForRepresented("0")![0]!.identifier,
+    visualModel.getVisualEntitiesForRepresented("0")![0]!.id,
     attributes[2],
     2);
 
@@ -169,7 +169,7 @@ test("Test change attribute order - change multi", () => {
   setAttributePositionAction(
     notificationMockup,
     visualModel,
-    visualModel.getVisualEntitiesForRepresented("0")![0]!.identifier,
+    visualModel.getVisualEntitiesForRepresented("0")![0]!.id,
     attributes[2],
     4,
   );
@@ -185,7 +185,7 @@ test("Test change attribute order - change multi", () => {
   setAttributePositionAction(
     notificationMockup,
     visualModel,
-  visualModel.getVisualEntitiesForRepresented("0")![0]!.identifier,
+  visualModel.getVisualEntitiesForRepresented("0")![0]!.id,
   attributes[5],
   1);
 
@@ -233,7 +233,7 @@ test("Test change attribute order - change multi - attribute profile", () => {
   setAttributePositionAction(
     notificationMockup,
     visualModel,
-    visualModel.getVisualEntitiesForRepresented("0")[0].identifier,
+    visualModel.getVisualEntitiesForRepresented("0")[0].id,
     attributes[2],
     4);
 
@@ -248,7 +248,7 @@ test("Test change attribute order - change multi - attribute profile", () => {
   setAttributePositionAction(
     notificationMockup,
     visualModel,
-    visualModel.getVisualEntitiesForRepresented("0")[0].identifier,
+    visualModel.getVisualEntitiesForRepresented("0")[0].id,
     attributes[5],
     1);
 

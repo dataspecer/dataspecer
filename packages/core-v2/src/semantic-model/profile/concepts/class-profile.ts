@@ -1,4 +1,5 @@
 import { Entity } from "../../../entity-model/index.ts";
+import { EntityIdentifier } from "../../../entity-model/entity.ts";
 import { SemanticModelEntity } from "../../concepts/index.ts";
 import { NamedThingProfile } from "./named-thing-profile.ts";
 import { Profile } from "./profile.ts";
@@ -13,6 +14,17 @@ export interface SemanticModelClassProfile extends SemanticModelEntity, Profile,
    */
   tags: string[];
 
+  controlledVocabularies: ControlledVocabularyAssignment[] | undefined;
+}
+//TODO: agregacni funkce
+
+
+export type Qualifier = "MUST" | "AT_LEAST_1" | "RECOMMENDED" | "MAY"
+
+export type ControlledVocabularyAssignment = {
+    identifier: EntityIdentifier;
+    qualifier: Qualifier;
+    override: boolean;
 }
 
 export const SEMANTIC_MODEL_CLASS_PROFILE = "class-profile";

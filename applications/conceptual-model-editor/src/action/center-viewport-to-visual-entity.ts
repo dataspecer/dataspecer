@@ -82,7 +82,7 @@ export function centerToVisualEntity(
   visualEntity: VisualEntity,
 ) {
   if (isVisualNode(visualEntity) || isVisualGroup(visualEntity)) {
-    diagram.actions().centerViewportToNode(visualEntity.identifier);
+    diagram.actions().centerViewportToNode(visualEntity.id);
   }
   else if (isVisualRelationship(visualEntity)) {
     diagram.actions().fitToView([visualEntity.visualSource, visualEntity.visualTarget]);

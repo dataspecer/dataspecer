@@ -95,5 +95,8 @@ function aggregateSemanticModelClassProfile(
     descriptionProperty: profile.descriptionProperty ?? null, // do not inherit, this is specific to this profile
     //
     conceptIris: Array.from(new Set(conceptIris)),
+    //
+    controlledVocabularies: profile.controlledVocabularies,
   } satisfies AggregatedProfiledSemanticModelClass;
 }
+// TODO [E. Blajer]: add effective controlled vocabularies

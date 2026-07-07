@@ -25,13 +25,13 @@ export function sanitizeVisualModel(
         entities, entity.representedEntity, entity.content);
       if (entity.content !== sanitizedContent) {
         visualModel.updateVisualEntity(
-          entity.identifier, { content: sanitizedContent });
+          entity.id, { content: sanitizedContent });
       }
     }
     if (isModelVisualInformation(entity)) {
       if (!modelIdentifiers.has(entity.representedModel)) {
         // The model is no longer part of the visual model.
-        visualModel.deleteVisualEntity(entity.identifier);
+        visualModel.deleteVisualEntity(entity.id);
       }
     }
   }

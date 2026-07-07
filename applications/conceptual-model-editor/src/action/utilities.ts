@@ -436,13 +436,13 @@ export const getBotRightPosition = (
 ) => {
   const botRight = { x: -10000000, y: -10000000 };
   nodes.forEach(node => {
-    const width = getDimensionValue(diagram, DimensionType.Width, node.identifier);
+    const width = getDimensionValue(diagram, DimensionType.Width, node.id);
     const x = node.position.x + width;
     if (x > botRight.x) {
       botRight.x = x;
     }
 
-    const height = getDimensionValue(diagram, DimensionType.Height, node.identifier);
+    const height = getDimensionValue(diagram, DimensionType.Height, node.id);
     const y = node.position.y + height;
     if (y > botRight.y) {
       botRight.y = y;

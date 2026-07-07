@@ -172,7 +172,7 @@ export class DefaultEdge implements Edge {
         this.end = end;
 
         this.visualEdge = this.createVisualEdgeBasedOnData(visualRelationship, semanticEdge, this.edgeProfileType, sourceModelIdentifier, start, end);
-        this.id = identifier ?? this.visualEdge.visualEdge.identifier;
+        this.id = identifier ?? this.visualEdge.visualEdge.id;
         sourceGraph.mainGraph.insertInAllEdges(this);
     }
 
@@ -214,7 +214,7 @@ export class DefaultEdge implements Edge {
         //      But currently it seems sufficient
         if(edgeProfileType === "CLASS-PROFILE") {
             const edgeToReturn: VisualProfileRelationship = {
-                identifier: createIdentifier(),
+                id: createIdentifier(),
                 entity: start?.semanticEntityRepresentingNode?.id ?? "",
                 type: [VISUAL_PROFILE_RELATIONSHIP_TYPE],
                 waypoints: [],
@@ -227,7 +227,7 @@ export class DefaultEdge implements Edge {
         }
         else {
             const edgeToReturn: VisualRelationship = {
-                identifier: createIdentifier(),
+                id: createIdentifier(),
                 representedRelationship: "",
                 type: [VISUAL_RELATIONSHIP_TYPE],
                 waypoints: [],
@@ -312,7 +312,7 @@ const isClassInLayoutedEntities = (
     const visualEntities = visualModel.getVisualEntitiesForRepresented(classIdentifier);
     let isPresentInVisualEntitiesToLayout = false;
     for (const visualEntity of visualEntities) {
-        isPresentInVisualEntitiesToLayout = isPresentInVisualEntitiesToLayout || entitiesToLayout.visualEntities.includes(visualEntity.identifier);
+        isPresentInVisualEntitiesToLayout = isPresentInVisualEntitiesToLayout || entitiesToLayout.visualEntities.includes(visualEntity.id);
     }
 
     const isPresentInVisualModel = isPresentInVisualEntitiesToLayout ||
@@ -414,7 +414,7 @@ function createNewVisualRelationshipBasedOnSemanticData(
     //      But currently it seems sufficient
     if(edgeProfileType === "CLASS-PROFILE") {
         const edgeToReturn: VisualProfileRelationship = {
-            identifier: createIdentifier(),
+            id: createIdentifier(),
             entity: start.semanticEntityRepresentingNode.id,
             type: [VISUAL_PROFILE_RELATIONSHIP_TYPE],
             waypoints: [],
@@ -427,7 +427,7 @@ function createNewVisualRelationshipBasedOnSemanticData(
     }
 
     const edgeToReturn: VisualRelationship = {
-        identifier: createIdentifier(),
+        id: createIdentifier(),
         type: [VISUAL_RELATIONSHIP_TYPE],
         representedRelationship: semanticEdge.id,
         waypoints: [],

@@ -29,16 +29,14 @@ class VisualRepresentationTracker implements Tracker {
   }
 
   onEntityDidCreate(model: ModelIdentifier, next: Entity) {
-    // VisualEntity uses 'identifier' while entity-model Entity uses 'id',
-    // so we cast through the visual-model's own Entity type.
     const visual = next as unknown as VisualEntity;
     if (isVisualNode(visual)) {
       const entity = this.getEntityWeak(visual.representedEntity);
-      this.addVisualRepresentation(entity, model, visual.identifier);
+      this.addVisualRepresentation(entity, model, visual.id);
     }
     if (isVisualRelationship(visual)) {
       const entity = this.getEntityWeak(visual.representedRelationship);
-      this.addVisualRepresentation(entity, model, visual.identifier);
+      this.addVisualRepresentation(entity, model, visual.id);
     }
   }
 
@@ -66,10 +64,10 @@ class VisualRepresentationTracker implements Tracker {
     const visual = previous as unknown as VisualEntity;
     if (isVisualNode(visual)) {
       const entity = this.getEntityWeak(visual.representedEntity);
-      this.removeVisualRepresentation(entity, model, visual.identifier);
+      this.removeVisualRepresentation(entity, model, visual.id);
     } else if (isVisualRelationship(visual)) {
       const entity = this.getEntityWeak(visual.representedRelationship);
-      this.removeVisualRepresentation(entity, model, visual.identifier);
+      this.removeVisualRepresentation(entity, model, visual.id);
     }
   }
 

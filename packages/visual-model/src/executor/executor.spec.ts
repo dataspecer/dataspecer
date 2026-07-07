@@ -22,8 +22,8 @@ import {
   type VisualRelationship,
   type VisualProfileRelationship,
   type VisualGroup,
+  VisualEntity,
 } from "../concepts/index.ts";
-import { fixVisualEntityType, type VisualEntityAndCoreEntity } from "../concepts/visual-entity.ts";
 import { applyOperationsToVisualModel } from "./executor.ts";
 
 /**
@@ -78,8 +78,8 @@ function expectDeletion(change: EntityChange | undefined) {
  * Helper to store a visual entity in the model — converts old-interface entity
  * (identifier) to new-interface entity (id) so EntityRecord typing is satisfied.
  */
-function storeInModel(model: EntityRecord, key: string, entity: VisualEntityAndCoreEntity): void {
-  (model as Record<string, VisualEntityAndCoreEntity>)[key] = entity;
+function storeInModel(model: EntityRecord, key: string, entity: VisualEntity): void {
+  (model as Record<string, VisualEntity>)[key] = entity;
 }
 
 describe("applyOperationsToVisualModel", () => {
@@ -94,7 +94,7 @@ describe("applyOperationsToVisualModel", () => {
   describe("AddVisualNodeOperation", () => {
     it("should create a visual node and record the change", () => {
       const node: VisualNode = {
-        identifier: "node-1",
+        id: "node-1",
         type: [VISUAL_NODE_TYPE],
         representedEntity: "entity-1",
         model: "model-1",
@@ -119,7 +119,7 @@ describe("applyOperationsToVisualModel", () => {
 
     it("should create multiple visual nodes", () => {
       const node1: VisualNode = {
-        identifier: "node-1",
+        id: "node-1",
         type: [VISUAL_NODE_TYPE],
         representedEntity: "entity-1",
         model: "model-1",
@@ -129,7 +129,7 @@ describe("applyOperationsToVisualModel", () => {
       };
 
       const node2: VisualNode = {
-        identifier: "node-2",
+        id: "node-2",
         type: [VISUAL_NODE_TYPE],
         representedEntity: "entity-2",
         model: "model-1",
@@ -151,7 +151,7 @@ describe("applyOperationsToVisualModel", () => {
   describe("AddVisualDiagramNodeOperation", () => {
     it("should create a visual diagram node", () => {
       const diagramNode: VisualDiagramNode = {
-        identifier: "diagram-node-1",
+        id: "diagram-node-1",
         type: [VISUAL_DIAGRAM_NODE_TYPE],
         representedVisualModel: "visual-model-1",
         position: { x: 50, y: 60, anchored: null },
@@ -171,7 +171,7 @@ describe("applyOperationsToVisualModel", () => {
   describe("AddVisualRelationshipOperation", () => {
     it("should create a visual relationship", () => {
       const relationship: VisualRelationship = {
-        identifier: "rel-1",
+        id: "rel-1",
         type: [VISUAL_RELATIONSHIP_TYPE],
         representedRelationship: "rel-entity",
         model: "model-1",
@@ -195,7 +195,7 @@ describe("applyOperationsToVisualModel", () => {
   describe("AddVisualProfileRelationshipOperation", () => {
     it("should create a visual profile relationship", () => {
       const profileRel: VisualProfileRelationship = {
-        identifier: "prof-rel-1",
+        id: "prof-rel-1",
         type: [VISUAL_PROFILE_RELATIONSHIP_TYPE],
         entity: "entity-1",
         model: "model-1",
@@ -216,7 +216,7 @@ describe("applyOperationsToVisualModel", () => {
   describe("AddVisualGroupOperation", () => {
     it("should create a visual group", () => {
       const group: VisualGroup = {
-        identifier: "group-1",
+        id: "group-1",
         type: [VISUAL_GROUP_TYPE],
         anchored: null,
         content: [],
@@ -235,7 +235,7 @@ describe("applyOperationsToVisualModel", () => {
     it("should update an existing entity", () => {
       // First, add an entity
       const node: VisualNode = {
-        identifier: "node-1",
+        id: "node-1",
         type: [VISUAL_NODE_TYPE],
         representedEntity: "entity-1",
         model: "model-1",
@@ -244,7 +244,7 @@ describe("applyOperationsToVisualModel", () => {
         visualModels: [],
       };
 
-      storeInModel(testContext.model, "node-1", fixVisualEntityType(node));
+      storeInModel(testContext.model, "node-1", node);
 
       // Now update it
       const updateOp = createUpdateVisualEntityOperation("node-1", {
@@ -271,7 +271,7 @@ describe("applyOperationsToVisualModel", () => {
 
     it("should preserve unchanged properties during update", () => {
       const node: VisualNode = {
-        identifier: "node-1",
+        id: "node-1",
         type: [VISUAL_NODE_TYPE],
         representedEntity: "entity-1",
         model: "model-1",
@@ -280,7 +280,7 @@ describe("applyOperationsToVisualModel", () => {
         visualModels: ["vm-1"],
       };
 
-      storeInModel(testContext.model, "node-1", fixVisualEntityType(node));
+      storeInModel(testContext.model, "node-1", node);
 
       const updateOp = createUpdateVisualEntityOperation("node-1", {
         content: ["new-attr"],
@@ -298,7 +298,7 @@ describe("applyOperationsToVisualModel", () => {
   describe("DeleteVisualEntityOperation", () => {
     it("should delete an existing entity", () => {
       const node: VisualNode = {
-        identifier: "node-1",
+        id: "node-1",
         type: [VISUAL_NODE_TYPE],
         representedEntity: "entity-1",
         model: "model-1",
@@ -307,7 +307,7 @@ describe("applyOperationsToVisualModel", () => {
         visualModels: [],
       };
 
-      storeInModel(testContext.model, "node-1", fixVisualEntityType(node));
+      storeInModel(testContext.model, "node-1", node);
 
       const deleteOp = createDeleteVisualEntityOperation("node-1");
 
@@ -342,7 +342,7 @@ describe("applyOperationsToVisualModel", () => {
     it("should apply multiple operations in sequence", () => {
       // Create two nodes
       const node1: VisualNode = {
-        identifier: "node-1",
+        id: "node-1",
         type: [VISUAL_NODE_TYPE],
         representedEntity: "entity-1",
         model: "model-1",
@@ -352,7 +352,7 @@ describe("applyOperationsToVisualModel", () => {
       };
 
       const node2: VisualNode = {
-        identifier: "node-2",
+        id: "node-2",
         type: [VISUAL_NODE_TYPE],
         representedEntity: "entity-2",
         model: "model-1",
@@ -367,8 +367,8 @@ describe("applyOperationsToVisualModel", () => {
       const deleteOp = createDeleteVisualEntityOperation("node-2");
 
       // Pre-populate node-1 and node-2 for update/delete operations
-      storeInModel(testContext.model, "node-1", fixVisualEntityType(node1));
-      storeInModel(testContext.model, "node-2", fixVisualEntityType(node2));
+      storeInModel(testContext.model, "node-1", node1);
+      storeInModel(testContext.model, "node-2", node2);
 
       const changes = applyOperationsToVisualModel(testContext.model, [
         addOp1,
@@ -396,7 +396,7 @@ describe("applyOperationsToVisualModel", () => {
 
     it("should create and update same entity in sequence", () => {
       const node: VisualNode = {
-        identifier: "node-1",
+        id: "node-1",
         type: [VISUAL_NODE_TYPE],
         representedEntity: "entity-1",
         model: "model-1",
@@ -406,7 +406,7 @@ describe("applyOperationsToVisualModel", () => {
       };
 
       const addOp = createAddVisualNodeOperation(node);
-      storeInModel(testContext.model, "node-1", fixVisualEntityType(node));
+      storeInModel(testContext.model, "node-1", node);
 
       const updateOp = createUpdateVisualEntityOperation("node-1", {
         content: ["attr-1"],
@@ -433,7 +433,7 @@ describe("applyOperationsToVisualModel", () => {
 
     it("should track multiple entity types in one batch", () => {
       const node: VisualNode = {
-        identifier: "node-1",
+        id: "node-1",
         type: [VISUAL_NODE_TYPE],
         representedEntity: "entity-1",
         model: "model-1",
@@ -443,7 +443,7 @@ describe("applyOperationsToVisualModel", () => {
       };
 
       const relationship: VisualRelationship = {
-        identifier: "rel-1",
+        id: "rel-1",
         type: [VISUAL_RELATIONSHIP_TYPE],
         representedRelationship: "rel-entity",
         model: "model-1",
@@ -453,7 +453,7 @@ describe("applyOperationsToVisualModel", () => {
       };
 
       const group: VisualGroup = {
-        identifier: "group-1",
+        id: "group-1",
         type: [VISUAL_GROUP_TYPE],
         anchored: null,
         content: [],
@@ -478,7 +478,7 @@ describe("applyOperationsToVisualModel", () => {
   describe("Edge cases", () => {
     it("should generate unique identifiers for created entities", () => {
       const node1: VisualNode = {
-        identifier: "node-1",
+        id: "node-1",
         type: [VISUAL_NODE_TYPE],
         representedEntity: "entity-1",
         model: "model-1",
@@ -488,7 +488,7 @@ describe("applyOperationsToVisualModel", () => {
       };
 
       const node2: VisualNode = {
-        identifier: "node-2",
+        id: "node-2",
         type: [VISUAL_NODE_TYPE],
         representedEntity: "entity-2",
         model: "model-1",
@@ -510,7 +510,7 @@ describe("applyOperationsToVisualModel", () => {
 
     it("should preserve entity immutability", () => {
       const node: VisualNode = {
-        identifier: "node-1",
+        id: "node-1",
         type: [VISUAL_NODE_TYPE],
         representedEntity: "entity-1",
         model: "model-1",
@@ -519,7 +519,7 @@ describe("applyOperationsToVisualModel", () => {
         visualModels: [],
       };
 
-      storeInModel(testContext.model, "node-1", fixVisualEntityType(node));
+      storeInModel(testContext.model, "node-1", node);
 
       const updateOp = createUpdateVisualEntityOperation("node-1", {
         position: { x: 100, y: 200, anchored: null },

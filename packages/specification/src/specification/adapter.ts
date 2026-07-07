@@ -5,7 +5,7 @@ import { DataSpecification as LegacyDataSpecification } from "@dataspecer/core/d
 import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
-import type { ModelEntity, PackageEntity } from "@dataspecer/project-model";
+import type { ProjectModelEntity, PackageEntity } from "@dataspecer/project-model";
 import { build } from "../model-hierarchy/semantic-model-aggregator-builder.ts";
 import { DataSpecification } from "./model.ts";
 import { TransactionMetadata } from "@dataspecer/model-store";
@@ -116,7 +116,7 @@ export function getDataSpecificationWithModels(
 function loadDataSpecifications(rootDataSpecificationId: ModelIdentifier, models: Record<ModelIdentifier, EntityRecord>): Record<string, DataSpecification> {
   const dataSpecifications: { [iri: string]: DataSpecification } = {};
 
-  const projectModel = models[PROJECT_MODEL_ID] as EntityRecord<ModelEntity>;
+  const projectModel = models[PROJECT_MODEL_ID] as EntityRecord<ProjectModelEntity>;
 
   const specificationToLoad = [rootDataSpecificationId];
 
@@ -159,7 +159,7 @@ function loadDataSpecifications(rootDataSpecificationId: ModelIdentifier, models
  * @param projectModel The project model containing the full hierarchy of models inside the project.
  * @param rootModel The root model may contain configuration for the data specification.
  */
-export function getDataSpecification(projectId: string, projectModel: EntityRecord<ModelEntity>, rootModel: EntityRecord | null): DataSpecification & Package {
+export function getDataSpecification(projectId: string, projectModel: EntityRecord<ProjectModelEntity>, rootModel: EntityRecord | null): DataSpecification & Package {
   const mainPackage = projectModel[projectId] as PackageEntity;
   const subResourceIds = mainPackage.subModels ?? [];
   if (!rootModel) {
@@ -208,7 +208,7 @@ export function getDataSpecification(projectId: string, projectModel: EntityReco
  * Obtains data from the project model and returns a legacy data structure about the package.
  * @todo do we need everything?
  */
-function projectModelToPackage(packageId: string, projectModel: EntityRecord<ModelEntity>): Package {
+function projectModelToPackage(packageId: string, projectModel: EntityRecord<ProjectModelEntity>): Package {
   const packageEntity = projectModel[packageId] as PackageEntity;
   const subResourceIds = packageEntity.subModels ?? [];
   const subResources: BaseResource[] = [];

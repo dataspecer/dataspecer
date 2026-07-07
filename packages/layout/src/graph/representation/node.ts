@@ -221,7 +221,7 @@ export class DefaultNode implements Node {
       if(visualNode !== null) {
           // Kind of ugly,
           // but the reason why need to do this is because the Reactflow dimension handlers, need the id.
-          this.id = visualNode.identifier;
+          this.id = visualNode.id;
       }
       const width = this.mainGraph.nodeDimensionQueryHandler.getWidth(this);
       const height = this.mainGraph.nodeDimensionQueryHandler.getHeight(this);
@@ -239,7 +239,7 @@ export class DefaultNode implements Node {
       else {
           let isAnchored: boolean = visualNode.position.anchored ?? false;
           if(explicitAnchors !== undefined) {
-              isAnchored = isEntityWithIdentifierAnchored(visualNode.identifier, explicitAnchors, isAnchored);
+              isAnchored = isEntityWithIdentifierAnchored(visualNode.id, explicitAnchors, isAnchored);
           }
 
           this.completeVisualNode = new VisualNodeComplete(visualNode, width, height, true, isOutsider, isAnchored);
@@ -251,7 +251,7 @@ export class DefaultNode implements Node {
               };
           }
       }
-      this.id = this.completeVisualNode.coreVisualNode.identifier;
+      this.id = this.completeVisualNode.coreVisualNode.id;
 
       sourceGraph.nodes[this.id] = this;
       mainGraph.insertInAllNodes(this);
@@ -272,7 +272,7 @@ export class DefaultNode implements Node {
           position = {x: 0, y: 0};
       }
       return {
-          identifier: createIdentifier(),
+          id: createIdentifier(),
           type: [VISUAL_NODE_TYPE],
           representedEntity: semanticEntityRepresentingNodeIdentifier,
           position: {
@@ -516,7 +516,7 @@ export const isNodeInVisualModel = (
   const visualEntities = visualModel.getVisualEntitiesForRepresented(classIdentifier);
   let isPresentInVisualEntitiesToLayout = false;
   for (const visualEntity of visualEntities) {
-    isPresentInVisualEntitiesToLayout = isPresentInVisualEntitiesToLayout || entitiesToLayout.visualEntities.includes(visualEntity.identifier);
+    isPresentInVisualEntitiesToLayout = isPresentInVisualEntitiesToLayout || entitiesToLayout.visualEntities.includes(visualEntity.id);
   }
   const isPresentInVisualModel = isPresentInVisualEntitiesToLayout ||
                                   entitiesToLayout.outsiders[classIdentifier] !== undefined;

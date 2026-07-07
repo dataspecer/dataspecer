@@ -20,6 +20,7 @@
     "title": "Create new"
   },
   "conceptual editor button": "Edit vocabularies and application profiles",
+  "controlled-vocabularies": "Controlled vocabularies",
   "created": "Created on {{val, datetime(dateStyle: short)}}",
   "data specification button": "Edit data structures",
   "data specification reload": "Reload data specification",

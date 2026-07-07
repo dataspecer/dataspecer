@@ -43,9 +43,9 @@ test("Test extension by relationship targets - visual identifiers", () => {
   expect(result.selectionExtension.nodeSelection.length).toEqual(1);
   expect(result.selectionExtension.nodeSelection[0]).toBe(expectedTargetEdge!.visualTarget);
   expect(result.selectionExtension.edgeSelection.length).toEqual(1);
-  expect(result.selectionExtension.edgeSelection[0]).toBe(expectedTargetEdge!.identifier);
+  expect(result.selectionExtension.edgeSelection[0]).toBe(expectedTargetEdge!.id);
   expect(result.nodesToEdgesMapping[result.selectionExtension.nodeSelection[0]][0])
-    .toEqual(expectedTargetEdge!.identifier);
+    .toEqual(expectedTargetEdge!.id);
 });
 
 test("Test extension by Generalization targets - visual identifiers", () => {
@@ -84,9 +84,9 @@ test("Test extension by Generalization targets - visual identifiers", () => {
   expect(result.selectionExtension.nodeSelection.length).toEqual(1);
   expect(result.selectionExtension.nodeSelection[0]).toBe(expectedTargetEdge!.visualTarget);
   expect(result.selectionExtension.edgeSelection.length).toEqual(1);
-  expect(result.selectionExtension.edgeSelection[0]).toBe(expectedTargetEdge!.identifier);
+  expect(result.selectionExtension.edgeSelection[0]).toBe(expectedTargetEdge!.id);
   expect(result.nodesToEdgesMapping[result.selectionExtension.nodeSelection[0]][0])
-    .toEqual(expectedTargetEdge!.identifier);
+    .toEqual(expectedTargetEdge!.id);
 });
 
 test("Test extension by Relationship profiles targets - visual identifiers", () => {
@@ -125,9 +125,9 @@ test("Test extension by Relationship profiles targets - visual identifiers", () 
   expect(result.selectionExtension.nodeSelection.length).toEqual(1);
   expect(result.selectionExtension.nodeSelection[0]).toBe(expectedTargetEdge!.visualTarget);
   expect(result.selectionExtension.edgeSelection.length).toEqual(1);
-  expect(result.selectionExtension.edgeSelection[0]).toBe(expectedTargetEdge!.identifier);
+  expect(result.selectionExtension.edgeSelection[0]).toBe(expectedTargetEdge!.id);
   expect(result.nodesToEdgesMapping[result.selectionExtension.nodeSelection[0]][0])
-    .toEqual(expectedTargetEdge!.identifier);
+    .toEqual(expectedTargetEdge!.id);
 });
 
 test("Test extension by Relationship class profiles targets - visual identifiers", () => {
@@ -154,7 +154,7 @@ test("Test extension by Relationship class profiles targets - visual identifiers
   for(const classProfile of classProfiles.createdIdentifiers) {
     const profiledClassVisual = visualModel.getVisualEntitiesForRepresented(classProfile.profiledClass)[0];
     const id = ActionsTestSuite.createNewVisualNodeOfClassProfileForTesting(
-      visualModel, classProfiles.model.getId(), classProfile.classProfile, profiledClassVisual.identifier);
+      visualModel, classProfiles.model.getId(), classProfile.classProfile, profiledClassVisual.id);
     createdProfileNodes.push(id);
   }
 
@@ -175,7 +175,7 @@ test("Test extension by Relationship class profiles targets - visual identifiers
   expect(result.selectionExtension.nodeSelection.length).toEqual(1);
   expect(result.selectionExtension.nodeSelection[0]).toBe(expectedTargetEdge!.visualTarget);
   expect(result.selectionExtension.edgeSelection.length).toEqual(1);
-  expect(result.selectionExtension.edgeSelection[0]).toBe(expectedTargetEdge!.identifier);
+  expect(result.selectionExtension.edgeSelection[0]).toBe(expectedTargetEdge!.id);
   expect(result.nodesToEdgesMapping[result.selectionExtension.nodeSelection[0]][0])
-    .toEqual(expectedTargetEdge!.identifier);
+    .toEqual(expectedTargetEdge!.id);
 });

@@ -10,7 +10,7 @@ import {
 import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
-import type { ModelEntity, PackageEntity } from "@dataspecer/project-model";
+import type { ProjectModelEntity, PackageEntity } from "@dataspecer/project-model";
 import { VisualModelData } from "@dataspecer/visual-model";
 import { ModelCompositionConfiguration, ModelCompositionConfigurationApplicationProfile, ModelCompositionConfigurationMerge } from "./composition-configuration.ts";
 import { getProvidedSourceSemanticModel } from "./adapter.ts";
@@ -115,7 +115,7 @@ class EntityRecordModel implements EntityModel {
 class SemanticModelAggregatorBuilder {
   private readonly mainProjectModelId: ModelIdentifier;
   private readonly allModels: Record<ModelIdentifier, EntityRecord>;
-  private readonly projectModel: EntityRecord<ModelEntity>;
+  private readonly projectModel: EntityRecord<ProjectModelEntity>;
   private readonly onChange?: (changeListener: (changes: Record<ModelIdentifier, EntityChange[]>) => void) => () => void;
   private readonly executeOperation?: (modelId: ModelIdentifier, operation: any) => void;
   private knownModels: Record<string, EntityModel> = {};
@@ -139,7 +139,7 @@ class SemanticModelAggregatorBuilder {
       throw new Error(`Project model with ID '${PROJECT_MODEL_ID}' is not available.`);
     }
 
-    this.projectModel = projectModel as EntityRecord<ModelEntity>;
+    this.projectModel = projectModel as EntityRecord<ProjectModelEntity>;
   }
 
   /**
@@ -171,7 +171,7 @@ class SemanticModelAggregatorBuilder {
 
     // Generate default configuration
     const hasProfile = packageEntity.subModels.some((subModelId) => {
-      const subModel = this.projectModel[subModelId] as ModelEntity | undefined;
+      const subModel = this.projectModel[subModelId] as ProjectModelEntity | undefined;
       return subModel && subModel.id.endsWith("/profile");
     });
 
@@ -213,7 +213,7 @@ class SemanticModelAggregatorBuilder {
     const subPackages: string[] = [];
 
     for (const subModelId of packageEntity.subModels) {
-      const subModel = this.projectModel[subModelId] as ModelEntity | undefined;
+      const subModel = this.projectModel[subModelId] as ProjectModelEntity | undefined;
       if (subModel) {
         if (isSemanticModelType(subModel.modelType)) {
           semanticModels.push(subModel.id);
@@ -289,7 +289,7 @@ class SemanticModelAggregatorBuilder {
    */
   private buildFromModelReference(modelId: string): SemanticModelAggregator {
     this.usedModels.add(modelId);
-    const entity = this.projectModel[modelId] as ModelEntity | undefined;
+    const entity = this.projectModel[modelId] as ProjectModelEntity | undefined;
 
     if (entity?.modelType === LOCAL_PACKAGE) {
       // It's a package, recurse
