@@ -1,13 +1,13 @@
 import { generateEntityId } from "@dataspecer/core/entity-model";
 import { EntityIdentifier } from "../../../entity-model/entity.ts";
 import { ControlledVocabularyAssignment, SemanticModelClassProfile, SemanticModelRelationshipEndProfile, SemanticModelRelationshipProfile } from "../concepts/index.ts";
-import { ADD_CONTROLLED_VOCABULARY_ASSIGNMENT, AddControlledVocabularyAssignment, CREATE_SEMANTIC_MODEL_CLASS_PROFILE, CREATE_SEMANTIC_MODEL_RELATIONSHIP_PROFILE, CreateSemanticModelClassProfile, CreateSemanticModelRelationshipProfile, MODIFY_CONTROLLED_VOCABULARY_ASSIGNMENT, MODIFY_SEMANTIC_MODEL_CLASS_PROFILE, MODIFY_SEMANTIC_MODEL_RELATIONSHIP_END_PROFILE, MODIFY_SEMANTIC_MODEL_RELATIONSHIP_PROFILE, ModifyControlledVocabularyAssignment, ModifySemanticModelClassProfile, ModifySemanticModelRelationshipEndProfile, ModifySemanticModelRelationshipProfile, REMOVE_CONTROLLED_VOCABULARY_ASSIGNMENT, RemoveControlledVocabularyAssignment } from "./operations.ts";
+import { ADD_CONTROLLED_VOCABULARY_ASSIGNMENT, AddControlledVocabularyAssignment, CREATE_SEMANTIC_MODEL_CLASS_PROFILE, CREATE_SEMANTIC_MODEL_RELATIONSHIP_PROFILE, CreateSemanticModelClassProfile, CreateSemanticModelRelationshipProfile, MODIFY_CONTROLLED_VOCABULARY_ASSIGNMENT, MODIFY_SEMANTIC_MODEL_CLASS_PROFILE, MODIFY_SEMANTIC_MODEL_RELATIONSHIP_END_PROFILE, MODIFY_SEMANTIC_MODEL_RELATIONSHIP_PROFILE, ModifyControlledVocabularyAssignment, ModifySemanticModelClassProfile, ModifySemanticModelRelationshipEndProfile, ModifySemanticModelRelationshipProfile, NewSemanticModelRelationshipEndProfile, REMOVE_CONTROLLED_VOCABULARY_ASSIGNMENT, RemoveControlledVocabularyAssignment } from "./operations.ts";
 import { generateOperationId } from "@dataspecer/core/operation";
 
 export interface SemanticModelProfileOperationFactory {
 
   createClassProfile(
-    entity: Omit<SemanticModelClassProfile, "id" | "type"> & Partial<Pick<SemanticModelClassProfile, "id">>
+    entity?: Partial<Omit<SemanticModelClassProfile, "type">>
   ): CreateSemanticModelClassProfile;
 
   modifyClassProfile(
@@ -16,7 +16,8 @@ export interface SemanticModelProfileOperationFactory {
   ): ModifySemanticModelClassProfile;
 
   createRelationshipProfile(
-    entity: Omit<SemanticModelRelationshipProfile, "id" | "type"> & Partial<Pick<SemanticModelRelationshipProfile, "id">>
+    entity?: Partial<Omit<SemanticModelRelationshipProfile, "type" | "ends">>
+      & { ends?: NewSemanticModelRelationshipEndProfile[] }
   ): CreateSemanticModelRelationshipProfile;
 
   modifyRelationshipProfile(
@@ -51,7 +52,7 @@ export interface SemanticModelProfileOperationFactory {
 class DefaultSemanticModelProfileOperationFactory
   implements SemanticModelProfileOperationFactory {
 
-  createClassProfile(entity: Omit<SemanticModelClassProfile, "id" | "type"> & Partial<Pick<SemanticModelClassProfile, "id">>)
+  createClassProfile(entity: Partial<Omit<SemanticModelClassProfile, "type">> = {})
     : CreateSemanticModelClassProfile {
     return {
       id: generateOperationId(),
@@ -72,7 +73,9 @@ class DefaultSemanticModelProfileOperationFactory
     };
   }
 
-  createRelationshipProfile(entity: Omit<SemanticModelRelationshipProfile, "id" | "type"> & Partial<Pick<SemanticModelRelationshipProfile, "id">>)
+  createRelationshipProfile(
+    entity: Partial<Omit<SemanticModelRelationshipProfile, "type" | "ends">>
+      & { ends?: NewSemanticModelRelationshipEndProfile[] } = {})
     : CreateSemanticModelRelationshipProfile {
       return {
         id: generateOperationId(),
