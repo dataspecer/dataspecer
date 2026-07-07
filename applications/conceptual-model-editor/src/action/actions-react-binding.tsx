@@ -1149,7 +1149,7 @@ function createActionsContext(
   ) => {
     withVisualModel(notifications, graph, (visualModel) => {
       const nodeIdentifiers = visualModel.getVisualEntitiesForRepresented(classIdentifier)
-        .map(visualEntity => visualEntity.identifier);
+        .map(visualEntity => visualEntity.id);
       const isClassInVisualModel = nodeIdentifiers.length > 0;
       if (!isClassInVisualModel) {
         return;

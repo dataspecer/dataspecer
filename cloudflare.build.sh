@@ -27,6 +27,10 @@ API_SPECIFICATION="/api-specification"
 API_SPECIFICATION_BASE_PATH="$BASE_PATH$API_SPECIFICATION"
 API_SPECIFICATION_URL="$API_SPECIFICATION_BASE_PATH"
 
+CONTROLLED_VOCABULARY_MANAGER="/controlled-vocabulary-manager"
+CONTROLLED_VOCABULARY_MANAGER_BASE_PATH="$BASE_PATH$CONTROLLED_VOCABULARY_MANAGER"
+CONTROLLED_VOCABULARY_MANAGER_URL="$CONTROLLED_VOCABULARY_MANAGER_BASE_PATH"
+
 if [ -d .git ]; then
   if [ -z "$GIT_COMMIT" ]; then
     GIT_COMMIT=$(git rev-parse HEAD)
@@ -52,10 +56,12 @@ printf "VITE_BACKEND=$BACKEND\nVITE_DEBUG_VERSION=$CF_PAGES_BRANCH@$(echo $CF_PA
 printf "VITE_PUBLIC_BASE_PATH=$CONCEPTUAL_MODEL_EDITOR_URL\nVITE_PUBLIC_APP_BACKEND=$BACKEND\nVITE_PUBLIC_APP_BACKEND_PACKAGE_ROOT=http://dataspecer.com/packages/local-root\nVITE_PUBLIC_MANAGER_PATH=$MANAGER_URL/\nVITE_PUBLIC_DSCME_LOGO_LINK=$MANAGER_URL/\n" > applications/conceptual-model-editor/.env.local
 printf "VITE_PUBLIC_APP_AUTOSAVE_ENABLED_BY_DEFAULT=0\n" >> applications/conceptual-model-editor/.env.local
 
-printf "VITE_DATA_SPECIFICATION_EDITOR=$DATA_SPECIFICATION_EDITOR_URL\nVITE_BACKEND=$BACKEND\nVITE_CME=$CONCEPTUAL_MODEL_EDITOR_URL\nVITE_API_SPECIFICATION_APPLICATION=$API_SPECIFICATION_URL\nVITE_BASE_PATH=$MANAGER_BASE_PATH\n" > applications/manager/.env.local
+printf "VITE_DATA_SPECIFICATION_EDITOR=$DATA_SPECIFICATION_EDITOR_URL\nVITE_BACKEND=$BACKEND\nVITE_CME=$CONCEPTUAL_MODEL_EDITOR_URL\nVITE_API_SPECIFICATION_APPLICATION=$API_SPECIFICATION_URL\nVITE_CONTROLLED_VOCABULARY_MANAGER=$CONTROLLED_VOCABULARY_MANAGER_URL\nVITE_BASE_PATH=$MANAGER_BASE_PATH\n" > applications/manager/.env.local
 printf "VITE_GIT_COMMIT=$GIT_COMMIT\nVITE_GIT_REF=$GIT_REF\nVITE_GIT_COMMIT_DATE=$GIT_COMMIT_DATE\nVITE_GIT_COMMIT_NUMBER=$GIT_COMMIT_NUMBER\n" >> applications/manager/.env.local
 
 printf "VITE_BACKEND=$BACKEND\n" > applications/api-specification/.env.local
+
+printf "VITE_MANAGER=$MANAGER_URL\nVITE_BACKEND=$BACKEND\n" > applications/controlled-vocabulary-manager/.env.local
 
 if [ $CF_PAGES_BRANCH != "main" ]; then
   printf "VITE_VERSION=$CF_PAGES_BRANCH\n" >> applications/manager/.env.local
@@ -67,10 +73,10 @@ fi
 
 if [ -n "$DO_BUILD_BACKEND" ]; then
   # Do not cache (-> local:) to make build faster (cache is not preserved between builds, so it would not help anyway)
-  npx turbo run build  --cache=local: --concurrency 100% --filter=data-specification-editor --filter=conceptual-model-editor --filter=manager --filter=api-specification --filter=backend^...
+  npx turbo run build  --cache=local: --concurrency 100% --filter=data-specification-editor --filter=conceptual-model-editor --filter=controlled-vocabulary-manager --filter=manager --filter=api-specification --filter=backend^...
   (cd services/backend && npx npm run build-pack)
 else
-  npx turbo run build  --cache=local: --concurrency 100% --filter=data-specification-editor --filter=conceptual-model-editor --filter=manager --filter=api-specification
+  npx turbo run build  --cache=local: --concurrency 100% --filter=data-specification-editor --filter=conceptual-model-editor --filter=controlled-vocabulary-manager --filter=manager --filter=api-specification
 fi
 
 rm -rf .dist
@@ -82,6 +88,10 @@ cp -r applications/data-specification-editor/dist/* .dist$DATA_SPECIFICATION_EDI
 # Copy conceptual-model-editor application
 mkdir -p .dist$CONCEPTUAL_MODEL_EDITOR
 cp -r applications/conceptual-model-editor/dist/* .dist$CONCEPTUAL_MODEL_EDITOR
+
+# Copy controlled-vocabulary-manager application
+mkdir -p .dist$CONTROLLED_VOCABULARY_MANAGER
+cp -r applications/controlled-vocabulary-manager/dist/* .dist$CONTROLLED_VOCABULARY_MANAGER
 
 # Copy manager application
 mkdir -p .dist$MANAGER

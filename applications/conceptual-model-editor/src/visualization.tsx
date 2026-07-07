@@ -236,7 +236,7 @@ function onChangeVisualModel(
     if (isVisualDiagramNode(visualEntity)) {
       const node = createVisualModelDiagramNode(
         options, aggregatorView.getAvailableVisualModels(),
-        visualEntity, nodeToGroupMapping[visualEntity.identifier] ?? null);
+        visualEntity, nodeToGroupMapping[visualEntity.id] ?? null);
       nextNodes.push(node);
     } else if (isVisualGroup(visualEntity)) {
       nextGroups.push(visualEntity);
@@ -252,7 +252,7 @@ function onChangeVisualModel(
         const node = createDiagramNode(
           options, visualModel, models, entities,
           visualEntity, entity, model,
-          nodeToGroupMapping[visualEntity.identifier] ?? null);
+          nodeToGroupMapping[visualEntity.id] ?? null);
         nextNodes.push(node);
       }
     } else if (isVisualRelationship(visualEntity)) {
@@ -297,8 +297,8 @@ function onChangeVisualModel(
       for (const item of profiled) {
         const profilesOf = visualModel.getVisualEntitiesForRepresented(item);
         for (const profileOf of profilesOf) {
-          if (visualEntity.visualSource !== profileOf.identifier &&
-            visualEntity.visualTarget !== profileOf.identifier) {
+          if (visualEntity.visualSource !== profileOf.id &&
+            visualEntity.visualTarget !== profileOf.id) {
             // The VisualProfileRelationship represents different profile relationship.
             continue;
           }
@@ -338,7 +338,7 @@ function createVisualModelDiagramNode(
   }
 
   const result: VisualModelDiagramNode = {
-    identifier: visualDiagramNode.identifier,
+    identifier: visualDiagramNode.id,
     externalIdentifier: visualDiagramNode.representedVisualModel,
     representedModelAlias: referencedVisualModelLabel,
     label: referencedVisualModelLabel,
@@ -369,7 +369,7 @@ function createDiagramNode(
   return {
     options,
     type: isProfile ? NodeType.ClassProfile : NodeType.Class,
-    identifier: visualNode.identifier,
+    identifier: visualNode.id,
     externalIdentifier: entity.id,
     label: getEntityLabelToShowInDiagram(options.language, entity),
     iri: prepareIri(semanticModels, null, entity),
@@ -691,7 +691,7 @@ function createDiagramEdgeForRelationship(
   return {
     options,
     type: EdgeType.Association,
-    identifier: visualRelationship.identifier,
+    identifier: visualRelationship.id,
     externalIdentifier: entity.id,
     label: getEntityLabelToShowInDiagram(language, entity),
     source: visualRelationship.visualSource,
@@ -724,7 +724,7 @@ function createDiagramEdgeForRelationshipProfile(
   return {
     options,
     type: EdgeType.AssociationProfile,
-    identifier: visualRelationship.identifier,
+    identifier: visualRelationship.id,
     externalIdentifier: entity.id,
     label,
     iri,
@@ -751,7 +751,7 @@ function createDiagramEdgeForGeneralization(
   const color = visualModel.getModelColor(visualRelationship.model) ?? DEFAULT_MODEL_COLOR;
   return {
     type: EdgeType.Generalization,
-    identifier: visualRelationship.identifier,
+    identifier: visualRelationship.id,
     externalIdentifier: entity.id,
     label: null,
     source: visualRelationship.visualSource,
@@ -784,7 +784,7 @@ function createDiagramEdgeForClassUsageOrProfile(
 ): Edge | null {
   return {
     type: EdgeType.ClassProfile,
-    identifier: visualProfileRelationship.identifier,
+    identifier: visualProfileRelationship.id,
     externalIdentifier: entity.id,
     label: tData("diagram.profile-edge", language),
     source: visualProfileRelationship.visualSource,
@@ -803,7 +803,7 @@ function createDiagramEdgeForClassUsageOrProfile(
 
 function createGroupNode(visualGroup: VisualGroup): Group {
   return {
-    identifier: visualGroup.identifier,
+    identifier: visualGroup.id,
   };
 }
 
@@ -843,7 +843,7 @@ function onChangeVisualEntities(
   for (const { previous, next } of groups) {
     if (previous !== null && next === null) {
       // Entity removed
-      actions.removeGroups([previous.identifier]);
+      actions.removeGroups([previous.id]);
       continue;
     }
 
@@ -871,8 +871,8 @@ function onChangeVisualEntities(
       // New or changed entity.
       if (isVisualDiagramNode(next)) {
         let group: string | null = null;
-        if (nodeIdToParentGroupIdMap[next.identifier] !== undefined) {
-          group = nodeIdToParentGroupIdMap[next.identifier];
+        if (nodeIdToParentGroupIdMap[next.id] !== undefined) {
+          group = nodeIdToParentGroupIdMap[next.id];
         }
 
         const node = createVisualModelDiagramNode(
@@ -901,8 +901,8 @@ function onChangeVisualEntities(
         }
 
         let group: string | null = null;
-        if (nodeIdToParentGroupIdMap[next.identifier] !== undefined) {
-          group = nodeIdToParentGroupIdMap[next.identifier];
+        if (nodeIdToParentGroupIdMap[next.id] !== undefined) {
+          group = nodeIdToParentGroupIdMap[next.id];
         }
 
         const node = createDiagramNode(
@@ -970,8 +970,8 @@ function onChangeVisualEntities(
         for (const item of profiled) {
           const profilesOf = visualModel.getVisualEntitiesForRepresented(item);
           for (const profileOf of profilesOf) {
-            if (next.visualSource !== profileOf.identifier &&
-              next.visualTarget !== profileOf.identifier) {
+            if (next.visualSource !== profileOf.id &&
+              next.visualTarget !== profileOf.id) {
               // The VisualProfileRelationship represents different profile relationship.
               continue;
             }
@@ -1005,11 +1005,11 @@ function onChangeVisualEntities(
     if (previous !== null && next === null) {
       // Entity removed
       if (isVisualNode(previous)) {
-        actions.removeNodes([previous.identifier]);
+        actions.removeNodes([previous.id]);
       } else if (isVisualRelationship(previous) || isVisualProfileRelationship(previous)) {
-        actions.removeEdges([previous.identifier]);
+        actions.removeEdges([previous.id]);
       } else if (isVisualDiagramNode(previous)) {
-        actions.removeNodes([previous.identifier]);
+        actions.removeNodes([previous.id]);
       } else {
         // We ignore other properties.
       }

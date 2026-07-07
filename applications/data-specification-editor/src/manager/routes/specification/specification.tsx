@@ -4,7 +4,7 @@ import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { createManagerModelStore, type DefaultFrontendModelStore } from "@dataspecer/model-store/implementation";
-import type { ModelEntity } from "@dataspecer/project-model";
+import type { ProjectModelEntity } from "@dataspecer/project-model";
 import { getDataSpecification } from "@dataspecer/specification/specification";
 import { Box, CircularProgress, Container, Typography } from "@mui/material";
 import { createContext, FC, useContext, useEffect, useState } from "react";
@@ -63,7 +63,7 @@ export const Specification: FC = () => {
 
       const reloadSpecification = () => {
         const allEntities = modelStore.getAllEntities();
-        const projectModel = allEntities[PROJECT_MODEL_ID] as EntityRecord<ModelEntity>;
+        const projectModel = allEntities[PROJECT_MODEL_ID] as EntityRecord<ProjectModelEntity>;
         const rootModel = allEntities[dataSpecificationIri as string] || null;
 
         const dataSpecification = getDataSpecification(dataSpecificationIri, projectModel, rootModel);

@@ -1,9 +1,13 @@
 import { generateOperationId, type Operation } from "@dataspecer/core/operation";
-import { fixVisualEntityType, HexColor, VisualDiagramNode, VISUAL_DIAGRAM_NODE_TYPE, VisualGroup, VISUAL_GROUP_TYPE, VisualNode, VISUAL_NODE_TYPE, VisualProfileRelationship, VISUAL_PROFILE_RELATIONSHIP_TYPE, VisualRelationship, VISUAL_RELATIONSHIP_TYPE, VisualView, type VisualEntityAndCoreEntity, type VisualEntity, type FixedVisualEntityType } from "./concepts/index.ts";
-import { ModelIdentifier } from "./entity-model/entity-model.ts";
-import { EntityIdentifier } from "./entity-model/entity.ts";
-import { LanguageString } from "./entity-model/labeled-model.ts";
-import { generateEntityId } from "@dataspecer/core/entity-model";
+import {
+  HexColor, VisualDiagramNode, VISUAL_DIAGRAM_NODE_TYPE, VisualGroup,
+  VISUAL_GROUP_TYPE, VisualNode, VISUAL_NODE_TYPE, VisualProfileRelationship,
+  VISUAL_PROFILE_RELATIONSHIP_TYPE, VisualRelationship,
+  VISUAL_RELATIONSHIP_TYPE, VisualView, type VisualEntity,
+} from "./concepts/index.ts";
+import { EntityIdentifier, generateEntityId } from "@dataspecer/core/entity-model";
+import { LanguageString } from "@dataspecer/core/core/core-resource";
+import { ModelIdentifier } from "@dataspecer/core/model";
 
 /**
  * @see {@link AddVisualNodeOperation}
@@ -20,15 +24,15 @@ export interface AddVisualNodeOperation extends Operation {
   /**
    * Properties of the visual node to be created (excluding identifier and type).
    */
-  entity: VisualNode & VisualEntityAndCoreEntity;
+  entity: VisualNode;
 }
 
-export function createAddVisualNodeOperation(entity: Omit<VisualNode, "id" | "identifier" | "type"> & Partial<Pick<FixedVisualEntityType<VisualEntity>, "id" | "identifier" | "type">>): AddVisualNodeOperation {
-  const entityId = entity.identifier ?? generateEntityId();
+export function createAddVisualNodeOperation(entity: Omit<VisualNode, "id" | "type"> & Partial<Pick<VisualEntity, "id" | "type">>): AddVisualNodeOperation {
+  const entityId = entity.id ?? generateEntityId();
   return {
     id: generateOperationId(),
     type: AddVisualNodeOperationType,
-    entity: fixVisualEntityType({ type: [VISUAL_NODE_TYPE], ...entity, id: entityId, identifier: entityId }),
+    entity: { type: [VISUAL_NODE_TYPE], ...entity, id: entityId },
   };
 }
 
@@ -51,15 +55,15 @@ export interface AddVisualDiagramNodeOperation extends Operation {
   /**
    * Properties of the visual diagram node to be created (excluding identifier and type).
    */
-  entity: VisualDiagramNode & VisualEntityAndCoreEntity;
+  entity: VisualDiagramNode;
 }
 
-export function createAddVisualDiagramNodeOperation(entity: Omit<VisualDiagramNode, "id" | "identifier" | "type"> & Partial<Pick<FixedVisualEntityType<VisualEntity>, "id" | "identifier" | "type">>): AddVisualDiagramNodeOperation {
-  const entityId = entity.identifier ?? generateEntityId();
+export function createAddVisualDiagramNodeOperation(entity: Omit<VisualDiagramNode, "id" | "type"> & Partial<Pick<VisualEntity, "id" | "type">>): AddVisualDiagramNodeOperation {
+  const entityId = entity.id ?? generateEntityId();
   return {
     id: generateOperationId(),
     type: AddVisualDiagramNodeOperationType,
-    entity: fixVisualEntityType({ type: [VISUAL_DIAGRAM_NODE_TYPE], ...entity, id: entityId, identifier: entityId }),
+    entity: { type: [VISUAL_DIAGRAM_NODE_TYPE], ...entity, id: entityId },
   };
 }
 
@@ -82,15 +86,15 @@ export interface AddVisualRelationshipOperation extends Operation {
   /**
    * Properties of the visual relationship to be created (excluding identifier and type).
    */
-  entity: VisualRelationship & VisualEntityAndCoreEntity;
+  entity: VisualRelationship;
 }
 
-export function createAddVisualRelationshipOperation(entity: Omit<VisualRelationship, "id" | "identifier" | "type"> & Partial<Pick<FixedVisualEntityType<VisualEntity>, "id" | "identifier" | "type">>): AddVisualRelationshipOperation {
-  const entityId = entity.identifier ?? generateEntityId();
+export function createAddVisualRelationshipOperation(entity: Omit<VisualRelationship, "id" | "type"> & Partial<Pick<VisualEntity, "id" | "type">>): AddVisualRelationshipOperation {
+  const entityId = entity.id ?? generateEntityId();
   return {
     id: generateOperationId(),
     type: AddVisualRelationshipOperationType,
-    entity: fixVisualEntityType({ type: [VISUAL_RELATIONSHIP_TYPE], ...entity, id: entityId, identifier: entityId }),
+    entity: { type: [VISUAL_RELATIONSHIP_TYPE], ...entity, id: entityId },
   };
 }
 
@@ -113,15 +117,15 @@ export interface AddVisualProfileRelationshipOperation extends Operation {
   /**
    * Properties of the visual profile relationship to be created (excluding identifier and type).
    */
-  entity: VisualProfileRelationship & VisualEntityAndCoreEntity;
+  entity: VisualProfileRelationship;
 }
 
-export function createAddVisualProfileRelationshipOperation(entity: Omit<VisualProfileRelationship, "id" | "identifier" | "type"> & Partial<Pick<FixedVisualEntityType<VisualEntity>, "id" | "identifier" | "type">>): AddVisualProfileRelationshipOperation {
-  const entityId = entity.identifier ?? generateEntityId();
+export function createAddVisualProfileRelationshipOperation(entity: Omit<VisualProfileRelationship, "id" | "type"> & Partial<Pick<VisualEntity, "id" | "type">>): AddVisualProfileRelationshipOperation {
+  const entityId = entity.id ?? generateEntityId();
   return {
     id: generateOperationId(),
     type: AddVisualProfileRelationshipOperationType,
-    entity: fixVisualEntityType({ type: [VISUAL_PROFILE_RELATIONSHIP_TYPE], ...entity, id: entityId, identifier: entityId }),
+    entity: { type: [VISUAL_PROFILE_RELATIONSHIP_TYPE], ...entity, id: entityId },
   };
 }
 
@@ -144,15 +148,15 @@ export interface AddVisualGroupOperation extends Operation {
   /**
    * Properties of the visual group to be created (excluding identifier and type).
    */
-  entity: VisualGroup & VisualEntityAndCoreEntity;
+  entity: VisualGroup;
 }
 
-export function createAddVisualGroupOperation(entity: Omit<VisualGroup, "id" | "identifier" | "type"> & Partial<Pick<FixedVisualEntityType<VisualEntity>, "id" | "identifier" | "type">>): AddVisualGroupOperation {
-  const entityId = entity.identifier ?? generateEntityId();
+export function createAddVisualGroupOperation(entity: Omit<VisualGroup, "id" | "type"> & Partial<Pick<VisualEntity, "id" | "type">>): AddVisualGroupOperation {
+  const entityId = entity.id ?? generateEntityId();
   return {
     id: generateOperationId(),
     type: AddVisualGroupOperationType,
-    entity: fixVisualEntityType({ type: [VISUAL_GROUP_TYPE], ...entity, id: entityId, identifier: entityId }),
+    entity: { type: [VISUAL_GROUP_TYPE], ...entity, id: entityId },
   };
 }
 
@@ -345,10 +349,10 @@ export interface SetViewOperation extends Operation {
   /**
    * View configuration including position, zoom level, and other viewport properties.
    */
-  view: Omit<VisualView, "identifier" | "id" | "type">;
+  view: Omit<VisualView, "id" | "type">;
 }
 
-export function createSetViewOperation(view: Omit<VisualView, "id" | "identifier" | "type">): SetViewOperation {
+export function createSetViewOperation(view: Omit<VisualView, "id" | "type">): SetViewOperation {
   return {
     id: generateOperationId(),
     type: SetViewOperationType,

@@ -6,7 +6,7 @@ import { RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
 import { diffEntities } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
-import type { Model, ModelIdentifier } from "@dataspecer/core/model";
+import type { Model, ModelIdentifier, ModelMetadata } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
 import { BaseModelInModelStore, type ModelState } from "./base.ts";
 import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
@@ -31,6 +31,17 @@ export interface MainEntity extends Entity {
   type: ["mainEntity"];
   alias?: string;
   urls?: string[];
+}
+
+export function getPimModelMetadata(entities: EntityRecord, modelId: ModelIdentifier): ModelMetadata | null {
+  const mainEntity = entities[modelId] as MainEntity | undefined;
+  if (!mainEntity) {
+    return null;
+  }
+  return {
+    label: mainEntity.alias ? { en: mainEntity.alias } : {},
+    description: {},
+  };
 }
 
 /**

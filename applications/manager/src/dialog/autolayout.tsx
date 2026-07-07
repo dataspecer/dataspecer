@@ -72,7 +72,7 @@ export const Autolayout = ({ iri, isOpen, resolve, parentIri }: { iri: string, p
 
       const generatedIdentifierForModelColor = (Math.random() + 1).toString(36).substring(7);
       visualEntities[generatedIdentifierForModelColor] = createVisualModelData({
-        identifier: generatedIdentifierForModelColor,
+        id: generatedIdentifierForModelColor,
         representedModel: semanticModelId,
         color: "#ff9770",
       })
@@ -87,7 +87,7 @@ export const Autolayout = ({ iri, isOpen, resolve, parentIri }: { iri: string, p
 
     const VISUAL_MODEL_VERSION = 1;
     const visualizationModel = {
-      identifier: modelVisualizationId,
+      id: modelVisualizationId,
       version: VISUAL_MODEL_VERSION,
       type: VISUAL_MODEL,
       entities: Object.values(visualEntities),

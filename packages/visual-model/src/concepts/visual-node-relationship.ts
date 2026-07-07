@@ -1,7 +1,7 @@
-import { ModelIdentifier } from "../entity-model/entity-model.ts";
-import { EntityIdentifier } from "../entity-model/entity.ts";
+import { EntityIdentifier } from "@dataspecer/core/entity-model";
 import { VisualEntity } from "./visual-entity.ts";
 import { Waypoint } from "./waypoint.ts";
+import { ModelIdentifier } from "@dataspecer/core/model";
 
 /**
  * Represents a relationship that is defined by an entity and its property.

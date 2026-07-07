@@ -755,6 +755,7 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
       externalDocumentationUrl: null,
       tags: [],
       order: null,
+      controlledVocabularies: [],
     });
     this.profile.executeOperation(operation);
 

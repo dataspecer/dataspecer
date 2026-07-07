@@ -19,7 +19,7 @@ import {
   type VocabularySpecificationDocument,
 } from "@dataspecer/data-specification-vocabulary/specification-description";
 import { structureModelToRdf } from "@dataspecer/data-specification-vocabulary/structure-model";
-import type { ModelEntity, PackageEntity } from "@dataspecer/project-model";
+import type { ProjectModelEntity, PackageEntity } from "@dataspecer/project-model";
 import { canonicalizeIds, garbageCollect } from "@dataspecer/structure-model";
 import { ModelDescription, type StructureModelDescription } from "./model.ts";
 import { DefaultShaclConfiguration, DefaultShaclFileKey, ShaclV2Configurator } from "./shacl-v2.ts";
@@ -44,10 +44,10 @@ const PROJECT_MODEL_ID = "_project_model";
  * Returns the immediate child model entities of a package, resolved from the
  * project model.
  */
-function getSubModelEntities(projectModel: Record<string, ModelEntity>, packageId: string): ModelEntity[] {
+function getSubModelEntities(projectModel: Record<string, ProjectModelEntity>, packageId: string): ProjectModelEntity[] {
   const packageEntity = projectModel[packageId] as PackageEntity | undefined;
   const subModelIds = packageEntity?.subModels ?? [];
-  return subModelIds.map((id) => projectModel[id]).filter((entity): entity is ModelEntity => entity !== undefined);
+  return subModelIds.map((id) => projectModel[id]).filter((entity): entity is ProjectModelEntity => entity !== undefined);
 }
 
 /**
@@ -134,7 +134,7 @@ export async function generateSpecification(packageId: string, context: Generate
   const queryParams = options.queryParams ?? "";
 
   const allModels = context.models;
-  const projectModel = (allModels[PROJECT_MODEL_ID] ?? {}) as Record<string, ModelEntity>;
+  const projectModel = (allModels[PROJECT_MODEL_ID] ?? {}) as Record<string, ProjectModelEntity>;
 
   const rootPackageEntity = projectModel[packageId] as PackageEntity | undefined;
   if (!rootPackageEntity) {

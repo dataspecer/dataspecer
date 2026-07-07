@@ -32,7 +32,7 @@ test("Test shift attribute - up and down", () => {
   expect(nodeWithAttributes.content).toEqual(newAttributes.map(attribute => attribute.identifier));
   //
   shiftAttributePositionAction(
-    notificationMockup, visualModel, nodeWithAttributes.identifier,
+    notificationMockup, visualModel, nodeWithAttributes.id,
     newAttributes.at(-1)!.identifier, ShiftAttributeDirection.Up, 1);
   nodeWithAttributes = visualModel.getVisualEntitiesForRepresented("0")[0] as VisualNode;
   expect(nodeWithAttributes.content[0]).toBe(newAttributes[0].identifier);
@@ -40,7 +40,7 @@ test("Test shift attribute - up and down", () => {
   expect(nodeWithAttributes.content[2]).toBe(newAttributes[1].identifier);
   //
   shiftAttributePositionAction(
-    notificationMockup, visualModel, nodeWithAttributes.identifier,
+    notificationMockup, visualModel, nodeWithAttributes.id,
     newAttributes.at(-1)!.identifier, ShiftAttributeDirection.Down, 1);
   nodeWithAttributes = visualModel.getVisualEntitiesForRepresented("0")[0] as VisualNode;
   expect(nodeWithAttributes.content).toEqual(newAttributes.map(attribute => attribute.identifier));
@@ -65,7 +65,7 @@ test("Test shift attribute - up and down over boundary", () => {
   expect(nodeWithAttributes.content).toEqual(newAttributes.map(attribute => attribute.identifier));
   //
   shiftAttributePositionAction(
-    notificationMockup, visualModel, nodeWithAttributes.identifier,
+    notificationMockup, visualModel, nodeWithAttributes.id,
     newAttributes.at(-1)!.identifier, ShiftAttributeDirection.Down, 1);
   nodeWithAttributes = visualModel.getVisualEntitiesForRepresented("0")[0] as VisualNode;
   expect(nodeWithAttributes.content[0]).toBe(newAttributes[2].identifier);
@@ -73,7 +73,7 @@ test("Test shift attribute - up and down over boundary", () => {
   expect(nodeWithAttributes.content[2]).toBe(newAttributes[1].identifier);
   //
   shiftAttributePositionAction(
-    notificationMockup, visualModel, nodeWithAttributes.identifier,
+    notificationMockup, visualModel, nodeWithAttributes.id,
     newAttributes.at(-1)!.identifier, ShiftAttributeDirection.Up, 1);
   nodeWithAttributes = visualModel.getVisualEntitiesForRepresented("0")[0] as VisualNode;
   expect(nodeWithAttributes.content).toEqual(newAttributes.map(attribute => attribute.identifier));

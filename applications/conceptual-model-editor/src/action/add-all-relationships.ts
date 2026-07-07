@@ -33,7 +33,7 @@ export function addAllRelationshipsForVisualDiagramNodeToVisualModelAction(
 
   const availableVisualModels: VisualModel[] = graph.aggregatorView.getAvailableVisualModels();
 
-  const visualRelationshipsToAdd: Omit<VisualRelationship, "identifier" | "type">[] = [];
+  const visualRelationshipsToAdd: Omit<VisualRelationship, "id" | "type">[] = [];
 
   const representedVisualModel = availableVisualModels
     .find(model => model.getIdentifier() === visualModelDiagramNode.externalIdentifier);
@@ -93,7 +93,7 @@ function findRelationshipsForEnd(
   otherVisualEnd: string,
   end: string | null,
   isEndSource: boolean,
-  outputArray: Omit<VisualRelationship, "identifier" | "type">[],
+  outputArray: Omit<VisualRelationship, "id" | "type">[],
 ): void {
   const visualEndPropertyString = isEndSource ? "visualSource" : "visualTarget";
   const visualOtherEndPropertyString = isEndSource ? "visualTarget" : "visualSource";
@@ -120,7 +120,7 @@ function findRelationshipsForEnd(
     }
 
     const index = availableVisualEnds
-      .findIndex(possibleVisualEnd => possibleVisualEnd.identifier === visualRelationship[visualEndPropertyString])
+      .findIndex(possibleVisualEnd => possibleVisualEnd.id === visualRelationship[visualEndPropertyString])
     if(index === -1) {
       continue;
     }
@@ -131,7 +131,7 @@ function findRelationshipsForEnd(
       notifications.error("The edge end is not a supported edge end for unknown reason");
       continue;
     }
-    if (otherVisualEnd === availableVisualEnd.identifier) {
+    if (otherVisualEnd === availableVisualEnd.id) {
       // Just skip it, what this would do is create self-loop which represents relationship
       // which exists inside the diagram node.
       continue;
@@ -140,15 +140,15 @@ function findRelationshipsForEnd(
     let visualSource: string;
     let visualTarget: string;
     if (isEndSource) {
-      visualSource = availableVisualEnd.identifier;
+      visualSource = availableVisualEnd.id;
       visualTarget = otherVisualEnd;
     }
     else {
       visualSource = otherVisualEnd;
-      visualTarget = availableVisualEnd.identifier;
+      visualTarget = availableVisualEnd.id;
     }
 
-    const visualRelationship: Omit<VisualRelationship, "identifier" | "type"> = {
+    const visualRelationship: Omit<VisualRelationship, "id" | "type"> = {
       representedRelationship: relationship.id,
       model: model?.getId(),
       waypoints: [],

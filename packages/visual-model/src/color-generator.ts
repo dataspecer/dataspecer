@@ -1,5 +1,5 @@
+import { ModelIdentifier } from "@dataspecer/core/model";
 import { HexColor } from "./concepts/index.ts";
-import { ModelIdentifier } from "./entity-model/entity-model.ts";
 
 export interface ColorGenerator {
 

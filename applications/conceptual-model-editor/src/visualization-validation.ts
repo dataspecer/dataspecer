@@ -84,7 +84,7 @@ function validateClassProfilesInsideVisualModel(
   classesContext: UseClassesContextType,
   models: Map<string, EntityModel>,
 ) {
-  const missingVisualProfileRelationships: Omit<VisualProfileRelationship, "identifier" | "type">[] = [];
+  const missingVisualProfileRelationships: Omit<VisualProfileRelationship, "id" | "type">[] = [];
   const invalidEntities: string[] = [];
   // Map the visual entity it is profile (that is visualTarget) of to its relationships
   const validVisualProfileRelationships: Record<string, VisualProfileRelationship[]> = {};
@@ -102,7 +102,7 @@ function validateClassProfilesInsideVisualModel(
       const source = visualModel.getVisualEntity(visualEntity.visualSource);
       const target = visualModel.getVisualEntity(visualEntity.visualTarget);
       if (source === null || target === null) {
-        invalidEntities.push(visualEntity.identifier);
+        invalidEntities.push(visualEntity.id);
         continue;
       }
       else if (isVisualNode(source) && isVisualNode(target)) {
@@ -110,13 +110,13 @@ function validateClassProfilesInsideVisualModel(
           .find(classProfile => classProfile.id === source.representedEntity);
 
         if(semanticSource === undefined) {
-          invalidEntities.push(visualEntity.identifier);
+          invalidEntities.push(visualEntity.id);
           continue;
         }
 
         const isSemanticTargetPresent = semanticSource.profiling.includes(target.representedEntity)
         if(!isSemanticTargetPresent) {
-          invalidEntities.push(visualEntity.identifier);
+          invalidEntities.push(visualEntity.id);
           continue;
         }
 
@@ -129,7 +129,7 @@ function validateClassProfilesInsideVisualModel(
       if (classProfile === undefined) {
         continue;
       }
-      classProfilesInVisualModel[visualEntity.identifier] = {
+      classProfilesInVisualModel[visualEntity.id] = {
         visualEntity,
         classProfile
       };
@@ -141,20 +141,20 @@ function validateClassProfilesInsideVisualModel(
     for (const profileOf of classProfile.profiling) {
       const profileOfVisuals = visualModel.getVisualEntitiesForRepresented(profileOf);
       for (const profileOfVisual of profileOfVisuals) {
-        const isVisualProfileRelationshipInModel = validVisualProfileRelationships[profileOfVisual.identifier]
-          ?.find(profileRelationship => profileRelationship.visualSource === visualEntity.identifier) !== undefined;
+        const isVisualProfileRelationshipInModel = validVisualProfileRelationships[profileOfVisual.id]
+          ?.find(profileRelationship => profileRelationship.visualSource === visualEntity.id) !== undefined;
         if (!isVisualProfileRelationshipInModel) {
           const model = findSourceModelOfEntity(classProfile.id, models);
           if (model === null) {
             LOG.error("Missing the source model when creating missing profile relationship on validation");
             continue;
           }
-          const profileRelationshipToAdd: Omit<VisualProfileRelationship, "identifier" | "type"> = {
+          const profileRelationshipToAdd: Omit<VisualProfileRelationship, "id" | "type"> = {
             entity: classProfile.id,
             model: model.getId(),
             waypoints: [],
-            visualSource: visualEntity.identifier,
-            visualTarget: profileOfVisual.identifier
+            visualSource: visualEntity.id,
+            visualTarget: profileOfVisual.id
           }
           missingVisualProfileRelationships.push(profileRelationshipToAdd);
         }
@@ -210,7 +210,7 @@ function validateVisualModelAgainstDiagramNodes(
       if (represented === undefined) {
         // Should not happen, but better be safe
         console.error("Can't find represented relationship when validating, this probably should not happen");
-        invalidEntities.push(visualEntity.identifier);
+        invalidEntities.push(visualEntity.id);
         continue;
       }
 
@@ -218,27 +218,27 @@ function validateVisualModelAgainstDiagramNodes(
 
       // The end is missing
       if (source === null || !allClasses.includes(source) || target === null || !allClasses.includes(target)) {
-        invalidEntities.push(visualEntity.identifier);
+        invalidEntities.push(visualEntity.id);
         continue;
       }
       // Check if the visual end is the same as the semantic one
       const visualEdgeSource = visualModel.getVisualEntity(visualEntity.visualSource);
       const visualEdgeTarget = visualModel.getVisualEntity(visualEntity.visualTarget);
       if (visualEdgeSource === null || visualEdgeTarget === null) {
-        invalidEntities.push(visualEntity.identifier);
+        invalidEntities.push(visualEntity.id);
         continue;
       }
 
       const isDomainValid = checkEdgeEndValidityAndExtend(
         visualModelsGetByRepresentedGlobal, visualModels,
-        visualEdgeSource, source, visualEntity.identifier, invalidEntities);
+        visualEdgeSource, source, visualEntity.id, invalidEntities);
       if (!isDomainValid) {
         continue;
       }
 
       const isRangeValid = checkEdgeEndValidityAndExtend(
         visualModelsGetByRepresentedGlobal, visualModels,
-        visualEdgeTarget, target, visualEntity.identifier, invalidEntities);
+        visualEdgeTarget, target, visualEntity.id, invalidEntities);
       if (!isRangeValid) {
         continue;
       }
@@ -250,12 +250,12 @@ function validateVisualModelAgainstDiagramNodes(
       //  2) The class profile edges pointing from/to visual diagram node don't add much relevant information
       //     + They can not be removed from visual model, so it just introduces clutter
       const isSourceInvalid = validateVisualProfileRelationshipEnd(
-        visualModel, visualEntity.visualSource, visualEntity.identifier, invalidEntities);
+        visualModel, visualEntity.visualSource, visualEntity.id, invalidEntities);
       if (isSourceInvalid) {
         continue;
       }
       validateVisualProfileRelationshipEnd(
-        visualModel, visualEntity.visualTarget, visualEntity.identifier, invalidEntities);
+        visualModel, visualEntity.visualTarget, visualEntity.id, invalidEntities);
     }
   }
 
@@ -320,7 +320,7 @@ function checkEdgeEndValidityAndExtend(
 
   if(isValid === null) {
     invalidEntitiesToExtend.push(examinedEdge);
-    invalidEntitiesToExtend.push(visualEdgeEnd.identifier);
+    invalidEntitiesToExtend.push(visualEdgeEnd.id);
   }
   else if(!isValid) {
     invalidEntitiesToExtend.push(examinedEdge);

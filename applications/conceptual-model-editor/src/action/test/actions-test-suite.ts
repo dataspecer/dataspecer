@@ -604,7 +604,7 @@ export class ActionsTestSuite {
     visualDiagramNode: VisualDiagramNode,
   ): VisualModelDiagramNode {
     const result: VisualModelDiagramNode = {
-      identifier: visualDiagramNode.identifier,
+      identifier: visualDiagramNode.id,
       externalIdentifier: visualDiagramNode.representedVisualModel,
       label: "",
       representedModelAlias: "",
@@ -982,8 +982,8 @@ export class ActionsTestSuite {
         x: 0, y: 2,
         anchored: null
       }],
-      visualSource: visualSource.identifier,
-      visualTarget: visualTarget.identifier,
+      visualSource: visualSource.id,
+      visualTarget: visualTarget.id,
     });
 
     return visualId;

@@ -1,10 +1,6 @@
-import { createDefaultEntityModel } from "./entity-model/default-entity-model.ts";
 import { VisualEntity, VisualNode, isVisualNode } from "./concepts/index.ts";
-import { createDefaultVisualModelFactory } from "./visual-model-factory.ts";
 import { WritableVisualModel } from "./writable-visual-model.ts";
-import { VISUAL_MODE_TYPE } from "./visual-model.ts";
-
-const factory = createDefaultVisualModelFactory();
+import { DefaultVisualModel } from "./default-visual-model.ts";
 
 test("Create default visual model.", () => {
   const identifier = "abc";
@@ -14,11 +10,7 @@ test("Create default visual model.", () => {
 });
 
 function createModel(identifier: string) : WritableVisualModel {
-  const internal = createDefaultEntityModel(VISUAL_MODE_TYPE, identifier);
-  const model = factory.createWritableVisualModelSyncNoWrap(internal);
-  expect(model).not.toBeNull;
-  // TypeScript does not infer the not null from previous line.
-  return model as WritableVisualModel;
+  return new DefaultVisualModel(identifier);
 }
 
 test("Set and delete model color.", () => {
@@ -48,7 +40,7 @@ test("Set and delete visual entity.", () => {
   expect(isVisualNode(actual[0] as VisualEntity)).toBeTruthy();
   const visualNode = actual[0] as VisualNode;
   expect(visualNode.representedEntity).toBe("s");
-  model.deleteVisualEntity(visualNode.identifier);
+  model.deleteVisualEntity(visualNode.id);
   expect(model.getVisualEntitiesForRepresented("s").length).toBe(0);
   expect([...model.getVisualEntities().entries()].length).toBe(numberOfEntitiesInModelAfterInitialization);
 });
@@ -81,7 +73,7 @@ test("Create 2 visual entities for one semantic and remove one of the visuals.",
   expect(isVisualNode(visualNode2!)).toBeTruthy();
   expect(visualNode2!.representedEntity).toBe("s");
   //
-  model.deleteVisualEntity(visualNode1!.identifier);
+  model.deleteVisualEntity(visualNode1!.id);
   expect(model.getVisualEntitiesForRepresented("s").length).toBe(1);
 });
 
