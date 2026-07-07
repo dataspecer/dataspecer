@@ -92,6 +92,9 @@ export {
     isWritableVisualModel,
     type WritableVisualModel,
 } from "./writable-visual-model.ts";
+export {
+    getVisualModelMetadata,
+} from "./metadata.ts";
 
 // For use by new backend.
 export {
