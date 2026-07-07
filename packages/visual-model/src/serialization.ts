@@ -19,7 +19,7 @@ export function visualModelEntitiesToSerialization(entities: EntityRecord): unkn
   const visualEntityList = entityList.map(fixVisualEntityType);
   return {
     identifier: "todo",
-    version: 1,
+    version: 2,
     type: "http://dataspecer.com/resources/local/visual-model",
     entities: Object.fromEntries(visualEntityList.map(entity => [entity.id, entity])),
   };
