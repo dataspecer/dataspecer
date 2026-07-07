@@ -13,10 +13,8 @@ interface ChangeEntry {
 const factory = createDefaultSemanticModelProfileOperationFactory();
 
 test("Create class profile.", () => {
-  let counter = 0;
   const actual: ChangeEntry[] = [];
   const executor = createDefaultSemanticModelProfileOperationExecutor(
-    { createIdentifier: () => (++counter).toString() },
     { entity: () => null },
     { change: (updated, removed) => actual.push({ updated, removed }) },
   );
@@ -61,7 +59,6 @@ test("Create class profile.", () => {
 });
 
 test("Modify class profile, change none.", () => {
-  let counter = 0;
   const actual: ChangeEntry[] = [];
   const previous: SemanticModelClassProfile = {
     id: "1",
@@ -79,7 +76,6 @@ test("Modify class profile, change none.", () => {
     controlledVocabularies: [],
   };
   const executor = createDefaultSemanticModelProfileOperationExecutor(
-    { createIdentifier: () => (++counter).toString() },
     { entity: () => previous },
     { change: (updated, removed) => actual.push({ updated, removed }) },
   );
@@ -112,7 +108,6 @@ test("Modify class profile, change none.", () => {
 });
 
 test("Modify class profile, change all.", () => {
-  let counter = 0;
   const actual: ChangeEntry[] = [];
   const previous: SemanticModelClassProfile = {
     id: "1",
@@ -130,7 +125,6 @@ test("Modify class profile, change all.", () => {
     controlledVocabularies: [],
   };
   const executor = createDefaultSemanticModelProfileOperationExecutor(
-    { createIdentifier: () => (++counter).toString() },
     { entity: () => previous },
     { change: (updated, removed) => actual.push({ updated, removed }) },
   );
@@ -175,10 +169,8 @@ test("Modify class profile, change all.", () => {
 });
 
 test("Create relationship profile.", () => {
-  let counter = 0;
   const actual: ChangeEntry[] = [];
   const executor = createDefaultSemanticModelProfileOperationExecutor(
-    { createIdentifier: () => (++counter).toString() },
     { entity: () => null },
     { change: (updated, removed) => actual.push({ updated, removed }) },
   );
@@ -257,7 +249,6 @@ test("Create relationship profile.", () => {
 });
 
 test("Modify relationship profile.", () => {
-  let counter = 0;
   const actual: ChangeEntry[] = [];
   const previous: SemanticModelRelationshipProfile = {
     id: "1",
@@ -291,7 +282,6 @@ test("Modify relationship profile.", () => {
     }],
   };
   const executor = createDefaultSemanticModelProfileOperationExecutor(
-    { createIdentifier: () => (++counter).toString() },
     { entity: () => previous },
     { change: (updated, removed) => actual.push({ updated, removed }) },
   );
@@ -368,10 +358,8 @@ test("Modify relationship profile.", () => {
 });
 
 test("Relationship use all edges.", () => {
-  let counter = 0;
   const actual: ChangeEntry[] = [];
   const executor = createDefaultSemanticModelProfileOperationExecutor(
-    { createIdentifier: () => (++counter).toString() },
     { entity: () => null },
     { change: (updated, removed) => actual.push({ updated, removed }) },
   );
@@ -477,10 +465,8 @@ test("Relationship use all edges.", () => {
 });
 
 test("Issue #917: Change class profile to null.", () => {
-  let counter = 0;
   const entities: Record<EntityIdentifier, Entity> = {};
   const executor = createDefaultSemanticModelProfileOperationExecutor(
-    { createIdentifier: () => (++counter).toString() },
     { entity: (identifier) => entities[identifier] ?? null },
     {
       change: (updated, removed) => {
@@ -539,7 +525,6 @@ test("Issue #917: Change class profile to null.", () => {
 });
 
 test("Issue #917: Change relationship profile to null.", () => {
-  let counter = 0;
   const actual: ChangeEntry[] = [];
   const previous: SemanticModelRelationshipProfile = {
     id: "1",
@@ -573,7 +558,6 @@ test("Issue #917: Change relationship profile to null.", () => {
     }],
   };
   const executor = createDefaultSemanticModelProfileOperationExecutor(
-    { createIdentifier: () => (++counter).toString() },
     { entity: () => previous },
     { change: (updated, removed) => actual.push({ updated, removed }) },
   );

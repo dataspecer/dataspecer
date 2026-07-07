@@ -6,7 +6,10 @@ export interface CreateSemanticModelClassProfile extends Operation {
 
   type: typeof CREATE_SEMANTIC_MODEL_CLASS_PROFILE;
 
-  entity: Omit<SemanticModelClassProfile, "type">;
+  /**
+   * Missing properties are filled with default values during execution.
+   */
+  entity: Partial<Omit<SemanticModelClassProfile, "type">> & Pick<SemanticModelClassProfile, "id">;
 }
 
 export const CREATE_SEMANTIC_MODEL_CLASS_PROFILE = "create-class-profile";
@@ -33,11 +36,24 @@ export function isModifySemanticModelClassProfile(operation: Operation)
   return operation.type === MODIFY_SEMANTIC_MODEL_CLASS_PROFILE;
 }
 
+/**
+ * Relationship end as accepted by the create operation. Only the concept is
+ * required, all other properties are filled with default values during
+ * execution.
+ */
+export type NewSemanticModelRelationshipEndProfile =
+  Partial<SemanticModelRelationshipEndProfile> & Pick<SemanticModelRelationshipEndProfile, "concept">;
+
 export interface CreateSemanticModelRelationshipProfile extends Operation {
 
   type: typeof CREATE_SEMANTIC_MODEL_RELATIONSHIP_PROFILE;
 
-  entity: Omit<SemanticModelRelationshipProfile, "type">;
+  /**
+   * Missing properties are filled with default values during execution.
+   */
+  entity: Partial<Omit<SemanticModelRelationshipProfile, "type" | "ends">>
+    & Pick<SemanticModelRelationshipProfile, "id">
+    & { ends?: NewSemanticModelRelationshipEndProfile[] };
 
 }
 
