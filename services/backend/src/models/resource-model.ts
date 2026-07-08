@@ -1,8 +1,6 @@
 import { LOCAL_PACKAGE, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
 import { PrismaClient, Resource as PrismaResource } from "@prisma/client";
-import { v4 as uuidv4 } from 'uuid';
-import { storeModel } from './../main.ts';
 import { LocalStoreModel, ModelStore } from "./local-store-model.ts";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { CoreResource } from "@dataspecer/core/core/core-resource";
@@ -133,7 +131,7 @@ export class ResourceModel {
         await this.prismaClient.resource.delete({where: {id: prismaResource.id}});
 
         for (const storeId of Object.values(JSON.parse(prismaResource.dataStoreId))) {
-            await this.storeModel.remove(this.storeModel.getById(storeId as string));
+            await this.storeModel.remove(storeId as string);
         }
     }
 
@@ -202,51 +200,6 @@ export class ResourceModel {
     }
 
     /**
-     * Copies package or resource by IRI to another package identified by parentIri.
-     */
-    async copyRecursively(iri: string, parentIri: string, userMetadata: {}) {
-        const prismaParentResource = await this.prismaClient.resource.findFirst({where: {iri: parentIri}});
-        if (prismaParentResource === null) {
-            throw new Error("Parent resource not found.");
-        }
-
-        const copyResource = async (sourceIri: string, parentIri: string, newIri: string) => {
-            const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: sourceIri}});
-            if (prismaResource === null) {
-                throw new Error("Resource to copy not found.");
-            }
-            await this.createResource(parentIri, newIri, prismaResource.representationType, JSON.parse(prismaResource.userMetadata));
-            const newDataStoreId = {} as Record<string, string>;
-            for (const [key, store] of Object.entries(JSON.parse(prismaResource.dataStoreId))) {
-                const newStore = await this.storeModel.create();
-                newDataStoreId[key] = newStore.uuid;
-
-                const contents = await storeModel.getModelStore(store as string).getString();
-                await this.storeModel.getModelStore(newStore.uuid).setString(contents);
-            }
-            await this.prismaClient.resource.update({
-                where: {iri: newIri},
-                data: {
-                    dataStoreId: JSON.stringify(newDataStoreId)
-                }
-            });
-
-            // Copy children
-            if (prismaResource.representationType === LOCAL_PACKAGE) {
-                const subResources = await this.prismaClient.resource.findMany({where: {parentResourceId: prismaResource.id}});
-                for (const subResource of subResources) {
-                    await copyResource(subResource.iri, newIri, newIri + "/" + uuidv4());
-                }
-            }
-        }
-
-        // Copy the root
-        await copyResource(iri, parentIri, uuidv4());
-
-        await this.updateModificationTimeById(prismaParentResource.id);
-    }
-
-    /**
      * Low level function to create a resource.
      * If parent IRI is null, the resource is created as root resource.
      */
@@ -312,7 +265,7 @@ export class ResourceModel {
         if (dataStoreId[storeName]) {
             return this.storeModel.getModelStore(dataStoreId[storeName], [onUpdate]);
         } else {
-            const store = await this.storeModel.create();
+            const store = this.storeModel.create();
             dataStoreId[storeName] = store.uuid;
             await this.prismaClient.resource.update({
                 where: {id: prismaResource.id},
@@ -336,7 +289,7 @@ export class ResourceModel {
             throw new Error("Store not found.");
         }
 
-        await this.storeModel.remove(this.storeModel.getById(dataStoreId[storeName]));
+        await this.storeModel.remove(dataStoreId[storeName]);
 
         delete dataStoreId[storeName];
 
@@ -375,7 +328,7 @@ export class ResourceModel {
      * Updates modification time of the resource and all its parent packages.
      * @param iri
      */
-    async updateModificationTime(iri: string) {
+    private async updateModificationTime(iri: string) {
         const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri}});
         if (prismaResource === null) {
             throw new Error("Cannot update modification time. Resource does not exists.");
