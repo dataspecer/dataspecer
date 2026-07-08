@@ -39,7 +39,8 @@ test("Put 4 visual nodes without edges into visual model with visual diagram nod
   expect(createdVisualModel).not.toBeUndefined();
   expect(isWritableVisualModel(createdVisualModel)).toBeTruthy();
 
-  expect([...createdVisualModel.getVisualEntities().keys()].length).toBe(4);
+  // 4 nodes + 1 visual model entity
+  expect([...createdVisualModel.getVisualEntities().keys()].length).toBe(5);
 });
 
 test("Put visual nodes with edges into visual model with visual diagram node reference to it", () => {

@@ -17,7 +17,7 @@ import {
   type VisualModelOperation,
 } from "../operations.ts";
 import { VisualEntity } from "../index.ts";
-import { ModelEntity, ModelEntityType } from "../default-visual-model.ts";
+import { ModelEntity, VISUAL_MODEL_ENTITY_TYPE } from "../default-visual-model.ts";
 
 /**
  * Function to apply changes to a visual model.
@@ -111,7 +111,7 @@ export function applyOperationsToVisualModel(writeableVisualModel: EntityRecord,
         del(entity.id);
       }
     } else if (isSetLabelOperation(operation)) {
-      const mainEntity = Object.values(model).find((entity) => entity.type.includes(ModelEntityType)) as unknown as ModelEntity;
+      const mainEntity = Object.values(model).find((entity) => entity.type.includes(VISUAL_MODEL_ENTITY_TYPE)) as unknown as ModelEntity;
       const updatedEntity = {
         ...mainEntity,
         label: operation.label,
