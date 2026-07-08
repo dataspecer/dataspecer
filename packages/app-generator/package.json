@@ -3,9 +3,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "build": "tsc && node scripts/copy-assets.mjs",
+    "compile-assets": "node scripts/compile-assets.mjs",
+    "build": "tsc",
     "dev": "tsc -w",
-    "prebuild": "rimraf lib",
+    "prebuild": "rimraf lib && npm run compile-assets --silent",
+    "predev": "npm run compile-assets --silent",
+    "pretest": "npm run compile-assets --silent",
+    "prelint": "npm run compile-assets --silent",
     "test": "vitest run --pass-with-no-tests",
     "lint": "eslint . && prettier . --check",
     "lint:fix": "eslint . --fix && prettier . --write"

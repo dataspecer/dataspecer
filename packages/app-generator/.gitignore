@@ -2,5 +2,6 @@ node_modules
 lib
 .turbo
 tmp
+src/generated/
 !.prettierrc.yaml
 !.prettierignore

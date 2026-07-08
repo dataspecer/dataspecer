@@ -6,7 +6,14 @@ import prettier from 'eslint-config-prettier';
 
 export default defineConfig([
     {
-        ignores: ['lib/**', 'dist/**', 'coverage/**', 'node_modules/**', 'tmp/**'],
+        ignores: [
+            'lib/**',
+            'dist/**',
+            'coverage/**',
+            'node_modules/**',
+            'tmp/**',
+            'src/generated/**',
+        ],
     },
 
     {
@@ -47,7 +54,7 @@ export default defineConfig([
     },
 
     {
-        files: ['static/**/*.{ts,tsx}'],
+        files: ['assets/generated-app/static/**/*.{ts,tsx}'],
         extends: [tseslint.configs.recommendedTypeChecked],
         languageOptions: {
             globals: {

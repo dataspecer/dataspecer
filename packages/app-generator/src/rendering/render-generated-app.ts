@@ -1,9 +1,11 @@
 import type { GenerationModel } from '../generation-model/types.ts';
 import { FileTree } from './file-tree.ts';
 import { buildRenderContext } from './render-context.ts';
-import { join, relative } from 'node:path';
-import { readdirSync, readFileSync } from 'node:fs';
 import { Eta } from 'eta';
+import {
+  generatedAppStaticFiles,
+  generatedAppTemplates,
+} from '../generated/generated-app-assets.ts';
 
 const eta = new Eta({
   autoTrim: false,
@@ -76,24 +78,16 @@ export function renderGeneratedApp(model: GenerationModel): FileTree {
 }
 
 function renderTemplate(templateName: string, data: object): string {
-  const template = readFileSync(
-    join(import.meta.dirname, '..', 'templates', 'generated-app', templateName),
-    'utf8'
-  );
+  const template = generatedAppTemplates[templateName as keyof typeof generatedAppTemplates];
+  if (template === undefined) {
+    throw new Error(`Missing generated application template "${templateName}".`);
+  }
 
   return eta.renderString(template, data);
 }
 
 function addStaticGeneratedAppAssets(fileTree: FileTree): void {
-  const root = join(import.meta.dirname, '..', '..', 'static', 'generated-app');
-  for (const filePath of collectFiles(root)) {
-    fileTree.set(relative(root, filePath), readFileSync(filePath, 'utf8'));
+  for (const [filePath, content] of Object.entries(generatedAppStaticFiles)) {
+    fileTree.set(filePath, content);
   }
-}
-
-function collectFiles(directory: string): string[] {
-  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const entryPath = join(directory, entry.name);
-    return entry.isDirectory() ? collectFiles(entryPath) : [entryPath];
-  });
 }

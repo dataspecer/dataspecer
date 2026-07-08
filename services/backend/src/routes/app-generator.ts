@@ -8,6 +8,7 @@ import {
 } from "@dataspecer/app-generator";
 import configuration from "../configuration.ts";
 import { AssociationKind, FieldKind } from "@dataspecer/app-generator";
+import { getSpecification } from "../utils/data-specification.ts";
 
 export const generateApplicationByModelId = asyncHandler(
   async (request: express.Request, response: express.Response) => {
@@ -50,6 +51,9 @@ export const generateApplicationByModelId = asyncHandler(
           blob: blobResult,
         };
       }),
+    );
+    const newDataSpecification = await getSpecification(
+      data.dataSpecificationIri,
     );
     const result = await generateApp({
       graph: data,

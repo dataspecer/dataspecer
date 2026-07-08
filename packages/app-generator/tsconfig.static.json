@@ -6,6 +6,6 @@
     "jsx": "react-jsx",
     "types": ["vite/client"]
   },
-  "include": ["static/**/*.ts", "static/**/*.tsx"],
+  "include": ["assets/generated-app/static/**/*.ts", "assets/generated-app/static/**/*.tsx"],
   "exclude": ["node_modules"]
 }
