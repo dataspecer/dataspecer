@@ -4,7 +4,7 @@ import type {
   GeneratedOperationDescriptor,
   GenerationModel,
 } from '../generation-model/types.ts';
-import { kebabCase, upperFirst } from 'es-toolkit';
+import { deburr, kebabCase, upperFirst } from 'es-toolkit';
 
 import { FieldKind } from '../metadata/types.ts';
 
@@ -65,7 +65,7 @@ export function buildRenderContext(model: GenerationModel): GeneratedAppRenderCo
     const fields = aggregate.fields.map(toRenderedField);
     return {
       ...aggregate,
-      moduleName: kebabCase(aggregate.name),
+      moduleName: kebabCase(deburr(aggregate.name)),
       descriptorName: `${aggregate.safeName}AggregateDescriptor`,
       modelName: `${aggregate.safeName}Model`,
       schemaName: `${aggregate.safeName}LdkitSchema`,
@@ -192,14 +192,26 @@ function localDatatypeName(datatype: string | undefined): string | undefined {
 }
 
 /**
- * Turns a field path into a valid TypeScript identifier. Paths are Dataspecer technical labels,
- * can be Czech, and identifiers may contain Unicode letters, so the path splits on characters
- * outside the identifier grammar and the parts are camel-joined. Distinct paths can collide
- * ("a-b" and "a.b" both map to "aB") and are not deduplicated.
+ * Turns a field path into a valid TypeScript identifier. For example "má_e-mailovou_adresu"
+ * becomes "ma_eMailovou_adresu". Paths are Dataspecer technical labels, which can be Czech, and
+ * diacritics are stripped so the names are easy to type. Distinct paths can collide, for
+ * example "a-b" and "a.b" both become "aB". Collisions are not deduplicated.
  */
 function toPropertyName(path: string): string {
-  const parts = path.split(/[^$\p{ID_Continue}]+/u).filter(Boolean);
-  const [first = 'value', ...rest] = parts;
-  const name = [first, ...rest.map(upperFirst)].join('');
-  return /^[$_\p{ID_Start}]/u.test(name) ? name : `_${name}`;
+  // ID_Start and ID_Continue are the Unicode character sets that JavaScript identifiers are
+  // built from. ID_Start covers characters allowed in the first position, such as letters, and
+  // ID_Continue covers the remaining positions and additionally includes digits and "_".
+  // JavaScript also allows "$" anywhere and "_" in the first position.
+  const nonIdentifierChars = /[^$\p{ID_Continue}]+/u;
+  const validIdentifierChars = /^[$_\p{ID_Start}]/u;
+  const parts = deburr(path)
+    .split(nonIdentifierChars)
+    .filter((part) => part.length > 0);
+
+  if (parts.length === 0) {
+    return 'value';
+  }
+
+  const name = parts.map((part, index) => (index === 0 ? part : upperFirst(part))).join('');
+  return validIdentifierChars.test(name) ? name : `_${name}`;
 }

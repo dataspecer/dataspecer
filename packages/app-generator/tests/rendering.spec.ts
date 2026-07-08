@@ -9,6 +9,7 @@ import {
   type ApplicationNode,
   type ApplicationNodeConfig,
 } from '../src/graph/types.ts';
+import { FieldKind } from '../src/metadata/types.ts';
 import { renderGeneratedApp } from '../src/rendering/render-generated-app.ts';
 import { basicMetadata, specificationIri } from './fixtures/metadata/basic-metadata.ts';
 
@@ -57,6 +58,37 @@ describe('renderGeneratedApp', () => {
     expect(descriptor).toContain('"path": "footnotes"');
     expect(descriptor).toContain('"propertyName": "footnotes"');
     expect(tree.get('src/shared/components/field-value.ts')).toContain('formatFieldValue');
+  });
+
+  it('renders diacritic labels as ASCII module and property names', () => {
+    const graph = graphFixture();
+    graph.nodes = [node('Cíl.ReadList', 'https://example.org/aggregate/cil', Operation.ReadList)];
+    graph.edges = [];
+    const model = buildGenerationModel(graph, {
+      dataSpecificationIri: specificationIri,
+      aggregates: [
+        {
+          iri: 'https://example.org/aggregate/cil',
+          name: 'Turistický cíl',
+          classIri: 'https://example.org/class/cil',
+          fields: [
+            {
+              path: 'má_url',
+              label: 'Má URL',
+              kind: FieldKind.Primitive,
+              datatype: 'string',
+            },
+          ],
+        },
+      ],
+    });
+    const tree = renderGeneratedApp(model);
+
+    expect(tree.get('src/modules/turisticky-cil/model.ts')).toContain('ma_url?: string');
+    expect(tree.get('src/modules/turisticky-cil/descriptor.ts')).toContain(
+      '"propertyName": "ma_url"'
+    );
+    expect(tree.get('src/modules/turisticky-cil/descriptor.ts')).toContain('"label": "Má URL"');
   });
 
   it('renders routes, pages, and the RDF/LDKit read adapter', () => {

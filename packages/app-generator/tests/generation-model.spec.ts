@@ -127,6 +127,34 @@ describe('buildGenerationModel', () => {
     ]);
   });
 
+  it('strips diacritics from generated identifiers', () => {
+    const graph = graphFixture();
+    graph.nodes = [node('Cíl.ReadList', 'https://example.org/aggregate/cil', Operation.ReadList)];
+    graph.edges = [];
+    const model = buildGenerationModel(graph, {
+      dataSpecificationIri: specificationIri,
+      aggregates: [
+        {
+          iri: 'https://example.org/aggregate/cil',
+          name: 'Turistický cíl',
+          classIri: 'https://example.org/class/cil',
+          fields: [
+            {
+              path: 'má_url',
+              label: 'Má URL',
+              kind: FieldKind.Primitive,
+              datatype: 'string',
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(model.aggregates[0].safeName).toBe('TuristickyCil');
+    expect(model.operations[0].routeId).toBe('cil-read-list');
+    expect(model.operations[0].pageComponentName).toBe('CilReadListPage');
+  });
+
   it('resolves association kinds from graph association config', () => {
     const graph = graphFixture();
     const model = buildGenerationModel(graph, preparedMetadataFor(graph));

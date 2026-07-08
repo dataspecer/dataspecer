@@ -1,4 +1,4 @@
-import { kebabCase, pascalCase, sortBy } from 'es-toolkit';
+import { deburr, kebabCase, pascalCase, sortBy } from 'es-toolkit';
 
 import type { ApplicationEdge, ApplicationGraph, ApplicationNode } from '../graph/types.ts';
 import { DatasourceType, DeletePolicy, EdgeType, Operation } from '../graph/types.ts';
@@ -37,7 +37,7 @@ export function buildGenerationModel(
   return {
     app: {
       name: graph.name,
-      safeName: kebabCase(graph.name),
+      safeName: kebabCase(deburr(graph.name)),
       dataSpecificationIri: graph.dataSpecificationIri,
     },
     datasource: {
@@ -65,7 +65,7 @@ function buildAggregateDescriptor(aggregate: AggregateMetadata): GeneratedAggreg
   return {
     iri: aggregate.iri,
     name: aggregate.name,
-    safeName: pascalCase(aggregate.name),
+    safeName: pascalCase(deburr(aggregate.name)),
     classIri: aggregate.classIri,
     fields: sortBy(aggregate.fields, [(field) => field.path]).map(buildFieldDescriptor),
   };
@@ -75,14 +75,14 @@ function buildOperationDescriptor(
   node: ApplicationNode,
   aggregate: AggregateMetadata
 ): GeneratedOperationDescriptor {
-  const pageComponentName = `${pascalCase(node.id)}Page`;
+  const pageComponentName = `${pascalCase(deburr(node.id))}Page`;
   const descriptor: GeneratedOperationDescriptor = {
     id: node.id,
     nodeId: node.id,
     aggregateIri: aggregate.iri,
     aggregateName: aggregate.name,
     operation: node.operation,
-    routeId: kebabCase(node.id),
+    routeId: kebabCase(deburr(node.id)),
     pageComponentName,
     pageTitle: getPageTitle(node, aggregate),
   };
