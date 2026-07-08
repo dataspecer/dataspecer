@@ -1,0 +1,420 @@
+{
+  "name": "Application graph manager",
+  "dataSpecificationIri": "3d0e8cf1-44fe-4be0-96c6-7a1e78d983f0",
+  "datasources": [
+    {
+      "id": "local-fuseki",
+      "type": "rdf",
+      "endpoint": "http://localhost:3030/app"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "graphs.list",
+      "aggregateIri": "3ff2e6fc-3d09-44d5-ae2d-1cdeb481b3ff",
+      "operation": "ReadList",
+      "config": {
+        "pageTitle": "Aplika\u010dn\u00ed grafy"
+      }
+    },
+    {
+      "id": "graphs.detail",
+      "aggregateIri": "6d8245e1-0d88-41a4-bc7b-cf576e9eeda9",
+      "operation": "ReadDetail",
+      "config": {
+        "pageTitle": "Detail grafu"
+      }
+    },
+    {
+      "id": "graphs.create",
+      "aggregateIri": "6d8245e1-0d88-41a4-bc7b-cf576e9eeda9",
+      "operation": "Create",
+      "config": {
+        "pageTitle": "Nov\u00fd graf",
+        "associations": {
+          "data_sources": "aggregation",
+          "edges": "composition",
+          "nodes": "composition",
+          "nodes.operation": "aggregation"
+        }
+      }
+    },
+    {
+      "id": "graphs.update",
+      "aggregateIri": "6d8245e1-0d88-41a4-bc7b-cf576e9eeda9",
+      "operation": "Update",
+      "config": {
+        "pageTitle": "Upravit graf",
+        "associations": {
+          "data_sources": "aggregation",
+          "edges": "composition",
+          "nodes": "composition",
+          "nodes.operation": "aggregation"
+        }
+      }
+    },
+    {
+      "id": "graphs.delete",
+      "aggregateIri": "6d8245e1-0d88-41a4-bc7b-cf576e9eeda9",
+      "operation": "Delete",
+      "config": {
+        "delete": {
+          "edges": "cascade",
+          "nodes": "cascade"
+        }
+      }
+    },
+    {
+      "id": "nodes.list",
+      "aggregateIri": "b188ced5-20f0-4755-bceb-0307048d98b0",
+      "operation": "ReadList",
+      "config": {
+        "pageTitle": "Uzly"
+      }
+    },
+    {
+      "id": "nodes.detail",
+      "aggregateIri": "d93c680b-ae95-419a-9c82-374078f995d3",
+      "operation": "ReadDetail",
+      "config": {
+        "pageTitle": "Detail uzlu"
+      }
+    },
+    {
+      "id": "nodes.create",
+      "aggregateIri": "d93c680b-ae95-419a-9c82-374078f995d3",
+      "operation": "Create",
+      "config": {
+        "pageTitle": "Nový uzel",
+        "associations": {
+          "graph": "aggregation",
+          "operation": "aggregation",
+          "node_configuration": "composition",
+          "node_configuration.association_configurations": "composition",
+          "node_configuration.association_configurations.association_type": "aggregation",
+          "node_configuration.delete_configurations": "composition",
+          "node_configuration.delete_configurations.delete_type": "aggregation"
+        }
+      }
+    },
+    {
+      "id": "nodes.update",
+      "aggregateIri": "d93c680b-ae95-419a-9c82-374078f995d3",
+      "operation": "Update",
+      "config": {
+        "pageTitle": "Upravit uzel",
+        "associations": {
+          "operation": "aggregation",
+          "node_configuration": "composition",
+          "node_configuration.association_configurations": "composition",
+          "node_configuration.association_configurations.association_type": "aggregation",
+          "node_configuration.delete_configurations": "composition",
+          "node_configuration.delete_configurations.delete_type": "aggregation"
+        }
+      }
+    },
+    {
+      "id": "nodes.delete",
+      "aggregateIri": "d93c680b-ae95-419a-9c82-374078f995d3",
+      "operation": "Delete",
+      "config": {
+        "delete": {
+          "node_configuration": "cascade",
+          "node_configuration.association_configurations": "cascade",
+          "node_configuration.delete_configurations": "cascade"
+        }
+      }
+    },
+    {
+      "id": "edges.list",
+      "aggregateIri": "ed74dd6b-6abd-4de8-8534-ac5740ca1ea8",
+      "operation": "ReadList",
+      "config": {
+        "pageTitle": "Hrany"
+      }
+    },
+    {
+      "id": "edges.detail",
+      "aggregateIri": "2991e32c-ee91-43ab-bd1b-bc691e1d606a",
+      "operation": "ReadDetail",
+      "config": {
+        "pageTitle": "Detail hrany"
+      }
+    },
+    {
+      "id": "edges.create",
+      "aggregateIri": "2991e32c-ee91-43ab-bd1b-bc691e1d606a",
+      "operation": "Create",
+      "config": {
+        "pageTitle": "Nová hrana",
+        "associations": {
+          "graph": "aggregation",
+          "edge_type": "aggregation",
+          "source_node": "aggregation",
+          "target_node": "aggregation"
+        }
+      }
+    },
+    {
+      "id": "datasources.list",
+      "aggregateIri": "c7374bca-3b5f-4ceb-85d0-36f3d59f6083",
+      "operation": "ReadList",
+      "config": {
+        "pageTitle": "Datov\u00e9 zdroje"
+      }
+    },
+    {
+      "id": "datasources.detail",
+      "aggregateIri": "ed53e62e-04d1-4856-81f6-22284dffe2f7",
+      "operation": "ReadDetail",
+      "config": {
+        "pageTitle": "Detail datov\u00e9ho zdroje"
+      }
+    },
+    {
+      "id": "datasources.create",
+      "aggregateIri": "ed53e62e-04d1-4856-81f6-22284dffe2f7",
+      "operation": "Create",
+      "config": {
+        "pageTitle": "Nov\u00fd datov\u00fd zdroj",
+        "associations": {
+          "data_source_type": "aggregation"
+        }
+      }
+    },
+    {
+      "id": "datasources.update",
+      "aggregateIri": "ed53e62e-04d1-4856-81f6-22284dffe2f7",
+      "operation": "Update",
+      "config": {
+        "pageTitle": "Upravit datov\u00fd zdroj",
+        "associations": {
+          "data_source_type": "aggregation"
+        }
+      }
+    },
+    {
+      "id": "datasources.delete",
+      "aggregateIri": "ed53e62e-04d1-4856-81f6-22284dffe2f7",
+      "operation": "Delete"
+    }
+  ],
+  "edges": [
+    {
+      "id": "graphs.list-graphs.detail",
+      "source": "graphs.list",
+      "target": "graphs.detail",
+      "type": "transition"
+    },
+    {
+      "id": "graphs.list-graphs.create",
+      "source": "graphs.list",
+      "target": "graphs.create",
+      "type": "transition"
+    },
+    {
+      "id": "graphs.list-graphs.update",
+      "source": "graphs.list",
+      "target": "graphs.update",
+      "type": "transition"
+    },
+    {
+      "id": "graphs.list-graphs.delete",
+      "source": "graphs.list",
+      "target": "graphs.delete",
+      "type": "transition"
+    },
+    {
+      "id": "graphs.detail-graphs.list",
+      "source": "graphs.detail",
+      "target": "graphs.list",
+      "type": "transition"
+    },
+    {
+      "id": "graphs.detail-graphs.update",
+      "source": "graphs.detail",
+      "target": "graphs.update",
+      "type": "transition"
+    },
+    {
+      "id": "graphs.detail-graphs.delete",
+      "source": "graphs.detail",
+      "target": "graphs.delete",
+      "type": "transition"
+    },
+    {
+      "id": "graphs.detail-nodes.detail",
+      "source": "graphs.detail",
+      "target": "nodes.detail",
+      "type": "transition"
+    },
+    {
+      "id": "graphs.detail-edges.detail",
+      "source": "graphs.detail",
+      "target": "edges.detail",
+      "type": "transition"
+    },
+    {
+      "id": "graphs.detail-datasources.detail",
+      "source": "graphs.detail",
+      "target": "datasources.detail",
+      "type": "transition"
+    },
+    {
+      "id": "graphs.create-redirect",
+      "source": "graphs.create",
+      "target": "graphs.list",
+      "type": "redirect"
+    },
+    {
+      "id": "graphs.update-redirect",
+      "source": "graphs.update",
+      "target": "graphs.detail",
+      "type": "redirect"
+    },
+    {
+      "id": "graphs.delete-redirect",
+      "source": "graphs.delete",
+      "target": "graphs.list",
+      "type": "redirect"
+    },
+    {
+      "id": "nodes.list-nodes.detail",
+      "source": "nodes.list",
+      "target": "nodes.detail",
+      "type": "transition"
+    },
+    {
+      "id": "nodes.list-nodes.create",
+      "source": "nodes.list",
+      "target": "nodes.create",
+      "type": "transition"
+    },
+    {
+      "id": "nodes.create-redirect",
+      "source": "nodes.create",
+      "target": "nodes.list",
+      "type": "redirect"
+    },
+    {
+      "id": "nodes.list-nodes.update",
+      "source": "nodes.list",
+      "target": "nodes.update",
+      "type": "transition"
+    },
+    {
+      "id": "nodes.detail-nodes.update",
+      "source": "nodes.detail",
+      "target": "nodes.update",
+      "type": "transition"
+    },
+    {
+      "id": "nodes.detail-nodes.delete",
+      "source": "nodes.detail",
+      "target": "nodes.delete",
+      "type": "transition"
+    },
+    {
+      "id": "nodes.update-redirect",
+      "source": "nodes.update",
+      "target": "nodes.detail",
+      "type": "redirect"
+    },
+    {
+      "id": "nodes.delete-redirect",
+      "source": "nodes.delete",
+      "target": "nodes.list",
+      "type": "redirect"
+    },
+    {
+      "id": "edges.list-edges.detail",
+      "source": "edges.list",
+      "target": "edges.detail",
+      "type": "transition"
+    },
+    {
+      "id": "edges.list-edges.create",
+      "source": "edges.list",
+      "target": "edges.create",
+      "type": "transition"
+    },
+    {
+      "id": "edges.create-redirect",
+      "source": "edges.create",
+      "target": "edges.list",
+      "type": "redirect"
+    },
+    {
+      "id": "edges.list-nodes.detail",
+      "source": "edges.list",
+      "target": "nodes.detail",
+      "type": "transition"
+    },
+    {
+      "id": "edges.detail-nodes.detail",
+      "source": "edges.detail",
+      "target": "nodes.detail",
+      "type": "transition"
+    },
+    {
+      "id": "datasources.list-datasources.detail",
+      "source": "datasources.list",
+      "target": "datasources.detail",
+      "type": "transition"
+    },
+    {
+      "id": "datasources.list-datasources.create",
+      "source": "datasources.list",
+      "target": "datasources.create",
+      "type": "transition"
+    },
+    {
+      "id": "datasources.list-datasources.update",
+      "source": "datasources.list",
+      "target": "datasources.update",
+      "type": "transition"
+    },
+    {
+      "id": "datasources.list-datasources.delete",
+      "source": "datasources.list",
+      "target": "datasources.delete",
+      "type": "transition"
+    },
+    {
+      "id": "datasources.detail-datasources.list",
+      "source": "datasources.detail",
+      "target": "datasources.list",
+      "type": "transition"
+    },
+    {
+      "id": "datasources.detail-datasources.update",
+      "source": "datasources.detail",
+      "target": "datasources.update",
+      "type": "transition"
+    },
+    {
+      "id": "datasources.detail-datasources.delete",
+      "source": "datasources.detail",
+      "target": "datasources.delete",
+      "type": "transition"
+    },
+    {
+      "id": "datasources.create-redirect",
+      "source": "datasources.create",
+      "target": "datasources.list",
+      "type": "redirect"
+    },
+    {
+      "id": "datasources.update-redirect",
+      "source": "datasources.update",
+      "target": "datasources.detail",
+      "type": "redirect"
+    },
+    {
+      "id": "datasources.delete-redirect",
+      "source": "datasources.delete",
+      "target": "datasources.list",
+      "type": "redirect"
+    }
+  ]
+}
