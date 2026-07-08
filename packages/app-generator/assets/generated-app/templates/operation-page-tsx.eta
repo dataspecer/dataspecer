@@ -4,6 +4,7 @@ import { CreateForm } from "../shared/components/create-form.tsx";
 import { DetailView } from "../shared/components/detail-view.tsx";
 import { ListView } from "../shared/components/list-view.tsx";
 import { PlaceholderOperationView } from "../shared/components/placeholder-operation-view.tsx";
+import { UpdateForm } from "../shared/components/update-form.tsx";
 import { readRouteEntityId } from "../shared/navigation/navigation.ts";
 import { invokeOperation } from "../shared/operations/operation-strategy.ts";
 import { dataSource, operations } from "../generated/operation-registry.ts";
@@ -106,8 +107,21 @@ export function <%= it.page.componentName %>() {<% if (it.page.operation.operati
       instanceBaseIri={instanceBaseIri}
     />
   );
+<% } else if (it.page.operation.operation === "Update") { %>
+  const id = readRouteEntityId(window.location.search);
+
+  return (
+    <UpdateForm
+      title={operation.title}
+      aggregate={operation.aggregate}
+      strategy={operation.strategy}
+      dataSource={dataSource}
+      navigation={operation.navigation}
+      id={id}
+    />
+  );
 <% } else { %>
-  // TODO: Implement Update forms and the Delete confirmation page with redirects
+  // TODO: Implement the Delete confirmation page with redirects
   return <PlaceholderOperationView title={operation.title} operation={operation.operation} />;
 <% } -%>
 }

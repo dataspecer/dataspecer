@@ -56,19 +56,27 @@ export class RdfLdkitDataSource implements DataSource {
   async create<TModel extends EntityModel>(args: MutationArgs<TModel>): Promise<TModel> {
     // LDKit's insert ignores @inverse and would write an inverse relation forward, so inverse
     // fields are kept out of the lens payload and their reversed triples are written separately.
-    const inverseFields = args.aggregate.fields.filter(
-      (field) => field.isReverse && field.propertyIri
-    );
-    const forwardPayload = { ...args.payload } as Record<string, unknown>;
-    for (const field of inverseFields) {
-      delete forwardPayload[field.propertyName];
-    }
+    const inverseFields = inverseWritableFields(args.aggregate.fields);
+    const forwardPayload = omitFields(args.payload, inverseFields);
 
     const lens = this.buildLens(args.aggregate);
     const entity = denormalizeIds(forwardPayload) as Parameters<typeof lens.insert>[0];
     await lens.insert(entity);
     await this.writeInverseLinks(inverseFields, args.payload);
     return args.payload;
+  }
+
+  async update<TModel extends EntityModel>(args: IdentifiedMutationArgs<TModel>): Promise<TModel> {
+    const payload = { ...args.payload, id: args.id };
+    const inverseFields = inverseWritableFields(args.aggregate.fields);
+    const forwardPayload = omitFields(payload, inverseFields);
+
+    const lens = this.buildLens(args.aggregate);
+    const entity = denormalizeIds(forwardPayload) as Parameters<typeof lens.update>[0];
+    await lens.update(entity);
+    await this.deleteInverseLinks(inverseFields, args.id);
+    await this.writeInverseLinks(inverseFields, payload);
+    return payload;
   }
 
   // Writes an inverse relation as `<target> <predicate> <entity>`, the direction LDKit reads but
@@ -95,13 +103,22 @@ export class RdfLdkitDataSource implements DataSource {
     await new QueryEngine().queryVoid(`INSERT DATA { ${triples.join(' . ')} }`, this.context());
   }
 
-  // TODO: Implement update and delete (including recursive composition save order and cascade deletes)
-  async update<TModel extends EntityModel>(_args: IdentifiedMutationArgs<TModel>): Promise<TModel> {
-    return Promise.reject(
-      new Error('Update is not implemented by the first prototype RDF datasource.')
-    );
+  private async deleteInverseLinks(
+    fields: readonly FieldDescriptor[],
+    entityId: string
+  ): Promise<void> {
+    for (const field of fields) {
+      if (!field.propertyIri) {
+        continue;
+      }
+      await new QueryEngine().queryVoid(
+        `DELETE WHERE { ?target <${field.propertyIri}> <${entityId}> }`,
+        this.context()
+      );
+    }
   }
 
+  // TODO: Implement delete, including recursive composition cascade.
   async delete<TModel extends EntityModel>(_args: DeleteArgs<TModel>): Promise<void> {
     return Promise.reject(
       new Error('Delete is not implemented by the first prototype RDF datasource.')
@@ -147,6 +164,21 @@ export class RdfLdkitDataSource implements DataSource {
       sources: [this.endpoint],
     };
   }
+}
+
+function inverseWritableFields(fields: readonly FieldDescriptor[]): FieldDescriptor[] {
+  return fields.filter((field) => field.isReverse && field.propertyIri);
+}
+
+function omitFields<TModel extends EntityModel>(
+  payload: TModel,
+  fields: readonly FieldDescriptor[]
+): Record<string, unknown> {
+  const result = { ...payload } as Record<string, unknown>;
+  for (const field of fields) {
+    delete result[field.propertyName];
+  }
+  return result;
 }
 
 // Extracts the target IRIs from a reference field value, which is an entity IRI object or an
