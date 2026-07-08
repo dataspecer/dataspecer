@@ -1,0 +1,3 @@
+// Base IRI Create forms prefill when generating a new entity IRI. Empty when the application graph
+// carries no absolute data specification IRI, in which case forms generate a urn:uuid instead.
+export const instanceBaseIri = <%~ it.json(it.instanceBaseIri) %>;

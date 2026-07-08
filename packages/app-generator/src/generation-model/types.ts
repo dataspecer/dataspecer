@@ -77,6 +77,8 @@ export interface GeneratedOperationNavigation {
   pageActions: GeneratedNavigationActionDescriptor[];
   rowActions: GeneratedNavigationActionDescriptor[];
   associationActions: GeneratedAssociationNavigationActionDescriptor[];
+  /** Where a form navigates after a successful write, for example a Create back to its list. */
+  successRedirect?: GeneratedNavigationActionDescriptor;
 }
 
 export interface GeneratedNavigationActionDescriptor {

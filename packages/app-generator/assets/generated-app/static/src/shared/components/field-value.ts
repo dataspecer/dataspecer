@@ -57,6 +57,11 @@ export function formatPrimitiveValue(value: unknown): string {
     if (languageValue !== null) {
       return languageValue;
     }
+    // A reference resolves to an entity IRI object, so fall back to its id.
+    const id = (value as { id?: unknown }).id;
+    if (typeof id === 'string') {
+      return id;
+    }
   }
   return JSON.stringify(value);
 }

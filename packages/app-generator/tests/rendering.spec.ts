@@ -224,7 +224,66 @@ describe('renderGeneratedApp', () => {
     expect(schema).toContain('"@type": "https://example.org/class/contact"');
     expect(schema).toContain('"@array": true');
   });
+
+  it('emits a form control for each editable primitive datatype', () => {
+    const graph = graphFixture();
+    graph.nodes = [node('Widget.Create', 'https://example.org/aggregate/widget', Operation.Create)];
+    graph.edges = [];
+    const model = buildGenerationModel(graph, {
+      dataSpecificationIri: specificationIri,
+      aggregates: [
+        {
+          iri: 'https://example.org/aggregate/widget',
+          name: 'Widget',
+          classIri: 'https://example.org/class/widget',
+          fields: [
+            primitive('label', 'http://www.w3.org/2001/XMLSchema#string'),
+            primitive('active', 'http://www.w3.org/2001/XMLSchema#boolean'),
+            primitive('count', 'http://www.w3.org/2001/XMLSchema#integer'),
+            primitive('releasedOn', 'http://www.w3.org/2001/XMLSchema#date'),
+            primitive('createdAt', 'http://www.w3.org/2001/XMLSchema#dateTime'),
+          ],
+        },
+      ],
+    });
+    const descriptor = renderGeneratedApp(model).get('src/modules/widget/descriptor.ts');
+
+    expect(descriptor).toContain('"formControl": "text"');
+    expect(descriptor).toContain('"formControl": "checkbox"');
+    expect(descriptor).toContain('"formControl": "number"');
+    expect(descriptor).toContain('"formControl": "date"');
+    expect(descriptor).toContain('"formControl": "datetime"');
+  });
+
+  it('redirects a create form back to its class list on success', () => {
+    const model = buildGenerationModel(graphFixture(), basicMetadata);
+    const createOperation = model.operations.find(
+      (operation) => operation.operation === Operation.Create
+    );
+    const listOperation = model.operations.find(
+      (operation) => operation.operation === Operation.ReadList
+    );
+
+    // Create uses the book-form aggregate and the list uses book-list, so the redirect can only
+    // be found by their shared class rather than by aggregate IRI.
+    expect(createOperation?.navigation.successRedirect?.targetPath).toBe(
+      `/${listOperation?.routeId}`
+    );
+    expect(createOperation?.navigation.successRedirect?.label).toBe('Back to list');
+    // Read operations are not forms, so they have no success redirect.
+    expect(listOperation?.navigation.successRedirect).toBeUndefined();
+  });
 });
+
+function primitive(path: string, datatype: string) {
+  return {
+    path,
+    label: path,
+    kind: FieldKind.Primitive,
+    propertyIri: `https://example.org/p/${path}`,
+    datatype,
+  };
+}
 
 function graphFixture(): ApplicationGraph {
   return {

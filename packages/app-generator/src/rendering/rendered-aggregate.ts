@@ -5,7 +5,7 @@ import type {
 
 import { FieldKind } from '../metadata/types.ts';
 import { toModuleName, toNestedModelTypeName, toPropertyName } from '../utils/naming.ts';
-import { datatypeMapping } from './datatypes.ts';
+import { datatypeMapping, type FormControl } from './datatypes.ts';
 import { hasNestedSchema } from './field-shape.ts';
 import { buildLdkitSchema, toLdkitSchemaSource } from './ldkit-schema.ts';
 
@@ -36,6 +36,8 @@ export interface RenderedField extends GeneratedFieldDescriptor {
   modelDeclaration: string;
   /** TypeScript expression producing the default value for required fields. */
   emptyValue: string;
+  /** Form control for an editable primitive field. Absent for associations. */
+  formControl?: FormControl;
   fields?: RenderedField[];
 }
 
@@ -53,6 +55,7 @@ interface DescriptorField {
   required: boolean;
   propertyIri?: string;
   datatype?: string;
+  formControl?: FormControl;
   targetAggregateIri?: string;
   targetClassIri?: string;
   associationKind?: string;
@@ -91,6 +94,8 @@ function toRenderedField(
     ? toNestedModelTypeName(aggregateTypeName, fieldPath)
     : undefined;
   const modelType = toModelType(field, children, nestedModelName);
+  const formControl =
+    field.kind === FieldKind.Primitive ? datatypeMapping(field.datatype).formControl : undefined;
   return {
     ...field,
     fields: children,
@@ -99,6 +104,7 @@ function toRenderedField(
     modelType,
     modelDeclaration: toModelDeclaration(propertyName, field.required, modelType),
     emptyValue: toEmptyValue(field, children),
+    ...(formControl ? { formControl } : {}),
   };
 }
 
@@ -129,6 +135,7 @@ function toDescriptorField(field: RenderedField): DescriptorField {
     required: field.required,
     ...(field.propertyIri ? { propertyIri: field.propertyIri } : {}),
     ...(field.datatype ? { datatype: field.datatype } : {}),
+    ...(field.formControl ? { formControl: field.formControl } : {}),
     ...(field.targetAggregateIri ? { targetAggregateIri: field.targetAggregateIri } : {}),
     ...(field.targetClassIri ? { targetClassIri: field.targetClassIri } : {}),
     ...(field.associationKind ? { associationKind: field.associationKind } : {}),
@@ -143,7 +150,15 @@ function toModelType(
   nestedModelName?: string
 ): string {
   if (field.kind === FieldKind.Association) {
-    const baseType = hasNestedSchema(field) && children ? (nestedModelName as string) : 'string';
+    let baseType: string;
+    if (hasNestedSchema(field) && children) {
+      baseType = nestedModelName as string;
+    } else if (field.targetClassIri) {
+      // A reference expands under @schema, so it reads back as an entity IRI object.
+      baseType = '{ id: string }';
+    } else {
+      baseType = 'string';
+    }
     return field.many ? `${baseType}[]` : baseType;
   }
 
@@ -160,17 +175,21 @@ function toEmptyValue(field: GeneratedFieldDescriptor, children?: RenderedField[
     if (field.many) {
       return '[]';
     }
-    if (!(hasNestedSchema(field) && children)) {
-      // A reference is an IRI string.
-      return '""';
+    if (hasNestedSchema(field) && children) {
+      const requiredChildren = children.filter((child) => child.required);
+      if (requiredChildren.length === 0) {
+        return '{}';
+      }
+      return `{ ${requiredChildren
+        .map((child) => `${child.propertyName}: ${child.emptyValue}`)
+        .join(', ')} }`;
     }
-    const requiredChildren = children.filter((child) => child.required);
-    if (requiredChildren.length === 0) {
-      return '{}';
+    if (field.targetClassIri) {
+      // A reference reads and writes as an entity IRI object.
+      return "{ id: '' }";
     }
-    return `{ ${requiredChildren
-      .map((child) => `${child.propertyName}: ${child.emptyValue}`)
-      .join(', ')} }`;
+    // A bare reference with no target class is an IRI string.
+    return '""';
   }
 
   const mapping = datatypeMapping(field.datatype);

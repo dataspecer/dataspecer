@@ -173,3 +173,91 @@ section h2 {
     border: 1px solid #f0b6b6;
     border-radius: 4px;
 }
+
+/* Create form: label/control rows with inline validation messages. */
+.entity-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 42rem;
+}
+
+.form-field {
+    display: grid;
+    grid-template-columns: minmax(8rem, max-content) 1fr;
+    gap: 0.25rem 1rem;
+    align-items: baseline;
+}
+
+.form-label {
+    font-weight: 600;
+}
+
+.form-required {
+    color: #922;
+}
+
+.form-control {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.form-control input[type='text'],
+.form-control input[type='number'],
+.form-control input[type='date'],
+.form-control input[type='datetime-local'],
+.form-control select {
+    padding: 0.35rem 0.5rem;
+    font: inherit;
+    border: 1px solid #c7ccd3;
+    border-radius: 4px;
+}
+
+.form-control input[type='checkbox'] {
+    justify-self: start;
+}
+
+.form-control input:disabled {
+    color: #8a9099;
+    background: #f2f4f7;
+}
+
+.field-note {
+    font-size: 0.85rem;
+    color: #8a9099;
+}
+
+.form-error {
+    font-size: 0.85rem;
+    color: #922;
+}
+
+.form-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.form-actions button {
+    padding: 0.4rem 1rem;
+    font: inherit;
+    background: #f0f2f5;
+    border: 1px solid #c7ccd3;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.form-actions button:hover:not(:disabled) {
+    background: #e2e6ec;
+}
+
+.form-actions button:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.form-cancel {
+    font-size: 0.9rem;
+}

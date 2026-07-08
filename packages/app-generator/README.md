@@ -10,3 +10,4 @@ application graph.
 - TODO: Render reverse relations as read-only fields in detail views
 - TODO: Codelists (application devs fill them in manually)
 - TODO: multiple language support?
+- TODO: Create - editable nested composition sub-forms, repeating (`many`) fields, validation beyond required fields

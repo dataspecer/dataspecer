@@ -66,7 +66,56 @@ export function buildOperationNavigation(
     }
   }
 
-  return { pageActions, rowActions, associationActions };
+  const successRedirect = buildSuccessRedirect(
+    sourceOperation,
+    sourceAggregate,
+    operationById,
+    routeByOperationId,
+    aggregateByIri
+  );
+
+  return {
+    pageActions,
+    rowActions,
+    associationActions,
+    ...(successRedirect ? { successRedirect } : {}),
+  };
+}
+
+// A write form returns to its class's list once it succeeds. The list is matched by class rather
+// than by aggregate IRI, because a list projection and a detail structure are distinct aggregates
+// of the same class, and matched without a graph edge so a Create or Update page always has a
+// destination.
+function buildSuccessRedirect(
+  sourceOperation: GeneratedOperationDescriptor,
+  sourceAggregate: GeneratedAggregateDescriptor,
+  operationById: ReadonlyMap<string, GeneratedOperationDescriptor>,
+  routeByOperationId: ReadonlyMap<string, GeneratedRouteDescriptor>,
+  aggregateByIri: ReadonlyMap<string, GeneratedAggregateDescriptor>
+): GeneratedNavigationActionDescriptor | undefined {
+  if (
+    sourceOperation.operation !== Operation.Create &&
+    sourceOperation.operation !== Operation.Update
+  ) {
+    return undefined;
+  }
+
+  const listOperation = [...operationById.values()].find(
+    (candidate) =>
+      candidate.operation === Operation.ReadList &&
+      aggregateByIri.get(candidate.aggregateIri)?.classIri === sourceAggregate.classIri
+  );
+  const listRoute = listOperation && routeByOperationId.get(listOperation.id);
+  if (!listOperation || !listRoute) {
+    return undefined;
+  }
+
+  return {
+    id: `${sourceOperation.id}:success:${listOperation.id}`,
+    label: 'Back to list',
+    targetPath: listRoute.path,
+    requiresEntityId: listRoute.requiresEntityId,
+  };
 }
 
 function buildNavigationAction(

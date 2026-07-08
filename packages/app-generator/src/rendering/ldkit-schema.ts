@@ -4,13 +4,12 @@ import type { RenderedField } from './rendered-aggregate.ts';
 
 import { FieldKind } from '../metadata/types.ts';
 import { datatypeMapping } from './datatypes.ts';
-import { hasNestedSchema } from './field-shape.ts';
 
 /**
  * Builds the LDKit schema for an aggregate from its rendered fields. The class IRI becomes the
- * entity @type, primitives use their datatype, associations with inline fields expand under
- * @schema, and associations without inline fields stay references that resolve to the target IRI.
- * Fields without a property IRI cannot be queried and are omitted.
+ * entity @type, primitives use their datatype, and associations with a target class expand under
+ * @schema (with inline fields when present, otherwise just the target @type) so they read and
+ * write as resource IRIs. Fields without a property IRI cannot be queried and are omitted.
  */
 export function buildLdkitSchema(classIri: string, fields: RenderedField[]): Schema {
   const schema: Schema = { '@type': classIri };
@@ -43,10 +42,13 @@ function buildLdkitProperty(field: RenderedField): Property {
   }
 
   if (field.kind === FieldKind.Association) {
-    if (hasNestedSchema(field)) {
-      property['@schema'] = buildLdkitSchema(field.targetClassIri as string, field.fields ?? []);
+    if (field.targetClassIri) {
+      // Both inline-nested associations and plain references expand under @schema, so LDKit reads
+      // and writes them as resource IRIs rather than string literals. A reference has no nested
+      // fields, so its schema carries only the target @type.
+      property['@schema'] = buildLdkitSchema(field.targetClassIri, field.fields ?? []);
     }
-    // Associations without a nested schema stay references, so LDKit returns the target IRI.
+    // An association without a target class stays a bare reference with no @type.
   } else {
     const mapping = datatypeMapping(field.datatype);
     if (mapping.multilang) {

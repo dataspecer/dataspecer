@@ -28,6 +28,7 @@ export function renderGeneratedApp(model: GenerationModel): FileTree {
     'src/data-source/create-data-source.ts',
     renderTemplate('create-data-source-ts.eta', context)
   );
+  tree.set('src/generated/app-config.ts', renderTemplate('app-config-ts.eta', context));
   tree.set(
     'src/generated/operation-registry.ts',
     renderTemplate('operation-registry-ts.eta', context)

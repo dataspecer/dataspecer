@@ -16,6 +16,9 @@ type LdkitDatatype = keyof SupportedDataTypes;
  * to value map, the same signal Dataspecer uses when it emits @container @language.
  */
 
+/** The HTML form control a primitive datatype maps to, consumed by the generated Create form. */
+export type FormControl = 'text' | 'number' | 'date' | 'datetime' | 'checkbox';
+
 export interface DatatypeMapping {
   /**
    * The datatype to emit as the LDKit @type, typed as one of the datatypes LDKit can parse.
@@ -29,10 +32,17 @@ export interface DatatypeMapping {
   tsType: string;
   /** Expression for an empty value, used by the generated createEmpty helpers. */
   emptyValue: string;
+  /** The form control the datatype maps to. Undefined when the datatype has no direct control. */
+  formControl?: FormControl;
 }
 
-function literal(ldkitType: LdkitDatatype, tsType: string, emptyValue: string): DatatypeMapping {
-  return { ldkitType, tsType, emptyValue };
+function literal(
+  ldkitType: LdkitDatatype,
+  tsType: string,
+  emptyValue: string,
+  formControl: FormControl
+): DatatypeMapping {
+  return { ldkitType, tsType, emptyValue, formControl };
 }
 
 const MULTILANG: DatatypeMapping = {
@@ -78,31 +88,33 @@ const STRING_TYPES = [
 
 const TABLE = new Map<string, DatatypeMapping>();
 for (const iri of NUMBER_TYPES) {
-  TABLE.set(iri, literal(iri, 'number', '0'));
+  TABLE.set(iri, literal(iri, 'number', '0', 'number'));
 }
 for (const iri of DATE_TYPES) {
-  TABLE.set(iri, literal(iri, 'Date', 'new Date()'));
+  TABLE.set(iri, literal(iri, 'Date', 'new Date()', 'date'));
 }
 for (const iri of STRING_TYPES) {
-  TABLE.set(iri, literal(iri, 'string', '""'));
+  TABLE.set(iri, literal(iri, 'string', '""', 'text'));
 }
-TABLE.set(xsd.boolean, literal(xsd.boolean, 'boolean', 'false'));
+// xsd.dateTime carries a time component, so it maps to a datetime control rather than a date.
+TABLE.set(xsd.dateTime, literal(xsd.dateTime, 'Date', 'new Date()', 'datetime'));
+TABLE.set(xsd.boolean, literal(xsd.boolean, 'boolean', 'false', 'checkbox'));
 
 // OFN base types map onto their xsd equivalents, which LDKit understands.
-TABLE.set(OFN.boolean, literal(xsd.boolean, 'boolean', 'false'));
-TABLE.set(OFN.date, literal(xsd.date, 'Date', 'new Date()'));
-TABLE.set(OFN.time, literal(xsd.time, 'string', '""'));
-TABLE.set(OFN.dateTime, literal(xsd.dateTime, 'Date', 'new Date()'));
-TABLE.set(OFN.integer, literal(xsd.integer, 'number', '0'));
-TABLE.set(OFN.decimal, literal(xsd.decimal, 'number', '0'));
-TABLE.set(OFN.url, literal(xsd.anyURI, 'string', '""'));
-TABLE.set(OFN.string, literal(xsd.string, 'string', '""'));
+TABLE.set(OFN.boolean, literal(xsd.boolean, 'boolean', 'false', 'checkbox'));
+TABLE.set(OFN.date, literal(xsd.date, 'Date', 'new Date()', 'date'));
+TABLE.set(OFN.time, literal(xsd.time, 'string', '""', 'text'));
+TABLE.set(OFN.dateTime, literal(xsd.dateTime, 'Date', 'new Date()', 'datetime'));
+TABLE.set(OFN.integer, literal(xsd.integer, 'number', '0', 'number'));
+TABLE.set(OFN.decimal, literal(xsd.decimal, 'number', '0', 'number'));
+TABLE.set(OFN.url, literal(xsd.anyURI, 'string', '""', 'text'));
+TABLE.set(OFN.string, literal(xsd.string, 'string', '""', 'text'));
 // OFN.rdfLangString is the rdf:langString IRI, so this also covers a raw langString datatype.
 TABLE.set(OFN.text, MULTILANG);
 TABLE.set(OFN.rdfLangString, MULTILANG);
 
 // Unrecognized and generic literal datatypes such as rdfs:Literal read as plain strings.
-const FALLBACK: DatatypeMapping = { tsType: 'string', emptyValue: '""' };
+const FALLBACK: DatatypeMapping = { tsType: 'string', emptyValue: '""', formControl: 'text' };
 
 export function datatypeMapping(datatype: string | undefined): DatatypeMapping {
   return (datatype && TABLE.get(datatype)) || FALLBACK;

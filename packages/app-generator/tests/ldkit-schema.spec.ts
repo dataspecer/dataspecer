@@ -151,7 +151,7 @@ describe('LDKit schema generation', () => {
     });
   });
 
-  it('keeps associations without inline fields as references', () => {
+  it('expands a reference under @schema so it reads and writes as an IRI', () => {
     const schema = schemaFor([
       {
         path: 'author',
@@ -164,8 +164,37 @@ describe('LDKit schema generation', () => {
         required: true,
       },
     ]);
-    // A reference carries no @type, so LDKit resolves it to the target IRI string.
-    expect(schema.author).toEqual({ '@id': 'https://example.org/p/author', '@optional': true });
+    // A reference carries a @schema with only the target @type, so LDKit treats the value as a
+    // resource IRI rather than a string literal on both read and write.
+    expect(schema.author).toEqual({
+      '@id': 'https://example.org/p/author',
+      '@schema': { '@type': 'https://example.org/class/author' },
+      '@optional': true,
+    });
+  });
+
+  it('marks a reverse reference @inverse so LDKit reads it backwards', () => {
+    const schema = schemaFor([
+      {
+        path: 'graph',
+        label: 'Graph',
+        kind: FieldKind.Association,
+        propertyIri: 'https://example.org/p/nodes',
+        targetClassIri: 'https://example.org/class/graph',
+        isReverse: true,
+        many: false,
+        required: false,
+      },
+    ]);
+    // @inverse flips the read direction; the @schema keeps the value a resource IRI. The write
+    // path cannot use @inverse (LDKit ignores it on insert), so the datasource reverses the
+    // triple itself.
+    expect(schema.graph).toEqual({
+      '@id': 'https://example.org/p/nodes',
+      '@inverse': true,
+      '@schema': { '@type': 'https://example.org/class/graph' },
+      '@optional': true,
+    });
   });
 
   it('treats inline fields without a target class as a reference in both schema and model', () => {

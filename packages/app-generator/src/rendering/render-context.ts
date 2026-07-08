@@ -8,6 +8,8 @@ export interface GeneratedAppRenderContext {
   model: GenerationModel;
   aggregates: RenderedAggregate[];
   pages: RenderedPage[];
+  /** Base IRI Create forms prefill when generating a new entity IRI. Empty when none derivable. */
+  instanceBaseIri: string;
   json: (value: unknown) => string;
 }
 
@@ -32,6 +34,7 @@ export function buildRenderContext(model: GenerationModel): GeneratedAppRenderCo
   return {
     model,
     aggregates,
+    instanceBaseIri: toInstanceBaseIri(model.app.dataSpecificationIri),
     pages: model.operations.map((operation) => {
       const aggregate = aggregateByIri.get(operation.aggregateIri);
       if (!aggregate) {
@@ -49,4 +52,12 @@ export function buildRenderContext(model: GenerationModel): GeneratedAppRenderCo
     }),
     json: (value) => JSON.stringify(value, null, 2),
   };
+}
+
+// Base IRI for generating new entity IRIs in Create forms. A data specification IRI that is a real
+// absolute IRI is reused as the base, with any trailing separators trimmed. Anything else, such
+// as a bare identifier, yields an empty base and the form falls back to a urn:uuid IRI.
+function toInstanceBaseIri(dataSpecificationIri: string): string {
+  const isAbsoluteIri = /^[a-z][a-z0-9+.-]*:/i.test(dataSpecificationIri);
+  return isAbsoluteIri ? dataSpecificationIri.replace(/[#/]+$/, '') : '';
 }

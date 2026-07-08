@@ -1,7 +1,8 @@
-import type { Lens, Schema } from 'ldkit';
-import { createLens, type Options } from 'ldkit';
+import type { Lens, Schema, QueryContext } from 'ldkit';
+import { createLens, QueryEngine } from 'ldkit';
+import type { RDF } from 'ldkit/rdf';
 
-import type { AggregateDescriptor, EntityModel } from '../types/aggregate.ts';
+import type { AggregateDescriptor, EntityModel, FieldDescriptor } from '../types/aggregate.ts';
 import type {
   DataSource,
   DeleteArgs,
@@ -9,8 +10,16 @@ import type {
   MutationArgs,
   ReadDetailArgs,
   ReadListArgs,
+  ReferenceOption,
 } from './data-source.ts';
 import { DataSourceKind } from './data-source.ts';
+
+// Label predicates tried, in order, when building a reference option label.
+const LABEL_PREDICATES = [
+  'http://www.w3.org/2000/01/rdf-schema#label',
+  'http://www.w3.org/2004/02/skos/core#prefLabel',
+  'http://purl.org/dc/terms/title',
+];
 
 export type LdkitSchemaMap = Record<string, Schema>;
 
@@ -44,13 +53,49 @@ export class RdfLdkitDataSource implements DataSource {
     return result ? toModel<TModel>(result) : null;
   }
 
-  // TODO: Implement create, update, and delete (including recursive composition save order and cascade deletes)
-  async create<TModel extends EntityModel>(_args: MutationArgs<TModel>): Promise<TModel> {
-    return Promise.reject(
-      new Error('Create is not implemented by the first prototype RDF datasource.')
+  async create<TModel extends EntityModel>(args: MutationArgs<TModel>): Promise<TModel> {
+    // LDKit's insert ignores @inverse and would write an inverse relation forward, so inverse
+    // fields are kept out of the lens payload and their reversed triples are written separately.
+    const inverseFields = args.aggregate.fields.filter(
+      (field) => field.isReverse && field.propertyIri
     );
+    const forwardPayload = { ...args.payload } as Record<string, unknown>;
+    for (const field of inverseFields) {
+      delete forwardPayload[field.propertyName];
+    }
+
+    const lens = this.buildLens(args.aggregate);
+    const entity = denormalizeIds(forwardPayload) as Parameters<typeof lens.insert>[0];
+    await lens.insert(entity);
+    await this.writeInverseLinks(inverseFields, args.payload);
+    return args.payload;
   }
 
+  // Writes an inverse relation as `<target> <predicate> <entity>`, the direction LDKit reads but
+  // does not write. One triple per referenced target, for single and repeating inverse fields.
+  private async writeInverseLinks<TModel extends EntityModel>(
+    fields: readonly FieldDescriptor[],
+    payload: TModel
+  ): Promise<void> {
+    const entityId = payload.id;
+    if (fields.length === 0 || typeof entityId !== 'string' || entityId === '') {
+      return;
+    }
+
+    const record = payload as Record<string, unknown>;
+    const triples = fields.flatMap((field) =>
+      referenceIds(record[field.propertyName]).map(
+        (targetId) => `<${targetId}> <${field.propertyIri as string}> <${entityId}>`
+      )
+    );
+    if (triples.length === 0) {
+      return;
+    }
+
+    await new QueryEngine().queryVoid(`INSERT DATA { ${triples.join(' . ')} }`, this.context());
+  }
+
+  // TODO: Implement update and delete (including recursive composition save order and cascade deletes)
   async update<TModel extends EntityModel>(_args: IdentifiedMutationArgs<TModel>): Promise<TModel> {
     return Promise.reject(
       new Error('Update is not implemented by the first prototype RDF datasource.')
@@ -63,6 +108,30 @@ export class RdfLdkitDataSource implements DataSource {
     );
   }
 
+  async listByType(classIri: string, limit = 200): Promise<ReferenceOption[]> {
+    const labelPath = LABEL_PREDICATES.map((predicate) => `<${predicate}>`).join('|');
+    const query = `SELECT DISTINCT ?iri ?label WHERE {
+  ?iri a <${classIri}> .
+  OPTIONAL { ?iri ${labelPath} ?label }
+} LIMIT ${limit}`;
+
+    // A SELECT by class rather than by a fixed schema, so it runs on the query engine directly
+    // instead of a lens. Reuses the same endpoint context the lenses read through.
+    const stream = await new QueryEngine().queryBindings(query, this.context());
+    const bindings = await collectStream(stream);
+
+    // Keep the first label seen per IRI, so a repeated label does not duplicate the option. IRIs
+    // without a label fall back to the IRI itself.
+    const labels = new Map<string, string>();
+    for (const binding of bindings) {
+      const iri = binding.get('iri')?.value;
+      if (iri && !labels.has(iri)) {
+        labels.set(iri, binding.get('label')?.value ?? iri);
+      }
+    }
+    return [...labels].map(([id, label]) => ({ id, label }));
+  }
+
   private buildLens<TModel extends EntityModel>(
     aggregate: AggregateDescriptor<TModel>
   ): Lens<Schema> {
@@ -70,11 +139,36 @@ export class RdfLdkitDataSource implements DataSource {
     if (!schema) {
       throw new Error(`Missing LDKit schema for aggregate "${aggregate.name}".`);
     }
-    const options: Options = {
+    return createLens(schema, this.context());
+  }
+
+  private context(): QueryContext {
+    return {
       sources: [this.endpoint],
     };
-    return createLens(schema, options);
   }
+}
+
+// Extracts the target IRIs from a reference field value, which is an entity IRI object or an
+// array of them. Empty ids are skipped so an unset reference contributes no triple.
+function referenceIds(value: unknown): string[] {
+  const values = Array.isArray(value) ? value : [value];
+  return values
+    .map((entry) =>
+      entry && typeof entry === 'object' ? (entry as { id?: unknown }).id : undefined
+    )
+    .filter((id): id is string => typeof id === 'string' && id !== '');
+}
+
+// Drains an LDKit result stream into an array. The stream is event based, so this resolves once
+// all items have arrived.
+function collectStream<T>(stream: RDF.ResultStream<T>): Promise<T[]> {
+  return new Promise((resolve, reject) => {
+    const items: T[] = [];
+    stream.on('data', (item: T) => items.push(item));
+    stream.on('end', () => resolve(items));
+    stream.on('error', reject);
+  });
 }
 
 // LDKit exposes the entity IRI as $id, at the root and in nested entities. The generated models
@@ -102,4 +196,36 @@ function normalizeIds(value: unknown): unknown {
     result.id = source.$id;
   }
   return result;
+}
+
+// Reverse of normalizeIds for writes: the generated models use id, LDKit expects $id. Empty
+// strings, null, undefined, and empty arrays are dropped so an unset optional field is not
+// written as an empty value. Returns undefined when the whole value drops out.
+function denormalizeIds(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    const entries = value.map(denormalizeIds).filter((entry) => entry !== undefined);
+    return entries.length > 0 ? entries : undefined;
+  }
+  if (value === null || value === undefined || value === '') {
+    return undefined;
+  }
+  if (typeof value !== 'object' || value instanceof Date) {
+    return value;
+  }
+  const source = value as Record<string, unknown>;
+  const result: Record<string, unknown> = {};
+  for (const [key, nested] of Object.entries(source)) {
+    if (key === 'id') {
+      if (typeof nested === 'string' && nested !== '') {
+        result.$id = nested;
+      }
+      continue;
+    }
+    const converted = denormalizeIds(nested);
+    if (converted !== undefined) {
+      result[key] = converted;
+    }
+  }
+  // An object that keeps no properties (for example an unset reference) is dropped entirely.
+  return Object.keys(result).length > 0 ? result : undefined;
 }
