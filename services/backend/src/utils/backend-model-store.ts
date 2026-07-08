@@ -44,8 +44,7 @@ function createProjectPackageEntity(resource: Package): PackageEntity {
  * by `${modelId}#${blobName}`. Returns null if the blob does not exist.
  */
 async function loadNamedBlobEntities(modelId: string, blobName: string, resourceModel: ResourceModel): Promise<EntityRecord | null> {
-  const store = await resourceModel.getResourceModelStore(modelId, blobName);
-  const blobData = store ? await store.getJson() : null;
+  const blobData = await resourceModel.getResourceStoreJson(modelId, blobName);
   if (!blobData) {
     return null;
   }
@@ -53,8 +52,7 @@ async function loadNamedBlobEntities(modelId: string, blobName: string, resource
 }
 
 export async function loadModelEntities(modelId: string, modelType: string, resourceModel: ResourceModel): Promise<EntityRecord> {
-  const store = await resourceModel.getResourceModelStore(modelId);
-  const modelData = store ? await store.getJson() : null;
+  const modelData = await resourceModel.getResourceStoreJson(modelId);
 
   if (modelType === LOCAL_PACKAGE) {
     return serializationToBlobModelEntities(modelId, modelData);

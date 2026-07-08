@@ -97,8 +97,7 @@ export class PackageImporter {
         const blob = await this.zip.file(file)!.async("text");
         const blobJson = JSON.parse(blob);
 
-        const store = await this.resourceModel.getOrCreateResourceModelStore(resourceIri, blobName);
-        await store.setJson(blobJson);
+        await this.resourceModel.setResourceStoreJson(resourceIri, blobJson, blobName);
       }
     }
   }

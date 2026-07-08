@@ -130,8 +130,7 @@ async function importRdfsModel(parentIri: string, url: string, newIri: string, u
   serialization.id = newIri;
   serialization.alias = userMetadata?.label?.en ?? userMetadata?.label?.cs;
   await ensureResource(parentIri, newIri, RDFS_MODEL, userMetadata);
-  const store = await resourceModel.getOrCreateResourceModelStore(newIri);
-  await store.setJson(serialization);
+  await resourceModel.setResourceStoreJson(newIri, serialization);
   return Object.values(wrapper.getEntities()) as SemanticModelEntity[];
 }
 
@@ -178,14 +177,13 @@ async function importAllStructureModels(urls: string[], iriPrefix: string, rootP
   for (const model of models) {
     await ensureResource(rootPackageId, model.iri, V1.PSM, {});
     touchedModelIds?.add(model.iri);
-    const store = await resourceModel.getOrCreateResourceModelStore(model.iri);
 
     const modelData = {
       operations: [],
       resources: Object.fromEntries(model.model.map((e) => [e.iri, e])),
     };
 
-    await store.setJson(modelData);
+    await resourceModel.setResourceStoreJson(model.iri, modelData);
   }
 }
 
@@ -216,7 +214,6 @@ async function importRdfsAndDsv(parentIri: string, rdfsUrl: string | null, dsvUr
   async function createModelFromEntities(entities: SemanticModelEntity[], id: string, userMetadata: any) {
     await ensureResource(parentIri, id, LOCAL_SEMANTIC_MODEL, userMetadata);
     touchedModelIds?.add(id);
-    const store = await resourceModel.getOrCreateResourceModelStore(id);
 
     // Manage prefixes
     const prefixesCount: Record<string, number> = {};
@@ -265,7 +262,7 @@ async function importRdfsAndDsv(parentIri: string, rdfsUrl: string | null, dsvUr
       baseIri: bestPrefix,
     } as any;
 
-    await store.setJson(result);
+    await resourceModel.setResourceStoreJson(id, result);
   }
 
   /**
@@ -440,12 +437,11 @@ async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIr
 
     await ensureResource(rootPackageId, rootPackageId + "/generator-configuration", V1.GENERATOR_CONFIGURATION, {});
     touchedModelIds?.add(rootPackageId + "/generator-configuration");
-    const generatorConfigurationStore = await resourceModel.getOrCreateResourceModelStore(rootPackageId + "/generator-configuration");
     const configuration = DataSpecificationConfigurator.setToObject(configurationModel, {
       ...DataSpecificationConfigurator.getFromObject(configurationModel),
       publicBaseUrl: rootHref,
     });
-    generatorConfigurationStore.setJson(configuration);
+    await resourceModel.setResourceStoreJson(rootPackageId + "/generator-configuration", configuration);
   }
 
   // Identify important resources to import
@@ -626,11 +622,10 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
   if (existingResource.types.includes(RDFS_MODEL)) {
     const previousEntities = await loadModelEntities(existingResource.iri, RDFS_MODEL, resourceModel);
 
-    const store = await resourceModel.getOrCreateResourceModelStore(existingResource.iri);
-    const data = await store.getJson() as {urls: string[]};
+    const data = await resourceModel.getResourceStoreJson(existingResource.iri) as {urls: string[]};
     const bodyUrls = (request.body as { urls?: string[] })?.urls;
     if (bodyUrls) {
-      await store.setJson({ ...data, urls: bodyUrls });
+      await resourceModel.setResourceStoreJson(existingResource.iri, { ...data, urls: bodyUrls });
     }
     const urls = bodyUrls ?? data.urls;
     const newModel = await createRdfsModel(urls, httpFetch);

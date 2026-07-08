@@ -1,9 +1,10 @@
 import { LOCAL_PACKAGE, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
 import { PrismaClient, Resource as PrismaResource } from "@prisma/client";
-import { LocalStoreModel, ModelStore } from "./local-store-model.ts";
+import { LocalStoreModel } from "./local-store-model.ts";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { CoreResource } from "@dataspecer/core/core/core-resource";
+import { v4 as uuidv4 } from "uuid";
 
 /**
  * Base information every resource has or should have.
@@ -49,7 +50,7 @@ export interface Package extends BaseResource {
  * Resource model manages resource in local database that is managed by Prisma.
  */
 export class ResourceModel {
-    readonly storeModel: LocalStoreModel;
+    private readonly storeModel: LocalStoreModel;
     private readonly prismaClient: PrismaClient;
 
     constructor(storeModel: LocalStoreModel, prismaClient: PrismaClient) {
@@ -147,10 +148,7 @@ export class ResourceModel {
             if (prismaResource.representationType === V1.PSM) {
                 // We must be careful here as the model may not be loaded yet.
                 if (dataStores.model) {
-                    const modelStore = this.storeModel.getModelStore(dataStores.model);
-                    // console.log(modelStore);
-                    const model = await modelStore.getJson();
-
+                    const model = await this.getJsonByStoreId(dataStores.model);
 
                     const schema = Object.values(model.resources as Record<string, CoreResource>).find(DataPsmSchema.is) as DataPsmSchema;
                     if (schema) {
@@ -179,7 +177,7 @@ export class ResourceModel {
     /**
      * Returns data about the package and its sub-resources.
      */
-    async getPackage(iri: string, deep: boolean = false) {
+    async getPackage(iri: string) {
         const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri, representationType: LOCAL_PACKAGE}});
         if (prismaResource === null) {
             return null;
@@ -235,49 +233,75 @@ export class ResourceModel {
         }
     }
 
-    async getResourceModelStore(iri: string, storeName: string = "model"): Promise<ModelStore | null> {
-        const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri}});
-        if (prismaResource === null) {
-            throw new Error("Resource not found.");
-        }
-
-        const onUpdate = () => this.updateModificationTime(iri);
-
-        const dataStoreId = JSON.parse(prismaResource.dataStoreId);
-
-        if (dataStoreId[storeName]) {
-            return this.storeModel.getModelStore(dataStoreId[storeName], [onUpdate]);
-        } else {
-            return null;
-        }
+    /**
+     * Returns the parsed JSON contents of the named store attached to the resource,
+     * or null if the resource has no such store.
+     *
+     * @todo return null or {} for non-existing stores?
+     */
+    async getResourceStoreJson(iri: string, storeName: string = "model"): Promise<any | null> {
+        const storeId = await this.getStoreId(iri, storeName);
+        return storeId === null ? null : await this.getJsonByStoreId(storeId);
     }
 
-    async getOrCreateResourceModelStore(iri: string, storeName: string = "model"): Promise<ModelStore> {
+    /**
+     * Overwrites the named store attached to the resource with the given JSON data,
+     * creating the store first if it does not exist yet.
+     */
+    async setResourceStoreJson(iri: string, data: any, storeName: string = "model"): Promise<void> {
+        const storeId = await this.getOrCreateStoreId(iri, storeName);
+        await this.storeModel.set(storeId, JSON.stringify(data));
+        await this.updateModificationTime(iri);
+    }
+
+    /**
+     * Returns the raw buffer contents of the named store attached to the resource,
+     * or null if the resource has no such store.
+     */
+    async getResourceStoreBuffer(iri: string, storeName: string = "model"): Promise<Buffer | null> {
+        const storeId = await this.getStoreId(iri, storeName);
+        return storeId === null ? null : await this.storeModel.get(storeId);
+    }
+
+    private async getStoreId(iri: string, storeName: string): Promise<string | null> {
         const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri}});
         if (prismaResource === null) {
             throw new Error("Resource not found.");
         }
 
-        const onUpdate = () => this.updateModificationTime(iri);
+        const dataStoreId = JSON.parse(prismaResource.dataStoreId);
+        return dataStoreId[storeName] ?? null;
+    }
+
+    private async getJsonByStoreId(storeId: string): Promise<any> {
+        const buffer = await this.storeModel.get(storeId);
+        return JSON.parse(buffer?.toString() as string);
+    }
+
+    private async getOrCreateStoreId(iri: string, storeName: string): Promise<string> {
+        const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri}});
+        if (prismaResource === null) {
+            throw new Error("Resource not found.");
+        }
 
         const dataStoreId = JSON.parse(prismaResource.dataStoreId);
 
         if (dataStoreId[storeName]) {
-            return this.storeModel.getModelStore(dataStoreId[storeName], [onUpdate]);
+            return dataStoreId[storeName];
         } else {
-            const store = this.storeModel.create();
-            dataStoreId[storeName] = store.uuid;
+            const storeId = uuidv4();
+            dataStoreId[storeName] = storeId;
             await this.prismaClient.resource.update({
                 where: {id: prismaResource.id},
                 data: {
                     dataStoreId: JSON.stringify(dataStoreId)
                 }
             });
-            return this.storeModel.getModelStore(store.uuid, [onUpdate]);
+            return storeId;
         }
     }
 
-    async deleteModelStore(iri: string, storeName: string = "model") {
+    async deleteResourceStore(iri: string, storeName: string = "model") {
         const prismaResource = await this.prismaClient.resource.findFirst({where: {iri: iri}});
         if (prismaResource === null) {
             throw new Error("Resource not found.");

@@ -44,8 +44,8 @@ export class PackageExporter {
     const metadata = this.constructMetadataFromResource(resource);
     await this.writeBlob(fullName, "meta", metadata);
 
-    for (const [blobName, storeId] of Object.entries(resource.dataStores)) {
-      const data = await this.resourceModel.storeModel.getModelStore(storeId).getJson();
+    for (const blobName of Object.keys(resource.dataStores)) {
+      const data = await this.resourceModel.getResourceStoreJson(iri, blobName);
       await this.writeBlob(fullName, blobName, data);
     }
   }
