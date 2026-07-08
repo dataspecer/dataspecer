@@ -1,5 +1,5 @@
 import type { EntityModel, FieldDescriptor } from '../types/aggregate.ts';
-import { formatFieldValue, formatPrimitiveValue } from './field-value.ts';
+import { formatPrimitiveValue } from './field-value.ts';
 import {
   entityIdFromValue,
   hrefForAction,
@@ -134,7 +134,7 @@ function AssociationFieldValue(props: AssociationFieldValueProps) {
     );
   }
 
-  const link = <AssociationLink field={field} value={value} action={props.action} />;
+  const link = <AssociationLink value={value} action={props.action} />;
   if (field.kind === 'association' && field.fields?.length && typeof value === 'object') {
     return (
       <>
@@ -153,16 +153,14 @@ function AssociationFieldValue(props: AssociationFieldValueProps) {
 }
 
 interface AssociationLinkProps {
-  field: FieldDescriptor;
   value: unknown;
   action: AssociationNavigationActionDescriptor;
 }
 
 function AssociationLink(props: AssociationLinkProps) {
   const entityId = entityIdFromValue(props.value);
-  const label = formatFieldValue(props.field, props.value);
   const href = entityId ? hrefForAction(props.action, entityId) : undefined;
-  return href ? <a href={href}>{label || entityId}</a> : <>{label}</>;
+  return href ? <a href={href}>View</a> : null;
 }
 
 interface ActionLinksProps {

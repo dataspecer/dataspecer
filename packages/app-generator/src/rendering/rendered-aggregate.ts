@@ -1,5 +1,3 @@
-import type { Schema } from 'ldkit';
-
 import type {
   GeneratedAggregateDescriptor,
   GeneratedFieldDescriptor,
@@ -23,11 +21,6 @@ export interface RenderedAggregate extends GeneratedAggregateDescriptor {
    * emitted as JSON in the aggregate descriptor template.
    */
   descriptorFields: DescriptorField[];
-  /**
-   * The LDKit schema object for the aggregate, keyed by property name so the read result matches
-   * the generated model.
-   */
-  ldkitSchema: Schema;
   /**
    * The LDKit schema rendered as TypeScript source. Datatype types are emitted as `xsd.*`
    * namespace references rather than plain IRIs, which is what LDKit's `Schema` type requires.
@@ -80,7 +73,6 @@ export function toRenderedAggregate(aggregate: GeneratedAggregateDescriptor): Re
     fields,
     nestedModels: collectNestedModels(fields),
     descriptorFields: fields.map(toDescriptorField),
-    ldkitSchema: schema,
     ldkitSchemaSource: toLdkitSchemaSource(schema),
   };
 }

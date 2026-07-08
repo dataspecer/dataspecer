@@ -60,8 +60,8 @@ function buildLdkitProperty(field: RenderedField): Property {
   if (field.many) {
     property['@array'] = true;
   }
-  if (!field.required) {
-    property['@optional'] = true;
-  }
+  // Missing read values should not make LDKit treat the whole resource as absent.
+  // TODO: Keep create and update validation separate so required fields stay required there.
+  property['@optional'] = true;
   return property;
 }

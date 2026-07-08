@@ -21,7 +21,12 @@ export interface RenderedPage {
 }
 
 export function buildRenderContext(model: GenerationModel): GeneratedAppRenderContext {
-  const aggregates = model.aggregates.map(toRenderedAggregate);
+  // Only aggregates used by a node produce a module. Association targets are inlined or rendered
+  // as reference IRIs, so an aggregate without an operation would generate an unused module.
+  const usedAggregateIris = new Set(model.operations.map((operation) => operation.aggregateIri));
+  const aggregates = model.aggregates
+    .filter((aggregate) => usedAggregateIris.has(aggregate.iri))
+    .map(toRenderedAggregate);
   const aggregateByIri = new Map(aggregates.map((aggregate) => [aggregate.iri, aggregate]));
 
   return {

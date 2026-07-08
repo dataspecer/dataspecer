@@ -1,43 +1,29 @@
 import { describe, expect, it } from 'vitest';
 
-import { DatasourceType } from '../src/graph/types.ts';
 import { FieldKind } from '../src/metadata/types.ts';
-import type { GenerationModel } from '../src/generation-model/types.ts';
-import { buildRenderContext } from '../src/rendering/render-context.ts';
+import type { GeneratedAggregateDescriptor } from '../src/generation-model/types.ts';
+import { buildLdkitSchema } from '../src/rendering/ldkit-schema.ts';
+import { toRenderedAggregate } from '../src/rendering/rendered-aggregate.ts';
 
 const XSD = 'http://www.w3.org/2001/XMLSchema#';
 const RDF_LANG_STRING = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString';
 const CLASS = 'https://example.org/class/sample';
 
-function modelWithFields(fields: GenerationModel['aggregates'][number]['fields']): GenerationModel {
-  return {
-    app: {
-      name: 'Sample app',
-      safeName: 'sample-app',
-      dataSpecificationIri: 'https://example.org/spec',
-    },
-    datasource: { id: 'main', type: DatasourceType.Rdf, endpoint: 'https://example.org/sparql' },
-    aggregates: [
-      {
-        iri: 'https://example.org/aggregate/sample',
-        name: 'Sample',
-        safeName: 'Sample',
-        classIri: CLASS,
-        fields,
-      },
-    ],
-    operations: [],
-    routes: [],
-    navigation: [],
-    redirects: [],
-  };
+type Fields = GeneratedAggregateDescriptor['fields'];
+
+function renderedAggregate(fields: Fields) {
+  return toRenderedAggregate({
+    iri: 'https://example.org/aggregate/sample',
+    name: 'Sample',
+    safeName: 'Sample',
+    classIri: CLASS,
+    fields,
+  });
 }
 
-function schemaFor(fields: GenerationModel['aggregates'][number]['fields']) {
-  return buildRenderContext(modelWithFields(fields)).aggregates[0].ldkitSchema as Record<
-    string,
-    any
-  >;
+function schemaFor(fields: Fields) {
+  const aggregate = renderedAggregate(fields);
+  return buildLdkitSchema(aggregate.classIri, aggregate.fields) as Record<string, any>;
 }
 
 describe('LDKit schema generation', () => {
@@ -46,7 +32,7 @@ describe('LDKit schema generation', () => {
     expect(schema['@type']).toBe(CLASS);
   });
 
-  it('maps primitive datatypes to xsd types and required to optional', () => {
+  it('maps primitive datatypes to xsd types and marks read properties optional', () => {
     const schema = schemaFor([
       {
         path: 'title',
@@ -68,7 +54,11 @@ describe('LDKit schema generation', () => {
       },
     ]);
 
-    expect(schema.title).toEqual({ '@id': 'https://example.org/p/title', '@type': `${XSD}string` });
+    expect(schema.title).toEqual({
+      '@id': 'https://example.org/p/title',
+      '@type': `${XSD}string`,
+      '@optional': true,
+    });
     expect(schema.count).toEqual({
       '@id': 'https://example.org/p/count',
       '@type': `${XSD}integer`,
@@ -103,7 +93,11 @@ describe('LDKit schema generation', () => {
         required: true,
       },
     ]);
-    expect(schema.note).toEqual({ '@id': 'https://example.org/p/note', '@multilang': true });
+    expect(schema.note).toEqual({
+      '@id': 'https://example.org/p/note',
+      '@multilang': true,
+      '@optional': true,
+    });
   });
 
   it('leaves unrecognized datatypes as plain strings without a type', () => {
@@ -118,7 +112,7 @@ describe('LDKit schema generation', () => {
         required: true,
       },
     ]);
-    expect(schema.raw).toEqual({ '@id': 'https://example.org/p/raw' });
+    expect(schema.raw).toEqual({ '@id': 'https://example.org/p/raw', '@optional': true });
   });
 
   it('expands associations with inline fields under a nested schema', () => {
@@ -149,7 +143,11 @@ describe('LDKit schema generation', () => {
     expect(schema.chapters['@optional']).toBe(true);
     expect(schema.chapters['@schema']).toEqual({
       '@type': 'https://example.org/class/chapter',
-      name: { '@id': 'https://example.org/p/name', '@type': `${XSD}string` },
+      name: {
+        '@id': 'https://example.org/p/name',
+        '@type': `${XSD}string`,
+        '@optional': true,
+      },
     });
   });
 
@@ -166,8 +164,8 @@ describe('LDKit schema generation', () => {
         required: true,
       },
     ]);
-    // A reference carries only @id, so LDKit resolves it to the target IRI string.
-    expect(schema.author).toEqual({ '@id': 'https://example.org/p/author' });
+    // A reference carries no @type, so LDKit resolves it to the target IRI string.
+    expect(schema.author).toEqual({ '@id': 'https://example.org/p/author', '@optional': true });
   });
 
   it('treats inline fields without a target class as a reference in both schema and model', () => {
@@ -193,30 +191,28 @@ describe('LDKit schema generation', () => {
         ],
       },
     ];
-    const context = buildRenderContext(modelWithFields(fields));
-    const schema = context.aggregates[0].ldkitSchema as Record<string, any>;
-    const orphan = context.aggregates[0].fields.find((field) => field.path === 'orphan');
+    const aggregate = renderedAggregate(fields);
+    const schema = buildLdkitSchema(aggregate.classIri, aggregate.fields) as Record<string, any>;
+    const orphan = aggregate.fields.find((field) => field.path === 'orphan');
 
-    expect(schema.orphan).toEqual({ '@id': 'https://example.org/p/orphan' });
+    expect(schema.orphan).toEqual({ '@id': 'https://example.org/p/orphan', '@optional': true });
     expect(orphan?.modelType).toBe('string');
     expect(orphan?.emptyValue).toBe('""');
   });
 
   it('uses an empty language map for repeated multilang fields', () => {
-    const context = buildRenderContext(
-      modelWithFields([
-        {
-          path: 'labels',
-          label: 'Labels',
-          kind: FieldKind.Primitive,
-          propertyIri: 'https://example.org/p/labels',
-          datatype: RDF_LANG_STRING,
-          many: true,
-          required: true,
-        },
-      ])
-    );
-    const labels = context.aggregates[0].fields.find((field) => field.path === 'labels');
+    const aggregate = renderedAggregate([
+      {
+        path: 'labels',
+        label: 'Labels',
+        kind: FieldKind.Primitive,
+        propertyIri: 'https://example.org/p/labels',
+        datatype: RDF_LANG_STRING,
+        many: true,
+        required: true,
+      },
+    ]);
+    const labels = aggregate.fields.find((field) => field.path === 'labels');
 
     expect(labels?.modelType).toBe('Record<string, string[]>');
     expect(labels?.emptyValue).toBe('{}');
@@ -253,29 +249,27 @@ describe('LDKit schema generation', () => {
   });
 
   it('aligns model types with the datatypes LDKit returns', () => {
-    const context = buildRenderContext(
-      modelWithFields([
-        {
-          path: 'created',
-          label: 'Created',
-          kind: FieldKind.Primitive,
-          propertyIri: 'https://example.org/p/created',
-          datatype: `${XSD}dateTime`,
-          many: false,
-          required: true,
-        },
-        {
-          path: 'note',
-          label: 'Note',
-          kind: FieldKind.Primitive,
-          propertyIri: 'https://example.org/p/note',
-          datatype: RDF_LANG_STRING,
-          many: false,
-          required: true,
-        },
-      ])
-    );
-    const fields = context.aggregates[0].fields;
+    const aggregate = renderedAggregate([
+      {
+        path: 'created',
+        label: 'Created',
+        kind: FieldKind.Primitive,
+        propertyIri: 'https://example.org/p/created',
+        datatype: `${XSD}dateTime`,
+        many: false,
+        required: true,
+      },
+      {
+        path: 'note',
+        label: 'Note',
+        kind: FieldKind.Primitive,
+        propertyIri: 'https://example.org/p/note',
+        datatype: RDF_LANG_STRING,
+        many: false,
+        required: true,
+      },
+    ]);
+    const fields = aggregate.fields;
     const created = fields.find((field) => field.path === 'created');
     const note = fields.find((field) => field.path === 'note');
 

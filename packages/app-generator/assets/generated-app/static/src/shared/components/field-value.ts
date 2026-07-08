@@ -12,6 +12,9 @@ export function formatFieldValue(field: FieldDescriptor, value: unknown): string
   if (Array.isArray(value)) {
     return value.map((entry) => formatFieldValue(field, entry)).join(', ');
   }
+  if (value instanceof Date) {
+    return formatPrimitiveValue(value);
+  }
   if (typeof value === 'object') {
     return formatObjectValue(field, value as Record<string, unknown>);
   }

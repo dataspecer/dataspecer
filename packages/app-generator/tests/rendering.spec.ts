@@ -149,7 +149,8 @@ describe('renderGeneratedApp', () => {
 
     expect(listPage).toContain('pageActions={operation.navigation.pageActions}');
     expect(listPage).toContain('rowActions={operation.navigation.rowActions}');
-    expect(registry).toContain('export const operations = defineOperations');
+    expect(registry).toContain('export const operations = {');
+    expect(registry).toContain('} satisfies Record<string, RegisteredOperation>;');
     expect(registry).toContain('navigation: {');
     expect(registry).toContain('"targetPath": "/book-create"');
     expect(registry).toContain('"targetPath": "/book-update"');

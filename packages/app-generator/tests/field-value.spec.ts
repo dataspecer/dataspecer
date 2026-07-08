@@ -20,6 +20,9 @@ describe('formatFieldValue', () => {
     expect(formatPrimitiveValue(new Date('2024-05-01T09:30:00.000Z'))).toBe(
       '2024-05-01T09:30:00.000Z'
     );
+    expect(formatFieldValue(primitiveField, new Date('2024-05-01T09:30:00.000Z'))).toBe(
+      '2024-05-01T09:30:00.000Z'
+    );
   });
 
   it('formats language maps by preferred language', () => {
