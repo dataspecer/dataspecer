@@ -1,6 +1,6 @@
 import type { JSONSchemaType } from 'ajv';
 
-import { AssociationKind, DeletePolicy, EdgeType, Operation } from './types.ts';
+import { AssociationKind, DatasourceType, DeletePolicy, EdgeType, Operation } from './types.ts';
 import type { ApplicationGraph } from './types.ts';
 
 const configSchema = {
@@ -58,7 +58,7 @@ export const applicationGraphSchema = {
           },
           type: {
             type: 'string',
-            minLength: 1,
+            enum: Object.values(DatasourceType),
           },
           endpoint: {
             type: 'string',

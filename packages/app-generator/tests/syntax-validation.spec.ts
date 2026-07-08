@@ -80,6 +80,21 @@ describe('validateGraphSyntax', () => {
     );
   });
 
+  it('rejects unsupported datasource types', () => {
+    const graph = readGraphFixture('valid-basic.json');
+    graph.datasources[0].type = 'rest';
+
+    const result = validateGraphSyntax(graph);
+
+    expect(result.valid).toBe(false);
+    expect(result.violations).toContainEqual(
+      expect.objectContaining({
+        code: ViolationCode.GraphSyntaxInvalid,
+        path: '/datasources/0/type',
+      })
+    );
+  });
+
   it('rejects invalid datasource endpoint URLs', () => {
     const graph = readGraphFixture('valid-basic.json');
     graph.datasources[0].endpoint = 'not a url';

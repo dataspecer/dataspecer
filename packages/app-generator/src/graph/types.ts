@@ -13,8 +13,6 @@ export enum EdgeType {
 
 export enum DatasourceType {
   Rdf = 'rdf',
-  Rest = 'rest',
-  File = 'file',
 }
 
 export enum AssociationKind {

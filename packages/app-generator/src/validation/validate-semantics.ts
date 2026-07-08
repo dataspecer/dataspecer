@@ -2,9 +2,11 @@ import type { Violation, ValidationResult } from './types.ts';
 import type { ApplicationGraph } from '../graph/types.ts';
 import type { DataspecerSpecificationMetadata } from '../metadata/types.ts';
 import { validateAggregateReferences } from './aggregate-reference-validation.ts';
+import { validateCompositionCycles } from './composition-cycle-validation.ts';
 import { validateDatasource } from './datasource-validation.ts';
 import { validateDeleteCascade } from './delete-cascade-validation.ts';
 import { validateEdgeEndpoints } from './edge-endpoint-validation.ts';
+import { validateNodeConfig } from './node-config-validation.ts';
 import { validateRedirects } from './redirect-validation.ts';
 import { validateTransitions } from './transition-validation.ts';
 import {
@@ -32,10 +34,12 @@ export function validateGraphSemantics(
 
   violations.push(...validateDatasource(context));
   violations.push(...validateAggregateReferences(context));
+  violations.push(...validateNodeConfig(context));
   violations.push(...validateEdgeEndpoints(context));
   violations.push(...validateRedirects(context));
   violations.push(...validateTransitions(context));
   violations.push(...validateDeleteCascade(context));
+  violations.push(...validateCompositionCycles(context));
   violations.push(
     ...associationKindIssues.map((issue) => associationKindIssueToViolation(issue, nodeIndexById))
   );

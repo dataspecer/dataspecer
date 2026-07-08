@@ -6,6 +6,8 @@ import type { GenerationModel } from './generation-model/types.ts';
 import type { ApplicationGraph } from './graph/types.ts';
 import { validateGraphSyntax } from './graph/validate-syntax.ts';
 import type { DataspecerMetadataProvider } from './metadata/dataspecer-metadata-provider.ts';
+import { DataspecerMetadataMappingError } from './metadata/dataspecer-specification-metadata-provider.ts';
+import type { DataspecerSpecificationMetadata } from './metadata/types.ts';
 import { resolveGraphAssociationKinds } from './metadata/resolve-graph-association-kinds.ts';
 import { writeFileTree } from './rendering/write-file-tree.ts';
 import type { FileTreeContent } from './rendering/file-tree.ts';
@@ -36,9 +38,12 @@ export async function generateApp(
   }
 
   const graph: ApplicationGraph = syntaxResult.graph;
-  const metadata = await input.metadataProvider.getSpecificationMetadata(
-    graph.dataSpecificationIri
-  );
+  let metadata: DataspecerSpecificationMetadata;
+  try {
+    metadata = await input.metadataProvider.getSpecificationMetadata(graph.dataSpecificationIri);
+  } catch (error) {
+    return failure(metadataResolutionViolations(error));
+  }
   const graphMetadata = resolveGraphAssociationKinds(graph, metadata);
   const semanticResult = validateGraphSemantics(
     graph,
@@ -85,6 +90,27 @@ export async function generateApp(
     writtenFiles,
     generationModel,
   };
+}
+
+function metadataResolutionViolations(error: unknown): Violation[] {
+  if (error instanceof DataspecerMetadataMappingError) {
+    return error.issues.map((issue) => ({
+      code: ViolationCode.MetadataResolutionFailed,
+      message: issue.message,
+      ...(issue.path ? { path: issue.path } : {}),
+      severity: ViolationSeverity.Error,
+    }));
+  }
+
+  return [
+    {
+      code: ViolationCode.MetadataResolutionFailed,
+      message: `Unable to resolve Dataspecer specification metadata: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+      severity: ViolationSeverity.Error,
+    },
+  ];
 }
 
 function failure(violations: Violation[]): GeneratePrototypeAppResult {

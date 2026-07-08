@@ -21,7 +21,7 @@ export function validateDatasource(context: SemanticValidationContext): Violatio
     return [
       semanticViolation(
         ViolationCode.SemanticUnsupportedDatasourceType,
-        `Datasource type "${graph.datasources[0].type}" is not supported by the first prototype.`,
+        `Datasource type "${String(graph.datasources[0].type)}" is not supported by the first prototype.`,
         '/datasources/0/type'
       ),
     ];

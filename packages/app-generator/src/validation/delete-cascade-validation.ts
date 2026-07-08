@@ -28,6 +28,12 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
       return;
     }
 
+    const cascadePaths = new Set(
+      Object.entries(deleteConfig)
+        .filter(([, policy]) => policy === DeletePolicy.Cascade)
+        .map(([path]) => normalizePath(path))
+    );
+
     Object.entries(deleteConfig).forEach(([path, policy]) => {
       if (policy !== DeletePolicy.Cascade) {
         violations.push(
@@ -40,7 +46,7 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
         return;
       }
 
-      const field = findAssociationFieldByPath(path, aggregate, context.aggregates);
+      const field = findAssociationFieldByPath(path, aggregate);
       if (!field || field.kind !== FieldKind.Association) {
         violations.push(
           semanticViolation(
@@ -60,6 +66,20 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
             `/nodes/${nodeIndex}/config/delete/${path}`
           )
         );
+        return;
+      }
+
+      const segments = normalizePath(path).split('.').filter(Boolean);
+      if (segments.length > 1 && !cascadePaths.has(segments.slice(0, -1).join('.'))) {
+        violations.push(
+          semanticViolation(
+            ViolationCode.SemanticCascadeRequiresParentCascade,
+            `Delete cascade path "${path}" requires its parent composition "${segments
+              .slice(0, -1)
+              .join('.')}" to cascade as well.`,
+            `/nodes/${nodeIndex}/config/delete/${path}`
+          )
+        );
       }
     });
   });
@@ -67,34 +87,33 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
   return violations;
 }
 
+function normalizePath(path: string): string {
+  return path
+    .split('.')
+    .filter((segment) => segment.length > 0)
+    .join('.');
+}
+
+/**
+ * Delete cascade paths address association fields within the aggregate's own structure tree.
+ * Nested segments descend into the inline fields of the parent association.
+ */
 function findAssociationFieldByPath(
   path: string,
-  rootAggregate: AggregateMetadata,
-  aggregates: SemanticValidationContext['aggregates']
+  rootAggregate: AggregateMetadata
 ): AggregateFieldMetadata | undefined {
-  let aggregate = rootAggregate;
+  let fields = rootAggregate.fields;
+  let resolved: AggregateFieldMetadata | undefined;
 
-  const segments = path.split('.').filter((candidate) => candidate.length > 0);
-  for (const [index, segment] of segments.entries()) {
-    const field = aggregate.fields.find((candidate) => candidate.path === segment);
-    if (!field || field.kind !== FieldKind.Association) {
+  for (const segment of path.split('.').filter((candidate) => candidate.length > 0)) {
+    resolved = fields.find(
+      (candidate) => candidate.path === segment && candidate.kind === FieldKind.Association
+    );
+    if (!resolved) {
       return undefined;
     }
-
-    if (index === segments.length - 1) {
-      return field;
-    }
-
-    if (!field.targetAggregateIri) {
-      return undefined;
-    }
-
-    const targetAggregate = aggregates.get(field.targetAggregateIri);
-    if (!targetAggregate) {
-      return undefined;
-    }
-    aggregate = targetAggregate;
+    fields = resolved.fields ?? [];
   }
 
-  return undefined;
+  return resolved;
 }

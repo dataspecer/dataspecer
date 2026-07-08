@@ -41,7 +41,9 @@ describe('validateGraphSemantics', () => {
     });
     const wrongType = validGraph({
       datasources: [
-        { id: 'main-rest', type: DatasourceType.Rest, endpoint: 'https://example.org/api' },
+        // The JSON schema already rejects non-RDF types, so a cast is needed here to exercise
+        // the defensive re-check in semantic validation.
+        { id: 'main-rest', type: 'rest' as DatasourceType, endpoint: 'https://example.org/api' },
       ],
     });
 
@@ -279,7 +281,10 @@ describe('validateGraphSemantics', () => {
           chapters: AssociationKind.Composition,
           'chapters.footnotes': AssociationKind.Composition,
         },
-        delete: { 'chapters.footnotes': DeletePolicy.Cascade },
+        delete: {
+          chapters: DeletePolicy.Cascade,
+          'chapters.footnotes': DeletePolicy.Cascade,
+        },
       }
     );
     const graph = validGraph({
@@ -290,6 +295,79 @@ describe('validateGraphSemantics', () => {
     const result = validatePreparedGraph(graph);
 
     expect(result.valid).toBe(true);
+  });
+
+  it('rejects nested delete cascade whose parent composition does not cascade', () => {
+    const deleteBook = node(
+      'Book.Delete',
+      'https://example.org/aggregate/book-detail',
+      Operation.Delete,
+      {
+        associations: {
+          chapters: AssociationKind.Composition,
+          'chapters.footnotes': AssociationKind.Composition,
+        },
+        delete: { 'chapters.footnotes': DeletePolicy.Cascade },
+      }
+    );
+    const graph = validGraph({
+      nodes: [deleteBook],
+      edges: [],
+    });
+
+    expectViolations(graph, ViolationCode.SemanticCascadeRequiresParentCascade);
+  });
+
+  it('rejects circular compositions across aggregates', () => {
+    const createBook = node(
+      'Book.Create',
+      'https://example.org/aggregate/book-detail',
+      Operation.Create,
+      {
+        associations: { author: AssociationKind.Composition },
+      }
+    );
+    const createAuthor = node(
+      'Author.Create',
+      'https://example.org/aggregate/author-detail',
+      Operation.Create,
+      {
+        associations: { books: AssociationKind.Composition },
+      }
+    );
+    const graph = validGraph({
+      nodes: [createBook, createAuthor],
+      edges: [],
+    });
+
+    expectViolations(graph, ViolationCode.SemanticCircularComposition);
+  });
+
+  it('rejects association config on read nodes', () => {
+    const graph = validGraph({
+      nodes: [
+        node('Book.ReadList', 'https://example.org/aggregate/book-list', Operation.ReadList, {
+          associations: { author: AssociationKind.Aggregation },
+        }),
+      ],
+      edges: [],
+    });
+
+    expectViolations(graph, ViolationCode.SemanticAssociationConfigNotAllowed);
+  });
+
+  it('rejects delete config on non-delete nodes', () => {
+    const graph = validGraph({
+      nodes: [
+        node('Book.Create', 'https://example.org/aggregate/book-detail', Operation.Create, {
+          associations: { chapters: AssociationKind.Composition },
+          delete: { chapters: DeletePolicy.Cascade },
+        }),
+      ],
+      edges: [],
+    });
+
+    expectViolations(graph, ViolationCode.SemanticDeleteConfigNotAllowed);
   });
 
   it('rejects nested delete cascade through aggregations', () => {

@@ -13,6 +13,10 @@ import {
   EdgeType,
   Operation,
 } from '../src/graph/types.ts';
+import {
+  DataspecerMetadataMappingError,
+  DataspecerMetadataMappingIssueCode,
+} from '../src/metadata/dataspecer-specification-metadata-provider.ts';
 import { FakeDataspecerMetadataProvider } from '../src/metadata/fake-dataspecer-metadata-provider.ts';
 import { basicMetadata, specificationIri } from './fixtures/metadata/basic-metadata.ts';
 
@@ -46,7 +50,8 @@ describe('generateApp', () => {
     const result = await generateApp({
       graph: graphFixture({
         datasources: [
-          { id: 'rest', type: DatasourceType.Rest, endpoint: 'https://example.org/api' },
+          { id: 'main-rdf', type: DatasourceType.Rdf, endpoint: 'https://example.org/sparql' },
+          { id: 'other-rdf', type: DatasourceType.Rdf, endpoint: 'https://example.org/other' },
         ],
       }),
       metadataProvider: metadataProvider(),
@@ -55,10 +60,55 @@ describe('generateApp', () => {
     expect(result.success).toBe(false);
     expect(result.violations).toContainEqual(
       expect.objectContaining({
-        code: ViolationCode.SemanticUnsupportedDatasourceType,
+        code: ViolationCode.SemanticUnsupportedDatasourceCount,
       })
     );
     expect(result.files).toEqual({});
+  });
+
+  it('returns violations when metadata mapping fails', async () => {
+    const result = await generateApp({
+      graph: graphFixture(),
+      metadataProvider: {
+        getSpecificationMetadata: () =>
+          Promise.reject(
+            new DataspecerMetadataMappingError([
+              {
+                code: DataspecerMetadataMappingIssueCode.MissingRootClass,
+                message: 'Structure model "example" does not have a resolvable root class.',
+                path: 'structureModels[0]',
+              },
+            ])
+          ),
+      },
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.violations).toEqual([
+      expect.objectContaining({
+        code: ViolationCode.MetadataResolutionFailed,
+        message: 'Structure model "example" does not have a resolvable root class.',
+        path: 'structureModels[0]',
+      }),
+    ]);
+    expect(result.files).toEqual({});
+  });
+
+  it('returns a violation when metadata loading fails unexpectedly', async () => {
+    const result = await generateApp({
+      graph: graphFixture(),
+      metadataProvider: {
+        getSpecificationMetadata: () => Promise.reject(new Error('backend unreachable')),
+      },
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.violations).toEqual([
+      expect.objectContaining({
+        code: ViolationCode.MetadataResolutionFailed,
+        message: expect.stringContaining('backend unreachable'),
+      }),
+    ]);
   });
 
   it('generates files in memory without an output directory', async () => {
