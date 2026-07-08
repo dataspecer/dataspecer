@@ -1,0 +1,133 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ag: <https://dataspecer.com/vocabulary/application-graph#> .
+@prefix code: <https://example.org/data/application-graph/codelist/> .
+@prefix data: <https://example.org/data/application-graph/> .
+
+# Instances of the application-graph meta-model. The class and property IRIs match the demo
+# specification, so LDKit schemas generated from that specification query exactly these terms.
+# Some predicate IRIs are irregular and are written as full IRIs to make that visible: the dotted
+# #ApplicationGraph.created, #ApplicationGraph.archived, #Edge.sourceNode, #Edge.targetNode,
+# #DeleteConfiguration.propertyPath, #AssociationConfiguration.propertyPath.
+
+# Codelist members. These are referenced from instances as IRIs, so they only need a type and
+# a readable label.
+code:op-read-list a ag:Operation ; rdfs:label "ReadList" .
+code:op-read-detail a ag:Operation ; rdfs:label "ReadDetail" .
+code:op-create a ag:Operation ; rdfs:label "Create" .
+code:op-update a ag:Operation ; rdfs:label "Update" .
+code:op-delete a ag:Operation ; rdfs:label "Delete" .
+
+code:edge-transition a ag:EdgeType ; rdfs:label "transition" .
+code:edge-redirect a ag:EdgeType ; rdfs:label "redirect" .
+
+code:ds-rdf a ag:DataSourceType ; rdfs:label "rdf" .
+code:ds-rest a ag:DataSourceType ; rdfs:label "rest" .
+
+code:assoc-composition a ag:AssociationType ; rdfs:label "composition" .
+code:assoc-aggregation a ag:AssociationType ; rdfs:label "aggregation" .
+
+code:delete-cascade a ag:DeleteType ; rdfs:label "cascade" .
+
+# Data sources are shared between graphs, so they are their own instances referenced from more
+# than one graph rather than owned by a single graph.
+data:ds-fuseki-local a ag:DataSource ;
+    ag:dataSourceId "local-fuseki" ;
+    ag:endpoint "http://localhost:3030/app/query"^^xsd:anyURI ;
+    ag:dataSourceType code:ds-rdf .
+
+data:ds-dbpedia a ag:DataSource ;
+    ag:dataSourceId "dbpedia" ;
+    ag:endpoint "https://dbpedia.org/sparql"^^xsd:anyURI ;
+    ag:dataSourceType code:ds-rdf .
+
+# Graph 1: an application over the tourist destination specification.
+data:graph-tourism a ag:ApplicationGraph ;
+    ag:name "Turistické cíle" ;
+    <https://dataspecer.com/vocabulary/application-graph#ApplicationGraph.archived> false ;
+    <https://dataspecer.com/vocabulary/application-graph#ApplicationGraph.created> "2024-05-01T09:30:00Z"^^xsd:dateTime ;
+    ag:dataSpecificationIri "https://example.org/specification/tourism"^^xsd:anyURI ;
+    ag:dataSources data:ds-fuseki-local, data:ds-dbpedia ;
+    ag:nodes data:graph-tourism-node-list, data:graph-tourism-node-detail ;
+    ag:edges data:graph-tourism-edge-list-detail .
+
+data:graph-tourism-node-list a ag:Node ;
+    ag:nodeId "destinations.list" ;
+    ag:aggregateIri "https://example.org/aggregate/tourist-destination-list"^^xsd:anyURI ;
+    ag:operation code:op-read-list .
+
+# This node carries a full configuration with nested delete and association configurations,
+# which exercises the deepest branch of the meta-model.
+data:graph-tourism-node-detail a ag:Node ;
+    ag:nodeId "destinations.detail" ;
+    ag:aggregateIri "https://example.org/aggregate/tourist-destination-detail"^^xsd:anyURI ;
+    ag:operation code:op-read-detail ;
+    ag:nodeConfiguration data:cfg-tourism-detail .
+
+data:cfg-tourism-detail a ag:NodeConfiguration ;
+    ag:pageTitle "Detail cíle" ;
+    ag:deleteConfigurations data:delcfg-tourism-contact ;
+    ag:associationConfigurations data:asscfg-tourism-contact .
+
+data:delcfg-tourism-contact a ag:DeleteConfiguration ;
+    <https://dataspecer.com/vocabulary/application-graph#DeleteConfiguration.propertyPath> "kontakt" ;
+    ag:deleteType code:delete-cascade .
+
+data:asscfg-tourism-contact a ag:AssociationConfiguration ;
+    <https://dataspecer.com/vocabulary/application-graph#AssociationConfiguration.propertyPath> "kontakt" ;
+    ag:associationType code:assoc-composition .
+
+data:graph-tourism-edge-list-detail a ag:Edge ;
+    ag:edgeId "list-detail" ;
+    ag:edgeType code:edge-transition ;
+    ag:sourceNodeId "destinations.list" ;
+    ag:targetNodeId "destinations.detail" ;
+    <https://dataspecer.com/vocabulary/application-graph#Edge.sourceNode> data:graph-tourism-node-list ;
+    <https://dataspecer.com/vocabulary/application-graph#Edge.targetNode> data:graph-tourism-node-detail .
+
+# Graph 2: the application graph manager describing itself, with aggregate IRIs taken from the
+# real demo specification. It is archived to exercise the boolean true case.
+data:graph-manager a ag:ApplicationGraph ;
+    ag:name "Správa aplikačních grafů" ;
+    <https://dataspecer.com/vocabulary/application-graph#ApplicationGraph.archived> true ;
+    <https://dataspecer.com/vocabulary/application-graph#ApplicationGraph.created> "2023-11-15T14:00:00Z"^^xsd:dateTime ;
+    ag:dataSpecificationIri "3d0e8cf1-44fe-4be0-96c6-7a1e78d983f0"^^xsd:anyURI ;
+    ag:dataSources data:ds-fuseki-local ;
+    ag:nodes data:graph-manager-node-list, data:graph-manager-node-detail ;
+    ag:edges data:graph-manager-edge-list-detail .
+
+data:graph-manager-node-list a ag:Node ;
+    ag:nodeId "graphs.list" ;
+    ag:aggregateIri "3ff2e6fc-3d09-44d5-ae2d-1cdeb481b3ff"^^xsd:anyURI ;
+    ag:operation code:op-read-list .
+
+data:graph-manager-node-detail a ag:Node ;
+    ag:nodeId "graphs.detail" ;
+    ag:aggregateIri "6d8245e1-0d88-41a4-bc7b-cf576e9eeda9"^^xsd:anyURI ;
+    ag:operation code:op-read-detail ;
+    ag:nodeConfiguration data:cfg-manager-detail .
+
+data:cfg-manager-detail a ag:NodeConfiguration ;
+    ag:pageTitle "Detail grafu" .
+
+data:graph-manager-edge-list-detail a ag:Edge ;
+    ag:edgeId "graphs-list-detail" ;
+    ag:edgeType code:edge-transition ;
+    ag:sourceNodeId "graphs.list" ;
+    ag:targetNodeId "graphs.detail" ;
+    <https://dataspecer.com/vocabulary/application-graph#Edge.sourceNode> data:graph-manager-node-list ;
+    <https://dataspecer.com/vocabulary/application-graph#Edge.targetNode> data:graph-manager-node-detail .
+
+# Graph 3: a minimal graph that leaves the optional archived flag and node configuration
+# unset, so readers must tolerate missing values.
+data:graph-minimal a ag:ApplicationGraph ;
+    ag:name "Prázdný náčrt" ;
+    <https://dataspecer.com/vocabulary/application-graph#ApplicationGraph.created> "2024-09-20T08:00:00Z"^^xsd:dateTime ;
+    ag:dataSpecificationIri "https://example.org/specification/draft"^^xsd:anyURI ;
+    ag:dataSources data:ds-dbpedia ;
+    ag:nodes data:graph-minimal-node-list .
+
+data:graph-minimal-node-list a ag:Node ;
+    ag:nodeId "items.list" ;
+    ag:aggregateIri "https://example.org/aggregate/item-list"^^xsd:anyURI ;
+    ag:operation code:op-read-list .

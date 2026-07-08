@@ -1,0 +1,45 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix tc: <https://slovník.gov.cz/datový/turistické-cíle/pojem/> .
+@prefix sport: <https://slovník.gov.cz/datový/sportoviště/pojem/> .
+@prefix kon: <https://slovník.gov.cz/generický/kontakty/pojem/> .
+@prefix ex: <https://example.org/turistický-cíl/> .
+
+# Sample tourist destinations matching the OFN tourist destination specification. The class and
+# property IRIs come from the aggregated semantic model of the test specification, so generated
+# LDKit schemas query exactly these terms.
+
+ex:karlstejn a tc:turistický-cíl ;
+    sport:kapacita "250"^^xsd:integer ;
+    tc:kouření-povoleno false ;
+    tc:kontakt ex:karlstejn-kontakt .
+
+ex:karlstejn-kontakt a kon:kontakt ;
+    kon:má-e-mailovou-adresu "info@hrad-karlstejn.cz" ;
+    kon:má-url "https://www.hrad-karlstejn.cz" .
+
+ex:petrin a tc:turistický-cíl ;
+    sport:kapacita "800"^^xsd:integer ;
+    tc:kouření-povoleno false ;
+    tc:kontakt ex:petrin-kontakt .
+
+ex:petrin-kontakt a kon:kontakt ;
+    kon:má-e-mailovou-adresu "petrin@prague.eu" ;
+    kon:má-url "https://www.prazskevyhledy.cz" .
+
+ex:punkva a tc:turistický-cíl ;
+    sport:kapacita "120"^^xsd:integer ;
+    tc:kouření-povoleno false ;
+    tc:kontakt ex:punkva-kontakt .
+
+ex:punkva-kontakt a kon:kontakt ;
+    kon:má-e-mailovou-adresu "punkevni@caves.cz" ;
+    kon:má-url "https://www.caves.cz/jeskyne/punkevni-jeskyne" .
+
+ex:krivoklat a tc:turistický-cíl ;
+    sport:kapacita "300"^^xsd:integer ;
+    tc:kouření-povoleno true ;
+    tc:kontakt ex:krivoklat-kontakt .
+
+ex:krivoklat-kontakt a kon:kontakt ;
+    kon:má-e-mailovou-adresu "krivoklat@hrady.cz" ;
+    kon:má-url "https://www.hrad-krivoklat.cz" .

@@ -1,0 +1,37 @@
+name: app-generator-fuseki
+
+services:
+    fuseki:
+        # Pinned to the Jena release the harness was validated against. stain/jena-fuseki no
+        # longer tracks Jena closely, so latest can drift.
+        image: stain/jena-fuseki:5.1.0
+        # An in-memory dataset with SPARQL Update enabled. Data is lost on restart, which makes
+        # resets cheap. The data-loader service reloads it on every start.
+        command: /jena-fuseki/fuseki-server --update --mem /app
+        ports:
+            - '3030:3030'
+        environment:
+            - ADMIN_PASSWORD=admin
+        healthcheck:
+            # An open ASK query confirms the server is up and the /app dataset exists.
+            test: 'curl -sf -o /dev/null "http://localhost:3030/app/query?query=ASK%7B%7D"'
+            interval: 3s
+            timeout: 5s
+            retries: 20
+
+    # Loads the fixture data once Fuseki is healthy, so a plain docker compose up fills the store.
+    # Because the dataset is in memory, this runs again on every up and restart, which is what
+    # we want.
+    data-loader:
+        image: curlimages/curl:8.11.1
+        depends_on:
+            fuseki:
+                condition: service_healthy
+        environment:
+            - ADMIN_PASSWORD=admin
+            - FUSEKI_URL=http://fuseki:3030
+        volumes:
+            - ./fixtures:/fixtures:ro
+            - ./init-data.sh:/init-data.sh:ro
+        entrypoint: ['sh', '/init-data.sh']
+        restart: 'no'
