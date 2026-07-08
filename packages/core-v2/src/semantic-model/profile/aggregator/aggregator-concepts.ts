@@ -1,4 +1,5 @@
 import { Entity } from "@dataspecer/core/entity-model";
+import { EntityIdentifier } from "../../../entity-model/entity.ts";
 import {
   SEMANTIC_MODEL_CLASS_PROFILE,
   SemanticModelClassProfile,
@@ -32,6 +33,12 @@ export interface AggregatedProfiledSemanticModelClass
    * List of IRIs of the original classes that were referenced by the profile.
    */
   conceptIris: string[];
+
+  /**
+   * List of identifiers of the non-profile (root) entities that were
+   * referenced by the profile.
+   */
+  conceptIdentifiers: EntityIdentifier[];
 
 }
 
@@ -100,6 +107,12 @@ export interface AggregatedProfiledSemanticModelRelationshipEnd
    * List of IRIs of the original ends that were referenced by the profile.
    */
   conceptIris: string[];
+
+  /**
+   * List of identifiers of the non-profile (root) entities that were
+   * referenced by the profile.
+   */
+  conceptIdentifiers: EntityIdentifier[];
 
 }
 

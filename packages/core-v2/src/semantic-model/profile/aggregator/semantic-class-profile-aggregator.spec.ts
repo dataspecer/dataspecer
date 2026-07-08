@@ -49,6 +49,7 @@ describe("SemanticClassProfileAggregator", () => {
       controlledVocabularies: [],
       //
       conceptIris: [],
+      conceptIdentifiers: [],
       nameProperty: null,
       descriptionProperty: null,
     };
@@ -115,6 +116,7 @@ describe("SemanticClassProfileAggregator", () => {
       controlledVocabularies: [],
       //
       conceptIris: ["http://class-2"],
+      conceptIdentifiers: ["2"],
       nameProperty: null,
       descriptionProperty: "http://description-2",
     };
@@ -164,6 +166,7 @@ describe("SemanticClassProfileAggregator", () => {
       controlledVocabularies: [],
       //
       conceptIris: ["http://localhost/class"],
+      conceptIdentifiers: ["2"],
       nameProperty: null,
       descriptionProperty: null,
     };
@@ -205,6 +208,7 @@ describe("SemanticClassProfileAggregator", () => {
       usageNote: null,
       usageNoteFromProfiled: null,
       conceptIris: ["http://example.com/Dataset"],
+      conceptIdentifiers: ["class-1"],
       externalDocumentationUrl: null,
       tags: [],
       controlledVocabularies: [],
@@ -216,6 +220,8 @@ describe("SemanticClassProfileAggregator", () => {
       profile, dependencies);
     // Concepts IRIs should be deduplicated.
     expect(actual.conceptIris).toStrictEqual(["http://example.com/Dataset"]);
+    // Concept identifiers should be deduplicated.
+    expect(actual.conceptIdentifiers).toStrictEqual(["class-1"]);
   });
 
 });

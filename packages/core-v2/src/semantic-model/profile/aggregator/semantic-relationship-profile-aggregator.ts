@@ -99,6 +99,26 @@ function aggregateSemanticModelRelationshipProfile(
         }
       }).flat();
 
+      // We need to collect identifiers of the non-profile (root) entities
+      // and propagate them toward the aggregated profile.
+      const conceptIdentifiers: EntityIdentifier[] = profiled.map(entity => {
+        if (isSemanticModelRelationship(entity)) {
+          const end = entity.ends[index];
+          if (end === undefined) {
+            return [];
+          }
+          return [entity.id];
+        } else if (isAggregatedProfiledSemanticModelRelationship(entity)) {
+          const end = entity.ends[index];
+          if (end === undefined) {
+            return [];
+          }
+          return end.conceptIdentifiers;
+        } else {
+          return [];
+        }
+      }).flat();
+
       // Prepare all ends we should profile.
       // We read ends on the same position.
       const profiledEnds = profiled
@@ -137,6 +157,7 @@ function aggregateSemanticModelRelationshipProfile(
         cardinality: cardinality,
         // Aggregate entities.
         conceptIris: [...new Set(conceptIris)],
+        conceptIdentifiers: [...new Set(conceptIdentifiers)],
       };
     })
   };

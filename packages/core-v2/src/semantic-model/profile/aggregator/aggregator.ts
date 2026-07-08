@@ -5,13 +5,16 @@ import {
 } from "../../concepts/index.ts";
 import {
   isSemanticModelClassProfile,
+  isSemanticModelGeneralizationProfile,
   isSemanticModelRelationshipProfile,
   SemanticModelClassProfile,
+  SemanticModelGeneralizationProfile,
   SemanticModelRelationshipProfile,
 } from "../concepts/index.ts";
 import {
   AggregatedProfiledSemanticModelClass,
   AggregatedProfiledSemanticModelRelationship,
+  AggregatedProfileSemanticModelGeneralization,
 } from "./aggregator-concepts.ts";
 import {
   SemanticClassProfileAggregator,
@@ -19,6 +22,9 @@ import {
 import {
   SemanticRelationshipProfileAggregator,
 } from "./semantic-relationship-profile-aggregator.ts";
+import {
+  SemanticGeneralizationProfileAggregator,
+} from "./semantic-generalization-profile-aggregator.ts";
 
 /**
  * Provide single interface for access to semantic profile aggregator.
@@ -53,6 +59,10 @@ export interface SemanticProfileAggregator {
     )[],
   ): AggregatedProfiledSemanticModelRelationship;
 
+  aggregateSemanticModelGeneralizationProfile(
+    profile: SemanticModelGeneralizationProfile,
+  ): AggregatedProfileSemanticModelGeneralization;
+
 }
 
 /**
@@ -66,6 +76,9 @@ class DefaultProfileEntityAggregator implements SemanticProfileAggregator {
     }
     if (isSemanticModelRelationshipProfile(entity)) {
       return SemanticRelationshipProfileAggregator.dependencies(entity);
+    }
+    if (isSemanticModelGeneralizationProfile(entity)) {
+      return SemanticGeneralizationProfileAggregator.dependencies(entity);
     }
     return null;
   }
@@ -92,6 +105,12 @@ class DefaultProfileEntityAggregator implements SemanticProfileAggregator {
   ): AggregatedProfiledSemanticModelRelationship {
     return SemanticRelationshipProfileAggregator
       .aggregate(profile, aggregatedProfiled);
+  }
+
+  aggregateSemanticModelGeneralizationProfile(
+    profile: SemanticModelGeneralizationProfile,
+  ): AggregatedProfileSemanticModelGeneralization {
+    return SemanticGeneralizationProfileAggregator.aggregate(profile);
   }
 
 }

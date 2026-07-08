@@ -1,11 +1,14 @@
 import { EntityIdentifier } from "../../../entity-model/entity.ts";
-import { LanguageString, SemanticModelClass } from "../../concepts/concepts.ts";
+import { SemanticModelClass } from "../../concepts/concepts.ts";
 import { isSemanticModelClass } from "../../concepts/index.ts";
 import {
   isSemanticModelClassProfile,
   SemanticModelClassProfile,
 } from "../concepts/index.ts";
-import { AggregatedProfiledSemanticModelClass, isAggregatedProfiledSemanticModelClass } from "./aggregator-concepts.ts";
+import {
+  AggregatedProfiledSemanticModelClass,
+  isAggregatedProfiledSemanticModelClass,
+} from "./aggregator-concepts.ts";
 import { createProfiledGetter } from "./utilities.ts";
 
 export const SemanticClassProfileAggregator = {
@@ -62,6 +65,10 @@ function aggregateSemanticModelClassProfile(
   // the aggregated profile.
   const conceptIris: string[] = [];
 
+  // We need to collect identifiers of the non-profile (root) entities
+  // and propagate them toward the aggregated profile.
+  const conceptIdentifiers: EntityIdentifier[] = [];
+
   // We collect all properties along the way.
   // The ideas is to merge even unknown properties into the result.
   const propertiesCollector: Record<string, unknown> = {};
@@ -75,12 +82,14 @@ function aggregateSemanticModelClassProfile(
     // We go from the most specific types to the general one.
     if (isAggregatedProfiledSemanticModelClass(profiled)) {
       conceptIris.push(...profiled.conceptIris);
+      conceptIdentifiers.push(...profiled.conceptIdentifiers);
     } else if (isSemanticModelClassProfile(profiled)) {
-      // conceptIris property is not part of this type.
+      // conceptIris and conceptIdentifiers properties are not part of this type.
     } else if (isSemanticModelClass(profiled)) {
       if (profiled.iri !== null) {
         conceptIris.push(profiled.iri);
       }
+      conceptIdentifiers.push(profiled.id);
     }
     // Collect all properties.
     Object.assign(propertiesCollector, profiled);
@@ -111,6 +120,7 @@ function aggregateSemanticModelClassProfile(
     controlledVocabularies: profile.controlledVocabularies,
     // Aggregate entities.
     conceptIris: [...new Set(conceptIris)],
+    conceptIdentifiers: [...new Set(conceptIdentifiers)],
     nameProperty: nameProperty,
     descriptionProperty: descriptionProperty,
   };

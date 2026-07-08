@@ -14,8 +14,17 @@ export {
 } from "./aggregator.ts";
 
 export {
+  createObservableSemanticProfileAggregator,
+  type ObservableSemanticProfileAggregator,
+} from "./observable-aggregator.ts";
+
+export {
   SemanticClassProfileAggregator,
 } from "./semantic-class-profile-aggregator.ts";
+
+export {
+  SemanticGeneralizationProfileAggregator,
+} from "./semantic-generalization-profile-aggregator.ts";
 
 export {
   SemanticRelationshipProfileAggregator,

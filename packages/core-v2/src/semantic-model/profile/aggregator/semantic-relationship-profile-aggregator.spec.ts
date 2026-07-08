@@ -91,6 +91,7 @@ describe("SemanticRelationshipProfileAggregator", () => {
         usageNote: null,
         usageNoteFromProfiled: "2",
         conceptIris: [],
+        conceptIdentifiers: ["2"],
         externalDocumentationUrl: "1-1-document",
         tags: ["1-1-level"],
         order: null,
@@ -108,6 +109,7 @@ describe("SemanticRelationshipProfileAggregator", () => {
         usageNote: null,
         usageNoteFromProfiled: "3",
         conceptIris: ["2-iri"],
+        conceptIdentifiers: ["2"],
         externalDocumentationUrl: "1-2-document",
         tags: ["1-2-level"],
         order: null,
@@ -193,6 +195,7 @@ describe("SemanticRelationshipProfileAggregator", () => {
         tags: [],
         order: null,
         conceptIris: [],
+        conceptIdentifiers: [],
       }, {
         iri: "http://example.com/title-profile",
         profiling: [],
@@ -210,6 +213,7 @@ describe("SemanticRelationshipProfileAggregator", () => {
         tags: [],
         order: null,
         conceptIris: ["http://example.com/title"],
+        conceptIdentifiers: ["rel-1"],
       }],
     } satisfies AggregatedProfiledSemanticModelRelationship];
     const actual = SemanticRelationshipProfileAggregator.aggregate(
@@ -217,6 +221,7 @@ describe("SemanticRelationshipProfileAggregator", () => {
     const end = actual.ends[1];
     expect(end).toBeDefined();
     expect(end!.conceptIris).toStrictEqual(["http://example.com/title"]);
+    expect(end!.conceptIdentifiers).toStrictEqual(["rel-1"]);
   });
 
   it("Aggregate relationship with a profiles.", () => {
@@ -325,6 +330,7 @@ describe("SemanticRelationshipProfileAggregator", () => {
         usageNote: { "": "2-note" },
         usageNoteFromProfiled: "2",
         conceptIris: [],
+        conceptIdentifiers: [],
         externalDocumentationUrl: "1-1-document",
         tags: ["1-1-level"],
         order: null,
@@ -342,6 +348,7 @@ describe("SemanticRelationshipProfileAggregator", () => {
         usageNote: { "": "3-note" },
         usageNoteFromProfiled: "3",
         conceptIris: [],
+        conceptIdentifiers: [],
         externalDocumentationUrl: "1-2-document",
         tags: ["1-2-level"],
         order: null,
