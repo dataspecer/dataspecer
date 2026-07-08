@@ -1,12 +1,18 @@
-import { Entity, EntityModel } from '@dataspecer/core-v2';
-import { Operation } from '@dataspecer/core-v2/semantic-model/operations';
-import { CoreOperation, CoreOperationResult, CoreResource, CoreResourceReader, CoreResourceWriter } from "@dataspecer/core/core";
+import {Entity, EntityModel} from '@dataspecer/core-v2';
+import {Operation} from '@dataspecer/core-v2/semantic-model/operations';
+import {
+    CoreOperation,
+    CoreOperationResult,
+    CoreResource,
+    CoreResourceReader,
+    CoreResourceWriter
+} from "@dataspecer/core/core";
 import * as DataPSM from "@dataspecer/core/data-psm/data-psm-vocabulary";
-import { DataPsmSchema } from "@dataspecer/core/data-psm/model";
-import { cloneDeep } from "lodash";
-import { ComplexOperation } from "./complex-operation.ts";
-import { FederatedCoreResourceWriter } from "./federated-core-resource-writer.ts";
-import { Resource } from "./resource.ts";
+import {DataPsmSchema} from "@dataspecer/core/data-psm/model";
+import _ from "lodash";
+import {ComplexOperation} from "./complex-operation.ts";
+import {FederatedCoreResourceWriter} from "./federated-core-resource-writer.ts";
+import {Resource} from "./resource.ts";
 
 /**
  * Callback listening for resource changes.
@@ -272,7 +278,7 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
         return [...resources];
     }
 
-    readResource(iri: string): CoreResource|Entity|null {
+    readResource(iri: string): CoreResource | Entity | null {
         if (!this.subscriptions.has(iri)) {
             this.createSubscriptionForNewResource(iri);
         }
@@ -282,7 +288,7 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
     }
 
     private createSubscriptionForNewResource(iri: string) {
-        let schemaIri: string|null = null;
+        let schemaIri: string | null = null;
         for (const schema of this.modelSchemas.values()) {
             if (schema.resources.includes(iri)) {
                 schemaIri = schema.iri;
@@ -369,7 +375,7 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
 
         this.updateSubscriptionTo(resourceIri, {
             isLoading: false,
-            resource: doNotClone ? resource : cloneDeep(resource),
+            resource: doNotClone ? resource : _.cloneDeep(resource),
         });
     }
 
@@ -475,7 +481,7 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter {
 
         if (DataPsmSchema.is(resource.resource)) {
             iris = resource.resource.dataPsmParts;
-        // @ts-ignore
+            // @ts-ignore
         } else if (resource.resource.getEntities) {
             // @ts-ignore
             iris = Object.keys(resource.resource.getEntities());

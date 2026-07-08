@@ -18,6 +18,7 @@ export class TemplateGenerator<TTemplate extends TemplateModel> {
 
     private readonly _eta: Eta;
     constructor() {
+        const __dirname = import.meta.dirname;
         this._eta = new Eta({
             views: path.join(__dirname, "..", "..", "templates"),
             autoTrim: false,
