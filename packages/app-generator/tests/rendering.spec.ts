@@ -45,6 +45,20 @@ describe('renderGeneratedApp', () => {
     );
   });
 
+  it('renders nested association fields in models and descriptors', () => {
+    const model = buildGenerationModel(graphFixture(), basicMetadata);
+    const tree = renderGeneratedApp(model);
+
+    expect(tree.get('src/modules/book-detail/model.ts')).toContain(
+      'chapters?: { id?: string; editor?: string; footnotes?: { id?: string; text?: string }[]; name?: string }[];'
+    );
+    const descriptor = tree.get('src/modules/book-detail/descriptor.ts');
+    expect(descriptor).toContain('"path": "chapters"');
+    expect(descriptor).toContain('"path": "footnotes"');
+    expect(descriptor).toContain('"propertyName": "footnotes"');
+    expect(tree.get('src/shared/components/field-value.ts')).toContain('formatFieldValue');
+  });
+
   it('renders routes, pages, and the RDF/LDKit read adapter', () => {
     const model = buildGenerationModel(graphFixture(), basicMetadata);
     const tree = renderGeneratedApp(model);

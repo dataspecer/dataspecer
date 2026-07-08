@@ -1,12 +1,6 @@
-export enum FieldKind {
-  Primitive = 'primitive',
-  Association = 'association',
-}
+export type FieldKind = 'primitive' | 'association';
 
-export enum AssociationKind {
-  Composition = 'composition',
-  Aggregation = 'aggregation',
-}
+export type AssociationKind = 'composition' | 'aggregation';
 
 export interface FieldDescriptor {
   path: string;
@@ -20,6 +14,8 @@ export interface FieldDescriptor {
   targetAggregateIri?: string;
   targetClassIri?: string;
   associationKind?: AssociationKind;
+  /** Nested fields of an association whose target is defined inline. */
+  fields?: FieldDescriptor[];
 }
 
 export interface AggregateDescriptor<TModel extends EntityModel = EntityModel> {

@@ -1,6 +1,5 @@
 import type { AssociationKind, DatasourceType, Operation } from '../graph/types.ts';
 import { type FieldKind } from '../metadata/types.ts';
-import { type AggregateFieldMetadata } from '../metadata/types.ts';
 
 export interface GenerationModel {
   app: GeneratedAppDescriptor;
@@ -29,7 +28,7 @@ export interface GeneratedAggregateDescriptor {
   name: string;
   safeName: string;
   classIri: string;
-  fields: AggregateFieldMetadata[];
+  fields: GeneratedFieldDescriptor[];
 }
 
 export interface GeneratedOperationDescriptor {
@@ -100,4 +99,6 @@ export interface GeneratedFieldDescriptor {
   targetAggregateIri?: string;
   targetClassIri?: string;
   associationKind?: AssociationKind;
+  /** Nested fields of an inline association target. */
+  fields?: GeneratedFieldDescriptor[];
 }

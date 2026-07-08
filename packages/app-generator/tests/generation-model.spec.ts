@@ -134,18 +134,22 @@ describe('buildGenerationModel', () => {
       (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
     );
 
-    expect(bookDetail?.fields.find((field) => field.path === 'chapters')).toMatchObject({
+    const chapters = bookDetail?.fields.find((field) => field.path === 'chapters');
+    expect(chapters).toMatchObject({
       associationKind: AssociationKind.Composition,
     });
     expect(bookDetail?.fields.find((field) => field.path === 'author')).toMatchObject({
       associationKind: AssociationKind.Aggregation,
     });
+    expect(chapters?.fields?.find((field) => field.path === 'editor')).toMatchObject({
+      associationKind: AssociationKind.Aggregation,
+    });
     const chapterDetail = model.aggregates.find(
       (aggregate) => aggregate.iri === 'https://example.org/aggregate/chapter-detail'
     );
-    expect(chapterDetail?.fields.find((field) => field.path === 'editor')).toMatchObject({
-      associationKind: AssociationKind.Aggregation,
-    });
+    expect(
+      chapterDetail?.fields.find((field) => field.path === 'editor')?.associationKind
+    ).toBeUndefined();
   });
 });
 

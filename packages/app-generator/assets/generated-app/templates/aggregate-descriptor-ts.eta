@@ -5,32 +5,6 @@ export const <%= it.aggregate.descriptorName %>: AggregateDescriptor<<%= it.aggr
   iri: <%~ it.json(it.aggregate.iri) %>,
   name: <%~ it.json(it.aggregate.name) %>,
   classIri: <%~ it.json(it.aggregate.classIri) %>,
-  fields: [
-<% it.aggregate.fields.forEach((field) => { %>
-    {
-      path: <%~ it.json(field.path) %>,
-      propertyName: <%~ it.json(field.propertyName) %>,
-      label: <%~ it.json(field.label) %>,
-      kind: <%~ it.json(field.kind) %>,
-      many: <%= field.many ? "true" : "false" %>,
-      required: <%= field.required ? "true" : "false" %>,
-<% if (field.propertyIri) { %>
-      propertyIri: <%~ it.json(field.propertyIri) %>,
-<% } %>
-<% if (field.datatype) { %>
-      datatype: <%~ it.json(field.datatype) %>,
-<% } %>
-<% if (field.targetAggregateIri) { %>
-      targetAggregateIri: <%~ it.json(field.targetAggregateIri) %>,
-<% } %>
-<% if (field.targetClassIri) { %>
-      targetClassIri: <%~ it.json(field.targetClassIri) %>,
-<% } %>
-<% if (field.associationKind) { %>
-      associationKind: <%~ it.json(field.associationKind) %>,
-<% } %>
-    },
-<% }) %>
-  ],
+  fields: <%~ it.json(it.aggregate.descriptorFields) %>,
   createEmpty: createEmpty<%= it.aggregate.modelName %>,
 };

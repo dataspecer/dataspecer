@@ -67,7 +67,7 @@ function buildAggregateDescriptor(aggregate: AggregateMetadata): GeneratedAggreg
     name: aggregate.name,
     safeName: toPascalCase(aggregate.name),
     classIri: aggregate.classIri,
-    fields: sortBy(aggregate.fields, [(field) => field.path]),
+    fields: sortBy(aggregate.fields, [(field) => field.path]).map(buildFieldDescriptor),
   };
 }
 
@@ -177,6 +177,9 @@ function buildFieldDescriptor(field: AggregateFieldMetadata): GeneratedFieldDesc
     ...(field.targetAggregateIri ? { targetAggregateIri: field.targetAggregateIri } : {}),
     ...(field.targetClassIri ? { targetClassIri: field.targetClassIri } : {}),
     ...(field.associationKind ? { associationKind: field.associationKind } : {}),
+    ...(field.fields
+      ? { fields: sortBy(field.fields, [(child) => child.path]).map(buildFieldDescriptor) }
+      : {}),
   };
 }
 
