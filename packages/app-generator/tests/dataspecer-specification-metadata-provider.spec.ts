@@ -221,6 +221,28 @@ describe('mapDataspecerSpecificationToMetadata', () => {
     expect(referencedContact?.fields).toBeUndefined();
   });
 
+  it('defaults missing cardinality to zero to many', () => {
+    const fixture = dataspecerFixture();
+    const titleAttribute = fixture.structureModels[0].find(
+      (resource) => resource.iri === 'https://example.org/psm/title'
+    ) as DataPsmAttribute;
+    delete (titleAttribute as { dataPsmCardinality?: unknown }).dataPsmCardinality;
+    const titleRelationship = fixture.aggregatedSemanticModel.find(
+      (entity) => entity.id === 'relationship-title'
+    ) as SemanticModelRelationship;
+    delete (titleRelationship.ends[1] as { cardinality?: unknown }).cardinality;
+
+    const metadata = mapDataspecerSpecificationToMetadata(specificationIri, fixture);
+    const book = metadata.aggregates.find(
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+    );
+
+    expect(book?.fields.find((field) => field.path === 'title')).toMatchObject({
+      many: true,
+      required: false,
+    });
+  });
+
   it('surfaces multi-root schemas as mapping issues', () => {
     const fixture = dataspecerFixture();
     const bookSchema = fixture.structureModels[0].find((resource) =>

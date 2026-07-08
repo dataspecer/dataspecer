@@ -198,13 +198,14 @@ function graphFixture(): ApplicationGraph {
       }),
       node('Book.ReadDetail', 'https://example.org/aggregate/book-detail', Operation.ReadDetail),
       node('Book.Create', 'https://example.org/aggregate/book-form', Operation.Create),
-      node('Book.Update', 'https://example.org/aggregate/book-form', Operation.Update),
-      node('Book.Delete', 'https://example.org/aggregate/book-detail', Operation.Delete, {
+      node('Book.Update', 'https://example.org/aggregate/book-detail', Operation.Update, {
         associations: {
           chapters: AssociationKind.Composition,
           author: AssociationKind.Aggregation,
           'chapters.editor': AssociationKind.Aggregation,
         },
+      }),
+      node('Book.Delete', 'https://example.org/aggregate/book-detail', Operation.Delete, {
         delete: { chapters: DeletePolicy.Cascade },
       }),
     ],

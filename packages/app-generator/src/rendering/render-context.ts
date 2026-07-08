@@ -5,7 +5,7 @@ import type {
   GenerationModel,
 } from '../generation-model/types.ts';
 
-import { toKebabName, toPropertyName } from '../utils/naming.ts';
+import { toModuleName, toOperationClassName, toPropertyName } from '../utils/naming.ts';
 import { FieldKind } from '../metadata/types.ts';
 
 export interface GeneratedAppRenderContext {
@@ -65,7 +65,7 @@ export function buildRenderContext(model: GenerationModel): GeneratedAppRenderCo
     const fields = aggregate.fields.map(toRenderedField);
     return {
       ...aggregate,
-      moduleName: toKebabName(aggregate.name),
+      moduleName: toModuleName(aggregate.name),
       descriptorName: `${aggregate.safeName}AggregateDescriptor`,
       modelName: `${aggregate.safeName}Model`,
       schemaName: `${aggregate.safeName}LdkitSchema`,
@@ -89,7 +89,7 @@ export function buildRenderContext(model: GenerationModel): GeneratedAppRenderCo
         componentName: operation.pageComponentName,
         moduleName: aggregate.moduleName,
         modelName: aggregate.modelName,
-        operationClassName: `${operation.pageComponentName.replace(/Page$/, '')}Operation`,
+        operationClassName: toOperationClassName(operation.nodeId),
         operation,
       };
     }),

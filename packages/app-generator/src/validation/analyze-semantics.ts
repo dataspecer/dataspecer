@@ -3,6 +3,7 @@ import type { ApplicationGraph } from '../graph/types.ts';
 import type { SpecificationMetadata } from '../metadata/types.ts';
 import { enrichMetadata } from './enrich-metadata.ts';
 import { validateGraphStructure } from './validate-structure.ts';
+import { validateAggregateNames } from './rules/aggregate-names.ts';
 import { validateAggregateReferences } from './rules/aggregate-reference.ts';
 import { validateCompositionCycles } from './rules/composition-cycle.ts';
 import { validateDeleteCascade } from './rules/delete-cascade.ts';
@@ -32,6 +33,7 @@ export function analyzeGraphSemantics(
   };
 
   const violations: Violation[] = [...structure.violations, ...enrichment.violations];
+  violations.push(...validateAggregateNames(context));
   violations.push(...validateAggregateReferences(context));
   violations.push(...validateRedirectClasses(context));
   violations.push(...validateTransitionClasses(context));

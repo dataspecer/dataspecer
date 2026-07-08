@@ -1,17 +1,39 @@
 import { deburr, kebabCase, pascalCase, upperFirst } from 'es-toolkit';
 
-/**
- * Identifiers, module paths, and routes of the generated application are derived here, with
- * diacritics stripped so Czech labels produce ASCII names. Display values such as labels and
- * page titles keep their diacritics and never go through these functions.
- */
-
-export function toKebabName(value: string): string {
+function toKebabName(value: string): string {
   return kebabCase(deburr(value));
 }
 
-export function toPascalName(value: string): string {
+function toPascalName(value: string): string {
   return pascalCase(deburr(value));
+}
+
+/** Names the generated application package and the downloaded zip archive. */
+export function toAppName(graphName: string): string {
+  return toKebabName(graphName);
+}
+
+/** Names the per-aggregate source folder of the generated application. */
+export function toModuleName(aggregateName: string): string {
+  return toKebabName(aggregateName);
+}
+
+/**
+ * Prefix for the TypeScript identifiers generated per aggregate, such as the model type, the
+ * LDKit schema, and the aggregate descriptor.
+ */
+export function toAggregateTypeName(aggregateName: string): string {
+  return toPascalName(aggregateName);
+}
+
+/** Names the React page component generated for a graph node. */
+export function toPageComponentName(nodeId: string): string {
+  return `${toPascalName(nodeId)}Page`;
+}
+
+/** Names the operation strategy class generated for a graph node. */
+export function toOperationClassName(nodeId: string): string {
+  return `${toPascalName(nodeId)}Operation`;
 }
 
 /**

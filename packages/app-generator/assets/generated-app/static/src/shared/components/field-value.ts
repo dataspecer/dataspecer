@@ -19,7 +19,7 @@ export function formatFieldValue(field: FieldDescriptor, value: unknown): string
 }
 
 function formatObjectValue(field: FieldDescriptor, value: Record<string, unknown>): string {
-  // TODO: Show all primitive nested fields comma separated and use this fallback policy: name -> title -> label -> IRI
+  // List columns show the first primitive nested field
   const firstPrimitive = (field.fields ?? []).find(
     (nested) => nested.kind === 'primitive' && value[nested.propertyName] != null
   );

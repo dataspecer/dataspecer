@@ -475,11 +475,12 @@ function fieldLabelFrom(
 }
 
 function cardinalityFlags(cardinality: Cardinality | null | undefined): {
-  many?: boolean;
-  required?: boolean;
+  many: boolean;
+  required: boolean;
 } {
   if (!cardinality) {
-    return {};
+    // treat missing cardinality as 0..*
+    return { required: false, many: true };
   }
   return {
     required: cardinality[0] > 0,

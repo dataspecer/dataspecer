@@ -232,13 +232,12 @@ describe('analyzeGraphSemantics', () => {
     expectViolations(graph, ViolationCode.SemanticTransitionRequiresAssociation);
   });
 
-  it('allows delete cascade through compositions only', () => {
+  it('allows delete cascade when no create or update node models the association', () => {
     const deleteBook = node(
       'Book.Delete',
       'https://example.org/aggregate/book-detail',
       Operation.Delete,
       {
-        associations: { chapters: AssociationKind.Composition },
         delete: { chapters: DeletePolicy.Cascade },
       }
     );
@@ -252,34 +251,97 @@ describe('analyzeGraphSemantics', () => {
     expect(result.valid).toBe(true);
   });
 
-  it('rejects delete cascade through aggregations', () => {
+  it('allows delete cascade when the create node structure does not contain the association', () => {
+    // BookForm shares the Book class but has no chapters field, so it cannot contradict the
+    // cascade declared on BookDetail.
+    const createBook = node(
+      'Book.Create',
+      'https://example.org/aggregate/book-form',
+      Operation.Create
+    );
     const deleteBook = node(
       'Book.Delete',
       'https://example.org/aggregate/book-detail',
       Operation.Delete,
       {
+        delete: { chapters: DeletePolicy.Cascade },
+      }
+    );
+    const graph = validGraph({
+      nodes: [createBook, deleteBook],
+      edges: [],
+    });
+
+    const result = validatePreparedGraph(graph);
+
+    expect(result.valid).toBe(true);
+  });
+
+  it('rejects delete cascade when an update node declares the association as an aggregation', () => {
+    const updateBook = node(
+      'Book.Update',
+      'https://example.org/aggregate/book-detail',
+      Operation.Update,
+      {
         associations: { author: AssociationKind.Aggregation },
+      }
+    );
+    const deleteBook = node(
+      'Book.Delete',
+      'https://example.org/aggregate/book-detail',
+      Operation.Delete,
+      {
         delete: { author: DeletePolicy.Cascade },
       }
     );
     const graph = validGraph({
-      nodes: [deleteBook],
+      nodes: [updateBook, deleteBook],
       edges: [],
     });
 
     expectViolations(graph, ViolationCode.SemanticCannotCascadeAggregation);
   });
 
-  it('allows nested delete cascade through configured compositions', () => {
+  it('rejects delete cascade when the association is unconfigured on an update node', () => {
+    // An unconfigured association on an update node of the same class defaults to aggregation.
+    const updateBook = node(
+      'Book.Update',
+      'https://example.org/aggregate/book-detail',
+      Operation.Update
+    );
     const deleteBook = node(
       'Book.Delete',
       'https://example.org/aggregate/book-detail',
       Operation.Delete,
       {
+        delete: { chapters: DeletePolicy.Cascade },
+      }
+    );
+    const graph = validGraph({
+      nodes: [updateBook, deleteBook],
+      edges: [],
+    });
+
+    expectViolations(graph, ViolationCode.SemanticCannotCascadeAggregation);
+  });
+
+  it('allows nested delete cascade through compositions declared on an update node', () => {
+    const updateBook = node(
+      'Book.Update',
+      'https://example.org/aggregate/book-detail',
+      Operation.Update,
+      {
         associations: {
           chapters: AssociationKind.Composition,
           'chapters.footnotes': AssociationKind.Composition,
         },
+      }
+    );
+    const deleteBook = node(
+      'Book.Delete',
+      'https://example.org/aggregate/book-detail',
+      Operation.Delete,
+      {
         delete: {
           chapters: DeletePolicy.Cascade,
           'chapters.footnotes': DeletePolicy.Cascade,
@@ -287,7 +349,7 @@ describe('analyzeGraphSemantics', () => {
       }
     );
     const graph = validGraph({
-      nodes: [deleteBook],
+      nodes: [updateBook, deleteBook],
       edges: [],
     });
 
@@ -297,24 +359,62 @@ describe('analyzeGraphSemantics', () => {
   });
 
   it('rejects nested delete cascade whose parent composition does not cascade', () => {
-    const deleteBook = node(
-      'Book.Delete',
+    const updateBook = node(
+      'Book.Update',
       'https://example.org/aggregate/book-detail',
-      Operation.Delete,
+      Operation.Update,
       {
         associations: {
           chapters: AssociationKind.Composition,
           'chapters.footnotes': AssociationKind.Composition,
         },
+      }
+    );
+    const deleteBook = node(
+      'Book.Delete',
+      'https://example.org/aggregate/book-detail',
+      Operation.Delete,
+      {
         delete: { 'chapters.footnotes': DeletePolicy.Cascade },
       }
     );
     const graph = validGraph({
-      nodes: [deleteBook],
+      nodes: [updateBook, deleteBook],
       edges: [],
     });
 
     expectViolations(graph, ViolationCode.SemanticCascadeRequiresParentCascade);
+  });
+
+  it('rejects aggregates whose names produce the same module name', () => {
+    const graph = validGraph({
+      nodes: [node('Book.ReadList', 'https://example.org/aggregate/book-a', Operation.ReadList)],
+      edges: [],
+    });
+    const metadata = {
+      dataSpecificationIri: specificationIri,
+      aggregates: [
+        {
+          iri: 'https://example.org/aggregate/book-a',
+          name: 'Book Detail',
+          classIri: 'https://example.org/class/book',
+          fields: [],
+        },
+        {
+          iri: 'https://example.org/aggregate/book-b',
+          name: 'Book detail',
+          classIri: 'https://example.org/class/book',
+          fields: [],
+        },
+      ],
+    };
+
+    const result = analyzeGraphSemantics(graph, metadata);
+
+    expect(result.valid).toBe(false);
+    expect(result.violations).toContainEqual(
+      expect.objectContaining({ code: ViolationCode.SemanticDuplicateAggregateName })
+    );
   });
 
   it('rejects circular compositions across aggregates', () => {
@@ -370,30 +470,54 @@ describe('analyzeGraphSemantics', () => {
   });
 
   it('rejects nested delete cascade through aggregations', () => {
-    const deleteBook = node(
-      'Book.Delete',
+    const updateBook = node(
+      'Book.Update',
       'https://example.org/aggregate/book-detail',
-      Operation.Delete,
+      Operation.Update,
       {
         associations: {
           chapters: AssociationKind.Composition,
           'chapters.editor': AssociationKind.Aggregation,
         },
-        delete: { 'chapters.editor': DeletePolicy.Cascade },
+      }
+    );
+    const deleteBook = node(
+      'Book.Delete',
+      'https://example.org/aggregate/book-detail',
+      Operation.Delete,
+      {
+        delete: {
+          chapters: DeletePolicy.Cascade,
+          'chapters.editor': DeletePolicy.Cascade,
+        },
       }
     );
     const graph = validGraph({
-      nodes: [deleteBook],
+      nodes: [updateBook, deleteBook],
       edges: [],
     });
 
     expectViolations(graph, ViolationCode.SemanticCannotCascadeAggregation);
   });
 
-  it('rejects invalid association config values', () => {
+  it('rejects association config on delete nodes', () => {
     const graph = validGraph({
       nodes: [
         node('Book.Delete', 'https://example.org/aggregate/book-detail', Operation.Delete, {
+          associations: { chapters: AssociationKind.Composition },
+          delete: { chapters: DeletePolicy.Cascade },
+        }),
+      ],
+      edges: [],
+    });
+
+    expectViolations(graph, ViolationCode.SemanticAssociationConfigNotAllowed);
+  });
+
+  it('rejects invalid association config values', () => {
+    const graph = validGraph({
+      nodes: [
+        node('Book.Update', 'https://example.org/aggregate/book-detail', Operation.Update, {
           associations: { chapters: 'invalid' },
         } as unknown as ApplicationNodeConfig),
       ],
@@ -406,7 +530,7 @@ describe('analyzeGraphSemantics', () => {
   it('rejects association config paths that are not associations', () => {
     const graph = validGraph({
       nodes: [
-        node('Book.Delete', 'https://example.org/aggregate/book-detail', Operation.Delete, {
+        node('Book.Update', 'https://example.org/aggregate/book-detail', Operation.Update, {
           associations: { title: AssociationKind.Composition },
         }),
       ],
@@ -419,7 +543,7 @@ describe('analyzeGraphSemantics', () => {
   it('rejects nested association config below aggregations', () => {
     const graph = validGraph({
       nodes: [
-        node('Book.Delete', 'https://example.org/aggregate/book-detail', Operation.Delete, {
+        node('Book.Update', 'https://example.org/aggregate/book-detail', Operation.Update, {
           associations: {
             author: AssociationKind.Aggregation,
             'author.name': AssociationKind.Aggregation,
@@ -435,7 +559,7 @@ describe('analyzeGraphSemantics', () => {
   it('rejects nested association config paths that are not associations', () => {
     const graph = validGraph({
       nodes: [
-        node('Book.Delete', 'https://example.org/aggregate/book-detail', Operation.Delete, {
+        node('Book.Update', 'https://example.org/aggregate/book-detail', Operation.Update, {
           associations: {
             chapters: AssociationKind.Composition,
             'chapters.name': AssociationKind.Aggregation,
@@ -490,6 +614,24 @@ describe('analyzeGraphSemantics', () => {
         }),
         node('Book.Update', 'https://example.org/aggregate/book-detail', Operation.Update, {
           associations: { chapters: AssociationKind.Aggregation },
+        }),
+      ],
+      edges: [],
+    });
+
+    expectViolations(graph, ViolationCode.SemanticConflictingAssociationKind);
+  });
+
+  it('rejects conflicting association config across aggregates of the same class', () => {
+    // BookList and BookDetail both represent the Book class, so their author associations
+    // describe the same semantic association and must agree on the kind.
+    const graph = validGraph({
+      nodes: [
+        node('Book.Create', 'https://example.org/aggregate/book-detail', Operation.Create, {
+          associations: { author: AssociationKind.Composition },
+        }),
+        node('BookRow.Update', 'https://example.org/aggregate/book-list', Operation.Update, {
+          associations: { author: AssociationKind.Aggregation },
         }),
       ],
       edges: [],

@@ -2,6 +2,7 @@ import { isPlainObject, sortBy } from 'es-toolkit';
 
 import {
   AssociationKind,
+  Operation,
   type ApplicationGraph,
   type ApplicationNodeConfig,
 } from '../graph/types.ts';
@@ -11,6 +12,7 @@ import {
   type SpecificationMetadata,
   FieldKind,
 } from '../metadata/types.ts';
+import { chainIdentity, resolveAssociationChain } from './association-chain.ts';
 import { splitFieldPath } from './field-path.ts';
 import { semanticViolation, type Violation } from './types.ts';
 import { ViolationCode } from './violation-codes.ts';
@@ -21,9 +23,11 @@ export interface MetadataEnrichment {
 }
 
 /**
- * Copies association kinds from node configs to the corresponding metadata fields. Every node config is self-contained,
- * so a nested path requires its parent path to be configured as a composition in the same node config. Nodes of one
- * aggregate must still agree on the kind of each association.
+ * Copies association kinds from Create and Update node configs to the corresponding metadata
+ * fields. Every node config is self-contained, so a nested path requires its parent path to be
+ * configured as a composition in the same node config. Configured kinds must agree across all
+ * aggregates of the same class, because a kind describes the underlying semantic association,
+ * not one structure. An unconfigured association is treated as an aggregation.
  */
 export function enrichMetadata(
   graph: ApplicationGraph,
@@ -32,8 +36,15 @@ export function enrichMetadata(
   const violations: Violation[] = [];
   const aggregates = new Map(metadata.aggregates.map((aggregate) => [aggregate.iri, aggregate]));
   const resolvedKinds = new Map<string, AssociationKind>();
+  const kindsByClassChain = new Map<string, AssociationKind>();
 
   graph.nodes.forEach((node, nodeIndex) => {
+    if (node.operation !== Operation.Create && node.operation !== Operation.Update) {
+      // Association kinds belong to Create and Update nodes. Other placements are rejected by
+      // the node config rule and are ignored here.
+      return;
+    }
+
     const associations = associationConfigFrom(node.config);
     if (!associations) {
       return;
@@ -76,20 +87,27 @@ export function enrichMetadata(
 
       nodeKinds.set(normalizedPath, kind);
 
-      const key = associationKey(aggregate.iri, normalizedPath);
-      const previous = resolvedKinds.get(key);
+      // The chain resolves whenever the path resolved, so this is a formality for typing.
+      const chain = resolveAssociationChain(aggregate, normalizedPath);
+      if (!chain) {
+        continue;
+      }
+
+      const classKey = chainIdentity(aggregate.classIri, chain);
+      const previous = kindsByClassChain.get(classKey);
       if (previous && previous !== kind) {
         violations.push(
           semanticViolation(
             ViolationCode.SemanticConflictingAssociationKind,
-            `Association config path "${path}" has conflicting kinds "${previous}" and "${kind}".`,
+            `Association config path "${path}" has conflicting kinds "${previous}" and "${kind}" among nodes of class "${aggregate.classIri}".`,
             violationPath
           )
         );
         continue;
       }
 
-      resolvedKinds.set(key, kind);
+      kindsByClassChain.set(classKey, kind);
+      resolvedKinds.set(associationKey(aggregate.iri, normalizedPath), kind);
     }
   });
 

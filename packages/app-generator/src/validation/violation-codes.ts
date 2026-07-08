@@ -10,6 +10,7 @@ export enum ViolationCode {
   SemanticCascadeRequiresParentCascade = 'SEMANTIC_CASCADE_REQUIRES_PARENT_CASCADE',
   SemanticCircularComposition = 'SEMANTIC_CIRCULAR_COMPOSITION',
   SemanticDeleteConfigNotAllowed = 'SEMANTIC_DELETE_CONFIG_NOT_ALLOWED',
+  SemanticDuplicateAggregateName = 'SEMANTIC_DUPLICATE_AGGREGATE_NAME',
   SemanticDuplicateRouteId = 'SEMANTIC_DUPLICATE_ROUTE_ID',
   SemanticConflictingAssociationKind = 'SEMANTIC_CONFLICTING_ASSOCIATION_KIND',
   SemanticInvalidAssociationKind = 'SEMANTIC_INVALID_ASSOCIATION_KIND',

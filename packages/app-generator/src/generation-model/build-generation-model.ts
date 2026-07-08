@@ -1,6 +1,6 @@
 import { sortBy } from 'es-toolkit';
 
-import { toKebabName, toPascalName, toRouteId } from '../utils/naming.ts';
+import { toAggregateTypeName, toAppName, toPageComponentName, toRouteId } from '../utils/naming.ts';
 
 import type { ApplicationEdge, ApplicationGraph, ApplicationNode } from '../graph/types.ts';
 import { DatasourceType, DeletePolicy, EdgeType, Operation } from '../graph/types.ts';
@@ -39,7 +39,7 @@ export function buildGenerationModel(
   return {
     app: {
       name: graph.name,
-      safeName: toKebabName(graph.name),
+      safeName: toAppName(graph.name),
       dataSpecificationIri: graph.dataSpecificationIri,
     },
     datasource: {
@@ -67,7 +67,7 @@ function buildAggregateDescriptor(aggregate: AggregateMetadata): GeneratedAggreg
   return {
     iri: aggregate.iri,
     name: aggregate.name,
-    safeName: toPascalName(aggregate.name),
+    safeName: toAggregateTypeName(aggregate.name),
     classIri: aggregate.classIri,
     fields: sortBy(aggregate.fields, [(field) => field.path]).map(buildFieldDescriptor),
   };
@@ -77,7 +77,7 @@ function buildOperationDescriptor(
   node: ApplicationNode,
   aggregate: AggregateMetadata
 ): GeneratedOperationDescriptor {
-  const pageComponentName = `${toPascalName(node.id)}Page`;
+  const pageComponentName = toPageComponentName(node.id);
   const descriptor: GeneratedOperationDescriptor = {
     id: node.id,
     nodeId: node.id,

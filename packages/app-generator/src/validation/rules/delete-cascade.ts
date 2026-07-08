@@ -1,16 +1,30 @@
 import { semanticViolation, type Violation } from '../types.ts';
 import { ViolationCode } from '../violation-codes.ts';
-import { AssociationKind, DeletePolicy, Operation } from '../../graph/types.ts';
+import {
+  AssociationKind,
+  DeletePolicy,
+  Operation,
+  type ApplicationNode,
+} from '../../graph/types.ts';
+import { findMatchingChain, resolveAssociationChain } from '../association-chain.ts';
 import { splitFieldPath } from '../field-path.ts';
 import type { SemanticValidationContext } from '../semantic-validation-context.ts';
-import {
-  type AggregateFieldMetadata,
-  type AggregateMetadata,
-  FieldKind,
-} from '../../metadata/types.ts';
+import type { AggregateMetadata } from '../../metadata/types.ts';
 
+interface MutationNodeAssociations {
+  node: ApplicationNode;
+  aggregate: AggregateMetadata;
+  kinds: Map<string, AssociationKind>;
+}
+
+/**
+ * A cascade must not contradict how Create and Update nodes of the same class model the association (only compositions
+ * can be cascade-deleted). An association left unconfigured on such a node defaults to aggregation, which cannot
+ * cascade. When no Create or Update node models the association at all, the cascade is accepted as declared.
+ */
 export function validateDeleteCascade(context: SemanticValidationContext): Violation[] {
   const violations: Violation[] = [];
+  const mutationNodes = collectMutationNodeAssociations(context);
 
   context.graph.nodes.forEach((node, nodeIndex) => {
     if (node.operation !== Operation.Delete) {
@@ -45,8 +59,8 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
         return;
       }
 
-      const field = findAssociationFieldByPath(path, aggregate);
-      if (!field || field.kind !== FieldKind.Association) {
+      const chain = resolveAssociationChain(aggregate, path);
+      if (!chain) {
         violations.push(
           semanticViolation(
             ViolationCode.SemanticDeletePathNotAssociation,
@@ -57,15 +71,25 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
         return;
       }
 
-      if (field.associationKind !== AssociationKind.Composition) {
-        violations.push(
-          semanticViolation(
-            ViolationCode.SemanticCannotCascadeAggregation,
-            `Delete cascade path "${path}" is not a composition.`,
-            `/nodes/${nodeIndex}/config/delete/${path}`
-          )
-        );
-        return;
+      for (const mutation of mutationNodes) {
+        if (mutation.aggregate.classIri !== aggregate.classIri) {
+          continue;
+        }
+        const matched = findMatchingChain(mutation.aggregate, chain);
+        if (!matched) {
+          continue;
+        }
+        const configuredKind = mutation.kinds.get(matched.map((field) => field.path).join('.'));
+        if (configuredKind !== AssociationKind.Composition) {
+          violations.push(
+            semanticViolation(
+              ViolationCode.SemanticCannotCascadeAggregation,
+              `Delete cascade path "${path}" is not configured as a composition on node "${mutation.node.id}".`,
+              `/nodes/${nodeIndex}/config/delete/${path}`
+            )
+          );
+          return;
+        }
       }
 
       const segments = splitFieldPath(path);
@@ -86,26 +110,26 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
   return violations;
 }
 
-/**
- * Delete cascade paths address association fields within the aggregate's own structure tree.
- * Nested segments descend into the inline fields of the parent association.
- */
-function findAssociationFieldByPath(
-  path: string,
-  rootAggregate: AggregateMetadata
-): AggregateFieldMetadata | undefined {
-  let fields = rootAggregate.fields;
-  let resolved: AggregateFieldMetadata | undefined;
+function collectMutationNodeAssociations(
+  context: SemanticValidationContext
+): MutationNodeAssociations[] {
+  const collected: MutationNodeAssociations[] = [];
 
-  for (const segment of splitFieldPath(path)) {
-    resolved = fields.find(
-      (candidate) => candidate.path === segment && candidate.kind === FieldKind.Association
-    );
-    if (!resolved) {
-      return undefined;
+  for (const node of context.graph.nodes) {
+    if (node.operation !== Operation.Create && node.operation !== Operation.Update) {
+      continue;
     }
-    fields = resolved.fields ?? [];
+    const aggregate = context.aggregates.get(node.aggregateIri);
+    if (!aggregate) {
+      continue;
+    }
+
+    const kinds = new Map<string, AssociationKind>();
+    for (const [path, kind] of Object.entries(node.config?.associations ?? {})) {
+      kinds.set(splitFieldPath(path).join('.'), kind);
+    }
+    collected.push({ node, aggregate, kinds });
   }
 
-  return resolved;
+  return collected;
 }

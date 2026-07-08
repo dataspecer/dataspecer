@@ -10,7 +10,7 @@ export function validateDatasource(context: StructuralValidationContext): Violat
     return [
       semanticViolation(
         ViolationCode.SemanticUnsupportedDatasourceCount,
-        'Exactly one datasource is supported by the first prototype.',
+        'Exactly one datasource (RDF) is supported by the current version.',
         '/datasources'
       ),
     ];
@@ -20,7 +20,7 @@ export function validateDatasource(context: StructuralValidationContext): Violat
     return [
       semanticViolation(
         ViolationCode.SemanticUnsupportedDatasourceType,
-        `Datasource type "${String(graph.datasources[0].type)}" is not supported by the first prototype.`,
+        `Datasource type "${String(graph.datasources[0].type)}" is not supported by the current version.`,
         '/datasources/0/type'
       ),
     ];

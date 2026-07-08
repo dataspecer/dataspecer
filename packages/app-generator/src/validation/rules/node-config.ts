@@ -4,14 +4,11 @@ import { Operation } from '../../graph/types.ts';
 import type { StructuralValidationContext } from '../semantic-validation-context.ts';
 
 /**
- * Association kinds may be configured on Create, Update, and Delete nodes. Delete nodes need
- * them to describe cascade targets. Delete policies may be configured only on Delete nodes.
+ * Association kinds may be configured only on Create and Update nodes. Delete cascade paths are
+ * validated against those declarations, so Delete nodes carry no association config themselves.
+ * Delete policies may be configured only on Delete nodes.
  */
-const OPERATIONS_WITH_ASSOCIATION_CONFIG = new Set([
-  Operation.Create,
-  Operation.Update,
-  Operation.Delete,
-]);
+const OPERATIONS_WITH_ASSOCIATION_CONFIG = new Set([Operation.Create, Operation.Update]);
 
 export function validateNodeConfig(context: StructuralValidationContext): Violation[] {
   return context.graph.nodes.flatMap((node, index) => {
