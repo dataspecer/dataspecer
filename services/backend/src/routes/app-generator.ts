@@ -1,5 +1,6 @@
 import z from "zod";
 import express from "express";
+import JSZip from "jszip";
 import { resourceModel } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 import {
@@ -8,6 +9,7 @@ import {
 } from "@dataspecer/app-generator";
 import { getSpecification } from "../utils/data-specification.ts";
 
+// TODO: Add endpoints for graph storage, validation, and metadata lookup for the graph editor.
 export const generateApplicationByModelId = asyncHandler(
   async (request: express.Request, response: express.Response) => {
     const querySchema = z.object({
@@ -28,9 +30,30 @@ export const generateApplicationByModelId = asyncHandler(
       ),
       ...(outputDirectory ? { outputDirectory, allowOverwrite: false } : {}),
     });
-    // TODO: Return the generated application as a downloadable archive and add endpoints for graph storage, validation,
-    //  and metadata lookup for the graph editor.
-    response.setHeader("Content-Type", "application/json");
-    response.send(result);
+
+    if (!result.success) {
+      response.status(400).json({
+        success: false,
+        violations: result.violations,
+      });
+      return;
+    }
+
+    const zip = new JSZip();
+    for (const [path, content] of Object.entries(result.files)) {
+      zip.file(path, content);
+    }
+    const archive = await zip.generateAsync({
+      type: "nodebuffer",
+      compression: "DEFLATE",
+    });
+    const fileName = `${result.generationModel?.app.safeName ?? "generated-application"}.zip`;
+
+    response.setHeader("Content-Type", "application/zip");
+    response.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${fileName}"`,
+    );
+    response.send(archive);
   },
 );
