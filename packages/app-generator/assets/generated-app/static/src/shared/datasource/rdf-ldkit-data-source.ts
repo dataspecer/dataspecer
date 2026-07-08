@@ -27,6 +27,7 @@ export class RdfLdkitDataSource implements DataSource {
 
   async readList<TModel extends EntityModel>(args: ReadListArgs<TModel>): Promise<TModel[]> {
     const lens = this.buildLens(args.aggregate);
+    // TODO: Handle args.orderBy and pagination in the generated list page
     const result = await lens.find({
       take: args.pageSize ?? 100,
       skip: ((args.page ?? 1) - 1) * (args.pageSize ?? 100),
@@ -43,6 +44,7 @@ export class RdfLdkitDataSource implements DataSource {
     return result ? toModel<TModel>(result) : null;
   }
 
+  // TODO: Implement create, update, and delete (including recursive composition save order and cascade deletes)
   async create<TModel extends EntityModel>(_args: MutationArgs<TModel>): Promise<TModel> {
     return Promise.reject(
       new Error('Create is not implemented by the first prototype RDF datasource.')

@@ -1,1 +1,2 @@
+// TODO: Generate the LDKit schema from field metadata
 export const <%= it.aggregate.schemaName %> = {} as const;

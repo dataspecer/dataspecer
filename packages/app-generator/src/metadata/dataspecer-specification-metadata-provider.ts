@@ -103,6 +103,8 @@ export function mapDataspecerSpecificationToMetadata(
     });
   }
 
+  // TODO: Distinguish blocking issues from warnings, for example a missing label, once
+  //  the graph editor can display warnings
   if (context.issues.length > 0) {
     throw new DataspecerMetadataMappingError(context.issues);
   }
@@ -259,6 +261,7 @@ function mapClassFields(
       return field ? [field] : [];
     }
 
+    // TODO: If time allows: support OR, include, container, external root resources
     addIssue(context, {
       code: DataspecerMetadataMappingIssueCode.UnsupportedFieldResource,
       message: `Class part "${partIri}" has unsupported resource type.`,

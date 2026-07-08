@@ -9,6 +9,7 @@ import type { <%= it.page.modelName %> } from "../modules/<%= it.page.moduleName
 
 const operation = operations[<%~ it.json(it.page.operation.id) %>];
 
+// TODO: Make this more pretty (styling)
 export function <%= it.page.componentName %>() {
 <% if (it.page.operation.operation === "ReadList") { %>
   const [items, setItems] = useState<<%= it.page.modelName %>[]>([]);
@@ -33,6 +34,7 @@ export function <%= it.page.componentName %>() {
       });
   }, []);
 
+  // TODO: Render graph transitions as row actions and navigation buttons
   return (
     <>
       {error ? <p role="alert">{error}</p> : null}
@@ -63,6 +65,7 @@ export function <%= it.page.componentName %>() {
       });
   }, [id]);
 
+  // TODO: Render graph transitions as navigation buttons and association links
   return (
     <>
       {error ? <p role="alert">{error}</p> : null}
@@ -70,6 +73,7 @@ export function <%= it.page.componentName %>() {
     </>
   );
 <% } else { %>
+  // TODO: Implement Create and Update forms and the Delete confirmation page with redirects
   return <PlaceholderOperationView title={operation.title} operation={operation.operation} />;
 <% } %>
 }

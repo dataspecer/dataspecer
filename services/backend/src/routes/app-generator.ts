@@ -28,6 +28,8 @@ export const generateApplicationByModelId = asyncHandler(
       ),
       ...(outputDirectory ? { outputDirectory, allowOverwrite: false } : {}),
     });
+    // TODO: Return the generated application as a downloadable archive and add endpoints for graph storage, validation,
+    //  and metadata lookup for the graph editor.
     response.setHeader("Content-Type", "application/json");
     response.send(result);
   },
