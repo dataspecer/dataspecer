@@ -1,5 +1,7 @@
+import { sortBy } from 'es-toolkit';
+
 import type { ApplicationEdge, ApplicationGraph, ApplicationNode } from '../graph/types.ts';
-import { DatasourceType, EdgeType, Operation } from '../graph/types.ts';
+import { DatasourceType, DeletePolicy, EdgeType, Operation } from '../graph/types.ts';
 import type {
   AggregateFieldMetadata,
   AggregateMetadata,
@@ -23,7 +25,7 @@ export function buildGenerationModel(
 ): GenerationModel {
   const aggregateMap = new Map(metadata.aggregates.map((aggregate) => [aggregate.iri, aggregate]));
   const operationByNodeId = new Map<string, GeneratedOperationDescriptor>();
-  const operations = sortBy(graph.nodes, (node) => node.id).map((node) => {
+  const operations = sortBy(graph.nodes, [(node) => node.id]).map((node) => {
     const aggregate = requireAggregate(aggregateMap, node.aggregateIri);
     const operation = buildOperationDescriptor(node, aggregate);
     operationByNodeId.set(node.id, operation);
@@ -43,18 +45,18 @@ export function buildGenerationModel(
       type: DatasourceType.Rdf,
       endpoint: graph.datasources[0].endpoint,
     },
-    aggregates: sortBy(metadata.aggregates, (aggregate) => aggregate.iri).map(
+    aggregates: sortBy(metadata.aggregates, [(aggregate) => aggregate.iri]).map(
       buildAggregateDescriptor
     ),
     operations,
     routes,
     navigation: sortBy(
       graph.edges.filter((edge) => edge.type === EdgeType.Transition),
-      (edge) => edge.id
+      [(edge) => edge.id]
     ).map((edge) => buildEdgeDescriptor(edge, operationByNodeId)),
     redirects: sortBy(
       graph.edges.filter((edge) => edge.type === EdgeType.Redirect),
-      (edge) => edge.id
+      [(edge) => edge.id]
     ).map((edge) => buildEdgeDescriptor(edge, operationByNodeId)),
   };
 }
@@ -65,7 +67,7 @@ function buildAggregateDescriptor(aggregate: AggregateMetadata): GeneratedAggreg
     name: aggregate.name,
     safeName: toPascalCase(aggregate.name),
     classIri: aggregate.classIri,
-    fields: sortBy(aggregate.fields, (field) => field.path),
+    fields: sortBy(aggregate.fields, [(field) => field.path]),
   };
 }
 
@@ -134,32 +136,28 @@ function buildEdgeDescriptor(
 
 function buildListDescriptor(fields: AggregateFieldMetadata[]): GeneratedListDescriptor {
   return {
-    columns: sortBy(fields, (field) => field.path).map(buildFieldDescriptor),
+    columns: sortBy(fields, [(field) => field.path]).map(buildFieldDescriptor),
   };
 }
 
 function buildDetailDescriptor(fields: AggregateFieldMetadata[]): GeneratedDetailDescriptor {
   return {
-    fields: sortBy(fields, (field) => field.path).map(buildFieldDescriptor),
+    fields: sortBy(fields, [(field) => field.path]).map(buildFieldDescriptor),
   };
 }
 
 function buildFormDescriptor(fields: AggregateFieldMetadata[]): GeneratedFormDescriptor {
   return {
-    fields: sortBy(fields, (field) => field.path).map(buildFieldDescriptor),
+    fields: sortBy(fields, [(field) => field.path]).map(buildFieldDescriptor),
     placeholder: true,
   };
 }
 
 function buildDeleteDescriptor(node: ApplicationNode): GeneratedDeleteDescriptor {
-  const deleteConfig = node.config?.delete;
-  const cascadePaths =
-    deleteConfig && typeof deleteConfig === 'object' && !Array.isArray(deleteConfig)
-      ? Object.entries(deleteConfig)
-          .filter(([, value]) => value === 'cascade')
-          .map(([path]) => path)
-          .sort()
-      : [];
+  const cascadePaths = Object.entries(node.config?.delete ?? {})
+    .filter(([, value]) => value === DeletePolicy.Cascade)
+    .map(([path]) => path)
+    .sort((left, right) => left.localeCompare(right));
 
   return {
     cascadePaths,
@@ -172,6 +170,7 @@ function buildFieldDescriptor(field: AggregateFieldMetadata): GeneratedFieldDesc
     path: field.path,
     label: field.label,
     kind: field.kind,
+    ...(field.propertyIri ? { propertyIri: field.propertyIri } : {}),
     ...(field.datatype ? { datatype: field.datatype } : {}),
     many: field.many ?? false,
     required: field.required ?? false,
@@ -182,11 +181,7 @@ function buildFieldDescriptor(field: AggregateFieldMetadata): GeneratedFieldDesc
 }
 
 function getPageTitle(node: ApplicationNode, aggregate: AggregateMetadata): string {
-  if (
-    node.config?.pageTitle &&
-    typeof node.config.pageTitle === 'string' &&
-    node.config.pageTitle.length > 0
-  ) {
+  if (node.config?.pageTitle) {
     return node.config.pageTitle;
   }
 
@@ -226,10 +221,6 @@ function requireOperation(
   }
 
   return operation;
-}
-
-function sortBy<T>(items: T[], getKey: (item: T) => string): T[] {
-  return [...items].sort((left, right) => getKey(left).localeCompare(getKey(right)));
 }
 
 function toPascalCase(value: string): string {

@@ -1,8 +1,4 @@
-import {
-  AssociationKind,
-  type DataspecerSpecificationMetadata,
-  FieldKind,
-} from '../../../src/metadata/types.ts';
+import { type DataspecerSpecificationMetadata, FieldKind } from '../../../src/metadata/types.ts';
 
 export const specificationIri = 'https://example.org/specification/library';
 
@@ -26,7 +22,6 @@ export const basicMetadata: DataspecerSpecificationMetadata = {
           kind: FieldKind.Association,
           targetAggregateIri: 'https://example.org/aggregate/author-detail',
           targetClassIri: 'https://example.org/class/author',
-          associationKind: AssociationKind.Aggregation,
         },
       ],
     },
@@ -47,7 +42,6 @@ export const basicMetadata: DataspecerSpecificationMetadata = {
           kind: FieldKind.Association,
           targetAggregateIri: 'https://example.org/aggregate/chapter-detail',
           targetClassIri: 'https://example.org/class/chapter',
-          associationKind: AssociationKind.Composition,
           many: true,
         },
         {
@@ -56,7 +50,6 @@ export const basicMetadata: DataspecerSpecificationMetadata = {
           kind: FieldKind.Association,
           targetAggregateIri: 'https://example.org/aggregate/author-detail',
           targetClassIri: 'https://example.org/class/author',
-          associationKind: AssociationKind.Aggregation,
         },
       ],
     },
@@ -94,6 +87,34 @@ export const basicMetadata: DataspecerSpecificationMetadata = {
         {
           path: 'name',
           label: 'Name',
+          kind: FieldKind.Primitive,
+          datatype: 'string',
+        },
+        {
+          path: 'editor',
+          label: 'Editor',
+          kind: FieldKind.Association,
+          targetAggregateIri: 'https://example.org/aggregate/author-detail',
+          targetClassIri: 'https://example.org/class/author',
+        },
+        {
+          path: 'footnotes',
+          label: 'Footnotes',
+          kind: FieldKind.Association,
+          targetAggregateIri: 'https://example.org/aggregate/footnote-detail',
+          targetClassIri: 'https://example.org/class/footnote',
+          many: true,
+        },
+      ],
+    },
+    {
+      iri: 'https://example.org/aggregate/footnote-detail',
+      name: 'FootnoteDetail',
+      classIri: 'https://example.org/class/footnote',
+      fields: [
+        {
+          path: 'text',
+          label: 'Text',
           kind: FieldKind.Primitive,
           datatype: 'string',
         },

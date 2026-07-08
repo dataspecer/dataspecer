@@ -2,27 +2,33 @@ import { describe, expect, it } from 'vitest';
 
 import { buildGenerationModel } from '../src/generation-model/build-generation-model.ts';
 import {
+  AssociationKind,
   DatasourceType,
+  DeletePolicy,
   EdgeType,
   Operation,
   type ApplicationGraph,
   type ApplicationNode,
+  type ApplicationNodeConfig,
 } from '../src/graph/types.ts';
 import { basicMetadata, specificationIri } from './fixtures/metadata/basic-metadata.ts';
 import { FieldKind } from '../src/metadata/types.ts';
+import { resolveGraphAssociationKinds } from '../src/metadata/resolve-graph-association-kinds.ts';
 
 describe('buildGenerationModel', () => {
   it('builds a deterministic generation model', () => {
     const graph = graphFixture();
 
-    const first = buildGenerationModel(graph, basicMetadata);
-    const second = buildGenerationModel(graphFixture(), basicMetadata);
+    const first = buildGenerationModel(graph, preparedMetadataFor(graph));
+    const secondGraph = graphFixture();
+    const second = buildGenerationModel(secondGraph, preparedMetadataFor(secondGraph));
 
     expect(first).toEqual(second);
   });
 
   it('describes app, datasource, operations, routes, navigation, and redirects', () => {
-    const model = buildGenerationModel(graphFixture(), basicMetadata);
+    const graph = graphFixture();
+    const model = buildGenerationModel(graph, preparedMetadataFor(graph));
 
     expect(model.app).toEqual({
       name: 'Library application',
@@ -97,7 +103,8 @@ describe('buildGenerationModel', () => {
   });
 
   it('creates read descriptors from aggregate fields', () => {
-    const model = buildGenerationModel(graphFixture(), basicMetadata);
+    const graph = graphFixture();
+    const model = buildGenerationModel(graph, preparedMetadataFor(graph));
     const readList = model.operations.find((operation) => operation.id === 'Book.ReadList');
     const readDetail = model.operations.find((operation) => operation.id === 'Book.ReadDetail');
 
@@ -118,6 +125,27 @@ describe('buildGenerationModel', () => {
       expect.objectContaining({ path: 'chapters' }),
       expect.objectContaining({ path: 'title' }),
     ]);
+  });
+
+  it('resolves association kinds from graph association config', () => {
+    const graph = graphFixture();
+    const model = buildGenerationModel(graph, preparedMetadataFor(graph));
+    const bookDetail = model.aggregates.find(
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+    );
+
+    expect(bookDetail?.fields.find((field) => field.path === 'chapters')).toMatchObject({
+      associationKind: AssociationKind.Composition,
+    });
+    expect(bookDetail?.fields.find((field) => field.path === 'author')).toMatchObject({
+      associationKind: AssociationKind.Aggregation,
+    });
+    const chapterDetail = model.aggregates.find(
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/chapter-detail'
+    );
+    expect(chapterDetail?.fields.find((field) => field.path === 'editor')).toMatchObject({
+      associationKind: AssociationKind.Aggregation,
+    });
   });
 });
 
@@ -140,7 +168,12 @@ function graphFixture(): ApplicationGraph {
       node('Book.Create', 'https://example.org/aggregate/book-form', Operation.Create),
       node('Book.Update', 'https://example.org/aggregate/book-form', Operation.Update),
       node('Book.Delete', 'https://example.org/aggregate/book-detail', Operation.Delete, {
-        delete: { chapters: 'cascade' },
+        associations: {
+          chapters: AssociationKind.Composition,
+          author: AssociationKind.Aggregation,
+          'chapters.editor': AssociationKind.Aggregation,
+        },
+        delete: { chapters: DeletePolicy.Cascade },
       }),
     ],
     edges: [
@@ -184,11 +217,15 @@ function graphFixture(): ApplicationGraph {
   };
 }
 
+function preparedMetadataFor(graph: ApplicationGraph) {
+  return resolveGraphAssociationKinds(graph, basicMetadata).metadata;
+}
+
 function node(
   id: string,
   aggregateIri: string,
   operation: ApplicationNode['operation'],
-  config?: Record<string, unknown>
+  config?: ApplicationNodeConfig
 ): ApplicationNode {
   return {
     id,

@@ -1,5 +1,4 @@
-import type { DatasourceType, Operation } from '../graph/types.ts';
-import type { AssociationKind } from '../metadata/types.ts';
+import type { AssociationKind, DatasourceType, Operation } from '../graph/types.ts';
 import { type FieldKind } from '../metadata/types.ts';
 import { type AggregateFieldMetadata } from '../metadata/types.ts';
 
@@ -94,6 +93,7 @@ export interface GeneratedFieldDescriptor {
   path: string;
   label: string;
   kind: FieldKind;
+  propertyIri?: string;
   datatype?: string;
   many: boolean;
   required: boolean;

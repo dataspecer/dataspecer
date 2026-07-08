@@ -134,13 +134,12 @@ export const createModelInstructions = {
   },
   [APPLICATION_GRAPH_NEW]: {
     needsNaming: true,
-    createHook: getHookForStandardModel(APPLICATION_GRAPH_NEW, (id, context) => ({
-      "id": id,
+    createHook: getHookForStandardModel(APPLICATION_GRAPH_NEW, (iri, context) => ({
+      "dataSpecificationIri": iri,
       "name": context.label?.cs ?? context.label?.en ?? "Application",
       "dataSources": [],
       "nodes": [],
       "edges": [],
-      "dataSpecification": context.parentIri ?? ""
     })),
   },
   [LOCAL_SEMANTIC_MODEL]: {

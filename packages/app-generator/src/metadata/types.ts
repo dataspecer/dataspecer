@@ -1,17 +1,16 @@
+import type { AssociationKind } from '../graph/types.ts';
+export { AssociationKind } from '../graph/types.ts';
+
 export enum FieldKind {
   Primitive = 'primitive',
   Association = 'association',
-}
-
-export enum AssociationKind {
-  Composition = 'composition',
-  Aggregation = 'aggregation',
 }
 
 export interface AggregateFieldMetadata {
   path: string;
   label: string;
   kind: FieldKind;
+  propertyIri?: string;
   datatype?: string;
   targetAggregateIri?: string;
   targetClassIri?: string;

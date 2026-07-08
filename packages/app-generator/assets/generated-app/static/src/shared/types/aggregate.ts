@@ -13,6 +13,7 @@ export interface FieldDescriptor {
   propertyName: string;
   label: string;
   kind: FieldKind;
+  propertyIri?: string;
   datatype?: string;
   many: boolean;
   required: boolean;

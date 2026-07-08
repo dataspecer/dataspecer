@@ -6,6 +6,7 @@ import type { GenerationModel } from './generation-model/types.ts';
 import type { ApplicationGraph } from './graph/types.ts';
 import { validateGraphSyntax } from './graph/validate-syntax.ts';
 import type { DataspecerMetadataProvider } from './metadata/dataspecer-metadata-provider.ts';
+import { resolveGraphAssociationKinds } from './metadata/resolve-graph-association-kinds.ts';
 import { writeFileTree } from './rendering/write-file-tree.ts';
 import type { FileTreeContent } from './rendering/file-tree.ts';
 import { renderGeneratedApp } from './rendering/render-generated-app.ts';
@@ -35,15 +36,20 @@ export async function generateApp(
   }
 
   const graph: ApplicationGraph = syntaxResult.graph;
-  const semanticResult = await validateGraphSemantics(graph, input.metadataProvider);
+  const metadata = await input.metadataProvider.getSpecificationMetadata(
+    graph.dataSpecificationIri
+  );
+  const graphMetadata = resolveGraphAssociationKinds(graph, metadata);
+  const semanticResult = validateGraphSemantics(
+    graph,
+    graphMetadata.metadata,
+    graphMetadata.issues
+  );
   if (!semanticResult.valid) {
     return failure(semanticResult.violations);
   }
 
-  const metadata = await input.metadataProvider.getSpecificationMetadata(
-    graph.dataSpecificationIri
-  );
-  const generationModel = buildGenerationModel(graph, metadata);
+  const generationModel = buildGenerationModel(graph, graphMetadata.metadata);
   const fileTree = renderGeneratedApp(generationModel);
   const files = fileTree.toObject();
   const writtenFiles: string[] = [];

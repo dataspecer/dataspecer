@@ -1,3 +1,5 @@
+import { isPlainObject } from 'es-toolkit';
+
 import type { ErrorObject } from 'ajv';
 import { Ajv } from 'ajv';
 import addFormats from 'ajv-formats';
@@ -74,7 +76,7 @@ function isApplicationGraphCandidate(input: unknown): input is {
   nodes: Array<{ id?: unknown }>;
   edges: Array<{ id?: unknown }>;
 } {
-  if (!input || typeof input !== 'object') {
+  if (!isPlainObject(input)) {
     return false;
   }
 

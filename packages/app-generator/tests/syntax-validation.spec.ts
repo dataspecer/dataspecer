@@ -94,6 +94,30 @@ describe('validateGraphSyntax', () => {
       })
     );
   });
+
+  it('rejects unsupported node config keys and values', () => {
+    const unsupportedKey = readGraphFixture('valid-basic.json');
+    unsupportedKey.nodes[0].config = {
+      pageTitle: 'Books',
+      unsupported: true,
+    };
+    const unsupportedAssociationKind = readGraphFixture('valid-basic.json');
+    unsupportedAssociationKind.nodes[0].config = {
+      associations: {
+        author: 'reference',
+      },
+    };
+    const unsupportedDeletePolicy = readGraphFixture('valid-basic.json');
+    unsupportedDeletePolicy.nodes[0].config = {
+      delete: {
+        author: 'remove-linked',
+      },
+    };
+
+    expect(validateGraphSyntax(unsupportedKey).valid).toBe(false);
+    expect(validateGraphSyntax(unsupportedAssociationKind).valid).toBe(false);
+    expect(validateGraphSyntax(unsupportedDeletePolicy).valid).toBe(false);
+  });
 });
 
 function readGraphFixture(name: string): any {

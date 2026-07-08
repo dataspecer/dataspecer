@@ -1,10 +1,14 @@
 import type { Violation } from './types.ts';
 import { ViolationCode } from './violation-codes.ts';
-import { Operation } from '../graph/types.ts';
-import { getObjectConfig } from './config.ts';
+import { DeletePolicy, Operation } from '../graph/types.ts';
 import { semanticViolation } from './violation.ts';
 import type { SemanticValidationContext } from './semantic-validation-context.ts';
-import { AssociationKind, FieldKind } from '../metadata/types.ts';
+import {
+  AssociationKind,
+  type AggregateFieldMetadata,
+  type AggregateMetadata,
+  FieldKind,
+} from '../metadata/types.ts';
 
 export function validateDeleteCascade(context: SemanticValidationContext): Violation[] {
   const violations: Violation[] = [];
@@ -14,7 +18,7 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
       return;
     }
 
-    const deleteConfig = getObjectConfig(node.config, 'delete');
+    const deleteConfig = node.config?.delete;
     if (!deleteConfig) {
       return;
     }
@@ -25,7 +29,7 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
     }
 
     Object.entries(deleteConfig).forEach(([path, policy]) => {
-      if (policy !== 'cascade') {
+      if (policy !== DeletePolicy.Cascade) {
         violations.push(
           semanticViolation(
             ViolationCode.SemanticInvalidDeletePolicy,
@@ -36,7 +40,7 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
         return;
       }
 
-      const field = aggregate.fields.find((candidate) => candidate.path === path);
+      const field = findAssociationFieldByPath(path, aggregate, context.aggregates);
       if (!field || field.kind !== FieldKind.Association) {
         violations.push(
           semanticViolation(
@@ -61,4 +65,36 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
   });
 
   return violations;
+}
+
+function findAssociationFieldByPath(
+  path: string,
+  rootAggregate: AggregateMetadata,
+  aggregates: SemanticValidationContext['aggregates']
+): AggregateFieldMetadata | undefined {
+  let aggregate = rootAggregate;
+
+  const segments = path.split('.').filter((candidate) => candidate.length > 0);
+  for (const [index, segment] of segments.entries()) {
+    const field = aggregate.fields.find((candidate) => candidate.path === segment);
+    if (!field || field.kind !== FieldKind.Association) {
+      return undefined;
+    }
+
+    if (index === segments.length - 1) {
+      return field;
+    }
+
+    if (!field.targetAggregateIri) {
+      return undefined;
+    }
+
+    const targetAggregate = aggregates.get(field.targetAggregateIri);
+    if (!targetAggregate) {
+      return undefined;
+    }
+    aggregate = targetAggregate;
+  }
+
+  return undefined;
 }

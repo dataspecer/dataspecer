@@ -17,6 +17,25 @@ export enum DatasourceType {
   File = 'file',
 }
 
+export enum AssociationKind {
+  Composition = 'composition',
+  Aggregation = 'aggregation',
+}
+
+export enum DeletePolicy {
+  Cascade = 'cascade',
+}
+
+export type AssociationConfig = Record<string, AssociationKind>;
+
+export type DeleteConfig = Record<string, DeletePolicy>;
+
+export interface ApplicationNodeConfig {
+  pageTitle?: string;
+  associations?: AssociationConfig;
+  delete?: DeleteConfig;
+}
+
 export interface DatasourceConfig {
   id: string;
   type: DatasourceType;
@@ -27,7 +46,7 @@ export interface ApplicationNode {
   id: string;
   aggregateIri: string;
   operation: Operation;
-  config?: Record<string, unknown>;
+  config?: ApplicationNodeConfig;
 }
 
 export interface ApplicationEdge {

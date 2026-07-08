@@ -2,25 +2,29 @@ import { describe, expect, it } from 'vitest';
 
 import { ViolationCode } from '../src/validation/violation-codes.ts';
 import {
+  AssociationKind,
   DatasourceType,
+  DeletePolicy,
   EdgeType,
   Operation,
   type ApplicationGraph,
   type ApplicationNode,
+  type ApplicationNodeConfig,
 } from '../src/graph/types.ts';
-import { FakeDataspecerMetadataProvider } from '../src/metadata/fake-dataspecer-metadata-provider.ts';
+import { resolveGraphAssociationKinds } from '../src/metadata/resolve-graph-association-kinds.ts';
 import { validateGraphSemantics } from '../src/validation/validate-semantics.ts';
 import { basicMetadata, specificationIri } from './fixtures/metadata/basic-metadata.ts';
 
 describe('validateGraphSemantics', () => {
-  it('accepts a valid read list to read detail transition', async () => {
-    const result = await validateGraphSemantics(validGraph(), metadataProvider());
+  it('accepts a valid read list to read detail transition', () => {
+    const graph = validGraph();
+    const result = validatePreparedGraph(graph);
 
     expect(result.valid).toBe(true);
     expect(result.violations).toEqual([]);
   });
 
-  it('requires exactly one RDF datasource', async () => {
+  it('requires exactly one RDF datasource', () => {
     const tooMany = validGraph({
       datasources: [
         {
@@ -41,11 +45,11 @@ describe('validateGraphSemantics', () => {
       ],
     });
 
-    await expectViolations(tooMany, ViolationCode.SemanticUnsupportedDatasourceCount);
-    await expectViolations(wrongType, ViolationCode.SemanticUnsupportedDatasourceType);
+    expectViolations(tooMany, ViolationCode.SemanticUnsupportedDatasourceCount);
+    expectViolations(wrongType, ViolationCode.SemanticUnsupportedDatasourceType);
   });
 
-  it('rejects unknown aggregate references', async () => {
+  it('rejects unknown aggregate references', () => {
     const graph = validGraph({
       nodes: [
         node('Missing.ReadList', 'https://example.org/aggregate/missing', Operation.ReadList),
@@ -53,10 +57,10 @@ describe('validateGraphSemantics', () => {
       edges: [],
     });
 
-    await expectViolations(graph, ViolationCode.SemanticUnknownAggregate);
+    expectViolations(graph, ViolationCode.SemanticUnknownAggregate);
   });
 
-  it('rejects edges with unknown source or target nodes', async () => {
+  it('rejects edges with unknown source or target nodes', () => {
     const graph = validGraph({
       edges: [
         {
@@ -68,7 +72,7 @@ describe('validateGraphSemantics', () => {
       ],
     });
 
-    const result = await validateGraphSemantics(graph, metadataProvider());
+    const result = validatePreparedGraph(graph);
 
     expect(result.violations).toEqual(
       expect.arrayContaining([
@@ -82,7 +86,7 @@ describe('validateGraphSemantics', () => {
     );
   });
 
-  it('rejects multiple redirects from one source node', async () => {
+  it('rejects multiple redirects from one source node', () => {
     const createNode = node(
       'Book.Create',
       'https://example.org/aggregate/book-form',
@@ -106,10 +110,10 @@ describe('validateGraphSemantics', () => {
       ],
     });
 
-    await expectViolations(graph, ViolationCode.SemanticMultipleRedirects);
+    expectViolations(graph, ViolationCode.SemanticMultipleRedirects);
   });
 
-  it('validates redirect operation pairs and same-class detail redirects', async () => {
+  it('validates redirect operation pairs and same-class detail redirects', () => {
     const createBook = node(
       'Book.Create',
       'https://example.org/aggregate/book-form',
@@ -142,11 +146,11 @@ describe('validateGraphSemantics', () => {
       ],
     });
 
-    await expectViolations(invalidPair, ViolationCode.SemanticInvalidRedirect);
-    await expectViolations(invalidClass, ViolationCode.SemanticRedirectRequiresSameClass);
+    expectViolations(invalidPair, ViolationCode.SemanticInvalidRedirect);
+    expectViolations(invalidClass, ViolationCode.SemanticRedirectRequiresSameClass);
   });
 
-  it('validates transition operation pairs and class compatibility', async () => {
+  it('validates transition operation pairs and class compatibility', () => {
     const authorDetail = node(
       'Author.ReadDetail',
       'https://example.org/aggregate/author-detail',
@@ -179,11 +183,11 @@ describe('validateGraphSemantics', () => {
       ],
     });
 
-    await expectViolations(invalidPair, ViolationCode.SemanticInvalidTransition);
-    await expectViolations(invalidClass, ViolationCode.SemanticTransitionRequiresSameClass);
+    expectViolations(invalidPair, ViolationCode.SemanticInvalidTransition);
+    expectViolations(invalidClass, ViolationCode.SemanticTransitionRequiresSameClass);
   });
 
-  it('allows associated cross-aggregate detail transitions', async () => {
+  it('allows associated cross-aggregate detail transitions', () => {
     const authorDetail = node(
       'Author.ReadDetail',
       'https://example.org/aggregate/author-detail',
@@ -201,12 +205,12 @@ describe('validateGraphSemantics', () => {
       ],
     });
 
-    const result = await validateGraphSemantics(graph, metadataProvider());
+    const result = validatePreparedGraph(graph);
 
     expect(result.valid).toBe(true);
   });
 
-  it('rejects unrelated cross-aggregate detail transitions', async () => {
+  it('rejects unrelated cross-aggregate detail transitions', () => {
     const chapterDetail = node(
       'Chapter.ReadDetail',
       'https://example.org/aggregate/chapter-detail',
@@ -224,53 +228,176 @@ describe('validateGraphSemantics', () => {
       ],
     });
 
-    await expectViolations(graph, ViolationCode.SemanticTransitionRequiresAssociation);
+    expectViolations(graph, ViolationCode.SemanticTransitionRequiresAssociation);
   });
 
-  it('allows delete cascade through compositions only', async () => {
+  it('allows delete cascade through compositions only', () => {
     const deleteBook = node(
       'Book.Delete',
       'https://example.org/aggregate/book-detail',
       Operation.Delete,
-      { delete: { chapters: 'cascade' } }
+      {
+        associations: { chapters: AssociationKind.Composition },
+        delete: { chapters: DeletePolicy.Cascade },
+      }
     );
     const graph = validGraph({
       nodes: [deleteBook],
       edges: [],
     });
 
-    const result = await validateGraphSemantics(graph, metadataProvider());
+    const result = validatePreparedGraph(graph);
 
     expect(result.valid).toBe(true);
   });
 
-  it('rejects delete cascade through aggregations', async () => {
+  it('rejects delete cascade through aggregations', () => {
     const deleteBook = node(
       'Book.Delete',
       'https://example.org/aggregate/book-detail',
       Operation.Delete,
-      { delete: { author: 'cascade' } }
+      {
+        associations: { author: AssociationKind.Aggregation },
+        delete: { author: DeletePolicy.Cascade },
+      }
     );
     const graph = validGraph({
       nodes: [deleteBook],
       edges: [],
     });
 
-    await expectViolations(graph, ViolationCode.SemanticCannotCascadeAggregation);
+    expectViolations(graph, ViolationCode.SemanticCannotCascadeAggregation);
+  });
+
+  it('allows nested delete cascade through configured compositions', () => {
+    const deleteBook = node(
+      'Book.Delete',
+      'https://example.org/aggregate/book-detail',
+      Operation.Delete,
+      {
+        associations: {
+          chapters: AssociationKind.Composition,
+          'chapters.footnotes': AssociationKind.Composition,
+        },
+        delete: { 'chapters.footnotes': DeletePolicy.Cascade },
+      }
+    );
+    const graph = validGraph({
+      nodes: [deleteBook],
+      edges: [],
+    });
+
+    const result = validatePreparedGraph(graph);
+
+    expect(result.valid).toBe(true);
+  });
+
+  it('rejects nested delete cascade through aggregations', () => {
+    const deleteBook = node(
+      'Book.Delete',
+      'https://example.org/aggregate/book-detail',
+      Operation.Delete,
+      {
+        associations: {
+          chapters: AssociationKind.Composition,
+          'chapters.editor': AssociationKind.Aggregation,
+        },
+        delete: { 'chapters.editor': DeletePolicy.Cascade },
+      }
+    );
+    const graph = validGraph({
+      nodes: [deleteBook],
+      edges: [],
+    });
+
+    expectViolations(graph, ViolationCode.SemanticCannotCascadeAggregation);
+  });
+
+  it('rejects invalid association config values', () => {
+    const graph = validGraph({
+      nodes: [
+        node('Book.Delete', 'https://example.org/aggregate/book-detail', Operation.Delete, {
+          associations: { chapters: 'invalid' },
+        } as unknown as ApplicationNodeConfig),
+      ],
+      edges: [],
+    });
+
+    expectViolations(graph, ViolationCode.SemanticInvalidAssociationKind);
+  });
+
+  it('rejects association config paths that are not associations', () => {
+    const graph = validGraph({
+      nodes: [
+        node('Book.Delete', 'https://example.org/aggregate/book-detail', Operation.Delete, {
+          associations: { title: AssociationKind.Composition },
+        }),
+      ],
+      edges: [],
+    });
+
+    expectViolations(graph, ViolationCode.SemanticAssociationPathNotAssociation);
+  });
+
+  it('rejects nested association config below aggregations', () => {
+    const graph = validGraph({
+      nodes: [
+        node('Book.Delete', 'https://example.org/aggregate/book-detail', Operation.Delete, {
+          associations: {
+            author: AssociationKind.Aggregation,
+            'author.name': AssociationKind.Aggregation,
+          },
+        }),
+      ],
+      edges: [],
+    });
+
+    expectViolations(graph, ViolationCode.SemanticNestedAssociationRequiresComposition);
+  });
+
+  it('rejects nested association config paths that are not associations', () => {
+    const graph = validGraph({
+      nodes: [
+        node('Book.Delete', 'https://example.org/aggregate/book-detail', Operation.Delete, {
+          associations: {
+            chapters: AssociationKind.Composition,
+            'chapters.name': AssociationKind.Aggregation,
+          },
+        }),
+      ],
+      edges: [],
+    });
+
+    expectViolations(graph, ViolationCode.SemanticAssociationPathNotAssociation);
+  });
+
+  it('rejects conflicting association config for the same aggregate path', () => {
+    const graph = validGraph({
+      nodes: [
+        node('Book.Create', 'https://example.org/aggregate/book-detail', Operation.Create, {
+          associations: { chapters: AssociationKind.Composition },
+        }),
+        node('Book.Update', 'https://example.org/aggregate/book-detail', Operation.Update, {
+          associations: { chapters: AssociationKind.Aggregation },
+        }),
+      ],
+      edges: [],
+    });
+
+    expectViolations(graph, ViolationCode.SemanticConflictingAssociationKind);
   });
 });
 
-async function expectViolations(graph: ApplicationGraph, code: ViolationCode) {
-  const result = await validateGraphSemantics(graph, metadataProvider());
+function expectViolations(graph: ApplicationGraph, code: ViolationCode) {
+  const result = validatePreparedGraph(graph);
 
   expect(result.valid).toBe(false);
   expect(result.violations).toContainEqual(expect.objectContaining({ code }));
 }
 
-function metadataProvider() {
-  return new FakeDataspecerMetadataProvider({
-    [specificationIri]: basicMetadata,
-  });
+function validatePreparedGraph(graph: ApplicationGraph) {
+  const prepared = resolveGraphAssociationKinds(graph, basicMetadata);
+  return validateGraphSemantics(graph, prepared.metadata, prepared.issues);
 }
 
 function validGraph(overrides: Partial<ApplicationGraph> = {}): ApplicationGraph {
@@ -304,7 +431,7 @@ function node(
   id: string,
   aggregateIri: string,
   operation: ApplicationNode['operation'],
-  config?: Record<string, unknown>
+  config?: ApplicationNodeConfig
 ): ApplicationNode {
   return {
     id,

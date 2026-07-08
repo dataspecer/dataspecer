@@ -1,14 +1,37 @@
 import type { JSONSchemaType } from 'ajv';
 
-import { EdgeType, Operation } from './types.ts';
+import { AssociationKind, DeletePolicy, EdgeType, Operation } from './types.ts';
 import type { ApplicationGraph } from './types.ts';
 
 const configSchema = {
   type: 'object',
-  additionalProperties: true,
+  additionalProperties: false,
+  properties: {
+    pageTitle: {
+      type: 'string',
+      minLength: 1,
+      nullable: true,
+    },
+    associations: {
+      type: 'object',
+      additionalProperties: {
+        type: 'string',
+        enum: Object.values(AssociationKind),
+      },
+      nullable: true,
+    },
+    delete: {
+      type: 'object',
+      additionalProperties: {
+        type: 'string',
+        enum: Object.values(DeletePolicy),
+      },
+      nullable: true,
+    },
+  },
 } as const;
 
-export const applicationGraphSchema: JSONSchemaType<ApplicationGraph> = {
+export const applicationGraphSchema = {
   $id: 'https://dataspecer.com/application-prototype-generator/application-graph.schema.json',
   type: 'object',
   additionalProperties: false,
@@ -97,4 +120,4 @@ export const applicationGraphSchema: JSONSchemaType<ApplicationGraph> = {
       },
     },
   },
-};
+} as unknown as JSONSchemaType<ApplicationGraph>;

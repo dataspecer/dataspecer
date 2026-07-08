@@ -7,6 +7,7 @@ import {
   Operation,
   type ApplicationGraph,
   type ApplicationNode,
+  type ApplicationNodeConfig,
 } from '../src/graph/types.ts';
 import { renderGeneratedApp } from '../src/rendering/render-generated-app.ts';
 import { basicMetadata, specificationIri } from './fixtures/metadata/basic-metadata.ts';
@@ -99,7 +100,7 @@ function node(
   id: string,
   aggregateIri: string,
   operation: ApplicationNode['operation'],
-  config?: Record<string, unknown>
+  config?: ApplicationNodeConfig
 ): ApplicationNode {
   return {
     id,

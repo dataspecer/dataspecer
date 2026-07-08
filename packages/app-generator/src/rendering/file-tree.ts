@@ -1,3 +1,5 @@
+import { sortBy } from 'es-toolkit';
+
 export type FileTreeContent = Record<string, string>;
 
 export class FileTree {
@@ -12,15 +14,7 @@ export class FileTree {
   }
 
   entries(): Array<[string, string]> {
-    return [...this.files.entries()].sort(([left], [right]) => {
-      if (left < right) {
-        return -1;
-      }
-      if (left > right) {
-        return 1;
-      }
-      return 0;
-    });
+    return sortBy([...this.files.entries()], [([path]) => path]);
   }
 
   paths(): string[] {
