@@ -2,7 +2,7 @@ import type { EntityModel } from "../../shared/types/aggregate.ts";
 
 export interface <%= it.aggregate.modelName %> extends EntityModel {
 <% it.aggregate.fields.forEach((field) => { %>
-  <%= field.propertyName %><%= field.required ? "" : "?" %>: <%~ field.modelType %>;
+  <%~ field.modelDeclaration %>;
 <% }) %>
 }
 

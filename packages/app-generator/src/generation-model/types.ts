@@ -103,6 +103,8 @@ export interface GeneratedFieldDescriptor {
   targetAggregateIri?: string;
   targetClassIri?: string;
   associationKind?: AssociationKind;
+  /** True for a reverse (inverse) relation, traversed backwards when read. */
+  isReverse?: boolean;
   /** Nested fields of an inline association target. */
   fields?: GeneratedFieldDescriptor[];
 }

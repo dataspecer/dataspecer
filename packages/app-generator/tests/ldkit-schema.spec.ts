@@ -1,0 +1,286 @@
+import { describe, expect, it } from 'vitest';
+
+import { DatasourceType } from '../src/graph/types.ts';
+import { FieldKind } from '../src/metadata/types.ts';
+import type { GenerationModel } from '../src/generation-model/types.ts';
+import { buildRenderContext } from '../src/rendering/render-context.ts';
+
+const XSD = 'http://www.w3.org/2001/XMLSchema#';
+const RDF_LANG_STRING = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString';
+const CLASS = 'https://example.org/class/sample';
+
+function modelWithFields(fields: GenerationModel['aggregates'][number]['fields']): GenerationModel {
+  return {
+    app: {
+      name: 'Sample app',
+      safeName: 'sample-app',
+      dataSpecificationIri: 'https://example.org/spec',
+    },
+    datasource: { id: 'main', type: DatasourceType.Rdf, endpoint: 'https://example.org/sparql' },
+    aggregates: [
+      {
+        iri: 'https://example.org/aggregate/sample',
+        name: 'Sample',
+        safeName: 'Sample',
+        classIri: CLASS,
+        fields,
+      },
+    ],
+    operations: [],
+    routes: [],
+    navigation: [],
+    redirects: [],
+  };
+}
+
+function schemaFor(fields: GenerationModel['aggregates'][number]['fields']) {
+  return buildRenderContext(modelWithFields(fields)).aggregates[0].ldkitSchema as Record<
+    string,
+    any
+  >;
+}
+
+describe('LDKit schema generation', () => {
+  it('uses the class IRI as the entity type', () => {
+    const schema = schemaFor([]);
+    expect(schema['@type']).toBe(CLASS);
+  });
+
+  it('maps primitive datatypes to xsd types and required to optional', () => {
+    const schema = schemaFor([
+      {
+        path: 'title',
+        label: 'Title',
+        kind: FieldKind.Primitive,
+        propertyIri: 'https://example.org/p/title',
+        datatype: `${XSD}string`,
+        many: false,
+        required: true,
+      },
+      {
+        path: 'count',
+        label: 'Count',
+        kind: FieldKind.Primitive,
+        propertyIri: 'https://example.org/p/count',
+        datatype: `${XSD}integer`,
+        many: false,
+        required: false,
+      },
+    ]);
+
+    expect(schema.title).toEqual({ '@id': 'https://example.org/p/title', '@type': `${XSD}string` });
+    expect(schema.count).toEqual({
+      '@id': 'https://example.org/p/count',
+      '@type': `${XSD}integer`,
+      '@optional': true,
+    });
+  });
+
+  it('marks repeated fields as arrays', () => {
+    const schema = schemaFor([
+      {
+        path: 'tags',
+        label: 'Tags',
+        kind: FieldKind.Primitive,
+        propertyIri: 'https://example.org/p/tags',
+        datatype: `${XSD}string`,
+        many: true,
+        required: true,
+      },
+    ]);
+    expect(schema.tags['@array']).toBe(true);
+  });
+
+  it('reads language tagged values through multilang and omits the type', () => {
+    const schema = schemaFor([
+      {
+        path: 'note',
+        label: 'Note',
+        kind: FieldKind.Primitive,
+        propertyIri: 'https://example.org/p/note',
+        datatype: RDF_LANG_STRING,
+        many: false,
+        required: true,
+      },
+    ]);
+    expect(schema.note).toEqual({ '@id': 'https://example.org/p/note', '@multilang': true });
+  });
+
+  it('leaves unrecognized datatypes as plain strings without a type', () => {
+    const schema = schemaFor([
+      {
+        path: 'raw',
+        label: 'Raw',
+        kind: FieldKind.Primitive,
+        propertyIri: 'https://example.org/p/raw',
+        datatype: 'http://www.w3.org/2000/01/rdf-schema#Literal',
+        many: false,
+        required: true,
+      },
+    ]);
+    expect(schema.raw).toEqual({ '@id': 'https://example.org/p/raw' });
+  });
+
+  it('expands associations with inline fields under a nested schema', () => {
+    const schema = schemaFor([
+      {
+        path: 'chapters',
+        label: 'Chapters',
+        kind: FieldKind.Association,
+        propertyIri: 'https://example.org/p/chapters',
+        targetClassIri: 'https://example.org/class/chapter',
+        many: true,
+        required: false,
+        fields: [
+          {
+            path: 'name',
+            label: 'Name',
+            kind: FieldKind.Primitive,
+            propertyIri: 'https://example.org/p/name',
+            datatype: `${XSD}string`,
+            many: false,
+            required: true,
+          },
+        ],
+      },
+    ]);
+
+    expect(schema.chapters['@array']).toBe(true);
+    expect(schema.chapters['@optional']).toBe(true);
+    expect(schema.chapters['@schema']).toEqual({
+      '@type': 'https://example.org/class/chapter',
+      name: { '@id': 'https://example.org/p/name', '@type': `${XSD}string` },
+    });
+  });
+
+  it('keeps associations without inline fields as references', () => {
+    const schema = schemaFor([
+      {
+        path: 'author',
+        label: 'Author',
+        kind: FieldKind.Association,
+        propertyIri: 'https://example.org/p/author',
+        targetAggregateIri: 'https://example.org/aggregate/author',
+        targetClassIri: 'https://example.org/class/author',
+        many: false,
+        required: true,
+      },
+    ]);
+    // A reference carries only @id, so LDKit resolves it to the target IRI string.
+    expect(schema.author).toEqual({ '@id': 'https://example.org/p/author' });
+  });
+
+  it('treats inline fields without a target class as a reference in both schema and model', () => {
+    const fields = [
+      {
+        path: 'orphan',
+        label: 'Orphan',
+        kind: FieldKind.Association,
+        propertyIri: 'https://example.org/p/orphan',
+        many: false,
+        required: true,
+        // Inline fields but no target class, so there is no @type for a nested schema.
+        fields: [
+          {
+            path: 'inner',
+            label: 'Inner',
+            kind: FieldKind.Primitive,
+            propertyIri: 'https://example.org/p/inner',
+            datatype: `${XSD}string`,
+            many: false,
+            required: true,
+          },
+        ],
+      },
+    ];
+    const context = buildRenderContext(modelWithFields(fields));
+    const schema = context.aggregates[0].ldkitSchema as Record<string, any>;
+    const orphan = context.aggregates[0].fields.find((field) => field.path === 'orphan');
+
+    expect(schema.orphan).toEqual({ '@id': 'https://example.org/p/orphan' });
+    expect(orphan?.modelType).toBe('string');
+    expect(orphan?.emptyValue).toBe('""');
+  });
+
+  it('uses an empty language map for repeated multilang fields', () => {
+    const context = buildRenderContext(
+      modelWithFields([
+        {
+          path: 'labels',
+          label: 'Labels',
+          kind: FieldKind.Primitive,
+          propertyIri: 'https://example.org/p/labels',
+          datatype: RDF_LANG_STRING,
+          many: true,
+          required: true,
+        },
+      ])
+    );
+    const labels = context.aggregates[0].fields.find((field) => field.path === 'labels');
+
+    expect(labels?.modelType).toBe('Record<string, string[]>');
+    expect(labels?.emptyValue).toBe('{}');
+  });
+
+  it('marks reverse relations as inverse', () => {
+    const schema = schemaFor([
+      {
+        path: 'authored_by',
+        label: 'Authored by',
+        kind: FieldKind.Association,
+        propertyIri: 'https://example.org/p/authored-by',
+        targetClassIri: 'https://example.org/class/book',
+        isReverse: true,
+        many: true,
+        required: false,
+      },
+    ]);
+    expect(schema.authored_by['@inverse']).toBe(true);
+  });
+
+  it('omits fields that have no property IRI', () => {
+    const schema = schemaFor([
+      {
+        path: 'ghost',
+        label: 'Ghost',
+        kind: FieldKind.Primitive,
+        datatype: `${XSD}string`,
+        many: false,
+        required: true,
+      },
+    ]);
+    expect(schema.ghost).toBeUndefined();
+  });
+
+  it('aligns model types with the datatypes LDKit returns', () => {
+    const context = buildRenderContext(
+      modelWithFields([
+        {
+          path: 'created',
+          label: 'Created',
+          kind: FieldKind.Primitive,
+          propertyIri: 'https://example.org/p/created',
+          datatype: `${XSD}dateTime`,
+          many: false,
+          required: true,
+        },
+        {
+          path: 'note',
+          label: 'Note',
+          kind: FieldKind.Primitive,
+          propertyIri: 'https://example.org/p/note',
+          datatype: RDF_LANG_STRING,
+          many: false,
+          required: true,
+        },
+      ])
+    );
+    const fields = context.aggregates[0].fields;
+    const created = fields.find((field) => field.path === 'created');
+    const note = fields.find((field) => field.path === 'note');
+
+    expect(created?.modelType).toBe('Date');
+    expect(created?.emptyValue).toBe('new Date()');
+    expect(note?.modelType).toBe('Record<string, string>');
+  });
+});

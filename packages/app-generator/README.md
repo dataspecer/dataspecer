@@ -9,3 +9,4 @@ application graph.
 - TODO: Notify the user about existing usages of an entity before deletion (SPARQL lookup limited to ten usages)
 - TODO: Render reverse relations as read-only fields in detail views
 - TODO: Codelists (application devs fill them in manually)
+- TODO: multiple language support?

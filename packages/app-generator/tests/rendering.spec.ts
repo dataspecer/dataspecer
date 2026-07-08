@@ -51,7 +51,7 @@ describe('renderGeneratedApp', () => {
     const tree = renderGeneratedApp(model);
 
     expect(tree.get('src/modules/book-detail/model.ts')).toContain(
-      'chapters?: { id?: string; editor?: string; footnotes?: { id?: string; text?: string }[]; name?: string }[];'
+      'chapters?: { id?: string; editor?: string | null; footnotes?: { id?: string; text?: string | null }[] | null; name?: string | null }[] | null;'
     );
     const descriptor = tree.get('src/modules/book-detail/descriptor.ts');
     expect(descriptor).toContain('"path": "chapters"');
@@ -84,7 +84,7 @@ describe('renderGeneratedApp', () => {
     });
     const tree = renderGeneratedApp(model);
 
-    expect(tree.get('src/modules/turisticky-cil/model.ts')).toContain('ma_url?: string');
+    expect(tree.get('src/modules/turisticky-cil/model.ts')).toContain('ma_url?: string | null');
     expect(tree.get('src/modules/turisticky-cil/descriptor.ts')).toContain(
       '"propertyName": "ma_url"'
     );
@@ -103,7 +103,65 @@ describe('renderGeneratedApp', () => {
       'extends DefaultReadListStrategy<BookListModel>'
     );
     expect(tree.get('src/shared/datasource/rdf-ldkit-data-source.ts')).toContain('createLens');
-    expect(tree.get('README.md')).toContain('Generated/User-Owned Boundaries');
+    const readme = tree.get('README.md');
+    expect(readme).toContain('Generated/User-Owned Boundaries');
+    expect(readme).toMatch(/generated from Dataspecer aggregate\s+field metadata/);
+  });
+
+  it('generates an LDKit schema with nested schemas for embedded associations', () => {
+    const graph = graphFixture();
+    graph.nodes = [
+      node('Place.ReadDetail', 'https://example.org/aggregate/place', Operation.ReadDetail),
+    ];
+    graph.edges = [];
+    const model = buildGenerationModel(graph, {
+      dataSpecificationIri: specificationIri,
+      aggregates: [
+        {
+          iri: 'https://example.org/aggregate/place',
+          name: 'Place',
+          classIri: 'https://example.org/class/place',
+          fields: [
+            {
+              path: 'name',
+              label: 'Name',
+              kind: FieldKind.Primitive,
+              propertyIri: 'https://example.org/p/name',
+              datatype: 'http://www.w3.org/2001/XMLSchema#string',
+            },
+            {
+              path: 'contacts',
+              label: 'Contacts',
+              kind: FieldKind.Association,
+              propertyIri: 'https://example.org/p/contact',
+              targetClassIri: 'https://example.org/class/contact',
+              many: true,
+              fields: [
+                {
+                  path: 'email',
+                  label: 'Email',
+                  kind: FieldKind.Primitive,
+                  propertyIri: 'https://example.org/p/email',
+                  datatype: 'http://www.w3.org/2001/XMLSchema#string',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    const schema = renderGeneratedApp(model).get('src/modules/place/ldkit-schema.ts');
+
+    expect(schema).toContain('export const PlaceLdkitSchema');
+    expect(schema).toContain('"@type": "https://example.org/class/place"');
+    // Datatypes are emitted as xsd namespace references so the schema matches LDKit's Schema type.
+    expect(schema).toContain('import { xsd } from "ldkit/namespaces";');
+    expect(schema).toContain('"@type": xsd.string');
+    // contacts is an embedded association, so it expands under a nested schema keyed by its class.
+    expect(schema).toContain('"@schema"');
+    expect(schema).toContain('"@type": "https://example.org/class/contact"');
+    expect(schema).toContain('"@array": true');
+    expect(schema).toContain('as const;');
   });
 });
 

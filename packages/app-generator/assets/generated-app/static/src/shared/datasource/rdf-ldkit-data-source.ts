@@ -77,7 +77,29 @@ export class RdfLdkitDataSource implements DataSource {
   }
 }
 
-// LDKit exposes the entity IRI as $id. The generated models use id.
-function toModel<TModel extends EntityModel>(entity: { $id: string }): TModel {
-  return { ...entity, id: entity.$id } as unknown as TModel;
+// LDKit exposes the entity IRI as $id, at the root and in nested entities. The generated models
+// use id, so the rename is applied recursively. Dates and other non-plain values pass through.
+function toModel<TModel extends EntityModel>(entity: unknown): TModel {
+  return normalizeIds(entity) as TModel;
+}
+
+function normalizeIds(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(normalizeIds);
+  }
+  if (value === null || typeof value !== 'object' || value instanceof Date) {
+    return value;
+  }
+  const source = value as Record<string, unknown>;
+  const result: Record<string, unknown> = {};
+  for (const [key, nested] of Object.entries(source)) {
+    if (key === '$id') {
+      continue;
+    }
+    result[key] = normalizeIds(nested);
+  }
+  if (typeof source.$id === 'string') {
+    result.id = source.$id;
+  }
+  return result;
 }

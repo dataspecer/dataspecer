@@ -344,6 +344,7 @@ function mapAssociationField(
     ...(propertyIri ? { propertyIri } : {}),
     ...(target.targetAggregateIri ? { targetAggregateIri: target.targetAggregateIri } : {}),
     ...(targetClassIri ? { targetClassIri } : {}),
+    ...(association.dataPsmIsReverse ? { isReverse: true } : {}),
     ...cardinalityFlags(cardinality),
     ...(target.fields ? { fields: target.fields } : {}),
   };

@@ -179,6 +179,7 @@ function buildFieldDescriptor(field: AggregateFieldMetadata): GeneratedFieldDesc
     ...(field.targetAggregateIri ? { targetAggregateIri: field.targetAggregateIri } : {}),
     ...(field.targetClassIri ? { targetClassIri: field.targetClassIri } : {}),
     ...(field.associationKind ? { associationKind: field.associationKind } : {}),
+    ...(field.isReverse ? { isReverse: true } : {}),
     ...(field.fields
       ? { fields: sortBy(field.fields, [(child) => child.path]).map(buildFieldDescriptor) }
       : {}),

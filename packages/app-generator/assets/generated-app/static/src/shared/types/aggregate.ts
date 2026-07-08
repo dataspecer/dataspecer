@@ -7,13 +7,24 @@ export interface FieldDescriptor {
   propertyName: string;
   label: string;
   kind: FieldKind;
+  /** IRI of the RDF predicate the field reads and writes. */
   propertyIri?: string;
+  /** IRI of the value datatype for a primitive field, for example an xsd or OFN type. */
   datatype?: string;
+  /** Whether the field holds more than one value (upper cardinality above one). */
   many: boolean;
+  /** Whether the field must have at least one value (lower cardinality of one or more). */
   required: boolean;
+  /**
+   * Set only when the association target is another aggregate (a class reference or the root
+   * class of another structure model). Mutually exclusive with the `fields` property.
+   */
   targetAggregateIri?: string;
+  /** IRI of the class the association points to. */
   targetClassIri?: string;
   associationKind?: AssociationKind;
+  /** True for a reverse (inverse) relation. Read-only, shown in detail views but not forms. */
+  isReverse?: boolean;
   /** Nested fields of an association whose target is defined inline. */
   fields?: FieldDescriptor[];
 }
