@@ -11,6 +11,11 @@ export function resolveControl(field: FieldDescriptor): FieldControl {
     return 'unsupported';
   }
   if (field.kind === 'association') {
+    // TODO: Replace this shortcut with proper nested aggregation handling. For now,
+    // aggregations are edited as IRI references even when metadata also exposes inline fields.
+    if (field.associationKind === 'aggregation' && field.targetClassIri) {
+      return 'reference';
+    }
     return field.targetClassIri && !field.fields?.length ? 'reference' : 'unsupported';
   }
   return field.formControl ?? 'unsupported';

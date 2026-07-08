@@ -28,7 +28,7 @@ export const generateApplicationByModelId = asyncHandler(
       metadataProvider: new DataspecerSpecificationMetadataProvider(
         getSpecification,
       ),
-      ...(outputDirectory ? { outputDirectory, allowOverwrite: false } : {}),
+      ...(outputDirectory ? { outputDirectory, allowOverwrite: true } : {}),
     });
 
     if (!result.success) {
