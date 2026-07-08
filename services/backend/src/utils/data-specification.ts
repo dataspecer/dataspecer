@@ -1,6 +1,5 @@
 import { getDataSpecificationWithModels } from "@dataspecer/specification/specification";
 import type {
-  DataspecerAggregatedSemanticModel,
   DataspecerSpecificationSource,
   DataspecerStructureResource,
 } from "@dataspecer/app-generator";
@@ -22,14 +21,15 @@ export async function getSpecification(projectId: string): Promise<DataspecerSpe
 
   // Aggregated semantic model is a single model containing entities.
   const aggregatedWrappedEntities = specification.semanticModelAggregator.getAggregatedEntities();
-  const unwrappedEntities = Object.values(aggregatedWrappedEntities).map((entity) => entity.aggregatedEntity);
-  const aggregatedSemanticModel = unwrappedEntities as DataspecerAggregatedSemanticModel;
+  const aggregatedSemanticModel = Object.values(aggregatedWrappedEntities).map((entity) => entity.aggregatedEntity);
 
   // Now process structure models
   const structureModels = Object.values(specification.structureModels).map((structureModel) => {
     const resources = structureModel.listResources();
-    return resources.map((resourceId) => structureModel.readResource(resourceId));
-  }) as DataspecerStructureResource[][];
+    return resources
+      .map((resourceId) => structureModel.readResource(resourceId))
+      .filter((resource): resource is DataspecerStructureResource => resource !== null);
+  });
 
   return {
     aggregatedSemanticModel,

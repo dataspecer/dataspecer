@@ -1,60 +1,58 @@
-import type { DataPsmAssociationEnd } from '@dataspecer/core/data-psm/model/data-psm-association-end';
-import type { DataPsmAttribute } from '@dataspecer/core/data-psm/model/data-psm-attribute';
-import type { DataPsmClass } from '@dataspecer/core/data-psm/model/data-psm-class';
-import type { DataPsmClassReference } from '@dataspecer/core/data-psm/model/data-psm-class-reference';
-import type { DataPsmResource } from '@dataspecer/core/data-psm/model/data-psm-resource';
-import type { DataPsmSchema } from '@dataspecer/core/data-psm/model/data-psm-schema';
+import type { CoreResource } from '@dataspecer/core/core';
+import type { Entity } from '@dataspecer/core-v2/entity-model';
 import type {
   SemanticModelClass,
-  SemanticModelGeneralization,
   SemanticModelRelationship,
   SemanticModelRelationshipEnd,
 } from '@dataspecer/core-v2/semantic-model/concepts';
 
-interface OptionalConceptIris {
+/**
+ * View over an aggregated semantic class for reading profile aggregation output. Profile
+ * aggregation produces classes with `conceptIris` (see `AggregatedProfiledSemanticModelClass`
+ * in `@dataspecer/core-v2`), while plain vocabulary classes lack the field. The field is
+ * therefore optional here.
+ */
+export interface DataspecerSemanticModelClass extends SemanticModelClass {
   /**
-   * Optional metadata produced by profile/vocabulary aggregators.
-   *
-   * For classes, these are IRIs of source classes represented by the aggregate.
-   * For relationship ends, these are IRIs of source relationship ends represented
-   * by the aggregate.
+   * IRIs of the original vocabulary concepts referenced by the profile.
    */
   conceptIris?: string[];
 }
 
-export interface DataspecerSemanticModelClass extends SemanticModelClass, OptionalConceptIris {}
-
-export interface DataspecerSemanticModelRelationshipEnd
-  extends SemanticModelRelationshipEnd, OptionalConceptIris {}
+export interface DataspecerSemanticModelRelationshipEnd extends SemanticModelRelationshipEnd {
+  /**
+   * IRIs of the original vocabulary concepts referenced by the profile.
+   */
+  conceptIris?: string[];
+}
 
 export interface DataspecerSemanticModelRelationship extends SemanticModelRelationship {
   ends: DataspecerSemanticModelRelationshipEnd[];
 }
 
-export type DataspecerSemanticEntity =
-  | DataspecerSemanticModelClass
-  | DataspecerSemanticModelRelationship
-  | SemanticModelGeneralization;
+/**
+ * Entities returned by the root semantic model aggregator. The concrete entity shape depends on
+ * the package's model composition, so the type is deliberately open. Typically the array contains
+ * classes, relationships, and generalizations, and profile compositions add `conceptIris` to
+ * classes and relationship ends. Consumers must narrow entities at runtime.
+ */
+export type DataspecerAggregatedSemanticModel = Entity[];
 
-export type DataspecerAggregatedSemanticModel = DataspecerSemanticEntity[];
-
-export type DataspecerStructureResource =
-  | DataPsmResource
-  | DataPsmSchema
-  | DataPsmClass
-  | DataPsmAttribute
-  | DataPsmAssociationEnd
-  | DataPsmClassReference;
+/**
+ * A resource of a structure model. Stores can return any data PSM resource kind, for example
+ * schemas, classes, attributes, association ends, class references, ORs, includes, and
+ * containers. Consumers must discriminate at runtime and report kinds they do not support.
+ */
+export type DataspecerStructureResource = CoreResource;
 
 export interface DataspecerSpecificationSource {
   /**
-   * List of semantic model entities. Each entity is either a class, relationship or generalization.
+   * List of aggregated semantic model entities.
    */
   aggregatedSemanticModel: DataspecerAggregatedSemanticModel;
   /**
-   * Array of structure models. Each structure model is an array of resources.
-   *
-   * Each structure model has one {@link DataPsmSchema} that is the root of the structure model.
+   * Array of structure models. Each structure model is an array of resources containing one
+   * {@link DataPsmSchema} that is the root of the structure model.
    */
   structureModels: DataspecerStructureResource[][];
 }

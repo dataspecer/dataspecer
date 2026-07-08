@@ -14,9 +14,10 @@ import {
   type SemanticModelRelationshipEnd,
 } from '@dataspecer/core-v2/semantic-model/concepts';
 
+import type { Entity } from '@dataspecer/core-v2/entity-model';
+
 import type { DataspecerMetadataProvider } from './dataspecer-metadata-provider.ts';
 import type {
-  DataspecerSemanticEntity,
   DataspecerSemanticModelClass,
   DataspecerSemanticModelRelationshipEnd,
   DataspecerSpecificationLoader,
@@ -73,7 +74,7 @@ interface MappingContext {
 }
 
 interface SemanticEntityIndex {
-  byKey: Map<string, DataspecerSemanticEntity>;
+  byKey: Map<string, Entity>;
 }
 
 export class DataspecerSpecificationMetadataProvider implements DataspecerMetadataProvider {
@@ -141,8 +142,8 @@ function buildMappingContext(specification: DataspecerSpecificationSource): Mapp
   };
 }
 
-function buildSemanticEntityIndex(entities: DataspecerSemanticEntity[]): SemanticEntityIndex {
-  const byKey = new Map<string, DataspecerSemanticEntity>();
+function buildSemanticEntityIndex(entities: Entity[]): SemanticEntityIndex {
+  const byKey = new Map<string, Entity>();
 
   for (const entity of entities) {
     for (const key of entityKeys(entity)) {
@@ -491,10 +492,13 @@ function isAssociationTargetResource(
   return DataPsmClass.is(resource) || DataPsmClassReference.is(resource);
 }
 
-function entityKeys(entity: DataspecerSemanticEntity): string[] {
-  const keys = [entity.id, entity.iri];
+function entityKeys(entity: Entity): string[] {
+  const keys: (string | null | undefined)[] = [entity.id];
+  if (isSemanticModelClass(entity) || isSemanticModelRelationship(entity)) {
+    keys.push(entity.iri);
+  }
   if (isSemanticModelClass(entity)) {
-    keys.push(...(entity.conceptIris ?? []));
+    keys.push(...((entity as DataspecerSemanticModelClass).conceptIris ?? []));
   }
   return keys.filter(isString);
 }
