@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { ViolationCode } from '../src/validation/violation-codes.ts';
-import { validateGraphSyntax } from '../src/graph/validate-syntax.ts';
+import { validateGraphSyntax } from '../src/validation/validate-syntax.ts';
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 

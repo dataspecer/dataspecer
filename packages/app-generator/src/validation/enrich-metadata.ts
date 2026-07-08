@@ -8,15 +8,15 @@ import {
 import {
   type AggregateFieldMetadata,
   type AggregateMetadata,
-  type DataspecerSpecificationMetadata,
+  type SpecificationMetadata,
   FieldKind,
 } from '../metadata/types.ts';
-import type { Violation } from './types.ts';
+import { splitFieldPath } from './field-path.ts';
+import { semanticViolation, type Violation } from './types.ts';
 import { ViolationCode } from './violation-codes.ts';
-import { semanticViolation } from './violation.ts';
 
 export interface MetadataEnrichment {
-  metadata: DataspecerSpecificationMetadata;
+  metadata: SpecificationMetadata;
   violations: Violation[];
 }
 
@@ -29,7 +29,7 @@ export interface MetadataEnrichment {
  */
 export function enrichMetadata(
   graph: ApplicationGraph,
-  metadata: DataspecerSpecificationMetadata
+  metadata: SpecificationMetadata
 ): MetadataEnrichment {
   const violations: Violation[] = [];
   const aggregates = new Map(metadata.aggregates.map((aggregate) => [aggregate.iri, aggregate]));
@@ -42,7 +42,7 @@ export function enrichMetadata(
     }
 
     const aggregate = aggregates.get(node.aggregateIri);
-    const entries = sortBy(Object.entries(associations), [([path]) => pathSegments(path).length]);
+    const entries = sortBy(Object.entries(associations), [([path]) => splitFieldPath(path).length]);
 
     for (const [path, value] of entries) {
       const violationPath = `/nodes/${nodeIndex}/config/associations/${path}`;
@@ -143,7 +143,7 @@ function resolveAssociationPath(
   resolvedKinds: Map<string, AssociationKind>,
   violations: Violation[]
 ): string | undefined {
-  const segments = pathSegments(path);
+  const segments = splitFieldPath(path);
   if (segments.length === 0) {
     violations.push(notAssociationViolation(aggregate, path, violationPath));
     return undefined;
@@ -215,8 +215,4 @@ function associationKindFrom(value: unknown): AssociationKind | undefined {
 
 function associationKey(aggregateIri: string, path: string): string {
   return `${aggregateIri}\u0000${path}`;
-}
-
-function pathSegments(path: string): string[] {
-  return path.split('.').filter((segment) => segment.length > 0);
 }

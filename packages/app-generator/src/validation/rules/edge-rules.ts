@@ -1,5 +1,5 @@
-import type { Operation } from '../graph/types.ts';
-import { Operation as OperationValue } from '../graph/types.ts';
+import type { Operation } from '../../graph/types.ts';
+import { Operation as OperationValue } from '../../graph/types.ts';
 
 export function isValidRedirectOperation(source: Operation, target: Operation): boolean {
   if (source === OperationValue.Create) {

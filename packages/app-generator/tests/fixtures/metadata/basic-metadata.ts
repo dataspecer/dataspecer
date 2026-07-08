@@ -1,8 +1,8 @@
-import { type DataspecerSpecificationMetadata, FieldKind } from '../../../src/metadata/types.ts';
+import { type SpecificationMetadata, FieldKind } from '../../../src/metadata/types.ts';
 
 export const specificationIri = 'https://example.org/specification/library';
 
-export const basicMetadata: DataspecerSpecificationMetadata = {
+export const basicMetadata: SpecificationMetadata = {
   dataSpecificationIri: specificationIri,
   aggregates: [
     {

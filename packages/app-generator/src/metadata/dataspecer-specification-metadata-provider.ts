@@ -16,18 +16,18 @@ import {
 
 import type { Entity } from '@dataspecer/core-v2/entity-model';
 
-import type { DataspecerMetadataProvider } from './dataspecer-metadata-provider.ts';
 import type {
-  DataspecerSemanticModelClass,
-  DataspecerSemanticModelRelationshipEnd,
-  DataspecerSpecificationLoader,
-  DataspecerSpecificationSource,
-  DataspecerStructureResource,
-} from './dataspecer-specification-source.ts';
+  AggregatedSemanticModelClass,
+  AggregatedSemanticModelRelationshipEnd,
+  SpecificationSourceLoader,
+  SpecificationSource,
+  StructureModelResource,
+} from './specification-source.ts';
 import {
   type AggregateFieldMetadata,
   type AggregateMetadata,
-  type DataspecerSpecificationMetadata,
+  type DataspecerMetadataProvider,
+  type SpecificationMetadata,
   FieldKind,
 } from './types.ts';
 
@@ -38,19 +38,19 @@ export interface DataspecerMetadataMappingIssue {
 }
 
 export enum DataspecerMetadataMappingIssueCode {
-  MissingStructureModels = 'missing_structure_models',
-  MissingSchema = 'missing_schema',
-  MissingSchemaIri = 'missing_schema_iri',
-  MissingRootClass = 'missing_root_class',
-  MissingClassInterpretation = 'missing_class_interpretation',
-  MissingClassIri = 'missing_class_iri',
-  MissingFieldResource = 'missing_field_resource',
-  MissingFieldInterpretation = 'missing_field_interpretation',
-  MissingAssociationTarget = 'missing_association_target',
-  MissingTargetAggregate = 'missing_target_aggregate',
-  UnsupportedFieldResource = 'unsupported_field_resource',
-  UnsupportedMultiRootSchema = 'unsupported_multi_root_schema',
-  CircularStructure = 'circular_structure',
+  MissingStructureModels = 'MISSING_STRUCTURE_MODELS',
+  MissingSchema = 'MISSING_SCHEMA',
+  MissingSchemaIri = 'MISSING_SCHEMA_IRI',
+  MissingRootClass = 'MISSING_ROOT_CLASS',
+  MissingClassInterpretation = 'MISSING_CLASS_INTERPRETATION',
+  MissingClassIri = 'MISSING_CLASS_IRI',
+  MissingFieldResource = 'MISSING_FIELD_RESOURCE',
+  MissingFieldInterpretation = 'MISSING_FIELD_INTERPRETATION',
+  MissingAssociationTarget = 'MISSING_ASSOCIATION_TARGET',
+  MissingTargetAggregate = 'MISSING_TARGET_AGGREGATE',
+  UnsupportedFieldResource = 'UNSUPPORTED_FIELD_RESOURCE',
+  UnsupportedMultiRootSchema = 'UNSUPPORTED_MULTI_ROOT_SCHEMA',
+  CircularStructure = 'CIRCULAR_STRUCTURE',
 }
 
 export class DataspecerMetadataMappingError extends Error {
@@ -68,7 +68,7 @@ type Cardinality = [number, number | null];
 
 interface MappingContext {
   semanticEntities: SemanticEntityIndex;
-  resourcesByIri: Map<string, DataspecerStructureResource>;
+  resourcesByIri: Map<string, StructureModelResource>;
   schemaIriByRootClassIri: Map<string, string>;
   issues: DataspecerMetadataMappingIssue[];
 }
@@ -78,11 +78,9 @@ interface SemanticEntityIndex {
 }
 
 export class DataspecerSpecificationMetadataProvider implements DataspecerMetadataProvider {
-  constructor(private readonly loadSpecification: DataspecerSpecificationLoader) {}
+  constructor(private readonly loadSpecification: SpecificationSourceLoader) {}
 
-  async getSpecificationMetadata(
-    dataSpecificationIri: string
-  ): Promise<DataspecerSpecificationMetadata> {
+  async getSpecificationMetadata(dataSpecificationIri: string): Promise<SpecificationMetadata> {
     const specification = await this.loadSpecification(dataSpecificationIri);
     return mapDataspecerSpecificationToMetadata(dataSpecificationIri, specification);
   }
@@ -90,8 +88,8 @@ export class DataspecerSpecificationMetadataProvider implements DataspecerMetada
 
 export function mapDataspecerSpecificationToMetadata(
   dataSpecificationIri: string,
-  specification: DataspecerSpecificationSource
-): DataspecerSpecificationMetadata {
+  specification: SpecificationSource
+): SpecificationMetadata {
   const context = buildMappingContext(specification);
   const aggregates = specification.structureModels.flatMap((structureModel, index) =>
     mapStructureModel(structureModel, index, context)
@@ -115,8 +113,8 @@ export function mapDataspecerSpecificationToMetadata(
   };
 }
 
-function buildMappingContext(specification: DataspecerSpecificationSource): MappingContext {
-  const resourcesByIri = new Map<string, DataspecerStructureResource>();
+function buildMappingContext(specification: SpecificationSource): MappingContext {
+  const resourcesByIri = new Map<string, StructureModelResource>();
   const schemaIriByRootClassIri = new Map<string, string>();
 
   for (const resource of specification.structureModels.flat()) {
@@ -155,7 +153,7 @@ function buildSemanticEntityIndex(entities: Entity[]): SemanticEntityIndex {
 }
 
 function mapStructureModel(
-  structureModel: DataspecerStructureResource[],
+  structureModel: StructureModelResource[],
   structureModelIndex: number,
   context: MappingContext
 ): AggregateMetadata[] {
@@ -487,7 +485,7 @@ function cardinalityFlags(cardinality: Cardinality | null | undefined): {
 }
 
 function isAssociationTargetResource(
-  resource: DataspecerStructureResource
+  resource: StructureModelResource
 ): resource is DataPsmClass | DataPsmClassReference {
   return DataPsmClass.is(resource) || DataPsmClassReference.is(resource);
 }
@@ -498,13 +496,13 @@ function entityKeys(entity: Entity): string[] {
     keys.push(entity.iri);
   }
   if (isSemanticModelClass(entity)) {
-    keys.push(...((entity as DataspecerSemanticModelClass).conceptIris ?? []));
+    keys.push(...((entity as AggregatedSemanticModelClass).conceptIris ?? []));
   }
   return keys.filter(isString);
 }
 
 function publicClassIri(entity: SemanticModelClass): string | undefined {
-  const dataspecerClass = entity as DataspecerSemanticModelClass;
+  const dataspecerClass = entity as AggregatedSemanticModelClass;
   return (
     publicAbsoluteIri(entity.iri) ?? dataspecerClass.conceptIris?.find(isAbsoluteIri) ?? entity.id
   );
@@ -522,7 +520,7 @@ function relationshipPropertyIri(
 }
 
 function publicRelationshipEndIri(end: SemanticModelRelationshipEnd): string | undefined {
-  const dataspecerEnd = end as DataspecerSemanticModelRelationshipEnd;
+  const dataspecerEnd = end as AggregatedSemanticModelRelationshipEnd;
   return publicAbsoluteIri(end.iri) ?? dataspecerEnd.conceptIris?.find(isAbsoluteIri);
 }
 
@@ -551,7 +549,7 @@ function localName(iri: string): string {
   return separatorIndex >= 0 ? iri.slice(separatorIndex + 1) : iri;
 }
 
-function resourcePath(resource: DataspecerStructureResource): string | undefined {
+function resourcePath(resource: StructureModelResource): string | undefined {
   return resource.iri ? `resource(${resource.iri})` : undefined;
 }
 

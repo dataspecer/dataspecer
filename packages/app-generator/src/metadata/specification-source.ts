@@ -12,22 +12,22 @@ import type {
  * in `@dataspecer/core-v2`), while plain vocabulary classes lack the field. The field is
  * therefore optional here.
  */
-export interface DataspecerSemanticModelClass extends SemanticModelClass {
+export interface AggregatedSemanticModelClass extends SemanticModelClass {
   /**
    * IRIs of the original vocabulary concepts referenced by the profile.
    */
   conceptIris?: string[];
 }
 
-export interface DataspecerSemanticModelRelationshipEnd extends SemanticModelRelationshipEnd {
+export interface AggregatedSemanticModelRelationshipEnd extends SemanticModelRelationshipEnd {
   /**
    * IRIs of the original vocabulary concepts referenced by the profile.
    */
   conceptIris?: string[];
 }
 
-export interface DataspecerSemanticModelRelationship extends SemanticModelRelationship {
-  ends: DataspecerSemanticModelRelationshipEnd[];
+export interface AggregatedSemanticModelRelationship extends SemanticModelRelationship {
+  ends: AggregatedSemanticModelRelationshipEnd[];
 }
 
 /**
@@ -36,27 +36,27 @@ export interface DataspecerSemanticModelRelationship extends SemanticModelRelati
  * classes, relationships, and generalizations, and profile compositions add `conceptIris` to
  * classes and relationship ends. Consumers must narrow entities at runtime.
  */
-export type DataspecerAggregatedSemanticModel = Entity[];
+export type AggregatedSemanticModel = Entity[];
 
 /**
  * A resource of a structure model. Stores can return any data PSM resource kind, for example
  * schemas, classes, attributes, association ends, class references, ORs, includes, and
  * containers. Consumers must discriminate at runtime and report kinds they do not support.
  */
-export type DataspecerStructureResource = CoreResource;
+export type StructureModelResource = CoreResource;
 
-export interface DataspecerSpecificationSource {
+export interface SpecificationSource {
   /**
    * List of aggregated semantic model entities.
    */
-  aggregatedSemanticModel: DataspecerAggregatedSemanticModel;
+  aggregatedSemanticModel: AggregatedSemanticModel;
   /**
    * Array of structure models. Each structure model is an array of resources containing one
    * {@link DataPsmSchema} that is the root of the structure model.
    */
-  structureModels: DataspecerStructureResource[][];
+  structureModels: StructureModelResource[][];
 }
 
-export type DataspecerSpecificationLoader = (
+export type SpecificationSourceLoader = (
   dataSpecificationIri: string
-) => Promise<DataspecerSpecificationSource>;
+) => Promise<SpecificationSource>;

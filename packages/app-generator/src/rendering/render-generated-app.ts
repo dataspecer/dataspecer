@@ -77,13 +77,8 @@ export function renderGeneratedApp(model: GenerationModel): FileTree {
   return tree;
 }
 
-function renderTemplate(templateName: string, data: object): string {
-  const template = generatedAppTemplates[templateName as keyof typeof generatedAppTemplates];
-  if (template === undefined) {
-    throw new Error(`Missing generated application template "${templateName}".`);
-  }
-
-  return eta.renderString(template, data);
+function renderTemplate(templateName: keyof typeof generatedAppTemplates, data: object): string {
+  return eta.renderString(generatedAppTemplates[templateName], data);
 }
 
 function addStaticGeneratedAppAssets(fileTree: FileTree): void {

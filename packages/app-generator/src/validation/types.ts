@@ -16,3 +16,12 @@ export interface ValidationResult {
   valid: boolean;
   violations: Violation[];
 }
+
+export function semanticViolation(code: ViolationCode, message: string, path: string): Violation {
+  return {
+    code,
+    message,
+    path,
+    severity: ViolationSeverity.Error,
+  };
+}

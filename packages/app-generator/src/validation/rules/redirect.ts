@@ -1,10 +1,9 @@
-import type { Violation } from './types.ts';
-import { ViolationCode } from './violation-codes.ts';
-import { EdgeType, Operation } from '../graph/types.ts';
+import { semanticViolation, type Violation } from '../types.ts';
+import { ViolationCode } from '../violation-codes.ts';
+import { EdgeType, Operation } from '../../graph/types.ts';
 import { haveSameClass } from './aggregate-rules.ts';
-import { semanticViolation } from './violation.ts';
 import { isValidRedirectOperation } from './edge-rules.ts';
-import type { SemanticValidationContext } from './semantic-validation-context.ts';
+import type { SemanticValidationContext } from '../semantic-validation-context.ts';
 
 export function validateRedirects(context: SemanticValidationContext): Violation[] {
   const violations: Violation[] = [];

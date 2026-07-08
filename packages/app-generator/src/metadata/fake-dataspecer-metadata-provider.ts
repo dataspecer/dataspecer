@@ -1,14 +1,9 @@
-import type { DataspecerMetadataProvider } from './dataspecer-metadata-provider.ts';
-import type { DataspecerSpecificationMetadata } from './types.ts';
+import type { DataspecerMetadataProvider, SpecificationMetadata } from './types.ts';
 
 export class FakeDataspecerMetadataProvider implements DataspecerMetadataProvider {
-  constructor(
-    private readonly metadataBySpecificationIri: Record<string, DataspecerSpecificationMetadata>
-  ) {}
+  constructor(private readonly metadataBySpecificationIri: Record<string, SpecificationMetadata>) {}
 
-  async getSpecificationMetadata(
-    dataSpecificationIri: string
-  ): Promise<DataspecerSpecificationMetadata> {
+  async getSpecificationMetadata(dataSpecificationIri: string): Promise<SpecificationMetadata> {
     const metadata = this.metadataBySpecificationIri[dataSpecificationIri] ?? {
       dataSpecificationIri,
       aggregates: [],

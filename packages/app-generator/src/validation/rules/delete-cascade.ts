@@ -1,14 +1,13 @@
-import type { Violation } from './types.ts';
-import { ViolationCode } from './violation-codes.ts';
-import { DeletePolicy, Operation } from '../graph/types.ts';
-import { semanticViolation } from './violation.ts';
-import type { SemanticValidationContext } from './semantic-validation-context.ts';
+import { semanticViolation, type Violation } from '../types.ts';
+import { ViolationCode } from '../violation-codes.ts';
+import { AssociationKind, DeletePolicy, Operation } from '../../graph/types.ts';
+import { splitFieldPath } from '../field-path.ts';
+import type { SemanticValidationContext } from '../semantic-validation-context.ts';
 import {
-  AssociationKind,
   type AggregateFieldMetadata,
   type AggregateMetadata,
   FieldKind,
-} from '../metadata/types.ts';
+} from '../../metadata/types.ts';
 
 export function validateDeleteCascade(context: SemanticValidationContext): Violation[] {
   const violations: Violation[] = [];
@@ -31,7 +30,7 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
     const cascadePaths = new Set(
       Object.entries(deleteConfig)
         .filter(([, policy]) => policy === DeletePolicy.Cascade)
-        .map(([path]) => normalizePath(path))
+        .map(([path]) => splitFieldPath(path).join('.'))
     );
 
     Object.entries(deleteConfig).forEach(([path, policy]) => {
@@ -69,7 +68,7 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
         return;
       }
 
-      const segments = normalizePath(path).split('.').filter(Boolean);
+      const segments = splitFieldPath(path);
       if (segments.length > 1 && !cascadePaths.has(segments.slice(0, -1).join('.'))) {
         violations.push(
           semanticViolation(
@@ -87,13 +86,6 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
   return violations;
 }
 
-function normalizePath(path: string): string {
-  return path
-    .split('.')
-    .filter((segment) => segment.length > 0)
-    .join('.');
-}
-
 /**
  * Delete cascade paths address association fields within the aggregate's own structure tree.
  * Nested segments descend into the inline fields of the parent association.
@@ -105,7 +97,7 @@ function findAssociationFieldByPath(
   let fields = rootAggregate.fields;
   let resolved: AggregateFieldMetadata | undefined;
 
-  for (const segment of path.split('.').filter((candidate) => candidate.length > 0)) {
+  for (const segment of splitFieldPath(path)) {
     resolved = fields.find(
       (candidate) => candidate.path === segment && candidate.kind === FieldKind.Association
     );

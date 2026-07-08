@@ -1,5 +1,5 @@
-import type { ApplicationNode } from '../graph/types.ts';
-import { type AggregateMetadata, FieldKind } from '../metadata/types.ts';
+import type { ApplicationNode } from '../../graph/types.ts';
+import { type AggregateMetadata, FieldKind } from '../../metadata/types.ts';
 
 export function haveSameClass(
   sourceNode: ApplicationNode,

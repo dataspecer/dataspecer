@@ -1,7 +1,6 @@
-import type { Violation } from './types.ts';
-import { ViolationCode } from './violation-codes.ts';
-import type { SemanticValidationContext } from './semantic-validation-context.ts';
-import { semanticViolation } from './violation.ts';
+import { semanticViolation, type Violation } from '../types.ts';
+import { ViolationCode } from '../violation-codes.ts';
+import type { SemanticValidationContext } from '../semantic-validation-context.ts';
 
 export function validateAggregateReferences(context: SemanticValidationContext): Violation[] {
   return context.graph.nodes.flatMap((node, index) => {

@@ -1,5 +1,4 @@
 import type { AssociationKind } from '../graph/types.ts';
-export { AssociationKind } from '../graph/types.ts';
 
 export enum FieldKind {
   Primitive = 'primitive',
@@ -36,7 +35,15 @@ export interface AggregateMetadata {
   fields: AggregateFieldMetadata[];
 }
 
-export interface DataspecerSpecificationMetadata {
+export interface SpecificationMetadata {
   dataSpecificationIri: string;
   aggregates: AggregateMetadata[];
+}
+
+/**
+ * Boundary through which the generator obtains metadata about Dataspecer artifacts. Generator
+ * core depends only on this interface, never on concrete Dataspecer API clients.
+ */
+export interface DataspecerMetadataProvider {
+  getSpecificationMetadata(dataSpecificationIri: string): Promise<SpecificationMetadata>;
 }

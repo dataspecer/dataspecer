@@ -4,11 +4,11 @@ import type { ErrorObject } from 'ajv';
 import { Ajv } from 'ajv';
 import addFormats from 'ajv-formats';
 
-import { ViolationCode } from '../validation/violation-codes.ts';
-import type { Violation, ValidationResult } from '../validation/types.ts';
-import { ViolationSeverity } from '../validation/types.ts';
-import { applicationGraphSchema } from './schema.ts';
-import type { ApplicationGraph } from './types.ts';
+import { ViolationCode } from './violation-codes.ts';
+import type { Violation, ValidationResult } from './types.ts';
+import { ViolationSeverity } from './types.ts';
+import { applicationGraphSchema } from '../graph/schema.ts';
+import type { ApplicationGraph } from '../graph/types.ts';
 
 export interface SyntaxValidationResult extends ValidationResult {
   graph?: ApplicationGraph;
@@ -18,10 +18,9 @@ const ajv = new Ajv({
   allErrors: true,
   strict: true,
 });
-const addAjvFormats = addFormats as unknown as (target: Ajv) => Ajv;
-addAjvFormats(ajv);
+addFormats.default(ajv);
 
-const validateSchema = ajv.compile(applicationGraphSchema);
+const validateSchema = ajv.compile<ApplicationGraph>(applicationGraphSchema);
 
 export function validateGraphSyntax(input: unknown): SyntaxValidationResult {
   const violations: Violation[] = [];

@@ -1,8 +1,7 @@
-import type { Violation } from './types.ts';
-import { ViolationCode } from './violation-codes.ts';
-import { Operation } from '../graph/types.ts';
-import type { SemanticValidationContext } from './semantic-validation-context.ts';
-import { semanticViolation } from './violation.ts';
+import { semanticViolation, type Violation } from '../types.ts';
+import { ViolationCode } from '../violation-codes.ts';
+import { Operation } from '../../graph/types.ts';
+import type { SemanticValidationContext } from '../semantic-validation-context.ts';
 
 /**
  * Association kinds may be configured on Create, Update, and Delete nodes. Delete nodes need

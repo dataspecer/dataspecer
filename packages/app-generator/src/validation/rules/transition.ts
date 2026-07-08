@@ -1,14 +1,13 @@
-import type { Violation } from './types.ts';
-import { ViolationCode } from './violation-codes.ts';
-import { EdgeType } from '../graph/types.ts';
+import { semanticViolation, type Violation } from '../types.ts';
+import { ViolationCode } from '../violation-codes.ts';
+import { EdgeType } from '../../graph/types.ts';
 import { hasAssociationToTarget, haveSameClass } from './aggregate-rules.ts';
-import { semanticViolation } from './violation.ts';
 import {
   isValidTransitionOperation,
   requiresSameClassOrAssociationTransition,
   requiresSameClassTransition,
 } from './edge-rules.ts';
-import type { SemanticValidationContext } from './semantic-validation-context.ts';
+import type { SemanticValidationContext } from '../semantic-validation-context.ts';
 
 export function validateTransitions(context: SemanticValidationContext): Violation[] {
   return context.graph.edges.flatMap((edge, index) => {

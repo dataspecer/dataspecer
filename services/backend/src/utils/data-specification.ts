@@ -1,7 +1,7 @@
 import { getDataSpecificationWithModels } from "@dataspecer/specification/specification";
 import type {
-  DataspecerSpecificationSource,
-  DataspecerStructureResource,
+  SpecificationSource,
+  StructureModelResource,
 } from "@dataspecer/app-generator";
 import { resourceModel } from "../main.ts";
 import { BackendModelRepository } from "./model-repository.ts";
@@ -15,7 +15,7 @@ import { BackendModelRepository } from "./model-repository.ts";
  * The purpose of this function is to provide a simple API that hides the
  * complexity that may change in the future.
  */
-export async function getSpecification(projectId: string): Promise<DataspecerSpecificationSource> {
+export async function getSpecification(projectId: string): Promise<SpecificationSource> {
   const modelRepository = new BackendModelRepository(resourceModel);
   const specification = await getDataSpecificationWithModels(projectId, "", modelRepository);
 
@@ -28,7 +28,7 @@ export async function getSpecification(projectId: string): Promise<DataspecerSpe
     const resources = structureModel.listResources();
     return resources
       .map((resourceId) => structureModel.readResource(resourceId))
-      .filter((resource): resource is DataspecerStructureResource => resource !== null);
+      .filter((resource): resource is StructureModelResource => resource !== null);
   });
 
   return {

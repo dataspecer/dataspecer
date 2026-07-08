@@ -4,23 +4,22 @@ import { ViolationSeverity } from './validation/types.ts';
 import { buildGenerationModel } from './generation-model/build-generation-model.ts';
 import type { GenerationModel } from './generation-model/types.ts';
 import type { ApplicationGraph } from './graph/types.ts';
-import { validateGraphSyntax } from './graph/validate-syntax.ts';
-import type { DataspecerMetadataProvider } from './metadata/dataspecer-metadata-provider.ts';
+import { validateGraphSyntax } from './validation/validate-syntax.ts';
 import { DataspecerMetadataMappingError } from './metadata/dataspecer-specification-metadata-provider.ts';
-import type { DataspecerSpecificationMetadata } from './metadata/types.ts';
+import type { DataspecerMetadataProvider, SpecificationMetadata } from './metadata/types.ts';
 import { writeFileTree } from './rendering/write-file-tree.ts';
 import type { FileTreeContent } from './rendering/file-tree.ts';
 import { renderGeneratedApp } from './rendering/render-generated-app.ts';
 import { analyzeGraphSemantics } from './validation/analyze-semantics.ts';
 
-export interface GeneratePrototypeAppInput {
+export interface GenerateAppInput {
   graph: unknown;
   metadataProvider: DataspecerMetadataProvider;
   outputDirectory?: string;
   allowOverwrite?: boolean;
 }
 
-export interface GeneratePrototypeAppResult {
+export interface GenerateAppResult {
   success: boolean;
   violations: Violation[];
   files: FileTreeContent;
@@ -28,16 +27,14 @@ export interface GeneratePrototypeAppResult {
   generationModel?: GenerationModel;
 }
 
-export async function generateApp(
-  input: GeneratePrototypeAppInput
-): Promise<GeneratePrototypeAppResult> {
+export async function generateApp(input: GenerateAppInput): Promise<GenerateAppResult> {
   const syntaxResult = validateGraphSyntax(input.graph);
   if (!syntaxResult.valid || !syntaxResult.graph) {
     return failure(syntaxResult.violations);
   }
 
   const graph: ApplicationGraph = syntaxResult.graph;
-  let metadata: DataspecerSpecificationMetadata;
+  let metadata: SpecificationMetadata;
   try {
     metadata = await input.metadataProvider.getSpecificationMetadata(graph.dataSpecificationIri);
   } catch (error) {
@@ -108,7 +105,7 @@ function metadataResolutionViolations(error: unknown): Violation[] {
   ];
 }
 
-function failure(violations: Violation[]): GeneratePrototypeAppResult {
+function failure(violations: Violation[]): GenerateAppResult {
   return {
     success: false,
     violations: violations,

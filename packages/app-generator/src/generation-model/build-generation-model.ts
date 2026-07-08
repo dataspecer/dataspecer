@@ -1,11 +1,11 @@
-import { sortBy } from 'es-toolkit';
+import { kebabCase, pascalCase, sortBy } from 'es-toolkit';
 
 import type { ApplicationEdge, ApplicationGraph, ApplicationNode } from '../graph/types.ts';
 import { DatasourceType, DeletePolicy, EdgeType, Operation } from '../graph/types.ts';
 import type {
   AggregateFieldMetadata,
   AggregateMetadata,
-  DataspecerSpecificationMetadata,
+  SpecificationMetadata,
 } from '../metadata/types.ts';
 import type {
   GeneratedAggregateDescriptor,
@@ -21,7 +21,7 @@ import type {
 
 export function buildGenerationModel(
   graph: ApplicationGraph,
-  metadata: DataspecerSpecificationMetadata
+  metadata: SpecificationMetadata
 ): GenerationModel {
   const aggregateMap = new Map(metadata.aggregates.map((aggregate) => [aggregate.iri, aggregate]));
   const operationByNodeId = new Map<string, GeneratedOperationDescriptor>();
@@ -37,7 +37,7 @@ export function buildGenerationModel(
   return {
     app: {
       name: graph.name,
-      safeName: toKebabCase(graph.name),
+      safeName: kebabCase(graph.name),
       dataSpecificationIri: graph.dataSpecificationIri,
     },
     datasource: {
@@ -65,7 +65,7 @@ function buildAggregateDescriptor(aggregate: AggregateMetadata): GeneratedAggreg
   return {
     iri: aggregate.iri,
     name: aggregate.name,
-    safeName: toPascalCase(aggregate.name),
+    safeName: pascalCase(aggregate.name),
     classIri: aggregate.classIri,
     fields: sortBy(aggregate.fields, [(field) => field.path]).map(buildFieldDescriptor),
   };
@@ -75,14 +75,14 @@ function buildOperationDescriptor(
   node: ApplicationNode,
   aggregate: AggregateMetadata
 ): GeneratedOperationDescriptor {
-  const pageComponentName = `${toPascalCase(node.id)}Page`;
+  const pageComponentName = `${pascalCase(node.id)}Page`;
   const descriptor: GeneratedOperationDescriptor = {
     id: node.id,
     nodeId: node.id,
     aggregateIri: aggregate.iri,
     aggregateName: aggregate.name,
     operation: node.operation,
-    routeId: toKebabCase(node.id),
+    routeId: kebabCase(node.id),
     pageComponentName,
     pageTitle: getPageTitle(node, aggregate),
   };
@@ -224,25 +224,4 @@ function requireOperation(
   }
 
   return operation;
-}
-
-function toPascalCase(value: string): string {
-  const words = value
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .split(/[^a-zA-Z0-9]+/)
-    .filter(Boolean);
-
-  return words.map(capitalize).join('');
-}
-
-function toKebabCase(value: string): string {
-  return value
-    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-    .replace(/[^a-zA-Z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .toLowerCase();
-}
-
-function capitalize(value: string): string {
-  return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
 }

@@ -17,7 +17,7 @@ import {
   DataspecerSpecificationMetadataProvider,
   mapDataspecerSpecificationToMetadata,
 } from '../src/metadata/dataspecer-specification-metadata-provider.ts';
-import type { DataspecerSpecificationSource } from '../src/metadata/dataspecer-specification-source.ts';
+import type { SpecificationSource } from '../src/metadata/specification-source.ts';
 import { FieldKind } from '../src/metadata/types.ts';
 
 const specificationIri = 'https://example.org/specification/library';
@@ -193,7 +193,7 @@ describe('mapDataspecerSpecificationToMetadata', () => {
         new URL('./fixtures/metadata/real-specification-source.json', import.meta.url),
         'utf8'
       )
-    ) as DataspecerSpecificationSource;
+    ) as SpecificationSource;
 
     const metadata = mapDataspecerSpecificationToMetadata(specificationIri, source);
 
@@ -313,7 +313,7 @@ describe('DataspecerSpecificationMetadataProvider', () => {
   });
 });
 
-function dataspecerFixture(): DataspecerSpecificationSource {
+function dataspecerFixture(): SpecificationSource {
   return {
     aggregatedSemanticModel: [
       semanticClass('class-book', 'https://example.org/class/book', 'Book'),

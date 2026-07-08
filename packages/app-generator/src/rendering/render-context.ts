@@ -4,6 +4,8 @@ import type {
   GeneratedOperationDescriptor,
   GenerationModel,
 } from '../generation-model/types.ts';
+import { kebabCase, upperFirst } from 'es-toolkit';
+
 import { FieldKind } from '../metadata/types.ts';
 
 export interface GeneratedAppRenderContext {
@@ -63,7 +65,7 @@ export function buildRenderContext(model: GenerationModel): GeneratedAppRenderCo
     const fields = aggregate.fields.map(toRenderedField);
     return {
       ...aggregate,
-      moduleName: toKebabCase(aggregate.name),
+      moduleName: kebabCase(aggregate.name),
       descriptorName: `${aggregate.safeName}AggregateDescriptor`,
       modelName: `${aggregate.safeName}Model`,
       schemaName: `${aggregate.safeName}LdkitSchema`,
@@ -189,21 +191,15 @@ function localDatatypeName(datatype: string | undefined): string | undefined {
   return separatorIndex >= 0 ? datatype.slice(separatorIndex + 1) : datatype;
 }
 
+/**
+ * Turns a field path into a valid TypeScript identifier. Paths are Dataspecer technical labels,
+ * can be Czech, and identifiers may contain Unicode letters, so the path splits on characters
+ * outside the identifier grammar and the parts are camel-joined. Distinct paths can collide
+ * ("a-b" and "a.b" both map to "aB") and are not deduplicated.
+ */
 function toPropertyName(path: string): string {
-  const parts = path.split(/[^\p{L}\p{N}_$]+/u).filter(Boolean);
+  const parts = path.split(/[^$\p{ID_Continue}]+/u).filter(Boolean);
   const [first = 'value', ...rest] = parts;
-  const name = [first, ...rest.map(capitalize)].join('');
-  return /^[\p{N}]/u.test(name) ? `_${name}` : name;
-}
-
-function toKebabCase(value: string): string {
-  return value
-    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-    .replace(/[^a-zA-Z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .toLowerCase();
-}
-
-function capitalize(value: string): string {
-  return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
+  const name = [first, ...rest.map(upperFirst)].join('');
+  return /^[$_\p{ID_Start}]/u.test(name) ? name : `_${name}`;
 }

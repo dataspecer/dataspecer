@@ -1,7 +1,6 @@
-import type { JSONSchemaType } from 'ajv';
+import type { SchemaObject } from 'ajv';
 
 import { AssociationKind, DatasourceType, DeletePolicy, EdgeType, Operation } from './types.ts';
-import type { ApplicationGraph } from './types.ts';
 
 const configSchema = {
   type: 'object',
@@ -31,7 +30,7 @@ const configSchema = {
   },
 } as const;
 
-export const applicationGraphSchema = {
+export const applicationGraphSchema: SchemaObject = {
   $id: 'https://dataspecer.com/application-prototype-generator/application-graph.schema.json',
   type: 'object',
   additionalProperties: false,
@@ -120,4 +119,4 @@ export const applicationGraphSchema = {
       },
     },
   },
-} as unknown as JSONSchemaType<ApplicationGraph>;
+};

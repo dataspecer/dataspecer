@@ -1,23 +1,23 @@
 import type { Violation, ValidationResult } from './types.ts';
 import type { ApplicationGraph } from '../graph/types.ts';
-import type { DataspecerSpecificationMetadata } from '../metadata/types.ts';
-import { validateAggregateReferences } from './aggregate-reference-validation.ts';
+import type { SpecificationMetadata } from '../metadata/types.ts';
+import { validateAggregateReferences } from './rules/aggregate-reference.ts';
 import { enrichMetadata } from './enrich-metadata.ts';
-import { validateCompositionCycles } from './composition-cycle-validation.ts';
-import { validateDatasource } from './datasource-validation.ts';
-import { validateDeleteCascade } from './delete-cascade-validation.ts';
-import { validateEdgeEndpoints } from './edge-endpoint-validation.ts';
-import { validateNodeConfig } from './node-config-validation.ts';
-import { validateRedirects } from './redirect-validation.ts';
-import { validateTransitions } from './transition-validation.ts';
+import { validateCompositionCycles } from './rules/composition-cycle.ts';
+import { validateDatasource } from './rules/datasource.ts';
+import { validateDeleteCascade } from './rules/delete-cascade.ts';
+import { validateEdgeEndpoints } from './rules/edge-endpoint.ts';
+import { validateNodeConfig } from './rules/node-config.ts';
+import { validateRedirects } from './rules/redirect.ts';
+import { validateTransitions } from './rules/transition.ts';
 
 export interface SemanticAnalysisResult extends ValidationResult {
-  enrichedMetadata: DataspecerSpecificationMetadata;
+  enrichedMetadata: SpecificationMetadata;
 }
 
 export function analyzeGraphSemantics(
   graph: ApplicationGraph,
-  metadata: DataspecerSpecificationMetadata
+  metadata: SpecificationMetadata
 ): SemanticAnalysisResult {
   const enrichment = enrichMetadata(graph, metadata);
   const aggregates = new Map(
