@@ -4,6 +4,7 @@ import { ViolationSeverity } from './validation/types.ts';
 import { buildGenerationModel } from './generation-model/build-generation-model.ts';
 import type { GenerationModel } from './generation-model/types.ts';
 import type { ApplicationGraph } from './graph/types.ts';
+import { validateGraphStructure } from './validation/validate-structure.ts';
 import { validateGraphSyntax } from './validation/validate-syntax.ts';
 import { DataspecerMetadataMappingError } from './metadata/dataspecer-specification-metadata-provider.ts';
 import type { DataspecerMetadataProvider, SpecificationMetadata } from './metadata/types.ts';
@@ -34,6 +35,12 @@ export async function generateApp(input: GenerateAppInput): Promise<GenerateAppR
   }
 
   const graph: ApplicationGraph = syntaxResult.graph;
+  // Structural rules need no metadata, so graph mistakes are reported fast
+  const structureResult = validateGraphStructure(graph);
+  if (!structureResult.valid) {
+    return failure(structureResult.violations);
+  }
+
   let metadata: SpecificationMetadata;
   try {
     metadata = await input.metadataProvider.getSpecificationMetadata(graph.dataSpecificationIri);

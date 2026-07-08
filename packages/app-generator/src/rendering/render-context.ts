@@ -4,8 +4,8 @@ import type {
   GeneratedOperationDescriptor,
   GenerationModel,
 } from '../generation-model/types.ts';
-import { deburr, kebabCase, upperFirst } from 'es-toolkit';
 
+import { toKebabName, toPropertyName } from '../utils/naming.ts';
 import { FieldKind } from '../metadata/types.ts';
 
 export interface GeneratedAppRenderContext {
@@ -65,7 +65,7 @@ export function buildRenderContext(model: GenerationModel): GeneratedAppRenderCo
     const fields = aggregate.fields.map(toRenderedField);
     return {
       ...aggregate,
-      moduleName: kebabCase(deburr(aggregate.name)),
+      moduleName: toKebabName(aggregate.name),
       descriptorName: `${aggregate.safeName}AggregateDescriptor`,
       modelName: `${aggregate.safeName}Model`,
       schemaName: `${aggregate.safeName}LdkitSchema`,
@@ -189,29 +189,4 @@ function localDatatypeName(datatype: string | undefined): string | undefined {
   }
   const separatorIndex = Math.max(datatype.lastIndexOf('#'), datatype.lastIndexOf('/'));
   return separatorIndex >= 0 ? datatype.slice(separatorIndex + 1) : datatype;
-}
-
-/**
- * Turns a field path into a valid TypeScript identifier. For example "má_e-mailovou_adresu"
- * becomes "ma_eMailovou_adresu". Paths are Dataspecer technical labels, which can be Czech, and
- * diacritics are stripped so the names are easy to type. Distinct paths can collide, for
- * example "a-b" and "a.b" both become "aB". Collisions are not deduplicated.
- */
-function toPropertyName(path: string): string {
-  // ID_Start and ID_Continue are the Unicode character sets that JavaScript identifiers are
-  // built from. ID_Start covers characters allowed in the first position, such as letters, and
-  // ID_Continue covers the remaining positions and additionally includes digits and "_".
-  // JavaScript also allows "$" anywhere and "_" in the first position.
-  const nonIdentifierChars = /[^$\p{ID_Continue}]+/u;
-  const validIdentifierChars = /^[$_\p{ID_Start}]/u;
-  const parts = deburr(path)
-    .split(nonIdentifierChars)
-    .filter((part) => part.length > 0);
-
-  if (parts.length === 0) {
-    return 'value';
-  }
-
-  const name = parts.map((part, index) => (index === 0 ? part : upperFirst(part))).join('');
-  return validIdentifierChars.test(name) ? name : `_${name}`;
 }

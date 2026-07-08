@@ -1,9 +1,9 @@
 import { semanticViolation, type Violation } from '../types.ts';
 import { ViolationCode } from '../violation-codes.ts';
 import { DatasourceType } from '../../graph/types.ts';
-import type { SemanticValidationContext } from '../semantic-validation-context.ts';
+import type { StructuralValidationContext } from '../semantic-validation-context.ts';
 
-export function validateDatasource(context: SemanticValidationContext): Violation[] {
+export function validateDatasource(context: StructuralValidationContext): Violation[] {
   const { graph } = context;
 
   if (graph.datasources.length !== 1) {

@@ -9,6 +9,11 @@ export interface OperationContext<TModel extends EntityModel = EntityModel> {
   payload?: TModel;
 }
 
+/**
+ * One CRUD operation of the generated application. Override the generated subclasses in
+ * src/modules to customize behavior. The optional hooks run around execute and are skipped
+ * when not defined.
+ */
 export interface OperationStrategy<TModel extends EntityModel = EntityModel, TResult = unknown> {
   validateRequest?(ctx: OperationContext<TModel>): Promise<ValidationResult>;
   execute(ctx: OperationContext<TModel>): Promise<OperationResult<TResult>>;
@@ -18,6 +23,10 @@ export interface OperationStrategy<TModel extends EntityModel = EntityModel, TRe
   ): Promise<OperationResult<TResult>>;
 }
 
+/**
+ * Runs a strategy as validateRequest, then execute, then postprocess. When validateRequest
+ * reports issues, execute does not run and the issues are returned as a failed result.
+ */
 export async function invokeOperation<TModel extends EntityModel, TResult = unknown>(
   strategy: OperationStrategy<TModel, TResult>,
   context: OperationContext<TModel>

@@ -8,6 +8,7 @@ export {
   EdgeType,
   Operation,
 } from './graph/types.ts';
+export { validateGraphStructure } from './validation/validate-structure.ts';
 export { validateGraphSyntax } from './validation/validate-syntax.ts';
 export {
   DataspecerMetadataMappingError,

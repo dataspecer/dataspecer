@@ -52,7 +52,7 @@ export interface SpecificationSource {
   aggregatedSemanticModel: AggregatedSemanticModel;
   /**
    * Array of structure models. Each structure model is an array of resources containing one
-   * {@link DataPsmSchema} that is the root of the structure model.
+   * DataPsmSchema that is the root of the structure model.
    */
   structureModels: StructureModelResource[][];
 }

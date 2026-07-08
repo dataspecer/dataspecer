@@ -13,7 +13,7 @@ export interface AggregateFieldMetadata {
   datatype?: string;
   /**
    * Set only when the association target is another aggregate (a class reference or the root
-   * class of another structure model). Mutually exclusive with {@link fields}.
+   * class of another structure model). Mutually exclusive with the `fields` property.
    */
   targetAggregateIri?: string;
   targetClassIri?: string;

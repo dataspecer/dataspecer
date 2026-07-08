@@ -448,6 +448,40 @@ describe('analyzeGraphSemantics', () => {
     expectViolations(graph, ViolationCode.SemanticAssociationPathNotAssociation);
   });
 
+  it('rejects nested association config whose parent is configured on another node', () => {
+    const graph = validGraph({
+      nodes: [
+        node('Book.Update', 'https://example.org/aggregate/book-detail', Operation.Update, {
+          associations: { 'chapters.editor': AssociationKind.Aggregation },
+        }),
+        node('Book.Create', 'https://example.org/aggregate/book-detail', Operation.Create, {
+          associations: { chapters: AssociationKind.Composition },
+        }),
+      ],
+      edges: [],
+    });
+
+    expectViolations(graph, ViolationCode.SemanticNestedAssociationRequiresComposition);
+  });
+
+  it('accepts nested association config declared in one node config', () => {
+    const graph = validGraph({
+      nodes: [
+        node('Book.Update', 'https://example.org/aggregate/book-detail', Operation.Update, {
+          associations: {
+            chapters: AssociationKind.Composition,
+            'chapters.editor': AssociationKind.Aggregation,
+          },
+        }),
+      ],
+      edges: [],
+    });
+
+    const result = validatePreparedGraph(graph);
+
+    expect(result.valid).toBe(true);
+  });
+
   it('rejects conflicting association config for the same aggregate path', () => {
     const graph = validGraph({
       nodes: [

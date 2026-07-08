@@ -21,11 +21,9 @@ export interface MetadataEnrichment {
 }
 
 /**
- * Copies association kinds from node configs to the corresponding metadata fields. Config paths
- * address association fields within the node aggregate's own structure tree. Nested segments
- * descend into the inline fields of the parent association and never cross into another
- * aggregate. Kinds are keyed by aggregate IRI and full dotted field path, so all nodes of one
- * aggregate must agree on the kind of each association.
+ * Copies association kinds from node configs to the corresponding metadata fields. Every node config is self-contained,
+ * so a nested path requires its parent path to be configured as a composition in the same node config. Nodes of one
+ * aggregate must still agree on the kind of each association.
  */
 export function enrichMetadata(
   graph: ApplicationGraph,
@@ -42,7 +40,9 @@ export function enrichMetadata(
     }
 
     const aggregate = aggregates.get(node.aggregateIri);
+    // Sorting by path depth resolves parent paths before their nested paths.
     const entries = sortBy(Object.entries(associations), [([path]) => splitFieldPath(path).length]);
+    const nodeKinds = new Map<string, AssociationKind>();
 
     for (const [path, value] of entries) {
       const violationPath = `/nodes/${nodeIndex}/config/associations/${path}`;
@@ -67,12 +67,14 @@ export function enrichMetadata(
         aggregate,
         path,
         violationPath,
-        resolvedKinds,
+        nodeKinds,
         violations
       );
       if (!normalizedPath) {
         continue;
       }
+
+      nodeKinds.set(normalizedPath, kind);
 
       const key = associationKey(aggregate.iri, normalizedPath);
       const previous = resolvedKinds.get(key);
@@ -133,14 +135,14 @@ function withResolvedAssociationKinds(
 
 /**
  * Walks the config path through the aggregate's field tree. Returns the normalized dotted path
- * when every segment is an association field and all intermediate segments are already configured
- * as compositions.
+ * when every segment is an association field and all intermediate segments are configured as
+ * compositions in the same node config.
  */
 function resolveAssociationPath(
   aggregate: AggregateMetadata,
   path: string,
   violationPath: string,
-  resolvedKinds: Map<string, AssociationKind>,
+  nodeKinds: Map<string, AssociationKind>,
   violations: Violation[]
 ): string | undefined {
   const segments = splitFieldPath(path);
@@ -164,14 +166,14 @@ function resolveAssociationPath(
       return resolvedSegments.join('.');
     }
 
-    const parentKind = resolvedKinds.get(associationKey(aggregate.iri, resolvedSegments.join('.')));
+    const parentKind = nodeKinds.get(resolvedSegments.join('.'));
     if (parentKind !== AssociationKind.Composition) {
       violations.push(
         semanticViolation(
           ViolationCode.SemanticNestedAssociationRequiresComposition,
           `Nested association config path "${path}" requires "${resolvedSegments.join(
             '.'
-          )}" to be configured as a composition.`,
+          )}" to be configured as a composition in the same node config.`,
           violationPath
         )
       );

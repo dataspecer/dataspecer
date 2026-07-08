@@ -14,6 +14,9 @@ import { DataSourceKind } from './data-source.ts';
 
 export type LdkitSchemaMap = Record<string, Schema>;
 
+/**
+ * Reads data from a SPARQL endpoint through LDKit lenses. Schemas are keyed by aggregate IRI.
+ */
 export class RdfLdkitDataSource implements DataSource {
   readonly kind: DataSourceKind = DataSourceKind.Rdf;
 
@@ -29,7 +32,7 @@ export class RdfLdkitDataSource implements DataSource {
       skip: ((args.page ?? 1) - 1) * (args.pageSize ?? 100),
     });
 
-    return result.map((r) => ({ ...r, id: r.$id })) as unknown as TModel[];
+    return result.map((entity) => toModel<TModel>(entity));
   }
 
   async readDetail<TModel extends EntityModel>(
@@ -37,7 +40,7 @@ export class RdfLdkitDataSource implements DataSource {
   ): Promise<TModel | null> {
     const lens = this.buildLens(args.aggregate);
     const result = await lens.findByIri(args.id);
-    return result as unknown as TModel | null;
+    return result ? toModel<TModel>(result) : null;
   }
 
   async create<TModel extends EntityModel>(_args: MutationArgs<TModel>): Promise<TModel> {
@@ -70,4 +73,9 @@ export class RdfLdkitDataSource implements DataSource {
     };
     return createLens(schema, options);
   }
+}
+
+// LDKit exposes the entity IRI as $id. The generated models use id.
+function toModel<TModel extends EntityModel>(entity: { $id: string }): TModel {
+  return { ...entity, id: entity.$id } as unknown as TModel;
 }

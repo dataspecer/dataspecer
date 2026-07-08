@@ -1,7 +1,7 @@
 import { semanticViolation, type Violation } from '../types.ts';
 import { ViolationCode } from '../violation-codes.ts';
 import { Operation } from '../../graph/types.ts';
-import type { SemanticValidationContext } from '../semantic-validation-context.ts';
+import type { StructuralValidationContext } from '../semantic-validation-context.ts';
 
 /**
  * Association kinds may be configured on Create, Update, and Delete nodes. Delete nodes need
@@ -13,7 +13,7 @@ const OPERATIONS_WITH_ASSOCIATION_CONFIG = new Set([
   Operation.Delete,
 ]);
 
-export function validateNodeConfig(context: SemanticValidationContext): Violation[] {
+export function validateNodeConfig(context: StructuralValidationContext): Violation[] {
   return context.graph.nodes.flatMap((node, index) => {
     const violations: Violation[] = [];
 

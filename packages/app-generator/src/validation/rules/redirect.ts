@@ -1,11 +1,10 @@
 import { semanticViolation, type Violation } from '../types.ts';
 import { ViolationCode } from '../violation-codes.ts';
-import { EdgeType, Operation } from '../../graph/types.ts';
-import { haveSameClass } from './aggregate-rules.ts';
+import { EdgeType } from '../../graph/types.ts';
 import { isValidRedirectOperation } from './edge-rules.ts';
-import type { SemanticValidationContext } from '../semantic-validation-context.ts';
+import type { StructuralValidationContext } from '../semantic-validation-context.ts';
 
-export function validateRedirects(context: SemanticValidationContext): Violation[] {
+export function validateRedirects(context: StructuralValidationContext): Violation[] {
   const violations: Violation[] = [];
   const redirectSources = new Set<string>();
 
@@ -36,20 +35,6 @@ export function validateRedirects(context: SemanticValidationContext): Violation
         semanticViolation(
           ViolationCode.SemanticInvalidRedirect,
           `Redirect "${edge.id}" from ${sourceNode.operation} to ${targetNode.operation} is not valid.`,
-          `/edges/${index}`
-        )
-      );
-      return;
-    }
-
-    if (
-      targetNode.operation === Operation.ReadDetail &&
-      !haveSameClass(sourceNode, targetNode, context.aggregates)
-    ) {
-      violations.push(
-        semanticViolation(
-          ViolationCode.SemanticRedirectRequiresSameClass,
-          `Redirect "${edge.id}" to ReadDetail requires source and target aggregates to represent the same class.`,
           `/edges/${index}`
         )
       );

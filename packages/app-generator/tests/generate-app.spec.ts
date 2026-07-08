@@ -111,6 +111,32 @@ describe('generateApp', () => {
     ]);
   });
 
+  it('reports structure violations without loading metadata', async () => {
+    const result = await generateApp({
+      graph: graphFixture({
+        edges: [
+          {
+            id: 'list-detail-redirect',
+            source: 'Book.ReadList',
+            target: 'Book.ReadDetail',
+            type: EdgeType.Redirect,
+          },
+        ],
+      }),
+      metadataProvider: {
+        getSpecificationMetadata: () => Promise.reject(new Error('must not be called')),
+      },
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.violations).toContainEqual(
+      expect.objectContaining({ code: ViolationCode.SemanticInvalidRedirect })
+    );
+    expect(result.violations).not.toContainEqual(
+      expect.objectContaining({ code: ViolationCode.MetadataResolutionFailed })
+    );
+  });
+
   it('generates files in memory without an output directory', async () => {
     const result = await generateApp({
       graph: graphFixture(),

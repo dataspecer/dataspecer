@@ -1,8 +1,8 @@
 import { semanticViolation, type Violation } from '../types.ts';
 import { ViolationCode } from '../violation-codes.ts';
-import type { SemanticValidationContext } from '../semantic-validation-context.ts';
+import type { StructuralValidationContext } from '../semantic-validation-context.ts';
 
-export function validateEdgeEndpoints(context: SemanticValidationContext): Violation[] {
+export function validateEdgeEndpoints(context: StructuralValidationContext): Violation[] {
   return context.graph.edges.flatMap((edge, index) => {
     const violations: Violation[] = [];
     if (!context.nodes.has(edge.source)) {
