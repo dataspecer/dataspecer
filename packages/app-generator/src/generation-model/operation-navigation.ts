@@ -95,7 +95,8 @@ function buildSuccessRedirect(
 ): GeneratedNavigationActionDescriptor | undefined {
   if (
     sourceOperation.operation !== Operation.Create &&
-    sourceOperation.operation !== Operation.Update
+    sourceOperation.operation !== Operation.Update &&
+    sourceOperation.operation !== Operation.Delete
   ) {
     return undefined;
   }

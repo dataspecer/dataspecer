@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { CreateForm } from "../shared/components/create-form.tsx";
+import { DeleteForm } from "../shared/components/delete-form.tsx";
 import { DetailView } from "../shared/components/detail-view.tsx";
 import { ListView } from "../shared/components/list-view.tsx";
 import { PlaceholderOperationView } from "../shared/components/placeholder-operation-view.tsx";
@@ -120,8 +121,20 @@ export function <%= it.page.componentName %>() {<% if (it.page.operation.operati
       id={id}
     />
   );
+<% } else if (it.page.operation.operation === "Delete") { %>
+  const id = readRouteEntityId(window.location.search);
+
+  return (
+    <DeleteForm
+      title={operation.title}
+      aggregate={operation.aggregate}
+      strategy={operation.strategy}
+      dataSource={dataSource}
+      navigation={operation.navigation}
+      id={id}
+    />
+  );
 <% } else { %>
-  // TODO: Implement the Delete confirmation page with redirects
   return <PlaceholderOperationView title={operation.title} operation={operation.operation} />;
 <% } -%>
 }

@@ -118,11 +118,11 @@ export class RdfLdkitDataSource implements DataSource {
     }
   }
 
-  // TODO: Implement delete, including recursive composition cascade.
-  async delete<TModel extends EntityModel>(_args: DeleteArgs<TModel>): Promise<void> {
-    return Promise.reject(
-      new Error('Delete is not implemented by the first prototype RDF datasource.')
-    );
+  async delete<TModel extends EntityModel>(args: DeleteArgs<TModel>): Promise<void> {
+    // TODO: Implement recursive composition cascade and incoming reference checks.
+    await this.deleteInverseLinks(inverseWritableFields(args.aggregate.fields), args.id);
+    const lens = this.buildLens(args.aggregate);
+    await lens.delete(args.id);
   }
 
   async listByType(classIri: string, limit = 200): Promise<ReferenceOption[]> {
