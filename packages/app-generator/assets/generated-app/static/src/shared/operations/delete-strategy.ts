@@ -1,5 +1,9 @@
 import type { EntityModel } from '../types/aggregate.ts';
-import type { OperationContext, OperationStrategy } from './operation-strategy.ts';
+import {
+  stringParam,
+  type OperationContext,
+  type OperationStrategy,
+} from './operation-strategy.ts';
 import type { OperationResult } from './operation-result.ts';
 
 export class DefaultDeleteStrategy<TModel extends EntityModel> implements OperationStrategy<
@@ -9,7 +13,7 @@ export class DefaultDeleteStrategy<TModel extends EntityModel> implements Operat
   async execute(ctx: OperationContext<TModel>): Promise<OperationResult<void>> {
     await ctx.datasource.delete({
       aggregate: ctx.aggregate,
-      id: JSON.stringify(ctx.params.id ?? ''),
+      id: stringParam(ctx.params, 'id'),
     });
     return { ok: true, data: undefined };
   }

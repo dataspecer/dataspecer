@@ -3,11 +3,13 @@ import { useEffect, useState } from "react";
 import { DetailView } from "../shared/components/detail-view.tsx";
 import { ListView } from "../shared/components/list-view.tsx";
 import { PlaceholderOperationView } from "../shared/components/placeholder-operation-view.tsx";
+import { readRouteEntityId } from "../shared/navigation/navigation.ts";
 import { invokeOperation } from "../shared/operations/operation-strategy.ts";
 import { dataSource, operations } from "../generated/operation-registry.ts";
 import type { <%= it.page.modelName %> } from "../modules/<%= it.page.moduleName %>/model.ts";
 
 const operation = operations[<%~ it.json(it.page.operation.id) %>];
+const navigation = <%~ it.json(it.page.operation.navigation) %> as const;
 
 // TODO: Make this more pretty (styling)
 export function <%= it.page.componentName %>() {
@@ -34,15 +36,21 @@ export function <%= it.page.componentName %>() {
       });
   }, []);
 
-  // TODO: Render graph transitions as row actions and navigation buttons
   return (
     <>
       {error ? <p role="alert">{error}</p> : null}
-      <ListView title={operation.title} fields={operation.aggregate.fields} items={items} />
+      <ListView
+        title={operation.title}
+        fields={operation.aggregate.fields}
+        items={items}
+        pageActions={navigation.pageActions}
+        rowActions={navigation.rowActions}
+        associationActions={navigation.associationActions}
+      />
     </>
   );
 <% } else if (it.page.operation.operation === "ReadDetail") { %>
-  const id = window.location.pathname.split("/").filter(Boolean).at(-1) ?? "";
+  const id = readRouteEntityId(window.location.search);
   const [item, setItem] = useState<<%= it.page.modelName %> | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,11 +73,20 @@ export function <%= it.page.componentName %>() {
       });
   }, [id]);
 
-  // TODO: Render graph transitions as navigation buttons and association links
   return (
     <>
       {error ? <p role="alert">{error}</p> : null}
-      {item ? <DetailView title={operation.title} fields={operation.aggregate.fields} item={item} /> : <p>No item loaded.</p>}
+      {item ? (
+        <DetailView
+          title={operation.title}
+          fields={operation.aggregate.fields}
+          item={item}
+          pageActions={navigation.pageActions}
+          associationActions={navigation.associationActions}
+        />
+      ) : (
+        <p>No item loaded.</p>
+      )}
     </>
   );
 <% } else { %>

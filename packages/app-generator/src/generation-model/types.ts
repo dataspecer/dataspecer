@@ -40,6 +40,7 @@ export interface GeneratedOperationDescriptor {
   routeId: string;
   pageComponentName: string;
   pageTitle: string;
+  navigation: GeneratedOperationNavigation;
   list?: GeneratedListDescriptor;
   detail?: GeneratedDetailDescriptor;
   form?: GeneratedFormDescriptor;
@@ -52,6 +53,7 @@ export interface GeneratedRouteDescriptor {
   path: string;
   operationId: string;
   pageComponentName: string;
+  requiresEntityId: boolean;
 }
 
 export interface GeneratedNavigationDescriptor {
@@ -68,6 +70,26 @@ export interface GeneratedRedirectDescriptor {
   targetOperationId: string;
   sourceNodeId: string;
   targetNodeId: string;
+}
+
+export interface GeneratedOperationNavigation {
+  pageActions: GeneratedNavigationActionDescriptor[];
+  rowActions: GeneratedNavigationActionDescriptor[];
+  associationActions: GeneratedAssociationNavigationActionDescriptor[];
+}
+
+export interface GeneratedNavigationActionDescriptor {
+  id: string;
+  label: string;
+  targetPath: string;
+  requiresEntityId: boolean;
+}
+
+export interface GeneratedAssociationNavigationActionDescriptor {
+  id: string;
+  fieldPath: string;
+  targetPath: string;
+  requiresEntityId: boolean;
 }
 
 export interface GeneratedListDescriptor {

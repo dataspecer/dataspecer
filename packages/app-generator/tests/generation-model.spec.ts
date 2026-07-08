@@ -50,8 +50,9 @@ describe('buildGenerationModel', () => {
     expect(model.routes).toContainEqual(
       expect.objectContaining({
         id: 'book-read-detail',
-        path: '/book-read-detail/:id',
+        path: '/book-read-detail',
         pageComponentName: 'BookReadDetailPage',
+        requiresEntityId: true,
       })
     );
     expect(model.navigation).toEqual([
@@ -179,6 +180,110 @@ describe('buildGenerationModel', () => {
       chapterDetail?.fields.find((field) => field.path === 'editor')?.associationKind
     ).toBeUndefined();
   });
+
+  it('classifies transitions into operation navigation descriptors', () => {
+    const graph = graphFixture();
+    graph.nodes = [
+      node('BookNested.ReadList', 'https://example.org/aggregate/book-detail', Operation.ReadList),
+      node('Book.ReadDetail', 'https://example.org/aggregate/book-detail', Operation.ReadDetail),
+      node('Book.Create', 'https://example.org/aggregate/book-form', Operation.Create),
+      node('Book.Update', 'https://example.org/aggregate/book-detail', Operation.Update),
+      node('Book.Delete', 'https://example.org/aggregate/book-detail', Operation.Delete),
+      node(
+        'Author.ReadDetail',
+        'https://example.org/aggregate/author-detail',
+        Operation.ReadDetail
+      ),
+    ];
+    graph.edges = [
+      transition('list-create', 'BookNested.ReadList', 'Book.Create'),
+      transition('list-detail', 'BookNested.ReadList', 'Book.ReadDetail'),
+      transition('list-update', 'BookNested.ReadList', 'Book.Update'),
+      transition('list-delete', 'BookNested.ReadList', 'Book.Delete'),
+      transition('list-author-detail', 'BookNested.ReadList', 'Author.ReadDetail'),
+      transition('detail-list', 'Book.ReadDetail', 'BookNested.ReadList'),
+      transition('detail-update', 'Book.ReadDetail', 'Book.Update'),
+      transition('detail-delete', 'Book.ReadDetail', 'Book.Delete'),
+      transition('detail-author-detail', 'Book.ReadDetail', 'Author.ReadDetail'),
+    ];
+
+    const model = buildGenerationModel(graph, basicMetadata);
+    const list = model.operations.find((operation) => operation.id === 'BookNested.ReadList');
+    const detail = model.operations.find((operation) => operation.id === 'Book.ReadDetail');
+
+    expect(list?.navigation.pageActions).toEqual([
+      {
+        id: 'list-create',
+        label: 'Create',
+        targetPath: '/book-create',
+        requiresEntityId: false,
+      },
+    ]);
+    expect(list?.navigation.rowActions).toEqual([
+      {
+        id: 'list-delete',
+        label: 'Delete',
+        targetPath: '/book-delete',
+        requiresEntityId: true,
+      },
+      {
+        id: 'list-detail',
+        label: 'Detail',
+        targetPath: '/book-read-detail',
+        requiresEntityId: true,
+      },
+      {
+        id: 'list-update',
+        label: 'Edit',
+        targetPath: '/book-update',
+        requiresEntityId: true,
+      },
+    ]);
+    expect(list?.navigation.associationActions).toEqual([
+      {
+        id: 'list-author-detail:author',
+        fieldPath: 'author',
+        targetPath: '/author-read-detail',
+        requiresEntityId: true,
+      },
+    ]);
+    expect(list?.navigation.associationActions[0]).not.toHaveProperty('label');
+
+    expect(detail?.navigation.pageActions).toEqual([
+      {
+        id: 'detail-delete',
+        label: 'Delete',
+        targetPath: '/book-delete',
+        requiresEntityId: true,
+      },
+      {
+        id: 'detail-list',
+        label: 'List',
+        targetPath: '/book-nested-read-list',
+        requiresEntityId: false,
+      },
+      {
+        id: 'detail-update',
+        label: 'Edit',
+        targetPath: '/book-update',
+        requiresEntityId: true,
+      },
+    ]);
+    expect(detail?.navigation.associationActions).toEqual([
+      {
+        id: 'detail-author-detail:author',
+        fieldPath: 'author',
+        targetPath: '/author-read-detail',
+        requiresEntityId: true,
+      },
+      {
+        id: 'detail-author-detail:chapters.editor',
+        fieldPath: 'chapters.editor',
+        targetPath: '/author-read-detail',
+        requiresEntityId: true,
+      },
+    ]);
+  });
 });
 
 function graphFixture(): ApplicationGraph {
@@ -265,5 +370,14 @@ function node(
     aggregateIri,
     operation,
     ...(config ? { config } : {}),
+  };
+}
+
+function transition(id: string, source: string, target: string) {
+  return {
+    id,
+    source,
+    target,
+    type: EdgeType.Transition,
   };
 }

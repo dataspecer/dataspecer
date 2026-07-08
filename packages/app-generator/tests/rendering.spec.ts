@@ -96,8 +96,10 @@ describe('renderGeneratedApp', () => {
     const tree = renderGeneratedApp(model);
 
     expect(tree.get('src/routes.tsx')).toContain('BookReadListPage');
-    expect(tree.get('src/routes.tsx')).toContain('/book-read-detail/:id');
+    expect(tree.get('src/routes.tsx')).toContain('path: "/book-read-detail"');
+    expect(tree.get('src/routes.tsx')).toContain('requiresEntityId: true');
     expect(tree.get('src/pages/BookReadListPage.tsx')).toContain('invokeOperation');
+    expect(tree.get('src/pages/BookReadListPage.tsx')).not.toContain('"fieldPath": "author"');
     expect(tree.get('src/modules/book-list/model.ts')).toContain('export interface BookListModel');
     expect(tree.get('src/modules/book-list/book-read-list-operation.ts')).toContain(
       'extends DefaultReadListStrategy<BookListModel>'
@@ -106,6 +108,58 @@ describe('renderGeneratedApp', () => {
     const readme = tree.get('README.md');
     expect(readme).toContain('Generated/User-Owned Boundaries');
     expect(readme).toMatch(/generated from Dataspecer aggregate\s+field metadata/);
+  });
+
+  it('renders graph transitions as page, row, and association navigation actions', () => {
+    const graph = graphFixture();
+    graph.nodes = [
+      node('Book.ReadList', 'https://example.org/aggregate/book-list', Operation.ReadList, {
+        pageTitle: 'Books',
+      }),
+      node('Book.ReadDetail', 'https://example.org/aggregate/book-detail', Operation.ReadDetail),
+      node('Book.Create', 'https://example.org/aggregate/book-form', Operation.Create),
+      node('Book.Update', 'https://example.org/aggregate/book-form', Operation.Update),
+      node('Book.Delete', 'https://example.org/aggregate/book-form', Operation.Delete),
+      node(
+        'Author.ReadDetail',
+        'https://example.org/aggregate/author-detail',
+        Operation.ReadDetail
+      ),
+    ];
+    graph.edges = [
+      transition('list-create', 'Book.ReadList', 'Book.Create'),
+      transition('list-detail', 'Book.ReadList', 'Book.ReadDetail'),
+      transition('list-update', 'Book.ReadList', 'Book.Update'),
+      transition('list-delete', 'Book.ReadList', 'Book.Delete'),
+      transition('list-author-detail', 'Book.ReadList', 'Author.ReadDetail'),
+      transition('detail-list', 'Book.ReadDetail', 'Book.ReadList'),
+      transition('detail-update', 'Book.ReadDetail', 'Book.Update'),
+      transition('detail-delete', 'Book.ReadDetail', 'Book.Delete'),
+      transition('detail-author-detail', 'Book.ReadDetail', 'Author.ReadDetail'),
+    ];
+
+    const tree = renderGeneratedApp(buildGenerationModel(graph, basicMetadata));
+    const listPage = tree.get('src/pages/BookReadListPage.tsx');
+    const detailPage = tree.get('src/pages/BookReadDetailPage.tsx');
+
+    expect(listPage).toContain('pageActions={navigation.pageActions}');
+    expect(listPage).toContain('rowActions={navigation.rowActions}');
+    expect(listPage).toContain('"targetPath": "/book-create"');
+    expect(listPage).toContain('"targetPath": "/book-update"');
+    expect(listPage).toContain('"targetPath": "/book-delete"');
+    expect(listPage).toContain('"fieldPath": "author"');
+
+    expect(detailPage).toContain('readRouteEntityId(window.location.search)');
+    expect(detailPage).toContain('pageActions={navigation.pageActions}');
+    expect(detailPage).toContain('"targetPath": "/book-read-list"');
+    expect(detailPage).toContain('"fieldPath": "author"');
+
+    expect(tree.get('src/shared/components/list-view.tsx')).toContain('rowActions');
+    expect(tree.get('src/shared/components/detail-view.tsx')).toContain('associationActions');
+    expect(tree.get('src/App.tsx')).not.toContain('example-id');
+    expect(tree.get('src/shared/operations/read-detail-strategy.ts')).toContain(
+      "stringParam(ctx.params, 'id')"
+    );
   });
 
   it('generates an LDKit schema with nested schemas for embedded associations', () => {
@@ -211,5 +265,14 @@ function node(
     aggregateIri,
     operation,
     ...(config ? { config } : {}),
+  };
+}
+
+function transition(id: string, source: string, target: string) {
+  return {
+    id,
+    source,
+    target,
+    type: EdgeType.Transition,
   };
 }

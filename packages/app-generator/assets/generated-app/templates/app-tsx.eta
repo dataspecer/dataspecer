@@ -11,8 +11,8 @@ export function App() {
       <header>
         <h1><%= it.model.app.name %></h1>
         <nav>
-          {routes.map((candidate) => (
-            <a key={candidate.id} href={candidate.path.replace("/:id", "/example-id")}>
+          {routes.filter((candidate) => !candidate.requiresEntityId).map((candidate) => (
+            <a key={candidate.id} href={candidate.path}>
               {candidate.title}
             </a>
           ))}
@@ -24,10 +24,5 @@ export function App() {
 }
 
 function matchPath(routePath: string, currentPath: string): boolean {
-  if (!routePath.includes(":id")) {
-    return routePath === currentPath || (currentPath === "/" && routePath === routes[0].path);
-  }
-
-  const prefix = routePath.replace("/:id", "");
-  return currentPath.startsWith(`${prefix}/`);
+  return routePath === currentPath || (currentPath === "/" && routePath === routes[0].path);
 }

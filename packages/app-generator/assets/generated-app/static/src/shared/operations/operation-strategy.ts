@@ -42,3 +42,8 @@ export async function invokeOperation<TModel extends EntityModel, TResult = unkn
   const result = await strategy.execute(context);
   return strategy.postprocess ? strategy.postprocess(context, result) : result;
 }
+
+export function stringParam(params: Record<string, unknown>, name: string): string {
+  const value = params[name];
+  return typeof value === 'string' ? value : '';
+}
