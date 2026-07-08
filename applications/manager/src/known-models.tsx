@@ -134,10 +134,10 @@ export const createModelInstructions = {
   },
   [APPLICATION_GRAPH_NEW]: {
     needsNaming: true,
-    createHook: getHookForStandardModel(APPLICATION_GRAPH_NEW, (iri, context) => ({
-      "dataSpecificationIri": iri,
+    createHook: getHookForStandardModel(APPLICATION_GRAPH_NEW, (_iri, context) => ({
       "name": context.label?.cs ?? context.label?.en ?? "Application",
-      "dataSources": [],
+      "dataSpecificationIri": context.parentIri,
+      "datasources": [],
       "nodes": [],
       "edges": [],
     })),

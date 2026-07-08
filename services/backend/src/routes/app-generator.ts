@@ -19,13 +19,14 @@ export const generateApplicationByModelId = asyncHandler(
       query.iri,
     );
     const data: any = await modelStore.getJson();
+    // If provided, the generated application is saved to a local directory in addition to returning it in the response
+    const outputDirectory = process.env.APP_GENERATOR_OUTPUT_DIR;
     const result = await generateApp({
       graph: data,
       metadataProvider: new DataspecerSpecificationMetadataProvider(
         getSpecification,
       ),
-      outputDirectory:
-        "/home/evaganov/Desktop/my/MFF/predmety/Výzkumný projekt/dataspecer-fork/packages/app-generator/tmp/test-app",
+      ...(outputDirectory ? { outputDirectory, allowOverwrite: false } : {}),
     });
     response.setHeader("Content-Type", "application/json");
     response.send(result);
