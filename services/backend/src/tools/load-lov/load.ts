@@ -115,8 +115,7 @@ const filename = "./lov.nq";
                 description: vocabulary.description,
                 tags: ["imported"]
             });
-            const store = await resourceModel.getOrCreateResourceModelStore(vocabulary.id);
-            await store.setJson({
+            await resourceModel.setResourceStoreJson(vocabulary.id, {
                 baseIri: vocabulary.namespaceUri,
                 entities: Object.fromEntries(vocabulary.entities.map(e => [e.id, e])),
                 modelAlias: label[Object.keys(label)[0]],

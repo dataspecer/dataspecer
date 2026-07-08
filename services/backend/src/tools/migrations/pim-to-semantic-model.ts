@@ -34,7 +34,7 @@ export default async function () {
           };
 
           // Process CIM
-          const cimData = await (await resourceModel.getResourceModelStore(cim.iri))?.getJson();
+          const cimData = await resourceModel.getResourceStoreJson(cim.iri);
           const cimModels = cimData.models as string[];
           if (cimModels.length == 0) {
             packageData.sourceSemanticModelIds = ["https://dataspecer.com/adapters/sgov"];
@@ -46,12 +46,12 @@ export default async function () {
           await resourceModel.deleteResource(cim.iri);
 
           // Process Generator configuration
-          const generatorConfigurationData = await (await resourceModel.getResourceModelStore(generatorConfiguration.iri))?.getJson();
+          const generatorConfigurationData = await resourceModel.getResourceStoreJson(generatorConfiguration.iri);
           if (!Array.isArray(generatorConfigurationData.sourceSemanticModelIds) && generatorConfigurationData.client) {
             const client = generatorConfigurationData.client;
             delete generatorConfigurationData.client;
             packageData.userPreferences.client = client;
-            await (await resourceModel.getResourceModelStore(generatorConfiguration.iri))?.setJson(generatorConfigurationData);
+            await resourceModel.setResourceStoreJson(generatorConfiguration.iri, generatorConfigurationData);
           }
 
           // Process PIM
@@ -62,7 +62,7 @@ export default async function () {
               representationType: LOCAL_SEMANTIC_MODEL,
             }
           });
-          const pimData = await (await resourceModel.getResourceModelStore(pim.iri))?.getJson();
+          const pimData = await resourceModel.getResourceStoreJson(pim.iri);
           const reader = ReadOnlyMemoryStore.create(pimData.resources);
           const wrapper = new PimStoreWrapper(reader);
           wrapper.fetchFromPimStore();
@@ -74,7 +74,7 @@ export default async function () {
             baseIri: "",
             entities,
           };
-          await (await resourceModel.getResourceModelStore(pim.iri))?.setJson(semanticModel);
+          await resourceModel.setResourceStoreJson(pim.iri, semanticModel);
 
           // Title
           // @ts-ignore
@@ -86,7 +86,7 @@ export default async function () {
           // Process PSMs reverse associations
           const relationshipMapping = wrapper.relationshipMapping;
           for (const psm of finalPackage?.subResources.filter(r => r.types.includes(PSM)) ?? []) {
-            const psmData = await (await resourceModel.getResourceModelStore(psm.iri))?.getJson();
+            const psmData = await resourceModel.getResourceStoreJson(psm.iri);
 
             for (const entity of Object.values(psmData.resources) as DataPsmResource[]) {
               if (DataPsmAssociationEnd.is(entity)) {
@@ -98,7 +98,7 @@ export default async function () {
               }
             }
 
-            await (await resourceModel.getResourceModelStore(psm.iri))?.setJson(psmData);
+            await resourceModel.setResourceStoreJson(psm.iri, psmData);
 
             // Title
             // @ts-ignore
@@ -109,8 +109,8 @@ export default async function () {
           }
 
           // Store the package data
-          const originalData = await (await resourceModel.getResourceModelStore(finalPackage!.iri))?.getJson() ?? {};
-          await (await resourceModel.getResourceModelStore(finalPackage!.iri))?.setJson({...originalData, ...packageData});
+          const originalData = await resourceModel.getResourceStoreJson(finalPackage!.iri) ?? {};
+          await resourceModel.setResourceStoreJson(finalPackage!.iri, {...originalData, ...packageData});
         } catch (e) {
           console.error(e);
         }

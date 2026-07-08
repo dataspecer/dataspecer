@@ -81,14 +81,12 @@ export const getBlob = asyncHandler(async (request: express.Request, response: e
     });
     const query = querySchema.parse(request.query);
 
-    const store = await resourceModel.getResourceModelStore(query.iri, query.name);
+    const buffer = await resourceModel.getResourceStoreBuffer(query.iri, query.name);
 
-    if (!store) {
+    if (!buffer) {
         response.sendStatus(404);
         return;
     }
-
-    const buffer = await (store).getBuffer();
 
     response.send(buffer);
     return;
@@ -101,7 +99,7 @@ export const updateBlob = asyncHandler(async (request: express.Request, response
     });
     const query = querySchema.parse(request.query);
 
-    const buffer = await (await resourceModel.getOrCreateResourceModelStore(query.iri, query.name)).setJson(request.body);
+    await resourceModel.setResourceStoreJson(query.iri, request.body, query.name);
 
     response.sendStatus(200);
     return;
@@ -114,7 +112,7 @@ export const deleteBlob = asyncHandler(async (request: express.Request, response
     });
     const query = querySchema.parse(request.query);
 
-    await resourceModel.deleteModelStore(query.iri, query.name);
+    await resourceModel.deleteResourceStore(query.iri, query.name);
 
     response.sendStatus(204);
     return;

@@ -24,7 +24,7 @@ export const getSimplifiedSemanticModel = asyncHandler(async (request: express.R
         return;
     }
 
-    const data = await (await resourceModel.getOrCreateResourceModelStore(query.iri)).getJson();
+    const data = await resourceModel.getResourceStoreJson(query.iri);
     const entities = data.entities as Record<string, SemanticModelEntity>;
 
     const simplifiedModel = semanticModelToSimplifiedSemanticModel(entities, {});
@@ -51,14 +51,12 @@ export const setSimplifiedSemanticModel = asyncHandler(async (request: express.R
         return;
     }
 
-    const modelStore = await resourceModel.getOrCreateResourceModelStore(query.iri);
-
-    const data = await modelStore.getJson();
+    const data = await resourceModel.getResourceStoreJson(query.iri);
     const entities = data.entities as Record<string, SemanticModelEntity>;
 
     const newEntities = simplifiedSemanticModelToSemanticModel(request.body, entities);
 
     data.entities = newEntities;
-    await modelStore.setJson(data);
+    await resourceModel.setResourceStoreJson(query.iri, data);
     response.sendStatus(204);
 });
