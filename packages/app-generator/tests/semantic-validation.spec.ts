@@ -11,11 +11,10 @@ import {
   type ApplicationNode,
   type ApplicationNodeConfig,
 } from '../src/graph/types.ts';
-import { resolveGraphAssociationKinds } from '../src/metadata/resolve-graph-association-kinds.ts';
-import { validateGraphSemantics } from '../src/validation/validate-semantics.ts';
+import { analyzeGraphSemantics } from '../src/validation/analyze-semantics.ts';
 import { basicMetadata, specificationIri } from './fixtures/metadata/basic-metadata.ts';
 
-describe('validateGraphSemantics', () => {
+describe('analyzeGraphSemantics', () => {
   it('accepts a valid read list to read detail transition', () => {
     const graph = validGraph();
     const result = validatePreparedGraph(graph);
@@ -474,8 +473,7 @@ function expectViolations(graph: ApplicationGraph, code: ViolationCode) {
 }
 
 function validatePreparedGraph(graph: ApplicationGraph) {
-  const prepared = resolveGraphAssociationKinds(graph, basicMetadata);
-  return validateGraphSemantics(graph, prepared.metadata, prepared.issues);
+  return analyzeGraphSemantics(graph, basicMetadata);
 }
 
 function validGraph(overrides: Partial<ApplicationGraph> = {}): ApplicationGraph {

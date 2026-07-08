@@ -8,11 +8,10 @@ import { validateGraphSyntax } from './graph/validate-syntax.ts';
 import type { DataspecerMetadataProvider } from './metadata/dataspecer-metadata-provider.ts';
 import { DataspecerMetadataMappingError } from './metadata/dataspecer-specification-metadata-provider.ts';
 import type { DataspecerSpecificationMetadata } from './metadata/types.ts';
-import { resolveGraphAssociationKinds } from './metadata/resolve-graph-association-kinds.ts';
 import { writeFileTree } from './rendering/write-file-tree.ts';
 import type { FileTreeContent } from './rendering/file-tree.ts';
 import { renderGeneratedApp } from './rendering/render-generated-app.ts';
-import { validateGraphSemantics } from './validation/validate-semantics.ts';
+import { analyzeGraphSemantics } from './validation/analyze-semantics.ts';
 
 export interface GeneratePrototypeAppInput {
   graph: unknown;
@@ -44,17 +43,13 @@ export async function generateApp(
   } catch (error) {
     return failure(metadataResolutionViolations(error));
   }
-  const graphMetadata = resolveGraphAssociationKinds(graph, metadata);
-  const semanticResult = validateGraphSemantics(
-    graph,
-    graphMetadata.metadata,
-    graphMetadata.issues
-  );
-  if (!semanticResult.valid) {
-    return failure(semanticResult.violations);
+
+  const analysis = analyzeGraphSemantics(graph, metadata);
+  if (!analysis.valid) {
+    return failure(analysis.violations);
   }
 
-  const generationModel = buildGenerationModel(graph, graphMetadata.metadata);
+  const generationModel = buildGenerationModel(graph, analysis.enrichedMetadata);
   const fileTree = renderGeneratedApp(generationModel);
   const files = fileTree.toObject();
   const writtenFiles: string[] = [];

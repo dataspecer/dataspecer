@@ -16,13 +16,9 @@ export {
   mapDataspecerSpecificationToMetadata,
 } from './metadata/dataspecer-specification-metadata-provider.ts';
 export { FakeDataspecerMetadataProvider } from './metadata/fake-dataspecer-metadata-provider.ts';
-export {
-  GraphAssociationKindResolutionIssueCode,
-  resolveGraphAssociationKinds,
-} from './metadata/resolve-graph-association-kinds.ts';
 export { FileTree } from './rendering/file-tree.ts';
 export { renderGeneratedApp } from './rendering/render-generated-app.ts';
-export { validateGraphSemantics } from './validation/validate-semantics.ts';
+export { analyzeGraphSemantics } from './validation/analyze-semantics.ts';
 export type { GeneratePrototypeAppInput, GeneratePrototypeAppResult } from './generate-app.ts';
 export type {
   GeneratedAggregateDescriptor,
@@ -46,10 +42,7 @@ export type {
   DeleteConfig,
 } from './graph/types.ts';
 export type { DataspecerMetadataProvider } from './metadata/dataspecer-metadata-provider.ts';
-export type {
-  GraphAssociationKindResolution,
-  GraphAssociationKindResolutionIssue,
-} from './metadata/resolve-graph-association-kinds.ts';
+export type { SemanticAnalysisResult } from './validation/analyze-semantics.ts';
 export type { DataspecerMetadataMappingIssue } from './metadata/dataspecer-specification-metadata-provider.ts';
 export type {
   DataspecerAggregatedSemanticModel,

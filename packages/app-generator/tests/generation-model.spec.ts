@@ -13,7 +13,7 @@ import {
 } from '../src/graph/types.ts';
 import { basicMetadata, specificationIri } from './fixtures/metadata/basic-metadata.ts';
 import { FieldKind } from '../src/metadata/types.ts';
-import { resolveGraphAssociationKinds } from '../src/metadata/resolve-graph-association-kinds.ts';
+import { analyzeGraphSemantics } from '../src/validation/analyze-semantics.ts';
 
 describe('buildGenerationModel', () => {
   it('builds a deterministic generation model', () => {
@@ -222,7 +222,7 @@ function graphFixture(): ApplicationGraph {
 }
 
 function preparedMetadataFor(graph: ApplicationGraph) {
-  return resolveGraphAssociationKinds(graph, basicMetadata).metadata;
+  return analyzeGraphSemantics(graph, basicMetadata).enrichedMetadata;
 }
 
 function node(
